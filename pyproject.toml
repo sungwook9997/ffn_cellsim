@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "activecellsim"
+version = "0.0.1.dev0"
+description = "First-principles MCF7 spheroid spreading simulator"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["acs*"]
+exclude = ["tests*", "scripts*", "configs*", "data*", "docs*", "logs*", "results*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["data", "results", "logs", "docs"]
+
+[tool.ruff.lint]
+# Conservative starter set; tighten later if the team wants stricter rules.
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",  # line length handled by formatter
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

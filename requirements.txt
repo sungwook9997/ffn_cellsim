@@ -1,0 +1,21 @@
+# ActiveCellSim — runtime dependencies (Stage 0).
+# Pinned versions are written by `pip freeze` after the env install completes.
+# This loose set is the source of truth for which packages enter the env.
+
+# Core simulation
+taichi>=1.7,<2.0
+numpy>=1.26,<3.0
+scipy>=1.11
+
+# Data I/O
+h5py>=3.10
+pyyaml>=6.0
+
+# Visualization / analysis
+matplotlib>=3.8
+plotly>=5.20
+vispy>=0.14
+
+# Dev tooling
+pytest>=8.0
+ruff>=0.4

@@ -1,0 +1,33 @@
+# Dev config — fastest-possible smoke runs to keep the inner loop tight.
+# Used during Stage 1a code-write iteration. NOT a scientific-validity target.
+
+run:
+  name: dev
+  seed: 0
+  output_dir: results/dev
+
+gpu:
+  backend: auto          # ACS_GPU_BACKEND env var still wins if set
+  device_memory_GB: 2
+
+simulation:
+  n_material_points: 200
+  domain_size_um: 200.0
+  dx_um: 5.0
+  dt_s: 0.05
+  total_sim_time_s: 60.0
+  frame_interval_s: 5.0
+
+# Layer activation flags — Stage 0 pins everything off.
+layers:
+  L1_bulk_hydrodynamics: true
+  L2_boundary_biology: false
+  L3_adhesion_phi: false
+  L4_internal_flow: false
+  L5_mechano_osmotic: false
+  L6_chemistry_necrosis: false   # Stage 2
+
+physics:
+  cohesion_strength: 1.0          # placeholder; literature anchor in Stage 1a
+  cortical_K_Pa: 100.0
+  maxwell_tau_s: 1.0

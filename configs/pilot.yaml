@@ -1,0 +1,36 @@
+# Pilot config — Stage 1a target.
+# 1,000 material points × 4 sim hours, wall-clock ≤ 30 min on RTX A5000.
+
+run:
+  name: pilot
+  seed: 42
+  output_dir: results/pilot
+
+gpu:
+  backend: cuda
+  # NOTE: hardware reality on primary workstation is RTX A5000 *Laptop* (16 GB);
+  # cap a bit below 12 GB to leave headroom for OS and frame buffers.
+  device_memory_GB: 10
+
+simulation:
+  n_material_points: 1000
+  domain_size_um: 600.0
+  dx_um: 4.0
+  dt_s: 0.02
+  total_sim_time_s: 14400.0      # 4 sim hours
+  frame_interval_s: 3600.0       # 60 sim min — matches PI's experimental imaging cadence
+
+layers:
+  L1_bulk_hydrodynamics: true
+  L2_boundary_biology: false
+  L3_adhesion_phi: false
+  L4_internal_flow: false
+  L5_mechano_osmotic: false
+  L6_chemistry_necrosis: false
+
+physics:
+  # Placeholders — every value gets a literature anchor (IF≥15) before Stage 1a closes.
+  # See docs/02_force_models.md and docs/12_validation.md.
+  cohesion_strength: null
+  cortical_K_Pa: null
+  maxwell_tau_s: null

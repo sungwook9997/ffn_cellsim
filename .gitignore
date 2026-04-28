@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Run artifacts (CLAUDE.md mandates per-run config + git hash capture, but the
+# bulk frame data should NOT enter version control)
+logs/
+results/
+*.h5
+*.hdf5
+frames/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Taichi caches
+.taichi/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Claude Code local session settings
+.claude/settings.local.json
