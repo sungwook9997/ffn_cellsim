@@ -32,6 +32,35 @@ These run automatically and pass/fail in CI:
 - All output values within physically reasonable ranges (not 10⁻²⁰ or 10²⁰)
 - Spreading rate within range observed in literature for tissue spreading
 
+### Sanity Gate Protocol — mandatory pre-execution review for every new physics/numerics module
+
+This protocol is part of academic honesty in computational work: a numerical scheme that violates dimensional analysis or stability conditions can produce plausible-looking output that is, in fact, meaningless. The protocol enforces that we *prove* — to ourselves and to the reader — that the discretisation is sound *before* a single simulation step runs. The duplicate copy of this protocol in `CLAUDE.md` is the executable directive; this copy in `12_validation.md` is the academic justification.
+
+**When it runs**: after writing or modifying any `acs/physics/*.py`, `acs/boundary/*.py`, `acs/adhesion/*.py`, or numerical-integrator code, **before** the first execution. Modifications to a single line still require re-running the affected sub-checks.
+
+**The five checks**:
+1. **Dimensional analysis** — units annotated on every input/output; characteristic scales L, T, S, V, M computed; the dominant non-dimensional numbers (Re, Ca, De, Pe, Ma) reported; for explicit time-stepping schemes the CFL bound must be re-derived against the configured `dt` and a PASS recorded as `dt/dt_CFL = W < 1`.
+2. **Boundary cases** — the code must remain well-defined at extreme limits (`N→0`, `N→∞`, `Δt→0`, `Δt→large`, `γ→0`, `K→∞`).
+3. **Conservation invariants** — explicit declaration of what is conserved, where dissipation is intentional, and where leaks are possible.
+4. **Numerical sanity** — `dx`/`dt`/precision choices justified against the slowest and fastest physically meaningful scales.
+5. **Sign / sense check** — every force term annotated with the intuitive direction it pushes.
+
+**Failure handling**: a FAIL halts further code work on that module. The author surfaces the issue to the PI with at least three concrete remediation options (e.g., reduce Δt, switch to implicit, switch to overdamped) and waits for direction before proceeding. The first `mlsmpm.py` draft (April 2026) caught a 16,000× CFL violation via this protocol; that experience is the reason the protocol is now permanent in `CLAUDE.md` Hard Rules.
+
+### Magic-Number Block
+
+The protocol forbids introducing empirical scaling factors / ad-hoc tuning constants ("magic numbers") into physics or numerics code. Before adding any such factor, all three tests below must pass; failing any blocks the change and forces the author to surface the underlying scheme issue to the PI.
+
+1. **Derivable** — can the value be derived from peer-reviewed literature (preferably IF ≥ 15) or from first principles (dimensional analysis, conservation law, asymptotic expansion)?
+2. **Grid-invariant** — does the value remain valid as `dx`, `dt`, `grid_n`, `n_particles`, or other discretisation parameters change? Or does each parameter sweep require re-tuning?
+3. **Fitting** — was the value chosen to make a specific simulated number match a target (a gate threshold, an experimental datapoint, a prior result)? "Yes" here is automatic disqualification.
+
+The April 2026 `csf_kappa_scale` episode is the documented anti-pattern. After CSF-driven radius drift exceeded the 5% gate, three successive empirical reductions (κ-scale 0.25 → 0.05, then capillary number 0.01 → 0.001) each made the gate "pass" by weakening the surface-tension force, but every one of them failed the three tests above. The principled fix — a finite-difference curvature operator `κ = -∇·n̂` per Brackbill (1992) — has a literature anchor, is grid-invariant up to standard discretisation error, and was not chosen to hit any target. The static-sphere validation (`κ_measured` vs `2/R`, ±10%) became a permanent gate to lock the scheme rather than the parameters.
+
+**Cousin rule — gate semantics are immutable per run**: a gate's tolerance, normalisation, and check window are part of the validation contract authored before the run starts. They are not tuneable in response to a failing result. If a gate appears to be genuinely incorrect (wrong physical interpretation, not just a tight tolerance), the author halts and surfaces the contract change to the PI rather than editing the gate inline.
+
+**Recording the result**: the five-check report lives in the module's docstring under a `Sanity Gate` heading (or as a sibling `<module>_sanity.md` file when too long). It is part of the deliverable, not optional documentation.
+
 ## Pillar 2: Literature Anchoring
 
 Every parameter in `02_force_models.md` has at least one IF ≥ 15 reference. Where IF ≥ 15 is not available, lower-IF references are explicitly flagged and noted as a limitation.

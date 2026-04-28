@@ -1,0 +1,41 @@
+# Production config — 24 GB+ TIER (RTX 4090, desktop A5000, Colab A100).
+# PLACEHOLDER — only fill in after Stage 1a benchmark on Laptop A5000 reveals
+# a parameter set that genuinely needs > 16 GB. Until then, runs use
+# production_16gb.yaml on every backend.
+#
+# When activating this file:
+#   - bump n_material_points / dx resolution above what 16 GB can hold
+#   - bump device_memory_GB to ~20 (leave 4 GB headroom on a 24 GB card)
+#   - keep simulation physics IDENTICAL to production_16gb.yaml so the
+#     comparison across hardware tiers measures only resolution effects
+
+run:
+  name: production_24gb
+  seed: 2026
+  output_dir: results/production_24gb
+
+gpu:
+  backend: cuda
+  device_memory_GB: 20
+
+simulation:
+  # Mirror production_16gb until the benchmark proves we need bigger.
+  n_material_points: 5000
+  domain_size_um: 1000.0
+  dx_um: 4.0
+  dt_s: 0.02
+  total_sim_time_s: 288000.0
+  frame_interval_s: 900.0
+
+layers:
+  L1_bulk_hydrodynamics: true
+  L2_boundary_biology: true
+  L3_adhesion_phi: true
+  L4_internal_flow: true
+  L5_mechano_osmotic: true
+  L6_chemistry_necrosis: false
+
+physics:
+  cohesion_strength: null
+  cortical_K_Pa: null
+  maxwell_tau_s: null

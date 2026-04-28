@@ -2,13 +2,29 @@
 
 ## Performance Targets
 
-| Mode | N points | Sim time | Wall-clock target | Hardware |
-|---|---|---|---|---|
-| Pilot | 1,000 | 4–8 hr | **≤ 30 min** | RTX A5000 |
-| Production | 5,000 | 80 hr | 5–15 hr | RTX A5000 |
-| Production large | 10,000 | 80 hr | 20–40 hr | RTX A5000 (or 4090×2 split) |
+Targets are written against the **16 GB Laptop A5000 baseline** (primary working environment). 24 GB+ targets (4090, A100, desktop A5000) should always be at least as fast.
 
-Pilot must complete in 30 min for fast iteration during development. If it does not, reduce N or simplify before optimizing.
+| Mode | N points | Sim time | Wall-clock target (16 GB Laptop A5000) | VRAM ceiling |
+|---|---|---|---|---|
+| Pilot      | 1,000  | 4–8 hr | **≤ 30 min**     | ≤ 8 GB  |
+| Production | 5,000  | 80 hr  | **~7–20 hr/run** | ≤ 12 GB |
+| Production large | 10,000 | 80 hr | TBD — likely needs 24 GB+ tier | > 16 GB |
+
+Pilot must complete in 30 min for fast iteration. If it doesn't, reduce N or simplify before optimizing.
+
+### Per-environment benchmark table
+
+Filled in during Stage 1a benchmark deliverable. Same `pilot.yaml` run on every available device.
+
+| Device                 | VRAM | Pilot wall-clock | Mean step (ms) | Peak VRAM | Notes |
+|---|---|---|---|---|---|
+| RTX A5000 Laptop (primary) | 16 GB | _TBD_ | _TBD_ | _TBD_ | baseline |
+| RTX 4090 (lab #1)      | 24 GB | _TBD_ | _TBD_ | _TBD_ | |
+| RTX 4090 (lab #2)      | 24 GB | _TBD_ | _TBD_ | _TBD_ | |
+| Colab A100             | 40 GB | _TBD_ | _TBD_ | _TBD_ | spillover |
+| Desktop A5000 (loaner) | 24 GB | _TBD_ | _TBD_ | _TBD_ | reference |
+
+The Laptop A5000 row is the canonical reference. Other rows quantify how much faster larger-VRAM hosts are (and whether Laptop GPU's ~70%-of-desktop expectation holds).
 
 ## Optimization Priorities (in order)
 
@@ -24,9 +40,10 @@ Avoid premature optimization. Profile first (Stage 1a).
 ## GPU Portability Mandate
 
 The same code must run on:
-- RTX A5000 (primary, CUDA, 24 GB)
+- **RTX A5000 Laptop** (primary, CUDA, **16 GB**) — baseline, most runs
 - RTX 4090 ×2 (secondary, CUDA, 24 GB each — single GPU per process initially)
 - Google Colab (T4 / A100, fallback)
+- Desktop A5000 (loaner, CUDA, 24 GB)
 - CPU (debugging fallback)
 
 ### Implementation
@@ -92,15 +109,20 @@ Workflow on Windows workstation:
 - After analysis, move to NAS or Dropbox sync
 - Mac side: only download dashboard.html + summary metrics for review
 
-## Memory Budget (RTX A5000, 24 GB VRAM)
+## Memory Budget (RTX A5000 Laptop, 16 GB VRAM baseline)
 
-For 5,000 material points:
+For 5,000 material points (estimate; will be confirmed in Stage 1a benchmark):
 - Material point arrays (position, velocity, F, σ, φ, ρ, ...): ~5 KB/point × 5,000 = 25 MB
 - Background grid (128³): 128³ × ~10 fields × 4 bytes = 80 MB
 - Particle-grid transfers, intermediates: ~200 MB
 - Taichi runtime overhead: ~500 MB
 
-Total: < 1 GB — well within budget. Even 100,000 points fits comfortably; we are CPU-bound, not memory-bound.
+Total estimate: < 1 GB — comfortably under the 12 GB ceiling. The benchmark step verifies this empirically before Stage 1a is signed off.
+
+If the empirical peak exceeds 12 GB on the 16 GB Laptop A5000:
+1. Demote `configs/production_16gb.yaml` to whatever fits (e.g., 3,000 points or coarser grid).
+2. Move the original 5,000-point spec to `configs/production_24gb.yaml` and run those on the lab 4090×2 / Colab A100.
+3. Document the demotion in `docs/12_validation.md` as an assumption-with-caveat.
 
 ## SSH Workflow (Headless)
 
@@ -108,7 +130,7 @@ Total: < 1 GB — well within budget. Even 100,000 points fits comfortably; we a
 ```bash
 # On Windows workstation (via SSH from Mac)
 cd D:/ActiveCellSim
-python run.py --config configs/production.yaml --run-id sweep_p1_seed42 &
+python run.py --config configs/production_16gb.yaml --run-id sweep_p1_seed42 &
 disown
 ```
 

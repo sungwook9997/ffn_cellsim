@@ -18,8 +18,10 @@ A 3D hybrid Eulerian-Lagrangian simulation using **Taichi MLS-MPM** with ~5,000 
 ### Stack
 - **Language**: Python 3.11+
 - **Simulation core**: Taichi (>= 1.7), prefer MLS-MPM examples as starting point
-- **Hardware target**: NVIDIA RTX A5000 (primary), portable to RTX 4090×2, fallback Google Colab
-- **GPU portability is mandatory** — no hard-coded device paths
+- **Hardware target**:
+  - **Primary working environment**: NVIDIA RTX A5000 *Laptop* GPU, **16 GB VRAM** (Xeon W-11955M mobile workstation, Windows, headless SSH). Most pilots and many production runs land here. **16 GB is the baseline reference for all sizing.**
+  - **Secondary / large-sweep environments**: 24 GB+ GPUs — RTX 4090 ×2 (lab workstation), Google Colab A100 (40 GB), or desktop A5000 (24 GB). Used for runs that exceed 16 GB or for parallel sweep throughput.
+  - **GPU portability is mandatory** — no hard-coded device IDs or paths; the `ACS_GPU_BACKEND` env var (cuda/vulkan/opengl/metal/cpu/auto) and `acs.gpu.init_taichi` dispatcher route everything.
 - **Execution**: Headless SSH, full automation (no mid-run user input)
 - **Visualization**:
   - Real-time viewer: Vispy (lightweight, SSH-friendly via offline frame export)
@@ -28,10 +30,13 @@ A 3D hybrid Eulerian-Lagrangian simulation using **Taichi MLS-MPM** with ~5,000 
 - **Data format**: HDF5 for simulation snapshots (frames), JSON for metadata, CSV for metrics
 
 ### Performance Budget
-- **Pilot**: 1,000 material points × 4–8 sim hours → wall-clock **≤ 30 minutes**
-- **Production**: 5,000 material points × 80+ sim hours → wall-clock **5–15 hours/run**
-- **Frame interval**: pilot 60 min, production 15 min (matches PI's experimental imaging)
-- **Sweep**: 5 conditions × 3 repeats = 15 runs, sequential batch
+Targets are written against the **16 GB Laptop A5000 baseline**. The same configs must also be runnable on 24 GB+ targets (typically faster, never blocked).
+- **Pilot**: 1,000 material points × 4–8 sim hours → wall-clock **≤ 30 minutes** on Laptop A5000.
+- **Production**: 5,000 material points × 80+ sim hours → wall-clock **~7–20 hours/run** on Laptop A5000 (Laptop GPU runs ~70% of desktop A5000). On 4090×2 / A100, expect closer to the original 5–15 hr.
+- **VRAM ceiling**: pilot configs target ≤ 8 GB working set; production targets ≤ 12 GB so OS + frame buffers + Taichi runtime have headroom on the 16 GB device.
+- **Stage 1a benchmark (mandatory)**: measure actual peak VRAM and wall-clock of the 5,000-point production config on Laptop A5000. If it exceeds 12 GB, split into a `production_24gb.yaml` configuration and reduce the 16 GB version to whatever fits.
+- **Frame interval**: pilot 60 min, production 15 min (matches PI's experimental imaging).
+- **Sweep**: 5 conditions × 3 repeats = 15 runs, sequential batch (Laptop A5000 by default; spillover to 4090×2 / Colab when backlog > 1 day).
 
 ### Validation Principle (Read Carefully)
 - **Literature-first**: All physical parameters from peer-reviewed sources, prefer IF ≥ 15 (Nat Phys, Nat Mater, Nat Cell Biol, Cell, Science, PNAS, Nat Commun, eLife)
@@ -71,7 +76,12 @@ ActiveCellSim/
 
 ## Code Conventions
 - Modular structure: `physics/`, `boundary/`, `adhesion/`, `viz/`, `io/`, `analysis/` separation
-- Configuration via YAML (`configs/pilot.yaml`, `configs/production.yaml`)
+- Configuration via YAML. **VRAM-tier-segregated production configs** so the 16 GB baseline is never silently broken by a parameter intended for a larger GPU:
+  - `configs/dev.yaml` — fast smoke iteration (≤ 2 GB)
+  - `configs/pilot.yaml` — 16 GB Laptop A5000, Stage 1a target
+  - `configs/production_16gb.yaml` — 16 GB baseline production config (default sweep)
+  - `configs/production_24gb.yaml` — 24 GB+ target (RTX 4090, desktop A5000) — only created when a parameter set genuinely cannot fit in 16 GB
+  - `configs/production.yaml` is reserved as a symlink/alias to whichever 16gb/24gb file is the current default; do not edit it directly
 - Each Tier/Layer is independently togglable via config flag (for staged activation)
 - Type hints + docstrings (Google style)
 - Unit tests for physics modules (especially conservation laws, scaling tests)
@@ -96,6 +106,51 @@ Run validation tests at each stage end. Don't move forward with broken physics.
 - **ALWAYS** save full configuration + git commit hash with each run output.
 - **ALWAYS** treat `data/experimental/*.csv` as read-only.
 - If a physical parameter has no IF≥15 reference, flag it explicitly in code comments and `docs/12_validation.md`.
+- **ALWAYS** run the Sanity Gate Protocol (below) on any new or modified physics/numerics module BEFORE the first execution.
+- **NEVER** introduce an empirical scaling factor / ad-hoc tuning constant ("magic number") that fails any of the three tests in the Magic-Number Block (below). Such factors paper over a missing principled term and rot quickly under parameter sweeps. If a numerical correction is genuinely needed, derive it from literature or first principles (e.g., proper finite-difference curvature operator instead of a scalar κ-scale knob); if you cannot, halt and surface to the PI.
+- **NEVER** modify a gate's tolerance, normalisation, or check window to make a failing run pass. Gates are validation contracts written before the run; if a gate is genuinely incorrect, surface to the PI for a contract change rather than editing it inline.
+
+## Magic-Number Block (mandatory check)
+
+A "magic number" is any new empirical scaling factor, tuning constant, or correction multiplier introduced into a physics / numerics module. Before adding one, the author must answer all three of the following. **Any "yes" on test 3, or "no" on tests 1–2, blocks the change** — surface to the PI with the underlying scheme issue instead.
+
+1. **Derivable**: can the value be derived from a literature reference (preferably IF ≥ 15) or from first principles (dimensional analysis, conservation law, asymptotic expansion)?
+2. **Grid-invariant**: does the value remain valid as `dx`, `dt`, `grid_n`, or `n_particles` change? Or does each parameter sweep require re-tuning?
+3. **Fitting**: was the value chosen to make a specific simulated number match a target (gate threshold, experimental datapoint, prior result)?
+
+The April 2026 `csf_kappa_scale=0.05` episode is the canonical anti-pattern: it failed test 1 (no derivation), failed test 2 (would need re-calibration at every grid resolution), and was true on test 3 (chosen so the radius drift gate would pass). The principled fix was a proper finite-difference curvature operator (∇·n̂) — which has a literature reference, is grid-invariant up to discretisation error, and was not chosen to fit any target.
+
+## Sanity Gate Protocol (mandatory before first execution of any physics/numerics code)
+
+After writing or modifying a physics/numerics module, **before running it**, perform the following five checks. Record the results either as a docstring section in the module under the heading `Sanity Gate` or as a sibling `*_sanity.md` note when the analysis is too long for a docstring. If any check FAILs, halt and surface the failure to the PI with concrete options before any further code is written. The CFL violation discovered in the first `mlsmpm.py` draft (dt=0.02 s vs CFL limit ≈1 μs, off by 16,000×) is the canonical example of this protocol catching a fork-in-the-road decision early.
+
+### 1. Dimensional analysis
+- Every input and output annotated with units (μm, s, Pa, kg, …).
+- Compute the characteristic scales: length L, time T, stress S, velocity V, mass M.
+- Compute the dominant non-dimensional numbers: Reynolds (Re), capillary (Ca), Deborah (De), Péclet (Pe), Mach (Ma) as relevant.
+- For explicit time-stepping schemes: compute the CFL / stability bound and verify `dt < dt_critical` with the configured parameters. If not, FAIL.
+- Record the result as `# Dimensional check: PASS — Re=X, Ca=Y, De=Z, dt/dt_CFL=W` or `# Dimensional check: FAIL — <reason>`.
+
+### 2. Boundary cases
+- Walk through the parameter / discretisation extremes that the code must survive: N → 0, N → ∞, Δt → 0, Δt → large, γ → 0, K → ∞, R → 0, etc.
+- Either prove (with a comment) that the limit is well-defined or add a guard. Silent NaN-on-extremes is a FAIL.
+
+### 3. Conservation invariants
+- State explicitly which quantities are conserved (mass, momentum, angular momentum, energy) and on which lines/kernels they are preserved.
+- State the deliberate dissipation channels (viscous, drag, Maxwell relaxation) and verify they are *only* dissipative (no sign flip).
+- Identify suspect leak points (e.g., reflective boundaries that may absorb momentum, atomic ops with non-deterministic order).
+
+### 4. Numerical sanity
+- Δt vs the slowest physically meaningful timescale (Δt ≪ τ_relax, etc.) and the fastest resolved timescale.
+- Grid resolution vs the smallest physical feature you need to capture (`dx ≪ R₀`, `dx ≲ thickness of boundary layer`).
+- Float precision: justify f32 vs f64 explicitly (typical: f32 for particle/grid hot fields, f64 for cumulative diagnostics).
+
+### 5. Sign / sense check
+- For every force / flux term, write one line on the *direction* it pushes (cohesion ⇒ attractive ⇒ negative work on expansion; pressure ⇒ repulsive ⇒ positive work on expansion; drag ⇒ opposes velocity; etc.).
+- A force whose sign cannot be checked against intuition is itself a FAIL.
+
+### Failure handling
+A FAIL halts further code work for the current module. Surface the issue to the PI with at least three concrete options (e.g., reduce Δt, switch to implicit, switch to overdamped). Wait for direction before proceeding. Never silently work around a Sanity Gate failure.
 
 ## When in doubt
 - Read `docs/00_project_vision.md` for framing

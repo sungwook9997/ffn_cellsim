@@ -26,6 +26,12 @@ ignore = [
     "E501",  # line length handled by formatter
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# `I` (capital eye) is the Taichi convention for grouped grid indices and is
+# universal in published MLS-MPM code. Keep it readable; suppress E741 here.
+"acs/physics/*.py" = ["E741"]
+"tests/test_physics_*.py" = ["E741"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra -q"

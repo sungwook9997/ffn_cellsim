@@ -1,0 +1,76 @@
+# Stage 1a-prod-burnin — staircase step 3 of 4.
+# Goal: jointly stress-test scale (5k points) and duration (24 sim hr) before
+# committing 5–15 hr of GPU time to the full production run.
+# 5,000 material points × 24 sim hours, wall-clock ~3–5 hr on Laptop A5000.
+
+run:
+  name: stage1a_prod_burnin
+  seed: 42
+  output_dir: results/stage1a_prod_burnin
+  staircase_step: 3
+
+gpu:
+  backend: cuda
+  device_memory_GB: 12             # full 16 GB Laptop A5000 ceiling minus headroom
+
+simulation:
+  n_material_points: 5000
+  domain_size_um: 1000.0
+  dx_um: 4.0                       # 250 cells per axis ≈ 15.6M voxels — VRAM-tight; benchmark verifies
+  dt_s: 0.02
+  total_sim_time_s: 86400.0        # 24 sim hours
+  frame_interval_s: 900.0          # 15 sim min — production cadence
+  diagnostic_interval_steps: 200
+
+layers:
+  L1_bulk_hydrodynamics: true
+  L2_boundary_biology: false
+  L3_adhesion_phi: false
+  L4_internal_flow: false
+  L5_mechano_osmotic: false
+  L6_chemistry_necrosis: false
+
+physics:
+  density_kg_m3: 1050.0           # TODO[anchor]
+  cortical_K_Pa: 1000.0           # TODO[anchor]
+  shear_mu_Pa: 300.0              # TODO[anchor]
+  maxwell_tau_s: 60.0             # TODO[anchor]
+  cohesive_gamma_J_m2: 1.0e-3     # TODO[anchor]
+
+nondim:
+  K_star: 1.0
+  mu_star: 0.3
+  tau_star: 1.0
+  capillary_number: 0.01           # SWEEP-EXPOSED
+  drag_xi_star: 1.0
+  density_star: 1.0
+  dt_star: 0.01
+  total_time_star: 1440.0          # 24 sim hr / 60 s
+  frame_interval_star: 15.0        # 900 s / 60 s
+  domain_star: 10.0                # larger box for 5k particles
+  radius_star: 1.0
+
+numerics:
+  scheme: overdamped_mlsmpm
+  constitutive_integrator: exponential
+  free_surface_detection: density
+  free_surface_density_threshold: 0.6
+  surface_tension_model: csf_grid
+  background_grid_resolution: 96
+
+initialization:
+  shape: sphere
+  radius_um: 100.0
+  pack: poisson_disk_random
+
+gate:
+  mass_drift_rel_max: 1.0e-10
+  momentum_drift_rel_max: 5.0e-3
+  energy_increase_tol_rel: 5.0e-3
+  vram_peak_gb_max: 12.0           # hard ceiling on 16 GB Laptop A5000
+  step_time_scaling_tol: 1.5
+  sphericity_min: 0.95
+  sphericity_check_after_s: 1800.0 # at 5k points equilibrium takes a bit longer
+  radius_drift_rel_max: 0.05
+  radius_drift_check_after_s: 1800.0
+  max_speed_over_vrms: 10.0
