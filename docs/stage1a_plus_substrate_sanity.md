@@ -559,6 +559,79 @@ anti-pattern, halt and surface to PI on any FAIL.
 
 ---
 
+## Option β addendum (recorded 2026-04-29 after Option α pilot)
+
+Stage 1a+ Option α pilot result: R drift 24.7%, contact-band depopulation
+49 → 4 → 0 within t* = 20·τ_relax. Mechanical-only substrate cannot hold
+the contracting spheroid; surface tension lifts it off the rigid floor.
+This is the unambiguous answer Option α was designed to produce, and per
+`docs/outcomes_stage1a_plus.md` it triggers the Option β escalation:
+**Ca_sub = α · Ca_cc sweep, anchored to the literature-anchored cell-cell
+capillary number.**
+
+### Activation of the substrate CSF impulse code path
+
+The substrate CSF impulse `dv_z = +γ_sub · κ_sub_proxy · n̂_sub · dt /
+ρ_local` (with `n̂_sub = -ẑ`, `κ_sub_proxy = 1/dx*`) was specified and
+six-check-analyzed in this document at proposal time but was not
+implemented under Option α (γ_sub = 0). Option β activates exactly that
+code path. The six-check analysis already on file applies unchanged:
+
+- **Check 1 (Dimensional)**: `Ca_sub_β = α · Ca_cc`. With α ∈ {0.1, 0.3,
+  1.0} and `Ca_cc = 0.01`, `Ca_sub_β ∈ {0.001, 0.003, 0.01}`. All inside
+  the `[0.001, 0.01]` bound from the original analysis. PASS.
+- **Check 2 (Boundary cases)**: `α → 0` recovers Option α; `α → ∞` would
+  saturate (already gated). The sweep range `[0.1, 1.0]` stays in the
+  safe interior. PASS.
+- **Check 3 (Conservation)**: substrate CSF impulse adds energy to the
+  contact band; the energy-monotone gate must include the substrate
+  surface-energy term `−γ_sub · A_contact`. **Implementation note**:
+  add this term to `surface_energy_star` in `_compute_invariants` when
+  `γ_sub_star > 0`. (Under Option α with γ_sub = 0 the term was zero
+  by construction; under Option β it must be live.)
+- **Check 4 (Numerical)**: substrate CSF impulse magnitude ≤ Ca_cc · K
+  = 0.01 in the worst case (α = 1.0); same order as the existing
+  cell-cell CSF, validated through v12+ for f32. PASS.
+- **Check 5 (Sign)**: already analyzed and PASS in this document
+  (impulse pulls particles toward substrate ⇒ attractive wetting). The
+  Option α result *experimentally confirmed* the sign: with γ_sub = 0 the
+  spheroid lifts off, so a non-zero γ_sub with this sign convention
+  must, by construction, oppose lift-off. ✓
+- **Check 6 (Measurement-protocol consistency)**: under Option β the
+  Young contact angle gate becomes meaningful (γ_sub > 0 gives a
+  finite `θ_eq`). The geometric measurement protocol already
+  established for the apparent contact angle (linear fit of r(z) over
+  the lowest 0.2·R₀ slab) is used unchanged; gate tolerance ±10°
+  applies. The contact area gate likewise becomes meaningful (Young
+  analytical reference exists for non-zero S = γ_sub).
+
+### Magic-Number Block on the sweep design
+
+`α ∈ {0.1, 0.3, 1.0}` is a **sweep variable**, not a fitted parameter.
+The anchored quantity is `γ_cc` (Maître et al. Science 2012, IF 47,
+already in `docs/02_force_models.md` §1.1 / §1.5). Reporting the R-drift
+result as a *response curve* in `α` makes the substrate value
+parameter-free at result level (no specific `γ_sub_Col1` is claimed).
+
+1. **Derivable** — yes, `γ_cc` from Maître Science 2012; `α` is a
+   sweep, not a value to derive. PASS.
+2. **Grid-invariant** — `α · Ca_cc` inherits Ca_cc's grid-invariance.
+   PASS.
+3. **Fitting** — no. The three values 0.1 / 0.3 / 1.0 are
+   logarithmically spaced exploration of one decade, chosen to bracket
+   the qualitative regime change (weak / moderate / γ_cc-comparable
+   wetting), not to make any gate pass. PASS.
+
+### Decision request to PI for Option β
+
+PI-pre-approved as the Outcome 4 escalation path. No further sign-off
+required to begin Option β implementation. Stop conditions remain: no
+magic numbers, no gate semantics edits beyond the Cousin-Rule
+substrate-surface-energy addition (recorded above and in
+`docs/outcomes_stage1a_plus.md`), no v13 anti-pattern.
+
+---
+
 ## Future work (Stage 1b and beyond — out of scope for this document)
 
 Recorded here so the framing is preserved across sessions; **none of this

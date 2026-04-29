@@ -218,6 +218,19 @@ class SolverConfig:
     # box faces (Stage 1a baseline behaviour, no substrate).
     substrate_enabled: bool = False
     n_contact_band: int = 3
+    # Stage 1a+ Option β: substrate adhesion energy density `γ_sub_star`
+    # (dimensionless, in K·R₀ units = stress·length). When > 0 and
+    # `substrate_enabled` is True, the substrate CSF impulse
+    #   dv_z = −γ_sub_star · κ_sub_proxy · dt / ρ_local
+    # (with κ_sub_proxy = 1/dx*, n̂_sub = −ẑ) is applied to grid cells in
+    # the contact band, pulling particles toward z = 0. Anchored to
+    # `Ca_cc` (Maître Science 2012, IF 47) via the runner's
+    # `gamma_sub_alpha` sweep variable: γ_sub_star = α · γ_cc_star =
+    # α · Ca_cc · K_star · radius_star. See
+    # `docs/stage1a_plus_substrate_sanity.md` §"Option β addendum" and
+    # `docs/outcomes_stage1a_plus.md` §"Option β addendum". Default 0
+    # recovers Option α (mechanical anchor only).
+    gamma_sub_star: float = 0.0
 
     @property
     def dx_star(self) -> float:
@@ -997,6 +1010,12 @@ class MLSMPMSolver:
         # When `substrate_enabled` is True the −z wall uses `n_contact_band`
         # (intentional substrate); otherwise it uses 3 (box-wall safety net).
         sub_band = self.cfg.n_contact_band if self.cfg.substrate_enabled else 3
+        # Stage 1a+ Option β substrate CSF impulse coefficient. When > 0,
+        # cells in the contact band receive an attractive impulse toward
+        # z = 0 of magnitude γ_sub_star · κ_sub_proxy · dt / ρ_local with
+        # κ_sub_proxy = 1/dx* and n̂_sub = −ẑ.
+        gamma_sub_star = self.cfg.gamma_sub_star
+        inv_dx = 1.0 / dx
 
         for I in ti.grouped(self.grid_m):
             m = self.grid_m[I]
@@ -1016,11 +1035,25 @@ class MLSMPMSolver:
                         dt * gamma * self.grid_kappa[I] * self.grid_color_grad[I]
                         / rho_local
                     )
+                # Stage 1a+ Option β substrate CSF impulse: cells in the
+                # contact band are pulled toward the substrate (n̂_sub = −ẑ,
+                # κ_sub_proxy = 1/dx*). When γ_sub_star = 0 (Option α) the
+                # impulse is identically zero by arithmetic, so the branch is
+                # kept guard-less for Taichi-trace simplicity (no ti.static
+                # on a kernel-local Expr). The min_cell_mass guard mirrors
+                # the free-surface CSF block above so a low-mass cell does
+                # not blow up via 1/ρ_local. Sign verified in
+                # `docs/stage1a_plus_substrate_sanity.md` §6/§"Option β
+                # addendum" check 5.
+                i, j, k = I[0], I[1], I[2]
+                if k < sub_band and m > min_cell_mass:
+                    rho_local_sub = m / (dx ** 3)
+                    v[2] -= dt * gamma_sub_star * inv_dx / rho_local_sub
+
                 # Overdamped per-step damping (mild; physics enters via slow-time interpretation).
                 v *= damp
 
                 # Reflective box-wall safety net (3-cell margin).
-                i, j, k = I[0], I[1], I[2]
                 if i < 3 and v[0] < 0:
                     v[0] = 0.0
                 if i > self.cfg.grid_n - 3 and v[0] > 0:
@@ -1107,6 +1140,8 @@ class MLSMPMSolver:
         mu = ti.cast(self.cfg.mu_star, ti.f64)
         V0 = ti.cast(self.cfg.particle_volume_star, ti.f64)
         gamma = ti.cast(self.cfg.gamma_star, ti.f64)
+        gamma_sub = ti.cast(self.cfg.gamma_sub_star, ti.f64)
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
 
         for p in self.x:
             v = self.v[p]
@@ -1148,6 +1183,21 @@ class MLSMPMSolver:
             if self.is_boundary[p] == 1:
                 # Surface energy proxy: γ × per-particle surface element ≈ γ × V₀^(2/3).
                 ti.atomic_add(self.diag_surface_energy[None], gamma * ti.cast(V0 ** (2.0 / 3.0), ti.f64))
+
+            # Stage 1a+ Option β substrate-adhesion energy: per particle in
+            # the contact band, subtract γ_sub · V₀^(2/3) (adhesion *reduces*
+            # total energy). Gated on `substrate_enabled` (compile-time
+            # Python bool, ti.static-safe); under Option α (γ_sub = 0) the
+            # contribution is arithmetically zero, so no inner γ_sub-guard
+            # is needed. The diagnostic is informational; the existing
+            # energy-monotone gate in the runner uses KE + U_strain only and
+            # is unaffected by this addition.
+            if ti.static(self.cfg.substrate_enabled):
+                if self.x[p][2] < h_band:
+                    ti.atomic_add(
+                        self.diag_surface_energy[None],
+                        -gamma_sub * ti.cast(V0 ** (2.0 / 3.0), ti.f64),
+                    )
 
     def substrate_diagnostics(self) -> dict:
         """Stage 1a+ Option α (γ_sub = 0) substrate gates + diagnostics.

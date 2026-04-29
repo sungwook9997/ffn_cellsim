@@ -92,3 +92,62 @@ results/stage1a_plus_pilot/run_manifest.json      — git hash + config + host
 - Gate semantic 변경 금지 (Cousin Rule)
 - v13 anti-pattern (measurement-protocol consistency 위반) 시 즉시 STOP
 - 한도 외 escalation 금지 — pilot 종료 후 PI 결정 대기, 자동 다음 cycle 진입 금지
+
+---
+
+## Option β addendum (recorded 2026-04-29 after Option α pilot)
+
+Option α produced the expected unambiguous result (R drift 24.7%,
+spheroid lift-off) and triggered the Outcome 4 escalation. Option β is
+the PI-pre-approved follow-up: **3-run sweep `Ca_sub = α · Ca_cc` for
+`α ∈ {0.1, 0.3, 1.0}`** (anchored to Maître Science 2012 cell-cell
+interfacial tension; see sanity-md addendum). Each run is otherwise
+identical to the Option α pilot (same Stage 1a+ scope, same default
+initial state, same 4 sim-hours, same diagnostics + gates).
+
+### Per-run gates (each of the 3 runs)
+
+Same gate set as Option α, plus the now-meaningful gates that were
+demoted to diagnostics under γ_sub = 0:
+
+- All gates from Option α (mass / momentum-horizontal / energy-monotone
+  / no-NaN / max-speed / VRAM / v15-inherited gates / R drift
+  improvement vs v15 baseline / anchor force balance / contact-band
+  ρ_kernel)
+- **Apparent contact angle θ vs Young**: tolerance ±10°. Young's
+  equation: `cos θ_eq = γ_sub / γ_cc = α` (ratio definition; with γ_cm
+  = γ_cc and γ_sm − γ_sc = γ_sub here). Predicted: α=0.1 → θ_eq ≈ 84°;
+  α=0.3 → 73°; α=1.0 → 0° (fully wetting, no equilibrium contact angle
+  is defined; gate degenerate at this end). Apply the gate only for
+  α < 1.0; log θ as diagnostic for α = 1.0.
+- **Contact area vs Young analytical**: tolerance ±15%. Volume V₀ =
+  4π/3 (dimensionless), `A_contact = π·a²` with `a = R · sin θ_eq` and
+  R fixed by volume conservation given θ_eq. Apply only for α < 1.0.
+- **Energy-monotone**: now includes substrate surface energy `−γ_sub ·
+  A_contact`. Total energy is `KE + U_strain + γ_cc · A_free −
+  γ_sub · A_contact`, monotone-decay limit unchanged.
+
+### Sweep-level analysis (across all 3 runs)
+
+After all three runs complete, classify the *sweep result* into one of
+the three meta-buckets below. Per-run R drift values feed the
+classification.
+
+| Sweep meta-bucket | Definition (3-run R drift) | Action |
+|---|---|---|
+| **Substrate scheme works (wetting succeeds at all α)** | All 3 runs show R drift < 24.4% (improvement vs v15 baseline) and contact band populated throughout (no lift-off) | STOP. Surface to PI. The substrate scheme + energetic wetting reproduce Layer 1 + substrate physics. Decisions: (i) move to Stage 1a++ (Layer 2 boundary biology); (ii) extend the α sweep with finer resolution; (iii) report as a finding with α-dependence. |
+| **Threshold ratio identified (wetting succeeds at large α only)** | At least one α has lift-off (R drift ≥ 24.4% and contact-band depopulation) and at least one α has no lift-off (R drift < 24.4%) | STOP. Surface to PI. Quantitative finding: minimum α below which mechanical-only failure persists. Report `α_threshold`. PI decides among (i) targeted sweep around threshold; (ii) Stage 1a++ at the smallest successful α; (iii) deeper analysis of the threshold mechanism. |
+| **Substrate scheme fails (lift-off at all α including α=1.0)** | All 3 runs show R drift ≥ 24.4% or contact-band depopulation | STOP. Surface to PI. **Scheme-level failure of the substrate-CSF approach itself**. Even γ_sub = γ_cc cannot anchor; revisit the v15 deferred (i)–(iii) diagnostics and the v15 architectural alternatives. This is Outcome 4 at the *sweep* level. |
+
+**Per-run STOP, then sweep-level STOP.** No automatic mid-run, no auto-
+extension of the sweep. After 3 runs complete, surface the meta-bucket
+classification to PI. The classification is a single decision point;
+all subsequent decisions are PI-driven.
+
+### Files of record (Option β, per-run)
+
+```
+results/stage1a_plus_beta_alpha_0p1/{gate_report.md, metrics.csv, ...}
+results/stage1a_plus_beta_alpha_0p3/{gate_report.md, metrics.csv, ...}
+results/stage1a_plus_beta_alpha_1p0/{gate_report.md, metrics.csv, ...}
+```

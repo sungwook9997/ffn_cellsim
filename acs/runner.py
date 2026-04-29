@@ -50,22 +50,35 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     nm = cfg["numerics"]
     sim = cfg["simulation"]
     sub = cfg.get("substrate", {})
+    # Stage 1a+ Option β: substrate adhesion energy is anchored to Ca_cc
+    # via the sweep multiplier α (Maître Science 2012, IF 47, anchors
+    # γ_cc; α is parameter-free at result level — see
+    # docs/stage1a_plus_substrate_sanity.md §"Option β addendum"
+    # Magic-Number Block). The dimensionless substrate adhesion is then
+    #   γ_sub_star = α · γ_cc_star = α · Ca_cc · K_star · radius_star.
+    # Default α = 0 recovers Option α (mechanical anchor only, γ_sub = 0).
+    Ca_cc = float(nd["capillary_number"])
+    K_star = float(nd["K_star"])
+    R_star = float(nd["radius_star"])
+    alpha = float(sub.get("gamma_sub_alpha", 0.0))
+    gamma_sub_star = alpha * Ca_cc * K_star * R_star
     return SolverConfig(
         n_particles=int(sim["n_material_points"]),
         grid_n=int(nm["background_grid_resolution"]),
         domain_star=float(nd["domain_star"]),
-        radius_star=float(nd["radius_star"]),
+        radius_star=R_star,
         dt_star=float(nd["dt_star"]),
-        K_star=float(nd["K_star"]),
+        K_star=K_star,
         mu_star=float(nd["mu_star"]),
         tau_star=float(nd["tau_star"]),
-        capillary_number=float(nd["capillary_number"]),
+        capillary_number=Ca_cc,
         drag_xi_star=float(nd["drag_xi_star"]),
         density_star=float(nd["density_star"]),
         free_surface_threshold=float(nm["free_surface_density_threshold"]),
         seed=int(cfg["run"]["seed"]),
         substrate_enabled=bool(sub.get("enabled", False)),
         n_contact_band=int(sub.get("n_contact_band", 3)),
+        gamma_sub_star=gamma_sub_star,
     )
 
 
@@ -107,11 +120,27 @@ def run_stage1a(config_path: Path | str) -> Path:
              solver_cfg.radius_star],
             dtype=np.float32,
         )
-        logger.info(
-            "Substrate enabled (Stage 1a+ Option α): n_contact_band=%d, "
-            "spheroid centre at z* = R₀ = %.4f",
-            solver_cfg.n_contact_band, solver_cfg.radius_star,
-        )
+        if solver_cfg.gamma_sub_star > 0.0:
+            alpha = solver_cfg.gamma_sub_star / max(
+                solver_cfg.capillary_number * solver_cfg.K_star * solver_cfg.radius_star,
+                1e-30,
+            )
+            logger.info(
+                "Substrate enabled (Stage 1a+ Option β): n_contact_band=%d, "
+                "γ_sub*=%.4e (α=γ_sub/γ_cc=%.3f, γ_cc*=%.4e), spheroid centre "
+                "at z* = R₀ = %.4f",
+                solver_cfg.n_contact_band,
+                solver_cfg.gamma_sub_star,
+                alpha,
+                solver_cfg.capillary_number * solver_cfg.K_star * solver_cfg.radius_star,
+                solver_cfg.radius_star,
+            )
+        else:
+            logger.info(
+                "Substrate enabled (Stage 1a+ Option α): n_contact_band=%d, "
+                "γ_sub*=0 (mechanical anchor only), spheroid centre at z* = R₀ = %.4f",
+                solver_cfg.n_contact_band, solver_cfg.radius_star,
+            )
     else:
         centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
     solver.initialize_sphere(centre)
