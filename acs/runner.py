@@ -56,6 +56,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     sub = cfg.get("substrate", {})
     layer2 = cfg.get("layer2", {})
     layer2_b = cfg.get("layer2_b", {})
+    layer7 = cfg.get("layer7", {})
     layer3 = cfg.get("layer3", {})
     gravity = cfg.get("gravity", {})
     layer4 = cfg.get("layer4", {})
@@ -94,6 +95,22 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     layer2_b_enabled = bool(layer2_b.get("enabled", False))
     lambda_lam_star = float(layer2_b.get("lambda_lam_star", 0.0))
     impulse_lam_star = float(layer2_b.get("impulse_lam_star", 0.0))
+    # Stage 1d.c ECM communication + protrusion state machine (per
+    # docs/stage1d_c_ecm_communication_sanity.md).
+    layer7_enabled = bool(layer7.get("enabled", False))
+    eta_ecm_star = float(layer7.get("eta_ecm_star", 5.0))
+    G_ecm_star = float(layer7.get("G_ecm_star", 1.0))
+    lambda_ecm_star = float(layer7.get("lambda_ecm_star", 4.0))
+    R_dep_star = float(layer7.get("R_dep_star", 1.0))
+    T0_star = float(layer7.get("T0_star", 0.1))
+    tau_lam_star = float(layer7.get("tau_lam_star", 10.0))
+    tau_release_star = float(layer7.get("tau_release_star", 5.0))
+    lambda_filo_star = float(layer7.get("lambda_filo_star", 0.05))
+    r_form_star = float(layer7.get("r_form_star", 0.1))
+    r_mature_star = float(layer7.get("r_mature_star", 0.05))
+    alpha_edge_star = float(layer7.get("alpha_edge_star", 1.0))
+    beta_ecm_star = float(layer7.get("beta_ecm_star", 0.5))
+    beta_traction_star = float(layer7.get("beta_traction_star", 0.5))
     # Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
     # `layer3_spatial_S` is DEPRECATED in favour of the φ_memory + c_act
     # split (intrinsically encodes contact-band gating in c_act ODE
@@ -202,12 +219,85 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         layer2_b_enabled=layer2_b_enabled,
         lambda_lam_star=lambda_lam_star,
         impulse_lam_star=impulse_lam_star,
+        layer7_enabled=layer7_enabled,
+        eta_ecm_star=eta_ecm_star,
+        G_ecm_star=G_ecm_star,
+        lambda_ecm_star=lambda_ecm_star,
+        R_dep_star=R_dep_star,
+        T0_star=T0_star,
+        tau_lam_star=tau_lam_star,
+        tau_release_star=tau_release_star,
+        lambda_filo_star=lambda_filo_star,
+        r_form_star=r_form_star,
+        r_mature_star=r_mature_star,
+        alpha_edge_star=alpha_edge_star,
+        beta_ecm_star=beta_ecm_star,
+        beta_traction_star=beta_traction_star,
         layer6_enabled=layer6_enabled,
         alpha_mmp_star=alpha_mmp_star,
         beta_deg_star=beta_deg_star,
         ecm_strength_initial=ecm_strength_initial,
         ecm_strength_min=ecm_strength_min,
     )
+
+
+def _build_stage1dc_kwargs(solver, solver_cfg) -> dict:
+    """Compute the optional Stage 1d.c HDF5 fields for write_frame.
+
+    Returns kwargs for fields that are populated only when the relevant
+    solver layers are active. Stress-channel disambiguation
+    (sigma_vol/sigma_active/sigma_total/pressure/dev_norm) is also
+    computed here per PI directive 2026-04-30 (HDF5 schema fix).
+    """
+    out: dict = {}
+    # Stress-channel disambiguation. tau_dev is already computed and
+    # passed; here we derive sigma_vol, sigma_active, sigma_total,
+    # pressure, dev_norm host-side from the solver's per-particle
+    # state.
+    K = float(solver_cfg.K_star)
+    rho_ref = float(solver._rho_ref_kernel[None])
+    rho_p = solver._rho_kernel_p.to_numpy().astype(np.float64)
+    tau_dev_np = solver.tau_dev.to_numpy().astype(np.float64)
+    n = rho_p.shape[0]
+    # K_eff per particle (Stage 1c K(ρ_osm) coupling).
+    if solver_cfg.layer5_enabled:
+        rho_osm_np = solver.rho_osm_p.to_numpy().astype(np.float64)
+        K_eff = K * rho_osm_np
+    else:
+        K_eff = np.full(n, K)
+    # σ_vol = K_eff (ρ_ref/ρ − 1) I (v15 (k.3) form)
+    vol_strain = rho_ref / np.clip(rho_p, 1e-30, None) - 1.0
+    sigma_vol_diag = K_eff * vol_strain  # scalar diagonal value
+    sigma_vol = np.zeros((n, 3, 3), dtype=np.float32)
+    for d in range(3):
+        sigma_vol[:, d, d] = sigma_vol_diag.astype(np.float32)
+    # σ_active = -ζ_eff·K I, only on boundary particles.
+    is_b = solver.is_boundary.to_numpy().astype(bool)
+    sigma_active = np.zeros((n, 3, 3), dtype=np.float32)
+    if solver_cfg.layer3_enabled:
+        phi_arr = solver.phi_p.to_numpy().astype(np.float64)
+        zeta_eff = solver_cfg.zeta_min * (1.0 - phi_arr) + solver_cfg.zeta_max * phi_arr
+    else:
+        zeta_eff = np.full(n, float(solver_cfg.zeta_star))
+    sigma_active_diag = -(zeta_eff * K)
+    for d in range(3):
+        sigma_active[is_b, d, d] = sigma_active_diag[is_b].astype(np.float32)
+    sigma_total = (tau_dev_np + sigma_vol + sigma_active).astype(np.float32)
+    pressure = (-(np.trace(sigma_total, axis1=1, axis2=2) / 3.0)).astype(np.float32)
+    dev_norm = np.sqrt((tau_dev_np ** 2).sum(axis=(1, 2))).astype(np.float32)
+    out["sigma_vol"] = sigma_vol
+    out["sigma_active"] = sigma_active
+    out["sigma_total"] = sigma_total
+    out["pressure"] = pressure
+    out["dev_norm"] = dev_norm
+    # Stage 1d.c per-particle ECM/protrusion fields.
+    if solver_cfg.layer7_enabled:
+        out["traction_ecm"] = solver.traction_p.to_numpy().astype(np.float32)
+        out["fa_strength"] = solver.fa_strength_p.to_numpy().astype(np.float32)
+        out["protrusion_state"] = solver.protrusion_state_p.to_numpy().astype(np.int32)
+        out["ecm_signal"] = solver.ecm_signal_p.to_numpy().astype(np.float32)
+        out["polarity"] = solver.polarity_p.to_numpy().astype(np.float32)
+    return out
 
 
 def run_stage1a(config_path: Path | str) -> Path:
@@ -444,8 +534,11 @@ def run_stage1a(config_path: Path | str) -> Path:
         total_time_star=total_t,
         frame_interval_star=frame_dt,
     ) as writer:
-        # Frame 0 (initial state). Per PI viz directive 2026-04-29:
-        # save per-particle state fields for state_overlays.py.
+        # Frame 0 (initial state). Per PI viz directive 2026-04-29 +
+        # Stage 1d.c HDF5 schema rationalisation 2026-04-30: save
+        # per-particle state fields for state_overlays.py + stress
+        # channels properly disambiguated.
+        _stage1dc_fields = _build_stage1dc_kwargs(solver, solver_cfg)
         writer.write_frame(
             0.0,
             position=solver.x.to_numpy(),
@@ -461,6 +554,7 @@ def run_stage1a(config_path: Path | str) -> Path:
             rho_osm=(solver.rho_osm_p.to_numpy() if solver_cfg.layer5_enabled else None),
             gamma_p=(solver.gamma_p_state.to_numpy()
                      if (solver_cfg.layer4_enabled and solver_cfg.layer4_dynamic_gamma) else None),
+            **_stage1dc_fields,
         )
         # v15 shell-density witness — frame 0.
         x0_np = solver.x.to_numpy()
@@ -560,6 +654,7 @@ def run_stage1a(config_path: Path | str) -> Path:
                     centre=np.asarray(m["centroid"], dtype=np.float64),
                     R0=R0, n_bins=SHELL_N_BINS, r_max_frac=SHELL_R_MAX_FRAC,
                 )
+                _stage1dc_runtime = _build_stage1dc_kwargs(solver, solver_cfg)
                 writer.write_frame(
                     step * dt,
                     position=xs,
@@ -575,6 +670,7 @@ def run_stage1a(config_path: Path | str) -> Path:
                     rho_osm=(solver.rho_osm_p.to_numpy() if solver_cfg.layer5_enabled else None),
                     gamma_p=(solver.gamma_p_state.to_numpy()
                              if (solver_cfg.layer4_enabled and solver_cfg.layer4_dynamic_gamma) else None),
+                    **_stage1dc_runtime,
                 )
                 frame_idx = writer._frame_count - 1
                 for b in range(SHELL_N_BINS):

@@ -359,6 +359,32 @@ class SolverConfig:
     lambda_lam_star: float = 0.0
     impulse_lam_star: float = 0.0
 
+    # Stage 1d.c ECM-mediated mechanical communication + protrusion
+    # state machine (per `docs/stage1d_c_ecm_communication_sanity.md`,
+    # PI directive 2026-04-30 per Codex analysis). Adds:
+    # - 2D substrate ECM displacement field on z=0 plane (screened
+    #   Helmholtz: η ∂u/∂t = G·∇²u − k·u + Σ_p T_p · W_p)
+    # - Per-particle protrusion state machine (5 states)
+    # - Per-particle traction (T_p = T0·fa_strength·polarity) coupled
+    #   to ECM via Newton's 3rd law
+    # All defaults zero (layer7_enabled=False); when on, the stochastic
+    # Stage 1a++.b one-step impulse is BYPASSED in favor of state-3
+    # sustained traction.
+    layer7_enabled: bool = False
+    eta_ecm_star: float = 5.0           # ECM viscous timescale (CFL safety)
+    G_ecm_star: float = 1.0              # ECM shear modulus (≈ K_star)
+    lambda_ecm_star: float = 4.0         # screening length (Nahum 2023 sweep [2,4,7,10])
+    R_dep_star: float = 1.0              # deposit kernel width = 1 cell diameter
+    T0_star: float = 0.1                 # traction stress scale (Balaban / Bergert)
+    tau_lam_star: float = 10.0           # lamellipodium spread duration ≈ 10 min
+    tau_release_star: float = 5.0        # FA release timescale ≈ 5 min
+    lambda_filo_star: float = 0.05       # filopodia probe rate per τ
+    r_form_star: float = 0.1             # nascent FA formation rate
+    r_mature_star: float = 0.05          # mature FA formation rate
+    alpha_edge_star: float = 1.0         # polarity update toward free edge
+    beta_ecm_star: float = 0.5           # ECM-alignment polarity bias
+    beta_traction_star: float = 0.5      # ECM-stiffness durotaxis bias
+
     # Stage 1d.b Marangoni Mechanism A + F (per
     # `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
     # When `layer4_dynamic_gamma=True` (default if layer4_enabled and
@@ -540,6 +566,22 @@ class MLSMPMSolver:
         # initial value (γ_eq(phi_initial)) is what the legacy inline
         # γ(φ) scatter would compute.
         self.gamma_p_state = ti.field(dtype=ti.f32, shape=n_p)
+        # Stage 1d.c per-particle protrusion + traction state (per
+        # docs/stage1d_c_ecm_communication_sanity.md, PI directive
+        # 2026-04-30). All zero-init except polarity (random unit
+        # vectors so initial state machine has well-defined directions).
+        self.protrusion_state_p = ti.field(dtype=ti.i32, shape=n_p)
+        self.protrusion_timer_p = ti.field(dtype=ti.f32, shape=n_p)
+        self.fa_strength_p = ti.field(dtype=ti.f32, shape=n_p)
+        self.polarity_p = ti.Vector.field(3, dtype=ti.f32, shape=n_p)
+        self.traction_p = ti.Vector.field(3, dtype=ti.f32, shape=n_p)
+        self.ecm_signal_p = ti.field(dtype=ti.f32, shape=n_p)
+        self.leader_score_p = ti.field(dtype=ti.f32, shape=n_p)
+        # 2D ECM displacement field on z=0 plane: u(x, y) ∈ R². Stored
+        # on a (grid_n × grid_n) lattice for compatibility with the
+        # background grid resolution.
+        self.grid_ecm_u = ti.Vector.field(2, dtype=ti.f32, shape=(self.cfg.grid_n, self.cfg.grid_n))
+        self.grid_ecm_force = ti.Vector.field(2, dtype=ti.f32, shape=(self.cfg.grid_n, self.cfg.grid_n))
         # Stage 1c Layer 5 osmotic state ρ_osm field (per particle).
         # Initialised to `cfg.rho_osm_initial` in the constructor. Evolved
         # by `_integrate_osmotic_ode` once per step when Layer 5 enabled.
@@ -593,6 +635,37 @@ class MLSMPMSolver:
         self.gamma_p_state.from_numpy(
             np.full(cfg.n_particles, gamma_eq_init, dtype=np.float32)
         )
+        # Stage 1d.c initial state: all particles quiet (state 0), no
+        # FA, zero traction. Polarity initialised to random unit
+        # vectors in xy plane so state-3 transitions have a default
+        # direction (overwritten by free-edge bias once active).
+        self.protrusion_state_p.from_numpy(
+            np.zeros(cfg.n_particles, dtype=np.int32)
+        )
+        self.protrusion_timer_p.from_numpy(
+            np.zeros(cfg.n_particles, dtype=np.float32)
+        )
+        self.fa_strength_p.from_numpy(
+            np.zeros(cfg.n_particles, dtype=np.float32)
+        )
+        rng_pol = np.random.default_rng(cfg.seed if hasattr(cfg, "seed") else 42)
+        theta = rng_pol.uniform(0, 2 * np.pi, cfg.n_particles).astype(np.float32)
+        polarity_init = np.column_stack([
+            np.cos(theta), np.sin(theta), np.zeros(cfg.n_particles, dtype=np.float32),
+        ]).astype(np.float32)
+        self.polarity_p.from_numpy(polarity_init)
+        self.traction_p.from_numpy(
+            np.zeros((cfg.n_particles, 3), dtype=np.float32)
+        )
+        self.ecm_signal_p.from_numpy(
+            np.zeros(cfg.n_particles, dtype=np.float32)
+        )
+        self.leader_score_p.from_numpy(
+            np.zeros(cfg.n_particles, dtype=np.float32)
+        )
+        # ECM grid initialised to zero displacement.
+        self.grid_ecm_u.fill(ti.Vector([0.0, 0.0]))
+        self.grid_ecm_force.fill(ti.Vector([0.0, 0.0]))
         # Stage 1c Layer 5 osmotic state ρ_osm initialised to
         # `rho_osm_initial` (= 1.0 = full hydration by default).
         self.rho_osm_p.from_numpy(
@@ -666,6 +739,16 @@ class MLSMPMSolver:
         # Stage 1a++.b stochastic event diagnostics.
         self.diag_lam_event_count_step = ti.field(dtype=ti.i32, shape=())
         self.diag_lam_event_count_total = ti.field(dtype=ti.i64, shape=())
+        # Stage 1d.c protrusion-state diagnostics.
+        self.diag_protrusion_count_quiet = ti.field(dtype=ti.i32, shape=())
+        self.diag_protrusion_count_filo = ti.field(dtype=ti.i32, shape=())
+        self.diag_protrusion_count_nascent = ti.field(dtype=ti.i32, shape=())
+        self.diag_protrusion_count_lam = ti.field(dtype=ti.i32, shape=())
+        self.diag_protrusion_count_retract = ti.field(dtype=ti.i32, shape=())
+        self.diag_fa_strength_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_traction_norm_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_ecm_signal_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_ecm_u_max = ti.field(dtype=ti.f32, shape=())
         # Stage 1a++.b: COM_xy used as radial-outward reference for
         # event impulse direction. Recomputed each step before
         # _apply_stochastic_events fires.
@@ -1295,15 +1378,32 @@ class MLSMPMSolver:
         self._p2g_momentum_and_stress()     # scatters momentum + density-based stress
         self._grid_op_overdamped()          # converts to velocity, applies CSF impulse γ·κ·∇c
         self._g2p_and_constitutive()
-        if self.cfg.layer2_b_enabled and self.cfg.lambda_lam_star > 0.0:
+        if self.cfg.layer2_b_enabled and self.cfg.lambda_lam_star > 0.0 and not self.cfg.layer7_enabled:
             # Stage 1a++.b stochastic boundary events: applied AFTER G2P
             # so the event impulses act on the just-updated particle
-            # velocities. Reset the per-step event counter; kernel
-            # re-uses self.com_xy (computed below), so order is:
-            # _compute_com_xy → _apply_stochastic_events.
+            # velocities. Skip when Stage 1d.c is active (layer7_enabled
+            # supersedes the one-step impulse with persistent traction).
             self.diag_lam_event_count_step[None] = 0
             self._compute_com_xy()
             self._apply_stochastic_events()
+        if self.cfg.layer7_enabled:
+            # Stage 1d.c ECM-mediated mechanical communication +
+            # protrusion state machine. Order:
+            #  (a) compute COM_xy (free-edge polarity reference)
+            #  (b) sample ecm_signal at particle positions
+            #  (c) update protrusion state machine
+            #  (d) update polarity (state ≥ 2 only)
+            #  (e) apply traction force to particles (state 3 only)
+            #  (f) clear ECM force accumulator → deposit reaction
+            #  (g) advance ECM displacement field one step
+            self._compute_com_xy()
+            self._sample_ecm_signal()
+            self._update_protrusion_state()
+            self._update_polarity()
+            self._apply_traction_force()
+            self._clear_ecm_force()
+            self._deposit_traction_to_ecm()
+            self._ecm_field_step()
         if self.cfg.layer3_enabled:
             # Stage 1b Layer 3: integrate the per-particle φ-ODE after the
             # mechanical step (φ is decoupled from positions; the ζ(φ)
@@ -1845,6 +1945,251 @@ class MLSMPMSolver:
 
                 self.grid_v[I] = v
 
+    # ---------------------------------- Stage 1d.c ECM communication ----
+    @ti.kernel
+    def _ecm_field_step(self):
+        """Stage 1d.c: 2D substrate ECM displacement field update.
+
+        Forward-Euler on the screened Helmholtz operator:
+          η · ∂u/∂t = G · ∇²u − k_anchor · u + F_external
+        where F_external accumulates per-particle traction deposits via
+        `_deposit_traction_to_ecm`.
+
+        Operates only on the z = first-cell layer (k=0). 2D in-plane
+        displacement vector u_ecm[i,j] ∈ R².
+        """
+        dt = self.cfg.dt_star
+        eta = self.cfg.eta_ecm_star
+        G = self.cfg.G_ecm_star
+        # k_anchor derived from λ_ecm: λ² = G/k → k = G/λ²
+        lam = ti.max(self.cfg.lambda_ecm_star, 1e-30)
+        k_anchor = G / (lam * lam)
+        dx = self.cfg.dx_star
+        inv_dx2 = 1.0 / (dx * dx)
+        n_g = self.cfg.grid_n
+        # Forward-Euler update.
+        for i, j in ti.ndrange(n_g, n_g):
+            if 0 < i < n_g - 1 and 0 < j < n_g - 1:
+                u_c = self.grid_ecm_u[i, j]
+                u_ip = self.grid_ecm_u[i + 1, j]
+                u_im = self.grid_ecm_u[i - 1, j]
+                u_jp = self.grid_ecm_u[i, j + 1]
+                u_jm = self.grid_ecm_u[i, j - 1]
+                lap = (u_ip + u_im + u_jp + u_jm - 4.0 * u_c) * inv_dx2
+                f_ext = self.grid_ecm_force[i, j]
+                du = dt * (G * lap - k_anchor * u_c + f_ext) / ti.max(eta, 1e-30)
+                self.grid_ecm_u[i, j] = u_c + du
+
+    @ti.kernel
+    def _clear_ecm_force(self):
+        """Reset per-step ECM force accumulator before deposit."""
+        for I in ti.grouped(self.grid_ecm_force):
+            self.grid_ecm_force[I] = ti.Vector([0.0, 0.0])
+
+    @ti.kernel
+    def _deposit_traction_to_ecm(self):
+        """Stage 1d.c: deposit per-particle traction onto ECM grid via
+        Gaussian kernel of width R_dep_star (Newton's 3rd law).
+
+        Each particle deposits −T_p (the substrate pulls back on ECM
+        with the opposite-sign reaction to the cell's outward pull).
+        Only applied for contact-band particles in state 3 (lamellipodium).
+        """
+        dx = self.cfg.dx_star
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
+        R_dep = self.cfg.R_dep_star
+        sigma2 = R_dep * R_dep + 1e-12
+        n_g = self.cfg.grid_n
+        # Each particle in state 3 deposits its traction within a 5x5
+        # neighbour patch (covers the Gaussian out to ~2σ).
+        for p in self.x:
+            if self.x[p][2] >= h_band:
+                continue
+            if self.protrusion_state_p[p] != 3:
+                continue
+            T = self.traction_p[p]
+            cx = self.x[p][0] / dx
+            cy = self.x[p][1] / dx
+            ic = ti.cast(cx, ti.i32)
+            jc = ti.cast(cy, ti.i32)
+            for di, dj in ti.ndrange(5, 5):
+                ii = ic + di - 2
+                jj = jc + dj - 2
+                if 0 <= ii < n_g and 0 <= jj < n_g:
+                    rx = (ii + 0.5) * dx - self.x[p][0]
+                    ry = (jj + 0.5) * dx - self.x[p][1]
+                    w = ti.exp(-0.5 * (rx * rx + ry * ry) / sigma2)
+                    # Newton 3rd: ECM receives -T (reaction).
+                    ti.atomic_add(self.grid_ecm_force[ii, jj][0], -w * T[0])
+                    ti.atomic_add(self.grid_ecm_force[ii, jj][1], -w * T[1])
+
+    @ti.kernel
+    def _sample_ecm_signal(self):
+        """Stage 1d.c: sample |u_ecm| at each particle's xy position
+        for use as `ecm_signal_p` (durotaxis bias + diagnostics)."""
+        dx = self.cfg.dx_star
+        n_g = self.cfg.grid_n
+        for p in self.x:
+            cx = self.x[p][0] / dx
+            cy = self.x[p][1] / dx
+            ic = ti.cast(cx, ti.i32)
+            jc = ti.cast(cy, ti.i32)
+            sig = 0.0
+            if 0 <= ic < n_g and 0 <= jc < n_g:
+                u = self.grid_ecm_u[ic, jc]
+                sig = ti.sqrt(u[0] * u[0] + u[1] * u[1])
+            self.ecm_signal_p[p] = sig
+
+    @ti.kernel
+    def _update_protrusion_state(self):
+        """Stage 1d.c: 5-state protrusion machine update per particle.
+
+        States: 0 quiet, 1 filopodia_probe, 2 nascent_adhesion,
+        3 lamellipodium_spread, 4 retract.
+
+        Transitions per dt (rates in 1/τ_relax star units):
+        - 0→1: λ_filo · contact_band_indicator · (a + b·c_act_p)
+        - 1→2: r_form · (1 + ECM signal proxy)
+        - 2→3: r_mature · (1 + γ·|F_traction|) — force-dependent
+        - 3→4: timer ≥ τ_lam
+        - 4→0: timer ≥ τ_release
+        """
+        dt = self.cfg.dt_star
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
+        lam_filo = self.cfg.lambda_filo_star
+        r_form = self.cfg.r_form_star
+        r_mature = self.cfg.r_mature_star
+        tau_lam = self.cfg.tau_lam_star
+        tau_release = self.cfg.tau_release_star
+        T0 = self.cfg.T0_star
+        for p in self.x:
+            in_band = self.x[p][2] < h_band
+            state = self.protrusion_state_p[p]
+            timer = self.protrusion_timer_p[p] + dt
+            self.protrusion_timer_p[p] = timer
+            if state == 0:  # quiet
+                if in_band:
+                    c_act_val = 0.0
+                    if ti.static(self.cfg.layer3_enabled and self.cfg.layer3_split):
+                        c_act_val = self.c_act_p[p]
+                    rate = lam_filo * (0.5 + 0.5 * c_act_val)
+                    if ti.random(ti.f32) < rate * dt:
+                        self.protrusion_state_p[p] = 1
+                        self.protrusion_timer_p[p] = 0.0
+                        self.fa_strength_p[p] = 0.0
+            elif state == 1:  # filopodia_probe
+                ecm_sig = self.ecm_signal_p[p]
+                p_form = r_form * (1.0 + ecm_sig)
+                if ti.random(ti.f32) < p_form * dt:
+                    self.protrusion_state_p[p] = 2
+                    self.protrusion_timer_p[p] = 0.0
+                # Failure to form: drop back to quiet after probe timeout
+                elif timer > 1.0:
+                    self.protrusion_state_p[p] = 0
+                    self.protrusion_timer_p[p] = 0.0
+            elif state == 2:  # nascent_adhesion
+                # FA strength rises during nascent state.
+                fa = self.fa_strength_p[p] + dt * 0.5
+                if fa > 1.0:
+                    fa = 1.0
+                self.fa_strength_p[p] = fa
+                # Force-dependent maturation: rate scales with current
+                # traction magnitude (catch-bond style).
+                T = self.traction_p[p]
+                T_mag = ti.sqrt(T[0] * T[0] + T[1] * T[1] + T[2] * T[2])
+                p_mature = r_mature * (1.0 + 0.5 * T_mag / ti.max(T0, 1e-30))
+                if ti.random(ti.f32) < p_mature * dt:
+                    self.protrusion_state_p[p] = 3
+                    self.protrusion_timer_p[p] = 0.0
+            elif state == 3:  # lamellipodium_spread (mature traction)
+                if timer >= tau_lam:
+                    self.protrusion_state_p[p] = 4
+                    self.protrusion_timer_p[p] = 0.0
+                    ti.atomic_add(self.leader_score_p[p], 1.0)
+            elif state == 4:  # retract
+                # FA strength decays during release.
+                fa = self.fa_strength_p[p] - dt * (1.0 / ti.max(tau_release, 1e-30))
+                if fa < 0.0:
+                    fa = 0.0
+                self.fa_strength_p[p] = fa
+                if timer >= tau_release:
+                    self.protrusion_state_p[p] = 0
+                    self.protrusion_timer_p[p] = 0.0
+                    self.fa_strength_p[p] = 0.0
+                    self.traction_p[p] = ti.Vector([0.0, 0.0, 0.0])
+
+    @ti.kernel
+    def _update_polarity(self):
+        """Stage 1d.c: polarity update for state-3 particles only.
+
+        dp_p/dt = α_edge · (n̂_free_edge − p_p) · I[is_boundary]
+                + β_traction · ∇|u_ecm|_xy / |∇|·|u_ecm|         (durotaxis)
+        Polarity is soft-clipped to ‖p_p‖ ≤ 1.
+
+        Free-edge direction = outward radial from spheroid xy COM.
+        """
+        dt = self.cfg.dt_star
+        a_edge = self.cfg.alpha_edge_star
+        b_trac = self.cfg.beta_traction_star
+        com = self.com_xy[None]
+        dx = self.cfg.dx_star
+        n_g = self.cfg.grid_n
+        for p in self.x:
+            if self.protrusion_state_p[p] < 2:
+                continue  # quiet/probe particles keep their polarity drift-free
+            pol = self.polarity_p[p]
+            # Free-edge bias (outward from COM in xy).
+            r0 = self.x[p][0] - com[0]
+            r1 = self.x[p][1] - com[1]
+            r_norm = ti.sqrt(r0 * r0 + r1 * r1) + 1e-12
+            r_hat = ti.Vector([r0 / r_norm, r1 / r_norm, 0.0])
+            edge_term = (r_hat - pol) * a_edge * (1.0 if self.is_boundary[p] == 1 else 0.0)
+            # Durotaxis bias: align with ∇|u_ecm| if computable.
+            ic = ti.cast(self.x[p][0] / dx, ti.i32)
+            jc = ti.cast(self.x[p][1] / dx, ti.i32)
+            duro = ti.Vector([0.0, 0.0, 0.0])
+            if 1 <= ic < n_g - 1 and 1 <= jc < n_g - 1:
+                u_ip = self.grid_ecm_u[ic + 1, jc]
+                u_im = self.grid_ecm_u[ic - 1, jc]
+                u_jp = self.grid_ecm_u[ic, jc + 1]
+                u_jm = self.grid_ecm_u[ic, jc - 1]
+                mag_ip = ti.sqrt(u_ip[0] * u_ip[0] + u_ip[1] * u_ip[1])
+                mag_im = ti.sqrt(u_im[0] * u_im[0] + u_im[1] * u_im[1])
+                mag_jp = ti.sqrt(u_jp[0] * u_jp[0] + u_jp[1] * u_jp[1])
+                mag_jm = ti.sqrt(u_jm[0] * u_jm[0] + u_jm[1] * u_jm[1])
+                gx = (mag_ip - mag_im) * 0.5 / dx
+                gy = (mag_jp - mag_jm) * 0.5 / dx
+                gnorm = ti.sqrt(gx * gx + gy * gy) + 1e-12
+                duro = ti.Vector([gx / gnorm, gy / gnorm, 0.0]) * b_trac
+            new_pol = pol + dt * (edge_term + duro)
+            # Soft clip to unit length.
+            np_mag = ti.sqrt(new_pol[0] ** 2 + new_pol[1] ** 2 + new_pol[2] ** 2)
+            if np_mag > 1.0:
+                new_pol = new_pol / np_mag
+            self.polarity_p[p] = new_pol
+
+    @ti.kernel
+    def _apply_traction_force(self):
+        """Stage 1d.c: state-3 particles experience persistent
+        outward traction Δv = T0 · fa_strength · polarity · dt / m_p.
+
+        This replaces the Stage 1a++.b one-step random impulse with
+        biologically-grounded sustained pulling. The Newton 3rd reaction
+        on ECM is deposited separately by `_deposit_traction_to_ecm`.
+        """
+        dt = self.cfg.dt_star
+        T0 = self.cfg.T0_star
+        m_p = self.cfg.particle_mass_star
+        for p in self.x:
+            if self.protrusion_state_p[p] != 3:
+                self.traction_p[p] = ti.Vector([0.0, 0.0, 0.0])
+                continue
+            fa = self.fa_strength_p[p]
+            pol = self.polarity_p[p]
+            T = T0 * fa * pol
+            self.traction_p[p] = T
+            self.v[p] += T * (dt / ti.max(m_p, 1e-30))
+
     # ---------------------------------- Stage 1a++.b stochastic events ----
     @ti.kernel
     def _compute_com_xy(self):
@@ -1970,6 +2315,16 @@ class MLSMPMSolver:
         self.diag_gamma_sum[None] = 0.0
         self.diag_gamma_min[None] = 1.0e10
         self.diag_gamma_max[None] = -1.0e10
+        # Stage 1d.c protrusion diagnostics, reset per call.
+        self.diag_protrusion_count_quiet[None] = 0
+        self.diag_protrusion_count_filo[None] = 0
+        self.diag_protrusion_count_nascent[None] = 0
+        self.diag_protrusion_count_lam[None] = 0
+        self.diag_protrusion_count_retract[None] = 0
+        self.diag_fa_strength_sum[None] = 0.0
+        self.diag_traction_norm_sum[None] = 0.0
+        self.diag_ecm_signal_sum[None] = 0.0
+        self.diag_ecm_u_max[None] = 0.0
         # Path C diagnostics, reset per call.
         self.diag_grav_pe[None] = 0.0
         self.diag_com_z_sum[None] = 0.0
@@ -2119,6 +2474,35 @@ class MLSMPMSolver:
                 )
                 ti.atomic_min(self.diag_gamma_min[None], gamma_p_aggr)
                 ti.atomic_max(self.diag_gamma_max[None], gamma_p_aggr)
+
+            # Stage 1d.c protrusion + traction aggregation.
+            if ti.static(self.cfg.layer7_enabled):
+                pstate = self.protrusion_state_p[p]
+                if pstate == 0:
+                    ti.atomic_add(self.diag_protrusion_count_quiet[None], 1)
+                elif pstate == 1:
+                    ti.atomic_add(self.diag_protrusion_count_filo[None], 1)
+                elif pstate == 2:
+                    ti.atomic_add(self.diag_protrusion_count_nascent[None], 1)
+                elif pstate == 3:
+                    ti.atomic_add(self.diag_protrusion_count_lam[None], 1)
+                elif pstate == 4:
+                    ti.atomic_add(self.diag_protrusion_count_retract[None], 1)
+                ti.atomic_add(
+                    self.diag_fa_strength_sum[None],
+                    ti.cast(self.fa_strength_p[p], ti.f64),
+                )
+                T = self.traction_p[p]
+                T_mag = ti.sqrt(T[0] * T[0] + T[1] * T[1] + T[2] * T[2])
+                ti.atomic_add(
+                    self.diag_traction_norm_sum[None],
+                    ti.cast(T_mag, ti.f64),
+                )
+                ti.atomic_add(
+                    self.diag_ecm_signal_sum[None],
+                    ti.cast(self.ecm_signal_p[p], ti.f64),
+                )
+                ti.atomic_max(self.diag_ecm_u_max[None], self.ecm_signal_p[p])
 
             # Stage 1c Layer 5 per-particle ρ_osm aggregation.
             if ti.static(self.cfg.layer5_enabled):
@@ -2504,6 +2888,26 @@ class MLSMPMSolver:
             # Stage 1a++.b stochastic event diagnostics.
             "lam_event_count_step": int(self.diag_lam_event_count_step[None]),
             "lam_event_count_total": int(self.diag_lam_event_count_total[None]),
+            # Stage 1d.c ECM/protrusion diagnostics. Sentinel NaN/0 when
+            # layer7 is disabled to keep the metrics.csv schema stable.
+            "n_quiet": (int(self.diag_protrusion_count_quiet[None])
+                        if self.cfg.layer7_enabled else 0),
+            "n_filopodia": (int(self.diag_protrusion_count_filo[None])
+                            if self.cfg.layer7_enabled else 0),
+            "n_nascent": (int(self.diag_protrusion_count_nascent[None])
+                          if self.cfg.layer7_enabled else 0),
+            "n_lamellipodium": (int(self.diag_protrusion_count_lam[None])
+                                if self.cfg.layer7_enabled else 0),
+            "n_retract": (int(self.diag_protrusion_count_retract[None])
+                          if self.cfg.layer7_enabled else 0),
+            "fa_strength_sum": (float(self.diag_fa_strength_sum[None])
+                                if self.cfg.layer7_enabled else float("nan")),
+            "traction_norm_sum": (float(self.diag_traction_norm_sum[None])
+                                  if self.cfg.layer7_enabled else float("nan")),
+            "ecm_signal_sum": (float(self.diag_ecm_signal_sum[None])
+                               if self.cfg.layer7_enabled else float("nan")),
+            "ecm_u_max": (float(self.diag_ecm_u_max[None])
+                          if self.cfg.layer7_enabled else float("nan")),
             # Path C diagnostics.
             "grav_pe_star": float(self.diag_grav_pe[None]),
             "com_z_star": (

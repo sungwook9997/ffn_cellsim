@@ -56,6 +56,21 @@ class FrameWriter:
         c_act: np.ndarray | None = None,
         rho_osm: np.ndarray | None = None,
         gamma_p: np.ndarray | None = None,
+        # Stage 1d.c per-particle ECM/protrusion + stress-channel
+        # disambiguation (PI directive 2026-04-30). The legacy
+        # `stress_tensor` name has been a misleading alias for tau_dev
+        # only — going forward we save tau_dev under its true name plus
+        # sigma_vol, sigma_active, sigma_total, pressure, dev_norm.
+        sigma_vol: np.ndarray | None = None,
+        sigma_active: np.ndarray | None = None,
+        sigma_total: np.ndarray | None = None,
+        pressure: np.ndarray | None = None,
+        dev_norm: np.ndarray | None = None,
+        traction_ecm: np.ndarray | None = None,
+        fa_strength: np.ndarray | None = None,
+        protrusion_state: np.ndarray | None = None,
+        ecm_signal: np.ndarray | None = None,
+        polarity: np.ndarray | None = None,
     ) -> None:
         gid = f"{self._frame_count:05d}"
         g = self._frames.create_group(gid)
@@ -64,6 +79,10 @@ class FrameWriter:
         g.create_dataset("position", data=position.astype(np.float32), **kw)
         g.create_dataset("velocity", data=velocity.astype(np.float32), **kw)
         g.create_dataset("deformation_gradient", data=F.astype(np.float32), **kw)
+        # PI directive 2026-04-30: save tau_dev under its true name. The
+        # legacy `stress_tensor` alias is kept (same data) for backwards
+        # read-compat with older notebooks; new code should read `tau_dev`.
+        g.create_dataset("tau_dev", data=tau_dev.astype(np.float32), **kw)
         g.create_dataset("stress_tensor", data=tau_dev.astype(np.float32), **kw)
         g.create_dataset("is_boundary", data=is_boundary.astype(np.bool_), **kw)
         # Optional per-particle state fields enable state_overlays viz.
@@ -77,6 +96,28 @@ class FrameWriter:
             g.create_dataset("rho_osm", data=rho_osm.astype(np.float32), **kw)
         if gamma_p is not None:
             g.create_dataset("gamma_p", data=gamma_p.astype(np.float32), **kw)
+        # Stage 1d.c stress-channel disambiguation.
+        if sigma_vol is not None:
+            g.create_dataset("sigma_vol", data=sigma_vol.astype(np.float32), **kw)
+        if sigma_active is not None:
+            g.create_dataset("sigma_active", data=sigma_active.astype(np.float32), **kw)
+        if sigma_total is not None:
+            g.create_dataset("sigma_total", data=sigma_total.astype(np.float32), **kw)
+        if pressure is not None:
+            g.create_dataset("pressure", data=pressure.astype(np.float32), **kw)
+        if dev_norm is not None:
+            g.create_dataset("dev_norm", data=dev_norm.astype(np.float32), **kw)
+        # Stage 1d.c ECM + protrusion fields.
+        if traction_ecm is not None:
+            g.create_dataset("traction_ecm", data=traction_ecm.astype(np.float32), **kw)
+        if fa_strength is not None:
+            g.create_dataset("fa_strength", data=fa_strength.astype(np.float32), **kw)
+        if protrusion_state is not None:
+            g.create_dataset("protrusion_state", data=protrusion_state.astype(np.int32), **kw)
+        if ecm_signal is not None:
+            g.create_dataset("ecm_signal", data=ecm_signal.astype(np.float32), **kw)
+        if polarity is not None:
+            g.create_dataset("polarity", data=polarity.astype(np.float32), **kw)
         self._frame_count += 1
 
     def close(self) -> None:
