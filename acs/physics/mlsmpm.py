@@ -332,6 +332,27 @@ class SolverConfig:
     # → ∇γ ≈ 0 → no Marangoni effect.
     layer3_spatial_S: bool = False
 
+    # Stage 2 Layer 6 chemistry / ECM remodeling — minimal scope per
+    # `docs/stage2_sanity.md`: MMP secretion + ECM degradation only,
+    # de novo ECM secretion deferred to Stage 2.b.
+    # Per-step ODE (forward Euler):
+    #   d(mmp_total)/dt = α_MMP · n_contact_band(t)
+    #   d(ecm_strength)/dt = -β_deg · mmp_total · ecm_strength
+    # γ_sub_eff(t) = γ_sub_star · ecm_strength(t) — substrate CSF
+    # impulse magnitude scaled by current ecm_strength. ecm_strength
+    # clamped to [ecm_strength_min, 1.0] (defensive floor against
+    # runaway full degradation). Default 0 disables Layer 6.
+    # Magic-Number Block PARTIAL anchored to Egeblad-Werb 2002
+    # Nat Rev Cancer IF 70 + Lu 2011 Nat Rev Mol Cell Biol IF 113
+    # framework references; specific dimensionless rates are order-of-
+    # magnitude derivations matching the project's τ_relax = 60 s
+    # calibration. PI full authorisation 2026-04-29.
+    layer6_enabled: bool = False
+    alpha_mmp_star: float = 0.0
+    beta_deg_star: float = 0.0
+    ecm_strength_initial: float = 1.0
+    ecm_strength_min: float = 0.1
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -460,6 +481,16 @@ class MLSMPMSolver:
         # Initialised to `cfg.rho_osm_initial` in the constructor. Evolved
         # by `_integrate_osmotic_ode` once per step when Layer 5 enabled.
         self.rho_osm_p = ti.field(dtype=ti.f32, shape=n_p)
+        # Stage 2 Layer 6 scalar state fields (global; not per-particle).
+        # mmp_total accumulates MMP secretion over time; ecm_strength
+        # decays exponentially as MMP·ecm_strength accumulates.
+        # diag_n_contact_band_layer6 is a per-step accumulator for the
+        # contact-band particle count needed by the Layer 6 ODE
+        # (separate from the diagnostic-frame `diag_n_boundary` which
+        # only updates per `_compute_invariants` call).
+        self.mmp_total_field = ti.field(dtype=ti.f64, shape=())
+        self.ecm_strength_field = ti.field(dtype=ti.f32, shape=())
+        self.diag_n_contact_band_layer6 = ti.field(dtype=ti.i32, shape=())
 
         # Initialise v15 density fields to a self-consistent default
         # (σ_vol = K·(ρ_ref/ρ_kernel − 1) = 0 for ρ_kernel = ρ_ref = density_star)
@@ -484,6 +515,9 @@ class MLSMPMSolver:
         self.rho_osm_p.from_numpy(
             np.full(cfg.n_particles, float(cfg.rho_osm_initial), dtype=np.float32)
         )
+        # Stage 2 Layer 6 scalar state initialisation.
+        self.mmp_total_field[None] = 0.0
+        self.ecm_strength_field[None] = float(cfg.ecm_strength_initial)
 
         self.diag_mass = ti.field(dtype=ti.f64, shape=())
         self.diag_momentum = ti.Vector.field(3, dtype=ti.f64, shape=())
@@ -912,6 +946,55 @@ class MLSMPMSolver:
         self._scatter_gamma_to_grid()
         self._compute_gamma_grad()
 
+    # ---------------------------------------------- Layer 6 chemistry ----
+    @ti.kernel
+    def _count_contact_band_layer6(self):
+        """Count particles in the substrate contact band (z < n_contact_band·dx).
+
+        Stage 2 Layer 6 needs this per step to update mmp_total ODE.
+        Writes the count into `diag_n_contact_band_layer6` field (avoids
+        Taichi kernel-return-type compatibility issues across versions).
+        """
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
+        self.diag_n_contact_band_layer6[None] = 0
+        for p in self.x:
+            if self.x[p][2] < h_band:
+                ti.atomic_add(self.diag_n_contact_band_layer6[None], 1)
+
+    def _integrate_layer6_ode(self) -> None:
+        """Stage 2 Layer 6 forward-Euler ODE update (host-side, per step).
+
+        Per `docs/stage2_sanity.md` Tier 2 spec:
+
+            d(mmp_total)/dt   = α_MMP · n_contact_band(t)
+            d(ecm_strength)/dt = -β_deg · mmp_total · ecm_strength
+
+        with ecm_strength clamped to [ecm_strength_min, 1.0]. Forward
+        Euler with dt = cfg.dt_star. Rates are slow (~ 1e-3 per τ_relax)
+        so dt · rate ≪ 1 (massively stable per check 4).
+        """
+        dt = self.cfg.dt_star
+        self._count_contact_band_layer6()
+        n_contact = int(self.diag_n_contact_band_layer6[None])
+
+        mmp = float(self.mmp_total_field[None])
+        ecm = float(self.ecm_strength_field[None])
+
+        # MMP secretion: monotone-increasing as long as n_contact > 0.
+        mmp_new = mmp + dt * self.cfg.alpha_mmp_star * float(n_contact)
+
+        # ECM degradation: exponential decay with rate β·mmp.
+        ecm_new = ecm + dt * (-self.cfg.beta_deg_star * mmp * ecm)
+
+        # Clamp ecm_strength to defensive bounds.
+        if ecm_new < self.cfg.ecm_strength_min:
+            ecm_new = self.cfg.ecm_strength_min
+        if ecm_new > 1.0:
+            ecm_new = 1.0
+
+        self.mmp_total_field[None] = mmp_new
+        self.ecm_strength_field[None] = ecm_new
+
     # ----------------------------------------------------- Layer 5 ρ_osm ----
     @ti.kernel
     def _integrate_osmotic_ode(self):
@@ -995,6 +1078,11 @@ class MLSMPMSolver:
             # tr(C_p) deformation rate; the K(ρ_osm) coupling enters
             # next step's `_p2g_momentum_and_stress`).
             self._integrate_osmotic_ode()
+        if self.cfg.layer6_enabled:
+            # Stage 2 Layer 6: integrate the Layer 6 ODE (mmp_total + ecm_strength).
+            # Updates global scalars; substrate CSF impulse magnitude in
+            # next step's `_grid_op_overdamped` reads ecm_strength_field.
+            self._integrate_layer6_ode()
 
     @ti.kernel
     def _clear_grid(self):
@@ -1405,9 +1493,13 @@ class MLSMPMSolver:
         sub_band = self.cfg.n_contact_band if self.cfg.substrate_enabled else 3
         # Stage 1a+ Option β substrate CSF impulse coefficient. When > 0,
         # cells in the contact band receive an attractive impulse toward
-        # z = 0 of magnitude γ_sub_star · κ_sub_proxy · dt / ρ_local with
+        # z = 0 of magnitude γ_sub_eff · κ_sub_proxy · dt / ρ_local with
         # κ_sub_proxy = 1/dx* and n̂_sub = −ẑ.
-        gamma_sub_star = self.cfg.gamma_sub_star
+        # Stage 2 Layer 6: γ_sub_eff = γ_sub_star · ecm_strength(t),
+        # where ecm_strength(t) decays from 1.0 as MMP accumulates.
+        # When Layer 6 disabled, ecm_strength stays at its initial value
+        # (1.0 by default) → γ_sub_eff = γ_sub_star (Stage 1d behaviour).
+        gamma_sub_star = self.cfg.gamma_sub_star * self.ecm_strength_field[None]
         inv_dx = 1.0 / dx
         # Path C effective gravity impulse coefficient. When > 0, every
         # grid cell with mass receives a per-step downward velocity
@@ -1982,4 +2074,7 @@ class MLSMPMSolver:
             "rho_osm_sum_sq": float(self.diag_rho_osm_sum_sq[None]),
             "rho_osm_min": float(self.diag_rho_osm_min[None]) if self.cfg.layer5_enabled else float("nan"),
             "rho_osm_max": float(self.diag_rho_osm_max[None]) if self.cfg.layer5_enabled else float("nan"),
+            # Stage 2 Layer 6 diagnostics.
+            "mmp_total": float(self.mmp_total_field[None]),
+            "ecm_strength": float(self.ecm_strength_field[None]),
         }

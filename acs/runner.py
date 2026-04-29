@@ -55,6 +55,18 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     gravity = cfg.get("gravity", {})
     layer4 = cfg.get("layer4", {})
     layer5 = cfg.get("layer5", {})
+    layer6 = cfg.get("layer6", {})
+    # Stage 2 Layer 6 chemistry/ECM remodeling — minimal scope per
+    # docs/stage2_sanity.md. PI full authorisation 2026-04-29.
+    # PARTIAL Magic-Number Block analogous to ζ_star Option α' / α_osm /
+    # gravity_star precedent (Egeblad-Werb 2002 IF 70 + Lu 2011 IF 113
+    # framework anchored, dimensionless rates derived from cited
+    # timescales rescaled to overdamped τ_relax = 60 s calibration).
+    layer6_enabled = bool(layer6.get("enabled", False))
+    alpha_mmp_star = float(layer6.get("alpha_mmp_star", 0.0))
+    beta_deg_star = float(layer6.get("beta_deg_star", 0.0))
+    ecm_strength_initial = float(layer6.get("ecm_strength_initial", 1.0))
+    ecm_strength_min = float(layer6.get("ecm_strength_min", 0.1))
     # Stage 1d Layer 4 cellular Marangoni (per
     # docs/07_internal_flow_dynamics.md framework citing Pajic-Lijakovic
     # & Milivojevic Eur Biophys J 2022 + Fütterer Phys Rev Fluids 2022).
@@ -143,6 +155,11 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         gamma_max_star=gamma_max_star,
         gamma_min_star=gamma_min_star,
         layer3_spatial_S=layer3_spatial_S,
+        layer6_enabled=layer6_enabled,
+        alpha_mmp_star=alpha_mmp_star,
+        beta_deg_star=beta_deg_star,
+        ecm_strength_initial=ecm_strength_initial,
+        ecm_strength_min=ecm_strength_min,
     )
 
 
@@ -239,6 +256,17 @@ def run_stage1a(config_path: Path | str) -> Path:
             "per docs/path_c_sanity.md Magic-Number Block PARTIAL "
             "resolution; PI full authorisation 2026-04-29).",
             solver_cfg.gravity_star,
+        )
+    if solver_cfg.layer6_enabled:
+        logger.info(
+            "Stage 2 Layer 6 chemistry/ECM remodeling active: "
+            "α_MMP_star=%.4e, β_deg_star=%.4e, ecm_strength_initial=%.3f, "
+            "ecm_strength_min=%.3f (Egeblad-Werb 2002 Nat Rev Cancer "
+            "IF 70 + Lu 2011 Nat Rev Mol Cell Biol IF 113 framework "
+            "anchors per docs/stage2_sanity.md PARTIAL Magic-Number "
+            "Block; PI full authorisation 2026-04-29).",
+            solver_cfg.alpha_mmp_star, solver_cfg.beta_deg_star,
+            solver_cfg.ecm_strength_initial, solver_cfg.ecm_strength_min,
         )
     if solver_cfg.layer4_enabled:
         logger.info(
@@ -928,6 +956,52 @@ def run_stage1a(config_path: Path | str) -> Path:
                     "<ρ_osm> trajectory finite & non-pathological",
                     False,
                     "no ρ_osm samples",
+                ))
+
+        # Stage 2 Layer 6 additional gates (layer6_enabled).
+        if solver_cfg.layer6_enabled:
+            # (Layer 6 i) ecm_strength ∈ [ecm_strength_min, 1.0] invariant.
+            ecm_series = [r.get("ecm_strength", float("nan")) for r in metrics_rows]
+            ecm_series_clean = [e for e in ecm_series if not (e is None or np.isnan(e))]
+            if ecm_series_clean:
+                ecm_min_overall = float(min(ecm_series_clean))
+                ecm_max_overall = float(max(ecm_series_clean))
+                results.append(GateResult(
+                    f"ecm_strength ∈ [{solver_cfg.ecm_strength_min}, 1.0] invariant",
+                    (
+                        ecm_min_overall >= solver_cfg.ecm_strength_min - 1e-6
+                        and ecm_max_overall <= 1.0 + 1e-6
+                    ),
+                    f"min(ecm_strength) over all frames = {ecm_min_overall:.4f}, "
+                    f"max(ecm_strength) over all frames = {ecm_max_overall:.4f}",
+                ))
+            else:
+                results.append(GateResult(
+                    f"ecm_strength ∈ [{solver_cfg.ecm_strength_min}, 1.0] invariant",
+                    False,
+                    "no ecm_strength samples",
+                ))
+
+            # (Layer 6 ii) mmp_total finite & non-decreasing.
+            mmp_series = [r.get("mmp_total", float("nan")) for r in metrics_rows]
+            mmp_series_clean = [m for m in mmp_series if not (m is None or np.isnan(m))]
+            if len(mmp_series_clean) >= 2:
+                mmp_end = float(mmp_series_clean[-1])
+                mmp_diffs = np.diff(np.array(mmp_series_clean, dtype=float))
+                # Allow tiny negative jitter from f32 round-off (1e-9 tolerance).
+                non_decreasing = bool((mmp_diffs >= -1e-9).all())
+                finite = np.isfinite(mmp_end) and abs(mmp_end) <= 1e6
+                results.append(GateResult(
+                    "mmp_total finite & non-decreasing",
+                    finite and non_decreasing,
+                    f"mmp_total(end) = {mmp_end:.4e} (finite={finite}, "
+                    f"min(Δmmp) = {float(mmp_diffs.min()):.3e}, n_frames={len(mmp_series_clean)})",
+                ))
+            else:
+                results.append(GateResult(
+                    "mmp_total finite & non-decreasing",
+                    False,
+                    "insufficient mmp_total samples",
                 ))
 
         # (iii) A/A₀ trajectory finite & non-pathological.
