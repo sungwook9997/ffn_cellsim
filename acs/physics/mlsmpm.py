@@ -283,6 +283,27 @@ class SolverConfig:
     # Provisional default for the v15-Path-C baseline pilot: 0.1.
     gravity_star: float = 0.0
 
+    # Stage 1c Layer 5 mechano-osmotic Tier 2 (per
+    # `docs/08_mechano_osmotic.md` framework citing Guo PNAS 2017 IF 12 +
+    # Venkova eLife 2022). When `layer5_enabled` is True, every particle
+    # carries a `rho_osm_p ∈ [rho_osm_min, rho_osm_max]` osmotic state
+    # evolved by forward Euler:
+    #   dρ_osm/dt = α_osm · max(0, -tr(C_p)) − β_osm · (ρ_osm − 1)
+    # ε̇^spreading = max(0, -tr(C)): positive when cell volume contracts,
+    # which is when water effluxes out of the cell. Coupling to the
+    # bulk modulus: K_eff = K_star · ρ_osm_p (replaces constant K in the
+    # v15 σ_vol formula). All values default to disable Layer 5
+    # (α_osm = β_osm = 0; ρ_osm fixed at rho_osm_initial = 1.0). PI full
+    # authorisation 2026-04-29 ("원래 framework standard 풀 적용").
+    # Magic-Number Block PARTIAL on the ODE constants — analogous to ζ_star
+    # Option α' precedent; honest disclosure in `docs/stage1c_sanity.md`.
+    layer5_enabled: bool = False
+    rho_osm_initial: float = 1.0
+    alpha_osm_star: float = 0.0
+    beta_osm_star: float = 0.0
+    rho_osm_min: float = 0.5
+    rho_osm_max: float = 1.6
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -327,6 +348,22 @@ class MLSMPMSolver:
             if not (0.0 <= cfg.phi_initial <= 1.0):
                 raise ValueError(
                     f"phi_initial ({cfg.phi_initial}) must be ∈ [0, 1]."
+                )
+        # Stage 1c Layer 5 forward-Euler stability invariant
+        # (per docs/stage1c_sanity.md check 2): dt · β_osm ≤ 0.5
+        # (factor-2 safety; α-driver bounded by typical |tr(C)| ≤ 1).
+        if cfg.layer5_enabled:
+            stiffness_osm = cfg.dt_star * cfg.beta_osm_star
+            if stiffness_osm > 0.5:
+                raise ValueError(
+                    f"Layer 5 ρ_osm-ODE stiffness violation: dt·β_osm = "
+                    f"{stiffness_osm:.4f} > 0.5. Reduce dt_star or β_osm "
+                    f"(forward Euler stability bound)."
+                )
+            if not (cfg.rho_osm_min <= cfg.rho_osm_initial <= cfg.rho_osm_max):
+                raise ValueError(
+                    f"rho_osm_initial ({cfg.rho_osm_initial}) must be ∈ "
+                    f"[{cfg.rho_osm_min}, {cfg.rho_osm_max}]."
                 )
 
         self.cfg = cfg
@@ -386,6 +423,10 @@ class MLSMPMSolver:
         # initialiser block below can populate it together with the
         # density fields. Diagnostic accumulators are declared later.
         self.phi_p = ti.field(dtype=ti.f32, shape=n_p)
+        # Stage 1c Layer 5 osmotic state ρ_osm field (per particle).
+        # Initialised to `cfg.rho_osm_initial` in the constructor. Evolved
+        # by `_integrate_osmotic_ode` once per step when Layer 5 enabled.
+        self.rho_osm_p = ti.field(dtype=ti.f32, shape=n_p)
 
         # Initialise v15 density fields to a self-consistent default
         # (σ_vol = K·(ρ_ref/ρ_kernel − 1) = 0 for ρ_kernel = ρ_ref = density_star)
@@ -404,6 +445,11 @@ class MLSMPMSolver:
         # via the YAML `layer3.phi_initial` field).
         self.phi_p.from_numpy(
             np.full(cfg.n_particles, float(cfg.phi_initial), dtype=np.float32)
+        )
+        # Stage 1c Layer 5 osmotic state ρ_osm initialised to
+        # `rho_osm_initial` (= 1.0 = full hydration by default).
+        self.rho_osm_p.from_numpy(
+            np.full(cfg.n_particles, float(cfg.rho_osm_initial), dtype=np.float32)
         )
 
         self.diag_mass = ti.field(dtype=ti.f64, shape=())
@@ -433,6 +479,14 @@ class MLSMPMSolver:
         self.diag_grav_pe = ti.field(dtype=ti.f64, shape=())
         # Path C centre-of-mass z (informational sedimentation depth).
         self.diag_com_z_sum = ti.field(dtype=ti.f64, shape=())
+
+        # Stage 1c Layer 5 ρ_osm aggregation diagnostics: bulk-shell
+        # <ρ_osm> via sum / N (host-side); min/max for the per-particle
+        # invariant gate. Sum-of-squares for variance.
+        self.diag_rho_osm_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_rho_osm_sum_sq = ti.field(dtype=ti.f64, shape=())
+        self.diag_rho_osm_min = ti.field(dtype=ti.f32, shape=())
+        self.diag_rho_osm_max = ti.field(dtype=ti.f32, shape=())
 
         # Stage 1b Layer 3 diagnostics: bulk-shell <φ>, boundary-shell <φ>,
         # contact-band <φ>, plus min/max for the φ ∈ [0,1] invariant gate.
@@ -739,6 +793,39 @@ class MLSMPMSolver:
                 new_phi = 1.0
             self.phi_p[p] = new_phi
 
+    # ----------------------------------------------------- Layer 5 ρ_osm ----
+    @ti.kernel
+    def _integrate_osmotic_ode(self):
+        """Stage 1c Layer 5 forward-Euler ρ_osm ODE integration.
+
+        Per `docs/08_mechano_osmotic.md` Tier 2 framework:
+
+            dρ_osm/dt = α_osm · ε̇^spreading − β_osm · (ρ_osm − 1)
+
+        with ε̇^spreading ≈ max(0, -tr(C_p)) (positive when cell volume
+        contracts → water leaves → ρ_osm rises). Forward-Euler update with
+        stiffness checked at constructor time (`dt · β_osm ≤ 0.5`). The
+        clamp `[ρ_osm_min, ρ_osm_max]` defends against transient
+        overshoots at the bounds.
+        """
+        dt = self.cfg.dt_star
+        alpha_osm = self.cfg.alpha_osm_star
+        beta_osm = self.cfg.beta_osm_star
+        rho_osm_min = self.cfg.rho_osm_min
+        rho_osm_max = self.cfg.rho_osm_max
+        for p in self.rho_osm_p:
+            C_p = self.C[p]
+            tr_C = C_p[0, 0] + C_p[1, 1] + C_p[2, 2]
+            eps_spread = ti.max(0.0, -tr_C)
+            rho = self.rho_osm_p[p]
+            drho = dt * (alpha_osm * eps_spread - beta_osm * (rho - 1.0))
+            new_rho = rho + drho
+            if new_rho < rho_osm_min:
+                new_rho = rho_osm_min
+            if new_rho > rho_osm_max:
+                new_rho = rho_osm_max
+            self.rho_osm_p[p] = new_rho
+
     # --------------------------------------------------------- one step ----
     def step(self) -> None:
         """Single MLS-MPM step under v15 (k.3) density-based volumetric stress.
@@ -777,6 +864,12 @@ class MLSMPMSolver:
             # mechanical step (φ is decoupled from positions; the ζ(φ)
             # coupling enters next step's `_p2g_momentum_and_stress`).
             self._integrate_phi_ode()
+        if self.cfg.layer5_enabled:
+            # Stage 1c Layer 5: integrate the per-particle ρ_osm ODE after
+            # the mechanical step (ρ_osm is driven by the post-step
+            # tr(C_p) deformation rate; the K(ρ_osm) coupling enters
+            # next step's `_p2g_momentum_and_stress`).
+            self._integrate_osmotic_ode()
 
     @ti.kernel
     def _clear_grid(self):
@@ -1119,7 +1212,15 @@ class MLSMPMSolver:
             ]
 
             rho_p = self._rho_kernel_p[p]
-            stress_vol = K * (rho_ref / rho_p - 1.0) * ti.Matrix.identity(ti.f32, 3)
+            # Stage 1c Layer 5 K(ρ_osm) coupling: K_eff per particle =
+            # K_star · ρ_osm_p. When Layer 5 disabled, ρ_osm_p == 1.0 by
+            # constructor + ODE inactivity; K_eff == K (Stage 1b
+            # behaviour). Compile-time gating via Python attribute access:
+            # if layer5 disabled, multiplication by 1.0 is a no-op.
+            K_eff = K
+            if ti.static(self.cfg.layer5_enabled):
+                K_eff = K * self.rho_osm_p[p]
+            stress_vol = K_eff * (rho_ref / rho_p - 1.0) * ti.Matrix.identity(ti.f32, 3)
             # Stage 1a++ Layer 2 / Stage 1b Layer 3 boundary-cell active
             # stress. Per-particle effective ζ_K depends on whether Layer 3
             # is enabled:
@@ -1328,6 +1429,11 @@ class MLSMPMSolver:
         # Path C diagnostics, reset per call.
         self.diag_grav_pe[None] = 0.0
         self.diag_com_z_sum[None] = 0.0
+        # Stage 1c Layer 5 ρ_osm diagnostics, reset per call.
+        self.diag_rho_osm_sum[None] = 0.0
+        self.diag_rho_osm_sum_sq[None] = 0.0
+        self.diag_rho_osm_min[None] = 1.0e10
+        self.diag_rho_osm_max[None] = -1.0e10
 
         m_p = ti.cast(self.cfg.particle_mass_star, ti.f64)
         K = ti.cast(self.cfg.K_star, ti.f64)
@@ -1371,19 +1477,24 @@ class MLSMPMSolver:
             ti.atomic_add(self.diag_com_z_sum[None], ti.cast(z_p, ti.f64))
 
             # v15 (k.3): volumetric strain energy uses the density-based form
-            #   U_vol = (1/2) K (ρ_ref/ρ_kernel − 1)²
-            # to match the v15 constitutive law σ_vol = K (ρ_ref/ρ_kernel − 1) I.
+            #   U_vol = (1/2) K_eff (ρ_ref/ρ_kernel − 1)²
+            # to match the v15 constitutive law σ_vol = K_eff (ρ_ref/ρ_kernel − 1) I.
+            # K_eff under Stage 1c Layer 5 is K · ρ_osm_p; under Layer 5 OFF
+            # ρ_osm_p == 1.0 so K_eff = K (Stage 1b behaviour).
             # F is still updated for diagnostics + Maxwell deviatoric coupling,
             # but no longer drives the volumetric channel. The deviatoric
             # contribution τ²/(4μ) is unchanged from v12.
             rho_p_d = ti.cast(self._rho_kernel_p[p], ti.f64)
             rho_ref_d = ti.cast(self._rho_ref_kernel[None], ti.f64)
             vol_strain = rho_ref_d / rho_p_d - 1.0
+            K_eff_d = K
+            if ti.static(self.cfg.layer5_enabled):
+                K_eff_d = K * ti.cast(self.rho_osm_p[p], ti.f64)
             tau = self.tau_dev[p]
             tau_norm_sq = 0.0
             for ii, jj in ti.static(ti.ndrange(3, 3)):
                 tau_norm_sq += tau[ii, jj] * tau[ii, jj]
-            U = 0.5 * K * vol_strain * vol_strain + ti.cast(tau_norm_sq, ti.f64) / (4.0 * (mu + 1e-12))
+            U = 0.5 * K_eff_d * vol_strain * vol_strain + ti.cast(tau_norm_sq, ti.f64) / (4.0 * (mu + 1e-12))
             ti.atomic_add(self.diag_strain_energy[None], U * V0)
 
             if self.is_boundary[p] == 1:
@@ -1431,6 +1542,20 @@ class MLSMPMSolver:
                 )
                 ti.atomic_min(self.diag_phi_min[None], phi_p_all)
                 ti.atomic_max(self.diag_phi_max[None], phi_p_all)
+
+            # Stage 1c Layer 5 per-particle ρ_osm aggregation.
+            if ti.static(self.cfg.layer5_enabled):
+                rho_osm_p_all = self.rho_osm_p[p]
+                ti.atomic_add(
+                    self.diag_rho_osm_sum[None],
+                    ti.cast(rho_osm_p_all, ti.f64),
+                )
+                ti.atomic_add(
+                    self.diag_rho_osm_sum_sq[None],
+                    ti.cast(rho_osm_p_all * rho_osm_p_all, ti.f64),
+                )
+                ti.atomic_min(self.diag_rho_osm_min[None], rho_osm_p_all)
+                ti.atomic_max(self.diag_rho_osm_max[None], rho_osm_p_all)
 
             # Stage 1a+ Option β substrate-adhesion energy: per particle in
             # the contact band, subtract γ_sub · V₀^(2/3) (adhesion *reduces*
@@ -1705,4 +1830,9 @@ class MLSMPMSolver:
                 float(self.diag_com_z_sum[None]) / float(self.cfg.n_particles)
                 if self.cfg.n_particles > 0 else float("nan")
             ),
+            # Stage 1c Layer 5 ρ_osm diagnostics.
+            "rho_osm_sum": float(self.diag_rho_osm_sum[None]),
+            "rho_osm_sum_sq": float(self.diag_rho_osm_sum_sq[None]),
+            "rho_osm_min": float(self.diag_rho_osm_min[None]) if self.cfg.layer5_enabled else float("nan"),
+            "rho_osm_max": float(self.diag_rho_osm_max[None]) if self.cfg.layer5_enabled else float("nan"),
         }

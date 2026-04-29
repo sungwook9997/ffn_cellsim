@@ -53,6 +53,17 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     layer2 = cfg.get("layer2", {})
     layer3 = cfg.get("layer3", {})
     gravity = cfg.get("gravity", {})
+    layer5 = cfg.get("layer5", {})
+    # Stage 1c Layer 5 mechano-osmotic Tier 2 (per
+    # docs/08_mechano_osmotic.md framework citing Guo PNAS 2017 IF 12 +
+    # Venkova eLife 2022). PI full authorisation 2026-04-29 covers PARTIAL
+    # Magic-Number Block on the ODE constants per docs/stage1c_sanity.md.
+    layer5_enabled = bool(layer5.get("enabled", False))
+    rho_osm_initial = float(layer5.get("rho_osm_initial", 1.0))
+    alpha_osm_star = float(layer5.get("alpha_osm_star", 0.0))
+    beta_osm_star = float(layer5.get("beta_osm_star", 0.0))
+    rho_osm_min = float(layer5.get("rho_osm_min", 0.5))
+    rho_osm_max = float(layer5.get("rho_osm_max", 1.6))
     # Path C effective gravity — body-force coefficient framing
     # (PARTIAL Magic-Number Block per ζ_star Option α' precedent;
     # framework anchored to Stewart Nature 2011 IF 65 cell density,
@@ -111,6 +122,12 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         zeta_min=zeta_min,
         zeta_max=zeta_max,
         gravity_star=gravity_star,
+        layer5_enabled=layer5_enabled,
+        rho_osm_initial=rho_osm_initial,
+        alpha_osm_star=alpha_osm_star,
+        beta_osm_star=beta_osm_star,
+        rho_osm_min=rho_osm_min,
+        rho_osm_max=rho_osm_max,
     )
 
 
@@ -207,6 +224,17 @@ def run_stage1a(config_path: Path | str) -> Path:
             "per docs/path_c_sanity.md Magic-Number Block PARTIAL "
             "resolution; PI full authorisation 2026-04-29).",
             solver_cfg.gravity_star,
+        )
+    if solver_cfg.layer5_enabled:
+        logger.info(
+            "Stage 1c Layer 5 mechano-osmotic Tier 2 active: "
+            "rho_osm_initial=%.3f, α_osm_star=%.4e, β_osm_star=%.4e, "
+            "ρ_osm ∈ [%.2f, %.2f]. K(ρ_osm) coupling: K_eff = K · ρ_osm "
+            "(Guo PNAS 2017 IF 12 + Venkova eLife 2022 framework per "
+            "docs/08_mechano_osmotic.md; PI full authorisation 2026-04-29).",
+            solver_cfg.rho_osm_initial, solver_cfg.alpha_osm_star,
+            solver_cfg.beta_osm_star,
+            solver_cfg.rho_osm_min, solver_cfg.rho_osm_max,
         )
     else:
         centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
@@ -830,6 +858,50 @@ def run_stage1a(config_path: Path | str) -> Path:
                 False,
                 "no φ samples",
             ))
+
+        # Stage 1c Layer 5 additional gates (layer5_enabled).
+        if solver_cfg.layer5_enabled:
+            # (Layer 5 i) ρ_osm ∈ [ρ_osm_min, ρ_osm_max] per-particle invariant.
+            rho_osm_min_series = [r.get("rho_osm_min", float("nan")) for r in metrics_rows]
+            rho_osm_max_series = [r.get("rho_osm_max", float("nan")) for r in metrics_rows]
+            rho_osm_min_overall = float(np.nanmin(rho_osm_min_series)) if rho_osm_min_series else float("nan")
+            rho_osm_max_overall = float(np.nanmax(rho_osm_max_series)) if rho_osm_max_series else float("nan")
+            results.append(GateResult(
+                f"ρ_osm ∈ [{solver_cfg.rho_osm_min}, {solver_cfg.rho_osm_max}] per-particle invariant",
+                (
+                    rho_osm_min_overall >= solver_cfg.rho_osm_min - 1e-6
+                    and rho_osm_max_overall <= solver_cfg.rho_osm_max + 1e-6
+                ),
+                f"min(ρ_osm) over all frames = {rho_osm_min_overall:.4f}, "
+                f"max(ρ_osm) over all frames = {rho_osm_max_overall:.4f}",
+            ))
+
+            # (Layer 5 ii) <ρ_osm> trajectory finite & non-pathological.
+            n_p_l5 = float(solver_cfg.n_particles)
+            rho_osm_means = [
+                float(r.get("rho_osm_sum", 0.0)) / n_p_l5
+                for r in metrics_rows
+            ]
+            if rho_osm_means:
+                rho_osm_end = float(rho_osm_means[-1])
+                # Allow slight relaxation below 1.0 but no catastrophic loss
+                # (Guo 2017 mechanism: spreading raises ρ_osm above 1.0).
+                results.append(GateResult(
+                    "<ρ_osm> trajectory finite & non-pathological",
+                    (
+                        np.isfinite(rho_osm_end)
+                        and 0.95 <= rho_osm_end <= solver_cfg.rho_osm_max + 1e-6
+                    ),
+                    f"<ρ_osm>(end) = {rho_osm_end:.4f} (window [0.95, "
+                    f"{solver_cfg.rho_osm_max}], rho_osm_initial = "
+                    f"{solver_cfg.rho_osm_initial:.3f})",
+                ))
+            else:
+                results.append(GateResult(
+                    "<ρ_osm> trajectory finite & non-pathological",
+                    False,
+                    "no ρ_osm samples",
+                ))
 
         # (iii) A/A₀ trajectory finite & non-pathological.
         # A_contact_xy_hull is the substrate contact area projected to xy
