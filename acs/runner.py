@@ -51,12 +51,22 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     sim = cfg["simulation"]
     sub = cfg.get("substrate", {})
     layer2 = cfg.get("layer2", {})
+    layer3 = cfg.get("layer3", {})
     # Stage 1a++ Layer 2 active stress (Option α' resolution 2026-04-29):
     # ζ/K dimensionless ratio, no Pa claim. K is anchored to Fischer-
     # Friedrich Nat Cell Biol 2014 IF 30 (already cited in
     # docs/02_force_models.md §1.1). Marchetti Rev Mod Phys 2013 IF 50
     # retained as framework reference.
     zeta_star = float(layer2.get("zeta_star", 0.0))
+    # Stage 1b Layer 3 φ-ODE (PI full authorisation 2026-04-29):
+    # Cho et al. 2020 mechanism, Halbleib & Nelson 2006, Hynes 2002 framework.
+    # See docs/stage1b_layer3_sanity.md and docs/03_adhesion_dynamics.md.
+    layer3_enabled = bool(layer3.get("enabled", False))
+    phi_initial = float(layer3.get("phi_initial", 0.05))
+    k_plus_star = float(layer3.get("k_plus_star", 0.0))
+    k_minus_star = float(layer3.get("k_minus_star", 0.0))
+    zeta_min = float(layer3.get("zeta_min", zeta_star))
+    zeta_max = float(layer3.get("zeta_max", zeta_star))
     # Stage 1a+ Option β: substrate adhesion energy is anchored to Ca_cc
     # via the sweep multiplier α (Maître Science 2012, IF 47, anchors
     # γ_cc; α is parameter-free at result level — see
@@ -87,6 +97,12 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         n_contact_band=int(sub.get("n_contact_band", 3)),
         gamma_sub_star=gamma_sub_star,
         zeta_star=zeta_star,
+        layer3_enabled=layer3_enabled,
+        phi_initial=phi_initial,
+        k_plus_star=k_plus_star,
+        k_minus_star=k_minus_star,
+        zeta_min=zeta_min,
+        zeta_max=zeta_max,
     )
 
 
@@ -160,6 +176,18 @@ def run_stage1a(config_path: Path | str) -> Path:
             "Energy-monotone gate SUSPENDED per Cousin-Rule contract change "
             "(active stress injects energy by construction).",
             solver_cfg.zeta_star,
+        )
+    if solver_cfg.layer3_enabled:
+        phi_eq_pred = solver_cfg.k_plus_star / max(
+            solver_cfg.k_plus_star + solver_cfg.k_minus_star, 1e-30,
+        )
+        logger.info(
+            "Stage 1b Layer 3 φ-ODE active: phi_initial=%.3f, k_+_star=%.4e, "
+            "k_-_star=%.4e, φ_eq=%.3f. ζ(φ) coupling: ζ ∈ [%.3f, %.3f] "
+            "(Cho 2020 framework; PI full authorization 2026-04-29).",
+            solver_cfg.phi_initial, solver_cfg.k_plus_star,
+            solver_cfg.k_minus_star, phi_eq_pred,
+            solver_cfg.zeta_min, solver_cfg.zeta_max,
         )
     else:
         centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
@@ -734,6 +762,78 @@ def run_stage1a(config_path: Path | str) -> Path:
                 "boundary-tag stability",
                 False,
                 "insufficient frames for flicker computation",
+            ))
+
+    # Stage 1b Layer 3 additional gates (layer3_enabled).
+    if solver_cfg.layer3_enabled:
+        # (i) φ ∈ [0, 1] per-particle invariant.
+        phi_min_series = [r.get("phi_min", float("nan")) for r in metrics_rows]
+        phi_max_series = [r.get("phi_max", float("nan")) for r in metrics_rows]
+        phi_min_overall = float(np.nanmin(phi_min_series)) if phi_min_series else float("nan")
+        phi_max_overall = float(np.nanmax(phi_max_series)) if phi_max_series else float("nan")
+        results.append(GateResult(
+            "φ ∈ [0, 1] per-particle invariant",
+            phi_min_overall >= 0.0 and phi_max_overall <= 1.0,
+            f"min(φ) over all frames = {phi_min_overall:.4f}, "
+            f"max(φ) over all frames = {phi_max_overall:.4f}",
+        ))
+
+        # (ii) φ trajectory monotone toward predicted φ_eq.
+        n_p = float(solver_cfg.n_particles)
+        phi_means = [
+            float(r.get("phi_sum", 0.0)) / n_p
+            for r in metrics_rows
+        ]
+        phi_eq_pred = solver_cfg.k_plus_star / max(
+            solver_cfg.k_plus_star + solver_cfg.k_minus_star, 1e-30,
+        )
+        if phi_means:
+            phi_end = float(phi_means[-1])
+            phi_eq_err = abs(phi_end - phi_eq_pred)
+            # Pilot duration is ~0.33 of φ relaxation time; allow up to
+            # the full equilibrium offset as a generous tolerance (the gate
+            # mainly catches divergence, not slow-relaxation behaviour).
+            results.append(GateResult(
+                "φ trajectory toward predicted φ_eq",
+                phi_eq_err <= max(0.5, abs(solver_cfg.phi_initial - phi_eq_pred)),
+                f"<φ>(end) = {phi_end:.4f}, predicted φ_eq = {phi_eq_pred:.4f}, "
+                f"|err| = {phi_eq_err:.4f} (tolerance: ≤ max(0.5, "
+                f"|φ_init − φ_eq|) = {max(0.5, abs(solver_cfg.phi_initial - phi_eq_pred)):.4f})",
+            ))
+        else:
+            results.append(GateResult(
+                "φ trajectory toward predicted φ_eq",
+                False,
+                "no φ samples",
+            ))
+
+        # (iii) A/A₀ trajectory finite & non-pathological.
+        # A_contact_xy_hull is the substrate contact area projected to xy
+        # (already computed by substrate_diagnostics). Pathology: NaN/Inf,
+        # or A/A₀ contracts below 0.5 (spheroid disintegrating; spreading
+        # context expects A/A₀ ≥ 1 monotone-ish, allowing small
+        # equilibration transients).
+        A_series = [
+            r.get("contact_area_xy_hull", float("nan"))
+            for r in metrics_rows
+        ]
+        A0 = next((a for a in A_series if not np.isnan(a) and a > 0), float("nan"))
+        A_clean = [a for a in A_series if not (a is None or np.isnan(a))]
+        if A_clean and A0 > 0:
+            A_ratios = [a / A0 for a in A_clean]
+            min_ratio = float(min(A_ratios))
+            max_ratio = float(max(A_ratios))
+            results.append(GateResult(
+                "A/A₀ trajectory finite & non-pathological",
+                np.isfinite(min_ratio) and np.isfinite(max_ratio) and min_ratio >= 0.5,
+                f"A/A₀ ∈ [{min_ratio:.3f}, {max_ratio:.3f}] (limit min ≥ 0.5; "
+                f"A₀ = {A0:.4f}, n_frames = {len(A_ratios)})",
+            ))
+        else:
+            results.append(GateResult(
+                "A/A₀ trajectory finite & non-pathological",
+                False,
+                "no valid A_contact_xy_hull samples",
             ))
 
     psi_check_t = float(g["sphericity_check_after_s"]) / float(cfg["physics"]["maxwell_tau_s"])

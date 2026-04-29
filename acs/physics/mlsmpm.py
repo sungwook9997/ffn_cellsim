@@ -249,6 +249,27 @@ class SolverConfig:
     # Option β (carrier baseline).
     zeta_star: float = 0.0
 
+    # Stage 1b Layer 3 φ-ODE (Cho et al. 2020 mechanism, see
+    # `docs/03_adhesion_dynamics.md` and `docs/stage1b_layer3_sanity.md`).
+    # When `layer3_enabled` is True, every particle carries a φ ∈ [0, 1]
+    # state evolved by the simplified ODE (S ≡ 1 since substrate is single-
+    # condition Col1):
+    #   dφ/dt = k_+_star · (1 − φ) − k_-_star · φ
+    # and the Layer 2 coupling becomes φ-dependent:
+    #   ζ_star_per_p = ζ_min · (1 − φ_p) + ζ_max · φ_p
+    # replacing the constant `zeta_star` (which is ignored when Layer 3
+    # is on). PI Option α'-style framing — bounds anchored to Stage 1a++
+    # Track 1 stable regime; φ_initial mapped per Bare/Pre/Lam4 phenotype
+    # by PI domain expertise (PI full authorisation 2026-04-29). All
+    # values default to disable Layer 3 (k_+ = k_- = 0; ζ_min = ζ_max =
+    # zeta_star) so existing Stage 1a / 1a+ / 1a++ configs are unaffected.
+    layer3_enabled: bool = False
+    phi_initial: float = 0.05
+    k_plus_star: float = 0.0
+    k_minus_star: float = 0.0
+    zeta_min: float = 0.0
+    zeta_max: float = 0.0
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -279,6 +300,21 @@ class MLSMPMSolver:
                 f"radius* ({cfg.radius_star}) must be ≥ 2·dx* ({2.0 * cfg.dx_star}); "
                 "increase grid_n or shrink the domain."
             )
+        # Stage 1b Layer 3 φ-ODE forward-Euler stiffness invariant
+        # (per docs/stage1b_layer3_sanity.md check 2): factor-2 safety
+        # margin against `dt · (k_+ + k_-) ≤ 1`.
+        if cfg.layer3_enabled:
+            stiffness = cfg.dt_star * (cfg.k_plus_star + cfg.k_minus_star)
+            if stiffness > 0.5:
+                raise ValueError(
+                    f"Layer 3 φ-ODE stiffness violation: dt·(k_+ + k_-) = "
+                    f"{stiffness:.4f} > 0.5. Reduce dt_star or k rates "
+                    f"(forward Euler stability bound)."
+                )
+            if not (0.0 <= cfg.phi_initial <= 1.0):
+                raise ValueError(
+                    f"phi_initial ({cfg.phi_initial}) must be ∈ [0, 1]."
+                )
 
         self.cfg = cfg
         n_p, n_g = cfg.n_particles, cfg.grid_n
@@ -333,6 +369,10 @@ class MLSMPMSolver:
         self._rho_kernel_p = ti.field(dtype=ti.f32, shape=n_p)
         self._rho_ref_kernel = ti.field(dtype=ti.f32, shape=())
         self._rho_floor = ti.field(dtype=ti.f32, shape=())
+        # Stage 1b Layer 3 φ field declared early so the constructor
+        # initialiser block below can populate it together with the
+        # density fields. Diagnostic accumulators are declared later.
+        self.phi_p = ti.field(dtype=ti.f32, shape=n_p)
 
         # Initialise v15 density fields to a self-consistent default
         # (σ_vol = K·(ρ_ref/ρ_kernel − 1) = 0 for ρ_kernel = ρ_ref = density_star)
@@ -345,6 +385,12 @@ class MLSMPMSolver:
         self._rho_floor[None] = 0.1 * rho_default
         self._rho_kernel_p.from_numpy(
             np.full(cfg.n_particles, rho_default, dtype=np.float32)
+        )
+        # Stage 1b Layer 3 φ field initialised to `phi_initial` (uniform
+        # across all particles; per-phenotype mapping is set by the runner
+        # via the YAML `layer3.phi_initial` field).
+        self.phi_p.from_numpy(
+            np.full(cfg.n_particles, float(cfg.phi_initial), dtype=np.float32)
         )
 
         self.diag_mass = ti.field(dtype=ti.f64, shape=())
@@ -363,6 +409,17 @@ class MLSMPMSolver:
         # F_substrate = diag_substrate_impulse_z / dt for the anchor-force-
         # balance gate.
         self.diag_substrate_impulse_z = ti.field(dtype=ti.f64, shape=())
+
+        # Stage 1b Layer 3 φ field is declared earlier (next to
+        # `_rho_kernel_p`) so the constructor's `from_numpy` initialiser
+        # block can populate it before `_zero_state` runs.
+        # Stage 1b Layer 3 diagnostics: bulk-shell <φ>, boundary-shell <φ>,
+        # contact-band <φ>, plus min/max for the φ ∈ [0,1] invariant gate.
+        self.diag_phi_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_phi_sum_sq = ti.field(dtype=ti.f64, shape=())
+        self.diag_phi_min = ti.field(dtype=ti.f32, shape=())
+        self.diag_phi_max = ti.field(dtype=ti.f32, shape=())
+        self.diag_phi_boundary_sum = ti.field(dtype=ti.f64, shape=())
 
         # Stage 1a++ Layer 2 diagnostics:
         #  • diag_active_power: instantaneous power delivered by the active
@@ -631,6 +688,36 @@ class MLSMPMSolver:
             ),
         }
 
+    # ----------------------------------------------------- Layer 3 φ-ODE ----
+    @ti.kernel
+    def _integrate_phi_ode(self):
+        """Stage 1b Layer 3 forward-Euler φ-ODE integration.
+
+        Per `docs/03_adhesion_dynamics.md` and `docs/stage1b_layer3_sanity.md`:
+        with substrate-induced signalling intensity simplified to S ≡ 1
+        (Stage 1b uses single-condition Col1 substrate, always present from
+        t=0 per Stage 1a+ initial-position scheme), the φ-ODE reduces to
+
+            dφ/dt = k_+ · (1 − φ) − k_- · φ
+
+        Forward-Euler update with stiffness checked at constructor time
+        (`dt · (k_+ + k_-) ≤ 0.5`). The `clip(0, 1)` defends against any
+        per-step overshoot at the boundaries of the [0, 1] domain.
+        """
+        dt = self.cfg.dt_star
+        k_plus = self.cfg.k_plus_star
+        k_minus = self.cfg.k_minus_star
+        for p in self.phi_p:
+            phi = self.phi_p[p]
+            dphi = dt * (k_plus * (1.0 - phi) - k_minus * phi)
+            new_phi = phi + dphi
+            # Defense-in-depth clamp on [0, 1].
+            if new_phi < 0.0:
+                new_phi = 0.0
+            if new_phi > 1.0:
+                new_phi = 1.0
+            self.phi_p[p] = new_phi
+
     # --------------------------------------------------------- one step ----
     def step(self) -> None:
         """Single MLS-MPM step under v15 (k.3) density-based volumetric stress.
@@ -664,6 +751,11 @@ class MLSMPMSolver:
         self._p2g_momentum_and_stress()     # scatters momentum + density-based stress
         self._grid_op_overdamped()          # converts to velocity, applies CSF impulse γ·κ·∇c
         self._g2p_and_constitutive()
+        if self.cfg.layer3_enabled:
+            # Stage 1b Layer 3: integrate the per-particle φ-ODE after the
+            # mechanical step (φ is decoupled from positions; the ζ(φ)
+            # coupling enters next step's `_p2g_momentum_and_stress`).
+            self._integrate_phi_ode()
 
     @ti.kernel
     def _clear_grid(self):
@@ -988,10 +1080,13 @@ class MLSMPMSolver:
         dx = self.cfg.dx_star
         dt = self.cfg.dt_star
         rho_ref = self._rho_ref_kernel[None]
-        # Stage 1a++ Layer 2 active-stress coefficient (compile-time
-        # constant via Python attribute access). When 0, the active term
-        # is identically 0 and reproduces Stage 1a+ Option β behaviour.
+        # Stage 1a++ Layer 2 / Stage 1b Layer 3 active-stress coupling.
+        # When Layer 3 is OFF: ζ(φ) = ζ_star (constant across all particles;
+        # Stage 1a++ behaviour). When Layer 3 is ON: ζ(φ) is computed
+        # per-particle from φ_p inside the loop.
         zeta_K = self.cfg.zeta_star * K
+        zeta_min_K = self.cfg.zeta_min * K
+        zeta_max_K = self.cfg.zeta_max * K
 
         for p in self.x:
             base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
@@ -1004,14 +1099,20 @@ class MLSMPMSolver:
 
             rho_p = self._rho_kernel_p[p]
             stress_vol = K * (rho_ref / rho_p - 1.0) * ti.Matrix.identity(ti.f32, 3)
-            # Stage 1a++ Layer 2 boundary-cell active stress: contractile
-            # cortex (compressive, σ_act < 0) applied only to boundary-
-            # tagged particles. When zeta_star == 0 (Stage 1a+ Option β
-            # carrier) the contribution is identically zero by arithmetic.
-            # is_boundary[p] is an i32 (0 or 1); multiplying by it gates
-            # the term per-particle without a runtime branch.
+            # Stage 1a++ Layer 2 / Stage 1b Layer 3 boundary-cell active
+            # stress. Per-particle effective ζ_K depends on whether Layer 3
+            # is enabled:
+            #   Layer 3 OFF: ζ_K_eff = zeta_K (constant, Stage 1a++)
+            #   Layer 3 ON : ζ_K_eff = ζ_min·K·(1−φ_p) + ζ_max·K·φ_p
+            # Both branches collapse to the same expression when zeta_min ==
+            # zeta_max == zeta_star, so the runtime conditional is at the
+            # config level (`layer3_enabled`), evaluated at trace time.
+            zeta_K_eff = zeta_K
+            if ti.static(self.cfg.layer3_enabled):
+                phi_p = self.phi_p[p]
+                zeta_K_eff = zeta_min_K * (1.0 - phi_p) + zeta_max_K * phi_p
             stress_act = (
-                -zeta_K * ti.cast(self.is_boundary[p], ti.f32)
+                -zeta_K_eff * ti.cast(self.is_boundary[p], ti.f32)
                 * ti.Matrix.identity(ti.f32, 3)
             )
             stress = stress_vol + self.tau_dev[p] + stress_act
@@ -1180,6 +1281,12 @@ class MLSMPMSolver:
         # Stage 1a++ Layer 2 diagnostics, reset per call.
         self.diag_active_power[None] = 0.0
         self.diag_n_boundary[None] = 0
+        # Stage 1b Layer 3 diagnostics, reset per call.
+        self.diag_phi_sum[None] = 0.0
+        self.diag_phi_sum_sq[None] = 0.0
+        self.diag_phi_min[None] = 1.0e10
+        self.diag_phi_max[None] = -1.0e10
+        self.diag_phi_boundary_sum[None] = 0.0
 
         m_p = ti.cast(self.cfg.particle_mass_star, ti.f64)
         K = ti.cast(self.cfg.K_star, ti.f64)
@@ -1231,16 +1338,46 @@ class MLSMPMSolver:
                 ti.atomic_add(self.diag_surface_energy[None], gamma * ti.cast(V0 ** (2.0 / 3.0), ti.f64))
                 ti.atomic_add(self.diag_n_boundary[None], 1)
                 # Stage 1a++ Layer 2 active power per boundary particle:
-                #   P_act,p = -ζ·K · tr(C_p) · V₀
-                # (σ_act_p = -ζ·K·I, ε̇_p ≈ sym(C_p), σ:ε̇ = -ζ·K · tr(C_p)).
-                # Sums to instantaneous total active power. Under Stage 1a+
-                # carrier (ζ_star = 0) the contribution is arithmetically 0.
+                #   P_act,p = -ζ_eff·K · tr(C_p) · V₀
+                # (σ_act_p = -ζ_eff·K·I, ε̇_p ≈ sym(C_p),
+                #  σ:ε̇ = -ζ_eff·K · tr(C_p)).
+                # ζ_eff is constant under Layer 2 only; under Layer 3 it
+                # depends on φ_p (per-particle φ-modulated coupling).
                 C_p = self.C[p]
                 tr_C = C_p[0, 0] + C_p[1, 1] + C_p[2, 2]
+                zeta_eff = self.cfg.zeta_star
+                if ti.static(self.cfg.layer3_enabled):
+                    phi_p = self.phi_p[p]
+                    zeta_eff = (
+                        self.cfg.zeta_min * (1.0 - phi_p)
+                        + self.cfg.zeta_max * phi_p
+                    )
                 ti.atomic_add(
                     self.diag_active_power[None],
-                    ti.cast(-self.cfg.zeta_star * self.cfg.K_star * tr_C * V0, ti.f64),
+                    ti.cast(-zeta_eff * self.cfg.K_star * tr_C * V0, ti.f64),
                 )
+                # Stage 1b Layer 3 boundary-shell <φ> accumulator.
+                if ti.static(self.cfg.layer3_enabled):
+                    ti.atomic_add(
+                        self.diag_phi_boundary_sum[None],
+                        ti.cast(self.phi_p[p], ti.f64),
+                    )
+
+            # Stage 1b Layer 3 per-particle φ aggregation (over all
+            # particles, not just boundary; bulk avg comes from <total>−
+            # <boundary> via the runner).
+            if ti.static(self.cfg.layer3_enabled):
+                phi_p_all = self.phi_p[p]
+                ti.atomic_add(
+                    self.diag_phi_sum[None],
+                    ti.cast(phi_p_all, ti.f64),
+                )
+                ti.atomic_add(
+                    self.diag_phi_sum_sq[None],
+                    ti.cast(phi_p_all * phi_p_all, ti.f64),
+                )
+                ti.atomic_min(self.diag_phi_min[None], phi_p_all)
+                ti.atomic_max(self.diag_phi_max[None], phi_p_all)
 
             # Stage 1a+ Option β substrate-adhesion energy: per particle in
             # the contact band, subtract γ_sub · V₀^(2/3) (adhesion *reduces*
@@ -1500,4 +1637,13 @@ class MLSMPMSolver:
             # Stage 1a++ Layer 2 diagnostics.
             "active_power_star": float(self.diag_active_power[None]),
             "n_boundary": int(self.diag_n_boundary[None]),
+            # Stage 1b Layer 3 diagnostics. Under Layer 3 OFF these are
+            # populated only with the boundary-tag count of n_boundary
+            # particles having phi_initial; bulk/std are trivial. Under
+            # Layer 3 ON they reflect the live φ field state.
+            "phi_sum": float(self.diag_phi_sum[None]),
+            "phi_sum_sq": float(self.diag_phi_sum_sq[None]),
+            "phi_min": float(self.diag_phi_min[None]) if self.cfg.layer3_enabled else float("nan"),
+            "phi_max": float(self.diag_phi_max[None]) if self.cfg.layer3_enabled else float("nan"),
+            "phi_boundary_sum": float(self.diag_phi_boundary_sum[None]),
         }
