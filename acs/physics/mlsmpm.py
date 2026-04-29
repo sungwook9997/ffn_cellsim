@@ -330,7 +330,24 @@ class SolverConfig:
     # particles (φ→φ_eq) from interior (φ→0), creating ∇φ → ∇γ → Marangoni
     # driving force. Without this, single-phenotype Layer 3 has uniform φ
     # → ∇γ ≈ 0 → no Marangoni effect.
+    #
+    # Stage 1b.b (PI directive 2026-04-29) DEPRECATES this flag: the
+    # φ_memory + c_act split intrinsically encodes the contact-band
+    # spatial gating in the c_act ODE while preserving formation
+    # phenotype memory in φ_memory. The flag is read but ignored;
+    # `layer3_split` (default True) is the new control.
     layer3_spatial_S: bool = False
+
+    # Stage 1b.b Layer 3 φ split (per `docs/layer3_phi_audit.md` §4 +
+    # `docs/stage1b_b_phi_split_sanity.md`). When True (default if
+    # layer3_enabled), φ is split into φ_memory_p (formation phenotype
+    # memory, ε-decay toward phi_initial) and c_act_p (contact
+    # activation, Cho 2020 ODE on contact-band only). Effective
+    # variable for downstream (Layer 4 γ): φ_eff = φ_memory + κ·c_act·
+    # (1 − φ_memory). When False, falls back to legacy single-φ ODE.
+    layer3_split: bool = True
+    layer3_kappa_act: float = 1.0      # κ in φ_eff formula (PI default 1.0)
+    layer3_memory_eps_star: float = 0.0  # ε memory decay rate (PI default 0.0 = exactly fixed)
 
     # Stage 2 Layer 6 chemistry / ECM remodeling — minimal scope per
     # `docs/stage2_sanity.md`: MMP secretion + ECM degradation only,
@@ -477,6 +494,17 @@ class MLSMPMSolver:
         # initialiser block below can populate it together with the
         # density fields. Diagnostic accumulators are declared later.
         self.phi_p = ti.field(dtype=ti.f32, shape=n_p)
+        # Stage 1b.b Layer 3 φ split (per docs/layer3_phi_audit.md §4 +
+        # docs/stage1b_b_phi_split_sanity.md). φ_memory_p stores the
+        # formation phenotype memory (slow/fixed); c_act_p stores the
+        # contact-activation state (Cho 2020 ODE on contact-band only).
+        # Effective variable phi_eff_p = φ_memory + κ · c_act ·
+        # (1 − φ_memory) is computed each step and assigned into
+        # `phi_p` for downstream consumers (Layer 4 γ scatter, Layer 2
+        # ζ_eff, diagnostics). When `layer3_split=False`, these are
+        # zero-init'd and unused.
+        self.phi_memory_p = ti.field(dtype=ti.f32, shape=n_p)
+        self.c_act_p = ti.field(dtype=ti.f32, shape=n_p)
         # Stage 1c Layer 5 osmotic state ρ_osm field (per particle).
         # Initialised to `cfg.rho_osm_initial` in the constructor. Evolved
         # by `_integrate_osmotic_ode` once per step when Layer 5 enabled.
@@ -509,6 +537,15 @@ class MLSMPMSolver:
         # via the YAML `layer3.phi_initial` field).
         self.phi_p.from_numpy(
             np.full(cfg.n_particles, float(cfg.phi_initial), dtype=np.float32)
+        )
+        # Stage 1b.b φ split initial state: φ_memory := phi_initial,
+        # c_act := 0 (no contact activation at t=0). Per
+        # `docs/stage1b_b_phi_split_sanity.md` §"Initialization".
+        self.phi_memory_p.from_numpy(
+            np.full(cfg.n_particles, float(cfg.phi_initial), dtype=np.float32)
+        )
+        self.c_act_p.from_numpy(
+            np.zeros(cfg.n_particles, dtype=np.float32)
         )
         # Stage 1c Layer 5 osmotic state ρ_osm initialised to
         # `rho_osm_initial` (= 1.0 = full hydration by default).
@@ -562,6 +599,19 @@ class MLSMPMSolver:
         self.diag_phi_min = ti.field(dtype=ti.f32, shape=())
         self.diag_phi_max = ti.field(dtype=ti.f32, shape=())
         self.diag_phi_boundary_sum = ti.field(dtype=ti.f64, shape=())
+        # Stage 1b.b Layer 3 split diagnostics: per-frame aggregate of
+        # phi_memory and c_act for new gates 5a + 5b.
+        # φ_memory: global mean for gate 5a preservation check.
+        # c_act: contact-band mean for gate 5b trajectory check; plus
+        # global min/max for the [0, 1] invariant.
+        self.diag_phi_memory_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_phi_memory_min = ti.field(dtype=ti.f32, shape=())
+        self.diag_phi_memory_max = ti.field(dtype=ti.f32, shape=())
+        self.diag_c_act_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_c_act_min = ti.field(dtype=ti.f32, shape=())
+        self.diag_c_act_max = ti.field(dtype=ti.f32, shape=())
+        self.diag_c_act_band_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_c_act_band_count = ti.field(dtype=ti.i32, shape=())
 
         # Stage 1a++ Layer 2 diagnostics:
         #  • diag_active_power: instantaneous power delivered by the active
@@ -851,27 +901,79 @@ class MLSMPMSolver:
         Forward-Euler update with stiffness checked at constructor time
         (`dt · (k_+ + k_-) ≤ 0.5`). The `clip(0, 1)` defends against any
         per-step overshoot at the boundaries of the [0, 1] domain.
+
+        Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
+        when `layer3_split=True` (default for layer3_enabled), φ is
+        split into φ_memory_p (formation phenotype memory, ε-decay
+        toward phi_initial) and c_act_p (contact activation, Cho 2020
+        ODE on contact-band only with c_act preserved in interior on
+        migration). φ_eff_p = φ_memory + κ · c_act · (1 − φ_memory) is
+        assigned into `phi_p` for downstream consumers (Layer 4 γ
+        scatter, Layer 2 ζ_eff, diagnostics).
+
+        When `layer3_split=False`, falls back to the legacy single-φ
+        ODE (kept for backwards-compat tests).
         """
         dt = self.cfg.dt_star
         k_plus = self.cfg.k_plus_star
         k_minus = self.cfg.k_minus_star
         h_band = self.cfg.n_contact_band * self.cfg.dx_star
-        for p in self.phi_p:
-            phi = self.phi_p[p]
-            # Stage 1d spatial S_p: 1 for substrate-band particles, 0 otherwise.
-            # When `layer3_spatial_S` is False (Stage 1b default), S_p ≡ 1.
-            S_p = 1.0
-            if ti.static(self.cfg.layer3_spatial_S):
+        if ti.static(self.cfg.layer3_split):
+            # Stage 1b.b new path: φ_memory + c_act split.
+            kappa = self.cfg.layer3_kappa_act
+            eps_mem = self.cfg.layer3_memory_eps_star
+            phi_init_const = self.cfg.phi_initial
+            for p in self.phi_p:
+                phi_mem = self.phi_memory_p[p]
+                c_act = self.c_act_p[p]
+                # φ_memory: slow decay toward phi_initial (ε=0 default
+                # makes this no-op; the Lyapunov form is robust to
+                # any small ε > 0 that might be set by future audits).
+                dphi_mem = -dt * eps_mem * (phi_mem - phi_init_const)
+                new_phi_mem = phi_mem + dphi_mem
+                if new_phi_mem < 0.0:
+                    new_phi_mem = 0.0
+                if new_phi_mem > 1.0:
+                    new_phi_mem = 1.0
+                # c_act: substrate-band-only Cho 2020 ODE. In interior
+                # (S=0), dc/dt = 0 — c_act *preserved* (not decayed).
+                # This contrasts with the v11 spatial S=0 → k_- decay
+                # which erased formation memory; here memory is in
+                # phi_memory_p, and c_act represents the integrated
+                # contact-engagement state.
+                S_p = 1.0
                 if self.x[p][2] >= h_band:
                     S_p = 0.0
-            dphi = dt * (k_plus * S_p * (1.0 - phi) - k_minus * phi)
-            new_phi = phi + dphi
-            # Defense-in-depth clamp on [0, 1].
-            if new_phi < 0.0:
-                new_phi = 0.0
-            if new_phi > 1.0:
-                new_phi = 1.0
-            self.phi_p[p] = new_phi
+                dc_act = dt * S_p * (k_plus * (1.0 - c_act) - k_minus * c_act)
+                new_c_act = c_act + dc_act
+                if new_c_act < 0.0:
+                    new_c_act = 0.0
+                if new_c_act > 1.0:
+                    new_c_act = 1.0
+                # φ_eff: phenotype-modulated contact-activation.
+                phi_eff = new_phi_mem + kappa * new_c_act * (1.0 - new_phi_mem)
+                if phi_eff < 0.0:
+                    phi_eff = 0.0
+                if phi_eff > 1.0:
+                    phi_eff = 1.0
+                self.phi_memory_p[p] = new_phi_mem
+                self.c_act_p[p] = new_c_act
+                self.phi_p[p] = phi_eff
+        else:
+            # Legacy single-φ path (Stage 1b backwards compat).
+            for p in self.phi_p:
+                phi = self.phi_p[p]
+                S_p = 1.0
+                if ti.static(self.cfg.layer3_spatial_S):
+                    if self.x[p][2] >= h_band:
+                        S_p = 0.0
+                dphi = dt * (k_plus * S_p * (1.0 - phi) - k_minus * phi)
+                new_phi = phi + dphi
+                if new_phi < 0.0:
+                    new_phi = 0.0
+                if new_phi > 1.0:
+                    new_phi = 1.0
+                self.phi_p[p] = new_phi
 
     # ------------------------------------------------ Layer 4 Marangoni ----
     @ti.kernel
@@ -1665,6 +1767,15 @@ class MLSMPMSolver:
         self.diag_phi_min[None] = 1.0e10
         self.diag_phi_max[None] = -1.0e10
         self.diag_phi_boundary_sum[None] = 0.0
+        # Stage 1b.b Layer 3 split diagnostics, reset per call.
+        self.diag_phi_memory_sum[None] = 0.0
+        self.diag_phi_memory_min[None] = 1.0e10
+        self.diag_phi_memory_max[None] = -1.0e10
+        self.diag_c_act_sum[None] = 0.0
+        self.diag_c_act_min[None] = 1.0e10
+        self.diag_c_act_max[None] = -1.0e10
+        self.diag_c_act_band_sum[None] = 0.0
+        self.diag_c_act_band_count[None] = 0
         # Path C diagnostics, reset per call.
         self.diag_grav_pe[None] = 0.0
         self.diag_com_z_sum[None] = 0.0
@@ -1781,6 +1892,29 @@ class MLSMPMSolver:
                 )
                 ti.atomic_min(self.diag_phi_min[None], phi_p_all)
                 ti.atomic_max(self.diag_phi_max[None], phi_p_all)
+                # Stage 1b.b: aggregate phi_memory + c_act per gates 5a/5b.
+                if ti.static(self.cfg.layer3_split):
+                    phi_mem_p = self.phi_memory_p[p]
+                    c_act_p_all = self.c_act_p[p]
+                    ti.atomic_add(
+                        self.diag_phi_memory_sum[None],
+                        ti.cast(phi_mem_p, ti.f64),
+                    )
+                    ti.atomic_min(self.diag_phi_memory_min[None], phi_mem_p)
+                    ti.atomic_max(self.diag_phi_memory_max[None], phi_mem_p)
+                    ti.atomic_add(
+                        self.diag_c_act_sum[None],
+                        ti.cast(c_act_p_all, ti.f64),
+                    )
+                    ti.atomic_min(self.diag_c_act_min[None], c_act_p_all)
+                    ti.atomic_max(self.diag_c_act_max[None], c_act_p_all)
+                    # Boundary band only (z_p < h_band) for gate 5b.
+                    if self.x[p][2] < h_band:
+                        ti.atomic_add(
+                            self.diag_c_act_band_sum[None],
+                            ti.cast(c_act_p_all, ti.f64),
+                        )
+                        ti.atomic_add(self.diag_c_act_band_count[None], 1)
 
             # Stage 1c Layer 5 per-particle ρ_osm aggregation.
             if ti.static(self.cfg.layer5_enabled):
@@ -2116,6 +2250,40 @@ class MLSMPMSolver:
             "phi_min": float(self.diag_phi_min[None]) if self.cfg.layer3_enabled else float("nan"),
             "phi_max": float(self.diag_phi_max[None]) if self.cfg.layer3_enabled else float("nan"),
             "phi_boundary_sum": float(self.diag_phi_boundary_sum[None]),
+            # Stage 1b.b Layer 3 split diagnostics. Under layer3_split OFF
+            # (legacy single-φ) these are sentinel NaN.
+            "phi_memory_sum": (
+                float(self.diag_phi_memory_sum[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "phi_memory_min": (
+                float(self.diag_phi_memory_min[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "phi_memory_max": (
+                float(self.diag_phi_memory_max[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "c_act_sum": (
+                float(self.diag_c_act_sum[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "c_act_min": (
+                float(self.diag_c_act_min[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "c_act_max": (
+                float(self.diag_c_act_max[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "c_act_band_sum": (
+                float(self.diag_c_act_band_sum[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else float("nan")
+            ),
+            "c_act_band_count": (
+                int(self.diag_c_act_band_count[None])
+                if (self.cfg.layer3_enabled and self.cfg.layer3_split) else 0
+            ),
             # Path C diagnostics.
             "grav_pe_star": float(self.diag_grav_pe[None]),
             "com_z_star": (

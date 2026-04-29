@@ -80,7 +80,26 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     layer4_enabled = bool(layer4.get("enabled", False))
     gamma_max_star = float(layer4.get("gamma_max_star", 0.0))
     gamma_min_star = float(layer4.get("gamma_min_star", 0.0))
-    layer3_spatial_S = bool(layer4.get("layer3_spatial_S", False))
+    # Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
+    # `layer3_spatial_S` is DEPRECATED in favour of the φ_memory + c_act
+    # split (intrinsically encodes contact-band gating in c_act ODE
+    # while preserving formation memory). The flag is read for backwards
+    # compat (silent ignore) but `layer3_split` (default True) is the
+    # new control.
+    layer3_spatial_S_legacy = bool(layer4.get("layer3_spatial_S", False))
+    layer3_split = bool(layer3.get("split", True))
+    layer3_kappa_act = float(layer3.get("kappa_act", 1.0))
+    layer3_memory_eps_star = float(layer3.get("memory_eps_star", 0.0))
+    if layer3_spatial_S_legacy and layer3_split:
+        # Deprecated flag set with new path active — ignore the flag and
+        # log a one-time warning (the c_act ODE already gates spatially).
+        import logging
+        logging.getLogger("acs.runner").warning(
+            "layer4.layer3_spatial_S is DEPRECATED under layer3_split=True "
+            "(Stage 1b.b φ_memory + c_act split). The flag is ignored; "
+            "the c_act ODE intrinsically encodes contact-band spatial gating."
+        )
+    layer3_spatial_S = layer3_spatial_S_legacy
     # Stage 1c Layer 5 mechano-osmotic Tier 2 (per
     # docs/08_mechano_osmotic.md framework citing Guo PNAS 2017 IF 12 +
     # Venkova eLife 2022). PI full authorisation 2026-04-29 covers PARTIAL
@@ -159,6 +178,9 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         gamma_max_star=gamma_max_star,
         gamma_min_star=gamma_min_star,
         layer3_spatial_S=layer3_spatial_S,
+        layer3_split=layer3_split,
+        layer3_kappa_act=layer3_kappa_act,
+        layer3_memory_eps_star=layer3_memory_eps_star,
         layer6_enabled=layer6_enabled,
         alpha_mmp_star=alpha_mmp_star,
         beta_deg_star=beta_deg_star,
@@ -945,34 +967,92 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"max(φ) over all frames = {phi_max_overall:.4f}",
         ))
 
-        # (ii) φ trajectory monotone toward predicted φ_eq.
         n_p = float(solver_cfg.n_particles)
-        phi_means = [
-            float(r.get("phi_sum", 0.0)) / n_p
-            for r in metrics_rows
-        ]
-        phi_eq_pred = solver_cfg.k_plus_star / max(
-            solver_cfg.k_plus_star + solver_cfg.k_minus_star, 1e-30,
-        )
-        if phi_means:
-            phi_end = float(phi_means[-1])
-            phi_eq_err = abs(phi_end - phi_eq_pred)
-            # Pilot duration is ~0.33 of φ relaxation time; allow up to
-            # the full equilibrium offset as a generous tolerance (the gate
-            # mainly catches divergence, not slow-relaxation behaviour).
-            results.append(GateResult(
-                "φ trajectory toward predicted φ_eq",
-                phi_eq_err <= max(0.5, abs(solver_cfg.phi_initial - phi_eq_pred)),
-                f"<φ>(end) = {phi_end:.4f}, predicted φ_eq = {phi_eq_pred:.4f}, "
-                f"|err| = {phi_eq_err:.4f} (tolerance: ≤ max(0.5, "
-                f"|φ_init − φ_eq|) = {max(0.5, abs(solver_cfg.phi_initial - phi_eq_pred)):.4f})",
-            ))
+        if solver_cfg.layer3_split:
+            # Stage 1b.b (PI directive 2026-04-29 per
+            # docs/layer3_phi_audit.md §5): the legacy F9 "φ trajectory
+            # toward predicted φ_eq" is DEPRECATED — it compared global
+            # <φ> against the boundary-only φ_eq (category error) AND
+            # the v11 spatial S=0 interior decay erased formation
+            # phenotype memory on the Cho 2020 transition timescale
+            # (semantic conflation). F9 is replaced by:
+            #   5a φ_memory preservation: |<φ_memory>(end) − phi_init|
+            #      ≤ memory_drift_max (default 0.01)
+            #   5b boundary c_act trajectory: <c_act>_band(end) ∈
+            #      [c_eq − tol, c_eq + tol] where c_eq = k_+/(k_++k_-)
+            phi_memory_means = [
+                float(r.get("phi_memory_sum", float("nan"))) / n_p
+                for r in metrics_rows
+                if not np.isnan(r.get("phi_memory_sum", float("nan")))
+            ]
+            if phi_memory_means:
+                phi_mem_end = float(phi_memory_means[-1])
+                phi_mem_drift = abs(phi_mem_end - solver_cfg.phi_initial)
+                drift_max = float(g.get("layer3_memory_drift_max", 0.01))
+                results.append(GateResult(
+                    "5a φ_memory preservation |<φ_memory> − phi_init|",
+                    phi_mem_drift <= drift_max,
+                    f"<φ_memory>(end) = {phi_mem_end:.4f}, phi_init = "
+                    f"{solver_cfg.phi_initial:.4f}, |drift| = {phi_mem_drift:.4f} "
+                    f"(limit {drift_max:.4f})",
+                ))
+            else:
+                results.append(GateResult(
+                    "5a φ_memory preservation |<φ_memory> − phi_init|",
+                    False,
+                    "no φ_memory samples (Stage 1b.b split inactive?)",
+                ))
+
+            c_eq_pred = solver_cfg.k_plus_star / max(
+                solver_cfg.k_plus_star + solver_cfg.k_minus_star, 1e-30,
+            )
+            c_act_band_means = []
+            for r in metrics_rows:
+                count = int(r.get("c_act_band_count", 0) or 0)
+                if count > 0:
+                    band_sum = float(r.get("c_act_band_sum", 0.0) or 0.0)
+                    c_act_band_means.append(band_sum / count)
+            if c_act_band_means:
+                c_act_band_end = float(c_act_band_means[-1])
+                c_eq_err = abs(c_act_band_end - c_eq_pred)
+                c_eq_tol = float(g.get("layer3_c_act_band_tol", 0.10))
+                results.append(GateResult(
+                    "5b c_act boundary trajectory toward c_eq",
+                    c_eq_err <= c_eq_tol,
+                    f"<c_act>_band(end) = {c_act_band_end:.4f}, c_eq = "
+                    f"{c_eq_pred:.4f}, |err| = {c_eq_err:.4f} (limit {c_eq_tol:.4f})",
+                ))
+            else:
+                results.append(GateResult(
+                    "5b c_act boundary trajectory toward c_eq",
+                    False,
+                    "no boundary-band c_act samples",
+                ))
         else:
-            results.append(GateResult(
-                "φ trajectory toward predicted φ_eq",
-                False,
-                "no φ samples",
-            ))
+            # Legacy F9 retained when layer3_split=False (backwards compat).
+            phi_means = [
+                float(r.get("phi_sum", 0.0)) / n_p
+                for r in metrics_rows
+            ]
+            phi_eq_pred = solver_cfg.k_plus_star / max(
+                solver_cfg.k_plus_star + solver_cfg.k_minus_star, 1e-30,
+            )
+            if phi_means:
+                phi_end = float(phi_means[-1])
+                phi_eq_err = abs(phi_end - phi_eq_pred)
+                results.append(GateResult(
+                    "φ trajectory toward predicted φ_eq (legacy F9)",
+                    phi_eq_err <= max(0.5, abs(solver_cfg.phi_initial - phi_eq_pred)),
+                    f"<φ>(end) = {phi_end:.4f}, predicted φ_eq = {phi_eq_pred:.4f}, "
+                    f"|err| = {phi_eq_err:.4f} (tolerance: ≤ max(0.5, "
+                    f"|φ_init − φ_eq|) = {max(0.5, abs(solver_cfg.phi_initial - phi_eq_pred)):.4f})",
+                ))
+            else:
+                results.append(GateResult(
+                    "φ trajectory toward predicted φ_eq (legacy F9)",
+                    False,
+                    "no φ samples",
+                ))
 
         # Stage 1c Layer 5 additional gates (layer5_enabled).
         if solver_cfg.layer5_enabled:
