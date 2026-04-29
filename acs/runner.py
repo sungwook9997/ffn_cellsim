@@ -53,7 +53,18 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     layer2 = cfg.get("layer2", {})
     layer3 = cfg.get("layer3", {})
     gravity = cfg.get("gravity", {})
+    layer4 = cfg.get("layer4", {})
     layer5 = cfg.get("layer5", {})
+    # Stage 1d Layer 4 cellular Marangoni (per
+    # docs/07_internal_flow_dynamics.md framework citing Pajic-Lijakovic
+    # & Milivojevic Eur Biophys J 2022 + Fütterer Phys Rev Fluids 2022).
+    # γ_max/γ_min anchored to Maître Science 2012 IF 47 cell-cell
+    # adhesion energy range. PI full authorisation 2026-04-29 covers
+    # PARTIAL Magic-Number Block per ζ_star Option α' precedent.
+    layer4_enabled = bool(layer4.get("enabled", False))
+    gamma_max_star = float(layer4.get("gamma_max_star", 0.0))
+    gamma_min_star = float(layer4.get("gamma_min_star", 0.0))
+    layer3_spatial_S = bool(layer4.get("layer3_spatial_S", False))
     # Stage 1c Layer 5 mechano-osmotic Tier 2 (per
     # docs/08_mechano_osmotic.md framework citing Guo PNAS 2017 IF 12 +
     # Venkova eLife 2022). PI full authorisation 2026-04-29 covers PARTIAL
@@ -128,6 +139,10 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         beta_osm_star=beta_osm_star,
         rho_osm_min=rho_osm_min,
         rho_osm_max=rho_osm_max,
+        layer4_enabled=layer4_enabled,
+        gamma_max_star=gamma_max_star,
+        gamma_min_star=gamma_min_star,
+        layer3_spatial_S=layer3_spatial_S,
     )
 
 
@@ -224,6 +239,18 @@ def run_stage1a(config_path: Path | str) -> Path:
             "per docs/path_c_sanity.md Magic-Number Block PARTIAL "
             "resolution; PI full authorisation 2026-04-29).",
             solver_cfg.gravity_star,
+        )
+    if solver_cfg.layer4_enabled:
+        logger.info(
+            "Stage 1d Layer 4 cellular Marangoni active: "
+            "γ_max_star=%.4f, γ_min_star=%.4f, γ_1=γ_min−γ_max=%.4f "
+            "(Maître Science 2012 IF 47 anchor for γ range; Pajic-Lijakovic "
+            "& Milivojevic Eur Biophys J 2022 framework reference per "
+            "docs/07_internal_flow_dynamics.md; PI full authorisation "
+            "2026-04-29). Layer 3 spatial S_p extension: %s.",
+            solver_cfg.gamma_max_star, solver_cfg.gamma_min_star,
+            solver_cfg.gamma_min_star - solver_cfg.gamma_max_star,
+            solver_cfg.layer3_spatial_S,
         )
     if solver_cfg.layer5_enabled:
         logger.info(

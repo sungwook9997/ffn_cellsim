@@ -304,6 +304,34 @@ class SolverConfig:
     rho_osm_min: float = 0.5
     rho_osm_max: float = 1.6
 
+    # Stage 1d Layer 4 cellular Marangoni (per
+    # `docs/07_internal_flow_dynamics.md` framework citing Pajic-Lijakovic
+    # & Milivojevic Eur Biophys J 2022 + Fütterer Phys Rev Fluids 2022).
+    # When `layer4_enabled` is True:
+    #   γ(φ_p) = γ_max·(1−φ_p) + γ_min·φ_p   per particle (Maître IF 47
+    #     anchor for γ_max/γ_min range; γ_1 ≡ γ_min − γ_max < 0 per
+    #     Cho 2020 mechanism)
+    #   γ scattered to grid via mass-weighted P2G → grid_gamma
+    #   ∇γ via central differences → grid_gamma_grad
+    #   Tangent projection ∇_s γ = (I − n̂⊗n̂)·∇γ using existing grid_normal
+    #   Marangoni impulse Δv = ∇_s γ · dt / ρ_local at boundary cells
+    # γ_max_star, γ_min_star are dimensionless (γ / (K · R₀)). Default 0
+    # disables Layer 4. PI full authorisation 2026-04-29 covers PARTIAL
+    # Magic-Number Block per ζ_star Option α' precedent (Pajic-Lijakovic
+    # 2022 framework anchored, Maître IF 47 γ-range anchored, specific γ_max
+    # / γ_min values inherit project framework defaults from
+    # `03_adhesion_dynamics.md`).
+    layer4_enabled: bool = False
+    gamma_max_star: float = 0.0
+    gamma_min_star: float = 0.0
+    # Stage 1d also enables a Layer 3 spatial extension: per-particle
+    # substrate-contact indicator S_p (binary; 1 if z_p < n_contact_band·dx,
+    # 0 otherwise). When True, Layer 3 ODE differentiates contact-band
+    # particles (φ→φ_eq) from interior (φ→0), creating ∇φ → ∇γ → Marangoni
+    # driving force. Without this, single-phenotype Layer 3 has uniform φ
+    # → ∇γ ≈ 0 → no Marangoni effect.
+    layer3_spatial_S: bool = False
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -400,6 +428,11 @@ class MLSMPMSolver:
         #   κ[I] = -∇·n̂[I]                   (mean curvature; positive for convex outward surface)
         self.grid_normal = ti.Vector.field(3, dtype=ti.f32, shape=(n_g, n_g, n_g))
         self.grid_kappa = ti.field(dtype=ti.f32, shape=(n_g, n_g, n_g))
+        # Stage 1d Layer 4 Marangoni grid scratch fields. grid_gamma is the
+        # mass-weighted γ_eff per cell; grid_gamma_grad is its central-FD
+        # gradient. Same allocation pattern as grid_color / grid_color_grad.
+        self.grid_gamma = ti.field(dtype=ti.f32, shape=(n_g, n_g, n_g))
+        self.grid_gamma_grad = ti.Vector.field(3, dtype=ti.f32, shape=(n_g, n_g, n_g))
 
         # Reference-calibration scratch fields (allocated once, reused on every
         # call to `calibrate_reference_state`).
@@ -766,14 +799,20 @@ class MLSMPMSolver:
     # ----------------------------------------------------- Layer 3 φ-ODE ----
     @ti.kernel
     def _integrate_phi_ode(self):
-        """Stage 1b Layer 3 forward-Euler φ-ODE integration.
+        """Stage 1b Layer 3 forward-Euler φ-ODE integration with Stage 1d
+        spatial S_p extension.
 
         Per `docs/03_adhesion_dynamics.md` and `docs/stage1b_layer3_sanity.md`:
-        with substrate-induced signalling intensity simplified to S ≡ 1
-        (Stage 1b uses single-condition Col1 substrate, always present from
-        t=0 per Stage 1a+ initial-position scheme), the φ-ODE reduces to
 
-            dφ/dt = k_+ · (1 − φ) − k_- · φ
+            dφ/dt = k_+ · S_p · (1 − φ) − k_- · φ
+
+        Stage 1b default: S_p ≡ 1 (substrate-induced signal uniform; single-
+        condition Col1 always present from t=0). Stage 1d extension
+        (`layer3_spatial_S`): S_p = 1 if z_p < n_contact_band·dx, else 0
+        — substrate-engaged particles see S=1 (φ → φ_eq = 0.75); interior
+        particles see S=0 (φ → 0 via the k_- relaxation alone). This
+        creates ∇φ → ∇γ → Marangoni driving force. Required for Stage 1d
+        (Layer 4) since otherwise ∇γ ≈ 0 with single-phenotype.
 
         Forward-Euler update with stiffness checked at constructor time
         (`dt · (k_+ + k_-) ≤ 0.5`). The `clip(0, 1)` defends against any
@@ -782,9 +821,16 @@ class MLSMPMSolver:
         dt = self.cfg.dt_star
         k_plus = self.cfg.k_plus_star
         k_minus = self.cfg.k_minus_star
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
         for p in self.phi_p:
             phi = self.phi_p[p]
-            dphi = dt * (k_plus * (1.0 - phi) - k_minus * phi)
+            # Stage 1d spatial S_p: 1 for substrate-band particles, 0 otherwise.
+            # When `layer3_spatial_S` is False (Stage 1b default), S_p ≡ 1.
+            S_p = 1.0
+            if ti.static(self.cfg.layer3_spatial_S):
+                if self.x[p][2] >= h_band:
+                    S_p = 0.0
+            dphi = dt * (k_plus * S_p * (1.0 - phi) - k_minus * phi)
             new_phi = phi + dphi
             # Defense-in-depth clamp on [0, 1].
             if new_phi < 0.0:
@@ -792,6 +838,79 @@ class MLSMPMSolver:
             if new_phi > 1.0:
                 new_phi = 1.0
             self.phi_p[p] = new_phi
+
+    # ------------------------------------------------ Layer 4 Marangoni ----
+    @ti.kernel
+    def _scatter_gamma_to_grid(self):
+        """Stage 1d Layer 4: scatter per-particle γ(φ_p) to grid_gamma.
+
+        Per `docs/07_internal_flow_dynamics.md` §1: γ_eff per cell =
+        Σ_p w_pI · m_p · γ(φ_p) / Σ_p w_pI · m_p (mass-weighted average).
+        For simplicity and matching the existing CSF colour pattern, we
+        scatter the mass-weighted γ contribution; the runner does NOT
+        renormalise (the gradient operator is invariant under uniform
+        scaling, and absolute γ value is informational only — the
+        Marangoni FORCE depends only on ∇γ).
+
+        Assumes _clear_grid has already zeroed grid_gamma. Reads
+        per-particle φ_p; computes γ(φ_p) = γ_max·(1−φ) + γ_min·φ
+        inline. When Layer 4 disabled this kernel is not called.
+        """
+        m_p = self.cfg.particle_mass_star
+        dx = self.cfg.dx_star
+        gamma_max = self.cfg.gamma_max_star
+        gamma_min = self.cfg.gamma_min_star
+        for p in self.x:
+            phi_p = self.phi_p[p]
+            gamma_p = gamma_max * (1.0 - phi_p) + gamma_min * phi_p
+            base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
+            fx = self.x[p] / dx - ti.cast(base, ti.f32)
+            w = [
+                0.5 * (1.5 - fx) ** 2,
+                0.75 - (fx - 1.0) ** 2,
+                0.5 * (fx - 0.5) ** 2,
+            ]
+            for i, j, k in ti.static(ti.ndrange(3, 3, 3)):
+                weight = w[i][0] * w[j][1] * w[k][2]
+                idx = base + ti.Vector([i, j, k])
+                if (
+                    0 <= idx[0] < self.cfg.grid_n
+                    and 0 <= idx[1] < self.cfg.grid_n
+                    and 0 <= idx[2] < self.cfg.grid_n
+                ):
+                    ti.atomic_add(self.grid_gamma[idx], weight * m_p * gamma_p)
+
+    @ti.kernel
+    def _compute_gamma_grad(self):
+        """Central-difference ∇γ on grid → grid_gamma_grad.
+
+        Same pattern as `_color_gradient_from_smoothed`. The gradient
+        is then used in `_grid_op_overdamped` to compute the tangential
+        Marangoni impulse via projection with `grid_normal` (already
+        populated by `_build_curvature` from CSF).
+        """
+        dx = self.cfg.dx_star
+        inv_2dx = 1.0 / (2.0 * dx)
+        n_g = self.cfg.grid_n
+        for I in ti.grouped(self.grid_gamma_grad):
+            i, j, k = I[0], I[1], I[2]
+            gx = 0.0
+            gy = 0.0
+            gz = 0.0
+            if 0 < i < n_g - 1:
+                gx = (self.grid_gamma[i + 1, j, k] - self.grid_gamma[i - 1, j, k]) * inv_2dx
+            if 0 < j < n_g - 1:
+                gy = (self.grid_gamma[i, j + 1, k] - self.grid_gamma[i, j - 1, k]) * inv_2dx
+            if 0 < k < n_g - 1:
+                gz = (self.grid_gamma[i, j, k + 1] - self.grid_gamma[i, j, k - 1]) * inv_2dx
+            self.grid_gamma_grad[I] = ti.Vector([gx, gy, gz])
+
+    def _build_marangoni_field(self) -> None:
+        """Build the γ_eff field on grid + its gradient. Called per step
+        when Layer 4 is enabled, after `_p2g_mass` (so particles exist on
+        grid) and after `_build_curvature` (so grid_normal is populated)."""
+        self._scatter_gamma_to_grid()
+        self._compute_gamma_grad()
 
     # ----------------------------------------------------- Layer 5 ρ_osm ----
     @ti.kernel
@@ -856,6 +975,12 @@ class MLSMPMSolver:
         self._interpolate_rho_runtime()     # populates _rho_kernel_p (with floor)
         self._build_csf_field()             # reads grid_m to compute colour ρ/ρ_bulk and ∇c
         self._build_curvature()             # n̂ = ∇c/|∇c|;  κ = -∇·n̂
+        if self.cfg.layer4_enabled:
+            # Stage 1d Layer 4: scatter γ(φ) and compute its gradient on
+            # the grid; the Marangoni impulse is applied in
+            # `_grid_op_overdamped` using both grid_gamma_grad and the
+            # existing grid_normal (from `_build_curvature`).
+            self._build_marangoni_field()
         self._p2g_momentum_and_stress()     # scatters momentum + density-based stress
         self._grid_op_overdamped()          # converts to velocity, applies CSF impulse γ·κ·∇c
         self._g2p_and_constitutive()
@@ -883,6 +1008,8 @@ class MLSMPMSolver:
             self.grid_color_grad[I] = ti.Vector.zero(ti.f32, 3)
             self.grid_normal[I] = ti.Vector.zero(ti.f32, 3)
             self.grid_kappa[I] = 0.0
+            self.grid_gamma[I] = 0.0
+            self.grid_gamma_grad[I] = ti.Vector.zero(ti.f32, 3)
         self.diag_max_count[None] = 0
         # Stage 1a+ substrate reaction-impulse accumulator: reset per step.
         self.diag_substrate_impulse_z[None] = 0.0
@@ -1332,6 +1459,26 @@ class MLSMPMSolver:
                 # toward substrate at z = 0. See `docs/path_c_sanity.md`
                 # check 5 for sign verification.
                 v[2] -= dt * gravity_star
+
+                # Stage 1d Layer 4 Marangoni impulse: at boundary cells
+                # (m > min_cell_mass; same band as the existing CSF
+                # impulse), apply tangential surface-tension-gradient
+                # force. Tangent projection: ∇_s γ = (I − n̂⊗n̂) · ∇γ.
+                # When Layer 4 disabled, grid_gamma_grad is zero
+                # (uncleared in cleared-state) so the impulse is zero by
+                # arithmetic. Sign per docs/stage1d_sanity.md check 5
+                # (Pajic-Lijakovic 2022): velocity flows from low γ
+                # toward high γ. ∇γ points toward higher γ; impulse
+                # adds in +∇γ direction → flow toward high γ. ✓
+                if ti.static(self.cfg.layer4_enabled):
+                    if m > min_cell_mass:
+                        rho_local_M = m / (dx ** 3)
+                        n_hat = self.grid_normal[I]
+                        grad_g = self.grid_gamma_grad[I]
+                        # Tangent projection: g_t = g − (g·n̂)·n̂
+                        g_dot_n = grad_g.dot(n_hat)
+                        grad_g_tan = grad_g - g_dot_n * n_hat
+                        v += dt * grad_g_tan / rho_local_M
 
                 # Overdamped per-step damping (mild; physics enters via slow-time interpretation).
                 v *= damp
