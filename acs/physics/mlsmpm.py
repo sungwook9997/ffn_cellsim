@@ -1856,13 +1856,29 @@ class MLSMPMSolver:
 
         K = float(self.cfg.K_star)
         V0 = float(self.cfg.particle_volume_star)
+        # Phase 1.1 anchor-force-balance integrand update (Stage 1c sanity-md
+        # contract change): K → K_eff per particle. Under Layer 5 active,
+        # K_eff_p = K · rho_osm_p (Stage 1c K(ρ_osm) coupling). When Layer 5
+        # is off, rho_osm_p == 1.0 and K_eff_p == K (Stage 1a+ behaviour).
+        rho_osm_p = self.rho_osm_p.to_numpy()
+        rho_osm_band = rho_osm_p[in_band].astype(np.float64)
+        K_eff_band = K * rho_osm_band  # per-particle effective bulk modulus
         # Hydrostatic pressure per particle (positive when ρ > ρ_ref, i.e.
-        # compressed). σ_vol = K(ρ_ref/ρ − 1)·I; pressure = -tr(σ_vol)/3 =
-        # K(1 − ρ_ref/ρ).
-        P_per_p = K * (1.0 - rho_ref / np.clip(rho_band, 1e-30, None))
+        # compressed). σ_vol = K_eff(ρ_ref/ρ − 1)·I; pressure = -tr(σ_vol)/3
+        # = K_eff(1 − ρ_ref/ρ).
+        P_per_p = K_eff_band * (1.0 - rho_ref / np.clip(rho_band, 1e-30, None))
+        # Phase 1.1 anchor-force-balance integrand update (Path C sanity-md
+        # contract change): include gravity contribution as M_spheroid · g_star
+        # (per-particle ρ · V₀ · g_star) per Path C check 6. When Path C is
+        # off (gravity_star = 0), the term is identically zero. Layer 4
+        # Marangoni: tangential force only, contributes 0 to the substrate-
+        # normal anchor balance.
+        rho_per_p = float(self.cfg.density_star)  # uniform density_star
+        F_gravity_band = rho_per_p * V0 * float(self.cfg.gravity_star) * float(in_band.sum())
         # Force pushing down on the substrate from each contact-band
-        # particle: P · (V0 / h_band). Sum gives total downward bulk force.
-        F_pressure_down = float((P_per_p * V0 / h_band).sum())
+        # particle: P · (V0 / h_band). Sum gives total downward bulk force,
+        # plus gravity contribution acting on the spheroid mass above.
+        F_pressure_down = float((P_per_p * V0 / h_band).sum()) + F_gravity_band
         F_substrate_up = float(self.diag_substrate_impulse_z[None]) / self.cfg.dt_star
 
         denom = max(abs(F_substrate_up), 1e-12)

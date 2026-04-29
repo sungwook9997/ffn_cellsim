@@ -22,7 +22,11 @@ from typing import Any
 import numpy as np
 import yaml
 
-from acs.analysis.shape_metrics import shape_metrics, shell_density_profile
+from acs.analysis.shape_metrics import (
+    shape_metrics,
+    shell_density_profile,
+    top_down_projection_area,
+)
 from acs.config import load_config
 from acs.gpu import init_taichi
 from acs.gpu_profiler import GpuProfiler
@@ -428,6 +432,14 @@ def run_stage1a(config_path: Path | str) -> Path:
                     else float("nan")
                 ),
             })
+        # Phase 1.2 top-down projection area (PI Outstanding-Issue
+        # Resolution 2026-04-29): xy-plane convex hull of ALL particles,
+        # z-independent — simulation analog of PI's experimental top-down
+        # microscope projection (the `Area_um2` column in
+        # `data/experimental/260313_*.csv`). This is the meaningful
+        # comparison metric vs PI experimental A/A₀, distinct from the
+        # substrate-contact area which depopulates on lift-off.
+        A_topdown_init = top_down_projection_area(x0_np)
         metrics_row0 = {
             "frame_index": 0,
             "time_star": 0.0,
@@ -441,6 +453,8 @@ def run_stage1a(config_path: Path | str) -> Path:
             "shell_bulk_mean_rho": shell0["bulk_mean_rho"],
             "shell_bulk_std_rho": shell0["bulk_std_rho"],
             "shell_bulk_n_particles": shell0["bulk_n_particles"],
+            "A_topdown_star": A_topdown_init,
+            "A_over_A0_topdown": 1.0,
             # active_power_star and n_boundary already in inv0 dict — see
             # MLSMPMSolver.invariants(). Keep them explicit for clarity.
         }
@@ -517,6 +531,13 @@ def run_stage1a(config_path: Path | str) -> Path:
                             else float("nan")
                         ),
                     })
+                # Phase 1.2 top-down projection area per frame.
+                A_topdown_now = top_down_projection_area(xs)
+                A_over_A0_topdown_now = (
+                    A_topdown_now / A_topdown_init
+                    if (A_topdown_init and np.isfinite(A_topdown_init) and A_topdown_init > 0)
+                    else float("nan")
+                )
                 metrics_row = {
                     "frame_index": frame_idx,
                     "time_star": step * dt,
@@ -530,6 +551,8 @@ def run_stage1a(config_path: Path | str) -> Path:
                     "shell_bulk_mean_rho": shell["bulk_mean_rho"],
                     "shell_bulk_std_rho": shell["bulk_std_rho"],
                     "shell_bulk_n_particles": shell["bulk_n_particles"],
+                    "A_topdown_star": A_topdown_now,
+                    "A_over_A0_topdown": A_over_A0_topdown_now,
                 }
                 if solver_cfg.substrate_enabled:
                     sub_diag = solver.substrate_diagnostics()
@@ -565,12 +588,22 @@ def run_stage1a(config_path: Path | str) -> Path:
 
         wall_total = time.perf_counter() - wall_start
 
-    # Metrics CSV.
+    # Metrics CSV. Use the UNION of all rows' keys as fieldnames (some
+    # rows may have substrate / Layer 4 / Layer 6 fields only when
+    # solver.substrate_diagnostics() returns valid=True; the union covers
+    # all populated fields). `restval=""` writes empty string for missing
+    # keys (e.g. frame 0 has no diag if substrate band empty at t=0).
     metrics_path = out_dir / "metrics.csv"
     if metrics_rows:
-        keys = list(metrics_rows[0].keys())
+        all_keys = []
+        seen = set()
+        for r in metrics_rows:
+            for k in r.keys():
+                if k not in seen:
+                    seen.add(k)
+                    all_keys.append(k)
         with metrics_path.open("w", newline="", encoding="utf-8") as fh:
-            w = csv.DictWriter(fh, fieldnames=keys)
+            w = csv.DictWriter(fh, fieldnames=all_keys, restval="")
             w.writeheader()
             w.writerows(metrics_rows)
 
@@ -703,12 +736,22 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
         ))
 
-    # Stage 1a++ contract change: when ζ_star > 0 the active stress injects
-    # energy by construction (active matter is non-equilibrium); the energy-
-    # monotone gate is suspended and replaced with a finiteness check on
-    # the cumulative active power. PI-approved 2026-04-29 in
-    # docs/stage1a_plus_plus_layer2_sanity.md §3.
-    if solver_cfg.zeta_star > 0.0:
+    # Stage 1a++ contract change extended to L3/L4/L5/L6 (Cousin-Rule
+    # extension finalised in Phase 1.1, 2026-04-29). When any active-matter
+    # / chemistry channel is on (Layer 2 ζ, Layer 3 ζ(φ), Layer 4 Marangoni
+    # surface work, Layer 5 osmotic K(ρ), Layer 6 chemistry/ECM remodeling),
+    # energy is injected by construction; the energy-monotone gate is
+    # suspended and replaced with a finiteness check on the cumulative
+    # active power. The Stage 1d sanity-md flagged this extension; this
+    # commit implements it. PI full authorisation 2026-04-29.
+    energy_gate_suspended = (
+        solver_cfg.zeta_star > 0.0
+        or solver_cfg.layer3_enabled
+        or solver_cfg.layer4_enabled
+        or solver_cfg.layer5_enabled
+        or solver_cfg.layer6_enabled
+    )
+    if energy_gate_suspended:
         # Suspended; report as informational.
         active_powers = np.array(
             [r.get("active_power_star", 0.0) for r in metrics_rows],

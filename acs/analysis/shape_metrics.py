@@ -59,6 +59,36 @@ def shape_metrics(x: np.ndarray) -> dict:
     }
 
 
+def top_down_projection_area(x: np.ndarray) -> float:
+    """Top-down (xy) projection area of a particle cloud, z-independent.
+
+    Phase 1.2 (PI Outstanding-Issue Resolution 2026-04-29): the inherited
+    Stage 1a+ A/A₀ measurement issue (substrate `contact_area_xy_hull`
+    depopulating during lift-off, giving min A/A₀ ≈ 0 even when the
+    spheroid is intact) was a measurement-protocol mismatch with the PI's
+    experimental A/A₀ — which is a TOP-DOWN MICROSCOPE PROJECTION (looking
+    down at the dish), NOT a substrate-contact measurement.
+
+    This function computes the xy-plane convex hull of ALL particles
+    regardless of z-position — the simulation analog of looking down at
+    the spheroid through a microscope. This is the metric to compare
+    directly with PI's `data/experimental/260313_*.csv` `Area_um2`
+    column (already the top-down projection in their analysis pipeline).
+
+    Returns the convex hull area in dimensionless units (R₀²).
+    """
+    from scipy.spatial import ConvexHull
+
+    if x.shape[0] < 3:
+        return float("nan")
+    xy = x[:, :2].astype(np.float64)
+    try:
+        hull = ConvexHull(xy)
+        return float(hull.volume)  # 2D ConvexHull.volume = area
+    except Exception:
+        return float("nan")
+
+
 def shell_density_profile(
     x: np.ndarray,
     rho_p: np.ndarray,
