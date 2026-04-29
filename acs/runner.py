@@ -55,6 +55,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     sim = cfg["simulation"]
     sub = cfg.get("substrate", {})
     layer2 = cfg.get("layer2", {})
+    layer2_b = cfg.get("layer2_b", {})
     layer3 = cfg.get("layer3", {})
     gravity = cfg.get("gravity", {})
     layer4 = cfg.get("layer4", {})
@@ -88,6 +89,11 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     tau_gamma_star = float(layer4.get("tau_gamma_star", 1.0))
     alpha_A_star = float(layer4.get("alpha_A_star", 0.0))
     alpha_F_star = float(layer4.get("alpha_F_star", 0.0))
+    # Stage 1a++.b stochastic boundary events (per
+    # docs/stage1a_pp_b_stochastic_sanity.md).
+    layer2_b_enabled = bool(layer2_b.get("enabled", False))
+    lambda_lam_star = float(layer2_b.get("lambda_lam_star", 0.0))
+    impulse_lam_star = float(layer2_b.get("impulse_lam_star", 0.0))
     # Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
     # `layer3_spatial_S` is DEPRECATED in favour of the φ_memory + c_act
     # split (intrinsically encodes contact-band gating in c_act ODE
@@ -193,6 +199,9 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         tau_gamma_star=tau_gamma_star,
         alpha_A_star=alpha_A_star,
         alpha_F_star=alpha_F_star,
+        layer2_b_enabled=layer2_b_enabled,
+        lambda_lam_star=lambda_lam_star,
+        impulse_lam_star=impulse_lam_star,
         layer6_enabled=layer6_enabled,
         alpha_mmp_star=alpha_mmp_star,
         beta_deg_star=beta_deg_star,

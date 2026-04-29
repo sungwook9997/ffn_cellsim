@@ -349,6 +349,16 @@ class SolverConfig:
     layer3_kappa_act: float = 1.0      # κ in φ_eff formula (PI default 1.0)
     layer3_memory_eps_star: float = 0.0  # ε memory decay rate (PI default 0.0 = exactly fixed)
 
+    # Stage 1a++.b stochastic boundary events (per
+    # `docs/stage1a_pp_b_stochastic_sanity.md` + `docs/marangoni_review.md`
+    # Option β + Codex review item 1). Adds discrete lamellipodia-like
+    # events at contact-band particles: each step, each band particle
+    # fires a Poisson(λ_lam · dt) tangential outward impulse of
+    # magnitude `impulse_lam_star`. Default off (λ=0, impulse=0).
+    layer2_b_enabled: bool = False
+    lambda_lam_star: float = 0.0
+    impulse_lam_star: float = 0.0
+
     # Stage 1d.b Marangoni Mechanism A + F (per
     # `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
     # When `layer4_dynamic_gamma=True` (default if layer4_enabled and
@@ -591,6 +601,7 @@ class MLSMPMSolver:
         # Stage 2 Layer 6 scalar state initialisation.
         self.mmp_total_field[None] = 0.0
         self.ecm_strength_field[None] = float(cfg.ecm_strength_initial)
+        # Stage 1a++.b cumulative event count starts at 0.
 
         self.diag_mass = ti.field(dtype=ti.f64, shape=())
         self.diag_momentum = ti.Vector.field(3, dtype=ti.f64, shape=())
@@ -652,6 +663,13 @@ class MLSMPMSolver:
         self.diag_gamma_sum = ti.field(dtype=ti.f64, shape=())
         self.diag_gamma_min = ti.field(dtype=ti.f32, shape=())
         self.diag_gamma_max = ti.field(dtype=ti.f32, shape=())
+        # Stage 1a++.b stochastic event diagnostics.
+        self.diag_lam_event_count_step = ti.field(dtype=ti.i32, shape=())
+        self.diag_lam_event_count_total = ti.field(dtype=ti.i64, shape=())
+        # Stage 1a++.b: COM_xy used as radial-outward reference for
+        # event impulse direction. Recomputed each step before
+        # _apply_stochastic_events fires.
+        self.com_xy = ti.Vector.field(2, dtype=ti.f32, shape=())
 
         # Stage 1a++ Layer 2 diagnostics:
         #  • diag_active_power: instantaneous power delivered by the active
@@ -1277,6 +1295,15 @@ class MLSMPMSolver:
         self._p2g_momentum_and_stress()     # scatters momentum + density-based stress
         self._grid_op_overdamped()          # converts to velocity, applies CSF impulse γ·κ·∇c
         self._g2p_and_constitutive()
+        if self.cfg.layer2_b_enabled and self.cfg.lambda_lam_star > 0.0:
+            # Stage 1a++.b stochastic boundary events: applied AFTER G2P
+            # so the event impulses act on the just-updated particle
+            # velocities. Reset the per-step event counter; kernel
+            # re-uses self.com_xy (computed below), so order is:
+            # _compute_com_xy → _apply_stochastic_events.
+            self.diag_lam_event_count_step[None] = 0
+            self._compute_com_xy()
+            self._apply_stochastic_events()
         if self.cfg.layer3_enabled:
             # Stage 1b Layer 3: integrate the per-particle φ-ODE after the
             # mechanical step (φ is decoupled from positions; the ζ(φ)
@@ -1817,6 +1844,56 @@ class MLSMPMSolver:
                     v[2] = 0.0
 
                 self.grid_v[I] = v
+
+    # ---------------------------------- Stage 1a++.b stochastic events ----
+    @ti.kernel
+    def _compute_com_xy(self):
+        """Compute spheroid COM in xy plane (Stage 1a++.b reference for
+        radial-outward stochastic event direction). Result in
+        `self.com_xy`. Pure reduction kernel."""
+        cx = 0.0
+        cy = 0.0
+        for p in self.x:
+            cx += self.x[p][0]
+            cy += self.x[p][1]
+        n = ti.cast(self.cfg.n_particles, ti.f32)
+        self.com_xy[None] = ti.Vector([cx / n, cy / n])
+
+    @ti.kernel
+    def _apply_stochastic_events(self):
+        """Stage 1a++.b stochastic boundary events (per
+        `docs/stage1a_pp_b_stochastic_sanity.md`).
+
+        For each contact-band particle, fires a Bernoulli(λ_lam · dt)
+        outward-radial tangential impulse of magnitude
+        `impulse_lam_star`. Direction = (x_p - COM_xy)/||(x_p - COM_xy)||
+        in the xy plane (z=0 component preserved).
+
+        When λ_lam = 0 (default), no events fire. When λ_lam · dt > 0.5,
+        the Bernoulli underestimates Poisson statistics — the sanity-md
+        flags this as a stability bound on λ_lam · dt.
+        """
+        dt = self.cfg.dt_star
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
+        lam_dt = self.cfg.lambda_lam_star * dt
+        impulse = self.cfg.impulse_lam_star
+        com = self.com_xy[None]
+        for p in self.x:
+            if self.x[p][2] >= h_band:
+                continue
+            # Bernoulli sample.
+            u = ti.random(ti.f32)
+            if u < lam_dt:
+                dx = self.x[p][0] - com[0]
+                dy = self.x[p][1] - com[1]
+                r = ti.sqrt(dx * dx + dy * dy)
+                if r > 1e-6:
+                    inv_r = 1.0 / r
+                    # Outward tangential impulse (xy plane only; z untouched).
+                    self.v[p][0] += impulse * dx * inv_r
+                    self.v[p][1] += impulse * dy * inv_r
+                    ti.atomic_add(self.diag_lam_event_count_step[None], 1)
+                    ti.atomic_add(self.diag_lam_event_count_total[None], 1)
 
     @ti.kernel
     def _g2p_and_constitutive(self):
@@ -2424,6 +2501,9 @@ class MLSMPMSolver:
                 float(self.diag_gamma_max[None])
                 if self.cfg.layer4_dynamic_gamma else float("nan")
             ),
+            # Stage 1a++.b stochastic event diagnostics.
+            "lam_event_count_step": int(self.diag_lam_event_count_step[None]),
+            "lam_event_count_total": int(self.diag_lam_event_count_total[None]),
             # Path C diagnostics.
             "grav_pe_star": float(self.diag_grav_pe[None]),
             "com_z_star": (
