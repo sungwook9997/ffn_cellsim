@@ -304,17 +304,27 @@ A run-level gate report (`results/{run.name}/gate_report.md`) records every metr
   F4 same root cause, linked.
 
 **Week 3+ — sequential autonomous implementation (PI directive
-2026-04-29 "순차적으로 모두 진행")**:
-- Stage 1b.b — Layer 3 φ_memory + c_act split (per
-  `docs/layer3_phi_audit.md`); blocks Stage 1d.b and Stage 1a++.b.
-- Stage 1d.b — Marangoni Mechanism A/E/F (per
-  `docs/marangoni_review.md` Option α); applied after Stage 1b.b
-  Pilot 2 confirms Layer 3 fix.
-- Stage 1a++.b — Discrete boundary events (per Option β); applied
-  after Stage 1d.b pilot.
-- Production sweep — 5k / 10k / 20k particles × Bare/Pre/Lam4 with
-  full visualization package (PI directive 2026-04-29 visualization
-  spec).
+2026-04-29 "순차적으로 모두 진행")** — DONE 2026-04-30:
+- [x] Stage 1b.b — Layer 3 φ_memory + c_act split (commit b670d7b);
+  Pilot 1 (1k Lam4 4hr): A/A₀ peak 4.28 vs pre-fix 2.66; Pilot 2
+  (5k Lam4 80hr): peak-and-decay CLOSED (peak 1.689 / end 1.677,
+  Bucket L3-C).
+- [x] Stage 1d.b — Marangoni Mechanism A/F (commit 9e2132f); Pilot:
+  A/A₀ peak 6.22 (within / above PI experimental range).
+- [x] Stage 1a++.b — Stochastic boundary events (commit 702b8a3);
+  Pilot: A/A₀ peak 4.78 with 448 events fired.
+- [x] Visualization framework (commit bb956b1) — live_imaging,
+  state_overlays, dashboard, parameter_tables + scripts.
+- [ ] 3-phenotype 5k full-stack production sweep (running) —
+  configs/full_stack_production_5k_{bare,pre,lam4}.yaml. Chained
+  background task `bzyl6n673`. Outputs in results/full_stack_*.
+
+**Pending PI decisions (after sweep finishes)**:
+- α_A / α_F / λ_lam / impulse_lam sensitivity sweeps
+- 10k and 20k cell-count production runs
+- Mechanism E (Stone 1990 surfactant transport)
+- Layer 3/5 audit expansion (Codex items 4, 5)
+- mlsmpm.py file split (Codex item 9)
 
 ### Deferred items (Codex review items)
 - Layer 3 audit (Codex item 4) — blocks Mechanism A/E/F upgrades

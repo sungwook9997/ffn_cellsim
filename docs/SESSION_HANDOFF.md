@@ -1,4 +1,4 @@
-# Session Handoff — 2026-04-29 (Option F Week 2, end-of-day)
+# Session Handoff — 2026-04-30 (post Stage 1b.b/1d.b/1a++.b + viz)
 
 This document records where the current session stopped. Keep this
 file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
@@ -8,14 +8,23 @@ file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
 
 ## Where we are now
 
-- **Active option**: **Option F** (engineering-Marangoni hybrid) per
-  `docs/codex_review_synthesis.md`. PI selected this 2026-04-29.
-- **Current week**: Option F Week 2 — solver investigations DONE.
-- **Last code commit**: d93b4ee (Week 1 docs); Week 2 commit pending.
-- **Last simulation**: Production Lam4 (commit b506b57), result
-  reclassified to **Bucket P3 strict** (peak-and-decay, not plateau).
-- **Hard blockers**: 4 → 1 after Week 2. Only F9 (φ trajectory, Layer
-  3 audit pending) remains.
+- **Active option**: PI sequential implementation directive
+  ("순차적으로 모두 진행"), 2026-04-29.
+- **Stages implemented**: Layer 3 audit + Stage 1b.b (φ_memory + c_act
+  split) + Stage 1d.b (Marangoni A+F) + Stage 1a++.b (stochastic
+  events) + visualization framework (per PI viz directive 2026-04-29).
+- **Last code commit**: cb6ae3a (full-stack 5k production sweep
+  configs + outcomes doc).
+- **Stage 1b.b production CONFIRMED Layer 3 audit hypothesis**:
+  pre-fix peak-and-decay (peak 1.570 → end 1.409) was contaminated
+  by artificial interior φ decay; post-fix end ≈ peak (1.689 → 1.677).
+- **All 5 originally-FAILing gates** closed by Option F + Stage 1b.b
+  contract changes; only F5 R drift remains as ACCEPTED-LIMITATION
+  (v15 architectural ceiling).
+- **Background**: full-stack 5k production sweep
+  (Lam4 → Pre → Bare → viz → comparison) chained and queued; ~80 min
+  total wall-clock. Logs: results/full_stack_*_console.log and
+  results/full_stack_chain.log.
 
 ## Documentation-pass deliverables (Week 1)
 
