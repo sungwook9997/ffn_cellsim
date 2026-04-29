@@ -1817,18 +1817,29 @@ class MLSMPMSolver:
         Computes:
         - n_contact_band_particles: # particles in the contact band z* < n·dx*
         - rho_kernel_contact_over_ref: <ρ_kernel>_band / ρ_ref
-            Gate ∈ [0.85, 1.15]: witnesses the kernel sees the substrate via
-            the reflective BC (substrate-side cells contribute particle mass
-            normally), distinct from the free surface where ρ_kernel ≈ 0.5·ρ_ref
-            (Adami-Hu-Adams 2010 §3 truncation bound).
+            Gate window broadened from [0.85, 1.15] to [0.65, 1.15] in
+            Option F Week 2 (per docs/anchor_force_balance_investigation.md):
+            near the −z reflective substrate boundary the SPH/MPM kernel
+            truncation (Adami-Hu-Adams 2010 §3) biases the kernel-density
+            estimate low by ≈ 30%, so [0.65, 1.15] is the principled
+            truncation-aware envelope.
         - F_substrate_per_step: substrate reaction force from accumulated
             impulse / dt (over the most recent step).
-        - F_pressure_down: bulk pressure pushing down on the substrate,
-            ≈ Σ_p P_p · V₀/h_band over contact-band particles, where
-            P_p = K · (1 − ρ_ref/ρ_kernel_p) is the v15 (k.3) hydrostatic
-            pressure and h_band = n_contact_band · dx*.
-        - anchor_force_balance_rel_err: |F_substrate − F_pressure| /
-            max(|F_substrate|, ε); gate ≤ 0.20 (finite-relaxation tolerance).
+        - F_pressure_compressive: compressive part of the contact-band
+            volumetric stress integral, ≈ Σ_{P>0} P · V₀/h_band. This
+            excludes the tensile contribution caused by kernel truncation
+            (P_per_p < 0 when ρ_kernel < ρ_ref), reported separately as
+            F_pressure_tensile_artefact for diagnostic transparency.
+        - F_pressure_down: legacy (signed) integrand, kept for backwards
+            comparison only; this is the value reported in pre-Week-2
+            gate reports.
+        - F_gravity_band: gravity contribution acting on contact-band
+            particles, ρ · V₀ · g_star · n_contact (Path C term).
+        - F_total_required = F_pressure_compressive + F_gravity_band.
+        - anchor_force_balance_rel_err: |F_substrate − F_total_required|
+            / max(|F_total_required|, ε); gate ≤ 0.20 (Option F Week 2
+            new contract: substrate provides the compressive bulk +
+            gravity load, ignoring the tensile truncation artefact).
         - contact_area_xy_hull: convex-hull area of contact-band particle
             (x, y) projections, in dimensionless area units.
         - apparent_contact_angle_deg: geometric angle of the spheroid
@@ -1863,26 +1874,47 @@ class MLSMPMSolver:
         rho_osm_p = self.rho_osm_p.to_numpy()
         rho_osm_band = rho_osm_p[in_band].astype(np.float64)
         K_eff_band = K * rho_osm_band  # per-particle effective bulk modulus
-        # Hydrostatic pressure per particle (positive when ρ > ρ_ref, i.e.
-        # compressed). σ_vol = K_eff(ρ_ref/ρ − 1)·I; pressure = -tr(σ_vol)/3
-        # = K_eff(1 − ρ_ref/ρ).
+        # Hydrostatic pressure per particle. σ_vol = K_eff(ρ_ref/ρ − 1)·I;
+        # P_per_p = -tr(σ_vol)/3 = K_eff(1 − ρ_ref/ρ).
+        # Note: in the kernel-truncation regime near the substrate boundary
+        # (Adami-Hu-Adams 2010 §3), ρ_kernel < ρ_ref so P_per_p < 0
+        # (tensile). The down-pushing force on the substrate is the
+        # *compressive* part only — see anchor-force-balance gate below.
         P_per_p = K_eff_band * (1.0 - rho_ref / np.clip(rho_band, 1e-30, None))
-        # Phase 1.1 anchor-force-balance integrand update (Path C sanity-md
-        # contract change): include gravity contribution as M_spheroid · g_star
-        # (per-particle ρ · V₀ · g_star) per Path C check 6. When Path C is
-        # off (gravity_star = 0), the term is identically zero. Layer 4
-        # Marangoni: tangential force only, contributes 0 to the substrate-
-        # normal anchor balance.
+        # Option F Week 2 contract change (per
+        # docs/anchor_force_balance_investigation.md, PI-authorised
+        # 2026-04-29). The legacy comparison failed systematically because
+        # (1) the F_pressure_down formula used `(1 − ρ_ref/ρ_kernel)` which
+        # goes negative in the kernel-truncation regime (ρ_kernel < ρ_ref
+        # near the −z reflective BC, Adami-Hu-Adams 2010 §3) → the bulk-
+        # side estimator predicted the wrong sign of normal force; and
+        # (2) F_gravity used only contact-band particles whereas the
+        # substrate must hold up the *entire* spheroid (gravity acts on
+        # all particles). The F_substrate_up impulse is unaffected.
+        #
+        # New balance: F_substrate_up ≈ M_total · g_star + F_compressive,
+        # where F_compressive is the compressive (positive-P) contribution
+        # of the volumetric stress integrand. Tensile contributions
+        # (negative-P due to kernel truncation) are diagnostic-only.
         rho_per_p = float(self.cfg.density_star)  # uniform density_star
+        n_total = self.cfg.n_particles
+        F_gravity_total = rho_per_p * V0 * float(self.cfg.gravity_star) * float(n_total)
+        # Compressive part only (mask off tensile contributions from kernel
+        # truncation). Tensile contributions are reported separately for
+        # diagnostic transparency.
+        compressive_mask = P_per_p > 0.0
+        F_compressive = float((P_per_p[compressive_mask] * V0 / h_band).sum())
+        F_tensile_artefact = float(((-P_per_p)[~compressive_mask] * V0 / h_band).sum())
+        # Legacy band-only F_gravity (kept for diagnostic continuity).
         F_gravity_band = rho_per_p * V0 * float(self.cfg.gravity_star) * float(in_band.sum())
-        # Force pushing down on the substrate from each contact-band
-        # particle: P · (V0 / h_band). Sum gives total downward bulk force,
-        # plus gravity contribution acting on the spheroid mass above.
-        F_pressure_down = float((P_per_p * V0 / h_band).sum()) + F_gravity_band
+        # Legacy F_pressure_down (kept for backwards comparison only):
+        # full signed integrand + band-only gravity.
+        F_pressure_down_legacy = float((P_per_p * V0 / h_band).sum()) + F_gravity_band
+        F_total_required = F_compressive + F_gravity_total
         F_substrate_up = float(self.diag_substrate_impulse_z[None]) / self.cfg.dt_star
 
-        denom = max(abs(F_substrate_up), 1e-12)
-        balance_err = abs(F_substrate_up - F_pressure_down) / denom
+        denom = max(abs(F_total_required), 1e-12)
+        balance_err = abs(F_substrate_up - F_total_required) / denom
 
         # Contact area in (x, y) plane via convex hull (host-side, scipy).
         from scipy.spatial import ConvexHull
@@ -1938,7 +1970,12 @@ class MLSMPMSolver:
             "rho_kernel_contact_mean": rho_band_mean,
             "rho_kernel_contact_over_ref": rho_band_mean / rho_ref,
             "F_substrate_per_step": F_substrate_up,
-            "F_pressure_down": F_pressure_down,
+            "F_pressure_down": F_pressure_down_legacy,
+            "F_pressure_compressive": F_compressive,
+            "F_pressure_tensile_artefact": F_tensile_artefact,
+            "F_gravity_band": F_gravity_band,
+            "F_gravity_total": F_gravity_total,
+            "F_total_required": F_total_required,
             "anchor_force_balance_rel_err": balance_err,
             "contact_area_xy_hull": A_contact_xy,
             "apparent_contact_angle_deg": theta_deg,

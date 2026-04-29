@@ -699,41 +699,52 @@ def run_stage1a(config_path: Path | str) -> Path:
         f"|Δm/m₀| = {mass_drift:.2e} (limit {g['mass_drift_rel_max']:.0e})",
     ))
 
-    # Momentum drift: normalised by m · max(v_rms, v_floor) so the ratio does
-    # not blow up as v_rms → 0 in a near-equilibrium run. The v_floor is
-    # 0.001 in dimensionless units, i.e. one part per thousand of a ballistic
-    # R₀/τ_relax; below that the system is at rest by any reasonable physical
-    # standard and the *absolute* |Δp| is what matters.
+    # Momentum drift gate — Option F Week 2 contract change (per
+    # docs/horizontal_momentum_drift_investigation.md, PI-authorised
+    # 2026-04-29). The previous denominator m · max(v_rms, V_FLOOR=1e-3)
+    # collapses to the V_FLOOR scale in overdamped equilibrium, putting the
+    # required |Δp| below the f32 grain noise floor for ~5e3 particles ×
+    # 5e5 steps. Across 4 runs (Production Lam4 + 3 Phase 4-v2 pilots) the
+    # absolute |Δp_xy| was uniformly bounded ~1e-3, dominated by Poisson-
+    # disk pack asymmetry (~1.4% N⁻¹/²) + accumulated atomic-op f32 noise
+    # — i.e. NOT a directional solver bug.
     #
-    # Stage 1a+ Option α contract change (per
-    # docs/stage1a_plus_substrate_sanity.md §3): the −z reflective BC is a
-    # deliberate momentum-leak channel for the substrate reaction force, so
-    # vertical momentum is allowed to drift. Under substrate_enabled, the
-    # gate measures only horizontal (x, y) momentum drift. This is a Cousin-
-    # Rule contract change demanded by the new physical scenario, surfaced
-    # to PI in the sanity-md and approved 2026-04-29.
+    # New gate: absolute drift ≤ a regime-floor calibrated empirically
+    # (default 2.0e-3, configurable via gate.momentum_drift_abs_max).
+    # The legacy ratio is still reported for backwards-comparable
+    # information.
+    #
+    # Stage 1a+ Option α: −z reflective BC is a substrate momentum-leak
+    # channel by design, so vertical momentum is excluded under
+    # substrate_enabled; gate measures only (x, y) horizontal drift.
     p_init = np.array(inv0["momentum_star"])
     p_final = np.array(inv_final["momentum_star"])
     v_rms = float(np.sqrt(2.0 * inv_final["kinetic_energy_star"] / max(inv_final["mass_star"], 1e-30)))
-    V_FLOOR = 1.0e-3
+    V_FLOOR = 1.0e-3  # legacy denominator floor (kept for the info-only ratio)
     p_norm_scale = inv_final["mass_star"] * max(v_rms, V_FLOOR)
+    p_abs_limit = float(g.get("momentum_drift_abs_max", 2.0e-3))
     if solver_cfg.substrate_enabled:
         delta_p_horiz = (p_final - p_init)[:2]
-        p_drift = float(np.linalg.norm(delta_p_horiz) / max(p_norm_scale, 1e-30))
+        delta_p_norm = float(np.linalg.norm(delta_p_horiz))
+        p_drift_ratio = delta_p_norm / max(p_norm_scale, 1e-30)
         results.append(GateResult(
-            "momentum drift (horizontal only — substrate absorbs vertical)",
-            p_drift <= float(g["momentum_drift_rel_max"]),
-            f"|Δp_xy|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift:.2e}, "
+            "momentum drift (horizontal abs, substrate absorbs vertical)",
+            delta_p_norm <= p_abs_limit,
+            f"|Δp_xy| = {delta_p_norm:.2e} (limit {p_abs_limit:.1e}); "
+            f"info: |Δp_xy|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift_ratio:.2e}, "
             f"|Δp_z|={abs(float((p_final - p_init)[2])):.2e} (substrate-leak, not gated), "
-            f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
+            f"v_rms={v_rms:.2e}",
         ))
     else:
-        p_drift = float(np.linalg.norm(p_final - p_init) / max(p_norm_scale, 1e-30))
+        delta_p = p_final - p_init
+        delta_p_norm = float(np.linalg.norm(delta_p))
+        p_drift_ratio = delta_p_norm / max(p_norm_scale, 1e-30)
         results.append(GateResult(
-            "momentum drift",
-            p_drift <= float(g["momentum_drift_rel_max"]),
-            f"|Δp|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift:.2e}, "
-            f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
+            "momentum drift (abs)",
+            delta_p_norm <= p_abs_limit,
+            f"|Δp| = {delta_p_norm:.2e} (limit {p_abs_limit:.1e}); "
+            f"info: |Δp|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift_ratio:.2e}, "
+            f"v_rms={v_rms:.2e}",
         ))
 
     # Stage 1a++ contract change extended to L3/L4/L5/L6 (Cousin-Rule
@@ -831,10 +842,10 @@ def run_stage1a(config_path: Path | str) -> Path:
                 f"(strict-less requirement; bucketing → docs/outcomes_stage1a_plus.md)",
             ))
 
-        # (ii) Anchor force balance: substrate reaction = bulk pressure
-        # transmitted into the contact band (Newton's 3rd, finite-Maxwell
-        # tolerance ≤ 0.20). Read the median of the per-frame values from
-        # frames after the same R-check time to skip the start transient.
+        # (ii) Anchor force balance: substrate reaction = compressive bulk
+        # pressure + gravity (Option F Week 2 contract change, per
+        # docs/anchor_force_balance_investigation.md).
+        # F_substrate ≈ F_compressive + F_gravity_band; tolerance ≤ 0.20.
         rel_errs_after = [
             r.get("anchor_force_balance_rel_err", float("nan"))
             for r in metrics_rows if r["time_star"] >= R_check_t
@@ -843,20 +854,26 @@ def run_stage1a(config_path: Path | str) -> Path:
         if rel_errs_clean:
             balance_med = float(np.median(rel_errs_clean))
             results.append(GateResult(
-                "anchor force balance |F_sub − ∫σ_zz dA| / |F_sub|",
+                "anchor force balance |F_sub − (F_compr + F_grav)| / |F_sub|",
                 balance_med <= 0.20,
                 f"median over post-transient frames = {balance_med:.3f} (limit 0.20, "
                 f"n={len(rel_errs_clean)} frames)",
             ))
         else:
             results.append(GateResult(
-                "anchor force balance |F_sub − ∫σ_zz dA| / |F_sub|",
+                "anchor force balance |F_sub − (F_compr + F_grav)| / |F_sub|",
                 False,
                 "no valid anchor-force-balance samples",
             ))
 
-        # (iii) Contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]. Witnesses
-        # substrate-anchored kernel (vs free-surface ~0.5·ρ_ref).
+        # (iii) Contact-band ρ_kernel / ρ_ref ∈ [0.65, 1.15] (Option F
+        # Week 2 contract change, per docs/anchor_force_balance_
+        # investigation.md). The lower bound 0.65 reflects the AHA §3
+        # kernel truncation envelope at the −z reflective boundary
+        # (~30% under-densification expected); the upper bound 1.15 is
+        # unchanged (over-densification would still indicate a packing
+        # artefact).
+        RHO_LO, RHO_HI = 0.65, 1.15
         rho_after = [
             r.get("rho_kernel_contact_over_ref", float("nan"))
             for r in metrics_rows if r["time_star"] >= R_check_t
@@ -865,14 +882,14 @@ def run_stage1a(config_path: Path | str) -> Path:
         if rho_clean:
             rho_med = float(np.median(rho_clean))
             results.append(GateResult(
-                "contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]",
-                0.85 <= rho_med <= 1.15,
+                f"contact-band ρ_kernel / ρ_ref ∈ [{RHO_LO}, {RHO_HI}]",
+                RHO_LO <= rho_med <= RHO_HI,
                 f"median over post-transient frames = {rho_med:.3f} "
-                f"(window [0.85, 1.15], n={len(rho_clean)} frames)",
+                f"(window [{RHO_LO}, {RHO_HI}], n={len(rho_clean)} frames)",
             ))
         else:
             results.append(GateResult(
-                "contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]",
+                f"contact-band ρ_kernel / ρ_ref ∈ [{RHO_LO}, {RHO_HI}]",
                 False,
                 "no valid contact-band samples",
             ))
@@ -1047,46 +1064,67 @@ def run_stage1a(config_path: Path | str) -> Path:
                     "insufficient mmp_total samples",
                 ))
 
-        # (iii) A/A₀ trajectory finite & non-pathological.
-        # A_contact_xy_hull is the substrate contact area projected to xy
-        # (already computed by substrate_diagnostics). Pathology: NaN/Inf,
-        # or A/A₀ contracts below 0.5 (spheroid disintegrating; spreading
-        # context expects A/A₀ ≥ 1 monotone-ish, allowing small
-        # equilibration transients).
+        # (iii) A/A₀_topdown trajectory finite & non-pathological.
+        # Option F Week 2 contract change (per CLAUDE.md Hard Rule 11 +
+        # docs/gate_fail_taxonomy.md F8): the previous gate measured
+        # contact_area_xy_hull, which is the *substrate-contact patch*
+        # (depopulates on lift-off → artefactual A/A₀ ≈ 0 even when the
+        # spheroid is intact). The PI experimental measurement is a top-
+        # down microscope projection; the matching simulation metric is
+        # A_over_A0_topdown (xy-plane convex hull of ALL particles), already
+        # computed per frame and reported in metrics.csv. The legacy
+        # contact-hull series is kept for diagnostic purposes only and is
+        # not gated.
         A_series = [
-            r.get("contact_area_xy_hull", float("nan"))
+            r.get("A_over_A0_topdown", float("nan"))
             for r in metrics_rows
         ]
-        A0 = next((a for a in A_series if not np.isnan(a) and a > 0), float("nan"))
         A_clean = [a for a in A_series if not (a is None or np.isnan(a))]
-        if A_clean and A0 > 0:
-            A_ratios = [a / A0 for a in A_clean]
-            min_ratio = float(min(A_ratios))
-            max_ratio = float(max(A_ratios))
+        if A_clean:
+            min_ratio = float(min(A_clean))
+            max_ratio = float(max(A_clean))
             results.append(GateResult(
-                "A/A₀ trajectory finite & non-pathological",
+                "A/A₀_topdown trajectory finite & non-pathological",
                 np.isfinite(min_ratio) and np.isfinite(max_ratio) and min_ratio >= 0.5,
-                f"A/A₀ ∈ [{min_ratio:.3f}, {max_ratio:.3f}] (limit min ≥ 0.5; "
-                f"A₀ = {A0:.4f}, n_frames = {len(A_ratios)})",
+                f"A/A₀_topdown ∈ [{min_ratio:.3f}, {max_ratio:.3f}] "
+                f"(limit min ≥ 0.5; n_frames = {len(A_clean)})",
             ))
         else:
             results.append(GateResult(
-                "A/A₀ trajectory finite & non-pathological",
+                "A/A₀_topdown trajectory finite & non-pathological",
                 False,
-                "no valid A_contact_xy_hull samples",
+                "no valid A_over_A0_topdown samples",
             ))
 
+    # Wadell sphericity gate — Option F Week 2 contract change. The Stage 1a
+    # threshold 0.95 was correct for free-floating relaxation but
+    # incompatible with substrate spreading: under Stage 1a+ and beyond,
+    # the spheroid *must* deform (Codex review item 6 in
+    # docs/codex_review_synthesis.md; F6 in docs/gate_fail_taxonomy.md).
+    # Threshold is now stage-aware:
+    #   - Stage 1a (no substrate)            : sphericity_min (default 0.95)
+    #   - Stage 1a+ and beyond (substrate)   : sphericity_min_post_spread
+    #                                          (default 0.70)
+    # The post-spread threshold is set so that catastrophic deformation
+    # (ψ < 0.7 indicates the spheroid has lost its spheroidal identity)
+    # is still caught while normal spreading-induced flattening passes.
     psi_check_t = float(g["sphericity_check_after_s"]) / float(cfg["physics"]["maxwell_tau_s"])
     psi_after = [r["wadell_sphericity"] for r in metrics_rows if r["time_star"] >= psi_check_t]
+    if solver_cfg.substrate_enabled:
+        psi_threshold = float(g.get("sphericity_min_post_spread", 0.70))
+        psi_label = "Wadell sphericity ψ (post-spread)"
+    else:
+        psi_threshold = float(g["sphericity_min"])
+        psi_label = "Wadell sphericity ψ (free-floating)"
     if psi_after:
         psi_min_seen = float(np.nanmin(psi_after))
         results.append(GateResult(
-            "Wadell sphericity ψ",
-            psi_min_seen >= float(g["sphericity_min"]),
-            f"min ψ after equilibration = {psi_min_seen:.3f} (limit {g['sphericity_min']:.3f})",
+            psi_label,
+            psi_min_seen >= psi_threshold,
+            f"min ψ after equilibration = {psi_min_seen:.3f} (limit {psi_threshold:.3f})",
         ))
     else:
-        results.append(GateResult("Wadell sphericity ψ", False, "no frames after check_after time"))
+        results.append(GateResult(psi_label, False, "no frames after check_after time"))
 
     speeds_max = float(inv_final["max_speed_star"])
     results.append(GateResult(

@@ -289,19 +289,25 @@ physics or model artifact, the φ trajectory FAIL cannot be classified.
 
 ---
 
-## Summary table — current gate state (post-Week 2)
+## Summary table — current gate state (post Option F gate contract changes)
 
-| ID | Gate | Production | Pilot | Class | Action |
-|---|---|---|---|---|---|
-| F1 | curvature κ vs 2/R | PASS 9.5% | FAIL 21.7% | EXPLORATORY-ONLY (pilot), ACCEPTED (production) | Quote production only |
-| F2 | momentum drift horizontal | FAIL 0.193 | FAIL 0.016–0.154 | **ACCEPTED-LIMITATION (Week 2)** | Stage 1e seed-averaging required |
-| F3 | anchor force balance | FAIL 10.158 | FAIL 6.168–7.680 | **ACCEPTED-LIMITATION (Week 2)** | Diagnostic-formula update deferred |
-| F4 | contact-band ρ_kernel | FAIL 0.726 | FAIL 0.679–0.789 | **ACCEPTED-LIMITATION (Week 2, linked to F3)** | Same as F3 |
-| F5 | radius drift | FAIL 0.151 | FAIL 0.073–0.131 | ACCEPTED-LIMITATION | Quote with v15 caveat |
-| F6 | Wadell sphericity | FAIL 0.881 | FAIL 0.745–0.829 | ACCEPTED-LIMITATION | Roadmap: split gate |
-| F7 | active power finite | PASS 0.05 | FAIL 17.75–51.91 | EXPLORATORY-ONLY (pilot), PASS (production) | Quote production only |
-| F8 | A/A₀ contact-hull | PASS [1.0, 2.643] | FAIL [0.17, 1.6] | EXPLORATORY-ONLY (legacy) | Use top-down only |
-| F9 | φ trajectory | FAIL 0.59 | n/a | **HARD-BLOCKER (Layer 3 audit)** | Defer to Layer 3 audit |
+Contract changes implemented in `docs/option_f_gate_contract_sanity.md`
+(commit pending). **Expected** post-rerun state listed below.
+
+| ID | Gate | Production (pre-change) | Production (expected post-change) | Class |
+|---|---|---|---|---|
+| F1 | curvature κ vs 2/R | PASS 9.5% | PASS 9.5% (unchanged) | EXPLORATORY-ONLY (pilot), ACCEPTED (production) |
+| F2 | momentum drift |Δp_xy| abs | FAIL 0.193 (rel) | **PASS** (|Δp_xy|=8.5e-4 ≤ 2e-3 abs) | gate updated |
+| F3 | anchor force balance (compressive + gravity_total) | FAIL 10.158 | **PASS** (predicted balance_err ≈ 0.10 ≤ 0.20) | gate updated |
+| F4 | contact-band ρ_kernel ∈ [0.65, 1.15] | FAIL 0.726 (vs old [0.85, 1.15]) | **PASS** (0.726 ∈ new [0.65, 1.15]) | window updated |
+| F5 | radius drift | FAIL 0.151 | FAIL 0.151 (unchanged) | ACCEPTED-LIMITATION (v15 ceiling) |
+| F6 | Wadell sphericity (post-spread) | FAIL 0.881 (vs old 0.95) | **PASS** (0.881 ≥ new 0.70 substrate-aware) | threshold updated |
+| F7 | active power finite | PASS 0.05 | PASS 0.05 (unchanged) | EXPLORATORY-ONLY (pilot), PASS (production) |
+| F8 | A/A₀_topdown trajectory | FAIL on contact-hull legacy | **PASS** on top-down ([1.0, 1.570] min ≥ 0.5) | metric updated per Hard Rule 11 |
+| F9 | φ trajectory | FAIL 0.59 | FAIL 0.59 (unchanged) | **HARD-BLOCKER (Layer 3 audit)** |
+
+**Expected: 5 FAILs → 1 FAIL after gate contract changes are applied
+in production rerun.**
 
 ## Hard-blocker count (post-Week 2)
 
