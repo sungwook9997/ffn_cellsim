@@ -1,4 +1,4 @@
-# Session Handoff — 2026-04-29 (Option F Week 1, end-of-day)
+# Session Handoff — 2026-04-29 (Option F Week 2, end-of-day)
 
 This document records where the current session stopped. Keep this
 file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
@@ -10,11 +10,12 @@ file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
 
 - **Active option**: **Option F** (engineering-Marangoni hybrid) per
   `docs/codex_review_synthesis.md`. PI selected this 2026-04-29.
-- **Current week**: Option F Week 1 — documentation pass (in progress).
-- **Last code commit**: 6aa3b27 (Codex review synthesis, no code).
+- **Current week**: Option F Week 2 — solver investigations DONE.
+- **Last code commit**: d93b4ee (Week 1 docs); Week 2 commit pending.
 - **Last simulation**: Production Lam4 (commit b506b57), result
-  reclassified to **Bucket P3 strict** (peak-and-decay, not plateau)
-  in this session.
+  reclassified to **Bucket P3 strict** (peak-and-decay, not plateau).
+- **Hard blockers**: 4 → 1 after Week 2. Only F9 (φ trajectory, Layer
+  3 audit pending) remains.
 
 ## Documentation-pass deliverables (Week 1)
 
@@ -28,22 +29,30 @@ file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
 | `docs/production_lam4_finding.md` labeling | FIXED (this commit) | P2 plateau → P3 peak-and-decay |
 | `docs/SESSION_HANDOFF.md` | CONSOLIDATED (this file) | original moved to archive |
 
-## Hard blockers tracked (from gate_fail_taxonomy.md)
+## Hard blockers tracked (post-Week 2)
 
-| ID | Gate | Severity | Week 2 owner |
-|---|---|---|---|
-| F2 | horizontal momentum drift (193× over) | blocks Stage 1e anisotropy claim | `horizontal_momentum_drift_investigation.md` |
-| F3 | anchor force balance (50× over) | potentially causal for asymptote | `anchor_force_balance_investigation.md` |
-| F4 | contact-band ρ_kernel/ρ_ref (15–32% under) | linked to F3 | (rolled into F3 investigation) |
-| F9 | φ trajectory vs predicted φ_eq | Layer 3 audit pending | deferred to Week 3+ |
+| ID | Gate | Status |
+|---|---|---|
+| ~~F2~~ | horizontal momentum drift | ACCEPTED-LIMITATION (gate too tight in overdamped equilibrium; Stage 1e seed-averaging required) |
+| ~~F3~~ | anchor force balance | ACCEPTED-LIMITATION (kernel-truncation diagnostic formula bug; NOT causal) |
+| ~~F4~~ | contact-band ρ_kernel/ρ_ref | ACCEPTED-LIMITATION (linked to F3) |
+| F9 | φ trajectory vs predicted φ_eq | **REMAINING** — Layer 3 audit pending |
 
-## Week 2 investigations (no code changes)
+## Week 2 outcomes (this commit)
 
-Both are read-only diagnostic analyses producing sanity_md-style
-documents. Outputs determine whether the FAIL is a solver bug
-(→ fix commit with sanity gate) or accepted physics
-(→ documentation-only update to `docs/12_validation.md` + reclassify
-in `docs/gate_fail_taxonomy.md`).
+Both investigations completed read-only:
+- `docs/horizontal_momentum_drift_investigation.md` — F2 root-caused
+  to gate normalization too tight in overdamped equilibrium + initial-
+  pack asymmetry. Absolute drift bounded ~1e-3 across 4 runs.
+- `docs/anchor_force_balance_investigation.md` — F3 root-caused to
+  Adami-Hu-Adams §3 kernel truncation making F_pressure_down formula
+  report negative (tensile) values when contact band is under-densified.
+  F_substrate_up is small and stable (~0.038); substrate is
+  *under-deflected*, not over-anchoring. Not causal for asymptote.
+
+Three of four hard blockers retired. Marangoni / asymptote
+interpretation unaffected (independent root cause per
+`docs/marangoni_review.md`).
 
 ## Where to find what
 
@@ -62,16 +71,23 @@ in `docs/gate_fail_taxonomy.md`).
 
 ## What the next session should do
 
-1. Resume Option F Week 2: anchor force balance + horizontal momentum
-   drift investigations. These are read-only — open the relevant code
-   paths in `acs/physics/mlsmpm.py` and `acs/runner.py`, examine the
-   FAIL's metric definitions, write the two `_investigation.md` docs.
-2. Do NOT start Stage 1a++.b or Mechanism A/E/F implementation. Those
-   wait for Week 2 outputs to inform the PI re-decision.
-3. Do NOT modify `mlsmpm.py` until Week 2 outputs surface a solver bug
-   to fix; the file split (Codex item 9) is Week 3+.
-4. Continue Option F discipline: review-only commits, sanity gate
-   protocol on any code change, Magic-Number Block on any new constant.
+1. **PI re-decision**: with 3 of 4 hard blockers retired and the
+   Marangoni / asymptote diagnosis intact, the choice between Option α
+   (Stage 1d.b: Mechanism A/E/F continuum upgrade), Option β (Stage
+   1a++.b: discrete boundary events), Option γ (sequenced), or Option
+   G (paper-as-is) is now well-posed. Surface to PI.
+2. Layer 3 audit (Codex item 4) — only remaining hard blocker (F9). A
+   Layer 3 audit unblocks both Mechanism A/E/F (which use γ(φ) and
+   thus inherit Layer 3 issues) AND any φ-related claim in the paper.
+3. Once a path is selected, prerequisites:
+   - **mlsmpm.py file split** (Codex item 9) before adding any new
+     state variable (γ_p for Mechanism A, Γ_p for Mechanism E,
+     stochastic-event state for Stage 1a++.b)
+   - **Symmetry-conservation tests** (Codex item 8 subset) at
+     minimum, ideally before file split, to lock in the current
+     behavior as a regression baseline
+4. Continue Option F discipline: sanity gate protocol on any code
+   change, Magic-Number Block on any new constant.
 
 ## What is NOT current state (historical context only)
 

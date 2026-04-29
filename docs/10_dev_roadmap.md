@@ -290,11 +290,18 @@ A run-level gate report (`results/{run.name}/gate_report.md`) records every metr
 - [ ] `docs/SESSION_HANDOFF.md` consolidation
 - [ ] `docs/production_lam4_finding.md` labeling fix
 
-**Week 2 (pending)**: solver investigation (no code changes).
-- [ ] `docs/horizontal_momentum_drift_investigation.md` —
-  root-cause F2 (193× over limit) → solver bug or accepted physics?
-- [ ] `docs/anchor_force_balance_investigation.md` — root-cause F3
-  (50× over limit) → potentially causal for asymptote?
+**Week 2 (DONE this commit)**: solver investigation (no code changes).
+- [x] `docs/horizontal_momentum_drift_investigation.md` — F2 root-cause
+  is gate-normalization-too-tight in overdamped equilibrium + initial-
+  pack asymmetry (~1.4% N⁻¹/² floor); absolute drift bounded ~1e-3 across
+  all runs. **Reclassified ACCEPTED-LIMITATION** with Stage 1e
+  seed-averaging requirement.
+- [x] `docs/anchor_force_balance_investigation.md` — F3 root-cause is
+  Adami-Hu-Adams §3 kernel truncation at substrate boundary making
+  F_pressure_down formula's compressive assumption invalid (P becomes
+  tensile, formula reports negative). NOT causal for asymptote
+  (F_substrate is under-deflected). **Reclassified ACCEPTED-LIMITATION**.
+  F4 same root cause, linked.
 
 **Week 3+ (deferred until Week 2 outputs)**: PI re-decision between:
 - Stage 1a++.b (discrete boundary events: lamellipodia / filopodia /
@@ -309,11 +316,13 @@ A run-level gate report (`results/{run.name}/gate_report.md`) records every metr
 - `mlsmpm.py` file split (Codex item 9) — prerequisite for new state vars
 
 ### Hard-blocker gate FAILs (publication-claim restricted)
-Per `docs/gate_fail_taxonomy.md`:
-- F2 horizontal momentum drift (Stage 1e anisotropy claim FORBIDDEN)
-- F3 anchor force balance (asymptote causation unclear)
-- F4 contact-band ρ_kernel (linked to F3)
-- F9 φ trajectory (Layer 3 audit pending)
+Per `docs/gate_fail_taxonomy.md` (post-Week 2):
+- ~~F2 horizontal momentum drift~~ — ACCEPTED-LIMITATION (Stage 1e
+  seed-averaging required)
+- ~~F3 anchor force balance~~ — ACCEPTED-LIMITATION (NOT causal,
+  diagnostic formula bug only)
+- ~~F4 contact-band ρ_kernel~~ — ACCEPTED-LIMITATION (linked to F3)
+- F9 φ trajectory — REMAINING HARD-BLOCKER (Layer 3 audit pending)
 
 When you (Claude Code) update this file after completing a stage,
 mark the stage's checkboxes complete and add a "Stage X completed

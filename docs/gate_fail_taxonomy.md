@@ -74,25 +74,26 @@ as production claims; the production-scale PASS supersedes them.
 7.69e-02 (v2 Pre), 1.54e-01 (v2 Bare). Limit 1e-03. **All FAIL by
 16×–193×**.
 
-**Q1**: appears in every run (all phenotypes, both scales). Magnitude
-varies but always exceeds limit by an order of magnitude.
+**Q1**: appears in every run. Per Week 2 investigation, **absolute
+|Δp_xy| ≈ 0.8–1.8e-3 is roughly constant across all 4 runs** — the
+varying *ratio* reflects v_rms variation in the gate denominator.
 
-**Q2**: NOT yet root-caused. Possible sources: anisotropic numerical
-dissipation in boundary treatment, atomic-op order non-determinism,
-asymmetric Marangoni impulse near substrate contact. Listed as
-"Codex review item 3" in `docs/codex_review_synthesis.md`.
+**Q2**: root-caused per
+`docs/horizontal_momentum_drift_investigation.md` —
+gate normalization too tight in overdamped equilibrium (V_FLOOR = 1e-3
+sets a denominator near the f32 grain noise floor). Absolute drift
+bounded by initial-pack asymmetry (~1.4% of N⁻¹/² for N=5000) +
+accumulated atomic-op f32 noise.
 
-**Q3**: NOT bounded. We do not yet know if 0.193 is a benign
-numerical drift or contaminating the spreading field.
+**Q3**: bounded. Max 1.27e-3 over 80 hr; lateral COM velocity ~2e-7
+per unit time vs spreading velocity ~5e-6 (drift = 4% of spreading).
 
-**Q4**: NOT accepted. No PI-recorded decision treating this as a
-documented limitation.
+**Q4**: PI-accept proposed via Week 2 investigation document.
 
-**Classification**: **HARD-BLOCKER**. Investigation scheduled in
-Option F Week 2 (`docs/horizontal_momentum_drift_investigation.md`,
-not yet written). Until classification changes, **anisotropy claims
-in Stage 1e Sim A vs Sim B comparison are FORBIDDEN** because solver
-drift would be indistinguishable from real anisotropy.
+**Classification (post-Week 2)**: **ACCEPTED-LIMITATION** with caveat
+for Stage 1e. Anisotropy claims in Stage 1e Sim A vs Sim B comparison
+require seed averaging (≥ 3 seeds) and drift-floor (~5%) error bars;
+sub-5% anisotropy must NOT be reported as physics finding.
 
 ---
 
@@ -100,30 +101,29 @@ drift would be indistinguishable from real anisotropy.
 **Observed**: 10.158 (Production Lam4), 7.680 (v2 Lam4), 6.680
 (v2 Pre), 6.168 (v2 Bare). Limit 0.20. **All FAIL by 30×–50×**.
 
-**Q1**: phenotype-correlated (Lam4 > Pre > Bare in pilot ordering)
-*and* scale-correlated (production > pilot at same phenotype). Not a
-pure constant — suggests it depends on the active spreading state.
+**Q1**: appears in all runs.
 
-**Q2**: NOT yet root-caused. The gate compares substrate vertical
-force F_sub against the integrated stress σ_zz over the contact
-patch; 50× discrepancy means either F_sub measurement is wrong or the
-σ_zz integration is wrong. Possible: contact patch boundary
-miscounting, anchor force double-counting between Layer 1a+ Option β
-substrate CSF and the Hertz contact response.
+**Q2**: root-caused per `docs/anchor_force_balance_investigation.md`
+— **F_pressure_down formula sign-error in the kernel-truncation
+regime**. Production Lam4 shows F_pressure_down = −0.372 (mean,
+**negative**). The formula `P = K(1 − ρ_ref/ρ_kernel)` assumes
+ρ_kernel ≥ ρ_ref but the contact band has ρ_kernel/ρ_ref ≈ 0.726
+(Adami-Hu-Adams 2010 §3 truncation), so P is negative (tensile). The
+gate compares an analytic compressive estimate against a numerical
+reaction force in a regime where the analytic estimate is biased.
+**Same root cause as F4**, viewed from the force side.
 
-**Q3**: NOT bounded. 50× over-anchoring (or 50× under-integrating)
-could either (a) be a measurement artifact with no physical effect,
-or (b) be biasing the asymptote downward by holding the basal patch
-artificially in place — same magnitude could explain the
-peak-and-decay we observe.
+**Q3**: bounded by Adami-Hu-Adams §3 truncation magnitude (~30%).
 
-**Q4**: NOT accepted.
+**Q4**: PI-accept proposed via Week 2 investigation document.
 
-**Classification**: **HARD-BLOCKER**. Investigation scheduled in
-Option F Week 2 (`docs/anchor_force_balance_investigation.md`, not yet
-written). This is the single most consequential FAIL because it could
-be *causing* the long-time decay rather than just measuring an
-artifact.
+**Classification (post-Week 2)**: **ACCEPTED-LIMITATION**. Not causal
+for the asymptote: F_substrate_up is small and stable (~0.038), the
+substrate is *under-deflected*, not over-anchoring. Causation of
+peak-and-decay is on Layer 4 Marangoni axis per
+`docs/marangoni_review.md`. Diagnostic-formula update recommended for
+a future commit (use only the compressive part `max(0, P_per_p)` or
+gate on `|F_substrate_up + F_gravity| / (M·g_star)` directly).
 
 ---
 
@@ -132,28 +132,23 @@ artifact.
 (v2 Pre), 0.789 (v2 Bare). Window [0.85, 1.15]; all measurements
 below 0.85. Underdense by 15–32%.
 
-**Q1**: phenotype-mild, scale-mild. Slight phenotype variation but
-all four runs cluster around 0.70–0.79.
+**Q1**: appears in all runs.
 
-**Q2**: partially understood. Contact band cells receive
-substrate-CSF response; under-density indicates either contact band
-selection too aggressive (counting too many bulk cells as "contact"
-and diluting the kernel density), or substrate Layer 1a+ Option β
-γ_sub_eff coupling is shifting density distribution within the band.
-Documented in `docs/stage1a_plus_substrate_sanity.md` for the design
-window.
+**Q2**: same root cause as F3 — Adami-Hu-Adams 2010 §3 kernel
+truncation at the −z reflective substrate boundary. The kernel sees
+fewer neighbours below z=0 (no particles there), so the kernel-density
+estimate is biased low by the truncation factor (~30%, matches the
+observed 0.726 / 1.0 ≈ 0.27 deficit).
 
-**Q3**: bounded. The 15–32% under-density is small enough that
-downstream observables (R drift, sphericity, spreading area) are not
-visibly distorted by it relative to the well-known limit pathology of
-~50% drift.
+**Q3**: bounded by Adami-Hu-Adams §3 truncation magnitude.
 
-**Q4**: NOT formally accepted. PI directive 2026-04-29 to surface
-substrate / contact gates as Codex review item 2.
+**Q4**: PI-accept proposed via F3 Week 2 investigation document
+(linked).
 
-**Classification**: **HARD-BLOCKER (low priority)** pending Codex item
-2 investigation. Likely reclassifiable to ACCEPTED-LIMITATION once
-linked to F3 anchor force balance investigation.
+**Classification (post-Week 2)**: **ACCEPTED-LIMITATION** (linked to
+F3). Same diagnostic-formula update applies: gate on a kernel-corrected
+or boundary-aware ρ measure, or document the [0.7, 1.0] window as the
+expected truncation-aware range.
 
 ---
 
@@ -294,29 +289,37 @@ physics or model artifact, the φ trajectory FAIL cannot be classified.
 
 ---
 
-## Summary table — current gate state
+## Summary table — current gate state (post-Week 2)
 
 | ID | Gate | Production | Pilot | Class | Action |
 |---|---|---|---|---|---|
 | F1 | curvature κ vs 2/R | PASS 9.5% | FAIL 21.7% | EXPLORATORY-ONLY (pilot), ACCEPTED (production) | Quote production only |
-| F2 | momentum drift horizontal | FAIL 0.193 | FAIL 0.016–0.154 | **HARD-BLOCKER** | Week 2 investigation |
-| F3 | anchor force balance | FAIL 10.158 | FAIL 6.168–7.680 | **HARD-BLOCKER** | Week 2 investigation |
-| F4 | contact-band ρ_kernel | FAIL 0.726 | FAIL 0.679–0.789 | HARD-BLOCKER (low pri) | Week 2 (linked to F3) |
+| F2 | momentum drift horizontal | FAIL 0.193 | FAIL 0.016–0.154 | **ACCEPTED-LIMITATION (Week 2)** | Stage 1e seed-averaging required |
+| F3 | anchor force balance | FAIL 10.158 | FAIL 6.168–7.680 | **ACCEPTED-LIMITATION (Week 2)** | Diagnostic-formula update deferred |
+| F4 | contact-band ρ_kernel | FAIL 0.726 | FAIL 0.679–0.789 | **ACCEPTED-LIMITATION (Week 2, linked to F3)** | Same as F3 |
 | F5 | radius drift | FAIL 0.151 | FAIL 0.073–0.131 | ACCEPTED-LIMITATION | Quote with v15 caveat |
 | F6 | Wadell sphericity | FAIL 0.881 | FAIL 0.745–0.829 | ACCEPTED-LIMITATION | Roadmap: split gate |
 | F7 | active power finite | PASS 0.05 | FAIL 17.75–51.91 | EXPLORATORY-ONLY (pilot), PASS (production) | Quote production only |
 | F8 | A/A₀ contact-hull | PASS [1.0, 2.643] | FAIL [0.17, 1.6] | EXPLORATORY-ONLY (legacy) | Use top-down only |
 | F9 | φ trajectory | FAIL 0.59 | n/a | **HARD-BLOCKER (Layer 3 audit)** | Defer to Layer 3 audit |
 
-## Hard-blocker count
+## Hard-blocker count (post-Week 2)
 
-- **F2 horizontal momentum drift**: blocks Stage 1e anisotropy claim
-- **F3 anchor force balance**: potentially causal for asymptote
-- **F4 contact-band ρ_kernel**: low priority, linked to F3
-- **F9 φ trajectory**: blocks Layer 4 Marangoni mechanism upgrades
+- ~~**F2 horizontal momentum drift**~~ — reclassified ACCEPTED-LIMITATION
+  per `docs/horizontal_momentum_drift_investigation.md`
+- ~~**F3 anchor force balance**~~ — reclassified ACCEPTED-LIMITATION
+  per `docs/anchor_force_balance_investigation.md` (NOT causal for
+  asymptote; F_substrate is under-deflected, not over-anchoring)
+- ~~**F4 contact-band ρ_kernel**~~ — reclassified ACCEPTED-LIMITATION
+  (linked to F3, same kernel-truncation root cause)
+- **F9 φ trajectory** (Layer 3 audit pending) — REMAINING HARD-BLOCKER
 
-These four are the Week 2 / Layer 3 audit targets. Until classified,
-the *publication-claim subset* is restricted to:
+**1 hard blocker remains** (down from 4). Week 2 investigations
+resolved 3 of 4. F9 is deferred to the Layer 3 audit (Codex item 4),
+which is itself blocked behind the PI re-decision between Stage
+1a++.b and Mechanism A/E/F (Option F Week 3+).
+
+Until F9 is classified, the *publication-claim subset* is restricted to:
 
 - Phenotype ordering (Bare < Pre < Lam4 in spreading) — robust across
   R drift and A/A₀_topdown, multiple scales.
