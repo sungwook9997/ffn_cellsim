@@ -32,6 +32,22 @@ from acs.visualization.plots import (
     plot_zeta_response_curve,
 )
 
+# PI visualization directive 2026-04-29: production package.
+from acs.visualization.live_imaging import (
+    render_topdown_frame,
+    render_sideview_frame,
+    render_topdown_sequence,
+    render_sideview_sequence,
+    render_final_frame_pair,
+    write_movie,
+)
+from acs.visualization.dashboard import render_dashboard
+from acs.visualization.parameter_tables import (
+    write_parameter_table_csv,
+    render_parameter_table_figure,
+)
+from acs.visualization.state_overlays import render_state_overlay
+
 __all__ = [
     "aggregate_narrative_table",
     "generate_summary",
@@ -44,4 +60,15 @@ __all__ = [
     "plot_production_bucket_classification",
     "plot_production_trajectory",
     "plot_zeta_response_curve",
+    # PI visualization directive 2026-04-29.
+    "render_topdown_frame",
+    "render_sideview_frame",
+    "render_topdown_sequence",
+    "render_sideview_sequence",
+    "render_final_frame_pair",
+    "write_movie",
+    "render_dashboard",
+    "write_parameter_table_csv",
+    "render_parameter_table_figure",
+    "render_state_overlay",
 ]
