@@ -232,6 +232,23 @@ class SolverConfig:
     # recovers Option α (mechanical anchor only).
     gamma_sub_star: float = 0.0
 
+    # Stage 1a++ Layer 2 boundary-cell active stress (continuum entry; no
+    # lamellipodia / filopodia / leader / FA stochastic events here, those
+    # are Stage 1a++.b deferred). When `zeta_star` > 0, every particle with
+    # `is_boundary[p] == 1` receives an additional Cauchy stress
+    #   σ_act_p = -ζ_star · K_star · I
+    # (sign: contractile cortex; compressive stress opposes the surface-
+    # tension contraction pulling the spheroid inward). Reported as a
+    # *dimensionless ratio* per PI Option α' resolution
+    # 2026-04-29 — no Pa claim is made; the result is a response curve in
+    # ζ/K. K is anchored to Fischer-Friedrich Nat Cell Biol 2014 IF 30
+    # (already cited in `docs/02_force_models.md` §1.1); Marchetti
+    # Rev Mod Phys 2013 IF 50 retained as the framework reference. See
+    # `docs/stage1a_plus_plus_layer2_sanity.md` and
+    # `docs/outcomes_stage1a_plus_plus.md`. Default 0 reproduces Stage 1a+
+    # Option β (carrier baseline).
+    zeta_star: float = 0.0
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -346,6 +363,18 @@ class MLSMPMSolver:
         # F_substrate = diag_substrate_impulse_z / dt for the anchor-force-
         # balance gate.
         self.diag_substrate_impulse_z = ti.field(dtype=ti.f64, shape=())
+
+        # Stage 1a++ Layer 2 diagnostics:
+        #  • diag_active_power: instantaneous power delivered by the active
+        #    boundary stress, P_act = Σ_{p ∈ boundary} -ζ·K · tr(C_p) · V₀.
+        #    Positive when the cortex does positive work on the bulk (cortex
+        #    expanding) — under contractile cortex (ζ > 0) this is normally
+        #    negative (cortex compresses, work flows out via overdamped drag).
+        #  • diag_n_boundary: count of boundary-tagged particles for the
+        #    boundary-tag-flicker stability gate (host-side comparison
+        #    across frames).
+        self.diag_active_power = ti.field(dtype=ti.f64, shape=())
+        self.diag_n_boundary = ti.field(dtype=ti.i32, shape=())
 
     # ------------------------------------------------------------- init ----
     def initialize_sphere(self, center_star, radius_star: float | None = None) -> None:
@@ -959,6 +988,10 @@ class MLSMPMSolver:
         dx = self.cfg.dx_star
         dt = self.cfg.dt_star
         rho_ref = self._rho_ref_kernel[None]
+        # Stage 1a++ Layer 2 active-stress coefficient (compile-time
+        # constant via Python attribute access). When 0, the active term
+        # is identically 0 and reproduces Stage 1a+ Option β behaviour.
+        zeta_K = self.cfg.zeta_star * K
 
         for p in self.x:
             base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
@@ -971,7 +1004,17 @@ class MLSMPMSolver:
 
             rho_p = self._rho_kernel_p[p]
             stress_vol = K * (rho_ref / rho_p - 1.0) * ti.Matrix.identity(ti.f32, 3)
-            stress = stress_vol + self.tau_dev[p]
+            # Stage 1a++ Layer 2 boundary-cell active stress: contractile
+            # cortex (compressive, σ_act < 0) applied only to boundary-
+            # tagged particles. When zeta_star == 0 (Stage 1a+ Option β
+            # carrier) the contribution is identically zero by arithmetic.
+            # is_boundary[p] is an i32 (0 or 1); multiplying by it gates
+            # the term per-particle without a runtime branch.
+            stress_act = (
+                -zeta_K * ti.cast(self.is_boundary[p], ti.f32)
+                * ti.Matrix.identity(ti.f32, 3)
+            )
+            stress = stress_vol + self.tau_dev[p] + stress_act
 
             stress_term = -dt * V0 * stress * (4.0 / (dx * dx))
             affine = stress_term + m_p * self.C[p]
@@ -1134,6 +1177,9 @@ class MLSMPMSolver:
         self.diag_surface_energy[None] = 0.0
         self.diag_max_speed[None] = 0.0
         self.diag_nan_count[None] = 0
+        # Stage 1a++ Layer 2 diagnostics, reset per call.
+        self.diag_active_power[None] = 0.0
+        self.diag_n_boundary[None] = 0
 
         m_p = ti.cast(self.cfg.particle_mass_star, ti.f64)
         K = ti.cast(self.cfg.K_star, ti.f64)
@@ -1183,6 +1229,18 @@ class MLSMPMSolver:
             if self.is_boundary[p] == 1:
                 # Surface energy proxy: γ × per-particle surface element ≈ γ × V₀^(2/3).
                 ti.atomic_add(self.diag_surface_energy[None], gamma * ti.cast(V0 ** (2.0 / 3.0), ti.f64))
+                ti.atomic_add(self.diag_n_boundary[None], 1)
+                # Stage 1a++ Layer 2 active power per boundary particle:
+                #   P_act,p = -ζ·K · tr(C_p) · V₀
+                # (σ_act_p = -ζ·K·I, ε̇_p ≈ sym(C_p), σ:ε̇ = -ζ·K · tr(C_p)).
+                # Sums to instantaneous total active power. Under Stage 1a+
+                # carrier (ζ_star = 0) the contribution is arithmetically 0.
+                C_p = self.C[p]
+                tr_C = C_p[0, 0] + C_p[1, 1] + C_p[2, 2]
+                ti.atomic_add(
+                    self.diag_active_power[None],
+                    ti.cast(-self.cfg.zeta_star * self.cfg.K_star * tr_C * V0, ti.f64),
+                )
 
             # Stage 1a+ Option β substrate-adhesion energy: per particle in
             # the contact band, subtract γ_sub · V₀^(2/3) (adhesion *reduces*
@@ -1439,4 +1497,7 @@ class MLSMPMSolver:
             "surface_energy_star": float(self.diag_surface_energy[None]),
             "max_speed_star": float(self.diag_max_speed[None]),
             "nan_count": int(self.diag_nan_count[None]),
+            # Stage 1a++ Layer 2 diagnostics.
+            "active_power_star": float(self.diag_active_power[None]),
+            "n_boundary": int(self.diag_n_boundary[None]),
         }

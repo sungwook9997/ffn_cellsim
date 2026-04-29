@@ -265,29 +265,103 @@ diagnostic.
 
 ## Magic-Number Block (mandatory, per `docs/12_validation.md`)
 
-### `ζ_star` (active stress coefficient, dimensionless)
+### `ζ_star` — verification partial; PI selected Option α' (ratio sweep, no Pa claim)
 
-| ζ_star value | Source | IF | Confidence |
-|---|---|---|---|
-| 0.1 — 1.0 (Marchetti range as `ζ_a / K`) | Marchetti et al. *Hydrodynamics of soft active matter*, Rev Mod Phys 2013, 85:1143 (already cited in `docs/02_force_models.md` §1.4 as the primary anchor for ζ_a ~ 100–1000 Pa, with K ~ 1 kPa) | 50 | high |
+**Status (resolved 2026-04-29)**: PI selected **Option α'** below
+(ratio sweep ζ/K only, no Pa claim, anchored to K via Fischer-Friedrich
+Nat Cell Biol 2014 IF 30, framework reference Marchetti Rev Mod Phys
+2013 IF 50). Stage 1a++ implementation proceeds with this framing.
+
+The `ζ_star` parameter enters the code as a *dimensionless ratio* `ζ/K`
+swept across `{0.1, 0.3, 1.0}`. **No claim about a specific MCF7 active-
+stress magnitude in Pa is made**; the result is a response curve in
+ζ/K. This is structurally identical to the Stage 1a+ Option β framing
+the PI already approved (`Ca_sub = α·Ca_cc`, K-anchored, sweep is the
+result). Magic-Number Block automatically passes (no specific Pa value
+to verify; sweep design is parameter-free at result level).
+
+The verification record below is preserved as the audit trail for why
+Option α' is the chosen path.
+
+### Verification record (preserved for audit trail)
 
 Per the v15 ρ_floor and γ_sub_Col1 verification precedent, the value
-must pass the three Magic-Number Block tests:
+must pass the three Magic-Number Block tests against the cited
+references *before* implementation. The previous draft of this section
+attributed the numerical range `ζ_a ∈ [100, 1000] Pa` (i.e.
+`ζ_star ∈ [0.1, 1.0]` with K = 1 kPa) directly to Marchetti
+Rev Mod Phys 2013 (IF 50). A literature verification was performed
+(2026-04-29).
 
-1. **Derivable** — yes, directly from Marchetti Rev Mod Phys 2013
-   (IF 50 ≥ 15) as `ζ_a / K` with `ζ_a ∈ [100, 1000]` Pa and `K = 1`
-   kPa. Unlike the γ_sub_Col1 case (no Col1-specific cellular-aggregate
-   spreading-coefficient existed), the Marchetti range *does* explicitly
-   give `ζ_a` as a numerical interval. PASS.
-2. **Grid-invariant** — yes; `ζ_star = ζ_a / K` is a dimensionless ratio
-   of two stress quantities. Independent of `dx`, `dt`, `n_particles`.
-   PASS.
-3. **Fitting** — no. The mid-range value `ζ_star = 0.3` (for a
-   single-shot pilot) or the sweep `{0.1, 0.3, 1.0}` (for a 3-run
-   exploration) are literature-mid-range / log-spaced, not chosen to
-   make any gate pass. PASS.
+#### Verification record
 
-**Magic-Number Block PASS** for `ζ_star`.
+| Reference | What it actually contains | Match for `ζ_a` numeric range? |
+|---|---|---|
+| Marchetti et al. *Hydrodynamics of soft active matter*, Rev Mod Phys 2013, 85:1143 (IF 50) | Comprehensive theoretical review of the **active-stress framework** (concept, hydrodynamic formulation, polar/nematic order parameters). Web-accessible portions (abstract, ToC, Boulder School lecture-note PDF) **do not contain a pinpointed numerical range for ζ_a in cell/tissue Pa or for ζ/K dimensionless**. The 50-page paper may cite specific values in its applications section, but no excerpt visible to web search confirms `[100, 1000] Pa`. | **framework anchored, specific value range NOT pinpointed in web-accessible portions** |
+| `docs/02_force_models.md` §1.4 in this project | Existing attribution: "ζ_a ~ 100–1000 Pa, Marchetti Rev Mod Phys 2013, IF 50" | **synthesis citation** (the project author wrote the range as "from the cell-tissue active-matter literature broadly, attributed to Marchetti as the framework anchor", not as a direct Marchetti quote) |
+
+This is structurally similar to the γ_sub_Col1 verification failure
+(2026-04-29 record above): the framework reference is solid, the
+specific numerical pinpoint is not. **Magic-Number Block test 1
+(Derivable) result is PARTIAL: framework derivable, specific range
+NOT pinpointed in the cited primary reference.** Tests 2 (grid-
+invariant) and 3 (fitting) PASS as in the previous draft.
+
+A test-1 partial result blocks the change unless PI selects an
+alternative path (analogous to the γ_sub_Col1 → Option α/β/γ
+resolution that the PI selected in 2026-04-29 for the Stage 1a+ stage).
+
+#### Alternatives surfaced to PI (Layer 2 activity sub-decision — PI selected Option α')
+
+Three options analogous to the substrate γ_sub_Col1 resolution. The
+naming uses primes to distinguish from the substrate options.
+
+**Option α' — Drop the numerical-magnitude claim entirely; sweep
+dimensionless `ζ/K` only.**
+- Report results as a *response curve* in `ζ/K`, not as a claim about
+  a specific MCF7 ζ_a value in Pa.
+- Anchor: K is well-anchored (Fischer-Friedrich Nat Cell Biol 2014,
+  IF 30, already cited in `docs/02_force_models.md` §1.1 as primary
+  for cortex stiffness ~ 1 kPa).
+- Sweep variable: `ζ/K ∈ {0.1, 0.3, 1.0}` is a logarithmically-spaced
+  decade exploration, *parameter-free at result level* (matches the
+  Stage 1a+ Option β framing for substrate `α = γ_sub/γ_cc`).
+- Magic-Number Block: PASS by construction (no specific Pa value is
+  claimed; the sweep is the result, not a parameter to verify).
+- Trade-off: cleanest framing; no ζ_a Pa value to defend at paper-
+  writing time. Identical structural pattern to substrate Option β.
+
+**Option β' — Cite secondary literature for the specific Pa range.**
+- Find a peer-reviewed paper that *does* explicitly give a numerical
+  range for active stress in cells/tissues (e.g. Saw et al. Nature
+  2017 IF 65 for active nematics in epithelia, Banerjee-Marchetti 2014
+  Soft Matter, Köpf-Pismen 2013, etc.) and use that as the primary
+  Pa anchor; demote Marchetti 2013 to framework reference.
+- Trade-off: requires another literature pass to verify the secondary
+  cite is itself a direct numerical claim, not another synthesis
+  attribution. Risk of recursive verification failure.
+
+**Option γ' — Keep `ζ_star ∈ {0.1, 0.3, 1.0}` with explicit "no
+specific literature reference for the Pa values; framework anchored to
+Marchetti 2013, dimensionless sweep range from order-of-magnitude
+synthesis of soft-active-matter literature for cell-tissue systems"
+docstring (v15 ρ_floor / γ_sub_Col1 precedent).**
+- Trade-off: matches v15 / γ_sub_Col1 honest-disclosure precedent;
+  propagates one weakly-pinpointed numerical range claim into the
+  Stage 1a++ documentation.
+
+**Recommendation**: Option α' (sweep ζ/K only, no Pa claim). It is
+strictly cleaner than γ' (no value-pinpoint claim made) and avoids
+the recursive-verification risk of β'. It is exactly analogous to the
+substrate Option β framing the PI already approved (`Ca_sub = α·Ca_cc`,
+result is a response curve, K-anchored). The sweep itself becomes the
+result, not a claim about an unmeasured MCF7 active-stress magnitude.
+
+**Resolved 2026-04-29: PI selected Option α'** (ratio sweep ζ/K only,
+no Pa claim, K-anchored to Fischer-Friedrich Nat Cell Biol 2014
+IF 30; Marchetti Rev Mod Phys 2013 IF 50 retained as framework
+reference for the active-stress concept and polar/nematic order
+parameter formalism). Stop conditions remain in force.
 
 ---
 
@@ -359,9 +433,13 @@ narrative its third quantitative pillar.
   balance integrand recomputed to include $\sigma_{\text{act},zz}$ at
   contact-band particles; (iii) contact-band ρ_kernel gate window
   reinterpretation.
-- **Magic-Number Block PASS** for `ζ_star`: Marchetti Rev Mod Phys 2013
-  (IF 50) directly anchors `ζ_a / K ∈ [0.1, 1.0]`. **Unlike γ_sub_Col1,
-  this anchor is literature-explicit.**
+- **Magic-Number Block resolution**: PI selected Option α' (resolved
+  2026-04-29). Sweep `ζ/K ∈ {0.1, 0.3, 1.0}` is the result, not a
+  parameter to verify; no specific Pa value is claimed. K is anchored
+  via Fischer-Friedrich Nat Cell Biol 2014 IF 30 (already cited in
+  `docs/02_force_models.md` §1.1 as primary for cortex stiffness ~1 kPa).
+  Marchetti Rev Mod Phys 2013 IF 50 retained as the framework reference
+  for the active-stress concept. Magic-Number Block automatically PASS.
 - **Carrier baseline**: Layer 1 v15 + Stage 1a+ Option β α=1.0 (best-
   anchored substrate config from the 5-simulation Layer 1 ceiling
   finding).
@@ -386,28 +464,28 @@ narrative its third quantitative pillar.
     1a++.b) or trigger Track B (v15 deferred diagnostics, see
     `docs/v15_deferred_diagnostics_plan.md`).
 
-## Decision request to PI
+## PI decisions (resolved 2026-04-29)
 
-1. **Approve Stage 1a++ scope** (Layer 1 v15 + Stage 1a+ Option β α=1.0
-   carrier + Layer 2 continuum boundary active stress; Layer 2
-   stochastic events deferred to Stage 1a++.b)?
-2. **Approve Option I (single $\zeta_\star = 0.3$) or Option II (sweep
-   $\zeta_\star \in \{0.1, 0.3, 1.0\}$)?**
-3. **Approve the three contract changes** (energy-monotone suspended,
-   anchor-force-balance integrand recomputed, contact-band ρ_kernel
-   reinterpretation)?
-4. **Approve `ζ_star ∈ [0.1, 1.0]` Marchetti Rev Mod Phys 2013 anchor**
-   as the literature-anchored single value (Option I) or sweep range
-   (Option II)?
-5. **Approve bounded outcomes for the Stage 1a++ pilot** (4-bucket
-   decision tree analogous to `docs/outcomes_stage1a_plus.md`, applied
-   to the new R drift improvement gate vs β α=1.0 baseline) — to be
-   drafted in `docs/outcomes_stage1a_plus_plus.md` if (1)–(4) pass.
+1. **Stage 1a++ scope** — APPROVED. Layer 1 v15 + Stage 1a+ Option β
+   α=1.0 carrier + Layer 2 continuum boundary active stress. Layer 2
+   stochastic events deferred to Stage 1a++.b.
+2. **Option II (3-run sweep)** — APPROVED.
+3. **Three contract changes** (energy-monotone suspended, anchor-force-
+   balance integrand recomputed, contact-band ρ_kernel
+   reinterpretation) — APPROVED.
+4. **`ζ_star` literature verification failed (PARTIAL)** — RESOLVED via
+   **Option α'**: sweep ζ/K only (no Pa claim), K-anchored to
+   Fischer-Friedrich Nat Cell Biol 2014 IF 30, Marchetti Rev Mod Phys
+   2013 IF 50 retained as framework reference. Result reported as
+   response curve in ζ/K, not as a claim about MCF7 active-stress
+   magnitude. Magic-Number Block automatically PASS.
+5. **Bounded outcomes for Stage 1a++ pilot** — APPROVED, drafted in
+   `docs/outcomes_stage1a_plus_plus.md`.
 
-If yes, Stage 1a++ implementation begins. Stop conditions remain in
-force: no magic numbers, no gate semantics edits beyond the three
-explicit contract changes recorded here, no v13 anti-pattern, halt and
-surface to PI on any FAIL.
+Stage 1a++ implementation begins under these decisions. Stop conditions
+remain in force: no magic numbers, no gate semantics edits beyond the
+three explicit contract changes recorded here, no v13 anti-pattern,
+halt and surface to PI on any FAIL.
 
 ## Track B trigger conditions (v15 deferred diagnostics)
 

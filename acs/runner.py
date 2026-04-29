@@ -50,6 +50,13 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     nm = cfg["numerics"]
     sim = cfg["simulation"]
     sub = cfg.get("substrate", {})
+    layer2 = cfg.get("layer2", {})
+    # Stage 1a++ Layer 2 active stress (Option α' resolution 2026-04-29):
+    # ζ/K dimensionless ratio, no Pa claim. K is anchored to Fischer-
+    # Friedrich Nat Cell Biol 2014 IF 30 (already cited in
+    # docs/02_force_models.md §1.1). Marchetti Rev Mod Phys 2013 IF 50
+    # retained as framework reference.
+    zeta_star = float(layer2.get("zeta_star", 0.0))
     # Stage 1a+ Option β: substrate adhesion energy is anchored to Ca_cc
     # via the sweep multiplier α (Maître Science 2012, IF 47, anchors
     # γ_cc; α is parameter-free at result level — see
@@ -79,6 +86,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         substrate_enabled=bool(sub.get("enabled", False)),
         n_contact_band=int(sub.get("n_contact_band", 3)),
         gamma_sub_star=gamma_sub_star,
+        zeta_star=zeta_star,
     )
 
 
@@ -141,6 +149,18 @@ def run_stage1a(config_path: Path | str) -> Path:
                 "γ_sub*=0 (mechanical anchor only), spheroid centre at z* = R₀ = %.4f",
                 solver_cfg.n_contact_band, solver_cfg.radius_star,
             )
+    if solver_cfg.zeta_star > 0.0:
+        # Stage 1a++ Layer 2 active stress (Option α' framing): ζ/K
+        # dimensionless ratio, no Pa claim. K anchored to Fischer-Friedrich
+        # Nat Cell Biol 2014 IF 30; Marchetti 2013 IF 50 framework
+        # reference. Result reported as response curve in ζ/K.
+        logger.info(
+            "Stage 1a++ Layer 2 active stress: ζ/K = ζ_star = %.4f "
+            "(σ_act = -ζ·K·I on boundary particles; contractile cortex). "
+            "Energy-monotone gate SUSPENDED per Cousin-Rule contract change "
+            "(active stress injects energy by construction).",
+            solver_cfg.zeta_star,
+        )
     else:
         centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
     solver.initialize_sphere(centre)
@@ -291,6 +311,8 @@ def run_stage1a(config_path: Path | str) -> Path:
             "shell_bulk_mean_rho": shell0["bulk_mean_rho"],
             "shell_bulk_std_rho": shell0["bulk_std_rho"],
             "shell_bulk_n_particles": shell0["bulk_n_particles"],
+            # active_power_star and n_boundary already in inv0 dict — see
+            # MLSMPMSolver.invariants(). Keep them explicit for clarity.
         }
         if solver_cfg.substrate_enabled:
             # Frame 0: no step has run, so the impulse accumulator is at its
@@ -551,22 +573,50 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
         ))
 
-    energies = np.array([
-        r["kinetic_energy_star"] + r["strain_energy_star"]
-        for r in metrics_rows
-    ], dtype=float)
-    if len(energies) >= 2:
-        E_max = float(energies.max())
-        increases = np.diff(energies)
-        max_inc = float(increases.max() if len(increases) else 0.0)
-        E_tol = float(g["energy_increase_tol_rel"]) * max(E_max, 1e-30)
+    # Stage 1a++ contract change: when ζ_star > 0 the active stress injects
+    # energy by construction (active matter is non-equilibrium); the energy-
+    # monotone gate is suspended and replaced with a finiteness check on
+    # the cumulative active power. PI-approved 2026-04-29 in
+    # docs/stage1a_plus_plus_layer2_sanity.md §3.
+    if solver_cfg.zeta_star > 0.0:
+        # Suspended; report as informational.
+        active_powers = np.array(
+            [r.get("active_power_star", 0.0) for r in metrics_rows],
+            dtype=float,
+        )
+        max_abs_power = float(np.abs(active_powers).max() if len(active_powers) else 0.0)
+        # Strain-energy reference for the "active power finite vs strain
+        # energy" sanity check.
+        U_strain_max = float(max(
+            (r.get("strain_energy_star", 0.0) for r in metrics_rows),
+            default=1e-30,
+        ))
+        # Active-work-finite gate: per-frame active power bounded by 10×
+        # strain-energy scale (rough sanity check that active power doesn't
+        # blow up unboundedly).
         results.append(GateResult(
-            "energy monotone (KE + strain)",
-            max_inc <= E_tol,
-            f"max(ΔE) = {max_inc:.3e} ≤ tol {E_tol:.3e}",
+            "active power finite (Stage 1a++ Cousin-Rule replacement for energy-monotone)",
+            np.isfinite(max_abs_power) and max_abs_power <= 10.0 * max(U_strain_max, 1e-30),
+            f"max |P_act| = {max_abs_power:.3e}, max U_strain = {U_strain_max:.3e}, "
+            f"ratio = {max_abs_power / max(U_strain_max, 1e-30):.2f} (limit 10.0)",
         ))
     else:
-        results.append(GateResult("energy monotone (KE + strain)", False, "insufficient frames"))
+        energies = np.array([
+            r["kinetic_energy_star"] + r["strain_energy_star"]
+            for r in metrics_rows
+        ], dtype=float)
+        if len(energies) >= 2:
+            E_max = float(energies.max())
+            increases = np.diff(energies)
+            max_inc = float(increases.max() if len(increases) else 0.0)
+            E_tol = float(g["energy_increase_tol_rel"]) * max(E_max, 1e-30)
+            results.append(GateResult(
+                "energy monotone (KE + strain)",
+                max_inc <= E_tol,
+                f"max(ΔE) = {max_inc:.3e} ≤ tol {E_tol:.3e}",
+            ))
+        else:
+            results.append(GateResult("energy monotone (KE + strain)", False, "insufficient frames"))
 
     nan_ok = inv_final["nan_count"] == 0 and not halted
     results.append(GateResult(
@@ -647,6 +697,43 @@ def run_stage1a(config_path: Path | str) -> Path:
                 "contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]",
                 False,
                 "no valid contact-band samples",
+            ))
+
+    # Stage 1a++ Layer 2 additional gates (zeta_star > 0).
+    if solver_cfg.zeta_star > 0.0:
+        # (iv) R drift improvement vs Stage 1a+ Option β α=1.0 baseline
+        # (= 0.247, the best-anchored Layer-1+substrate result). Stage
+        # 1a++ must improve on this to demonstrate Layer 2 contribution.
+        # See docs/outcomes_stage1a_plus_plus.md §"Mechanism question".
+        beta_alpha1_baseline = float(g.get("stage1a_plus_beta_alpha1_R_drift_baseline", 0.247))
+        if not np.isnan(R_drift):
+            results.append(GateResult(
+                "R drift improvement vs Stage 1a+ Option β α=1.0 baseline",
+                R_drift < beta_alpha1_baseline,
+                f"R_drift_1aplusplus = {R_drift:.3f} vs β α=1.0 baseline "
+                f"{beta_alpha1_baseline:.3f} (strict-less; bucketing → "
+                f"docs/outcomes_stage1a_plus_plus.md)",
+            ))
+
+        # (v) Boundary-tag stability: |Δn_boundary / n_boundary| per frame
+        # ≤ 0.10. Numerical hygiene — if the boundary tag flickers
+        # pathologically, the active-stress measurement is meaningless.
+        n_b_series = [int(r.get("n_boundary", 0)) for r in metrics_rows]
+        if len(n_b_series) >= 2:
+            denom = max(np.mean(n_b_series), 1.0)
+            flickers = np.abs(np.diff(n_b_series)) / denom
+            max_flicker = float(flickers.max())
+            results.append(GateResult(
+                "boundary-tag stability |Δn_boundary| / <n_boundary> per frame",
+                max_flicker <= 0.10,
+                f"max frame-to-frame flicker = {max_flicker:.3f} "
+                f"(<n_boundary>={denom:.1f}, limit 0.10, n_frames={len(n_b_series)})",
+            ))
+        else:
+            results.append(GateResult(
+                "boundary-tag stability",
+                False,
+                "insufficient frames for flicker computation",
             ))
 
     psi_check_t = float(g["sphericity_check_after_s"]) / float(cfg["physics"]["maxwell_tau_s"])
