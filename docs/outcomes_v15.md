@@ -145,3 +145,116 @@ exist (do **not** implement without explicit PI sign-off):
 
 Both are scheme changes outside the v15 bounded scope and require a fresh
 Sanity-Gate proposal. v15 proceeds as PI-approved.
+
+---
+
+## Pilot result (2026-04-29)
+
+`python -m acs.runner configs/stage1a_pilot.yaml` — 24,000 steps, wall-clock
+0.63 min on Laptop A5000, peak VRAM 2.03 GB, no NaN. Run is deterministic
+(repeated; identical gate values).
+
+### Critical separation outcome
+
+The Sanity-Gate check 6 witness — the shell-averaged `<ρ_kernel>(r/R₀)`
+profile — discriminates two competing interpretations of any residual R
+drift in v15:
+
+| Interpretation | Predicted shell signature | Observed | Verdict |
+|---|---|---|---|
+| **(A) Numerical onion-peeling artifact** — surface-only contraction without bulk pressure transmission (the v12 failure mode) | Surface bin shows ρ peak; bulk bins remain at ρ_ref (no rise) | Bulk bins (1–6) at frame 24: ρ ∈ [2.544, 2.554], inter-shell variation **< 0.4%**; no surface peak | **RULED OUT** |
+| **(B) Single-layer biological limit** — bulk uniformly pressurised but to insufficient magnitude to balance Laplace pressure | Bulk profile flat with small δρ excess across all shells; R contracts to whatever balance δρ provides | Bulk δρ excess ≈ **+0.45%** uniformly vs predicted +2.9% (proposal §6 (b)); R/R₀ contracts to 0.756 (drift 24.4%) | **CONFIRMED** |
+
+The v15 (k.3) bulk-transmission mechanism therefore works *structurally* —
+surface CSF impulses now propagate uniformly through the spheroid bulk via
+the kernel-density coupling — but the achievable bulk pressure response
+(σ_vol = K · δρ ≈ K · 0.005) is ≈ 6× weaker than the equilibrium prediction
+(K · 0.029) needed for R_eq/R₀ ≈ 0.99.
+
+### Bounded-outcome bucket
+
+R drift 24.4% places the run in **Outcome 4 (> 20%, architectural review)**
+per the decision tree above. Per the same tree: STOP for PI decision; no
+further within-Layer-1 cycles, no parameter retuning, no inline gate edits.
+
+### Two paths surfaced to PI
+
+**Path A — Architectural review.** Treat the residual R drift as a
+framework-level failure of the surface-CSF + overdamped + density-volumetric
+combination. Options include sharp-interface CSF, mixed-mode
+pressure-projection, fully-incompressible split, or a Tait-form WCSPH
+volumetric stress (`docs/outcomes_v15.md` "alternatives" §). Each is a
+fresh Sanity-Gate proposal.
+
+**Path B — Single-layer limit acknowledged; advance to Stage 1a+.** Treat
+the residual R drift as a *quantitative finding*, not a numerical bug:
+Layer 1 alone (bulk active viscoelastic hydrodynamics) cannot maintain a
+free-floating spheroid at its preferred radius under physically-anchored
+surface tension, because the achievable bulk-pressure response from a
+single-cell-population fluid description is structurally too weak. The
+multi-layer biology (Layer 2 boundary cells with focal-adhesion stiffness,
+Layer 3 E-cadherin / Int-β1 adhesion network, Layer 5 mechano-osmotic
+turgor) is *necessary*, not optional, for spheroid integrity.
+
+### PI decision: Path B (recorded 2026-04-29)
+
+Reasoning recorded by the PI for the project audit trail:
+
+1. **Shell profile flat → numerical onion-peeling artifact ruled out.** The
+   Sanity-Gate check 6 witness directly tests the v15 mechanism and shows
+   it works as designed. The residual R drift is therefore not attributable
+   to a discretisation pathology, so an architectural fix to the discretisation
+   would not target the actual cause.
+2. **R drift 24.4% is the quantitative single-layer limit, not a bug.** The
+   number reflects the equilibrium balance between Laplace pressure and the
+   achievable bulk volumetric response of the chosen continuum description.
+   Reporting it as a finding is academically more defensible than chasing
+   it with further architectural iterations whose anchor would be the same
+   target gate value.
+3. **Multi-layer biology necessity is now demonstrable from simulation
+   alone.** This was previously a literature claim; v15 makes it a
+   simulation-derived quantitative result.
+4. **Cho et al. 2020 consistency.** E-cadherin knockdown (and analogous
+   single-adhesion-channel perturbations) destabilise spheroid integrity in
+   the experimental MCF7 system, qualitatively matching the v15 result that
+   a single-channel mechanical description is insufficient.
+5. **Paper narrative.** The layer-by-layer mechanism quantification (which
+   layer contributes which fraction of the spheroid stability) is the
+   intended publication frame; v15 provides the Layer 1 baseline that
+   subsequent layers will be measured against.
+
+### Deferred diagnostic — 6× shortfall in δρ_bulk
+
+The proposal §6 (b) predicts δρ_eq ≈ +2.9% from `γ·κ ≈ K·(ρ_ref/ρ_eq − 1)`;
+v15 observed +0.45% (≈ 6× short). Three candidate explanations remain
+unresolved:
+
+(i) Maxwell deviatoric residual stress is sharing some load even at
+    t* = 240 (the system is still slowly contracting at the end of the
+    pilot, suggesting the long-time deviatoric tail is non-zero);
+
+(ii) The G2P kernel-density estimator under-reports the true particle
+     clustering by an O(1) factor inherent to quadratic-kernel smoothing;
+
+(iii) The effective small-strain bulk modulus of K · (ρ_ref/ρ − 1) at
+      δρ ≪ 1 is structurally smaller than K because the linearised slope
+      depends on the achieved δρ, not on K alone.
+
+These are **deferred to Stage 1a+ or Stage 1c**, where they become
+naturally testable: substrate contact (Stage 1a+) introduces an
+independent constraint on R via the wetting/spreading geometry, and
+turgor pressure (Stage 1c, Layer 5 Tier 2) introduces an independent
+volumetric pressure source whose magnitude can be compared against the
+v15 shortfall. No standalone v15 diagnostic cycle is taken before then.
+
+### Files of record for this run
+
+```
+results/stage1a_pilot/gate_report.md         — Pillar-1 gate evaluation
+results/stage1a_pilot/metrics.csv            — per-frame invariants + shell summary
+results/stage1a_pilot/shell_profile.csv      — long-format <ρ_kernel>(r/R₀) per (frame, bin)
+results/stage1a_pilot/snapshots.h5           — particle state per frame
+results/stage1a_pilot/curvature_validation.json
+results/stage1a_pilot/reference_calibration.json
+results/stage1a_pilot/run_manifest.json      — git hash + config + host
+```
