@@ -349,6 +349,24 @@ class SolverConfig:
     layer3_kappa_act: float = 1.0      # κ in φ_eff formula (PI default 1.0)
     layer3_memory_eps_star: float = 0.0  # ε memory decay rate (PI default 0.0 = exactly fixed)
 
+    # Stage 1d.b Marangoni Mechanism A + F (per
+    # `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
+    # When `layer4_dynamic_gamma=True` (default if layer4_enabled and
+    # `tau_gamma_star > 0`), γ becomes a per-particle state variable
+    # γ_p evolved by ODE:
+    #   dγ_p/dt = (γ_eq_target − γ_p)/τ_γ + α_A·|tr(C_p)|·(γ_max − γ_p)
+    #   γ_eq_target = [γ_max·(1−φ_eff) + γ_min·φ_eff] · [1 + α_F·(ρ_osm − 1)]
+    # τ_γ default 1.0 (Yadav 2022 PRF τ₃ ≈ 70s, τ_relax = 60s).
+    # α_A default 0 (Mechanism A reaccumulation disabled; non-zero =
+    # PARTIAL Magic-Number-Block, requires PI sweep authorization).
+    # α_F default 0 (Mechanism F osmotic coupling disabled; same).
+    # When `layer4_dynamic_gamma=False`, falls back to legacy inline
+    # γ(φ_eff) scatter for backwards compat.
+    layer4_dynamic_gamma: bool = False
+    tau_gamma_star: float = 1.0
+    alpha_A_star: float = 0.0
+    alpha_F_star: float = 0.0
+
     # Stage 2 Layer 6 chemistry / ECM remodeling — minimal scope per
     # `docs/stage2_sanity.md`: MMP secretion + ECM degradation only,
     # de novo ECM secretion deferred to Stage 2.b.
@@ -505,6 +523,13 @@ class MLSMPMSolver:
         # zero-init'd and unused.
         self.phi_memory_p = ti.field(dtype=ti.f32, shape=n_p)
         self.c_act_p = ti.field(dtype=ti.f32, shape=n_p)
+        # Stage 1d.b Marangoni dynamic γ state (Mechanism A reaccumulation
+        # + Mechanism F osmotic coupling). Per
+        # docs/stage1d_b_marangoni_sanity.md. When `layer4_dynamic_gamma`
+        # is False, this field is populated but never updated — its
+        # initial value (γ_eq(phi_initial)) is what the legacy inline
+        # γ(φ) scatter would compute.
+        self.gamma_p_state = ti.field(dtype=ti.f32, shape=n_p)
         # Stage 1c Layer 5 osmotic state ρ_osm field (per particle).
         # Initialised to `cfg.rho_osm_initial` in the constructor. Evolved
         # by `_integrate_osmotic_ode` once per step when Layer 5 enabled.
@@ -546,6 +571,17 @@ class MLSMPMSolver:
         )
         self.c_act_p.from_numpy(
             np.zeros(cfg.n_particles, dtype=np.float32)
+        )
+        # Stage 1d.b: γ_p initial = γ_eq(phi_initial). At t=0,
+        # c_act_p=0, so phi_eff_p = phi_initial, so γ_eq matches the
+        # legacy γ(phi_initial) value. Fixes the t=0 boundary case for
+        # both legacy and dynamic_gamma paths.
+        gamma_eq_init = (
+            float(cfg.gamma_max_star) * (1.0 - float(cfg.phi_initial))
+            + float(cfg.gamma_min_star) * float(cfg.phi_initial)
+        )
+        self.gamma_p_state.from_numpy(
+            np.full(cfg.n_particles, gamma_eq_init, dtype=np.float32)
         )
         # Stage 1c Layer 5 osmotic state ρ_osm initialised to
         # `rho_osm_initial` (= 1.0 = full hydration by default).
@@ -612,6 +648,10 @@ class MLSMPMSolver:
         self.diag_c_act_max = ti.field(dtype=ti.f32, shape=())
         self.diag_c_act_band_sum = ti.field(dtype=ti.f64, shape=())
         self.diag_c_act_band_count = ti.field(dtype=ti.i32, shape=())
+        # Stage 1d.b dynamic γ diagnostics.
+        self.diag_gamma_sum = ti.field(dtype=ti.f64, shape=())
+        self.diag_gamma_min = ti.field(dtype=ti.f32, shape=())
+        self.diag_gamma_max = ti.field(dtype=ti.f32, shape=())
 
         # Stage 1a++ Layer 2 diagnostics:
         #  • diag_active_power: instantaneous power delivered by the active
@@ -977,28 +1017,96 @@ class MLSMPMSolver:
 
     # ------------------------------------------------ Layer 4 Marangoni ----
     @ti.kernel
+    def _integrate_gamma_ode(self):
+        """Stage 1d.b Marangoni Mechanism A + F (per
+        `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
+
+        Per-particle γ ODE:
+          γ_eq_p = γ_max·(1 − φ_eff) + γ_min·φ_eff
+          γ_eq_target = γ_eq_p · (1 + α_F · (ρ_osm_p − 1))    [Mech F]
+          dγ_p/dt = (γ_eq_target − γ_p)/τ_γ
+                  + α_A · |tr(C_p)| · (γ_max − γ_p)             [Mech A]
+
+        - Mechanism A (Yadav 2022 PRF): strain-driven reaccumulation,
+          gated on |tr(C_p)| (volumetric strain rate proxy in MLS-MPM).
+        - Mechanism F (Yadav 2022 + Guo 2017): osmotic-stiffness ↔
+          surface tension proportionality. ρ_osm > 1 (cell volume
+          loss → cortex stiffer) → γ_eq_target > γ_eq.
+
+        When `layer4_dynamic_gamma=False`, this kernel is not called
+        and `_scatter_gamma_to_grid` falls back to legacy inline
+        γ(φ_eff) computation.
+
+        Forward-Euler dt with γ_p clipped to non-negative; upper bound
+        is naturally bounded by the (γ_max − γ_p) factor in the
+        Mechanism A term.
+        """
+        dt = self.cfg.dt_star
+        tau_g = self.cfg.tau_gamma_star
+        alpha_A = self.cfg.alpha_A_star
+        alpha_F = self.cfg.alpha_F_star
+        gamma_max = self.cfg.gamma_max_star
+        gamma_min = self.cfg.gamma_min_star
+        for p in self.x:
+            phi_eff = self.phi_p[p]   # phi_p holds phi_eff under Stage 1b.b
+            rho_osm = self.rho_osm_p[p]
+            gamma_eq = gamma_max * (1.0 - phi_eff) + gamma_min * phi_eff
+            # Mechanism F: osmotic coupling factor.
+            g_osm = 1.0 + alpha_F * (rho_osm - 1.0)
+            if g_osm < 0.0:
+                g_osm = 0.0  # defensive (alpha_F · rho_osm shouldn't drop g_osm below 0)
+            gamma_eq_target = gamma_eq * g_osm
+            # Mechanism A: |tr(C_p)| as volumetric strain rate proxy.
+            C_p = self.C[p]
+            tr_C_abs = ti.abs(C_p[0, 0] + C_p[1, 1] + C_p[2, 2])
+            # ODE step (forward Euler).
+            gamma = self.gamma_p_state[p]
+            dgamma = dt * (
+                (gamma_eq_target - gamma) / ti.max(tau_g, 1e-30)
+                + alpha_A * tr_C_abs * (gamma_max - gamma)
+            )
+            new_gamma = gamma + dgamma
+            # Defense-in-depth clip to physically-meaningful range.
+            # Upper bound: γ_max · max(g_osm) ≈ γ_max · (1 + α_F·(ρ_max-1)).
+            gamma_upper = gamma_max * (1.0 + alpha_F * (self.cfg.rho_osm_max - 1.0))
+            if new_gamma < 0.0:
+                new_gamma = 0.0
+            if new_gamma > gamma_upper:
+                new_gamma = gamma_upper
+            self.gamma_p_state[p] = new_gamma
+
+    @ti.kernel
     def _scatter_gamma_to_grid(self):
-        """Stage 1d Layer 4: scatter per-particle γ(φ_p) to grid_gamma.
+        """Stage 1d Layer 4: scatter per-particle γ to grid_gamma.
 
         Per `docs/07_internal_flow_dynamics.md` §1: γ_eff per cell =
-        Σ_p w_pI · m_p · γ(φ_p) / Σ_p w_pI · m_p (mass-weighted average).
+        Σ_p w_pI · m_p · γ_p / Σ_p w_pI · m_p (mass-weighted average).
         For simplicity and matching the existing CSF colour pattern, we
         scatter the mass-weighted γ contribution; the runner does NOT
         renormalise (the gradient operator is invariant under uniform
         scaling, and absolute γ value is informational only — the
         Marangoni FORCE depends only on ∇γ).
 
-        Assumes _clear_grid has already zeroed grid_gamma. Reads
-        per-particle φ_p; computes γ(φ_p) = γ_max·(1−φ) + γ_min·φ
-        inline. When Layer 4 disabled this kernel is not called.
+        Source for γ_p:
+        - When `layer4_dynamic_gamma=True` (Stage 1d.b): reads
+          `self.gamma_p_state[p]` (evolved by `_integrate_gamma_ode`).
+        - When False (legacy Stage 1d): computes γ(φ_eff_p) inline as
+          γ_max·(1−φ) + γ_min·φ.
+
+        Assumes _clear_grid has already zeroed grid_gamma. When Layer
+        4 disabled this kernel is not called.
         """
         m_p = self.cfg.particle_mass_star
         dx = self.cfg.dx_star
         gamma_max = self.cfg.gamma_max_star
         gamma_min = self.cfg.gamma_min_star
         for p in self.x:
-            phi_p = self.phi_p[p]
-            gamma_p = gamma_max * (1.0 - phi_p) + gamma_min * phi_p
+            gamma_p = 0.0
+            if ti.static(self.cfg.layer4_dynamic_gamma):
+                gamma_p = self.gamma_p_state[p]
+            else:
+                phi_p = self.phi_p[p]
+                gamma_p = gamma_max * (1.0 - phi_p) + gamma_min * phi_p
             base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
             fx = self.x[p] / dx - ti.cast(base, ti.f32)
             w = [
@@ -1174,6 +1282,11 @@ class MLSMPMSolver:
             # mechanical step (φ is decoupled from positions; the ζ(φ)
             # coupling enters next step's `_p2g_momentum_and_stress`).
             self._integrate_phi_ode()
+        if self.cfg.layer4_enabled and self.cfg.layer4_dynamic_gamma:
+            # Stage 1d.b Marangoni Mechanism A + F: integrate γ_p ODE
+            # after the mechanical step. γ_p is consumed by the next
+            # step's _scatter_gamma_to_grid (within _build_marangoni_field).
+            self._integrate_gamma_ode()
         if self.cfg.layer5_enabled:
             # Stage 1c Layer 5: integrate the per-particle ρ_osm ODE after
             # the mechanical step (ρ_osm is driven by the post-step
@@ -1776,6 +1889,10 @@ class MLSMPMSolver:
         self.diag_c_act_max[None] = -1.0e10
         self.diag_c_act_band_sum[None] = 0.0
         self.diag_c_act_band_count[None] = 0
+        # Stage 1d.b γ diagnostics, reset per call.
+        self.diag_gamma_sum[None] = 0.0
+        self.diag_gamma_min[None] = 1.0e10
+        self.diag_gamma_max[None] = -1.0e10
         # Path C diagnostics, reset per call.
         self.diag_grav_pe[None] = 0.0
         self.diag_com_z_sum[None] = 0.0
@@ -1915,6 +2032,16 @@ class MLSMPMSolver:
                             ti.cast(c_act_p_all, ti.f64),
                         )
                         ti.atomic_add(self.diag_c_act_band_count[None], 1)
+
+            # Stage 1d.b dynamic γ aggregation.
+            if ti.static(self.cfg.layer4_dynamic_gamma):
+                gamma_p_aggr = self.gamma_p_state[p]
+                ti.atomic_add(
+                    self.diag_gamma_sum[None],
+                    ti.cast(gamma_p_aggr, ti.f64),
+                )
+                ti.atomic_min(self.diag_gamma_min[None], gamma_p_aggr)
+                ti.atomic_max(self.diag_gamma_max[None], gamma_p_aggr)
 
             # Stage 1c Layer 5 per-particle ρ_osm aggregation.
             if ti.static(self.cfg.layer5_enabled):
@@ -2283,6 +2410,19 @@ class MLSMPMSolver:
             "c_act_band_count": (
                 int(self.diag_c_act_band_count[None])
                 if (self.cfg.layer3_enabled and self.cfg.layer3_split) else 0
+            ),
+            # Stage 1d.b dynamic γ diagnostics.
+            "gamma_sum": (
+                float(self.diag_gamma_sum[None])
+                if self.cfg.layer4_dynamic_gamma else float("nan")
+            ),
+            "gamma_min": (
+                float(self.diag_gamma_min[None])
+                if self.cfg.layer4_dynamic_gamma else float("nan")
+            ),
+            "gamma_max": (
+                float(self.diag_gamma_max[None])
+                if self.cfg.layer4_dynamic_gamma else float("nan")
             ),
             # Path C diagnostics.
             "grav_pe_star": float(self.diag_grav_pe[None]),

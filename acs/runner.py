@@ -80,6 +80,14 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     layer4_enabled = bool(layer4.get("enabled", False))
     gamma_max_star = float(layer4.get("gamma_max_star", 0.0))
     gamma_min_star = float(layer4.get("gamma_min_star", 0.0))
+    # Stage 1d.b Marangoni Mechanism A + F (per
+    # docs/stage1d_b_marangoni_sanity.md). Default OFF (alpha_A = 0,
+    # alpha_F = 0) → recovers legacy γ(φ) static map even with
+    # dynamic_gamma=True.
+    layer4_dynamic_gamma = bool(layer4.get("dynamic_gamma", False))
+    tau_gamma_star = float(layer4.get("tau_gamma_star", 1.0))
+    alpha_A_star = float(layer4.get("alpha_A_star", 0.0))
+    alpha_F_star = float(layer4.get("alpha_F_star", 0.0))
     # Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
     # `layer3_spatial_S` is DEPRECATED in favour of the φ_memory + c_act
     # split (intrinsically encodes contact-band gating in c_act ODE
@@ -181,6 +189,10 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         layer3_split=layer3_split,
         layer3_kappa_act=layer3_kappa_act,
         layer3_memory_eps_star=layer3_memory_eps_star,
+        layer4_dynamic_gamma=layer4_dynamic_gamma,
+        tau_gamma_star=tau_gamma_star,
+        alpha_A_star=alpha_A_star,
+        alpha_F_star=alpha_F_star,
         layer6_enabled=layer6_enabled,
         alpha_mmp_star=alpha_mmp_star,
         beta_deg_star=beta_deg_star,
