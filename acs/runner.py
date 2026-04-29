@@ -22,7 +22,7 @@ from typing import Any
 import numpy as np
 import yaml
 
-from acs.analysis.shape_metrics import shape_metrics
+from acs.analysis.shape_metrics import shape_metrics, shell_density_profile
 from acs.config import load_config
 from acs.gpu import init_taichi
 from acs.gpu_profiler import GpuProfiler
@@ -171,6 +171,15 @@ def run_stage1a(config_path: Path | str) -> Path:
 
     frames_per_save = max(1, int(round(frame_dt / dt)))
     metrics_rows: list[dict[str, Any]] = []
+    # shell_rows is the long-format witness for the v15 (k.3) bulk-transmission
+    # mechanism (Sanity-Gate check 6, measurement-protocol consistency). One row
+    # per (frame, radial bin); read by analysis to verify the equilibrium
+    # ρ_kernel(r/R₀) profile is flat across the bulk shell rather than
+    # surface-only. Specification: docs/stage1a_interior_pressure_sanity.md
+    # §6 (e) and docs/outcomes_v15.md.
+    shell_rows: list[dict[str, Any]] = []
+    SHELL_N_BINS = 10
+    SHELL_R_MAX_FRAC = 1.2
     step_times: list[float] = []
     halted = False
     halt_reason = ""
@@ -193,6 +202,28 @@ def run_stage1a(config_path: Path | str) -> Path:
             tau_dev=solver.tau_dev.to_numpy(),
             is_boundary=solver.is_boundary.to_numpy(),
         )
+        # v15 shell-density witness — frame 0.
+        x0_np = solver.x.to_numpy()
+        rho0_np = solver._rho_kernel_p.to_numpy()
+        shell0 = shell_density_profile(
+            x0_np, rho0_np,
+            centre=np.asarray(metrics0["centroid"], dtype=np.float64),
+            R0=R0, n_bins=SHELL_N_BINS, r_max_frac=SHELL_R_MAX_FRAC,
+        )
+        for b in range(SHELL_N_BINS):
+            shell_rows.append({
+                "frame_index": 0,
+                "time_star": 0.0,
+                "bin_index": b,
+                "r_lo_over_R0": float(shell0["bin_lo_over_R0"][b]),
+                "r_hi_over_R0": float(shell0["bin_hi_over_R0"][b]),
+                "count": int(shell0["count_per_bin"][b]),
+                "mean_rho_kernel": (
+                    float(shell0["mean_rho_per_bin"][b])
+                    if not np.isnan(shell0["mean_rho_per_bin"][b])
+                    else float("nan")
+                ),
+            })
         metrics_rows.append({
             "frame_index": 0,
             "time_star": 0.0,
@@ -203,6 +234,9 @@ def run_stage1a(config_path: Path | str) -> Path:
             "wadell_sphericity": metrics0["wadell_sphericity"],
             "effective_radius": metrics0["effective_radius"],
             "radius_of_gyration": metrics0["radius_of_gyration"],
+            "shell_bulk_mean_rho": shell0["bulk_mean_rho"],
+            "shell_bulk_std_rho": shell0["bulk_std_rho"],
+            "shell_bulk_n_particles": shell0["bulk_n_particles"],
         })
 
         wall_start = time.perf_counter()
@@ -225,6 +259,13 @@ def run_stage1a(config_path: Path | str) -> Path:
                 inv = solver.invariants()
                 xs = solver.x.to_numpy()
                 m = shape_metrics(xs)
+                # v15 shell-density witness — runtime frame.
+                rho_runtime = solver._rho_kernel_p.to_numpy()
+                shell = shell_density_profile(
+                    xs, rho_runtime,
+                    centre=np.asarray(m["centroid"], dtype=np.float64),
+                    R0=R0, n_bins=SHELL_N_BINS, r_max_frac=SHELL_R_MAX_FRAC,
+                )
                 writer.write_frame(
                     step * dt,
                     position=xs,
@@ -233,8 +274,23 @@ def run_stage1a(config_path: Path | str) -> Path:
                     tau_dev=solver.tau_dev.to_numpy(),
                     is_boundary=solver.is_boundary.to_numpy(),
                 )
+                frame_idx = writer._frame_count - 1
+                for b in range(SHELL_N_BINS):
+                    shell_rows.append({
+                        "frame_index": frame_idx,
+                        "time_star": step * dt,
+                        "bin_index": b,
+                        "r_lo_over_R0": float(shell["bin_lo_over_R0"][b]),
+                        "r_hi_over_R0": float(shell["bin_hi_over_R0"][b]),
+                        "count": int(shell["count_per_bin"][b]),
+                        "mean_rho_kernel": (
+                            float(shell["mean_rho_per_bin"][b])
+                            if not np.isnan(shell["mean_rho_per_bin"][b])
+                            else float("nan")
+                        ),
+                    })
                 metrics_rows.append({
-                    "frame_index": writer._frame_count - 1,
+                    "frame_index": frame_idx,
                     "time_star": step * dt,
                     **{k: v for k, v in inv.items() if not isinstance(v, np.ndarray)},
                     "momentum_x": float(inv["momentum_star"][0]),
@@ -243,15 +299,22 @@ def run_stage1a(config_path: Path | str) -> Path:
                     "wadell_sphericity": m["wadell_sphericity"],
                     "effective_radius": m["effective_radius"],
                     "radius_of_gyration": m["radius_of_gyration"],
+                    "shell_bulk_mean_rho": shell["bulk_mean_rho"],
+                    "shell_bulk_std_rho": shell["bulk_std_rho"],
+                    "shell_bulk_n_particles": shell["bulk_n_particles"],
                 })
                 logger.info(
-                    "step=%d t*=%.3f KE=%.3e U=%.3e R/R0=%.3f ψ=%.3f vmax=%.3e",
+                    "step=%d t*=%.3f KE=%.3e U=%.3e R/R0=%.3f ψ=%.3f vmax=%.3e "
+                    "ρ_bulk=%.4f±%.4f (n=%d)",
                     step, step * dt,
                     inv["kinetic_energy_star"],
                     inv["strain_energy_star"],
                     m["effective_radius"] / R0,
                     m["wadell_sphericity"],
                     inv["max_speed_star"],
+                    shell["bulk_mean_rho"],
+                    shell["bulk_std_rho"],
+                    shell["bulk_n_particles"],
                 )
 
         wall_total = time.perf_counter() - wall_start
@@ -264,6 +327,18 @@ def run_stage1a(config_path: Path | str) -> Path:
             w = csv.DictWriter(fh, fieldnames=keys)
             w.writeheader()
             w.writerows(metrics_rows)
+
+    # v15 shell-density witness CSV (long format: one row per (frame, bin)).
+    # Read by analysis to plot ρ_kernel(r/R₀) profile over time and verify
+    # the v15 bulk-transmission mechanism. See
+    # docs/stage1a_interior_pressure_sanity.md §6 (e).
+    shell_path = out_dir / "shell_profile.csv"
+    if shell_rows:
+        keys = list(shell_rows[0].keys())
+        with shell_path.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=keys)
+            w.writeheader()
+            w.writerows(shell_rows)
 
     # ---------- Gate evaluation ----------
     g = cfg["gate"]

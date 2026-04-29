@@ -68,9 +68,17 @@ Sanity Gate (per docs/12_validation.md, run before first execution)
                  detects via max_speed_over_vrms.
    γ → 0:        boundary tagging still runs but contributes nothing — solver
                  reduces to pure viscoelastic relaxation, valid sanity check.
-   K → ∞:        volumetric Neo-Hookean clamps J = 1; numerically the f32
-                 stress field saturates. Stage 1a placeholder K* = 1 stays well
-                 inside f32 range.
+   K → ∞:        volumetric stress σ_vol = K·(ρ_ref/ρ_kernel − 1) saturates the
+                 f32 field for any finite (ρ_kernel − ρ_ref). Stage 1a
+                 placeholder K* = 1 stays well inside f32 range.
+   ρ_kernel→0:   v15 (k.3) form 1/ρ_kernel diverges; clamped at
+                 ρ_floor = 0.1·ρ_ref_kernel by `_interpolate_rho_runtime`,
+                 bounding σ_vol at +9·K. The clamp is a numerical safety
+                 floor — see `docs/outcomes_v15.md` for the literature
+                 verification record (no exact 0.1 cite found; conservative
+                 below the AHA-2010 free-surface kernel-truncation bound
+                 ~0.5·ρ_ref and the Liu-Liu 2010 isolated-particle
+                 threshold ~0.5·ρ_ref).
    R → 0:        constructor refuses R < 2·dx (cannot resolve the spheroid).
 
 3. **Conservation invariants**
@@ -101,26 +109,68 @@ Sanity Gate (per docs/12_validation.md, run before first execution)
                accumulate over 10⁵ steps. Justified vs gate tolerance 10⁻¹⁰.
 
 5. **Sign / sense check**
-   Volumetric Neo-Hookean   σ_vol = K (J − 1) I:
-       J > 1 (expansion) ⇒ σ_vol > 0 ⇒ pressure pushing outward ⇒ on grid,
-       force = −∇·σ pulls particles inward ⇒ correct restoring direction. ✓
+   Volumetric (v15 (k.3), density-based)   σ_vol = K (ρ_ref/ρ_kernel − 1) I:
+       ρ_kernel > ρ_ref (clustered) ⇒ ρ_ref/ρ_kernel − 1 < 0 ⇒ σ_vol < 0
+       ⇒ Cauchy stress is compressive ⇒ grid force −V₀·σ_vol·∇w is *outward*
+       ⇒ pushes the over-clustered region apart. ✓
+       ρ_kernel < ρ_ref (rarefied) ⇒ σ_vol > 0 ⇒ tensile ⇒ grid force pulls
+       particles together. ✓
+       Equilibrium at ρ_kernel = ρ_ref. This is the standard fluid-pressure
+       response (high density → expand, low density → contract), with the
+       same sign behaviour as the v12 K(J − 1) volumetric Neo-Hookean but
+       with kernel-density rather than Lagrangian deformation as the source —
+       so the bulk pressure responds to *spatial particle clustering*, not
+       just to local F. This is the v15 fix for the (k) interior-pressure-
+       transmission failure of v12 (where overdamped + ∇v ≈ 0 made F → I in
+       the bulk and σ_vol stayed ≈ 0 even as surface CSF dragged particles
+       inward; see `docs/stage1a_interior_pressure_sanity.md`).
    Maxwell deviatoric        τ_dev_{n+1} = e^(-dt/τ)·τ_dev_n + 2μτ(1−e^(-dt/τ))·ε̇_dev:
        under shear ε̇_dev > 0 ⇒ τ_dev grows toward 2μ·τ·ε̇_dev (steady),
-       opposing the shear ⇒ correct. ✓
+       opposing the shear ⇒ correct. ✓ Unchanged from v12.
    CSF impulse              dv = +γ·κ·∇c·dt / ρ_local (Brackbill 1992):
-       Colour c = grid_m / (ρ_bulk · dx³) gives c≈1 inside the fluid and c≈0
-       in vacuum. ∇c then points INWARD at the free surface (gradient of
-       "inside-ness"). The unit normal n̂ = ∇c/|∇c| therefore points inward,
-       and curvature κ = -∇·n̂ is **positive for a convex droplet** (= 2/R
-       for a sphere). The body force F_v = γ·κ·∇c thus has TWO inward signs
-       multiplied (κ > 0, ∇c inward) and points inward — exactly the
-       physical restoring force from surface tension. ✓
+       Colour c = grid_m / (ρ_bulk · grid_kernel_weight) (Adami-Hu-Adams 2010
+       §3 reproducing-kernel normalisation, in v12) gives c ≡ 1 in any cell
+       whose kernel sees particles and c ≈ 0 in vacuum. ∇c then points
+       INWARD at the free surface (gradient of "inside-ness"). The unit
+       normal n̂ = ∇c/|∇c| therefore points inward, and curvature κ = -∇·n̂
+       is **positive for a convex droplet** (= 2/R for a sphere). The body
+       force F_v = γ·κ·∇c thus has TWO inward signs multiplied (κ > 0, ∇c
+       inward) and points inward — exactly the physical restoring force from
+       surface tension. ✓
        Static-sphere validation in `runner.run_stage1a` asserts that the
        measured surface κ matches 2/R within 10% before the time loop runs.
    Overdamped drag          v ← (1 / (1 + ξ*·dt*)) · v after the elastic step:
        reduces |v| monotonically toward force-balance ⇒ correct. ✓
 
    Sense check: PASS.
+
+6. **Measurement-protocol consistency** (codified after v13, see
+   docs/12_validation.md and docs/stage1a_interior_pressure_sanity.md §6)
+   The v15 proposal walks through every gate's measurement protocol against
+   the new density-based volumetric stress. Salient items:
+     • Static-curvature κ gate is unchanged (κ depends only on the colour
+       field, not the constitutive law). ✓
+     • Radius-drift gate measures `effective_radius` from the second moment
+       of particle positions; the proposal predicts equilibrium at
+       R_eq/R_ref ≈ 0.991 (from γ·κ ≈ K·(ρ_ref/ρ_eq − 1) with γ=0.01,
+       κ ≈ 2.8, K=1 ⇒ ρ_eq/ρ_ref ≈ 1.029 ⇒ R contraction ≈ 0.9%). The
+       *off-protocol pathway* — could R shrink without ρ_kernel rising in
+       the bulk? — is closed by the new shell-averaged `<ρ_kernel>(r/R₀)`
+       diagnostic (`shell_density_profile` in `acs.analysis.shape_metrics`,
+       written to `shell_profile.csv` by the runner). A flat bulk profile
+       at equilibrium confirms that pressure transmits through the bulk;
+       a surface-only peak indicates the v15 fix is failing.
+     • Conservation gates (mass, momentum, energy) are arithmetic-only;
+       the volumetric strain energy is updated to U_vol = (K/2)·
+       (ρ_ref/ρ_kernel − 1)² for consistency with the new constitutive law,
+       so the energy-monotone gate continues to reflect the actual stored
+       internal energy.
+     • Calibration `<J>_well_resolved` gate is unchanged in semantic but
+       becomes informational (no longer load-bearing for σ_vol).
+   Check 6: PASS — the predicted equilibrium IS consistent with the
+   measurement protocol, and a new measurement-protocol-consistent witness
+   (shell `<ρ_kernel>(r/R₀)`) is added to test the bulk-transmission
+   mechanism directly.
 
 ================================================================================
 """
@@ -228,6 +278,32 @@ class MLSMPMSolver:
         self._calib_rho = ti.field(dtype=ti.f32, shape=n_p)
         self._calib_W = ti.field(dtype=ti.f32, shape=n_p)
         self._calib_scale = ti.field(dtype=ti.f32, shape=n_p)
+
+        # v15 (k.3) density-based volumetric stress fields.
+        # `_rho_kernel_p` is the kernel-interpolated density at particle p,
+        # refreshed at the start of every `step()` from the post-`_p2g_mass`
+        # `grid_m`. `_rho_ref_kernel` and `_rho_floor` are scalar fields set
+        # once by `calibrate_reference_state` (rho_ref = harmonic mean over
+        # well-resolved particles; rho_floor = 0.1·rho_ref). See
+        # `docs/stage1a_interior_pressure_sanity.md` for the proposal and
+        # `docs/outcomes_v15.md` for the literature-verification record on
+        # the 0.1 floor value.
+        self._rho_kernel_p = ti.field(dtype=ti.f32, shape=n_p)
+        self._rho_ref_kernel = ti.field(dtype=ti.f32, shape=())
+        self._rho_floor = ti.field(dtype=ti.f32, shape=())
+
+        # Initialise v15 density fields to a self-consistent default
+        # (σ_vol = K·(ρ_ref/ρ_kernel − 1) = 0 for ρ_kernel = ρ_ref = density_star)
+        # so that any code path that calls `step()` or `invariants()` without
+        # first calling `calibrate_reference_state` has well-defined behaviour.
+        # `calibrate_reference_state` later overwrites all three with the
+        # harmonic-mean-derived values from the actual particle pack.
+        rho_default = float(cfg.density_star)
+        self._rho_ref_kernel[None] = rho_default
+        self._rho_floor[None] = 0.1 * rho_default
+        self._rho_kernel_p.from_numpy(
+            np.full(cfg.n_particles, rho_default, dtype=np.float32)
+        )
 
         self.diag_mass = ti.field(dtype=ti.f64, shape=())
         self.diag_momentum = ti.Vector.field(3, dtype=ti.f64, shape=())
@@ -427,6 +503,20 @@ class MLSMPMSolver:
         self._calib_scale.from_numpy(scale_np)
         self._set_F_isotropic_from_calib()
 
+        # v15 (k.3): record ρ_ref_kernel and the numerical-safety floor
+        # ρ_floor = 0.1·ρ_ref for the density-based volumetric stress, and
+        # initialise `_rho_kernel_p` to ρ_ref so the very first step's σ_vol
+        # is zero by construction (it is overwritten anyway by
+        # `_interpolate_rho_runtime` at the top of step 1, before
+        # `_p2g_momentum_and_stress` reads it; this initialisation keeps the
+        # field in a defined state for any out-of-loop diagnostics that read
+        # it before `step` is called).
+        self._rho_ref_kernel[None] = float(rho_ref)
+        self._rho_floor[None] = 0.1 * float(rho_ref)
+        self._rho_kernel_p.from_numpy(
+            np.full(self.cfg.n_particles, float(rho_ref), dtype=np.float32)
+        )
+
         # Diagnostic: <J> over the three populations.
         J_per_p = scale_np.astype(np.float64) ** 3
         boundary_mask = ~well_resolved_mask
@@ -481,12 +571,36 @@ class MLSMPMSolver:
 
     # --------------------------------------------------------- one step ----
     def step(self) -> None:
+        """Single MLS-MPM step under v15 (k.3) density-based volumetric stress.
+
+        Pipeline (post-v15):
+          1. _clear_grid              — zero grid fields
+          2. _tag_boundary            — populate grid_count, classify particles
+          3. _p2g_mass                — scatter particle mass + kernel weight
+                                        to grid (no momentum, no stress)
+          4. _interpolate_rho_runtime — G2P → `_rho_kernel_p` per particle,
+                                        with floor clamp ρ_floor = 0.1·ρ_ref
+          5. _build_csf_field         — colour, smoothing, ∇c (reads grid_m)
+          6. _build_curvature         — n̂ and κ from ∇c
+          7. _p2g_momentum_and_stress — scatter momentum + v15 stress
+                                        σ = K·(ρ_ref/ρ_kernel_p − 1)·I + τ_dev
+          8. _grid_op_overdamped      — CSF impulse, drag, walls, m → v
+          9. _g2p_and_constitutive    — gather to particles, advect, update F, τ_dev
+
+        The split P2G (steps 3, 7) is the price of the v15 fix: σ_vol now
+        depends on the kernel-interpolated density at p, which itself depends
+        on grid_m built from all particles. So mass must scatter first, ρ_kernel
+        must be interpolated next, and only then can stress be scattered.
+        Estimated step-time cost: ~30–50% over v12.
+        """
         self._clear_grid()
         self._tag_boundary()
-        self._p2g()                  # populates grid_m (mass) and grid_v (momentum)
-        self._build_csf_field()      # reads grid_m to compute colour ρ/ρ_bulk and ∇c
-        self._build_curvature()      # n̂ = ∇c/|∇c|;  κ = -∇·n̂
-        self._grid_op_overdamped()   # converts to velocity, applies CSF impulse γ·κ·∇c
+        self._p2g_mass()                    # populates grid_m + grid_kernel_weight
+        self._interpolate_rho_runtime()     # populates _rho_kernel_p (with floor)
+        self._build_csf_field()             # reads grid_m to compute colour ρ/ρ_bulk and ∇c
+        self._build_curvature()             # n̂ = ∇c/|∇c|;  κ = -∇·n̂
+        self._p2g_momentum_and_stress()     # scatters momentum + density-based stress
+        self._grid_op_overdamped()          # converts to velocity, applies CSF impulse γ·κ·∇c
         self._g2p_and_constitutive()
 
     @ti.kernel
@@ -684,12 +798,132 @@ class MLSMPMSolver:
             self.grid_kappa[I] = -div
 
     @ti.kernel
-    def _p2g(self):
+    def _p2g_mass(self):
+        """First P2G pass: scatter particle mass + kernel volume weight only.
+
+        v15 (k.3) splits the legacy `_p2g` into two passes so that the
+        density-based volumetric stress σ_vol = K·(ρ_ref/ρ_kernel − 1)·I can
+        be evaluated using the post-scatter `grid_m` *before* momentum/stress
+        is scattered. Pass 1 (this kernel) writes `grid_m` and the
+        Adami-Hu-Adams 2010 §3 reproducing-kernel volume sum
+        `grid_kernel_weight`. `_clear_grid` runs first, so we accumulate into
+        already-zeroed fields.
+        """
+        m_p = self.cfg.particle_mass_star
+        V0 = self.cfg.particle_volume_star
+        dx = self.cfg.dx_star
+
+        for p in self.x:
+            base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
+            fx = self.x[p] / dx - ti.cast(base, ti.f32)
+            w = [
+                0.5 * (1.5 - fx) ** 2,
+                0.75 - (fx - 1.0) ** 2,
+                0.5 * (fx - 0.5) ** 2,
+            ]
+            for i, j, k in ti.static(ti.ndrange(3, 3, 3)):
+                weight = w[i][0] * w[j][1] * w[k][2]
+                idx = base + ti.Vector([i, j, k])
+                if (
+                    0 <= idx[0] < self.cfg.grid_n
+                    and 0 <= idx[1] < self.cfg.grid_n
+                    and 0 <= idx[2] < self.cfg.grid_n
+                ):
+                    ti.atomic_add(self.grid_m[idx], weight * m_p)
+                    # Reproducing-kernel volume sum (Adami-Hu-Adams 2010 §3).
+                    ti.atomic_add(self.grid_kernel_weight[idx], weight * V0)
+
+    @ti.kernel
+    def _interpolate_rho_runtime(self):
+        """G2P interpolation of grid kernel density into `_rho_kernel_p`.
+
+            ρ_kernel_p[p] = max( Σ_I w_pI · grid_m[I] / dx³ ,  ρ_floor )
+
+        Reads the post-`_p2g_mass` `grid_m` and writes the per-particle
+        kernel-interpolated density used as the source of the v15 (k.3)
+        density-based volumetric stress
+
+            σ_vol_p = K · (ρ_ref_kernel / ρ_kernel_p − 1) · I.
+
+        ρ_floor (= 0.1 · ρ_ref_kernel by `calibrate_reference_state`) is a
+        numerical-safety clamp on the 1/ρ_kernel asymptote at ρ_kernel → 0.
+        The exact value 0.1 has **no specific literature reference**: a
+        search of Becker-Teschner (2007) (WCSPH origin, Tait EOS, no floor
+        used), Adami-Hu-Adams (2010) §3 (Shepard normalisation, free-surface
+        truncation bound ~0.5·ρ_ref), and Liu-Liu (2010) (review,
+        isolated-particle threshold ~0.5·ρ_ref) found no exact 0.1·ρ_ref
+        value. The choice is conservative below those bounds (5× below the
+        free-surface kernel-truncation limit) so that the floor is *only*
+        active for particles in the rarefied vacuum tail and never at the
+        equilibrium ρ_eq ≈ 1.03·ρ_ref that the radius-drift gate measures.
+        Magic-Number Block (`docs/12_validation.md`): derivable from the
+        AHA-2010 truncation bound, grid-invariant (a fraction of a
+        per-pack-calibrated quantity), not chosen to fit any gate value.
+        See `docs/outcomes_v15.md` for the full literature-verification
+        record.
+
+        Structurally identical to `_interpolate_density_to_particles`
+        (calibration scratch, validated through v11/v12); separated into a
+        dedicated step-time kernel because writing into `_rho_kernel_p`
+        (per-particle, runtime-hot) is conceptually distinct from writing
+        into `_calib_rho` (per-particle, calibration-only).
+        """
+        dx = self.cfg.dx_star
+        inv_vol = 1.0 / (dx ** 3)
+        rho_floor = self._rho_floor[None]
+        for p in self.x:
+            base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
+            fx = self.x[p] / dx - ti.cast(base, ti.f32)
+            w = [
+                0.5 * (1.5 - fx) ** 2,
+                0.75 - (fx - 1.0) ** 2,
+                0.5 * (fx - 0.5) ** 2,
+            ]
+            rho = 0.0
+            for i, j, k in ti.static(ti.ndrange(3, 3, 3)):
+                weight = w[i][0] * w[j][1] * w[k][2]
+                idx = base + ti.Vector([i, j, k])
+                if (
+                    0 <= idx[0] < self.cfg.grid_n
+                    and 0 <= idx[1] < self.cfg.grid_n
+                    and 0 <= idx[2] < self.cfg.grid_n
+                ):
+                    rho += weight * self.grid_m[idx] * inv_vol
+            self._rho_kernel_p[p] = ti.max(rho, rho_floor)
+
+    @ti.kernel
+    def _p2g_momentum_and_stress(self):
+        """Second P2G pass: scatter momentum + v15 density-based stress.
+
+        Volumetric stress (v15 (k.3), density-based, hybrid Eulerian-Lagrangian):
+
+            σ_vol_p = K · (ρ_ref_kernel / ρ_kernel_p − 1) · I,
+
+        where ρ_kernel_p is the kernel-interpolated density at p (computed in
+        `_interpolate_rho_runtime`, with floor clamp). This replaces the
+        previous (v12) deformation-based form K·(det F − 1)·I that produced
+        no bulk pressure response in the overdamped/no-flow interior (where
+        ∇v ≈ 0 ⇒ F → I), the root cause of the v12 R/R₀ ≈ 0.67 contraction.
+
+        Deviatoric stress (unchanged from v12):  τ_dev_p, integrated by the
+        closed-form Maxwell exponential integrator in `_g2p_and_constitutive`.
+
+        Momentum scatter follows the standard MLS-MPM affine form (Hu et al.
+        2018). Mass and kernel-weight scatter happen in `_p2g_mass`, not here.
+
+        Reference: Becker & Teschner (2007) for the WCSPH density-driven
+        volumetric stress idea; Stomakhin et al. (2014) §3 for the
+        elastic/plastic-split MPM precedent for splitting volumetric and
+        deviatoric responses; Adami-Hu-Adams (2010) §3 (already used in v12)
+        for the reproducing-kernel normalisation underlying the kernel-density
+        estimator.
+        """
         K = self.cfg.K_star
         V0 = self.cfg.particle_volume_star
         m_p = self.cfg.particle_mass_star
         dx = self.cfg.dx_star
         dt = self.cfg.dt_star
+        rho_ref = self._rho_ref_kernel[None]
 
         for p in self.x:
             base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
@@ -700,8 +934,8 @@ class MLSMPMSolver:
                 0.5 * (fx - 0.5) ** 2,
             ]
 
-            J = self.F[p].determinant()
-            stress_vol = K * (J - 1.0) * ti.Matrix.identity(ti.f32, 3)
+            rho_p = self._rho_kernel_p[p]
+            stress_vol = K * (rho_ref / rho_p - 1.0) * ti.Matrix.identity(ti.f32, 3)
             stress = stress_vol + self.tau_dev[p]
 
             stress_term = -dt * V0 * stress * (4.0 / (dx * dx))
@@ -717,9 +951,6 @@ class MLSMPMSolver:
                 ):
                     dpos = (ti.Vector([i, j, k]).cast(ti.f32) - fx) * dx
                     ti.atomic_add(self.grid_v[idx], weight * (m_p * self.v[p] + affine @ dpos))
-                    ti.atomic_add(self.grid_m[idx], weight * m_p)
-                    # Reproducing-kernel volume sum (Adami-Hu-Adams 2010 §3).
-                    ti.atomic_add(self.grid_kernel_weight[idx], weight * V0)
 
     @ti.kernel
     def _grid_op_overdamped(self):
@@ -860,12 +1091,20 @@ class MLSMPMSolver:
 
             ti.atomic_add(self.diag_kinetic_energy[None], 0.5 * m_p * ti.cast(speed * speed, ti.f64))
 
-            J = self.F[p].determinant()
+            # v15 (k.3): volumetric strain energy uses the density-based form
+            #   U_vol = (1/2) K (ρ_ref/ρ_kernel − 1)²
+            # to match the v15 constitutive law σ_vol = K (ρ_ref/ρ_kernel − 1) I.
+            # F is still updated for diagnostics + Maxwell deviatoric coupling,
+            # but no longer drives the volumetric channel. The deviatoric
+            # contribution τ²/(4μ) is unchanged from v12.
+            rho_p_d = ti.cast(self._rho_kernel_p[p], ti.f64)
+            rho_ref_d = ti.cast(self._rho_ref_kernel[None], ti.f64)
+            vol_strain = rho_ref_d / rho_p_d - 1.0
             tau = self.tau_dev[p]
             tau_norm_sq = 0.0
             for ii, jj in ti.static(ti.ndrange(3, 3)):
                 tau_norm_sq += tau[ii, jj] * tau[ii, jj]
-            U = 0.5 * K * (J - 1.0) ** 2 + ti.cast(tau_norm_sq, ti.f64) / (4.0 * (mu + 1e-12))
+            U = 0.5 * K * vol_strain * vol_strain + ti.cast(tau_norm_sq, ti.f64) / (4.0 * (mu + 1e-12))
             ti.atomic_add(self.diag_strain_energy[None], U * V0)
 
             if self.is_boundary[p] == 1:

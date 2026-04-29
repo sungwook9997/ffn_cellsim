@@ -57,3 +57,104 @@ def shape_metrics(x: np.ndarray) -> dict:
         "effective_radius": effective_radius(x),
         "wadell_sphericity": wadell_sphericity(x),
     }
+
+
+def shell_density_profile(
+    x: np.ndarray,
+    rho_p: np.ndarray,
+    centre: np.ndarray,
+    R0: float,
+    n_bins: int = 10,
+    r_max_frac: float = 1.2,
+) -> dict:
+    """Per-radial-shell mean of a per-particle scalar (here: kernel density).
+
+    Sanity-Gate check 6 (measurement-protocol consistency) witness for the
+    v15 (k.3) bulk-transmission mechanism. The proposal in
+    `docs/stage1a_interior_pressure_sanity.md` predicts that, at equilibrium,
+    the kernel-density `ρ_kernel(r/R₀)` profile is **flat** across the bulk
+    (ρ ≈ ρ_eq ≈ 1.03·ρ_ref) and only deviates in the surface band. A
+    surface-only peaked profile (with bulk ρ ≈ ρ_ref unchanged) would
+    indicate that surface CSF dragged a thin boundary layer inward without
+    propagating pressure to the bulk — i.e. the v15 fix is failing.
+
+    Parameters
+    ----------
+    x : (N, 3) particle positions in dimensionless units (R₀-units).
+    rho_p : (N,) per-particle scalar (the kernel-interpolated density
+        `_rho_kernel_p` from the solver).
+    centre : (3,) reference centre, dimensionless units.
+    R0 : reference radius, used to normalise the radial coordinate to r/R₀.
+    n_bins : number of radial bins on `[0, r_max_frac]`.
+    r_max_frac : upper edge of the radial range, in units of R₀. The default
+        1.2 covers the relaxed spheroid (≈ 1.0) plus a small margin to catch
+        any bulged/escaped particles.
+
+    Returns
+    -------
+    dict with arrays and summary scalars:
+        bin_edges_over_R0 : (n_bins + 1,) bin edges in r/R₀
+        bin_lo_over_R0    : (n_bins,) lower edge per bin
+        bin_hi_over_R0    : (n_bins,) upper edge per bin
+        bin_centre_over_R0: (n_bins,) bin midpoints in r/R₀
+        count_per_bin     : (n_bins,) particle count per bin
+        mean_rho_per_bin  : (n_bins,) shell-averaged ρ; NaN if bin empty
+        bulk_mean_rho     : scalar, count-weighted mean over the bulk shell
+                            r/R₀ ∈ [0.2, 0.7] (excludes core noise + surface
+                            band)
+        bulk_std_rho      : scalar, count-weighted std over the same shell.
+                            A small std/mean implies the bulk profile is flat
+                            ⇒ v15 bulk transmission worked.
+        bulk_n_particles  : int, total particles in the bulk shell.
+    """
+    if x.shape[0] != rho_p.shape[0]:
+        raise ValueError(
+            f"x and rho_p must have matching lengths; got {x.shape[0]} vs {rho_p.shape[0]}"
+        )
+    centre = np.asarray(centre, dtype=np.float64).reshape(3)
+    r_over_R0 = np.linalg.norm(x.astype(np.float64) - centre, axis=1) / float(R0)
+
+    edges = np.linspace(0.0, float(r_max_frac), n_bins + 1)
+    bin_lo = edges[:-1]
+    bin_hi = edges[1:]
+    centres = 0.5 * (bin_lo + bin_hi)
+
+    # np.digitize uses right=False by default: a value equal to an edge goes
+    # to the bin to its right. For the upper-bound edge, particles with
+    # r/R₀ > r_max_frac get index n_bins (out of range); we drop them.
+    raw = np.digitize(r_over_R0, edges) - 1
+    in_range = (raw >= 0) & (raw < n_bins)
+
+    counts = np.zeros(n_bins, dtype=np.int64)
+    mean_rho = np.full(n_bins, np.nan, dtype=np.float64)
+    rho_p_d = rho_p.astype(np.float64)
+    for b in range(n_bins):
+        mask = in_range & (raw == b)
+        counts[b] = int(mask.sum())
+        if counts[b] > 0:
+            mean_rho[b] = float(rho_p_d[mask].mean())
+
+    # Bulk shell summary: r/R₀ ∈ [0.2, 0.7], excludes the core (where small
+    # particle count amplifies noise) and the surface band (where kernel
+    # truncation drives ρ down by up to 50%, AHA 2010 §3).
+    bulk_mask = in_range & (r_over_R0 >= 0.2) & (r_over_R0 <= 0.7)
+    bulk_n = int(bulk_mask.sum())
+    if bulk_n > 0:
+        bulk_vals = rho_p_d[bulk_mask]
+        bulk_mean = float(bulk_vals.mean())
+        bulk_std = float(bulk_vals.std())
+    else:
+        bulk_mean = float("nan")
+        bulk_std = float("nan")
+
+    return {
+        "bin_edges_over_R0": edges,
+        "bin_lo_over_R0": bin_lo,
+        "bin_hi_over_R0": bin_hi,
+        "bin_centre_over_R0": centres,
+        "count_per_bin": counts,
+        "mean_rho_per_bin": mean_rho,
+        "bulk_mean_rho": bulk_mean,
+        "bulk_std_rho": bulk_std,
+        "bulk_n_particles": bulk_n,
+    }
