@@ -316,53 +316,94 @@ class MLSMPMSolver:
             self.F[p] = self._calib_scale[p] * ti.Matrix.identity(ti.f32, 3)
 
     def calibrate_reference_state(self) -> dict:
-        """Reference-state calibration per Hu et al. 2018 §4.3 / Jiang et al. 2015.
+        """Population-aware reference-state calibration.
 
-        Random rejection sampling produces a particle pack whose actual local
-        density ρ_actual differs from the nominal `density_star = 1`. If we leave
-        F = I, σ_vol = K·(J−1) is non-zero at t=0 and the spheroid drifts. Fix:
-        scale F per-particle so the *current* configuration is the reference,
-        i.e. set F[p] such that the elastic strain energy contribution at t=0
-        vanishes regardless of ρ_actual.
+        Per Hu et al. 2018 §4.3 / Jiang et al. 2015 for the F-rescaling itself,
+        and Adami, Hu & Adams 2010 (J. Comp. Phys. 229, 5011) for the
+        population partition rationale.
 
-        Concretely, we measure ρ_actual at each particle by an MLS-MPM mass-only
-        round trip (P2G mass, then G2P density), set the reference density
-        ρ_ref to the mean of populated cells, and assign
+        Random rejection sampling produces a particle pack whose
+        kernel-interpolated density ρ_kernel differs from the nominal
+        `density_star`. **The deviation has two distinct physical origins:**
 
-            F[p] = (ρ_ref / ρ_actual_p)^(1/3) · I
+          (i) Bulk packing noise: interior particles see a complete 3³ kernel
+              and ρ_kernel fluctuates around the true bulk density due to the
+              discrete random pack. This IS a real elastic mismatch and we
+              want to absorb it into a non-trivial reference state F[p] ≠ I.
 
-        so that the volumetric Jacobian J_p = det(F[p]) = ρ_ref / ρ_actual_p,
-        and the volumetric stress K·(J_p − 1) corresponds to the *deviation*
-        from the calibrated density rather than from an arbitrary unit-cube
-        reference.
+         (ii) Kernel-truncation artifact at the free surface: boundary
+              particles see a kernel that is partially in vacuum, so
+              ρ_kernel is systematically biased low (by up to ~50% in 3D)
+              relative to the true cellular density. This is NOT a real
+              elastic mismatch — it is a numerical artifact of the SPH-style
+              kernel-density estimator (Adami, Hu & Adams 2010).
 
-        Returns a small dict of diagnostics (ρ_ref, ρ_actual statistics, F-scale
-        statistics) for the runner to log alongside the initial invariants.
+        A naive uniform calibration absorbs the kernel artifact (ii) into
+        ρ_ref and biases the volumetric stress for ALL particles in a
+        grid-resolution-dependent way. This was the v10 failure mode:
+        ρ_ref was the harmonic mean over a "well-resolved" subset but the
+        F-scale was applied to ALL particles, giving <J>_all = 1.556 ≠ 1
+        (population-mismatch Jensen residual).
+
+        Population-aware fix:
+          - identify well-resolved particles by ρ_kernel > 0.5·ρ_max (interior
+            kernel sees a roughly complete neighbourhood),
+          - compute ρ_ref = harmonic mean over THIS subset only,
+          - apply F[p] = (ρ_ref / ρ_p)^(1/3) · I to THIS subset only,
+          - leave F[p] = I for boundary particles (set by _zero_state). Their
+            σ_vol(t=0) = K·(J−1) = 0 by construction, contributing zero
+            spurious elastic strain energy. The kernel-truncation bias stays
+            where it physically belongs — in the kernel — instead of being
+            absorbed into a bulk reference parameter.
+
+        By construction <J>_well_resolved ≡ 1.0 (the harmonic-mean identity
+        holds because ρ_ref and the F-scale-application population coincide),
+        and <J>_boundary ≡ 1.0 (F = I trivially). The runner asserts
+        |<J>_well_resolved − 1| < 1e-6 as a hard scheme-correctness gate.
+
+        Returns a diagnostics dict for the runner to log and gate.
         """
         self._scatter_mass_only()
         self._interpolate_density_to_particles()
         rho_np = self._calib_rho.to_numpy()
-        # Use only particles whose density is well-resolved (above half max)
-        # to define ρ_ref — boundary particles see fewer neighbours and would
-        # otherwise bias the estimate.
+
         rho_max = float(rho_np.max())
-        well_resolved = rho_np[rho_np > 0.5 * rho_max]
-        rho_used = well_resolved if len(well_resolved) else rho_np
-        rho_arith_mean = float(rho_used.mean())
-        # ρ_ref must be the **harmonic mean** of ρ_actual, not the arithmetic
-        # mean. Reason: with F_p = (ρ_ref/ρ_p)^(1/3)·I we have J_p = ρ_ref/ρ_p,
-        # and σ_vol_p = K·(J_p − 1). Net macroscopic outward pressure ∝
-        # mean(J_p − 1) = ρ_ref·mean(1/ρ_p) − 1. Setting ρ_ref = arithmetic
-        # mean(ρ_p) gives mean(J) > 1 by Jensen (1/x is convex), hence a slow
-        # outward drift. Setting ρ_ref = harmonic mean = 1 / mean(1/ρ_p)
-        # forces mean(J_p) ≡ 1 exactly. This was the residual drift source
-        # in the second pilot run (R/R₀ drifted +8.5% over 240 τ-units).
-        inv_rho = 1.0 / np.clip(rho_used, 1e-6, None)
-        rho_ref = float(1.0 / inv_rho.mean())
-        scale_np = np.cbrt(np.clip(rho_ref / np.clip(rho_np, 1e-6, None), 1.0 / 8.0, 8.0)).astype(np.float32)
+        rho_arith_mean = float(rho_np.mean())
+        well_resolved_mask = rho_np > 0.5 * rho_max
+        n_resolved = int(well_resolved_mask.sum())
+
+        # Default F-scale = 1 everywhere (i.e. F = I); only well-resolved
+        # particles are modified.
+        scale_np = np.ones_like(rho_np, dtype=np.float32)
+
+        if n_resolved > 0:
+            rho_used = rho_np[well_resolved_mask]
+            # Harmonic mean over the SAME population to which the F-scale will
+            # be applied — this is the only way <J>_population = 1 exactly
+            # (closes the Jensen identity: ρ_ref · <1/ρ_p>_resolved ≡ 1).
+            inv_rho = 1.0 / np.clip(rho_used, 1e-6, None)
+            rho_ref = float(1.0 / inv_rho.mean())
+            ratio = rho_ref / np.clip(rho_used, 1e-6, None)
+            # Clamp guards pathological outliers; for any sane pack the
+            # well-resolved ratio sits comfortably inside [1/8, 8].
+            scale_np[well_resolved_mask] = np.cbrt(
+                np.clip(ratio, 1.0 / 8.0, 8.0)
+            ).astype(np.float32)
+        else:
+            # Degenerate (no well-resolved particles): leave F = I everywhere
+            # and report ρ_ref = arithmetic mean for the log only.
+            rho_ref = rho_arith_mean
 
         self._calib_scale.from_numpy(scale_np)
         self._set_F_isotropic_from_calib()
+
+        # Diagnostic: <J> over the three populations.
+        J_per_p = scale_np.astype(np.float64) ** 3
+        boundary_mask = ~well_resolved_mask
+        n_boundary = int(boundary_mask.sum())
+        J_well_resolved = float(J_per_p[well_resolved_mask].mean()) if n_resolved else 1.0
+        J_boundary = float(J_per_p[boundary_mask].mean()) if n_boundary else 1.0
+        J_all = float(J_per_p.mean())
 
         # Reset grid mass so the next real step starts from a clean slate.
         self._clear_grid()
@@ -374,7 +415,16 @@ class MLSMPMSolver:
             "F_scale_min": float(scale_np.min()),
             "F_scale_max": float(scale_np.max()),
             "F_scale_mean": float(scale_np.mean()),
-            "J_mean_after_calib": float(np.mean(scale_np ** 3)),
+            "J_mean_well_resolved": J_well_resolved,
+            "J_mean_boundary_subset": J_boundary,
+            "J_mean_all": J_all,
+            # Backwards-compatible alias for the runner log line.
+            "J_mean_after_calib": J_all,
+            "n_well_resolved": n_resolved,
+            "n_boundary_subset": n_boundary,
+            "calibration_population": (
+                "well_resolved (ρ_kernel > 0.5·ρ_max); boundary subset retains F = I"
+            ),
         }
 
     # --------------------------------------------------------- one step ----

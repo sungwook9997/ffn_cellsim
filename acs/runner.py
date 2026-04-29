@@ -96,15 +96,22 @@ def run_stage1a(config_path: Path | str) -> Path:
     centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
     solver.initialize_sphere(centre)
 
-    # Reference-state calibration (Hu et al. 2018 §4.3).
+    # Reference-state calibration (Hu et al. 2018 §4.3, Adami-Hu-Adams 2010
+    # population partition).
     calib = solver.calibrate_reference_state()
     logger.info(
         "Reference calibration: ρ_ref(harmonic)=%.4f vs arith=%.4f, "
-        "ρ_actual∈[%.4f, %.4f], F_scale∈[%.4f, %.4f], <J>=%.5f",
+        "ρ_actual∈[%.4f, %.4f], F_scale∈[%.4f, %.4f]",
         calib["rho_ref_harmonic"], calib["rho_arith_mean"],
         calib["rho_actual_min"], calib["rho_actual_max"],
         calib["F_scale_min"], calib["F_scale_max"],
-        calib["J_mean_after_calib"],
+    )
+    logger.info(
+        "Calibration <J> diagnostic: well_resolved=%.8f (n=%d), "
+        "boundary_subset=%.8f (n=%d), all=%.8f",
+        calib["J_mean_well_resolved"], calib["n_well_resolved"],
+        calib["J_mean_boundary_subset"], calib["n_boundary_subset"],
+        calib["J_mean_all"],
     )
     (out_dir / "reference_calibration.json").write_text(
         json.dumps(calib, indent=2), encoding="utf-8"
@@ -251,8 +258,26 @@ def run_stage1a(config_path: Path | str) -> Path:
 
     inv_final = solver.invariants()
 
-    # Curvature validation comes first — a scheme-correctness gate independent
-    # of integration tolerances.
+    # Reference-calibration scheme-correctness gate. By construction (Adami-
+    # Hu-Adams 2010 population-aware partition), <J>_well_resolved must equal
+    # 1.0 to floating-point round-off. A violation indicates a population
+    # mismatch in calibrate_reference_state — exactly the v10 failure mode.
+    # Tolerance 1e-6 is f32-roundoff scale (np.cbrt + clamp); not a physics
+    # tolerance and not a fittable parameter.
+    J_GATE_TOL = 1.0e-6
+    j_resolved = float(calib["J_mean_well_resolved"])
+    j_resolved_err = abs(j_resolved - 1.0)
+    results.append(GateResult(
+        "calibration <J>_well_resolved == 1",
+        j_resolved_err <= J_GATE_TOL,
+        f"<J>_well_resolved = {j_resolved:.8f} "
+        f"(|err| = {j_resolved_err:.2e}, limit {J_GATE_TOL:.0e}); "
+        f"<J>_boundary_subset = {calib['J_mean_boundary_subset']:.8f}, "
+        f"<J>_all = {calib['J_mean_all']:.8f}",
+    ))
+
+    # Curvature validation — a scheme-correctness gate independent of
+    # integration tolerances.
     if curv.get("valid"):
         results.append(GateResult(
             "curvature operator (κ vs 2/R)",
@@ -399,7 +424,11 @@ def run_stage1a(config_path: Path | str) -> Path:
         f"- Peak VRAM: {peak_vram:.2f} GB" if peak_vram > 0 else "- Peak VRAM: n/a (nvidia-smi unavailable)",
         f"- Initial R₀\\* = {R0:.4f}",
         f"- Reference calibration: ρ_ref(harmonic)={calib['rho_ref_harmonic']:.4f}, "
-        f"<J>={calib['J_mean_after_calib']:.5f}, "
+        f"<J>_well_resolved={calib['J_mean_well_resolved']:.8f} "
+        f"(n={calib['n_well_resolved']}), "
+        f"<J>_boundary_subset={calib['J_mean_boundary_subset']:.8f} "
+        f"(n={calib['n_boundary_subset']}), "
+        f"<J>_all={calib['J_mean_all']:.8f}, "
         f"F_scale∈[{calib['F_scale_min']:.4f}, {calib['F_scale_max']:.4f}]",
         "",
         "## Checks",
