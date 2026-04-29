@@ -264,28 +264,34 @@ is a measurement-protocol legacy, not a physics failure.
 
 ### F9 — φ trajectory toward predicted φ_eq
 **Observed**: <φ>(end) = 0.1593 vs predicted φ_eq = 0.7514, |err| =
-0.5920 (tolerance ≤ 0.5). Production Lam4 only (pilot did not run
-long enough for φ_eq drift).
+0.5920 (tolerance ≤ 0.5).
 
-**Q1**: scale-correlated. At pilot 4hr the framework has not yet
-deviated; at production 80hr the interior φ has decayed to 0.088.
+**Q1**: scale-correlated. Production 80hr only.
 
-**Q2**: known. Layer 3 spatial Sₚ extension (v11) drives φ_interior
-→ 0 because S=0 in interior (no boundary cells means k_+ source is
-zero, k_- relaxation dominates). The "predicted φ_eq" is the *boundary*
-equilibrium, not the global mean. **Codex review item 4** flags Layer
-3 audit needed.
+**Q2**: known. Per `docs/layer3_phi_audit.md` (PI directive 2026-04-29):
+this is a **FORMULATION BUG**, not a physical limitation. The current
+φ variable conflates *formation phenotype memory* (Bare/Pre/Lam4
+established at t=0) with *contact activation* (Cho 2020 transition
+kinetics, applies only to substrate-engaged cells). The v11 spatial
+S=0 interior term incorrectly applies the contact-activation k_-
+rate to the formation memory, erasing it on a 25-min half-life.
+Additionally, the gate compares the global `<φ>` against the
+boundary-only `φ_eq` — a category error.
 
-**Q3**: NOT bounded. The interior φ decay is what is generating the
-Marangoni retraction in Mechanism inventory of marangoni_review.md.
-Whether 0.088 is the correct interior value or a Layer 3 modeling
-artifact is open.
+**Q3**: bounded by the formulation-bug fix proposal in
+`docs/layer3_phi_audit.md` §4: split into φ_memory_p (slow/fixed) +
+c_act_p (Cho 2020 dynamics on contact-band only). Replaces F9 with
+two new gates (5a φ_memory preservation, 5b boundary c_act trajectory).
 
-**Q4**: NOT accepted. PI flagged Layer 3 audit in Option F.
+**Q4**: PI directive 2026-04-29 specifies the audit + replacement
+path; awaiting code implementation.
 
-**Classification**: **HARD-BLOCKER (Layer 3 audit pending)**. Until
-the Layer 3 review confirms whether the interior decay is correct
-physics or model artifact, the φ trajectory FAIL cannot be classified.
+**Classification**: **FORMULATION BUG — audit complete, Stage 1b.b
+implementation pending**. The remediation is the φ_memory + c_act
+split per the audit document. Production Lam4 plateau interpretation
+is **provisionally contaminated** by artificial interior φ decay
+until Stage 1b.b Pilot 2 (5k Lam4 80hr post-fix) confirms whether
+the asymptote behaves the same after the φ formulation is corrected.
 
 ---
 

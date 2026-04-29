@@ -303,11 +303,18 @@ A run-level gate report (`results/{run.name}/gate_report.md`) records every metr
   (F_substrate is under-deflected). **Reclassified ACCEPTED-LIMITATION**.
   F4 same root cause, linked.
 
-**Week 3+ (deferred until Week 2 outputs)**: PI re-decision between:
-- Stage 1a++.b (discrete boundary events: lamellipodia / filopodia /
-  leader cells) — Option β in marangoni_review.md
-- Stage 1d.b (Marangoni Mechanism A / E / F) — Option α
-- Or paper-as-is (Option G in codex_review_synthesis.md)
+**Week 3+ — sequential autonomous implementation (PI directive
+2026-04-29 "순차적으로 모두 진행")**:
+- Stage 1b.b — Layer 3 φ_memory + c_act split (per
+  `docs/layer3_phi_audit.md`); blocks Stage 1d.b and Stage 1a++.b.
+- Stage 1d.b — Marangoni Mechanism A/E/F (per
+  `docs/marangoni_review.md` Option α); applied after Stage 1b.b
+  Pilot 2 confirms Layer 3 fix.
+- Stage 1a++.b — Discrete boundary events (per Option β); applied
+  after Stage 1d.b pilot.
+- Production sweep — 5k / 10k / 20k particles × Bare/Pre/Lam4 with
+  full visualization package (PI directive 2026-04-29 visualization
+  spec).
 
 ### Deferred items (Codex review items)
 - Layer 3 audit (Codex item 4) — blocks Mechanism A/E/F upgrades

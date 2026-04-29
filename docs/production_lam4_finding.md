@@ -1,6 +1,15 @@
 # Production Lam4 finding — Bucket P3 (peak-and-decay; framework retracts in long-time vs PI [8, 33])
 
-> **REVISION 2026-04-29 (Option F Week 1)**: original commit b506b57
+> **REVISION 2 2026-04-29 (Layer 3 audit)**: per PI directive
+> `docs/layer3_phi_audit.md`, the peak-and-decay interpretation
+> below is **provisionally contaminated** by artificial interior φ
+> decay (the v11 spatial S=0 patch erases formation phenotype memory
+> on the Cho 2020 transition timescale, contradicting the experimental
+> setup where Bare/Pre/Lam4 is set at t=0). Final asymptote
+> classification is deferred until Stage 1b.b Pilot 2 (5k Lam4 80hr
+> with φ_memory + c_act split).
+>
+> **REVISION 1 2026-04-29 (Option F Week 1)**: original commit b506b57
 > labeled the gate metric `contact_xy_hull/A₀` as "A/A₀_topdown" and
 > reported "Bucket P2 plateau ≈ 2.65". This was a metric mislabel.
 > The true `A_over_A0_topdown` (the publication-relevant top-down
