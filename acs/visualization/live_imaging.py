@@ -355,6 +355,32 @@ def write_movie(png_paths: List[Path], out_path: Path,
     return out_path
 
 
+def write_mp4_and_gif(png_paths: List[Path], mp4_path: Path,
+                     fps: int = 8, gif_fps: int = 6,
+                     gif_max_frames: int = 80) -> dict:
+    """Write both MP4 (full-quality) and GIF (preview, downsampled) from
+    a PNG sequence. Per PI viz directive 2026-04-29: GIF preview for
+    quick review.
+
+    Returns a dict with 'mp4' and 'gif' Path entries (None if absent).
+    """
+    out: dict = {"mp4": None, "gif": None}
+    if imageio is None or not png_paths:
+        return out
+    # MP4 (full).
+    out["mp4"] = write_movie(png_paths, mp4_path, fps=fps, gif=False)
+    # GIF (downsampled for preview if too long).
+    gif_path = mp4_path.with_suffix(".gif")
+    n = len(png_paths)
+    if n > gif_max_frames:
+        stride = max(1, n // gif_max_frames)
+        sampled = png_paths[::stride]
+    else:
+        sampled = png_paths
+    out["gif"] = write_movie(sampled, gif_path, fps=gif_fps, gif=True)
+    return out
+
+
 def render_final_frame_pair(run_dir: Path) -> Tuple[Optional[Path], Optional[Path]]:
     """Render only the FINAL frame in both modalities.
 

@@ -444,7 +444,8 @@ def run_stage1a(config_path: Path | str) -> Path:
         total_time_star=total_t,
         frame_interval_star=frame_dt,
     ) as writer:
-        # Frame 0 (initial state).
+        # Frame 0 (initial state). Per PI viz directive 2026-04-29:
+        # save per-particle state fields for state_overlays.py.
         writer.write_frame(
             0.0,
             position=solver.x.to_numpy(),
@@ -452,6 +453,14 @@ def run_stage1a(config_path: Path | str) -> Path:
             F=solver.F.to_numpy(),
             tau_dev=solver.tau_dev.to_numpy(),
             is_boundary=solver.is_boundary.to_numpy(),
+            phi=(solver.phi_p.to_numpy() if solver_cfg.layer3_enabled else None),
+            phi_memory=(solver.phi_memory_p.to_numpy()
+                        if (solver_cfg.layer3_enabled and solver_cfg.layer3_split) else None),
+            c_act=(solver.c_act_p.to_numpy()
+                   if (solver_cfg.layer3_enabled and solver_cfg.layer3_split) else None),
+            rho_osm=(solver.rho_osm_p.to_numpy() if solver_cfg.layer5_enabled else None),
+            gamma_p=(solver.gamma_p_state.to_numpy()
+                     if (solver_cfg.layer4_enabled and solver_cfg.layer4_dynamic_gamma) else None),
         )
         # v15 shell-density witness — frame 0.
         x0_np = solver.x.to_numpy()
@@ -558,6 +567,14 @@ def run_stage1a(config_path: Path | str) -> Path:
                     F=solver.F.to_numpy(),
                     tau_dev=solver.tau_dev.to_numpy(),
                     is_boundary=solver.is_boundary.to_numpy(),
+                    phi=(solver.phi_p.to_numpy() if solver_cfg.layer3_enabled else None),
+                    phi_memory=(solver.phi_memory_p.to_numpy()
+                                if (solver_cfg.layer3_enabled and solver_cfg.layer3_split) else None),
+                    c_act=(solver.c_act_p.to_numpy()
+                           if (solver_cfg.layer3_enabled and solver_cfg.layer3_split) else None),
+                    rho_osm=(solver.rho_osm_p.to_numpy() if solver_cfg.layer5_enabled else None),
+                    gamma_p=(solver.gamma_p_state.to_numpy()
+                             if (solver_cfg.layer4_enabled and solver_cfg.layer4_dynamic_gamma) else None),
                 )
                 frame_idx = writer._frame_count - 1
                 for b in range(SHELL_N_BINS):

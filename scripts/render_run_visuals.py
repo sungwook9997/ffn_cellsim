@@ -32,6 +32,7 @@ from acs.visualization import (
     render_state_overlay,
     render_topdown_sequence,
     write_movie,
+    write_mp4_and_gif,
     write_parameter_table_csv,
 )
 
@@ -66,21 +67,23 @@ def main() -> None:
     render_final_frame_pair(run_dir)
 
     if not args.no_movies:
-        print("  → top-down movie")
-        out = write_movie(top_paths, run_dir / "figures" / "movies" / "topdown_live.mp4",
-                          fps=args.fps)
-        if out is None:
-            print("    (no movie — imageio missing or no frames)")
-        else:
-            print(f"    {out.name}")
+        print("  → top-down movie + GIF preview")
+        out = write_mp4_and_gif(
+            top_paths,
+            run_dir / "figures" / "movies" / "topdown_live.mp4",
+            fps=args.fps,
+        )
+        for k, p in out.items():
+            print(f"    {k}: {p.name if p else '(none)'}")
 
-        print("  → side-view movie")
-        out = write_movie(side_paths, run_dir / "figures" / "movies" / "sideview_live.mp4",
-                          fps=args.fps)
-        if out is None:
-            print("    (no movie — imageio missing or no frames)")
-        else:
-            print(f"    {out.name}")
+        print("  → side-view movie + GIF preview")
+        out = write_mp4_and_gif(
+            side_paths,
+            run_dir / "figures" / "movies" / "sideview_live.mp4",
+            fps=args.fps,
+        )
+        for k, p in out.items():
+            print(f"    {k}: {p.name if p else '(none)'}")
 
     if not args.no_overlays:
         print("  → state overlays")

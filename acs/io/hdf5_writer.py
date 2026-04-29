@@ -48,6 +48,14 @@ class FrameWriter:
         F: np.ndarray,
         tau_dev: np.ndarray,
         is_boundary: np.ndarray,
+        # Stage 1b.b / 1c / 1d.b per-particle state fields (PI viz
+        # directive 2026-04-29). All optional — when None, the dataset
+        # is omitted, preserving backwards compat with older readers.
+        phi: np.ndarray | None = None,
+        phi_memory: np.ndarray | None = None,
+        c_act: np.ndarray | None = None,
+        rho_osm: np.ndarray | None = None,
+        gamma_p: np.ndarray | None = None,
     ) -> None:
         gid = f"{self._frame_count:05d}"
         g = self._frames.create_group(gid)
@@ -58,6 +66,17 @@ class FrameWriter:
         g.create_dataset("deformation_gradient", data=F.astype(np.float32), **kw)
         g.create_dataset("stress_tensor", data=tau_dev.astype(np.float32), **kw)
         g.create_dataset("is_boundary", data=is_boundary.astype(np.bool_), **kw)
+        # Optional per-particle state fields enable state_overlays viz.
+        if phi is not None:
+            g.create_dataset("phi", data=phi.astype(np.float32), **kw)
+        if phi_memory is not None:
+            g.create_dataset("phi_memory", data=phi_memory.astype(np.float32), **kw)
+        if c_act is not None:
+            g.create_dataset("c_act", data=c_act.astype(np.float32), **kw)
+        if rho_osm is not None:
+            g.create_dataset("rho_osm", data=rho_osm.astype(np.float32), **kw)
+        if gamma_p is not None:
+            g.create_dataset("gamma_p", data=gamma_p.astype(np.float32), **kw)
         self._frame_count += 1
 
     def close(self) -> None:

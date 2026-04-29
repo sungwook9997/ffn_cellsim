@@ -40,6 +40,7 @@ from acs.visualization.live_imaging import (
     render_sideview_sequence,
     render_final_frame_pair,
     write_movie,
+    write_mp4_and_gif,
 )
 from acs.visualization.dashboard import render_dashboard
 from acs.visualization.parameter_tables import (
@@ -67,6 +68,7 @@ __all__ = [
     "render_sideview_sequence",
     "render_final_frame_pair",
     "write_movie",
+    "write_mp4_and_gif",
     "render_dashboard",
     "write_parameter_table_csv",
     "render_parameter_table_figure",
