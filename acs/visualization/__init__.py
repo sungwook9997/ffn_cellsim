@@ -43,6 +43,10 @@ from acs.visualization.live_imaging import (
     write_mp4_and_gif,
 )
 from acs.visualization.dashboard import render_dashboard
+from acs.visualization.figure_style import (
+    install_helvetica_style,
+    save_figure_dual,
+)
 from acs.visualization.parameter_tables import (
     write_parameter_table_csv,
     render_parameter_table_figure,
@@ -73,4 +77,6 @@ __all__ = [
     "write_parameter_table_csv",
     "render_parameter_table_figure",
     "render_state_overlay",
+    "install_helvetica_style",
+    "save_figure_dual",
 ]

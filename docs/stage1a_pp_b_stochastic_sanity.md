@@ -1,5 +1,24 @@
 # Stage 1a++.b sanity gate — Stochastic boundary events
 
+> **DEPRECATED 2026-04-30**: Superseded by Stage 1d.c
+> (`docs/stage1d_c_ecm_communication_sanity.md`). Stage 1a++.b's
+> single-step random outward impulse was a coarse approximation of
+> protrusion biology; Stage 1d.c replaces it with a 5-state
+> protrusion machine (quiet → filopodia_probe → nascent_adhesion →
+> lamellipodium_spread → retract) + ECM-mediated long-range
+> mechanical communication + persistent traction (T_p = T0 ·
+> fa_strength · polarity). When `layer7.enabled=true`, the solver
+> step explicitly bypasses the Stage 1a++.b kernel:
+> ```python
+> if cfg.layer2_b_enabled and cfg.lambda_lam_star > 0.0
+>    and not cfg.layer7_enabled:   # Stage 1d.c supersedes
+>     _apply_stochastic_events()
+> ```
+> The Stage 1a++.b config block (`layer2_b: {enabled, lambda_lam_star,
+> impulse_lam_star}`) is preserved for backwards compatibility with
+> pre-Stage-1d.c experiments. New runs should use `layer7` instead.
+> `docs/marangoni_review.md` Option β is satisfied by Stage 1d.c.
+
 PI directive 2026-04-29 (autonomous sequential implementation).
 Implements `docs/marangoni_review.md` Option β (Codex review item 1):
 discrete lamellipodia / filopodia / leader-cell events at the

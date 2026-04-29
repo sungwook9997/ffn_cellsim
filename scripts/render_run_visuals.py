@@ -25,12 +25,14 @@ import argparse
 from pathlib import Path
 
 from acs.visualization import (
+    install_helvetica_style,
     render_dashboard,
     render_final_frame_pair,
     render_parameter_table_figure,
     render_sideview_sequence,
     render_state_overlay,
     render_topdown_sequence,
+    save_figure_dual,
     write_movie,
     write_mp4_and_gif,
     write_parameter_table_csv,
@@ -52,6 +54,9 @@ def main() -> None:
     run_dir = args.run_dir.resolve()
     if not run_dir.exists():
         raise SystemExit(f"Run directory not found: {run_dir}")
+
+    # CODEX_FIGURE_GUIDE.md: Helvetica typography, paper-grade rcParams.
+    install_helvetica_style()
 
     print(f"[render_run_visuals] Run: {run_dir.name}")
 

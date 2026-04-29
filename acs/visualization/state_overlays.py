@@ -90,15 +90,26 @@ def render_state_overlay(
     if x is None:
         return None
 
-    fig, axes = plt.subplots(2, 3, figsize=(13, 8))
-    # Channel inventory: (axis, key, title, cmap, vmin, vmax)
+    # Stage 1d.c (PI directive 2026-04-30): expanded to 3×4 grid to
+    # cover all per-particle channels including ECM/protrusion fields.
+    fig, axes = plt.subplots(3, 4, figsize=(18, 12))
+    # Channel inventory: (axis, key, title, cmap, vmin, vmax, special)
     channels = [
-        ((0, 0), "phi_memory", "φ_memory (formation)", "Blues", 0.0, 1.0),
-        ((0, 1), "c_act", "contact_activation", "Oranges", 0.0, 1.0),
-        ((0, 2), "phi", "φ_eff (consumed by L4)", "viridis", 0.0, 1.0),
-        ((1, 0), "rho_osm", "ρ_osm", "RdBu_r", 0.5, 1.6),
-        ((1, 1), "gamma_p", "γ_p (dynamic)", "magma", None, None),
-        ((1, 2), "v_norm", "‖v‖ speed", "plasma", 0.0, 0.05),
+        # Row 1: Layer 3/4/5 state
+        ((0, 0), "phi_memory", "φ_memory (formation)", "Blues", 0.0, 1.0, None),
+        ((0, 1), "c_act", "contact_activation", "Oranges", 0.0, 1.0, None),
+        ((0, 2), "phi", "φ_eff (Layer 4 input)", "viridis", 0.0, 1.0, None),
+        ((0, 3), "rho_osm", "ρ_osm", "RdBu_r", 0.5, 1.6, None),
+        # Row 2: Marangoni / kinematic
+        ((1, 0), "gamma_p", "γ_p (dynamic)", "magma", None, None, None),
+        ((1, 1), "v_norm", "‖v‖ speed", "plasma", 0.0, 0.05, None),
+        ((1, 2), "pressure", "pressure (-tr/3)", "RdBu_r", None, None, None),
+        ((1, 3), "dev_norm", "‖τ_dev‖ (deviatoric)", "viridis", None, None, None),
+        # Row 3: Stage 1d.c ECM/protrusion
+        ((2, 0), "protrusion_state", "protrusion state (0-4)", "Set1", -0.5, 4.5, "discrete"),
+        ((2, 1), "fa_strength", "FA strength (0-1)", "Greens", 0.0, 1.0, None),
+        ((2, 2), "ecm_signal", "|u_ecm| at particle", "magma", None, None, None),
+        ((2, 3), "polarity", "polarity (xy arrows)", None, None, None, "vector"),
     ]
     cfg_path = Path(run_dir) / "config.yaml"
     cfg = None
@@ -106,8 +117,11 @@ def render_state_overlay(
         with open(cfg_path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
     domain = float(cfg["nondim"]["domain_star"]) if cfg else 6.0
-    for (i, j), key, title, cmap, vmin, vmax in channels:
+    for entry in channels:
+        (i, j), key, title, cmap, vmin, vmax = entry[:6]
+        special = entry[6] if len(entry) > 6 else None
         ax = axes[i, j]
+        # Per-channel field extraction.
         if key == "v_norm":
             v = snap.get("v")
             if v is None:
@@ -115,6 +129,27 @@ def render_state_overlay(
                 ax.axis("off")
                 continue
             field = np.linalg.norm(v, axis=1)
+        elif special == "vector":
+            # Polarity drawn as arrow quiver, colored by ‖p‖.
+            pol = snap.get(key)
+            if pol is None or pol.shape[0] != x.shape[0]:
+                ax.text(0.5, 0.5, f"no {key} channel", ha="center", va="center")
+                ax.axis("off")
+                continue
+            mag = np.linalg.norm(pol[:, :2], axis=1)
+            # Subsample for clarity if too many particles.
+            stride = max(1, x.shape[0] // 600)
+            ax.quiver(
+                x[::stride, 0], x[::stride, 1],
+                pol[::stride, 0], pol[::stride, 1],
+                mag[::stride],
+                cmap="plasma", scale=20, width=0.003, alpha=0.85,
+            )
+            ax.set_xlim(0, domain)
+            ax.set_ylim(0, domain)
+            ax.set_aspect("equal")
+            ax.set_title(title, fontsize=10)
+            continue
         else:
             field = snap.get(key)
         if field is None or field.shape[0] != x.shape[0]:

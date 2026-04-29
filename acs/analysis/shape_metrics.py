@@ -89,6 +89,69 @@ def top_down_projection_area(x: np.ndarray) -> float:
         return float("nan")
 
 
+def top_down_connected_component_area(
+    x: np.ndarray,
+    *,
+    link_radius: float,
+) -> dict:
+    """Top-down area of the largest connected xy component.
+
+    This is a companion diagnostic to :func:`top_down_projection_area`, not a
+    replacement for the PI-matched top-down convex hull. A few escaped particles
+    can inflate the all-particle hull while the biologically meaningful sheet
+    remains compact. The connected-component hull catches that failure mode.
+    """
+    from scipy.spatial import ConvexHull, cKDTree
+
+    n = int(x.shape[0])
+    if n < 3 or link_radius <= 0.0:
+        return {"area": float("nan"), "fraction": 0.0, "n_component": 0}
+
+    xy = x[:, :2].astype(np.float64)
+    pairs = cKDTree(xy).query_pairs(float(link_radius), output_type="ndarray")
+
+    parent = np.arange(n, dtype=np.int64)
+    size = np.ones(n, dtype=np.int64)
+
+    def find(a: int) -> int:
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = int(parent[a])
+        return a
+
+    def union(a: int, b: int) -> None:
+        ra = find(a)
+        rb = find(b)
+        if ra == rb:
+            return
+        if size[ra] < size[rb]:
+            ra, rb = rb, ra
+        parent[rb] = ra
+        size[ra] += size[rb]
+
+    for a, b in pairs:
+        union(int(a), int(b))
+
+    roots = np.array([find(i) for i in range(n)], dtype=np.int64)
+    unique, counts = np.unique(roots, return_counts=True)
+    largest_root = int(unique[int(np.argmax(counts))])
+    mask = roots == largest_root
+    n_component = int(mask.sum())
+    if n_component < 3:
+        area = float("nan")
+    else:
+        try:
+            area = float(ConvexHull(xy[mask]).volume)
+        except Exception:
+            area = float("nan")
+
+    return {
+        "area": area,
+        "fraction": float(n_component / max(n, 1)),
+        "n_component": n_component,
+    }
+
+
 def shell_density_profile(
     x: np.ndarray,
     rho_p: np.ndarray,

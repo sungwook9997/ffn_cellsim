@@ -384,6 +384,7 @@ class SolverConfig:
     alpha_edge_star: float = 1.0         # polarity update toward free edge
     beta_ecm_star: float = 0.5           # ECM-alignment polarity bias
     beta_traction_star: float = 0.5      # ECM-stiffness durotaxis bias
+    protrusion_speed_cap_star: float = 0.06  # ~0.1 um/s at R0=100um, tau=60s
 
     # Stage 1d.b Marangoni Mechanism A + F (per
     # `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
@@ -2127,6 +2128,15 @@ class MLSMPMSolver:
         Polarity is soft-clipped to ‖p_p‖ ≤ 1.
 
         Free-edge direction = outward radial from spheroid xy COM.
+
+        PI directive 2026-04-30 free-edge accuracy fix: polarity update
+        only fires when the particle is BOTH (a) in the contact band
+        (z_p < h_band; substrate-engaged), and (b) flagged as a free-
+        edge particle (is_boundary == 1). Top boundary particles (free
+        surface above the substrate) NO LONGER receive outward polarity
+        — they have no traction to apply because they cannot anchor on
+        the substrate. This fix prevents the spheroid top from being
+        pulled outward during state-3 traction.
         """
         dt = self.cfg.dt_star
         a_edge = self.cfg.alpha_edge_star
@@ -2134,11 +2144,19 @@ class MLSMPMSolver:
         com = self.com_xy[None]
         dx = self.cfg.dx_star
         n_g = self.cfg.grid_n
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
         for p in self.x:
             if self.protrusion_state_p[p] < 2:
                 continue  # quiet/probe particles keep their polarity drift-free
+            # Stage 1d.c free-edge accuracy: only contact-band particles
+            # update polarity. Top boundary cells (above contact band)
+            # cannot anchor on substrate → no meaningful free-edge bias.
+            if self.x[p][2] >= h_band:
+                continue
             pol = self.polarity_p[p]
-            # Free-edge bias (outward from COM in xy).
+            # Free-edge bias (outward from COM in xy). Only contact-
+            # band particles in is_boundary=1 are at the *spreading*
+            # leading edge.
             r0 = self.x[p][0] - com[0]
             r1 = self.x[p][1] - com[1]
             r_norm = ti.sqrt(r0 * r0 + r1 * r1) + 1e-12
@@ -2179,7 +2197,8 @@ class MLSMPMSolver:
         """
         dt = self.cfg.dt_star
         T0 = self.cfg.T0_star
-        m_p = self.cfg.particle_mass_star
+        xi = ti.max(self.cfg.drag_xi_star, 1e-30)
+        v_cap = self.cfg.protrusion_speed_cap_star
         for p in self.x:
             if self.protrusion_state_p[p] != 3:
                 self.traction_p[p] = ti.Vector([0.0, 0.0, 0.0])
@@ -2188,7 +2207,10 @@ class MLSMPMSolver:
             pol = self.polarity_p[p]
             T = T0 * fa * pol
             self.traction_p[p] = T
-            self.v[p] += T * (dt / ti.max(m_p, 1e-30))
+            self.v[p] += T * (dt / xi)
+            speed = ti.sqrt(self.v[p][0] ** 2 + self.v[p][1] ** 2 + self.v[p][2] ** 2)
+            if speed > v_cap:
+                self.v[p] = self.v[p] * (v_cap / speed)
 
     # ---------------------------------- Stage 1a++.b stochastic events ----
     @ti.kernel
@@ -2632,7 +2654,21 @@ class MLSMPMSolver:
         # Legacy F_pressure_down (kept for backwards comparison only):
         # full signed integrand + band-only gravity.
         F_pressure_down_legacy = float((P_per_p * V0 / h_band).sum()) + F_gravity_band
-        F_total_required = F_compressive + F_gravity_total
+        # Stage 1d.c (PI directive 2026-04-30): when Layer 7 active, the
+        # ECM traction reaction also contributes to the load on the
+        # substrate. Per-particle traction T_p has only xy components by
+        # construction (z=0), so its NET vertical contribution is zero
+        # (the substrate normal force component is unchanged); however
+        # the *horizontal* traction sum is reported as a diagnostic and
+        # explicitly NOT included in the anchor force balance (which is
+        # a vertical-axis Newton 3rd check by definition).
+        F_traction_xy = 0.0
+        F_traction_z = 0.0
+        if self.cfg.layer7_enabled:
+            traction_np = self.traction_p.to_numpy().astype(np.float64)
+            F_traction_xy = float(np.linalg.norm(traction_np[in_band, :2].sum(axis=0)))
+            F_traction_z = float(traction_np[in_band, 2].sum())
+        F_total_required = F_compressive + F_gravity_total + F_traction_z
         F_substrate_up = float(self.diag_substrate_impulse_z[None]) / self.cfg.dt_star
 
         denom = max(abs(F_total_required), 1e-12)
@@ -2697,6 +2733,8 @@ class MLSMPMSolver:
             "F_pressure_tensile_artefact": F_tensile_artefact,
             "F_gravity_band": F_gravity_band,
             "F_gravity_total": F_gravity_total,
+            "F_traction_xy": F_traction_xy,
+            "F_traction_z": F_traction_z,
             "F_total_required": F_total_required,
             "anchor_force_balance_rel_err": balance_err,
             "contact_area_xy_hull": A_contact_xy,

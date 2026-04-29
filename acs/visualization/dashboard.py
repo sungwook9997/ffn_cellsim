@@ -125,9 +125,22 @@ def render_dashboard(run_dir: Path, out_path: Optional[Path] = None) -> Path:
     py0 = py[0] if py.size else 0.0
     dpxy_abs = np.sqrt((px - px0) ** 2 + (py - py0) ** 2)
 
-    # 4×3 grid layout.
-    fig = plt.figure(figsize=(16, 10))
-    gs = fig.add_gridspec(3, 4, hspace=0.4, wspace=0.32)
+    # Stage 1d.c additional metrics.
+    n_lam = col("n_lamellipodium")
+    n_filo = col("n_filopodia")
+    n_nascent = col("n_nascent")
+    n_retract = col("n_retract")
+    fa_sum = col("fa_strength_sum")
+    traction_sum = col("traction_norm_sum")
+    ecm_signal_sum = col("ecm_signal_sum")
+    ecm_u_max = col("ecm_u_max")
+    a_largest = col("A_largest_component_over_A0_topdown")
+    largest_frac = col("largest_component_fraction")
+    hull_lev = col("topdown_hull_leverage")
+
+    # Expanded grid: 4 rows × 4 cols to accommodate Stage 1d.c.
+    fig = plt.figure(figsize=(18, 13))
+    gs = fig.add_gridspec(4, 4, hspace=0.45, wspace=0.32)
 
     ax = fig.add_subplot(gs[0, 0])
     ax.plot(t, aa0, color="#0d4ec9")
@@ -201,8 +214,63 @@ def render_dashboard(run_dir: Path, out_path: Optional[Path] = None) -> Path:
     ax.set_title("Contact patch area (diagnostic)")
     ax.grid(alpha=0.3)
 
+    # Stage 1d.c row 3: protrusion state machine + ECM
+    ax = fig.add_subplot(gs[2, 0])
+    n_total = n_part if n_part > 0 else 1.0
+    if not np.all(np.isnan(n_lam)):
+        ax.fill_between(t, 0, n_filo / n_total, label="filopodia", alpha=0.7, color="#bb6f00")
+        ax.fill_between(t, n_filo / n_total, (n_filo + n_nascent) / n_total,
+                        label="nascent", alpha=0.7, color="#9b1d20")
+        ax.fill_between(t, (n_filo + n_nascent) / n_total,
+                        (n_filo + n_nascent + n_lam) / n_total,
+                        label="lamellipodium", alpha=0.7, color="#3a8c4f")
+        ax.fill_between(t, (n_filo + n_nascent + n_lam) / n_total,
+                        (n_filo + n_nascent + n_lam + n_retract) / n_total,
+                        label="retract", alpha=0.7, color="#888")
+    ax.set_xlabel("t*")
+    ax.set_ylabel("fraction of particles")
+    ax.set_title("Protrusion state machine")
+    ax.legend(fontsize=7, loc="upper left")
+    ax.grid(alpha=0.3)
+
+    ax = fig.add_subplot(gs[2, 1])
+    if not np.all(np.isnan(fa_sum)):
+        ax.plot(t, fa_sum / n_total, color="#3a8c4f", label="<fa_strength>")
+        ax.plot(t, traction_sum / n_total, color="#9b1d20", label="<‖T_p‖>")
+    ax.set_xlabel("t*")
+    ax.set_ylabel("FA / traction (per particle)")
+    ax.set_title("Focal adhesion + traction")
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+
+    ax = fig.add_subplot(gs[2, 2])
+    if not np.all(np.isnan(ecm_signal_sum)):
+        ax.plot(t, ecm_signal_sum / n_total, color="#0d4ec9", label="<|u_ecm|>")
+        ax2 = ax.twinx()
+        ax2.plot(t, ecm_u_max, color="#bb6f00", label="max |u_ecm|", linestyle="--")
+        ax2.set_ylabel("max |u_ecm|", color="#bb6f00")
+    ax.set_xlabel("t*")
+    ax.set_ylabel("<|u_ecm|>", color="#0d4ec9")
+    ax.set_title("ECM displacement field")
+    ax.grid(alpha=0.3)
+
+    ax = fig.add_subplot(gs[2, 3])
+    if not np.all(np.isnan(largest_frac)):
+        ax.plot(t, largest_frac, color="#0d4ec9", label="largest component frac")
+        ax.axhline(0.90, color="#999", linestyle="--", linewidth=0.8,
+                   label="gate ≥ 0.90")
+        ax2 = ax.twinx()
+        ax2.plot(t, hull_lev, color="#9b1d20", label="hull/component leverage", linestyle=":")
+        ax2.axhline(1.35, color="#9b1d20", linestyle="--", linewidth=0.6, alpha=0.5)
+        ax2.set_ylabel("hull leverage", color="#9b1d20")
+    ax.set_xlabel("t*")
+    ax.set_ylabel("largest fraction", color="#0d4ec9")
+    ax.set_title("Connected-component diagnostic")
+    ax.legend(fontsize=7, loc="lower right")
+    ax.grid(alpha=0.3)
+
     # Gate summary panel (spans two columns).
-    ax = fig.add_subplot(gs[2, :2])
+    ax = fig.add_subplot(gs[3, :2])
     ax.axis("off")
     overall = gate.get("overall", "?")
     color = {"PASS": "#2a8a4d", "FAIL": "#a02828"}.get(overall, "#666")
@@ -223,7 +291,7 @@ def render_dashboard(run_dir: Path, out_path: Optional[Path] = None) -> Path:
             break
 
     # Run identity panel.
-    ax = fig.add_subplot(gs[2, 2:])
+    ax = fig.add_subplot(gs[3, 2:])
     ax.axis("off")
     label = "?"
     if cfg:
@@ -259,12 +327,43 @@ def render_dashboard(run_dir: Path, out_path: Optional[Path] = None) -> Path:
                 f"Layer 2.b: stochastic events (λ={layer2_b.get('lambda_lam_star', 0)},"
                 f" impulse={layer2_b.get('impulse_lam_star', 0)})"
             )
+        layer7 = cfg.get("layer7", {})
+        if layer7.get("enabled", False):
+            info_lines.append(
+                f"Layer 7 (Stage 1d.c): T0={layer7.get('T0_star', 0)}, "
+                f"λ_ecm={layer7.get('lambda_ecm_star', 0)}, "
+                f"τ_lam={layer7.get('tau_lam_star', 0)}"
+            )
     y = 1.0
     for ln in info_lines:
         ax.text(0.0, y, ln, fontsize=10, va="top", family="monospace")
         y -= 0.08
 
     fig.suptitle(f"Run dashboard — {run_dir.name}", fontsize=14, y=0.995)
+    # Legacy single-save (low-res PNG inside figures/dashboard/) for
+    # quick inspection.
     fig.savefig(out_path, dpi=110, bbox_inches="tight")
+    # Paper-grade dual-save per CODEX_FIGURE_GUIDE.md.
+    try:
+        from acs.visualization.figure_style import save_figure_dual
+        save_figure_dual(
+            fig,
+            stem=f"run_dashboard_{run_dir.name}",
+            run_dir=run_dir,
+            caption=(
+                "Production-run dashboard summarising A/A_topdown(t), "
+                "effective radius, Wadell sphericity, horizontal momentum "
+                "drift, Layer 3 split (φ_memory + c_act), Layer 5 osmotic "
+                "state, Layer 6 chemistry, contact patch area, Stage 1d.c "
+                "protrusion state machine + ECM diagnostic, gate PASS/FAIL "
+                "summary, and run parameter identity."
+            ),
+            description="Run-level summary figure",
+            metadata={"figure_class": "summary_dashboard",
+                      "run_name": run_dir.name},
+            step="stage1dc",
+        )
+    except Exception:
+        pass
     plt.close(fig)
     return out_path

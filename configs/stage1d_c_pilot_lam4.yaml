@@ -66,6 +66,7 @@ layer7:
   alpha_edge_star: 1.0
   beta_ecm_star: 0.5
   beta_traction_star: 0.5
+  protrusion_speed_cap_star: 0.06  # ~0.1 um/s at R0=100um, tau=60s
 
 layer3:
   enabled: true
@@ -145,6 +146,8 @@ gate:
   max_speed_over_vrms: 10.0
   layer3_memory_drift_max: 0.01        # Stage 1b.b 5a: φ_memory drift limit
   layer3_c_act_band_tol: 0.10          # Stage 1b.b 5b: c_act vs c_eq tol
+  stage1dc_hull_leverage_max: 1.35
+  stage1dc_largest_component_fraction_min: 0.90
   v15_R_drift_baseline: 0.244
   stage1a_plus_beta_alpha1_R_drift_baseline: 0.247
   stage1c_R_drift_baseline: 0.138
