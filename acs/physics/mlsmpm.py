@@ -207,6 +207,18 @@ class SolverConfig:
 
     seed: int = 42
 
+    # Stage 1a+ substrate (Option α: mechanical anchor only, γ_sub = 0).
+    # When `substrate_enabled` is True, the existing reflective grid BC at
+    # k < n_contact_band on the −z side becomes the *intentional* substrate
+    # (rather than a never-fired box-wall safety net), and per-step impulse
+    # delivered into z = 0 is accumulated in `diag_substrate_impulse_z`
+    # for the anchor-force-balance gate. See
+    # `docs/stage1a_plus_substrate_sanity.md` and `docs/outcomes_stage1a_plus.md`.
+    # When False, the −z wall is the same 3-cell safety net as the other five
+    # box faces (Stage 1a baseline behaviour, no substrate).
+    substrate_enabled: bool = False
+    n_contact_band: int = 3
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -313,6 +325,14 @@ class MLSMPMSolver:
         self.diag_max_speed = ti.field(dtype=ti.f32, shape=())
         self.diag_max_count = ti.field(dtype=ti.i32, shape=())
         self.diag_nan_count = ti.field(dtype=ti.i32, shape=())
+
+        # Stage 1a+ Option α: per-step accumulator of substrate reaction
+        # impulse (in z direction). Reset in `_clear_grid`, accumulated in
+        # `_grid_op_overdamped` whenever the −z wall clamps a downward grid
+        # velocity, and read by `substrate_diagnostics` to compute
+        # F_substrate = diag_substrate_impulse_z / dt for the anchor-force-
+        # balance gate.
+        self.diag_substrate_impulse_z = ti.field(dtype=ti.f64, shape=())
 
     # ------------------------------------------------------------- init ----
     def initialize_sphere(self, center_star, radius_star: float | None = None) -> None:
@@ -616,6 +636,8 @@ class MLSMPMSolver:
             self.grid_normal[I] = ti.Vector.zero(ti.f32, 3)
             self.grid_kappa[I] = 0.0
         self.diag_max_count[None] = 0
+        # Stage 1a+ substrate reaction-impulse accumulator: reset per step.
+        self.diag_substrate_impulse_z[None] = 0.0
 
     @ti.kernel
     def _tag_boundary(self):
@@ -971,6 +993,10 @@ class MLSMPMSolver:
         min_cell_mass = 0.1 * rho_ref * (dx ** 3)
 
         damp = 1.0 / (1.0 + self.cfg.drag_xi_star * dt)
+        # Compile-time constants for the substrate / box-wall reflective BC.
+        # When `substrate_enabled` is True the −z wall uses `n_contact_band`
+        # (intentional substrate); otherwise it uses 3 (box-wall safety net).
+        sub_band = self.cfg.n_contact_band if self.cfg.substrate_enabled else 3
 
         for I in ti.grouped(self.grid_m):
             m = self.grid_m[I]
@@ -1003,7 +1029,19 @@ class MLSMPMSolver:
                     v[1] = 0.0
                 if j > self.cfg.grid_n - 3 and v[1] > 0:
                     v[1] = 0.0
-                if k < 3 and v[2] < 0:
+                # −z wall: under Stage 1a+ Option α this is the *intentional*
+                # rigid substrate (γ_sub = 0, mechanical anchor only); when
+                # `substrate_enabled` is False it is the same 3-cell box-wall
+                # safety net as the +x, −x, +y, −y, +z faces. Either way the
+                # clamp logic is identical; the only Stage-1a+-specific
+                # behaviour is recording the per-step reaction impulse for
+                # the anchor-force-balance gate.
+                if k < sub_band and v[2] < 0:
+                    if ti.static(self.cfg.substrate_enabled):
+                        ti.atomic_add(
+                            self.diag_substrate_impulse_z[None],
+                            ti.cast(m * (-v[2]), ti.f64),
+                        )
                     v[2] = 0.0
                 if k > self.cfg.grid_n - 3 and v[2] > 0:
                     v[2] = 0.0
@@ -1110,6 +1148,123 @@ class MLSMPMSolver:
             if self.is_boundary[p] == 1:
                 # Surface energy proxy: γ × per-particle surface element ≈ γ × V₀^(2/3).
                 ti.atomic_add(self.diag_surface_energy[None], gamma * ti.cast(V0 ** (2.0 / 3.0), ti.f64))
+
+    def substrate_diagnostics(self) -> dict:
+        """Stage 1a+ Option α (γ_sub = 0) substrate gates + diagnostics.
+
+        Computes:
+        - n_contact_band_particles: # particles in the contact band z* < n·dx*
+        - rho_kernel_contact_over_ref: <ρ_kernel>_band / ρ_ref
+            Gate ∈ [0.85, 1.15]: witnesses the kernel sees the substrate via
+            the reflective BC (substrate-side cells contribute particle mass
+            normally), distinct from the free surface where ρ_kernel ≈ 0.5·ρ_ref
+            (Adami-Hu-Adams 2010 §3 truncation bound).
+        - F_substrate_per_step: substrate reaction force from accumulated
+            impulse / dt (over the most recent step).
+        - F_pressure_down: bulk pressure pushing down on the substrate,
+            ≈ Σ_p P_p · V₀/h_band over contact-band particles, where
+            P_p = K · (1 − ρ_ref/ρ_kernel_p) is the v15 (k.3) hydrostatic
+            pressure and h_band = n_contact_band · dx*.
+        - anchor_force_balance_rel_err: |F_substrate − F_pressure| /
+            max(|F_substrate|, ε); gate ≤ 0.20 (finite-relaxation tolerance).
+        - contact_area_xy_hull: convex-hull area of contact-band particle
+            (x, y) projections, in dimensionless area units.
+        - apparent_contact_angle_deg: geometric angle of the spheroid
+            surface near the substrate; log-only diagnostic under γ_sub = 0
+            (no Young analytical reference).
+
+        Returns {"valid": False, ...} if substrate is disabled or there are
+        no contact-band particles.
+        """
+        if not self.cfg.substrate_enabled:
+            return {"valid": False, "reason": "substrate not enabled"}
+
+        x_np = self.x.to_numpy()
+        rho_p = self._rho_kernel_p.to_numpy()
+        z = x_np[:, 2]
+        h_band = self.cfg.n_contact_band * self.cfg.dx_star
+        in_band = z < h_band
+        n_contact = int(in_band.sum())
+        if n_contact == 0:
+            return {"valid": False, "reason": "no contact-band particles"}
+
+        rho_ref = float(self._rho_ref_kernel[None])
+        rho_band = rho_p[in_band].astype(np.float64)
+        rho_band_mean = float(rho_band.mean())
+
+        K = float(self.cfg.K_star)
+        V0 = float(self.cfg.particle_volume_star)
+        # Hydrostatic pressure per particle (positive when ρ > ρ_ref, i.e.
+        # compressed). σ_vol = K(ρ_ref/ρ − 1)·I; pressure = -tr(σ_vol)/3 =
+        # K(1 − ρ_ref/ρ).
+        P_per_p = K * (1.0 - rho_ref / np.clip(rho_band, 1e-30, None))
+        # Force pushing down on the substrate from each contact-band
+        # particle: P · (V0 / h_band). Sum gives total downward bulk force.
+        F_pressure_down = float((P_per_p * V0 / h_band).sum())
+        F_substrate_up = float(self.diag_substrate_impulse_z[None]) / self.cfg.dt_star
+
+        denom = max(abs(F_substrate_up), 1e-12)
+        balance_err = abs(F_substrate_up - F_pressure_down) / denom
+
+        # Contact area in (x, y) plane via convex hull (host-side, scipy).
+        from scipy.spatial import ConvexHull
+        xy_band = x_np[in_band, :2].astype(np.float64)
+        A_contact_xy = float("nan")
+        if n_contact >= 3:
+            try:
+                hull = ConvexHull(xy_band)
+                A_contact_xy = float(hull.volume)  # 2D ConvexHull.volume = area
+            except Exception:
+                pass
+
+        # Apparent contact angle (geometric, log-only): linear fit of the
+        # spheroid radial extent r(z) over the lowest 0.2·R₀ slab gives
+        # dr/dz, and the apparent angle is atan(-dr/dz) (radians) measured
+        # from the substrate plane (90° = straight wall, 0° = parallel film).
+        # This is a *geometric* quantity (not a curvature), so the v13
+        # f″/f′ pathology does not apply.
+        from numpy.polynomial import polynomial as Pnumpy
+        cx = x_np[:, 0].mean()
+        cy = x_np[:, 1].mean()
+        r_all = np.sqrt((x_np[:, 0] - cx) ** 2 + (x_np[:, 1] - cy) ** 2)
+        z_lo, z_hi = 0.0, 0.2 * self.cfg.radius_star
+        slab = (z >= z_lo) & (z <= z_hi)
+        theta_deg = float("nan")
+        if int(slab.sum()) >= 8:
+            # Per-z radial outer extent: take the 90th percentile of r within
+            # narrow z bins to get the effective surface r(z).
+            n_bins = 5
+            z_edges = np.linspace(z_lo, z_hi, n_bins + 1)
+            zc, rc = [], []
+            for b in range(n_bins):
+                m = slab & (z >= z_edges[b]) & (z < z_edges[b + 1])
+                if int(m.sum()) >= 3:
+                    zc.append(0.5 * (z_edges[b] + z_edges[b + 1]))
+                    rc.append(float(np.percentile(r_all[m], 90)))
+            if len(zc) >= 3:
+                coefs = np.polyfit(zc, rc, 1)  # rc = coefs[0]*zc + coefs[1]
+                drdz = float(coefs[0])
+                theta_deg = float(np.degrees(np.arctan2(1.0, max(-drdz, -1e6))))
+                # arctan2(1, -dr/dz): when -dr/dz → +∞ (vertical wall) → 90°,
+                # when -dr/dz → 0 (flat film) → 90° too — degenerate. Use
+                # a more direct formula:
+                theta_deg = float(np.degrees(np.arctan(-drdz)) + 90.0)
+                # = 90° at dr/dz = 0 (flat near-substrate surface, hemispherical),
+                # > 90° at dr/dz < 0 (wider at z=0 than above, dewetting),
+                # < 90° at dr/dz > 0 (narrowing toward z=0, beading).
+
+        return {
+            "valid": True,
+            "n_contact_band_particles": n_contact,
+            "h_band_star": h_band,
+            "rho_kernel_contact_mean": rho_band_mean,
+            "rho_kernel_contact_over_ref": rho_band_mean / rho_ref,
+            "F_substrate_per_step": F_substrate_up,
+            "F_pressure_down": F_pressure_down,
+            "anchor_force_balance_rel_err": balance_err,
+            "contact_area_xy_hull": A_contact_xy,
+            "apparent_contact_angle_deg": theta_deg,
+        }
 
     def measure_surface_curvature(self) -> dict:
         """Static curvature validation: build a CSF + curvature pass on the

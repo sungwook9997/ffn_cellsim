@@ -49,6 +49,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     nd = cfg["nondim"]
     nm = cfg["numerics"]
     sim = cfg["simulation"]
+    sub = cfg.get("substrate", {})
     return SolverConfig(
         n_particles=int(sim["n_material_points"]),
         grid_n=int(nm["background_grid_resolution"]),
@@ -63,6 +64,8 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         density_star=float(nd["density_star"]),
         free_surface_threshold=float(nm["free_surface_density_threshold"]),
         seed=int(cfg["run"]["seed"]),
+        substrate_enabled=bool(sub.get("enabled", False)),
+        n_contact_band=int(sub.get("n_contact_band", 3)),
     )
 
 
@@ -93,7 +96,24 @@ def run_stage1a(config_path: Path | str) -> Path:
     # Build solver.
     solver_cfg = _solver_cfg_from_yaml(cfg)
     solver = MLSMPMSolver(solver_cfg)
-    centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
+    if solver_cfg.substrate_enabled:
+        # Stage 1a+ Option α: place spheroid in contact with the rigid
+        # substrate at z = 0. Spheroid centre at z* = R₀ → bottommost
+        # particle at z* = 0. No free-fall transient (no gravity at this
+        # stage; see docs/stage1a_plus_substrate_sanity.md scope §).
+        centre = np.array(
+            [solver_cfg.domain_star * 0.5,
+             solver_cfg.domain_star * 0.5,
+             solver_cfg.radius_star],
+            dtype=np.float32,
+        )
+        logger.info(
+            "Substrate enabled (Stage 1a+ Option α): n_contact_band=%d, "
+            "spheroid centre at z* = R₀ = %.4f",
+            solver_cfg.n_contact_band, solver_cfg.radius_star,
+        )
+    else:
+        centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
     solver.initialize_sphere(centre)
 
     # Reference-state calibration (Hu et al. 2018 §4.3, Adami-Hu-Adams 2010
@@ -180,6 +200,11 @@ def run_stage1a(config_path: Path | str) -> Path:
     shell_rows: list[dict[str, Any]] = []
     SHELL_N_BINS = 10
     SHELL_R_MAX_FRAC = 1.2
+    # Stage 1a+ Option α (γ_sub = 0): per-frame substrate diagnostics
+    # (anchor force balance, contact-band ρ_kernel, contact area, apparent
+    # contact angle). Written to contact_metrics.csv. Specification:
+    # docs/stage1a_plus_substrate_sanity.md and docs/outcomes_stage1a_plus.md.
+    contact_rows: list[dict[str, Any]] = []
     step_times: list[float] = []
     halted = False
     halt_reason = ""
@@ -224,7 +249,7 @@ def run_stage1a(config_path: Path | str) -> Path:
                     else float("nan")
                 ),
             })
-        metrics_rows.append({
+        metrics_row0 = {
             "frame_index": 0,
             "time_star": 0.0,
             **{k: v for k, v in inv0.items() if not isinstance(v, np.ndarray)},
@@ -237,7 +262,29 @@ def run_stage1a(config_path: Path | str) -> Path:
             "shell_bulk_mean_rho": shell0["bulk_mean_rho"],
             "shell_bulk_std_rho": shell0["bulk_std_rho"],
             "shell_bulk_n_particles": shell0["bulk_n_particles"],
-        })
+        }
+        if solver_cfg.substrate_enabled:
+            # Frame 0: no step has run, so the impulse accumulator is at its
+            # constructor-default 0.0 (and would be 0 anyway as no penetration
+            # has been clamped). Substrate diagnostics still computable from
+            # the initial-state particle positions.
+            sub_diag0 = solver.substrate_diagnostics()
+            if sub_diag0.get("valid"):
+                metrics_row0.update({
+                    "n_contact_band_particles": sub_diag0["n_contact_band_particles"],
+                    "rho_kernel_contact_over_ref": sub_diag0["rho_kernel_contact_over_ref"],
+                    "F_substrate_per_step": sub_diag0["F_substrate_per_step"],
+                    "F_pressure_down": sub_diag0["F_pressure_down"],
+                    "anchor_force_balance_rel_err": sub_diag0["anchor_force_balance_rel_err"],
+                    "contact_area_xy_hull": sub_diag0["contact_area_xy_hull"],
+                    "apparent_contact_angle_deg": sub_diag0["apparent_contact_angle_deg"],
+                })
+                contact_rows.append({
+                    "frame_index": 0,
+                    "time_star": 0.0,
+                    **sub_diag0,
+                })
+        metrics_rows.append(metrics_row0)
 
         wall_start = time.perf_counter()
         last_snap_step = 0
@@ -289,7 +336,7 @@ def run_stage1a(config_path: Path | str) -> Path:
                             else float("nan")
                         ),
                     })
-                metrics_rows.append({
+                metrics_row = {
                     "frame_index": frame_idx,
                     "time_star": step * dt,
                     **{k: v for k, v in inv.items() if not isinstance(v, np.ndarray)},
@@ -302,7 +349,25 @@ def run_stage1a(config_path: Path | str) -> Path:
                     "shell_bulk_mean_rho": shell["bulk_mean_rho"],
                     "shell_bulk_std_rho": shell["bulk_std_rho"],
                     "shell_bulk_n_particles": shell["bulk_n_particles"],
-                })
+                }
+                if solver_cfg.substrate_enabled:
+                    sub_diag = solver.substrate_diagnostics()
+                    if sub_diag.get("valid"):
+                        metrics_row.update({
+                            "n_contact_band_particles": sub_diag["n_contact_band_particles"],
+                            "rho_kernel_contact_over_ref": sub_diag["rho_kernel_contact_over_ref"],
+                            "F_substrate_per_step": sub_diag["F_substrate_per_step"],
+                            "F_pressure_down": sub_diag["F_pressure_down"],
+                            "anchor_force_balance_rel_err": sub_diag["anchor_force_balance_rel_err"],
+                            "contact_area_xy_hull": sub_diag["contact_area_xy_hull"],
+                            "apparent_contact_angle_deg": sub_diag["apparent_contact_angle_deg"],
+                        })
+                        contact_rows.append({
+                            "frame_index": frame_idx,
+                            "time_star": step * dt,
+                            **sub_diag,
+                        })
+                metrics_rows.append(metrics_row)
                 logger.info(
                     "step=%d t*=%.3f KE=%.3e U=%.3e R/R0=%.3f ψ=%.3f vmax=%.3e "
                     "ρ_bulk=%.4f±%.4f (n=%d)",
@@ -339,6 +404,16 @@ def run_stage1a(config_path: Path | str) -> Path:
             w = csv.DictWriter(fh, fieldnames=keys)
             w.writeheader()
             w.writerows(shell_rows)
+
+    # Stage 1a+ Option α substrate diagnostics CSV (one row per frame).
+    # Specification: docs/outcomes_stage1a_plus.md §"Files of record".
+    if contact_rows:
+        contact_path = out_dir / "contact_metrics.csv"
+        keys = list(contact_rows[0].keys())
+        with contact_path.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=keys)
+            w.writeheader()
+            w.writerows(contact_rows)
 
     # ---------- Gate evaluation ----------
     g = cfg["gate"]
@@ -415,18 +490,37 @@ def run_stage1a(config_path: Path | str) -> Path:
     # 0.001 in dimensionless units, i.e. one part per thousand of a ballistic
     # R₀/τ_relax; below that the system is at rest by any reasonable physical
     # standard and the *absolute* |Δp| is what matters.
+    #
+    # Stage 1a+ Option α contract change (per
+    # docs/stage1a_plus_substrate_sanity.md §3): the −z reflective BC is a
+    # deliberate momentum-leak channel for the substrate reaction force, so
+    # vertical momentum is allowed to drift. Under substrate_enabled, the
+    # gate measures only horizontal (x, y) momentum drift. This is a Cousin-
+    # Rule contract change demanded by the new physical scenario, surfaced
+    # to PI in the sanity-md and approved 2026-04-29.
     p_init = np.array(inv0["momentum_star"])
     p_final = np.array(inv_final["momentum_star"])
     v_rms = float(np.sqrt(2.0 * inv_final["kinetic_energy_star"] / max(inv_final["mass_star"], 1e-30)))
     V_FLOOR = 1.0e-3
     p_norm_scale = inv_final["mass_star"] * max(v_rms, V_FLOOR)
-    p_drift = float(np.linalg.norm(p_final - p_init) / max(p_norm_scale, 1e-30))
-    results.append(GateResult(
-        "momentum drift",
-        p_drift <= float(g["momentum_drift_rel_max"]),
-        f"|Δp|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift:.2e}, "
-        f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
-    ))
+    if solver_cfg.substrate_enabled:
+        delta_p_horiz = (p_final - p_init)[:2]
+        p_drift = float(np.linalg.norm(delta_p_horiz) / max(p_norm_scale, 1e-30))
+        results.append(GateResult(
+            "momentum drift (horizontal only — substrate absorbs vertical)",
+            p_drift <= float(g["momentum_drift_rel_max"]),
+            f"|Δp_xy|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift:.2e}, "
+            f"|Δp_z|={abs(float((p_final - p_init)[2])):.2e} (substrate-leak, not gated), "
+            f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
+        ))
+    else:
+        p_drift = float(np.linalg.norm(p_final - p_init) / max(p_norm_scale, 1e-30))
+        results.append(GateResult(
+            "momentum drift",
+            p_drift <= float(g["momentum_drift_rel_max"]),
+            f"|Δp|/(m·max(v_rms,{V_FLOOR:.0e})) = {p_drift:.2e}, "
+            f"v_rms={v_rms:.2e} (limit {g['momentum_drift_rel_max']:.0e})",
+        ))
 
     energies = np.array([
         r["kinetic_energy_star"] + r["strain_energy_star"]
@@ -462,7 +556,69 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"max drift = {R_drift:.3f} (limit {g['radius_drift_rel_max']:.3f})",
         ))
     else:
+        R_drift = float("nan")
         results.append(GateResult("radius drift |R/R₀ − 1|", False, "no frames after check_after time"))
+
+    # Stage 1a+ Option α additional gates (substrate enabled).
+    if solver_cfg.substrate_enabled:
+        # (i) R drift improvement vs Stage 1a v15 baseline (24.4%). This is a
+        # *relative-improvement* gate, not an absolute tolerance: the substrate
+        # must do *some* mechanical work. See
+        # docs/outcomes_stage1a_plus.md §"Bounded outcomes".
+        v15_baseline = float(g.get("v15_R_drift_baseline", 0.244))
+        if not np.isnan(R_drift):
+            results.append(GateResult(
+                "R drift improvement vs v15 baseline",
+                R_drift < v15_baseline,
+                f"R_drift_1aplus = {R_drift:.3f} vs v15 baseline {v15_baseline:.3f} "
+                f"(strict-less requirement; bucketing → docs/outcomes_stage1a_plus.md)",
+            ))
+
+        # (ii) Anchor force balance: substrate reaction = bulk pressure
+        # transmitted into the contact band (Newton's 3rd, finite-Maxwell
+        # tolerance ≤ 0.20). Read the median of the per-frame values from
+        # frames after the same R-check time to skip the start transient.
+        rel_errs_after = [
+            r.get("anchor_force_balance_rel_err", float("nan"))
+            for r in metrics_rows if r["time_star"] >= R_check_t
+        ]
+        rel_errs_clean = [e for e in rel_errs_after if not (e is None or np.isnan(e))]
+        if rel_errs_clean:
+            balance_med = float(np.median(rel_errs_clean))
+            results.append(GateResult(
+                "anchor force balance |F_sub − ∫σ_zz dA| / |F_sub|",
+                balance_med <= 0.20,
+                f"median over post-transient frames = {balance_med:.3f} (limit 0.20, "
+                f"n={len(rel_errs_clean)} frames)",
+            ))
+        else:
+            results.append(GateResult(
+                "anchor force balance |F_sub − ∫σ_zz dA| / |F_sub|",
+                False,
+                "no valid anchor-force-balance samples",
+            ))
+
+        # (iii) Contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]. Witnesses
+        # substrate-anchored kernel (vs free-surface ~0.5·ρ_ref).
+        rho_after = [
+            r.get("rho_kernel_contact_over_ref", float("nan"))
+            for r in metrics_rows if r["time_star"] >= R_check_t
+        ]
+        rho_clean = [e for e in rho_after if not (e is None or np.isnan(e))]
+        if rho_clean:
+            rho_med = float(np.median(rho_clean))
+            results.append(GateResult(
+                "contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]",
+                0.85 <= rho_med <= 1.15,
+                f"median over post-transient frames = {rho_med:.3f} "
+                f"(window [0.85, 1.15], n={len(rho_clean)} frames)",
+            ))
+        else:
+            results.append(GateResult(
+                "contact-band ρ_kernel / ρ_ref ∈ [0.85, 1.15]",
+                False,
+                "no valid contact-band samples",
+            ))
 
     psi_check_t = float(g["sphericity_check_after_s"]) / float(cfg["physics"]["maxwell_tau_s"])
     psi_after = [r["wadell_sphericity"] for r in metrics_rows if r["time_star"] >= psi_check_t]

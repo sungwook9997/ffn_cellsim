@@ -104,3 +104,56 @@ The PI's auto-mode rules from this session remain in force unless explicitly rel
 ## Task tracker state at handoff
 
 The active task is **#27 "Step 2 — Brackbill 1992 §V colour smoothing"** in the in-progress state. v10 result above. Step 3 (Stage 1a-mid) was queued but **NOT** entered per the Stop conditions. All earlier debug-cycle tasks (#26 "Step 1 (option C, selection criterion) — FAILED") are completed for the record.
+
+---
+
+## Stage 1b framing memo — Bare/Pre/Lam4 = phenotype, NOT substrate (recorded 2026-04-29)
+
+When Stage 1b activates Layer 3 (φ-ODE for E-cad ↔ Int-β1, see
+`docs/03_adhesion_dynamics.md`), the PI's three experimental conditions
+enter the simulation. Use this exact framing — re-deriving it from
+scratch in a new session is wasted effort and risks the substrate-
+misframing trap that was caught and corrected on 2026-04-29.
+
+**One-liner**: *Bare/Pre/Lam4 = same Col1 substrate, different spheroid
+initial phenotype (formation environment dependent).*
+
+**Mechanism**: PI seeds MCF7 single cells onto pV4D4 hydrogel under three
+laminin-presentation conditions during spheroid formation:
+
+| Condition | Formation environment |
+|---|---|
+| `Bare` | pV4D4 only, no protein presentation |
+| `Pre` | pV4D4 + pre-adsorbed laminin |
+| `Lam4` | pV4D4 + laminin in media (4 µg/mL) |
+
+This three-condition design extends Cho et al. 2020's ULA-derived → pV4D4
+framework with the PI's own laminin-presentation tuning. Different
+laminin-integrin engagement during formation produces different
+**E-cadherin / Integrin-β1 ratios** in the formed spheroid (Cho 2020
+mechanism, well-established). After formation, all spheroids are *transferred*
+onto the same Col1-coated confocal dish for the 24–96 hr spreading assay.
+
+**Stage 1b mapping** (when implemented; not now):
+- Activate Layer 3 φ-ODE.
+- Three runs with three different *initial φ values*, mapped from
+  formation environment:
+  - `Bare` → low laminin engagement → E-cad-dominant initial state →
+    low initial φ (E-cad/(E-cad+Int) ratio)
+  - `Pre` → moderate laminin engagement → mid initial φ
+  - `Lam4` → high laminin engagement → Int-β1-dominant initial state →
+    high initial φ
+- Substrate stays Col1-only across all three runs. Single γ_sub_Col1
+  value (the same anchored in `docs/stage1a_plus_substrate_sanity.md`).
+
+**Anti-pattern to avoid**: do *not* parameterise Bare/Pre/Lam4 as
+γ_sub_{Bare,Pre,Lam4}. The spreading-time substrate is identical in all
+three cases. Inter-condition variance in `A/A₀(t)` is attributable to
+the spheroid's formation-derived starting state, not to spreading-
+substrate differences. This was caught and fixed during the Stage 1a+
+sanity-md review on 2026-04-29; see also memory entry
+`memory/experimental_design.md`.
+
+
+---
+
