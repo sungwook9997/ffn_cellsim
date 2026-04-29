@@ -113,6 +113,12 @@ def run_stage1a(config_path: Path | str) -> Path:
         calib["J_mean_boundary_subset"], calib["n_boundary_subset"],
         calib["J_mean_all"],
     )
+    logger.info(
+        "Calibration consistency (task-7): n_W_well_resolved=%d vs "
+        "n_rho_well_resolved=%d; ρ↔W Jaccard = %.4f",
+        calib["n_W_well_resolved"], calib["n_well_resolved"],
+        calib["rho_W_jaccard"],
+    )
     (out_dir / "reference_calibration.json").write_text(
         json.dumps(calib, indent=2), encoding="utf-8"
     )
@@ -131,6 +137,13 @@ def run_stage1a(config_path: Path | str) -> Path:
             rel_err * 100.0, curv["n_surface_cells"],
         )
         curv["relative_error"] = rel_err
+        logger.info(
+            "CSF localisation (Adami-Hu-Adams 2010): "
+            "bulk |∇c| mean = %.4f, surface |∇c| peak = %.4f, "
+            "ratio = %.4f (gate < 0.10)",
+            curv["bulk_grad_c_mean"], curv["surface_grad_c_peak"],
+            curv["bulk_to_surface_grad_ratio"],
+        )
     else:
         logger.warning("Curvature validation invalid: %s", curv.get("reason"))
         curv["relative_error"] = float("nan")
@@ -286,11 +299,33 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"analytical=2/R={curv['kappa_analytical']:.4f}, "
             f"rel err {curv['relative_error'] * 100:.1f}% (limit 10%)",
         ))
+        # CSF localisation gate: with Adami-Hu-Adams 2010 reproducing-kernel
+        # normalisation, c ≡ 1 in any cell whose kernel sees particles, so
+        # |∇c| should be confined to the surface band. The bulk-shell
+        # mean / surface-peak ratio quantifies the residual interior
+        # penetration. Limit 0.10 is set by analogy to the 10% curvature
+        # tolerance — both are scheme-correctness contracts at floating-point
+        # scale rather than physics tolerances. v11 baseline (no AHA): 0.61
+        # at n_smoothing_passes=2 (FAIL), 0.50 at n_passes=4 (still FAIL).
+        BULK_GRAD_LIMIT = 0.10
+        ratio = curv["bulk_to_surface_grad_ratio"]
+        results.append(GateResult(
+            "CSF localisation (bulk/surface |∇c| ratio)",
+            ratio <= BULK_GRAD_LIMIT,
+            f"bulk |∇c| mean = {curv['bulk_grad_c_mean']:.4f}, "
+            f"surface |∇c| peak = {curv['surface_grad_c_peak']:.4f}, "
+            f"ratio = {ratio:.4f} (limit {BULK_GRAD_LIMIT:.2f})",
+        ))
     else:
         results.append(GateResult(
             "curvature operator (κ vs 2/R)",
             False,
             f"validation invalid: {curv.get('reason')}",
+        ))
+        results.append(GateResult(
+            "CSF localisation (bulk/surface |∇c| ratio)",
+            False,
+            f"curvature validation invalid: {curv.get('reason')}",
         ))
 
     mass_drift = abs(inv_final["mass_star"] - inv0["mass_star"]) / max(inv0["mass_star"], 1e-30)
@@ -398,6 +433,13 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"- relative error: {curv['relative_error'] * 100:.2f}% (limit 10%)",
             f"- surface band: {curv['n_surface_cells']} cells "
             f"(selection: {curv.get('selection', 'unknown')})",
+            "",
+            "### CSF localisation (Adami-Hu-Adams 2010 §3)",
+            f"- bulk |∇c| mean (r/R₀ ∈ [0.2, 0.7], n={curv['n_bulk_cells_sampled']} cells) = "
+            f"{curv['bulk_grad_c_mean']:.4f}",
+            f"- surface |∇c| peak = {curv['surface_grad_c_peak']:.4f}",
+            f"- ratio bulk/surface = {curv['bulk_to_surface_grad_ratio']:.4f} "
+            f"(limit 0.10)",
         ]
     else:
         curv_lines.append(f"- validation invalid: {curv.get('reason')}")
@@ -430,6 +472,10 @@ def run_stage1a(config_path: Path | str) -> Path:
         f"(n={calib['n_boundary_subset']}), "
         f"<J>_all={calib['J_mean_all']:.8f}, "
         f"F_scale∈[{calib['F_scale_min']:.4f}, {calib['F_scale_max']:.4f}]",
+        f"- ρ↔W well-resolved Jaccard (task-7 consistency): "
+        f"{calib['rho_W_jaccard']:.4f}; "
+        f"n_W_well_resolved={calib['n_W_well_resolved']} vs "
+        f"n_ρ_well_resolved={calib['n_well_resolved']}",
         "",
         "## Checks",
         *(r.render() for r in results),

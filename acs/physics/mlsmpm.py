@@ -201,6 +201,14 @@ class MLSMPMSolver:
         self.grid_v = ti.Vector.field(3, dtype=ti.f32, shape=(n_g, n_g, n_g))
         self.grid_m = ti.field(dtype=ti.f32, shape=(n_g, n_g, n_g))
         self.grid_count = ti.field(dtype=ti.i32, shape=(n_g, n_g, n_g))
+        # Reproducing-kernel volume sum (Adami, Hu & Adams 2010 §3 / Shepard
+        # normalisation): grid_kernel_weight[I] = Σ_p w_pI · V₀, the
+        # kernel-volume coverage at grid cell I. Used to normalise the
+        # colour function so c_norm = grid_m / (ρ_bulk · grid_kernel_weight)
+        # is identically 1 in bulk wherever grid_kernel_weight > 0
+        # (partition-of-unity), eliminating the random-pack radial trend
+        # that produced CSF interior penetration in v11.
+        self.grid_kernel_weight = ti.field(dtype=ti.f32, shape=(n_g, n_g, n_g))
         self.grid_color = ti.field(dtype=ti.f32, shape=(n_g, n_g, n_g))
         # Smoothed colour for Brackbill (1992) §V: a thin diffuse interface
         # (~1 grid cell) makes ∇c picks up grid-scale variation rather than
@@ -218,6 +226,7 @@ class MLSMPMSolver:
         # Reference-calibration scratch fields (allocated once, reused on every
         # call to `calibrate_reference_state`).
         self._calib_rho = ti.field(dtype=ti.f32, shape=n_p)
+        self._calib_W = ti.field(dtype=ti.f32, shape=n_p)
         self._calib_scale = ti.field(dtype=ti.f32, shape=n_p)
 
         self.diag_mass = ti.field(dtype=ti.f64, shape=())
@@ -258,14 +267,23 @@ class MLSMPMSolver:
     # ----------------------------------------------- reference calibration ----
     @ti.kernel
     def _scatter_mass_only(self):
-        """One P2G pass that scatters only mass (no momentum, no stress) to the
-        grid. Used by `calibrate_reference_state` to measure the actual local
-        density produced by the random pack.
+        """One P2G pass that scatters mass and the unit-volume kernel weight
+        (no momentum, no stress) to the grid.
+
+        Used by `calibrate_reference_state` to measure local density and by
+        `measure_surface_curvature` (read-only static measurement). The
+        kernel-volume sum `Σ_p w_pI · V₀` enables the Adami-Hu-Adams 2010 §3
+        reproducing-kernel normalisation of the colour function: in any bulk
+        cell where particles fully populate the kernel support, the ratio
+        `grid_m / (ρ_bulk · grid_kernel_weight) = m_p / (ρ_bulk · V₀) = 1`
+        identically, with NO random-pack noise.
         """
         m_p = self.cfg.particle_mass_star
+        V0 = self.cfg.particle_volume_star
         dx = self.cfg.dx_star
         for I in ti.grouped(self.grid_m):
             self.grid_m[I] = 0.0
+            self.grid_kernel_weight[I] = 0.0
         for p in self.x:
             base = ti.cast(self.x[p] / dx - 0.5, ti.i32)
             fx = self.x[p] / dx - ti.cast(base, ti.f32)
@@ -283,10 +301,19 @@ class MLSMPMSolver:
                     and 0 <= idx[2] < self.cfg.grid_n
                 ):
                     ti.atomic_add(self.grid_m[idx], weight * m_p)
+                    ti.atomic_add(self.grid_kernel_weight[idx], weight * V0)
 
     @ti.kernel
     def _interpolate_density_to_particles(self):
-        """G2P-style interpolation of `grid_m / dx³` (= local density) into `_calib_rho`."""
+        """G2P-style interpolation of `grid_m / dx³` (= local kernel density)
+        into `_calib_rho`, and of `grid_kernel_weight / dx³` (= dimensionless
+        kernel coverage, ≈ 1 in fully-resolved bulk) into `_calib_W`.
+
+        `_calib_rho` retains the v11 semantics for backwards-compatible
+        well-resolved selection. `_calib_W` is a diagnostic for the
+        v12 task-7 consistency check (does W-based well-resolved coincide
+        with ρ-based?).
+        """
         dx = self.cfg.dx_star
         inv_vol = 1.0 / (dx ** 3)
         for p in self.x:
@@ -298,6 +325,7 @@ class MLSMPMSolver:
                 0.5 * (fx - 0.5) ** 2,
             ]
             rho = 0.0
+            wsum = 0.0
             for i, j, k in ti.static(ti.ndrange(3, 3, 3)):
                 weight = w[i][0] * w[j][1] * w[k][2]
                 idx = base + ti.Vector([i, j, k])
@@ -307,7 +335,9 @@ class MLSMPMSolver:
                     and 0 <= idx[2] < self.cfg.grid_n
                 ):
                     rho += weight * self.grid_m[idx] * inv_vol
+                    wsum += weight * self.grid_kernel_weight[idx] * inv_vol
             self._calib_rho[p] = rho
+            self._calib_W[p] = wsum
 
     @ti.kernel
     def _set_F_isotropic_from_calib(self):
@@ -405,6 +435,23 @@ class MLSMPMSolver:
         J_boundary = float(J_per_p[boundary_mask].mean()) if n_boundary else 1.0
         J_all = float(J_per_p.mean())
 
+        # Task-7 consistency check: does the W-based (kernel-coverage)
+        # well-resolved subset coincide with the ρ-based one we use for
+        # calibration? In Adami-Hu-Adams 2010 §3 framing the kernel-coverage
+        # W_p ≈ Σ_p w_pI · V₀ / dx³ is the cleaner indicator of "kernel sees
+        # full neighbourhood" — bulk-noise-immune, surface-truncation-direct.
+        # We *report* the W-based mask alongside the ρ-based one. If they
+        # agree (high Jaccard), the existing calibration logic is consistent;
+        # if not, the v12 commit should record the discrepancy and motivate
+        # a unified definition in v13.
+        W_np = self._calib_W.to_numpy()
+        W_max = float(W_np.max())
+        W_well_resolved_mask = W_np > 0.5 * W_max if W_max > 0 else np.zeros_like(W_np, dtype=bool)
+        n_W_resolved = int(W_well_resolved_mask.sum())
+        intersection = int(np.logical_and(well_resolved_mask, W_well_resolved_mask).sum())
+        union = int(np.logical_or(well_resolved_mask, W_well_resolved_mask).sum())
+        jaccard = float(intersection / union) if union > 0 else 1.0
+
         # Reset grid mass so the next real step starts from a clean slate.
         self._clear_grid()
         return {
@@ -412,6 +459,11 @@ class MLSMPMSolver:
             "rho_arith_mean": rho_arith_mean,
             "rho_actual_min": float(rho_np.min()),
             "rho_actual_max": rho_max,
+            "W_kernel_min": float(W_np.min()),
+            "W_kernel_max": W_max,
+            "W_kernel_mean": float(W_np.mean()),
+            "n_W_well_resolved": n_W_resolved,
+            "rho_W_jaccard": jaccard,
             "F_scale_min": float(scale_np.min()),
             "F_scale_max": float(scale_np.max()),
             "F_scale_mean": float(scale_np.mean()),
@@ -442,6 +494,7 @@ class MLSMPMSolver:
         for I in ti.grouped(self.grid_m):
             self.grid_v[I] = ti.Vector.zero(ti.f32, 3)
             self.grid_m[I] = 0.0
+            self.grid_kernel_weight[I] = 0.0
             self.grid_count[I] = 0
             self.grid_color[I] = 0.0
             self.grid_color_smooth[I] = 0.0
@@ -487,13 +540,31 @@ class MLSMPMSolver:
 
     @ti.kernel
     def _seed_color_from_mass(self):
-        """Raw colour c = ρ/ρ_bulk (≈1 inside, 0 outside, with a thin
-        single-cell-wide interface). Smoothed in subsequent passes."""
-        dx = self.cfg.dx_star
+        """Reproducing-kernel-normalised colour (Adami, Hu & Adams 2010 §3).
+
+        c[I] = grid_m[I] / (ρ_bulk · max(grid_kernel_weight[I], ε_div))
+
+        The kernel-volume sum `grid_kernel_weight[I] = Σ_p w_pI · V₀` and the
+        kernel-mass sum `grid_m[I] = Σ_p w_pI · m_p` share the SAME particle
+        weights, so any random-pack packing-density variation cancels in the
+        ratio: `m_p / V₀ = ρ_bulk` is a constant. By construction:
+            c = 1   in any cell whose kernel support contains particles,
+            c = 0   in pure-vacuum cells (grid_m = 0; ε_div only prevents 0/0).
+
+        This eliminates the smooth radial trend in c that v11's diagnostic
+        (`scripts/diag_csf_penetration.py`) showed as the source of CSF
+        interior penetration: bulk |∇c| ≈ 60% of surface peak |∇c| dropped
+        to a thin diffuse interface localised at the actual free surface.
+
+        ε_div is a numerical-safety floor preventing 0/0 in vacuum cells —
+        not a physical scale or a fitting parameter (passes Magic-Number
+        Block tests 1, 2, and 3).
+        """
         rho_bulk = self.cfg.density_star
-        inv_norm = 1.0 / (rho_bulk * (dx ** 3))
+        eps_div = 1.0e-6
         for I in ti.grouped(self.grid_color):
-            self.grid_color[I] = self.grid_m[I] * inv_norm
+            denom = rho_bulk * ti.max(self.grid_kernel_weight[I], eps_div)
+            self.grid_color[I] = self.grid_m[I] / denom
 
     @ti.kernel
     def _smooth_color_pass(self):
@@ -639,6 +710,8 @@ class MLSMPMSolver:
                     dpos = (ti.Vector([i, j, k]).cast(ti.f32) - fx) * dx
                     ti.atomic_add(self.grid_v[idx], weight * (m_p * self.v[p] + affine @ dpos))
                     ti.atomic_add(self.grid_m[idx], weight * m_p)
+                    # Reproducing-kernel volume sum (Adami-Hu-Adams 2010 §3).
+                    ti.atomic_add(self.grid_kernel_weight[idx], weight * V0)
 
     @ti.kernel
     def _grid_op_overdamped(self):
@@ -861,6 +934,32 @@ class MLSMPMSolver:
         if kappa_surface.size == 0:
             return {"valid": False, "reason": "empty surface band after |∇c| filter"}
 
+        # ---------- bulk / surface |∇c| ratio (CSF localisation gate) -----
+        # Measure the spatial localisation of the colour-gradient field. With
+        # Adami-Hu-Adams 2010 reproducing-kernel normalisation, c ≡ 1 in any
+        # cell whose kernel sees particles, so |∇c| should be confined to the
+        # surface band. The bulk shell (r/R₀ ∈ [0.2, 0.7]) provides a
+        # representative "deep interior" sample where |∇c| should be
+        # numerically negligible compared to the surface peak.
+        n_g_local = self.cfg.grid_n
+        ix_arr = np.arange(n_g_local)
+        Ix_arr, Iy_arr, Iz_arr = np.meshgrid(ix_arr, ix_arr, ix_arr, indexing="ij")
+        Xc = (Ix_arr + 0.5) * self.cfg.dx_star
+        Yc = (Iy_arr + 0.5) * self.cfg.dx_star
+        Zc = (Iz_arr + 0.5) * self.cfg.dx_star
+        centre_d = self.cfg.domain_star * 0.5
+        rr = np.sqrt((Xc - centre_d) ** 2 + (Yc - centre_d) ** 2 + (Zc - centre_d) ** 2)
+        r_over_R0 = rr / self.cfg.radius_star
+        bulk_mask = (r_over_R0 >= 0.2) & (r_over_R0 <= 0.7)
+        n_bulk = int(bulk_mask.sum())
+        bulk_grad_mean = float(grad_mag_3d[bulk_mask].mean()) if n_bulk > 0 else 0.0
+        surface_grad_peak = float(grad_mag_3d.max())
+        bulk_to_surface_grad_ratio = (
+            bulk_grad_mean / surface_grad_peak
+            if surface_grad_peak > 0
+            else 0.0
+        )
+
         return {
             "valid": True,
             "kappa_measured_mean": float(kappa_surface.mean()),
@@ -870,6 +969,10 @@ class MLSMPMSolver:
             "n_surface_cells": int(kappa_surface.size),
             "n_boundary_cells_total": int(flat.size),
             "selection": "boundary_particle_cells_with_grad_filter",
+            "bulk_grad_c_mean": bulk_grad_mean,
+            "surface_grad_c_peak": surface_grad_peak,
+            "bulk_to_surface_grad_ratio": bulk_to_surface_grad_ratio,
+            "n_bulk_cells_sampled": n_bulk,
         }
 
     def invariants(self) -> dict:
