@@ -270,6 +270,19 @@ class SolverConfig:
     zeta_min: float = 0.0
     zeta_max: float = 0.0
 
+    # Path C effective gravity (buoyancy-corrected). Per
+    # `docs/path_c_sanity.md` and `docs/outcomes_path_c.md`. When > 0,
+    # every grid cell with mass receives a per-step downward velocity
+    # impulse `Δv_z = −gravity_star · dt`, applied in
+    # `_grid_op_overdamped` after CSF / before drag / before reflective
+    # wall clamp. Default 0 disables Path C (Stage 1a+ Option α etc.
+    # behaviour preserved). Anchored to Stewart Nature 2011 cell-density
+    # framework (IF 65, already cited in `docs/02_force_models.md` §1.7);
+    # specific value framed as a body-force coefficient (PARTIAL
+    # Magic-Number Block per ζ_star Option α' precedent — see sanity-md).
+    # Provisional default for the v15-Path-C baseline pilot: 0.1.
+    gravity_star: float = 0.0
+
     @property
     def dx_star(self) -> float:
         return self.domain_star / self.grid_n
@@ -413,6 +426,14 @@ class MLSMPMSolver:
         # Stage 1b Layer 3 φ field is declared earlier (next to
         # `_rho_kernel_p`) so the constructor's `from_numpy` initialiser
         # block can populate it before `_zero_state` runs.
+        # Path C gravitational potential energy (sum over all particles
+        # of `ρ_p · g_star · z_p · V₀`). Reset per `_compute_invariants`
+        # call. Reported in `invariants()` for the energy-monotone gate
+        # extension.
+        self.diag_grav_pe = ti.field(dtype=ti.f64, shape=())
+        # Path C centre-of-mass z (informational sedimentation depth).
+        self.diag_com_z_sum = ti.field(dtype=ti.f64, shape=())
+
         # Stage 1b Layer 3 diagnostics: bulk-shell <φ>, boundary-shell <φ>,
         # contact-band <φ>, plus min/max for the φ ∈ [0,1] invariant gate.
         self.diag_phi_sum = ti.field(dtype=ti.f64, shape=())
@@ -1160,6 +1181,14 @@ class MLSMPMSolver:
         # κ_sub_proxy = 1/dx* and n̂_sub = −ẑ.
         gamma_sub_star = self.cfg.gamma_sub_star
         inv_dx = 1.0 / dx
+        # Path C effective gravity impulse coefficient. When > 0, every
+        # grid cell with mass receives a per-step downward velocity
+        # impulse `Δv_z = −gravity_star · dt` (no division by ρ_local
+        # because gravity is force-per-unit-mass — the impulse is just
+        # an acceleration · dt; in the f = m·a sense the per-cell force
+        # is m · g_star, but in MPM we apply the velocity impulse
+        # directly via overdamped balance ξ·v = m·g/m = g).
+        gravity_star = self.cfg.gravity_star
 
         for I in ti.grouped(self.grid_m):
             m = self.grid_m[I]
@@ -1193,6 +1222,15 @@ class MLSMPMSolver:
                 if k < sub_band and m > min_cell_mass:
                     rho_local_sub = m / (dx ** 3)
                     v[2] -= dt * gamma_sub_star * inv_dx / rho_local_sub
+
+                # Path C effective gravity impulse: every grid cell with
+                # mass receives a per-step downward velocity impulse
+                # `Δv_z = −gravity_star · dt`. When gravity_star = 0 (Path
+                # C disabled) the impulse is identically zero by arithmetic.
+                # Sign convention: gravity_star > 0 ⇒ dv_z < 0 ⇒ pulls
+                # toward substrate at z = 0. See `docs/path_c_sanity.md`
+                # check 5 for sign verification.
+                v[2] -= dt * gravity_star
 
                 # Overdamped per-step damping (mild; physics enters via slow-time interpretation).
                 v *= damp
@@ -1287,6 +1325,9 @@ class MLSMPMSolver:
         self.diag_phi_min[None] = 1.0e10
         self.diag_phi_max[None] = -1.0e10
         self.diag_phi_boundary_sum[None] = 0.0
+        # Path C diagnostics, reset per call.
+        self.diag_grav_pe[None] = 0.0
+        self.diag_com_z_sum[None] = 0.0
 
         m_p = ti.cast(self.cfg.particle_mass_star, ti.f64)
         K = ti.cast(self.cfg.K_star, ti.f64)
@@ -1316,6 +1357,18 @@ class MLSMPMSolver:
                 ti.atomic_add(self.diag_momentum[None][d], m_p * ti.cast(v[d], ti.f64))
 
             ti.atomic_add(self.diag_kinetic_energy[None], 0.5 * m_p * ti.cast(speed * speed, ti.f64))
+
+            # Path C gravitational potential energy: U_grav = ρ_p · g_star
+            # · z_p · V₀ (positive above z=0; decreases as spheroid sinks).
+            # Sign chosen so dU_grav/dz > 0 (need to do work to lift).
+            # When gravity_star = 0 (Path C off) the contribution is 0 by
+            # arithmetic.
+            z_p = self.x[p][2]
+            ti.atomic_add(
+                self.diag_grav_pe[None],
+                ti.cast(self.cfg.density_star * self.cfg.gravity_star * z_p, ti.f64) * V0,
+            )
+            ti.atomic_add(self.diag_com_z_sum[None], ti.cast(z_p, ti.f64))
 
             # v15 (k.3): volumetric strain energy uses the density-based form
             #   U_vol = (1/2) K (ρ_ref/ρ_kernel − 1)²
@@ -1646,4 +1699,10 @@ class MLSMPMSolver:
             "phi_min": float(self.diag_phi_min[None]) if self.cfg.layer3_enabled else float("nan"),
             "phi_max": float(self.diag_phi_max[None]) if self.cfg.layer3_enabled else float("nan"),
             "phi_boundary_sum": float(self.diag_phi_boundary_sum[None]),
+            # Path C diagnostics.
+            "grav_pe_star": float(self.diag_grav_pe[None]),
+            "com_z_star": (
+                float(self.diag_com_z_sum[None]) / float(self.cfg.n_particles)
+                if self.cfg.n_particles > 0 else float("nan")
+            ),
         }

@@ -52,6 +52,13 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     sub = cfg.get("substrate", {})
     layer2 = cfg.get("layer2", {})
     layer3 = cfg.get("layer3", {})
+    gravity = cfg.get("gravity", {})
+    # Path C effective gravity — body-force coefficient framing
+    # (PARTIAL Magic-Number Block per ζ_star Option α' precedent;
+    # framework anchored to Stewart Nature 2011 IF 65 cell density,
+    # value framed as a body-force coefficient under the overdamped
+    # solver's ξ_star = 1 calibration). See docs/path_c_sanity.md.
+    gravity_star = float(gravity.get("gravity_star", 0.0))
     # Stage 1a++ Layer 2 active stress (Option α' resolution 2026-04-29):
     # ζ/K dimensionless ratio, no Pa claim. K is anchored to Fischer-
     # Friedrich Nat Cell Biol 2014 IF 30 (already cited in
@@ -103,6 +110,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
         k_minus_star=k_minus_star,
         zeta_min=zeta_min,
         zeta_max=zeta_max,
+        gravity_star=gravity_star,
     )
 
 
@@ -188,6 +196,17 @@ def run_stage1a(config_path: Path | str) -> Path:
             solver_cfg.phi_initial, solver_cfg.k_plus_star,
             solver_cfg.k_minus_star, phi_eq_pred,
             solver_cfg.zeta_min, solver_cfg.zeta_max,
+        )
+    if solver_cfg.gravity_star > 0.0:
+        # Path C: effective gravity body force.
+        logger.info(
+            "Path C effective gravity active: gravity_star = %.4e "
+            "(framework anchored to Stewart Nature 2011 IF 65 cell density "
+            "≈ 1.05 g/cm³, ρ_medium ≈ 1.00 g/cm³; specific value framed as "
+            "body-force coefficient under overdamped ξ_star = 1 calibration "
+            "per docs/path_c_sanity.md Magic-Number Block PARTIAL "
+            "resolution; PI full authorisation 2026-04-29).",
+            solver_cfg.gravity_star,
         )
     else:
         centre = np.full(3, solver_cfg.domain_star * 0.5, dtype=np.float32)
@@ -629,8 +648,13 @@ def run_stage1a(config_path: Path | str) -> Path:
             f"ratio = {max_abs_power / max(U_strain_max, 1e-30):.2f} (limit 10.0)",
         ))
     else:
+        # Path C extension: when gravity is active, include U_grav in the
+        # energy-monotone sum (per docs/path_c_sanity.md check 3 contract
+        # extension). When gravity_star == 0, the term is identically zero
+        # and the sum is identical to the original Stage 1a baseline.
         energies = np.array([
             r["kinetic_energy_star"] + r["strain_energy_star"]
+            + r.get("grav_pe_star", 0.0)
             for r in metrics_rows
         ], dtype=float)
         if len(energies) >= 2:
