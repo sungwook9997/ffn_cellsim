@@ -635,83 +635,53 @@ class MLSMPMSolver:
 
     @ti.kernel
     def _build_curvature(self):
-        """AHA-2010-§4-inspired reproducing curvature operator
-        (grid-native Laplacian / gradient form).
+        """Brackbill (1992) curvature operator — restored after v13 revert.
 
-        Curvature via the differential identity
+        Two-pass finite-difference scheme:
+            (1) smoothed unit normal:  n̂[I] = ∇c[I] / sqrt(|∇c[I]|² + ε²)
+            (2) mean curvature:        κ[I] = -∇·n̂[I]   (central differences)
 
-            κ = −∇·n̂ = −∇·(∇c / |∇c|)
-              = − Δc / |∇c|   +   (∇c · ∇|∇c|) / |∇c|²
+        Sign convention: with c≈1 inside, c≈0 outside, ∇c points INWARD, so n̂
+        points inward. Then -∇·n̂ is **positive for a convex droplet**. For a
+        sphere of radius R: κ = 2/R. The static-sphere validation in the
+        runner asserts this. ε² = 1e-6 keeps the f32 division stable in the
+        bulk where |∇c| ≈ 0.
 
-        For a sphere of radius R with a radially-symmetric diffuse colour
-        c(r), the second term vanishes at the gradient peak (c″(R) = 0 by
-        symmetry of the smoothed transition), and the leading term recovers
+        The ε² regulariser inside the sqrt has a non-obvious robustness
+        consequence: it bounds the magnitude of n̂ at every grid cell, so
+        the subsequent central-FD divergence is shielded from the off-peak
+        f″/f′ asymmetry of the smoothed colour profile that broke the v13
+        Laplacian-form attempt (commit 3ba63c5). See v13 commit message
+        and `docs/stage1a_aha_div_sanity.md` for the failure analysis.
 
-            κ(R) = − Δc(R) / |∇c(R)| = − (2/R) c′(R) / |c′(R)| = + 2/R
-
-        EXACTLY (analytical), regardless of the smoothed-profile shape.
-
-        Compared with v12's two-pass `n̂ = ∇c/√(|∇c|²+ε²)` then
-        `κ = −∇·n̂` central-FD scheme:
-
-          - The Laplacian Δc is a robust 2nd-order central FD on a uniform
-            grid; it does NOT involve a small-denominator division at any
-            single grid cell, so f32 cancellation is bounded.
-          - The denominator |∇c| is the same field used in the CSF
-            impulse, so wherever the CSF body force is non-zero, the
-            curvature is well-defined.
-          - In bulk (after AHA-§3 normalisation, c ≡ 1) Δc ≈ 0 and
-            |∇c| ≈ 0; κ = 0 / ε_div = 0 — no spurious curvature.
-          - In vacuum (c ≡ 0) similarly, Δc = |∇c| = 0; κ = 0.
-
-        The verification analysis (`docs/stage1a_aha_div_sanity.md`) shows
-        that the literal AHA §4 SPH formula collapses to standard central
-        FD on a uniform grid, so this Laplacian-form is the principled
-        grid-native analogue (Brackbill 1992 §V / Sussman-Smereka-Osher
-        1994 / Kang-Fedkiw-Liu 2000) carrying the AHA spirit (robust
-        free-surface curvature) into our MPM setup.
-
-        ε_div is a numerical-safety floor against 0/0 in cells with
-        identically zero |∇c|; it is not a tunable parameter (passes all
-        three Magic-Number Block tests).
-
-        Sign convention: c=1 inside, c=0 outside ⇒ ∇c points inward ⇒
-        Δc < 0 at gradient peak (= 2c′/R, c′ < 0) ⇒ κ = −Δc/|∇c| > 0
-        for a convex droplet. The CSF impulse dv = γ·κ·∇c·dt/ρ then
-        points inward (γ > 0, κ > 0, ∇c inward) — physically correct.
-
-        `grid_normal` is retained as a diagnostic field (consumed by no
-        kernel after this change) so existing logging / inspection code
-        keeps working; it is no longer on the critical path.
+        References:
+        - Brackbill, Kothe, Zemach (1992) "A continuum method for modeling
+          surface tension", J. Comp. Phys. 100, 335.
+        - Adami, Hu, Adams (2010) "A new surface-tension formulation for
+          multi-phase SPH using a reproducing divergence approximation",
+          J. Comp. Phys. 229, 5011 (informs §3 colour normalisation, used;
+          §4 reproducing divergence shown not to translate to uniform grid).
         """
-        eps_div = 1.0e-6
-        inv_dx2 = 1.0 / (self.cfg.dx_star ** 2)
+        eps2 = 1.0e-6
         n_g = self.cfg.grid_n
+        # Pass 1: unit normals from ∇c.
+        for I in ti.grouped(self.grid_normal):
+            g = self.grid_color_grad[I]
+            mag = ti.sqrt(g.dot(g) + eps2)
+            self.grid_normal[I] = g / mag
 
+        # Pass 2: κ = -∇·n̂ via central difference.
+        inv_2dx = 1.0 / (2.0 * self.cfg.dx_star)
         for I in ti.grouped(self.grid_kappa):
             i, j, k = I[0], I[1], I[2]
-            c_centre = self.grid_color[I]
-
-            lap = 0.0
+            div = 0.0
             if 0 < i < n_g - 1:
-                lap += (self.grid_color[i + 1, j, k]
-                        - 2.0 * c_centre
-                        + self.grid_color[i - 1, j, k]) * inv_dx2
+                div += (self.grid_normal[i + 1, j, k][0] - self.grid_normal[i - 1, j, k][0]) * inv_2dx
             if 0 < j < n_g - 1:
-                lap += (self.grid_color[i, j + 1, k]
-                        - 2.0 * c_centre
-                        + self.grid_color[i, j - 1, k]) * inv_dx2
+                div += (self.grid_normal[i, j + 1, k][1] - self.grid_normal[i, j - 1, k][1]) * inv_2dx
             if 0 < k < n_g - 1:
-                lap += (self.grid_color[i, j, k + 1]
-                        - 2.0 * c_centre
-                        + self.grid_color[i, j, k - 1]) * inv_dx2
-
-            g = self.grid_color_grad[I]
-            gmag = ti.sqrt(g.dot(g))
-            denom = ti.max(gmag, eps_div)
-            self.grid_kappa[I] = -lap / denom
-            # Diagnostic-only normal (no longer consumed by CSF impulse).
-            self.grid_normal[I] = g / denom
+                div += (self.grid_normal[i, j, k + 1][2] - self.grid_normal[i, j, k - 1][2]) * inv_2dx
+            self.grid_kappa[I] = -div
 
     @ti.kernel
     def _p2g(self):

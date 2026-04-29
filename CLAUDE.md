@@ -149,6 +149,11 @@ After writing or modifying a physics/numerics module, **before running it**, per
 - For every force / flux term, write one line on the *direction* it pushes (cohesion ⇒ attractive ⇒ negative work on expansion; pressure ⇒ repulsive ⇒ positive work on expansion; drag ⇒ opposes velocity; etc.).
 - A force whose sign cannot be checked against intuition is itself a FAIL.
 
+### 6. Measurement-protocol consistency
+- An analytical proof of correctness is only meaningful if it covers the *measurement protocol* used to evaluate the gate or report the result. A point/peak analytical derivation (e.g., "exact at the gradient peak", "exact for a uniform field") is **insufficient** when the measurement is band-averaged, integrated over a region, sampled at multiple points, or otherwise evaluated *off* the analytical-proof point.
+- Walk through where the gate or report value comes from. Identify every cell, particle, or sample the measurement averages or integrates over. For each, write down whether the analytical proof still holds — and if it does not, either (i) extend the proof to cover those samples, (ii) change the measurement to match the proof's domain, or (iii) record the off-proof contribution as a known systematic and bound it.
+- The April 2026 v13 episode (Stage 1a `_build_curvature` Laplacian form) is the canonical anti-pattern: the analytical "κ = 2/R exact at the gradient peak" proof passed checks 1–5, but the band-averaged measurement included off-peak cells where `κ = f″/f′ + 2/r` picked up an asymmetric contribution `|f″/f′|_max ≈ 2/δ_smoothing ≈ 13`, giving a measured κ 5× worse than the prior scheme. The off-peak response was the missing protocol item.
+
 ### Failure handling
 A FAIL halts further code work for the current module. Surface the issue to the PI with at least three concrete options (e.g., reduce Δt, switch to implicit, switch to overdamped). Wait for direction before proceeding. Never silently work around a Sanity Gate failure.
 

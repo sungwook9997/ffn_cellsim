@@ -38,14 +38,15 @@ This protocol is part of academic honesty in computational work: a numerical sch
 
 **When it runs**: after writing or modifying any `acs/physics/*.py`, `acs/boundary/*.py`, `acs/adhesion/*.py`, or numerical-integrator code, **before** the first execution. Modifications to a single line still require re-running the affected sub-checks.
 
-**The five checks**:
+**The six checks**:
 1. **Dimensional analysis** — units annotated on every input/output; characteristic scales L, T, S, V, M computed; the dominant non-dimensional numbers (Re, Ca, De, Pe, Ma) reported; for explicit time-stepping schemes the CFL bound must be re-derived against the configured `dt` and a PASS recorded as `dt/dt_CFL = W < 1`.
 2. **Boundary cases** — the code must remain well-defined at extreme limits (`N→0`, `N→∞`, `Δt→0`, `Δt→large`, `γ→0`, `K→∞`).
 3. **Conservation invariants** — explicit declaration of what is conserved, where dissipation is intentional, and where leaks are possible.
 4. **Numerical sanity** — `dx`/`dt`/precision choices justified against the slowest and fastest physically meaningful scales.
 5. **Sign / sense check** — every force term annotated with the intuitive direction it pushes.
+6. **Measurement-protocol consistency** — the analytical proof of correctness used for checks 1–5 must cover the *measurement protocol* through which the gate or report value is evaluated. A point/peak proof is insufficient when the measurement is band-averaged, integrated, or sampled off-point. For each cell, particle, or sample the measurement averages over, the author must either (i) extend the analytical proof to cover those samples, (ii) change the measurement to match the proof's domain, or (iii) record the off-proof contribution as a known systematic and bound it.
 
-**Failure handling**: a FAIL halts further code work on that module. The author surfaces the issue to the PI with at least three concrete remediation options (e.g., reduce Δt, switch to implicit, switch to overdamped) and waits for direction before proceeding. The first `mlsmpm.py` draft (April 2026) caught a 16,000× CFL violation via this protocol; that experience is the reason the protocol is now permanent in `CLAUDE.md` Hard Rules.
+**Failure handling**: a FAIL halts further code work on that module. The author surfaces the issue to the PI with at least three concrete remediation options (e.g., reduce Δt, switch to implicit, switch to overdamped) and waits for direction before proceeding. Two episodes anchor this protocol: the first `mlsmpm.py` draft (April 2026) caught a 16,000× CFL violation via check 1, motivating the original five-check protocol; the v13 `_build_curvature` Laplacian-form attempt (April 2026, commit 3ba63c5) passed checks 1–5 but failed in production because the analytical proof was point-only at the gradient peak while the measurement was band-averaged — motivating the addition of check 6.
 
 ### Magic-Number Block
 
@@ -58,6 +59,8 @@ The protocol forbids introducing empirical scaling factors / ad-hoc tuning const
 The April 2026 `csf_kappa_scale` episode is the documented anti-pattern. After CSF-driven radius drift exceeded the 5% gate, three successive empirical reductions (κ-scale 0.25 → 0.05, then capillary number 0.01 → 0.001) each made the gate "pass" by weakening the surface-tension force, but every one of them failed the three tests above. The principled fix — a finite-difference curvature operator `κ = -∇·n̂` per Brackbill (1992) — has a literature anchor, is grid-invariant up to standard discretisation error, and was not chosen to hit any target. The static-sphere validation (`κ_measured` vs `2/R`, ±10%) became a permanent gate to lock the scheme rather than the parameters.
 
 **Cousin rule — gate semantics are immutable per run**: a gate's tolerance, normalisation, and check window are part of the validation contract authored before the run starts. They are not tuneable in response to a failing result. If a gate appears to be genuinely incorrect (wrong physical interpretation, not just a tight tolerance), the author halts and surfaces the contract change to the PI rather than editing the gate inline.
+
+**v13 episode (anti-pattern for check 6)**: the AHA-§4-inspired Laplacian curvature `κ = -Δc / |∇c|` was introduced after a written verification (`docs/stage1a_aha_div_sanity.md`) that proved analytically `κ = 2/R` at the gradient peak of a smooth radial profile. Checks 1–5 all PASS. The implementation degraded measured κ from 40% over (v12) to 440% over (v13) because the static-curvature measurement averages over a band where 0.05 < c < 0.95, and the off-peak contribution `f″(r)/f′(r)` reaches `≈ 2/δ_smoothing ≈ 13` — five times the analytical-peak result. The v12 form (Brackbill central FD on `n̂`) had been silently robust to this off-peak asymmetry because the `√(|∇c|² + ε²)` regulariser inside `n̂` bounded its magnitude per cell, structurally excluding the f″/f′ pathway. v13 was reverted in commit (next), and check 6 was added so that any future `_build_curvature` proposal must walk through how the band-averaged measurement responds, not only the peak value.
 
 **Recording the result**: the five-check report lives in the module's docstring under a `Sanity Gate` heading (or as a sibling `<module>_sanity.md` file when too long). It is part of the deliverable, not optional documentation.
 
