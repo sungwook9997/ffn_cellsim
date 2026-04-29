@@ -244,7 +244,77 @@ A run-level gate report (`results/{run.name}/gate_report.md`) records every metr
 
 ---
 
-## Current Status
-**As of project initiation**: Stage 0 not yet started. Begin with Stage 0 environment setup, then proceed strictly in Stage order.
+## Current Status (refreshed 2026-04-29, Option F Week 1)
 
-When you (Claude Code) update this file after completing a stage, mark the stage's checkboxes complete and add a "Stage X completed YYYY-MM-DD" line.
+**Active option**: Option F (engineering-Marangoni hybrid) per
+`docs/codex_review_synthesis.md`.
+
+### Stages completed
+- **Stage 0** — completed 2026-04-29 (env, CUDA, configs, smoke tests).
+- **Stage 1a** — completed v15 density-based volumetric stress
+  σ_vol = K·(ρ_ref/ρ_kernel − 1)·I; commit 8e06d8e. Architectural R
+  drift ceiling 0.244 documented in `docs/outcomes_v15.md`.
+- **Stage 1a+** — completed Option β substrate CSF
+  γ_sub_eff = γ_sub_star · ecm_strength; commit chain through Phase
+  4-v2. R drift improvement vs v15 baseline documented in
+  `docs/outcomes_stage1a_plus.md`.
+- **Stage 1a++** — completed Layer 2 active boundary stress
+  σ_act = -ζ·K·I; ζ=0.6 first PASS of R drift gate;
+  `docs/outcomes_stage1a_plus_plus.md`.
+- **Stage 1b** — completed Layer 3 φ-ODE (Cho 2020 k_+/k_-);
+  `docs/outcomes_stage1b.md`.
+- **Stage 1c** — completed Layer 5 Tier 2 mechano-osmotic
+  (Guo 2017); `docs/outcomes_stage1c.md`.
+- **Stage 1d** — completed Layer 4 Marangoni γ(φ);
+  `docs/outcomes_stage1d.md`. Phase 4-v2 phenotype ordering reproduced
+  (Bare<Pre<Lam4 in both R drift and A/A₀_topdown).
+- **Stage 1e** — Sim A 1D radial reduction module shipped
+  (`acs/analysis/radial_reduction.py`); `docs/outcomes_stage1e.md`.
+  Sim A vs Sim B comparison **gated by F2 horizontal momentum drift
+  HARD-BLOCKER** until anisotropy diagnosis is settled.
+- **Stage 2** — Layer 6 chemistry/ECM degradation completed;
+  `docs/outcomes_stage2.md`.
+- **Production Lam4** — completed (commit b506b57); 5k × 80 hr;
+  finding: **peak-and-decay**, top-down peak 1.570 at 7.75 hr, end
+  1.409 at 80 hr; Bucket P3 strict (mechanism-missing). See
+  `docs/production_lam4_finding.md`.
+
+### Active work — Option F (Codex review + Marangoni)
+
+**Week 1 (current)**: documentation pass.
+- [x] `docs/marangoni_review.md` (commit d0a7d99)
+- [x] `docs/codex_review_synthesis.md` (commit 6aa3b27)
+- [x] `docs/gate_fail_taxonomy.md` (this commit)
+- [x] `docs/parameter_registry.md` (this commit)
+- [x] roadmap refresh (this commit)
+- [ ] `docs/SESSION_HANDOFF.md` consolidation
+- [ ] `docs/production_lam4_finding.md` labeling fix
+
+**Week 2 (pending)**: solver investigation (no code changes).
+- [ ] `docs/horizontal_momentum_drift_investigation.md` —
+  root-cause F2 (193× over limit) → solver bug or accepted physics?
+- [ ] `docs/anchor_force_balance_investigation.md` — root-cause F3
+  (50× over limit) → potentially causal for asymptote?
+
+**Week 3+ (deferred until Week 2 outputs)**: PI re-decision between:
+- Stage 1a++.b (discrete boundary events: lamellipodia / filopodia /
+  leader cells) — Option β in marangoni_review.md
+- Stage 1d.b (Marangoni Mechanism A / E / F) — Option α
+- Or paper-as-is (Option G in codex_review_synthesis.md)
+
+### Deferred items (Codex review items)
+- Layer 3 audit (Codex item 4) — blocks Mechanism A/E/F upgrades
+- Layer 5 audit (Codex item 5) — blocks Mechanism F coupling
+- Test discipline expansion (Codex item 8) — 7 missing tests
+- `mlsmpm.py` file split (Codex item 9) — prerequisite for new state vars
+
+### Hard-blocker gate FAILs (publication-claim restricted)
+Per `docs/gate_fail_taxonomy.md`:
+- F2 horizontal momentum drift (Stage 1e anisotropy claim FORBIDDEN)
+- F3 anchor force balance (asymptote causation unclear)
+- F4 contact-band ρ_kernel (linked to F3)
+- F9 φ trajectory (Layer 3 audit pending)
+
+When you (Claude Code) update this file after completing a stage,
+mark the stage's checkboxes complete and add a "Stage X completed
+YYYY-MM-DD" line.
