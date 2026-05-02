@@ -17,16 +17,37 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import shlex
+import shutil
 import subprocess
 from typing import Iterable
 
 
 DEFAULT_REPO = pathlib.Path(__file__).resolve().parents[2]
 
-CLAUDE_CMD = "claude --dangerously-skip-permissions"
-CODEX_CMD = "codex --dangerously-bypass-approvals-and-sandbox"
+def _executable(name: str, fallback: str | None = None) -> str:
+    path = shutil.which(name)
+    if path is not None:
+        return shlex.quote(path)
+    if fallback is not None and pathlib.Path(fallback).exists():
+        return shlex.quote(fallback)
+    return shlex.quote(name)
+
+
+CLAUDE_CMD = f"{_executable('claude')} --dangerously-skip-permissions"
+CODEX_CMD = (
+    f"{_executable('codex', '/Applications/Codex.app/Contents/Resources/codex')} "
+    "--dangerously-bypass-approvals-and-sandbox"
+)
 WIN_SSH_CMD = "ssh win"
 HEARTBEAT_CMD = "python3 tools/collab_mcp/heartbeat_daemon.py"
+INTERACTIVE_SESSIONS = {
+    "claude-chat",
+    "codex-chat",
+    "claude-work",
+    "codex-work",
+    "win-ssh",
+}
 
 
 def tmux(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -43,10 +64,13 @@ def has_session(name: str) -> bool:
     return tmux("has-session", "-t", name, check=False).returncode == 0
 
 
-def ensure_session(name: str, cwd: pathlib.Path) -> bool:
+def ensure_session(name: str, cwd: pathlib.Path, command: str | None = None) -> bool:
     if has_session(name):
         return False
-    tmux("new-session", "-d", "-s", name, "-c", str(cwd))
+    args = ["new-session", "-d", "-s", name, "-c", str(cwd)]
+    if command is not None:
+        args.append(command)
+    tmux(*args)
     return True
 
 
@@ -62,8 +86,8 @@ def pane_command(target: str) -> str:
 
 
 def send_line(target: str, line: str) -> None:
-    tmux("send-keys", "-t", target, "-l", line)
-    tmux("send-keys", "-t", target, "C-m")
+    tmux("send-keys", "-t", target, "C-c")
+    tmux("send-keys", "-t", target, line, "Enter")
 
 
 def start_cli_if_shell(target: str, command: str) -> bool:
@@ -82,13 +106,37 @@ def setup(
     start_heartbeat: bool,
 ) -> list[str]:
     actions: list[str] = []
+    start_commands: dict[str, tuple[str, str]] = {}
+    if start_chat:
+        start_commands.update({
+            "claude-chat": (CLAUDE_CMD, "started Claude in claude-chat"),
+            "codex-chat": (CODEX_CMD, "started Codex in codex-chat"),
+        })
+    if start_work:
+        start_commands.update({
+            "claude-work": (CLAUDE_CMD, "started Claude in claude-work"),
+            "codex-work": (CODEX_CMD, "started Codex in codex-work"),
+        })
+    if start_win_ssh:
+        start_commands["win-ssh"] = (WIN_SSH_CMD, "started Windows SSH in win-ssh")
+    if start_heartbeat:
+        start_commands["heartbeat"] = (HEARTBEAT_CMD, "started heartbeat daemon")
+
+    created_sessions: set[str] = set()
     sessions = [
         "claude-chat", "codex-chat", "claude-work", "codex-work",
         "win-ssh", "heartbeat",
     ]
     for session in sessions:
-        created = ensure_session(session, cwd)
+        command_and_action = start_commands.get(session)
+        run_direct = command_and_action is not None and session not in INTERACTIVE_SESSIONS
+        command = command_and_action[0] if run_direct else None
+        created = ensure_session(session, cwd, command)
         actions.append(f"{'created' if created else 'exists'} {session}")
+        if created:
+            created_sessions.add(session)
+            if run_direct and command_and_action is not None:
+                actions.append(command_and_action[1])
 
     if start_chat:
         if start_cli_if_shell("claude-chat:0.0", CLAUDE_CMD):
@@ -107,7 +155,7 @@ def setup(
             actions.append("started Windows SSH in win-ssh")
 
     if start_heartbeat:
-        if start_cli_if_shell("heartbeat:0.0", HEARTBEAT_CMD):
+        if "heartbeat" not in created_sessions and start_cli_if_shell("heartbeat:0.0", HEARTBEAT_CMD):
             actions.append("started heartbeat daemon")
 
     return actions
