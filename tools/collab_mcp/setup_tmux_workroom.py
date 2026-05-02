@@ -34,7 +34,10 @@ def _executable(name: str, fallback: str | None = None) -> str:
     return shlex.quote(name)
 
 
-CLAUDE_CMD = f"{_executable('claude')} --dangerously-skip-permissions"
+CLAUDE_CMD = (
+    f"{_executable('claude', str(pathlib.Path.home() / '.local/bin/claude'))} "
+    "--dangerously-skip-permissions"
+)
 CODEX_CMD = (
     f"{_executable('codex', '/Applications/Codex.app/Contents/Resources/codex')} "
     "--dangerously-bypass-approvals-and-sandbox"

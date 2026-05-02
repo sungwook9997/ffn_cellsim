@@ -44,15 +44,35 @@ if [[ -z "$COLLAB_PYTHON" && -x "$REPO_ROOT/.venv-collab/bin/python" ]]; then
   COLLAB_PYTHON="$REPO_ROOT/.venv-collab/bin/python"
 fi
 
+run_with_timeout() {
+  local timeout_s="$1"
+  shift
+  "$@" &
+  local pid=$!
+  local waited=0
+  while kill -0 "$pid" 2>/dev/null; do
+    if (( waited >= timeout_s )); then
+      kill "$pid" 2>/dev/null || true
+      sleep 0.2
+      kill -9 "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+      return 124
+    fi
+    sleep 1
+    waited=$(( waited + 1 ))
+  done
+  wait "$pid"
+}
+
 PYTHON_HEALTHY=0
 if [[ -n "$COLLAB_PYTHON" && -x "$COLLAB_PYTHON" ]]; then
-  if "$COLLAB_PYTHON" -c 'import mcp' >/dev/null 2>&1; then
+  if run_with_timeout 5 "$COLLAB_PYTHON" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("mcp") else 1)' >/dev/null 2>&1; then
     PYTHON_HEALTHY=1
   fi
 fi
 
 if [[ "$PYTHON_HEALTHY" -ne 1 ]]; then
-  echo "[FAIL-LOUD] acs-collab python unhealthy: COLLAB_MCP_PYTHON='${COLLAB_MCP_PYTHON:-}' resolved='${COLLAB_PYTHON:-<empty>}' — venv missing or 'mcp' module not importable. Refusing system python3 fallback." >&2
+  echo "[FAIL-LOUD] acs-collab python unhealthy: COLLAB_MCP_PYTHON='${COLLAB_MCP_PYTHON:-}' resolved='${COLLAB_PYTHON:-<empty>}' — venv missing, 'mcp' module not discoverable, or health check timed out. Refusing system python3 fallback." >&2
   echo "[FAIL-LOUD] Fix: ensure $REPO_ROOT/.venv-collab/bin/python exists with 'pip install mcp[cli]>=1.2' OR set COLLAB_MCP_PYTHON to a python that has mcp." >&2
   printf 'unhealthy at %s; resolved=%s\n' "$(date -Iseconds 2>/dev/null || date)" "${COLLAB_PYTHON:-<empty>}" \
     >"$SENTINEL_PYTHON"

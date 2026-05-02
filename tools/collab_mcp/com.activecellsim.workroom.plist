@@ -55,7 +55,7 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>COLLAB_MCP_PYTHON</key>
         <string>__REPO_ROOT__/.venv-collab/bin/python</string>
         <key>COLLAB_MCP_TOKEN</key>

@@ -45,12 +45,13 @@ case "$action" in
       exit 1
     fi
     mkdir -p "$TARGET_DIR" /tmp/acs-collab
-    # Two-pass substitution: __REPO_ROOT__ first, then __COLLAB_MCP_TOKEN__.
+    # Template substitution keeps machine-specific paths out of the repo.
     # Token is read from the current shell environment, never written
     # back into the in-repo template, so the secret only lives in the
     # rendered file under ~/Library/LaunchAgents/.
     umask 077
     sed -e "s|__REPO_ROOT__|$REPO_ROOT|g" \
+        -e "s|__HOME__|$HOME|g" \
         -e "s|__COLLAB_MCP_TOKEN__|$COLLAB_MCP_TOKEN|g" \
         "$TEMPLATE" > "$TARGET"
     chmod 600 "$TARGET"
