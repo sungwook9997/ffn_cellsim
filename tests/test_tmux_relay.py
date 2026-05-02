@@ -94,7 +94,7 @@ def test_wrapper_prompt_sanitizes_shell_metacharacters(monkeypatch, tmp_path):
     assert ")" not in prompt
 
 
-def test_run_once_dry_run_marks_cursor(monkeypatch, tmp_path, capsys):
+def test_run_once_dry_run_does_not_mark_cursor(monkeypatch, tmp_path, capsys):
     relay = _load_relay(monkeypatch, tmp_path)
     db_path = tmp_path / "relay.db"
     _init_messages(db_path)
@@ -113,12 +113,30 @@ def test_run_once_dry_run_marks_cursor(monkeypatch, tmp_path, capsys):
 
     captured = capsys.readouterr().out
     assert routed == 2
-    assert second_routed == 0
+    assert second_routed == 2
     assert "claude-pane" in captured
     assert "codex-pane" in captured
     conn = sqlite3.connect(db_path)
     cursor = conn.execute(
         "SELECT last_routed_id FROM relay_cursors WHERE relay_name='unit'"
+    ).fetchone()
+    conn.close()
+    assert cursor is None
+
+
+def test_init_cursor_now_marks_latest(monkeypatch, tmp_path):
+    relay = _load_relay(monkeypatch, tmp_path)
+    db_path = tmp_path / "relay.db"
+    _init_messages(db_path)
+    _insert_message(db_path, "pi", "claude,codex")
+    latest = _insert_message(db_path, "pi", "claude")
+
+    initialized = relay.init_cursor_now("unit")
+
+    assert initialized == latest
+    conn = sqlite3.connect(db_path)
+    cursor = conn.execute(
+        "SELECT last_routed_id FROM relay_cursors WHERE relay_name='unit'"
     ).fetchone()[0]
     conn.close()
-    assert cursor == first + 1
+    assert cursor == latest

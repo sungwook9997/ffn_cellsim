@@ -18,7 +18,11 @@ separately-approved wrapper added in a later iteration.
 `room.py` adds a browser-facing PI / Claude / Codex room over the same
 SQLite DB. It is also message-only: the browser can view the timeline,
 active claims, artifact pointers, and post PI messages, but it cannot
-run commands or read artifact contents.
+run commands or read artifact contents. The UI is a KakaoTalk-style chat
+(right-aligned PI bubbles, left-aligned LLM bubbles, sticky composer,
+Enter to send / Shift+Enter for newline, `@claude` / `@codex` / `@both`
+mentions, day dividers, seen indicators) and a top-bar agent status
+strip showing each agent's current % progress, activity, and freshness.
 
 `launch_workroom_mac.command` opens the same room as a local app-style
 Chrome window on macOS. It starts the room server if needed, then opens
@@ -121,6 +125,24 @@ Open `http://<windows-tailscale-name>:7879/` in a browser and enter
 to `claude,codex`, and are visible to both LLM clients through normal
 MCP `read()` calls.
 
+### Live agent progress strip
+
+Claude and Codex publish their own progress to the room via a small JSON
+endpoint. PI sees the result as pills in the top bar — name, %, current
+activity, and freshness (fresh / aging / stale).
+
+```bash
+curl -s -b cookies.txt -H 'Content-Type: application/json' -X POST \
+  -d '{"agent":"claude","percent":60,"activity":"writing room.py JS","topic":"ui-redesign-claude"}' \
+  http://127.0.0.1:7879/agent_status
+```
+
+Validation: `agent` must be `claude`/`codex`/`pi`; `percent` is 0..100;
+`activity` capped at 240 chars; `topic` capped at 120 chars. Auth uses
+`COLLAB_ROOM_TOKEN` via the same browser cookie or by adding the cookie
+header to the curl call. The pill turns gray after 5 minutes without an
+update.
+
 ## Running the app-style room on macOS
 
 From Finder, double-click:
@@ -161,7 +183,28 @@ Install tmux once on macOS:
 brew install tmux
 ```
 
-Start or attach your Claude/Codex tmux panes, then note the targets:
+Recommended layout separates fast PI chat from long-running work:
+
+```text
+claude-chat  receives PI workroom messages
+codex-chat   receives PI workroom messages
+claude-work  long implementation tasks
+codex-work   long review/implementation tasks
+```
+
+Create the sessions and launch the chat CLIs:
+
+```bash
+python3 tools/collab_mcp/setup_tmux_workroom.py --start-chat
+```
+
+Start work CLIs too only when you want separate implementation panes:
+
+```bash
+python3 tools/collab_mcp/setup_tmux_workroom.py --start-work
+```
+
+Inspect targets:
 
 ```bash
 tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}'
@@ -170,16 +213,23 @@ tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_curr
 Run a dry-run first:
 
 ```bash
-COLLAB_TMUX_CLAUDE_TARGET=claude:0.0 \
-COLLAB_TMUX_CODEX_TARGET=codex:0.0 \
+COLLAB_TMUX_CLAUDE_TARGET=claude-chat:0.0 \
+COLLAB_TMUX_CODEX_TARGET=codex-chat:0.0 \
 python3 tools/collab_mcp/tmux_relay.py --once --dry-run
+```
+
+Before the first live run on an existing conversation, initialize the
+relay cursor so old PI messages are not replayed into both panes:
+
+```bash
+python3 tools/collab_mcp/tmux_relay.py --init-cursor-now
 ```
 
 Run the live relay:
 
 ```bash
-COLLAB_TMUX_CLAUDE_TARGET=claude:0.0 \
-COLLAB_TMUX_CODEX_TARGET=codex:0.0 \
+COLLAB_TMUX_CLAUDE_TARGET=claude-chat:0.0 \
+COLLAB_TMUX_CODEX_TARGET=codex-chat:0.0 \
 python3 tools/collab_mcp/tmux_relay.py
 ```
 

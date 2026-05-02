@@ -122,6 +122,19 @@ def mark_routed(relay_name: str, message_id: int) -> None:
             raise
 
 
+def latest_message_id() -> int:
+    _init_schema()
+    with closing(_db()) as conn:
+        row = conn.execute("SELECT COALESCE(MAX(id), 0) FROM messages").fetchone()
+    return int(row[0])
+
+
+def init_cursor_now(relay_name: str) -> int:
+    message_id = latest_message_id()
+    mark_routed(relay_name, message_id)
+    return message_id
+
+
 def wrapper_prompt(message: WorkroomMessage, target_agent: str) -> str:
     """Return the only text injected into tmux panes."""
     author = safe_label(message.author)
@@ -179,7 +192,7 @@ def tmux_send_wrapper(target: str, prompt: str, dry_run: bool = False) -> None:
         ["tmux", "send-keys", "-t", target, "-l", prompt],
         check=True,
     )
-    subprocess.run(["tmux", "send-keys", "-t", target, "Enter"], check=True)
+    subprocess.run(["tmux", "send-keys", "-t", target, "C-m"], check=True)
 
 
 def dispatch_message(message: WorkroomMessage, config: RelayConfig) -> set[str]:
@@ -198,7 +211,8 @@ def run_once(config: RelayConfig, limit: int = DEFAULT_MAX_MESSAGES) -> int:
     for message in messages:
         targets = dispatch_message(message, config)
         routed += len(targets)
-        mark_routed(config.relay_name, message.id)
+        if not config.dry_run:
+            mark_routed(config.relay_name, message.id)
     return routed
 
 
@@ -221,6 +235,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--include-llm-messages", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--once", action="store_true")
+    parser.add_argument(
+        "--init-cursor-now",
+        action="store_true",
+        help="Set relay cursor to the current latest message id and exit.",
+    )
     parser.add_argument("--interval", type=float, default=DEFAULT_POLL_INTERVAL_S)
     parser.add_argument("--limit", type=int, default=DEFAULT_MAX_MESSAGES)
     return parser
@@ -239,6 +258,10 @@ def main(argv: Iterable[str] | None = None) -> None:
         raise ValueError("--limit must be in [1, 200]")
     if args.interval <= 0:
         raise ValueError("--interval must be positive")
+    if args.init_cursor_now:
+        message_id = init_cursor_now(args.relay_name)
+        print(f"initialized relay cursor {args.relay_name!r} at message #{message_id}")
+        return
     if args.once:
         routed = run_once(config, limit=args.limit)
         print(f"routed {routed} tmux wrapper prompt(s)")
