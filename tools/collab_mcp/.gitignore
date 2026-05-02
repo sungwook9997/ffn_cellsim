@@ -1,0 +1,6 @@
+# Local SQLite WAL/journal copies if anyone runs the server inside this dir
+*.db
+*.db-wal
+*.db-shm
+.venv-collab/
+__pycache__/
