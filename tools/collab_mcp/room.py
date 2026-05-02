@@ -1118,6 +1118,7 @@ JS = r"""
     agents: initial.agents || [],
     agentsFetchedAt: Date.now(),
     pending: 0,
+    pollFailures: 0,
   };
   var messagesEl = document.getElementById("messages");
   var cursorStrip = document.getElementById("cursor-strip");
@@ -1134,6 +1135,13 @@ JS = r"""
   var sendBtn = document.getElementById("composer-send");
 
   var SELF_AUTHOR = "pi";
+  var POLL_FAST_MS = 600;
+  var POLL_IDLE_MS = 1500;
+  var POLL_HIDDEN_MS = 2500;
+  var POLL_BACKOFF_MAX_MS = 8000;
+  var AGENT_TICK_MS = 1000;
+  var pollTimer = null;
+  var pollInFlight = false;
 
   function isNearBottom() {
     return messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 80;
@@ -1483,7 +1491,7 @@ JS = r"""
     card.appendChild(activity);
 
     // Awake/asleep badge — orthogonal to the freshness tier color above.
-    // Freshness keys off updated_at (heartbeat-refreshed every 30 s);
+    // Freshness keys off updated_at (heartbeat-refreshed every 5 s);
     // awake keys off last_active_at (advances only on real LLM/operator
     // posts), so a chat pane that never woke up after reboot stays red
     // even while the heartbeat daemon paints the card green.
@@ -1611,7 +1619,30 @@ JS = r"""
     });
   }
 
-  function poll() {
+  function pollDelay(hasNewMessages) {
+    if (state.pollFailures) {
+      return Math.min(POLL_BACKOFF_MAX_MS, POLL_IDLE_MS * Math.pow(2, state.pollFailures - 1));
+    }
+    if (document.hidden) return POLL_HIDDEN_MS;
+    if (hasNewMessages || document.hasFocus()) return POLL_FAST_MS;
+    return POLL_IDLE_MS;
+  }
+
+  function schedulePoll(delay) {
+    if (pollTimer) window.clearTimeout(pollTimer);
+    pollTimer = window.setTimeout(function () { poll(false); }, delay);
+  }
+
+  function poll(force) {
+    if (pollInFlight) {
+      if (force) schedulePoll(100);
+      return;
+    }
+    if (pollTimer) {
+      window.clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    pollInFlight = true;
     var url = "/messages.json?after=" + encodeURIComponent(state.lastId);
     fetch(url, {credentials: "same-origin", headers: {"Accept": "application/json"}})
       .then(function (r) {
@@ -1619,8 +1650,10 @@ JS = r"""
         return r.json();
       })
       .then(function (data) {
+        state.pollFailures = 0;
         var prevCursors = JSON.stringify(state.cursors);
         state.cursors = data.cursors || {};
+        var hasNewMessages = !!(data.messages && data.messages.length);
         if (data.messages && data.messages.length) {
           appendNewMessages(data.messages);
         }
@@ -1633,10 +1666,16 @@ JS = r"""
         state.agentsFetchedAt = Date.now();
         renderAgents(data.agents || []);
         renderAgentCards();
+        schedulePoll(pollDelay(hasNewMessages));
       })
       .catch(function (err) {
         // network blip — try again next tick
+        state.pollFailures = (state.pollFailures || 0) + 1;
         if (window.console && console.warn) console.warn("poll failed", err);
+        schedulePoll(pollDelay(false));
+      })
+      .finally(function () {
+        pollInFlight = false;
       });
   }
 
@@ -1671,7 +1710,7 @@ JS = r"""
         }
         bodyEl.value = "";
         autoresize(bodyEl);
-        poll();
+        poll(true);
       })
       .catch(function (err) { alert("send failed: " + err); })
       .finally(function () { sendBtn.disabled = false; bodyEl.focus(); });
@@ -1702,6 +1741,11 @@ JS = r"""
     sidebar.classList.toggle("hidden");
   });
 
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) poll(true);
+  });
+  window.addEventListener("focus", function () { poll(true); });
+
   // Initial paint from server-supplied state.
   state.cursors = initial.cursors || {};
   renderCursors();
@@ -1713,9 +1757,9 @@ JS = r"""
   scrollToBottom();
   autoresize(bodyEl);
 
-  setInterval(poll, 3000);
-  // Re-render agent strip + cards every 10s so age labels tick without a server roundtrip.
-  setInterval(function () { renderAgents(); renderAgentCards(); }, 10000);
+  poll(true);
+  // Re-render agent strip + cards every second so sidebar lag is visible immediately.
+  setInterval(function () { renderAgents(); renderAgentCards(); }, AGENT_TICK_MS);
 })();
 """
 

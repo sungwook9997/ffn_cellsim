@@ -8,7 +8,7 @@ The layout separates always-idle chat panes from long-running work panes:
   codex-work    optional long-running Codex review/implementation work
   win-ssh       optional SSH pane to the Windows A5000 workstation
   heartbeat     optional sidebar heartbeat daemon (refreshes agent_status
-                rows for the four LLM panes every 30 s)
+                rows for the four LLM panes every 5 s)
 
 Existing sessions are never killed or renamed.
 """

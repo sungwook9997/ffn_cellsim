@@ -28,7 +28,7 @@ DB_PATH = pathlib.Path(
 ).expanduser()
 
 DEFAULT_RELAY_NAME = os.environ.get("COLLAB_TMUX_RELAY_NAME", "default")
-DEFAULT_POLL_INTERVAL_S = float(os.environ.get("COLLAB_TMUX_POLL_INTERVAL", "1.0"))
+DEFAULT_POLL_INTERVAL_S = float(os.environ.get("COLLAB_TMUX_POLL_INTERVAL", "0.25"))
 DEFAULT_MAX_MESSAGES = int(os.environ.get("COLLAB_TMUX_MAX_MESSAGES", "20"))
 SAFE_LABEL_RE = re.compile(r"[^0-9A-Za-z가-힣._/@,+: -]+")
 
@@ -166,6 +166,7 @@ def wrapper_prompt(message: WorkroomMessage, target_agent: str) -> str:
     return (
         f": mcp_msg id={message.id} from={author} to={addressee} "
         f"topic={topic} pane=chat work_pane={target_agent}-work "
+        f"priority=immediate ack_first "
         f"action=read_acs_collab_mcp_then_send_if_{target_agent}_should_reply"
     )
 

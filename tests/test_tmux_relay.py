@@ -71,6 +71,8 @@ def test_wrapper_prompt_does_not_include_raw_body(monkeypatch, tmp_path):
     prompt = relay.wrapper_prompt(message, "codex")
 
     assert "id=3" in prompt
+    assert "priority=immediate" in prompt
+    assert "ack_first" in prompt
     assert "read" in prompt.lower()
     assert "secret body" not in prompt
 

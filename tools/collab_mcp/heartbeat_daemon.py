@@ -1,6 +1,6 @@
 """Heartbeat daemon for the ACS Collab Workroom sidebar.
 
-Every 30 s, refresh the `agent_status` row for each of the four LLM panes
+Every 5 s, refresh the `agent_status` row for each of the four LLM panes
 (`claude-chat`, `claude-work`, `codex-chat`, `codex-work`) so the sidebar
 "Agents · 4 panes" panel stays visibly alive even when the pane is idle
 between PI prompts. The daemon never invents progress numbers — it
@@ -33,7 +33,7 @@ DB_PATH = pathlib.Path(
 ).expanduser()
 ROOM_URL = os.environ.get("COLLAB_ROOM_URL", "http://127.0.0.1:7879/agent_status")
 ROOM_TOKEN = os.environ.get("COLLAB_ROOM_TOKEN", "acs-room")
-INTERVAL_S = float(os.environ.get("COLLAB_HEARTBEAT_INTERVAL", "30"))
+INTERVAL_S = float(os.environ.get("COLLAB_HEARTBEAT_INTERVAL", "5"))
 
 PANES = [
     ("claude-chat", "claude-chat:0.0"),
