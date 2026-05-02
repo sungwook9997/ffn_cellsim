@@ -37,6 +37,7 @@ render unreliably on some machines.
 | `status()` | Active claims + per-author unread counts + latest message |
 | `announce_artifact(kind, path, note)` | Register a figure / HDF5 / dashboard path |
 | `list_artifacts(limit=20)` | Recent artifact pointers |
+| `bootstrap(limit=50, topic, since_id)` | Read recent messages without advancing cursor (warm up a fresh session) |
 
 Allowed `status` values: `FYI`, `proposal`, `review`, `decision-needed`,
 `open-question`, `blocker`. Allowed authors: `claude`, `codex`

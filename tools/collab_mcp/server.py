@@ -485,6 +485,56 @@ def list_artifacts(ctx: Context, limit: int = 20) -> dict[str, Any]:
     }
 
 
+@mcp.tool()
+def bootstrap(
+    ctx: Context,
+    limit: int = 50,
+    topic: str = "",
+    since_id: int = 0,
+) -> dict[str, Any]:
+    """Read recent messages without advancing the caller's cursor.
+
+    Used to warm up a fresh CLI/desktop session with prior collab context.
+    Unlike `read`, this includes the caller's own messages so a returning
+    session sees the full timeline. Filters: optional `topic` exact match,
+    optional `since_id` to fetch only messages newer than a known id.
+    """
+    _auth(ctx)
+    if limit < 1 or limit > 200:
+        raise ValueError("limit must be in [1, 200]")
+    if since_id < 0:
+        raise ValueError("since_id must be >= 0")
+    sql = (
+        "SELECT id, ts, author, addressee, topic, body, status, refs "
+        "FROM messages WHERE id>?"
+    )
+    params: list[Any] = [since_id]
+    if topic:
+        sql += " AND topic=?"
+        params.append(topic)
+    sql += " ORDER BY id DESC LIMIT ?"
+    params.append(limit)
+    with closing(_db()) as conn:
+        rows = conn.execute(sql, params).fetchall()
+    rows = list(reversed(rows))
+    return {
+        "count": len(rows),
+        "messages": [
+            {
+                "id": r[0],
+                "ts": r[1],
+                "from": r[2],
+                "to": r[3],
+                "topic": r[4],
+                "body": r[5],
+                "status": r[6],
+                "refs": json.loads(r[7]),
+            }
+            for r in rows
+        ],
+    }
+
+
 def main() -> None:
     bind = os.environ.get("COLLAB_MCP_BIND", "127.0.0.1:7878")
     if ":" in bind:

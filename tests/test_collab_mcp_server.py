@@ -93,3 +93,38 @@ def test_announce_artifact_rejects_empty_path(monkeypatch: pytest.MonkeyPatch, t
 
     with pytest.raises(ValueError, match="path must be non-empty"):
         server.announce_artifact(ctx, kind="figure", path=" ")
+
+
+def test_bootstrap_includes_self_and_preserves_cursor(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    server = _load_server(monkeypatch, tmp_path)
+    claude = _FakeContext("unit-test-token", "claude")
+    codex = _FakeContext("unit-test-token", "codex")
+
+    server.send(claude, to="codex", topic="layer-1", body="hello from claude")
+    server.send(codex, to="claude", topic="layer-1", body="ack from codex")
+    server.send(claude, to="codex", topic="layer-2", body="separate topic")
+
+    boot = server.bootstrap(claude, limit=10)
+    assert boot["count"] == 3
+    authors = [m["from"] for m in boot["messages"]]
+    assert "claude" in authors and "codex" in authors
+
+    follow_up_unread = server.read(claude)
+    assert follow_up_unread["count"] == 1
+    assert follow_up_unread["messages"][0]["from"] == "codex"
+
+
+def test_bootstrap_topic_and_since_filters(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    server = _load_server(monkeypatch, tmp_path)
+    claude = _FakeContext("unit-test-token", "claude")
+    codex = _FakeContext("unit-test-token", "codex")
+
+    server.send(claude, to="codex", topic="layer-1", body="m1")
+    second = server.send(codex, to="claude", topic="layer-2", body="m2")
+    server.send(claude, to="codex", topic="layer-1", body="m3")
+
+    topic_only = server.bootstrap(claude, topic="layer-1", limit=10)
+    assert [m["body"] for m in topic_only["messages"]] == ["m1", "m3"]
+
+    since = server.bootstrap(claude, since_id=second["id"], limit=10)
+    assert [m["body"] for m in since["messages"]] == ["m3"]
