@@ -159,6 +159,38 @@ After writing or modifying a physics/numerics module, **before running it**, per
 ### Failure handling
 A FAIL halts further code work for the current module. Surface the issue to the PI with at least three concrete options (e.g., reduce Δt, switch to implicit, switch to overdamped). Wait for direction before proceeding. Never silently work around a Sanity Gate failure.
 
+## Session bootstrap (acs-collab MCP)
+
+This project uses the `acs-collab` MCP server for async PI ↔ Claude ↔ Codex
+collaboration. CLI session history (`~/.claude/projects/...`) is per-client
+and does not sync between the desktop app and the terminal CLI, but the MCP
+DB + `docs/claude_codex_log.md` ledger is a shared external store that
+**both** clients can read.
+
+**Rule:** at the start of every fresh session — including `claude --continue`
+resumes, brand-new desktop-app threads, and any thread where the assistant
+has no in-memory record of the recent collab traffic — call:
+
+```
+mcp__acs-collab__bootstrap(limit=50)
+```
+
+before processing the first user prompt. The tool is read-only, does not
+advance any cursor, and includes the caller's own messages so the timeline
+is complete.
+
+**After bootstrap:**
+- If the dump contains unresolved decisions, blockers, or open `claim`s
+  relevant to the user's first prompt, surface them in one short line
+  before acting.
+- If the dump is empty or clearly unrelated to the current task, proceed
+  normally without restating it.
+- The user may explicitly say "skip bootstrap" or "new task, fresh state" —
+  honor that and do not call.
+
+This rule is mirrored in the `collab_claude_codex` memory entry so it stays
+loaded even if `CLAUDE.md` is trimmed.
+
 ## When in doubt
 - Read `docs/00_project_vision.md` for framing
 - Read `docs/10_dev_roadmap.md` for what to do next
