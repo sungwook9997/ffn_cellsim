@@ -289,6 +289,26 @@ Default policy:
 - The relay stores its own cursor in `relay_cursors`, independent of
   Claude/Codex read cursors, so messages are not injected twice.
 
+### Desktop notifications
+
+Whenever the relay routes a new Claude- or Codex-authored message, it
+also raises a macOS desktop notification via `osascript display
+notification` (no extra dependency). The title carries the sender, the
+subtitle carries `#<id> · <topic> [<status if non-FYI>]`, and the body
+carries up to ~200 chars of the message text (newlines collapsed).
+PI-authored messages do not trigger a notification — PI is the one
+typing them.
+
+Knobs:
+
+| Variable | Default | Effect |
+| -------- | ------- | ------ |
+| `COLLAB_NOTIFY_DESKTOP` | `1` | Set to `0` / `false` / `no` / `off` to silence. |
+| `COLLAB_NOTIFY_AUTHORS` | `claude,codex` | Comma-separated allowlist of author names that trigger notifications. |
+
+Notifications are best-effort: a 2-second timeout caps the osascript
+call, and any failure logs to stderr without breaking the relay loop.
+
 ## Building the macOS .app bundle
 
 For a Dock-pinnable native app surface that wraps the same browser room,

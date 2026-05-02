@@ -32,6 +32,18 @@ DEFAULT_POLL_INTERVAL_S = float(os.environ.get("COLLAB_TMUX_POLL_INTERVAL", "1.0
 DEFAULT_MAX_MESSAGES = int(os.environ.get("COLLAB_TMUX_MAX_MESSAGES", "20"))
 SAFE_LABEL_RE = re.compile(r"[^0-9A-Za-z가-힣._/@,+: -]+")
 
+NOTIFY_DESKTOP = os.environ.get("COLLAB_NOTIFY_DESKTOP", "1").lower() not in {
+    "0", "false", "no", "off", ""
+}
+NOTIFY_AUTHORS = {
+    a.strip().lower()
+    for a in os.environ.get("COLLAB_NOTIFY_AUTHORS", "claude,codex").split(",")
+    if a.strip()
+}
+NOTIFY_BODY_MAX = 200
+NOTIFY_TITLE_MAX = 80
+NOTIFY_SUBTITLE_MAX = 80
+
 
 @dataclasses.dataclass(frozen=True)
 class WorkroomMessage:
@@ -40,6 +52,7 @@ class WorkroomMessage:
     addressee: str
     topic: str
     status: str
+    body: str = ""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -94,7 +107,7 @@ def fetch_new_messages(relay_name: str, limit: int) -> list[WorkroomMessage]:
     with closing(_db()) as conn:
         last = _load_cursor(conn, relay_name)
         rows = conn.execute(
-            "SELECT id, author, addressee, topic, status "
+            "SELECT id, author, addressee, topic, status, body "
             "FROM messages WHERE id>? ORDER BY id ASC LIMIT ?",
             (last, limit),
         ).fetchall()
@@ -105,6 +118,7 @@ def fetch_new_messages(relay_name: str, limit: int) -> list[WorkroomMessage]:
             addressee=str(row[2]).lower(),
             topic=str(row[3]),
             status=str(row[4]),
+            body=str(row[5] or ""),
         )
         for row in rows
     ]
@@ -208,12 +222,67 @@ def dispatch_message(message: WorkroomMessage, config: RelayConfig) -> set[str]:
     return targets
 
 
+def _applescript_escape(s: str) -> str:
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _truncate(s: str, max_len: int) -> str:
+    s = " ".join(s.split())  # collapse newlines/tabs into single spaces
+    if len(s) <= max_len:
+        return s
+    return s[: max_len - 1].rstrip() + "…"
+
+
+def notify_desktop(message: WorkroomMessage, dry_run: bool = False) -> bool:
+    """Raise a macOS desktop notification for a new LLM-authored message.
+
+    Best-effort and non-blocking. Returns True iff a notification was actually
+    fired. PI-authored messages are skipped — PI is the human typing, not a
+    notification target. Set ``COLLAB_NOTIFY_DESKTOP=0`` (or false/no/off) to
+    silence; ``COLLAB_NOTIFY_AUTHORS`` overrides the default
+    ``claude,codex`` allowlist.
+    """
+    if not NOTIFY_DESKTOP:
+        return False
+    if message.author not in NOTIFY_AUTHORS:
+        return False
+    if sys.platform != "darwin":
+        return False
+
+    title = _applescript_escape(_truncate(f"ACS Collab — {message.author}", NOTIFY_TITLE_MAX))
+    subtitle_raw = f"#{message.id} · {message.topic}"
+    if message.status and message.status.lower() not in {"fyi", ""}:
+        subtitle_raw = f"{subtitle_raw} [{message.status}]"
+    subtitle = _applescript_escape(_truncate(subtitle_raw, NOTIFY_SUBTITLE_MAX))
+    body = _applescript_escape(_truncate(message.body or "(no body)", NOTIFY_BODY_MAX))
+    script = (
+        f'display notification "{body}" '
+        f'with title "{title}" subtitle "{subtitle}"'
+    )
+    if dry_run:
+        print(f"[dry-run] osascript: {script}")
+        return False
+    try:
+        subprocess.run(
+            ["osascript", "-e", script],
+            check=False,
+            timeout=2.0,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        print(f"desktop notify failed: {exc}", file=sys.stderr, flush=True)
+        return False
+    return True
+
+
 def run_once(config: RelayConfig, limit: int = DEFAULT_MAX_MESSAGES) -> int:
     messages = fetch_new_messages(config.relay_name, limit)
     routed = 0
     for message in messages:
         targets = dispatch_message(message, config)
         routed += len(targets)
+        notify_desktop(message, dry_run=config.dry_run)
         if not config.dry_run:
             mark_routed(config.relay_name, message.id)
     return routed
