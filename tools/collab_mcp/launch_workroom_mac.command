@@ -23,10 +23,12 @@ if ! pgrep -x syncthing >/dev/null 2>&1; then
   fi
 fi
 
-# 2) tmux work sessions (claude-chat, codex-chat, claude-work, codex-work, win-ssh).
-#    setup_tmux_workroom is idempotent: never kills/renames existing sessions
-#    and only starts a CLI/SSH command in panes that are currently a plain shell.
-python3 -m tools.collab_mcp.setup_tmux_workroom --start-chat --start-work --start-win-ssh \
+# 2) tmux work sessions (claude-chat, codex-chat, claude-work, codex-work,
+#    win-ssh, heartbeat). setup_tmux_workroom is idempotent: never kills or
+#    renames existing sessions, and only starts a CLI/SSH/daemon in panes
+#    that are currently a plain shell.
+python3 -m tools.collab_mcp.setup_tmux_workroom \
+  --start-chat --start-work --start-win-ssh --start-heartbeat \
   >>"$LOG_DIR/setup_tmux_workroom.log" 2>&1 || true
 
 # 3) Relay session — keeps PI/LLM messages flowing into chat panes.
@@ -47,8 +49,18 @@ if ! curl -fsS "http://127.0.0.1:7879/" >/dev/null 2>&1; then
 fi
 
 # 5) Chrome --app mode (fallback to default browser).
+#    Idempotent: skip when an existing Chrome tab/window already points at
+#    the workroom URL — otherwise launchctl kickstart and re-runs would
+#    pile up duplicate windows. The osascript probe is wrapped so a
+#    Chrome that is not running (no tabs to query) still falls through to
+#    the open call.
 if open -Ra "Google Chrome" >/dev/null 2>&1; then
-  open -na "Google Chrome" --args --app="http://127.0.0.1:7879/"
+  EXISTING_TABS=$(osascript \
+    -e 'tell application "Google Chrome" to get URL of every tab of every window' \
+    2>/dev/null | tr ',' '\n' | grep -c '127.0.0.1:7879' || true)
+  if [[ "${EXISTING_TABS:-0}" -eq 0 ]]; then
+    open -na "Google Chrome" --args --app="http://127.0.0.1:7879/"
+  fi
 else
   open "http://127.0.0.1:7879/"
 fi

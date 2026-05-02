@@ -663,12 +663,22 @@ a, button { font: inherit; }
   z-index: 5;
 }
 .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.cursor-strip { color: var(--muted); font-size: 12px; }
+.cursor-strip {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 4px;
+  min-width: 0;
+}
 .cursor-strip .pill {
   background: rgba(0,0,0,0.05);
   border-radius: 10px;
-  margin-right: 6px;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
   padding: 2px 8px;
+  white-space: nowrap;
 }
 .agent-strip {
   align-items: center;
@@ -910,6 +920,12 @@ nav { display: flex; gap: 8px; }
   position: relative;
 }
 .agent-card.placeholder { background: transparent; border-style: dashed; }
+.agent-card.tier-fresh  { box-shadow: 0 0 0 2px rgba(46,160,67,0.40); }
+.agent-card.tier-fresh  .meta > :last-child { color: #1f7a32; font-weight: 600; }
+.agent-card.tier-aging  { box-shadow: 0 0 0 2px rgba(212,154,0,0.40); }
+.agent-card.tier-aging  .meta > :last-child { color: #8a6300; font-weight: 600; }
+.agent-card.tier-stale  { box-shadow: 0 0 0 2px rgba(200,40,40,0.45); opacity: 0.78; }
+.agent-card.tier-stale  .meta > :last-child { color: #b3261e; font-weight: 700; }
 .agent-card.fresh { box-shadow: 0 0 0 2px rgba(36,107,254,0.18); }
 .agent-card.stale { opacity: 0.55; }
 .agent-card .head {
@@ -1348,11 +1364,13 @@ JS = r"""
     if (agent && agent.age_seconds != null) {
       age = agent.age_seconds + elapsedSinceFetch;
     }
+    // Three-tier freshness: green ≤ 30 s, yellow 30–90 s, red > 90 s.
+    // Placeholder cards (no agent row yet) keep the dashed-border look.
     var staleness = "placeholder";
     if (agent) {
-      staleness = "fresh";
-      if (age == null || age > 300) staleness = "stale";
-      else if (age > 60) staleness = "";
+      if (age == null || age > 90) staleness = "tier-stale";
+      else if (age > 30) staleness = "tier-aging";
+      else staleness = "tier-fresh";
     }
     card.className = "agent-card " + base + (staleness ? " " + staleness : "");
 

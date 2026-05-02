@@ -7,6 +7,8 @@ The layout separates always-idle chat panes from long-running work panes:
   claude-work   optional long-running Claude implementation work
   codex-work    optional long-running Codex review/implementation work
   win-ssh       optional SSH pane to the Windows A5000 workstation
+  heartbeat     optional sidebar heartbeat daemon (refreshes agent_status
+                rows for the four LLM panes every 30 s)
 
 Existing sessions are never killed or renamed.
 """
@@ -24,6 +26,7 @@ DEFAULT_REPO = pathlib.Path(__file__).resolve().parents[2]
 CLAUDE_CMD = "claude --dangerously-skip-permissions"
 CODEX_CMD = "codex --dangerously-bypass-approvals-and-sandbox"
 WIN_SSH_CMD = "ssh win"
+HEARTBEAT_CMD = "python3 tools/collab_mcp/heartbeat_daemon.py"
 
 
 def tmux(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -76,9 +79,13 @@ def setup(
     start_chat: bool,
     start_work: bool,
     start_win_ssh: bool,
+    start_heartbeat: bool,
 ) -> list[str]:
     actions: list[str] = []
-    sessions = ["claude-chat", "codex-chat", "claude-work", "codex-work", "win-ssh"]
+    sessions = [
+        "claude-chat", "codex-chat", "claude-work", "codex-work",
+        "win-ssh", "heartbeat",
+    ]
     for session in sessions:
         created = ensure_session(session, cwd)
         actions.append(f"{'created' if created else 'exists'} {session}")
@@ -99,6 +106,10 @@ def setup(
         if start_cli_if_shell("win-ssh:0.0", WIN_SSH_CMD):
             actions.append("started Windows SSH in win-ssh")
 
+    if start_heartbeat:
+        if start_cli_if_shell("heartbeat:0.0", HEARTBEAT_CMD):
+            actions.append("started heartbeat daemon")
+
     return actions
 
 
@@ -108,6 +119,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--start-chat", action="store_true", help="Launch Claude/Codex in chat sessions.")
     parser.add_argument("--start-work", action="store_true", help="Launch Claude/Codex in work sessions.")
     parser.add_argument("--start-win-ssh", action="store_true", help="Launch ssh win in the Windows SSH session.")
+    parser.add_argument("--start-heartbeat", action="store_true", help="Launch the sidebar heartbeat daemon.")
     return parser
 
 
@@ -119,6 +131,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         start_chat=args.start_chat,
         start_work=args.start_work,
         start_win_ssh=args.start_win_ssh,
+        start_heartbeat=args.start_heartbeat,
     )
     for action in actions:
         print(action)
@@ -126,6 +139,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     print("  COLLAB_TMUX_CLAUDE_TARGET=claude-chat:0.0")
     print("  COLLAB_TMUX_CODEX_TARGET=codex-chat:0.0")
     print("  Windows SSH target: win-ssh:0.0")
+    print("  Heartbeat target:   heartbeat:0.0")
 
 
 if __name__ == "__main__":

@@ -249,6 +249,27 @@ Start the Windows SSH pane:
 python3 tools/collab_mcp/setup_tmux_workroom.py --start-win-ssh
 ```
 
+Start the sidebar heartbeat daemon — it re-POSTs each LLM pane's
+existing `agent_status` row every 30 s so the sidebar's "Agents · 4
+panes" cards never silently turn stale, and stamps `(pane dead)` when a
+pane has crashed:
+
+```bash
+python3 tools/collab_mcp/setup_tmux_workroom.py --start-heartbeat
+```
+
+Knobs (env vars on the heartbeat process):
+
+| Variable | Default | Effect |
+| -------- | ------- | ------ |
+| `COLLAB_HEARTBEAT_INTERVAL` | `30` | Tick interval in seconds. |
+| `COLLAB_ROOM_URL` | `http://127.0.0.1:7879/agent_status` | room.py endpoint. |
+| `COLLAB_ROOM_TOKEN` | `acs-room` | Cookie token used to authenticate the POST. |
+
+Sidebar freshness colour tiers (room.py): green ≤ 30 s, yellow 30–90 s,
+red > 90 s. With the heartbeat daemon running, healthy panes stay green;
+the colour drift is itself the dead-pane signal.
+
 `setup_tmux_workroom.py` launches the four LLM panes in no-prompt
 permission mode by default:
 
