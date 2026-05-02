@@ -192,6 +192,9 @@ def tmux_send_wrapper(target: str, prompt: str, dry_run: bool = False) -> None:
         ["tmux", "send-keys", "-t", target, "-l", prompt],
         check=True,
     )
+    # Codex/Claude TUIs can lag one event loop tick behind long literal input.
+    # Give the pane a moment to materialize the text before submitting it.
+    time.sleep(0.08)
     subprocess.run(["tmux", "send-keys", "-t", target, "C-m"], check=True)
 
 
