@@ -87,7 +87,20 @@ ActiveCellSim/
 - Unit tests for physics modules (especially conservation laws, scaling tests)
 - Logging with severity levels (DEBUG for dev, INFO for production runs)
 
-## Development Order (Bottom-up)
+## Active roadmap (v2 supersedes v1 for new work)
+
+The original `docs/10_dev_roadmap.md` (Stage 1a → 2 below) describes the
+v1 spheroid-first continuum prototype, kept frozen for reference and
+reproducibility of prior results. **All new development follows
+`docs/10_dev_roadmap_v2.md`** — image-constrained, cell-resolved,
+single-cell first. See `docs/00_project_vision_v2.md` for why we pivoted
+and `docs/v1_continuum_backup.md` for what v1 deliberately stays as.
+The `acs/v2/` package is the v2 code home; v1 modules remain under
+`acs/` (non-`v2/` subpaths) and are not deleted.
+
+When in doubt about which roadmap to follow: v2.
+
+## Development Order — v1 (frozen, historical reference)
 **Strict order — do not skip stages:**
 1. **Stage 1a**: Single deformable spheroid relaxation (free-floating, no substrate) → verify equilibrium shape, conservation laws
 2. **Stage 1a+**: Add substrate contact (Hertz + adhesion) → verify wetting onset
