@@ -95,7 +95,28 @@ def test_announce_artifact_rejects_empty_path(monkeypatch: pytest.MonkeyPatch, t
         server.announce_artifact(ctx, kind="figure", path=" ")
 
 
-def test_bootstrap_includes_self_and_preserves_cursor(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_bootstrap_advances_cursor_by_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    server = _load_server(monkeypatch, tmp_path)
+    claude = _FakeContext("unit-test-token", "claude")
+    codex = _FakeContext("unit-test-token", "codex")
+
+    server.send(claude, to="codex", topic="layer-1", body="hello from claude")
+    server.send(codex, to="claude", topic="layer-1", body="ack from codex")
+    third = server.send(claude, to="codex", topic="layer-2", body="separate topic")
+
+    boot = server.bootstrap(claude, limit=10)
+    assert boot["count"] == 3
+    authors = [m["from"] for m in boot["messages"]]
+    assert "claude" in authors and "codex" in authors
+    assert boot["cursor_advanced_to"] == third["id"]
+
+    follow_up_unread = server.read(claude)
+    assert follow_up_unread["count"] == 0
+
+
+def test_bootstrap_preserves_cursor_when_advance_disabled(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
     server = _load_server(monkeypatch, tmp_path)
     claude = _FakeContext("unit-test-token", "claude")
     codex = _FakeContext("unit-test-token", "codex")
@@ -104,10 +125,9 @@ def test_bootstrap_includes_self_and_preserves_cursor(monkeypatch: pytest.Monkey
     server.send(codex, to="claude", topic="layer-1", body="ack from codex")
     server.send(claude, to="codex", topic="layer-2", body="separate topic")
 
-    boot = server.bootstrap(claude, limit=10)
+    boot = server.bootstrap(claude, limit=10, advance_cursor=False)
     assert boot["count"] == 3
-    authors = [m["from"] for m in boot["messages"]]
-    assert "claude" in authors and "codex" in authors
+    assert boot["cursor_advanced_to"] is None
 
     follow_up_unread = server.read(claude)
     assert follow_up_unread["count"] == 1

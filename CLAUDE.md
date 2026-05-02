@@ -188,9 +188,11 @@ has no in-memory record of the recent collab traffic — call:
 mcp__acs-collab__bootstrap(limit=50)
 ```
 
-before processing the first user prompt. The tool is read-only, does not
-advance any cursor, and includes the caller's own messages so the timeline
-is complete.
+before processing the first user prompt. The tool returns the recent
+timeline (caller's own messages included) **and advances the caller's
+read-cursor to the latest returned id** so the room.py "seen by X"
+indicator catches up immediately. Pass `advance_cursor=False` only when
+you genuinely need a read-only peek without changing your seen-state.
 
 **After bootstrap:**
 - If the dump contains unresolved decisions, blockers, or open `claim`s

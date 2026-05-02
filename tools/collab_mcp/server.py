@@ -491,15 +491,20 @@ def bootstrap(
     limit: int = 50,
     topic: str = "",
     since_id: int = 0,
+    advance_cursor: bool = True,
 ) -> dict[str, Any]:
-    """Read recent messages without advancing the caller's cursor.
+    """Read recent messages and mark the caller current.
 
     Used to warm up a fresh CLI/desktop session with prior collab context.
-    Unlike `read`, this includes the caller's own messages so a returning
-    session sees the full timeline. Filters: optional `topic` exact match,
-    optional `since_id` to fetch only messages newer than a known id.
+    Unlike `read`, includes the caller's own messages so a returning session
+    sees the full timeline. By default advances the caller's read-cursor to
+    the latest returned id so the UI's "seen by X" indicator catches up
+    immediately — set ``advance_cursor=False`` for a pure read-only peek.
+
+    Filters: optional ``topic`` exact match, optional ``since_id`` to fetch
+    only messages newer than a known id.
     """
-    _auth(ctx)
+    author = _auth(ctx)
     if limit < 1 or limit > 200:
         raise ValueError("limit must be in [1, 200]")
     if since_id < 0:
@@ -514,11 +519,20 @@ def bootstrap(
         params.append(topic)
     sql += " ORDER BY id DESC LIMIT ?"
     params.append(limit)
+    cursor_advanced_to: int | None = None
     with closing(_db()) as conn:
         rows = conn.execute(sql, params).fetchall()
-    rows = list(reversed(rows))
+        rows = list(reversed(rows))
+        if advance_cursor and rows:
+            cursor_advanced_to = rows[-1][0]
+            conn.execute(
+                "INSERT INTO cursors(author, last_seen_id) VALUES(?,?) "
+                "ON CONFLICT(author) DO UPDATE SET last_seen_id=excluded.last_seen_id",
+                (author, cursor_advanced_to),
+            )
     return {
         "count": len(rows),
+        "cursor_advanced_to": cursor_advanced_to,
         "messages": [
             {
                 "id": r[0],
