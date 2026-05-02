@@ -37,3 +37,8 @@ Thumbs.db
 
 # Syncthing folder marker
 .stfolder/
+
+# acs-collab MCP ledger — append-only mirror of the message queue, shared via
+# Syncthing (not git). Every send rewrites it, so tracking it would generate
+# noisy diffs without adding history beyond what the SQLite DB already stores.
+docs/claude_codex_log.md

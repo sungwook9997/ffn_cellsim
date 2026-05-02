@@ -147,6 +147,52 @@ Log:   docs/claude_codex_log.md
 This is the recommended local surface on the current Mac. It is still
 message-only and writes to the same DB/ledger as MCP.
 
+## Running the tmux relay
+
+`tmux_relay.py` is the first group-chat bridge. It polls the shared
+SQLite message table and injects only a compact wrapper prompt into
+Claude/Codex tmux panes. It never injects raw message bodies, so quotes,
+newlines, code blocks, and Korean text stay in SQLite/MCP instead of
+being escaped through `tmux send-keys`.
+
+Install tmux once on macOS:
+
+```bash
+brew install tmux
+```
+
+Start or attach your Claude/Codex tmux panes, then note the targets:
+
+```bash
+tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}'
+```
+
+Run a dry-run first:
+
+```bash
+COLLAB_TMUX_CLAUDE_TARGET=claude:0.0 \
+COLLAB_TMUX_CODEX_TARGET=codex:0.0 \
+python3 tools/collab_mcp/tmux_relay.py --once --dry-run
+```
+
+Run the live relay:
+
+```bash
+COLLAB_TMUX_CLAUDE_TARGET=claude:0.0 \
+COLLAB_TMUX_CODEX_TARGET=codex:0.0 \
+python3 tools/collab_mcp/tmux_relay.py
+```
+
+Default policy:
+
+- PI-authored messages route to `@claude`, `@codex`, or both.
+- Claude/Codex-authored messages are not auto-routed by default, which
+  prevents accidental LLM ping-pong.
+- Add `--include-llm-messages` only for a deliberate Claude↔Codex
+  routing test.
+- The relay stores its own cursor in `relay_cursors`, independent of
+  Claude/Codex read cursors, so messages are not injected twice.
+
 ## Building the macOS .app bundle
 
 For a Dock-pinnable native app surface that wraps the same browser room,
