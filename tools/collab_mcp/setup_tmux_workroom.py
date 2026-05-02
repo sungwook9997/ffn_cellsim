@@ -20,6 +20,9 @@ from typing import Iterable
 
 DEFAULT_REPO = pathlib.Path(__file__).resolve().parents[2]
 
+CLAUDE_CMD = "claude --dangerously-skip-permissions"
+CODEX_CMD = "codex --dangerously-bypass-approvals-and-sandbox"
+
 
 def tmux(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -74,15 +77,15 @@ def setup(cwd: pathlib.Path, start_chat: bool, start_work: bool) -> list[str]:
         actions.append(f"{'created' if created else 'exists'} {session}")
 
     if start_chat:
-        if start_cli_if_shell("claude-chat:0.0", "claude"):
+        if start_cli_if_shell("claude-chat:0.0", CLAUDE_CMD):
             actions.append("started Claude in claude-chat")
-        if start_cli_if_shell("codex-chat:0.0", "codex"):
+        if start_cli_if_shell("codex-chat:0.0", CODEX_CMD):
             actions.append("started Codex in codex-chat")
 
     if start_work:
-        if start_cli_if_shell("claude-work:0.0", "claude"):
+        if start_cli_if_shell("claude-work:0.0", CLAUDE_CMD):
             actions.append("started Claude in claude-work")
-        if start_cli_if_shell("codex-work:0.0", "codex"):
+        if start_cli_if_shell("codex-work:0.0", CODEX_CMD):
             actions.append("started Codex in codex-work")
 
     return actions
