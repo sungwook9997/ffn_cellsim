@@ -44,6 +44,17 @@ LEDGER_PATH = (
     else None
 )
 ROOM_TOKEN = os.environ.get("COLLAB_ROOM_TOKEN", os.environ.get("COLLAB_MCP_TOKEN", ""))
+# Programmatic agents (chat panes, work panes, daemons) may already hold
+# COLLAB_MCP_TOKEN as a bearer; accepting both removes a footgun where the
+# agent has the MCP secret but not the room cookie token.
+ROOM_TOKENS_ACCEPTED = tuple(
+    t for t in (
+        ROOM_TOKEN,
+        os.environ.get("COLLAB_MCP_TOKEN", ""),
+        os.environ.get("COLLAB_ROOM_TOKEN", ""),
+    )
+    if t
+)
 PI_AUTHOR = os.environ.get("COLLAB_ROOM_AUTHOR", "pi").strip().lower() or "pi"
 
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -624,6 +635,9 @@ class RoomHandler(BaseHTTPRequestHandler):
     def _is_authenticated(self) -> bool:
         if not ROOM_TOKEN:
             return True
+        header_token = self.headers.get("X-Collab-Token", "")
+        if header_token and self._token_ok(header_token):
+            return True
         cookies = http.cookies.SimpleCookie(self.headers.get("Cookie", ""))
         cookie = cookies.get("collab_room_token")
         return bool(cookie and self._token_ok(urllib.parse.unquote(cookie.value)))
@@ -631,7 +645,7 @@ class RoomHandler(BaseHTTPRequestHandler):
     def _token_ok(self, token: str) -> bool:
         if not ROOM_TOKEN:
             return True
-        return hmac.compare_digest(token, ROOM_TOKEN)
+        return any(hmac.compare_digest(token, t) for t in ROOM_TOKENS_ACCEPTED)
 
     def _send_text(
         self,
