@@ -31,5 +31,9 @@ Thumbs.db
 # Notebook checkpoints
 .ipynb_checkpoints/
 
-# Claude Code local session settings
+# Claude Code local session settings + per-host worktrees
 .claude/settings.local.json
+.claude/worktrees/
+
+# Syncthing folder marker
+.stfolder/
