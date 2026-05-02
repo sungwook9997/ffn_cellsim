@@ -308,6 +308,41 @@ Once built, double-click the .app from Finder, drag it to the Dock for
 a one-click launch, or run `open ~/Applications/ACSWorkroom.app` from
 the terminal.
 
+## Auto-start on macOS login (launchd)
+
+For unattended recovery after a reboot, install the user LaunchAgent so
+the workroom comes up automatically when the user logs in:
+
+```bash
+tools/collab_mcp/install_launchd.sh install
+```
+
+The installer renders `tools/collab_mcp/com.activecellsim.workroom.plist`
+(substituting `__REPO_ROOT__` with the current repo path), drops it into
+`~/Library/LaunchAgents/`, and bootstraps it under the GUI domain. From
+the next login onward, `launch_workroom_mac.command` runs once at user
+login, idempotently bringing up syncthing → tmux 4 work sessions →
+relay → room.py → Chrome.
+
+`KeepAlive` is `false` because the launcher exits after kicking off the
+persistent processes; respawning it in a loop would just re-open Chrome
+windows. Use the explicit on-demand kick instead:
+
+```bash
+launchctl kickstart -k gui/$(id -u)/com.activecellsim.workroom
+```
+
+Other modes:
+
+```bash
+tools/collab_mcp/install_launchd.sh status     # plist + load state
+tools/collab_mcp/install_launchd.sh uninstall  # bootout + remove plist
+```
+
+Logs: `/tmp/acs-collab/launchd.out` and `/tmp/acs-collab/launchd.err`.
+The launcher's per-stage logs (`setup_tmux_workroom.log`, `tmux_relay.log`,
+`room.log`) live in the same directory.
+
 ## Running the experimental Tk desktop room
 
 On macOS or Windows, from the repo root:
