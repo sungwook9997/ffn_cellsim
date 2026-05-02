@@ -1,12 +1,12 @@
 """Build a macOS .app bundle that wraps the ACS Workroom browser surface.
 
-Stdlib-only, no Xcode needed. The bundle's executable is a thin zsh launcher
-derived from `launch_workroom_mac.command`: it ensures `room.py` is running on
-127.0.0.1:7879 and opens Chrome in `--app` mode (or the default browser).
+Stdlib-only, no Xcode needed. The bundle's executable is a thin zsh shim that
+delegates to `tools/collab_mcp/launch_workroom_mac.command`, which is the
+single source of truth for full-stack boot (syncthing check, tmux 4 work
+sessions, relay, room.py, Chrome). Re-run this script only when the repo
+moves — the .command file itself can be edited freely without rebuilding.
 
 Default output: ~/Applications/ACSWorkroom.app — user-writable, no sudo.
-The bundle hard-codes the repo root at build time. Re-run this script if the
-repo moves.
 """
 
 from __future__ import annotations
@@ -27,23 +27,7 @@ LAUNCHER_TEMPLATE = """#!/bin/zsh
 set -euo pipefail
 
 REPO_ROOT={repo_root_quoted}
-cd "$REPO_ROOT"
-
-export COLLAB_MCP_LEDGER="${{COLLAB_MCP_LEDGER:-$REPO_ROOT/docs/claude_codex_log.md}}"
-export COLLAB_ROOM_BIND="${{COLLAB_ROOM_BIND:-127.0.0.1:7879}}"
-export COLLAB_ROOM_TOKEN="${{COLLAB_ROOM_TOKEN:-acs-room}}"
-
-if ! curl -fsS "http://127.0.0.1:7879/" >/dev/null 2>&1; then
-  mkdir -p /tmp/acs-collab
-  nohup python3 tools/collab_mcp/room.py >/tmp/acs-collab/room.log 2>&1 &
-  sleep 1
-fi
-
-if open -Ra "Google Chrome" >/dev/null 2>&1; then
-  open -na "Google Chrome" --args --app="http://127.0.0.1:7879/"
-else
-  open "http://127.0.0.1:7879/"
-fi
+exec "$REPO_ROOT/tools/collab_mcp/launch_workroom_mac.command"
 """
 
 

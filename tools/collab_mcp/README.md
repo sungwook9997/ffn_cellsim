@@ -169,6 +169,27 @@ Log:   docs/claude_codex_log.md
 This is the recommended local surface on the current Mac. It is still
 message-only and writes to the same DB/ledger as MCP.
 
+The launcher is a full-stack workroom supervisor — one double-click brings
+up everything that has to be alive for PI ↔ Claude ↔ Codex collaboration
+on this Mac:
+
+1. Syncthing (best-effort: `brew services start syncthing` or `nohup
+   syncthing` if installed; skipped if already running).
+2. tmux work sessions — `claude-chat`, `claude-work`, `codex-chat`,
+   `codex-work` — via `setup_tmux_workroom.py --start-chat --start-work`.
+   The setup is idempotent: existing sessions/panes are never killed or
+   renamed; CLIs are only started in panes that are still a plain shell.
+3. `relay` tmux session running `tmux_relay.py` (env vars
+   `COLLAB_TMUX_CLAUDE_TARGET` / `COLLAB_TMUX_CODEX_TARGET` default to
+   `claude-chat:0.0` / `codex-chat:0.0`).
+4. `room.py` browser UI server (port 7879) with a 5-second readiness wait.
+5. Chrome `--app` mode at `http://127.0.0.1:7879/` (falls back to the
+   default browser when Chrome is missing).
+
+Logs land under `/tmp/acs-collab/` (`setup_tmux_workroom.log`,
+`tmux_relay.log`, `room.log`). The launcher is safe to run multiple
+times — every step is a no-op when its target is already alive.
+
 ## Running the tmux relay
 
 `tmux_relay.py` is the first group-chat bridge. It polls the shared
@@ -203,6 +224,15 @@ Start work CLIs too only when you want separate implementation panes:
 ```bash
 python3 tools/collab_mcp/setup_tmux_workroom.py --start-work
 ```
+
+`setup_tmux_workroom.py` launches the four LLM panes in no-prompt
+permission mode by default:
+
+- Claude: `claude --dangerously-skip-permissions`
+- Codex: `codex --dangerously-bypass-approvals-and-sandbox`
+
+This affects newly started panes only. Restart existing Claude/Codex panes
+when the permission mode needs to change for already running sessions.
 
 Inspect targets:
 
