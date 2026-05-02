@@ -137,11 +137,27 @@ curl -s -b cookies.txt -H 'Content-Type: application/json' -X POST \
   http://127.0.0.1:7879/agent_status
 ```
 
-Validation: `agent` must be `claude`/`codex`/`pi`; `percent` is 0..100;
-`activity` capped at 240 chars; `topic` capped at 120 chars. Auth uses
+Validation: `agent` is one of `claude`, `codex`, `pi`, `claude-chat`,
+`claude-work`, `codex-chat`, `codex-work`; `percent` is 0..100; `activity`
+capped at 240 chars; `topic` capped at 120 chars. Auth uses
 `COLLAB_ROOM_TOKEN` via the same browser cookie or by adding the cookie
 header to the curl call. The pill turns gray after 5 minutes without an
 update.
+
+The right sidebar's "Agents · 4 panes" panel shows one card per work pane
+(`claude-chat`, `claude-work`, `codex-chat`, `codex-work`) with a percent
+bar, current activity, topic, and freshness tick. Cards default to a
+dashed placeholder when no row exists yet; if only a legacy `claude` /
+`codex` row is present, both that base agent's chat and work cards mirror
+it until the panes start posting separately. Post pane-aware updates so
+PI can see who is doing what at a glance:
+
+```bash
+curl -fsS -b "collab_room_token=acs-room" \
+     -H "Content-Type: application/json" \
+     -X POST --data '{"agent":"claude-work","percent":42,"activity":"editing room.py","topic":"workroom-supervisor-app"}' \
+     http://127.0.0.1:7879/agent_status
+```
 
 ## Running the app-style room on macOS
 

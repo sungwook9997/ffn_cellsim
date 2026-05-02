@@ -235,12 +235,31 @@ def _agents_to_dict(agents: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
     return out
 
 
+_AGENT_VALUES = {
+    "claude", "codex", "pi",
+    "claude-chat", "claude-work",
+    "codex-chat", "codex-work",
+}
+
+
+def _agent_base(agent: str) -> str:
+    """Map a pane-aware agent value to its base agent (claude/codex/pi)."""
+    if agent.startswith("claude"):
+        return "claude"
+    if agent.startswith("codex"):
+        return "codex"
+    return agent
+
+
 def _upsert_agent_status(
     agent: str, percent: int, activity: str, topic: str = ""
 ) -> dict[str, Any]:
     agent = _require_nonempty(agent, "agent").lower()
-    if agent not in {"claude", "codex", "pi"}:
-        raise ValueError("agent must be one of claude/codex/pi")
+    if agent not in _AGENT_VALUES:
+        raise ValueError(
+            "agent must be one of "
+            "claude/codex/pi/claude-chat/claude-work/codex-chat/codex-work"
+        )
     try:
         percent_i = int(percent)
     except (TypeError, ValueError) as exc:
@@ -393,6 +412,10 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
       </form>
     </section>
     <aside class="sidebar" id="sidebar">
+      <section class="panel">
+        <h2>Agents · 4 panes</h2>
+        <div class="agent-cards" id="agent-cards"></div>
+      </section>
       <section class="panel">
         <h2>Active Claims</h2>
         <ul id="claims-list"><li class="empty">None</li></ul>
@@ -874,6 +897,68 @@ nav { display: flex; gap: 8px; }
   padding: 14px 14px 24px;
 }
 .sidebar.hidden { display: none; }
+.agent-cards { display: flex; flex-direction: column; gap: 8px; }
+.agent-card {
+  background: #f6f8fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  gap: 4px;
+  padding: 8px 10px;
+  position: relative;
+}
+.agent-card.placeholder { background: transparent; border-style: dashed; }
+.agent-card.fresh { box-shadow: 0 0 0 2px rgba(36,107,254,0.18); }
+.agent-card.stale { opacity: 0.55; }
+.agent-card .head {
+  align-items: baseline;
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+.agent-card .head .name { font-weight: 700; }
+.agent-card .head .name.claude { color: var(--claude-tag); }
+.agent-card .head .name.codex { color: var(--codex-tag); }
+.agent-card .head .name.pi { color: var(--pi-tag); }
+.agent-card .head .role {
+  background: rgba(0,0,0,0.06);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+}
+.agent-card .head .pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.agent-card .progress {
+  background: rgba(0,0,0,0.07);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+.agent-card .progress > .bar {
+  background: var(--claude-tag);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.agent-card.codex .progress > .bar { background: var(--codex-tag); }
+.agent-card.pi .progress > .bar { background: var(--pi-tag); }
+.agent-card .activity {
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.agent-card .meta {
+  color: var(--muted);
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  justify-content: space-between;
+}
 .panel { display: flex; flex-direction: column; }
 .panel ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .panel li {
@@ -954,6 +1039,7 @@ JS = r"""
   var jumpCount = document.getElementById("jump-count");
   var sidebar = document.getElementById("sidebar");
   var toggleSidebar = document.getElementById("toggle-sidebar");
+  var agentCardsEl = document.getElementById("agent-cards");
   var composer = document.getElementById("composer");
   var bodyEl = document.getElementById("composer-body");
   var sendBtn = document.getElementById("composer-send");
@@ -1238,6 +1324,106 @@ JS = r"""
     });
   }
 
+  var PANE_ORDER = ["claude-chat", "claude-work", "codex-chat", "codex-work"];
+
+  function paneBase(name) {
+    if (name && name.indexOf("claude") === 0) return "claude";
+    if (name && name.indexOf("codex") === 0) return "codex";
+    if (name === "pi") return "pi";
+    return "other";
+  }
+
+  function paneRole(name) {
+    if (!name) return "";
+    var i = name.indexOf("-");
+    return i > 0 ? name.slice(i + 1) : "";
+  }
+
+  function buildAgentCard(name, agent, elapsedSinceFetch) {
+    var card = document.createElement("div");
+    var base = paneBase(name);
+    var role = paneRole(name);
+
+    var age = null;
+    if (agent && agent.age_seconds != null) {
+      age = agent.age_seconds + elapsedSinceFetch;
+    }
+    var staleness = "placeholder";
+    if (agent) {
+      staleness = "fresh";
+      if (age == null || age > 300) staleness = "stale";
+      else if (age > 60) staleness = "";
+    }
+    card.className = "agent-card " + base + (staleness ? " " + staleness : "");
+
+    var head = document.createElement("div");
+    head.className = "head";
+
+    var nameEl = document.createElement("span");
+    nameEl.className = "name " + base;
+    nameEl.textContent = name;
+    head.appendChild(nameEl);
+
+    if (role) {
+      var roleEl = document.createElement("span");
+      roleEl.className = "role";
+      roleEl.textContent = role;
+      head.appendChild(roleEl);
+    }
+
+    var pct = document.createElement("span");
+    pct.className = "pct";
+    pct.textContent = agent ? ((agent.percent || 0) + "%") : "—";
+    head.appendChild(pct);
+    card.appendChild(head);
+
+    var progress = document.createElement("div");
+    progress.className = "progress";
+    var bar = document.createElement("div");
+    bar.className = "bar";
+    var pctValue = agent ? Math.max(0, Math.min(100, agent.percent || 0)) : 0;
+    bar.style.width = pctValue + "%";
+    progress.appendChild(bar);
+    card.appendChild(progress);
+
+    var activity = document.createElement("div");
+    activity.className = "activity";
+    activity.textContent = agent ? (agent.activity || "(idle)") : "(no status yet)";
+    card.appendChild(activity);
+
+    var meta = document.createElement("div");
+    meta.className = "meta";
+    var topicEl = document.createElement("span");
+    topicEl.textContent = agent && agent.topic ? "[" + agent.topic + "]" : "";
+    var ageEl = document.createElement("span");
+    ageEl.textContent = ageLabel(age);
+    meta.appendChild(topicEl);
+    meta.appendChild(ageEl);
+    card.appendChild(meta);
+
+    return card;
+  }
+
+  function renderAgentCards(agents) {
+    if (agents) state.agents = agents;
+    if (!agentCardsEl) return;
+    agentCardsEl.innerHTML = "";
+    var elapsedSinceFetch = Math.floor((Date.now() - state.agentsFetchedAt) / 1000);
+    var byName = {};
+    (state.agents || []).forEach(function (a) { byName[a.agent] = a; });
+    PANE_ORDER.forEach(function (paneName) {
+      var direct = byName[paneName];
+      // Backward compat: when only the legacy "claude"/"codex" row exists,
+      // mirror it onto both chat and work cards so the sidebar shows
+      // something useful until commit#5 splits the heartbeats.
+      if (!direct) {
+        var base = paneBase(paneName);
+        if (byName[base]) direct = byName[base];
+      }
+      agentCardsEl.appendChild(buildAgentCard(paneName, direct, elapsedSinceFetch));
+    });
+  }
+
   function renderClaims(claims) {
     claimsList.innerHTML = "";
     if (!claims.length) {
@@ -1319,6 +1505,7 @@ JS = r"""
         renderArtifacts(data.artifacts || []);
         state.agentsFetchedAt = Date.now();
         renderAgents(data.agents || []);
+        renderAgentCards();
       })
       .catch(function (err) {
         // network blip — try again next tick
@@ -1395,12 +1582,13 @@ JS = r"""
   renderClaims(initial.claims || []);
   renderArtifacts(initial.artifacts || []);
   renderAgents(initial.agents || []);
+  renderAgentCards();
   scrollToBottom();
   autoresize(bodyEl);
 
   setInterval(poll, 3000);
-  // Re-render agent strip every 10s so age labels tick without a server roundtrip.
-  setInterval(function () { renderAgents(); }, 10000);
+  // Re-render agent strip + cards every 10s so age labels tick without a server roundtrip.
+  setInterval(function () { renderAgents(); renderAgentCards(); }, 10000);
 })();
 """
 
