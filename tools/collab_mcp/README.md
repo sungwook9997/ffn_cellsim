@@ -15,6 +15,17 @@ limited to message append/read, topic claim/release, status query, and
 artifact-pointer announcement. GPU job launches must go through a
 separately-approved wrapper added in a later iteration.
 
+`room.py` adds a browser-facing PI / Claude / Codex room over the same
+SQLite DB. It is also message-only: the browser can view the timeline,
+active claims, artifact pointers, and post PI messages, but it cannot
+run commands or read artifact contents.
+
+`launch_workroom_mac.command` opens the same room as a local app-style
+Chrome window on macOS. It starts the room server if needed, then opens
+`http://127.0.0.1:7879/` in Chrome app mode. `desktop_room.py` is an
+experimental Tkinter client kept as a fallback, but macOS system Tk can
+render unreliably on some machines.
+
 ## Tools
 
 | Tool | Purpose |
@@ -45,6 +56,9 @@ All settings come from environment variables; nothing is committed.
 | `COLLAB_MCP_DB`    | no  | `~/.acs-collab/inbox.db` | SQLite file (server-local). |
 | `COLLAB_MCP_LEDGER`| no  | unset | If set, every `send` appends to this file. Recommended: `<repo>/docs/claude_codex_log.md` on the host machine. |
 | `COLLAB_MCP_AUTHORS`| no | `claude,codex` | Comma-separated allowlist. |
+| `COLLAB_ROOM_BIND` | no | `127.0.0.1:7879` | Browser room listen address. Use `0.0.0.0:<port>` only behind Tailscale/firewall. |
+| `COLLAB_ROOM_TOKEN` | no | `COLLAB_MCP_TOKEN` | Browser login token. Set separately if PI should not use the MCP bearer token. |
+| `COLLAB_ROOM_AUTHOR` | no | `pi` | Author label for browser-submitted messages. |
 
 Per-request authentication / identity (clients send these headers):
 
@@ -79,6 +93,116 @@ X-Collab-Author: claude   # or 'codex'
 5. Allow inbound TCP 7878 on the Tailscale interface only (not the
    public network). Codex confirms the firewall rule with PI before
    committing it.
+
+## Running the browser room
+
+Run this on the same host as the MCP server so both processes share
+`COLLAB_MCP_DB` and `COLLAB_MCP_LEDGER`.
+
+```powershell
+$env:COLLAB_MCP_DB = "$HOME\.acs-collab\inbox.db"
+$env:COLLAB_MCP_LEDGER = "C:\Users\sw1\ActiveCellSim\docs\claude_codex_log.md"
+$env:COLLAB_ROOM_TOKEN = "<browser-login-token>"
+$env:COLLAB_ROOM_BIND = "127.0.0.1:7879"
+python tools\collab_mcp\room.py
+```
+
+For Tailscale browser access from PI devices:
+
+```powershell
+# Use only after restricting inbound access to Tailscale/private profile.
+$env:COLLAB_ROOM_BIND = "0.0.0.0:7879"
+python tools\collab_mcp\room.py
+```
+
+Open `http://<windows-tailscale-name>:7879/` in a browser and enter
+`COLLAB_ROOM_TOKEN`. PI messages are written as author `pi`, addressed
+to `claude,codex`, and are visible to both LLM clients through normal
+MCP `read()` calls.
+
+## Running the app-style room on macOS
+
+From Finder, double-click:
+
+```text
+tools/collab_mcp/launch_workroom_mac.command
+```
+
+Or from Terminal:
+
+```bash
+tools/collab_mcp/launch_workroom_mac.command
+```
+
+Defaults:
+
+```text
+URL:   http://127.0.0.1:7879/
+Token: acs-room
+DB:    ~/.acs-collab/inbox.db
+Log:   docs/claude_codex_log.md
+```
+
+This is the recommended local surface on the current Mac. It is still
+message-only and writes to the same DB/ledger as MCP.
+
+## Building the macOS .app bundle
+
+For a Dock-pinnable native app surface that wraps the same browser room,
+build the `.app` bundle once:
+
+```bash
+python3 tools/collab_mcp/build_workroom_app.py
+```
+
+Defaults:
+
+```text
+output:   ~/Applications/ACSWorkroom.app
+name:     ACSWorkroom
+bundleId: com.activecellsim.workroom
+```
+
+The build is stdlib-only (no Xcode, no extra packages). The launcher
+inside the bundle is the same zsh script as `launch_workroom_mac.command`,
+with the repo root baked in at build time. Re-run the build script if
+the repo is moved.
+
+Override knobs:
+
+```bash
+python3 tools/collab_mcp/build_workroom_app.py \
+    --output /Applications \
+    --name ACSWorkroom \
+    --bundle-id com.activecellsim.workroom
+```
+
+Once built, double-click the .app from Finder, drag it to the Dock for
+a one-click launch, or run `open ~/Applications/ACSWorkroom.app` from
+the terminal.
+
+## Running the experimental Tk desktop room
+
+On macOS or Windows, from the repo root:
+
+```powershell
+$env:COLLAB_MCP_LEDGER = "C:\Users\sw1\ActiveCellSim\docs\claude_codex_log.md"
+python tools\collab_mcp\desktop_room.py
+```
+
+On macOS zsh:
+
+```bash
+COLLAB_MCP_LEDGER=/Users/sw1/ActiveCellSim/docs/claude_codex_log.md \
+python3 tools/collab_mcp/desktop_room.py
+```
+
+The desktop app reads `COLLAB_MCP_DB` if set; otherwise it uses
+`~/.acs-collab/inbox.db`, matching the MCP server default. It does not
+start Claude or Codex by itself. It is the local workroom surface; the
+LLM clients still need to read the MCP queue or run a later relay.
+On this Mac, the system Tk window can appear blank; use the app-style
+Chrome launcher above when that happens.
 
 ## Connecting Claude Code (Mac client)
 
