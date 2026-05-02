@@ -31,8 +31,29 @@ case "$action" in
       echo "launcher not executable: $REPO_ROOT/tools/collab_mcp/launch_workroom_mac.command" >&2
       exit 1
     fi
+    if [[ -z "${COLLAB_MCP_TOKEN:-}" ]]; then
+      echo "COLLAB_MCP_TOKEN unset in current shell — refuse to install a plist with an empty token." >&2
+      echo "Source ~/.zshenv (or export COLLAB_MCP_TOKEN=...) and re-run this installer." >&2
+      exit 1
+    fi
+    if [[ ! -x "$REPO_ROOT/.venv-collab/bin/python" ]]; then
+      echo "venv missing: $REPO_ROOT/.venv-collab/bin/python — bootstrap the collab venv before installing." >&2
+      exit 1
+    fi
+    if ! "$REPO_ROOT/.venv-collab/bin/python" -c 'import mcp' >/dev/null 2>&1; then
+      echo "$REPO_ROOT/.venv-collab/bin/python cannot import 'mcp' — run 'pip install mcp[cli]>=1.2' inside the venv before installing." >&2
+      exit 1
+    fi
     mkdir -p "$TARGET_DIR" /tmp/acs-collab
-    sed "s|__REPO_ROOT__|$REPO_ROOT|g" "$TEMPLATE" > "$TARGET"
+    # Two-pass substitution: __REPO_ROOT__ first, then __COLLAB_MCP_TOKEN__.
+    # Token is read from the current shell environment, never written
+    # back into the in-repo template, so the secret only lives in the
+    # rendered file under ~/Library/LaunchAgents/.
+    umask 077
+    sed -e "s|__REPO_ROOT__|$REPO_ROOT|g" \
+        -e "s|__COLLAB_MCP_TOKEN__|$COLLAB_MCP_TOKEN|g" \
+        "$TEMPLATE" > "$TARGET"
+    chmod 600 "$TARGET"
     plutil -lint "$TARGET" >/dev/null
 
     uid="$(id -u)"

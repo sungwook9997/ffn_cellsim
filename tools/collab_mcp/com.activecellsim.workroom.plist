@@ -43,10 +43,23 @@
     <key>StandardErrorPath</key>
     <string>/tmp/acs-collab/launchd.err</string>
 
+    <!--
+      EnvironmentVariables — substituted at install time by
+      install_launchd.sh. Pinning COLLAB_MCP_PYTHON in plist (rather than
+      depending on the user's interactive zshenv being loaded) prevents
+      the boot-time fallback to /usr/bin/python3 that caused the silent
+      ModuleNotFoundError on 2026-05-02. COLLAB_MCP_TOKEN is also pinned
+      here so the launcher's MCP-server step is never gated on a shell
+      rc-file the launchd job does not source.
+    -->
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>COLLAB_MCP_PYTHON</key>
+        <string>__REPO_ROOT__/.venv-collab/bin/python</string>
+        <key>COLLAB_MCP_TOKEN</key>
+        <string>__COLLAB_MCP_TOKEN__</string>
     </dict>
 
     <key>ProcessType</key>

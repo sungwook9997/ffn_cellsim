@@ -99,10 +99,22 @@ def _init_schema() -> None:
                 percent INTEGER NOT NULL DEFAULT 0,
                 activity TEXT NOT NULL DEFAULT '',
                 topic TEXT NOT NULL DEFAULT '',
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                last_active_at TEXT
             );
             """
         )
+        # Idempotent migration for databases that pre-date the
+        # last_active_at column. Existing rows are seeded from updated_at
+        # so heartbeat-only refreshes don't regress live agents into the
+        # "asleep" state on first room.py boot after upgrade.
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(agent_status)").fetchall()}
+        if "last_active_at" not in cols:
+            conn.execute("ALTER TABLE agent_status ADD COLUMN last_active_at TEXT")
+            conn.execute(
+                "UPDATE agent_status SET last_active_at = updated_at "
+                "WHERE last_active_at IS NULL"
+            )
 
 
 def _now_human() -> str:
@@ -200,28 +212,37 @@ def _fetch_sidebar() -> dict[str, Any]:
             "SELECT author, last_seen_id FROM cursors ORDER BY author"
         ).fetchall()
         agents = conn.execute(
-            "SELECT agent, percent, activity, topic, updated_at FROM agent_status "
-            "ORDER BY agent"
+            "SELECT agent, percent, activity, topic, updated_at, last_active_at "
+            "FROM agent_status ORDER BY agent"
         ).fetchall()
     return {"claims": claims, "artifacts": artifacts, "cursors": cursors, "agents": agents}
+
+
+def _parse_iso(ts: str | None, tzinfo) -> dt.datetime | None:
+    if not ts:
+        return None
+    try:
+        return dt.datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S%z")
+    except (ValueError, TypeError):
+        try:
+            parsed = dt.datetime.strptime(ts[:16], "%Y-%m-%d %H:%M")
+            return parsed.replace(tzinfo=tzinfo)
+        except (ValueError, TypeError):
+            return None
 
 
 def _agents_to_dict(agents: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
     out = []
     now = dt.datetime.now().astimezone()
-    for agent, percent, activity, topic, updated_at in agents:
-        age_seconds = None
-        parsed = None
-        try:
-            parsed = dt.datetime.strptime(updated_at, "%Y-%m-%dT%H:%M:%S%z")
-        except (ValueError, TypeError):
-            try:
-                parsed = dt.datetime.strptime(updated_at[:16], "%Y-%m-%d %H:%M")
-                parsed = parsed.replace(tzinfo=now.tzinfo)
-            except (ValueError, TypeError):
-                parsed = None
-        if parsed is not None:
-            age_seconds = max(0, int((now - parsed).total_seconds()))
+    for row in agents:
+        agent, percent, activity, topic, updated_at = row[:5]
+        last_active_at = row[5] if len(row) > 5 else None
+        parsed = _parse_iso(updated_at, now.tzinfo)
+        age_seconds = max(0, int((now - parsed).total_seconds())) if parsed else None
+        active_parsed = _parse_iso(last_active_at, now.tzinfo)
+        active_age_seconds = (
+            max(0, int((now - active_parsed).total_seconds())) if active_parsed else None
+        )
         out.append(
             {
                 "agent": agent,
@@ -230,6 +251,8 @@ def _agents_to_dict(agents: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
                 "topic": topic or "",
                 "updated_at": updated_at,
                 "age_seconds": age_seconds,
+                "last_active_at": last_active_at,
+                "active_age_seconds": active_age_seconds,
             }
         )
     return out
@@ -252,7 +275,7 @@ def _agent_base(agent: str) -> str:
 
 
 def _upsert_agent_status(
-    agent: str, percent: int, activity: str, topic: str = ""
+    agent: str, percent: int, activity: str, topic: str = "", heartbeat: bool = False
 ) -> dict[str, Any]:
     agent = _require_nonempty(agent, "agent").lower()
     if agent not in _AGENT_VALUES:
@@ -269,16 +292,38 @@ def _upsert_agent_status(
     activity = (activity or "").strip()[:240]
     topic = (topic or "").strip()[:120]
     ts = _now_iso_seconds()
+    # last_active_at advances only on real LLM/operator posts. Daemon
+    # heartbeat refreshes (heartbeat=true) bump updated_at so the
+    # freshness color stays green, but leave last_active_at untouched so
+    # the sidebar can flag panes that haven't actually moved.
     with closing(_db()) as conn:
-        conn.execute(
-            "INSERT INTO agent_status(agent, percent, activity, topic, updated_at) "
-            "VALUES(?,?,?,?,?) "
-            "ON CONFLICT(agent) DO UPDATE SET "
-            "percent=excluded.percent, activity=excluded.activity, "
-            "topic=excluded.topic, updated_at=excluded.updated_at",
-            (agent, percent_i, activity, topic, ts),
-        )
-    return {"agent": agent, "percent": percent_i, "activity": activity, "topic": topic, "updated_at": ts}
+        if heartbeat:
+            conn.execute(
+                "INSERT INTO agent_status(agent, percent, activity, topic, updated_at, last_active_at) "
+                "VALUES(?,?,?,?,?,NULL) "
+                "ON CONFLICT(agent) DO UPDATE SET "
+                "percent=excluded.percent, activity=excluded.activity, "
+                "topic=excluded.topic, updated_at=excluded.updated_at",
+                (agent, percent_i, activity, topic, ts),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO agent_status(agent, percent, activity, topic, updated_at, last_active_at) "
+                "VALUES(?,?,?,?,?,?) "
+                "ON CONFLICT(agent) DO UPDATE SET "
+                "percent=excluded.percent, activity=excluded.activity, "
+                "topic=excluded.topic, updated_at=excluded.updated_at, "
+                "last_active_at=excluded.last_active_at",
+                (agent, percent_i, activity, topic, ts, ts),
+            )
+    return {
+        "agent": agent,
+        "percent": percent_i,
+        "activity": activity,
+        "topic": topic,
+        "updated_at": ts,
+        "heartbeat": bool(heartbeat),
+    }
 
 
 def _message_to_dict(row: tuple[Any, ...]) -> dict[str, Any]:
@@ -547,6 +592,7 @@ class RoomHandler(BaseHTTPRequestHandler):
             percent=payload.get("percent", 0),
             activity=str(payload.get("activity", "")),
             topic=str(payload.get("topic", "")),
+            heartbeat=bool(payload.get("heartbeat", False)),
         )
         self._send_json({"ok": True, **result})
 
@@ -928,6 +974,19 @@ nav { display: flex; gap: 8px; }
 .agent-card.tier-stale  .meta > :last-child { color: #b3261e; font-weight: 700; }
 .agent-card.fresh { box-shadow: 0 0 0 2px rgba(36,107,254,0.18); }
 .agent-card.stale { opacity: 0.55; }
+.agent-card .awake-badge {
+  align-self: flex-start;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+.agent-card .awake-badge.awake  { background: rgba(46,160,67,0.18); color: #1f7a32; }
+.agent-card .awake-badge.idle   { background: rgba(212,154,0,0.22); color: #8a6300; }
+.agent-card .awake-badge.asleep { background: rgba(200,40,40,0.18); color: #b3261e; }
 .agent-card .head {
   align-items: baseline;
   display: flex;
@@ -1408,6 +1467,42 @@ JS = r"""
     activity.className = "activity";
     activity.textContent = agent ? (agent.activity || "(idle)") : "(no status yet)";
     card.appendChild(activity);
+
+    // Awake/asleep badge — orthogonal to the freshness tier color above.
+    // Freshness keys off updated_at (heartbeat-refreshed every 30 s);
+    // awake keys off last_active_at (advances only on real LLM/operator
+    // posts), so a chat pane that never woke up after reboot stays red
+    // even while the heartbeat daemon paints the card green.
+    if (agent) {
+      var activeAge = (agent.active_age_seconds == null)
+        ? null
+        : (agent.active_age_seconds + elapsedSinceFetch);
+      var awakeBadge = document.createElement("span");
+      awakeBadge.className = "awake-badge";
+      var role = paneRole(name);
+      if (activeAge == null) {
+        // Never posted real activity since the row was created — for chat
+        // panes this is the post-reboot "waiting for first PI message"
+        // state. Work panes default to awake until they prove otherwise.
+        if (role === "chat") {
+          awakeBadge.classList.add("asleep");
+          awakeBadge.textContent = "asleep · waiting for first PI message";
+        } else {
+          awakeBadge.classList.add("awake");
+          awakeBadge.textContent = "awake";
+        }
+      } else if (activeAge > 1800) {
+        awakeBadge.classList.add("asleep");
+        awakeBadge.textContent = "asleep · " + ageLabel(activeAge);
+      } else if (activeAge > 600) {
+        awakeBadge.classList.add("idle");
+        awakeBadge.textContent = "idle · " + ageLabel(activeAge);
+      } else {
+        awakeBadge.classList.add("awake");
+        awakeBadge.textContent = "awake · " + ageLabel(activeAge);
+      }
+      card.appendChild(awakeBadge);
+    }
 
     var meta = document.createElement("div");
     meta.className = "meta";

@@ -67,8 +67,18 @@ def read_status(agent: str) -> dict | None:
 
 
 def post_status(agent: str, percent: int, activity: str, topic: str) -> None:
+    # heartbeat=True so room.py refreshes updated_at (sidebar freshness
+    # tier) without advancing last_active_at — that field only moves on
+    # real LLM/operator posts, which is what the chat-pane awake/asleep
+    # badge keys off of.
     payload = json.dumps(
-        {"agent": agent, "percent": percent, "activity": activity, "topic": topic}
+        {
+            "agent": agent,
+            "percent": percent,
+            "activity": activity,
+            "topic": topic,
+            "heartbeat": True,
+        }
     ).encode("utf-8")
     req = urllib.request.Request(
         ROOM_URL,
