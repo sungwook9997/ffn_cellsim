@@ -206,6 +206,58 @@ you genuinely need a read-only peek without changing your seen-state.
 This rule is mirrored in the `collab_claude_codex` memory entry so it stays
 loaded even if `CLAUDE.md` is trimmed.
 
+## Chat pane vs work pane discipline (acs-collab tmux)
+
+The acs-collab tmux layout is **two panes per agent**: `claude-chat`
+receives PI messages via the relay, `claude-work` runs long
+implementation/edit/test cycles. Codex mirrors this with `codex-chat` /
+`codex-work`. The split exists so PI never has to wait for an
+implementing agent — the chat pane stays free to acknowledge, route,
+and report status.
+
+**You can tell which pane you are in two ways**:
+- The relay wrapper that delivers each PI message includes
+  `pane=chat work_pane=<your_name>-work`. If you see `pane=chat`, you are
+  the chat instance.
+- Otherwise (no wrapper, e.g. a fresh CLI session not behind the relay,
+  or a session that was directly briefed via `work_briefing.md`),
+  inspect `tmux display -p '#S'` — `*-work` means work pane.
+
+**Hard rules for the chat pane** (no exceptions without explicit PI ask):
+1. **Acknowledge fast, finish nothing big.** Reply within one turn,
+   ideally in 1–3 short sentences plus a `mcp__acs-collab__send` and a
+   `/agent_status` POST. Never start a multi-minute or multi-file edit
+   yourself.
+2. **Dispatch every non-trivial task to the work pane.** Anything
+   beyond a one-line hotfix, a status report, or a question for PI goes
+   to `<your_name>-work` via `/tmp/acs-collab/work_briefing.md`:
+   write a briefing file with the task, decisions, claim status, and
+   heartbeat-cadence expectations, then nudge the work pane to read and
+   execute it. Once dispatched, post a one-line "delegated to
+   `<your_name>-work`" message and stay idle for the next PI message.
+3. **No commits, no `git add`, no destructive ops from chat.** The work
+   pane handles those. Chat pane never amends, force-pushes, kills
+   processes, or restarts servers.
+4. **No claim transfers without notifying PI.** If chat is holding a
+   claim, hand it off in the briefing and explicitly say "claim ownership
+   moves to `<your_name>-work`" in MCP.
+
+**Hard rules for the work pane**:
+1. **Heartbeat aggressively.** `/agent_status` POST every milestone and
+   at minimum every 1–2 minutes during long tasks. Use the pane-aware
+   `agent` value (`claude-work` / `codex-work`) so the sidebar 4-pane
+   panel stays informative.
+2. **Milestone reports via MCP send.** Short, structured: `[<pane> · NN%]
+   <one line>`. Batched, not every 30 seconds.
+3. **Open questions go back to PI through the work pane's MCP send**, not
+   by hijacking the chat pane.
+
+**When PI hands off mid-task**: chat reads PI's instruction, writes
+`/tmp/acs-collab/work_briefing.md`, then triggers the work pane (e.g.
+`tmux send-keys -t <your_name>-work:0.0 -l "Read /tmp/acs-collab/work_briefing.md"
+&& tmux send-keys -t <your_name>-work:0.0 C-m`). Work pane resumes from
+the briefing without bouncing back to chat for clarifications.
+
 ## When in doubt
 - Read `docs/00_project_vision.md` for framing
 - Read `docs/10_dev_roadmap.md` for what to do next

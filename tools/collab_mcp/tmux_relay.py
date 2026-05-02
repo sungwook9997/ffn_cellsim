@@ -150,14 +150,23 @@ def init_cursor_now(relay_name: str) -> int:
 
 
 def wrapper_prompt(message: WorkroomMessage, target_agent: str) -> str:
-    """Return the only text injected into tmux panes."""
+    """Return the only text injected into tmux panes.
+
+    The relay only writes into chat panes (`claude-chat:0.0` /
+    `codex-chat:0.0`), so every wrapper carries `pane=chat` and a
+    `work_pane=<agent>-work` hint. Chat-pane agents must keep replies short
+    and dispatch any non-trivial implementation work to the matching work
+    pane via `/tmp/acs-collab/work_briefing.md`. See `CLAUDE.md` /
+    `AGENTS.md` "Chat pane vs work pane discipline".
+    """
     author = safe_label(message.author)
     addressee = safe_label(message.addressee)
     topic = safe_label(message.topic, max_len=80)
     target_agent = safe_label(target_agent, max_len=20)
     return (
         f": mcp_msg id={message.id} from={author} to={addressee} "
-        f"topic={topic} action=read_acs_collab_mcp_then_send_if_{target_agent}_should_reply"
+        f"topic={topic} pane=chat work_pane={target_agent}-work "
+        f"action=read_acs_collab_mcp_then_send_if_{target_agent}_should_reply"
     )
 
 

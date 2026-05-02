@@ -172,6 +172,45 @@ After writing or modifying a physics/numerics module, **before running it**, per
 ### Failure handling
 A FAIL halts further code work for the current module. Surface the issue to the PI with at least three concrete options (e.g., reduce Δt, switch to implicit, switch to overdamped). Wait for direction before proceeding. Never silently work around a Sanity Gate failure.
 
+## Chat pane vs work pane discipline (acs-collab tmux)
+
+The acs-collab tmux layout is **two panes per agent**: `codex-chat`
+receives PI messages via the relay, `codex-work` runs long
+implementation/review/test cycles. Claude mirrors this with `claude-chat` /
+`claude-work`. The split exists so PI never has to wait for an
+implementing agent — the chat pane stays free to acknowledge, route,
+and report status.
+
+**You can tell which pane you are in two ways**:
+- The relay wrapper that delivers each PI message includes
+  `pane=chat work_pane=<your_name>-work`. If you see `pane=chat`, you are
+  the chat instance.
+- Otherwise (e.g. a session directly briefed via `work_briefing.md`),
+  inspect `tmux display -p '#S'` — `*-work` means work pane.
+
+**Hard rules for the chat pane** (no exceptions without explicit PI ask):
+1. **Acknowledge fast, finish nothing big.** Reply within one turn,
+   ideally in 1–3 short sentences plus an MCP `send` and a `/agent_status`
+   POST. Never start a multi-minute or multi-file edit yourself.
+2. **Dispatch every non-trivial task to the work pane** via
+   `/tmp/acs-collab/work_briefing.md`. Once dispatched, post a one-line
+   "delegated to `<your_name>-work`" and stay idle for the next PI
+   message.
+3. **No commits, no `git add`, no destructive ops from chat.** The work
+   pane handles those.
+4. **No claim transfers without notifying PI.** If chat holds a claim,
+   hand it off in the briefing and announce the transfer via MCP.
+
+**Hard rules for the work pane**:
+1. **Heartbeat aggressively.** `/agent_status` POST every milestone and
+   at minimum every 1–2 minutes during long tasks. Use the pane-aware
+   `agent` value (`codex-work`) so the sidebar 4-pane panel stays
+   informative.
+2. **Milestone reports via MCP `send`.** Short, structured: `[<pane> ·
+   NN%] <one line>`. Batched.
+3. **Open questions go back to PI through the work pane's MCP send**, not
+   by hijacking the chat pane.
+
 ## When in doubt
 - Read `docs/00_project_vision.md` for framing
 - Read `docs/10_dev_roadmap.md` for what to do next
