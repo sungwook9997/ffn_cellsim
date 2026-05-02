@@ -2,9 +2,10 @@
 
 Stdlib-only, no Xcode needed. The bundle's executable is a thin zsh shim that
 delegates to `tools/collab_mcp/launch_workroom_mac.command`, which is the
-single source of truth for full-stack boot (syncthing check, tmux 4 work
-sessions, relay, room.py, Chrome). Re-run this script only when the repo
-moves — the .command file itself can be edited freely without rebuilding.
+single source of truth for full-stack boot (syncthing check, tmux work
+sessions, Windows SSH pane, relay, room.py, Chrome). Re-run this script only
+when the repo moves — the .command file itself can be edited freely without
+rebuilding.
 
 Default output: ~/Applications/ACSWorkroom.app — user-writable, no sudo.
 """

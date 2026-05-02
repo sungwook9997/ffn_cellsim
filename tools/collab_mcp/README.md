@@ -192,9 +192,10 @@ on this Mac:
 1. Syncthing (best-effort: `brew services start syncthing` or `nohup
    syncthing` if installed; skipped if already running).
 2. tmux work sessions — `claude-chat`, `claude-work`, `codex-chat`,
-   `codex-work` — via `setup_tmux_workroom.py --start-chat --start-work`.
+   `codex-work`, and `win-ssh` — via
+   `setup_tmux_workroom.py --start-chat --start-work --start-win-ssh`.
    The setup is idempotent: existing sessions/panes are never killed or
-   renamed; CLIs are only started in panes that are still a plain shell.
+   renamed; CLIs/SSH are only started in panes that are still a plain shell.
 3. `relay` tmux session running `tmux_relay.py` (env vars
    `COLLAB_TMUX_CLAUDE_TARGET` / `COLLAB_TMUX_CODEX_TARGET` default to
    `claude-chat:0.0` / `codex-chat:0.0`).
@@ -227,6 +228,7 @@ claude-chat  receives PI workroom messages
 codex-chat   receives PI workroom messages
 claude-work  long implementation tasks
 codex-work   long review/implementation tasks
+win-ssh      SSH pane to the Windows A5000 workstation
 ```
 
 Create the sessions and launch the chat CLIs:
@@ -239,6 +241,12 @@ Start work CLIs too only when you want separate implementation panes:
 
 ```bash
 python3 tools/collab_mcp/setup_tmux_workroom.py --start-work
+```
+
+Start the Windows SSH pane:
+
+```bash
+python3 tools/collab_mcp/setup_tmux_workroom.py --start-win-ssh
 ```
 
 `setup_tmux_workroom.py` launches the four LLM panes in no-prompt
@@ -357,7 +365,8 @@ The installer renders `tools/collab_mcp/com.activecellsim.workroom.plist`
 (substituting `__REPO_ROOT__` with the current repo path), drops it into
 `~/Library/LaunchAgents/`, and bootstraps it under the GUI domain. From
 the next login onward, `launch_workroom_mac.command` runs once at user
-login, idempotently bringing up syncthing → tmux 4 work sessions →
+login, idempotently bringing up syncthing → tmux work sessions plus
+`win-ssh` →
 relay → room.py → Chrome.
 
 `KeepAlive` is `false` because the launcher exits after kicking off the

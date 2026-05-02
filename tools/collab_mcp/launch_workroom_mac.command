@@ -23,10 +23,10 @@ if ! pgrep -x syncthing >/dev/null 2>&1; then
   fi
 fi
 
-# 2) tmux 4 work sessions (claude-chat, codex-chat, claude-work, codex-work).
+# 2) tmux work sessions (claude-chat, codex-chat, claude-work, codex-work, win-ssh).
 #    setup_tmux_workroom is idempotent: never kills/renames existing sessions
-#    and only starts a CLI in panes that are currently a plain shell.
-python3 -m tools.collab_mcp.setup_tmux_workroom --start-chat --start-work \
+#    and only starts a CLI/SSH command in panes that are currently a plain shell.
+python3 -m tools.collab_mcp.setup_tmux_workroom --start-chat --start-work --start-win-ssh \
   >>"$LOG_DIR/setup_tmux_workroom.log" 2>&1 || true
 
 # 3) Relay session — keeps PI/LLM messages flowing into chat panes.
