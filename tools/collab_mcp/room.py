@@ -67,6 +67,14 @@ ROOM_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 DEFAULT_ROOM = os.environ.get("COLLAB_DEFAULT_ROOM", "design-discussion").strip().lower() or "design-discussion"
 if not ROOM_NAME_RE.match(DEFAULT_ROOM):
     DEFAULT_ROOM = "design-discussion"
+ROOM_PRESETS = tuple(
+    room
+    for room in (
+        part.strip()
+        for part in os.environ.get("COLLAB_ROOM_PRESETS", "design-discussion,implementation-work").split(",")
+    )
+    if room and ROOM_NAME_RE.match(room)
+)
 
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -356,7 +364,7 @@ def _fetch_recent_messages(limit: int = 200, room: str = DEFAULT_ROOM) -> list[t
 
 
 def _fetch_rooms() -> list[str]:
-    rooms = {DEFAULT_ROOM}
+    rooms = {DEFAULT_ROOM, *ROOM_PRESETS}
     with closing(_db()) as conn:
         rooms.update(row[0] for row in conn.execute("SELECT DISTINCT room FROM messages").fetchall())
         rooms.update(row[0] for row in conn.execute("SELECT DISTINCT room FROM claims").fetchall())
