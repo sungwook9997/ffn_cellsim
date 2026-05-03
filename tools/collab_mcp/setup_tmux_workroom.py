@@ -167,8 +167,20 @@ def ensure_session(name: str, cwd: pathlib.Path, command: str | None = None) -> 
     args = ["new-session", "-d", "-s", name, "-c", str(cwd)]
     if command is not None:
         args.append(command)
-    tmux(*args)
-    return True
+    result = tmux(*args, check=False)
+    if result.returncode == 0:
+        return True
+    # Same-room launchers can race: both see no session, one creates it,
+    # the other gets tmux's duplicate-session failure. Treat the loser as
+    # idempotent success if the target now exists.
+    if has_session(name):
+        return False
+    raise subprocess.CalledProcessError(
+        result.returncode,
+        ["tmux", *args],
+        output=result.stdout,
+        stderr=result.stderr,
+    )
 
 
 def pane_command(target: str) -> str:

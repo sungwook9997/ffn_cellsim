@@ -46,6 +46,81 @@ SENTINEL_TOKEN="$LOG_DIR/.mcp_token_unset"
 SENTINEL_SELFCHECK="$LOG_DIR/.selfcheck_failed"
 rm -f "$SENTINEL_PYTHON" "$SENTINEL_MCP" "$SENTINEL_TOKEN" "$SENTINEL_SELFCHECK"
 
+# Tmux session creation race-guard. Two launchers can both pass
+# `tmux has-session` for a singleton (mcp / room) before either creates
+# it; the loser then crashes `tmux new-session "duplicate session: X"`
+# under `set -e` and kills the launcher. We serialize the create through
+# a per-name lock file (shlock), and additionally swallow the
+# duplicate-session error so a concurrent winner does not poison the
+# loser. Idempotency invariant: after this function returns, the
+# session exists or stderr explains why it could not be created.
+SHARED_LOCK_DIR="$SHARED_LOG_DIR/locks"
+mkdir -p "$SHARED_LOCK_DIR"
+ensure_tmux_session_locked() {
+  # $1=session_name $2=cwd $3=command (single string, will be passed to
+  # `tmux new-session` as the command argument).
+  local name="$1" cwd="$2" cmd="$3"
+  if tmux has-session -t "$name" 2>/dev/null; then
+    return 0
+  fi
+  local lock="$SHARED_LOCK_DIR/${name}.lock"
+  # Use shlock when available (BSD/macOS); fall back to a best-effort
+  # mkdir-based lock everywhere else. Both are advisory — the
+  # has-session re-check below is the actual correctness guarantee.
+  local locked=0
+  if command -v shlock >/dev/null 2>&1; then
+    if shlock -p $$ -f "$lock" >/dev/null 2>&1; then
+      locked=1
+    fi
+  else
+    if mkdir "${lock}.d" 2>/dev/null; then
+      locked=1
+    fi
+  fi
+  if [[ "$locked" -ne 1 ]]; then
+    # Another launcher holds the lock. Spin up to ~3 s for them to
+    # finish creating the session.
+    local _i
+    for _i in 1 2 3 4 5 6; do
+      if tmux has-session -t "$name" 2>/dev/null; then
+        return 0
+      fi
+      sleep 0.5
+    done
+    echo "[FAIL-LOUD] could not acquire tmux session lock for $name and session did not appear" >&2
+    return 1
+  fi
+  # We hold the lock. Re-check, then create.
+  if ! tmux has-session -t "$name" 2>/dev/null; then
+    if ! tmux new-session -d -s "$name" -c "$cwd" "$cmd" 2>/tmp/.acs_tmux_err.$$; then
+      local err
+      err=$(cat /tmp/.acs_tmux_err.$$ 2>/dev/null || true)
+      rm -f /tmp/.acs_tmux_err.$$
+      if echo "$err" | grep -q -i "duplicate session"; then
+        : # raced; the winner's session is fine
+      else
+        echo "[FAIL-LOUD] tmux new-session $name failed: $err" >&2
+        if command -v shlock >/dev/null 2>&1; then
+          rm -f "$lock"
+        else
+          rmdir "${lock}.d" 2>/dev/null || true
+        fi
+        return 1
+      fi
+    fi
+    rm -f /tmp/.acs_tmux_err.$$
+  fi
+  if command -v shlock >/dev/null 2>&1; then
+    rm -f "$lock"
+  else
+    rmdir "${lock}.d" 2>/dev/null || true
+  fi
+  if ! tmux has-session -t "$name" 2>/dev/null; then
+    echo "[FAIL-LOUD] tmux session $name was not present after create attempt" >&2
+    return 1
+  fi
+}
+
 # Best-effort desktop notification. Always returns 0 so a missing
 # osascript (e.g., headless ssh) never aborts the launcher.
 notify() {
@@ -124,10 +199,8 @@ elif [[ -z "${COLLAB_MCP_TOKEN:-}" ]]; then
   printf 'token unset at boot\n' >"$SENTINEL_TOKEN"
   notify "ACS Collab Workroom [$WORKROOM]" "MCP startup BLOCKED" "COLLAB_MCP_TOKEN missing in launchd env — see launchd.err"
 else
-  if ! tmux has-session -t mcp 2>/dev/null; then
-    tmux new-session -d -s mcp -c "$REPO_ROOT" \
-      "'$COLLAB_PYTHON' tools/collab_mcp/server.py >>'$SHARED_LOG_DIR/mcp.log' 2>&1"
-  fi
+  ensure_tmux_session_locked "mcp" "$REPO_ROOT" \
+    "'$COLLAB_PYTHON' tools/collab_mcp/server.py >>'$SHARED_LOG_DIR/mcp.log' 2>&1"
   MCP_UP=0
   for _i in 1 2 3 4 5 6 7 8 9 10; do
     if curl -sS --max-time 1 -o /dev/null "http://127.0.0.1:7878/mcp/" >/dev/null 2>&1; then
@@ -158,23 +231,19 @@ python3 -m tools.collab_mcp.setup_tmux_workroom \
 #    THIS workroom. Each workroom gets its own relay so its DB cursor
 #    (relay_cursors row) does not collide with another workroom's relay.
 RELAY_SESSION="${WORKROOM}-relay"
-if ! tmux has-session -t "$RELAY_SESSION" 2>/dev/null; then
-  tmux new-session -d -s "$RELAY_SESSION" -c "$REPO_ROOT" \
-    "python3 tools/collab_mcp/tmux_relay.py \
-       --relay-name '$WORKROOM' \
-       --workroom '$WORKROOM' \
-       --claude-target '${WORKROOM}-claude-chat:0.0' \
-       --codex-target '${WORKROOM}-codex-chat:0.0' \
-       --include-llm-messages \
-       >>'$LOG_DIR/tmux_relay.log' 2>&1"
-fi
+ensure_tmux_session_locked "$RELAY_SESSION" "$REPO_ROOT" \
+  "python3 tools/collab_mcp/tmux_relay.py \
+     --relay-name '$WORKROOM' \
+     --workroom '$WORKROOM' \
+     --claude-target '${WORKROOM}-claude-chat:0.0' \
+     --codex-target '${WORKROOM}-codex-chat:0.0' \
+     --include-llm-messages \
+     >>'$LOG_DIR/tmux_relay.log' 2>&1"
 
 # 5) room.py — browser UI server (shared singleton, port 7879).
 if ! curl -fsS "http://127.0.0.1:7879/" >/dev/null 2>&1; then
-  if ! tmux has-session -t room 2>/dev/null; then
-    tmux new-session -d -s room -c "$REPO_ROOT" \
-      "python3 tools/collab_mcp/room.py >>'$SHARED_LOG_DIR/room.log' 2>&1"
-  fi
+  ensure_tmux_session_locked "room" "$REPO_ROOT" \
+    "python3 tools/collab_mcp/room.py >>'$SHARED_LOG_DIR/room.log' 2>&1"
   for _i in 1 2 3 4 5 6 7 8 9 10; do
     if curl -fsS "http://127.0.0.1:7879/" >/dev/null 2>&1; then
       break
