@@ -411,3 +411,83 @@ def test_state_rejects_non_finite_vertices():
     with pytest.raises(ActiveContourParametersError) as info:
         ActiveContourState(cell_id="c", vertices_xy_um=bad, params=params)
     assert info.value.failure_kind == "non_finite_vertices"
+
+
+def test_state_rejects_empty_cell_id():
+    params = _params(n_vertices=8).validate()
+    verts = regular_polygon_vertices(8, radius_um=1.0)
+    with pytest.raises(ActiveContourParametersError) as info:
+        ActiveContourState(cell_id="   ", vertices_xy_um=verts, params=params)
+    assert info.value.failure_kind == "cell_id_underspecified"
+
+
+def test_state_rejects_non_string_cell_id():
+    params = _params(n_vertices=8).validate()
+    verts = regular_polygon_vertices(8, radius_um=1.0)
+    with pytest.raises(ActiveContourParametersError) as info:
+        ActiveContourState(cell_id=42, vertices_xy_um=verts, params=params)  # type: ignore[arg-type]
+    assert info.value.failure_kind == "cell_id_underspecified"
+
+
+def test_state_rejects_negative_step_count():
+    params = _params(n_vertices=8).validate()
+    verts = regular_polygon_vertices(8, radius_um=1.0)
+    with pytest.raises(ActiveContourParametersError) as info:
+        ActiveContourState(
+            cell_id="c", vertices_xy_um=verts, params=params, step_count=-1
+        )
+    assert info.value.failure_kind == "step_count_underspecified"
+
+
+def test_state_rejects_bool_step_count():
+    params = _params(n_vertices=8).validate()
+    verts = regular_polygon_vertices(8, radius_um=1.0)
+    with pytest.raises(ActiveContourParametersError) as info:
+        ActiveContourState(
+            cell_id="c",
+            vertices_xy_um=verts,
+            params=params,
+            step_count=True,  # type: ignore[arg-type]
+        )
+    assert info.value.failure_kind == "step_count_underspecified"
+
+
+def test_state_rejects_self_intersecting_polygon_at_construction():
+    """Codex MCP id=1016: pre-step MeasurementBoundary validation is
+    enforced at __post_init__ so a self-intersecting initial polygon
+    cannot be advanced one step before the contract fires."""
+
+    from acs.v2.measurement_boundary import MeasurementBoundaryError
+
+    params = _params(n_vertices=4).validate()
+    bowtie = np.array(
+        [
+            [0.0, 0.0],
+            [2.0, 2.0],
+            [0.0, 2.0],
+            [2.0, 0.0],
+        ]
+    )
+    with pytest.raises(MeasurementBoundaryError) as info:
+        ActiveContourState(cell_id="c", vertices_xy_um=bowtie, params=params)
+    assert info.value.failure_kind in {"self_intersection", "wrong_orientation"}
+
+
+def test_state_rejects_cw_polygon_at_construction():
+    """A clockwise polygon (negative shoelace) is rejected at construction
+    rather than silently advanced through ``step``."""
+
+    from acs.v2.measurement_boundary import MeasurementBoundaryError
+
+    params = _params(n_vertices=4).validate()
+    cw_square = np.array(
+        [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 0.0],
+        ]
+    )
+    with pytest.raises(MeasurementBoundaryError) as info:
+        ActiveContourState(cell_id="c", vertices_xy_um=cw_square, params=params)
+    assert info.value.failure_kind == "wrong_orientation"

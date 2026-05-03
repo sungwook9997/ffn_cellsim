@@ -13,6 +13,14 @@ from acs.v2.active_contour import (
     ellipse_polygon_vertices,
     regular_polygon_vertices,
 )
+from acs.v2.dynamics.active_contour import (
+    ActiveContourStepError,
+    compute_area_forces,
+    compute_cortex_forces,
+    energy_area,
+    energy_cortex,
+    step,
+)
 from acs.v2.cell_cluster import CellClusterState
 from acs.v2.data_contract import (
     ArtifactKind,
@@ -48,6 +56,7 @@ __all__ = [
     "ActiveContourParameters",
     "ActiveContourParametersError",
     "ActiveContourState",
+    "ActiveContourStepError",
     "ArtifactKind",
     "CellClusterState",
     "ECMSubstrateState",
@@ -66,11 +75,16 @@ __all__ = [
     "V2DataContract",
     "boundary_perimeter_um",
     "boundary_projected_area_um2",
+    "compute_area_forces",
+    "compute_cortex_forces",
     "compute_rate_max",
     "default_registry",
     "ellipse_polygon_vertices",
+    "energy_area",
+    "energy_cortex",
     "read_frame",
     "regular_polygon_vertices",
+    "step",
     "render_frame_html",
     "render_frame_png",
     "write_frame",

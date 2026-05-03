@@ -247,6 +247,20 @@ class ActiveContourState:
         # never silently carry an invalid contract into compute_rate_max
         # or downstream dynamics.
         self.params.validate()
+        if not isinstance(self.cell_id, str) or not self.cell_id.strip():
+            raise ActiveContourParametersError(
+                "cell_id_underspecified",
+                "cell_id must be a non-empty string",
+            )
+        if (
+            isinstance(self.step_count, bool)
+            or not isinstance(self.step_count, int)
+            or self.step_count < 0
+        ):
+            raise ActiveContourParametersError(
+                "step_count_underspecified",
+                "step_count must be a non-negative integer",
+            )
         verts = np.asarray(self.vertices_xy_um, dtype=np.float64)
         if verts.ndim != 2 or verts.shape[1] != 2:
             raise ActiveContourParametersError(
@@ -267,6 +281,12 @@ class ActiveContourState:
         # Reseat as a writable array so callers cannot smuggle a
         # frozen view.
         self.vertices_xy_um = np.array(verts, dtype=np.float64, copy=True)
+        # Pre/post-step canonical contract: every ActiveContourState is
+        # always a valid MeasurementBoundary polygon (Hard Rule 11).
+        # A state instantiated from a self-intersecting / CW / pinched
+        # input therefore raises MeasurementBoundaryError immediately at
+        # construction time, before any force evaluation can run.
+        self.to_measurement_boundary()
 
     def to_measurement_boundary(
         self, *, source_modality: str = "active_contour"
