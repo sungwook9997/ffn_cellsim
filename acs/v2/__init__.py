@@ -27,6 +27,11 @@ from acs.v2.metrics import (
     boundary_projected_area_um2,
     default_registry,
 )
+from acs.v2.output.frame_dump import (
+    FrameDumpReadResult,
+    read_frame,
+    write_frame,
+)
 from acs.v2.protrusion import ProtrusionEvent
 from acs.v2.single_cell import SingleCellState
 
@@ -35,6 +40,7 @@ __all__ = [
     "CellClusterState",
     "ECMSubstrateState",
     "FocalAdhesionState",
+    "FrameDumpReadResult",
     "ImagingDatasetSpec",
     "JunctionState",
     "MeasurementBoundary",
@@ -49,4 +55,6 @@ __all__ = [
     "boundary_perimeter_um",
     "boundary_projected_area_um2",
     "default_registry",
+    "read_frame",
+    "write_frame",
 ]
