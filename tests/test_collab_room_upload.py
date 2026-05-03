@@ -110,21 +110,21 @@ def test_workroom_prefixed_agent_status_is_accepted(monkeypatch, tmp_path: Path)
     room = _load_room(monkeypatch, tmp_path)
 
     result = room._upsert_agent_status(
-        "design-discussion-claude-chat",
+        "design-discussion-claude",
         percent=12,
         activity="waiting",
         topic="room-split",
         heartbeat=True,
     )
 
-    assert result["agent"] == "design-discussion-claude-chat"
+    assert result["agent"] == "design-discussion-claude"
     agents = room._sidebar_to_dict(room._fetch_sidebar())["agents"]
-    assert agents[0]["agent"] == "design-discussion-claude-chat"
-    assert room._agent_base("design-discussion-claude-chat") == "claude"
+    assert agents[0]["agent"] == "design-discussion-claude"
+    assert room._agent_base("design-discussion-claude") == "claude"
 
 
 def test_invalid_workroom_prefixed_agent_status_is_rejected(monkeypatch, tmp_path: Path):
     room = _load_room(monkeypatch, tmp_path)
 
-    with pytest.raises(ValueError, match="<workroom>-<pane>"):
-        room._upsert_agent_status("BadRoom-claude-chat", 0, "bad")
+    with pytest.raises(ValueError, match="<workroom>-<agent>"):
+        room._upsert_agent_status("BadRoom-claude", 0, "bad")

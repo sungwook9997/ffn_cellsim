@@ -1,6 +1,6 @@
 """Heartbeat daemon for the ACS Collab Workroom sidebar.
 
-Every 5 s, refresh the `agent_status` row for each of the four LLM panes
+Every 5 s, refresh the `agent_status` row for each of the two LLM sessions
 in the workroom so the sidebar "Agents" panel stays visibly alive even
 when the pane is idle between PI prompts. The daemon never invents
 progress numbers — it re-POSTs the existing row's percent/activity
@@ -10,7 +10,7 @@ If a prefixed workroom row does not exist yet, the daemon seeds a neutral
 of falling back to stale legacy logical rows.
 
 When ``--workroom <name>`` is given, agent IDs and tmux targets are both
-prefixed with the workroom name (e.g. ``design-discussion-claude-chat``).
+prefixed with the workroom name (e.g. ``design-discussion-claude``).
 This lets multiple workrooms heartbeat in parallel without colliding on
 the same ``agent_status`` row.
 
@@ -45,15 +45,15 @@ ROOM_TOKEN = os.environ.get("COLLAB_ROOM_TOKEN", "acs-room")
 INTERVAL_S = float(os.environ.get("COLLAB_HEARTBEAT_INTERVAL", "5"))
 WORKROOM_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 
-LOGICAL_PANES = ("claude-chat", "claude-work", "codex-chat", "codex-work")
+LOGICAL_PANES = ("claude", "codex")
 
 
 def build_panes(workroom: str | None) -> list[tuple[str, str]]:
     """Return [(agent_id, tmux_target), ...] for the daemon to refresh.
 
     Without a workroom (legacy mode), agent IDs and tmux targets are the
-    bare logical names (``claude-chat`` etc.). With a workroom, both are
-    prefixed (``design-discussion-claude-chat``) so per-room heartbeats
+    bare logical names (``claude`` etc.). With a workroom, both are
+    prefixed (``design-discussion-claude``) so per-room heartbeats
     do not collide on the shared ``agent_status`` table.
     """
     if not workroom:

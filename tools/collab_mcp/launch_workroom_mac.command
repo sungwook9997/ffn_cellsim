@@ -25,11 +25,10 @@ export ACS_WORKROOM="$WORKROOM"
 export COLLAB_MCP_LEDGER="${COLLAB_MCP_LEDGER:-$REPO_ROOT/docs/claude_codex_log.md}"
 export COLLAB_ROOM_BIND="${COLLAB_ROOM_BIND:-127.0.0.1:7879}"
 export COLLAB_ROOM_TOKEN="${COLLAB_ROOM_TOKEN:-acs-room}"
-# Per-room relay targets so the relay knows which chat panes belong to
-# this workroom. Override via COLLAB_TMUX_*_TARGET if you need to point
-# the relay at a different physical pane.
-export COLLAB_TMUX_CLAUDE_TARGET="${COLLAB_TMUX_CLAUDE_TARGET:-${WORKROOM}-claude-chat:0.0}"
-export COLLAB_TMUX_CODEX_TARGET="${COLLAB_TMUX_CODEX_TARGET:-${WORKROOM}-codex-chat:0.0}"
+# Per-room relay targets. Each workroom owns exactly one Claude and one
+# Codex LLM session.
+export COLLAB_TMUX_CLAUDE_TARGET="${COLLAB_TMUX_CLAUDE_TARGET:-${WORKROOM}-claude:0.0}"
+export COLLAB_TMUX_CODEX_TARGET="${COLLAB_TMUX_CODEX_TARGET:-${WORKROOM}-codex:0.0}"
 
 LOG_DIR="/tmp/acs-collab/$WORKROOM"
 SHARED_LOG_DIR="/tmp/acs-collab"
@@ -217,17 +216,16 @@ else
 fi
 
 # 3) tmux work sessions — workroom-prefixed:
-#      <wr>-claude-chat, <wr>-codex-chat, <wr>-claude-work, <wr>-codex-work,
-#      <wr>-win-ssh, <wr>-heartbeat.
+#      <wr>-claude, <wr>-codex, <wr>-heartbeat.
 #    setup_tmux_workroom is idempotent: never kills or renames existing
 #    sessions, and only starts a CLI/SSH/daemon in panes that are
 #    currently a plain shell.
 python3 -m tools.collab_mcp.setup_tmux_workroom \
   --workroom "$WORKROOM" \
-  --start-chat --start-work --start-win-ssh --start-heartbeat \
+  --start-chat --start-heartbeat \
   >>"$LOG_DIR/setup_tmux_workroom.log" 2>&1 || true
 
-# 4) Relay session — keeps PI/LLM messages flowing into chat panes for
+# 4) Relay session — keeps PI/LLM messages flowing into agent sessions for
 #    THIS workroom. Each workroom gets its own relay so its DB cursor
 #    (relay_cursors row) does not collide with another workroom's relay.
 RELAY_SESSION="${WORKROOM}-relay"
@@ -235,8 +233,8 @@ ensure_tmux_session_locked "$RELAY_SESSION" "$REPO_ROOT" \
   "python3 tools/collab_mcp/tmux_relay.py \
      --relay-name '$WORKROOM' \
      --workroom '$WORKROOM' \
-     --claude-target '${WORKROOM}-claude-chat:0.0' \
-     --codex-target '${WORKROOM}-codex-chat:0.0' \
+     --claude-target '${WORKROOM}-claude:0.0' \
+     --codex-target '${WORKROOM}-codex:0.0' \
      --include-llm-messages \
      --init-cursor-if-missing \
      >>'$LOG_DIR/tmux_relay.log' 2>&1"
@@ -313,7 +311,7 @@ selfcheck_http() {
 }
 
 # Per-room sessions
-for s in claude-chat claude-work codex-chat codex-work win-ssh relay heartbeat; do
+for s in claude codex relay heartbeat; do
   selfcheck_session "${WORKROOM}-${s}"
 done
 # Shared singletons

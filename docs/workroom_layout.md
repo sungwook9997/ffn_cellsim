@@ -41,10 +41,9 @@ Adding a third room only when **both** of the following hold:
 
 ## What is per-room vs shared
 
-**Per-room** — one instance per workroom, prefixed with `<wr>-`:
-- tmux sessions: `<wr>-claude-chat`, `<wr>-codex-chat`,
-  `<wr>-claude-work`, `<wr>-codex-work`, `<wr>-win-ssh`,
-  `<wr>-relay`, `<wr>-heartbeat`.
+**Per-room** — one Claude + one Codex per workroom, prefixed with `<wr>-`:
+- tmux sessions: `<wr>-claude`, `<wr>-codex`, `<wr>-relay`,
+  `<wr>-heartbeat`.
 - Log dir: `/tmp/acs-collab/<wr>/`. Sentinel files
   (`.mcp_python_unhealthy`, `.mcp_server_unhealthy`,
   `.mcp_token_unset`, `.selfcheck_failed`) live inside.
@@ -92,12 +91,11 @@ What the launcher creates, in order:
 1. Python health gate (refuses system `python3` fallback; needs
    `.venv-collab/bin/python` with `mcp[cli]>=1.2`).
 2. Shared `mcp` singleton if missing (lock-protected).
-3. Per-room tmux pane sessions via `setup_tmux_workroom.py
-   --workroom <wr> --start-chat --start-work --start-win-ssh
-   --start-heartbeat`.
+3. Per-room tmux agent sessions via `setup_tmux_workroom.py
+   --workroom <wr> --start-chat --start-heartbeat`.
 4. Per-room `<wr>-relay` session running `tmux_relay.py --relay-name
-   <wr> --workroom <wr> --claude-target <wr>-claude-chat:0.0
-   --codex-target <wr>-codex-chat:0.0 --include-llm-messages`.
+   <wr> --workroom <wr> --claude-target <wr>-claude:0.0
+   --codex-target <wr>-codex:0.0 --include-llm-messages`.
 5. Shared `room` UI singleton if `http://127.0.0.1:7879/` is not yet
    answering (lock-protected).
 6. Chrome `--app` to the room URL (idempotent across concurrent
@@ -133,16 +131,17 @@ messages still advance the cursor so other rooms' traffic doesn't
 re-fetch forever, and `notify_desktop` fires only for messages that
 actually belong to the relay.
 
-Wrapper prompt fields (what chat panes see):
+Wrapper prompt fields (what agent sessions see):
 
 ```
 : mcp_msg id=<n> from=<author> to=<addr> topic=<t> room=<wr>
-  pane=chat work_pane=<wr>-<agent>-work priority=immediate ack_first
+  pane=agent priority=immediate ack_first
   action=read_acs_collab_mcp_then_send_if_<agent>_should_reply
 ```
 
-The `work_pane=` name is the physical prefixed session, so chat panes
-brief the right sibling via `/tmp/acs-collab/work_briefing.md`.
+There is no separate chat/work split in the active model. The receiving
+agent session either answers directly or performs the delegated work in
+that same session.
 
 ## Claim / cursor / status semantics
 
@@ -207,8 +206,7 @@ The single MCP DB + the cross-room sidebar + the shared
 ## Removing a room
 
 1. `tmux kill-session -t <wr>-<logical>` for each per-room session
-   (`-claude-chat`, `-claude-work`, `-codex-chat`, `-codex-work`,
-   `-win-ssh`, `-relay`, `-heartbeat`).
+   (`-claude`, `-codex`, `-relay`, `-heartbeat`).
 2. `rm -rf /tmp/acs-collab/<wr>/`.
 3. Optionally wipe DB rows: `DELETE FROM messages WHERE room='<wr>';`
    plus the matching `cursors` and `claims` rows. Don't do this if the
@@ -226,10 +224,11 @@ The single MCP DB + the cross-room sidebar + the shared
 | 2026-05-03 | `083ae55` | Room selector persistence, PI reply path, and new-relay cursor hotfixes |
 | 2026-05-03 | runtime | Task 5 live migration: legacy unprefixed sessions retired after both prefixed rooms passed self-check |
 | 2026-05-03 | `04df930` | Prefixed heartbeat rows seeded so UI agent cards show per-room panes instead of stale legacy rows |
+| 2026-05-03 | pending | Task 7 trims each room to exactly one Claude + one Codex agent session |
 
 Pre-Task-2 messages were bucketed into `design-discussion` by the
 schema migration. Pre-Task-1 unprefixed tmux sessions were retired
 during Task 5 after `design-discussion` and `implementation-work`
 both cold-started successfully. The active runtime should now contain
-only prefixed per-room sessions plus the shared `mcp` and `room`
-singletons.
+only `<room>-claude`, `<room>-codex`, `<room>-relay`,
+`<room>-heartbeat` plus the shared `mcp` and `room` singletons.

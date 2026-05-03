@@ -452,7 +452,7 @@ _AGENT_VALUES = {
 WORKROOM_RE = ROOM_NAME_RE
 _PREFIXED_AGENT_RE = re.compile(
     r"^(?P<room>[a-z0-9][a-z0-9-]{0,31})-"
-    r"(?P<logical>claude-chat|claude-work|codex-chat|codex-work)$"
+    r"(?P<logical>claude|codex|claude-chat|claude-work|codex-chat|codex-work)$"
 )
 
 
@@ -475,15 +475,13 @@ def _validate_agent(agent: str) -> str:
         return lowered
     if raw != lowered:
         raise ValueError(
-            "agent must be one of claude/codex/pi/claude-chat/claude-work/"
-            "codex-chat/codex-work or <workroom>-<pane>"
+            "agent must be one of claude/codex/pi or <workroom>-<agent>"
         )
     match = _PREFIXED_AGENT_RE.match(raw)
     if match and WORKROOM_RE.match(match.group("room")):
         return raw
     raise ValueError(
-        "agent must be one of claude/codex/pi/claude-chat/claude-work/"
-        "codex-chat/codex-work or <workroom>-<pane>"
+        "agent must be one of claude/codex/pi or <workroom>-<agent>"
     )
 
 
@@ -692,7 +690,7 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
     </section>
     <aside class="sidebar" id="sidebar">
       <section class="panel">
-        <h2>Agents · 4 panes</h2>
+        <h2>Agents · 2 agents</h2>
         <div class="agent-cards" id="agent-cards"></div>
       </section>
       <section class="panel">
@@ -1772,11 +1770,11 @@ JS = r"""
     });
   }
 
-  var PANE_ORDER = ["claude-chat", "claude-work", "codex-chat", "codex-work"];
+  var PANE_ORDER = ["claude", "codex"];
 
   function agentLogicalName(name) {
     if (!name) return "";
-    var m = String(name).match(/^(?:[a-z0-9][a-z0-9-]{0,31})-(claude-chat|claude-work|codex-chat|codex-work)$/);
+    var m = String(name).match(/^(?:[a-z0-9][a-z0-9-]{0,31})-(claude|codex|claude-chat|claude-work|codex-chat|codex-work)$/);
     return m ? m[1] : name;
   }
 
@@ -1852,7 +1850,7 @@ JS = r"""
     // Awake/asleep badge — orthogonal to the freshness tier color above.
     // Freshness keys off updated_at (heartbeat-refreshed every 5 s);
     // awake keys off last_active_at (advances only on real LLM/operator
-    // posts), so a chat pane that never woke up after reboot stays red
+    // posts), so an agent that never woke up after reboot stays red
     // even while the heartbeat daemon paints the card green.
     if (agent) {
       var activeAge = (agent.active_age_seconds == null)
@@ -1862,16 +1860,8 @@ JS = r"""
       awakeBadge.className = "awake-badge";
       var role = paneRole(name);
       if (activeAge == null) {
-        // Never posted real activity since the row was created — for chat
-        // panes this is the post-reboot "waiting for first PI message"
-        // state. Work panes default to awake until they prove otherwise.
-        if (role === "chat") {
-          awakeBadge.classList.add("asleep");
-          awakeBadge.textContent = "asleep · waiting for first PI message";
-        } else {
-          awakeBadge.classList.add("awake");
-          awakeBadge.textContent = "awake";
-        }
+        awakeBadge.classList.add("asleep");
+        awakeBadge.textContent = "asleep · waiting for first PI message";
       } else if (activeAge > 1800) {
         awakeBadge.classList.add("asleep");
         awakeBadge.textContent = "asleep · " + ageLabel(activeAge);
@@ -1918,7 +1908,7 @@ JS = r"""
         });
       }
       // Backward compat: when only the legacy "claude"/"codex" row exists,
-      // mirror it onto both chat and work cards so the sidebar shows
+      // mirror it onto the agent card so the sidebar shows
       // something useful until commit#5 splits the heartbeats.
       if (!direct) {
         var base = paneBase(paneName);

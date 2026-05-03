@@ -174,26 +174,19 @@ def init_cursor_if_missing(relay_name: str) -> int | None:
 def wrapper_prompt(message: WorkroomMessage, target_agent: str, workroom: str = "") -> str:
     """Return the only text injected into tmux panes.
 
-    The relay only writes into chat panes, so every wrapper carries
-    `pane=chat` and a `work_pane=<...>-work` hint. When the relay knows
-    its workroom, the work_pane field is the physical session name
-    (`<workroom>-<agent>-work`) so chat panes brief the correct sibling.
-    Without a workroom (legacy mode) it falls back to the bare
-    `<agent>-work` name. Chat-pane agents must keep replies short and
-    dispatch any non-trivial implementation work to that pane via
-    `/tmp/acs-collab/work_briefing.md`. See `CLAUDE.md` / `AGENTS.md`
-    "Chat pane vs work pane discipline".
+    The relay writes into the one Claude/Codex agent session for the
+    workroom. The wrapper names the room and asks the target to read the
+    exact message through MCP before responding.
     """
     author = safe_label(message.author)
     addressee = safe_label(message.addressee)
     topic = safe_label(message.topic, max_len=80)
     target_agent = safe_label(target_agent, max_len=20)
     workroom_label = safe_label(workroom, max_len=32) if workroom else ""
-    work_pane = f"{workroom_label}-{target_agent}-work" if workroom_label and workroom_label != "unknown" else f"{target_agent}-work"
     room_field = f" room={workroom_label}" if workroom_label and workroom_label != "unknown" else ""
     return (
         f": mcp_msg id={message.id} from={author} to={addressee} "
-        f"topic={topic}{room_field} pane=chat work_pane={work_pane} "
+        f"topic={topic}{room_field} pane=agent "
         f"priority=immediate ack_first "
         f"action=read_acs_collab_mcp_then_send_if_{target_agent}_should_reply"
     )

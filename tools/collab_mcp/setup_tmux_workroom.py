@@ -1,14 +1,10 @@
 """Create the recommended ACS Workroom tmux session layout.
 
-The layout separates always-idle chat panes from long-running work panes:
+The active layout is one Claude + one Codex per workroom:
 
-  <wr>-claude-chat   receives PI workroom wrappers
-  <wr>-codex-chat    receives PI workroom wrappers
-  <wr>-claude-work   optional long-running Claude implementation work
-  <wr>-codex-work    optional long-running Codex review/implementation work
-  <wr>-win-ssh       optional SSH pane to the Windows A5000 workstation
-  <wr>-heartbeat     optional sidebar heartbeat daemon (refreshes agent_status
-                     rows for the four LLM panes every 5 s)
+  <wr>-claude      receives workroom wrappers and may do the work directly
+  <wr>-codex       receives workroom wrappers and may do the work directly
+  <wr>-heartbeat   optional sidebar heartbeat daemon
 
 `<wr>` is the workroom prefix (default `design-discussion`). The shared MCP
 server (`mcp`) and room.py UI (`room`) are room-agnostic singletons and are
@@ -55,13 +51,7 @@ WIN_SSH_CMD = "ssh win"
 HEARTBEAT_CMD_TEMPLATE = "python3 tools/collab_mcp/heartbeat_daemon.py --workroom {workroom}"
 DEFAULT_MCP_URL = os.environ.get("COLLAB_MCP_URL", "http://127.0.0.1:7878/mcp/")
 PER_ROOM_LOG_DIR = pathlib.Path(os.environ.get("COLLAB_LOG_DIR_BASE", "/tmp/acs-collab"))
-INTERACTIVE_LOGICAL = {
-    "claude-chat",
-    "codex-chat",
-    "claude-work",
-    "codex-work",
-    "win-ssh",
-}
+INTERACTIVE_LOGICAL = {"claude", "codex", "win-ssh"}
 
 
 def write_claude_mcp_config(workroom: str, log_dir: pathlib.Path, token: str) -> pathlib.Path:
@@ -143,7 +133,7 @@ def validate_workroom(name: str) -> str:
 
 
 def session_name(workroom: str, logical: str) -> str:
-    """Map a logical pane (claude-chat, ...) to its workroom-prefixed session."""
+    """Map a logical pane (claude/codex/...) to its workroom-prefixed session."""
     return f"{workroom}-{logical}"
 
 
@@ -220,7 +210,8 @@ def setup(
     heartbeat_cmd = HEARTBEAT_CMD_TEMPLATE.format(workroom=shlex.quote(workroom))
     log_dir = PER_ROOM_LOG_DIR / workroom
     token = os.environ.get("COLLAB_MCP_TOKEN", "")
-    if (start_chat or start_work) and not token:
+    start_agents = start_chat or start_work
+    if start_agents and not token:
         # Without a token we cannot generate a usable per-workroom Claude
         # MCP config. Fail loud rather than write an unauthenticated
         # config that would silently break the room header propagation.
@@ -231,21 +222,16 @@ def setup(
         )
     claude_cfg = (
         write_claude_mcp_config(workroom, log_dir, token)
-        if (start_chat or start_work) and token
+        if start_agents and token
         else None
     )
     claude_cmd = claude_command(workroom, claude_cfg) if claude_cfg else CLAUDE_BIN
     codex_cmd = codex_command(workroom)
     start_commands: dict[str, tuple[str, str]] = {}
-    if start_chat:
+    if start_agents:
         start_commands.update({
-            "claude-chat": (claude_cmd, f"started Claude in {workroom}-claude-chat"),
-            "codex-chat": (codex_cmd, f"started Codex in {workroom}-codex-chat"),
-        })
-    if start_work:
-        start_commands.update({
-            "claude-work": (claude_cmd, f"started Claude in {workroom}-claude-work"),
-            "codex-work": (codex_cmd, f"started Codex in {workroom}-codex-work"),
+            "claude": (claude_cmd, f"started Claude in {workroom}-claude"),
+            "codex": (codex_cmd, f"started Codex in {workroom}-codex"),
         })
     if start_win_ssh:
         start_commands["win-ssh"] = (WIN_SSH_CMD, f"started Windows SSH in {workroom}-win-ssh")
@@ -253,10 +239,11 @@ def setup(
         start_commands["heartbeat"] = (heartbeat_cmd, f"started heartbeat daemon ({workroom})")
 
     created_sessions: set[str] = set()
-    logical_sessions = [
-        "claude-chat", "codex-chat", "claude-work", "codex-work",
-        "win-ssh", "heartbeat",
-    ]
+    logical_sessions = ["claude", "codex"]
+    if start_win_ssh:
+        logical_sessions.append("win-ssh")
+    if start_heartbeat:
+        logical_sessions.append("heartbeat")
     for logical in logical_sessions:
         physical = session_name(workroom, logical)
         command_and_action = start_commands.get(logical)
@@ -272,17 +259,11 @@ def setup(
             if run_direct and command_and_action is not None:
                 actions.append(command_and_action[1])
 
-    if start_chat:
-        if start_cli_if_shell(f"{session_name(workroom, 'claude-chat')}:0.0", claude_cmd):
-            actions.append(f"started Claude in {workroom}-claude-chat")
-        if start_cli_if_shell(f"{session_name(workroom, 'codex-chat')}:0.0", codex_cmd):
-            actions.append(f"started Codex in {workroom}-codex-chat")
-
-    if start_work:
-        if start_cli_if_shell(f"{session_name(workroom, 'claude-work')}:0.0", claude_cmd):
-            actions.append(f"started Claude in {workroom}-claude-work")
-        if start_cli_if_shell(f"{session_name(workroom, 'codex-work')}:0.0", codex_cmd):
-            actions.append(f"started Codex in {workroom}-codex-work")
+    if start_agents:
+        if start_cli_if_shell(f"{session_name(workroom, 'claude')}:0.0", claude_cmd):
+            actions.append(f"started Claude in {workroom}-claude")
+        if start_cli_if_shell(f"{session_name(workroom, 'codex')}:0.0", codex_cmd):
+            actions.append(f"started Codex in {workroom}-codex")
 
     if start_win_ssh:
         if start_cli_if_shell(f"{session_name(workroom, 'win-ssh')}:0.0", WIN_SSH_CMD):
@@ -307,8 +288,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Workroom name; tmux sessions are prefixed with this. "
              "Default: $ACS_WORKROOM or 'design-discussion'.",
     )
-    parser.add_argument("--start-chat", action="store_true", help="Launch Claude/Codex in chat sessions.")
-    parser.add_argument("--start-work", action="store_true", help="Launch Claude/Codex in work sessions.")
+    parser.add_argument("--start-chat", action="store_true", help="Launch Claude/Codex agent sessions.")
+    parser.add_argument("--start-work", action="store_true", help="Deprecated alias for --start-chat.")
     parser.add_argument("--start-win-ssh", action="store_true", help="Launch ssh win in the Windows SSH session.")
     parser.add_argument("--start-heartbeat", action="store_true", help="Launch the sidebar heartbeat daemon.")
     return parser
@@ -330,8 +311,8 @@ def main(argv: Iterable[str] | None = None) -> None:
         print(action)
     print(f"\nWorkroom: {workroom}")
     print("Relay targets:")
-    print(f"  COLLAB_TMUX_CLAUDE_TARGET={workroom}-claude-chat:0.0")
-    print(f"  COLLAB_TMUX_CODEX_TARGET={workroom}-codex-chat:0.0")
+    print(f"  COLLAB_TMUX_CLAUDE_TARGET={workroom}-claude:0.0")
+    print(f"  COLLAB_TMUX_CODEX_TARGET={workroom}-codex:0.0")
     print(f"  Windows SSH target: {workroom}-win-ssh:0.0")
     print(f"  Heartbeat target:   {workroom}-heartbeat:0.0")
 

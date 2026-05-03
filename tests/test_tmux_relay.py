@@ -154,16 +154,14 @@ def test_run_once_dry_run_does_not_mark_cursor(monkeypatch, tmp_path, capsys):
     assert cursor is None
 
 
-def test_wrapper_prompt_includes_workroom_in_work_pane(monkeypatch, tmp_path):
-    """When relay knows its workroom, work_pane must be the prefixed
-    physical session (e.g. design-discussion-codex-work) so chat panes
-    brief the right sibling and not a non-existent unprefixed session."""
+def test_wrapper_prompt_includes_workroom(monkeypatch, tmp_path):
+    """When relay knows its workroom, wrapper metadata must include it."""
     relay = _load_relay(monkeypatch, tmp_path)
     message = relay.WorkroomMessage(
         7, "pi", "claude,codex", "routing", "FYI", room="design-discussion"
     )
     prompt = relay.wrapper_prompt(message, "codex", workroom="design-discussion")
-    assert "work_pane=design-discussion-codex-work" in prompt
+    assert "pane=agent" in prompt
     assert "room=design-discussion" in prompt
 
 
@@ -171,7 +169,7 @@ def test_wrapper_prompt_legacy_unprefixed_when_no_workroom(monkeypatch, tmp_path
     relay = _load_relay(monkeypatch, tmp_path)
     message = relay.WorkroomMessage(8, "pi", "claude,codex", "routing", "FYI")
     prompt = relay.wrapper_prompt(message, "codex")
-    assert "work_pane=codex-work" in prompt
+    assert "pane=agent" in prompt
     assert "room=" not in prompt
 
 

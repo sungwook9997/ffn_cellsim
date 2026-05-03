@@ -23,12 +23,12 @@ def test_build_panes_prefixes_workroom(monkeypatch, tmp_path):
     panes = heartbeat.build_panes("design-discussion")
 
     assert panes[0] == (
-        "design-discussion-claude-chat",
-        "design-discussion-claude-chat:0.0",
+        "design-discussion-claude",
+        "design-discussion-claude:0.0",
     )
     assert panes[-1] == (
-        "design-discussion-codex-work",
-        "design-discussion-codex-work:0.0",
+        "design-discussion-codex",
+        "design-discussion-codex:0.0",
     )
 
 
@@ -44,9 +44,9 @@ def test_tick_seeds_missing_status_rows(monkeypatch, tmp_path):
         lambda agent, percent, activity, topic: posted.append((agent, percent, activity, topic)),
     )
 
-    heartbeat.tick([("implementation-work-codex-chat", "implementation-work-codex-chat:0.0")])
+    heartbeat.tick([("implementation-work-codex", "implementation-work-codex:0.0")])
 
-    assert posted == [("implementation-work-codex-chat", 0, "idle", "")]
+    assert posted == [("implementation-work-codex", 0, "idle", "")]
 
 
 def test_tick_preserves_existing_status(monkeypatch, tmp_path):
@@ -65,6 +65,6 @@ def test_tick_preserves_existing_status(monkeypatch, tmp_path):
         lambda agent, percent, activity, topic: posted.append((agent, percent, activity, topic)),
     )
 
-    heartbeat.tick([("design-discussion-claude-work", "design-discussion-claude-work:0.0")])
+    heartbeat.tick([("design-discussion-claude", "design-discussion-claude:0.0")])
 
-    assert posted == [("design-discussion-claude-work", 42, "reviewing", "v2")]
+    assert posted == [("design-discussion-claude", 42, "reviewing", "v2")]

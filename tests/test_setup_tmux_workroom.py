@@ -72,11 +72,11 @@ def test_send_line_clears_partial_prompt_before_enter(monkeypatch):
 
     monkeypatch.setattr(setup, "tmux", fake_tmux)
 
-    setup.send_line("design-discussion-codex-chat:0.0", codex_cmd)
+    setup.send_line("design-discussion-codex:0.0", codex_cmd)
 
     assert calls == [
-        ("send-keys", "-t", "design-discussion-codex-chat:0.0", "C-c"),
-        ("send-keys", "-t", "design-discussion-codex-chat:0.0", codex_cmd, "Enter"),
+        ("send-keys", "-t", "design-discussion-codex:0.0", "C-c"),
+        ("send-keys", "-t", "design-discussion-codex:0.0", codex_cmd, "Enter"),
     ]
 
 
@@ -107,13 +107,13 @@ def test_setup_starts_new_interactive_sessions_inside_shell(monkeypatch, tmp_pat
         start_heartbeat=True,
     )
 
-    assert "started Codex in design-discussion-codex-chat" in actions
+    assert "started Codex in design-discussion-codex" in actions
     assert "started heartbeat daemon (design-discussion)" in actions
     assert (
-        "new-session", "-d", "-s", "design-discussion-codex-chat", "-c", str(tmp_path)
+        "new-session", "-d", "-s", "design-discussion-codex", "-c", str(tmp_path)
     ) in calls
     assert (
         "new-session", "-d", "-s", "design-discussion-heartbeat", "-c", str(tmp_path), heartbeat_cmd
     ) in calls
-    assert ("send-keys", "-t", "design-discussion-codex-chat:0.0", "C-c") in calls
-    assert ("send-keys", "-t", "design-discussion-codex-chat:0.0", codex_cmd, "Enter") in calls
+    assert ("send-keys", "-t", "design-discussion-codex:0.0", "C-c") in calls
+    assert ("send-keys", "-t", "design-discussion-codex:0.0", codex_cmd, "Enter") in calls
