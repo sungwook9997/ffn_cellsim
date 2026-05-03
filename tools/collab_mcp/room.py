@@ -37,6 +37,12 @@ ALLOWED_STATUSES = {
     "blocker",
 }
 ADDRESSEE_PRESETS = ("claude,codex", "claude", "codex")
+APPROVAL_STATUSES = {"decision-needed", "blocker"}
+APPROVAL_ACTIONS = {
+    "approve": ("ack", "Approved"),
+    "reject": ("blocker", "Rejected"),
+    "changes": ("open-question", "Needs changes"),
+}
 DB_PATH = pathlib.Path(
     os.environ.get(
         "COLLAB_MCP_DB",
@@ -139,7 +145,16 @@ def _init_schema() -> None:
                 updated_at TEXT NOT NULL,
                 last_active_at TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS approval_settings(
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
             """
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO approval_settings(key, value) "
+            "SELECT 'enabled_from_id', CAST(COALESCE(MAX(id), 0) AS TEXT) FROM messages"
         )
         # Idempotent migration for databases that pre-date the
         # last_active_at column. Existing rows are seeded from updated_at
@@ -268,6 +283,115 @@ def _insert_pi_message(
         msg_id = cur.lastrowid
     ledger_appended = _ledger_append(ts, PI_AUTHOR, addressee, topic, body, status, refs)
     return {"id": msg_id, "ts": ts, "room": room, "ledger_appended": ledger_appended}
+
+
+def _addressee_has(addressee: str, target: str) -> bool:
+    return target in {part.strip().lower() for part in addressee.split(",")}
+
+
+def _approval_refs(refs_json: str) -> set[int]:
+    try:
+        refs = json.loads(refs_json)
+    except json.JSONDecodeError:
+        return set()
+    out: set[int] = set()
+    for ref in refs:
+        text = str(ref).strip()
+        for prefix in ("approval:", "mcp_msg:"):
+            if text.startswith(prefix):
+                try:
+                    out.add(int(text.removeprefix(prefix)))
+                except ValueError:
+                    pass
+    return out
+
+
+def _approval_enabled_from_id() -> int:
+    with closing(_db()) as conn:
+        row = conn.execute(
+            "SELECT value FROM approval_settings WHERE key='enabled_from_id'"
+        ).fetchone()
+    if row is None:
+        return 0
+    try:
+        return int(row[0])
+    except (TypeError, ValueError):
+        return 0
+
+
+def _fetch_approvals(room: str = DEFAULT_ROOM, limit: int = 50) -> list[dict[str, Any]]:
+    room = _validate_room(room)
+    enabled_from_id = _approval_enabled_from_id()
+    with closing(_db()) as conn:
+        candidate_rows = conn.execute(
+            "SELECT id, ts, author, addressee, topic, body, status, refs, room "
+            "FROM messages WHERE room=? AND id>? AND author<>? AND status IN (?,?) "
+            "ORDER BY id DESC LIMIT 200",
+            (room, enabled_from_id, PI_AUTHOR, *sorted(APPROVAL_STATUSES)),
+        ).fetchall()
+        resolution_rows = conn.execute(
+            "SELECT refs FROM messages WHERE room=? AND author=?",
+            (room, PI_AUTHOR),
+        ).fetchall()
+
+    resolved: set[int] = set()
+    for (refs_json,) in resolution_rows:
+        resolved.update(_approval_refs(refs_json))
+
+    approvals = []
+    for row in reversed(candidate_rows):
+        msg = _message_to_dict(row)
+        if msg["id"] in resolved:
+            continue
+        if not _addressee_has(msg["addressee"], PI_AUTHOR):
+            continue
+        approvals.append(msg)
+    return approvals[-limit:]
+
+
+def _approval_request(approval_id: int, room: str = DEFAULT_ROOM) -> dict[str, Any]:
+    room = _validate_room(room)
+    with closing(_db()) as conn:
+        row = conn.execute(
+            "SELECT id, ts, author, addressee, topic, body, status, refs, room "
+            "FROM messages WHERE id=? AND room=?",
+            (int(approval_id), room),
+        ).fetchone()
+    if row is None:
+        raise ValueError(f"approval request #{approval_id} not found in room {room!r}")
+    msg = _message_to_dict(row)
+    if msg["status"] not in APPROVAL_STATUSES or not _addressee_has(msg["addressee"], PI_AUTHOR):
+        raise ValueError(f"message #{approval_id} is not a pending approval request")
+    if msg["id"] not in {a["id"] for a in _fetch_approvals(room=room, limit=200)}:
+        raise ValueError(f"approval request #{approval_id} is already resolved")
+    return msg
+
+
+def _handle_approval_action(
+    approval_id: int,
+    action: str,
+    note: str = "",
+    room: str = DEFAULT_ROOM,
+) -> dict[str, Any]:
+    room = _validate_room(room)
+    action = action.strip().lower()
+    if action not in APPROVAL_ACTIONS:
+        raise ValueError(f"action must be one of {sorted(APPROVAL_ACTIONS)}")
+    request = _approval_request(approval_id, room=room)
+    status, label = APPROVAL_ACTIONS[action]
+    target = request["author"] if request["author"] in {"claude", "codex"} else "claude,codex"
+    note = note.strip()
+    body = f"[approval {action} for #{request['id']}] {label}."
+    if note:
+        body += f"\n\n{note}"
+    return _insert_pi_message(
+        topic=request["topic"],
+        body=body,
+        addressee=target,
+        status=status,
+        refs=[f"mcp_msg:{request['id']}", f"approval:{request['id']}"],
+        room=room,
+    )
 
 
 def _insert_artifact(kind: str, path: str, note: str = "", author: str = PI_AUTHOR) -> dict[str, Any]:
@@ -659,6 +783,9 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
     </div>
     <div class="sync-strip" id="sync-strip" aria-live="polite">Live</div>
     <nav>
+      <button type="button" id="approvals-toggle" class="ghost approval-nav">
+        Approvals <span id="approvals-count">0</span>
+      </button>
       <label class="room-picker">
         <span>Room</span>
         <select id="room-select">{room_options}</select>
@@ -703,6 +830,18 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
       </form>
     </section>
   </main>
+  <section class="approvals-drawer hidden" id="approvals-drawer" aria-label="Approvals">
+    <div class="approvals-panel">
+      <div class="approvals-head">
+        <div>
+          <h2>Approvals</h2>
+          <p>PI 승인이 필요한 decision-needed / blocker 요청만 모읍니다.</p>
+        </div>
+        <button type="button" id="approvals-close" class="ghost">Close</button>
+      </div>
+      <div class="approvals-list" id="approvals-list"></div>
+    </div>
+  </section>
   <script id="initial-state" type="application/json">{initial_b64}</script>
   <script>{JS}</script>
 </body>
@@ -735,6 +874,14 @@ class RoomHandler(BaseHTTPRequestHandler):
             payload = self._build_payload(after_id=after, room=room)
             self._send_json(payload)
             return
+        if path == "/approvals.json":
+            if not self._is_authenticated():
+                self._send_json({"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            qs = urllib.parse.parse_qs(parsed.query)
+            room = self._room_from_query(qs)
+            self._send_json({"room": room, "approvals": _fetch_approvals(room=room)})
+            return
         if path != "/":
             self.send_error(HTTPStatus.NOT_FOUND, "not found")
             return
@@ -755,6 +902,8 @@ class RoomHandler(BaseHTTPRequestHandler):
                 self._handle_send()
             elif path == "/agent_status":
                 self._handle_agent_status()
+            elif path == "/approval_action":
+                self._handle_approval_action()
             else:
                 self.send_error(HTTPStatus.NOT_FOUND, "not found")
         except ValueError as exc:
@@ -785,6 +934,7 @@ class RoomHandler(BaseHTTPRequestHandler):
             "artifacts": sidebar["artifacts"],
             "cursors": sidebar["cursors"],
             "agents": sidebar["agents"],
+            "approvals": _fetch_approvals(room=room),
         }
 
     def _handle_login(self) -> None:
@@ -854,6 +1004,19 @@ class RoomHandler(BaseHTTPRequestHandler):
             heartbeat=bool(payload.get("heartbeat", False)),
         )
         self._send_json({"ok": True, **result})
+
+    def _handle_approval_action(self) -> None:
+        if not self._is_authenticated():
+            self._send_json({"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
+            return
+        payload = self._read_json()
+        result = _handle_approval_action(
+            approval_id=int(payload.get("approval_id", 0)),
+            action=str(payload.get("action", "")),
+            note=str(payload.get("note", "")),
+            room=str(payload.get("room", DEFAULT_ROOM)),
+        )
+        self._send_json({"ok": True, **result, "approvals": _fetch_approvals(room=result["room"])})
 
     def _read_form(self) -> dict[str, list[str]]:
         length = int(self.headers.get("Content-Length", "0"))
@@ -1067,6 +1230,26 @@ nav { display: flex; gap: 8px; }
   text-decoration: none;
 }
 .ghost:hover { background: rgba(0,0,0,0.04); }
+.approval-nav {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+.approval-nav #approvals-count {
+  background: #c92a2a;
+  border-radius: 10px;
+  color: #fff;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  padding: 1px 6px;
+  text-align: center;
+}
+.approval-nav.clean #approvals-count {
+  background: rgba(0,0,0,0.12);
+  color: var(--muted);
+}
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1237,6 +1420,96 @@ nav { display: flex; gap: 8px; }
   margin: 12px 18px 0;
   padding: 8px 10px;
 }
+.approvals-drawer {
+  background: rgba(29,35,47,0.22);
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 20;
+}
+.approvals-drawer.hidden { display: none; }
+.approvals-panel {
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  min-width: 340px;
+  width: min(520px, 92vw);
+}
+.approvals-head {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+.approvals-head h2 {
+  color: var(--ink);
+  font-size: 15px;
+  letter-spacing: 0;
+  margin-bottom: 2px;
+  text-transform: none;
+}
+.approvals-head p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.approvals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 14px 16px 18px;
+}
+.approval-card {
+  background: #f6f8fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.approval-card .approval-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+.approval-card .approval-title {
+  font-weight: 700;
+}
+.approval-card .approval-body {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.approval-card .approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.approval-actions button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 6px 9px;
+}
+.approval-actions .approve { background: #2a8a4d; color: #fff; }
+.approval-actions .changes { background: var(--accent); color: var(--accent-ink); }
+.approval-actions .reject { background: #fff0f0; color: #8b1e1e; }
+.approval-empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  padding: 16px;
+  text-align: center;
+}
 .error {
   background: #fff0f0;
   border: 1px solid #ffc9c9;
@@ -1283,7 +1556,7 @@ nav { display: flex; gap: 8px; }
 JS = r"""
 (function () {
   var initialEl = document.getElementById("initial-state");
-  var initial = {messages: [], claims: [], artifacts: [], cursors: {}};
+  var initial = {messages: [], claims: [], artifacts: [], approvals: [], cursors: {}};
   if (initialEl) {
     try { initial = JSON.parse(initialEl.textContent || "{}"); } catch (e) {}
   }
@@ -1320,6 +1593,7 @@ JS = r"""
     messages: [],
     cursors: initial.cursors || {},
     agents: initial.agents || [],
+    approvals: initial.approvals || [],
     agentsFetchedAt: Date.now(),
     currentRoom: selectedRoom,
     rooms: initial.rooms || [],
@@ -1329,6 +1603,11 @@ JS = r"""
   var messagesEl = document.getElementById("messages");
   var cursorStrip = document.getElementById("cursor-strip");
   var syncStrip = document.getElementById("sync-strip");
+  var approvalsToggle = document.getElementById("approvals-toggle");
+  var approvalsCount = document.getElementById("approvals-count");
+  var approvalsDrawer = document.getElementById("approvals-drawer");
+  var approvalsClose = document.getElementById("approvals-close");
+  var approvalsList = document.getElementById("approvals-list");
   var claimsList = null;
   var artifactsList = null;
   var jumpBtn = document.getElementById("jump-bottom");
@@ -1580,8 +1859,88 @@ JS = r"""
     syncStrip.textContent = label;
   }
 
-  function renderAgentCards(agents) {
-    if (agents) state.agents = agents;
+  function renderApprovals(approvals) {
+    if (approvals) state.approvals = approvals;
+    var count = state.approvals ? state.approvals.length : 0;
+    if (approvalsCount) approvalsCount.textContent = String(count);
+    if (approvalsToggle) approvalsToggle.classList.toggle("clean", count === 0);
+    if (!approvalsList) return;
+    approvalsList.innerHTML = "";
+    if (!count) {
+      var empty = document.createElement("div");
+      empty.className = "approval-empty";
+      empty.textContent = "No pending approvals";
+      approvalsList.appendChild(empty);
+      return;
+    }
+    state.approvals.forEach(function (a) {
+      var card = document.createElement("div");
+      card.className = "approval-card";
+
+      var title = document.createElement("div");
+      title.className = "approval-title";
+      title.textContent = "#" + a.id + " · " + a.topic + " · " + a.status;
+      card.appendChild(title);
+
+      var meta = document.createElement("div");
+      meta.className = "approval-meta";
+      meta.textContent = a.author + " → " + a.addressee + " · " + a.ts;
+      card.appendChild(meta);
+
+      var body = document.createElement("div");
+      body.className = "approval-body";
+      body.textContent = a.body || "";
+      card.appendChild(body);
+
+      if (a.refs && a.refs.length) {
+        var refs = document.createElement("div");
+        refs.className = "approval-meta";
+        refs.textContent = "refs: " + a.refs.join(" ");
+        card.appendChild(refs);
+      }
+
+      var actions = document.createElement("div");
+      actions.className = "approval-actions";
+      [
+        ["approve", "Approve"],
+        ["changes", "Needs changes"],
+        ["reject", "Reject"],
+      ].forEach(function (item) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = item[0];
+        btn.textContent = item[1];
+        btn.addEventListener("click", function () { submitApproval(a.id, item[0]); });
+        actions.appendChild(btn);
+      });
+      card.appendChild(actions);
+      approvalsList.appendChild(card);
+    });
+  }
+
+  function submitApproval(approvalId, action) {
+    var note = window.prompt("Optional note for " + action + " #" + approvalId + ":", "") || "";
+    fetch("/approval_action", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json", "Accept": "application/json"},
+      body: JSON.stringify({
+        approval_id: approvalId,
+        action: action,
+        note: note,
+        room: state.currentRoom,
+      }),
+    })
+      .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, body: j}; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          alert((res.body && res.body.error) || "approval action failed");
+          return;
+        }
+        renderApprovals(res.body.approvals || []);
+        poll(true);
+      })
+      .catch(function (err) { alert("approval action failed: " + err); });
   }
 
   function renderClaims(claims) {
@@ -1695,6 +2054,7 @@ JS = r"""
         renderArtifacts(data.artifacts || []);
         state.agentsFetchedAt = Date.now();
         renderSync(data.agents || []);
+        renderApprovals(data.approvals || []);
         schedulePoll(pollDelay(hasNewMessages));
       })
       .catch(function (err) {
@@ -1804,6 +2164,22 @@ JS = r"""
       jumpBtn.classList.add("hidden");
     }
   });
+  if (approvalsToggle && approvalsDrawer) {
+    approvalsToggle.addEventListener("click", function () {
+      approvalsDrawer.classList.remove("hidden");
+      renderApprovals();
+    });
+  }
+  if (approvalsClose && approvalsDrawer) {
+    approvalsClose.addEventListener("click", function () {
+      approvalsDrawer.classList.add("hidden");
+    });
+  }
+  if (approvalsDrawer) {
+    approvalsDrawer.addEventListener("click", function (e) {
+      if (e.target === approvalsDrawer) approvalsDrawer.classList.add("hidden");
+    });
+  }
 
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) poll(true);
@@ -1817,6 +2193,7 @@ JS = r"""
   renderClaims(initial.claims || []);
   renderArtifacts(initial.artifacts || []);
   renderSync(initial.agents || []);
+  renderApprovals(initial.approvals || []);
   scrollToBottom();
   autoresize(bodyEl);
 

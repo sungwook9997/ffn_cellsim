@@ -159,22 +159,56 @@ This means two rooms can hold a claim on the same logical topic
 `design-discussion` and Claude implementing in `implementation-work`
 won't collide.
 
-## Sidebar UI
+## Browser UI
 
 Topbar `Room` selector lets PI pick the active workroom for compose +
-timeline view. JS poll, send, and agent-card lookup all carry the
-selected room. Agent cards prefer `<currentRoom>-<logical>` ids and
-fall back to bare logical / suffix-match for legacy unprefixed
-sessions, so the legacy 4-pane mode and the new 2-room mode both
-render usefully.
+timeline view. JS poll and send both carry the selected room. The UI is
+intentionally chat-first: the old right sidebar progress cards were
+removed because heartbeat-derived progress can look more precise than
+the LLM terminal state really is.
+
+The topbar keeps only a small live sync strip:
+
+```text
+Live · <room> · #<latest-message-id> · <n> agents linked
+```
 
 Empty-DB defaults: the topbar `Room` select shows
 `design-discussion` and `implementation-work` even before any traffic
 exists, so PI can post into either room from a cold-start.
 
+### Approvals drawer
+
+The `Approvals` topbar button opens a drawer containing only unresolved
+PI decision requests. A request enters the drawer when all of the
+following are true:
+
+- message `room` equals the currently selected room
+- message `to` includes `pi`
+- message `status` is `decision-needed` or `blocker`
+- no later PI message in the same room references `approval:<id>` or
+  `mcp_msg:<id>`
+
+Drawer actions create normal PI-authored MCP messages:
+
+| Button | Outgoing status | Meaning |
+|---|---|---|
+| `Approve` | `ack` | PI approves the requested action |
+| `Needs changes` | `open-question` | PI wants the agent to revise or clarify |
+| `Reject` | `blocker` | PI blocks the requested action |
+
+Each action references the original request with both `mcp_msg:<id>`
+and `approval:<id>`, so the request disappears from the drawer without
+needing a separate approvals table.
+
+Agent rule: anything that requires PI approval must be sent as
+`to=pi status=decision-needed` (or `status=blocker` for an already
+blocked unsafe path). Do not bury approval requests in normal FYI
+messages or in terminal-only text.
+
 ## Cross-room context — preventing silent split
 
-The single MCP DB + the cross-room sidebar + the shared
+The single MCP DB + the room-scoped UI/approval drawer + the shared
 `docs/claude_codex_log.md` ledger are the three places that prevent
 "context split is silent" failure mode. Operating SOP:
 

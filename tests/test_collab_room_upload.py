@@ -128,3 +128,45 @@ def test_invalid_workroom_prefixed_agent_status_is_rejected(monkeypatch, tmp_pat
 
     with pytest.raises(ValueError, match="<workroom>-<agent>"):
         room._upsert_agent_status("BadRoom-claude", 0, "bad")
+
+
+def test_approval_queue_resolves_via_pi_action(monkeypatch, tmp_path: Path):
+    room = _load_room(monkeypatch, tmp_path)
+
+    with room._db() as conn:
+        cur = conn.execute(
+            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs, room) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (
+                "2026-05-03 22:30 (KST)",
+                "claude",
+                "pi",
+                "sanity-gate",
+                "Need PI approval before changing gate contract.",
+                "decision-needed",
+                "[]",
+                "implementation-work",
+            ),
+        )
+        approval_id = cur.lastrowid
+
+    approvals = room._fetch_approvals(room="implementation-work")
+    assert [a["id"] for a in approvals] == [approval_id]
+
+    result = room._handle_approval_action(
+        approval_id=approval_id,
+        action="approve",
+        note="Proceed with option A.",
+        room="implementation-work",
+    )
+
+    assert result["room"] == "implementation-work"
+    assert room._fetch_approvals(room="implementation-work") == []
+    messages = [
+        room._message_to_dict(row)
+        for row in room._fetch_recent_messages(room="implementation-work")
+    ]
+    assert messages[-1]["author"] == "pi"
+    assert messages[-1]["addressee"] == "claude"
+    assert messages[-1]["status"] == "ack"
+    assert f"approval:{approval_id}" in messages[-1]["refs"]
