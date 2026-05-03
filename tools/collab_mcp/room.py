@@ -412,6 +412,8 @@ def _fetch_sidebar(room: str = DEFAULT_ROOM) -> dict[str, Any]:
             "claude-work",
             "codex-chat",
             "codex-work",
+            "claude",
+            "codex",
         }
         agents = [row for row in agents if row[0] not in legacy_room_agents]
     return {"claims": claims, "artifacts": artifacts, "cursors": cursors, "agents": agents}
