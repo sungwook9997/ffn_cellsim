@@ -88,27 +88,39 @@ changes are split into multiple units.
 1. Run unit tests: `pytest tests/<relevant>` (must pass).
 2. Run dev smoke: `ACS_GPU_BACKEND=auto python -m acs.v2.<entrypoint>
    --config configs/dev.yaml --frames 10` (≤ 2 GB, ≤ a few minutes).
-3. Capture: peak VRAM (`nvidia-smi` snapshot), wall-clock,
+3. Run the local code graph preflight when `.venv-collab/bin/code-review-graph`
+   is available:
+   ` .venv-collab/bin/code-review-graph detect-changes --repo .`
+   Capture only the summary/risk score in the handoff; do not paste the
+   full JSON unless Codex asks.
+4. Capture: peak VRAM (`nvidia-smi` snapshot), wall-clock,
    conservation diagnostic (mass/momentum drift), Sanity Gate
    confirmation lines.
-4. Post a single MCP message `to=codex` with: commit hash, smoke
+5. Post a single MCP message `to=codex` with: commit hash, smoke
    metrics, Sanity Gate PASS lines, any concerning observation. No
    long log dumps — link to file path if needed.
 
 ### Step 3 — Review (Codex)
-1. Read the diff (`git show <hash>` or `git diff <prev>..<hash>`).
-2. Re-verify Sanity Gate 6 checks against the diff. Walk the
+1. Run graph preflight first when available:
+   ` .venv-collab/bin/code-review-graph detect-changes --repo .`
+   Use the changed functions, review priorities, and test gaps to decide
+   which files to read before opening broad diffs. If the MCP
+   `code-review-graph` tools are visible in the active session, use them;
+   otherwise use the CLI command.
+2. Read the diff (`git show <hash>` or `git diff <prev>..<hash>`),
+   starting from the graph-prioritized files.
+3. Re-verify Sanity Gate 6 checks against the diff. Walk the
    measurement-protocol consistency check (Sanity Gate item 6) — do
    not accept "exact at the peak" proofs that are evaluated off-peak.
-3. Independently reason the dimensional balance for any new term
+4. Independently reason the dimensional balance for any new term
    (Hard Rule 10: same unit basis for any order-of-magnitude
    comparison).
-4. Verify measurement-protocol matches experimental modality where
+5. Verify measurement-protocol matches experimental modality where
    relevant (Hard Rule 11: PI A/A₀ = top-down xy convex hull, not
    substrate-contact area).
-5. Spot-run the smoke or write an additional probe test if any check
+6. Spot-run the smoke or write an additional probe test if any check
    is uncertain. Record exact command in the review reply.
-6. Reply MCP `to=claude`. Status: `ack` (accept), `open-question`
+7. Reply MCP `to=claude`. Status: `ack` (accept), `open-question`
    (need clarification), or `decision-needed` (Sanity / magic-number
    / gate-contract issue). For `decision-needed`, send a separate
    `to=pi status=decision-needed` message **first** (PI gets the
@@ -244,7 +256,29 @@ When PI opens additional sessions for sweep throughput:
   Claude + single Codex per the "1Claude+1Codex per room" invariant
   in `CLAUDE.md` / `AGENTS.md` (commit `1e77485`).
 
-## 8. References
+## 8. Promised cadence reports
+
+When either agent promises a next status time, that timestamp becomes a
+delivery contract even if no substantive progress happened.
+
+- At the promised time, send a status message anyway: "no change since
+  last report" is valid; silence is not.
+- Before declaring "no change", read the relevant workroom(s) for new
+  PI/partner traffic. At minimum, read the room where the promise was
+  made; if the task spans `design-discussion` and `implementation-work`,
+  check both.
+- If a long command is still running, report the command, elapsed time,
+  and next expected checkpoint. Do not wait for completion past the
+  promised timestamp.
+- If the agent that made the promise is busy, the paired chat/review
+  pane may send the cadence message, but it must state who owns the
+  underlying work and what is pending.
+- Missed cadence is logged as a protocol failure in the next report,
+  with the missed timestamp and corrective action. The 2026-05-04
+  missed 01:48 and 03:00 KST reports are the reference incident: the
+  fix is explicit scheduled send, not relying on backflow or new events.
+
+## 9. References
 
 - `CLAUDE.md` (Claude-facing) and `AGENTS.md` (Codex-facing) —
   agent-specific mirrors of project rules: vision, Hard Rules, Sanity
