@@ -3,12 +3,58 @@
 These classes describe what an imaging dataset claims to contain before any
 model fitting or simulation is allowed. They are deliberately lightweight and
 GPU-free so they can run on Mac, Windows, CI, or notebooks.
+
+Sanity Gate (data_contract):
+    1. Dimensional analysis: this module is dimensionless metadata only. Units
+       live on the metric strings ("um", "um2", "count_per_frame", ...). dt/CFL
+       is N/A.
+    2. Boundary cases: empty channels, empty metrics, missing artifacts,
+       missing CSV columns, missing channels, non-positive voxel sizes,
+       calibration/validation timepoint overlap, out-of-range timepoints,
+       duplicate `(name, measurement_modality)` metric keys, and
+       `available_csv_columns` declared without `CSV_TABLE` artifact are all
+       guarded.
+    3. Conservation/provenance invariants: dataclasses are frozen so a
+       declared dataset/contract cannot be mutated after construction; metric
+       validation runs against the full dataset, not a stale channel list.
+    4. Numerical sanity: all numeric fields (frame_interval_s, voxel sizes)
+       are checked positive; integer timepoint indices are bounded by
+       n_timepoints.
+    5. Sign/sense check: artifact subset semantics (`required_artifacts`
+       must be a subset of `available_artifacts`) and channel/CSV-column
+       subset semantics are enforced positively, not by negation tricks.
+    6. Measurement-protocol consistency: per Hard Rule 11, metrics declare
+       what artifacts/columns/channels they read from. A dataset that does
+       not advertise those artifacts cannot be calibrated/validated by such
+       a metric. Default single-cell contract auto-filters to the dataset's
+       advertised artifacts so a declared contract never lies about what is
+       measurable.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Sequence
+from enum import Enum
+from typing import Sequence
+
+
+class ArtifactKind(str, Enum):
+    """Kinds of dataset artifacts that v2 metrics may require.
+
+    Phase 1 expands the previously-locked 8-member contract with
+    ``ECM_FIELD`` to admit ECM substrate state as a first-class artifact
+    (per `docs/v2_phase1_plan_consolidated.md` §8).
+    """
+
+    CSV_TABLE = "csv_table"
+    RAW_FRAMES = "raw_frames"
+    SEGMENTATION_MASK = "segmentation_mask"
+    BOUNDARY_CONTOURS = "boundary_contours"
+    TRACKING_TABLE = "tracking_table"
+    MARKER_CHANNEL = "marker_channel"
+    TFM_FIELD = "tfm_field"
+    EVENT_ANNOTATIONS = "event_annotations"
+    ECM_FIELD = "ecm_field"
 
 
 def _require_positive_triplet(name: str, values: Sequence[float]) -> None:
@@ -32,6 +78,8 @@ class ImagingDatasetSpec:
     n_timepoints: int
     calibration_timepoints: tuple[int, ...] = field(default_factory=tuple)
     validation_timepoints: tuple[int, ...] = field(default_factory=tuple)
+    available_artifacts: tuple[ArtifactKind, ...] = field(default_factory=tuple)
+    available_csv_columns: tuple[str, ...] = field(default_factory=tuple)
     notes: str = ""
 
     def validate(self) -> None:
@@ -62,20 +110,52 @@ class ImagingDatasetSpec:
                     f"timepoint index {idx} outside dataset range [0, {self.n_timepoints})"
                 )
 
+        seen_artifacts: set[ArtifactKind] = set()
+        for art in self.available_artifacts:
+            if not isinstance(art, ArtifactKind):
+                raise ValueError(
+                    f"available_artifacts must contain ArtifactKind values, got {art!r}"
+                )
+            if art in seen_artifacts:
+                raise ValueError(f"duplicate artifact in available_artifacts: {art!r}")
+            seen_artifacts.add(art)
+
+        if self.available_csv_columns and ArtifactKind.CSV_TABLE not in self.available_artifacts:
+            raise ValueError(
+                "available_csv_columns is non-empty but CSV_TABLE artifact is not advertised"
+            )
+        if any(not col.strip() for col in self.available_csv_columns):
+            raise ValueError(
+                f"available_csv_columns must be non-empty strings, got {self.available_csv_columns!r}"
+            )
+        if len(set(self.available_csv_columns)) != len(self.available_csv_columns):
+            raise ValueError(
+                f"duplicate CSV column in available_csv_columns: {self.available_csv_columns!r}"
+            )
+
 
 @dataclass(frozen=True)
 class MetricSpec:
-    """A visual or physical metric used for calibration or validation."""
+    """A visual or physical metric used for calibration or validation.
+
+    Artifact-aware semantics (Phase 1 consolidated plan §8): a metric declares
+    which dataset artifacts it reads, which CSV columns it requires (only
+    meaningful when ``ArtifactKind.CSV_TABLE`` is also required), and which
+    imaging channels it depends on. Validation checks that the metric's
+    declared inputs are all present in the dataset.
+    """
 
     name: str
     target_object: str
     measurement_modality: str
     unit: str
     role: str
-    source_channel: Optional[str] = None
+    required_artifacts: tuple[ArtifactKind, ...] = field(default_factory=tuple)
+    csv_columns_required: tuple[str, ...] = field(default_factory=tuple)
+    channels_required: tuple[str, ...] = field(default_factory=tuple)
     description: str = ""
 
-    def validate(self, available_channels: Sequence[str]) -> None:
+    def validate(self, dataset: ImagingDatasetSpec) -> None:
         if not self.name.strip():
             raise ValueError("metric name must be non-empty")
         if not self.target_object.strip():
@@ -88,10 +168,44 @@ class MetricSpec:
             raise ValueError(
                 f"metric {self.name!r} role must be calibration, validation, or diagnostic"
             )
-        if self.source_channel is not None and self.source_channel not in available_channels:
+
+        for art in self.required_artifacts:
+            if not isinstance(art, ArtifactKind):
+                raise ValueError(
+                    f"metric {self.name!r} required_artifacts must contain ArtifactKind values, "
+                    f"got {art!r}"
+                )
+        missing_artifacts = sorted(
+            (a.value for a in set(self.required_artifacts) - set(dataset.available_artifacts)),
+        )
+        if missing_artifacts:
             raise ValueError(
-                f"metric {self.name!r} source_channel {self.source_channel!r} "
-                f"not in dataset channels {tuple(available_channels)!r}"
+                f"metric {self.name!r} requires artifacts {missing_artifacts!r} "
+                f"not advertised by dataset {dataset.dataset_id!r}"
+            )
+
+        if self.csv_columns_required:
+            if ArtifactKind.CSV_TABLE not in self.required_artifacts:
+                raise ValueError(
+                    f"metric {self.name!r} declares csv_columns_required but does not "
+                    f"include CSV_TABLE in required_artifacts"
+                )
+            missing_columns = sorted(
+                set(self.csv_columns_required) - set(dataset.available_csv_columns),
+            )
+            if missing_columns:
+                raise ValueError(
+                    f"metric {self.name!r} requires CSV columns {missing_columns!r} "
+                    f"not available in dataset {dataset.dataset_id!r}"
+                )
+
+        missing_channels = sorted(
+            set(self.channels_required) - set(dataset.channels),
+        )
+        if missing_channels:
+            raise ValueError(
+                f"metric {self.name!r} requires channels {missing_channels!r} "
+                f"not in dataset {dataset.dataset_id!r}"
             )
 
 
@@ -106,12 +220,13 @@ class V2DataContract:
         self.dataset.validate()
         if not self.metrics:
             raise ValueError("at least one metric is required")
-        seen: set[str] = set()
+        seen_keys: set[tuple[str, str]] = set()
         for metric in self.metrics:
-            metric.validate(self.dataset.channels)
-            if metric.name in seen:
-                raise ValueError(f"duplicate metric name: {metric.name!r}")
-            seen.add(metric.name)
+            metric.validate(self.dataset)
+            key = (metric.name, metric.measurement_modality)
+            if key in seen_keys:
+                raise ValueError(f"duplicate metric key (name, measurement_modality): {key!r}")
+            seen_keys.add(key)
 
     @property
     def calibration_metrics(self) -> tuple[MetricSpec, ...]:
@@ -123,34 +238,48 @@ class V2DataContract:
 
 
 def default_single_cell_contract(dataset: ImagingDatasetSpec) -> V2DataContract:
-    """Return a minimal single-cell metric contract for early v2 work."""
+    """Return a minimal single-cell metric contract for early v2 work.
 
-    return V2DataContract(
-        dataset=dataset,
-        metrics=(
-            MetricSpec(
-                name="projected_area",
-                target_object="single_cell",
-                measurement_modality="top_down_segmentation",
-                unit="um2",
-                role="calibration",
-                description="Top-down projected cell area from segmentation masks.",
+    Auto-filters candidate metrics to those whose ``required_artifacts`` are
+    a subset of ``dataset.available_artifacts``. A metric that depends on an
+    unadvertised artifact is silently omitted, so a declared contract never
+    claims a metric the dataset cannot supply.
+    """
+
+    candidates: tuple[MetricSpec, ...] = (
+        MetricSpec(
+            name="projected_area",
+            target_object="single_cell",
+            measurement_modality="top_down_segmentation",
+            unit="um2",
+            role="calibration",
+            required_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+            description="Top-down projected cell area from segmentation masks.",
+        ),
+        MetricSpec(
+            name="boundary_roughness",
+            target_object="single_cell",
+            measurement_modality="cell_outline",
+            unit="dimensionless",
+            role="validation",
+            required_artifacts=(ArtifactKind.BOUNDARY_CONTOURS,),
+            description="Perimeter-normalized outline roughness for protrusive activity.",
+        ),
+        MetricSpec(
+            name="protrusion_event_count",
+            target_object="single_cell_boundary",
+            measurement_modality="live_imaging_tracking",
+            unit="count_per_frame",
+            role="validation",
+            required_artifacts=(
+                ArtifactKind.EVENT_ANNOTATIONS,
+                ArtifactKind.TRACKING_TABLE,
             ),
-            MetricSpec(
-                name="boundary_roughness",
-                target_object="single_cell",
-                measurement_modality="cell_outline",
-                unit="dimensionless",
-                role="validation",
-                description="Perimeter-normalized outline roughness for protrusive activity.",
-            ),
-            MetricSpec(
-                name="protrusion_event_count",
-                target_object="single_cell_boundary",
-                measurement_modality="live_imaging_tracking",
-                unit="count_per_frame",
-                role="validation",
-                description="Detected lamellipodia/filopodia-like boundary events.",
-            ),
+            description="Detected lamellipodia/filopodia-like boundary events.",
         ),
     )
+    available = set(dataset.available_artifacts)
+    metrics = tuple(
+        m for m in candidates if set(m.required_artifacts).issubset(available)
+    )
+    return V2DataContract(dataset=dataset, metrics=metrics)

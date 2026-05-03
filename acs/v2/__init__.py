@@ -5,7 +5,12 @@ starts with data contracts and biological state schemas, then grows toward
 single-cell and cell-resolved spheroid simulation.
 """
 
-from acs.v2.data_contract import ImagingDatasetSpec, MetricSpec, V2DataContract
+from acs.v2.data_contract import (
+    ArtifactKind,
+    ImagingDatasetSpec,
+    MetricSpec,
+    V2DataContract,
+)
 from acs.v2.measurement_boundary import (
     MeasurementBoundary,
     MeasurementBoundaryError,
@@ -13,6 +18,7 @@ from acs.v2.measurement_boundary import (
 from acs.v2.single_cell import FocalAdhesionState, ProtrusionEvent, SingleCellState
 
 __all__ = [
+    "ArtifactKind",
     "FocalAdhesionState",
     "ImagingDatasetSpec",
     "MeasurementBoundary",

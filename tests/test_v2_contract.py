@@ -3,13 +3,19 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from acs.v2.data_contract import ImagingDatasetSpec, default_single_cell_contract
+from acs.v2.data_contract import (
+    ArtifactKind,
+    ImagingDatasetSpec,
+    MetricSpec,
+    V2DataContract,
+    default_single_cell_contract,
+)
 from acs.v2.measurement_boundary import MeasurementBoundary
 from acs.v2.single_cell import FocalAdhesionState, ProtrusionEvent, SingleCellState
 
 
-def test_default_single_cell_contract_validates():
-    dataset = ImagingDatasetSpec(
+def _full_artifact_dataset(**overrides) -> ImagingDatasetSpec:
+    base = dict(
         dataset_id="single_cell_demo",
         root_uri="data/imaging/single_cell_demo",
         modality="confocal_live",
@@ -19,32 +25,274 @@ def test_default_single_cell_contract_validates():
         n_timepoints=12,
         calibration_timepoints=(0, 1, 2, 3),
         validation_timepoints=(8, 9, 10, 11),
+        available_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.BOUNDARY_CONTOURS,
+            ArtifactKind.EVENT_ANNOTATIONS,
+            ArtifactKind.TRACKING_TABLE,
+        ),
     )
+    base.update(overrides)
+    return ImagingDatasetSpec(**base)
 
+
+def test_artifact_kind_has_nine_members_with_ecm_field():
+    members = list(ArtifactKind)
+    assert len(members) == 9
+    assert ArtifactKind.ECM_FIELD in members
+    expected = {
+        "csv_table",
+        "raw_frames",
+        "segmentation_mask",
+        "boundary_contours",
+        "tracking_table",
+        "marker_channel",
+        "tfm_field",
+        "event_annotations",
+        "ecm_field",
+    }
+    assert {a.value for a in members} == expected
+
+
+def test_default_single_cell_contract_validates_with_full_artifacts():
+    dataset = _full_artifact_dataset()
     contract = default_single_cell_contract(dataset)
-
     contract.validate()
     assert len(contract.calibration_metrics) == 1
     assert len(contract.validation_metrics) == 2
 
 
+def test_default_contract_auto_filters_to_available_artifacts():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+    )
+    contract = default_single_cell_contract(dataset)
+    contract.validate()
+    metric_names = tuple(m.name for m in contract.metrics)
+    assert metric_names == ("projected_area",)
+
+
+def test_default_contract_with_no_artifacts_yields_empty_metrics_and_fails_validate():
+    dataset = _full_artifact_dataset(available_artifacts=())
+    contract = default_single_cell_contract(dataset)
+    assert contract.metrics == ()
+    with pytest.raises(ValueError, match="at least one metric"):
+        contract.validate()
+
+
 def test_contract_rejects_calibration_validation_overlap():
-    dataset = ImagingDatasetSpec(
-        dataset_id="overlap",
-        root_uri="data/imaging/overlap",
-        modality="confocal_live",
-        channels=("membrane",),
-        voxel_size_um_xyz=(0.25, 0.25, 1.0),
-        frame_interval_s=60.0,
+    dataset = _full_artifact_dataset(
         n_timepoints=3,
         calibration_timepoints=(1,),
         validation_timepoints=(1,),
+        available_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
     )
-
     contract = default_single_cell_contract(dataset)
-
     with pytest.raises(ValueError, match="overlap"):
         contract.validate()
+
+
+def test_metric_required_artifacts_fail_when_dataset_missing_artifact():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+    )
+    metric = MetricSpec(
+        name="boundary_roughness",
+        target_object="single_cell",
+        measurement_modality="cell_outline",
+        unit="dimensionless",
+        role="validation",
+        required_artifacts=(ArtifactKind.BOUNDARY_CONTOURS,),
+    )
+    with pytest.raises(ValueError, match="boundary_contours"):
+        metric.validate(dataset)
+
+
+def test_metric_required_artifacts_pass_subset():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.BOUNDARY_CONTOURS,
+        ),
+    )
+    metric = MetricSpec(
+        name="boundary_roughness",
+        target_object="single_cell",
+        measurement_modality="cell_outline",
+        unit="dimensionless",
+        role="validation",
+        required_artifacts=(ArtifactKind.BOUNDARY_CONTOURS,),
+    )
+    metric.validate(dataset)
+
+
+def test_metric_csv_columns_require_csv_table_artifact():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+    )
+    metric = MetricSpec(
+        name="experimental_area",
+        target_object="single_cell",
+        measurement_modality="csv_top_down",
+        unit="um2",
+        role="calibration",
+        required_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+        csv_columns_required=("Area_um2",),
+    )
+    with pytest.raises(ValueError, match="CSV_TABLE"):
+        metric.validate(dataset)
+
+
+def test_metric_csv_columns_pass_when_csv_table_and_columns_available():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.CSV_TABLE,
+        ),
+        available_csv_columns=("Area_um2", "Time_s"),
+    )
+    metric = MetricSpec(
+        name="experimental_area",
+        target_object="single_cell",
+        measurement_modality="csv_top_down",
+        unit="um2",
+        role="calibration",
+        required_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.CSV_TABLE,
+        ),
+        csv_columns_required=("Area_um2",),
+    )
+    metric.validate(dataset)
+
+
+def test_metric_csv_columns_fail_when_column_missing():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.CSV_TABLE,
+        ),
+        available_csv_columns=("Time_s",),
+    )
+    metric = MetricSpec(
+        name="experimental_area",
+        target_object="single_cell",
+        measurement_modality="csv_top_down",
+        unit="um2",
+        role="calibration",
+        required_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.CSV_TABLE,
+        ),
+        csv_columns_required=("Area_um2",),
+    )
+    with pytest.raises(ValueError, match="Area_um2"):
+        metric.validate(dataset)
+
+
+def test_metric_channels_required_pass_and_fail():
+    dataset = _full_artifact_dataset()
+    ok_metric = MetricSpec(
+        name="actin_intensity",
+        target_object="single_cell",
+        measurement_modality="channel_intensity",
+        unit="au",
+        role="diagnostic",
+        required_artifacts=(ArtifactKind.RAW_FRAMES,),
+        channels_required=("actin",),
+    )
+    dataset_with_raw = _full_artifact_dataset(
+        available_artifacts=(*dataset.available_artifacts, ArtifactKind.RAW_FRAMES),
+    )
+    ok_metric.validate(dataset_with_raw)
+
+    bad_metric = MetricSpec(
+        name="dapi_intensity",
+        target_object="single_cell",
+        measurement_modality="channel_intensity",
+        unit="au",
+        role="diagnostic",
+        required_artifacts=(ArtifactKind.RAW_FRAMES,),
+        channels_required=("dapi",),
+    )
+    with pytest.raises(ValueError, match="dapi"):
+        bad_metric.validate(dataset_with_raw)
+
+
+def test_duplicate_metric_key_name_modality():
+    dataset = _full_artifact_dataset()
+    metric = MetricSpec(
+        name="projected_area",
+        target_object="single_cell",
+        measurement_modality="top_down_segmentation",
+        unit="um2",
+        role="calibration",
+        required_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+    )
+    contract = V2DataContract(dataset=dataset, metrics=(metric, metric))
+    with pytest.raises(ValueError, match="duplicate metric key"):
+        contract.validate()
+
+
+def test_distinct_metrics_same_name_different_modality_allowed():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.CSV_TABLE,
+        ),
+        available_csv_columns=("Area_um2",),
+    )
+    seg_metric = MetricSpec(
+        name="projected_area",
+        target_object="single_cell",
+        measurement_modality="top_down_segmentation",
+        unit="um2",
+        role="calibration",
+        required_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+    )
+    csv_metric = MetricSpec(
+        name="projected_area",
+        target_object="single_cell",
+        measurement_modality="csv_top_down",
+        unit="um2",
+        role="calibration",
+        required_artifacts=(ArtifactKind.CSV_TABLE,),
+        csv_columns_required=("Area_um2",),
+    )
+    contract = V2DataContract(dataset=dataset, metrics=(seg_metric, csv_metric))
+    contract.validate()
+    assert len(contract.calibration_metrics) == 2
+
+
+def test_dataset_csv_columns_without_csv_artifact_rejected():
+    with pytest.raises(ValueError, match="CSV_TABLE"):
+        ImagingDatasetSpec(
+            dataset_id="bad",
+            root_uri="data/bad",
+            modality="confocal_live",
+            channels=("membrane",),
+            voxel_size_um_xyz=(0.25, 0.25, 1.0),
+            frame_interval_s=60.0,
+            n_timepoints=3,
+            available_csv_columns=("Time_s",),
+        ).validate()
+
+
+def test_dataset_duplicate_artifact_rejected():
+    with pytest.raises(ValueError, match="duplicate artifact"):
+        ImagingDatasetSpec(
+            dataset_id="dup",
+            root_uri="data/dup",
+            modality="confocal_live",
+            channels=("membrane",),
+            voxel_size_um_xyz=(0.25, 0.25, 1.0),
+            frame_interval_s=60.0,
+            n_timepoints=3,
+            available_artifacts=(
+                ArtifactKind.SEGMENTATION_MASK,
+                ArtifactKind.SEGMENTATION_MASK,
+            ),
+        ).validate()
 
 
 def test_single_cell_state_projected_area_and_nested_validation():
