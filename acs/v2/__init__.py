@@ -15,6 +15,14 @@ from acs.v2.measurement_boundary import (
     MeasurementBoundary,
     MeasurementBoundaryError,
 )
+from acs.v2.metrics import (
+    MetricRegistry,
+    MetricRegistryError,
+    RegisteredMetric,
+    boundary_perimeter_um,
+    boundary_projected_area_um2,
+    default_registry,
+)
 from acs.v2.single_cell import FocalAdhesionState, ProtrusionEvent, SingleCellState
 
 __all__ = [
@@ -23,8 +31,14 @@ __all__ = [
     "ImagingDatasetSpec",
     "MeasurementBoundary",
     "MeasurementBoundaryError",
+    "MetricRegistry",
+    "MetricRegistryError",
     "MetricSpec",
     "ProtrusionEvent",
+    "RegisteredMetric",
     "SingleCellState",
     "V2DataContract",
+    "boundary_perimeter_um",
+    "boundary_projected_area_um2",
+    "default_registry",
 ]
