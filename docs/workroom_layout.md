@@ -2,7 +2,7 @@
 
 **Status:** active operating model after the Task 1–5 split
 (commits `6a1a134`, `ee9d3a4`, `35c5112`, `244fec0`, `083ae55`,
-2026-05-03).
+`1ea6695`, `04df930`, 2026-05-03).
 **Replaces:** the single 4-pane workroom that ran Claude+Codex chat/work
 inside one tmux scope.
 
@@ -225,6 +225,7 @@ The single MCP DB + the cross-room sidebar + the shared
 | 2026-05-03 | `244fec0` | Task 6 2-room SOP + Claude memory entry |
 | 2026-05-03 | `083ae55` | Room selector persistence, PI reply path, and new-relay cursor hotfixes |
 | 2026-05-03 | runtime | Task 5 live migration: legacy unprefixed sessions retired after both prefixed rooms passed self-check |
+| 2026-05-03 | `04df930` | Prefixed heartbeat rows seeded so UI agent cards show per-room panes instead of stale legacy rows |
 
 Pre-Task-2 messages were bucketed into `design-discussion` by the
 schema migration. Pre-Task-1 unprefixed tmux sessions were retired
