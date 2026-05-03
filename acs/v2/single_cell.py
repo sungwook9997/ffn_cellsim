@@ -1,8 +1,22 @@
-"""Single-cell state schemas for v2 mechanobiology.
+"""Single-cell state schema for v2 mechanobiology.
 
-This module intentionally defines state and validation only. Dynamical update
-rules belong in later physics modules after the data contract and sanity checks
-are agreed.
+This module defines :class:`SingleCellState` and re-exports the canonical
+``ProtrusionEvent`` and ``FocalAdhesionState`` schemas from their dedicated
+modules. Dynamical update rules belong in later physics modules; nothing in
+this file simulates anything.
+
+Slow-biology hooks (``cell_state``, ``cell_age_s``, ``cell_cycle_phase``,
+``division_count``, ``parent_cell_id``, ``mechanosignal_yap_taz``,
+``neighbor_cell_ids``) carry schema only and are default OFF per
+``docs/v2_phase1_plan_consolidated.md`` §6.6. Dead cells retain their
+geometry for visualization, but downstream dynamics modules must skip
+their dynamics.
+
+Sanity Gate scope: schema-only state container; full physics 6-item gate
+N/A. The boundary-case checks owned here are the slow-biology hook
+guards plus polarity, height, and nested event/adhesion validation.
+
+Magic-Number Block: this module declares no tunable numeric. N/A.
 """
 
 from __future__ import annotations
@@ -12,78 +26,25 @@ from typing import Literal, Optional
 
 import numpy as np
 
+from acs.v2.focal_adhesion import FocalAdhesionState
 from acs.v2.measurement_boundary import MeasurementBoundary
+from acs.v2.protrusion import ProtrusionEvent
 
 CellState = Literal["alive", "dead"]
 CellCyclePhase = Literal["G0", "G1", "S", "G2", "M"]
 
-
-@dataclass(frozen=True)
-class ProtrusionEvent:
-    """A lamellipodia/filopodia-like boundary event extracted or simulated."""
-
-    time_s: float
-    cell_id: str
-    event_type: str
-    boundary_angle_rad: float
-    length_um: float
-    lifetime_s: float
-    confidence: float = 1.0
-
-    def validate(self) -> None:
-        if self.time_s < 0.0:
-            raise ValueError("time_s must be non-negative")
-        if not self.cell_id.strip():
-            raise ValueError("cell_id must be non-empty")
-        if self.event_type not in {"lamellipodium", "filopodium", "retraction"}:
-            raise ValueError(
-                "event_type must be lamellipodium, filopodium, or retraction"
-            )
-        if self.length_um < 0.0:
-            raise ValueError("length_um must be non-negative")
-        if self.lifetime_s <= 0.0:
-            raise ValueError("lifetime_s must be positive")
-        if not (0.0 <= self.confidence <= 1.0):
-            raise ValueError("confidence must be in [0, 1]")
-
-
-@dataclass(frozen=True)
-class FocalAdhesionState:
-    """State of one focal adhesion observation or simulated adhesion patch."""
-
-    adhesion_id: str
-    cell_id: str
-    position_um_xyz: tuple[float, float, float]
-    age_s: float
-    maturity: float
-    bound_fraction: float
-
-    def validate(self) -> None:
-        if not self.adhesion_id.strip():
-            raise ValueError("adhesion_id must be non-empty")
-        if not self.cell_id.strip():
-            raise ValueError("cell_id must be non-empty")
-        if len(self.position_um_xyz) != 3:
-            raise ValueError("position_um_xyz must contain exactly 3 values")
-        if self.age_s < 0.0:
-            raise ValueError("age_s must be non-negative")
-        if not (0.0 <= self.maturity <= 1.0):
-            raise ValueError("maturity must be in [0, 1]")
-        if not (0.0 <= self.bound_fraction <= 1.0):
-            raise ValueError("bound_fraction must be in [0, 1]")
+__all__ = [
+    "CellCyclePhase",
+    "CellState",
+    "FocalAdhesionState",
+    "ProtrusionEvent",
+    "SingleCellState",
+]
 
 
 @dataclass
 class SingleCellState:
-    """Geometry and mechanobiology state for one cell at one timepoint.
-
-    Slow-biology hooks (``cell_state``, ``cell_age_s``, ``cell_cycle_phase``,
-    ``division_count``, ``parent_cell_id``, ``mechanosignal_yap_taz``,
-    ``neighbor_cell_ids``) carry schema only. Their dynamics are default
-    OFF and gated behind their own Sanity Gates per
-    `docs/v2_phase1_plan_consolidated.md` §6.6. Dead cells retain geometry
-    for visualization but downstream dynamics modules must skip them.
-    """
+    """Geometry and mechanobiology state for one cell at one timepoint."""
 
     cell_id: str
     time_s: float

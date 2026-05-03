@@ -314,11 +314,11 @@ def test_single_cell_state_projected_area_and_nested_validation():
         polarity_xy=(1.0, 0.0),
         protrusions=[
             ProtrusionEvent(
-                time_s=120.0,
                 cell_id="cell-1",
-                event_type="lamellipodium",
+                start_time_s=120.0,
                 boundary_angle_rad=0.0,
                 length_um=3.0,
+                event_type="lamellipodium",
                 lifetime_s=180.0,
             )
         ],
@@ -326,7 +326,7 @@ def test_single_cell_state_projected_area_and_nested_validation():
             FocalAdhesionState(
                 adhesion_id="fa-1",
                 cell_id="cell-1",
-                position_um_xyz=(1.0, 0.5, 0.0),
+                position_um_xy=(1.0, 0.5),
                 age_s=60.0,
                 maturity=0.4,
                 bound_fraction=0.8,
