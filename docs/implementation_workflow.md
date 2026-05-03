@@ -4,8 +4,17 @@
 (2026-05-03, MCP ids: PI 567/572/575/578, Claude 570/580/582/585,
 Codex 568/574/576/579/583).
 **Scope:** ActiveCellSim v2 (`acs/v2/`, `docs/10_dev_roadmap_v2.md`).
-**Mirrors:** `docs/workroom_layout.md` (room split SOP), `CLAUDE.md`
-(Sanity Gate, Magic-Number Block, Hard Rules).
+**Mirrors:** `docs/workroom_layout.md` (room split SOP); `CLAUDE.md`
+**and** `AGENTS.md` (Sanity Gate, Magic-Number Block, Hard Rules).
+
+**On `CLAUDE.md` vs `AGENTS.md`.** The repo has both files. They are
+agent-specific mirrors of the same project rules: Claude reads
+`CLAUDE.md`, Codex reads `AGENTS.md`. This SOP cites both whenever it
+references shared rules. **If the two files disagree on a Hard Rule,
+Sanity Gate item, or Magic-Number Block clause, that disagreement is
+itself a `decision-needed` for PI — neither agent silently picks one.**
+Editorial drift between the two files should be flagged to PI as a
+maintenance issue, not resolved unilaterally.
 
 ## 1. Roles
 
@@ -16,7 +25,8 @@ Codex 568/574/576/579/583).
 | **PI** | Design decisions; Sanity Gate failure resolution; production-run authorization; experimental-data overlay direction | None — but PI is in `design-discussion` by default; do not page PI for routine review work |
 
 PI is the only authority for: design changes, gate-contract changes,
-production-run go/no-go, deviation from any `CLAUDE.md` Hard Rule.
+production-run go/no-go, deviation from any Hard Rule in `CLAUDE.md` /
+`AGENTS.md`.
 
 ## 2. Agent-to-agent MCP discipline
 
@@ -33,8 +43,9 @@ pane wrapped exactly like a PI message (`: mcp_msg id=...`). Use this.
 
 **PI escalation** (`to=pi` with `status=open-question` or
 `decision-needed`):
-- Sanity Gate FAIL on a physics/numerics module (per `CLAUDE.md`
-  failure-handling rule — surface with at least three concrete options).
+- Sanity Gate FAIL on a physics/numerics module (per `CLAUDE.md` /
+  `AGENTS.md` failure-handling rule — surface with at least three
+  concrete options).
 - Magic-number test 3 = yes, or tests 1/2 = no.
 - Gate-contract change request (never edit gate tolerances inline).
 - Production-run authorization.
@@ -45,6 +56,15 @@ pane wrapped exactly like a PI message (`: mcp_msg id=...`). Use this.
 **Visibility-only to PI** (`to=pi` with `status=FYI`):
 - Cycle complete + handoff ready (one line + commit hash).
 - Smoke test result one-liner if PI asked for status.
+
+**One recipient per `mcp__acs-collab__send` call.** The `to` field
+accepts a single recipient. When an escalation needs both PI and the
+partner agent in the timeline (e.g. Codex flags Sanity Gate FAIL,
+needs PI decision and Claude needs to halt), send **two messages**
+back-to-back with `refs` cross-linking them — never assume CC or
+multi-recipient delivery. Order: `to=pi` first (decision channel),
+then `to=<partner>` referring to the PI message id, so the agent's
+halt instruction has the PI escalation as its anchor.
 
 Default: keep PI off the timeline for routine review.
 
@@ -90,14 +110,25 @@ changes are split into multiple units.
    is uncertain. Record exact command in the review reply.
 6. Reply MCP `to=claude`. Status: `ack` (accept), `open-question`
    (need clarification), or `decision-needed` (Sanity / magic-number
-   / gate-contract issue → also CC `to=pi`).
+   / gate-contract issue). For `decision-needed`, send a separate
+   `to=pi status=decision-needed` message **first** (PI gets the
+   decision), then the `to=claude` reply with `refs=[<pi_msg_id>]`
+   so Claude's halt instruction is anchored to the PI escalation.
+   Per §2: one recipient per call, no CC.
 
 ### Step 4 — Converge
-- Codex `ack` → Claude marks the unit complete. Both ids recorded in
-  the unit's commit message trailer (`Reviewed-By: codex (mcp=<id>)`).
+- Codex `ack` → Claude marks the unit complete. **Do not amend the
+  reviewed commit** to add a `Reviewed-By` trailer: amending changes
+  the hash that was reviewed and breaks reproducibility. Sign-off
+  lives in the production-handoff brief (§5: Claude mcp id + Codex
+  mcp id), not in the commit object. If a per-cycle audit trail is
+  desired, append the review pair `(unit-commit-hash, claude-mcp-id,
+  codex-mcp-id)` to a separate `runs/review_log.md` (metadata-only
+  commit, never an amend of the reviewed unit).
 - Codex `open-question` → Claude addresses, posts new commit hash, go
   to step 3.
-- Codex `decision-needed` → both wait for PI.
+- Codex `decision-needed` → both wait for PI (per §2 escalation
+  message ordering: PI message first, then partner with refs).
 
 A cycle that bounces step 3 ↔ step 1 more than twice without
 converging is itself a `decision-needed` — escalate to PI rather
@@ -105,8 +136,8 @@ than spiraling.
 
 ## 4. Sanity Gate and Magic-Number Block
 
-Both are defined in `CLAUDE.md`. This SOP enforces *when* they are
-applied:
+Both are defined in `CLAUDE.md` (and mirrored in `AGENTS.md`). This
+SOP enforces *when* they are applied:
 
 - **Before first execution** of any new physics/numerics module —
   Sanity Gate 6 checks recorded.
@@ -156,9 +187,14 @@ single brief file at `runs/<UTC-yyyymmdd-HHMM>_<topic>.md`:
 ```
 
 ### Clean-tree rule (production / sweep)
-`git status --short` MUST be empty. Dirty tree → handoff refused;
-commit or stash & branch first. Reason: production runs are recorded
-against a commit hash; uncommitted changes invalidate that record.
+`git status --short` MUST be empty **at handoff time** — this is a
+live check the implementer runs in the current shell while assembling
+the handoff brief, not a property assumed from the reviewed commit.
+Reviewed clean ≠ currently clean: sibling worktrees or unrelated
+edits can dirty the tree between review and handoff. Dirty tree →
+handoff refused; commit or stash & branch first. Reason: production
+runs are recorded against a commit hash; uncommitted changes
+invalidate that record.
 
 ### Dev-smoke exception
 Dev smoke / debug runs MAY proceed dirty, but the handoff (if any)
@@ -168,8 +204,8 @@ on a clean commit.
 
 ### Always-blocker
 Any dirty file under `data/experimental/` is a hard blocker
-regardless of run type. Per `CLAUDE.md` Hard Rule, those CSVs are
-read-only.
+regardless of run type. Per `CLAUDE.md` / `AGENTS.md` Hard Rule,
+those CSVs are read-only.
 
 ## 6. Sanity Gate / Magic-Number escalation
 
@@ -184,7 +220,8 @@ When Claude (step 1 or 2) or Codex (step 3) hits a FAIL:
    - which option the implementer recommends and why
 3. Wait for PI direction. Never silently work around.
 
-Example anti-patterns to never repeat (from `CLAUDE.md`):
+Example anti-patterns to never repeat (from `CLAUDE.md` /
+`AGENTS.md`):
 - `csf_kappa_scale=0.05` (April 2026): magic number chosen to make
   gate pass.
 - `g_star/κ` per-volume vs per-area mismatch (Path C, 2026-04-29):
@@ -204,12 +241,15 @@ When PI opens additional sessions for sweep throughput:
   `runs/<UTC>_sweep_<topic>.md` listing every per-session
   reproducibility block from §5.
 - Heavy-load mode terminates on PI signal; revert to single
-  Claude + single Codex per CLAUDE.md "1Claude+1Codex per room"
-  invariant (commit `1e77485`).
+  Claude + single Codex per the "1Claude+1Codex per room" invariant
+  in `CLAUDE.md` / `AGENTS.md` (commit `1e77485`).
 
 ## 8. References
 
-- `CLAUDE.md` — vision, Hard Rules, Sanity Gate, Magic-Number Block.
+- `CLAUDE.md` (Claude-facing) and `AGENTS.md` (Codex-facing) —
+  agent-specific mirrors of project rules: vision, Hard Rules, Sanity
+  Gate, Magic-Number Block. Conflicts between the two escalate to PI
+  per §1.
 - `docs/00_project_vision_v2.md` — v2 framing (image-constrained,
   cell-resolved).
 - `docs/10_dev_roadmap_v2.md` — current implementation roadmap.
