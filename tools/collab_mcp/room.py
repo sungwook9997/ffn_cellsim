@@ -657,13 +657,12 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
       <h1>ACS Collab</h1>
       <span class="cursor-strip" id="cursor-strip"></span>
     </div>
-    <div class="agent-strip" id="agent-strip" aria-live="polite"></div>
+    <div class="sync-strip" id="sync-strip" aria-live="polite">Live</div>
     <nav>
       <label class="room-picker">
         <span>Room</span>
         <select id="room-select">{room_options}</select>
       </label>
-      <button type="button" id="toggle-sidebar" class="ghost">Sidebar</button>
       <a href="/logout" class="ghost">Logout</a>
     </nav>
   </header>
@@ -703,21 +702,6 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
         </div>
       </form>
     </section>
-    <aside class="sidebar" id="sidebar">
-      <section class="panel">
-        <h2>Agents · 2 agents</h2>
-        <div class="agent-cards" id="agent-cards"></div>
-      </section>
-      <section class="panel">
-        <h2>Active Claims</h2>
-        <ul id="claims-list"><li class="empty">None</li></ul>
-      </section>
-      <section class="panel">
-        <h2>Artifacts</h2>
-        <p class="panel-hint">PI uploads are saved under <code>{_esc(UPLOAD_DIR)}</code>.</p>
-        <ul id="artifacts-list"><li class="empty">None</li></ul>
-      </section>
-    </aside>
   </main>
   <script id="initial-state" type="application/json">{initial_b64}</script>
   <script>{JS}</script>
@@ -1047,47 +1031,17 @@ a, button { font: inherit; }
   padding: 2px 8px;
   white-space: nowrap;
 }
-.agent-strip {
+.sync-strip {
   align-items: center;
   display: flex;
   flex: 1 1 auto;
-  flex-wrap: wrap;
-  gap: 8px;
   justify-content: flex-end;
   min-width: 0;
-}
-.agent-pill {
-  align-items: center;
-  background: #f3f5f8;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  display: inline-flex;
-  font-size: 12px;
-  gap: 8px;
-  max-width: 360px;
-  min-width: 0;
-  padding: 4px 10px;
-}
-.agent-pill .name { font-weight: 700; }
-.agent-pill .name.claude { color: var(--claude-tag); }
-.agent-pill .name.codex { color: var(--codex-tag); }
-.agent-pill .name.pi { color: var(--pi-tag); }
-.agent-pill .pct {
-  background: rgba(0,0,0,0.06);
-  border-radius: 8px;
-  font-variant-numeric: tabular-nums;
-  padding: 1px 6px;
-}
-.agent-pill .activity {
   color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  min-width: 0;
 }
-.agent-pill .age { color: var(--muted); font-size: 10px; }
-.agent-pill.stale { opacity: 0.55; }
-.agent-pill.fresh { box-shadow: 0 0 0 2px rgba(36,107,254,0.18); }
 nav { display: flex; gap: 8px; }
 .room-picker {
   align-items: center;
@@ -1115,7 +1069,7 @@ nav { display: flex; gap: 8px; }
 .ghost:hover { background: rgba(0,0,0,0.04); }
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr);
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -1283,115 +1237,6 @@ nav { display: flex; gap: 8px; }
   margin: 12px 18px 0;
   padding: 8px 10px;
 }
-.sidebar {
-  background: var(--panel);
-  border-left: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  padding: 14px 14px 24px;
-}
-.sidebar.hidden { display: none; }
-.agent-cards { display: flex; flex-direction: column; gap: 8px; }
-.agent-card {
-  background: #f6f8fb;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-  gap: 4px;
-  padding: 8px 10px;
-  position: relative;
-}
-.agent-card.placeholder { background: transparent; border-style: dashed; }
-.agent-card.tier-fresh  { box-shadow: 0 0 0 2px rgba(46,160,67,0.40); }
-.agent-card.tier-fresh  .meta > :last-child { color: #1f7a32; font-weight: 600; }
-.agent-card.tier-aging  { box-shadow: 0 0 0 2px rgba(212,154,0,0.40); }
-.agent-card.tier-aging  .meta > :last-child { color: #8a6300; font-weight: 600; }
-.agent-card.tier-stale  { box-shadow: 0 0 0 2px rgba(200,40,40,0.45); opacity: 0.78; }
-.agent-card.tier-stale  .meta > :last-child { color: #b3261e; font-weight: 700; }
-.agent-card.fresh { box-shadow: 0 0 0 2px rgba(36,107,254,0.18); }
-.agent-card.stale { opacity: 0.55; }
-.agent-card .awake-badge {
-  align-self: flex-start;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  margin-top: 4px;
-  padding: 2px 6px;
-  text-transform: uppercase;
-}
-.agent-card .awake-badge.awake  { background: rgba(46,160,67,0.18); color: #1f7a32; }
-.agent-card .awake-badge.idle   { background: rgba(212,154,0,0.22); color: #8a6300; }
-.agent-card .awake-badge.asleep { background: rgba(200,40,40,0.18); color: #b3261e; }
-.agent-card .head {
-  align-items: baseline;
-  display: flex;
-  gap: 6px;
-  justify-content: space-between;
-}
-.agent-card .head .name { font-weight: 700; }
-.agent-card .head .name.claude { color: var(--claude-tag); }
-.agent-card .head .name.codex { color: var(--codex-tag); }
-.agent-card .head .name.pi { color: var(--pi-tag); }
-.agent-card .head .role {
-  background: rgba(0,0,0,0.06);
-  border-radius: 6px;
-  color: var(--muted);
-  font-size: 10px;
-  padding: 1px 5px;
-  text-transform: uppercase;
-}
-.agent-card .head .pct {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-.agent-card .progress {
-  background: rgba(0,0,0,0.07);
-  border-radius: 4px;
-  height: 6px;
-  overflow: hidden;
-}
-.agent-card .progress > .bar {
-  background: var(--claude-tag);
-  height: 100%;
-  transition: width 0.3s ease;
-}
-.agent-card.codex .progress > .bar { background: var(--codex-tag); }
-.agent-card.pi .progress > .bar { background: var(--pi-tag); }
-.agent-card .activity {
-  color: var(--ink);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.agent-card .meta {
-  color: var(--muted);
-  display: flex;
-  font-size: 11px;
-  gap: 8px;
-  justify-content: space-between;
-}
-.panel { display: flex; flex-direction: column; }
-.panel-hint {
-  color: var(--muted);
-  font-size: 11px;
-  margin-bottom: 8px;
-  word-break: break-word;
-}
-.panel ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.panel li {
-  background: #f6f8fb;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-size: 12px;
-  padding: 8px 10px;
-}
-.panel li.empty { background: transparent; border-style: dashed; color: var(--muted); text-align: center; }
-.panel li code { background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 11px; padding: 1px 4px; }
-.panel li .meta { color: var(--muted); display: block; font-size: 11px; margin-top: 4px; }
 .error {
   background: #fff0f0;
   border: 1px solid #ffc9c9;
@@ -1431,7 +1276,6 @@ nav { display: flex; gap: 8px; }
 }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
-  .sidebar { border-left: 0; border-top: 1px solid var(--line); max-height: 240px; }
 }
 """
 
@@ -1484,14 +1328,11 @@ JS = r"""
   };
   var messagesEl = document.getElementById("messages");
   var cursorStrip = document.getElementById("cursor-strip");
-  var agentStrip = document.getElementById("agent-strip");
-  var claimsList = document.getElementById("claims-list");
-  var artifactsList = document.getElementById("artifacts-list");
+  var syncStrip = document.getElementById("sync-strip");
+  var claimsList = null;
+  var artifactsList = null;
   var jumpBtn = document.getElementById("jump-bottom");
   var jumpCount = document.getElementById("jump-count");
-  var sidebar = document.getElementById("sidebar");
-  var toggleSidebar = document.getElementById("toggle-sidebar");
-  var agentCardsEl = document.getElementById("agent-cards");
   var composer = document.getElementById("composer");
   var bodyEl = document.getElementById("composer-body");
   var fileEl = document.getElementById("composer-files");
@@ -1503,7 +1344,6 @@ JS = r"""
   var POLL_IDLE_MS = 1500;
   var POLL_HIDDEN_MS = 2500;
   var POLL_BACKOFF_MAX_MS = 8000;
-  var AGENT_TICK_MS = 1000;
   var pollTimer = null;
   var pollInFlight = false;
 
@@ -1730,210 +1570,22 @@ JS = r"""
     });
   }
 
-  function ageLabel(seconds) {
-    if (seconds == null) return "";
-    if (seconds < 60) return seconds + "s ago";
-    if (seconds < 3600) return Math.floor(seconds / 60) + "m ago";
-    if (seconds < 86400) return Math.floor(seconds / 3600) + "h ago";
-    return Math.floor(seconds / 86400) + "d ago";
-  }
-
-  function renderAgents(agents) {
+  function renderSync(agents) {
     if (agents) state.agents = agents;
-    agents = state.agents;
-    agentStrip.innerHTML = "";
-    if (!agents || !agents.length) {
-      var empty = document.createElement("span");
-      empty.className = "agent-pill stale";
-      empty.textContent = "no agent status yet";
-      agentStrip.appendChild(empty);
-      return;
-    }
-    var elapsedSinceFetch = Math.floor((Date.now() - state.agentsFetchedAt) / 1000);
-    agents.forEach(function (a) {
-      var age = (a.age_seconds == null) ? null : (a.age_seconds + elapsedSinceFetch);
-      var pill = document.createElement("div");
-      var staleness = "fresh";
-      if (age == null || age > 300) staleness = "stale";
-      else if (age > 60) staleness = "";
-      pill.className = "agent-pill " + staleness;
-
-      var name = document.createElement("span");
-      name.className = "name " + (a.agent || "");
-      name.textContent = a.agent;
-      pill.appendChild(name);
-
-      var pct = document.createElement("span");
-      pct.className = "pct";
-      pct.textContent = (a.percent || 0) + "%";
-      pill.appendChild(pct);
-
-      var act = document.createElement("span");
-      act.className = "activity";
-      var label = a.activity || "(idle)";
-      if (a.topic) label = "[" + a.topic + "] " + label;
-      act.textContent = label;
-      act.title = label;
-      pill.appendChild(act);
-
-      var ageEl = document.createElement("span");
-      ageEl.className = "age";
-      ageEl.textContent = ageLabel(age);
-      pill.appendChild(ageEl);
-
-      agentStrip.appendChild(pill);
-    });
-  }
-
-  var PANE_ORDER = ["claude", "codex"];
-
-  function agentLogicalName(name) {
-    if (!name) return "";
-    var m = String(name).match(/^(?:[a-z0-9][a-z0-9-]{0,31})-(claude|codex|claude-chat|claude-work|codex-chat|codex-work)$/);
-    return m ? m[1] : name;
-  }
-
-  function paneBase(name) {
-    var logical = agentLogicalName(name);
-    if (logical && logical.indexOf("claude") === 0) return "claude";
-    if (logical && logical.indexOf("codex") === 0) return "codex";
-    if (logical === "pi") return "pi";
-    return "other";
-  }
-
-  function paneRole(name) {
-    var logical = agentLogicalName(name);
-    if (!logical) return "";
-    var i = logical.indexOf("-");
-    return i > 0 ? logical.slice(i + 1) : "";
-  }
-
-  function buildAgentCard(name, agent, elapsedSinceFetch) {
-    var card = document.createElement("div");
-    var base = paneBase(name);
-    var role = paneRole(name);
-
-    var age = null;
-    if (agent && agent.age_seconds != null) {
-      age = agent.age_seconds + elapsedSinceFetch;
-    }
-    // Three-tier freshness: green ≤ 30 s, yellow 30–90 s, red > 90 s.
-    // Placeholder cards (no agent row yet) keep the dashed-border look.
-    var staleness = "placeholder";
-    if (agent) {
-      if (age == null || age > 90) staleness = "tier-stale";
-      else if (age > 30) staleness = "tier-aging";
-      else staleness = "tier-fresh";
-    }
-    card.className = "agent-card " + base + (staleness ? " " + staleness : "");
-
-    var head = document.createElement("div");
-    head.className = "head";
-
-    var nameEl = document.createElement("span");
-    nameEl.className = "name " + base;
-    nameEl.textContent = name;
-    head.appendChild(nameEl);
-
-    if (role) {
-      var roleEl = document.createElement("span");
-      roleEl.className = "role";
-      roleEl.textContent = role;
-      head.appendChild(roleEl);
-    }
-
-    var pct = document.createElement("span");
-    pct.className = "pct";
-    pct.textContent = agent ? ((agent.percent || 0) + "%") : "—";
-    head.appendChild(pct);
-    card.appendChild(head);
-
-    var progress = document.createElement("div");
-    progress.className = "progress";
-    var bar = document.createElement("div");
-    bar.className = "bar";
-    var pctValue = agent ? Math.max(0, Math.min(100, agent.percent || 0)) : 0;
-    bar.style.width = pctValue + "%";
-    progress.appendChild(bar);
-    card.appendChild(progress);
-
-    var activity = document.createElement("div");
-    activity.className = "activity";
-    activity.textContent = agent ? (agent.activity || "(idle)") : "(no status yet)";
-    card.appendChild(activity);
-
-    // Awake/asleep badge — orthogonal to the freshness tier color above.
-    // Freshness keys off updated_at (heartbeat-refreshed every 5 s);
-    // awake keys off last_active_at (advances only on real LLM/operator
-    // posts), so an agent that never woke up after reboot stays red
-    // even while the heartbeat daemon paints the card green.
-    if (agent) {
-      var activeAge = (agent.active_age_seconds == null)
-        ? null
-        : (agent.active_age_seconds + elapsedSinceFetch);
-      var awakeBadge = document.createElement("span");
-      awakeBadge.className = "awake-badge";
-      var role = paneRole(name);
-      if (activeAge == null) {
-        awakeBadge.classList.add("asleep");
-        awakeBadge.textContent = "asleep · waiting for first PI message";
-      } else if (activeAge > 1800) {
-        awakeBadge.classList.add("asleep");
-        awakeBadge.textContent = "asleep · " + ageLabel(activeAge);
-      } else if (activeAge > 600) {
-        awakeBadge.classList.add("idle");
-        awakeBadge.textContent = "idle · " + ageLabel(activeAge);
-      } else {
-        awakeBadge.classList.add("awake");
-        awakeBadge.textContent = "awake · " + ageLabel(activeAge);
-      }
-      card.appendChild(awakeBadge);
-    }
-
-    var meta = document.createElement("div");
-    meta.className = "meta";
-    var topicEl = document.createElement("span");
-    topicEl.textContent = agent && agent.topic ? "[" + agent.topic + "]" : "";
-    var ageEl = document.createElement("span");
-    ageEl.textContent = ageLabel(age);
-    meta.appendChild(topicEl);
-    meta.appendChild(ageEl);
-    card.appendChild(meta);
-
-    return card;
+    if (!syncStrip) return;
+    var agentCount = state.agents ? state.agents.length : 0;
+    var label = "Live · " + state.currentRoom + " · #" + (state.lastId || 0);
+    if (agentCount) label += " · " + agentCount + " agents linked";
+    if (state.pollFailures) label = "Reconnecting · " + state.currentRoom;
+    syncStrip.textContent = label;
   }
 
   function renderAgentCards(agents) {
     if (agents) state.agents = agents;
-    if (!agentCardsEl) return;
-    agentCardsEl.innerHTML = "";
-    var elapsedSinceFetch = Math.floor((Date.now() - state.agentsFetchedAt) / 1000);
-    var byName = {};
-    (state.agents || []).forEach(function (a) { byName[a.agent] = a; });
-    PANE_ORDER.forEach(function (paneName) {
-      var direct = byName[state.currentRoom + "-" + paneName] || byName[paneName];
-      if (!direct) {
-        var suffix = "-" + paneName;
-        Object.keys(byName).some(function (agentName) {
-          if (agentName.slice(-suffix.length) === suffix) {
-            direct = byName[agentName];
-            return true;
-          }
-          return false;
-        });
-      }
-      // Backward compat: when only the legacy "claude"/"codex" row exists,
-      // mirror it onto the agent card so the sidebar shows
-      // something useful until commit#5 splits the heartbeats.
-      if (!direct) {
-        var base = paneBase(paneName);
-        if (byName[base]) direct = byName[base];
-      }
-      agentCardsEl.appendChild(buildAgentCard(direct && direct.agent ? direct.agent : paneName, direct, elapsedSinceFetch));
-    });
   }
 
   function renderClaims(claims) {
+    if (!claimsList) return;
     claimsList.innerHTML = "";
     if (!claims.length) {
       var li = document.createElement("li");
@@ -1962,6 +1614,7 @@ JS = r"""
   }
 
   function renderArtifacts(artifacts) {
+    if (!artifactsList) return;
     artifactsList.innerHTML = "";
     if (!artifacts.length) {
       var li = document.createElement("li");
@@ -2041,8 +1694,7 @@ JS = r"""
         renderClaims(data.claims || []);
         renderArtifacts(data.artifacts || []);
         state.agentsFetchedAt = Date.now();
-        renderAgents(data.agents || []);
-        renderAgentCards();
+        renderSync(data.agents || []);
         schedulePoll(pollDelay(hasNewMessages));
       })
       .catch(function (err) {
@@ -2153,10 +1805,6 @@ JS = r"""
     }
   });
 
-  toggleSidebar.addEventListener("click", function () {
-    sidebar.classList.toggle("hidden");
-  });
-
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) poll(true);
   });
@@ -2168,14 +1816,11 @@ JS = r"""
   renderMessages(initial.messages || []);
   renderClaims(initial.claims || []);
   renderArtifacts(initial.artifacts || []);
-  renderAgents(initial.agents || []);
-  renderAgentCards();
+  renderSync(initial.agents || []);
   scrollToBottom();
   autoresize(bodyEl);
 
   poll(true);
-  // Re-render agent strip + cards every second so sidebar lag is visible immediately.
-  setInterval(function () { renderAgents(); renderAgentCards(); }, AGENT_TICK_MS);
 })();
 """
 
