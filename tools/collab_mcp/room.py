@@ -29,6 +29,7 @@ from typing import Any
 
 ALLOWED_STATUSES = {
     "FYI",
+    "ack",
     "proposal",
     "review",
     "decision-needed",
@@ -1429,13 +1430,41 @@ JS = r"""
   if (initialEl) {
     try { initial = JSON.parse(initialEl.textContent || "{}"); } catch (e) {}
   }
+  var ROOM_STORAGE_KEY = "acs-collab-current-room";
+  var ROOM_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
+  function validRoom(value) {
+    value = String(value || "");
+    return ROOM_RE.test(value) ? value : "";
+  }
+  function roomFromUrl() {
+    try {
+      return validRoom(new URLSearchParams(window.location.search).get("room"));
+    } catch (e) {
+      return "";
+    }
+  }
+  function storedRoom() {
+    try {
+      return validRoom(window.localStorage.getItem(ROOM_STORAGE_KEY));
+    } catch (e) {
+      return "";
+    }
+  }
+  function persistRoom(room) {
+    room = validRoom(room);
+    if (!room) return;
+    try { window.localStorage.setItem(ROOM_STORAGE_KEY, room); } catch (e) {}
+  }
+  var selectedRoom = roomFromUrl() || storedRoom() || initial.room || "design-discussion";
+  selectedRoom = validRoom(selectedRoom) || "design-discussion";
+  persistRoom(selectedRoom);
   var state = {
     lastId: 0,
     messages: [],
     cursors: initial.cursors || {},
     agents: initial.agents || [],
     agentsFetchedAt: Date.now(),
-    currentRoom: initial.room || "design-discussion",
+    currentRoom: selectedRoom,
     rooms: initial.rooms || [],
     pending: 0,
     pollFailures: 0,
@@ -2096,7 +2125,10 @@ JS = r"""
     roomSelect.value = state.currentRoom;
     roomSelect.addEventListener("change", function () {
       var nextRoom = roomSelect.value || "design-discussion";
-      window.location.href = "/?room=" + encodeURIComponent(nextRoom);
+      nextRoom = validRoom(nextRoom) || "design-discussion";
+      persistRoom(nextRoom);
+      state.currentRoom = nextRoom;
+      window.location.assign("/?room=" + encodeURIComponent(nextRoom));
     });
   }
 

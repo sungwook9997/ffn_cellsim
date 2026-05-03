@@ -157,6 +157,20 @@ def init_cursor_now(relay_name: str) -> int:
     return message_id
 
 
+def init_cursor_if_missing(relay_name: str) -> int | None:
+    """Initialize a relay cursor at the current latest message only once.
+
+    New workroom relays should not replay the entire shared history into
+    fresh chat panes. Existing relays must keep their cursor so a restart
+    does not skip messages that arrived while they were down.
+    """
+    _init_schema()
+    with closing(_db()) as conn:
+        if _load_cursor(conn, relay_name):
+            return None
+    return init_cursor_now(relay_name)
+
+
 def wrapper_prompt(message: WorkroomMessage, target_agent: str, workroom: str = "") -> str:
     """Return the only text injected into tmux panes.
 
@@ -370,6 +384,12 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Set relay cursor to the current latest message id and exit.",
     )
+    parser.add_argument(
+        "--init-cursor-if-missing",
+        action="store_true",
+        help="Before polling, set a missing relay cursor to the current "
+             "latest message id. Existing cursors are preserved.",
+    )
     parser.add_argument("--interval", type=float, default=DEFAULT_POLL_INTERVAL_S)
     parser.add_argument("--limit", type=int, default=DEFAULT_MAX_MESSAGES)
     return parser
@@ -393,6 +413,10 @@ def main(argv: Iterable[str] | None = None) -> None:
         message_id = init_cursor_now(args.relay_name)
         print(f"initialized relay cursor {args.relay_name!r} at message #{message_id}")
         return
+    if args.init_cursor_if_missing:
+        message_id = init_cursor_if_missing(args.relay_name)
+        if message_id is not None:
+            print(f"initialized missing relay cursor {args.relay_name!r} at message #{message_id}")
     if args.once:
         routed = run_once(config, limit=args.limit)
         print(f"routed {routed} tmux wrapper prompt(s)")

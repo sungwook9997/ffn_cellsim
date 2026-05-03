@@ -71,6 +71,20 @@ def test_send_rejects_unknown_addressee(monkeypatch: pytest.MonkeyPatch, tmp_pat
         server.send(ctx, to="mallory", topic="handshake", body="hello")
 
 
+def test_send_allows_pi_addressee(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    server = _load_server(monkeypatch, tmp_path)
+    ctx = _FakeContext("unit-test-token", "codex", room="implementation-work")
+
+    out = server.send(ctx, to="pi", topic="handshake", body="hello PI", status="ack")
+
+    assert out["room"] == "implementation-work"
+    row = server._db().execute(
+        "SELECT author, addressee, room, body, status FROM messages WHERE id=?",
+        (out["id"],),
+    ).fetchone()
+    assert row == ("codex", "pi", "implementation-work", "hello PI", "ack")
+
+
 def test_claim_blocks_conflicting_owner(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     server = _load_server(monkeypatch, tmp_path)
     claude = _FakeContext("unit-test-token", "claude")

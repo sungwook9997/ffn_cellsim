@@ -238,6 +238,7 @@ ensure_tmux_session_locked "$RELAY_SESSION" "$REPO_ROOT" \
      --claude-target '${WORKROOM}-claude-chat:0.0' \
      --codex-target '${WORKROOM}-codex-chat:0.0' \
      --include-llm-messages \
+     --init-cursor-if-missing \
      >>'$LOG_DIR/tmux_relay.log' 2>&1"
 
 # 5) room.py — browser UI server (shared singleton, port 7879).

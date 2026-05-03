@@ -244,3 +244,40 @@ def test_init_cursor_now_marks_latest(monkeypatch, tmp_path):
     ).fetchone()[0]
     conn.close()
     assert cursor == latest
+
+
+def test_init_cursor_if_missing_preserves_existing(monkeypatch, tmp_path):
+    relay = _load_relay(monkeypatch, tmp_path)
+    db_path = tmp_path / "relay.db"
+    _init_messages(db_path)
+    first = _insert_message(db_path, "pi", "claude,codex")
+    _insert_message(db_path, "pi", "claude")
+    relay.mark_routed("unit", first)
+
+    initialized = relay.init_cursor_if_missing("unit")
+
+    assert initialized is None
+    conn = sqlite3.connect(db_path)
+    cursor = conn.execute(
+        "SELECT last_routed_id FROM relay_cursors WHERE relay_name='unit'"
+    ).fetchone()[0]
+    conn.close()
+    assert cursor == first
+
+
+def test_init_cursor_if_missing_starts_new_relay_at_latest(monkeypatch, tmp_path):
+    relay = _load_relay(monkeypatch, tmp_path)
+    db_path = tmp_path / "relay.db"
+    _init_messages(db_path)
+    _insert_message(db_path, "pi", "claude,codex")
+    latest = _insert_message(db_path, "pi", "claude")
+
+    initialized = relay.init_cursor_if_missing("new-workroom")
+
+    assert initialized == latest
+    conn = sqlite3.connect(db_path)
+    cursor = conn.execute(
+        "SELECT last_routed_id FROM relay_cursors WHERE relay_name='new-workroom'"
+    ).fetchone()[0]
+    conn.close()
+    assert cursor == latest

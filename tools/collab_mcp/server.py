@@ -56,8 +56,10 @@ ALLOWED_AUTHORS = {
     for a in os.environ.get("COLLAB_MCP_AUTHORS", "claude,codex").split(",")
     if a.strip()
 }
+ALLOWED_ADDRESSEES = ALLOWED_AUTHORS | {"pi"}
 ALLOWED_STATUSES = {
     "FYI",
+    "ack",
     "proposal",
     "review",
     "decision-needed",
@@ -319,6 +321,15 @@ def _require_author(value: str, field_name: str) -> str:
     return cleaned
 
 
+def _require_addressee(value: str, field_name: str) -> str:
+    cleaned = _require_nonempty(value, field_name).lower()
+    if cleaned not in ALLOWED_ADDRESSEES:
+        raise ValueError(
+            f"{field_name} must be one of {sorted(ALLOWED_ADDRESSEES)} (got {value!r})"
+        )
+    return cleaned
+
+
 def _ledger_append(
     ts: str, author: str, addressee: str, topic: str, body: str, status: str, refs: list[str]
 ) -> bool:
@@ -371,7 +382,7 @@ def send(
     """
     author = _auth(ctx)
     caller_room = _caller_room(ctx)
-    to = _require_author(to, "to")
+    to = _require_addressee(to, "to")
     topic = _require_nonempty(topic, "topic")
     body = _require_nonempty(body, "body")
     if status not in ALLOWED_STATUSES:
