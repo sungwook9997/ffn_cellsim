@@ -94,11 +94,19 @@ def claude_command(workroom: str, mcp_config_path: pathlib.Path) -> str:
     desktop-app reasoning depth — the CLI default falls to a smaller
     effort tier and PI flagged the resulting "shallow" responses on
     2026-05-03 (memory: workroom_claude_flags).
+
+    ``--exclude-dynamic-system-prompt-sections`` moves per-machine
+    sections (cwd, env, memory paths, git status) out of the cached
+    system prompt into the first user message. The workroom always
+    runs on the same Mac with stable cwd per room, so cache reuse
+    is high; this flag turns each turn's TTFT and per-turn token
+    cost down without changing model behavior.
     """
     return (
         f"ACS_WORKROOM={shlex.quote(workroom)} {CLAUDE_BIN} "
         f"--dangerously-skip-permissions "
         f"--model 'claude-opus-4-7[1m]' --effort xhigh "
+        f"--exclude-dynamic-system-prompt-sections "
         f"--mcp-config {shlex.quote(str(mcp_config_path))} --strict-mcp-config"
     )
 
