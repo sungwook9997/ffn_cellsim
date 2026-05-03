@@ -34,6 +34,7 @@ from acs.v2.output.frame_dump import (
 )
 from acs.v2.protrusion import ProtrusionEvent
 from acs.v2.single_cell import SingleCellState
+from acs.v2.viz.stub3d import render_frame_html, render_frame_png
 
 __all__ = [
     "ArtifactKind",
@@ -56,5 +57,7 @@ __all__ = [
     "boundary_projected_area_um2",
     "default_registry",
     "read_frame",
+    "render_frame_html",
+    "render_frame_png",
     "write_frame",
 ]
