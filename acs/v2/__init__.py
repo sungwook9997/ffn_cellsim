@@ -5,6 +5,14 @@ starts with data contracts and biological state schemas, then grows toward
 single-cell and cell-resolved spheroid simulation.
 """
 
+from acs.v2.active_contour import (
+    ActiveContourParameters,
+    ActiveContourParametersError,
+    ActiveContourState,
+    compute_rate_max,
+    ellipse_polygon_vertices,
+    regular_polygon_vertices,
+)
 from acs.v2.cell_cluster import CellClusterState
 from acs.v2.data_contract import (
     ArtifactKind,
@@ -37,6 +45,9 @@ from acs.v2.single_cell import SingleCellState
 from acs.v2.viz.stub3d import render_frame_html, render_frame_png
 
 __all__ = [
+    "ActiveContourParameters",
+    "ActiveContourParametersError",
+    "ActiveContourState",
     "ArtifactKind",
     "CellClusterState",
     "ECMSubstrateState",
@@ -55,8 +66,11 @@ __all__ = [
     "V2DataContract",
     "boundary_perimeter_um",
     "boundary_projected_area_um2",
+    "compute_rate_max",
     "default_registry",
+    "ellipse_polygon_vertices",
     "read_frame",
+    "regular_polygon_vertices",
     "render_frame_html",
     "render_frame_png",
     "write_frame",
