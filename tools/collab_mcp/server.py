@@ -35,6 +35,7 @@ import hmac
 import json
 import os
 import pathlib
+import re
 import sqlite3
 import sys
 from contextlib import closing
@@ -75,6 +76,17 @@ LEDGER_PATH = (
     if os.environ.get("COLLAB_MCP_LEDGER")
     else None
 )
+ROOM_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
+ALL_ROOMS_SENTINEL = "*"
+_DEFAULT_ROOM_RAW = os.environ.get("COLLAB_DEFAULT_ROOM", "design-discussion").strip().lower() or "design-discussion"
+if not ROOM_NAME_RE.match(_DEFAULT_ROOM_RAW):
+    sys.stderr.write(
+        f"fatal: COLLAB_DEFAULT_ROOM={_DEFAULT_ROOM_RAW!r} does not match "
+        f"{ROOM_NAME_RE.pattern}. The value is interpolated into schema "
+        "DDL defaults and must be a safe room identifier.\n"
+    )
+    sys.exit(2)
+DEFAULT_ROOM = _DEFAULT_ROOM_RAW
 
 if not TOKEN:
     sys.stderr.write(
@@ -95,8 +107,11 @@ def _db() -> sqlite3.Connection:
 
 def _init_schema() -> None:
     with closing(_db()) as conn:
+        # Create-from-scratch path. Existing databases skip the CREATE
+        # IF NOT EXISTS lines and fall through to the migration block
+        # below.
         conn.executescript(
-            """
+            f"""
             CREATE TABLE IF NOT EXISTS messages(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ts TEXT NOT NULL,
@@ -105,21 +120,26 @@ def _init_schema() -> None:
                 topic TEXT NOT NULL,
                 body TEXT NOT NULL,
                 status TEXT NOT NULL,
-                refs TEXT NOT NULL DEFAULT '[]'
+                refs TEXT NOT NULL DEFAULT '[]',
+                room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}'
             );
             CREATE INDEX IF NOT EXISTS idx_messages_id ON messages(id);
 
             CREATE TABLE IF NOT EXISTS claims(
-                topic TEXT PRIMARY KEY,
+                room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                topic TEXT NOT NULL,
                 author TEXT NOT NULL,
                 claimed_at TEXT NOT NULL,
                 released_at TEXT,
-                summary TEXT
+                summary TEXT,
+                PRIMARY KEY(room, topic)
             );
 
             CREATE TABLE IF NOT EXISTS cursors(
-                author TEXT PRIMARY KEY,
-                last_seen_id INTEGER NOT NULL DEFAULT 0
+                author TEXT NOT NULL,
+                room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                last_seen_id INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(author, room)
             );
 
             CREATE TABLE IF NOT EXISTS artifacts(
@@ -132,6 +152,65 @@ def _init_schema() -> None:
             );
             """
         )
+
+        # Idempotent migration for pre-room databases. SQLite ADD COLUMN
+        # backfills existing rows with the DEFAULT, so legacy messages
+        # are bucketed into design-discussion (the room where every
+        # pre-Task-2 conversation lived).
+        existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(messages)").fetchall()}
+        if "room" not in existing_cols:
+            conn.execute(
+                f"ALTER TABLE messages ADD COLUMN room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}'"
+            )
+
+        # Migrate single-author cursor table to per-(author, room) cursors.
+        # Pre-Task-2 schema was PRIMARY KEY(author) — that table can't be
+        # altered into a composite PK in place, so we rebuild it. The
+        # legacy row maps onto (author, DEFAULT_ROOM) since every
+        # pre-existing message lived in that room post-messages-migration.
+        cursor_cols = {row[1] for row in conn.execute("PRAGMA table_info(cursors)").fetchall()}
+        if "room" not in cursor_cols:
+            conn.executescript(
+                f"""
+                CREATE TABLE cursors_new(
+                    author TEXT NOT NULL,
+                    room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                    last_seen_id INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY(author, room)
+                );
+                INSERT OR REPLACE INTO cursors_new(author, room, last_seen_id)
+                    SELECT author, '{DEFAULT_ROOM}', last_seen_id FROM cursors;
+                DROP TABLE cursors;
+                ALTER TABLE cursors_new RENAME TO cursors;
+                """
+            )
+
+        # Now safe in either path: room column is guaranteed.
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_room_id ON messages(room, id)")
+
+        # Migrate the claims table to a composite (room, topic) PK so two
+        # workrooms can claim the same logical topic name independently.
+        # Pre-Task-2 schema was PRIMARY KEY(topic); rebuild and bucket
+        # legacy claims into DEFAULT_ROOM.
+        claims_cols = {row[1] for row in conn.execute("PRAGMA table_info(claims)").fetchall()}
+        if "room" not in claims_cols:
+            conn.executescript(
+                f"""
+                CREATE TABLE claims_new(
+                    room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                    topic TEXT NOT NULL,
+                    author TEXT NOT NULL,
+                    claimed_at TEXT NOT NULL,
+                    released_at TEXT,
+                    summary TEXT,
+                    PRIMARY KEY(room, topic)
+                );
+                INSERT OR REPLACE INTO claims_new(room, topic, author, claimed_at, released_at, summary)
+                    SELECT '{DEFAULT_ROOM}', topic, author, claimed_at, released_at, summary FROM claims;
+                DROP TABLE claims;
+                ALTER TABLE claims_new RENAME TO claims;
+                """
+            )
 
 
 _init_schema()
@@ -177,6 +256,51 @@ def _auth(ctx: Context) -> str:
     headers = _request_headers(ctx)
     _check_token(headers)
     return _author(headers)
+
+
+def _caller_room(ctx: Context) -> str:
+    """Return the workroom name implied by the caller's headers / env.
+
+    Resolution order:
+      1. ``X-Collab-Room`` header on the request (per-CLI MCP client config).
+      2. Server env ``COLLAB_DEFAULT_ROOM``.
+      3. Hard fallback ``design-discussion``.
+
+    The raw header value is validated against ``ROOM_NAME_RE`` (strict
+    lowercase) before being accepted — silent case-folding would mask a
+    misconfigured CLI shipping an uppercase room name, which is exactly
+    the bug the regex is meant to surface.
+    """
+    headers = _request_headers(ctx)
+    raw = headers.get("x-collab-room", "").strip()
+    if raw:
+        if not ROOM_NAME_RE.match(raw):
+            raise ValueError(
+                f"X-Collab-Room header must match {ROOM_NAME_RE.pattern} (got {raw!r})"
+            )
+        return raw
+    return DEFAULT_ROOM
+
+
+def _resolve_room(value: str | None, default: str) -> str:
+    """Validate an explicit ``room`` arg or fall back to the caller's room.
+
+    Like ``_caller_room``, validation runs against the raw stripped value
+    so a typo with the wrong case (``IMPLEMENTATION-WORK``) is rejected
+    rather than silently normalized.
+    """
+    if value is None:
+        return default
+    cleaned = value.strip()
+    if not cleaned:
+        return default
+    if cleaned == ALL_ROOMS_SENTINEL:
+        return ALL_ROOMS_SENTINEL
+    if not ROOM_NAME_RE.match(cleaned):
+        raise ValueError(
+            f"room must match {ROOM_NAME_RE.pattern} or be '{ALL_ROOMS_SENTINEL}' (got {value!r})"
+        )
+    return cleaned
 
 
 def _require_nonempty(value: str, field_name: str) -> str:
@@ -236,13 +360,17 @@ def send(
     body: str,
     status: str = "FYI",
     refs: list[str] | None = None,
+    room: str | None = None,
 ) -> dict[str, Any]:
     """Append a message to the shared queue and (if configured) the ledger file.
 
-    Rate-limit guard: a single author cannot send four consecutive messages
-    without the other side replying — protects against runaway loops.
+    The message is tagged with a ``room`` (workroom) — when omitted, the
+    caller's default room is used (see ``_caller_room``). The rate-limit
+    guard is scoped per-room so two workrooms running in parallel don't
+    starve each other.
     """
     author = _auth(ctx)
+    caller_room = _caller_room(ctx)
     to = _require_author(to, "to")
     topic = _require_nonempty(topic, "topic")
     body = _require_nonempty(body, "body")
@@ -250,20 +378,25 @@ def send(
         raise ValueError(
             f"status must be one of {sorted(ALLOWED_STATUSES)} (got {status!r})"
         )
+    target_room = _resolve_room(room, caller_room)
+    if target_room == ALL_ROOMS_SENTINEL:
+        raise ValueError("send: room must be a single room name, not '*'")
     refs = list(refs or [])
     ts_human = _now_human()
     with closing(_db()) as conn:
         recent = conn.execute(
-            "SELECT author FROM messages ORDER BY id DESC LIMIT 3"
+            "SELECT author FROM messages WHERE room=? ORDER BY id DESC LIMIT 3",
+            (target_room,),
         ).fetchall()
         if len(recent) == 3 and all(r[0] == author for r in recent):
             raise RuntimeError(
-                f"rate limit: {author} sent 3 in a row; wait for {to} to reply"
+                f"rate limit: {author} sent 3 in a row in room {target_room!r}; "
+                f"wait for {to} to reply"
             )
         cur = conn.execute(
-            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs) "
-            "VALUES (?,?,?,?,?,?,?)",
-            (ts_human, author, to, topic, body, status, json.dumps(refs)),
+            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs, room) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (ts_human, author, to, topic, body, status, json.dumps(refs), target_room),
         )
         msg_id = cur.lastrowid
     appended = _ledger_append(ts_human, author, to, topic, body, status, refs)
@@ -271,6 +404,7 @@ def send(
         "id": msg_id,
         "ts": ts_human,
         "author": author,
+        "room": target_room,
         "ledger_appended": appended,
     }
 
@@ -280,37 +414,59 @@ def read(
     ctx: Context,
     unread_only: bool = True,
     limit: int = 20,
+    room: str | None = None,
 ) -> dict[str, Any]:
-    """Read messages. Default returns unread (advances cursor)."""
+    """Read messages. Default returns unread (advances cursor).
+
+    Filters to the caller's current room by default. Pass an explicit
+    ``room`` name to read another room, or ``room='*'`` for a cross-room
+    view (admin / migration use).
+    """
     author = _auth(ctx)
+    caller_room = _caller_room(ctx)
+    target_room = _resolve_room(room, caller_room)
     if limit < 1 or limit > 200:
         raise ValueError("limit must be in [1, 200]")
+    if target_room == ALL_ROOMS_SENTINEL and unread_only:
+        # Cursors are per-(author, room). "Unread" across rooms is
+        # ambiguous: each room has its own cursor and skipping it would
+        # leak messages. Force the caller to either name a room or read
+        # the recent timeline (unread_only=False).
+        raise ValueError(
+            "read: room='*' requires unread_only=False (cursors are per-room)"
+        )
+    where_room = "" if target_room == ALL_ROOMS_SENTINEL else " AND room=?"
+    room_param: tuple[Any, ...] = () if target_room == ALL_ROOMS_SENTINEL else (target_room,)
     with closing(_db()) as conn:
-        cur = conn.execute(
-            "SELECT last_seen_id FROM cursors WHERE author=?", (author,)
-        ).fetchone()
-        last = cur[0] if cur else 0
         if unread_only:
-            rows = conn.execute(
-                "SELECT id, ts, author, addressee, topic, body, status, refs "
-                "FROM messages WHERE id>? AND author<>? ORDER BY id ASC LIMIT ?",
-                (last, author, limit),
-            ).fetchall()
+            cur = conn.execute(
+                "SELECT last_seen_id FROM cursors WHERE author=? AND room=?",
+                (author, target_room),
+            ).fetchone()
+            last = cur[0] if cur else 0
+            sql = (
+                "SELECT id, ts, author, addressee, topic, body, status, refs, room "
+                "FROM messages WHERE id>? AND author<>?" + where_room +
+                " ORDER BY id ASC LIMIT ?"
+            )
+            rows = conn.execute(sql, (last, author, *room_param, limit)).fetchall()
             if rows:
                 conn.execute(
-                    "INSERT INTO cursors(author, last_seen_id) VALUES(?,?) "
-                    "ON CONFLICT(author) DO UPDATE SET last_seen_id=excluded.last_seen_id",
-                    (author, rows[-1][0]),
+                    "INSERT INTO cursors(author, room, last_seen_id) VALUES(?,?,?) "
+                    "ON CONFLICT(author, room) DO UPDATE SET last_seen_id=excluded.last_seen_id",
+                    (author, target_room, rows[-1][0]),
                 )
         else:
-            rows = conn.execute(
-                "SELECT id, ts, author, addressee, topic, body, status, refs "
-                "FROM messages ORDER BY id DESC LIMIT ?",
-                (limit,),
-            ).fetchall()
+            sql = (
+                "SELECT id, ts, author, addressee, topic, body, status, refs, room "
+                "FROM messages WHERE 1=1" + where_room +
+                " ORDER BY id DESC LIMIT ?"
+            )
+            rows = conn.execute(sql, (*room_param, limit)).fetchall()
             rows = list(reversed(rows))
     return {
         "count": len(rows),
+        "room": target_room,
         "messages": [
             {
                 "id": r[0],
@@ -321,6 +477,7 @@ def read(
                 "body": r[5],
                 "status": r[6],
                 "refs": json.loads(r[7]),
+                "room": r[8],
             }
             for r in rows
         ],
@@ -328,9 +485,22 @@ def read(
 
 
 @mcp.tool()
-def claim(ctx: Context, topic: str, intent: str = "") -> dict[str, Any]:
-    """Atomically claim a work topic. Fails on conflict with another active claim."""
+def claim(
+    ctx: Context,
+    topic: str,
+    intent: str = "",
+    room: str | None = None,
+) -> dict[str, Any]:
+    """Atomically claim a work topic in a workroom.
+
+    Claims are scoped per ``(room, topic)``: two workrooms can hold the
+    same logical topic name without conflict. ``room`` defaults to the
+    caller's workroom (header / env / fallback).
+    """
     author = _auth(ctx)
+    target_room = _resolve_room(room, _caller_room(ctx))
+    if target_room == ALL_ROOMS_SENTINEL:
+        raise ValueError("claim: room must be a single room name, not '*'")
     topic = _require_nonempty(topic, "topic")
     now = _now_iso()
     with closing(_db()) as conn:
@@ -338,8 +508,8 @@ def claim(ctx: Context, topic: str, intent: str = "") -> dict[str, Any]:
         try:
             existing = conn.execute(
                 "SELECT author, claimed_at FROM claims "
-                "WHERE topic=? AND released_at IS NULL",
-                (topic,),
+                "WHERE room=? AND topic=? AND released_at IS NULL",
+                (target_room, topic),
             ).fetchone()
             if existing and existing[0] != author:
                 conn.execute("ROLLBACK")
@@ -348,26 +518,39 @@ def claim(ctx: Context, topic: str, intent: str = "") -> dict[str, Any]:
                     "conflict": True,
                     "owner": existing[0],
                     "claimed_at": existing[1],
+                    "room": target_room,
                 }
             conn.execute(
-                "INSERT INTO claims(topic, author, claimed_at, summary) "
-                "VALUES(?,?,?,?) "
-                "ON CONFLICT(topic) DO UPDATE SET "
+                "INSERT INTO claims(room, topic, author, claimed_at, summary) "
+                "VALUES(?,?,?,?,?) "
+                "ON CONFLICT(room, topic) DO UPDATE SET "
                 "author=excluded.author, claimed_at=excluded.claimed_at, "
                 "released_at=NULL, summary=excluded.summary",
-                (topic, author, now, intent),
+                (target_room, topic, author, now, intent),
             )
             conn.execute("COMMIT")
         except Exception:
             conn.execute("ROLLBACK")
             raise
-    return {"ok": True, "topic": topic, "owner": author, "claimed_at": now}
+    return {"ok": True, "topic": topic, "room": target_room, "owner": author, "claimed_at": now}
 
 
 @mcp.tool()
-def release(ctx: Context, topic: str, summary: str) -> dict[str, Any]:
-    """Release a topic claim with a summary of what was done."""
+def release(
+    ctx: Context,
+    topic: str,
+    summary: str,
+    room: str | None = None,
+) -> dict[str, Any]:
+    """Release a topic claim with a summary of what was done.
+
+    ``room`` defaults to the caller's workroom; release only matches a
+    claim in the same room.
+    """
     author = _auth(ctx)
+    target_room = _resolve_room(room, _caller_room(ctx))
+    if target_room == ALL_ROOMS_SENTINEL:
+        raise ValueError("release: room must be a single room name, not '*'")
     topic = _require_nonempty(topic, "topic")
     summary = _require_nonempty(summary, "summary")
     now = _now_iso()
@@ -375,57 +558,94 @@ def release(ctx: Context, topic: str, summary: str) -> dict[str, Any]:
         conn.execute("BEGIN IMMEDIATE")
         try:
             existing = conn.execute(
-                "SELECT author FROM claims WHERE topic=? AND released_at IS NULL",
-                (topic,),
+                "SELECT author FROM claims "
+                "WHERE room=? AND topic=? AND released_at IS NULL",
+                (target_room, topic),
             ).fetchone()
             if not existing:
                 conn.execute("ROLLBACK")
-                return {"ok": False, "error": "no active claim"}
+                return {"ok": False, "error": "no active claim", "room": target_room}
             if existing[0] != author:
                 conn.execute("ROLLBACK")
-                return {"ok": False, "error": f"claim owned by {existing[0]}"}
+                return {"ok": False, "error": f"claim owned by {existing[0]}", "room": target_room}
             conn.execute(
-                "UPDATE claims SET released_at=?, summary=? WHERE topic=?",
-                (now, summary, topic),
+                "UPDATE claims SET released_at=?, summary=? WHERE room=? AND topic=?",
+                (now, summary, target_room, topic),
             )
             conn.execute("COMMIT")
         except Exception:
             conn.execute("ROLLBACK")
             raise
-    return {"ok": True, "topic": topic, "released_at": now, "summary": summary}
+    return {"ok": True, "topic": topic, "room": target_room, "released_at": now, "summary": summary}
 
 
 @mcp.tool()
 def status(ctx: Context) -> dict[str, Any]:
-    """Active claims plus per-author unread counts."""
+    """Active claims plus per-author unread counts.
+
+    Unread counts are reported both for the caller's current room and for
+    every distinct room in the DB, so a workroom-aware client can show its
+    own number prominently and still see whether another room has traffic.
+    """
     _auth(ctx)
+    caller_room = _caller_room(ctx)
     with closing(_db()) as conn:
+        # Active claims for the caller's room go in `active_claims`;
+        # claims_by_room shows the cross-room view for callers wiring up
+        # the sidebar / multi-room dashboards.
         active = conn.execute(
             "SELECT topic, author, claimed_at, summary FROM claims "
-            "WHERE released_at IS NULL ORDER BY claimed_at"
+            "WHERE released_at IS NULL AND room=? ORDER BY claimed_at",
+            (caller_room,),
         ).fetchall()
+        cross_active = conn.execute(
+            "SELECT room, topic, author, claimed_at, summary FROM claims "
+            "WHERE released_at IS NULL ORDER BY room, claimed_at"
+        ).fetchall()
+        all_rooms = sorted(
+            {row[0] for row in conn.execute("SELECT DISTINCT room FROM messages").fetchall()}
+            | {row[0] for row in cross_active}
+            | {caller_room}
+        )
         unread: dict[str, int] = {}
+        unread_by_room: dict[str, dict[str, int]] = {}
         for a in sorted(ALLOWED_AUTHORS):
-            cur = conn.execute(
-                "SELECT last_seen_id FROM cursors WHERE author=?", (a,)
-            ).fetchone()
-            last = cur[0] if cur else 0
-            cnt = conn.execute(
-                "SELECT COUNT(*) FROM messages WHERE id>? AND author<>?",
-                (last, a),
-            ).fetchone()[0]
-            unread[a] = cnt
+            unread_by_room[a] = {}
+            for r in all_rooms:
+                cur = conn.execute(
+                    "SELECT last_seen_id FROM cursors WHERE author=? AND room=?",
+                    (a, r),
+                ).fetchone()
+                last = cur[0] if cur else 0
+                rcnt = conn.execute(
+                    "SELECT COUNT(*) FROM messages WHERE id>? AND author<>? AND room=?",
+                    (last, a, r),
+                ).fetchone()[0]
+                unread_by_room[a][r] = rcnt
+            unread[a] = unread_by_room[a].get(caller_room, 0)
         last_msg = conn.execute(
-            "SELECT id, ts, author, topic FROM messages ORDER BY id DESC LIMIT 1"
+            "SELECT id, ts, author, topic, room FROM messages "
+            "WHERE room=? ORDER BY id DESC LIMIT 1",
+            (caller_room,),
         ).fetchone()
+    claims_by_room: dict[str, list[dict[str, Any]]] = {r: [] for r in all_rooms}
+    for row in cross_active:
+        claims_by_room.setdefault(row[0], []).append(
+            {"topic": row[1], "owner": row[2], "claimed_at": row[3], "intent": row[4]}
+        )
     return {
+        "room": caller_room,
+        "rooms": all_rooms,
         "active_claims": [
             {"topic": r[0], "owner": r[1], "claimed_at": r[2], "intent": r[3]}
             for r in active
         ],
+        "claims_by_room": claims_by_room,
         "unread": unread,
+        "unread_by_room": unread_by_room,
         "last_message": (
-            {"id": last_msg[0], "ts": last_msg[1], "from": last_msg[2], "topic": last_msg[3]}
+            {"id": last_msg[0], "ts": last_msg[1], "from": last_msg[2],
+             "topic": last_msg[3], "room": last_msg[4]}
             if last_msg
             else None
         ),
@@ -492,6 +712,7 @@ def bootstrap(
     topic: str = "",
     since_id: int = 0,
     advance_cursor: bool = True,
+    room: str | None = None,
 ) -> dict[str, Any]:
     """Read recent messages and mark the caller current.
 
@@ -502,36 +723,59 @@ def bootstrap(
     immediately — set ``advance_cursor=False`` for a pure read-only peek.
 
     Filters: optional ``topic`` exact match, optional ``since_id`` to fetch
-    only messages newer than a known id.
+    only messages newer than a known id, optional ``room`` to switch
+    workrooms (default = caller's current room; ``'*'`` = all rooms).
     """
     author = _auth(ctx)
+    caller_room = _caller_room(ctx)
+    target_room = _resolve_room(room, caller_room)
     if limit < 1 or limit > 200:
         raise ValueError("limit must be in [1, 200]")
     if since_id < 0:
         raise ValueError("since_id must be >= 0")
     sql = (
-        "SELECT id, ts, author, addressee, topic, body, status, refs "
+        "SELECT id, ts, author, addressee, topic, body, status, refs, room "
         "FROM messages WHERE id>?"
     )
     params: list[Any] = [since_id]
     if topic:
         sql += " AND topic=?"
         params.append(topic)
+    if target_room != ALL_ROOMS_SENTINEL:
+        sql += " AND room=?"
+        params.append(target_room)
     sql += " ORDER BY id DESC LIMIT ?"
     params.append(limit)
-    cursor_advanced_to: int | None = None
+    cursor_advanced_to: int | dict[str, int] | None = None
     with closing(_db()) as conn:
         rows = conn.execute(sql, params).fetchall()
         rows = list(reversed(rows))
         if advance_cursor and rows:
-            cursor_advanced_to = rows[-1][0]
-            conn.execute(
-                "INSERT INTO cursors(author, last_seen_id) VALUES(?,?) "
-                "ON CONFLICT(author) DO UPDATE SET last_seen_id=excluded.last_seen_id",
-                (author, cursor_advanced_to),
-            )
+            # Cursors are per-(author, room). For a single-room bootstrap
+            # the answer is the max id seen. For room='*' we walk the
+            # rooms touched by the result and advance each cursor to the
+            # highest id from that room — preserving the per-room
+            # invariant that future unread reads do not skip messages
+            # from a different room that happen to have higher ids.
+            per_room_max: dict[str, int] = {}
+            for row in rows:
+                rm = row[8] or DEFAULT_ROOM
+                if row[0] > per_room_max.get(rm, 0):
+                    per_room_max[rm] = row[0]
+            for rm, max_id in per_room_max.items():
+                conn.execute(
+                    "INSERT INTO cursors(author, room, last_seen_id) VALUES(?,?,?) "
+                    "ON CONFLICT(author, room) DO UPDATE SET "
+                    "last_seen_id=MAX(cursors.last_seen_id, excluded.last_seen_id)",
+                    (author, rm, max_id),
+                )
+            if target_room == ALL_ROOMS_SENTINEL:
+                cursor_advanced_to = per_room_max
+            else:
+                cursor_advanced_to = per_room_max.get(target_room)
     return {
         "count": len(rows),
+        "room": target_room,
         "cursor_advanced_to": cursor_advanced_to,
         "messages": [
             {
@@ -543,6 +787,7 @@ def bootstrap(
                 "body": r[5],
                 "status": r[6],
                 "refs": json.loads(r[7]),
+                "room": r[8],
             }
             for r in rows
         ],

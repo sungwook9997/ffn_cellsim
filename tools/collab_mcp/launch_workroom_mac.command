@@ -5,18 +5,41 @@ SCRIPT_DIR="${0:A:h}"
 REPO_ROOT="${SCRIPT_DIR:h:h}"
 cd "$REPO_ROOT"
 
+# ---------------------------------------------------------------------------
+# Workroom selection
+# ---------------------------------------------------------------------------
+# Usage: launch_workroom_mac.command [workroom-name]
+#   default = $ACS_WORKROOM, else "design-discussion".
+# Workroom name selects per-room tmux session prefixes and per-room log
+# directories so multiple workrooms (e.g. design-discussion +
+# implementation-work) can boot side by side without colliding. The
+# shared MCP server (`mcp`) and room.py UI (`room`) remain singletons.
+WORKROOM_DEFAULT="${ACS_WORKROOM:-design-discussion}"
+WORKROOM="${1:-$WORKROOM_DEFAULT}"
+if ! [[ "$WORKROOM" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; then
+  echo "[FAIL-LOUD] invalid workroom name '$WORKROOM' — must match ^[a-z0-9][a-z0-9-]{0,31}$ (lowercase alphanum + dash, 1-32 chars)." >&2
+  exit 2
+fi
+export ACS_WORKROOM="$WORKROOM"
+
 export COLLAB_MCP_LEDGER="${COLLAB_MCP_LEDGER:-$REPO_ROOT/docs/claude_codex_log.md}"
 export COLLAB_ROOM_BIND="${COLLAB_ROOM_BIND:-127.0.0.1:7879}"
 export COLLAB_ROOM_TOKEN="${COLLAB_ROOM_TOKEN:-acs-room}"
-export COLLAB_TMUX_CLAUDE_TARGET="${COLLAB_TMUX_CLAUDE_TARGET:-claude-chat:0.0}"
-export COLLAB_TMUX_CODEX_TARGET="${COLLAB_TMUX_CODEX_TARGET:-codex-chat:0.0}"
+# Per-room relay targets so the relay knows which chat panes belong to
+# this workroom. Override via COLLAB_TMUX_*_TARGET if you need to point
+# the relay at a different physical pane.
+export COLLAB_TMUX_CLAUDE_TARGET="${COLLAB_TMUX_CLAUDE_TARGET:-${WORKROOM}-claude-chat:0.0}"
+export COLLAB_TMUX_CODEX_TARGET="${COLLAB_TMUX_CODEX_TARGET:-${WORKROOM}-codex-chat:0.0}"
 
-LOG_DIR="/tmp/acs-collab"
-mkdir -p "$LOG_DIR"
+LOG_DIR="/tmp/acs-collab/$WORKROOM"
+SHARED_LOG_DIR="/tmp/acs-collab"
+mkdir -p "$LOG_DIR" "$SHARED_LOG_DIR"
 
 # Sentinels surface boot-time problems to the post-launch self-check
-# (and to anyone tailing /tmp/acs-collab/) so a silent failure can never
-# masquerade as a healthy boot the way it did on 2026-05-02 (id=199).
+# (and to anyone tailing /tmp/acs-collab/<workroom>/) so a silent failure
+# can never masquerade as a healthy boot the way it did on 2026-05-02
+# (id=199). Sentinels live under the per-room dir so two workrooms do
+# not overwrite each other's diagnostics.
 SENTINEL_PYTHON="$LOG_DIR/.mcp_python_unhealthy"
 SENTINEL_MCP="$LOG_DIR/.mcp_server_unhealthy"
 SENTINEL_TOKEN="$LOG_DIR/.mcp_token_unset"
@@ -76,7 +99,7 @@ if [[ "$PYTHON_HEALTHY" -ne 1 ]]; then
   echo "[FAIL-LOUD] Fix: ensure $REPO_ROOT/.venv-collab/bin/python exists with 'pip install mcp[cli]>=1.2' OR set COLLAB_MCP_PYTHON to a python that has mcp." >&2
   printf 'unhealthy at %s; resolved=%s\n' "$(date -Iseconds 2>/dev/null || date)" "${COLLAB_PYTHON:-<empty>}" \
     >"$SENTINEL_PYTHON"
-  notify "ACS Collab Workroom" "MCP startup BLOCKED" "venv missing or mcp module not installed — see launchd.err"
+  notify "ACS Collab Workroom [$WORKROOM]" "MCP startup BLOCKED" "venv missing or mcp module not installed — see launchd.err"
 fi
 
 # 1) Syncthing — best-effort, never block.
@@ -91,18 +114,19 @@ fi
 # 2) MCP server — must be alive before Claude/Codex panes start so their
 #    MCP clients can complete the startup handshake. Skipped when the
 #    python health gate above failed, so we never spawn a server.py that
-#    is guaranteed to crash with ModuleNotFoundError.
+#    is guaranteed to crash with ModuleNotFoundError. The server is a
+#    shared singleton across workrooms (one DB, one process).
 if [[ "$PYTHON_HEALTHY" -ne 1 ]]; then
   echo "[FAIL-LOUD] skipping MCP server step — python unhealthy (see $SENTINEL_PYTHON)" >&2
   printf 'skipped: python unhealthy\n' >"$SENTINEL_MCP"
 elif [[ -z "${COLLAB_MCP_TOKEN:-}" ]]; then
   echo "[FAIL-LOUD] COLLAB_MCP_TOKEN unset in launcher environment — MCP server not started. Set it in the launchd plist (see com.activecellsim.workroom.plist EnvironmentVariables)." >&2
   printf 'token unset at boot\n' >"$SENTINEL_TOKEN"
-  notify "ACS Collab Workroom" "MCP startup BLOCKED" "COLLAB_MCP_TOKEN missing in launchd env — see launchd.err"
+  notify "ACS Collab Workroom [$WORKROOM]" "MCP startup BLOCKED" "COLLAB_MCP_TOKEN missing in launchd env — see launchd.err"
 else
   if ! tmux has-session -t mcp 2>/dev/null; then
     tmux new-session -d -s mcp -c "$REPO_ROOT" \
-      "'$COLLAB_PYTHON' tools/collab_mcp/server.py >>'$LOG_DIR/mcp.log' 2>&1"
+      "'$COLLAB_PYTHON' tools/collab_mcp/server.py >>'$SHARED_LOG_DIR/mcp.log' 2>&1"
   fi
   MCP_UP=0
   for _i in 1 2 3 4 5 6 7 8 9 10; do
@@ -113,31 +137,43 @@ else
     sleep 0.5
   done
   if [[ "$MCP_UP" -ne 1 ]]; then
-    echo "[FAIL-LOUD] MCP server did not answer on http://127.0.0.1:7878/mcp/ within ~5 s — see $LOG_DIR/mcp.log for the crash trace." >&2
+    echo "[FAIL-LOUD] MCP server did not answer on http://127.0.0.1:7878/mcp/ within ~5 s — see $SHARED_LOG_DIR/mcp.log for the crash trace." >&2
     printf 'no response on 7878 within 5s\n' >"$SENTINEL_MCP"
-    notify "ACS Collab Workroom" "MCP startup BLOCKED" "server.py started but 7878 never came up — see mcp.log"
+    notify "ACS Collab Workroom [$WORKROOM]" "MCP startup BLOCKED" "server.py started but 7878 never came up — see mcp.log"
   fi
 fi
 
-# 3) tmux work sessions (claude-chat, codex-chat, claude-work, codex-work,
-#    win-ssh, heartbeat). setup_tmux_workroom is idempotent: never kills or
-#    renames existing sessions, and only starts a CLI/SSH/daemon in panes
-#    that are currently a plain shell.
+# 3) tmux work sessions — workroom-prefixed:
+#      <wr>-claude-chat, <wr>-codex-chat, <wr>-claude-work, <wr>-codex-work,
+#      <wr>-win-ssh, <wr>-heartbeat.
+#    setup_tmux_workroom is idempotent: never kills or renames existing
+#    sessions, and only starts a CLI/SSH/daemon in panes that are
+#    currently a plain shell.
 python3 -m tools.collab_mcp.setup_tmux_workroom \
+  --workroom "$WORKROOM" \
   --start-chat --start-work --start-win-ssh --start-heartbeat \
   >>"$LOG_DIR/setup_tmux_workroom.log" 2>&1 || true
 
-# 4) Relay session — keeps PI/LLM messages flowing into chat panes.
-if ! tmux has-session -t relay 2>/dev/null; then
-  tmux new-session -d -s relay -c "$REPO_ROOT" \
-    "python3 tools/collab_mcp/tmux_relay.py >>'$LOG_DIR/tmux_relay.log' 2>&1"
+# 4) Relay session — keeps PI/LLM messages flowing into chat panes for
+#    THIS workroom. Each workroom gets its own relay so its DB cursor
+#    (relay_cursors row) does not collide with another workroom's relay.
+RELAY_SESSION="${WORKROOM}-relay"
+if ! tmux has-session -t "$RELAY_SESSION" 2>/dev/null; then
+  tmux new-session -d -s "$RELAY_SESSION" -c "$REPO_ROOT" \
+    "python3 tools/collab_mcp/tmux_relay.py \
+       --relay-name '$WORKROOM' \
+       --workroom '$WORKROOM' \
+       --claude-target '${WORKROOM}-claude-chat:0.0' \
+       --codex-target '${WORKROOM}-codex-chat:0.0' \
+       --include-llm-messages \
+       >>'$LOG_DIR/tmux_relay.log' 2>&1"
 fi
 
-# 5) room.py — browser UI server.
+# 5) room.py — browser UI server (shared singleton, port 7879).
 if ! curl -fsS "http://127.0.0.1:7879/" >/dev/null 2>&1; then
   if ! tmux has-session -t room 2>/dev/null; then
     tmux new-session -d -s room -c "$REPO_ROOT" \
-      "python3 tools/collab_mcp/room.py >>'$LOG_DIR/room.log' 2>&1"
+      "python3 tools/collab_mcp/room.py >>'$SHARED_LOG_DIR/room.log' 2>&1"
   fi
   for _i in 1 2 3 4 5 6 7 8 9 10; do
     if curl -fsS "http://127.0.0.1:7879/" >/dev/null 2>&1; then
@@ -154,7 +190,8 @@ fi
 #    (b) The first `open -na` returns before the new tab is queryable,
 #        so the second invocation also sees 0 matching URLs.
 #    A short-lived lock file (CHROME_LOCK_TTL_S) bridges both windows.
-CHROME_LOCK="$LOG_DIR/chrome_app.lock"
+#    The lock is shared across workrooms because the UI is one tab.
+CHROME_LOCK="$SHARED_LOG_DIR/chrome_app.lock"
 CHROME_LOCK_TTL_S=30
 chrome_lock_fresh() {
   [[ -f "$CHROME_LOCK" ]] || return 1
@@ -205,7 +242,12 @@ selfcheck_http() {
   fi
 }
 
-for s in claude-chat claude-work codex-chat codex-work win-ssh relay heartbeat room mcp; do
+# Per-room sessions
+for s in claude-chat claude-work codex-chat codex-work win-ssh relay heartbeat; do
+  selfcheck_session "${WORKROOM}-${s}"
+done
+# Shared singletons
+for s in room mcp; do
   selfcheck_session "$s"
 done
 selfcheck_http "room.py" "http://127.0.0.1:7879/"
@@ -214,12 +256,13 @@ selfcheck_http "mcp"     "http://127.0.0.1:7878/mcp/"
 if (( ${#SELFCHECK_FAILS[@]} > 0 )); then
   echo "[SELF-CHECK FAIL] ${#SELFCHECK_FAILS[@]} item(s): ${SELFCHECK_FAILS[*]}" >&2
   echo "[SELF-CHECK OK ] ${#SELFCHECK_OK[@]} item(s): ${SELFCHECK_OK[*]}" >&2
-  printf 'failed at %s\nFAIL: %s\nOK: %s\n' \
+  printf 'failed at %s\nworkroom: %s\nFAIL: %s\nOK: %s\n' \
     "$(date -Iseconds 2>/dev/null || date)" \
+    "$WORKROOM" \
     "${SELFCHECK_FAILS[*]}" \
     "${SELFCHECK_OK[*]}" \
     >"$SENTINEL_SELFCHECK"
-  notify "ACS Collab Workroom" "Self-check FAILED (${#SELFCHECK_FAILS[@]})" "$(printf '%s' "${SELFCHECK_FAILS[*]}" | head -c 200)"
+  notify "ACS Collab Workroom [$WORKROOM]" "Self-check FAILED (${#SELFCHECK_FAILS[@]})" "$(printf '%s' "${SELFCHECK_FAILS[*]}" | head -c 200)"
 else
-  echo "[SELF-CHECK OK ] all ${#SELFCHECK_OK[@]} tiers up" >&2
+  echo "[SELF-CHECK OK ] workroom=$WORKROOM all ${#SELFCHECK_OK[@]} tiers up" >&2
 fi

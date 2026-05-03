@@ -1,11 +1,15 @@
 """Heartbeat daemon for the ACS Collab Workroom sidebar.
 
 Every 5 s, refresh the `agent_status` row for each of the four LLM panes
-(`claude-chat`, `claude-work`, `codex-chat`, `codex-work`) so the sidebar
-"Agents · 4 panes" panel stays visibly alive even when the pane is idle
-between PI prompts. The daemon never invents progress numbers — it
-re-POSTs the existing row's percent/activity unchanged, which only bumps
-``updated_at`` and resets the freshness tick.
+in the workroom so the sidebar "Agents" panel stays visibly alive even
+when the pane is idle between PI prompts. The daemon never invents
+progress numbers — it re-POSTs the existing row's percent/activity
+unchanged, which only bumps ``updated_at`` and resets the freshness tick.
+
+When ``--workroom <name>`` is given, agent IDs and tmux targets are both
+prefixed with the workroom name (e.g. ``design-discussion-claude-chat``).
+This lets multiple workrooms heartbeat in parallel without colliding on
+the same ``agent_status`` row.
 
 If the underlying tmux pane is dead, the daemon overwrites the row's
 activity with ``"(pane dead)"`` and leaves the percent intact so PI can
@@ -14,9 +18,11 @@ spot a crashed CLI from the sidebar without inventing fake progress.
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import pathlib
+import re
 import sqlite3
 import subprocess
 import sys
@@ -34,13 +40,26 @@ DB_PATH = pathlib.Path(
 ROOM_URL = os.environ.get("COLLAB_ROOM_URL", "http://127.0.0.1:7879/agent_status")
 ROOM_TOKEN = os.environ.get("COLLAB_ROOM_TOKEN", "acs-room")
 INTERVAL_S = float(os.environ.get("COLLAB_HEARTBEAT_INTERVAL", "5"))
+WORKROOM_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 
-PANES = [
-    ("claude-chat", "claude-chat:0.0"),
-    ("claude-work", "claude-work:0.0"),
-    ("codex-chat", "codex-chat:0.0"),
-    ("codex-work", "codex-work:0.0"),
-]
+LOGICAL_PANES = ("claude-chat", "claude-work", "codex-chat", "codex-work")
+
+
+def build_panes(workroom: str | None) -> list[tuple[str, str]]:
+    """Return [(agent_id, tmux_target), ...] for the daemon to refresh.
+
+    Without a workroom (legacy mode), agent IDs and tmux targets are the
+    bare logical names (``claude-chat`` etc.). With a workroom, both are
+    prefixed (``design-discussion-claude-chat``) so per-room heartbeats
+    do not collide on the shared ``agent_status`` table.
+    """
+    if not workroom:
+        return [(name, f"{name}:0.0") for name in LOGICAL_PANES]
+    if not WORKROOM_RE.match(workroom):
+        raise ValueError(
+            f"invalid workroom name {workroom!r}: must match {WORKROOM_RE.pattern}"
+        )
+    return [(f"{workroom}-{name}", f"{workroom}-{name}:0.0") for name in LOGICAL_PANES]
 
 
 def pane_alive(target: str) -> bool:
@@ -93,8 +112,8 @@ def post_status(agent: str, percent: int, activity: str, topic: str) -> None:
         resp.read()
 
 
-def tick() -> None:
-    for agent, target in PANES:
+def tick(panes: list[tuple[str, str]]) -> None:
+    for agent, target in panes:
         existing = read_status(agent)
         if not existing:
             continue
@@ -108,15 +127,30 @@ def tick() -> None:
             print(f"heartbeat post failed for {agent}: {exc}", file=sys.stderr, flush=True)
 
 
-def main() -> None:
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Heartbeat daemon for ACS Collab Workroom sidebar.")
+    parser.add_argument(
+        "--workroom",
+        default=os.environ.get("ACS_WORKROOM", ""),
+        help="Workroom name; agent IDs and tmux targets get prefixed. "
+             "Default: $ACS_WORKROOM (empty = legacy unprefixed mode).",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = _build_parser().parse_args(argv)
+    workroom = args.workroom.strip() or None
+    panes = build_panes(workroom)
     print(
-        f"acs-collab heartbeat daemon: interval={INTERVAL_S}s url={ROOM_URL}",
+        f"acs-collab heartbeat daemon: workroom={workroom or '<legacy>'} "
+        f"interval={INTERVAL_S}s url={ROOM_URL} panes={[a for a, _ in panes]}",
         file=sys.stderr,
         flush=True,
     )
     while True:
         try:
-            tick()
+            tick(panes)
         except Exception as exc:  # noqa: BLE001
             print(f"heartbeat tick error: {exc}", file=sys.stderr, flush=True)
         time.sleep(INTERVAL_S)

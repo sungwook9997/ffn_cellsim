@@ -9,15 +9,19 @@ post PI messages into the shared queue.
 from __future__ import annotations
 
 import datetime as dt
+import email.parser
+import email.policy
 import html
 import http.cookies
 import hmac
 import json
 import os
 import pathlib
+import re
 import sqlite3
 import sys
 import urllib.parse
+import uuid
 from contextlib import closing
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -56,8 +60,16 @@ ROOM_TOKENS_ACCEPTED = tuple(
     if t
 )
 PI_AUTHOR = os.environ.get("COLLAB_ROOM_AUTHOR", "pi").strip().lower() or "pi"
+UPLOAD_DIR = pathlib.Path(os.environ.get("COLLAB_ROOM_UPLOAD_DIR", "/tmp/acs-collab/uploads")).expanduser()
+MAX_FORM_BYTES = 65536
+MAX_UPLOAD_BYTES = int(os.environ.get("COLLAB_ROOM_MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
+ROOM_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
+DEFAULT_ROOM = os.environ.get("COLLAB_DEFAULT_ROOM", "design-discussion").strip().lower() or "design-discussion"
+if not ROOM_NAME_RE.match(DEFAULT_ROOM):
+    DEFAULT_ROOM = "design-discussion"
 
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _db() -> sqlite3.Connection:
@@ -70,7 +82,7 @@ def _db() -> sqlite3.Connection:
 def _init_schema() -> None:
     with closing(_db()) as conn:
         conn.executescript(
-            """
+            f"""
             CREATE TABLE IF NOT EXISTS messages(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ts TEXT NOT NULL,
@@ -79,21 +91,26 @@ def _init_schema() -> None:
                 topic TEXT NOT NULL,
                 body TEXT NOT NULL,
                 status TEXT NOT NULL,
-                refs TEXT NOT NULL DEFAULT '[]'
+                refs TEXT NOT NULL DEFAULT '[]',
+                room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}'
             );
             CREATE INDEX IF NOT EXISTS idx_messages_id ON messages(id);
 
             CREATE TABLE IF NOT EXISTS claims(
-                topic TEXT PRIMARY KEY,
+                room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                topic TEXT NOT NULL,
                 author TEXT NOT NULL,
                 claimed_at TEXT NOT NULL,
                 released_at TEXT,
-                summary TEXT
+                summary TEXT,
+                PRIMARY KEY(room, topic)
             );
 
             CREATE TABLE IF NOT EXISTS cursors(
-                author TEXT PRIMARY KEY,
-                last_seen_id INTEGER NOT NULL DEFAULT 0
+                author TEXT NOT NULL,
+                room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                last_seen_id INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(author, room)
             );
 
             CREATE TABLE IF NOT EXISTS artifacts(
@@ -126,6 +143,49 @@ def _init_schema() -> None:
                 "UPDATE agent_status SET last_active_at = updated_at "
                 "WHERE last_active_at IS NULL"
             )
+        message_cols = {row[1] for row in conn.execute("PRAGMA table_info(messages)").fetchall()}
+        if "room" not in message_cols:
+            conn.execute(
+                f"ALTER TABLE messages ADD COLUMN room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}'"
+            )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_room_id ON messages(room, id)")
+
+        claim_cols = {row[1] for row in conn.execute("PRAGMA table_info(claims)").fetchall()}
+        if "room" not in claim_cols:
+            conn.executescript(
+                f"""
+                CREATE TABLE claims_new(
+                    room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                    topic TEXT NOT NULL,
+                    author TEXT NOT NULL,
+                    claimed_at TEXT NOT NULL,
+                    released_at TEXT,
+                    summary TEXT,
+                    PRIMARY KEY(room, topic)
+                );
+                INSERT OR REPLACE INTO claims_new(room, topic, author, claimed_at, released_at, summary)
+                    SELECT '{DEFAULT_ROOM}', topic, author, claimed_at, released_at, summary FROM claims;
+                DROP TABLE claims;
+                ALTER TABLE claims_new RENAME TO claims;
+                """
+            )
+
+        cursor_cols = {row[1] for row in conn.execute("PRAGMA table_info(cursors)").fetchall()}
+        if "room" not in cursor_cols:
+            conn.executescript(
+                f"""
+                CREATE TABLE cursors_new(
+                    author TEXT NOT NULL,
+                    room TEXT NOT NULL DEFAULT '{DEFAULT_ROOM}',
+                    last_seen_id INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY(author, room)
+                );
+                INSERT OR REPLACE INTO cursors_new(author, room, last_seen_id)
+                    SELECT author, '{DEFAULT_ROOM}', last_seen_id FROM cursors;
+                DROP TABLE cursors;
+                ALTER TABLE cursors_new RENAME TO cursors;
+                """
+            )
 
 
 def _now_human() -> str:
@@ -141,6 +201,15 @@ def _require_nonempty(value: str, field_name: str) -> str:
     if not cleaned:
         raise ValueError(f"{field_name} must be non-empty")
     return cleaned
+
+
+def _validate_room(value: str | None, default: str = DEFAULT_ROOM) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return default
+    if not ROOM_NAME_RE.match(raw):
+        raise ValueError(f"room must match {ROOM_NAME_RE.pattern} (got {value!r})")
+    return raw
 
 
 def _ledger_append(
@@ -171,61 +240,158 @@ def _insert_pi_message(
     addressee: str,
     status: str,
     refs: list[str],
+    room: str = DEFAULT_ROOM,
 ) -> dict[str, Any]:
     topic = _require_nonempty(topic, "topic")
     body = _require_nonempty(body, "body")
     addressee = _require_nonempty(addressee, "to")
+    room = _validate_room(room)
     if status not in ALLOWED_STATUSES:
         raise ValueError(f"status must be one of {sorted(ALLOWED_STATUSES)}")
 
     ts = _now_human()
     with closing(_db()) as conn:
         cur = conn.execute(
-            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs) "
-            "VALUES (?,?,?,?,?,?,?)",
-            (ts, PI_AUTHOR, addressee, topic, body, status, json.dumps(refs)),
+            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs, room) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (ts, PI_AUTHOR, addressee, topic, body, status, json.dumps(refs), room),
         )
         msg_id = cur.lastrowid
     ledger_appended = _ledger_append(ts, PI_AUTHOR, addressee, topic, body, status, refs)
-    return {"id": msg_id, "ts": ts, "ledger_appended": ledger_appended}
+    return {"id": msg_id, "ts": ts, "room": room, "ledger_appended": ledger_appended}
 
 
-def _fetch_messages(after_id: int = 0, limit: int = 200) -> list[tuple[Any, ...]]:
+def _insert_artifact(kind: str, path: str, note: str = "", author: str = PI_AUTHOR) -> dict[str, Any]:
+    kind = _require_nonempty(kind, "kind")
+    path = _require_nonempty(path, "path")
+    ts = _now_human()
+    with closing(_db()) as conn:
+        cur = conn.execute(
+            "INSERT INTO artifacts(ts, author, kind, path, note) VALUES (?,?,?,?,?)",
+            (ts, author, kind, path, note or ""),
+        )
+        artifact_id = cur.lastrowid
+    return {"id": artifact_id, "ts": ts, "author": author, "kind": kind, "path": path, "note": note or ""}
+
+
+def _safe_upload_name(filename: str) -> str:
+    base = pathlib.PurePath(filename or "upload.bin").name.strip()
+    if not base:
+        base = "upload.bin"
+    safe = re.sub(r"[^A-Za-z0-9._ -]+", "_", base).strip(" .")
+    return safe or "upload.bin"
+
+
+def _store_upload(filename: str, data: bytes, content_type: str) -> dict[str, Any]:
+    safe_name = _safe_upload_name(filename)
+    stamp = dt.datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
+    dest = UPLOAD_DIR / f"{stamp}_{uuid.uuid4().hex[:8]}_{safe_name}"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    note = f"{filename or safe_name} ({content_type or 'application/octet-stream'}, {len(data)} bytes)"
+    artifact = _insert_artifact("pi_upload", str(dest), note=note)
+    return {
+        "artifact_id": artifact["id"],
+        "path": str(dest),
+        "name": filename or safe_name,
+        "content_type": content_type or "application/octet-stream",
+        "size": len(data),
+    }
+
+
+def _format_uploads_for_message(body: str, uploads: list[dict[str, Any]]) -> str:
+    body = body.strip() or "첨부 파일을 공유합니다."
+    if not uploads:
+        return body
+    lines = ["", "[첨부 파일]"]
+    for upload in uploads:
+        lines.append(
+            "- "
+            f"{upload['name']} -> {upload['path']} "
+            f"(artifact #{upload['artifact_id']}, {upload['content_type']}, {upload['size']} bytes)"
+        )
+    return body.rstrip() + "\n" + "\n".join(lines)
+
+
+def _insert_pi_message_with_uploads(
+    topic: str,
+    body: str,
+    addressee: str,
+    status: str,
+    refs: list[str],
+    uploads: list[dict[str, Any]],
+    room: str = DEFAULT_ROOM,
+) -> dict[str, Any]:
+    upload_paths = [str(upload["path"]) for upload in uploads]
+    combined_refs = refs + [path for path in upload_paths if path not in refs]
+    return _insert_pi_message(
+        topic=topic,
+        body=_format_uploads_for_message(body, uploads),
+        addressee=addressee,
+        status=status,
+        refs=combined_refs,
+        room=room,
+    )
+
+
+def _fetch_messages(after_id: int = 0, limit: int = 200, room: str = DEFAULT_ROOM) -> list[tuple[Any, ...]]:
+    room = _validate_room(room)
     with closing(_db()) as conn:
         return conn.execute(
-            "SELECT id, ts, author, addressee, topic, body, status, refs "
-            "FROM messages WHERE id > ? ORDER BY id ASC LIMIT ?",
-            (int(after_id), int(limit)),
+            "SELECT id, ts, author, addressee, topic, body, status, refs, room "
+            "FROM messages WHERE id > ? AND room=? ORDER BY id ASC LIMIT ?",
+            (int(after_id), room, int(limit)),
         ).fetchall()
 
 
-def _fetch_recent_messages(limit: int = 200) -> list[tuple[Any, ...]]:
+def _fetch_recent_messages(limit: int = 200, room: str = DEFAULT_ROOM) -> list[tuple[Any, ...]]:
+    room = _validate_room(room)
     with closing(_db()) as conn:
         rows = conn.execute(
-            "SELECT id, ts, author, addressee, topic, body, status, refs "
-            "FROM messages ORDER BY id DESC LIMIT ?",
-            (int(limit),),
+            "SELECT id, ts, author, addressee, topic, body, status, refs, room "
+            "FROM messages WHERE room=? ORDER BY id DESC LIMIT ?",
+            (room, int(limit)),
         ).fetchall()
     return list(reversed(rows))
 
 
-def _fetch_sidebar() -> dict[str, Any]:
+def _fetch_rooms() -> list[str]:
+    rooms = {DEFAULT_ROOM}
+    with closing(_db()) as conn:
+        rooms.update(row[0] for row in conn.execute("SELECT DISTINCT room FROM messages").fetchall())
+        rooms.update(row[0] for row in conn.execute("SELECT DISTINCT room FROM claims").fetchall())
+        agent_rows = conn.execute("SELECT agent FROM agent_status").fetchall()
+    for (agent,) in agent_rows:
+        agent_room = _agent_room(agent)
+        if agent_room:
+            rooms.add(agent_room)
+    return sorted(r for r in rooms if r)
+
+
+def _fetch_sidebar(room: str = DEFAULT_ROOM) -> dict[str, Any]:
+    room = _validate_room(room)
     with closing(_db()) as conn:
         claims = conn.execute(
             "SELECT topic, author, claimed_at, summary FROM claims "
-            "WHERE released_at IS NULL ORDER BY claimed_at"
+            "WHERE released_at IS NULL AND room=? ORDER BY claimed_at",
+            (room,),
         ).fetchall()
         artifacts = conn.execute(
             "SELECT id, ts, author, kind, path, note FROM artifacts "
             "ORDER BY id DESC LIMIT 30"
         ).fetchall()
         cursors = conn.execute(
-            "SELECT author, last_seen_id FROM cursors ORDER BY author"
+            "SELECT author, last_seen_id FROM cursors WHERE room=? ORDER BY author",
+            (room,),
         ).fetchall()
         agents = conn.execute(
             "SELECT agent, percent, activity, topic, updated_at, last_active_at "
             "FROM agent_status ORDER BY agent"
         ).fetchall()
+    agents = [
+        row for row in agents
+        if not _agent_room(row[0]) or _agent_room(row[0]) == room
+    ]
     return {"claims": claims, "artifacts": artifacts, "cursors": cursors, "agents": agents}
 
 
@@ -274,26 +440,58 @@ _AGENT_VALUES = {
     "claude-chat", "claude-work",
     "codex-chat", "codex-work",
 }
+WORKROOM_RE = ROOM_NAME_RE
+_PREFIXED_AGENT_RE = re.compile(
+    r"^(?P<room>[a-z0-9][a-z0-9-]{0,31})-"
+    r"(?P<logical>claude-chat|claude-work|codex-chat|codex-work)$"
+)
+
+
+def _agent_logical(agent: str) -> str:
+    match = _PREFIXED_AGENT_RE.match(agent)
+    if match:
+        return match.group("logical")
+    return agent
+
+
+def _agent_room(agent: str) -> str:
+    match = _PREFIXED_AGENT_RE.match(agent)
+    return match.group("room") if match else ""
+
+
+def _validate_agent(agent: str) -> str:
+    raw = _require_nonempty(agent, "agent")
+    lowered = raw.lower()
+    if lowered in _AGENT_VALUES:
+        return lowered
+    if raw != lowered:
+        raise ValueError(
+            "agent must be one of claude/codex/pi/claude-chat/claude-work/"
+            "codex-chat/codex-work or <workroom>-<pane>"
+        )
+    match = _PREFIXED_AGENT_RE.match(raw)
+    if match and WORKROOM_RE.match(match.group("room")):
+        return raw
+    raise ValueError(
+        "agent must be one of claude/codex/pi/claude-chat/claude-work/"
+        "codex-chat/codex-work or <workroom>-<pane>"
+    )
 
 
 def _agent_base(agent: str) -> str:
     """Map a pane-aware agent value to its base agent (claude/codex/pi)."""
-    if agent.startswith("claude"):
+    logical = _agent_logical(agent)
+    if logical.startswith("claude"):
         return "claude"
-    if agent.startswith("codex"):
+    if logical.startswith("codex"):
         return "codex"
-    return agent
+    return logical
 
 
 def _upsert_agent_status(
     agent: str, percent: int, activity: str, topic: str = "", heartbeat: bool = False
 ) -> dict[str, Any]:
-    agent = _require_nonempty(agent, "agent").lower()
-    if agent not in _AGENT_VALUES:
-        raise ValueError(
-            "agent must be one of "
-            "claude/codex/pi/claude-chat/claude-work/codex-chat/codex-work"
-        )
+    agent = _validate_agent(agent)
     try:
         percent_i = int(percent)
     except (TypeError, ValueError) as exc:
@@ -338,7 +536,8 @@ def _upsert_agent_status(
 
 
 def _message_to_dict(row: tuple[Any, ...]) -> dict[str, Any]:
-    msg_id, ts, author, addressee, topic, body, status, refs_json = row
+    msg_id, ts, author, addressee, topic, body, status, refs_json = row[:8]
+    room = row[8] if len(row) > 8 else DEFAULT_ROOM
     try:
         refs = json.loads(refs_json)
     except json.JSONDecodeError:
@@ -352,6 +551,7 @@ def _message_to_dict(row: tuple[Any, ...]) -> dict[str, Any]:
         "body": body,
         "status": status,
         "refs": refs,
+        "room": room,
     }
 
 
@@ -404,6 +604,12 @@ def _render_login(error: str = "") -> str:
 
 def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
     """Initial server-side render. JS takes over polling after first paint."""
+    current_room = _validate_room(str(initial_state.get("room") or DEFAULT_ROOM))
+    rooms = sorted(set(str(r) for r in initial_state.get("rooms", []) if r) | {current_room, DEFAULT_ROOM})
+    room_options = "\n".join(
+        f"<option value='{_esc(room)}'{' selected' if room == current_room else ''}>{_esc(room)}</option>"
+        for room in rooms
+    )
     status_options = "\n".join(
         f"<option value='{_esc(status)}'{' selected' if status == 'open-question' else ''}>{_esc(status)}</option>"
         for status in sorted(ALLOWED_STATUSES)
@@ -431,6 +637,10 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
     </div>
     <div class="agent-strip" id="agent-strip" aria-live="polite"></div>
     <nav>
+      <label class="room-picker">
+        <span>Room</span>
+        <select id="room-select">{room_options}</select>
+      </label>
       <button type="button" id="toggle-sidebar" class="ghost">Sidebar</button>
       <a href="/logout" class="ghost">Logout</a>
     </nav>
@@ -440,7 +650,7 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
       {flash_html}
       <div class="messages" id="messages" role="log" aria-live="polite"></div>
       <button type="button" id="jump-bottom" class="jump hidden" aria-label="Jump to newest">↓ <span id="jump-count">new</span></button>
-      <form class="composer" id="composer" autocomplete="off">
+      <form class="composer" id="composer" autocomplete="off" enctype="multipart/form-data">
         <div class="composer-meta">
           <label class="meta-field">
             <span>To</span>
@@ -457,6 +667,10 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
           <label class="meta-field grow">
             <span>Refs (optional)</span>
             <input name="refs" id="composer-refs" placeholder="comma-separated paths/topics">
+          </label>
+          <label class="meta-field file-field">
+            <span>Files</span>
+            <input type="file" name="attachments" id="composer-files" multiple>
           </label>
         </div>
         <div class="composer-row">
@@ -478,6 +692,7 @@ def _render_room(initial_state: dict[str, Any], flash: str = "") -> str:
       </section>
       <section class="panel">
         <h2>Artifacts</h2>
+        <p class="panel-hint">PI uploads are saved under <code>{_esc(UPLOAD_DIR)}</code>.</p>
         <ul id="artifacts-list"><li class="empty">None</li></ul>
       </section>
     </aside>
@@ -505,12 +720,13 @@ class RoomHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
                 return
             qs = urllib.parse.parse_qs(parsed.query)
+            room = self._room_from_query(qs)
             after = 0
             try:
                 after = int(qs.get("after", ["0"])[0])
             except (TypeError, ValueError):
                 after = 0
-            payload = self._build_payload(after_id=after)
+            payload = self._build_payload(after_id=after, room=room)
             self._send_json(payload)
             return
         if path != "/":
@@ -519,7 +735,9 @@ class RoomHandler(BaseHTTPRequestHandler):
         if not self._is_authenticated():
             self._send_text(_render_login())
             return
-        initial = self._build_payload(after_id=0, recent=True)
+        qs = urllib.parse.parse_qs(parsed.query)
+        room = self._room_from_query(qs)
+        initial = self._build_payload(after_id=0, recent=True, room=room)
         self._send_text(_render_room(initial))
 
     def do_POST(self) -> None:
@@ -543,13 +761,19 @@ class RoomHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args: Any) -> None:
         sys.stderr.write(f"[collab-room] {self.address_string()} - {fmt % args}\n")
 
-    def _build_payload(self, after_id: int, recent: bool = False) -> dict[str, Any]:
+    def _room_from_query(self, qs: dict[str, list[str]]) -> str:
+        return _validate_room(qs.get("room", [DEFAULT_ROOM])[0])
+
+    def _build_payload(self, after_id: int, recent: bool = False, room: str = DEFAULT_ROOM) -> dict[str, Any]:
+        room = _validate_room(room)
         if recent:
-            rows = _fetch_recent_messages(limit=200)
+            rows = _fetch_recent_messages(limit=200, room=room)
         else:
-            rows = _fetch_messages(after_id=after_id, limit=200)
-        sidebar = _sidebar_to_dict(_fetch_sidebar())
+            rows = _fetch_messages(after_id=after_id, limit=200, room=room)
+        sidebar = _sidebar_to_dict(_fetch_sidebar(room=room))
         return {
+            "room": room,
+            "rooms": _fetch_rooms(),
             "messages": [_message_to_dict(r) for r in rows],
             "claims": sidebar["claims"],
             "artifacts": sidebar["artifacts"],
@@ -572,26 +796,44 @@ class RoomHandler(BaseHTTPRequestHandler):
             else:
                 self._send_text(_render_login("Please enter the room token."), status=HTTPStatus.UNAUTHORIZED)
             return
-        if self._wants_json():
+        if self._is_json_request():
             payload = self._read_json()
+            room = _validate_room(str(payload.get("room", DEFAULT_ROOM)))
             result = _insert_pi_message(
                 topic=str(payload.get("topic", "")),
                 body=str(payload.get("body", "")),
                 addressee=str(payload.get("to", "")),
                 status=str(payload.get("status", "open-question")),
                 refs=[str(r).strip() for r in payload.get("refs", []) if str(r).strip()],
+                room=room,
             )
             self._send_json({"ok": True, **result})
             return
+        if self._is_multipart_request():
+            fields, uploads = self._read_multipart_form()
+            room = _validate_room(fields.get("room", [DEFAULT_ROOM])[0])
+            result = _insert_pi_message_with_uploads(
+                topic=fields.get("topic", [""])[0],
+                body=fields.get("body", [""])[0],
+                addressee=fields.get("to", [""])[0],
+                status=fields.get("status", ["open-question"])[0],
+                refs=_parse_refs(fields.get("refs", [""])[0]),
+                uploads=uploads,
+                room=room,
+            )
+            self._send_json({"ok": True, "uploads": uploads, **result})
+            return
         fields = self._read_form()
+        room = _validate_room(fields.get("room", [DEFAULT_ROOM])[0])
         result = _insert_pi_message(
             topic=fields.get("topic", [""])[0],
             body=fields.get("body", [""])[0],
             addressee=fields.get("to", [""])[0],
             status=fields.get("status", ["open-question"])[0],
             refs=_parse_refs(fields.get("refs", [""])[0]),
+            room=room,
         )
-        self._redirect(f"/?sent={result['id']}")
+        self._redirect(f"/?room={urllib.parse.quote(room)}&sent={result['id']}")
 
     def _handle_agent_status(self) -> None:
         if not self._is_authenticated():
@@ -609,14 +851,51 @@ class RoomHandler(BaseHTTPRequestHandler):
 
     def _read_form(self) -> dict[str, list[str]]:
         length = int(self.headers.get("Content-Length", "0"))
-        if length > 65536:
+        if length > MAX_FORM_BYTES:
             raise ValueError("request body too large")
         body = self.rfile.read(length).decode("utf-8")
         return urllib.parse.parse_qs(body, keep_blank_values=True)
 
+    def _read_multipart_form(self) -> tuple[dict[str, list[str]], list[dict[str, Any]]]:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length > MAX_UPLOAD_BYTES:
+            raise ValueError(f"upload request too large; limit is {MAX_UPLOAD_BYTES} bytes")
+        content_type = self.headers.get("Content-Type", "")
+        raw = self.rfile.read(length)
+        parser = email.parser.BytesParser(policy=email.policy.default)
+        msg = parser.parsebytes(
+            b"Content-Type: " + content_type.encode("utf-8") + b"\r\n"
+            b"MIME-Version: 1.0\r\n\r\n"
+            + raw
+        )
+        if not msg.is_multipart():
+            raise ValueError("multipart body expected")
+        fields: dict[str, list[str]] = {}
+        uploads: list[dict[str, Any]] = []
+        for part in msg.iter_parts():
+            name = part.get_param("name", header="content-disposition")
+            if not name:
+                continue
+            filename = part.get_filename()
+            payload = part.get_payload(decode=True) or b""
+            if filename:
+                if not payload:
+                    continue
+                uploads.append(
+                    _store_upload(
+                        filename=filename,
+                        data=payload,
+                        content_type=part.get_content_type(),
+                    )
+                )
+            else:
+                charset = part.get_content_charset() or "utf-8"
+                fields.setdefault(name, []).append(payload.decode(charset, errors="replace"))
+        return fields, uploads
+
     def _read_json(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length", "0"))
-        if length > 65536:
+        if length > MAX_FORM_BYTES:
             raise ValueError("request body too large")
         raw = self.rfile.read(length).decode("utf-8") or "{}"
         try:
@@ -626,6 +905,12 @@ class RoomHandler(BaseHTTPRequestHandler):
         if not isinstance(data, dict):
             raise ValueError("json body must be an object")
         return data
+
+    def _is_json_request(self) -> bool:
+        return (self.headers.get("Content-Type") or "").lower().startswith("application/json")
+
+    def _is_multipart_request(self) -> bool:
+        return (self.headers.get("Content-Type") or "").lower().startswith("multipart/form-data")
 
     def _wants_json(self) -> bool:
         ctype = (self.headers.get("Content-Type") or "").lower()
@@ -782,6 +1067,20 @@ a, button { font: inherit; }
 .agent-pill.stale { opacity: 0.55; }
 .agent-pill.fresh { box-shadow: 0 0 0 2px rgba(36,107,254,0.18); }
 nav { display: flex; gap: 8px; }
+.room-picker {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+}
+.room-picker select {
+  background: #f3f5f8;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  padding: 6px 8px;
+}
 .ghost {
   background: transparent;
   border: 1px solid var(--line);
@@ -908,6 +1207,11 @@ nav { display: flex; gap: 8px; }
   border-radius: 6px;
   color: var(--ink);
   padding: 6px 8px;
+}
+.meta-field.file-field { flex: 1 1 260px; }
+.meta-field.file-field input {
+  cursor: pointer;
+  max-width: 100%;
 }
 .composer-row { display: flex; gap: 8px; align-items: stretch; }
 .composer-row textarea {
@@ -1049,6 +1353,12 @@ nav { display: flex; gap: 8px; }
   justify-content: space-between;
 }
 .panel { display: flex; flex-direction: column; }
+.panel-hint {
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
 .panel ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .panel li {
   background: #f6f8fb;
@@ -1117,6 +1427,8 @@ JS = r"""
     cursors: initial.cursors || {},
     agents: initial.agents || [],
     agentsFetchedAt: Date.now(),
+    currentRoom: initial.room || "design-discussion",
+    rooms: initial.rooms || [],
     pending: 0,
     pollFailures: 0,
   };
@@ -1132,7 +1444,9 @@ JS = r"""
   var agentCardsEl = document.getElementById("agent-cards");
   var composer = document.getElementById("composer");
   var bodyEl = document.getElementById("composer-body");
+  var fileEl = document.getElementById("composer-files");
   var sendBtn = document.getElementById("composer-send");
+  var roomSelect = document.getElementById("room-select");
 
   var SELF_AUTHOR = "pi";
   var POLL_FAST_MS = 600;
@@ -1423,17 +1737,25 @@ JS = r"""
 
   var PANE_ORDER = ["claude-chat", "claude-work", "codex-chat", "codex-work"];
 
+  function agentLogicalName(name) {
+    if (!name) return "";
+    var m = String(name).match(/^(?:[a-z0-9][a-z0-9-]{0,31})-(claude-chat|claude-work|codex-chat|codex-work)$/);
+    return m ? m[1] : name;
+  }
+
   function paneBase(name) {
-    if (name && name.indexOf("claude") === 0) return "claude";
-    if (name && name.indexOf("codex") === 0) return "codex";
-    if (name === "pi") return "pi";
+    var logical = agentLogicalName(name);
+    if (logical && logical.indexOf("claude") === 0) return "claude";
+    if (logical && logical.indexOf("codex") === 0) return "codex";
+    if (logical === "pi") return "pi";
     return "other";
   }
 
   function paneRole(name) {
-    if (!name) return "";
-    var i = name.indexOf("-");
-    return i > 0 ? name.slice(i + 1) : "";
+    var logical = agentLogicalName(name);
+    if (!logical) return "";
+    var i = logical.indexOf("-");
+    return i > 0 ? logical.slice(i + 1) : "";
   }
 
   function buildAgentCard(name, agent, elapsedSinceFetch) {
@@ -1547,7 +1869,17 @@ JS = r"""
     var byName = {};
     (state.agents || []).forEach(function (a) { byName[a.agent] = a; });
     PANE_ORDER.forEach(function (paneName) {
-      var direct = byName[paneName];
+      var direct = byName[state.currentRoom + "-" + paneName] || byName[paneName];
+      if (!direct) {
+        var suffix = "-" + paneName;
+        Object.keys(byName).some(function (agentName) {
+          if (agentName.slice(-suffix.length) === suffix) {
+            direct = byName[agentName];
+            return true;
+          }
+          return false;
+        });
+      }
       // Backward compat: when only the legacy "claude"/"codex" row exists,
       // mirror it onto both chat and work cards so the sidebar shows
       // something useful until commit#5 splits the heartbeats.
@@ -1555,7 +1887,7 @@ JS = r"""
         var base = paneBase(paneName);
         if (byName[base]) direct = byName[base];
       }
-      agentCardsEl.appendChild(buildAgentCard(paneName, direct, elapsedSinceFetch));
+      agentCardsEl.appendChild(buildAgentCard(direct && direct.agent ? direct.agent : paneName, direct, elapsedSinceFetch));
     });
   }
 
@@ -1643,7 +1975,8 @@ JS = r"""
       pollTimer = null;
     }
     pollInFlight = true;
-    var url = "/messages.json?after=" + encodeURIComponent(state.lastId);
+    var url = "/messages.json?after=" + encodeURIComponent(state.lastId) +
+      "&room=" + encodeURIComponent(state.currentRoom);
     fetch(url, {credentials: "same-origin", headers: {"Accept": "application/json"}})
       .then(function (r) {
         if (!r.ok) throw new Error("status " + r.status);
@@ -1651,6 +1984,8 @@ JS = r"""
       })
       .then(function (data) {
         state.pollFailures = 0;
+        state.currentRoom = data.room || state.currentRoom;
+        state.rooms = data.rooms || state.rooms;
         var prevCursors = JSON.stringify(state.cursors);
         state.cursors = data.cursors || {};
         var hasNewMessages = !!(data.messages && data.messages.length);
@@ -1686,21 +2021,48 @@ JS = r"""
 
   function sendMessage() {
     var body = bodyEl.value.trim();
-    if (!body) return;
+    var files = fileEl && fileEl.files ? Array.prototype.slice.call(fileEl.files) : [];
+    if (!body && !files.length) return;
     sendBtn.disabled = true;
-    var payload = {
-      to: document.getElementById("composer-to").value,
-      topic: document.getElementById("composer-topic").value,
-      status: document.getElementById("composer-status").value,
-      body: bodyEl.value,
-      refs: (document.getElementById("composer-refs").value || "")
-        .split(",").map(function (s) { return s.trim(); }).filter(Boolean),
-    };
+    var refsText = document.getElementById("composer-refs").value || "";
+    var payload;
+    var fetchOptions;
+    if (files.length) {
+      payload = new FormData();
+      payload.append("to", document.getElementById("composer-to").value);
+      payload.append("topic", document.getElementById("composer-topic").value);
+      payload.append("status", document.getElementById("composer-status").value);
+      payload.append("body", bodyEl.value);
+      payload.append("refs", refsText);
+      payload.append("room", state.currentRoom);
+      files.forEach(function (file) { payload.append("attachments", file, file.name); });
+      fetchOptions = {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {"Accept": "application/json"},
+        body: payload,
+      };
+    } else {
+      payload = {
+        to: document.getElementById("composer-to").value,
+        topic: document.getElementById("composer-topic").value,
+        status: document.getElementById("composer-status").value,
+        body: bodyEl.value,
+        refs: refsText.split(",").map(function (s) { return s.trim(); }).filter(Boolean),
+        room: state.currentRoom,
+      };
+      fetchOptions = {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {"Content-Type": "application/json", "Accept": "application/json"},
+        body: JSON.stringify(payload),
+      };
+    }
     fetch("/send", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {"Content-Type": "application/json", "Accept": "application/json"},
-      body: JSON.stringify(payload),
+      method: fetchOptions.method,
+      credentials: fetchOptions.credentials,
+      headers: fetchOptions.headers,
+      body: fetchOptions.body,
     })
       .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, body: j}; }); })
       .then(function (res) {
@@ -1709,6 +2071,7 @@ JS = r"""
           return;
         }
         bodyEl.value = "";
+        if (fileEl) fileEl.value = "";
         autoresize(bodyEl);
         poll(true);
       })
@@ -1720,6 +2083,14 @@ JS = r"""
     e.preventDefault();
     sendMessage();
   });
+
+  if (roomSelect) {
+    roomSelect.value = state.currentRoom;
+    roomSelect.addEventListener("change", function () {
+      var nextRoom = roomSelect.value || "design-discussion";
+      window.location.href = "/?room=" + encodeURIComponent(nextRoom);
+    });
+  }
 
   bodyEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {

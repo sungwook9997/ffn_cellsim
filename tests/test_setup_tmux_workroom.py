@@ -20,6 +20,7 @@ def _load_setup(monkeypatch):
 def test_new_daemon_session_can_start_command_directly(monkeypatch, tmp_path):
     setup = _load_setup(monkeypatch)
     calls = []
+    heartbeat_cmd = setup.HEARTBEAT_CMD_TEMPLATE.format(workroom="design-discussion")
 
     def fake_tmux(*args, check=True):
         calls.append(args)
@@ -29,17 +30,18 @@ def test_new_daemon_session_can_start_command_directly(monkeypatch, tmp_path):
 
     monkeypatch.setattr(setup, "tmux", fake_tmux)
 
-    created = setup.ensure_session("heartbeat", tmp_path, setup.HEARTBEAT_CMD)
+    created = setup.ensure_session("design-discussion-heartbeat", tmp_path, heartbeat_cmd)
 
     assert created is True
     assert (
-        "new-session", "-d", "-s", "heartbeat", "-c", str(tmp_path), setup.HEARTBEAT_CMD
+        "new-session", "-d", "-s", "design-discussion-heartbeat", "-c", str(tmp_path), heartbeat_cmd
     ) in calls
 
 
 def test_send_line_clears_partial_prompt_before_enter(monkeypatch):
     setup = _load_setup(monkeypatch)
     calls = []
+    codex_cmd = setup.codex_command("design-discussion")
 
     def fake_tmux(*args, check=True):
         calls.append(args)
@@ -47,17 +49,21 @@ def test_send_line_clears_partial_prompt_before_enter(monkeypatch):
 
     monkeypatch.setattr(setup, "tmux", fake_tmux)
 
-    setup.send_line("codex-chat:0.0", setup.CODEX_CMD)
+    setup.send_line("design-discussion-codex-chat:0.0", codex_cmd)
 
     assert calls == [
-        ("send-keys", "-t", "codex-chat:0.0", "C-c"),
-        ("send-keys", "-t", "codex-chat:0.0", setup.CODEX_CMD, "Enter"),
+        ("send-keys", "-t", "design-discussion-codex-chat:0.0", "C-c"),
+        ("send-keys", "-t", "design-discussion-codex-chat:0.0", codex_cmd, "Enter"),
     ]
 
 
 def test_setup_starts_new_interactive_sessions_inside_shell(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLAB_MCP_TOKEN", "unit-test-token")
     setup = _load_setup(monkeypatch)
+    setup.PER_ROOM_LOG_DIR = tmp_path / "logs"
     calls = []
+    heartbeat_cmd = setup.HEARTBEAT_CMD_TEMPLATE.format(workroom="design-discussion")
+    codex_cmd = setup.codex_command("design-discussion")
 
     def fake_tmux(*args, check=True):
         calls.append(args)
@@ -71,19 +77,20 @@ def test_setup_starts_new_interactive_sessions_inside_shell(monkeypatch, tmp_pat
 
     actions = setup.setup(
         tmp_path,
+        workroom="design-discussion",
         start_chat=True,
         start_work=False,
         start_win_ssh=False,
         start_heartbeat=True,
     )
 
-    assert "started Codex in codex-chat" in actions
-    assert "started heartbeat daemon" in actions
+    assert "started Codex in design-discussion-codex-chat" in actions
+    assert "started heartbeat daemon (design-discussion)" in actions
     assert (
-        "new-session", "-d", "-s", "codex-chat", "-c", str(tmp_path)
+        "new-session", "-d", "-s", "design-discussion-codex-chat", "-c", str(tmp_path)
     ) in calls
     assert (
-        "new-session", "-d", "-s", "heartbeat", "-c", str(tmp_path), setup.HEARTBEAT_CMD
+        "new-session", "-d", "-s", "design-discussion-heartbeat", "-c", str(tmp_path), heartbeat_cmd
     ) in calls
-    assert ("send-keys", "-t", "codex-chat:0.0", "C-c") in calls
-    assert ("send-keys", "-t", "codex-chat:0.0", setup.CODEX_CMD, "Enter") in calls
+    assert ("send-keys", "-t", "design-discussion-codex-chat:0.0", "C-c") in calls
+    assert ("send-keys", "-t", "design-discussion-codex-chat:0.0", codex_cmd, "Enter") in calls

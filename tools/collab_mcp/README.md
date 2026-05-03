@@ -191,20 +191,24 @@ on this Mac:
 
 1. Syncthing (best-effort: `brew services start syncthing` or `nohup
    syncthing` if installed; skipped if already running).
-2. tmux work sessions — `claude-chat`, `claude-work`, `codex-chat`,
+2. `mcp` tmux session running `server.py` when `COLLAB_MCP_TOKEN` is set.
+   The launcher uses `COLLAB_MCP_PYTHON` when provided, otherwise
+   `.venv-collab/bin/python` when present, otherwise `python3`.
+3. tmux work sessions — `claude-chat`, `claude-work`, `codex-chat`,
    `codex-work`, and `win-ssh` — via
    `setup_tmux_workroom.py --start-chat --start-work --start-win-ssh`.
    The setup is idempotent: existing sessions/panes are never killed or
    renamed; CLIs/SSH are only started in panes that are still a plain shell.
-3. `relay` tmux session running `tmux_relay.py` (env vars
+4. `relay` tmux session running `tmux_relay.py` (env vars
    `COLLAB_TMUX_CLAUDE_TARGET` / `COLLAB_TMUX_CODEX_TARGET` default to
    `claude-chat:0.0` / `codex-chat:0.0`).
-4. `room.py` browser UI server (port 7879) with a 5-second readiness wait.
-5. Chrome `--app` mode at `http://127.0.0.1:7879/` (falls back to the
+5. `room` tmux session running the `room.py` browser UI server (port 7879)
+   with a 5-second readiness wait.
+6. Chrome `--app` mode at `http://127.0.0.1:7879/` (falls back to the
    default browser when Chrome is missing).
 
 Logs land under `/tmp/acs-collab/` (`setup_tmux_workroom.log`,
-`tmux_relay.log`, `room.log`). The launcher is safe to run multiple
+`mcp.log`, `tmux_relay.log`, `room.log`). The launcher is safe to run multiple
 times — every step is a no-op when its target is already alive.
 
 ## Running the tmux relay
@@ -406,8 +410,10 @@ tools/collab_mcp/install_launchd.sh uninstall  # bootout + remove plist
 ```
 
 Logs: `/tmp/acs-collab/launchd.out` and `/tmp/acs-collab/launchd.err`.
-The launcher's per-stage logs (`setup_tmux_workroom.log`, `tmux_relay.log`,
-`room.log`) live in the same directory.
+The launcher's per-stage logs (`setup_tmux_workroom.log`, `mcp.log`,
+`tmux_relay.log`, `room.log`) live in the same directory. Persistent services
+run in tmux sessions (`mcp`, `relay`, `room`) so they survive after the
+one-shot LaunchAgent launcher exits.
 
 ## Running the experimental Tk desktop room
 

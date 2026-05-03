@@ -53,6 +53,7 @@ class WorkroomMessage:
     topic: str
     status: str
     body: str = ""
+    room: str = ""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -62,6 +63,7 @@ class RelayConfig:
     codex_target: str
     include_llm_messages: bool
     dry_run: bool
+    workroom: str = ""  # empty = legacy mode (no room filter)
 
 
 def _db() -> sqlite3.Connection:
@@ -106,22 +108,28 @@ def fetch_new_messages(relay_name: str, limit: int) -> list[WorkroomMessage]:
     _init_schema()
     with closing(_db()) as conn:
         last = _load_cursor(conn, relay_name)
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(messages)").fetchall()}
+        select = "SELECT id, author, addressee, topic, status, body"
+        if "room" in cols:
+            select += ", room"
         rows = conn.execute(
-            "SELECT id, author, addressee, topic, status, body "
-            "FROM messages WHERE id>? ORDER BY id ASC LIMIT ?",
+            f"{select} FROM messages WHERE id>? ORDER BY id ASC LIMIT ?",
             (last, limit),
         ).fetchall()
-    return [
-        WorkroomMessage(
-            id=int(row[0]),
-            author=str(row[1]).lower(),
-            addressee=str(row[2]).lower(),
-            topic=str(row[3]),
-            status=str(row[4]),
-            body=str(row[5] or ""),
+    out: list[WorkroomMessage] = []
+    for row in rows:
+        out.append(
+            WorkroomMessage(
+                id=int(row[0]),
+                author=str(row[1]).lower(),
+                addressee=str(row[2]).lower(),
+                topic=str(row[3]),
+                status=str(row[4]),
+                body=str(row[5] or ""),
+                room=str(row[6]) if len(row) > 6 and row[6] else "",
+            )
         )
-        for row in rows
-    ]
+    return out
 
 
 def mark_routed(relay_name: str, message_id: int) -> None:
@@ -149,23 +157,29 @@ def init_cursor_now(relay_name: str) -> int:
     return message_id
 
 
-def wrapper_prompt(message: WorkroomMessage, target_agent: str) -> str:
+def wrapper_prompt(message: WorkroomMessage, target_agent: str, workroom: str = "") -> str:
     """Return the only text injected into tmux panes.
 
-    The relay only writes into chat panes (`claude-chat:0.0` /
-    `codex-chat:0.0`), so every wrapper carries `pane=chat` and a
-    `work_pane=<agent>-work` hint. Chat-pane agents must keep replies short
-    and dispatch any non-trivial implementation work to the matching work
-    pane via `/tmp/acs-collab/work_briefing.md`. See `CLAUDE.md` /
-    `AGENTS.md` "Chat pane vs work pane discipline".
+    The relay only writes into chat panes, so every wrapper carries
+    `pane=chat` and a `work_pane=<...>-work` hint. When the relay knows
+    its workroom, the work_pane field is the physical session name
+    (`<workroom>-<agent>-work`) so chat panes brief the correct sibling.
+    Without a workroom (legacy mode) it falls back to the bare
+    `<agent>-work` name. Chat-pane agents must keep replies short and
+    dispatch any non-trivial implementation work to that pane via
+    `/tmp/acs-collab/work_briefing.md`. See `CLAUDE.md` / `AGENTS.md`
+    "Chat pane vs work pane discipline".
     """
     author = safe_label(message.author)
     addressee = safe_label(message.addressee)
     topic = safe_label(message.topic, max_len=80)
     target_agent = safe_label(target_agent, max_len=20)
+    workroom_label = safe_label(workroom, max_len=32) if workroom else ""
+    work_pane = f"{workroom_label}-{target_agent}-work" if workroom_label and workroom_label != "unknown" else f"{target_agent}-work"
+    room_field = f" room={workroom_label}" if workroom_label and workroom_label != "unknown" else ""
     return (
         f": mcp_msg id={message.id} from={author} to={addressee} "
-        f"topic={topic} pane=chat work_pane={target_agent}-work "
+        f"topic={topic}{room_field} pane=chat work_pane={work_pane} "
         f"priority=immediate ack_first "
         f"action=read_acs_collab_mcp_then_send_if_{target_agent}_should_reply"
     )
@@ -222,13 +236,35 @@ def tmux_send_wrapper(target: str, prompt: str, dry_run: bool = False) -> None:
     subprocess.run(["tmux", "send-keys", "-t", target, "C-m"], check=True)
 
 
+def message_belongs_to_relay(message: WorkroomMessage, config: RelayConfig) -> bool:
+    """True iff this relay should both notify and dispatch the message.
+
+    Workroom isolation: a relay tied to room X only handles messages
+    tagged with room X. Legacy messages (``room == ""``) are handled by
+    all relays so the pre-room corpus stays reachable. A relay that
+    boots without --workroom (``config.workroom == ""``) behaves like
+    the pre-multiplex relay and handles everything.
+    """
+    if not config.workroom:
+        return True
+    if not message.room:
+        return True
+    return message.room == config.workroom
+
+
 def dispatch_message(message: WorkroomMessage, config: RelayConfig) -> set[str]:
+    if not message_belongs_to_relay(message, config):
+        return set()
     targets = route_targets(message, config.include_llm_messages)
     for agent in sorted(targets):
         tmux_target = config.claude_target if agent == "claude" else config.codex_target
         if not tmux_target:
             raise ValueError(f"missing tmux target for {agent}")
-        tmux_send_wrapper(tmux_target, wrapper_prompt(message, agent), config.dry_run)
+        tmux_send_wrapper(
+            tmux_target,
+            wrapper_prompt(message, agent, config.workroom),
+            config.dry_run,
+        )
     return targets
 
 
@@ -273,14 +309,12 @@ def notify_desktop(message: WorkroomMessage, dry_run: bool = False) -> bool:
         print(f"[dry-run] osascript: {script}")
         return False
     try:
-        subprocess.run(
+        subprocess.Popen(
             ["osascript", "-e", script],
-            check=False,
-            timeout=2.0,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except OSError as exc:
         print(f"desktop notify failed: {exc}", file=sys.stderr, flush=True)
         return False
     return True
@@ -290,9 +324,16 @@ def run_once(config: RelayConfig, limit: int = DEFAULT_MAX_MESSAGES) -> int:
     messages = fetch_new_messages(config.relay_name, limit)
     routed = 0
     for message in messages:
-        targets = dispatch_message(message, config)
-        routed += len(targets)
-        notify_desktop(message, dry_run=config.dry_run)
+        # Cursor must always advance, even when the message is filtered
+        # out by room — otherwise other-room traffic would re-fetch
+        # forever. But notification is only fired when the message
+        # actually belongs to this relay, so a workroom-specific
+        # heartbeat does not flash a desktop banner for a peer room.
+        belongs = message_belongs_to_relay(message, config)
+        if belongs:
+            targets = dispatch_message(message, config)
+            routed += len(targets)
+            notify_desktop(message, dry_run=config.dry_run)
         if not config.dry_run:
             mark_routed(config.relay_name, message.id)
     return routed
@@ -314,6 +355,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--relay-name", default=DEFAULT_RELAY_NAME)
     parser.add_argument("--claude-target", default=os.environ.get("COLLAB_TMUX_CLAUDE_TARGET", ""))
     parser.add_argument("--codex-target", default=os.environ.get("COLLAB_TMUX_CODEX_TARGET", ""))
+    parser.add_argument(
+        "--workroom",
+        default=os.environ.get("ACS_WORKROOM", ""),
+        help="Workroom name; relay only routes messages tagged with this "
+             "room (legacy room=='' messages are still routed). "
+             "Empty = legacy mode (route everything).",
+    )
     parser.add_argument("--include-llm-messages", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--once", action="store_true")
@@ -335,6 +383,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         codex_target=args.codex_target,
         include_llm_messages=args.include_llm_messages,
         dry_run=args.dry_run,
+        workroom=args.workroom.strip().lower(),
     )
     if args.limit < 1 or args.limit > 200:
         raise ValueError("--limit must be in [1, 200]")

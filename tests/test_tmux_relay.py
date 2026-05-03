@@ -18,10 +18,24 @@ def _load_relay(monkeypatch, tmp_path: Path):
     return module
 
 
-def _init_messages(db_path: Path) -> None:
+def _init_messages(db_path: Path, with_room: bool = True) -> None:
     conn = sqlite3.connect(db_path)
-    conn.executescript(
+    schema = (
         """
+        CREATE TABLE messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts TEXT NOT NULL,
+            author TEXT NOT NULL,
+            addressee TEXT NOT NULL,
+            topic TEXT NOT NULL,
+            body TEXT NOT NULL,
+            status TEXT NOT NULL,
+            refs TEXT NOT NULL DEFAULT '[]',
+            room TEXT NOT NULL DEFAULT 'design-discussion'
+        );
+        """
+        if with_room
+        else """
         CREATE TABLE messages(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ts TEXT NOT NULL,
@@ -34,16 +48,30 @@ def _init_messages(db_path: Path) -> None:
         );
         """
     )
+    conn.executescript(schema)
     conn.close()
 
 
-def _insert_message(db_path: Path, author: str, addressee: str, body: str = "secret body") -> int:
+def _insert_message(
+    db_path: Path,
+    author: str,
+    addressee: str,
+    body: str = "secret body",
+    room: str | None = None,
+) -> int:
     conn = sqlite3.connect(db_path)
-    cur = conn.execute(
-        "INSERT INTO messages(ts, author, addressee, topic, body, status, refs) "
-        "VALUES('now',?,?,?,?, 'FYI', '[]')",
-        (author, addressee, "routing", body),
-    )
+    if room is None:
+        cur = conn.execute(
+            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs) "
+            "VALUES('now',?,?,?,?, 'FYI', '[]')",
+            (author, addressee, "routing", body),
+        )
+    else:
+        cur = conn.execute(
+            "INSERT INTO messages(ts, author, addressee, topic, body, status, refs, room) "
+            "VALUES('now',?,?,?,?, 'FYI', '[]', ?)",
+            (author, addressee, "routing", body, room),
+        )
     conn.commit()
     conn.close()
     return int(cur.lastrowid)
@@ -124,6 +152,80 @@ def test_run_once_dry_run_does_not_mark_cursor(monkeypatch, tmp_path, capsys):
     ).fetchone()
     conn.close()
     assert cursor is None
+
+
+def test_wrapper_prompt_includes_workroom_in_work_pane(monkeypatch, tmp_path):
+    """When relay knows its workroom, work_pane must be the prefixed
+    physical session (e.g. design-discussion-codex-work) so chat panes
+    brief the right sibling and not a non-existent unprefixed session."""
+    relay = _load_relay(monkeypatch, tmp_path)
+    message = relay.WorkroomMessage(
+        7, "pi", "claude,codex", "routing", "FYI", room="design-discussion"
+    )
+    prompt = relay.wrapper_prompt(message, "codex", workroom="design-discussion")
+    assert "work_pane=design-discussion-codex-work" in prompt
+    assert "room=design-discussion" in prompt
+
+
+def test_wrapper_prompt_legacy_unprefixed_when_no_workroom(monkeypatch, tmp_path):
+    relay = _load_relay(monkeypatch, tmp_path)
+    message = relay.WorkroomMessage(8, "pi", "claude,codex", "routing", "FYI")
+    prompt = relay.wrapper_prompt(message, "codex")
+    assert "work_pane=codex-work" in prompt
+    assert "room=" not in prompt
+
+
+def test_relay_skips_other_room_dispatch_and_notify(monkeypatch, tmp_path, capsys):
+    """A workroom-scoped relay must NOT dispatch OR desktop-notify on a
+    message tagged with a different room. The cursor still advances so
+    the relay never re-fetches."""
+    relay = _load_relay(monkeypatch, tmp_path)
+    db_path = tmp_path / "relay.db"
+    _init_messages(db_path, with_room=True)
+    notify_calls: list[int] = []
+    monkeypatch.setattr(
+        relay,
+        "notify_desktop",
+        lambda message, dry_run=False: notify_calls.append(message.id) or False,
+    )
+    own = _insert_message(db_path, "pi", "claude,codex", room="design-discussion")
+    other = _insert_message(db_path, "pi", "claude,codex", room="implementation-work")
+    config = relay.RelayConfig(
+        relay_name="design-relay",
+        claude_target="d-claude",
+        codex_target="d-codex",
+        include_llm_messages=False,
+        dry_run=True,
+        workroom="design-discussion",
+    )
+    routed = relay.run_once(config, limit=20)
+    captured = capsys.readouterr().out
+    # own room: claude + codex dispatched
+    assert routed == 2
+    assert "d-claude" in captured and "d-codex" in captured
+    # other-room message: only own-room id appears in notify calls
+    assert notify_calls == [own]
+    assert other not in notify_calls
+
+
+def test_relay_routes_legacy_room_empty_messages(monkeypatch, tmp_path, capsys):
+    """Legacy messages (no room column) must still flow through any
+    workroom-scoped relay; otherwise pre-Task-2 corpus becomes invisible."""
+    relay = _load_relay(monkeypatch, tmp_path)
+    db_path = tmp_path / "relay.db"
+    _init_messages(db_path, with_room=False)
+    monkeypatch.setattr(relay, "notify_desktop", lambda message, dry_run=False: False)
+    _insert_message(db_path, "pi", "claude,codex")
+    config = relay.RelayConfig(
+        relay_name="impl-relay",
+        claude_target="i-claude",
+        codex_target="i-codex",
+        include_llm_messages=False,
+        dry_run=True,
+        workroom="implementation-work",
+    )
+    routed = relay.run_once(config, limit=20)
+    assert routed == 2  # legacy room='' is routed even by an impl-room relay
 
 
 def test_init_cursor_now_marks_latest(monkeypatch, tmp_path):
