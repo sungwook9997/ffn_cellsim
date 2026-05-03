@@ -5,6 +5,9 @@ in the workroom so the sidebar "Agents" panel stays visibly alive even
 when the pane is idle between PI prompts. The daemon never invents
 progress numbers — it re-POSTs the existing row's percent/activity
 unchanged, which only bumps ``updated_at`` and resets the freshness tick.
+If a prefixed workroom row does not exist yet, the daemon seeds a neutral
+``0% idle`` row so newly cold-started rooms show their own cards instead
+of falling back to stale legacy logical rows.
 
 When ``--workroom <name>`` is given, agent IDs and tmux targets are both
 prefixed with the workroom name (e.g. ``design-discussion-claude-chat``).
@@ -115,14 +118,14 @@ def post_status(agent: str, percent: int, activity: str, topic: str) -> None:
 def tick(panes: list[tuple[str, str]]) -> None:
     for agent, target in panes:
         existing = read_status(agent)
-        if not existing:
-            continue
         if pane_alive(target):
-            activity = existing["activity"]
+            activity = existing["activity"] if existing else "idle"
         else:
             activity = "(pane dead)"
+        percent = existing["percent"] if existing else 0
+        topic = existing["topic"] if existing else ""
         try:
-            post_status(agent, existing["percent"], activity, existing["topic"])
+            post_status(agent, percent, activity, topic)
         except Exception as exc:  # noqa: BLE001
             print(f"heartbeat post failed for {agent}: {exc}", file=sys.stderr, flush=True)
 
