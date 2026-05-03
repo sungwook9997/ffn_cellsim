@@ -401,6 +401,19 @@ def _fetch_sidebar(room: str = DEFAULT_ROOM) -> dict[str, Any]:
         row for row in agents
         if not _agent_room(row[0]) or _agent_room(row[0]) == room
     ]
+    names = {row[0] for row in agents}
+    if f"{room}-claude" in names or f"{room}-codex" in names:
+        legacy_room_agents = {
+            f"{room}-claude-chat",
+            f"{room}-claude-work",
+            f"{room}-codex-chat",
+            f"{room}-codex-work",
+            "claude-chat",
+            "claude-work",
+            "codex-chat",
+            "codex-work",
+        }
+        agents = [row for row in agents if row[0] not in legacy_room_agents]
     return {"claims": claims, "artifacts": artifacts, "cursors": cursors, "agents": agents}
 
 
