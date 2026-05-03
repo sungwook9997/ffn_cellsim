@@ -25,7 +25,7 @@ from acs.v2.active_contour import (
 from acs.v2.active_contour_harness import (
     StepDiagnostics,
     compute_finite_n_residual,
-    equilibrium_radius_from_quartic,
+    equilibrium_radius_from_cubic,
     run_active_contour_test,
 )
 
@@ -178,7 +178,7 @@ def test_gate_test_4_coupled_ellipse_diagnostic_records(tmp_path):
         ),
         params=params,
     )
-    r_star = equilibrium_radius_from_quartic(
+    r_star = equilibrium_radius_from_cubic(
         lambda_c_nN=params.lambda_c_resolved_nN,
         k_a_nN_per_um=params.k_a_nN_per_um,
         target_area_um2=target_area,
@@ -380,7 +380,7 @@ def test_reference_r_star_png_generated_when_extra_metrics_have_r_star(tmp_path)
         ),
         params=params,
     )
-    r_star = equilibrium_radius_from_quartic(
+    r_star = equilibrium_radius_from_cubic(
         lambda_c_nN=params.lambda_c_resolved_nN,
         k_a_nN_per_um=params.k_a_nN_per_um,
         target_area_um2=target_area,
@@ -495,9 +495,9 @@ def test_run_active_contour_test_default_frame_interval_is_100(tmp_path):
     assert data["frame_interval"] == 100
 
 
-def test_equilibrium_radius_solves_quartic():
+def test_equilibrium_radius_solves_cubic():
     target_area = 10.0
-    r_star = equilibrium_radius_from_quartic(
+    r_star = equilibrium_radius_from_cubic(
         lambda_c_nN=0.5,
         k_a_nN_per_um=1.0,
         target_area_um2=target_area,

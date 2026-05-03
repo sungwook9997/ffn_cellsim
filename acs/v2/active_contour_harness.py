@@ -495,14 +495,18 @@ def compute_finite_n_residual(state: ActiveContourState) -> float:
     return float(np.linalg.norm(forces))
 
 
-def equilibrium_radius_from_quartic(
+def equilibrium_radius_from_cubic(
     *, lambda_c_nN: float, k_a_nN_per_um: float, target_area_um2: float
 ) -> float:
-    """Solve ``K_A · (πR² − A_0)/A_0 + λ_c/R = 0`` via :func:`numpy.roots`.
+    """Solve the force-balance cubic in radius via :func:`numpy.roots`.
 
-    Returns the positive real root closest to ``sqrt(A_0/π)``.
-    Raises ``ValueError`` when no positive real root exists in the
-    expected range.
+    Starting from ``K_A · (πR² − A_0)/A_0 + λ_c/R = 0`` and multiplying
+    by ``R`` gives the cubic
+    ``(K_A · π / A_0) · R³ − K_A · R + λ_c = 0``. (The original
+    fraction is degree-3 in ``R`` after clearing the ``1/R`` term, not
+    quartic.) Returns the positive real root closest to
+    ``sqrt(A_0 / π)``. Raises ``ValueError`` when no positive real
+    root exists in the expected range.
     """
 
     if lambda_c_nN <= 0.0 or k_a_nN_per_um <= 0.0 or target_area_um2 <= 0.0:
@@ -513,7 +517,7 @@ def equilibrium_radius_from_quartic(
     a = k_a_nN_per_um * np.pi / target_area_um2  # coefficient on R^3
     b = -k_a_nN_per_um  # coefficient on R
     c = lambda_c_nN  # constant
-    coeffs = [a, 0.0, b, c]
+    coeffs = [a, 0.0, b, c]  # cubic: a*R^3 + 0*R^2 + b*R + c
     roots = np.roots(coeffs)
     real_positive = [
         float(r.real) for r in roots if abs(r.imag) < 1e-9 and r.real > 0.0
@@ -522,3 +526,10 @@ def equilibrium_radius_from_quartic(
         raise ValueError(f"no positive real root for coefficients {coeffs!r}")
     r_init_guess = float(np.sqrt(target_area_um2 / np.pi))
     return min(real_positive, key=lambda r: abs(r - r_init_guess))
+
+
+# Backward-compat alias (deprecated): the public name was briefly
+# `equilibrium_radius_from_quartic` in the immediate-prior commit; the
+# math is cubic, not quartic. The alias keeps existing callers working
+# while the renamed function is the canonical export.
+equilibrium_radius_from_quartic = equilibrium_radius_from_cubic

@@ -17,6 +17,7 @@ from acs.v2.active_contour_harness import (
     HarnessRun,
     StepDiagnostics,
     compute_finite_n_residual,
+    equilibrium_radius_from_cubic,
     equilibrium_radius_from_quartic,
     run_active_contour_test,
 )
@@ -92,6 +93,7 @@ __all__ = [
     "ellipse_polygon_vertices",
     "energy_area",
     "energy_cortex",
+    "equilibrium_radius_from_cubic",
     "equilibrium_radius_from_quartic",
     "read_frame",
     "regular_polygon_vertices",
