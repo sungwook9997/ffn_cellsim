@@ -1,7 +1,8 @@
 # ACS Collab — 2-Workroom Layout SOP
 
-**Status:** active operating model after the Task 1–4 split
-(commits `6a1a134`, `ee9d3a4`, `35c5112`, 2026-05-03).
+**Status:** active operating model after the Task 1–5 split
+(commits `6a1a134`, `ee9d3a4`, `35c5112`, `244fec0`, `083ae55`,
+2026-05-03).
 **Replaces:** the single 4-pane workroom that ran Claude+Codex chat/work
 inside one tmux scope.
 
@@ -221,9 +222,13 @@ The single MCP DB + the cross-room sidebar + the shared
 | 2026-05-03 | `6a1a134` | Task 1+2 + Task 3 server-side prefixed-agent acceptance + composer/sidebar grouping |
 | 2026-05-03 | `ee9d3a4` | Task 3 default room presets |
 | 2026-05-03 | `35c5112` | Task 4 collision-safe parallel boot |
+| 2026-05-03 | `244fec0` | Task 6 2-room SOP + Claude memory entry |
+| 2026-05-03 | `083ae55` | Room selector persistence, PI reply path, and new-relay cursor hotfixes |
+| 2026-05-03 | runtime | Task 5 live migration: legacy unprefixed sessions retired after both prefixed rooms passed self-check |
 
 Pre-Task-2 messages were bucketed into `design-discussion` by the
-schema migration. Pre-Task-1 unprefixed tmux sessions
-(`claude-chat`, `codex-chat`, `claude-work`, `codex-work`,
-`win-ssh`, `relay`, `heartbeat`) are not touched by the new launcher;
-Task 5 (separate, PI-confirmed) covers the live-session migration.
+schema migration. Pre-Task-1 unprefixed tmux sessions were retired
+during Task 5 after `design-discussion` and `implementation-work`
+both cold-started successfully. The active runtime should now contain
+only prefixed per-room sessions plus the shared `mcp` and `room`
+singletons.
