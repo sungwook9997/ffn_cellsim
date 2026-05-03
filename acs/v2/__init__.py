@@ -6,14 +6,19 @@ single-cell and cell-resolved spheroid simulation.
 """
 
 from acs.v2.data_contract import ImagingDatasetSpec, MetricSpec, V2DataContract
+from acs.v2.measurement_boundary import (
+    MeasurementBoundary,
+    MeasurementBoundaryError,
+)
 from acs.v2.single_cell import FocalAdhesionState, ProtrusionEvent, SingleCellState
 
 __all__ = [
     "FocalAdhesionState",
     "ImagingDatasetSpec",
+    "MeasurementBoundary",
+    "MeasurementBoundaryError",
     "MetricSpec",
     "ProtrusionEvent",
     "SingleCellState",
     "V2DataContract",
 ]
-

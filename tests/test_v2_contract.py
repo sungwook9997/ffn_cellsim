@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from acs.v2.data_contract import ImagingDatasetSpec, default_single_cell_contract
+from acs.v2.measurement_boundary import MeasurementBoundary
 from acs.v2.single_cell import FocalAdhesionState, ProtrusionEvent, SingleCellState
 
 
@@ -56,7 +57,11 @@ def test_single_cell_state_projected_area_and_nested_validation():
     state = SingleCellState(
         cell_id="cell-1",
         time_s=120.0,
-        boundary_xy_um=boundary,
+        measurement_boundary=MeasurementBoundary.from_array(
+            boundary,
+            coordinate_convention="world_um_y_up",
+            source_modality="manual_test_outline",
+        ),
         height_um=6.0,
         polarity_xy=(1.0, 0.0),
         protrusions=[

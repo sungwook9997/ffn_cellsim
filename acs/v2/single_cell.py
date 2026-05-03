@@ -12,6 +12,8 @@ from typing import Optional
 
 import numpy as np
 
+from acs.v2.measurement_boundary import MeasurementBoundary
+
 
 @dataclass(frozen=True)
 class ProtrusionEvent:
@@ -74,7 +76,7 @@ class SingleCellState:
 
     cell_id: str
     time_s: float
-    boundary_xy_um: np.ndarray
+    measurement_boundary: MeasurementBoundary
     height_um: Optional[float] = None
     polarity_xy: Optional[tuple[float, float]] = None
     protrusions: list[ProtrusionEvent] = field(default_factory=list)
@@ -85,11 +87,7 @@ class SingleCellState:
             raise ValueError("cell_id must be non-empty")
         if self.time_s < 0.0:
             raise ValueError("time_s must be non-negative")
-        boundary = np.asarray(self.boundary_xy_um, dtype=float)
-        if boundary.ndim != 2 or boundary.shape[1] != 2 or boundary.shape[0] < 3:
-            raise ValueError("boundary_xy_um must have shape (N, 2) with N >= 3")
-        if not np.isfinite(boundary).all():
-            raise ValueError("boundary_xy_um must contain only finite values")
+        self.measurement_boundary.validate()
         if self.height_um is not None and self.height_um <= 0.0:
             raise ValueError("height_um must be positive when provided")
         if self.polarity_xy is not None:
@@ -109,10 +107,7 @@ class SingleCellState:
                 raise ValueError("all adhesions must match SingleCellState.cell_id")
 
     def projected_area_um2(self) -> float:
-        """Compute polygon area from the xy boundary using the shoelace formula."""
+        """Return the measurement-boundary projected area in um2."""
 
         self.validate()
-        xy = np.asarray(self.boundary_xy_um, dtype=float)
-        x = xy[:, 0]
-        y = xy[:, 1]
-        return float(0.5 * abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))))
+        return self.measurement_boundary.projected_area_um2()
