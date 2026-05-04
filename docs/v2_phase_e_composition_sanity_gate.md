@@ -628,25 +628,29 @@ HB#1+#2 / HB#5 Sanity Gate review precedent.
   6. No constant redefinition: meta-test 16
      (`ce.TRACTION_REF_NN_PER_UM2 is cr.TRACTION_REF_NN_PER_UM2`)
 - **Code commit module-docstring intent guard** (Codex
-  `id=1546` blocker resolution + B1 `id=1458` precedent
-  divergence note): the module docstring must describe the
-  Phase E v1 wording boundary in **paraphrased** form (e.g.,
-  "this composition provides ECM-side evidence ONLY; full
-  closed-loop satisfaction requires Phase E v2 + Item 5
-  sweep harness + PI-approved decision") **without inserting
-  the literal forbidden strings** `"Items 1-4 satisfied"`,
-  `"full closed-loop"`, `"full FA→ECM→FA"`, or `"gate
-  satisfied"` (which would trip meta-test 14 — these strings
-  must NOT appear anywhere in the module source, only in this
-  Sanity Gate doc + the lock doc + the test docstrings/
-  assertions where they are explicitly the targets of the
-  string check). The literal forbidden-string list is owned
-  by meta-test 14, NOT the docstring. **Divergence note from
-  B1 `id=1458` precedent**: B1's forbidden list could be
+  `id=1546` blocker resolution + Codex `id=1549` example-text
+  refinement + B1 `id=1458` precedent divergence note): the
+  module docstring must describe the Phase E v1 wording
+  boundary in **paraphrased** form. Example safe wording per
+  Codex `id=1549`: "this composition provides ECM-side
+  evidence only; complete bidirectional closure remains future
+  work requiring Phase E v2, the Item 5 sweep harness, and PI
+  approval." This wording avoids ALL four literal forbidden
+  substrings — `"Items 1-4 satisfied"`, `"full closed-loop"`,
+  `"full FA→ECM→FA"`, `"gate satisfied"` — which would trip
+  meta-test 14 if reproduced in module source. The literal
+  forbidden-string list is owned by meta-test 14 + lock doc +
+  this Sanity Gate doc + test docstrings/assertions where
+  they are explicitly the targets of the string check, NOT
+  the module docstring itself. **Divergence note from B1
+  `id=1458` precedent**: B1's forbidden list could be
   reproduced verbatim because no string-matching meta-test
   enforced absence of the forbidden phrases in source. Phase
-  E v1 has meta-test 14, so verbatim reproduction is
-  contradictory; paraphrased intent guard is the resolution.
+  E v1 has meta-test 14 specifically scanning for those
+  phrases, so verbatim reproduction is contradictory;
+  paraphrased intent guard with "complete bidirectional
+  closure" / "ECM-side evidence only" wording is the
+  resolution.
 - All 17 tests must pass at first commit; no `TODO test_X`
   placeholders.
 - `pytest tests/test_v2_closed_loop_phase_e.py` + combined
