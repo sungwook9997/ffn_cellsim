@@ -226,8 +226,13 @@ def step_closed_loop_phase_e_v1(
             Object-identity re-imported per Y14.
 
     Returns:
-        :class:`PhaseEStepResult` with the 5 sub-results +
-        triple-identity ``updated_ecm`` (locked invariant).
+        :class:`PhaseEStepResult` with the 5 sub-results and
+        ``updated_ecm`` object-identical to
+        ``orientation_response.updated_ecm`` (Y4 locked
+        invariant). Note: Phase E v1 has single-identity
+        only; ``result.updated_ecm is ecm`` is **False**
+        (HB#1+#2 returns a fresh ECM per its Y12 no-aliasing
+        contract).
     """
 
     traction_density_xy = scatter_fa_traction_to_ecm_bilinear(adhesions, ecm)
