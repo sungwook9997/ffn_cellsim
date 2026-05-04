@@ -23,9 +23,16 @@ Sanity Gate scope: non-physics schema module. The full physics 6-item
 gate is N/A; this module only owns the boundary-case checks (state
 literal, position finite, age non-negative, [0,1] bounds), units
 (``traction_force_nN_xy`` in nN), and the measurement-protocol
-consistency that ``state="unbound"`` and ``bound_fraction == 0`` are
-the only legitimate ``traction_force_nN_xy == (0, 0)`` configuration
-under the no-traction-without-attachment rule (Plan §6.3).
+consistency that ``state="unbound"`` is the only state for which
+the schema *itself* enforces ``traction_force_nN_xy == (0, 0)``
+(under the no-traction-without-attachment rule, Plan §6.3). The
+6.3a dynamics layer additionally forces ``state == "released"`` to
+zero traction at update time (per
+``docs/v2_focal_adhesion_dynamics_sanity_gate.md`` §5 state table
+and the field-level docstring on ``traction_force_nN_xy``); the
+schema permits non-zero traction on released so a record can carry
+the "what was bound right before release" snapshot, while the
+dynamics layer is what actually zeroes the live force.
 
 Magic-Number Block: this module declares no tunable numeric. N/A.
 """
