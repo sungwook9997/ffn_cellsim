@@ -43,6 +43,10 @@ from acs.v2.dynamics.focal_adhesion import (
     compute_radial_tangential_decomposition,
     step_focal_adhesions_static,
 )
+from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
+    ProtrusionStateMultipliers,
+    step_protrusion_coupled_focal_adhesions,
+)
 from acs.v2.ecm_open_loop_harness import (
     EcmOlRun,
     EcmOlScenario,
@@ -107,6 +111,7 @@ __all__ = [
     "MetricRegistryError",
     "MetricSpec",
     "ProtrusionEvent",
+    "ProtrusionStateMultipliers",
     "RegisteredMetric",
     "SingleCellState",
     "StepDiagnostics",
@@ -135,6 +140,7 @@ __all__ = [
     "run_active_contour_test",
     "step",
     "step_focal_adhesions_static",
+    "step_protrusion_coupled_focal_adhesions",
     "render_frame_html",
     "render_frame_png",
     "write_frame",

@@ -21,12 +21,17 @@ from acs.v2.dynamics.focal_adhesion import (
     compute_radial_tangential_decomposition,
     step_focal_adhesions_static,
 )
+from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
+    ProtrusionStateMultipliers,
+    step_protrusion_coupled_focal_adhesions,
+)
 
 __all__ = [
     "ECMOpenLoopError",
     "FocalAdhesionDynamicsError",
     "FocalAdhesionDynamicsParameters",
     "FocalAdhesionDynamicsResult",
+    "ProtrusionStateMultipliers",
     "accumulate_prescribed_traction",
     "apply_prescribed_density_rate",
     "apply_prescribed_orientation_rate",
@@ -38,4 +43,5 @@ __all__ = [
     "energy_cortex",
     "step",
     "step_focal_adhesions_static",
+    "step_protrusion_coupled_focal_adhesions",
 ]
