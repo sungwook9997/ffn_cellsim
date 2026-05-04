@@ -533,7 +533,8 @@ derivation)**:
   `id=1488` API-surface lock + alphabetical reorder of
   `__all__`): error + 3 constants + 2 dataclasses + 1 function
 - `acs/v2/__init__.py` (mirror 7 exports)
-- `tests/test_v2_ecm_constitutive_response.py` (new, ~19 tests per §4)
+- `tests/test_v2_ecm_constitutive_response.py` (new, ~20 tests
+  per §4; count not capped)
 
 ---
 
@@ -594,8 +595,9 @@ This file is the design-team input to implementation-work for:
      `k_orient` and `traction_ref` strict positive
    - Y12-guard: `spacing_um` (not `dx_um`), no `grid_shape` arg, no
      mechanosensing shortcut
-   - all 6 new symbols exported through both `acs.v2.dynamics` and
-     `acs.v2`
+   - all 7 new symbols exported through both `acs.v2.dynamics` and
+     `acs.v2` (per Codex `id=1488` 6→7 expansion to include the
+     locked `ECMConstitutiveResponseError`)
 3. On Sanity Gate PASS: HB#1+#2 code commit
    (`acs/v2/dynamics/ecm_constitutive_response.py` new, exports,
    tests).

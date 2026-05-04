@@ -479,9 +479,10 @@ sister-gate-mirror layered against HB#3 / HB#4 / Phase D / B1
   B1 / HB#4 / Phase D `@dataclass(frozen=True, slots=True)`
   precedent for `ECMOrientationResponseDiagnostics` +
   `ECMOrientationResponseResult`.
-- **API surface (`__init__.py` exports)**: 6 new symbols at
-  both `acs/v2/__init__.py` and `acs/v2/dynamics/__init__.py`
-  with `__all__` inclusion. Test 18
+- **API surface (`__init__.py` exports)**: **7 new symbols**
+  at both `acs/v2/__init__.py` and `acs/v2/dynamics/__init__.py`
+  with `__all__` inclusion (per Codex `id=1488` 6→7 expansion
+  to include the locked `ECMConstitutiveResponseError`). Test 18
   (`test_orientation_response_exports_through_both_init`)
   enforces.
 - **Failure-kind discipline** (locked per Codex `id=1488`):
