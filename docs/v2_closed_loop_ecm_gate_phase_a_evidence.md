@@ -98,11 +98,15 @@ function's individual unit reduction in 6.4-open-A/B/C commits
 The Hard Rule 10 reminder in the gate explicitly cites "kPa /
 force-per-area comparisons before any ECM force or remodeling
 update". The open-loop preflight performs no such comparison. The
-two units are interchangeable physically (1 kPa = 10⁻³ nN/μm² in
-this project's chosen length-area scale), but the project rule
-mandates that the comparison be written with both quantities
-reduced to the same unit at the call site, not at the storage
-layer.
+two units are dimensionally identical:
+`kPa = kN/m² = 10³ N/m²`, and `nN/μm² = 10⁻⁹ N / (10⁻⁶ m)²
+= 10³ N/m²`, so **1 kPa = 1 nN/μm² exactly**. (The first commit
+of this note carried a `10⁻³` factor that was wrong by three
+orders of magnitude — flagged by Codex review id=1234 and
+re-derived above.) Even with the factor of 1, the project rule
+still mandates that the comparison be written with both quantities
+reduced to the same unit at the call site, not implicitly at the
+storage layer.
 
 This comparison only arises when a closed-loop FA→ECM coupling
 function feeds per-FA `nN` traction into the ECM as a per-cell
