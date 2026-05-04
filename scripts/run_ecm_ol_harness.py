@@ -119,14 +119,26 @@ def main() -> int:
         run_ecm_ol_scenario,
     )
 
-    timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%MZ")
+    timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_root = os.path.join(repo, "runs", f"{timestamp}_ecm_ol")
-    os.makedirs(run_root, exist_ok=True)
+    os.makedirs(run_root, exist_ok=False)
     git_hash = _git_commit_hash(repo)
 
     nx = ny = int(args.grid)
     grid_shape = (nx, ny)
     summary_index: list[dict] = []
+
+    def _record(scenario_obj, run_obj) -> None:
+        status = "FAIL" if run_obj.failure is not None else "PASS"
+        summary_index.append(
+            {
+                "scenario": scenario_obj.name,
+                "status": status,
+                "summary": run_obj.summary_path,
+                "metadata": run_obj.metadata_path,
+                "failure": run_obj.failure,
+            }
+        )
 
     # Scenario 1: traction-only (uniform prescribed traction)
     ecm1 = make_default_ecm(nx=nx, ny=ny)
@@ -143,7 +155,7 @@ def main() -> int:
         frame_interval=args.frame_interval,
         git_commit_hash=git_hash,
     )
-    summary_index.append({"scenario": scenario1.name, "summary": run1.summary_path})
+    _record(scenario1, run1)
 
     # Scenario 2: stiffness-rate-only (positive ramp)
     ecm2 = make_default_ecm(nx=nx, ny=ny)
@@ -160,7 +172,7 @@ def main() -> int:
         frame_interval=args.frame_interval,
         git_commit_hash=git_hash,
     )
-    summary_index.append({"scenario": scenario2.name, "summary": run2.summary_path})
+    _record(scenario2, run2)
 
     # Scenario 3: density-rate-only (ligand grows, fiber shallower growth)
     ecm3 = make_default_ecm(nx=nx, ny=ny)
@@ -178,7 +190,7 @@ def main() -> int:
         frame_interval=args.frame_interval,
         git_commit_hash=git_hash,
     )
-    summary_index.append({"scenario": scenario3.name, "summary": run3.summary_path})
+    _record(scenario3, run3)
 
     # Scenario 4: orientation-rate-only (negative diagonal from identity)
     ecm4 = make_default_ecm(nx=nx, ny=ny)
@@ -197,7 +209,7 @@ def main() -> int:
         frame_interval=args.frame_interval,
         git_commit_hash=git_hash,
     )
-    summary_index.append({"scenario": scenario4.name, "summary": run4.summary_path})
+    _record(scenario4, run4)
 
     # Scenario 5: all-channel smoke (exercise the sequential application order)
     ecm5 = make_default_ecm(nx=nx, ny=ny)
@@ -220,8 +232,12 @@ def main() -> int:
         frame_interval=args.frame_interval,
         git_commit_hash=git_hash,
     )
-    summary_index.append({"scenario": scenario5.name, "summary": run5.summary_path})
+    _record(scenario5, run5)
 
+    failed_scenarios = [
+        entry["scenario"] for entry in summary_index if entry["status"] == "FAIL"
+    ]
+    aggregate_status = "FAIL" if failed_scenarios else "PASS"
     index_path = os.path.join(run_root, "index.json")
     with open(index_path, "w", encoding="utf-8") as fh:
         json.dump(
@@ -232,15 +248,20 @@ def main() -> int:
                 "grid_shape": list(grid_shape),
                 "dt_s": args.dt_s,
                 "scenarios": summary_index,
+                "aggregate_status": aggregate_status,
+                "failed_scenarios": failed_scenarios,
                 "run_root": run_root,
             },
             fh,
             indent=2,
         )
-    print(f"ECM-OL harness run complete. artifacts: {run_root}")
+    print(f"ECM-OL harness run {aggregate_status}. artifacts: {run_root}")
     print(f"index: {index_path}")
     for entry in summary_index:
-        print(f"  {entry['scenario']} -> {entry['summary']}")
+        print(f"  [{entry['status']}] {entry['scenario']} -> {entry['summary']}")
+    if failed_scenarios:
+        print(f"FAILED scenarios: {', '.join(failed_scenarios)}", file=sys.stderr)
+        return 1
     return 0
 
 
