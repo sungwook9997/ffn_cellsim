@@ -230,22 +230,40 @@ algebra-handled, not test-required). No NaN paths.
 
 ### 3.1 ECM schema invariant preservation (locked §3 item 3)
 
-The convex update `T_new = (1−w)·T_old + w·n⊗n` is a
-componentwise convex combination:
+The convex update `T_new = (1−w)·T_old + w·n⊗n` preserves the
+ECM schema invariant under the contract **"valid input ECM →
+valid output ECM"** (Codex `id=1486` silent-heal-path closure).
+Invalid input ECM is **rejected** at function entry by
+`ecm.validate()` per Step 6 sister-gate-mirror with HB#3 / HB#4
+(both call `ecm.validate()` at function entry as local dynamics
+precedent), NOT "healed" by the convex update toward
+`T_target` under high traction × dt.
+
+Under valid input, the proof:
+
 - Symmetry: `n⊗n` is symmetric by construction; `T_old` is
-  symmetric (validated by ECM schema). Convex combination of
+  symmetric (input was validated). Convex combination of
   symmetric matrices is symmetric. ✓
 - Componentwise bound: schema enforces `|T_ij| ≤ 1`. `n⊗n` has
   components in `[-1, 1]` (since `|n_i| ≤ 1` after
-  normalization). `T_old` components in `[-1, 1]` per schema.
-  Convex combination preserves the box `[-1, 1]^4`. ✓
-- `updated_ecm.validate()` is called before return, so any
-  drift (e.g., float-rounding pushing a component to `1 + 1e-17`)
-  is caught at construction time.
+  normalization). `T_old` components in `[-1, 1]` per validated
+  input. Convex combination preserves the box `[-1, 1]^4`. ✓
+- `updated_ecm.validate()` is called before return as the
+  output-side guard, catching any float-rounding drift (e.g.,
+  pushing a component to `1 + 1e-17`).
+
+**Two-sided validation contract** (per Codex `id=1486`):
+
+| Validation | When | Purpose |
+|---|---|---|
+| `ecm.validate()` | function entry | reject invalid input — closes silent-heal path |
+| `updated_ecm.validate()` | before return | catch float-rounding drift in output |
 
 Tested by test 12
 (`test_orientation_response_componentwise_bound_preserved`) +
-test 13 (`test_orientation_response_symmetry_preserved`).
+test 13 (`test_orientation_response_symmetry_preserved`) + test
+20 (`test_orientation_response_invalid_input_ecm_rejected_before_update`,
+new per Codex `id=1486`).
 
 ### 3.2 Unchanged-fields bytewise equality (Y12, locked §3 item 3)
 
@@ -442,7 +460,9 @@ sister-gate-mirror layered against HB#3 / HB#4 / Phase D / B1
 
 - **Code (validation ordering)**: HB#1+#2 has different inputs
   (no `position_um_xy`, no FA list); the mirror is at the
-  schema-level: `_validate_finite_*` → `_validate_dt_*` →
+  schema-level: **`ecm.validate()` first** (per HB#3/HB#4 local
+  dynamics precedent + Codex `id=1486` silent-heal-path closure)
+  → `_validate_finite_*` → `_validate_dt_*` →
   `_validate_positive_*` → `_validate_*_shape` before any
   computation, mirroring HB#3/#4's "validate-before-act"
   discipline.
@@ -464,14 +484,23 @@ sister-gate-mirror layered against HB#3 / HB#4 / Phase D / B1
   list §1 does not specify; impl-work will choose at code
   commit and document.
 
-### 6.6 Y12-guard meta-test
+### 6.6 Y12-guard meta-test (extended per Codex `id=1486`)
 
 Test 19
 (`test_orientation_response_uses_current_schema_not_stale_naming`)
 is a static check via `inspect.getsource()` regex or AST walk
-that the implementation does NOT reference `dx_um` (stale) or
-pass `grid_shape` to the `ECMSubstrateState` constructor. This
-locks Codex's Y12 catch into runtime evidence.
+that the implementation:
+
+- does NOT reference `dx_um` (stale field name);
+- does NOT pass `grid_shape` to the `ECMSubstrateState`
+  constructor (it is a derived property, not a field);
+- calls **both** `ecm.validate()` at function entry (Codex
+  `id=1486` silent-heal-path closure) AND
+  `updated_ecm.validate()` before return (Y12 output guard).
+
+This locks Codex's Y12 + `id=1486` catches into runtime
+evidence. The two-sided validation contract is enforced
+statically.
 
 ### Status
 
@@ -483,7 +512,7 @@ four layers; Y12-guard locked into a runtime meta-test.
 
 ---
 
-## 7. Test catalog (~19 tests per locked §4)
+## 7. Test catalog (~20 tests per locked §4 + Codex `id=1486` test 20)
 
 Owned by `tests/test_v2_ecm_constitutive_response.py` (not yet
 committed). Each test maps to a locked invariant in
@@ -522,13 +551,21 @@ committed). Each test maps to a locked invariant in
     both `acs.v2` and `acs.v2.dynamics`)
 19. **`test_orientation_response_uses_current_schema_not_stale_naming`**
     (§6.6; Y12-guard static check: no `dx_um`, no
-    `grid_shape` constructor arg; `updated_ecm.validate()`
-    called)
+    `grid_shape` constructor arg; **both** `ecm.validate()` at
+    entry AND `updated_ecm.validate()` before return called per
+    Codex `id=1486` two-sided validation contract)
+20. **`test_orientation_response_invalid_input_ecm_rejected_before_update`**
+    (§3.1; Codex `id=1486`) — passing an `ECMSubstrateState`
+    whose `orientation_tensor` violates `validate()` (e.g., a
+    component `> 1.0` that the convex update could "heal"
+    toward `T_target` under high traction × dt) must raise
+    from `ecm.validate()` at function entry, BEFORE any algebra
+    runs. Closes the silent-heal path.
 
 If a regression case surfaces during code commit (e.g., Codex
 review catches an edge case in the einsum or expm1 call), an
 extra test is added with explicit lock reference; the count is
-not capped at 19.
+not capped at 20.
 
 ---
 
@@ -542,7 +579,7 @@ not capped at 19.
 | §4 Numerical | **PASS** | `expm1` for stability near 0; float64; no new tolerance; unconditionally stable in `dt` |
 | §5 Sign | **PASS** | Convex weight `∈ [0, 1]`; distance-to-target monotone decreasing per step under fixed target |
 | §6 Measurement-protocol | **PASS** | Strictly local algebra (no off-proof points); Rule 10 bridge in diagnostics; Step 6 sister-gate-mirror across 4 layers; Y12-guard meta-test |
-| §7 Test catalog | 19 tests planned per locked §4 + Y12-guard + sister-pattern meta-tests |
+| §7 Test catalog | 20 tests planned per locked §4 + Y12-guard + sister-pattern meta-tests + Codex `id=1486` invalid-input rejection test |
 
 **Overall**: gate PASS. impl-work is clear to commit
 `acs/v2/dynamics/ecm_constitutive_response.py` + 6 export
@@ -569,7 +606,7 @@ Phase D / B1 Sanity Gate review precedent.
 - Code commit must reproduce the locked §1 forbidden list at
   module-docstring level (text-level guard layered on top of
   runtime tests, per B1 `id=1458` precedent).
-- All 19 tests must pass at first commit; no `TODO test_X`
+- All 20 tests must pass at first commit; no `TODO test_X`
   placeholders.
 - `pytest tests/test_v2_ecm_constitutive_response.py` +
   combined sister-gate regression

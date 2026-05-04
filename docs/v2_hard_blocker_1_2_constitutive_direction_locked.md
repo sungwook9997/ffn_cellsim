@@ -112,7 +112,10 @@ def step_ecm_orientation_response(
     traction_ref_nN_per_um2: float = TRACTION_REF_NN_PER_UM2,
     k_orient_per_s: float = K_ORIENT_PER_S,
 ) -> ECMOrientationResponseResult:
-    # --- Validate ---
+    # --- Validate (ecm.validate() FIRST per HB#3/HB#4 sister precedent + Codex
+    #     id=1486 silent-heal-path closure: invalid input ECM is rejected,
+    #     not healed) ---
+    ecm.validate()                                                        # symmetry + componentwise + finite, on input
     _validate_finite_traction(traction_density_xy)                       # nan/inf raise
     _validate_dt_nonneg_finite_nonbool(dt_s)                             # dt>=0, finite, not bool
     _validate_positive_finite(traction_ref_nN_per_um2, "traction_ref")   # strict > 0
@@ -404,8 +407,12 @@ derivation)**:
    - Boolean `dt_s`: rejected
 3. **Conservation**: orientation update is a convex combination —
    conserves nothing physical (orientation has no conservation law),
-   but conserves the schema invariant (componentwise bound, symmetry).
-   `stiffness_kpa`, `fiber_density`, `ligand_density`,
+   but **preserves** the schema invariant under the contract "valid
+   input ECM → valid output ECM" (componentwise bound, symmetry).
+   Invalid input ECM is **rejected** by `ecm.validate()` at
+   function entry per Codex `id=1486`, not "healed" toward
+   `T_target` by the convex update. `stiffness_kpa`,
+   `fiber_density`, `ligand_density`,
    `accumulated_traction_nNs_per_um2` all bytewise unchanged.
 4. **Numerical**:
    - `expm1` chosen for stability near zero argument (Y10)
@@ -423,7 +430,7 @@ derivation)**:
 
 ---
 
-## 4. Test Catalog (~17–19 tests)
+## 4. Test Catalog (~20 tests; count not capped)
 
 1. `test_orientation_response_zero_traction_is_identity`
 2. `test_orientation_response_dt_zero_is_identity_no_op`
@@ -463,9 +470,18 @@ derivation)**:
     importable from both `acs.v2.dynamics` and `acs.v2`
 19. **`test_orientation_response_uses_current_schema_not_stale_naming`** —
     Y12-guard meta-test: implementation must not reference `dx_um` or
-    pass `grid_shape` to the constructor; must call
-    `updated_ecm.validate()` before returning. (Static check via
-    `inspect.getsource()` regex or AST walk.)
+    pass `grid_shape` to the constructor; must call **both**
+    `ecm.validate()` at function entry and `updated_ecm.validate()`
+    before returning. (Static check via `inspect.getsource()` regex
+    or AST walk.) Updated per Codex `id=1486` to require both
+    validations, not only the output one.
+20. **`test_orientation_response_invalid_input_ecm_rejected_before_update`**
+    (Codex `id=1486`) — passing an `ECMSubstrateState` whose
+    `orientation_tensor` violates `validate()` (e.g., a component
+    `> 1.0` that the convex update could "heal" toward `T_target`
+    under high traction × dt) must raise from `ecm.validate()` at
+    function entry, BEFORE any algebra runs. Closes the silent-heal
+    path: invalid input ECM is rejected, not healed.
 
 ---
 
