@@ -11,9 +11,9 @@ Sanity Gate (data_contract):
     2. Boundary cases: empty channels, empty metrics, missing artifacts,
        missing CSV columns, missing channels, non-positive voxel sizes,
        calibration/validation timepoint overlap, out-of-range timepoints,
-       duplicate `(name, measurement_modality)` metric keys, and
-       `available_csv_columns` declared without `CSV_TABLE` artifact are all
-       guarded.
+       duplicate `(name, measurement_modality)` metric keys, artifact layout
+       path traversal/absolute paths, and `available_csv_columns` declared
+       without `CSV_TABLE` artifact are all guarded.
     3. Conservation/provenance invariants: dataclasses are frozen so a
        declared dataset/contract cannot be mutated after construction; metric
        validation runs against the full dataset, not a stale channel list.
@@ -65,6 +65,91 @@ def _require_positive_triplet(name: str, values: Sequence[float]) -> None:
         raise ValueError(f"{name} values must be positive, got {values!r}")
 
 
+_CANONICAL_ARTIFACT_PATHS: dict[ArtifactKind, tuple[str, str]] = {
+    ArtifactKind.CSV_TABLE: ("tables/measurements.csv", "csv"),
+    ArtifactKind.RAW_FRAMES: ("raw/{channel}/t{timepoint:04d}.tif", "tiff_stack"),
+    ArtifactKind.SEGMENTATION_MASK: (
+        "segmentation/masks/t{timepoint:04d}.tif",
+        "label_mask_tiff",
+    ),
+    ArtifactKind.BOUNDARY_CONTOURS: (
+        "segmentation/contours/t{timepoint:04d}.json",
+        "measurement_boundary_json",
+    ),
+    ArtifactKind.TRACKING_TABLE: ("tables/tracking.csv", "csv"),
+    ArtifactKind.MARKER_CHANNEL: (
+        "markers/{channel}/t{timepoint:04d}.tif",
+        "tiff_stack",
+    ),
+    ArtifactKind.TFM_FIELD: ("tfm/t{timepoint:04d}.npz", "numpy_npz"),
+    ArtifactKind.EVENT_ANNOTATIONS: ("annotations/events.csv", "csv"),
+    ArtifactKind.ECM_FIELD: ("ecm/t{timepoint:04d}.npz", "numpy_npz"),
+}
+
+
+@dataclass(frozen=True)
+class ArtifactLayoutEntry:
+    """Canonical relative location for one advertised dataset artifact.
+
+    Paths are relative to ``ImagingDatasetSpec.root_uri`` and are templates,
+    not filesystem existence checks. Placeholders such as ``{channel}`` and
+    ``{timepoint:04d}`` document the layout expected by loaders.
+    """
+
+    artifact: ArtifactKind
+    relative_path: str
+    format_hint: str
+    required: bool = True
+
+    def validate(self) -> None:
+        if not isinstance(self.artifact, ArtifactKind):
+            raise ValueError(
+                f"artifact layout entries require ArtifactKind values, got {self.artifact!r}"
+            )
+        if not self.relative_path.strip():
+            raise ValueError(f"layout path for {self.artifact.value!r} must be non-empty")
+        if "\\" in self.relative_path:
+            raise ValueError(
+                f"layout path for {self.artifact.value!r} must use POSIX separators"
+            )
+        if self.relative_path.startswith("/"):
+            raise ValueError(
+                f"layout path for {self.artifact.value!r} must be relative to root_uri"
+            )
+        parts = self.relative_path.split("/")
+        if any(part in {"", ".", ".."} for part in parts):
+            raise ValueError(
+                f"layout path for {self.artifact.value!r} must not contain empty, '.', "
+                f"or '..' path segments: {self.relative_path!r}"
+            )
+        if not self.format_hint.strip():
+            raise ValueError(
+                f"format_hint for {self.artifact.value!r} must be non-empty"
+            )
+
+
+def canonical_artifact_layout(
+    artifacts: Sequence[ArtifactKind],
+) -> tuple[ArtifactLayoutEntry, ...]:
+    """Return canonical relative path templates for advertised artifacts."""
+
+    entries: list[ArtifactLayoutEntry] = []
+    for artifact in artifacts:
+        if not isinstance(artifact, ArtifactKind):
+            raise ValueError(
+                f"canonical_artifact_layout requires ArtifactKind values, got {artifact!r}"
+            )
+        relative_path, format_hint = _CANONICAL_ARTIFACT_PATHS[artifact]
+        entries.append(
+            ArtifactLayoutEntry(
+                artifact=artifact,
+                relative_path=relative_path,
+                format_hint=format_hint,
+            )
+        )
+    return tuple(entries)
+
+
 @dataclass(frozen=True)
 class ImagingDatasetSpec:
     """Metadata needed to interpret a confocal/live-imaging dataset."""
@@ -80,6 +165,7 @@ class ImagingDatasetSpec:
     validation_timepoints: tuple[int, ...] = field(default_factory=tuple)
     available_artifacts: tuple[ArtifactKind, ...] = field(default_factory=tuple)
     available_csv_columns: tuple[str, ...] = field(default_factory=tuple)
+    artifact_layout: tuple[ArtifactLayoutEntry, ...] = field(default_factory=tuple)
     notes: str = ""
 
     def validate(self) -> None:
@@ -132,6 +218,56 @@ class ImagingDatasetSpec:
             raise ValueError(
                 f"duplicate CSV column in available_csv_columns: {self.available_csv_columns!r}"
             )
+        self._validate_artifact_layout()
+
+    def _validate_artifact_layout(self) -> None:
+        if not self.artifact_layout:
+            return
+        advertised = set(self.available_artifacts)
+        seen: set[ArtifactKind] = set()
+        for entry in self.artifact_layout:
+            entry.validate()
+            if entry.artifact in seen:
+                raise ValueError(
+                    f"duplicate layout entry for artifact: {entry.artifact.value!r}"
+                )
+            seen.add(entry.artifact)
+        extra = sorted(a.value for a in seen - advertised)
+        if extra:
+            raise ValueError(
+                f"artifact_layout contains artifacts not advertised by dataset "
+                f"{self.dataset_id!r}: {extra!r}"
+            )
+        missing = sorted(a.value for a in advertised - seen)
+        if missing:
+            raise ValueError(
+                f"artifact_layout is missing advertised artifacts for dataset "
+                f"{self.dataset_id!r}: {missing!r}"
+            )
+
+    def canonical_artifact_layout(self) -> tuple[ArtifactLayoutEntry, ...]:
+        """Return declared layout or canonical defaults for advertised artifacts."""
+
+        if self.artifact_layout:
+            return self.artifact_layout
+        return canonical_artifact_layout(self.available_artifacts)
+
+    def artifact_relative_path(self, artifact: ArtifactKind) -> str:
+        """Return the relative path template for one advertised artifact."""
+
+        for entry in self.canonical_artifact_layout():
+            if entry.artifact == artifact:
+                return entry.relative_path
+        raise ValueError(
+            f"dataset {self.dataset_id!r} does not advertise artifact {artifact.value!r}"
+        )
+
+    def artifact_uri(self, artifact: ArtifactKind) -> str:
+        """Return the root-relative URI template for one advertised artifact."""
+
+        root = self.root_uri.rstrip("/")
+        return f"{root}/{self.artifact_relative_path(artifact)}"
+
 
 
 @dataclass(frozen=True)

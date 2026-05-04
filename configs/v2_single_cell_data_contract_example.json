@@ -46,6 +46,44 @@
       "perimeter_um",
       "boundary_roughness"
     ],
+    "artifact_layout": [
+      {
+        "artifact": "segmentation_mask",
+        "relative_path": "segmentation/masks/t{timepoint:04d}.tif",
+        "format_hint": "label_mask_tiff",
+        "required": true
+      },
+      {
+        "artifact": "boundary_contours",
+        "relative_path": "segmentation/contours/t{timepoint:04d}.json",
+        "format_hint": "measurement_boundary_json",
+        "required": true
+      },
+      {
+        "artifact": "tracking_table",
+        "relative_path": "tables/tracking.csv",
+        "format_hint": "csv",
+        "required": true
+      },
+      {
+        "artifact": "event_annotations",
+        "relative_path": "annotations/events.csv",
+        "format_hint": "csv",
+        "required": true
+      },
+      {
+        "artifact": "marker_channel",
+        "relative_path": "markers/{channel}/t{timepoint:04d}.tif",
+        "format_hint": "tiff_stack",
+        "required": true
+      },
+      {
+        "artifact": "csv_table",
+        "relative_path": "tables/measurements.csv",
+        "format_hint": "csv",
+        "required": true
+      }
+    ],
     "notes": "Example-only v2 single-cell data contract fixture. Paths are canonical placeholders; do not treat as PI data."
   },
   "metrics": [

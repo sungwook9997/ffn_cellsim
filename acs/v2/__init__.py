@@ -56,10 +56,12 @@ from acs.v2.ecm_open_loop_harness import (
 )
 from acs.v2.cell_cluster import CellClusterState
 from acs.v2.data_contract import (
+    ArtifactLayoutEntry,
     ArtifactKind,
     ImagingDatasetSpec,
     MetricSpec,
     V2DataContract,
+    canonical_artifact_layout,
 )
 from acs.v2.ecm_substrate import ECMSubstrateState
 from acs.v2.focal_adhesion import FocalAdhesionState
@@ -90,6 +92,7 @@ __all__ = [
     "ActiveContourParametersError",
     "ActiveContourState",
     "ActiveContourStepError",
+    "ArtifactLayoutEntry",
     "ArtifactKind",
     "CellClusterState",
     "ECMSubstrateState",
@@ -122,6 +125,7 @@ __all__ = [
     "apply_prescribed_stiffness_rate",
     "boundary_perimeter_um",
     "boundary_projected_area_um2",
+    "canonical_artifact_layout",
     "compute_area_forces",
     "compute_cortex_forces",
     "compute_finite_n_residual",

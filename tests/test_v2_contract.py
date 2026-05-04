@@ -7,10 +7,12 @@ import numpy as np
 import pytest
 
 from acs.v2.data_contract import (
+    ArtifactLayoutEntry,
     ArtifactKind,
     ImagingDatasetSpec,
     MetricSpec,
     V2DataContract,
+    canonical_artifact_layout,
     default_single_cell_contract,
 )
 from acs.v2.measurement_boundary import MeasurementBoundary
@@ -60,6 +62,15 @@ def _contract_from_json(path: Path) -> V2DataContract:
     )
     dataset_payload["available_csv_columns"] = tuple(
         dataset_payload.get("available_csv_columns", ())
+    )
+    dataset_payload["artifact_layout"] = tuple(
+        ArtifactLayoutEntry(
+            artifact=ArtifactKind(entry["artifact"]),
+            relative_path=entry["relative_path"],
+            format_hint=entry["format_hint"],
+            required=entry.get("required", True),
+        )
+        for entry in dataset_payload.get("artifact_layout", ())
     )
     dataset = ImagingDatasetSpec(**dataset_payload)
 
@@ -112,6 +123,10 @@ def test_example_single_cell_data_contract_json_validates():
         contract.dataset.validation_timepoints
     )
     assert ArtifactKind.CSV_TABLE in contract.dataset.available_artifacts
+    assert contract.dataset.artifact_uri(ArtifactKind.SEGMENTATION_MASK) == (
+        "data/imaging/v2_single_cell_col1_demo/"
+        "segmentation/masks/t{timepoint:04d}.tif"
+    )
 
     keys = {(m.name, m.measurement_modality) for m in contract.metrics}
     assert ("projected_area", "top_down_segmentation") in keys
@@ -359,6 +374,88 @@ def test_dataset_duplicate_artifact_rejected():
                 ArtifactKind.SEGMENTATION_MASK,
             ),
         ).validate()
+
+
+def test_canonical_artifact_layout_covers_advertised_artifacts():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(
+            ArtifactKind.RAW_FRAMES,
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.BOUNDARY_CONTOURS,
+            ArtifactKind.TRACKING_TABLE,
+            ArtifactKind.EVENT_ANNOTATIONS,
+            ArtifactKind.MARKER_CHANNEL,
+            ArtifactKind.CSV_TABLE,
+        ),
+    )
+    layout = dataset.canonical_artifact_layout()
+
+    assert tuple(entry.artifact for entry in layout) == dataset.available_artifacts
+    assert dataset.artifact_relative_path(ArtifactKind.RAW_FRAMES) == (
+        "raw/{channel}/t{timepoint:04d}.tif"
+    )
+    assert dataset.artifact_uri(ArtifactKind.CSV_TABLE) == (
+        "data/imaging/single_cell_demo/tables/measurements.csv"
+    )
+
+
+def test_canonical_artifact_layout_rejects_non_artifact_kind():
+    with pytest.raises(ValueError, match="ArtifactKind"):
+        canonical_artifact_layout(("raw_frames",))  # type: ignore[arg-type]
+
+
+def test_declared_artifact_layout_must_cover_available_artifacts_exactly():
+    dataset = _full_artifact_dataset(
+        available_artifacts=(
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.BOUNDARY_CONTOURS,
+        ),
+        artifact_layout=(
+            ArtifactLayoutEntry(
+                artifact=ArtifactKind.SEGMENTATION_MASK,
+                relative_path="segmentation/masks/t{timepoint:04d}.tif",
+                format_hint="label_mask_tiff",
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="missing advertised artifacts"):
+        dataset.validate()
+
+    dataset = _full_artifact_dataset(
+        available_artifacts=(ArtifactKind.SEGMENTATION_MASK,),
+        artifact_layout=(
+            ArtifactLayoutEntry(
+                artifact=ArtifactKind.SEGMENTATION_MASK,
+                relative_path="segmentation/masks/t{timepoint:04d}.tif",
+                format_hint="label_mask_tiff",
+            ),
+            ArtifactLayoutEntry(
+                artifact=ArtifactKind.SEGMENTATION_MASK,
+                relative_path="segmentation/masks/duplicate.tif",
+                format_hint="label_mask_tiff",
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="duplicate layout entry"):
+        dataset.validate()
+
+
+@pytest.mark.parametrize(
+    "bad_path, match",
+    [
+        ("/absolute/raw.tif", "relative"),
+        ("segmentation/../raw.tif", "path segments"),
+        ("raw\\frames.tif", "POSIX"),
+    ],
+)
+def test_artifact_layout_rejects_unsafe_paths(bad_path: str, match: str):
+    entry = ArtifactLayoutEntry(
+        artifact=ArtifactKind.RAW_FRAMES,
+        relative_path=bad_path,
+        format_hint="tiff_stack",
+    )
+    with pytest.raises(ValueError, match=match):
+        entry.validate()
 
 
 def test_single_cell_state_projected_area_and_nested_validation():
