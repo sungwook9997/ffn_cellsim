@@ -118,20 +118,51 @@ target cell, divided by the cell area; weights sum to 1.
 - Continuous: an FA crossing a cell boundary smoothly
   redistributes weight between the two adjacent cells; the
   scattered traction field has no step-function jump.
-- Trivially passes Sanity Gate §3 conservation (the four
-  weights sum to 1 by construction).
+- **Interior** §3 conservation is trivial: the four weights sum
+  to 1 by construction when the full 2×2 stencil lies inside
+  the grid.
 - Standard finite-element interpolation pattern — derivable
   from first principles on a structured grid; no fitted
-  parameter.
-- Well-defined at the ECM grid edge: an FA at a corner cell
-  receives zero weight on the absent neighbors (or equivalently,
-  the absent neighbors are clamped to zero contribution).
+  parameter (interior).
 
 **Cons**:
 - Smears the load over four cells even when FA size ≪ grid
   spacing; for a sharp point load this is a slight inaccuracy.
-- Edge-cell behavior is technically a boundary condition that
-  must be explicitly tested (Sanity Gate §2 boundary cases).
+- **Edge / out-of-grid handling is an unresolved design-discussion
+  item, not a property of bilinear itself**. If an FA position
+  is near a domain edge so that one or more of the 4 stencil
+  cells is absent, the retained in-domain weights sum to less
+  than 1; §3 conservation is **not** automatic. The
+  design-discussion round must lock one of the policies in §2
+  edge-handling sub-section before this can be called "trivially
+  conserving".
+
+#### Edge-handling policies (deferred to design-discussion round)
+
+The following options are not ranked here — each preserves
+conservation differently. Codex review `id=1334` flagged that
+the original "trivially conserving" framing was wrong for
+boundary FAs.
+
+- (b.i) **Reject out-of-grid FA positions** loudly with an
+  explicit failure_kind (e.g., `fa_position_outside_grid`). The
+  retained-weights problem never arises; the cost is that
+  caller is responsible for keeping FAs strictly inside the
+  grid.
+- (b.ii) **Require full-stencil FAs**: only FAs whose 2×2
+  bilinear stencil lies inside the grid are accepted; any
+  edge-stencil FA raises (e.g., `fa_position_in_edge_stencil`).
+  Stricter than (b.i); conservation is automatic but the
+  caller's tolerated FA region is shrunk by half a cell on
+  each edge.
+- (b.iii) **Renormalize retained in-domain weights** at
+  boundaries to sum to 1. Conservation holds but the
+  "no normalization step required" simplicity is **lost** for
+  edge cells. The §3 Sanity Gate proof must record the
+  renormalization branch with its own derivation.
+- (b.iv) **Other**: e.g., reflect-pad / extend-and-clip /
+  literature-derived variants. Reserved for the design round
+  to consider.
 
 ### Candidate (c) — Gaussian kernel
 
@@ -197,9 +228,15 @@ Reasoning:
    numerical parameters beyond `spacing_um` (already in the
    schema). No new tunable lands. Compare to (c) which adds
    `(r_kernel, σ_kernel)` and shifts Magic-Number Block work.
-2. **Sanity Gate §3 conservation**: trivial, no normalization
-   step required. Compare to (c) which requires explicit
-   truncated-Gaussian normalization with its own derivation.
+2. **Sanity Gate §3 conservation**: trivial **for interior FAs**
+   (full 2×2 stencil); the four bilinear weights sum to 1 by
+   construction. **Edge/out-of-grid FAs require an explicit
+   policy** (see §2 edge-handling sub-section); the conservation
+   property is contingent on that policy choice. Compare to (c)
+   which requires explicit truncated-Gaussian normalization with
+   its own derivation **at every grid cell**, not just at edges.
+   Bilinear's conservation burden is therefore strictly less
+   than Gaussian's even after edge handling is locked.
 3. **Sanity Gate §6 measurement-protocol**: bilinear is the
    standard FE-style interpolation; no new measurement modality
    is invented. The FA position-to-grid-fraction mapping is the
