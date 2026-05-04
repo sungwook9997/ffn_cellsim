@@ -52,7 +52,7 @@ introduce; the note does NOT prescribe how that change is computed.
 
 | Schema | Field(s) | Cytokinesis impact (deferred) |
 |---|---|---|
-| `acs/v2/single_cell.py::SingleCellState` | `cell_id` | divide-event introduces a *child* `cell_id`; the *parent* `cell_id` either retires or is reassigned to one of the daughters. Relationship recorded out-of-schema (event log) — see §3 below. |
+| `acs/v2/single_cell.py::SingleCellState` | `cell_id` | divide-event introduces a *child* `cell_id`; the *parent* `cell_id` either retires or is reassigned to one of the daughters. Lineage identity can use the existing `parent_cell_id` / `division_count` breadcrumbs (already in `SingleCellState`); full event details (cleavage curve, division time, FA / protrusion reassignments) are out-of-schema — see §2. |
 | `acs/v2/single_cell.py::SingleCellState` | `measurement_boundary` | parent boundary partitions into two daughter `MeasurementBoundary` polygons via a cleavage curve; cleavage curve geometry deferred. |
 | `acs/v2/single_cell.py::SingleCellState` | `cell_state` | divide event transitions parent through a brief `dividing` literal (NOT YET in the `CellState` literal `Literal["alive", "dead"]` — see §4 schema-only TBD for adding a `dividing` value). |
 | `acs/v2/focal_adhesion.py::FocalAdhesionState` | `cell_id` | each FA's `cell_id` reassigned to whichever daughter the FA's `position_um_xy` falls within. FAs straddling the cleavage curve: deferred (lifetime-end vs reassign-to-nearest is a Phase 1.5 decision). |
