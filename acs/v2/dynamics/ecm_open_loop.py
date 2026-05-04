@@ -7,7 +7,7 @@ loop back to cell motion, FA state, or any biology-derived input**.
 Closed-loop ECM activation is gated behind the six-item gate in
 ``docs/v2_phase1_forward_roadmap.md`` "Closed-Loop ECM Gate".
 
-Three preflight functions live here, one per ECM field family:
+Four preflight functions live here, one per ECM field family:
 
 - ``accumulate_prescribed_traction(ecm, traction_density_nN_per_um2,
   dt_s)`` — ECM-OL-1 (commit ``29a360f``): integrates a prescribed
@@ -38,7 +38,7 @@ Three preflight functions live here, one per ECM field family:
   update only consumes ``ligand_density_rate_per_s`` and the
   fiber update only consumes ``fiber_density_rate_per_s``.
 - ``apply_prescribed_orientation_rate(ecm, orientation_rate_per_s,
-  dt_s)`` — 6.4-open-C (this commit): applies a prescribed signed
+  dt_s)`` — 6.4-open-C (commit ``8b2c1ab``): applies a prescribed signed
   ``(nx, ny, 2, 2)`` orientation-tensor rate field into
   ``orientation_tensor``. Signed rates are allowed (positive grows
   the local component, negative shrinks it), but the rate field
@@ -77,13 +77,35 @@ module):
        nN/μm² unit-chain proof) is the closed-loop gate's
        responsibility, not this preflight's.
     2. Boundary cases. Each function rejects: shape mismatch with
-       ECM grid; non-finite or bool inputs; ``dt_s < 0`` or
-       non-finite; per-field sign violations on the *post-state*
-       (negative traction history, negative stiffness). ``dt_s == 0``
-       and zero input fields are exact no-ops returning a fresh
-       state. ``apply_prescribed_stiffness_rate`` accepts negative
-       rate entries (softening); only the post-state non-negativity
-       is enforced.
+       the ECM grid (``traction_shape``, ``stiffness_rate_shape``,
+       ``ligand_density_rate_shape``, ``fiber_density_rate_shape``,
+       ``orientation_rate_shape``); non-finite or bool inputs
+       (``*_non_finite`` and ``dt_invalid``); ``dt_s < 0`` or
+       non-finite (``dt_invalid``); per-field schema violations on
+       the *post-state*:
+         - ``accumulate_prescribed_traction``: negative input
+           rejected (``traction_negative``); the cumulative field
+           is monotone non-decreasing by construction.
+         - ``apply_prescribed_stiffness_rate``: signed input
+           accepted; post-state ``stiffness_kpa < 0`` rejected
+           (``stiffness_negative_post_update``).
+         - ``apply_prescribed_density_rate``: signed input
+           accepted per density field; post-state must stay in
+           ``[0, 1]`` per field, with split lower/upper failure
+           kinds (``ligand_density_negative_post_update``,
+           ``ligand_density_exceeds_one_post_update``,
+           ``fiber_density_negative_post_update``,
+           ``fiber_density_exceeds_one_post_update``).
+         - ``apply_prescribed_orientation_rate``: input must be
+           component-wise symmetric within
+           ``_ORIENTATION_SYMMETRY_TOL``
+           (``orientation_rate_asymmetric``); post-state must stay
+           component-wise in ``[-_ORIENTATION_BOUND,
+           +_ORIENTATION_BOUND]`` with split lower/upper failure
+           kinds (``orientation_negative_bound_post_update``,
+           ``orientation_exceeds_bound_post_update``).
+       ``dt_s == 0`` and zero input fields are exact no-ops
+       returning a fresh state. No clamping in any function.
     3. Conservation / provenance invariants. Input ``ecm`` is never
        mutated. Every non-target ECM field is copied verbatim; the
        returned state runs through ``ECMSubstrateState.validate()``
