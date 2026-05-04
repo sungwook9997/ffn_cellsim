@@ -709,6 +709,36 @@ committed). Each test maps to a locked invariant in
     contain `satisfies_item_5`. Failure-kind discipline owned
     by test 22; wording discipline owned by this test.
 
+### Divisibility-fix regressions (2) — Codex `id=1591` + `id=1594` BLOCKER chain
+
+25. **`test_item_5_sweep_near_indivisible_inside_old_tolerance_raises`**
+    (NEW per Codex `id=1591` BLOCKER) — a spacing that would
+    have passed the prior `math.isclose(..., abs_tol=1e-9)`
+    divisibility check must now raise under the
+    `Fraction(str(...))` exact-decimal-divisibility check.
+    Negative regression: spacing `1.0 + 1e-11` with
+    `domain_size_um_xy=(8.0, 8.0)` yields
+    `Fraction(str(1.0 + 1e-11))` ≈ `Fraction(100000000001, 1e11)`,
+    so quotient `Fraction(8, 1) / Fraction(...)` has non-1
+    denominator → raises with `"exactly divisible"` match.
+    Locked Y1 "exact divisibility" + locked "zero new harness
+    tolerances" enforcement.
+26. **`test_item_5_sweep_decimal_exact_divisible_passes_per_user_intent`**
+    (NEW per Codex `id=1594` BLOCKER positive regression) —
+    mathematically exact decimal config values must PASS
+    validation even when float64 binary-quotient representation
+    yields non-integer due to `0.1` not being exactly
+    representable. Positive regression:
+    `domain_size_um_xy=(0.3, 0.3)`, `spacing_um=0.1` yields
+    binary `0.3 / 0.1 = 2.9999999999999996` (NOT 3.0 in
+    float64) but `Fraction(str(0.3)) / Fraction(str(0.1)) =
+    Fraction(3, 10) / Fraction(1, 10) = Fraction(3, 1)` →
+    exact integer 3 → PASSES with `result.nx_by_run[0] == 3`
+    and `result.ny_by_run[0] == 3`. Demonstrates that the
+    `Fraction(str(...))` check correctly accepts
+    user-intended decimal config that prior `nx_f.is_integer()`
+    binary check would have rejected.
+
 ---
 
 ## 9. Gate verdict

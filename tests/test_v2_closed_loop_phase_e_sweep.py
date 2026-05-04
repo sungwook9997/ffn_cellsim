@@ -10,12 +10,16 @@ per Codex ``id=1581`` BLOCKER + 2 divisibility-fix regressions
 (test 25 near-indivisible-raises + test 26 exact-decimal-passes)
 added per Codex ``id=1591``/``id=1594`` BLOCKER chain.
 
-Per Codex ``id=1587`` Sanity Gate PASS, this catalog covers:
+Per Codex ``id=1587`` Sanity Gate PASS + ``id=1594`` divisibility
+fix, this catalog covers:
 - Validation tests (11): tests 1-11
 - Determinism + metadata (3): tests 12-14
 - Evidence-providing (4) Phase E v1 Y2 sister-pattern: tests 15-18
 - Boundary + Step 0 (3): tests 19-21
 - Composition guard + exports + wording boundary (3): tests 22-24
+- Divisibility-fix regressions (2) per Codex ``id=1591`` +
+  ``id=1594`` BLOCKER chain: tests 25-26 (near-indivisible
+  raises + exact-decimal user-intent passes)
 """
 
 from __future__ import annotations
