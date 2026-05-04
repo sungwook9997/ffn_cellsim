@@ -114,10 +114,18 @@ typed discipline.
 
 ### Q1 — Typed schema for the 6.3a-shared diagnostics
 
-Current shape: `diagnostics: dict` with keys
-`aggregate_cell_force_nN_xy` (tuple[float, float]),
-`aggregate_substrate_reaction_nN_xy` (tuple[float, float]),
-`max_traction_magnitude_nN` (float).
+Current shape: `diagnostics: dict` with **four** 6.3a-shared keys
+(verified against both producers
+`acs/v2/dynamics/focal_adhesion.py:381-390` and
+`acs/v2/dynamics/protrusion_coupled_focal_adhesion.py:422-430`):
+
+- `n_adhesions: int` (count of FAs in the step)
+- `aggregate_cell_force_nN_xy: tuple[float, float]` (component
+  sum across FAs, in `nN`)
+- `aggregate_substrate_reaction_nN_xy: tuple[float, float]`
+  (component sum across FAs, in `nN`)
+- `max_traction_magnitude_nN: float` (max of L2 norm of per-FA
+  cell force, in `nN`; `0.0` if `n_adhesions == 0`)
 
 Two candidate shapes:
 
@@ -137,10 +145,20 @@ Two candidate shapes:
 
 ### Q2 — 6.3b extension shape
 
-Current shape: `diagnostics: dict` with the 6.3a-shared 3 keys
-plus 4 6.3b-extension keys (`linked_missing`,
-`reciprocal_missing`, `multiplier_histogram`,
-`max_effective_rate_per_name`).
+Current shape: `diagnostics: dict` with the 4 6.3a-shared keys
+above plus 4 6.3b-extension keys (verified against
+`acs/v2/dynamics/protrusion_coupled_focal_adhesion.py:431-434`):
+
+- `linked_missing: int` (always 0 in current implementation;
+  reserved for future linkage-resolution paths)
+- `reciprocal_missing: int` (count of FAs with resolved
+  `linked_protrusion_id` whose linked protrusion did not list
+  the FA in `associated_adhesion_ids`)
+- `multiplier_histogram: dict[str, collections.Counter[float]]`
+  (per-rate-name `Counter` of effective multiplier values rounded
+  to 12 decimals for float64-round-off-stable comparison)
+- `max_effective_rate_per_name: dict[str, float]` (per-rate-name
+  maximum effective rate across all FAs, in `[1/s]`)
 
 Three candidate shapes (only relevant if Q1 picks (a)):
 
