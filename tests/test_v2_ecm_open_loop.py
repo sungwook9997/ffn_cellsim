@@ -727,3 +727,146 @@ def test_orientation_rate_chained_calls_compose():
     expected = ecm.orientation_tensor + rate_a * 1.0 + rate_b * 2.0
     np.testing.assert_allclose(out_chained.orientation_tensor, expected, atol=0.0)
 
+
+# ---------------------------------------------------------------------------
+# Phase B precursor evidence (closed-loop ECM gate phased plan §1)
+#
+# Per docs/v2_closed_loop_ecm_gate_phased_plan_locked.md §1, Phase B:
+#  - is "Item 1 precursor evidence: prescribed-traction stimulus monotonicity"
+#  - does NOT satisfy closed-loop gate Item 1 (response monotonicity)
+#  - measures the open-loop traction accumulator
+#    (a stimulus/memory field), not an ECM response field.
+#
+# These tests verify the stimulus accumulator's monotone-non-decreasing
+# property by construction: positive prescribed traction increases the
+# accumulator, zero prescribed traction leaves it unchanged, and negative
+# prescribed traction is rejected with failure_kind="traction_negative"
+# so the field cannot decrease through this preflight path.
+#
+# Hard Rule 11 wording protection (lock §1): the Phase B section header
+# and per-test docstrings explicitly NOT claim Item 1 satisfaction. The
+# meta-test
+# `test_stimulus_monotonicity_does_not_satisfy_closed_loop_item_1` makes
+# the wording boundary an explicit runtime assertion so a future
+# refactor cannot silently relabel these tests.
+# ---------------------------------------------------------------------------
+
+
+def test_stimulus_accumulator_monotone_under_positive_traction():
+    """Phase B precursor evidence — positive prescribed traction
+    monotonically increases the open-loop stimulus accumulator
+    ``accumulated_traction_nNs_per_um2`` per step.
+
+    Phase B precursor evidence; does NOT satisfy closed-loop gate
+    Item 1 (response monotonicity) — see meta-test below.
+    """
+
+    ecm = _ecm()
+    initial = ecm.accumulated_traction_nNs_per_um2.copy()
+
+    traction = np.full(ecm.grid_shape, 0.5, dtype=np.float64)
+    out = ecm
+    history = [initial.copy()]
+    for _ in range(5):
+        out = accumulate_prescribed_traction(out, traction, dt_s=0.1)
+        history.append(out.accumulated_traction_nNs_per_um2.copy())
+
+    # Per-step monotone non-decreasing pointwise.
+    for prev, curr in zip(history[:-1], history[1:]):
+        assert np.all(curr >= prev), (
+            "stimulus accumulator must be monotone non-decreasing under "
+            "positive prescribed traction"
+        )
+    # Final field strictly above initial (positive traction across all cells).
+    assert np.all(history[-1] > initial)
+
+
+def test_stimulus_accumulator_no_change_when_traction_zero():
+    """Phase B precursor evidence — zero prescribed traction leaves the
+    open-loop stimulus accumulator unchanged, exactly to float64
+    round-off (the underlying update is bit-exact ``x + 0 = x``).
+
+    Phase B precursor evidence; does NOT satisfy closed-loop gate
+    Item 3 closed-loop side, which requires the same property on a
+    response field (Phase E).
+    """
+
+    ecm = _ecm()
+    initial = ecm.accumulated_traction_nNs_per_um2.copy()
+
+    out = ecm
+    for _ in range(5):
+        out = accumulate_prescribed_traction(
+            out, np.zeros(ecm.grid_shape), dt_s=0.5
+        )
+        np.testing.assert_array_equal(
+            out.accumulated_traction_nNs_per_um2, initial
+        )
+
+
+def test_stimulus_accumulator_rejects_negative_traction_enforcing_monotonicity():
+    """Phase B precursor evidence — negative prescribed traction is
+    rejected with failure_kind="traction_negative", so the open-loop
+    stimulus accumulator cannot decrease through this preflight path.
+
+    Lock §8 drafting clarification (per Codex impl id=1241): the
+    test catalog originally listed this entry as
+    ``test_stimulus_accumulator_signed_traction_can_decrease``,
+    which encodes a behavior the code does NOT support (the
+    open-loop preflight rejects negative traction). The renamed
+    test here is faithful to the lock's intent ("verify the
+    accumulator's signedness contract") while consistent with the
+    code reality (signedness contract = non-negative-only).
+
+    Phase B precursor evidence; does NOT satisfy closed-loop gate
+    Item 1 (response monotonicity).
+    """
+
+    ecm = _ecm()
+    negative = np.full(ecm.grid_shape, -0.1, dtype=np.float64)
+    with pytest.raises(ECMOpenLoopError) as excinfo:
+        accumulate_prescribed_traction(ecm, negative, dt_s=1.0)
+    assert excinfo.value.failure_kind == "traction_negative"
+
+    # Mixed-sign field with at least one negative cell also rejected.
+    mixed = np.full(ecm.grid_shape, 0.1, dtype=np.float64)
+    mixed[0, 0] = -1e-9
+    with pytest.raises(ECMOpenLoopError) as excinfo_mixed:
+        accumulate_prescribed_traction(ecm, mixed, dt_s=1.0)
+    assert excinfo_mixed.value.failure_kind == "traction_negative"
+
+
+def test_stimulus_monotonicity_does_not_satisfy_closed_loop_item_1():
+    """Phase B precursor evidence — Hard Rule 11 wording protection.
+
+    Documents in code that the three tests above measure the
+    open-loop traction accumulator
+    (``accumulated_traction_nNs_per_um2``), which is a stimulus /
+    memory field. They do **not** satisfy the closed-loop ECM gate
+    Item 1 (response monotonicity), which requires:
+
+    - a response field defined (Hard Blocker #1: constitutive-law
+      direction)
+    - a constitutive law mapping cumulative stimulus to response
+      change (Phases D + E per
+      ``docs/v2_closed_loop_ecm_gate_phased_plan_locked.md`` §1)
+    - a monotonicity test on the response field, not the stimulus
+      field
+
+    Hard Rule 11 (CLAUDE.md): the measured value must match the
+    claim. Measuring stimulus-accumulator monotonicity does not
+    measure remodeling-response monotonicity. This test is a
+    runtime assertion that makes the wording boundary explicit, so
+    a future refactor cannot silently relabel the Phase B tests
+    above as Item 1 satisfaction.
+    """
+
+    phase_b_measured_field = "accumulated_traction_nNs_per_um2 (stimulus)"
+    closed_loop_item_1_claim = "ECM response field monotonicity (TBD)"
+    assert phase_b_measured_field != closed_loop_item_1_claim, (
+        "Phase B tests measure stimulus accumulator (a memory field), "
+        "NOT a response field. They cannot satisfy closed-loop gate "
+        "Item 1, which requires a response field per Hard Blocker #1 "
+        "in docs/v2_closed_loop_ecm_gate_phased_plan_locked.md §2."
+    )
+
