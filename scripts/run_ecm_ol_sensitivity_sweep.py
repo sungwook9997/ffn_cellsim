@@ -526,6 +526,8 @@ def run_ecm_ol_sensitivity_sweep(
             f"<td>{rec.final_field_max:.4e}</td>"
             f"<td>{rec.final_field_min:.4e}</td>"
             f"<td>{rec.final_field_mean:.4e}</td>"
+            f"<td>{rec.final_field_sum:.4e}</td>"
+            f"<td>{rec.selected_reduction_value:.4e}</td>"
             f"<td>{rec.reduction_used}</td>"
             f"<td>{rec.n_steps_completed}</td>"
             f"<td>{rec.failure}</td></tr>"
@@ -547,7 +549,8 @@ def run_ecm_ol_sensitivity_sweep(
             f"{tuple_actual_status[t.label]}</p>"
             f"<table><thead><tr><th>channel</th><th>status</th>"
             f"<th>expected</th><th>final_max</th><th>final_min</th>"
-            f"<th>final_mean</th><th>reduction</th>"
+            f"<th>final_mean</th><th>final_sum</th>"
+            f"<th>selected_reduction_value</th><th>reduction</th>"
             f"<th>steps_completed</th><th>failure</th></tr></thead>"
             f"<tbody>{rows}</tbody></table></body></html>"
         )
