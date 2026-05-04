@@ -8,7 +8,11 @@ autonomy + visible deliverable focus)
 MCP id 1434–1441 (rounds 1–4 + ack)
 **Parent audit**: `docs/v2_sister_gate_mirror_audit_2026_05_05.md` (commit `d19670d`),
 Finding B1 routed to separate cycle by Codex `id=1432`
-**Brief**: `docs/v2_focal_adhesion_dynamics_result_typed_brief.md` (commit `06c3a03`)
+**Brief**: `docs/v2_focal_adhesion_dynamics_result_typed_brief.md`
+(opening commit `06c3a03`, Q1/Q2 key-set/type completeness correction
+`64db861` — does not contradict this lock; Y2 already accepts
+`n_adhesions` in base diagnostics, §1 already pins the 6.3b extension
+diagnostics shape)
 **PI ratify status**: full delegation per PI id=939/1008. impl-work uses
 this for the B1 Sanity Gate doc + code entry.
 
@@ -288,6 +292,7 @@ new tests:
 ## 6. References
 
 - Brief (opening position): `docs/v2_focal_adhesion_dynamics_result_typed_brief.md`
+  (opening `06c3a03`, Q1/Q2 completeness correction `64db861`)
 - Sister-gate-mirror audit: `docs/v2_sister_gate_mirror_audit_2026_05_05.md`
 - HB#3 lock (sister precedent): `docs/v2_hard_blocker_3_fa_to_ecm_scattering_locked.md`
 - HB#4 lock (sister precedent): `docs/v2_hard_blocker_4_ecm_to_fa_bias_target_locked.md`
