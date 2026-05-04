@@ -133,15 +133,15 @@ contract.
 | Case | Guard | Failure-kind |
 |---|---|---|
 | Empty `adhesions` tuple | early-return `np.zeros((nx, ny, 2), dtype=np.float64)` (no FA iteration) | (no exception) |
-| `position_um_xy` non-finite (NaN, ±inf) | reject before bilinear computation | `non_finite_position` |
-| `traction_force_nN_xy` non-finite | reject before deposit | `non_finite_traction` |
+| `position_um_xy` non-finite (NaN, ±inf) | reject before bilinear computation | `non_finite_fa_position` (per locked design) |
+| `traction_force_nN_xy` non-finite | reject before deposit | `non_finite_fa_traction` (per locked design) |
 | FA position strictly outside `[origin_x, origin_x + nx·dx] × [origin_y, origin_y + ny·dy]` plus `_FA_POSITION_BOUNDARY_TOL_UM` | raise BEFORE bilinear; no silent clamp | `fa_position_outside_ecm_grid` |
 | FA position exactly at footprint corner | inclusive boundary; truncated stencil deposits 100% to corner cell center | (no exception) |
 | FA position exactly at footprint edge midpoint | inclusive; truncated stencil deposits across edge cells with renormalized weights | (no exception) |
 | FA position strictly at a cell center | bilinear degenerates: `fx == 0`, `fy == 0` → weight 1.0 to that center, 0 elsewhere | (no exception) |
 | FA position exactly at 4-center crossing (`fx == 0.5, fy == 0.5`) | weights `(0.25, 0.25, 0.25, 0.25)` | (no exception) |
-| `ecm.spacing_um` ≤ 0 or non-finite | inherited from ECM schema validation; this scatter does NOT re-validate (assumes ECM passed `validate()`) | (inherited ECM validation failure_kind) |
-| `ecm.grid_shape` non-positive integer | inherited (same) | (inherited) |
+| `ecm.spacing_um` ≤ 0 or non-finite | scatter calls `ecm.validate()` at function entry per `acs/v2/dynamics/ecm_open_loop.py` precedent (Codex review id=1354 alignment); the ECM schema's `ValueError` propagates verbatim | inherited `ECMSubstrateState.validate()` `ValueError` |
+| `ecm.grid_shape` non-positive integer | same — `ecm.validate()` at entry catches before scatter | inherited (same) |
 | FA tuple containing duplicate `adhesion_id` | not the scatter's responsibility (caller-side concern); scatter just iterates | (no exception) |
 | Boundary half-cell with **all** stencil weights mapping to invalid centers | impossible by construction within footprint (`(b.iii) renormalization` applies only when `at least one` valid weight exists; and the inclusive footprint with finite `tol` guarantees at least one valid stencil cell exists) | (impossible per construction; documented as invariant) |
 
@@ -390,9 +390,11 @@ behavior.
 | 17 | `test_non_finite_fa_position_raises` | §2 boundary failure_kind |
 | 18 | `test_scatter_does_not_satisfy_closed_loop_response_law` | §6 Hard Rule 11 meta-test |
 
-(Locked §7 lists 16; the meta-test #18 is added per Phase B / C
-precedent — Hard Rule 11 boundary protection — and is not
-considered a scope expansion.)
+(Locked §7 lists 17 tests including
+`test_non_finite_fa_position_raises` and
+`test_returned_shape_is_nx_ny_2_float64`; the Hard Rule 11
+meta-test #18 is added per Phase B / Phase C precedent and is
+not considered a scope expansion. Test count 17 + 1 = 18.)
 
 ---
 
@@ -411,9 +413,11 @@ The gate clears for executable code in two commits:
    `_FA_POSITION_BOUNDARY_TOL_UM = 1e-12 * max(nx*dx, ny*dy)`
    computed at runtime per ECM (not a fixed module-level
    constant; recomputed per call to remain grid-invariant).
-2. `tests/test_v2_fa_to_ecm_scattering.py` — ~18 tests per §9
-   catalog above (16 from locked §7 + 1 boundary tolerance
-   parametrize + 1 Hard Rule 11 meta-test).
+2. `tests/test_v2_fa_to_ecm_scattering.py` — 18 tests per §9
+   catalog above (17 from locked §7 catalog including
+   `test_non_finite_fa_position_raises` and
+   `test_returned_shape_is_nx_ny_2_float64`, plus 1 Hard Rule 11
+   meta-test added per Phase B / Phase C precedent).
 
 Plus `acs/v2/dynamics/__init__.py` + `acs/v2/__init__.py`
 exports.
