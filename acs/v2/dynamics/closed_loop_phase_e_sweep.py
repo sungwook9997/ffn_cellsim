@@ -335,20 +335,30 @@ def _validate_config(config: PhaseEV1Item5SweepConfig) -> None:
 
     for spacing in config.spacing_um_values:
         spacing_f = float(spacing)
+        # Y1 exact divisibility per Codex id=1591 BLOCKER fix: use exact
+        # float equality (NOT math.isclose tolerance — locked "zero new
+        # harness tolerances beyond 1e-12 IEEE max-bound allowance").
+        # In float64, x / y == int(x / y) iff the division is exact in
+        # float arithmetic (no representation rounding); this catches
+        # both genuinely indivisible cases (16.0 / 1.5 ≈ 10.666 ≠ 10)
+        # and near-indivisible-inside-prior-tolerance cases (16.0 /
+        # (1.0 + 1e-11) ≈ 15.999... ≠ 15) without an ad-hoc tolerance.
         nx_f = dx / spacing_f
         ny_f = dy / spacing_f
-        nx = int(round(nx_f))
-        ny = int(round(ny_f))
-        if (
-            not math.isclose(nx_f, nx, abs_tol=1e-9)
-            or not math.isclose(ny_f, ny, abs_tol=1e-9)
-            or nx < 1
-            or ny < 1
-        ):
+        if not (nx_f.is_integer() and ny_f.is_integer()):
             raise ValueError(
                 f"domain_size_um_xy {config.domain_size_um_xy!r} must be "
-                f"exactly divisible by every spacing_um; got spacing={spacing_f} "
-                f"with nx={nx_f}, ny={ny_f} (must be positive integers)"
+                f"exactly divisible by every spacing_um; got spacing="
+                f"{spacing_f} with nx={nx_f}, ny={ny_f} (must be exact "
+                f"positive integers)"
+            )
+        nx = int(nx_f)
+        ny = int(ny_f)
+        if nx < 1 or ny < 1:
+            raise ValueError(
+                f"domain_size_um_xy {config.domain_size_um_xy!r} produces "
+                f"non-positive grid dimensions at spacing={spacing_f}: "
+                f"nx={nx}, ny={ny} (must be ≥ 1)"
             )
 
 

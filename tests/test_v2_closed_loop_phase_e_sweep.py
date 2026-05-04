@@ -90,6 +90,25 @@ def test_item_5_sweep_indivisible_domain_raises():
         )
 
 
+def test_item_5_sweep_near_indivisible_inside_old_tolerance_raises():
+    """Test 25 (Codex id=1591 BLOCKER fix): a spacing that would have
+    passed the prior 1e-9 abs_tol divisibility check must now raise
+    under the exact-equality replacement.
+
+    Example: domain_size_um_xy=(16.0, 16.0) with spacing=1.0 + 1e-11
+    yields nx_f ≈ 15.999999999984... which is ≈1.6e-10 from 16; the
+    prior `math.isclose(nx_f, 16, abs_tol=1e-9)` would accept this
+    silently. The locked "zero new harness tolerances" contract +
+    Y1 "exact divisibility" require this to raise.
+    """
+
+    near_indivisible_spacing = 1.0 + 1e-11
+    with pytest.raises(ValueError, match="exactly divisible"):
+        run_phase_e_v1_sensitivity_sweep(
+            _baseline_config(spacing_um_values=(near_indivisible_spacing,))
+        )
+
+
 def test_item_5_sweep_unsupported_traction_scenario_raises():
     """Test 5 (Y20): runtime Literal validation."""
 
