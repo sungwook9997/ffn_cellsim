@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -12,6 +15,11 @@ from acs.v2.data_contract import (
 )
 from acs.v2.measurement_boundary import MeasurementBoundary
 from acs.v2.single_cell import FocalAdhesionState, ProtrusionEvent, SingleCellState
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_EXAMPLE_CONTRACT_PATH = (
+    _REPO_ROOT / "configs" / "v2_single_cell_data_contract_example.json"
+)
 
 
 def _full_artifact_dataset(**overrides) -> ImagingDatasetSpec:
@@ -36,6 +44,42 @@ def _full_artifact_dataset(**overrides) -> ImagingDatasetSpec:
     return ImagingDatasetSpec(**base)
 
 
+def _contract_from_json(path: Path) -> V2DataContract:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    dataset_payload = dict(payload["dataset"])
+    dataset_payload["channels"] = tuple(dataset_payload["channels"])
+    dataset_payload["voxel_size_um_xyz"] = tuple(dataset_payload["voxel_size_um_xyz"])
+    dataset_payload["calibration_timepoints"] = tuple(
+        dataset_payload.get("calibration_timepoints", ())
+    )
+    dataset_payload["validation_timepoints"] = tuple(
+        dataset_payload.get("validation_timepoints", ())
+    )
+    dataset_payload["available_artifacts"] = tuple(
+        ArtifactKind(value) for value in dataset_payload.get("available_artifacts", ())
+    )
+    dataset_payload["available_csv_columns"] = tuple(
+        dataset_payload.get("available_csv_columns", ())
+    )
+    dataset = ImagingDatasetSpec(**dataset_payload)
+
+    metrics = []
+    for raw_metric in payload["metrics"]:
+        metric_payload = dict(raw_metric)
+        metric_payload["required_artifacts"] = tuple(
+            ArtifactKind(value)
+            for value in metric_payload.get("required_artifacts", ())
+        )
+        metric_payload["csv_columns_required"] = tuple(
+            metric_payload.get("csv_columns_required", ())
+        )
+        metric_payload["channels_required"] = tuple(
+            metric_payload.get("channels_required", ())
+        )
+        metrics.append(MetricSpec(**metric_payload))
+    return V2DataContract(dataset=dataset, metrics=tuple(metrics))
+
+
 def test_artifact_kind_has_nine_members_with_ecm_field():
     members = list(ArtifactKind)
     assert len(members) == 9
@@ -52,6 +96,28 @@ def test_artifact_kind_has_nine_members_with_ecm_field():
         "ecm_field",
     }
     assert {a.value for a in members} == expected
+
+
+def test_example_single_cell_data_contract_json_validates():
+    """The roadmap's example JSON data contract stays loadable into the
+    canonical V2 dataclasses and validates without relying on PI data."""
+
+    contract = _contract_from_json(_EXAMPLE_CONTRACT_PATH)
+    contract.validate()
+
+    assert contract.dataset.dataset_id == "v2_single_cell_col1_demo"
+    assert contract.dataset.voxel_size_um_xyz == (0.25, 0.25, 1.0)
+    assert contract.dataset.frame_interval_s == pytest.approx(60.0)
+    assert set(contract.dataset.calibration_timepoints).isdisjoint(
+        contract.dataset.validation_timepoints
+    )
+    assert ArtifactKind.CSV_TABLE in contract.dataset.available_artifacts
+
+    keys = {(m.name, m.measurement_modality) for m in contract.metrics}
+    assert ("projected_area", "top_down_segmentation") in keys
+    assert ("projected_area", "csv_top_down") in keys
+    assert len(contract.calibration_metrics) == 1
+    assert len(contract.validation_metrics) == 2
 
 
 def test_default_single_cell_contract_validates_with_full_artifacts():
