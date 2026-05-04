@@ -430,8 +430,13 @@ result dataclass)**:
    - Schema-saturating ECM `T = [[1, 1], [1, -1]]` traceless rank-2:
      score reaches `±√2` at angle `π/8`
    - `k_active = ε` small: multiplier ≈ 1.0 + k·score (Taylor)
-   - `k_active = 100` (overflow risk): `_validate_k_active` raises
-     `k_active_invalid` (`exp(100·√2)` overflows float64)
+   - `k_active = 1000` (overflow): `_validate_k_active` raises
+     `k_active_invalid` because `exp(1000·√2) = exp(1414.2)` overflows
+     float64. Threshold derivation: `exp(k·√2) > float64.max` iff
+     `k > log(float64.max) / √2 ≈ 709.78 / 1.4142 ≈ 501.892`. Use `1000`
+     to be safely above threshold. (Codex `id=1618` correction: prior
+     `k_active = 100` claim was false — `exp(100·√2) ≈ 2.62e61` is
+     finite, well below `float64.max ≈ 1.79e308`.)
 3. **Conservation**: function is pure read-only — no state mutation.
    The HB#4 v1 grandfathered result `ECMToFABiasResult` is frozen+slots
    (immutable). `multipliers_per_fa` is freshly allocated.

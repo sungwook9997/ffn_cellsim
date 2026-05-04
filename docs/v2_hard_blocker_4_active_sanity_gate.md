@@ -110,7 +110,7 @@ multipliers_per_fa[i, :] = multiplier        # all 3 rates same (Y4 Q2=a)
 - Isotropic ECM `T = a·I` (test 6): `Q = 0` → `alignment_score = 0` → `multiplier = 1.0` exact for ALL FAs (Y1 anti-pattern guard; Item 5 IC `T = 0.5·I` automatically neutral)
 - Schema-saturating ECM `T = [[1,1],[1,-1]]` traceless rank-2 (test 7): score reaches `+√2` at angle `θ = π/8`
 - `k_active = ε` small (covered by test 9 aligned-boost via small + positive value): multiplier ≈ `1 + k·score` Taylor
-- `k_active = 100` overflow (test 4): `_validate_k_active` raises `k_active_invalid` (since `exp(100·√2) ≈ 6.66e+61 < float64.max ≈ 1.79e+308`; correct overflow-bound case is `k_active ≥ ~501`; test value chosen to land in actual non-finite region)
+- `k_active = 1000` overflow (test 4): `_validate_k_active` raises `k_active_invalid`. **Threshold derivation** (Codex `id=1618` correction): `exp(k · √2) > float64.max` iff `k > log(float64.max) / √2 ≈ 709.78 / 1.4142 ≈ 501.892`. Direct computation: `exp(100·√2) ≈ 2.62e+61` is finite (well below `float64.max ≈ 1.79e+308`); `exp(502·√2)` overflows; `exp(1000·√2) = exp(1414.2)` overflows clearly. Test fixture uses `k_active = 1000.0` to be safely above the ~502 threshold. Lock §3 #2 amended in same Codex `id=1618` BLOCKER fix.
 - `k_active = 0` (test 1): raises `k_active_invalid`
 - `k_active < 0` (test 1): raises `k_active_invalid`
 - `k_active = NaN/inf` (test 2): raises `k_active_invalid`
@@ -419,12 +419,13 @@ docs/v2_hard_blocker_4_active_brief.md                  ✓ (opening brief)
 Code-line citations in this Sanity Gate doc:
 
 - `acs/v2/dynamics/ecm_to_fa_bias.py:127-141` (ECMToFABiasResult) — verified above
-- `acs/v2/dynamics/ecm_to_fa_bias.py:89-92` (FAToECMBiasFailureKind) — verified above
+- `acs/v2/dynamics/ecm_to_fa_bias.py:89-92` (FAToECMBiasFailureKind, current 2-kind literal extending to 4-kind) — verified above
 - `acs/v2/dynamics/ecm_to_fa_bias.py:244` (sample_ecm_at_fa_positions) — verified above
 - `acs/v2/dynamics/ecm_to_fa_bias.py:352` (compute_ecm_to_fa_bias_neutral) — verified above
-- `acs/v2/ecm_substrate.py:42` (orientation_tensor `|T_ij| ≤ 1` schema invariant) — cited in §2.6 deviatoric bound derivation; required for Hard Rule 10 unit chain
+- `acs/v2/ecm_substrate.py:36` (`_ORIENTATION_BOUND = 1.0` constant for `|T_ij| ≤ 1` invariant) — cited in §2.6 deviatoric bound derivation; required for Hard Rule 10 unit chain
+- `acs/v2/ecm_substrate.py:115` (validator error message enforcing `|T_ij| ≤ 1`) — companion citation for the constant
 
-All 5 line-number citations verifiable via `git ls-files` + `grep`.
+All 6 line-number citations verifiable via `git ls-files` + `grep`. Lock §6 cited `acs/v2/ecm_substrate.py:42` as the invariant location, but `:42` is just `class ECMSubstrateState:` (the dataclass body offset, not the invariant); canonical lines for the bound are `:36` (constant) + `:115` (validator). This Sanity Gate cites both. (Codex `id=1618` correction.)
 
 ### 6.4 Deferred-vs-locked wording sweep — PASS
 
