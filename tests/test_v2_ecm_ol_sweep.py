@@ -369,3 +369,138 @@ def test_explicit_fixture_scenarios_cover_4_channels():
     assert names == sorted(
         ["traction", "stiffness_rate", "density_rate", "orientation_rate"]
     )
+
+
+# ---------------------------------------------------------------------------
+# Codex review id=1253 regressions
+# ---------------------------------------------------------------------------
+
+
+def test_sum_reduction_actually_uses_sum_not_max(tmp_path):
+    """Codex id=1253 finding 1: ``reduction_choice=\"sum\"`` must produce
+    a ``selected_reduction_value`` that equals the field sum, not max.
+    Use a 4-cell uniform-traction scenario where field sum is
+    distinct from field max."""
+
+    # 1 step of uniform 0.3 traction over a 2x2 grid with dt 1.0:
+    # accumulated field = 0.3 across all 4 cells. max = 0.3, sum = 1.2.
+    tuples = [
+        SweepTuple(
+            grid_n=(2, 2),
+            spacing_um=1.0,
+            dt_s=1.0,
+            n_steps=1,
+            frame_interval=1,
+            expected_status="PASS",
+            label="sum_check",
+        )
+    ]
+    scenarios = _build_scenarios((2, 2))
+    out = str(tmp_path / "sum_run")
+    run = run_ecm_ol_sensitivity_sweep(
+        sweep_tuples=tuples,
+        channel_scenarios=scenarios,
+        reduction_choice="sum",
+        max_grid_cells_total=64,
+        output_dir=out,
+        git_commit_hash="",
+        fixture_kind="non_production_smoke",
+    )
+    traction_rec = next(
+        r
+        for r in run.records
+        if r.tuple_label == "sum_check" and r.channel == "traction"
+    )
+    # Field is uniform 0.3 across 4 cells.
+    assert traction_rec.final_field_max == pytest.approx(0.3)
+    assert traction_rec.final_field_sum == pytest.approx(1.2)
+    # selected_reduction_value MUST be sum, not max.
+    assert traction_rec.selected_reduction_value == pytest.approx(1.2)
+    assert traction_rec.selected_reduction_value != pytest.approx(0.3)
+
+
+def test_missing_channel_raises_sweep_channel_invalid(tmp_path):
+    """Codex id=1253 finding 2: a caller-supplied channel scenario list
+    that omits a required channel raises sweep_channel_invalid BEFORE
+    any output_dir is created."""
+
+    full = _build_scenarios((2, 2))
+    # Drop one channel.
+    partial = [s for s in full if s.name != "orientation_rate"]
+    tuples = [_tiny_tuple("only")]
+    out = str(tmp_path / "missing_channel_run")
+    with pytest.raises(SweepValidationError) as excinfo:
+        run_ecm_ol_sensitivity_sweep(
+            sweep_tuples=tuples,
+            channel_scenarios=partial,
+            reduction_choice="max",
+            max_grid_cells_total=64,
+            output_dir=out,
+            git_commit_hash="",
+            fixture_kind="non_production_smoke",
+        )
+    assert excinfo.value.failure_kind == "sweep_channel_invalid"
+    assert "orientation_rate" in str(excinfo.value)
+    # No partial run-root.
+    assert not os.path.isdir(out)
+
+
+def test_duplicate_channel_raises_sweep_channel_invalid(tmp_path):
+    """Codex id=1253 finding 2: a caller-supplied channel scenario list
+    with two ChannelScenarios for the same channel raises
+    sweep_channel_invalid BEFORE any output_dir is created."""
+
+    full = _build_scenarios((2, 2))
+    # Duplicate traction.
+    duplicated = list(full) + [full[0]]
+    tuples = [_tiny_tuple("only")]
+    out = str(tmp_path / "duplicate_channel_run")
+    with pytest.raises(SweepValidationError) as excinfo:
+        run_ecm_ol_sensitivity_sweep(
+            sweep_tuples=tuples,
+            channel_scenarios=duplicated,
+            reduction_choice="max",
+            max_grid_cells_total=64,
+            output_dir=out,
+            git_commit_hash="",
+            fixture_kind="non_production_smoke",
+        )
+    assert excinfo.value.failure_kind == "sweep_channel_invalid"
+    assert "duplicate" in str(excinfo.value)
+    assert not os.path.isdir(out)
+
+
+def test_per_step_diagnostic_series_recorded(tmp_path):
+    """Codex id=1253 finding 3: per-(tuple, channel) per-step
+    diagnostic series must land in metadata.json + per-channel
+    diagnostic plot."""
+
+    tuples = [_tiny_tuple("series_check", n_steps=4)]
+    scenarios = _build_scenarios((2, 2))
+    out = str(tmp_path / "series_run")
+    run_ecm_ol_sensitivity_sweep(
+        sweep_tuples=tuples,
+        channel_scenarios=scenarios,
+        reduction_choice="max",
+        max_grid_cells_total=64,
+        output_dir=out,
+        git_commit_hash="",
+        fixture_kind="non_production_smoke",
+    )
+    # Per-channel diagnostic PNG exists for each channel.
+    for ch in ("traction", "stiffness_rate", "density_rate", "orientation_rate"):
+        assert os.path.isfile(
+            os.path.join(out, "series_check", f"diagnostic_{ch}.png")
+        )
+    # metadata.json has per-step series for each channel.
+    with open(os.path.join(out, "series_check", "metadata.json")) as fh:
+        data = json.load(fh)
+    for ch in ("traction", "stiffness_rate", "density_rate", "orientation_rate"):
+        ch_data = data["channels"][ch]
+        # n_steps=4 + step 0 baseline = 5 entries.
+        assert len(ch_data["per_step_max"]) == 5
+        assert len(ch_data["per_step_min"]) == 5
+        assert len(ch_data["per_step_mean"]) == 5
+        # final_field_sum and selected_reduction_value present.
+        assert "final_field_sum" in ch_data
+        assert "selected_reduction_value" in ch_data

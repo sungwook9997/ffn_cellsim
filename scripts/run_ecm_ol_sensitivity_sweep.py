@@ -141,8 +141,13 @@ class TupleChannelRecord:
     final_field_max: float = 0.0
     final_field_min: float = 0.0
     final_field_mean: float = 0.0
+    final_field_sum: float = 0.0
+    selected_reduction_value: float = 0.0
     reduction_used: str = ""
     n_steps_completed: int = 0
+    per_step_max: list[float] = field(default_factory=list)
+    per_step_min: list[float] = field(default_factory=list)
+    per_step_mean: list[float] = field(default_factory=list)
 
 
 @dataclass
@@ -269,6 +274,22 @@ def _post_state_for_record(
     )
 
 
+def _record_per_step(rec: TupleChannelRecord, ecm: ECMSubstrateState) -> None:
+    """Record the post-step max/min/mean of the channel's field
+    on this ECM state, so the per-(tuple, channel) diagnostic plot
+    can show the trajectory."""
+
+    field = _post_state_for_record(ecm, rec.channel)
+    if field.size == 0:
+        rec.per_step_max.append(0.0)
+        rec.per_step_min.append(0.0)
+        rec.per_step_mean.append(0.0)
+        return
+    rec.per_step_max.append(float(field.max()))
+    rec.per_step_min.append(float(field.min()))
+    rec.per_step_mean.append(float(field.mean()))
+
+
 def _run_one_tuple_channel(
     t: SweepTuple,
     scenario: ChannelScenario,
@@ -284,6 +305,8 @@ def _run_one_tuple_channel(
     grid_shape = (nx, ny)
     # Per-(tuple, channel) ECM isolation: fresh state per call.
     ecm = make_default_ecm(nx=nx, ny=ny, spacing_um=t.spacing_um)
+    # Step 0 baseline (initial state) for the per-step series.
+    _record_per_step(rec, ecm)
     try:
         for i in range(1, t.n_steps + 1):
             if scenario.name == "traction":
@@ -306,6 +329,7 @@ def _run_one_tuple_channel(
                     f"unknown channel {scenario.name!r}",
                 )
             rec.n_steps_completed = i
+            _record_per_step(rec, ecm)
     except ECMOpenLoopError as exc:
         rec.status = "FAIL"
         rec.failure = {
@@ -341,6 +365,8 @@ def _run_one_tuple_channel(
     rec.final_field_max = float(field_post.max()) if field_post.size else 0.0
     rec.final_field_min = float(field_post.min()) if field_post.size else 0.0
     rec.final_field_mean = float(field_post.mean()) if field_post.size else 0.0
+    rec.final_field_sum = float(field_post.sum()) if field_post.size else 0.0
+    rec.selected_reduction_value = _reduce(field_post, reduction)
     return rec
 
 
@@ -384,13 +410,34 @@ def run_ecm_ol_sensitivity_sweep(
     for t in sweep_tuples:
         _validate_sweep_tuple(t, max_grid_cells_total)
 
-    # Validate channel scenarios.
+    # Validate channel scenarios: must be EXACTLY one ChannelScenario per
+    # known channel in _CHANNELS, no missing, no duplicates. Per Codex
+    # impl review id=1253, accepting subsets or duplicates would let a
+    # caller publish a "PASS" bundle that does not exercise all four
+    # ECM-OL preflight functions per Phase C scope.
+    seen: dict[str, int] = {}
     for scen in channel_scenarios:
         if scen.name not in _CHANNELS:
             raise SweepValidationError(
-                "sweep_n_steps_invalid",
+                "sweep_channel_invalid",
                 f"channel name {scen.name!r} not in {_CHANNELS}",
             )
+        seen[scen.name] = seen.get(scen.name, 0) + 1
+    for ch in _CHANNELS:
+        if seen.get(ch, 0) == 0:
+            raise SweepValidationError(
+                "sweep_channel_invalid",
+                f"channel scenarios missing required channel {ch!r}; "
+                f"Phase C requires exactly one ChannelScenario per "
+                f"channel in {list(_CHANNELS)}",
+            )
+    duplicates = [ch for ch, count in seen.items() if count > 1]
+    if duplicates:
+        raise SweepValidationError(
+            "sweep_channel_invalid",
+            f"channel scenarios contain duplicate channels {duplicates}; "
+            f"each channel must have exactly one ChannelScenario",
+        )
 
     os.makedirs(output_dir, exist_ok=False)
     run = SweepRun(
@@ -458,8 +505,13 @@ def run_ecm_ol_sensitivity_sweep(
                     "final_field_max": rec.final_field_max,
                     "final_field_min": rec.final_field_min,
                     "final_field_mean": rec.final_field_mean,
+                    "final_field_sum": rec.final_field_sum,
+                    "selected_reduction_value": rec.selected_reduction_value,
                     "reduction_used": rec.reduction_used,
                     "n_steps_completed": rec.n_steps_completed,
+                    "per_step_max": rec.per_step_max,
+                    "per_step_min": rec.per_step_min,
+                    "per_step_mean": rec.per_step_mean,
                 }
                 for name, rec in per_channel.items()
             },
@@ -502,8 +554,9 @@ def run_ecm_ol_sensitivity_sweep(
         with open(summary_path, "w", encoding="utf-8") as fh:
             fh.write(body)
 
-    # Cross-tuple summary plot per channel: chosen reduction value
-    # vs tuple ordering (one trace per channel).
+    # Cross-tuple summary plot per channel: selected_reduction_value
+    # (from _reduce(field, reduction)) vs tuple ordering, one trace
+    # per channel.
     if run.records:
         fig, axes = plt.subplots(
             len(_CHANNELS), 1, figsize=(7.0, 1.8 * len(_CHANNELS)), sharex=True
@@ -523,12 +576,7 @@ def run_ecm_ol_sensitivity_sweep(
                 if not matching or matching[0].status == "FAIL":
                     ys.append(np.nan)
                     continue
-                if reduction_choice == "max":
-                    ys.append(matching[0].final_field_max)
-                elif reduction_choice == "mean":
-                    ys.append(matching[0].final_field_mean)
-                else:  # sum
-                    ys.append(matching[0].final_field_max)  # placeholder
+                ys.append(matching[0].selected_reduction_value)
             ax.plot(xs, ys, marker="o")
             ax.set_ylabel(f"{channel}\n({reduction_choice})", fontsize=8)
         axes[-1].set_xticks(list(range(len(labels))))
@@ -539,6 +587,38 @@ def run_ecm_ol_sensitivity_sweep(
         plot_path = os.path.join(output_dir, "sweep_summary.png")
         fig.savefig(plot_path, dpi=120)
         plt.close(fig)
+
+    # Per-(tuple, channel) diagnostic plot: per-step max/min/mean
+    # series of the post-step field over the n_steps run, so a
+    # downstream reader can see the trajectory at each (grid, dt)
+    # point. Sanity Gate §0/§8 contract.
+    for t in sweep_tuples:
+        tuple_dir = os.path.join(output_dir, t.label)
+        for scen in channel_scenarios:
+            rec = next(
+                r
+                for r in run.records
+                if r.tuple_label == t.label and r.channel == scen.name
+            )
+            if not rec.per_step_max:
+                continue
+            fig, ax = plt.subplots(figsize=(6.0, 3.0))
+            steps = list(range(len(rec.per_step_max)))
+            ax.plot(steps, rec.per_step_max, label="max", marker="o")
+            ax.plot(steps, rec.per_step_min, label="min", marker="s")
+            ax.plot(steps, rec.per_step_mean, label="mean", marker="^")
+            ax.set_xlabel("step index")
+            ax.set_ylabel(f"{scen.name} field reduction")
+            ax.set_title(
+                f"{t.label} {scen.name} per-step (open-loop sweep baseline)"
+            )
+            ax.legend(loc="best", fontsize=8)
+            fig.tight_layout()
+            chan_plot_path = os.path.join(
+                tuple_dir, f"diagnostic_{scen.name}.png"
+            )
+            fig.savefig(chan_plot_path, dpi=120)
+            plt.close(fig)
 
     # index.json
     index_path = os.path.join(output_dir, "index.json")
