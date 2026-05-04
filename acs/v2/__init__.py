@@ -29,6 +29,10 @@ from acs.v2.dynamics.active_contour import (
     energy_cortex,
     step,
 )
+from acs.v2.dynamics.ecm_open_loop import (
+    ECMOpenLoopError,
+    accumulate_prescribed_traction,
+)
 from acs.v2.cell_cluster import CellClusterState
 from acs.v2.data_contract import (
     ArtifactKind,
@@ -68,6 +72,7 @@ __all__ = [
     "ArtifactKind",
     "CellClusterState",
     "ECMSubstrateState",
+    "ECMOpenLoopError",
     "FocalAdhesionState",
     "FrameDumpReadResult",
     "HarnessRun",
@@ -83,6 +88,7 @@ __all__ = [
     "SingleCellState",
     "StepDiagnostics",
     "V2DataContract",
+    "accumulate_prescribed_traction",
     "boundary_perimeter_um",
     "boundary_projected_area_um2",
     "compute_area_forces",

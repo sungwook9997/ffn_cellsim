@@ -7,8 +7,14 @@ from acs.v2.dynamics.active_contour import (
     energy_cortex,
     step,
 )
+from acs.v2.dynamics.ecm_open_loop import (
+    ECMOpenLoopError,
+    accumulate_prescribed_traction,
+)
 
 __all__ = [
+    "ECMOpenLoopError",
+    "accumulate_prescribed_traction",
     "compute_area_forces",
     "compute_cortex_forces",
     "energy_area",
