@@ -214,8 +214,8 @@ underlying physics (already gated under 6.3a / 6.3b locks).
 1. **Units**: every diagnostics field carries the same unit as the
    corresponding dict value previously did:
    - `n_adhesions`: count (dimensionless int)
-   - `aggregate_cell_force_nN_xy`: nN × nN
-   - `aggregate_substrate_reaction_nN_xy`: nN × nN
+   - `aggregate_cell_force_nN_xy`: 2-vector, each component in nN
+   - `aggregate_substrate_reaction_nN_xy`: 2-vector, each component in nN
    - `max_traction_magnitude_nN`: nN
    - `linked_missing`: count
    - `reciprocal_missing`: count

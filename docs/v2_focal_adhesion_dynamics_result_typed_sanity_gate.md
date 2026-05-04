@@ -103,10 +103,11 @@ diagnostics field carries the same unit as the corresponding
 dict value carried before B1 (locked §3 item 1):
 
 - `n_adhesions: int` — dimensionless count.
-- `aggregate_cell_force_nN_xy: tuple[float, float]` — `nN × nN`
-  (2-component force-per-cell sum).
+- `aggregate_cell_force_nN_xy: tuple[float, float]` — 2-vector,
+  each component in `nN` (component sum across FAs).
 - `aggregate_substrate_reaction_nN_xy: tuple[float, float]` —
-  `nN × nN` (Newton-3 partner of cell force, per 6.3a contract).
+  2-vector, each component in `nN` (Newton-3 partner of cell
+  force, per 6.3a contract).
 - `max_traction_magnitude_nN: float` — `nN` (max of L2 norm of
   per-FA cell force).
 - `linked_missing: int` — count.
