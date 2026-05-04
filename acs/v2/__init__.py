@@ -36,6 +36,10 @@ from acs.v2.dynamics.ecm_open_loop import (
     apply_prescribed_orientation_rate,
     apply_prescribed_stiffness_rate,
 )
+from acs.v2.dynamics.fa_to_ecm_scattering import (
+    FAToECMScatteringError,
+    scatter_fa_traction_to_ecm_bilinear,
+)
 from acs.v2.dynamics.focal_adhesion import (
     FocalAdhesionDynamicsError,
     FocalAdhesionDynamicsParameters,
@@ -107,6 +111,7 @@ __all__ = [
     "EcmOlStepDiagnostics",
     "FocalAdhesionDynamicsError",
     "FocalAdhesionDynamicsParameters",
+    "FAToECMScatteringError",
     "FocalAdhesionDynamicsResult",
     "FocalAdhesionState",
     "FrameDumpReadResult",
@@ -157,5 +162,6 @@ __all__ = [
     "step_protrusion_coupled_focal_adhesions",
     "render_frame_html",
     "render_frame_png",
+    "scatter_fa_traction_to_ecm_bilinear",
     "write_frame",
 ]

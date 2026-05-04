@@ -21,6 +21,10 @@ from acs.v2.dynamics.focal_adhesion import (
     compute_radial_tangential_decomposition,
     step_focal_adhesions_static,
 )
+from acs.v2.dynamics.fa_to_ecm_scattering import (
+    FAToECMScatteringError,
+    scatter_fa_traction_to_ecm_bilinear,
+)
 from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
     ProtrusionStateMultipliers,
     step_protrusion_coupled_focal_adhesions,
@@ -28,6 +32,7 @@ from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
 
 __all__ = [
     "ECMOpenLoopError",
+    "FAToECMScatteringError",
     "FocalAdhesionDynamicsError",
     "FocalAdhesionDynamicsParameters",
     "FocalAdhesionDynamicsResult",
@@ -41,6 +46,7 @@ __all__ = [
     "compute_radial_tangential_decomposition",
     "energy_area",
     "energy_cortex",
+    "scatter_fa_traction_to_ecm_bilinear",
     "step",
     "step_focal_adhesions_static",
     "step_protrusion_coupled_focal_adhesions",
