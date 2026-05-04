@@ -52,6 +52,28 @@ class FocalAdhesionState:
     bound_fraction: float
     state: FocalAdhesionStateLabel = "nascent"
     traction_force_nN_xy: tuple[float, float] = (0.0, 0.0)
+    """Per-FA cell-on-substrate traction vector in nN. The substrate-on-cell
+    reaction is the negation; Newton 3 holds per FA. Convention locked in
+    `docs/v2_focal_adhesion_dynamics_sanity_gate.md` §6.
+
+    State conventions (locked in the same gate, §5 state table):
+
+    - ``state == "unbound"``: ``bound_fraction`` is forced to 0; traction
+      is forced to (0, 0). The schema validator enforces this on
+      construction.
+    - ``state == "released"``: terminal absorbing state; the 6.3a dynamics
+      step forces traction to (0, 0) regardless of stored
+      ``bound_fraction``. Schema permits ``bound_fraction > 0`` to record
+      a "what was bound right before release" history value; downstream
+      consumers must read ``traction_force_nN_xy``, not ``bound_fraction``,
+      for the active force.
+    - ``state == "slipping"``: traction follows §5 magnitude formula but
+      ``bound_fraction`` cannot increase (decreases only under explicit
+      ``k_unbind_per_s``).
+    - ``state in {"nascent", "mature"}``: traction follows §5 formula;
+      both ``maturity`` and ``bound_fraction`` can increase under explicit
+      caller-supplied rates.
+    """
     linked_protrusion_id: Optional[str] = None
     source: FocalAdhesionSource = "simulated"
 

@@ -33,6 +33,13 @@ from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
 )
+from acs.v2.dynamics.focal_adhesion import (
+    FocalAdhesionDynamicsError,
+    FocalAdhesionDynamicsParameters,
+    FocalAdhesionDynamicsResult,
+    compute_radial_tangential_decomposition,
+    step_focal_adhesions_static,
+)
 from acs.v2.ecm_open_loop_harness import (
     EcmOlRun,
     EcmOlScenario,
@@ -83,6 +90,9 @@ __all__ = [
     "EcmOlRun",
     "EcmOlScenario",
     "EcmOlStepDiagnostics",
+    "FocalAdhesionDynamicsError",
+    "FocalAdhesionDynamicsParameters",
+    "FocalAdhesionDynamicsResult",
     "FocalAdhesionState",
     "FrameDumpReadResult",
     "HarnessRun",
@@ -104,6 +114,7 @@ __all__ = [
     "compute_area_forces",
     "compute_cortex_forces",
     "compute_finite_n_residual",
+    "compute_radial_tangential_decomposition",
     "compute_rate_max",
     "default_registry",
     "ellipse_polygon_vertices",
@@ -117,6 +128,7 @@ __all__ = [
     "regular_polygon_vertices",
     "run_active_contour_test",
     "step",
+    "step_focal_adhesions_static",
     "render_frame_html",
     "render_frame_png",
     "write_frame",
