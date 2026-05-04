@@ -757,8 +757,12 @@ precedent.
   precedent + locked §1 forbidden list paraphrase): describe
   Item 5 wording boundary in **paraphrased** form without
   inserting forbidden literal strings (`"satisfies_item_5"`,
-  etc.) which meta-test 22 must reject from module source.
-  Sister-pattern with Phase E v1 `id=1546` + `id=1549`.
+  `"Item 5 satisfied"`, etc.) which **meta-test 24** must
+  reject from module source / docstrings / test names per the
+  test 22 (failure-kind) / test 24 (wording-boundary)
+  separation locked at Codex `id=1581`. Sister-pattern with
+  Phase E v1 `id=1546` + `id=1549` paraphrased intent guard
+  resolution.
 - All 24 tests must pass at first commit; no `TODO test_X`
   placeholders.
 - `pytest tests/test_v2_closed_loop_phase_e_sweep.py` +
