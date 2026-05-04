@@ -74,7 +74,7 @@ across the 4 ECM-OL preflight functions (traction, stiffness, density,
 orientation). New script + Sanity Gate.
 
 **Wording lock**:
-- "Open-loop sweep harness and baseline sensitivity evidence"
+- "Open-loop sweep harness and open-loop sweep baseline evidence"
 - **NOT** "Item 5 satisfied"
 - Item 5 remains OPEN for closed-loop side (closed-loop grid/dt
   sensitivity once scattering + response law exist)
@@ -304,15 +304,17 @@ Each reference must be verified before parameterization (per
 ### Phase B
 - `test_stimulus_accumulator_monotone_under_positive_traction`
 - `test_stimulus_accumulator_no_change_when_traction_zero`
-- `test_stimulus_accumulator_signed_traction_can_decrease`
-- `test_stimulus_monotonicity_does_not_satisfy_response_item_1` (Hard Rule 11 wording check)
+- `test_stimulus_accumulator_rejects_negative_traction_enforcing_monotonicity`
+- `test_stimulus_monotonicity_does_not_satisfy_closed_loop_item_1` (Hard Rule 11 wording check)
 
 ### Phase C
-- `test_open_loop_sweep_harness_runs_4_channels`
+- `test_open_loop_sweep_runs_4_channels_explicit_fixture`
 - `test_open_loop_sweep_grid_spacing_variation`
 - `test_open_loop_sweep_dt_variation`
 - `test_open_loop_sweep_summary_reports_baseline_only` (Hard Rule 11
-  wording check: "baseline sensitivity, NOT closed-loop sensitivity")
+  wording check: "open-loop sweep baseline, NOT Item 5 satisfaction")
+- `test_open_loop_sweep_does_not_satisfy_closed_loop_item_5`
+- `test_open_loop_sweep_memory_cap_rejects_oversize_grid`
 
 ### Phase D (TBD per #3/#4 lock)
 - Per-function no-op tests (interface validation, identity behavior)

@@ -11,6 +11,14 @@ ECM-OL preflight series (commits `29a360f`, `2c76c0c`, `7dc1767`,
 and the 6.3b protrusion-coupled FA dynamics series (`4548ad4`,
 `6d1e12b`, `dc5043a`, `9a20fc9`, `deed45a`, `50033c3`, `2a00452`).
 
+**Supersession note (post-lock audit, 2026-05-04)**: this brief is
+the pre-lock dependency analysis. The implementation contract is now
+`docs/v2_closed_loop_ecm_gate_phased_plan_locked.md`. Where this
+brief says "Item 1 partial" or "Item 5 sensitivity sweep", read that
+as the pre-lock sketch of what the locked plan later names **Phase B
+precursor evidence** and **Phase C open-loop sweep baseline**. Do not
+grep-copy those phrases as gate-item satisfaction claims.
+
 ---
 
 ## Why this brief exists
@@ -229,25 +237,27 @@ Items provable under the current ECM-OL only:
 - Item 6 (open-loop side): existing module docstring ✓.
 
 Action: write a small `docs/v2_closed_loop_ecm_gate_phase_a.md`
-that records the existing tests/proofs as the satisfying evidence.
+that records the existing tests/proofs as open-loop-side evidence.
 Single small commit. No design blocker.
 
-### Phase B — Item 1 partial (prescribed-traction monotonicity)
+### Phase B — Item 1 precursor (prescribed-traction stimulus monotonicity)
 
-Item 1 partial proof: vary prescribed traction patterns and assert
-that the accumulator response (monotonicity of cumulative storage)
+Item 1 precursor proof: vary prescribed traction patterns and assert
+that the stimulus accumulator (monotonicity of cumulative storage)
 follows. Already covered by ECM-OL tests but should be lifted into
-a dedicated Item-1 "monotone-under-traction" regression suite.
+a dedicated "precursor, NOT Item 1 satisfaction" regression suite.
 
 Action: small test additions to `tests/test_v2_ecm_open_loop.py`
-under an `Item 1 partial` section. No design blocker.
+under an Item 1 precursor section. No design blocker.
 
-### Phase C — Item 5 sensitivity sweep
+### Phase C — open-loop sweep baseline (NOT Item 5 satisfaction)
 
 Implement a sweep harness extending `acs.v2.ecm_open_loop_harness`
 to run each preflight function across a grid sweep `(nx, ny) ×
-dt_s`. Persist artifacts under `runs/<UTC>_ecm_ol_sweep/`. New
-script, follows `scripts/run_ecm_ol_harness.py` pattern.
+dt_s`. Persist artifacts under `runs/<UTC>_ecm_ol_sensitivity/`.
+New script, follows `scripts/run_ecm_ol_harness.py` pattern. This
+is baseline evidence on open-loop preflight outputs, not the
+closed-loop Item 5 sensitivity claim.
 
 Action: medium unit, plumbing only, no constitutive-law decisions.
 
@@ -331,7 +341,7 @@ above.
 | Phase | New Sanity Gate doc(s) needed |
 |---|---|
 | A | None (existing docs cover it; just an evidence note) |
-| B | Possibly extend ECM-OL Sanity Gate's §3 with explicit "Item 1 partial" section |
+| B | Possibly extend ECM-OL Sanity Gate's §3 with explicit "Item 1 precursor, NOT satisfaction" section |
 | C | New `docs/v2_ecm_ol_sweep_sanity_gate.md` for the sweep harness |
 | D | New `docs/v2_fa_to_ecm_response_sanity_gate.md`, `docs/v2_ecm_to_fa_bias_sanity_gate.md`, `docs/v2_closed_loop_integrator_sanity_gate.md` |
 | E | Per-test gates for Items 2 + 4 + 5 closed-loop side + 6 closed-loop side |
