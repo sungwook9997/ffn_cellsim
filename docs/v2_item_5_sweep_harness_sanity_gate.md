@@ -494,10 +494,16 @@ observable summaries (NO pass/fail decision); explicit
 "sensitivity not guaranteed monotone" wording in §0 + §1
 forbidden list.
 
-Per Codex `id=1563` review focus #5 + Phase E v1 Y2 sister:
-test names enforced via meta-test 22 source/meta guard (no
-local `Item5*Error` class definition + no `failure_kind=`
-assignment in module body).
+Per Codex `id=1563` review focus #5 + `id=1581` blocker
+resolution + Phase E v1 Y2 sister: wording boundary enforced
+by **two separate meta-tests**:
+- Test 22: source/meta guard for no local `Item5*Error` class
+  definition + no `failure_kind=` assignment (failure-kind
+  discipline)
+- Test 24 (NEW per Codex `id=1581`): source/meta guard for no
+  satisfaction-claim wording (`"Item 5 satisfied"`,
+  `"satisfies_item_5"`) in module/function/return-class
+  docstrings + test names (wording-boundary discipline)
 
 ### 6.5 IEEE roundoff vs gate threshold (Y18 — central forward
 guard)
@@ -532,14 +538,24 @@ sister-gate-mirror layered against Phase E v1 / HB#5 / HB#1+#2
 - **API surface (`__init__.py` exports)**: 4 new symbols at
   both `acs/v2/__init__.py` and `acs/v2/dynamics/__init__.py`
   per Y12. Test 23 enforces; private helpers stay private.
-- **Failure-kind discipline**: NO error class introduced (Y22
-  / sister-pattern with Phase E v1 + HB#5 — no domain-specific
-  failure modes for a thin harness wrapper); `_validate_config`
-  raises plain `ValueError`. Meta-test 22 forward-guards.
+- **Failure-kind discipline** (Y22 typo in earlier draft —
+  corrected to "no Y-number"; failure-kind decision is locked
+  via §1 forbidden list + sister-pattern, not a numbered Y in
+  the locked §2 trace which only goes to Y21): NO error class
+  introduced (sister-pattern with Phase E v1 + HB#5 — no
+  domain-specific failure modes for a thin harness wrapper);
+  `_validate_config` raises plain `ValueError`. Meta-test 22
+  forward-guards (no `Item5*Error` class + no `failure_kind=`
+  assignment).
 - **Wording-boundary meta-test**: harness inherits Phase E v1
-  Y2 wording boundary (`provides_*_evidence` test names);
-  meta-test 22 enforces no satisfaction-claim wording in
-  module source (sister with Phase E v1 test 14).
+  Y2 wording boundary (`provides_*_evidence` test names).
+  **Per Codex `id=1581` blocker resolution**: a separate
+  meta-test 24 (NEW; sister-pattern with Phase E v1 test 14)
+  enforces no satisfaction-claim wording (`"Item 5 satisfied"`,
+  `"satisfies_item_5"`) in module/function/return-class
+  docstrings + test names. Test 22 stays focused on
+  failure-kind discipline; test 24 focuses on wording
+  discipline; the two are orthogonal forward guards.
 
 ### Status
 
@@ -552,7 +568,8 @@ sister-gate-mirror layered against Phase E v1 / HB#5 / HB#1+#2
   forbidden list.
 - Y17 Step 0 semantics enforced by test 21.
 - Y18 IEEE roundoff explicitly labeled + Y8/Y19 evidence-only
-  test names + meta-test 22 source guard.
+  test names + meta-test 22 (failure-kind) + meta-test 24
+  (wording-boundary) per Codex `id=1581` separation.
 - Step 6 sister-gate-mirror at all 4 layers + wording-boundary
   + IEEE-roundoff-vs-gate-threshold distinction.
 
@@ -604,7 +621,7 @@ compliant. All other constants re-imported from HB#1+#2 lock.
 
 ---
 
-## 8. Test catalog (23 tests per locked §4)
+## 8. Test catalog (24 tests; 23 per locked §4 + 1 new per Codex `id=1581` blocker)
 
 Owned by `tests/test_v2_closed_loop_phase_e_sweep.py` (not yet
 committed). Each test maps to a locked invariant in
@@ -665,12 +682,13 @@ committed). Each test maps to a locked invariant in
     `max_convex_weight[:, 0] == 0` exact;
     `max_orientation_delta[:, 0] == 0` exact)
 
-### Composition guard + exports (2)
+### Composition guard + exports + wording boundary (3)
 
 22. `test_item_5_sweep_no_local_failure_kinds_or_phase_e_error_redefinition`
     (sister-pattern with Phase E v1 test 3 source/meta guard
     — assert no `Item5*Error` class definition + no
-    `failure_kind =` assignment in module body)
+    `failure_kind =` assignment in module body) — failure-kind
+    discipline ONLY; wording discipline owned by test 24.
 23. `test_item_5_sweep_exports_through_both_init` —
     `PhaseEV1Item5SweepConfig`, `PhaseEV1Item5SweepMetadata`,
     `PhaseEV1Item5SweepResult`,
@@ -678,6 +696,18 @@ committed). Each test maps to a locked invariant in
     `acs.v2.dynamics` AND `acs.v2`; private `_default_*`,
     `_build_*`, `_validate_*`, `_detect_*`, `_compute_*`,
     `_record_*` helpers NOT exported.
+24. **`test_item_5_sweep_module_doc_does_not_overclaim_item_5_satisfaction`**
+    (NEW per Codex `id=1581` blocker; sister-pattern with
+    Phase E v1 test 14 wording-boundary forward guard) —
+    module docstring + function docstring + return-class +
+    config-class + metadata-class docstrings do NOT contain
+    `"Item 5 satisfied"`, `"satisfies_item_5"`, or
+    `"satisfies_*_item_5"`. AST walk on module + string-search
+    over `inspect.getsource(...)` + iteration over test
+    function names in `tests/test_v2_closed_loop_phase_e_sweep.py`
+    asserting none start with `test_*_satisfies_item_5_*` or
+    contain `satisfies_item_5`. Failure-kind discipline owned
+    by test 22; wording discipline owned by this test.
 
 ---
 
@@ -686,7 +716,7 @@ committed). Each test maps to a locked invariant in
 | Item | Status | Notes |
 |---|---|---|
 | §1 Dimensional | **PASS** | No new unit chain; sub-call chains preserved; 0.5*I IC + 1e-12 IEEE roundoff Magic-Number Block compliant |
-| §2 Boundary | **PASS** | 8 boundary classes locked; 14 of 23 tests covering validation + Step 0 + zero-bound case |
+| §2 Boundary | **PASS** | 8 boundary classes locked; 14 of 24 tests covering validation + Step 0 + zero-bound case |
 | §3 Conservation | **PASS** | Harness conserves nothing of its own; 5 sub-call invariants inherited; trajectory shape exactly per config; metadata reproducibility (Y13 + Y14) |
 | §4 Numerical | **PASS** | Float64 + int64; 1e-12 IEEE roundoff explicitly labeled NOT gate tunable (Y18 forward guard); zero new harness tolerances |
 | §5 Sign | **PASS** | All 7 trajectory + aggregate fields non-negative by construction |
@@ -729,7 +759,7 @@ precedent.
   inserting forbidden literal strings (`"satisfies_item_5"`,
   etc.) which meta-test 22 must reject from module source.
   Sister-pattern with Phase E v1 `id=1546` + `id=1549`.
-- All 23 tests must pass at first commit; no `TODO test_X`
+- All 24 tests must pass at first commit; no `TODO test_X`
   placeholders.
 - `pytest tests/test_v2_closed_loop_phase_e_sweep.py` +
   combined sister-gate regression (HB#3 + HB#4 + Phase D +
