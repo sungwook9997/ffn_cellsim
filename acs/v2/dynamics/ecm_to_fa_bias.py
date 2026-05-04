@@ -11,9 +11,12 @@ neutral function that returns all-1.0 per-FA per-rate multipliers
 The module deliberately does **not**:
 
 - mutate the input ECM or FA states (pure functions);
-- compute non-1.0 multipliers (Phase E future, separate function
-  ``compute_ecm_to_fa_bias_active`` + separate Sanity Gate +
-  separate lock);
+- compute non-1.0 multipliers via :func:`compute_ecm_to_fa_bias_neutral`
+  (non-1.0 multipliers are available **only** through the explicit
+  :func:`compute_ecm_to_fa_bias_active` entry point — locked at
+  ``docs/v2_hard_blocker_4_active_locked.md``, Sanity Gated at
+  ``docs/v2_hard_blocker_4_active_sanity_gate.md``; function-naming
+  separation preserves the silent-activation guard);
 - mutate ``traction_scale_nN`` (locked phased plan §3
   effective-stiffness guard);
 - spawn or remove FAs (FA nucleation deferred — locked phased plan
@@ -426,6 +429,12 @@ def _validate_k_active(k_active: float) -> None:
         raise FAToECMBiasError(
             "k_active_invalid",
             f"k_active must be float (not bool — Python bool subset int trap), "
+            f"got {type(k_active).__name__}",
+        )
+    if not isinstance(k_active, (int, float, np.floating, np.integer)):
+        raise FAToECMBiasError(
+            "k_active_invalid",
+            f"k_active must be a numeric scalar (int / float / numpy scalar), "
             f"got {type(k_active).__name__}",
         )
     if not (np.isfinite(k_active) and k_active > 0.0):

@@ -130,12 +130,22 @@ def test_compute_ecm_to_fa_bias_active_k_active_zero_or_negative_raises():
 
 
 def test_compute_ecm_to_fa_bias_active_k_active_nonfinite_raises():
+    """Lock §4 #2 specified nonfinite cases (NaN/+inf/-inf); per Codex
+    id=1625 BLOCKER fold-in directive (no test catalog increase),
+    nonnumeric cases (str / None / list) are also folded into this
+    bucket — all raise FAToECMBiasError(failure_kind="k_active_invalid")
+    rather than leaking raw Python/NumPy TypeErrors."""
     ecm = _ecm_isotropic_half()
     fa = _fa()
     for bad in (float("nan"), float("inf"), -float("inf")):
         with pytest.raises(FAToECMBiasError) as excinfo:
             compute_ecm_to_fa_bias_active((fa,), ecm, k_active=bad)
         assert excinfo.value.failure_kind == "k_active_invalid"
+    for bad_nonnumeric in ("1.0", None, [], (1.0,), {"x": 1.0}):
+        with pytest.raises(FAToECMBiasError) as excinfo:
+            compute_ecm_to_fa_bias_active((fa,), ecm, k_active=bad_nonnumeric)
+        assert excinfo.value.failure_kind == "k_active_invalid"
+        assert "numeric" in str(excinfo.value).lower() or "bool" in str(excinfo.value).lower()
 
 
 def test_compute_ecm_to_fa_bias_active_k_active_bool_raises():
