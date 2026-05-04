@@ -1,50 +1,72 @@
-"""Open-loop ECM preflight harness: drive ECM-OL-1 over scenarios + persist artifacts.
+"""Open-loop ECM preflight harness: drive the four open-loop preflight
+paths over scenarios + persist artifacts.
 
-Composes the already-tested
-:func:`acs.v2.dynamics.ecm_open_loop.accumulate_prescribed_traction`
-into a multi-step / multi-scenario sanity-test driver. The scenarios
-each define a *prescribed* traction-density sequence (no closed-loop
-feedback) and the harness records HDF5 frame dumps, per-step
-diagnostics, a 4-panel diagnostic plot, a status table in
-``summary.html``, and a JSON metadata payload that mirrors the same
-status table — same artifact contract as the P1 alpha gate harness.
+Composes the already-tested open-loop preflight functions in
+:mod:`acs.v2.dynamics.ecm_open_loop`:
+
+- :func:`accumulate_prescribed_traction`
+- :func:`apply_prescribed_stiffness_rate`
+- :func:`apply_prescribed_density_rate`
+- :func:`apply_prescribed_orientation_rate`
+
+into a multi-step / multi-scenario sanity-test driver. A scenario
+defines, per channel, an optional caller-supplied factory that
+returns the *prescribed* field at a given integer step (no closed-loop
+feedback). Per step the harness applies the active channels in a
+fixed order ``traction → stiffness_rate → density_rate →
+orientation_rate``, records HDF5 frame dumps, per-step diagnostics,
+a multi-row diagnostic plot, a status table in ``summary.html``, and
+a JSON metadata payload that mirrors the same status table — same
+artifact contract as the P1 alpha gate harness.
 
 This module is plumbing only — no new physics, no new tunable
-constants. Caller-supplied prescribed traction patterns are *test
-inputs*, not model defaults; the harness records them under
-``scenario.name`` so a downstream comparison can re-run with a
-different prescribed pattern without changing this file.
+constants, no new biological default rates. Caller-supplied
+prescribed factories are *test inputs*, not model defaults; the
+harness records which channels were active under
+``metadata['active_channels']`` so a downstream comparison can
+re-run with a different prescribed pattern without changing this
+file. Sequential application is exactly four library calls per
+step; there is no inter-channel coupling beyond the order in which
+they execute.
 
 Sanity Gate scope (ecm_open_loop_harness):
 
-- §1 dimensional: every accumulation step uses
-  :func:`accumulate_prescribed_traction` whose Rule 10 unit chain
-  (``[nN/μm²] · [s] = [nN·s/μm²]``) was already verified in
-  ``acs.v2.dynamics.ecm_open_loop``. The harness only records
-  per-step scalars (max / mean / nonzero-fraction of the cumulative
-  field) — it introduces no new unit reduction.
-- §2 boundary cases: traction sequence factory is required; ECM
-  output_dir is required; ``n_steps`` is non-negative integer;
-  ``frame_interval`` is positive integer. Bool/float rejected for
-  both knobs.
+- §1 dimensional: every channel application uses an
+  already-verified open-loop preflight whose Rule 10 unit chain was
+  established in ``acs.v2.dynamics.ecm_open_loop`` (traction
+  ``[nN/μm²]·[s]=[nN·s/μm²]``; stiffness ``[kPa/s]·[s]=[kPa]``;
+  density ``[1/s]·[s]=[dimensionless]``; orientation
+  ``[1/s]·[s]=[dimensionless]``). The harness only records per-step
+  scalars (max / min / mean of the relevant field) — it introduces
+  no new unit reduction.
+- §2 boundary cases: at least one channel factory is required (a
+  scenario with no factory raises ``ValueError`` at construction);
+  ECM ``output_dir`` is required; ``n_steps`` is non-negative
+  integer; ``frame_interval`` is positive integer. Bool/float are
+  rejected for both knobs.
 - §3 conservation/provenance: the harness threads a single ECM
-  state through the accumulator without ever mutating an earlier
-  step's state. Each frame_dump persists a ``CellClusterState``
-  whose ``ECMSubstrateState`` field is the canonical evolved state,
-  so a downstream ``read_frame`` round-trip materialises the same
-  ECM that drove the next step.
-- §4 numerical sanity: float64 throughout via
-  :func:`accumulate_prescribed_traction`.
+  state through the four channel calls per step without ever
+  mutating an earlier step's state. Each ``frame_dump`` persists a
+  ``CellClusterState`` whose ``ECMSubstrateState`` field is the
+  canonical evolved state, so a downstream ``read_frame``
+  round-trip materialises the same ECM that drove the next step.
+- §4 numerical sanity: float64 throughout via the underlying
+  preflight functions.
 - §5 sign/sense: prescribed traction is non-negative by the
-  open-loop preflight contract; the harness does not introduce a
-  sign convention.
+  open-loop preflight contract; stiffness / density rates are
+  signed and may push fields into invalid bounds — the harness
+  records the resulting ``ECMOpenLoopError.failure_kind`` rather
+  than clamping. Orientation rates are signed and must be
+  symmetric; the schema bound check is component-wise.
 - §6 measurement-protocol consistency: per Hard Rule 11, the
-  harness's measurement modality is the per-step cumulative
-  traction-density grid persisted by ``frame_dump`` and re-rendered
-  by ``stub3d``; no new measurement is invented.
+  harness's measurement modality is the per-step post-state ECM
+  field grids persisted by ``frame_dump`` and re-rendered by
+  ``stub3d``; no new measurement is invented. The diagnostic plot
+  panels read the same per-step scalars that ``metadata.json``
+  reports.
 
 Magic-Number Block: this module declares no tunable numeric. All
-scenario parameters (traction amplitudes, n_steps, dt_s,
+scenario parameters (traction amplitudes, rates, n_steps, dt_s,
 frame_interval) are caller-supplied test inputs.
 """
 
@@ -67,6 +89,9 @@ from acs.v2.cell_cluster import CellClusterState  # noqa: E402
 from acs.v2.dynamics.ecm_open_loop import (  # noqa: E402
     ECMOpenLoopError,
     accumulate_prescribed_traction,
+    apply_prescribed_density_rate,
+    apply_prescribed_orientation_rate,
+    apply_prescribed_stiffness_rate,
 )
 from acs.v2.ecm_substrate import ECMSubstrateState  # noqa: E402
 from acs.v2.measurement_boundary import MeasurementBoundary  # noqa: E402
@@ -85,23 +110,80 @@ class EcmOlStepDiagnostics:
     nonzero_fraction: float
     traction_max_nN_per_um2: float
     traction_mean_nN_per_um2: float
+    stiffness_kpa_max: float
+    stiffness_kpa_min: float
+    ligand_density_max: float
+    ligand_density_min: float
+    fiber_density_max: float
+    fiber_density_min: float
+    orientation_tensor_abs_max: float
 
 
 @dataclass
 class EcmOlScenario:
-    """One prescribed-traction sequence for the ECM-OL preflight.
+    """One prescribed open-loop scenario for the ECM-OL preflight.
 
-    `traction_factory(step_index)` returns a non-negative
-    `(nx, ny)` float64 array in `[nN/μm²]` for the given integer
-    step index (1-based; step 0 is the initial state with no
-    accumulation yet).
+    At least one of the channel factories must be supplied. Each
+    factory takes a 1-based integer step index and returns the
+    caller-supplied prescribed field for that step in the units
+    contracted by the underlying preflight function:
+
+    - ``traction_factory(i) -> (nx, ny) float64`` ``[nN/μm²]``,
+      non-negative.
+    - ``stiffness_rate_factory(i) -> (nx, ny) float64`` ``[kPa/s]``,
+      signed.
+    - ``ligand_density_rate_factory(i) -> (nx, ny) float64``
+      ``[1/s]``, signed.
+    - ``fiber_density_rate_factory(i) -> (nx, ny) float64``
+      ``[1/s]``, signed.
+    - ``orientation_rate_factory(i) -> (nx, ny, 2, 2) float64``
+      ``[1/s]``, symmetric component-wise.
+
+    Step 0 records only the initial state; channel factories are
+    called for steps ``1..n_steps``.
     """
 
     name: str
     initial_ecm: ECMSubstrateState
-    traction_factory: Callable[[int], np.ndarray]
     n_steps: int
     dt_s: float
+    traction_factory: Optional[Callable[[int], np.ndarray]] = None
+    stiffness_rate_factory: Optional[Callable[[int], np.ndarray]] = None
+    ligand_density_rate_factory: Optional[Callable[[int], np.ndarray]] = None
+    fiber_density_rate_factory: Optional[Callable[[int], np.ndarray]] = None
+    orientation_rate_factory: Optional[Callable[[int], np.ndarray]] = None
+
+    def __post_init__(self) -> None:
+        if all(
+            f is None
+            for f in (
+                self.traction_factory,
+                self.stiffness_rate_factory,
+                self.ligand_density_rate_factory,
+                self.fiber_density_rate_factory,
+                self.orientation_rate_factory,
+            )
+        ):
+            raise ValueError(
+                "EcmOlScenario requires at least one channel factory "
+                "(traction_factory, stiffness_rate_factory, "
+                "ligand_density_rate_factory, fiber_density_rate_factory, "
+                "or orientation_rate_factory)"
+            )
+
+    def active_channels(self) -> list[str]:
+        active: list[str] = []
+        if self.traction_factory is not None:
+            active.append("traction")
+        if self.stiffness_rate_factory is not None:
+            active.append("stiffness_rate")
+        if self.ligand_density_rate_factory is not None:
+            active.append("ligand_density_rate")
+        if self.fiber_density_rate_factory is not None:
+            active.append("fiber_density_rate")
+        if self.orientation_rate_factory is not None:
+            active.append("orientation_rate")
+        return active
 
 
 @dataclass
@@ -123,6 +205,7 @@ class EcmOlRun:
     summary_path: Optional[str] = None
     metadata_path: Optional[str] = None
     failure_report_path: Optional[str] = None
+    active_channels: list[str] = field(default_factory=list)
 
 
 def _placeholder_cell_state(ecm: ECMSubstrateState, time_s: float) -> SingleCellState:
@@ -159,10 +242,22 @@ def _placeholder_cell_state(ecm: ECMSubstrateState, time_s: float) -> SingleCell
 
 
 def _record_diagnostics(
-    ecm: ECMSubstrateState, traction: np.ndarray, step_index: int, dt_s: float
+    ecm: ECMSubstrateState,
+    traction: Optional[np.ndarray],
+    step_index: int,
+    dt_s: float,
 ) -> EcmOlStepDiagnostics:
     accumulated = np.asarray(ecm.accumulated_traction_nNs_per_um2, dtype=np.float64)
     nonzero = float((accumulated > 0.0).mean()) if accumulated.size else 0.0
+    stiffness = np.asarray(ecm.stiffness_kpa, dtype=np.float64)
+    ligand = np.asarray(ecm.ligand_density, dtype=np.float64)
+    fiber = np.asarray(ecm.fiber_density, dtype=np.float64)
+    orientation = np.asarray(ecm.orientation_tensor, dtype=np.float64)
+    traction_arr = (
+        np.asarray(traction, dtype=np.float64)
+        if traction is not None
+        else np.zeros(ecm.grid_shape, dtype=np.float64)
+    )
     return EcmOlStepDiagnostics(
         step_index=step_index,
         time_s=float(step_index) * float(dt_s),
@@ -170,8 +265,17 @@ def _record_diagnostics(
         accumulated_mean_nNs_per_um2=float(accumulated.mean()) if accumulated.size else 0.0,
         accumulated_sum_nNs_per_um2=float(accumulated.sum()),
         nonzero_fraction=nonzero,
-        traction_max_nN_per_um2=float(traction.max()) if traction.size else 0.0,
-        traction_mean_nN_per_um2=float(traction.mean()) if traction.size else 0.0,
+        traction_max_nN_per_um2=float(traction_arr.max()) if traction_arr.size else 0.0,
+        traction_mean_nN_per_um2=float(traction_arr.mean()) if traction_arr.size else 0.0,
+        stiffness_kpa_max=float(stiffness.max()) if stiffness.size else 0.0,
+        stiffness_kpa_min=float(stiffness.min()) if stiffness.size else 0.0,
+        ligand_density_max=float(ligand.max()) if ligand.size else 0.0,
+        ligand_density_min=float(ligand.min()) if ligand.size else 0.0,
+        fiber_density_max=float(fiber.max()) if fiber.size else 0.0,
+        fiber_density_min=float(fiber.min()) if fiber.size else 0.0,
+        orientation_tensor_abs_max=(
+            float(np.abs(orientation).max()) if orientation.size else 0.0
+        ),
     )
 
 
@@ -195,20 +299,21 @@ def _make_diagnostic_plot(run: EcmOlRun) -> Optional[str]:
     if not run.history:
         return None
     steps = np.array([d.step_index for d in run.history])
-    accum_max = np.array([d.accumulated_max_nNs_per_um2 for d in run.history])
-    accum_mean = np.array([d.accumulated_mean_nNs_per_um2 for d in run.history])
-    accum_sum = np.array([d.accumulated_sum_nNs_per_um2 for d in run.history])
-    nonzero = np.array([d.nonzero_fraction for d in run.history])
-    fig, axes = plt.subplots(4, 1, figsize=(6.0, 8.0), sharex=True)
-    axes[0].plot(steps, accum_max)
-    axes[0].set_ylabel("max accum (nN·s/μm²)")
-    axes[1].plot(steps, accum_mean)
-    axes[1].set_ylabel("mean accum")
-    axes[2].plot(steps, accum_sum)
-    axes[2].set_ylabel("sum accum")
-    axes[3].plot(steps, nonzero)
-    axes[3].set_ylabel("nonzero fraction")
-    axes[3].set_xlabel("step index")
+    rows = [
+        ("traction max (nN/μm²)", [d.traction_max_nN_per_um2 for d in run.history]),
+        ("accum max (nN·s/μm²)", [d.accumulated_max_nNs_per_um2 for d in run.history]),
+        ("stiffness max (kPa)", [d.stiffness_kpa_max for d in run.history]),
+        ("ligand max", [d.ligand_density_max for d in run.history]),
+        ("fiber max", [d.fiber_density_max for d in run.history]),
+        ("orient |max|", [d.orientation_tensor_abs_max for d in run.history]),
+    ]
+    fig, axes = plt.subplots(len(rows), 1, figsize=(6.0, 1.6 * len(rows)), sharex=True)
+    if len(rows) == 1:
+        axes = [axes]
+    for ax, (label, series) in zip(axes, rows):
+        ax.plot(steps, np.asarray(series, dtype=np.float64))
+        ax.set_ylabel(label)
+    axes[-1].set_xlabel("step index")
     fig.suptitle(f"{run.scenario_name} ECM-OL diagnostics")
     fig.tight_layout()
     plot_path = os.path.join(run.output_dir, f"diagnostic_{run.scenario_name}.png")
@@ -221,16 +326,31 @@ def _build_status_payload(
     run: EcmOlRun, status: str, git_commit_hash: str
 ) -> dict:
     final_state = run.final_ecm
-    final_max = (
-        float(np.asarray(final_state.accumulated_traction_nNs_per_um2).max())
-        if final_state is not None
-        else 0.0
-    )
-    final_mean = (
-        float(np.asarray(final_state.accumulated_traction_nNs_per_um2).mean())
-        if final_state is not None
-        else 0.0
-    )
+
+    def _max(field_name: str) -> float:
+        if final_state is None:
+            return 0.0
+        arr = np.asarray(getattr(final_state, field_name))
+        return float(arr.max()) if arr.size else 0.0
+
+    def _min(field_name: str) -> float:
+        if final_state is None:
+            return 0.0
+        arr = np.asarray(getattr(final_state, field_name))
+        return float(arr.min()) if arr.size else 0.0
+
+    def _mean(field_name: str) -> float:
+        if final_state is None:
+            return 0.0
+        arr = np.asarray(getattr(final_state, field_name))
+        return float(arr.mean()) if arr.size else 0.0
+
+    def _abs_max(field_name: str) -> float:
+        if final_state is None:
+            return 0.0
+        arr = np.asarray(getattr(final_state, field_name))
+        return float(np.abs(arr).max()) if arr.size else 0.0
+
     return {
         "scenario_name": run.scenario_name,
         "status": status,
@@ -240,8 +360,16 @@ def _build_status_payload(
         "dt_s": run.dt_s,
         "wall_clock_s": run.wall_clock_s,
         "git_commit_hash": git_commit_hash or "unrecorded",
-        "final_accumulated_max_nNs_per_um2": final_max,
-        "final_accumulated_mean_nNs_per_um2": final_mean,
+        "active_channels": list(run.active_channels),
+        "final_accumulated_max_nNs_per_um2": _max("accumulated_traction_nNs_per_um2"),
+        "final_accumulated_mean_nNs_per_um2": _mean("accumulated_traction_nNs_per_um2"),
+        "final_stiffness_kpa_max": _max("stiffness_kpa"),
+        "final_stiffness_kpa_min": _min("stiffness_kpa"),
+        "final_ligand_density_max": _max("ligand_density"),
+        "final_ligand_density_min": _min("ligand_density"),
+        "final_fiber_density_max": _max("fiber_density"),
+        "final_fiber_density_min": _min("fiber_density"),
+        "final_orientation_tensor_abs_max": _abs_max("orientation_tensor"),
         "failure": run.failure,
     }
 
@@ -260,7 +388,11 @@ def _make_summary_html(run: EcmOlRun, *, payload: dict) -> str:
         f'<td>{d.accumulated_mean_nNs_per_um2:.4e}</td>'
         f'<td>{d.accumulated_sum_nNs_per_um2:.4e}</td>'
         f'<td>{d.nonzero_fraction:.4e}</td>'
-        f'<td>{d.traction_max_nN_per_um2:.4e}</td></tr>'
+        f'<td>{d.traction_max_nN_per_um2:.4e}</td>'
+        f'<td>{d.stiffness_kpa_max:.4e}</td>'
+        f'<td>{d.ligand_density_max:.4e}</td>'
+        f'<td>{d.fiber_density_max:.4e}</td>'
+        f'<td>{d.orientation_tensor_abs_max:.4e}</td></tr>'
         for d in run.history
     )
     thumbs = "".join(
@@ -289,8 +421,16 @@ def _make_summary_html(run: EcmOlRun, *, payload: dict) -> str:
         "dt_s",
         "wall_clock_s",
         "git_commit_hash",
+        "active_channels",
         "final_accumulated_max_nNs_per_um2",
         "final_accumulated_mean_nNs_per_um2",
+        "final_stiffness_kpa_max",
+        "final_stiffness_kpa_min",
+        "final_ligand_density_max",
+        "final_ligand_density_min",
+        "final_fiber_density_max",
+        "final_fiber_density_min",
+        "final_orientation_tensor_abs_max",
     ):
         status_table_rows.append(
             f"<tr><th>{key}</th><td>{payload.get(key)}</td></tr>"
@@ -312,7 +452,8 @@ def _make_summary_html(run: EcmOlRun, *, payload: dict) -> str:
         f"<h2>Per-step metrics</h2>"
         f"<table><thead><tr><th>step</th><th>time_s</th><th>max accum</th>"
         f"<th>mean accum</th><th>sum accum</th><th>nonzero frac</th>"
-        f"<th>traction max</th></tr></thead>"
+        f"<th>traction max</th><th>stiffness max</th><th>ligand max</th>"
+        f"<th>fiber max</th><th>orient |max|</th></tr></thead>"
         f"<tbody>{rows}</tbody></table></body></html>"
     )
     summary_path = os.path.join(run.output_dir, "summary.html")
@@ -326,6 +467,7 @@ def _write_failure_report(run: EcmOlRun) -> str:
     payload = {
         "scenario_name": run.scenario_name,
         "final_step_index": run.final_step_index,
+        "active_channels": list(run.active_channels),
         "failure": run.failure,
         "last_metrics": last_state.__dict__ if last_state is not None else None,
         "frame_paths": [os.path.basename(p) for p in run.frame_paths],
@@ -360,6 +502,51 @@ def _require_positive_int(value, name: str) -> int:
     return value
 
 
+def _apply_step_channels(
+    ecm: ECMSubstrateState,
+    scenario: EcmOlScenario,
+    step_index: int,
+) -> tuple[ECMSubstrateState, Optional[np.ndarray]]:
+    """Apply the four open-loop preflight channels for one step in
+    fixed order: traction → stiffness → density → orientation. Each
+    channel is skipped if its factory is ``None``. Returns the
+    evolved ``ECMSubstrateState`` and the prescribed traction array
+    (or ``None``) for diagnostic recording."""
+
+    traction: Optional[np.ndarray] = None
+    if scenario.traction_factory is not None:
+        traction = scenario.traction_factory(step_index)
+        ecm = accumulate_prescribed_traction(ecm, traction, dt_s=scenario.dt_s)
+    if scenario.stiffness_rate_factory is not None:
+        stiffness_rate = scenario.stiffness_rate_factory(step_index)
+        ecm = apply_prescribed_stiffness_rate(
+            ecm, stiffness_rate, dt_s=scenario.dt_s
+        )
+    if (
+        scenario.ligand_density_rate_factory is not None
+        or scenario.fiber_density_rate_factory is not None
+    ):
+        ligand_rate = (
+            scenario.ligand_density_rate_factory(step_index)
+            if scenario.ligand_density_rate_factory is not None
+            else np.zeros(ecm.grid_shape, dtype=np.float64)
+        )
+        fiber_rate = (
+            scenario.fiber_density_rate_factory(step_index)
+            if scenario.fiber_density_rate_factory is not None
+            else np.zeros(ecm.grid_shape, dtype=np.float64)
+        )
+        ecm = apply_prescribed_density_rate(
+            ecm, ligand_rate, fiber_rate, dt_s=scenario.dt_s
+        )
+    if scenario.orientation_rate_factory is not None:
+        orientation_rate = scenario.orientation_rate_factory(step_index)
+        ecm = apply_prescribed_orientation_rate(
+            ecm, orientation_rate, dt_s=scenario.dt_s
+        )
+    return ecm, traction
+
+
 def run_ecm_ol_scenario(
     scenario: EcmOlScenario,
     output_dir: str,
@@ -368,10 +555,14 @@ def run_ecm_ol_scenario(
     git_commit_hash: str = "",
 ) -> EcmOlRun:
     """Run one ECM-OL scenario and produce frame/PNG/HTML/summary/metadata
-    artifacts. On failure (e.g. a traction factory returning a malformed
-    array, or accumulate raising), the harness records the failure,
-    truncates artifact emission, and writes ``failure_report.md`` —
-    same pattern as :mod:`acs.v2.active_contour_harness`.
+    artifacts. Per step the harness applies whichever channels the
+    scenario provides, in the fixed order
+    ``traction → stiffness_rate → density_rate → orientation_rate``.
+    On failure (e.g. a factory returning a malformed array, or any
+    underlying preflight raising ``ECMOpenLoopError``), the harness
+    records the failure with ``failure_kind`` and writes
+    ``failure_report.md`` — same pattern as
+    :mod:`acs.v2.active_contour_harness`.
     """
 
     _require_non_negative_int(scenario.n_steps, "scenario.n_steps")
@@ -385,11 +576,11 @@ def run_ecm_ol_scenario(
         n_steps=scenario.n_steps,
         dt_s=float(scenario.dt_s),
         frame_interval=frame_interval,
+        active_channels=scenario.active_channels(),
     )
     wall_clock_start = time.perf_counter()
     ecm = scenario.initial_ecm
-    initial_traction = np.zeros(ecm.grid_shape, dtype=np.float64)
-    run.history.append(_record_diagnostics(ecm, initial_traction, 0, scenario.dt_s))
+    run.history.append(_record_diagnostics(ecm, None, 0, scenario.dt_s))
     try:
         _write_frame_artifacts(ecm, run, step_index=0, time_s=0.0)
     except Exception as exc:  # pragma: no cover
@@ -405,8 +596,7 @@ def run_ecm_ol_scenario(
 
     for i in range(1, scenario.n_steps + 1):
         try:
-            traction = scenario.traction_factory(i)
-            ecm = accumulate_prescribed_traction(ecm, traction, dt_s=scenario.dt_s)
+            ecm, traction = _apply_step_channels(ecm, scenario, i)
         except ECMOpenLoopError as exc:
             run.failure = {
                 "kind": "ecm_open_loop_violation",
