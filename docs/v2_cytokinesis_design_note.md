@@ -54,10 +54,10 @@ introduce; the note does NOT prescribe how that change is computed.
 |---|---|---|
 | `acs/v2/single_cell.py::SingleCellState` | `cell_id` | divide-event introduces a *child* `cell_id`; the *parent* `cell_id` either retires or is reassigned to one of the daughters. Relationship recorded out-of-schema (event log) — see §3 below. |
 | `acs/v2/single_cell.py::SingleCellState` | `measurement_boundary` | parent boundary partitions into two daughter `MeasurementBoundary` polygons via a cleavage curve; cleavage curve geometry deferred. |
-| `acs/v2/single_cell.py::SingleCellState` | `cell_state` | divide event transitions parent through a brief `dividing` literal (NOT YET in the `CellStateLabel` enum — see §4 schema-only TBD). |
+| `acs/v2/single_cell.py::SingleCellState` | `cell_state` | divide event transitions parent through a brief `dividing` literal (NOT YET in the `CellState` literal `Literal["alive", "dead"]` — see §4 schema-only TBD for adding a `dividing` value). |
 | `acs/v2/focal_adhesion.py::FocalAdhesionState` | `cell_id` | each FA's `cell_id` reassigned to whichever daughter the FA's `position_um_xy` falls within. FAs straddling the cleavage curve: deferred (lifetime-end vs reassign-to-nearest is a Phase 1.5 decision). |
 | `acs/v2/focal_adhesion.py::FocalAdhesionState` | `linked_protrusion_id` | preserved verbatim if the linked protrusion is still active and on the same side; otherwise transitively follow the protrusion's reassignment. |
-| `acs/v2/protrusion.py::ProtrusionEvent` | `cell_id` | each protrusion's `cell_id` reassigned by the same partition rule; protrusions straddling the cleavage curve are *ended* by Phase 1.5 default (cleavage destroys local cytoskeletal continuity). |
+| `acs/v2/protrusion.py::ProtrusionEvent` | `cell_id` | each protrusion's `cell_id` reassigned by the same partition rule; protrusions straddling the cleavage curve: termination policy deferred (one *candidate* policy is to end them on the basis that cleavage destroys local cytoskeletal continuity, but this is NOT a Phase 1 / Phase 1.5 default — see §3.3). |
 | `acs/v2/protrusion.py::ProtrusionEvent` | `associated_adhesion_ids` | follows FA reassignment transitively. |
 | `acs/v2/ecm_substrate.py::ECMSubstrateState` | all fields | unchanged by cytokinesis — the ECM is the substrate, not the cell. The cumulative `accumulated_traction_nNs_per_um2` at the cleavage site is *preserved*; if the cleavage produces an immediate displacement of FA traction sources, that is deferred to whatever Phase D scaffolding lands. |
 | `acs/v2/cell_cluster.py::CellClusterState` | `cells` mapping | parent `cell_id` removed, two daughter `cell_id`s inserted; total `cells` count increases by 1. |
@@ -68,28 +68,53 @@ policy) is Phase 1.5 scope.
 
 ---
 
-## 2. Event-log representation (out-of-schema)
+## 2. Event-log representation: lineage breadcrumbs vs full event log
 
-A cytokinesis event is recorded out-of-schema — neither
-`SingleCellState` nor `CellClusterState` has a built-in division
-history field in Phase 1. A Phase 1.5 commit that wants to
-preserve the parent→daughters lineage can either:
+Per Codex review id=1282 verification, **minimal lineage
+breadcrumbs already exist in the v2 schema**:
 
-- (a) extend `SingleCellState` with optional `parent_cell_id:
-  Optional[str]` and `division_time_s: Optional[float]` fields
-  (schema-additive, validate per existing
-  `validate()` patterns), or
-- (b) write the lineage to an external event-log artifact (e.g.,
-  a new `CytokinesisEvent` schema in `acs/v2/cytokinesis.py`,
-  parallel to `ProtrusionEvent`).
+- `acs/v2/single_cell.py::SingleCellState`:
+  - `division_count: int = 0` — number of times this cell has
+    divided (validated as non-negative integer);
+  - `parent_cell_id: Optional[str] = None` — pointer to the
+    parent cell (validated non-empty when provided, must differ
+    from `cell_id`).
+- `acs/v2/cell_cluster.py::CellClusterState`:
+  - `external_parent_ids: tuple[str, ...] = ()` — cluster-level
+    record of parent ids resolvable outside the cluster;
+  - cluster validation already enforces that any
+    `cell.parent_cell_id` either resolves to another cell in the
+    cluster or appears in `external_parent_ids`.
+
+These breadcrumbs are sufficient to **identify** lineage after a
+division event lands but are NOT sufficient to **describe** the
+event itself: there is no Phase 1 record of *when* the division
+occurred, *what* the cleavage curve was, *which* daughters the
+parent's FAs and protrusions reassigned to, or *what* the
+parent's pre-division state was.
+
+A Phase 1.5 commit that wants to preserve the full parent→two-daughters
+**event log** therefore still needs to add an out-of-schema
+representation. Two candidate paths (NOT a lock):
+
+- (a) extend `SingleCellState` with optional `division_time_s:
+  Optional[float]` (and possibly a `cleavage_curve` reference)
+  next to the existing breadcrumbs;
+- (b) write the event to a new `CytokinesisEvent` schema in
+  `acs/v2/cytokinesis.py`, parallel to `ProtrusionEvent` —
+  carrying parent_id, daughter_ids, division_time_s, cleavage
+  curve, FA / protrusion reassignment outcomes, and any
+  per-event diagnostics.
 
 Phase 1 does not commit to either; both are valid future paths.
 
 The note's recommendation (NOT a lock): option **(b)** — a separate
-`CytokinesisEvent` schema mirrors the `ProtrusionEvent` precedent
-and keeps `SingleCellState` lean. Option (a) creates a perpetual
-parent-pointer tax on every cell record even if division never
-fires.
+`CytokinesisEvent` schema mirrors the `ProtrusionEvent` precedent,
+keeps `SingleCellState` lean, and lets the existing `division_count`
+and `parent_cell_id` breadcrumbs continue to do their identity job
+without absorbing event-description duties. Option (a) overloads
+`SingleCellState` with per-event fields that most cells will never
+populate.
 
 ---
 
@@ -154,7 +179,7 @@ What does each daughter inherit from the parent?
 - `linked_protrusion_id` per FA: follows protrusion reassignment.
 - `time_s` per `SingleCellState`: parent's `time_s` (no clock
   reset).
-- `cell_state`: typically `alive` (or `nascent` if Phase 1.5 adds
+- `cell_state`: typically `alive` (or another future daughter-state literal if Phase 1.5 adds
   that literal — see §4).
 - ECM cumulative traction at the cleavage site: preserved
   (substrate state is independent of cell identity).
@@ -170,10 +195,11 @@ term); a *force-driven* cytokinesis is Phase 2.
 
 ---
 
-## 4. Schema-only TBD: `dividing` `CellStateLabel` literal
+## 4. Schema-only TBD: `dividing` `CellState` literal
 
-The current `CellStateLabel` enum in `acs/v2/single_cell.py`
-(per the existing schema) does NOT include a `dividing` literal.
+The current `CellState` literal in `acs/v2/single_cell.py`
+is `Literal["alive", "dead"]` and does NOT include a `dividing`
+literal.
 Adding it is a schema-additive change that future executable
 cytokinesis will need; it is also a candidate for inclusion *now*
 as a schema-only field even before executable code lands, mirroring
@@ -232,7 +258,7 @@ with a `status=blocker` to PI and three concrete options
 - Not a design lock. Each deferred item (§3.1–§3.5) gets its own
   design-discussion round.
 - Not a schema change. No field is added to any v2 schema by this
-  note. The `dividing` `CellStateLabel` literal flagged in §4 is
+  note. The `dividing` `CellState` literal flagged in §4 is
   TBD, not added.
 - Not a code commitment. No `cytokinesis_step` function is
   proposed; no module path is committed.
