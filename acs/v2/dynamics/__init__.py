@@ -14,6 +14,15 @@ from acs.v2.dynamics.closed_loop_phase_d import (
     step_fa_to_ecm_response,
     step_phase_d_no_op,
 )
+from acs.v2.dynamics.ecm_constitutive_response import (
+    ECMConstitutiveResponseError,
+    ECMOrientationResponseDiagnostics,
+    ECMOrientationResponseResult,
+    K_ORIENT_PER_S,
+    TAU_ALIGN_RANGE_S,
+    TRACTION_REF_NN_PER_UM2,
+    step_ecm_orientation_response,
+)
 from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
@@ -49,7 +58,10 @@ from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
 )
 
 __all__ = [
+    "ECMConstitutiveResponseError",
     "ECMOpenLoopError",
+    "ECMOrientationResponseDiagnostics",
+    "ECMOrientationResponseResult",
     "ECMSampledAtFAs",
     "ECMToFABiasResult",
     "FAToECMBiasError",
@@ -59,11 +71,14 @@ __all__ = [
     "FocalAdhesionDynamicsError",
     "FocalAdhesionDynamicsParameters",
     "FocalAdhesionDynamicsResult",
+    "K_ORIENT_PER_S",
     "PhaseDNoOpStepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
     "ProtrusionStateMultipliers",
     "RATE_NAMES",
+    "TAU_ALIGN_RANGE_S",
+    "TRACTION_REF_NN_PER_UM2",
     "accumulate_prescribed_traction",
     "apply_prescribed_density_rate",
     "apply_prescribed_orientation_rate",
@@ -77,6 +92,7 @@ __all__ = [
     "sample_ecm_at_fa_positions",
     "scatter_fa_traction_to_ecm_bilinear",
     "step",
+    "step_ecm_orientation_response",
     "step_ecm_to_fa_bias",
     "step_fa_to_ecm_response",
     "step_focal_adhesions_static",
