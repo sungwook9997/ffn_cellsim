@@ -11,6 +11,10 @@ from acs.v2.metrics import (
     RegisteredMetric,
     boundary_perimeter_um,
     boundary_projected_area_um2,
+    csv_scalar_metric,
+    csv_spheroid_a_over_a0,
+    csv_spheroid_area_um2,
+    csv_spheroid_effective_radius_um,
     default_registry,
 )
 
@@ -30,12 +34,15 @@ def _square_boundary(side_um: float = 2.0) -> MeasurementBoundary:
     )
 
 
-def test_default_registry_has_three_entries_keyed_by_name_and_artifact():
+def test_default_registry_has_six_entries_keyed_by_name_and_artifact():
     registry = default_registry()
     expected = {
         ("projected_area", ArtifactKind.BOUNDARY_CONTOURS),
         ("projected_area", ArtifactKind.SEGMENTATION_MASK),
         ("perimeter", ArtifactKind.BOUNDARY_CONTOURS),
+        ("spheroid_projected_area", ArtifactKind.CSV_TABLE),
+        ("spheroid_a_over_a0", ArtifactKind.CSV_TABLE),
+        ("spheroid_effective_radius", ArtifactKind.CSV_TABLE),
     }
     assert set(registry.keys()) == expected
 
@@ -62,6 +69,45 @@ def test_registry_lookup_unknown_key_raises():
         registry.get("missing_metric", ArtifactKind.SEGMENTATION_MASK)
     with pytest.raises(MetricRegistryError):
         registry.get("projected_area", ArtifactKind.CSV_TABLE)
+
+
+def test_default_registry_spheroid_csv_metrics_return_scalar_columns():
+    registry = default_registry()
+    row = {
+        "Area_um2": "1250.5",
+        "A_over_A0": 1.37,
+        "EffectiveRadius_um": 19.95,
+    }
+
+    area = registry.get("spheroid_projected_area", ArtifactKind.CSV_TABLE)
+    ratio = registry.get("spheroid_a_over_a0", ArtifactKind.CSV_TABLE)
+    radius = registry.get("spheroid_effective_radius", ArtifactKind.CSV_TABLE)
+
+    assert area.unit == "um2"
+    assert ratio.unit == "dimensionless"
+    assert radius.unit == "um"
+    assert area(row) == pytest.approx(1250.5)
+    assert ratio(row) == pytest.approx(1.37)
+    assert radius(row) == pytest.approx(19.95)
+
+
+def test_csv_spheroid_metric_helpers_are_column_specific():
+    row = {
+        "Area_um2": 100.0,
+        "A_over_A0": "1.25",
+        "EffectiveRadius_um": 5.64,
+    }
+
+    assert csv_spheroid_area_um2(row) == pytest.approx(100.0)
+    assert csv_spheroid_a_over_a0(row) == pytest.approx(1.25)
+    assert csv_spheroid_effective_radius_um(row) == pytest.approx(5.64)
+
+
+def test_csv_scalar_metric_rejects_missing_or_non_numeric_column():
+    with pytest.raises(MetricRegistryError, match="missing"):
+        csv_scalar_metric({"Area_um2": 100.0}, "A_over_A0")
+    with pytest.raises(MetricRegistryError, match="numeric"):
+        csv_scalar_metric({"Area_um2": "not_numeric"}, "Area_um2")
 
 
 def test_registry_duplicate_register_raises():

@@ -25,6 +25,7 @@ Magic-Number Block: this module declares no tunable numeric. N/A.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Callable
 
@@ -108,6 +109,37 @@ def boundary_perimeter_um(boundary: MeasurementBoundary) -> float:
     return boundary.perimeter_um()
 
 
+def csv_scalar_metric(row: Mapping[str, object], column: str) -> float:
+    """Return one numeric scalar from a CSV-like row mapping."""
+
+    if column not in row:
+        raise MetricRegistryError(f"CSV row missing required column: {column!r}")
+    try:
+        return float(row[column])
+    except (TypeError, ValueError) as exc:
+        raise MetricRegistryError(
+            f"CSV column {column!r} must contain a numeric scalar, got {row[column]!r}"
+        ) from exc
+
+
+def csv_spheroid_area_um2(row: Mapping[str, object]) -> float:
+    """Top-down spheroid projected area from a CSV row in ``um2``."""
+
+    return csv_scalar_metric(row, "Area_um2")
+
+
+def csv_spheroid_a_over_a0(row: Mapping[str, object]) -> float:
+    """Dimensionless spheroid projected area ratio from a CSV row."""
+
+    return csv_scalar_metric(row, "A_over_A0")
+
+
+def csv_spheroid_effective_radius_um(row: Mapping[str, object]) -> float:
+    """Spheroid effective radius from a CSV row in ``um``."""
+
+    return csv_scalar_metric(row, "EffectiveRadius_um")
+
+
 def default_registry() -> MetricRegistry:
     """Return a fresh registry pre-populated with v2 boundary metrics."""
 
@@ -137,6 +169,35 @@ def default_registry() -> MetricRegistry:
             unit="um",
             fn=boundary_perimeter_um,
             description="Closed-polygon perimeter from a measurement boundary.",
+        )
+    )
+    registry.register(
+        RegisteredMetric(
+            name="spheroid_projected_area",
+            artifact_kind=ArtifactKind.CSV_TABLE,
+            unit="um2",
+            fn=csv_spheroid_area_um2,
+            description="Top-down spheroid projected area from a CSV Area_um2 column.",
+        )
+    )
+    registry.register(
+        RegisteredMetric(
+            name="spheroid_a_over_a0",
+            artifact_kind=ArtifactKind.CSV_TABLE,
+            unit="dimensionless",
+            fn=csv_spheroid_a_over_a0,
+            description="Dimensionless spheroid A/A0 from a CSV A_over_A0 column.",
+        )
+    )
+    registry.register(
+        RegisteredMetric(
+            name="spheroid_effective_radius",
+            artifact_kind=ArtifactKind.CSV_TABLE,
+            unit="um",
+            fn=csv_spheroid_effective_radius_um,
+            description=(
+                "Spheroid effective radius from a CSV EffectiveRadius_um column."
+            ),
         )
     )
     return registry

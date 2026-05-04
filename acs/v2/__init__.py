@@ -77,6 +77,10 @@ from acs.v2.metrics import (
     RegisteredMetric,
     boundary_perimeter_um,
     boundary_projected_area_um2,
+    csv_scalar_metric,
+    csv_spheroid_a_over_a0,
+    csv_spheroid_area_um2,
+    csv_spheroid_effective_radius_um,
     default_registry,
 )
 from acs.v2.output.frame_dump import (
@@ -133,6 +137,10 @@ __all__ = [
     "compute_finite_n_residual",
     "compute_radial_tangential_decomposition",
     "compute_rate_max",
+    "csv_scalar_metric",
+    "csv_spheroid_a_over_a0",
+    "csv_spheroid_area_um2",
+    "csv_spheroid_effective_radius_um",
     "default_registry",
     "ellipse_polygon_vertices",
     "energy_area",
