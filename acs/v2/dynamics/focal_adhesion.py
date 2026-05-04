@@ -45,7 +45,7 @@ imported from ``acs.v2.active_contour`` rather than redefined.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -150,7 +150,32 @@ class FocalAdhesionDynamicsParameters:
         return self
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
+class FocalAdhesionDynamicsDiagnostics:
+    """Typed diagnostics for one 6.3a static FA dynamics step.
+
+    All fields are populated by ``step_focal_adhesions_static``;
+    units carry per locked plan
+    ``docs/v2_focal_adhesion_dynamics_result_typed_locked.md`` §3.
+
+    Attributes:
+        n_adhesions: count of FAs in the step (dimensionless).
+        aggregate_cell_force_nN_xy: 2-vector, each component in
+            ``nN``, summed across FAs.
+        aggregate_substrate_reaction_nN_xy: 2-vector, each
+            component in ``nN``, Newton-3 partner of the cell
+            force aggregate.
+        max_traction_magnitude_nN: max L2 norm of per-FA cell
+            force in ``nN``; ``0.0`` when ``n_adhesions == 0``.
+    """
+
+    n_adhesions: int
+    aggregate_cell_force_nN_xy: tuple[float, float]
+    aggregate_substrate_reaction_nN_xy: tuple[float, float]
+    max_traction_magnitude_nN: float
+
+
+@dataclass(frozen=True, slots=True)
 class FocalAdhesionDynamicsResult:
     """Outputs of one 6.3a static FA dynamics step."""
 
@@ -159,7 +184,7 @@ class FocalAdhesionDynamicsResult:
     substrate_reaction_nN_xy: np.ndarray
     radial_components: np.ndarray
     tangential_components: np.ndarray
-    diagnostics: dict = field(default_factory=dict)
+    diagnostics: FocalAdhesionDynamicsDiagnostics
 
 
 def _validate_centroid(centroid_um_xy: ArrayLike) -> np.ndarray:
@@ -378,16 +403,22 @@ def step_focal_adhesions_static(
             )
         )
 
-    diagnostics = {
-        "n_adhesions": n,
-        "aggregate_cell_force_nN_xy": tuple(cell_force.sum(axis=0).tolist()),
-        "aggregate_substrate_reaction_nN_xy": tuple(
-            substrate_reaction.sum(axis=0).tolist()
+    cell_force_sum = cell_force.sum(axis=0).tolist()
+    substrate_reaction_sum = substrate_reaction.sum(axis=0).tolist()
+    diagnostics = FocalAdhesionDynamicsDiagnostics(
+        n_adhesions=n,
+        aggregate_cell_force_nN_xy=(
+            float(cell_force_sum[0]),
+            float(cell_force_sum[1]),
         ),
-        "max_traction_magnitude_nN": float(
+        aggregate_substrate_reaction_nN_xy=(
+            float(substrate_reaction_sum[0]),
+            float(substrate_reaction_sum[1]),
+        ),
+        max_traction_magnitude_nN=float(
             np.linalg.norm(cell_force, axis=1).max() if n else 0.0
         ),
-    }
+    )
 
     return FocalAdhesionDynamicsResult(
         updated_adhesions=tuple(updated),

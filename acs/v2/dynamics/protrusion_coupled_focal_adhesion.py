@@ -63,6 +63,7 @@ from numpy.typing import ArrayLike
 
 from acs.v2.active_contour import _DT_RATE_SAFETY_MARGIN
 from acs.v2.dynamics.focal_adhesion import (
+    FocalAdhesionDynamicsDiagnostics,
     FocalAdhesionDynamicsError,
     FocalAdhesionDynamicsParameters,
     FocalAdhesionDynamicsResult,
@@ -77,6 +78,51 @@ _ALLOWED_STATE_KEYS: frozenset[str] = frozenset(
 _ALLOWED_RATE_KEYS: frozenset[str] = frozenset(
     {"k_maturity_per_s", "k_bind_per_s", "k_unbind_per_s"}
 )
+
+
+@dataclass(frozen=True, slots=True)
+class ProtrusionCoupledDynamicsDiagnostics(FocalAdhesionDynamicsDiagnostics):
+    """Typed diagnostics for one 6.3b protrusion-coupled FA step.
+
+    IS-A :class:`FocalAdhesionDynamicsDiagnostics` — the four base
+    fields (``n_adhesions``, ``aggregate_cell_force_nN_xy``,
+    ``aggregate_substrate_reaction_nN_xy``,
+    ``max_traction_magnitude_nN``) inherit from the 6.3a base. The
+    four extension fields below are 6.3b-specific.
+
+    Attributes:
+        linked_missing: count of FAs whose linked-protrusion lookup
+            silently missed (currently always 0; reserved for
+            future linkage-resolution paths).
+        reciprocal_missing: count of FAs with resolved
+            ``linked_protrusion_id`` whose linked protrusion did
+            NOT list the FA in ``associated_adhesion_ids``.
+        multiplier_histogram: per-rate-name :class:`Counter` of
+            effective multiplier values rounded to 12 decimals
+            for float64-round-off-stable comparison.
+        max_effective_rate_per_name: per-rate-name maximum
+            effective rate across all FAs, in ``[1/s]``.
+    """
+
+    linked_missing: int
+    reciprocal_missing: int
+    multiplier_histogram: Mapping[str, Counter]
+    max_effective_rate_per_name: Mapping[str, float]
+
+
+@dataclass(frozen=True, slots=True)
+class ProtrusionCoupledDynamicsResult(FocalAdhesionDynamicsResult):
+    """Outputs of one 6.3b protrusion-coupled FA step.
+
+    IS-A :class:`FocalAdhesionDynamicsResult` — the five physical
+    fields are inherited unchanged. Only the ``diagnostics`` field
+    is overridden to the 6.3b-specific
+    :class:`ProtrusionCoupledDynamicsDiagnostics` subclass per
+    locked Y4 (plain override, no
+    ``# type: ignore[assignment]``).
+    """
+
+    diagnostics: ProtrusionCoupledDynamicsDiagnostics
 
 
 @dataclass(frozen=True)
@@ -215,7 +261,7 @@ def step_protrusion_coupled_focal_adhesions(
     multipliers: ProtrusionStateMultipliers,
     *,
     traction_axis_xy_per_fa: Optional[list[Optional[ArrayLike]]] = None,
-) -> FocalAdhesionDynamicsResult:
+) -> ProtrusionCoupledDynamicsResult:
     """Advance a list of adhesions by one 6.3b protrusion-coupled FA
     dynamics step.
 
@@ -419,22 +465,28 @@ def step_protrusion_coupled_focal_adhesions(
         for name, values in multiplier_values_per_name.items()
     }
 
-    diagnostics = {
-        "n_adhesions": n,
-        "aggregate_cell_force_nN_xy": tuple(cell_force.sum(axis=0).tolist()),
-        "aggregate_substrate_reaction_nN_xy": tuple(
-            substrate_reaction.sum(axis=0).tolist()
+    cell_force_sum = cell_force.sum(axis=0).tolist()
+    substrate_reaction_sum = substrate_reaction.sum(axis=0).tolist()
+    diagnostics = ProtrusionCoupledDynamicsDiagnostics(
+        n_adhesions=n,
+        aggregate_cell_force_nN_xy=(
+            float(cell_force_sum[0]),
+            float(cell_force_sum[1]),
         ),
-        "max_traction_magnitude_nN": float(
+        aggregate_substrate_reaction_nN_xy=(
+            float(substrate_reaction_sum[0]),
+            float(substrate_reaction_sum[1]),
+        ),
+        max_traction_magnitude_nN=float(
             np.linalg.norm(cell_force, axis=1).max() if n else 0.0
         ),
-        "linked_missing": 0,
-        "reciprocal_missing": reciprocal_missing,
-        "multiplier_histogram": multiplier_histogram,
-        "max_effective_rate_per_name": max_per_name,
-    }
+        linked_missing=0,
+        reciprocal_missing=reciprocal_missing,
+        multiplier_histogram=multiplier_histogram,
+        max_effective_rate_per_name=max_per_name,
+    )
 
-    return FocalAdhesionDynamicsResult(
+    return ProtrusionCoupledDynamicsResult(
         updated_adhesions=tuple(updated),
         cell_force_nN_xy=cell_force,
         substrate_reaction_nN_xy=substrate_reaction,

@@ -56,6 +56,7 @@ from acs.v2.dynamics.fa_to_ecm_scattering import (
     scatter_fa_traction_to_ecm_bilinear,
 )
 from acs.v2.dynamics.focal_adhesion import (
+    FocalAdhesionDynamicsDiagnostics,
     FocalAdhesionDynamicsError,
     FocalAdhesionDynamicsParameters,
     FocalAdhesionDynamicsResult,
@@ -63,6 +64,8 @@ from acs.v2.dynamics.focal_adhesion import (
     step_focal_adhesions_static,
 )
 from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
+    ProtrusionCoupledDynamicsDiagnostics,
+    ProtrusionCoupledDynamicsResult,
     ProtrusionStateMultipliers,
     step_protrusion_coupled_focal_adhesions,
 )
@@ -131,6 +134,7 @@ __all__ = [
     "FAToECMBiasError",
     "FAToECMResponseResult",
     "FAToECMScatteringError",
+    "FocalAdhesionDynamicsDiagnostics",
     "FocalAdhesionDynamicsResult",
     "FocalAdhesionState",
     "FrameDumpReadResult",
@@ -143,6 +147,8 @@ __all__ = [
     "MetricRegistryError",
     "MetricSpec",
     "PhaseDNoOpStepResult",
+    "ProtrusionCoupledDynamicsDiagnostics",
+    "ProtrusionCoupledDynamicsResult",
     "ProtrusionEvent",
     "ProtrusionStateMultipliers",
     "RATE_NAMES",

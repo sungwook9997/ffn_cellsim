@@ -8,15 +8,21 @@ the locked design (``docs/v2_63b_protrusion_coupling_locked.md``).
 
 from __future__ import annotations
 
+import dataclasses
+
 import numpy as np
 import pytest
 
 from acs.v2.dynamics.focal_adhesion import (
+    FocalAdhesionDynamicsDiagnostics,
     FocalAdhesionDynamicsError,
     FocalAdhesionDynamicsParameters,
+    FocalAdhesionDynamicsResult,
     step_focal_adhesions_static,
 )
 from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
+    ProtrusionCoupledDynamicsDiagnostics,
+    ProtrusionCoupledDynamicsResult,
     ProtrusionStateMultipliers,
     step_protrusion_coupled_focal_adhesions,
 )
@@ -284,8 +290,8 @@ def test_reciprocal_missing_records_diagnostic_not_raise():
     result = step_protrusion_coupled_focal_adhesions(
         (fa,), CENTROID, params, registry, table
     )
-    assert result.diagnostics["reciprocal_missing"] == 1
-    assert result.diagnostics["linked_missing"] == 0
+    assert result.diagnostics.reciprocal_missing == 1
+    assert result.diagnostics.linked_missing == 0
 
 
 # ---------------------------------------------------------------------------
@@ -453,3 +459,84 @@ def test_no_state_label_change_after_step():
     # the effective rate
     assert result.updated_adhesions[0].maturity == fa.maturity
     assert result.updated_adhesions[0].bound_fraction == fa.bound_fraction
+
+
+# ---------------------------------------------------------------------------
+# B1 typed-schema migration tests (per locked §4 +
+# docs/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md §8)
+# ---------------------------------------------------------------------------
+
+
+def _b1_protrusion_fixture():
+    """Reusable single-FA + protrusion result for B1 typed-migration
+    tests on the 6.3b path."""
+
+    fa = _make_fa(
+        "a1",
+        position=(1.0, 0.0),
+        state="mature",
+        maturity=0.5,
+        bound_fraction=0.5,
+        linked_protrusion_id="p1",
+    )
+    registry = {
+        "p1": _make_protrusion("p1", state="growing", associated_adhesion_ids=("a1",)),
+    }
+    table = ProtrusionStateMultipliers(table={})
+    params = FocalAdhesionDynamicsParameters(
+        dt_fa_s=0.05, traction_scale_nN=2.0
+    )
+    return step_protrusion_coupled_focal_adhesions(
+        (fa,), CENTROID, params, registry, table
+    )
+
+
+def test_protrusion_coupled_diagnostics_is_subclass():
+    """6.3b result.diagnostics is a ProtrusionCoupledDynamicsDiagnostics
+    AND IS-A FocalAdhesionDynamicsDiagnostics (locked §1 / Y1
+    subclass approach / Sanity Gate §6.3)."""
+
+    result = _b1_protrusion_fixture()
+    assert isinstance(result.diagnostics, ProtrusionCoupledDynamicsDiagnostics)
+    assert isinstance(result.diagnostics, FocalAdhesionDynamicsDiagnostics)
+    assert type(result.diagnostics) is ProtrusionCoupledDynamicsDiagnostics
+
+
+def test_protrusion_coupled_result_is_subclass():
+    """6.3b result is a ProtrusionCoupledDynamicsResult AND IS-A
+    FocalAdhesionDynamicsResult (locked Y1 / Sanity Gate §6.3)."""
+
+    result = _b1_protrusion_fixture()
+    assert isinstance(result, ProtrusionCoupledDynamicsResult)
+    assert isinstance(result, FocalAdhesionDynamicsResult)
+    assert type(result) is ProtrusionCoupledDynamicsResult
+
+
+def test_protrusion_coupled_result_frozen():
+    """6.3b result is frozen — field assignment raises
+    FrozenInstanceError (locked frozen=True / Sanity Gate §6.4)."""
+
+    result = _b1_protrusion_fixture()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        result.cell_force_nN_xy = np.zeros_like(result.cell_force_nN_xy)
+
+
+def test_protrusion_coupled_diagnostics_no_dict_access():
+    """6.3b result.diagnostics rejects __getitem__ (locked §1
+    Forbidden / Sanity Gate §6.2 runtime meta-test)."""
+
+    result = _b1_protrusion_fixture()
+    with pytest.raises(TypeError):
+        _ = result.diagnostics["reciprocal_missing"]
+
+
+def test_protrusion_coupled_diagnostics_n_adhesions_inherited():
+    """6.3b diagnostics still surfaces inherited base-class
+    n_adhesions field via attribute access (locked Y2 + IS-A
+    relation guarantees inherited fields remain accessible)."""
+
+    result = _b1_protrusion_fixture()
+    assert result.diagnostics.n_adhesions == 1
+    # Also accessible via the base type protocol.
+    base_view: FocalAdhesionDynamicsDiagnostics = result.diagnostics
+    assert base_view.n_adhesions == 1

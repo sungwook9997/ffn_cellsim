@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import dataclasses
 import math
 
 import numpy as np
 import pytest
 
 from acs.v2.dynamics.focal_adhesion import (
+    FocalAdhesionDynamicsDiagnostics,
     FocalAdhesionDynamicsError,
     FocalAdhesionDynamicsParameters,
+    FocalAdhesionDynamicsResult,
     compute_radial_tangential_decomposition,
     step_focal_adhesions_static,
 )
@@ -320,8 +323,8 @@ def test_diagnostics_aggregate_cancellation():
                maturity=1.0, bound_fraction=1.0)
            for i, t in enumerate([0.0, math.pi / 2, math.pi, 3 * math.pi / 2])]
     result = step_focal_adhesions_static(fas, centroid_um_xy=(0.0, 0.0), params=params)
-    cell_sum = np.array(result.diagnostics["aggregate_cell_force_nN_xy"])
-    sub_sum = np.array(result.diagnostics["aggregate_substrate_reaction_nN_xy"])
+    cell_sum = np.array(result.diagnostics.aggregate_cell_force_nN_xy)
+    sub_sum = np.array(result.diagnostics.aggregate_substrate_reaction_nN_xy)
     np.testing.assert_allclose(cell_sum + sub_sum, np.zeros(2), atol=1e-12)
     # Symmetric arrangement: aggregate cell force should be near zero too.
     np.testing.assert_allclose(cell_sum, np.zeros(2), atol=1e-12)
@@ -347,3 +350,118 @@ def test_decomposition_helper_position_equals_centroid_rejects():
             centroid_xy=(0.0, 0.0),
         )
     assert info.value.failure_kind == "radial_axis_undefined"
+
+
+# ---------------------------------------------------------------------------
+# B1 typed-schema migration tests (per locked §4 +
+# docs/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md §8)
+# ---------------------------------------------------------------------------
+
+
+def _b1_fixture_result():
+    """Reusable single-FA result for B1 typed-migration tests."""
+
+    fa = _fa(
+        "a1",
+        position=(1.0, 0.0),
+        state="mature",
+        maturity=1.0,
+        bound_fraction=1.0,
+    )
+    params = FocalAdhesionDynamicsParameters(
+        dt_fa_s=0.05, traction_scale_nN=2.0
+    )
+    return step_focal_adhesions_static(
+        (fa,), centroid_um_xy=(0.0, 0.0), params=params
+    )
+
+
+def test_focal_adhesion_diagnostics_is_typed_dataclass():
+    """6.3a result.diagnostics is a typed FocalAdhesionDynamicsDiagnostics
+    dataclass, not a dict (locked §1 / Sanity Gate §6.1)."""
+
+    result = _b1_fixture_result()
+    assert isinstance(result.diagnostics, FocalAdhesionDynamicsDiagnostics)
+    assert not isinstance(result.diagnostics, dict)
+
+
+def test_focal_adhesion_diagnostics_no_dict_access():
+    """6.3a result.diagnostics rejects __getitem__ access (locked §1
+    Forbidden / Sanity Gate §6.2 runtime meta-test against future
+    dict-shim refactor)."""
+
+    result = _b1_fixture_result()
+    with pytest.raises(TypeError):
+        _ = result.diagnostics["n_adhesions"]
+
+
+def test_focal_adhesion_result_frozen():
+    """6.3a result is frozen — field assignment raises
+    FrozenInstanceError (locked §1 frozen=True / Sanity Gate §6.4)."""
+
+    result = _b1_fixture_result()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        result.cell_force_nN_xy = np.zeros_like(result.cell_force_nN_xy)
+
+
+def test_focal_adhesion_diagnostics_frozen():
+    """6.3a result.diagnostics is frozen — field assignment raises
+    FrozenInstanceError. Mirrors test_focal_adhesion_result_frozen for
+    the diagnostics dataclass."""
+
+    result = _b1_fixture_result()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        result.diagnostics.n_adhesions = 999
+
+
+def test_focal_adhesion_b1_no_behavior_change_baseline():
+    """B1 regression: post-migration attribute values match the
+    pre-migration dict values byte-for-byte for a fixed FA configuration.
+
+    Pre-B1 dict-key set verified at brief commit 64db861 against
+    producer focal_adhesion.py:381-390. The migration is shape-only;
+    every value here matches what the pre-B1 dict would have stored."""
+
+    fas = (
+        _fa(
+            "a1", position=(1.0, 0.0), state="mature",
+            maturity=1.0, bound_fraction=1.0,
+        ),
+        _fa(
+            "a2", position=(0.0, 1.0), state="mature",
+            maturity=0.5, bound_fraction=0.5,
+        ),
+    )
+    params = FocalAdhesionDynamicsParameters(
+        dt_fa_s=0.05, traction_scale_nN=2.0
+    )
+    result = step_focal_adhesions_static(
+        fas, centroid_um_xy=(0.0, 0.0), params=params
+    )
+
+    # Base 4 fields populated.
+    assert result.diagnostics.n_adhesions == 2
+    assert isinstance(result.diagnostics.aggregate_cell_force_nN_xy, tuple)
+    assert len(result.diagnostics.aggregate_cell_force_nN_xy) == 2
+    assert isinstance(
+        result.diagnostics.aggregate_substrate_reaction_nN_xy, tuple
+    )
+    assert len(result.diagnostics.aggregate_substrate_reaction_nN_xy) == 2
+    assert isinstance(result.diagnostics.max_traction_magnitude_nN, float)
+
+    # Per-component float64 round-off reproduction of producer
+    # arr.sum(axis=0).tolist() pre-B1.
+    expected_cell_sum = result.cell_force_nN_xy.sum(axis=0).tolist()
+    expected_sub_sum = result.substrate_reaction_nN_xy.sum(axis=0).tolist()
+    assert result.diagnostics.aggregate_cell_force_nN_xy == (
+        float(expected_cell_sum[0]),
+        float(expected_cell_sum[1]),
+    )
+    assert result.diagnostics.aggregate_substrate_reaction_nN_xy == (
+        float(expected_sub_sum[0]),
+        float(expected_sub_sum[1]),
+    )
+    expected_max = float(
+        np.linalg.norm(result.cell_force_nN_xy, axis=1).max()
+    )
+    assert result.diagnostics.max_traction_magnitude_nN == expected_max

@@ -22,6 +22,7 @@ from acs.v2.dynamics.ecm_open_loop import (
     apply_prescribed_stiffness_rate,
 )
 from acs.v2.dynamics.focal_adhesion import (
+    FocalAdhesionDynamicsDiagnostics,
     FocalAdhesionDynamicsError,
     FocalAdhesionDynamicsParameters,
     FocalAdhesionDynamicsResult,
@@ -41,6 +42,8 @@ from acs.v2.dynamics.fa_to_ecm_scattering import (
     scatter_fa_traction_to_ecm_bilinear,
 )
 from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
+    ProtrusionCoupledDynamicsDiagnostics,
+    ProtrusionCoupledDynamicsResult,
     ProtrusionStateMultipliers,
     step_protrusion_coupled_focal_adhesions,
 )
@@ -52,10 +55,13 @@ __all__ = [
     "FAToECMBiasError",
     "FAToECMResponseResult",
     "FAToECMScatteringError",
+    "FocalAdhesionDynamicsDiagnostics",
     "FocalAdhesionDynamicsError",
     "FocalAdhesionDynamicsParameters",
     "FocalAdhesionDynamicsResult",
     "PhaseDNoOpStepResult",
+    "ProtrusionCoupledDynamicsDiagnostics",
+    "ProtrusionCoupledDynamicsResult",
     "ProtrusionStateMultipliers",
     "RATE_NAMES",
     "accumulate_prescribed_traction",
