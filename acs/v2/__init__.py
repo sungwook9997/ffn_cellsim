@@ -29,6 +29,13 @@ from acs.v2.dynamics.active_contour import (
     energy_cortex,
     step,
 )
+from acs.v2.dynamics.closed_loop_phase_d import (
+    FAToECMResponseResult,
+    PhaseDNoOpStepResult,
+    step_ecm_to_fa_bias,
+    step_fa_to_ecm_response,
+    step_phase_d_no_op,
+)
 from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
@@ -122,6 +129,7 @@ __all__ = [
     "FocalAdhesionDynamicsError",
     "FocalAdhesionDynamicsParameters",
     "FAToECMBiasError",
+    "FAToECMResponseResult",
     "FAToECMScatteringError",
     "FocalAdhesionDynamicsResult",
     "FocalAdhesionState",
@@ -134,6 +142,7 @@ __all__ = [
     "MetricRegistry",
     "MetricRegistryError",
     "MetricSpec",
+    "PhaseDNoOpStepResult",
     "ProtrusionEvent",
     "ProtrusionStateMultipliers",
     "RATE_NAMES",
@@ -171,7 +180,10 @@ __all__ = [
     "regular_polygon_vertices",
     "run_active_contour_test",
     "step",
+    "step_ecm_to_fa_bias",
+    "step_fa_to_ecm_response",
     "step_focal_adhesions_static",
+    "step_phase_d_no_op",
     "step_protrusion_coupled_focal_adhesions",
     "render_frame_html",
     "render_frame_png",

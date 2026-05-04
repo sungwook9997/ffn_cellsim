@@ -389,3 +389,56 @@ def test_phase_d_step_no_diagnostics_dict_field():
         "traction_density_xy",
         "updated_ecm",
     }
+
+
+# ---------------------------------------------------------------------------
+# Test 13: import-surface assertion — Phase D symbols exported via package
+# __init__ surfaces (per Codex review id=1423 API-surface fix)
+# ---------------------------------------------------------------------------
+def test_phase_d_symbols_exported_via_package_init():
+    """Phase D named-API symbols (locked plan §2 Hard Blocker #3/#4
+    entry contract) must be importable from the v2 package roots
+    `acs.v2` and `acs.v2.dynamics`, mirroring the HB#3 / HB#4 export
+    precedent. Catches future regressions where a Phase E module
+    rename or a refactor drops Phase D from the re-export surface."""
+
+    import acs.v2 as v2_pkg
+    import acs.v2.dynamics as dyn_pkg
+
+    expected_phase_d_symbols = {
+        "FAToECMResponseResult",
+        "PhaseDNoOpStepResult",
+        "step_fa_to_ecm_response",
+        "step_ecm_to_fa_bias",
+        "step_phase_d_no_op",
+    }
+
+    # Module-level attribute presence.
+    for sym in expected_phase_d_symbols:
+        assert hasattr(v2_pkg, sym), (
+            f"acs.v2 missing Phase D symbol {sym!r}"
+        )
+        assert hasattr(dyn_pkg, sym), (
+            f"acs.v2.dynamics missing Phase D symbol {sym!r}"
+        )
+
+    # Identity match: re-exported symbol IS the wrapper-module
+    # symbol (catches a future refactor that aliases to a stale
+    # implementation).
+    for sym in expected_phase_d_symbols:
+        assert getattr(v2_pkg, sym) is getattr(cl_phase_d, sym), (
+            f"acs.v2.{sym} is not acs.v2.dynamics.closed_loop_phase_d.{sym}"
+        )
+        assert getattr(dyn_pkg, sym) is getattr(cl_phase_d, sym), (
+            f"acs.v2.dynamics.{sym} is not "
+            f"acs.v2.dynamics.closed_loop_phase_d.{sym}"
+        )
+
+    # __all__ inclusion at both surfaces.
+    for sym in expected_phase_d_symbols:
+        assert sym in v2_pkg.__all__, (
+            f"acs.v2.__all__ missing {sym!r}"
+        )
+        assert sym in dyn_pkg.__all__, (
+            f"acs.v2.dynamics.__all__ missing {sym!r}"
+        )
