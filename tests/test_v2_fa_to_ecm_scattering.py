@@ -401,6 +401,29 @@ def test_non_finite_fa_traction_raises():
     assert excinfo.value.failure_kind == "non_finite_fa_traction"
 
 
+def test_invalid_fa_schema_propagates_validate_error():
+    """Codex review id=1359 regression: per-FA `fa.validate()` runs
+    after the lock-specific non-finite checks, so schema invariants
+    (e.g., "no traction without attachment" — `state == "unbound"`
+    with non-zero traction) propagate as the schema's `ValueError`
+    BEFORE any deposit happens. Mirror the `step_focal_adhesions_static`
+    local dynamics precedent."""
+
+    ecm = _ecm(nx=4, ny=4, spacing_um=1.0)
+    bad_fa = FocalAdhesionState(
+        adhesion_id="bad-fa",
+        cell_id="cell-A",
+        position_um_xy=(1.5, 1.5),
+        age_s=0.0,
+        maturity=0.0,
+        bound_fraction=0.0,
+        state="unbound",
+        traction_force_nN_xy=(1.0, 0.0),  # invalid: unbound + non-zero
+    )
+    with pytest.raises(ValueError, match="no traction without attachment"):
+        scatter_fa_traction_to_ecm_bilinear((bad_fa,), ecm)
+
+
 # ---------------------------------------------------------------------------
 # Test 18: Hard Rule 11 wording-boundary meta-test (Phase B/C precedent)
 # ---------------------------------------------------------------------------

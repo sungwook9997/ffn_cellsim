@@ -104,6 +104,12 @@ def scatter_fa_traction_to_ecm_bilinear(
     """Bilinear single-point scatter of per-FA cell-on-substrate
     traction onto the ECM grid as a vector traction-density field.
 
+    The locked design signature accepts a tuple; ``list`` is also
+    accepted as a runtime convenience (matching the
+    ``step_focal_adhesions_static`` precedent), but the strict
+    contract is the tuple form per
+    ``docs/v2_hard_blocker_3_fa_to_ecm_scattering_locked.md`` §1.
+
     Returns an ``(nx, ny, 2)`` float64 array in ``nN/μm²``. The
     function is pure: ``ecm`` is not mutated, no accumulator is
     called, no response field is updated, and no scalarization is
@@ -183,6 +189,15 @@ def scatter_fa_traction_to_ecm_bilinear(
                 f"FA {fa.adhesion_id!r} traction_force_nN_xy="
                 f"{fa.traction_force_nN_xy!r} is not finite",
             )
+        # Defensive per-FA schema validation per the local dynamics
+        # precedent (`step_focal_adhesions_static` calls
+        # `fa.validate()` per FA). Schema invariants such as
+        # "no traction without attachment" (`state == "unbound"`
+        # with non-zero traction) propagate as the schema's
+        # ``ValueError``. The lock-specific failure_kinds for
+        # non-finite position/traction above run first so they
+        # surface with the locked names.
+        fa.validate()
         if not (x_min <= x_fa <= x_max) or not (y_min <= y_fa <= y_max):
             raise FAToECMScatteringError(
                 "fa_position_outside_ecm_grid",
