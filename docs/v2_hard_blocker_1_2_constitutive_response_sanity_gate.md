@@ -61,9 +61,18 @@ containing per locked §1:
 - 1 pure function `step_ecm_orientation_response(ecm,
   traction_density_xy, dt_s, *, traction_ref_nN_per_um2,
   k_orient_per_s) -> ECMOrientationResponseResult`.
+- Locked error class **`ECMConstitutiveResponseError(ValueError)`**
+  with machine-readable `failure_kind` attribute (Codex
+  `id=1488` Step 6 sister-gate-mirror with HB#3
+  `FAToECMScatteringError` + HB#4 `FAToECMBiasError`). Owned
+  failure kinds: `dt_invalid`, `traction_ref_invalid`,
+  `k_orient_invalid`, `traction_shape_mismatch`,
+  `non_finite_traction`. Inherited `ecm.validate()` failures
+  remain plain schema `ValueError` (test 20).
 - Exports through `acs/v2/dynamics/__init__.py` and
-  `acs/v2/__init__.py` (6 new symbols total: 3 constants + 2
-  dataclasses + 1 function).
+  `acs/v2/__init__.py` (**7 new symbols** per Codex `id=1488`
+  6→7 expansion to include the locked error class: error + 3
+  constants + 2 dataclasses + 1 function).
 
 ### Explicitly out of scope (will FAIL gate if introduced)
 
@@ -475,14 +484,22 @@ sister-gate-mirror layered against HB#3 / HB#4 / Phase D / B1
   with `__all__` inclusion. Test 18
   (`test_orientation_response_exports_through_both_init`)
   enforces.
-- **Failure-kind discipline**: HB#1+#2 inherits the
-  open-loop-precedent `ECMOpenLoopError` pattern OR introduces
-  its own `ECMConstitutiveResponseError` (locked §5 leaves
-  the choice to impl). If a new error class is introduced,
-  it must follow the `class FooError(ValueError)` +
-  `failure_kind` attribute pattern from HB#3 / HB#4. Forbidden
-  list §1 does not specify; impl-work will choose at code
-  commit and document.
+- **Failure-kind discipline** (locked per Codex `id=1488`):
+  HB#1+#2 introduces `ECMConstitutiveResponseError(ValueError)`
+  with machine-readable `failure_kind` attribute, mirroring
+  HB#3 `FAToECMScatteringError` + HB#4 `FAToECMBiasError`
+  pattern. Owned failure kinds are exhaustively enumerated:
+  `dt_invalid` (covers negative / bool / nonfinite),
+  `traction_ref_invalid` (nonpositive / nonfinite),
+  `k_orient_invalid` (nonpositive / nonfinite — strict
+  no-zero-no-op), `traction_shape_mismatch`,
+  `non_finite_traction`. Inherited `ecm.validate()` failures
+  remain plain schema `ValueError` and are NOT wrapped in
+  `ECMConstitutiveResponseError` (Codex `id=1488` —
+  schema-level errors stay schema-level, not masked as
+  constitutive-law-level errors). Tests 3-9 assert the typed
+  error + specific failure_kind; test 20 asserts plain
+  `ValueError` for the inherited schema rejection path.
 
 ### 6.6 Y12-guard meta-test (extended per Codex `id=1486`)
 
@@ -521,16 +538,28 @@ committed). Each test maps to a locked invariant in
 1. `test_orientation_response_zero_traction_is_identity` (§2.1)
 2. `test_orientation_response_dt_zero_is_identity_no_op` (§2.2;
    Y15)
-3. `test_orientation_response_dt_negative_raises` (§2.3)
-4. `test_orientation_response_dt_bool_raises` (§2.3)
-5. `test_orientation_response_dt_nonfinite_raises` (§2.3)
+3. `test_orientation_response_dt_negative_raises` (§2.3) —
+   asserts `ECMConstitutiveResponseError` with
+   `failure_kind="dt_invalid"`
+4. `test_orientation_response_dt_bool_raises` (§2.3) —
+   asserts `ECMConstitutiveResponseError` with
+   `failure_kind="dt_invalid"`
+5. `test_orientation_response_dt_nonfinite_raises` (§2.3) —
+   asserts `ECMConstitutiveResponseError` with
+   `failure_kind="dt_invalid"`
 6. `test_orientation_response_traction_ref_nonpositive_raises`
-   (§2.4)
+   (§2.4) — asserts `ECMConstitutiveResponseError` with
+   `failure_kind="traction_ref_invalid"`
 7. `test_orientation_response_k_orient_nonpositive_raises`
-   (§2.4; strict, Y11)
+   (§2.4; strict, Y11) — asserts
+   `ECMConstitutiveResponseError` with
+   `failure_kind="k_orient_invalid"`
 8. `test_orientation_response_traction_shape_mismatch_raises`
-   (§2.5)
-9. `test_orientation_response_traction_nonfinite_raises` (§2.5)
+   (§2.5) — asserts `ECMConstitutiveResponseError` with
+   `failure_kind="traction_shape_mismatch"`
+9. `test_orientation_response_traction_nonfinite_raises`
+   (§2.5) — asserts `ECMConstitutiveResponseError` with
+   `failure_kind="non_finite_traction"`
 10. `test_orientation_response_no_aliasing_all_arrays` (§3.3;
     Y12) — `not np.shares_memory(...)` for all 5 array fields
 11. `test_orientation_response_unchanged_fields_bytewise_equal`
@@ -547,8 +576,14 @@ committed). Each test maps to a locked invariant in
 17. `test_orientation_response_diagnostics_records_input_params`
     (§6.3; Y13)
 18. **`test_orientation_response_exports_through_both_init`**
-    (§6.5; sister-gate-mirror API surface — 6 new symbols at
-    both `acs.v2` and `acs.v2.dynamics`)
+    (§6.5; sister-gate-mirror API surface — **7 new symbols**
+    per Codex `id=1488` 6→7 expansion at both `acs.v2` and
+    `acs.v2.dynamics`: `ECMConstitutiveResponseError`,
+    `ECMOrientationResponseDiagnostics`,
+    `ECMOrientationResponseResult`,
+    `step_ecm_orientation_response`,
+    `TRACTION_REF_NN_PER_UM2`, `K_ORIENT_PER_S`,
+    `TAU_ALIGN_RANGE_S`)
 19. **`test_orientation_response_uses_current_schema_not_stale_naming`**
     (§6.6; Y12-guard static check: no `dx_um`, no
     `grid_shape` constructor arg; **both** `ecm.validate()` at
@@ -559,8 +594,11 @@ committed). Each test maps to a locked invariant in
     whose `orientation_tensor` violates `validate()` (e.g., a
     component `> 1.0` that the convex update could "heal"
     toward `T_target` under high traction × dt) must raise
-    from `ecm.validate()` at function entry, BEFORE any algebra
-    runs. Closes the silent-heal path.
+    plain schema `ValueError` from `ecm.validate()` at function
+    entry, BEFORE any algebra runs. Asserts plain `ValueError`
+    (NOT `ECMConstitutiveResponseError`) per Codex `id=1488`:
+    schema-level errors stay schema-level, not wrapped.
+    Closes the silent-heal path.
 
 If a regression case surfaces during code commit (e.g., Codex
 review catches an edge case in the einsum or expm1 call), an
@@ -601,8 +639,9 @@ Phase D / B1 Sanity Gate review precedent.
      `traction_ref` strict positive
   5. Y12-guard: `spacing_um` (not `dx_um`), no `grid_shape`
      arg, no mechanosensing shortcut
-  6. 6 new symbols exported through both `acs.v2.dynamics`
-     and `acs.v2`
+  6. **7 new symbols** exported through both `acs.v2.dynamics`
+     and `acs.v2` (per Codex `id=1488` 6→7 expansion to include
+     the locked `ECMConstitutiveResponseError`)
 - Code commit must reproduce the locked §1 forbidden list at
   module-docstring level (text-level guard layered on top of
   runtime tests, per B1 `id=1458` precedent).

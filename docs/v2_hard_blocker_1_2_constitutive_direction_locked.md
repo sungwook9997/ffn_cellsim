@@ -434,14 +434,25 @@ derivation)**:
 
 1. `test_orientation_response_zero_traction_is_identity`
 2. `test_orientation_response_dt_zero_is_identity_no_op`
-3. `test_orientation_response_dt_negative_raises`
-4. `test_orientation_response_dt_bool_raises`
-5. `test_orientation_response_dt_nonfinite_raises`
+3. `test_orientation_response_dt_negative_raises` —
+   `ECMConstitutiveResponseError`, `failure_kind="dt_invalid"`
+4. `test_orientation_response_dt_bool_raises` —
+   `ECMConstitutiveResponseError`, `failure_kind="dt_invalid"`
+5. `test_orientation_response_dt_nonfinite_raises` —
+   `ECMConstitutiveResponseError`, `failure_kind="dt_invalid"`
 6. `test_orientation_response_traction_ref_nonpositive_raises`
-7. `test_orientation_response_k_orient_nonpositive_raises` (strict, no
-   zero no-op)
-8. `test_orientation_response_traction_shape_mismatch_raises`
-9. `test_orientation_response_traction_nonfinite_raises`
+   — `ECMConstitutiveResponseError`,
+   `failure_kind="traction_ref_invalid"`
+7. `test_orientation_response_k_orient_nonpositive_raises`
+   (strict, no zero no-op) —
+   `ECMConstitutiveResponseError`,
+   `failure_kind="k_orient_invalid"`
+8. `test_orientation_response_traction_shape_mismatch_raises` —
+   `ECMConstitutiveResponseError`,
+   `failure_kind="traction_shape_mismatch"`
+9. `test_orientation_response_traction_nonfinite_raises` —
+   `ECMConstitutiveResponseError`,
+   `failure_kind="non_finite_traction"`
 10. `test_orientation_response_no_aliasing_all_arrays` —
     `not np.shares_memory(...)` for all 5 array fields
 11. `test_orientation_response_unchanged_fields_bytewise_equal` —
@@ -464,10 +475,13 @@ derivation)**:
     `result.diagnostics.traction_ref_nN_per_um2 == passed value`,
     `result.diagnostics.k_orient_per_s == passed value`
 18. **`test_orientation_response_exports_through_both_init`** —
+    7 symbols importable from both `acs.v2.dynamics` and
+    `acs.v2`: `ECMConstitutiveResponseError`,
     `ECMOrientationResponseDiagnostics`,
     `ECMOrientationResponseResult`, `step_ecm_orientation_response`,
-    `TRACTION_REF_NN_PER_UM2`, `K_ORIENT_PER_S`, `TAU_ALIGN_RANGE_S`
-    importable from both `acs.v2.dynamics` and `acs.v2`
+    `TRACTION_REF_NN_PER_UM2`, `K_ORIENT_PER_S`,
+    `TAU_ALIGN_RANGE_S` (per Codex `id=1488` 6→7 expansion to
+    include the locked error class)
 19. **`test_orientation_response_uses_current_schema_not_stale_naming`** —
     Y12-guard meta-test: implementation must not reference `dx_um` or
     pass `grid_shape` to the constructor; must call **both**
@@ -479,9 +493,13 @@ derivation)**:
     (Codex `id=1486`) — passing an `ECMSubstrateState` whose
     `orientation_tensor` violates `validate()` (e.g., a component
     `> 1.0` that the convex update could "heal" toward `T_target`
-    under high traction × dt) must raise from `ecm.validate()` at
-    function entry, BEFORE any algebra runs. Closes the silent-heal
-    path: invalid input ECM is rejected, not healed.
+    under high traction × dt) must raise plain schema
+    `ValueError` from `ecm.validate()` at function entry, BEFORE
+    any algebra runs. Closes the silent-heal path: invalid
+    input ECM is rejected, not healed. Inherited `ValueError`
+    is NOT wrapped in `ECMConstitutiveResponseError` (per Codex
+    `id=1488`: schema-level errors stay schema-level, not masked
+    as constitutive-law-level errors).
 
 ---
 
@@ -498,10 +516,23 @@ derivation)**:
     fields)
   - `ECMOrientationResponseResult` dataclass (frozen, slots)
   - `step_ecm_orientation_response` function
-  - `ECMConstitutiveResponseError` (or reuse open-loop error pattern)
-- `acs/v2/dynamics/__init__.py` (6 new exports + alphabetical reorder
-  of `__all__`)
-- `acs/v2/__init__.py` (mirror exports)
+  - **`ECMConstitutiveResponseError(ValueError)`** with
+    machine-readable `failure_kind` attribute (locked per Codex
+    `id=1488` Step 6 sister-gate-mirror with HB#3
+    `FAToECMScatteringError` + HB#4 `FAToECMBiasError`). Owned
+    failure kinds (raised by validators inside
+    `step_ecm_orientation_response`): `dt_invalid` (covers
+    negative / bool / nonfinite), `traction_ref_invalid`
+    (nonpositive / nonfinite), `k_orient_invalid` (nonpositive /
+    nonfinite — strict no-zero-no-op), `traction_shape_mismatch`,
+    `non_finite_traction`. Inherited `ecm.validate()` failures
+    remain plain schema `ValueError` (per Codex `id=1488` to
+    avoid masking schema-level errors as constitutive-law-level
+    errors).
+- `acs/v2/dynamics/__init__.py` (**7 new exports** per Codex
+  `id=1488` API-surface lock + alphabetical reorder of
+  `__all__`): error + 3 constants + 2 dataclasses + 1 function
+- `acs/v2/__init__.py` (mirror 7 exports)
 - `tests/test_v2_ecm_constitutive_response.py` (new, ~19 tests per §4)
 
 ---
