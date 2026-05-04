@@ -27,7 +27,7 @@ defects relative to HB#3 / HB#4 / Phase D locked patterns:
 1. `@dataclass` plain (NOT `frozen=True, slots=True`) — diverges from
    HB#3 / HB#4 / Phase D result types
 2. `diagnostics: dict = field(default_factory=dict)` — loose untyped
-   dict, the exact regression caught at HB#4 round C1 (`id=1395`)
+   dict, the exact regression caught at Phase D round 1 C1 (`id=1395`)
 
 HB#4 `diagnostics_dict` keeps its grandfathered surface (separate unit,
 out of B1 scope). 6.3a / 6.3b is older code that needs typed-schema
