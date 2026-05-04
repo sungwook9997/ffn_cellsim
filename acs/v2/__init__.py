@@ -40,6 +40,12 @@ from acs.v2.dynamics.closed_loop_phase_e import (
     PhaseEStepResult,
     step_closed_loop_phase_e_v1,
 )
+from acs.v2.dynamics.closed_loop_phase_e_sweep import (
+    PhaseEV1Item5SweepConfig,
+    PhaseEV1Item5SweepMetadata,
+    PhaseEV1Item5SweepResult,
+    run_phase_e_v1_sensitivity_sweep,
+)
 from acs.v2.dynamics.ecm_constitutive_response import (
     ECMConstitutiveResponseError,
     ECMOrientationResponseDiagnostics,
@@ -176,6 +182,9 @@ __all__ = [
     "MetricSpec",
     "PhaseDNoOpStepResult",
     "PhaseEStepResult",
+    "PhaseEV1Item5SweepConfig",
+    "PhaseEV1Item5SweepMetadata",
+    "PhaseEV1Item5SweepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
     "ProtrusionEvent",
@@ -217,6 +226,7 @@ __all__ = [
     "read_frame",
     "regular_polygon_vertices",
     "run_active_contour_test",
+    "run_phase_e_v1_sensitivity_sweep",
     "step",
     "step_closed_loop_phase_e_v1",
     "step_ecm_orientation_response",

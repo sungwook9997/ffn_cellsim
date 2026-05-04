@@ -18,6 +18,12 @@ from acs.v2.dynamics.closed_loop_phase_e import (
     PhaseEStepResult,
     step_closed_loop_phase_e_v1,
 )
+from acs.v2.dynamics.closed_loop_phase_e_sweep import (
+    PhaseEV1Item5SweepConfig,
+    PhaseEV1Item5SweepMetadata,
+    PhaseEV1Item5SweepResult,
+    run_phase_e_v1_sensitivity_sweep,
+)
 from acs.v2.dynamics.ecm_constitutive_response import (
     ECMConstitutiveResponseError,
     ECMOrientationResponseDiagnostics,
@@ -89,6 +95,9 @@ __all__ = [
     "MAX_SQ_FROBENIUS_DIFF_PER_CELL",
     "PhaseDNoOpStepResult",
     "PhaseEStepResult",
+    "PhaseEV1Item5SweepConfig",
+    "PhaseEV1Item5SweepMetadata",
+    "PhaseEV1Item5SweepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
     "ProtrusionStateMultipliers",
@@ -104,6 +113,7 @@ __all__ = [
     "compute_ecm_orientation_lyapunov_metric",
     "compute_ecm_to_fa_bias_neutral",
     "compute_radial_tangential_decomposition",
+    "run_phase_e_v1_sensitivity_sweep",
     "energy_area",
     "energy_cortex",
     "sample_ecm_at_fa_positions",
