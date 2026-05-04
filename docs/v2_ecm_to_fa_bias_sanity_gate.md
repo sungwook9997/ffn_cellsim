@@ -65,7 +65,7 @@ commit lands.
   `"non_finite_fa_position"`.
 - Frozen dataclasses `ECMSampledAtFAs` + `ECMToFABiasResult` per
   locked §1.
-- 16-test catalog per locked §7.
+- 19-test catalog: 18 from locked §6 (NOT §7 — §7 is the Phase D integrator pointer; test catalog lives at §6 of the lock) + 1 new `test_invalid_fa_schema_propagates_validate_error` regression for the per-FA `fa.validate()` boundary required by Codex review id=1378 (mirrors the Hard Blocker #3 id=1359 fix).
 
 ### Explicitly out of scope (will FAIL gate if introduced)
 
@@ -160,6 +160,7 @@ responsibility and explicitly NOT this gate's.
 |---|---|---|
 | Empty `adhesions` tuple | early-return `ECMToFABiasResult(fa_ids=(), multipliers_per_fa=np.zeros((0, 3)), rate_names=RATE_NAMES, sampled_diagnostics=ECMSampledAtFAs(fa_ids=(), …all zero-row arrays…), diagnostics_dict={"n_adhesions": 0, "max_multiplier": 1.0, "min_multiplier": 1.0, "sampler_geometry": "bilinear_cell_centered"})`. **No raise** (locked §0 forbids `empty_adhesions` failure_kind). | (no exception) |
 | `position_um_xy` non-finite (NaN, ±inf) | reject before bilinear computation | `non_finite_fa_position` |
+| `FocalAdhesionState` schema invariant violation (e.g., `state == "unbound"` with non-zero `traction_force_nN_xy`, `bound_fraction == 0.0` with non-zero traction, etc.) | per-FA `fa.validate()` runs **after** `non_finite_fa_position` check and **before** bilinear sampling, so the lock-specific `non_finite_fa_position` failure_kind still fires first; schema-only invariants then propagate as the schema's `ValueError`. Mirrors Hard Blocker #3 fix `883efc8` and the local dynamics precedent in `step_focal_adhesions_static`. | inherited `FocalAdhesionState.validate()` `ValueError` |
 | FA position strictly outside `[origin_x, origin_x + nx*dx] × [origin_y, origin_y + ny*dy]` plus `_FA_POSITION_BOUNDARY_TOL_UM` | raise BEFORE sampler bilinear; no silent clamp | `fa_bias_position_outside_ecm_grid` (distinct from Hard Blocker #3 `fa_position_outside_ecm_grid` because the failing op is read/bias, not scatter; physical footprint rule identical) |
 | FA position exactly at footprint corner | inclusive boundary; truncated stencil reads from the single in-grid corner cell | (no exception) |
 | FA position exactly at footprint edge midpoint | inclusive; truncated stencil reads from edge cells with renormalized weights | (no exception) |
@@ -319,7 +320,7 @@ response laws decide the reduction. This mirrors Hard Blocker
 
 ### Geometry consistency with Hard Blocker #3
 
-Per locked §6 Sanity Gate item 6 + the
+Per locked §5 Sanity Gate item 6 + the
 `test_sampler_consistency_with_scatter_geometry` test in §9: the
 same FA position scattered by Hard Blocker #3 and sampled by Hard
 Blocker #4 must use the same cell-centered convention,
@@ -399,12 +400,14 @@ Planned (NOT committed by this gate):
 
 ---
 
-## 9. Test catalog (~17, per locked §7 + Hard Rule 11 meta-test)
+## 9. Test catalog (19, per locked §6 + fa.validate() regression)
 
 Each test exercises one Sanity Gate item or one forbidden
-behavior. Locked §7 lists 16; this catalog adds the
-Hard-Rule-11 meta-test parallel to Phase B / Phase C / Hard
-Blocker #3 precedents.
+behavior. Locked §6 (NOT §7 — §7 is the Phase D integrator
+pointer) lists 18; this catalog adds the
+`test_invalid_fa_schema_propagates_validate_error` regression
+required by the fa.validate() boundary fix per Codex review
+id=1378 (mirror of Hard Blocker #3 id=1359 fix).
 
 | # | Test name | Gate item |
 |---|---|---|
@@ -416,21 +419,25 @@ Blocker #3 precedents.
 | 6 | `test_sampler_outside_footprint_raises_fa_bias_position_outside_ecm_grid` | §2 / §4 out-of-grid policy |
 | 7 | `test_sampler_input_order_preserved` | §6 input order preservation |
 | 8 | `test_sampler_accumulated_traction_is_scalar_shape_n_fa` | §1 / §0 forbidden vector accumulated |
-| 9 | `test_neutral_bias_no_ecm_mutation` | §3 pure-function constraint |
-| 10 | `test_neutral_bias_no_fa_mutation` | §3 pure-function constraint |
-| 11 | `test_diagnostics_dict_only_serializable_plain_values` | §0 forbidden arrays in diagnostics |
-| 12 | `test_diagnostics_dict_keys_are_locked_set` | §6 measurement-protocol; locked keys (n_adhesions, max/min_multiplier, sampler_geometry) |
-| 13 | `test_empty_fa_list_returns_empty_result_not_raise` | §0 forbidden empty_adhesions failure |
-| 14 | `test_sampler_consistency_with_scatter_geometry` | §6 measurement-protocol (sister-gate consistency with Hard Blocker #3) |
-| 15 | `test_returned_shapes_match_locked_signature` | §1 dataclass shape contract |
-| 16 | `test_no_active_law_invoked_in_phase_d` | §0 forbidden + Hard Rule 11 meta-test |
-| 17 | `test_non_finite_fa_position_raises` | §2 boundary failure_kind |
+| 9 | `test_sampler_orientation_tensor_shape_n_fa_2_2` | §6 native-shape / no-scalarization protection (orientation tensor returned full 2×2 per FA) |
+| 10 | `test_neutral_bias_no_ecm_mutation` | §3 pure-function constraint |
+| 11 | `test_neutral_bias_no_fa_mutation` | §3 pure-function constraint |
+| 12 | `test_diagnostics_dict_only_serializable_plain_values` | §0 forbidden arrays in diagnostics |
+| 13 | `test_diagnostics_dict_keys_are_locked_set` | §6 measurement-protocol; locked keys (n_adhesions, max/min_multiplier, sampler_geometry) |
+| 14 | `test_empty_fa_list_returns_empty_result_not_raise` | §0 forbidden empty_adhesions failure |
+| 15 | `test_sampler_consistency_with_scatter_geometry` | §6 measurement-protocol (sister-gate consistency with Hard Blocker #3) |
+| 16 | `test_returned_shapes_match_locked_signature` | §1 dataclass shape contract |
+| 17 | `test_no_active_law_invoked_in_phase_d` | §0 forbidden + Hard Rule 11 meta-test |
+| 18 | `test_non_finite_fa_position_raises` | §2 boundary failure_kind |
+| 19 | `test_invalid_fa_schema_propagates_validate_error` | §2 fa.validate() boundary at function entry; mirrors Hard Blocker #3 fix `883efc8`; expected schema invariant: `state="unbound"` with non-zero `traction_force_nN_xy` raises schema `ValueError` BEFORE any sampler / multiplier output |
 
-All 17 tests come from locked §7 catalog; no scope expansion. The
-Phase D / Phase E function naming separation is verified
-structurally by the absence of `compute_ecm_to_fa_bias_active`
-in the module — caller cannot trigger it through this gate's
-public surface.
+All 18 tests #1–#18 come from locked §6 catalog (no scope
+expansion vs lock); #19 is the fa.validate() regression that
+mirrors the Hard Blocker #3 `883efc8` fix and was added per
+Codex review id=1378. The Phase D / Phase E function naming
+separation is verified structurally by the absence of
+`compute_ecm_to_fa_bias_active` in the module — caller cannot
+trigger it through this gate's public surface.
 
 ---
 
@@ -449,7 +456,9 @@ The gate clears for executable code in two commits:
    `sample_ecm_at_fa_positions` + `compute_ecm_to_fa_bias_neutral`
    functions. `_FA_POSITION_BOUNDARY_TOL_UM` either imported from
    Hard Blocker #3 module (preferred) or recomputed locally.
-2. `tests/test_v2_ecm_to_fa_bias.py` — 17 tests per §9 catalog.
+2. `tests/test_v2_ecm_to_fa_bias.py` — 19 tests per §9 catalog
+   (18 from locked §6 + 1 fa.validate() regression per Codex
+   review id=1378).
 
 Plus `acs/v2/dynamics/__init__.py` + `acs/v2/__init__.py`
 exports.
