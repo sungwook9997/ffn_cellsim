@@ -8,8 +8,11 @@ a matplotlib diagnostic plot (``diagnostic_<scenario>.png``) showing
 per-FA maturity / bound-fraction trajectories plus the per-step
 maximum effective rate per rate name. A top-level ``index.json``
 lists every scenario summary path with an ``aggregate_status``
-(PASS / FAIL) and a ``failed_scenarios`` list so a downstream
-consumer can tell at a glance whether any scenario broke.
+(PASS / FAIL) and three categorised lists —
+``intentional_failures_observed``, ``unexpected_failures``, and
+``unexpected_passes`` — so a downstream consumer can tell at a
+glance whether any scenario broke without mistaking the intentional
+demonstration for a regression.
 
 Scenarios are caller-supplied test inputs only — no model defaults,
 no biology decisions, no RNG. The script exists to make the 6.3b
