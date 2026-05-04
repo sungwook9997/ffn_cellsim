@@ -155,10 +155,30 @@ def _boundary_tol_um(ecm: ECMSubstrateState) -> float:
 def _validate_fa_position_and_schema(
     fa: FocalAdhesionState, x_min: float, x_max: float, y_min: float, y_max: float
 ) -> tuple[float, float]:
-    """Run the locked validation order: lock-specific
-    ``non_finite_fa_position`` first, then per-FA
-    ``fa.validate()`` (Codex review id=1378), then out-of-grid
-    inclusion. Returns the validated ``(x_fa, y_fa)`` tuple."""
+    """Run the locked validation order: structural len-check on
+    ``position_um_xy`` first (defer to schema validator for the
+    canonical error message — Codex review id=1385), then
+    lock-specific ``non_finite_fa_position`` failure_kind, then
+    per-FA ``fa.validate()`` for other schema invariants
+    (Codex review id=1378), then out-of-grid inclusion. Returns
+    the validated ``(x_fa, y_fa)`` tuple."""
+
+    # Defensive structural len check before unpacking. If
+    # `fa.position_um_xy` has length != 2 (e.g., a 1-tuple), the
+    # subsequent unpack would raise Python's "not enough values
+    # to unpack" ValueError instead of the schema's canonical
+    # "position_um_xy must contain exactly 2 finite values"
+    # message. Defer to fa.validate() in that case so the schema
+    # error surfaces with its locked wording.
+    if len(fa.position_um_xy) != 2:
+        fa.validate()
+        # Unreachable: fa.validate() must raise on len != 2.
+        raise FAToECMBiasError(
+            "non_finite_fa_position",
+            f"FA {fa.adhesion_id!r} position_um_xy length != 2 "
+            f"and FocalAdhesionState.validate() did not raise; "
+            f"this should be unreachable",
+        )
 
     x_fa, y_fa = fa.position_um_xy
     x_fa = float(x_fa)

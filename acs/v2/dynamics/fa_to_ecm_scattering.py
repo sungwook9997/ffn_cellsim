@@ -171,6 +171,21 @@ def scatter_fa_traction_to_ecm_bilinear(
         return out
 
     for fa in adhesions:
+        # Defensive structural len check before unpacking
+        # (Codex review id=1385 sister-gate-mirror: `(0.5,)` 1-tuple
+        # would otherwise raise Python's unpack ValueError instead
+        # of the schema's canonical
+        # "position_um_xy must contain exactly 2 finite values"
+        # message). Defer to fa.validate() in that case.
+        if len(fa.position_um_xy) != 2:
+            fa.validate()
+            # Unreachable: fa.validate() must raise on len != 2.
+            raise FAToECMScatteringError(
+                "non_finite_fa_position",
+                f"FA {fa.adhesion_id!r} position_um_xy length != 2 "
+                f"and FocalAdhesionState.validate() did not raise; "
+                f"this should be unreachable",
+            )
         x_fa, y_fa = fa.position_um_xy
         x_fa = float(x_fa)
         y_fa = float(y_fa)

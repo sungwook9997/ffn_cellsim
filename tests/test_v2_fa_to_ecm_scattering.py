@@ -401,6 +401,30 @@ def test_non_finite_fa_traction_raises():
     assert excinfo.value.failure_kind == "non_finite_fa_traction"
 
 
+def test_malformed_position_length_propagates_schema_validate_error():
+    """Codex review id=1385 sister-gate-mirror regression: an FA
+    with `position_um_xy` of length != 2 (e.g., a 1-tuple) must
+    raise the schema's canonical ValueError ("position_um_xy must
+    contain exactly 2 finite values") rather than Python's unpack
+    ValueError. Mirrors the Hard Blocker #4 fix applied in
+    sample_ecm_at_fa_positions / compute_ecm_to_fa_bias_neutral
+    for sister-gate consistency."""
+
+    ecm = _ecm(nx=4, ny=4, spacing_um=1.0)
+    bad_fa = FocalAdhesionState(
+        adhesion_id="bad-len",
+        cell_id="cell-A",
+        position_um_xy=(0.5,),  # type: ignore[arg-type]
+        age_s=0.0,
+        maturity=1.0,
+        bound_fraction=1.0,
+        state="mature",
+        traction_force_nN_xy=(1.0, 0.0),
+    )
+    with pytest.raises(ValueError, match="position_um_xy must contain exactly 2"):
+        scatter_fa_traction_to_ecm_bilinear((bad_fa,), ecm)
+
+
 def test_invalid_fa_schema_propagates_validate_error():
     """Codex review id=1359 regression: per-FA `fa.validate()` runs
     after the lock-specific non-finite checks, so schema invariants
