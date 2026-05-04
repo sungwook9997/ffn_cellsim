@@ -621,7 +621,7 @@ compliant. All other constants re-imported from HB#1+#2 lock.
 
 ---
 
-## 8. Test catalog (25 tests; 23 per locked §4 + 1 new per Codex `id=1581` blocker (test 24 wording-boundary) + 1 new per Codex `id=1591` blocker (test 25 near-indivisible-inside-old-tolerance))
+## 8. Test catalog (26 tests; 23 per locked §4 + 1 new per Codex `id=1581` blocker (test 24 wording-boundary) + 2 new per Codex `id=1591`/`id=1594` BLOCKER chain (test 25 near-indivisible-raises + test 26 exact-decimal-passes per user intent))
 
 Owned by `tests/test_v2_closed_loop_phase_e_sweep.py` (not yet
 committed). Each test maps to a locked invariant in
@@ -716,7 +716,7 @@ committed). Each test maps to a locked invariant in
 | Item | Status | Notes |
 |---|---|---|
 | §1 Dimensional | **PASS** | No new unit chain; sub-call chains preserved; 0.5*I IC + 1e-12 IEEE roundoff Magic-Number Block compliant |
-| §2 Boundary | **PASS** | 8 boundary classes locked; 15 of 25 tests covering validation (incl Codex `id=1591` near-indivisible-inside-old-tolerance) + Step 0 + zero-bound case |
+| §2 Boundary | **PASS** | 8 boundary classes locked; 16 of 26 tests covering validation (incl Codex `id=1591` near-indivisible-raises + `id=1594` exact-decimal-passes-per-user-intent regression) + Step 0 + zero-bound case |
 | §3 Conservation | **PASS** | Harness conserves nothing of its own; 5 sub-call invariants inherited; trajectory shape exactly per config; metadata reproducibility (Y13 + Y14) |
 | §4 Numerical | **PASS** | Float64 + int64; 1e-12 IEEE roundoff explicitly labeled NOT gate tunable (Y18 forward guard); zero new harness tolerances |
 | §5 Sign | **PASS** | All 7 trajectory + aggregate fields non-negative by construction |
@@ -763,7 +763,7 @@ precedent.
   separation locked at Codex `id=1581`. Sister-pattern with
   Phase E v1 `id=1546` + `id=1549` paraphrased intent guard
   resolution.
-- All 25 tests must pass at first commit; no `TODO test_X`
+- All 26 tests must pass at first commit; no `TODO test_X`
   placeholders.
 - `pytest tests/test_v2_closed_loop_phase_e_sweep.py` +
   combined sister-gate regression (HB#3 + HB#4 + Phase D +

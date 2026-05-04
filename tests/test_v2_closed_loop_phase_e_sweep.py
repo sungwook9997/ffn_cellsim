@@ -4,9 +4,11 @@ Test catalog mirrors
 ``docs/v2_item_5_sweep_harness_locked.md`` §4 (commit ``c5634d5``)
 and the impl-work Sanity Gate
 ``docs/v2_item_5_sweep_harness_sanity_gate.md`` §8 (commits
-``338be1b`` + ``19825e9`` + ``774d963``). 24 tests total: 23
+``338be1b`` + ``19825e9`` + ``774d963``). 26 tests total: 23
 per locked §4 + 1 wording-boundary meta-test (test 24) added
-per Codex ``id=1581`` BLOCKER.
+per Codex ``id=1581`` BLOCKER + 2 divisibility-fix regressions
+(test 25 near-indivisible-raises + test 26 exact-decimal-passes)
+added per Codex ``id=1591``/``id=1594`` BLOCKER chain.
 
 Per Codex ``id=1587`` Sanity Gate PASS, this catalog covers:
 - Validation tests (11): tests 1-11
@@ -93,13 +95,14 @@ def test_item_5_sweep_indivisible_domain_raises():
 def test_item_5_sweep_near_indivisible_inside_old_tolerance_raises():
     """Test 25 (Codex id=1591 BLOCKER fix): a spacing that would have
     passed the prior 1e-9 abs_tol divisibility check must now raise
-    under the exact-equality replacement.
+    under exact-decimal-divisibility replacement.
 
     Example: domain_size_um_xy=(16.0, 16.0) with spacing=1.0 + 1e-11
-    yields nx_f ≈ 15.999999999984... which is ≈1.6e-10 from 16; the
-    prior `math.isclose(nx_f, 16, abs_tol=1e-9)` would accept this
-    silently. The locked "zero new harness tolerances" contract +
-    Y1 "exact divisibility" require this to raise.
+    yields binary nx_f ≈ 15.999999999984...; Fraction(str(...))
+    representation gives Fraction(100000000001, 1e11) which is NOT
+    exactly divisible into 16. The locked "zero new harness
+    tolerances" contract + Y1 "exact divisibility" require this to
+    raise.
     """
 
     near_indivisible_spacing = 1.0 + 1e-11
@@ -107,6 +110,36 @@ def test_item_5_sweep_near_indivisible_inside_old_tolerance_raises():
         run_phase_e_v1_sensitivity_sweep(
             _baseline_config(spacing_um_values=(near_indivisible_spacing,))
         )
+
+
+def test_item_5_sweep_decimal_exact_divisible_passes_per_user_intent():
+    """Test 26 (Codex id=1594 BLOCKER fix): mathematically exact decimal
+    config values must PASS validation even when float64 binary-quotient
+    representation yields non-integer.
+
+    Example: domain_size_um_xy=(0.3, 0.3) with spacing=0.1 yields
+    binary 0.3 / 0.1 = 2.9999999999999996 (NOT 3.0 in float64) due
+    to 0.1 not being exactly representable. Y1 "exact divisibility"
+    is intended as exact decimal divisibility per user-facing float
+    config (YAML decimal etc.), so Fraction(str(0.3)) /
+    Fraction(str(0.1)) = Fraction(3, 10) / Fraction(1, 10) =
+    Fraction(3, 1) → exact integer 3 → must PASS.
+
+    This is the positive regression Codex id=1594 requested: ensure
+    the Fraction-based exact-decimal check accepts valid decimal
+    config that prior `nx_f.is_integer()` binary check would reject.
+    """
+
+    config = _baseline_config(
+        spacing_um_values=(0.1,),
+        dt_s_values=(60.0,),
+        domain_size_um_xy=(0.3, 0.3),
+        fa_position_um_xy=(0.15, 0.15),
+        n_steps=2,
+    )
+    result = run_phase_e_v1_sensitivity_sweep(config)
+    assert result.nx_by_run[0] == 3
+    assert result.ny_by_run[0] == 3
 
 
 def test_item_5_sweep_unsupported_traction_scenario_raises():

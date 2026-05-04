@@ -79,8 +79,9 @@ Sanity Gate scope (acs/v2/dynamics/closed_loop_phase_e_sweep.py):
 
 - §1 dimensional: harness performs no unit transformation;
   inherits Phase E v1 + HB#5 unit chains.
-- §2 boundary: 8 boundary classes covered by 14 of 24 tests
-  (validation 11 + Step 0 + zero-bound + invalid-cases).
+- §2 boundary: 8 boundary classes covered by 16 of 26 tests
+  (validation 11 + Step 0 + zero-bound + invalid-cases +
+  divisibility-fix regressions per Codex id=1591/id=1594).
 - §3 conservation: harness has no per-step conservation of
   its own; trajectory shape exactly per config; metadata
   reproducibility (Y13 + Y14).
@@ -108,6 +109,7 @@ import math
 import subprocess
 import sys
 from dataclasses import dataclass
+from fractions import Fraction
 from typing import Literal
 
 import numpy as np
@@ -335,25 +337,43 @@ def _validate_config(config: PhaseEV1Item5SweepConfig) -> None:
 
     for spacing in config.spacing_um_values:
         spacing_f = float(spacing)
-        # Y1 exact divisibility per Codex id=1591 BLOCKER fix: use exact
-        # float equality (NOT math.isclose tolerance — locked "zero new
-        # harness tolerances beyond 1e-12 IEEE max-bound allowance").
-        # In float64, x / y == int(x / y) iff the division is exact in
-        # float arithmetic (no representation rounding); this catches
-        # both genuinely indivisible cases (16.0 / 1.5 ≈ 10.666 ≠ 10)
-        # and near-indivisible-inside-prior-tolerance cases (16.0 /
-        # (1.0 + 1e-11) ≈ 15.999... ≠ 15) without an ad-hoc tolerance.
-        nx_f = dx / spacing_f
-        ny_f = dy / spacing_f
-        if not (nx_f.is_integer() and ny_f.is_integer()):
+        # Y1 exact divisibility per Codex id=1591 + id=1594 BLOCKER fix:
+        # use exact decimal representation via Fraction(str(value)).
+        # NOT float64 binary-quotient semantics (`x / y; .is_integer()`)
+        # — that rejects mathematically exact decimal values like
+        # 0.3 / 0.1 = 2.9999999999999996 (because 0.1 is not exactly
+        # representable in float64). For a YAML/user-facing float
+        # config, "exact divisibility" means exact decimal divisibility
+        # (user-intended), not binary divisibility.
+        # Fraction(str(value)) parses via Python's shortest round-
+        # trippable repr → exact decimal interpretation:
+        #   - Fraction(str(0.3)) = Fraction(3, 10)
+        #   - Fraction(str(0.1)) = Fraction(1, 10)
+        #   - Fraction(3, 10) / Fraction(1, 10) = Fraction(3, 1)
+        #     → denominator == 1 → exact integer
+        # Catches near-indivisible-inside-prior-tolerance:
+        #   - Fraction(str(1.0 + 1e-11)) ≈ Fraction(100000000001, 1e11)
+        #     → Fraction(16) / Fraction(...) has non-1 denominator
+        #     → raises (Codex id=1591 test 25 still PASSes).
+        spacing_frac = Fraction(str(spacing_f))
+        dx_frac = Fraction(str(dx))
+        dy_frac = Fraction(str(dy))
+        if spacing_frac == 0:
+            raise ValueError(
+                f"spacing_um {spacing_f!r} cannot be zero (caught earlier "
+                f"by finiteness/positivity check; this guard is defensive)"
+            )
+        quotient_x = dx_frac / spacing_frac
+        quotient_y = dy_frac / spacing_frac
+        if quotient_x.denominator != 1 or quotient_y.denominator != 1:
             raise ValueError(
                 f"domain_size_um_xy {config.domain_size_um_xy!r} must be "
                 f"exactly divisible by every spacing_um; got spacing="
-                f"{spacing_f} with nx={nx_f}, ny={ny_f} (must be exact "
-                f"positive integers)"
+                f"{spacing_f} with quotient_x={quotient_x}, "
+                f"quotient_y={quotient_y} (must be exact positive integers)"
             )
-        nx = int(nx_f)
-        ny = int(ny_f)
+        nx = int(quotient_x)
+        ny = int(quotient_y)
         if nx < 1 or ny < 1:
             raise ValueError(
                 f"domain_size_um_xy {config.domain_size_um_xy!r} produces "
