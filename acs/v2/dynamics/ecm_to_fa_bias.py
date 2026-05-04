@@ -24,9 +24,16 @@ The module deliberately does **not**:
   per Hard Rule 11 measurement-protocol consistency);
 - carry vector accumulated traction memory (ECM schema is scalar
   ``(nx, ny)`` per ``accumulated_traction_nNs_per_um2``);
-- raise on empty FA list (returns shape-consistent empty result);
-- expose ``compute_ecm_to_fa_bias_active`` (silent-activation guard
-  via Phase D / Phase E function naming separation).
+- raise on empty FA list (returns shape-consistent empty result).
+
+The HB#4-active variant ``compute_ecm_to_fa_bias_active`` is now also
+defined in this module (Phase E v2 step 1; locked at
+``docs/v2_hard_blocker_4_active_locked.md``, Sanity Gated at
+``docs/v2_hard_blocker_4_active_sanity_gate.md``). Function-naming
+separation preserves the silent-activation guard: a caller cannot
+trigger active behavior through ``compute_ecm_to_fa_bias_neutral``;
+the two variants are distinct entry points with distinct validation
+chains and distinct failure kinds.
 
 Sanity Gate scope (acs/v2/dynamics/ecm_to_fa_bias.py):
 
@@ -55,9 +62,15 @@ Sanity Gate scope (acs/v2/dynamics/ecm_to_fa_bias.py):
   ``test_no_active_law_invoked_in_phase_d`` enforces Hard Rule 11
   boundary (Phase B / Phase C / Hard Blocker #3 precedent).
 
-Magic-Number Block: ``_BOUNDARY_TOL_RELATIVE = 1e-12`` is the only
-new module-level constant (matching Hard Blocker #3 inheritance
-pattern); ``RATE_NAMES`` is a literal-string tuple, not a numeric
+Magic-Number Block: ``_BOUNDARY_TOL_RELATIVE = 1e-12`` (Hard Blocker
+#3 inheritance pattern) and ``_DEVIATORIC_SCORE_BOUND = sqrt(2.0)``
+(derived schema bound on ``|n.T @ Q @ n|`` under ECM
+``|T_ij| <= 1`` invariant; HB#4-active step 1 lock Y10) are the
+two module-level numeric constants. Both are derivable from
+upstream invariants — neither is fitted to a target, neither
+requires re-tuning under grid changes (Magic-Number Block tests 1
+and 2 pass; not chosen to fit any specific datapoint, test 3
+pass). ``RATE_NAMES`` is a literal-string tuple, not a numeric
 tunable; the all-1.0 neutral multiplier is a structural identity.
 """
 
@@ -89,15 +102,18 @@ RATE_NAMES: Final[
 FAToECMBiasFailureKind = Literal[
     "fa_bias_position_outside_ecm_grid",
     "non_finite_fa_position",
+    "k_active_invalid",
+    "active_multiplier_non_finite",
 ]
 
 
 class FAToECMBiasError(ValueError):
     """Validation error raised by
     :func:`sample_ecm_at_fa_positions` /
-    :func:`compute_ecm_to_fa_bias_neutral` when an FA's position
-    violates the locked bias contract. Carries a machine-readable
-    :attr:`failure_kind`."""
+    :func:`compute_ecm_to_fa_bias_neutral` /
+    :func:`compute_ecm_to_fa_bias_active` when an FA's position
+    or active-bias parameter violates the locked bias contract.
+    Carries a machine-readable :attr:`failure_kind`."""
 
     def __init__(self, failure_kind: str, message: str) -> None:
         self.failure_kind = failure_kind
@@ -393,6 +409,161 @@ def compute_ecm_to_fa_bias_neutral(
             "min_multiplier": float(multipliers.min()),
             "sampler_geometry": "bilinear_cell_centered",
         }
+    return ECMToFABiasResult(
+        fa_ids=sampled.fa_ids,
+        multipliers_per_fa=multipliers,
+        rate_names=tuple(RATE_NAMES),
+        sampled_diagnostics=sampled,
+        diagnostics_dict=diagnostics_dict,
+    )
+
+
+_DEVIATORIC_SCORE_BOUND: Final[float] = float(np.sqrt(2.0))
+
+
+def _validate_k_active(k_active: float) -> None:
+    if isinstance(k_active, bool):
+        raise FAToECMBiasError(
+            "k_active_invalid",
+            f"k_active must be float (not bool — Python bool subset int trap), "
+            f"got {type(k_active).__name__}",
+        )
+    if not (np.isfinite(k_active) and k_active > 0.0):
+        raise FAToECMBiasError(
+            "k_active_invalid",
+            f"k_active must be finite positive, got {k_active!r}",
+        )
+    derived_bound = float(np.exp(k_active * _DEVIATORIC_SCORE_BOUND))
+    if not np.isfinite(derived_bound):
+        raise FAToECMBiasError(
+            "k_active_invalid",
+            f"k_active={k_active!r} produces non-finite multiplier bound "
+            f"exp({k_active!r}*sqrt(2)) = {derived_bound!r}; reduce k_active",
+        )
+
+
+def compute_ecm_to_fa_bias_active(
+    adhesions: tuple[FocalAdhesionState, ...] | list[FocalAdhesionState],
+    ecm: ECMSubstrateState,
+    *,
+    k_active: float,
+) -> ECMToFABiasResult:
+    """HB#4-active step 1: orientation-driven Rayleigh-quotient bias on
+    the deviatoric ECM orientation tensor.
+
+    For each FA i:
+        n_fa = traction / |traction|  (branch-defined zero-traction → exact neutral)
+        T_local = ECM orientation tensor sampled at FA position
+        Q = T_local - 0.5 * trace(T_local) * I  (deviatoric: alignment-only)
+        score = n_fa.T @ Q @ n_fa  (dimensionless; |score| <= sqrt(2) under |T_ij| <= 1)
+        multiplier = exp(k_active * score)  (bounded positive exponential map)
+
+    All three FA rates (k_maturity_per_s, k_bind_per_s, k_unbind_per_s)
+    receive the SAME multiplier per FA — active-bias scaffolding only;
+    per-rate selectivity is Phase E v3+ scope.
+
+    Range: multiplier in [exp(-sqrt(2)*k_active), exp(+sqrt(2)*k_active)];
+    multiplier == 1.0 exactly at score == 0 (isotropic T = a*I gives Q = 0
+    so any traction direction yields neutral; Item 5 IC T = 0.5*I is
+    therefore automatically neutral under this law).
+
+    Validation order (ecm -> k_active -> sampler) lets cheap parameter
+    failures fire before the expensive sampler is called even with empty
+    adhesions.
+
+    Reads only ``orientation_tensor`` from the sampled ECM; the other
+    sampled ECM fields (mechanosensing scalars and accumulated-traction
+    memory) are excluded by the function-scoped AST + string guard
+    in the test catalog (HB#5 Y11 sister-pattern).
+
+    Args:
+        adhesions: tuple or list of :class:`FocalAdhesionState`.
+        ecm: :class:`ECMSubstrateState`. Validated at entry.
+        k_active: dimensionless coupling strength. REQUIRED, no
+            default. Must be finite, positive, and produce a finite
+            ``exp(k_active*sqrt(2))`` upper bound.
+
+    Returns:
+        :class:`ECMToFABiasResult` with deviatoric-Rayleigh
+        multipliers (shape ``(N_FA, 3)``, all three rates same per
+        FA) and 10-key diagnostics dict including the alignment
+        score range and the score bound value.
+
+    Raises:
+        FAToECMBiasError: with ``failure_kind == "k_active_invalid"``
+            if ``k_active`` is invalid; ``failure_kind ==
+            "active_multiplier_non_finite"`` if a per-FA score or
+            multiplier becomes non-finite (defense in depth);
+            sampler failure_kinds propagate from
+            :func:`sample_ecm_at_fa_positions`.
+    """
+
+    ecm.validate()
+    _validate_k_active(k_active)
+    sampled = sample_ecm_at_fa_positions(adhesions, ecm)
+
+    n_fa = len(sampled.fa_ids)
+    n_rates = len(RATE_NAMES)
+    multipliers = np.ones((n_fa, n_rates), dtype=np.float64)
+    alignment_scores = np.zeros(n_fa, dtype=np.float64)
+    zero_traction_count = 0
+    identity_2x2 = np.eye(2, dtype=np.float64)
+
+    for i, fa in enumerate(adhesions):
+        traction = np.asarray(fa.traction_force_nN_xy, dtype=np.float64)
+        traction_norm = float(np.linalg.norm(traction))
+        if traction_norm > 0.0:
+            n_fa_unit = traction / traction_norm
+            t_local = sampled.orientation_tensor[i]
+            trace_t = float(t_local[0, 0] + t_local[1, 1])
+            q_dev = t_local - 0.5 * trace_t * identity_2x2
+            alignment_score = float(n_fa_unit @ q_dev @ n_fa_unit)
+        else:
+            alignment_score = 0.0
+            zero_traction_count += 1
+
+        if not np.isfinite(alignment_score):
+            raise FAToECMBiasError(
+                "active_multiplier_non_finite",
+                f"FA {fa.adhesion_id!r}: alignment_score {alignment_score!r} "
+                f"non-finite (suggests corrupted orientation_tensor; "
+                f"ecm.validate() should have caught)",
+            )
+        multiplier = float(np.exp(k_active * alignment_score))
+        if not np.isfinite(multiplier):
+            raise FAToECMBiasError(
+                "active_multiplier_non_finite",
+                f"FA {fa.adhesion_id!r}: multiplier {multiplier!r} non-finite "
+                f"(k_active={k_active!r}, score={alignment_score!r})",
+            )
+
+        multipliers[i, :] = multiplier
+        alignment_scores[i] = alignment_score
+
+    if n_fa > 0:
+        max_multiplier = float(multipliers.max())
+        min_multiplier = float(multipliers.min())
+        max_score = float(alignment_scores.max())
+        min_score = float(alignment_scores.min())
+    else:
+        max_multiplier = 1.0
+        min_multiplier = 1.0
+        max_score = 0.0
+        min_score = 0.0
+
+    diagnostics_dict: dict[str, float | int | str] = {
+        "n_adhesions": int(n_fa),
+        "max_multiplier": max_multiplier,
+        "min_multiplier": min_multiplier,
+        "sampler_geometry": "bilinear_cell_centered",
+        "mechanism": "deviatoric_rayleigh_orientation",
+        "k_active": float(k_active),
+        "max_alignment_score": max_score,
+        "min_alignment_score": min_score,
+        "zero_traction_count": int(zero_traction_count),
+        "score_bound": float(_DEVIATORIC_SCORE_BOUND),
+    }
+
     return ECMToFABiasResult(
         fa_ids=sampled.fa_ids,
         multipliers_per_fa=multipliers,

@@ -74,6 +74,7 @@ from acs.v2.dynamics.ecm_to_fa_bias import (
     ECMToFABiasResult,
     FAToECMBiasError,
     RATE_NAMES,
+    compute_ecm_to_fa_bias_active,
     compute_ecm_to_fa_bias_neutral,
     sample_ecm_at_fa_positions,
 )
@@ -207,6 +208,7 @@ __all__ = [
     "compute_area_forces",
     "compute_cortex_forces",
     "compute_ecm_orientation_lyapunov_metric",
+    "compute_ecm_to_fa_bias_active",
     "compute_ecm_to_fa_bias_neutral",
     "compute_finite_n_residual",
     "compute_radial_tangential_decomposition",
