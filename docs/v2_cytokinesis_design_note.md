@@ -274,8 +274,9 @@ with a `status=blocker` to PI and three concrete options
 
 ## 7. References
 
-- Forward roadmap: `docs/v2_phase1_forward_roadmap.md` lines 51,
-  53–61 (Phase 1 Out / Schema-Only).
+- Forward roadmap: `docs/v2_phase1_forward_roadmap.md`
+  ("Cytokinesis design-note only, no executable implementation
+  requirement" entry in the "Phase 1 Out / Schema-Only" section).
 - v2 schemas (current state):
   - `acs/v2/single_cell.py::SingleCellState`
   - `acs/v2/focal_adhesion.py::FocalAdhesionState`
