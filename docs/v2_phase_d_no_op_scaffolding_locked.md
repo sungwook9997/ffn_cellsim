@@ -270,11 +270,14 @@ invariant.
 8. `test_phase_d_step_propagates_hb3_failure_kinds` — non-finite FA
    position raises `FAToECMScatteringError` with
    `failure_kind="non_finite_fa_position"`.
-9. `test_phase_d_step_propagates_hb4_failure_kinds` — when HB#3
-   passes but HB#4 raises (e.g., FA exactly on out-of-grid
-   tolerance edge), the wrapper surfaces `FAToECMBiasError` with
-   `failure_kind="fa_bias_position_outside_ecm_grid"`. Tests
-   ordering as well.
+9. `test_phase_d_step_propagates_hb4_failure_kinds_when_bias_leg_raises`
+   — after FA→ECM succeeds, a mocked/stubbed HB#4 failure (for
+   example monkeypatching `step_ecm_to_fa_bias` to raise
+   `FAToECMBiasError`) is propagated unchanged. Natural
+   geometry-boundary inputs should have matching HB#3/HB#4
+   pass/fail behavior; a geometry case that passes HB#3 but fails
+   HB#4 is a sister-gate-mirror bug, not a valid propagation
+   scenario.
 10. `test_phase_d_step_scatter_conservation_inherited` — sum over
     grid * cell area equals sum over FAs (HB#3 invariant
     propagated through wrapper).
