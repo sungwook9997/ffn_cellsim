@@ -49,8 +49,9 @@ containing per locked §1:
   — single composition function; HB#4 hard-wired neutral
   (`compute_ecm_to_fa_bias_neutral`); no v2 placeholder/hooks
   (Y3); no wrapper failure kinds.
-- 9 imports from sister modules (HB#3 + HB#1+#2 + HB#4 + HB#5
-  + ECM substrate + focal adhesion schemas + 2 HB#1+#2 constants
+- 11 imports from sister modules (HB#3 1 + HB#1+#2 4 = 2
+  constants + 1 result type + 1 function + HB#4 2 + HB#5 2 +
+  ECM substrate 1 + focal adhesion 1; HB#1+#2 constants
   re-imported, NOT redefined per Y14).
 - Exports through `acs/v2/dynamics/__init__.py` and
   `acs/v2/__init__.py` (only 2 new symbols per Y14:
@@ -626,9 +627,26 @@ HB#1+#2 / HB#5 Sanity Gate review precedent.
      AST check)
   6. No constant redefinition: meta-test 16
      (`ce.TRACTION_REF_NN_PER_UM2 is cr.TRACTION_REF_NN_PER_UM2`)
-- Code commit must reproduce the locked §1 forbidden list at
-  module-docstring level (text-level guard layered on top of
-  runtime tests, per B1 `id=1458` precedent).
+- **Code commit module-docstring intent guard** (Codex
+  `id=1546` blocker resolution + B1 `id=1458` precedent
+  divergence note): the module docstring must describe the
+  Phase E v1 wording boundary in **paraphrased** form (e.g.,
+  "this composition provides ECM-side evidence ONLY; full
+  closed-loop satisfaction requires Phase E v2 + Item 5
+  sweep harness + PI-approved decision") **without inserting
+  the literal forbidden strings** `"Items 1-4 satisfied"`,
+  `"full closed-loop"`, `"full FA→ECM→FA"`, or `"gate
+  satisfied"` (which would trip meta-test 14 — these strings
+  must NOT appear anywhere in the module source, only in this
+  Sanity Gate doc + the lock doc + the test docstrings/
+  assertions where they are explicitly the targets of the
+  string check). The literal forbidden-string list is owned
+  by meta-test 14, NOT the docstring. **Divergence note from
+  B1 `id=1458` precedent**: B1's forbidden list could be
+  reproduced verbatim because no string-matching meta-test
+  enforced absence of the forbidden phrases in source. Phase
+  E v1 has meta-test 14, so verbatim reproduction is
+  contradictory; paraphrased intent guard is the resolution.
 - All 17 tests must pass at first commit; no `TODO test_X`
   placeholders.
 - `pytest tests/test_v2_closed_loop_phase_e.py` + combined
