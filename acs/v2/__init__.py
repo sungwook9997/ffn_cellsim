@@ -45,6 +45,13 @@ from acs.v2.dynamics.ecm_constitutive_response import (
     TRACTION_REF_NN_PER_UM2,
     step_ecm_orientation_response,
 )
+from acs.v2.dynamics.ecm_lyapunov_metric import (
+    ECMOrientationLyapunovMetricDiagnostics,
+    ECMOrientationLyapunovMetricResult,
+    MAX_LYAPUNOV_ENERGY_FACTOR_PER_ACTIVE_CELL,
+    MAX_SQ_FROBENIUS_DIFF_PER_CELL,
+    compute_ecm_orientation_lyapunov_metric,
+)
 from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
@@ -133,6 +140,8 @@ __all__ = [
     "CellClusterState",
     "ECMConstitutiveResponseError",
     "ECMOpenLoopError",
+    "ECMOrientationLyapunovMetricDiagnostics",
+    "ECMOrientationLyapunovMetricResult",
     "ECMOrientationResponseDiagnostics",
     "ECMOrientationResponseResult",
     "ECMSampledAtFAs",
@@ -154,6 +163,8 @@ __all__ = [
     "ImagingDatasetSpec",
     "JunctionState",
     "K_ORIENT_PER_S",
+    "MAX_LYAPUNOV_ENERGY_FACTOR_PER_ACTIVE_CELL",
+    "MAX_SQ_FROBENIUS_DIFF_PER_CELL",
     "MeasurementBoundary",
     "MeasurementBoundaryError",
     "MetricRegistry",
@@ -181,6 +192,7 @@ __all__ = [
     "canonical_artifact_layout",
     "compute_area_forces",
     "compute_cortex_forces",
+    "compute_ecm_orientation_lyapunov_metric",
     "compute_ecm_to_fa_bias_neutral",
     "compute_finite_n_residual",
     "compute_radial_tangential_decomposition",

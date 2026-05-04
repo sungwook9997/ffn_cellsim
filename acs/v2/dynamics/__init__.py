@@ -23,6 +23,13 @@ from acs.v2.dynamics.ecm_constitutive_response import (
     TRACTION_REF_NN_PER_UM2,
     step_ecm_orientation_response,
 )
+from acs.v2.dynamics.ecm_lyapunov_metric import (
+    ECMOrientationLyapunovMetricDiagnostics,
+    ECMOrientationLyapunovMetricResult,
+    MAX_LYAPUNOV_ENERGY_FACTOR_PER_ACTIVE_CELL,
+    MAX_SQ_FROBENIUS_DIFF_PER_CELL,
+    compute_ecm_orientation_lyapunov_metric,
+)
 from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
@@ -60,6 +67,8 @@ from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
 __all__ = [
     "ECMConstitutiveResponseError",
     "ECMOpenLoopError",
+    "ECMOrientationLyapunovMetricDiagnostics",
+    "ECMOrientationLyapunovMetricResult",
     "ECMOrientationResponseDiagnostics",
     "ECMOrientationResponseResult",
     "ECMSampledAtFAs",
@@ -72,6 +81,8 @@ __all__ = [
     "FocalAdhesionDynamicsParameters",
     "FocalAdhesionDynamicsResult",
     "K_ORIENT_PER_S",
+    "MAX_LYAPUNOV_ENERGY_FACTOR_PER_ACTIVE_CELL",
+    "MAX_SQ_FROBENIUS_DIFF_PER_CELL",
     "PhaseDNoOpStepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
@@ -85,6 +96,7 @@ __all__ = [
     "apply_prescribed_stiffness_rate",
     "compute_area_forces",
     "compute_cortex_forces",
+    "compute_ecm_orientation_lyapunov_metric",
     "compute_ecm_to_fa_bias_neutral",
     "compute_radial_tangential_decomposition",
     "energy_area",
