@@ -409,23 +409,36 @@ exports.
 If Codex review surfaces a missing reduction or hidden numeric, the
 gate flips to BLOCKER with the three-options template.
 
-### Outstanding before code lands
+### Post-implementation status (audit 2026-05-04 KST)
 
-- Codex review of this gate document (5 focus per impl Codex
-  `id=1201` + design-discussion Codex `id=1198`):
-  1. typed `ProtrusionStateMultipliers` validation — unknown keys
-     fail not neutral
-  2. per-FA delegation to 6.3a or behavior-equivalent grouping;
-     no inline reimplementation
-  3. `linked_protrusion_missing` failure on missing linked id
-  4. reciprocal mismatch diagnostic only (warnings, not failures)
-  5. pre-step `dt_fa_s · max(effective_rate over all FAs)` gate
+This section was originally titled "Outstanding before code
+lands" and is preserved as historical scaffolding. All five
+review focus points listed below were reviewed and cleared by
+Codex (impl `id=1207` cleared the Sanity Gate; impl `id=1214`
+cleared the code; impl `id=1219` cleared the persistent runner):
 
-- The lock artifact (`docs/v2_63b_protrusion_coupling_locked.md`)
-  must be committed alongside this gate so the gate's
-  source-of-truth dependency is auditable on disk. design-discussion
-  Claude wrote the lock file at `~13:15 KST`; impl-work commits it
-  in the same patch as this gate document for traceability.
+1. typed `ProtrusionStateMultipliers` validation — unknown keys
+   fail not neutral ✓ (`9a20fc9`, `deed45a`)
+2. per-FA delegation to 6.3a or behavior-equivalent grouping;
+   no inline reimplementation ✓ (`9a20fc9`)
+3. `linked_protrusion_missing` failure on missing linked id ✓
+   (`9a20fc9`)
+4. reciprocal mismatch diagnostic only (warnings, not failures) ✓
+   (`9a20fc9`)
+5. pre-step `dt_fa_s · max(effective_rate over all FAs)` gate ✓
+   (`9a20fc9`, `deed45a` empty-FA bypass fix)
+
+The lock artifact (`docs/v2_63b_protrusion_coupling_locked.md`)
+landed together with this gate doc in commit `6d1e12b`
+(whitespace hygiene fix `dc5043a`); the source-of-truth
+dependency is auditable on disk.
+
+The persistent visible-deliverable runner landed at `50033c3`
++ `2a00452` (docstring align fix).
+
+Future modification of `acs/v2/dynamics/protrusion_coupled_focal_adhesion.py`
+must update or supersede this gate first if any §0 forbidden item
+or §1–§6 contract changes.
 
 ---
 

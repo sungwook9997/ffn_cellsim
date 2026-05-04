@@ -328,14 +328,24 @@ sign-convention drift, the gate flips to BLOCKER with the
 three-options template (defer 6.3a, narrow scope further, switch
 to a different next unit).
 
-### Outstanding before code lands
+### Post-implementation status (audit 2026-05-04 KST)
 
-- Codex review of this gate (the FA-side spec match for the
-  design lock id=1076).
-- A single docs commit landing this gate file alongside the code
-  is acceptable. The locked design discussion (already on
-  `docs/v2_phase1_forward_roadmap.md` and the design-discussion
-  ledger) is the spec source; this file is the impl-side gate.
+This section was originally titled "Outstanding before code
+lands" and is preserved as historical scaffolding. The 6.3a code
++ this gate doc landed together at commit `52622b4`; Codex
+review cleared the doc and the FA-side spec match for design
+lock id=1076 in the same review cycle. A follow-up clarification
+to the `released` zero-traction wording landed at `f43c619`.
 
-PI awareness: this unit is mid-cycle; PI will see commit hashes +
-fast-suite test counts as the cadence cycles complete.
+The gate items §1–§6, the Magic-Number Block, and the test
+catalog have all been satisfied by the landed implementation.
+The locked design source remains
+`docs/v2_phase1_forward_roadmap.md` plus the
+design-discussion ledger; this file is the impl-side gate that
+governed the original commit and continues to bind any future
+modification of `acs/v2/dynamics/focal_adhesion.py` (any change
+that violates a §1–§6 item must update or supersede this gate
+first).
+
+PI awareness: complete. PI received commit hashes + fast-suite
+test counts during the original cadence cycle.
