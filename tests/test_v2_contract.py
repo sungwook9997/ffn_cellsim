@@ -11,6 +11,7 @@ from acs.v2.data_contract import (
     ArtifactKind,
     ImagingDatasetSpec,
     MetricSpec,
+    SegmentationProvenance,
     V2DataContract,
     canonical_artifact_layout,
     default_single_cell_contract,
@@ -40,6 +41,13 @@ def _full_artifact_dataset(**overrides) -> ImagingDatasetSpec:
             ArtifactKind.BOUNDARY_CONTOURS,
             ArtifactKind.EVENT_ANNOTATIONS,
             ArtifactKind.TRACKING_TABLE,
+        ),
+        segmentation_provenance=SegmentationProvenance(
+            method="cellpose_then_manual_qc",
+            software="Cellpose",
+            version="2.0",
+            postprocessing=("remove_small_objects", "manual_boundary_qc"),
+            reviewer="test_fixture",
         ),
     )
     base.update(overrides)
@@ -72,6 +80,22 @@ def _contract_from_json(path: Path) -> V2DataContract:
         )
         for entry in dataset_payload.get("artifact_layout", ())
     )
+    raw_provenance = dataset_payload.get("segmentation_provenance")
+    if raw_provenance is not None:
+        dataset_payload["segmentation_provenance"] = SegmentationProvenance(
+            method=raw_provenance["method"],
+            software=raw_provenance["software"],
+            version=raw_provenance["version"],
+            source_artifact=ArtifactKind(
+                raw_provenance.get("source_artifact", ArtifactKind.RAW_FRAMES.value)
+            ),
+            coordinate_convention=raw_provenance.get(
+                "coordinate_convention",
+                "image_um_y_down",
+            ),
+            postprocessing=tuple(raw_provenance.get("postprocessing", ())),
+            reviewer=raw_provenance.get("reviewer", ""),
+        )
     dataset = ImagingDatasetSpec(**dataset_payload)
 
     metrics = []
@@ -127,6 +151,8 @@ def test_example_single_cell_data_contract_json_validates():
         "data/imaging/v2_single_cell_col1_demo/"
         "segmentation/masks/t{timepoint:04d}.tif"
     )
+    assert contract.dataset.segmentation_provenance is not None
+    assert contract.dataset.segmentation_provenance.software == "Cellpose"
 
     keys = {(m.name, m.measurement_modality) for m in contract.metrics}
     assert ("projected_area", "top_down_segmentation") in keys
@@ -374,6 +400,38 @@ def test_dataset_duplicate_artifact_rejected():
                 ArtifactKind.SEGMENTATION_MASK,
             ),
         ).validate()
+
+
+def test_segmentation_artifacts_require_segmentation_provenance():
+    dataset = _full_artifact_dataset(segmentation_provenance=None)
+
+    with pytest.raises(ValueError, match="segmentation_provenance"):
+        dataset.validate()
+
+
+def test_segmentation_provenance_validates_required_fields():
+    with pytest.raises(ValueError, match="method"):
+        SegmentationProvenance(
+            method=" ",
+            software="Cellpose",
+            version="2.0",
+        ).validate()
+
+    with pytest.raises(ValueError, match="coordinate_convention"):
+        SegmentationProvenance(
+            method="cellpose",
+            software="Cellpose",
+            version="2.0",
+            coordinate_convention="pixel_y_down",
+        ).validate()
+
+    SegmentationProvenance(
+        method="cellpose_then_manual_qc",
+        software="Cellpose",
+        version="2.0",
+        coordinate_convention="image_um_y_down",
+        postprocessing=("remove_small_objects",),
+    ).validate()
 
 
 def test_canonical_artifact_layout_covers_advertised_artifacts():

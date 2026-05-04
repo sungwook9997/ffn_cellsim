@@ -9,7 +9,8 @@ Sanity Gate (data_contract):
        live on the metric strings ("um", "um2", "count_per_frame", ...). dt/CFL
        is N/A.
     2. Boundary cases: empty channels, empty metrics, missing artifacts,
-       missing CSV columns, missing channels, non-positive voxel sizes,
+       missing CSV columns, missing channels, missing segmentation provenance
+       for segmentation-derived artifacts, non-positive voxel sizes,
        calibration/validation timepoint overlap, out-of-range timepoints,
        duplicate `(name, measurement_modality)` metric keys, artifact layout
        path traversal/absolute paths, and `available_csv_columns` declared
@@ -128,6 +129,47 @@ class ArtifactLayoutEntry:
             )
 
 
+@dataclass(frozen=True)
+class SegmentationProvenance:
+    """How segmentation-derived masks/contours were produced.
+
+    This records the measurement pipeline only. It must not be used to justify
+    solver vertex spacing, numerical ``dx``, or physics parameters.
+    """
+
+    method: str
+    software: str
+    version: str
+    source_artifact: ArtifactKind = ArtifactKind.RAW_FRAMES
+    coordinate_convention: str = "image_um_y_down"
+    postprocessing: tuple[str, ...] = field(default_factory=tuple)
+    reviewer: str = ""
+
+    def validate(self) -> None:
+        if not self.method.strip():
+            raise ValueError("segmentation provenance method must be non-empty")
+        if not self.software.strip():
+            raise ValueError("segmentation provenance software must be non-empty")
+        if not self.version.strip():
+            raise ValueError("segmentation provenance version must be non-empty")
+        if not isinstance(self.source_artifact, ArtifactKind):
+            raise ValueError(
+                "segmentation provenance source_artifact must be an ArtifactKind"
+            )
+        if self.coordinate_convention not in {
+            "image_um_y_down",
+            "world_um_y_up",
+        }:
+            raise ValueError(
+                "segmentation provenance coordinate_convention must be "
+                "image_um_y_down or world_um_y_up"
+            )
+        if any(not step.strip() for step in self.postprocessing):
+            raise ValueError(
+                "segmentation provenance postprocessing entries must be non-empty"
+            )
+
+
 def canonical_artifact_layout(
     artifacts: Sequence[ArtifactKind],
 ) -> tuple[ArtifactLayoutEntry, ...]:
@@ -166,6 +208,7 @@ class ImagingDatasetSpec:
     available_artifacts: tuple[ArtifactKind, ...] = field(default_factory=tuple)
     available_csv_columns: tuple[str, ...] = field(default_factory=tuple)
     artifact_layout: tuple[ArtifactLayoutEntry, ...] = field(default_factory=tuple)
+    segmentation_provenance: SegmentationProvenance | None = None
     notes: str = ""
 
     def validate(self) -> None:
@@ -219,6 +262,22 @@ class ImagingDatasetSpec:
                 f"duplicate CSV column in available_csv_columns: {self.available_csv_columns!r}"
             )
         self._validate_artifact_layout()
+        self._validate_segmentation_provenance()
+
+    def _validate_segmentation_provenance(self) -> None:
+        segmentation_artifacts = {
+            ArtifactKind.SEGMENTATION_MASK,
+            ArtifactKind.BOUNDARY_CONTOURS,
+        }
+        if segmentation_artifacts.intersection(self.available_artifacts):
+            if self.segmentation_provenance is None:
+                raise ValueError(
+                    "segmentation_provenance is required when segmentation_mask "
+                    "or boundary_contours artifacts are advertised"
+                )
+        if self.segmentation_provenance is None:
+            return
+        self.segmentation_provenance.validate()
 
     def _validate_artifact_layout(self) -> None:
         if not self.artifact_layout:

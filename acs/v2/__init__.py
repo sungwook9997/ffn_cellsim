@@ -60,6 +60,7 @@ from acs.v2.data_contract import (
     ArtifactKind,
     ImagingDatasetSpec,
     MetricSpec,
+    SegmentationProvenance,
     V2DataContract,
     canonical_artifact_layout,
 )
@@ -116,6 +117,7 @@ __all__ = [
     "ProtrusionEvent",
     "ProtrusionStateMultipliers",
     "RegisteredMetric",
+    "SegmentationProvenance",
     "SingleCellState",
     "StepDiagnostics",
     "V2DataContract",

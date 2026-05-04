@@ -84,6 +84,18 @@
         "required": true
       }
     ],
+    "segmentation_provenance": {
+      "method": "cellpose_then_manual_qc",
+      "software": "Cellpose",
+      "version": "2.0",
+      "source_artifact": "raw_frames",
+      "coordinate_convention": "image_um_y_down",
+      "postprocessing": [
+        "remove_small_objects",
+        "manual_boundary_qc"
+      ],
+      "reviewer": "example_only"
+    },
     "notes": "Example-only v2 single-cell data contract fixture. Paths are canonical placeholders; do not treat as PI data."
   },
   "metrics": [
