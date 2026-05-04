@@ -785,10 +785,15 @@ def test_stimulus_accumulator_no_change_when_traction_zero():
     """Phase B precursor evidence — zero prescribed traction leaves the
     open-loop stimulus accumulator unchanged, exactly to float64
     round-off (the underlying update is bit-exact ``x + 0 = x``).
+    This is the boundary case of monotone-non-decreasing where the
+    monotone increase reduces to monotone equality.
 
     Phase B precursor evidence; does NOT satisfy closed-loop gate
-    Item 3 closed-loop side, which requires the same property on a
-    response field (Phase E).
+    Item 1 (response monotonicity), which requires this property on
+    a response field, not the stimulus accumulator. The
+    zero-traction case contributes to the Item 1 precursor only as
+    the boundary point of the monotonicity claim, not as an
+    independent gate-item satisfaction.
     """
 
     ecm = _ecm()
