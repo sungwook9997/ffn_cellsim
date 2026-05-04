@@ -33,6 +33,13 @@ from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
 )
+from acs.v2.ecm_open_loop_harness import (
+    EcmOlRun,
+    EcmOlScenario,
+    EcmOlStepDiagnostics,
+    make_default_ecm,
+    run_ecm_ol_scenario,
+)
 from acs.v2.cell_cluster import CellClusterState
 from acs.v2.data_contract import (
     ArtifactKind,
@@ -73,6 +80,9 @@ __all__ = [
     "CellClusterState",
     "ECMSubstrateState",
     "ECMOpenLoopError",
+    "EcmOlRun",
+    "EcmOlScenario",
+    "EcmOlStepDiagnostics",
     "FocalAdhesionState",
     "FrameDumpReadResult",
     "HarnessRun",
@@ -100,6 +110,8 @@ __all__ = [
     "energy_area",
     "energy_cortex",
     "equilibrium_radius_from_cubic",
+    "make_default_ecm",
+    "run_ecm_ol_scenario",
     "equilibrium_radius_from_quartic",
     "read_frame",
     "regular_polygon_vertices",
