@@ -40,6 +40,37 @@ Sanity Gate scope (dynamics/focal_adhesion.py):
 Magic-Number Block: this module declares no tunable numeric. The reused
 0.5 stability margin is the only numerical safety factor and is
 imported from ``acs.v2.active_contour`` rather than redefined.
+
+B1 typed-schema migration scope (per
+``docs/v2_focal_adhesion_dynamics_result_typed_locked.md`` +
+``docs/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md``,
+commits ``ed5c0ca`` / ``7924730`` / ``77d4e91`` / ``88eaa4b`` /
+``3b10df6``): :class:`FocalAdhesionDynamicsResult` is
+``frozen=True, slots=True`` and its ``diagnostics`` field is the
+typed :class:`FocalAdhesionDynamicsDiagnostics` dataclass (4
+fields: ``n_adhesions``, ``aggregate_cell_force_nN_xy``,
+``aggregate_substrate_reaction_nN_xy``,
+``max_traction_magnitude_nN``). The migration is **shape-only**;
+no behavior change to 6.3a force / rate algebra.
+
+B1 forbidden (text-level guard layered on top of the runtime
+tests in ``tests/test_v2_focal_adhesion_dynamics.py``):
+
+- No 6.3a force / rate algebra change (typing migration only).
+- No HB#4 ``diagnostics_dict`` migration here (HB#4 surface is
+  grandfathered; separate unit).
+- No nested mapping deep-freeze (``multiplier_histogram`` /
+  ``max_effective_rate_per_name`` stay ``Mapping[...]`` in the
+  6.3b extension; separate unit).
+- No ``__getitem__`` shim, deprecation hybrid, or any other
+  backward-compat dict access on :class:`FocalAdhesionDynamicsResult`
+  or :class:`FocalAdhesionDynamicsDiagnostics`. Tests
+  ``test_focal_adhesion_diagnostics_no_dict_access`` enforce.
+- No preemptive ``# type: ignore[assignment]`` on any subclass
+  diagnostics override (deferred to a future strict-type-check
+  unit per locked Y4).
+- No ``Generic[T_Diag]`` parameterization (overengineered for
+  B1).
 """
 
 from __future__ import annotations

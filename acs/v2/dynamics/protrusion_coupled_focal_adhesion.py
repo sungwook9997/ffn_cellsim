@@ -11,8 +11,16 @@ registry plus a typed multiplier table, then delegates per-FA to
 The wrapper deliberately does **not** reimplement 6.3a rate or
 traction algebra inline. It only changes which effective-rate
 parameters reach 6.3a and aggregates per-FA results back in input
-order. The output contract matches 6.3a's verbatim, with diagnostics
-extended additively (``linked_missing``, ``reciprocal_missing``,
+order. The 5 physical fields of the result match 6.3a's contract
+verbatim; the 6.3b-specific diagnostics extension is captured by
+the locked B1 subclass result type
+:class:`ProtrusionCoupledDynamicsResult` (IS-A
+:class:`acs.v2.dynamics.focal_adhesion.FocalAdhesionDynamicsResult`),
+whose ``diagnostics`` field is the typed
+:class:`ProtrusionCoupledDynamicsDiagnostics` (IS-A
+:class:`acs.v2.dynamics.focal_adhesion.FocalAdhesionDynamicsDiagnostics`)
+dataclass with 4 6.3a-shared fields + 4 6.3b extension fields
+(``linked_missing``, ``reciprocal_missing``,
 ``multiplier_histogram``, ``max_effective_rate_per_name``).
 
 Sanity Gate scope (dynamics/protrusion_coupled_focal_adhesion.py):
@@ -40,8 +48,12 @@ Sanity Gate scope (dynamics/protrusion_coupled_focal_adhesion.py):
   (6.3a's no-auto-state-transition contract is preserved).
 - §6 measurement-protocol: 6.3a output contract is unchanged
   (cell-on-substrate inward radial-to-centroid traction by default,
-  decomposition reconstructs the original); diagnostics keys are
-  added but every existing 6.3a key is preserved.
+  decomposition reconstructs the original); the 6.3b diagnostics
+  extension lives on the typed
+  :class:`ProtrusionCoupledDynamicsDiagnostics` subclass, every
+  base-class field is inherited and accessible via attribute
+  access, and ``__getitem__`` access is rejected per B1 (see B1
+  forbidden block below).
 
 Magic-Number Block: this module declares no tunable numeric. The
 reused 0.5 stability margin is the only numerical safety factor and
@@ -49,6 +61,41 @@ is imported from :mod:`acs.v2.active_contour` rather than redefined.
 The reference biology multiplier table from the lock §3 is
 documentation only; runtime requires explicit caller-supplied
 multipliers.
+
+B1 typed-schema migration scope (per
+``docs/v2_focal_adhesion_dynamics_result_typed_locked.md`` +
+``docs/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md``,
+commits ``ed5c0ca`` / ``7924730`` / ``77d4e91`` / ``88eaa4b`` /
+``3b10df6``): :func:`step_protrusion_coupled_focal_adhesions`
+returns :class:`ProtrusionCoupledDynamicsResult` (IS-A
+:class:`acs.v2.dynamics.focal_adhesion.FocalAdhesionDynamicsResult`),
+``frozen=True, slots=True``; its ``diagnostics`` field is the
+typed :class:`ProtrusionCoupledDynamicsDiagnostics` (IS-A
+:class:`acs.v2.dynamics.focal_adhesion.FocalAdhesionDynamicsDiagnostics`),
+8 fields total (4 inherited base + 4 6.3b extension). The
+migration is **shape-only**; no behavior change to 6.3a/6.3b
+force / rate algebra.
+
+B1 forbidden (text-level guard layered on top of the runtime
+tests in ``tests/test_v2_protrusion_coupled_focal_adhesion.py``):
+
+- No 6.3a/6.3b force / rate algebra change (typing migration
+  only).
+- No HB#4 ``diagnostics_dict`` migration here (HB#4 surface is
+  grandfathered; separate unit).
+- No nested mapping deep-freeze: ``multiplier_histogram`` is
+  ``Mapping[str, Counter]``, ``max_effective_rate_per_name`` is
+  ``Mapping[str, float]`` (separate unit).
+- No ``__getitem__`` shim, deprecation hybrid, or any other
+  backward-compat dict access on
+  :class:`ProtrusionCoupledDynamicsResult` or
+  :class:`ProtrusionCoupledDynamicsDiagnostics`. Tests
+  ``test_protrusion_coupled_diagnostics_no_dict_access`` enforce.
+- No preemptive ``# type: ignore[assignment]`` on the subclass
+  diagnostics field override (locked Y4 plain override; deferred
+  to a future strict-type-check unit).
+- No ``Generic[T_Diag]`` parameterization (overengineered for
+  B1).
 """
 
 from __future__ import annotations
