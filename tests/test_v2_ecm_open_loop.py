@@ -6,6 +6,7 @@ import pytest
 from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
+    apply_prescribed_stiffness_rate,
 )
 from acs.v2.ecm_substrate import ECMSubstrateState
 
@@ -119,4 +120,161 @@ def test_invalid_dt_rejected(bad_dt):
     with pytest.raises(ECMOpenLoopError) as info:
         accumulate_prescribed_traction(ecm, np.zeros(ecm.grid_shape), dt_s=bad_dt)
     assert info.value.failure_kind == "dt_invalid"
+
+
+@pytest.mark.parametrize(
+    "bad_dt",
+    [np.True_, np.False_, np.bool_(True), np.array(True), np.array(False)],
+)
+def test_numpy_bool_dt_rejected_for_traction(bad_dt):
+    """Codex review id=1121: `np.bool_` / 0-d bool array silently coerce to
+    1.0/0.0 via ``float()``. They must be rejected as ``dt_invalid`` even
+    though Python ``bool`` is already covered above."""
+
+    ecm = _ecm()
+    with pytest.raises(ECMOpenLoopError) as info:
+        accumulate_prescribed_traction(ecm, np.zeros(ecm.grid_shape), dt_s=bad_dt)
+    assert info.value.failure_kind == "dt_invalid"
+
+
+# ----- 6.4-open-A: apply_prescribed_stiffness_rate -----
+
+
+def test_stiffness_rate_zero_no_op_returns_new_state():
+    ecm = _ecm()
+    rate = np.zeros(ecm.grid_shape)
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    assert out is not ecm
+    np.testing.assert_array_equal(out.stiffness_kpa, ecm.stiffness_kpa)
+
+
+def test_stiffness_rate_zero_dt_no_op():
+    ecm = _ecm()
+    rate = np.full(ecm.grid_shape, 5.0, dtype=np.float64)  # large rate
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=0.0)
+    np.testing.assert_array_equal(out.stiffness_kpa, ecm.stiffness_kpa)
+
+
+def test_stiffness_rate_uniform_positive_exact_increment():
+    ecm = _ecm()
+    rate = np.full(ecm.grid_shape, 0.5, dtype=np.float64)  # +0.5 kPa/s
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=2.0)  # *2 s
+    expected = ecm.stiffness_kpa + 1.0  # +1.0 kPa
+    np.testing.assert_allclose(out.stiffness_kpa, expected, atol=0.0)
+
+
+def test_stiffness_rate_nonuniform_signed_exact_update():
+    ecm = _ecm()
+    rate = np.array([[0.1, -0.2], [0.3, -0.4], [0.5, -0.6]], dtype=np.float64)
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    expected = ecm.stiffness_kpa + rate
+    np.testing.assert_allclose(out.stiffness_kpa, expected, atol=0.0)
+    assert (out.stiffness_kpa >= 0.0).all()
+
+
+def test_stiffness_rate_negative_post_state_raises():
+    ecm = _ecm()
+    # ecm.stiffness_kpa = 2.0; a -3.0 kPa/s rate over 1 s would give -1.0.
+    rate = np.full(ecm.grid_shape, -3.0, dtype=np.float64)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    assert info.value.failure_kind == "stiffness_negative_post_update"
+
+
+def test_stiffness_rate_at_exact_zero_post_state_accepted():
+    """Boundary case: rate · dt exactly cancels existing stiffness → post == 0
+    is allowed (schema permits non-negative)."""
+
+    ecm = _ecm()
+    rate = np.full(ecm.grid_shape, -2.0, dtype=np.float64)  # exactly -ecm.stiffness
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    np.testing.assert_allclose(out.stiffness_kpa, np.zeros(ecm.grid_shape))
+
+
+def test_stiffness_rate_shape_mismatch_rejected():
+    ecm = _ecm()
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_stiffness_rate(ecm, np.zeros((2, 2)), dt_s=1.0)
+    assert info.value.failure_kind == "stiffness_rate_shape"
+
+
+def test_stiffness_rate_non_finite_rejected():
+    ecm = _ecm()
+    rate = np.zeros(ecm.grid_shape)
+    rate[0, 0] = np.nan
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    assert info.value.failure_kind == "stiffness_rate_non_finite"
+
+
+@pytest.mark.parametrize("bad_dt", [True, -1.0, np.inf, np.nan, object()])
+def test_stiffness_rate_invalid_dt_rejected(bad_dt):
+    ecm = _ecm()
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_stiffness_rate(ecm, np.zeros(ecm.grid_shape), dt_s=bad_dt)
+    assert info.value.failure_kind == "dt_invalid"
+
+
+@pytest.mark.parametrize(
+    "bad_dt",
+    [np.True_, np.False_, np.bool_(True), np.array(True), np.array(False)],
+)
+def test_numpy_bool_dt_rejected_for_stiffness_rate(bad_dt):
+    ecm = _ecm()
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_stiffness_rate(ecm, np.zeros(ecm.grid_shape), dt_s=bad_dt)
+    assert info.value.failure_kind == "dt_invalid"
+
+
+def test_stiffness_rate_other_fields_preserved_and_not_aliased():
+    ecm = _ecm()
+    rate = np.full(ecm.grid_shape, 0.1, dtype=np.float64)
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    # Verbatim equality on non-stiffness fields.
+    np.testing.assert_array_equal(out.ligand_density, ecm.ligand_density)
+    np.testing.assert_array_equal(out.fiber_density, ecm.fiber_density)
+    np.testing.assert_array_equal(out.orientation_tensor, ecm.orientation_tensor)
+    np.testing.assert_array_equal(
+        out.accumulated_traction_nNs_per_um2, ecm.accumulated_traction_nNs_per_um2
+    )
+    assert out.origin_um_xy == ecm.origin_um_xy
+    assert out.spacing_um == ecm.spacing_um
+    assert out.source == ecm.source
+    # Not aliased: mutating one must not affect the other (defensive copy).
+    out.stiffness_kpa.setflags(write=True)  # ensure writable
+    original_snapshot = ecm.stiffness_kpa.copy()
+    out.stiffness_kpa[0, 0] = 99.0
+    np.testing.assert_array_equal(ecm.stiffness_kpa, original_snapshot)
+    np.testing.assert_array_equal(
+        out.ligand_density, ecm.ligand_density,
+    )  # still equal, but distinct array
+    assert out.ligand_density is not ecm.ligand_density
+
+
+def test_stiffness_rate_input_ecm_not_mutated():
+    ecm = _ecm()
+    snapshot = ecm.stiffness_kpa.copy()
+    rate = np.full(ecm.grid_shape, 0.7, dtype=np.float64)
+    apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    np.testing.assert_array_equal(ecm.stiffness_kpa, snapshot)
+
+
+def test_stiffness_rate_returned_state_validates():
+    ecm = _ecm()
+    rate = np.full(ecm.grid_shape, 0.1, dtype=np.float64)
+    out = apply_prescribed_stiffness_rate(ecm, rate, dt_s=1.0)
+    out.validate()  # must not raise; schema invariants intact
+
+
+def test_stiffness_rate_chained_calls_compose():
+    """Multiple calls compose linearly: dt_a · rate_a + dt_b · rate_b applied in
+    sequence equals one call with their sum (under matching final post-state)."""
+
+    ecm = _ecm()
+    rate_a = np.full(ecm.grid_shape, 0.2, dtype=np.float64)
+    rate_b = np.full(ecm.grid_shape, -0.1, dtype=np.float64)
+    out_chained = apply_prescribed_stiffness_rate(ecm, rate_a, dt_s=1.0)
+    out_chained = apply_prescribed_stiffness_rate(out_chained, rate_b, dt_s=2.0)
+    expected = ecm.stiffness_kpa + 0.2 * 1.0 + (-0.1) * 2.0
+    np.testing.assert_allclose(out_chained.stiffness_kpa, expected, atol=0.0)
 

@@ -1,41 +1,82 @@
-"""Open-loop ECM dynamics preflight for prescribed traction history.
+"""Open-loop ECM dynamics preflight for prescribed inputs.
 
-This module implements the smallest separated ECM dynamics mode after P1
-alpha: accumulate a caller-supplied, non-negative scalar traction density
-field into :class:`acs.v2.ecm_substrate.ECMSubstrateState` without closing
-the loop back to cell motion, FA state, stiffness, density, or fiber
-orientation.
+This module covers the separated-dynamics-mode ECM updates that take
+caller-supplied prescribed input fields and integrate them into
+:class:`acs.v2.ecm_substrate.ECMSubstrateState` **without closing the
+loop back to cell motion, FA state, or any biology-derived input**.
+Closed-loop ECM activation is gated behind the six-item gate in
+``docs/v2_phase1_forward_roadmap.md`` "Closed-Loop ECM Gate".
 
-Sanity Gate:
-    1. Dimensional analysis: input ``traction_density_nN_per_um2`` is
-       [nN/um^2], ``dt_s`` is [s], and the stored history
-       ``accumulated_traction_nNs_per_um2`` is [nN*s/um^2]. The only update is
-       ``H_new = H_old + traction_density * dt_s``. No kPa conversion, force
-       per-volume comparison, CFL, Re, Ca, De, Pe, or Ma term exists in this
-       open-loop accumulator.
-    2. Boundary cases: ``dt_s = 0`` and zero traction are exact no-ops;
-       negative, non-finite, bool, or non-scalar ``dt_s`` is rejected;
-       traction fields with wrong shape, negative entries, or non-finite
-       entries are rejected before any state is created.
-    3. Conservation invariants: no mass, momentum, or energy state is stored
-       or changed here. All ECM fields except accumulated traction are copied
-       unchanged. The only intentional monotone quantity is scalar traction
-       history, which can only increase because the prescribed density and
-       timestep are non-negative.
-    4. Numerical sanity: float64 is used for accumulation and returned arrays.
-       There is no explicit stability bound because this is a linear
-       open-loop recorder, not a feedback update. Grid resolution is inherited
-       from ``ECMSubstrateState`` and the input traction must match that grid.
-    5. Sign/sense check: positive prescribed traction increases stored ECM
-       traction exposure; zero prescribed traction leaves it unchanged. The
-       function deliberately does not infer traction direction or substrate
-       reaction forces.
-    6. Measurement-protocol consistency: this preflight records scalar
-       substrate traction exposure per ECM grid cell. It is not a projected
-       area metric, not a stiffness/remodeling readout, and not a closed-loop
-       force applied to cell boundaries.
+Two preflight functions live here, one per ECM field family:
 
-Magic-Number Block: no tunable constants are introduced. N/A.
+- ``accumulate_prescribed_traction(ecm, traction_density_nN_per_um2,
+  dt_s)`` — ECM-OL-1 (commit ``29a360f``): integrates a prescribed
+  non-negative scalar traction-density field into the cumulative
+  ``accumulated_traction_nNs_per_um2`` history. Monotone
+  non-decreasing by construction (no relaxation in preflight).
+- ``apply_prescribed_stiffness_rate(ecm, stiffness_rate_kpa_per_s,
+  dt_s)`` — 6.4-open-A (this commit): applies a prescribed
+  signed stiffness rate field into ``stiffness_kpa``. Signed
+  rates are allowed (open-loop preflight permits stiffening *and*
+  softening), but the **post-state** ``stiffness_kpa`` must remain
+  non-negative per the ECM schema; an update that would push any
+  cell below zero raises ``stiffness_negative_post_update`` instead
+  of clamping. No upper cap is invented.
+
+Sanity Gate (open-loop preflight, applies to every function in this
+module):
+
+    1. Dimensional analysis. Each function performs exactly one Rule
+       10 unit-chain reduction and stores the result in the matching
+       ``ECMSubstrateState`` field:
+         - ``accumulate_prescribed_traction``:
+           ``[nN/μm²] · [s] = [nN·s/μm²]`` →
+           ``accumulated_traction_nNs_per_um2``.
+         - ``apply_prescribed_stiffness_rate``:
+           ``[kPa/s] · [s] = [kPa]`` → ``stiffness_kpa``.
+       No kPa↔nN/μm² conversion, no force-per-volume comparison, no
+       CFL/Re/Ca/De/Pe/Ma. Closed-loop ECM gate item 6 (the kPa↔
+       nN/μm² unit-chain proof) is the closed-loop gate's
+       responsibility, not this preflight's.
+    2. Boundary cases. Each function rejects: shape mismatch with
+       ECM grid; non-finite or bool inputs; ``dt_s < 0`` or
+       non-finite; per-field sign violations on the *post-state*
+       (negative traction history, negative stiffness). ``dt_s == 0``
+       and zero input fields are exact no-ops returning a fresh
+       state. ``apply_prescribed_stiffness_rate`` accepts negative
+       rate entries (softening); only the post-state non-negativity
+       is enforced.
+    3. Conservation / provenance invariants. Input ``ecm`` is never
+       mutated. Every non-target ECM field is copied verbatim; the
+       returned state runs through ``ECMSubstrateState.validate()``
+       so any breakage of schema invariants surfaces here, not at
+       downstream consumers. ``accumulate_prescribed_traction``
+       additionally guarantees monotonic non-decrease of the
+       cumulative field by rejecting negative input.
+    4. Numerical sanity. float64 throughout. There is no explicit
+       stability bound because every preflight function in this
+       module is a linear open-loop recorder, not a feedback update.
+       Grid resolution is inherited from ``ECMSubstrateState``.
+    5. Sign / sense check.
+         - traction: positive prescribed traction adds to the
+           cumulative exposure; negative input rejected at validation
+           because preflight has no relaxation mechanism.
+         - stiffness rate: positive rate stiffens, negative rate
+           softens, zero rate / zero dt no-ops. The function never
+           infers stiffening from cell forces; the rate field is
+           caller-supplied (closed-loop is the only place where
+           biology-derived rates are wired in).
+    6. Measurement-protocol consistency (Hard Rule 11). The grid
+       layout (origin, spacing, shape) is preserved verbatim so the
+       same coordinates that downstream visualization or comparison
+       reads still resolve to the same physical cell. ``frame_dump``
+       round-trip already re-validates these invariants per the ECM
+       schema; this module ensures it never produces an invalid
+       output.
+
+Magic-Number Block: no tunable constants. The schema bound
+``_ORIENTATION_BOUND = 1.0`` for the orientation tensor lives in
+``acs.v2.ecm_substrate`` and is not relevant to this preflight.
 """
 
 from __future__ import annotations
@@ -106,6 +147,16 @@ def accumulate_prescribed_traction(
 def _validate_dt(dt_s: float) -> float:
     if isinstance(dt_s, bool):
         raise ECMOpenLoopError("dt_invalid", "dt_s must be a finite non-negative scalar")
+    # Reject numpy bool scalars and 0-d bool arrays. ``float(np.True_) -> 1.0``
+    # and ``float(np.array(True)) -> 1.0`` would otherwise sneak past the
+    # python-bool guard above and silently coerce to dt_s == 1.0.
+    if isinstance(dt_s, np.bool_):
+        raise ECMOpenLoopError("dt_invalid", "dt_s must be a finite non-negative scalar")
+    if isinstance(dt_s, np.ndarray):
+        if dt_s.dtype == bool or dt_s.shape != ():
+            raise ECMOpenLoopError(
+                "dt_invalid", "dt_s must be a finite non-negative scalar"
+            )
     try:
         dt = float(dt_s)
     except (TypeError, ValueError):
@@ -136,4 +187,102 @@ def _validate_traction_density(value, *, expected_shape: tuple[int, int]) -> np.
             "traction_density_nN_per_um2 must be non-negative at every grid cell",
         )
     return traction
+
+
+def _validate_stiffness_rate(value, *, expected_shape: tuple[int, int]) -> np.ndarray:
+    """Signed stiffness-rate field validator. Negative entries are
+    permitted (softening); only the *post-state* non-negativity is
+    enforced by the caller."""
+
+    rate = np.asarray(value, dtype=np.float64)
+    if rate.shape != expected_shape:
+        raise ECMOpenLoopError(
+            "stiffness_rate_shape",
+            f"stiffness_rate_kpa_per_s must have shape {expected_shape!r}, "
+            f"got {rate.shape!r}",
+        )
+    if not np.isfinite(rate).all():
+        raise ECMOpenLoopError(
+            "stiffness_rate_non_finite",
+            "stiffness_rate_kpa_per_s must contain only finite values",
+        )
+    return rate
+
+
+def apply_prescribed_stiffness_rate(
+    ecm: ECMSubstrateState,
+    stiffness_rate_kpa_per_s,
+    dt_s: float,
+) -> ECMSubstrateState:
+    """Apply a prescribed signed stiffness-rate field to ``ecm.stiffness_kpa``.
+
+    The update is the simplest linear open-loop recorder:
+    ``stiffness_new = stiffness_old + stiffness_rate_kpa_per_s · dt_s``
+    with the unit chain ``[kPa/s] · [s] = [kPa]``. Negative rate
+    entries are allowed (softening); the post-state
+    ``stiffness_kpa`` must remain non-negative per the ECM schema.
+    A would-be-negative cell raises
+    ``stiffness_negative_post_update`` rather than being clamped to
+    zero (no magic clipping).
+
+    All non-stiffness ECM fields (``ligand_density``, ``fiber_density``,
+    ``orientation_tensor``, ``accumulated_traction_nNs_per_um2``) are
+    copied verbatim so the only field this function ever changes is
+    ``stiffness_kpa``. The grid layout (``origin_um_xy``,
+    ``spacing_um``, shape) is preserved verbatim. The input ``ecm``
+    is never mutated; the returned state runs through
+    ``ECMSubstrateState.validate()``.
+
+    ``dt_s == 0`` and a zero rate field are both exact no-ops
+    returning a fresh state with bit-equivalent ``stiffness_kpa``.
+
+    Args:
+        ecm: Existing ECM substrate state. Validated and never mutated.
+        stiffness_rate_kpa_per_s: Array with shape ``ecm.grid_shape``
+            and units [kPa/s]. Values must be finite. Negative entries
+            permitted (softening).
+        dt_s: Non-negative scalar timestep [s]. ``0`` is allowed and
+            produces an exact no-op on stiffness.
+
+    Raises:
+        ECMOpenLoopError: ``dt_invalid``, ``stiffness_rate_shape``,
+            ``stiffness_rate_non_finite``, or
+            ``stiffness_negative_post_update`` per the gate §2 boundary
+            table.
+    """
+
+    ecm.validate()
+    dt = _validate_dt(dt_s)
+    rate = _validate_stiffness_rate(
+        stiffness_rate_kpa_per_s, expected_shape=ecm.grid_shape
+    )
+
+    new_stiffness = (
+        np.asarray(ecm.stiffness_kpa, dtype=np.float64) + rate * dt
+    )
+    if (new_stiffness < 0.0).any():
+        # Surface with input context, not the schema's generic
+        # validation message. No clamping (gate §2 + §5).
+        min_value = float(new_stiffness.min())
+        raise ECMOpenLoopError(
+            "stiffness_negative_post_update",
+            f"prescribed stiffness rate would push stiffness_kpa below zero "
+            f"(min post-update value = {min_value!r}); open-loop preflight "
+            f"does not clamp",
+        )
+
+    next_ecm = ECMSubstrateState(
+        origin_um_xy=tuple(ecm.origin_um_xy),
+        spacing_um=float(ecm.spacing_um),
+        stiffness_kpa=new_stiffness,
+        ligand_density=np.array(ecm.ligand_density, dtype=np.float64, copy=True),
+        fiber_density=np.array(ecm.fiber_density, dtype=np.float64, copy=True),
+        orientation_tensor=np.array(ecm.orientation_tensor, dtype=np.float64, copy=True),
+        accumulated_traction_nNs_per_um2=np.array(
+            ecm.accumulated_traction_nNs_per_um2, dtype=np.float64, copy=True
+        ),
+        source=ecm.source,
+    )
+    next_ecm.validate()
+    return next_ecm
 

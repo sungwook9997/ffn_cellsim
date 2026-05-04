@@ -10,6 +10,7 @@ from acs.v2.dynamics.active_contour import (
 from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
+    apply_prescribed_stiffness_rate,
 )
 from acs.v2.dynamics.focal_adhesion import (
     FocalAdhesionDynamicsError,
@@ -25,6 +26,7 @@ __all__ = [
     "FocalAdhesionDynamicsParameters",
     "FocalAdhesionDynamicsResult",
     "accumulate_prescribed_traction",
+    "apply_prescribed_stiffness_rate",
     "compute_area_forces",
     "compute_cortex_forces",
     "compute_radial_tangential_decomposition",
