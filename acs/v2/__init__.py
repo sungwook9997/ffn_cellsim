@@ -36,6 +36,10 @@ from acs.v2.dynamics.closed_loop_phase_d import (
     step_fa_to_ecm_response,
     step_phase_d_no_op,
 )
+from acs.v2.dynamics.closed_loop_phase_e import (
+    PhaseEStepResult,
+    step_closed_loop_phase_e_v1,
+)
 from acs.v2.dynamics.ecm_constitutive_response import (
     ECMConstitutiveResponseError,
     ECMOrientationResponseDiagnostics,
@@ -171,6 +175,7 @@ __all__ = [
     "MetricRegistryError",
     "MetricSpec",
     "PhaseDNoOpStepResult",
+    "PhaseEStepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
     "ProtrusionEvent",
@@ -213,6 +218,7 @@ __all__ = [
     "regular_polygon_vertices",
     "run_active_contour_test",
     "step",
+    "step_closed_loop_phase_e_v1",
     "step_ecm_orientation_response",
     "step_ecm_to_fa_bias",
     "step_fa_to_ecm_response",

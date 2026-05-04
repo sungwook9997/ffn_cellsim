@@ -14,6 +14,10 @@ from acs.v2.dynamics.closed_loop_phase_d import (
     step_fa_to_ecm_response,
     step_phase_d_no_op,
 )
+from acs.v2.dynamics.closed_loop_phase_e import (
+    PhaseEStepResult,
+    step_closed_loop_phase_e_v1,
+)
 from acs.v2.dynamics.ecm_constitutive_response import (
     ECMConstitutiveResponseError,
     ECMOrientationResponseDiagnostics,
@@ -84,6 +88,7 @@ __all__ = [
     "MAX_LYAPUNOV_ENERGY_FACTOR_PER_ACTIVE_CELL",
     "MAX_SQ_FROBENIUS_DIFF_PER_CELL",
     "PhaseDNoOpStepResult",
+    "PhaseEStepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
     "ProtrusionStateMultipliers",
@@ -104,6 +109,7 @@ __all__ = [
     "sample_ecm_at_fa_positions",
     "scatter_fa_traction_to_ecm_bilinear",
     "step",
+    "step_closed_loop_phase_e_v1",
     "step_ecm_orientation_response",
     "step_ecm_to_fa_bias",
     "step_fa_to_ecm_response",
