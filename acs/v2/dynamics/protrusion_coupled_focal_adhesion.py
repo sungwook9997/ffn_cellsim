@@ -238,6 +238,11 @@ def step_protrusion_coupled_focal_adhesions(
     - ``linked_protrusion_missing`` when an FA's
       ``linked_protrusion_id`` is set but is not present in
       ``protrusion_registry``.
+    - ``linked_protrusion_invalid_state`` when a linked
+      ``ProtrusionEvent.state`` value is not one of the typed
+      ``ProtrusionState`` enum members. Detected/manual records with
+      a misspelled state must fail loudly here rather than silently
+      becoming neutral 1.0 multiplier.
     - ``dt_rate_violation`` when ``dt_fa_s · max(effective_rate over
       all FAs and rate names) > _DT_RATE_SAFETY_MARGIN``. Auto-shrink
       is forbidden — the caller must reduce ``dt_fa_s`` or the
@@ -269,6 +274,32 @@ def step_protrusion_coupled_focal_adhesions(
     """
 
     multipliers.validate()
+
+    # Base-params validation BEFORE the empty-FA early return path so an
+    # invalid scalar (bool dt_fa_s, negative traction_scale_nN, etc.)
+    # cannot silently succeed on `adhesions=()`. We split the validation
+    # into two passes: scalar/max-traction first with rates washed to
+    # None (so the 6.3a dt-rate gate is vacuous), then rate-value
+    # validation with dt washed to 0 (so the dt-rate gate is again
+    # vacuous). 6.3b runs its own stronger dt-rate gate over the
+    # effective rates further down.
+    FocalAdhesionDynamicsParameters(
+        dt_fa_s=params.dt_fa_s,
+        traction_scale_nN=params.traction_scale_nN,
+        k_maturity_per_s=None,
+        k_bind_per_s=None,
+        k_unbind_per_s=None,
+        max_traction_nN=params.max_traction_nN,
+    ).validate()
+    FocalAdhesionDynamicsParameters(
+        dt_fa_s=0.0,
+        traction_scale_nN=params.traction_scale_nN,
+        k_maturity_per_s=params.k_maturity_per_s,
+        k_bind_per_s=params.k_bind_per_s,
+        k_unbind_per_s=params.k_unbind_per_s,
+        max_traction_nN=params.max_traction_nN,
+    ).validate()
+
     adhesions_tuple = tuple(adhesions)
     n = len(adhesions_tuple)
 
@@ -303,6 +334,20 @@ def step_protrusion_coupled_focal_adhesions(
                     f"protrusion_registry does not contain that id",
                 )
             protrusion_state = protrusion.state
+            # Hard-fail on a runtime protrusion.state outside the typed
+            # ProtrusionState enum: otherwise the multiplier lookup
+            # would silently fall through to neutral 1.0 and a
+            # detected/manual record with a misspelled state would be
+            # treated as base 6.3a behavior. The typed-state contract
+            # (lock §2) demands a loud failure here.
+            if protrusion_state not in _ALLOWED_STATE_KEYS:
+                raise FocalAdhesionDynamicsError(
+                    "linked_protrusion_invalid_state",
+                    f"FA {fa.adhesion_id!r} links to protrusion "
+                    f"{linked_id!r} whose state {protrusion_state!r} is "
+                    f"not in the typed ProtrusionState enum "
+                    f"{sorted(_ALLOWED_STATE_KEYS)}",
+                )
             if fa.adhesion_id not in protrusion.associated_adhesion_ids:
                 reciprocal_missing += 1
 

@@ -119,6 +119,8 @@ artifact §2.
 | `multipliers` table is missing a known state | `lookup()` returns 1.0 (neutral) — no failure | (no exception; absent = neutral) |
 | `multipliers` table is missing a known rate under a present state | `lookup()` returns 1.0 (neutral) — no failure | (no exception; absent = neutral) |
 | `protrusion_registry` is missing FA's `linked_protrusion_id` | per-FA lookup fails before stepping | `linked_protrusion_missing` |
+| Linked `ProtrusionEvent.state` is not in the typed `ProtrusionState` enum (`growing/stalled/retracting/ended`) | per-FA enum check raises before lookup | `linked_protrusion_invalid_state` |
+| Empty `adhesions` list with invalid base `params` (e.g. bool `dt_fa_s`, negative `traction_scale_nN`) | upfront base-params validation runs before the empty-FA early return | inherited 6.3a failure_kinds (`dt_invalid`, `traction_scale_invalid`, `rate_invalid`, `max_traction_invalid`) |
 | FA has `linked_protrusion_id is None` (FA not linked at all) | treated as no protrusion influence; multiplier 1.0 across all rates (effectively 6.3a behavior for that FA) | (no exception; equivalent to base 6.3a) |
 | `ProtrusionEvent` lists FA in `associated_adhesion_ids` but FA does not link back | ignored by one-way read | (no exception; diagnostic only — `reciprocal_missing` counter) |
 | FA links back via `linked_protrusion_id` but `ProtrusionEvent.associated_adhesion_ids` does not list the FA | recorded in diagnostics | (no exception; `reciprocal_missing` counter) |

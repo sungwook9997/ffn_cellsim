@@ -359,6 +359,72 @@ def test_per_fa_input_order_preserved_in_output():
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Codex review id=1211 regression: empty FA list still validates base params
+# ---------------------------------------------------------------------------
+
+
+def test_empty_adhesion_list_still_validates_base_params():
+    """Codex id=1211 finding 1: empty ``adhesions`` must not bypass base-
+    parameter validation. A bool ``dt_fa_s`` is invalid regardless of FA
+    list size and must raise ``dt_invalid``."""
+
+    bad_params = FocalAdhesionDynamicsParameters(
+        dt_fa_s=True,  # bool — must reject
+        traction_scale_nN=1.0,
+    )
+    with pytest.raises(FocalAdhesionDynamicsError) as excinfo:
+        step_protrusion_coupled_focal_adhesions(
+            (), CENTROID, bad_params, {}, ProtrusionStateMultipliers(table={})
+        )
+    assert excinfo.value.failure_kind == "dt_invalid"
+
+
+def test_empty_adhesion_list_rejects_negative_traction_scale():
+    """Codex id=1211 finding 1: empty FA list with negative
+    ``traction_scale_nN`` must still raise ``traction_scale_invalid``."""
+
+    bad_params = FocalAdhesionDynamicsParameters(
+        dt_fa_s=0.1,
+        traction_scale_nN=-1.0,
+    )
+    with pytest.raises(FocalAdhesionDynamicsError) as excinfo:
+        step_protrusion_coupled_focal_adhesions(
+            (), CENTROID, bad_params, {}, ProtrusionStateMultipliers(table={})
+        )
+    assert excinfo.value.failure_kind == "traction_scale_invalid"
+
+
+# ---------------------------------------------------------------------------
+# Codex review id=1211 regression: invalid linked protrusion state
+# ---------------------------------------------------------------------------
+
+
+def test_invalid_linked_protrusion_state_raises_invalid_state(monkeypatch):
+    """Codex id=1211 finding 2: a linked ``ProtrusionEvent`` whose runtime
+    state is outside the typed ``ProtrusionState`` enum must raise
+    ``linked_protrusion_invalid_state``, not silently become neutral 1.0
+    multiplier. We bypass ``ProtrusionEvent.__post_init__`` validation
+    by constructing then mutating a frozen attribute via ``object.__setattr__``
+    to simulate a malformed record (e.g. detected/manual record with a
+    bug in the upstream state field)."""
+
+    fa = _make_fa("fa-1", linked_protrusion_id="p-1")
+    params = _base_params()
+    table = ProtrusionStateMultipliers(table={})
+
+    bad_protrusion = _make_protrusion("p-1", state="growing")
+    object.__setattr__(bad_protrusion, "state", "sprinting")  # type: ignore[arg-type]
+    registry = {"p-1": bad_protrusion}
+
+    with pytest.raises(FocalAdhesionDynamicsError) as excinfo:
+        step_protrusion_coupled_focal_adhesions(
+            (fa,), CENTROID, params, registry, table
+        )
+    assert excinfo.value.failure_kind == "linked_protrusion_invalid_state"
+    assert "sprinting" in str(excinfo.value)
+
+
 def test_no_state_label_change_after_step():
     """Even multiplier 0 (no rate-driven update) does not change the FA
     state label. The state label is only set by the caller."""
