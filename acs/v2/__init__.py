@@ -33,6 +33,7 @@ from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
     apply_prescribed_density_rate,
+    apply_prescribed_orientation_rate,
     apply_prescribed_stiffness_rate,
 )
 from acs.v2.dynamics.focal_adhesion import (
@@ -112,6 +113,7 @@ __all__ = [
     "V2DataContract",
     "accumulate_prescribed_traction",
     "apply_prescribed_density_rate",
+    "apply_prescribed_orientation_rate",
     "apply_prescribed_stiffness_rate",
     "boundary_perimeter_um",
     "boundary_projected_area_um2",

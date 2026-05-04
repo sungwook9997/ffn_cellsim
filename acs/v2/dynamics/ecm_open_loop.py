@@ -23,7 +23,7 @@ Three preflight functions live here, one per ECM field family:
   cell below zero raises ``stiffness_negative_post_update`` instead
   of clamping. No upper cap is invented.
 - ``apply_prescribed_density_rate(ecm, ligand_density_rate_per_s,
-  fiber_density_rate_per_s, dt_s)`` — 6.4-open-B (this commit):
+  fiber_density_rate_per_s, dt_s)`` — 6.4-open-B (commit ``e4a71c9``):
   applies prescribed signed density-rate fields into
   ``ligand_density`` and ``fiber_density`` simultaneously. Both
   density fields are dimensionless and bounded to ``[0, 1]`` by
@@ -37,6 +37,23 @@ Three preflight functions live here, one per ECM field family:
   rate fields are processed in strict cross-isolation: the ligand
   update only consumes ``ligand_density_rate_per_s`` and the
   fiber update only consumes ``fiber_density_rate_per_s``.
+- ``apply_prescribed_orientation_rate(ecm, orientation_rate_per_s,
+  dt_s)`` — 6.4-open-C (this commit): applies a prescribed signed
+  ``(nx, ny, 2, 2)`` orientation-tensor rate field into
+  ``orientation_tensor``. Signed rates are allowed (positive grows
+  the local component, negative shrinks it), but the rate field
+  must already be component-wise symmetric to within the ECM
+  schema's ``_ORIENTATION_SYMMETRY_TOL`` (no auto-symmetrization),
+  and the post-state must stay component-wise within
+  ``[-_ORIENTATION_BOUND, +_ORIENTATION_BOUND]`` (no clamping).
+  Failure kinds: ``orientation_rate_shape``,
+  ``orientation_rate_non_finite``,
+  ``orientation_rate_asymmetric``,
+  ``orientation_negative_bound_post_update``,
+  ``orientation_exceeds_bound_post_update``. The ECM schema
+  constants are imported from :mod:`acs.v2.ecm_substrate` so a
+  future tightening (e.g. a smaller symmetry tolerance) propagates
+  here without a separate magic number.
 
 Sanity Gate (open-loop preflight, applies to every function in this
 module):
@@ -52,6 +69,9 @@ module):
          - ``apply_prescribed_density_rate``:
            ``[1/s] · [s] = [dimensionless density]`` →
            ``ligand_density`` and ``fiber_density``.
+         - ``apply_prescribed_orientation_rate``:
+           ``[1/s] · [s] = [dimensionless orientation tensor]`` →
+           ``orientation_tensor``.
        No kPa↔nN/μm² conversion, no force-per-volume comparison, no
        CFL/Re/Ca/De/Pe/Ma. Closed-loop ECM gate item 6 (the kPa↔
        nN/μm² unit-chain proof) is the closed-loop gate's
@@ -88,6 +108,13 @@ module):
            negative rates thin (toward 0). ligand and fiber
            density rates are processed in strict cross-isolation —
            ligand update never reads fiber rate and vice versa.
+         - orientation rate: positive components grow the local
+           orientation tensor entry, negative components shrink it.
+           No symmetrization or normalization is performed — the
+           caller is responsible for supplying a symmetric rate
+           tensor. The schema's symmetry and bound checks are
+           reused (not redefined here) so the open-loop preflight
+           cannot drift away from the schema contract.
     6. Measurement-protocol consistency (Hard Rule 11). The grid
        layout (origin, spacing, shape) is preserved verbatim so the
        same coordinates that downstream visualization or comparison
@@ -96,16 +123,25 @@ module):
        schema; this module ensures it never produces an invalid
        output.
 
-Magic-Number Block: no tunable constants. The schema bound
-``_ORIENTATION_BOUND = 1.0`` for the orientation tensor lives in
-``acs.v2.ecm_substrate`` and is not relevant to this preflight.
+Magic-Number Block: no tunable constants in this module. The
+schema constants ``_ORIENTATION_SYMMETRY_TOL`` (numerical tie-break
+for symmetry) and ``_ORIENTATION_BOUND`` (dimensionless cap on the
+orientation tensor's component magnitudes) are imported from
+:mod:`acs.v2.ecm_substrate` and reused by
+``apply_prescribed_orientation_rate`` rather than duplicated. They
+remain documented as numerical tie-breaks at their definition site,
+not physics tunables.
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from acs.v2.ecm_substrate import ECMSubstrateState
+from acs.v2.ecm_substrate import (
+    _ORIENTATION_BOUND,
+    _ORIENTATION_SYMMETRY_TOL,
+    ECMSubstrateState,
+)
 
 
 class ECMOpenLoopError(ValueError):
@@ -442,6 +478,130 @@ def apply_prescribed_density_rate(
         ligand_density=new_ligand,
         fiber_density=new_fiber,
         orientation_tensor=np.array(ecm.orientation_tensor, dtype=np.float64, copy=True),
+        accumulated_traction_nNs_per_um2=np.array(
+            ecm.accumulated_traction_nNs_per_um2, dtype=np.float64, copy=True
+        ),
+        source=ecm.source,
+    )
+    next_ecm.validate()
+    return next_ecm
+
+
+def _validate_orientation_rate(
+    value, *, expected_grid_shape: tuple[int, int]
+) -> np.ndarray:
+    """Signed orientation-tensor rate validator. Negative entries
+    permitted; only the *post-state* component magnitudes are
+    enforced by the caller. Symmetry is required at the input rate
+    so the post-state symmetric invariant is preserved without
+    auto-symmetrization."""
+
+    expected_shape = (*expected_grid_shape, 2, 2)
+    rate = np.asarray(value, dtype=np.float64)
+    if rate.shape != expected_shape:
+        raise ECMOpenLoopError(
+            "orientation_rate_shape",
+            f"orientation_rate_per_s must have shape {expected_shape!r}, "
+            f"got {rate.shape!r}",
+        )
+    if not np.isfinite(rate).all():
+        raise ECMOpenLoopError(
+            "orientation_rate_non_finite",
+            "orientation_rate_per_s must contain only finite values",
+        )
+    asymmetry = float(
+        np.max(np.abs(rate - np.swapaxes(rate, -1, -2)))
+    )
+    if asymmetry > _ORIENTATION_SYMMETRY_TOL:
+        raise ECMOpenLoopError(
+            "orientation_rate_asymmetric",
+            f"orientation_rate_per_s must be symmetric in its 2x2 blocks "
+            f"to within {_ORIENTATION_SYMMETRY_TOL!r}; max |R - R.T| = "
+            f"{asymmetry!r} (no auto-symmetrization in open-loop preflight)",
+        )
+    return rate
+
+
+def apply_prescribed_orientation_rate(
+    ecm: ECMSubstrateState,
+    orientation_rate_per_s,
+    dt_s: float,
+) -> ECMSubstrateState:
+    """Apply a prescribed signed orientation-tensor rate field to
+    ``ecm.orientation_tensor``.
+
+    The update is the simplest linear open-loop recorder:
+    ``orientation_new = orientation_old + orientation_rate_per_s · dt_s``
+    with the unit chain ``[1/s] · [s] = [dimensionless]``. Signed rate
+    entries are allowed (positive component grows local entry,
+    negative shrinks). The rate field must already be component-wise
+    symmetric to within ``_ORIENTATION_SYMMETRY_TOL``; the function
+    performs **no auto-symmetrization** so that a caller bug does not
+    silently drift away from the schema's symmetric invariant.
+
+    The post-state must satisfy
+    ``|orientation_new[..., i, j]| <= _ORIENTATION_BOUND``
+    component-wise, again per the ECM schema. Lower- and upper-bound
+    violations raise distinct failure kinds
+    (``orientation_negative_bound_post_update`` for components below
+    ``-_ORIENTATION_BOUND``; ``orientation_exceeds_bound_post_update``
+    for components above ``+_ORIENTATION_BOUND``). Exact ``±1.0``
+    boundary values are accepted; no clamping in either direction.
+
+    All non-orientation ECM fields (``stiffness_kpa``,
+    ``ligand_density``, ``fiber_density``,
+    ``accumulated_traction_nNs_per_um2``, ``origin_um_xy``,
+    ``spacing_um``, ``source``) are copied verbatim; the input
+    ``ecm`` is never mutated; the returned state runs through
+    ``ECMSubstrateState.validate()``.
+
+    ``dt_s == 0`` and a zero rate field are exact no-ops.
+
+    Args:
+        ecm: Existing ECM substrate state. Validated and never mutated.
+        orientation_rate_per_s: Array with shape
+            ``(*ecm.grid_shape, 2, 2)`` and units [1/s]. Values must
+            be finite and component-wise symmetric.
+        dt_s: Non-negative scalar timestep [s]. ``0`` is allowed and
+            produces an exact no-op.
+
+    Raises:
+        ECMOpenLoopError: per the gate §2 boundary table.
+    """
+
+    ecm.validate()
+    dt = _validate_dt(dt_s)
+    rate = _validate_orientation_rate(
+        orientation_rate_per_s, expected_grid_shape=ecm.grid_shape
+    )
+
+    new_orientation = (
+        np.asarray(ecm.orientation_tensor, dtype=np.float64) + rate * dt
+    )
+    component_max = float(np.max(new_orientation))
+    component_min = float(np.min(new_orientation))
+    if component_min < -_ORIENTATION_BOUND:
+        raise ECMOpenLoopError(
+            "orientation_negative_bound_post_update",
+            f"prescribed orientation rate would push a component below "
+            f"-{_ORIENTATION_BOUND} (min post-update value = "
+            f"{component_min!r}); open-loop preflight does not clamp",
+        )
+    if component_max > _ORIENTATION_BOUND:
+        raise ECMOpenLoopError(
+            "orientation_exceeds_bound_post_update",
+            f"prescribed orientation rate would push a component above "
+            f"+{_ORIENTATION_BOUND} (max post-update value = "
+            f"{component_max!r}); open-loop preflight does not clamp",
+        )
+
+    next_ecm = ECMSubstrateState(
+        origin_um_xy=tuple(ecm.origin_um_xy),
+        spacing_um=float(ecm.spacing_um),
+        stiffness_kpa=np.array(ecm.stiffness_kpa, dtype=np.float64, copy=True),
+        ligand_density=np.array(ecm.ligand_density, dtype=np.float64, copy=True),
+        fiber_density=np.array(ecm.fiber_density, dtype=np.float64, copy=True),
+        orientation_tensor=new_orientation,
         accumulated_traction_nNs_per_um2=np.array(
             ecm.accumulated_traction_nNs_per_um2, dtype=np.float64, copy=True
         ),

@@ -7,8 +7,10 @@ from acs.v2.dynamics.ecm_open_loop import (
     ECMOpenLoopError,
     accumulate_prescribed_traction,
     apply_prescribed_density_rate,
+    apply_prescribed_orientation_rate,
     apply_prescribed_stiffness_rate,
 )
+from acs.v2.ecm_substrate import _ORIENTATION_BOUND
 from acs.v2.ecm_substrate import ECMSubstrateState
 
 
@@ -522,4 +524,206 @@ def test_density_rate_chained_calls_compose():
     expected_fiber = ecm.fiber_density + 0.05 * 1.0 + (-0.025) * 2.0
     np.testing.assert_allclose(out_chained.ligand_density, expected_ligand, atol=0.0)
     np.testing.assert_allclose(out_chained.fiber_density, expected_fiber, atol=0.0)
+
+
+# ----- 6.4-open-C: apply_prescribed_orientation_rate -----
+
+
+def _zero_orientation_rate(grid_shape: tuple[int, int]) -> np.ndarray:
+    return np.zeros((*grid_shape, 2, 2), dtype=np.float64)
+
+
+def _symmetric_orientation_rate(
+    grid_shape: tuple[int, int], xx: float, yy: float, off: float
+) -> np.ndarray:
+    rate = np.zeros((*grid_shape, 2, 2), dtype=np.float64)
+    rate[..., 0, 0] = xx
+    rate[..., 1, 1] = yy
+    rate[..., 0, 1] = off
+    rate[..., 1, 0] = off
+    return rate
+
+
+def test_orientation_rate_zero_no_op_returns_new_state():
+    ecm = _ecm()
+    rate = _zero_orientation_rate(ecm.grid_shape)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    assert out is not ecm
+    np.testing.assert_array_equal(out.orientation_tensor, ecm.orientation_tensor)
+
+
+def test_orientation_rate_zero_dt_no_op():
+    ecm = _ecm()
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=0.5, yy=-0.3, off=0.2)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=0.0)
+    np.testing.assert_array_equal(out.orientation_tensor, ecm.orientation_tensor)
+
+
+def test_orientation_rate_uniform_symmetric_exact_update():
+    """ECM starts at identity (T_00 = T_11 = 1.0). Rates must keep
+    post-state in [-_ORIENTATION_BOUND, +_ORIENTATION_BOUND], so we
+    push T_00 / T_11 down (negative rate) and T_01 / T_10 up by a
+    small symmetric off-diagonal increment."""
+
+    ecm = _ecm()
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=-0.1, yy=-0.05, off=0.025)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=2.0)
+    expected = ecm.orientation_tensor + rate * 2.0
+    np.testing.assert_allclose(out.orientation_tensor, expected, atol=0.0)
+
+
+def test_orientation_rate_sparse_symmetric_per_cell_exact_update():
+    """Per-cell distinct symmetric rate: only one cell has nonzero rate.
+    Push diagonals down so post-state stays within bounds."""
+
+    ecm = _ecm()
+    rate = _zero_orientation_rate(ecm.grid_shape)
+    rate[0, 0] = np.array([[-0.3, -0.1], [-0.1, -0.2]], dtype=np.float64)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    expected = ecm.orientation_tensor + rate
+    np.testing.assert_allclose(out.orientation_tensor, expected, atol=0.0)
+
+
+def test_orientation_rate_asymmetric_rejected():
+    ecm = _ecm()
+    rate = _zero_orientation_rate(ecm.grid_shape)
+    rate[0, 0, 0, 1] = 0.5  # asymmetric: T_01 != T_10
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    assert info.value.failure_kind == "orientation_rate_asymmetric"
+
+
+def test_orientation_rate_shape_mismatch_rejected():
+    ecm = _ecm()
+    bad = np.zeros((2, 2, 2, 2), dtype=np.float64)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, bad, dt_s=1.0)
+    assert info.value.failure_kind == "orientation_rate_shape"
+
+
+def test_orientation_rate_missing_block_dimension_rejected():
+    ecm = _ecm()
+    bad_2d = np.zeros(ecm.grid_shape, dtype=np.float64)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, bad_2d, dt_s=1.0)
+    assert info.value.failure_kind == "orientation_rate_shape"
+
+
+def test_orientation_rate_non_finite_rejected():
+    ecm = _ecm()
+    rate = _zero_orientation_rate(ecm.grid_shape)
+    rate[1, 1, 0, 0] = np.nan
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    assert info.value.failure_kind == "orientation_rate_non_finite"
+
+
+def test_orientation_negative_bound_post_update_raises():
+    ecm = _ecm()
+    # ecm orientation_tensor[..., 0, 0] = 1.0 (identity); push down by -2.5.
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=-2.5, yy=0.0, off=0.0)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    assert info.value.failure_kind == "orientation_negative_bound_post_update"
+
+
+def test_orientation_exceeds_bound_post_update_raises():
+    ecm = _ecm()
+    # ecm orientation_tensor[..., 0, 0] = 1.0; push up by +0.5 → 1.5 > 1.0.
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=0.5, yy=0.0, off=0.0)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    assert info.value.failure_kind == "orientation_exceeds_bound_post_update"
+
+
+def test_orientation_exact_positive_bound_accepted():
+    """Post == +_ORIENTATION_BOUND is allowed (schema permits).
+    ecm starts at identity so [..., 1, 1] = 1.0; rate = -0.0 keeps it at 1.0.
+    Push another component to +bound to verify boundary acceptance."""
+
+    ecm = _ecm()
+    # Start with identity orientation: T_00=1, T_11=1, T_01=T_10=0.
+    # Add 0 to T_00 (stays at 1.0). T_11 already at 1.0. Test passes if no raise.
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=0.0, yy=0.0, off=0.0)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    np.testing.assert_array_equal(out.orientation_tensor, ecm.orientation_tensor)
+
+
+def test_orientation_exact_negative_bound_accepted():
+    """Push a zero component down to -_ORIENTATION_BOUND exactly."""
+
+    ecm = _ecm()
+    # ecm T_01 = T_10 = 0; rate = -1.0 brings them to -1.0 exactly.
+    rate = _symmetric_orientation_rate(
+        ecm.grid_shape, xx=0.0, yy=0.0, off=-_ORIENTATION_BOUND
+    )
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    expected_off = -_ORIENTATION_BOUND
+    np.testing.assert_allclose(out.orientation_tensor[..., 0, 1], expected_off)
+    np.testing.assert_allclose(out.orientation_tensor[..., 1, 0], expected_off)
+
+
+@pytest.mark.parametrize("bad_dt", [True, -1.0, np.inf, np.nan, object()])
+def test_orientation_rate_invalid_dt_rejected(bad_dt):
+    ecm = _ecm()
+    rate = _zero_orientation_rate(ecm.grid_shape)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, rate, dt_s=bad_dt)
+    assert info.value.failure_kind == "dt_invalid"
+
+
+@pytest.mark.parametrize(
+    "bad_dt",
+    [np.True_, np.False_, np.bool_(True), np.array(True), np.array(False)],
+)
+def test_orientation_rate_numpy_bool_dt_rejected(bad_dt):
+    ecm = _ecm()
+    rate = _zero_orientation_rate(ecm.grid_shape)
+    with pytest.raises(ECMOpenLoopError) as info:
+        apply_prescribed_orientation_rate(ecm, rate, dt_s=bad_dt)
+    assert info.value.failure_kind == "dt_invalid"
+
+
+def test_orientation_rate_other_fields_preserved_and_not_aliased():
+    ecm = _ecm()
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=-0.05, yy=-0.05, off=0.01)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    np.testing.assert_array_equal(out.stiffness_kpa, ecm.stiffness_kpa)
+    np.testing.assert_array_equal(out.ligand_density, ecm.ligand_density)
+    np.testing.assert_array_equal(out.fiber_density, ecm.fiber_density)
+    np.testing.assert_array_equal(
+        out.accumulated_traction_nNs_per_um2, ecm.accumulated_traction_nNs_per_um2
+    )
+    assert out.origin_um_xy == ecm.origin_um_xy
+    assert out.spacing_um == ecm.spacing_um
+    assert out.source == ecm.source
+    # Not aliased.
+    assert out.stiffness_kpa is not ecm.stiffness_kpa
+    assert out.ligand_density is not ecm.ligand_density
+    assert out.orientation_tensor is not ecm.orientation_tensor
+
+
+def test_orientation_rate_input_ecm_not_mutated():
+    ecm = _ecm()
+    snapshot = ecm.orientation_tensor.copy()
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=-0.1, yy=-0.05, off=0.05)
+    apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    np.testing.assert_array_equal(ecm.orientation_tensor, snapshot)
+
+
+def test_orientation_rate_returned_state_validates():
+    ecm = _ecm()
+    rate = _symmetric_orientation_rate(ecm.grid_shape, xx=-0.05, yy=-0.05, off=0.02)
+    out = apply_prescribed_orientation_rate(ecm, rate, dt_s=1.0)
+    out.validate()
+
+
+def test_orientation_rate_chained_calls_compose():
+    ecm = _ecm()
+    rate_a = _symmetric_orientation_rate(ecm.grid_shape, xx=-0.1, yy=-0.05, off=0.05)
+    rate_b = _symmetric_orientation_rate(ecm.grid_shape, xx=0.05, yy=-0.025, off=-0.025)
+    out_chained = apply_prescribed_orientation_rate(ecm, rate_a, dt_s=1.0)
+    out_chained = apply_prescribed_orientation_rate(out_chained, rate_b, dt_s=2.0)
+    expected = ecm.orientation_tensor + rate_a * 1.0 + rate_b * 2.0
+    np.testing.assert_allclose(out_chained.orientation_tensor, expected, atol=0.0)
 
