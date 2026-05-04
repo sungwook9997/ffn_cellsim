@@ -80,20 +80,20 @@ RateName = Literal["k_maturity_per_s", "k_bind_per_s", "k_unbind_per_s"]
 @dataclass(frozen=True, slots=True)
 class ProtrusionStateMultipliers:
     """Caller-supplied per-state multiplier table. NO project default.
-    
+
     Unknown state or rate keys raise at validate(). Missing known keys
     return neutral 1.0 multiplier. Caller decides which states get which
     boost; 6.3b code makes no biology decisions.
     """
     table: Mapping[ProtrusionState, Mapping[RateName, float]]
-    
+
     def validate(self) -> None:
         # raise FocalAdhesionDynamicsError("multiplier_table_unknown_key", ...)
         #   if state key not in ProtrusionState enum
         #   if rate key not in RateName enum
         #   if value not finite, is bool, or < 0
         ...
-    
+
     def lookup(self, state: ProtrusionState, rate_name: RateName) -> float:
         """Return multiplier (1.0 if state or rate_name absent in table)."""
         return self.table.get(state, {}).get(rate_name, 1.0)
