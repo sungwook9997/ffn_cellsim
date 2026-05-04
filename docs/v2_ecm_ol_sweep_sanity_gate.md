@@ -72,6 +72,16 @@ blockers.
 - Auto-generated sweep ranges. Caller supplies the
   `(grid_n, spacing_um, dt_s)` tuple list explicitly; the harness
   does not infer or expand a range.
+- Runtime defaults in the harness function signature. The
+  harness function (`run_ecm_ol_sensitivity_sweep` or equivalent)
+  takes mandatory arguments for the tuple list, the per-channel
+  prescribed-input scenarios, the reduction choice, and
+  `max_grid_cells_total` — no `=...` defaults that hide silent
+  caller-elision (per Codex review id=1248). The driver script
+  may carry an **explicit fixture** in its `_build_scenarios()`
+  helper labeled as a non-production test fixture in
+  `metadata.json`, but every value is passed explicitly to the
+  harness function; no runtime opt-out path.
 - New physical parameters. Sweep amplitudes (prescribed traction
   magnitude, prescribed rate magnitudes) are caller-supplied test
   inputs; no production defaults land.
@@ -176,9 +186,13 @@ The sweep's working memory is dominated by the largest grid:
 `max(grid_n) · max(grid_n_other) · 8 bytes` per ECM field, times
 ~6 fields, plus scratch for per-step diagnostics. The Sanity Gate
 requires the caller to supply an explicit `max_grid_cells_total`
-cap (default suggestion `64 · 64 = 4096` for Phase 1 baseline);
-the harness raises `sweep_memory_cap_exceeded` before any allocation
-when a tuple's grid exceeds the cap.
+cap as a **mandatory** harness function argument (no `=...`
+default in the signature); the gate doc may suggest a worked
+example value (e.g., `64 · 64 = 4096` for Phase 1 baseline) for
+the script-side fixture, but that suggestion lives only in this
+gate doc and in the script's explicit fixture, never as a
+function default. The harness raises `sweep_memory_cap_exceeded`
+before any allocation when a tuple's grid exceeds the cap.
 
 ### Per-tuple dt-rate sanity
 
@@ -265,8 +279,8 @@ Every numeric in the Phase C harness is one of:
 
 | Symbol | Source | Magic-Number Block status |
 |---|---|---|
-| `grid_n`, `spacing_um`, `dt_s`, `n_steps`, `frame_interval` (per tuple) | runtime caller-supplied (no project default) | **not a magic number** — caller-supplied test inputs only |
-| `max_grid_cells_total` cap | caller-supplied numerical safety bound (default suggestion `4096` documented but caller must explicitly pass) | named numerical safety bound; not a physics constant |
+| `grid_n`, `spacing_um`, `dt_s`, `n_steps`, `frame_interval` (per tuple) | runtime caller-supplied (no project default, no harness signature default) | **not a magic number** — caller-supplied test inputs only |
+| `max_grid_cells_total` cap | caller-supplied numerical safety bound (mandatory positional arg in the harness function; the gate doc may suggest `4096` for Phase 1 baseline as a worked example, but the suggestion lives only in this gate doc, not in code) | named numerical safety bound; not a physics constant; **never a function default** |
 | Sweep amplitudes (prescribed traction magnitude, prescribed rate magnitudes per channel) | caller-supplied per-channel scenario inputs | **not a magic number** — same as 6.3b runner pattern |
 | Reduction choice (max, mean, sum) | caller-supplied; no project default | **not a magic number** — protocol selection |
 | Reference biology table from the closed-loop lock §3 | doc only, not used in Phase C code | N/A |
@@ -309,8 +323,14 @@ Planned (not committed by this gate):
 - Top-level `index.json` with `aggregate_status`,
   `intentional_failures_observed`, `unexpected_failures`,
   `unexpected_passes`.
-- One representative tuple list (e.g., 3 grid sizes × 3 dt values)
-  as the default smoke-test scenario; caller may override via CLI.
+- An **explicit non-production fixture** in the script's
+  `_build_scenarios()` helper (e.g., 3 grid sizes × 3 dt values),
+  labeled `"fixture_kind": "non_production_smoke"` in every
+  `metadata.json` and in the top-level `index.json`. The harness
+  function still takes every value as a mandatory argument; the
+  fixture exists only on the script side. CLI may override every
+  fixture entry. **No runtime default tuple list lives in the
+  harness function signature.**
 
 ---
 
@@ -320,7 +340,7 @@ Each test exercises one Sanity Gate item.
 
 | # | Test name | Gate item |
 |---|---|---|
-| 1 | `test_open_loop_sweep_runs_4_channels_default_tuples` | §0 + §3 isolation |
+| 1 | `test_open_loop_sweep_runs_4_channels_explicit_fixture` | §0 + §3 isolation |
 | 2 | `test_open_loop_sweep_grid_spacing_variation` | §1 + §3 + §6 |
 | 3 | `test_open_loop_sweep_dt_variation` | §1 + §4 + §6 |
 | 4 | `test_open_loop_sweep_summary_reports_baseline_only` | §6 wording (Hard Rule 11) |
