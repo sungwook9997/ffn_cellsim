@@ -2,9 +2,9 @@
 
 **Status**: design note only, **NOT a Sanity Gate, NOT a code
 commitment**. Per
-`docs/v2_phase1_forward_roadmap.md` line 51 ("Cytokinesis
-design-note only, no executable implementation requirement") and
-the "Phase 1 Out / Schema-Only" classification (line 53–61).
+`docs/v2_phase1_forward_roadmap.md` ("Cytokinesis design-note
+only, no executable implementation requirement" entry in the
+"Phase 1 Out / Schema-Only" section).
 
 **Author**: implementation-work Claude, drafted as a design-lock-
 independent idle unit during the 2026-05-04 KST session
@@ -14,7 +14,10 @@ fixture (id=1274), no collision.
 
 **Hard contract**: nothing in this note authorizes a code commit
 that executes cytokinesis. Phase 1 explicitly defers executable
-cytokinesis to Phase 1.5 / Phase 2 (forward roadmap line 56–57).
+cytokinesis to Phase 1.5 / Phase 2 (forward roadmap "Cytokinesis
+execution: design-note only in Phase 1; executable work deferred
+to Phase 1.5 / Phase 2" entry in the "Phase 1 Out / Schema-Only"
+section).
 Any future code that *implements* cytokinesis must write its own
 Sanity Gate document and design-discussion lock.
 

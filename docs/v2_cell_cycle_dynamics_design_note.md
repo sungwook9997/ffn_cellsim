@@ -2,9 +2,8 @@
 
 **Status**: design note only, **NOT a Sanity Gate, NOT a code
 commitment**. Per
-`docs/v2_phase1_forward_roadmap.md` line 55 ("Cell-cycle
-dynamics: schema-only") in the "Phase 1 Out / Schema-Only"
-classification (line 53–61).
+`docs/v2_phase1_forward_roadmap.md` ("Cell-cycle dynamics:
+schema-only" entry in the "Phase 1 Out / Schema-Only" section).
 
 **Author**: implementation-work Claude, drafted as a parallel idle
 unit alongside the cytokinesis design note (`ef2806c` /
@@ -37,8 +36,9 @@ This note documents:
 - the existing schema fields and their validators;
 - which dynamics are deferred and require their own
   design-discussion round before executable code lands;
-- the relationship to cytokinesis (cell-cycle phase M triggers
-  cytokinesis, so the two design notes are linked);
+- the relationship to cytokinesis (cell-cycle phase M is the
+  natural cytokinesis trigger *candidate*; exact M↔cytokinesis
+  coupling deferred to Phase 1.5 design-lock — see §2.5);
 - activation criteria for future cell-cycle dynamics.
 
 It does **not** propose constitutive equations for phase
@@ -175,8 +175,10 @@ linked:
   they record post-event lineage identity; cell-cycle note §1
   lists them as part of the schema surface).
 - A Phase 1.5 PR that implements cell-cycle dynamics likely lands
-  alongside the cytokinesis-execution PR, since cytokinesis is
-  the *exit* condition for `M` phase.
+  alongside the cytokinesis-execution PR if Phase 1.5 picks tight
+  M↔cytokinesis coupling (one of two candidates per §2.5).
+  Loose coupling is also a valid Phase 1.5 candidate; either path
+  must respect both notes' activation criteria.
 
 **No Phase 1 code couples the two layers**. Either future
 implementation must respect both notes' activation criteria.
@@ -254,14 +256,15 @@ into smaller PRs).
 
 ## 6. References
 
-- Forward roadmap: `docs/v2_phase1_forward_roadmap.md` line 55
-  ("Cell-cycle dynamics: schema-only"), line 53–61 (Phase 1 Out
-  / Schema-Only classification).
+- Forward roadmap: `docs/v2_phase1_forward_roadmap.md`
+  ("Cell-cycle dynamics: schema-only" entry in the "Phase 1 Out
+  / Schema-Only" section).
 - Existing schema: `acs/v2/single_cell.py` (`cell_age_s`,
   `cell_cycle_phase`, `CellCyclePhase` literal,
   `mechanosignal_yap_taz`, `division_count`, `parent_cell_id`).
 - Paired design note: `docs/v2_cytokinesis_design_note.md`
-  (cytokinesis is the M→G1 exit event for the cell-cycle layer).
+  (M-phase is the natural cytokinesis trigger candidate; exact
+  M↔cytokinesis coupling deferred to Phase 1.5 design-lock).
 - Closed-loop ECM gate phased plan (gates YAP/TAZ feedback when
   it goes closed-loop):
   `docs/v2_closed_loop_ecm_gate_phased_plan_locked.md`.
