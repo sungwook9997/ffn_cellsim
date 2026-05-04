@@ -204,9 +204,15 @@ self-intersection guard fires).
 ### Test 4 (coupled ellipse → discrete equilibrium residual) — DIAGNOSTIC
 
 `λ_c > 0`, `K_A > 0`. Initial: ellipse polygon (1.5×1, N=64).
-Reference equilibrium `R*` from quartic
-`K_A · (πR² - A_0)/A_0 + λ_c/R = 0` (positive real root closest
-to `R_init`, solved with `numpy.roots`).
+Reference equilibrium `R*` from cubic
+`K_A · π R³ / A_0 - K_A · R + λ_c = 0` (positive real root closest
+to `R_init`, solved with `numpy.roots`). Derivation: multiply the
+equilibrium condition `K_A · (πR² - A_0)/A_0 + λ_c/R = 0` through
+by `R`. The cubic form is canonical here per the
+``equilibrium_radius_from_cubic`` rename in commit ``e9bda2a``;
+the legacy alias ``equilibrium_radius_from_quartic`` is preserved
+in code for backward compatibility but is misleading on the
+polynomial degree.
 
 `finite_N_residual` baseline: build a regular N-gon at radius `R*`
 and evaluate the IMPLEMENTED force residual `||F||` on it.
