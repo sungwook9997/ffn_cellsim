@@ -95,6 +95,10 @@ from acs.v2.dynamics.focal_adhesion import (
     compute_radial_tangential_decomposition,
     step_focal_adhesions_static,
 )
+from acs.v2.dynamics.phase_f_minimal_motility import (
+    PhaseFStepResult,
+    step_phase_f_minimal_motility,
+)
 from acs.v2.dynamics.protrusion_coupled_focal_adhesion import (
     ProtrusionCoupledDynamicsDiagnostics,
     ProtrusionCoupledDynamicsResult,
@@ -194,6 +198,7 @@ __all__ = [
     "PhaseEV2Item5SweepConfig",
     "PhaseEV2Item5SweepMetadata",
     "PhaseEV2Item5SweepResult",
+    "PhaseFStepResult",
     "ProtrusionCoupledDynamicsDiagnostics",
     "ProtrusionCoupledDynamicsResult",
     "ProtrusionEvent",
@@ -242,6 +247,7 @@ __all__ = [
     "step_closed_loop_phase_e_v1",
     "step_closed_loop_phase_e_v2",
     "step_ecm_orientation_response",
+    "step_phase_f_minimal_motility",
     "step_ecm_to_fa_bias",
     "step_fa_to_ecm_response",
     "step_focal_adhesions_static",
