@@ -90,6 +90,12 @@ def _select_frames(frame_paths: list[str], *, max_frames: int) -> list[str]:
         raise ValueError(f"max_frames must be positive, got {max_frames!r}")
     if len(frame_paths) <= max_frames:
         return list(frame_paths)
+    # max_frames == 1: return only the first frame (Codex id=1756 fix —
+    # the evenly-spaced formula divides by (max_frames - 1) which would
+    # zero-divide; the natural viewer-cap semantics for "at most one panel"
+    # is the initial frame).
+    if max_frames == 1:
+        return [frame_paths[0]]
     # Evenly-spaced subsample including first + last to preserve trajectory ends.
     n = len(frame_paths)
     indices = [round(i * (n - 1) / (max_frames - 1)) for i in range(max_frames)]

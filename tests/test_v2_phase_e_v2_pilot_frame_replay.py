@@ -104,6 +104,26 @@ def test_frame_replay_subsamples_when_exceeding_max_frames(tmp_path):
     assert rendered_basenames[-1] == all_basenames[-1]  # frame_000010.h5
 
 
+def test_frame_replay_max_frames_one_returns_single_first_frame(tmp_path):
+    """Test 6 (Codex `id=1756` BLOCKER fix regression): `max_frames=1`이
+    `ZeroDivisionError` 없이 첫 frame 1개만 rendered. 이전에 `(max_frames-1)=0`
+    division에서 crash했던 회귀 방지."""
+    config = PhaseEV2PilotConfig(n_steps=2, dt_s=0.0, frame_interval=1, grid_n=3)
+    pilot = run_phase_e_v2_pilot(str(tmp_path / "replay_one"), config, git_commit_hash="r6")
+    assert len(pilot.frame_paths) >= 2  # 최소 2개 (initial + ≥1 step)
+
+    artifacts = render_phase_e_v2_pilot_frame_replay(
+        pilot.output_dir, write_html=False, max_frames=1
+    )
+    assert artifacts.n_frames_total >= 2
+    assert artifacts.n_frames_rendered == 1
+    assert len(artifacts.frame_paths_rendered) == 1
+    # 첫 frame이 선택됨 (frame_000000.h5)
+    assert os.path.basename(artifacts.frame_paths_rendered[0]) == "frame_000000.h5"
+    assert os.path.isfile(artifacts.png_path)
+    assert os.path.getsize(artifacts.png_path) > 0
+
+
 def test_frame_replay_cli_smoke(tmp_path):
     """Test 5: CLI smoke — pilot runner CLI + replay CLI 연쇄."""
     run_dir = tmp_path / "cli_replay"
