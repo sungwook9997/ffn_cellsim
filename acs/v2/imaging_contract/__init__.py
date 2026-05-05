@@ -10,6 +10,7 @@ from acs.v2.imaging_contract.loader import (
 )
 from acs.v2.imaging_contract.split_builder import (
     build_condition_stratified_split_manifest,
+    compute_yaml_sha256,
 )
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "ImagingInputContractValidationResult",
     "ImagingInputMetric",
     "build_condition_stratified_split_manifest",
+    "compute_yaml_sha256",
     "load_imaging_contract",
     "validate_imaging_contract",
 ]

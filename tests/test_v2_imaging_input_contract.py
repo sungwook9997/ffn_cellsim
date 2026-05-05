@@ -56,14 +56,46 @@ def test_split_manifest_is_condition_stratified_scene_level():
 
 
 def test_build_split_manifest_reproduces_committed_manifest():
+    from acs.v2.imaging_contract.split_builder import compute_yaml_sha256
+
     contract = load_imaging_contract(_CONTRACT_PATH)
     groups = {g.condition: g.csv_path for g in contract.groups}
     rebuilt = build_condition_stratified_split_manifest(
-        groups, seed=contract.split_seed
+        groups,
+        seed=contract.split_seed,
+        contract_id=contract.contract_id,
+        input_yaml_path="configs/imaging/260313.yaml",
+        input_yaml_sha256=compute_yaml_sha256(_CONTRACT_PATH),
     )
     committed = json.loads(contract.split_manifest_path.read_text(encoding="utf-8"))
 
     assert rebuilt == committed
+
+
+def test_split_manifest_input_yaml_sha256_stale_fails_closed(tmp_path):
+    """Y13 tamper detection: manifest with mismatched input_yaml_sha256 fails."""
+    contract = load_imaging_contract(_CONTRACT_PATH)
+    manifest = json.loads(
+        contract.split_manifest_path.read_text(encoding="utf-8")
+    )
+    manifest["input_yaml_sha256"] = "0" * 64
+    bad_manifest = tmp_path / "split.json"
+    bad_manifest.write_text(json.dumps(manifest), encoding="utf-8")
+    bad_split = replace(contract.split, manifest_path=bad_manifest)
+    bad = replace(contract, split=bad_split)
+
+    with pytest.raises(ValueError, match="input_yaml_sha256"):
+        validate_imaging_contract(bad)
+
+
+def test_split_ratio_must_sum_to_one():
+    """P2 hotfix: ratio entries that don't sum to 1.0 fail closed."""
+    contract = load_imaging_contract(_CONTRACT_PATH)
+    bad_split = replace(contract.split, ratio=(0.7, 0.7))
+    bad = replace(contract, split=bad_split)
+
+    with pytest.raises(ValueError, match="must sum to 1.0"):
+        validate_imaging_contract(bad)
 
 
 def test_missing_pixel_size_fails(tmp_path):

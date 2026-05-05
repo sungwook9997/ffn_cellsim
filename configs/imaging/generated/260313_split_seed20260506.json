@@ -1,5 +1,11 @@
 {
   "schema_version": "v2_imaging_split_manifest_v1",
+  "manifest_version": 1,
+  "generator": "acs.v2.imaging_contract.split_builder",
+  "generated_at_iso": null,
+  "contract_id": "pi_260313_v1",
+  "input_yaml": "configs/imaging/260313.yaml",
+  "input_yaml_sha256": "a007e531d02fda90ecf2ecc3c1168e74233b7dafda7e03979cb8a31ecc5fbda0",
   "seed": 20260506,
   "split_policy": "condition_stratified_scene_level_70_30",
   "groups": {

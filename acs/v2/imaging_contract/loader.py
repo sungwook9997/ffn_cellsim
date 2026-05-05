@@ -23,6 +23,7 @@ from acs.v2.data_contract import (
     MetricSpec,
     V2DataContract,
 )
+from acs.v2.imaging_contract.split_builder import compute_yaml_sha256
 
 
 @dataclass(frozen=True, slots=True)
@@ -411,6 +412,12 @@ def validate_imaging_contract(
         raise ValueError(
             "calibration_validation_split.ratio entries must be in (0, 1)"
         )
+    ratio_sum = float(contract.split.ratio[0]) + float(contract.split.ratio[1])
+    if not math.isclose(ratio_sum, 1.0, rel_tol=1e-9, abs_tol=1e-9):
+        raise ValueError(
+            f"calibration_validation_split.ratio must sum to 1.0; "
+            f"got {contract.split.ratio!r} (sum={ratio_sum})"
+        )
     if any(v <= 0 for v in contract.image_size_px_width_height):
         raise ValueError(
             "image_size_px_width_height entries must be positive"
@@ -420,6 +427,21 @@ def validate_imaging_contract(
     manifest = _load_manifest(contract.split.manifest_path)
     if manifest.get("seed") != contract.split.seed:
         raise ValueError("split manifest seed does not match contract seed")
+    if manifest.get("contract_id") != contract.contract_id:
+        raise ValueError(
+            f"split manifest contract_id "
+            f"{manifest.get('contract_id')!r} does not match contract "
+            f"{contract.contract_id!r}"
+        )
+    expected_sha = compute_yaml_sha256(contract.yaml_path)
+    actual_sha = manifest.get("input_yaml_sha256")
+    if actual_sha != expected_sha:
+        raise ValueError(
+            "split manifest input_yaml_sha256 does not match current YAML "
+            f"(Y13 tamper detection); expected {expected_sha!r}, "
+            f"got {actual_sha!r}. Regenerate manifest via "
+            "acs.v2.imaging_contract.split_builder; manual edits forbidden."
+        )
 
     group_scene_counts: dict[str, int] = {}
     group_row_counts: dict[str, int] = {}
