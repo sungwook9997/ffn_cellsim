@@ -1,0 +1,61 @@
+contract_id: pi_260313_v1
+roadmap_layer: v2_1_imaging_input
+imaging_date: "2026-03-13"
+canonical_root: ../../data/experimental/imaging
+voxel_size_um_xyz: [2.048, 2.048, 1.0]
+frame_interval_s: 3600.0
+channels: [saved_mask_reconstruction]
+
+raw_imaging:
+  available: true
+  path:
+
+split:
+  seed: 20260506
+  calibration_fraction: 0.7
+  manifest: generated/260313_split_seed20260506.json
+
+groups:
+  - condition: Bare
+    csv_path: ../../data/experimental/260313_Bare.csv
+    naming_series_prefix: "MD-Experiment-0004_Position("
+    filename_prefix: "MD-Experiment-0004_Position("
+    scene_id_column: Series
+    frame_column: Frame
+    time_column: Time_min
+  - condition: Lam4
+    csv_path: ../../data/experimental/260313_Lam4.csv
+    naming_series_prefix: "Position("
+    filename_prefix: "MD-Experiment-0004_Position("
+    scene_id_column: Series
+    frame_column: Frame
+    time_column: Time_min
+  - condition: Pre
+    csv_path: ../../data/experimental/260313_Pre.csv
+    naming_series_prefix: "MD-Experiment-0004_Position("
+    filename_prefix: "MD-Experiment-0004_Position("
+    scene_id_column: Series
+    frame_column: Frame
+    time_column: Time_min
+
+metrics:
+  - name: area_um2
+    column: Area_um2
+    unit: um2
+    role: calibration
+  - name: a_over_a0
+    column: A_over_A0
+    unit: dimensionless
+    role: validation
+  - name: effective_radius_um
+    column: EffectiveRadius_um
+    unit: um
+    role: diagnostic
+  - name: solidity
+    column: Solidity
+    unit: dimensionless
+    role: diagnostic
+  - name: circularity
+    column: Circularity
+    unit: dimensionless
+    role: diagnostic
