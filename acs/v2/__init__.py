@@ -13,6 +13,18 @@ from acs.v2.active_contour import (
     ellipse_polygon_vertices,
     regular_polygon_vertices,
 )
+from acs.v2.adhesion_network_state import (
+    AdhesionNetworkRates,
+    AdhesionNetworkSignals,
+    AdhesionNetworkStepDiagnostics,
+    AdhesionNetworkStepResult,
+    CellAdhesionNetworkState,
+)
+from acs.v2.dynamics.adhesion_network_dynamics import (
+    compute_fa_engagement_signal,
+    compute_junction_engagement_signal,
+    step_adhesion_network_state,
+)
 from acs.v2.active_contour_harness import (
     HarnessRun,
     StepDiagnostics,
@@ -155,6 +167,11 @@ __all__ = [
     "ActiveContourParametersError",
     "ActiveContourState",
     "ActiveContourStepError",
+    "AdhesionNetworkRates",
+    "AdhesionNetworkSignals",
+    "AdhesionNetworkStepDiagnostics",
+    "AdhesionNetworkStepResult",
+    "CellAdhesionNetworkState",
     "ArtifactLayoutEntry",
     "ArtifactKind",
     "CellClusterState",
@@ -223,6 +240,8 @@ __all__ = [
     "compute_ecm_orientation_lyapunov_metric",
     "compute_ecm_to_fa_bias_active",
     "compute_ecm_to_fa_bias_neutral",
+    "compute_fa_engagement_signal",
+    "compute_junction_engagement_signal",
     "compute_finite_n_residual",
     "compute_radial_tangential_decomposition",
     "compute_rate_max",
@@ -244,6 +263,7 @@ __all__ = [
     "run_phase_e_v1_sensitivity_sweep",
     "run_phase_e_v2_sensitivity_sweep",
     "step",
+    "step_adhesion_network_state",
     "step_closed_loop_phase_e_v1",
     "step_closed_loop_phase_e_v2",
     "step_ecm_orientation_response",

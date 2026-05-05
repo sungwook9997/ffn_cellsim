@@ -7,6 +7,11 @@ from acs.v2.dynamics.active_contour import (
     energy_cortex,
     step,
 )
+from acs.v2.dynamics.adhesion_network_dynamics import (
+    compute_fa_engagement_signal,
+    compute_junction_engagement_signal,
+    step_adhesion_network_state,
+)
 from acs.v2.dynamics.closed_loop_phase_d import (
     FAToECMResponseResult,
     PhaseDNoOpStepResult,
@@ -127,6 +132,8 @@ __all__ = [
     "compute_ecm_orientation_lyapunov_metric",
     "compute_ecm_to_fa_bias_active",
     "compute_ecm_to_fa_bias_neutral",
+    "compute_fa_engagement_signal",
+    "compute_junction_engagement_signal",
     "compute_radial_tangential_decomposition",
     "run_phase_e_v1_sensitivity_sweep",
     "run_phase_e_v2_sensitivity_sweep",
@@ -135,6 +142,7 @@ __all__ = [
     "sample_ecm_at_fa_positions",
     "scatter_fa_traction_to_ecm_bilinear",
     "step",
+    "step_adhesion_network_state",
     "step_closed_loop_phase_e_v1",
     "step_closed_loop_phase_e_v2",
     "step_ecm_orientation_response",
