@@ -31,6 +31,7 @@ from acs.v2.dynamics import ecm_constitutive_response as cr
 from acs.v2.dynamics.closed_loop_phase_e import (
     PhaseEStepResult,
     step_closed_loop_phase_e_v1,
+    step_closed_loop_phase_e_v2,
 )
 from acs.v2.dynamics.ecm_constitutive_response import (
     ECMConstitutiveResponseError,
@@ -593,3 +594,149 @@ def test_phase_e_v1_exports_through_both_init():
         assert sym in v2_dynamics.__all__, (
             f"acs.v2.dynamics.__all__ missing {sym!r}"
         )
+
+
+def test_phase_e_v2_returns_phase_e_step_result_and_identity_invariant():
+    """Phase E v2 reuses PhaseEStepResult and preserves the v1 Y4
+    updated-ECM identity invariant."""
+
+    ecm = _ecm(orientation_value=(1.0, 0.0, 0.0, -1.0))
+    fa = _fa("a1", traction=(1.0, 0.0))
+
+    result = step_closed_loop_phase_e_v2((fa,), ecm, dt_s=0.0, k_active=1.0)
+
+    assert isinstance(result, PhaseEStepResult)
+    assert result.updated_ecm is result.orientation_response.updated_ecm
+    assert result.ecm_to_fa_bias.diagnostics_dict["mechanism"] == (
+        "deviatoric_rayleigh_orientation"
+    )
+    assert result.ecm_to_fa_bias.diagnostics_dict["k_active"] == 1.0
+
+
+def test_phase_e_v2_call_order_uses_active_bias_not_neutral(monkeypatch):
+    """HB#3 -> HB#1+#2 -> HB#4-active -> HB#5, with HB#5 receiving
+    the original scatter object."""
+
+    calls: list[tuple[str, tuple, dict]] = []
+
+    real_scatter = ce.scatter_fa_traction_to_ecm_bilinear
+    real_orient = ce.step_ecm_orientation_response
+    real_active = ce.compute_ecm_to_fa_bias_active
+    real_lyap = ce.compute_ecm_orientation_lyapunov_metric
+
+    def _spy_scatter(*args, **kwargs):
+        out = real_scatter(*args, **kwargs)
+        calls.append(("scatter", args, {"out": out}))
+        return out
+
+    def _spy_orient(*args, **kwargs):
+        out = real_orient(*args, **kwargs)
+        calls.append(("orient", args, {"out": out}))
+        return out
+
+    def _spy_active(*args, **kwargs):
+        out = real_active(*args, **kwargs)
+        calls.append(("active", args, {"kwargs": kwargs, "out": out}))
+        return out
+
+    def _neutral_should_not_run(*args, **kwargs):
+        raise AssertionError("Phase E v2 must not call HB#4-neutral")
+
+    def _spy_lyap(*args, **kwargs):
+        out = real_lyap(*args, **kwargs)
+        calls.append(("lyap", args, {"out": out}))
+        return out
+
+    monkeypatch.setattr(ce, "scatter_fa_traction_to_ecm_bilinear", _spy_scatter)
+    monkeypatch.setattr(ce, "step_ecm_orientation_response", _spy_orient)
+    monkeypatch.setattr(ce, "compute_ecm_to_fa_bias_active", _spy_active)
+    monkeypatch.setattr(ce, "compute_ecm_to_fa_bias_neutral", _neutral_should_not_run)
+    monkeypatch.setattr(ce, "compute_ecm_orientation_lyapunov_metric", _spy_lyap)
+
+    ecm = _ecm(orientation_value=(1.0, 0.0, 0.0, -1.0))
+    fa = _fa("a1", traction=(1.0, 0.0))
+    result = step_closed_loop_phase_e_v2((fa,), ecm, dt_s=0.0, k_active=0.7)
+
+    assert [c[0] for c in calls] == ["scatter", "orient", "active", "lyap"]
+    scatter_out = calls[0][2]["out"]
+    post_update_ecm = calls[1][2]["out"].updated_ecm
+
+    active_args = calls[2][1]
+    active_kwargs = calls[2][2]["kwargs"]
+    assert active_args[1] is post_update_ecm
+    assert active_kwargs["k_active"] == 0.7
+
+    lyap_args = calls[3][1]
+    assert lyap_args[0] is post_update_ecm
+    assert lyap_args[1] is scatter_out
+    assert result.updated_ecm is post_update_ecm
+
+
+def test_phase_e_v2_invalid_k_active_raises_before_scatter(monkeypatch):
+    """Valid ECM + invalid k_active must fail before HB#3 scatter."""
+
+    ecm = _ecm()
+    scatter_calls = {"count": 0}
+
+    def _tracking_scatter(*args, **kwargs):
+        scatter_calls["count"] += 1
+        raise AssertionError("scatter should not run when k_active is invalid")
+
+    monkeypatch.setattr(ce, "scatter_fa_traction_to_ecm_bilinear", _tracking_scatter)
+
+    with pytest.raises(FAToECMBiasError) as excinfo:
+        step_closed_loop_phase_e_v2((), ecm, dt_s=0.0, k_active=-1.0)
+
+    assert excinfo.value.failure_kind == "k_active_invalid"
+    assert scatter_calls["count"] == 0
+
+
+def test_phase_e_v2_anti_collapse_under_anisotropic_ecm_with_two_perpendicular_fas():
+    """Central v2 invariant: anisotropic ECM differentiates two FAs at
+    the same position by traction direction."""
+
+    ecm = _ecm(orientation_value=(1.0, 0.0, 0.0, -1.0))
+    fas = (
+        _fa("x", traction=(1.0, 0.0)),
+        _fa("y", traction=(0.0, 1.0)),
+    )
+
+    result = step_closed_loop_phase_e_v2(fas, ecm, dt_s=0.0, k_active=1.0)
+    multipliers = result.ecm_to_fa_bias.multipliers_per_fa
+
+    np.testing.assert_allclose(multipliers[0, :], np.exp(1.0), rtol=1e-12)
+    np.testing.assert_allclose(multipliers[1, :], np.exp(-1.0), rtol=1e-12)
+    assert not np.allclose(multipliers, 1.0)
+    assert not np.allclose(multipliers[0, :], multipliers[1, :])
+
+
+def test_phase_e_v2_docstring_marks_composition_closure_without_item_overclaim():
+    """Q4 hybrid wording: per-step composition closure only."""
+
+    function_doc = step_closed_loop_phase_e_v2.__doc__ or ""
+
+    assert "composition-structure" in function_doc
+    assert "does **not** by itself establish Items 1-4" in function_doc
+    for forbidden in (
+        "Items 1-4 satisfied",
+        "full closed-loop satisfied",
+        "satisfies_item",
+    ):
+        assert forbidden not in function_doc
+
+
+def test_phase_e_v2_exports_through_both_init():
+    """Only the new v2 wrapper function is exported; result type is
+    reused."""
+
+    assert hasattr(v2_pkg, "step_closed_loop_phase_e_v2")
+    assert hasattr(v2_dynamics, "step_closed_loop_phase_e_v2")
+    assert v2_pkg.step_closed_loop_phase_e_v2 is ce.step_closed_loop_phase_e_v2
+    assert v2_dynamics.step_closed_loop_phase_e_v2 is ce.step_closed_loop_phase_e_v2
+    assert "step_closed_loop_phase_e_v2" in v2_pkg.__all__
+    assert "step_closed_loop_phase_e_v2" in v2_dynamics.__all__
+
+    assert not hasattr(v2_pkg, "PhaseEV2StepResult")
+    assert not hasattr(v2_dynamics, "PhaseEV2StepResult")
+    assert "PhaseEV2StepResult" not in v2_pkg.__all__
+    assert "PhaseEV2StepResult" not in v2_dynamics.__all__

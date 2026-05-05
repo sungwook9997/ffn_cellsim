@@ -120,7 +120,9 @@ from acs.v2.dynamics.ecm_lyapunov_metric import (
 )
 from acs.v2.dynamics.ecm_to_fa_bias import (
     ECMToFABiasResult,
+    compute_ecm_to_fa_bias_active,
     compute_ecm_to_fa_bias_neutral,
+    _validate_k_active as _validate_hb4_active_k_active,
 )
 from acs.v2.dynamics.fa_to_ecm_scattering import (
     scatter_fa_traction_to_ecm_bilinear,
@@ -245,6 +247,114 @@ def step_closed_loop_phase_e_v1(
     )
     ecm_to_fa_bias = compute_ecm_to_fa_bias_neutral(
         adhesions, orientation_response.updated_ecm
+    )
+    lyapunov_metric = compute_ecm_orientation_lyapunov_metric(
+        orientation_response.updated_ecm, traction_density_xy
+    )
+    return PhaseEStepResult(
+        traction_density_xy=traction_density_xy,
+        orientation_response=orientation_response,
+        ecm_to_fa_bias=ecm_to_fa_bias,
+        lyapunov_metric=lyapunov_metric,
+        updated_ecm=orientation_response.updated_ecm,
+    )
+
+
+def step_closed_loop_phase_e_v2(
+    adhesions: tuple[FocalAdhesionState, ...] | list[FocalAdhesionState],
+    ecm: ECMSubstrateState,
+    dt_s: float,
+    *,
+    k_active: float,
+    traction_ref_nN_per_um2: float = TRACTION_REF_NN_PER_UM2,
+    k_orient_per_s: float = K_ORIENT_PER_S,
+) -> PhaseEStepResult:
+    """One Phase E v2 ECM-side composition step (active HB#4 in the loop).
+
+    Phase E v2 step 2 achieves per-step **composition-structure
+    closure** by placing HB#4-active non-neutral ECM->FA bias inside
+    the FA->ECM->FA loop. It does **not** by itself establish Items 1-4
+    multi-step satisfaction over time; that requires a sweep harness
+    or simulation-engine trajectory (locked Q4 = (c) hybrid wording
+    boundary).
+
+    Composes (sister with v1 with HB#4-active swap at step 3):
+
+    1. HB#3 scatter: FA traction -> ECM grid traction density.
+    2. HB#1+#2 orientation update: instantaneous traction stimulus
+       drives convex orientation update; returns fresh ECM with no
+       aliasing per HB#1+#2 Y12.
+    3. HB#4-**active** bias readout: deviatoric Rayleigh score on
+       post-HB#1+#2 ECM (non-neutral multipliers per HB#4-active Y1).
+    4. HB#5 Lyapunov-like metric: on the post-HB#1+#2 ECM + the
+       original HB#3 scatter object (NOT recomputed; call-order spy
+       test enforces).
+
+    Validation order (locked Codex C3 / HB#4-active Y12 sister):
+      a. ``ecm.validate()``
+      b. ``_validate_hb4_active_k_active(k_active)`` — cheap parameter
+         failure first (BEFORE HB#3 scatter O(N_FA) work)
+      c. sub-call sequence (HB#3 -> HB#1+#2 -> HB#4-active -> HB#5)
+
+    No wrapper failure kinds (Y17 inheritance from v1): sub-call errors
+    (HB#3 / HB#1+#2 / HB#4-active / HB#5) propagate verbatim. ``k_active``
+    validation surfaces the imported HB#4-active ``k_active_invalid``
+    error kind from the shared validator (no v2-local error kind
+    invented).
+
+    Identity invariant Y4 (inherited from v1): ``result.updated_ecm is
+    result.orientation_response.updated_ecm`` — object identity, no
+    copy, no mutation in the wrapper.
+
+    Args:
+        adhesions: tuple or list of
+            :class:`acs.v2.focal_adhesion.FocalAdhesionState`. Empty
+            list valid (per HB#3 contract); produces all-zero traction
+            -> identity orientation update -> empty bias ``(0, 3)`` ->
+            V_active=0.
+        ecm: input :class:`acs.v2.ecm_substrate.ECMSubstrateState`.
+            Validated at function entry.
+        dt_s: timestep in seconds. ``0.0`` is valid no-op (HB#1+#2
+            Y15 + locked anti-collapse fixture); negative / boolean /
+            non-finite raise from HB#1+#2.
+        k_active: dimensionless coupling strength for HB#4-active
+            deviatoric Rayleigh law. **REQUIRED, no default** (Q3 = (b)
+            sister with HB#4-active Y3). Must be finite, positive, and
+            produce a finite ``exp(k_active*sqrt(2))`` upper bound.
+        traction_ref_nN_per_um2: literature-pinned reference traction
+            scale (default
+            :data:`acs.v2.dynamics.ecm_constitutive_response.TRACTION_REF_NN_PER_UM2`).
+        k_orient_per_s: alignment rate constant (default
+            :data:`acs.v2.dynamics.ecm_constitutive_response.K_ORIENT_PER_S`).
+
+    Returns:
+        :class:`PhaseEStepResult` (Q1 = (a) reused; HB#4-active Y15
+        sister) with the 5 sub-results and ``updated_ecm`` object-
+        identical to ``orientation_response.updated_ecm`` (Y4 invariant).
+
+    Raises:
+        FAToECMBiasError: reports the HB#4-active ``k_active_invalid``
+            error kind if ``k_active`` is invalid (raised BEFORE any
+            sub-call fires).
+        Errors from sub-calls (HB#3 / HB#1+#2 / HB#4-active / HB#5)
+            propagate verbatim — no wrapper-level translation.
+    """
+
+    ecm.validate()
+    _validate_hb4_active_k_active(k_active)
+
+    traction_density_xy = scatter_fa_traction_to_ecm_bilinear(adhesions, ecm)
+    orientation_response = step_ecm_orientation_response(
+        ecm,
+        traction_density_xy,
+        dt_s,
+        traction_ref_nN_per_um2=traction_ref_nN_per_um2,
+        k_orient_per_s=k_orient_per_s,
+    )
+    ecm_to_fa_bias = compute_ecm_to_fa_bias_active(
+        adhesions,
+        orientation_response.updated_ecm,
+        k_active=k_active,
     )
     lyapunov_metric = compute_ecm_orientation_lyapunov_metric(
         orientation_response.updated_ecm, traction_density_xy

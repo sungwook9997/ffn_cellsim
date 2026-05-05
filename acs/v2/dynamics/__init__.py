@@ -17,6 +17,7 @@ from acs.v2.dynamics.closed_loop_phase_d import (
 from acs.v2.dynamics.closed_loop_phase_e import (
     PhaseEStepResult,
     step_closed_loop_phase_e_v1,
+    step_closed_loop_phase_e_v2,
 )
 from acs.v2.dynamics.closed_loop_phase_e_sweep import (
     PhaseEV1Item5SweepConfig,
@@ -122,6 +123,7 @@ __all__ = [
     "scatter_fa_traction_to_ecm_bilinear",
     "step",
     "step_closed_loop_phase_e_v1",
+    "step_closed_loop_phase_e_v2",
     "step_ecm_orientation_response",
     "step_ecm_to_fa_bias",
     "step_fa_to_ecm_response",
