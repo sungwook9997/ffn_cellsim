@@ -2,18 +2,50 @@ contract_id: pi_260313_v1
 roadmap_layer: v2_1_imaging_input
 imaging_date: "2026-03-13"
 canonical_root: ../../data/experimental/imaging
-voxel_size_um_xyz: [2.048, 2.048, 1.0]
-frame_interval_s: 3600.0
 channels: [saved_mask_reconstruction]
+
+# Y1 P0-1: pixel size 2.048 um/px (NOT 1.024); audit estimate was 4x wrong.
+# Validated against CSV via sqrt(Area_um2 / Area_px).
+pixel_size_um_xy: [2.048, 2.048]
+pixel_area_um2: 4.194304
+
+# Y16 SEAL guard 1: frame_interval_min first-class top-level (PI vocabulary).
+frame_interval_min: 60
+
+# Y17 SEAL guard 2: image axis order explicit (NumPy/PIL can swap).
+image_size_px_width_height: [1388, 1040]
+
+# Y15 P0 (C3 catch): per-group max frame count + monotonic; impossible
+# exact "frames_per_scene: 82" fixed via min/max + monotonic.
+expected_timepoints:
+  min_frames_per_scene: 1
+  max_frames_per_scene_per_group:
+    260313_Bare: 83
+    260313_Lam4: 84
+    260313_Pre: 83
+  require_monotonic_time_min: true
+  require_monotonic_frame: true
+  expected_frame_interval_min: 60
 
 raw_imaging:
   available: true
   path:
 
-split:
+# Y14: Hard Rule 1 explicit forbidden_use guard (NOT just behavior).
+calibration_validation_split:
+  policy: condition_stratified_scene_level
+  ratio: [0.7, 0.3]
   seed: 20260506
-  calibration_fraction: 0.7
   manifest: generated/260313_split_seed20260506.json
+  calibration_use: pipeline_loader_metric_dashboard_development_only
+  forbidden_use: physics_parameter_fitting
+
+# Y9: Hard Rule 1 sidecar guard. model2_framewise.csv is reduced-surrogate;
+# must NOT be loaded by physics fitter.
+sidecars:
+  model2_framewise:
+    allowed_use: reduced_surrogate_reference_only
+    forbidden_use: dynamics_parameter_fitting
 
 groups:
   - condition: Bare
