@@ -17,7 +17,7 @@ import json
 import os
 import time
 from dataclasses import asdict, dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 
@@ -39,7 +39,21 @@ from acs.v2.single_cell import SingleCellState
 
 @dataclass(frozen=True, slots=True)
 class PhaseEV2PilotConfig:
-    """Configuration for the synthetic Phase E v2 pilot runner."""
+    """Configuration for the synthetic Phase E v2 pilot runner.
+
+    The optional ``cell_motility`` field enables an explicit
+    *visualization-only* smoke mode. When set to ``"translation_smoke"``,
+    the runner switches to a single-FA fixture (so net traction is
+    nonzero) and translates the cell boundary by
+    ``smoke_displacement_um_per_step`` along the FA traction direction
+    each step. This is **NOT** a biological motility model and the field
+    name uses ``smoke_displacement`` (not ``motility_speed``) to avoid
+    suggesting a physical velocity. See Codex ``id=1906``/``id=1912``
+    A-modified guardrails: smoke evidence only, no mechanistic claim.
+
+    Default: ``cell_motility="off"`` preserves the previous Phase E v2
+    pilot runner behavior bit-for-bit.
+    """
 
     n_steps: int = 4
     dt_s: float = 0.0
@@ -49,6 +63,8 @@ class PhaseEV2PilotConfig:
     k_active: float = 1.0
     traction_ref_nN_per_um2: float = TRACTION_REF_NN_PER_UM2
     k_orient_per_s: float = K_ORIENT_PER_S
+    cell_motility: Literal["off", "translation_smoke"] = "off"
+    smoke_displacement_um_per_step: float = 0.0
 
     def validate(self) -> None:
         _require_non_negative_int(self.n_steps, "n_steps")
@@ -60,6 +76,7 @@ class PhaseEV2PilotConfig:
             ("k_active", self.k_active),
             ("traction_ref_nN_per_um2", self.traction_ref_nN_per_um2),
             ("k_orient_per_s", self.k_orient_per_s),
+            ("smoke_displacement_um_per_step", self.smoke_displacement_um_per_step),
         ):
             if isinstance(value, bool) or not np.isfinite(value):
                 raise ValueError(f"{name} must be finite numeric, got {value!r}")
@@ -76,6 +93,21 @@ class PhaseEV2PilotConfig:
             )
         if self.k_orient_per_s <= 0.0:
             raise ValueError(f"k_orient_per_s must be positive, got {self.k_orient_per_s!r}")
+        if self.cell_motility not in ("off", "translation_smoke"):
+            raise ValueError(
+                f"cell_motility must be 'off' or 'translation_smoke', "
+                f"got {self.cell_motility!r}"
+            )
+        if self.smoke_displacement_um_per_step < 0.0:
+            raise ValueError(
+                f"smoke_displacement_um_per_step must be non-negative, "
+                f"got {self.smoke_displacement_um_per_step!r}"
+            )
+        if self.cell_motility == "translation_smoke" and self.smoke_displacement_um_per_step == 0.0:
+            raise ValueError(
+                "cell_motility='translation_smoke' requires "
+                "smoke_displacement_um_per_step > 0 to produce visible motion"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,7 +156,7 @@ def _require_positive_int(value: int, name: str) -> int:
 
 
 def make_phase_e_v2_pilot_fixture(
-    *, grid_n: int = 4, spacing_um: float = 1.0
+    *, grid_n: int = 4, spacing_um: float = 1.0, motility_smoke: bool = False
 ) -> tuple[ECMSubstrateState, SingleCellState, tuple[FocalAdhesionState, ...]]:
     """Create the synthetic one-cell/two-FA fixture used by the runner.
 
@@ -132,6 +164,12 @@ def make_phase_e_v2_pilot_fixture(
     ``[[1, 0], [0, -1]]``. Two FAs share one cell-centered position and
     pull along perpendicular directions, matching the Phase E v2
     anti-collapse fixture.
+
+    When ``motility_smoke=True``, switches to a **single-FA** variant
+    pulling along ``(1, 0)`` only, so net traction is nonzero and the
+    visualization-only smoke mode (Codex ``id=1906`` A-modified) shows a
+    clear cell centroid translation. This variant is for *visual smoke
+    only* and is **NOT** a biological motility setup.
     """
 
     _require_positive_int(grid_n, "grid_n")
@@ -171,28 +209,46 @@ def make_phase_e_v2_pilot_fixture(
         source_modality="phase_e_v2_pilot_synthetic",
         object_id="pilot-cell",
     )
-    fas = (
-        FocalAdhesionState(
-            adhesion_id="pilot-fa-x",
-            cell_id="pilot-cell",
-            position_um_xy=(center, center),
-            age_s=0.0,
-            maturity=1.0,
-            bound_fraction=1.0,
-            state="mature",
-            traction_force_nN_xy=(1.0, 0.0),
-        ),
-        FocalAdhesionState(
-            adhesion_id="pilot-fa-y",
-            cell_id="pilot-cell",
-            position_um_xy=(center, center),
-            age_s=0.0,
-            maturity=1.0,
-            bound_fraction=1.0,
-            state="mature",
-            traction_force_nN_xy=(0.0, 1.0),
-        ),
-    )
+    if motility_smoke:
+        # Single-FA variant pulling along (1, 0) so net traction is
+        # nonzero — visualization-only smoke fixture (Codex id=1906).
+        fas = (
+            FocalAdhesionState(
+                adhesion_id="pilot-fa-x",
+                cell_id="pilot-cell",
+                position_um_xy=(center, center),
+                age_s=0.0,
+                maturity=1.0,
+                bound_fraction=1.0,
+                state="mature",
+                traction_force_nN_xy=(1.0, 0.0),
+            ),
+        )
+    else:
+        # Default: two perpendicular FAs at the same position (anti-collapse
+        # fixture; net traction is zero, so the smoke mode would do nothing).
+        fas = (
+            FocalAdhesionState(
+                adhesion_id="pilot-fa-x",
+                cell_id="pilot-cell",
+                position_um_xy=(center, center),
+                age_s=0.0,
+                maturity=1.0,
+                bound_fraction=1.0,
+                state="mature",
+                traction_force_nN_xy=(1.0, 0.0),
+            ),
+            FocalAdhesionState(
+                adhesion_id="pilot-fa-y",
+                cell_id="pilot-cell",
+                position_um_xy=(center, center),
+                age_s=0.0,
+                maturity=1.0,
+                bound_fraction=1.0,
+                state="mature",
+                traction_force_nN_xy=(0.0, 1.0),
+            ),
+        )
     cell = SingleCellState(
         cell_id="pilot-cell",
         time_s=0.0,
@@ -220,6 +276,61 @@ def _cell_at_time(template: SingleCellState, time_s: float) -> SingleCellState:
         parent_cell_id=template.parent_cell_id,
         mechanosignal_yap_taz=template.mechanosignal_yap_taz,
         neighbor_cell_ids=template.neighbor_cell_ids,
+    )
+
+
+def _apply_motility_smoke(
+    cell: SingleCellState,
+    adhesions: tuple[FocalAdhesionState, ...],
+    *,
+    smoke_displacement_um: float,
+) -> SingleCellState:
+    """Translate the cell boundary along the net traction direction.
+
+    **Visual smoke only**: this is a display-time translation, NOT a
+    biological motility model. The displacement parameter is named
+    ``smoke_displacement`` (not ``motility_speed``) per Codex
+    ``id=1906`` A-modified guardrail. The function does NOT update FA
+    positions, ECM, or any physics state — it only shifts the
+    measurement boundary so a viewer can see the cell move.
+    """
+
+    if not adhesions:
+        return cell
+    net = np.zeros(2, dtype=np.float64)
+    for fa in adhesions:
+        net += np.asarray(fa.traction_force_nN_xy, dtype=np.float64)
+    norm = float(np.linalg.norm(net))
+    if norm <= 0.0:
+        # Net traction zero → no visible direction; skip translation
+        # (smoke fixture should provide a single-FA setup with nonzero net).
+        return cell
+    direction = net / norm
+    delta = direction * float(smoke_displacement_um)
+
+    boundary = cell.measurement_boundary
+    new_vertices = np.asarray(boundary.vertices_xy_um, dtype=np.float64) + delta
+    new_boundary = MeasurementBoundary.from_array(
+        new_vertices,
+        coordinate_convention=boundary.coordinate_convention,
+        source_modality=boundary.source_modality,
+        object_id=boundary.object_id,
+    )
+    return SingleCellState(
+        cell_id=cell.cell_id,
+        time_s=cell.time_s,
+        measurement_boundary=new_boundary,
+        height_um=cell.height_um,
+        polarity_xy=cell.polarity_xy,
+        protrusions=list(cell.protrusions),
+        adhesions=list(cell.adhesions),
+        cell_state=cell.cell_state,
+        cell_age_s=cell.cell_age_s,
+        cell_cycle_phase=cell.cell_cycle_phase,
+        division_count=cell.division_count,
+        parent_cell_id=cell.parent_cell_id,
+        mechanosignal_yap_taz=cell.mechanosignal_yap_taz,
+        neighbor_cell_ids=cell.neighbor_cell_ids,
     )
 
 
@@ -291,6 +402,13 @@ def _write_metadata_json(
     wall_clock_s: float,
 ) -> str:
     final = diagnostics[-1] if diagnostics else None
+    motility_notes: list[str] = []
+    if config.cell_motility == "translation_smoke":
+        motility_notes = [
+            "cell_motility=translation_smoke (visual smoke only)",
+            "smoke_displacement_um_per_step is a display parameter, NOT biological speed",
+            "no FA-to-cell force coupling; boundary translated post-step for viewer",
+        ]
     payload = {
         "runner": "phase_e_v2_pilot",
         "tier": "B",
@@ -303,12 +421,16 @@ def _write_metadata_json(
         "csv_path": "diagnostics.csv",
         "wall_clock_s": float(wall_clock_s),
         "final": asdict(final) if final is not None else None,
+        "visual_smoke_only": config.cell_motility == "translation_smoke",
+        "not_mechanistic": True,
+        "cell_motility_mode": config.cell_motility,
         "notes": [
-            "synthetic one-cell/two-FA fixture",
+            "synthetic one-cell/two-FA fixture (default) or single-FA (motility smoke)",
             "no FA dynamics",
             "no new physics law",
             "no new measurement semantics",
             "no PI experimental data use",
+            *motility_notes,
         ],
     }
     path = os.path.join(output_dir, "metadata.json")
@@ -329,8 +451,11 @@ def run_phase_e_v2_pilot(
     cfg.validate()
     os.makedirs(output_dir, exist_ok=True)
 
+    motility_smoke = cfg.cell_motility == "translation_smoke"
     ecm, cell, adhesions = make_phase_e_v2_pilot_fixture(
-        grid_n=cfg.grid_n, spacing_um=cfg.spacing_um
+        grid_n=cfg.grid_n,
+        spacing_um=cfg.spacing_um,
+        motility_smoke=motility_smoke,
     )
     diagnostics: list[PhaseEV2PilotStepDiagnostics] = []
     frame_paths: list[str] = []
@@ -354,6 +479,12 @@ def run_phase_e_v2_pilot(
         final_result = result
         time_s = float(step_index) * float(cfg.dt_s)
         diagnostics.append(_diagnostics_from_result(step_index, time_s, result))
+        if motility_smoke:
+            cell = _apply_motility_smoke(
+                cell,
+                adhesions,
+                smoke_displacement_um=cfg.smoke_displacement_um_per_step,
+            )
         if step_index % cfg.frame_interval == 0 or step_index == cfg.n_steps:
             frame_paths.append(
                 _write_cluster_frame(

@@ -38,6 +38,22 @@ def main() -> int:
     parser.add_argument("--grid", type=int, default=4)
     parser.add_argument("--spacing-um", type=float, default=1.0)
     parser.add_argument("--k-active", type=float, default=1.0)
+    parser.add_argument(
+        "--cell-motility",
+        choices=["off", "translation_smoke"],
+        default="off",
+        help="Visualization-only smoke mode. 'translation_smoke' switches to "
+        "single-FA fixture and translates cell boundary along net traction "
+        "by --smoke-displacement-um-per-step each step. NOT biological "
+        "motility; visual smoke evidence only.",
+    )
+    parser.add_argument(
+        "--smoke-displacement-um-per-step",
+        type=float,
+        default=0.0,
+        help="Per-step boundary translation in um for cell_motility=translation_smoke. "
+        "Display parameter only, NOT biological speed.",
+    )
     args = parser.parse_args()
 
     repo = os.path.abspath(args.repo)
@@ -61,6 +77,8 @@ def main() -> int:
         grid_n=args.grid,
         spacing_um=args.spacing_um,
         k_active=args.k_active,
+        cell_motility=args.cell_motility,
+        smoke_displacement_um_per_step=args.smoke_displacement_um_per_step,
     )
     result = run_phase_e_v2_pilot(
         output_dir,
