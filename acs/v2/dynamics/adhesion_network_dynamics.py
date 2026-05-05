@@ -169,9 +169,18 @@ def compute_fa_engagement_signal(
     Returns the mean of ``bound_fraction * maturity`` over all FAs
     (branch-defined normalization, no magic blend weights). Empty FA
     list returns 0.0 (no integrin engagement signal).
+
+    Each input FA is validated via ``fa.validate()`` before its
+    contribution is computed (Codex ``id=2079`` P0 BLOCKER fix). This
+    preserves the "normalized signal in [0, 1]" contract at the helper
+    boundary; invalid FA schema (e.g., ``maturity > 1``) surfaces as
+    a plain :class:`ValueError` from the FA schema validator instead
+    of producing an out-of-range signal value.
     """
     if not adhesions:
         return 0.0
+    for fa in adhesions:
+        fa.validate()
     products = np.array(
         [float(fa.bound_fraction) * float(fa.maturity) for fa in adhesions],
         dtype=np.float64,
@@ -190,11 +199,19 @@ def compute_junction_engagement_signal(
     raises :class:`ValueError` — silent zero-coercion is forbidden;
     caller must populate ``cadherin_proxy`` or filter junctions
     before passing.
+
+    Each input Junction is validated via ``j.validate()`` before its
+    proxy is consumed (Codex ``id=2079`` P0 BLOCKER fix). This
+    preserves the "normalized signal in [0, 1]" contract at the helper
+    boundary; invalid junction schema (e.g., ``cadherin_proxy > 1``)
+    surfaces as a plain :class:`ValueError` from the junction schema
+    validator before the helper returns.
     """
     if not junctions:
         return 0.0
     proxies: list[float] = []
     for j in junctions:
+        j.validate()
         if j.cadherin_proxy is None:
             raise ValueError(
                 f"Junction with cadherin_proxy=None cannot contribute to "

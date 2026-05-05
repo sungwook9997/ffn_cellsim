@@ -288,6 +288,47 @@ def test_compute_junction_engagement_signal_empty_returns_zero():
     assert compute_junction_engagement_signal(()) == 0.0
 
 
+def test_compute_fa_engagement_signal_invalid_fa_raises(monkeypatch):
+    """Codex `id=2079` P0 BLOCKER fix regression: invalid FA schema
+    (maturity > 1) must raise ValueError at the helper boundary
+    instead of producing an out-of-range signal (e.g., 2.0)."""
+    # Build a FocalAdhesionState that bypasses normal construction
+    # validation, then verify the helper enforces validate() before
+    # consuming its fields.
+    fa = FocalAdhesionState(
+        adhesion_id="fa-bad",
+        cell_id="cell-x",
+        position_um_xy=(0.0, 0.0),
+        age_s=0.0,
+        maturity=1.0,  # construct valid
+        bound_fraction=1.0,
+        state="mature",
+        traction_force_nN_xy=(0.0, 0.0),
+    )
+    # Mutate maturity past schema bound by replacing dataclass field.
+    object.__setattr__(fa, "maturity", 2.0)
+    with pytest.raises(ValueError, match="maturity"):
+        compute_fa_engagement_signal((fa,))
+
+
+def test_compute_junction_engagement_signal_invalid_junction_raises():
+    """Codex `id=2079` P0 BLOCKER fix regression: invalid Junction
+    schema (cadherin_proxy > 1) must raise ValueError at the helper
+    boundary."""
+    j = JunctionState(
+        junction_id="j-bad",
+        cell_id_a="cell-a",
+        cell_id_b="cell-b",
+        contact_length_um=1.0,
+        age_s=0.0,
+        maturity=0.5,
+        cadherin_proxy=0.5,
+    )
+    object.__setattr__(j, "cadherin_proxy", 2.0)
+    with pytest.raises(ValueError, match="cadherin_proxy"):
+        compute_junction_engagement_signal((j,))
+
+
 def test_exports_through_both_init():
     """All public symbols accessible through both surfaces."""
     expected_state_classes = {
