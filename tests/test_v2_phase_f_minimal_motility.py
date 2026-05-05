@@ -403,11 +403,15 @@ def test_phase_f_step_huge_external_traction_raises_dt_violation_not_geometry_er
     )
     ecm = _make_test_ecm()
     v0 = contour.vertices_xy_um[0]
-    # Huge FA traction (~1000 nN) will produce displacement that violates
-    # the combined dt safety margin via the external-force second gate.
-    # The fixture's xi_line=1.0 + radius=1.0 polygon gives zeta_per_vertex
-    # ≈ 0.5 nN·s/μm; combined rate = 1000 / 0.5 = 2000/s; dt*rate = 2.0
-    # which is > _DT_RATE_SAFETY_MARGIN=0.5.
+    # Huge FA traction will produce a normalized stride that violates
+    # the combined dt safety margin via the external-force second gate
+    # (Codex `id=2012` unit-consistent fix). For radius=1.0 polygon at
+    # xi_line=1.0:
+    #   ell_v ≈ 0.5 um (control length per vertex);
+    #   zeta = xi_line * ell_v ≈ 0.5 nN·s/um;
+    #   velocity = 1000 / 0.5 = 2000 um/s;
+    #   normalized_rate = velocity / ell_v = 4000 [1/s];
+    #   dt * normalized_rate = 1e-3 * 4000 = 4 (dimensionless) > 0.5
     fa = _make_test_fa(position=tuple(v0.tolist()), traction=(1000.0, 0.0))
     fa_to_vertex = {fa.adhesion_id: 0}
 

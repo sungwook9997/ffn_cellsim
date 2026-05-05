@@ -175,20 +175,43 @@ def _step_active_contour_with_external_force(
     dt_cell_s = float(contour_state.params.dt_cell_s)
 
     # Second gate (Phase F new physics): combined internal+external dt
-    # safety margin. Required because the new external-force layer is
-    # outside P1's compute_rate_max scope; without this gate a large FA
-    # traction would escape the dt_violation contract and surface as a
-    # downstream MeasurementBoundary geometry error (Codex id=1986 P0
-    # BLOCKER fix). Per-vertex rate magnitude = |forces_i| / zeta_i.
-    per_vertex_rate = np.linalg.norm(forces, axis=-1) / zeta
-    combined_rate_max = float(per_vertex_rate.max())
-    combined_dt_rate_product = dt_cell_s * combined_rate_max
+    # safety margin, unit-consistent with P1's contract per Codex
+    # ``id=2012`` BLOCKER fix.
+    #
+    # P1's compute_rate_max returns ``rate_max_s_inv [1/s]`` so that
+    # ``dt * rate_max`` is dimensionless and directly comparable to
+    # _DT_RATE_SAFETY_MARGIN. The external-force gate must use the same
+    # unit chain. We construct a per-vertex normalized rate by:
+    #
+    #   velocity_i [um/s]      = forces_i [nN] / zeta_i [nN·s/um]
+    #   ell_v_i [um]           = control length at vertex i (half-sum of
+    #                            adjacent edge lengths, same definition
+    #                            P1 uses internally)
+    #   normalized_rate_i [1/s] = |velocity_i| / ell_v_i
+    #
+    # Then ``dt_cell_s * normalized_rate_max`` is dimensionless and
+    # comparable to _DT_RATE_SAFETY_MARGIN. The interpretation is the
+    # standard Courant-style stride-vs-edge-length safety: a vertex
+    # cannot move more than _DT_RATE_SAFETY_MARGIN of its local edge
+    # control length per step.
+    velocity_um_per_s = forces / zeta[:, None]
+    velocity_magnitude_um_per_s = np.linalg.norm(velocity_um_per_s, axis=-1)
+    diffs_um = (
+        np.roll(contour_state.vertices_xy_um, -1, axis=0)
+        - contour_state.vertices_xy_um
+    )
+    ell_edge_um = np.linalg.norm(diffs_um, axis=1)
+    ell_v_um = 0.5 * (ell_edge_um + np.roll(ell_edge_um, 1))
+    combined_rate_per_vertex_s_inv = velocity_magnitude_um_per_s / ell_v_um
+    combined_rate_max_s_inv = float(combined_rate_per_vertex_s_inv.max())
+    combined_dt_rate_product = dt_cell_s * combined_rate_max_s_inv
     if combined_dt_rate_product > _DT_RATE_SAFETY_MARGIN:
         raise ActiveContourStepError(
             "dt_violation",
-            f"dt_cell_s={dt_cell_s}*combined_rate_max product "
-            f"{combined_dt_rate_product:.4f} > safety margin "
-            f"{_DT_RATE_SAFETY_MARGIN} (internal+external)",
+            f"dt_cell_s={dt_cell_s}*combined_rate_max_s_inv product "
+            f"{combined_dt_rate_product:.4f} (dimensionless) > safety "
+            f"margin {_DT_RATE_SAFETY_MARGIN} (internal+external "
+            f"velocity/control-length normalized stride)",
         )
 
     new_vertices = (
