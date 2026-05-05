@@ -84,10 +84,11 @@ def _read_metadata_json(metadata_path: str) -> dict[str, object]:
     if not isinstance(data, dict):
         raise ValueError(f"{metadata_path!r} top-level is not a JSON object")
     runner = data.get("runner")
-    if runner != "phase_e_v2_pilot":
+    accepted_runners = ("phase_e_v2_pilot", "phase_f_minimal_motility_pilot")
+    if runner not in accepted_runners:
         raise ValueError(
-            f"{metadata_path!r} runner field {runner!r} is not "
-            f"'phase_e_v2_pilot'; refusing to render unrelated artifacts"
+            f"{metadata_path!r} runner field {runner!r} is not in "
+            f"{accepted_runners}; refusing to render unrelated artifacts"
         )
     return data
 
