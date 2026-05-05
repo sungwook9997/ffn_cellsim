@@ -50,7 +50,7 @@ def _make_test_contour(
     dt_cell_s: float = 1e-3,
     lambda_c_nN: float = 0.0,
     sigma_c_nN_per_um: float = 0.0,
-    xi_line_nN_s_per_um2: float = 1e-3,
+    xi_line_nN_s_per_um2: float = 1.0,
     effective_height_um: float = 1.0,
 ) -> ActiveContourState:
     params = ActiveContourParameters(
@@ -389,6 +389,36 @@ def test_phase_f_step_exports_through_both_init():
 # ---------------------------------------------------------------------------
 # PI acceptance tightening (Codex id=1953, PI id=1949 rigid translation 챌린지)
 # ---------------------------------------------------------------------------
+
+
+def test_phase_f_step_huge_external_traction_raises_dt_violation_not_geometry_error():
+    """Test 15 (Codex `id=1986` P0 BLOCKER fix regression): huge FA
+    traction이 internal-only dt 검사 우회하지 않고 combined
+    internal+external dt_rate_product check에서
+    `ActiveContourStepError(failure_kind="dt_violation")`로 fail-fast.
+    이전에는 geometry self-intersection (`MeasurementBoundaryError`)으로
+    터졌음."""
+    contour = _make_test_contour(
+        lambda_c_nN=0.0, k_a_nN_per_um=0.0, dt_cell_s=1e-3
+    )
+    ecm = _make_test_ecm()
+    v0 = contour.vertices_xy_um[0]
+    # Huge FA traction (~1000 nN) will produce displacement that violates
+    # the combined dt safety margin via the external-force second gate.
+    # The fixture's xi_line=1.0 + radius=1.0 polygon gives zeta_per_vertex
+    # ≈ 0.5 nN·s/μm; combined rate = 1000 / 0.5 = 2000/s; dt*rate = 2.0
+    # which is > _DT_RATE_SAFETY_MARGIN=0.5.
+    fa = _make_test_fa(position=tuple(v0.tolist()), traction=(1000.0, 0.0))
+    fa_to_vertex = {fa.adhesion_id: 0}
+
+    with pytest.raises(ActiveContourStepError) as excinfo:
+        step_phase_f_minimal_motility(
+            contour, (fa,), ecm, fa_to_vertex, k_active=1.0
+        )
+    assert excinfo.value.failure_kind == "dt_violation"
+    # The combined gate message should be distinguishable from the
+    # internal-only gate.
+    assert "internal+external" in str(excinfo.value)
 
 
 def test_phase_f_step_attached_vertex_displacement_exceeds_non_attached():

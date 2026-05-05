@@ -146,13 +146,17 @@ def _step_active_contour_with_external_force(
     ``_DT_RATE_SAFETY_MARGIN`` as P1).
     """
 
+    # First gate (P1 sister-consistent baseline): internal-only dt safety
+    # margin via compute_rate_max. This preserves the P1 step's contract
+    # so a Phase F caller's contour_state alone cannot violate it
+    # silently.
     rate_info = compute_rate_max(contour_state)
     if rate_info["dt_rate_product"] > _DT_RATE_SAFETY_MARGIN:
         raise ActiveContourStepError(
             "dt_violation",
             f"dt_cell_s={contour_state.params.dt_cell_s}*rate_max product "
             f"{rate_info['dt_rate_product']:.4f} > safety margin "
-            f"{_DT_RATE_SAFETY_MARGIN}",
+            f"{_DT_RATE_SAFETY_MARGIN} (internal-only)",
         )
 
     internal = compute_cortex_forces(contour_state) + compute_area_forces(
@@ -167,11 +171,28 @@ def _step_active_contour_with_external_force(
         )
 
     forces = internal + external_forces_per_vertex_nN
-
     zeta = rate_info["zeta_nN_s_per_um"]
+    dt_cell_s = float(contour_state.params.dt_cell_s)
+
+    # Second gate (Phase F new physics): combined internal+external dt
+    # safety margin. Required because the new external-force layer is
+    # outside P1's compute_rate_max scope; without this gate a large FA
+    # traction would escape the dt_violation contract and surface as a
+    # downstream MeasurementBoundary geometry error (Codex id=1986 P0
+    # BLOCKER fix). Per-vertex rate magnitude = |forces_i| / zeta_i.
+    per_vertex_rate = np.linalg.norm(forces, axis=-1) / zeta
+    combined_rate_max = float(per_vertex_rate.max())
+    combined_dt_rate_product = dt_cell_s * combined_rate_max
+    if combined_dt_rate_product > _DT_RATE_SAFETY_MARGIN:
+        raise ActiveContourStepError(
+            "dt_violation",
+            f"dt_cell_s={dt_cell_s}*combined_rate_max product "
+            f"{combined_dt_rate_product:.4f} > safety margin "
+            f"{_DT_RATE_SAFETY_MARGIN} (internal+external)",
+        )
+
     new_vertices = (
-        contour_state.vertices_xy_um
-        + contour_state.params.dt_cell_s * forces / zeta[:, None]
+        contour_state.vertices_xy_um + dt_cell_s * forces / zeta[:, None]
     )
 
     return replace(contour_state, vertices_xy_um=new_vertices)
