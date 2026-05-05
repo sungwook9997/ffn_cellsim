@@ -57,6 +57,11 @@ from acs.v2.dynamics.ecm_open_loop import (
     apply_prescribed_orientation_rate,
     apply_prescribed_stiffness_rate,
 )
+from acs.v2.dynamics.fa_rate_response import (
+    FARateResponseDiagnostics,
+    FARateResponseResult,
+    step_fa_rate_response,
+)
 from acs.v2.dynamics.focal_adhesion import (
     FocalAdhesionDynamicsDiagnostics,
     FocalAdhesionDynamicsError,
@@ -98,6 +103,8 @@ __all__ = [
     "ECMOrientationResponseResult",
     "ECMSampledAtFAs",
     "ECMToFABiasResult",
+    "FARateResponseDiagnostics",
+    "FARateResponseResult",
     "FAToECMBiasError",
     "FAToECMResponseResult",
     "FAToECMScatteringError",
@@ -148,6 +155,7 @@ __all__ = [
     "step_ecm_orientation_response",
     "step_phase_f_minimal_motility",
     "step_ecm_to_fa_bias",
+    "step_fa_rate_response",
     "step_fa_to_ecm_response",
     "step_focal_adhesions_static",
     "step_phase_d_no_op",

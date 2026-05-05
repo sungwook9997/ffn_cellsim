@@ -95,6 +95,11 @@ from acs.v2.dynamics.ecm_to_fa_bias import (
     compute_ecm_to_fa_bias_neutral,
     sample_ecm_at_fa_positions,
 )
+from acs.v2.dynamics.fa_rate_response import (
+    FARateResponseDiagnostics,
+    FARateResponseResult,
+    step_fa_rate_response,
+)
 from acs.v2.dynamics.fa_to_ecm_scattering import (
     FAToECMScatteringError,
     scatter_fa_traction_to_ecm_bilinear,
@@ -184,6 +189,8 @@ __all__ = [
     "ECMSampledAtFAs",
     "ECMSubstrateState",
     "ECMToFABiasResult",
+    "FARateResponseDiagnostics",
+    "FARateResponseResult",
     "EcmOlRun",
     "EcmOlScenario",
     "EcmOlStepDiagnostics",
@@ -269,6 +276,7 @@ __all__ = [
     "step_ecm_orientation_response",
     "step_phase_f_minimal_motility",
     "step_ecm_to_fa_bias",
+    "step_fa_rate_response",
     "step_fa_to_ecm_response",
     "step_focal_adhesions_static",
     "step_phase_d_no_op",
