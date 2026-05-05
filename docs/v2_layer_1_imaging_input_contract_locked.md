@@ -111,15 +111,18 @@ pixel_size_validation:                  # Y12
 # "missing frame interval raises" is unambiguous because of this.
 frame_interval_min: 60
 
-# Y11 C3 critical: per-scene frame count variation; Bare 8×82=656
-# expected vs actual 602 reveals not all scenes have full 82 frames.
+# Y11 C3 critical: per-scene frame count variation; Bare 8×83=664
+# expected vs actual 602 reveals not all scenes have full 83 frames.
 # Use min/max + monotonic time validation (NOT exact equality).
+# (Frame-count semantics = Python `len(frames_in_scene)`, NOT `max(Frame)`;
+#  see lock amendment 2026-05-06 — original lock had `max(Frame)` = 82/83/82
+#  off-by-one, impl-work id=2268 caught this BEFORE first execution.)
 expected_timepoints:
   min_frames_per_scene: 1
   max_frames_per_scene_per_group:
-    260313_Bare: 82
-    260313_Lam4: 83
-    260313_Pre: 82
+    260313_Bare: 83
+    260313_Lam4: 84
+    260313_Pre: 83
   expected_frame_interval_min: 60       # consistency check vs top-level
   require_monotonic_time_min: true
   require_monotonic_frame: true
@@ -345,7 +348,7 @@ def build_split_manifest(yaml_path: Path) -> dict:
 - ❌ **Derive t-index from Frame index** (Y2 P0-2: CSV `filename` authoritative;
   Bare uses stride 3, Lam4 mixed)
 - ❌ **Group-id string-split for condition** (Y9: explicit `condition` field)
-- ❌ **Exact `frames_per_scene` enforcement** (Y11 C3: Bare 8×82=656 vs actual
+- ❌ **Exact `frames_per_scene` enforcement** (Y11 C3: Bare 8×83=664 vs actual
   602 → impossible constraint; use min/max + monotonic)
 - ❌ **Manual edit of generated split manifest** (Y13: regenerate via
   `split_builder` only; `input_yaml_sha256` enforces consistency)
@@ -426,10 +429,19 @@ with stem from CSV `filename` column. Mask required (test 9
 fail-closed); overlay diagnostic-only.
 
 **Y11 (C3 CRITICAL per-scene frame count variation)**: Codex direct
-CSV inspection: Bare 8×82=656 expected vs actual 602 → not all scenes
-have full 82 frames. YAML uses `min_frames_per_scene: 1` +
+CSV inspection: Bare 8×83=664 expected vs actual 602 → not all scenes
+have full 83 frames. YAML uses `min_frames_per_scene: 1` +
 `max_frames_per_scene_per_group` + monotonic Frame/Time_min validation.
 My initial YAML would have locked impossible constraint.
+
+**Y11 lock amendment 2026-05-06 03:25 KST (impl-work id=2268)**: original
+lock max values 82/83/82 used `max(Frame)` (last index) instead of Python
+`len(frames_in_scene)` (count). Actual ground-truth `len()` is 83/84/83.
+impl-work caught this before first execution per CLAUDE.md gate-edit
+prohibition (refused to silently bump YAML to clear test). Amendment
+shifts integers only; field name + Python loader semantics unchanged.
+Off-by-one is uniform across all 3 conditions, confirming audit-time
+counting error not per-condition data anomaly.
 
 **Y12 (C4 pixel-size tolerance unit-specific)**: `pixel_size_validation`
 declares `rtol: 1.0e-6` + `atol_um: 1.0e-9`. Loader compares CSV-derived
@@ -527,7 +539,7 @@ not accidentally swap axes.
      `group_id`; future multi-date contracts cannot ambiguate condition
      by string-splitting.
    - **Y11 frame count variation**: per-scene frame counts vary (Bare
-     8×82=656 expected vs actual 602); validation uses `min/max +
+     8×83=664 expected vs actual 602); validation uses `min/max +
      monotonic` instead of exact equality.
    - **Y13 split manifest discipline**: generated output, manual edit
      FORBIDDEN; `input_yaml_sha256` enforces YAML-manifest consistency
@@ -667,7 +679,7 @@ not accidentally swap axes.
     sqrt = 2.048 μm/px`
   - Bare scene t-index: `t002, t005, t008, ...` (stride 3)
   - Lam4 scene t-index: `t001, t002, t005, t008, ...` (mixed)
-  - Bare expected `8 × 82 = 656` rows vs actual `602` rows
+  - Bare expected `8 × 83 = 664` rows vs actual `602` rows
 - Hard Rule 1 (no PI data fitting): CLAUDE.md
 - Hard Rule 11 (sim-experiment measurement matching): CLAUDE.md
 - Magic-Number Block: CLAUDE.md (Y14 calibration role clarity
