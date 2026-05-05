@@ -160,10 +160,16 @@ def render_phase_e_v2_pilot_movie(
             f"runner must have emitted at least one frame"
         )
 
-    # Lazy import to keep the module load cheap when imageio is missing.
+    # Lazy import the v1 helper module. Per Codex `id=1814` BLOCKER 1:
+    # the v1 module imports `imageio` defensively (sets it to None on
+    # ImportError) so a successful `from ... import write_mp4_and_gif`
+    # does NOT imply the imageio backend is actually available.
+    # Confirm `live_imaging.imageio is not None` before treating the
+    # backend as available.
     try:
-        from acs.visualization.live_imaging import write_mp4_and_gif
-        backend_available = True
+        from acs.visualization import live_imaging as _live_imaging
+        write_mp4_and_gif = _live_imaging.write_mp4_and_gif
+        backend_available = _live_imaging.imageio is not None
     except Exception:  # pragma: no cover - defensive
         write_mp4_and_gif = None  # type: ignore[assignment]
         backend_available = False
@@ -184,9 +190,7 @@ def render_phase_e_v2_pilot_movie(
             render_frame_png(h5_path, png_path)
             png_paths.append(Path(png_path))
 
-        mp4_target = abs_run_dir + os.sep + _DEFAULT_MP4_NAME if False else os.path.join(
-            abs_run_dir, _DEFAULT_MP4_NAME
-        )
+        mp4_target = os.path.join(abs_run_dir, _DEFAULT_MP4_NAME)
         mp4_path: Optional[str] = None
         gif_path: Optional[str] = None
 
@@ -200,16 +204,44 @@ def render_phase_e_v2_pilot_movie(
             )
             mp4_returned = result.get("mp4")
             gif_returned = result.get("gif")
-            if mp4_returned is not None:
-                mp4_path = str(Path(mp4_returned).resolve())
-            if write_gif and gif_returned is not None:
-                gif_path = str(Path(gif_returned).resolve())
-            elif not write_gif and gif_returned is not None:
-                # GIF was generated but caller asked to suppress it.
-                try:
-                    os.remove(str(gif_returned))
-                except OSError:
-                    pass
+
+            # Per Codex `id=1814` BLOCKER 2: v1 `write_movie(..., gif=False)`
+            # falls back to writing a `.gif` if the MP4 codec is unavailable
+            # and returns that GIF path under `result['mp4']`. Classify by
+            # suffix + existence so a `.gif` returned in the mp4 slot is
+            # promoted to gif_path (when write_gif=True) or removed (when
+            # write_gif=False), preventing mp4_path from pointing at a .gif.
+            mp4_resolved: Optional[Path] = (
+                Path(mp4_returned) if mp4_returned is not None else None
+            )
+            gif_resolved: Optional[Path] = (
+                Path(gif_returned) if gif_returned is not None else None
+            )
+
+            if mp4_resolved is not None and mp4_resolved.exists():
+                if mp4_resolved.suffix.lower() == ".mp4":
+                    mp4_path = str(mp4_resolved.resolve())
+                elif mp4_resolved.suffix.lower() == ".gif":
+                    # Codec-fallback GIF surfaced in the mp4 slot.
+                    if write_gif and gif_resolved is None:
+                        # Promote to gif_path when no separate GIF returned.
+                        gif_resolved = mp4_resolved
+                    elif not write_gif:
+                        try:
+                            os.remove(str(mp4_resolved))
+                        except OSError:
+                            pass
+
+            if gif_resolved is not None and gif_resolved.exists():
+                if gif_resolved.suffix.lower() == ".gif":
+                    if write_gif:
+                        gif_path = str(gif_resolved.resolve())
+                    else:
+                        # write_gif=False: caller asked to suppress GIF.
+                        try:
+                            os.remove(str(gif_resolved))
+                        except OSError:
+                            pass
 
         return PilotMovieArtifacts(
             run_dir=abs_run_dir,

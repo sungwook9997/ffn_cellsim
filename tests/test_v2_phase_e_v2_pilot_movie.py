@@ -97,6 +97,43 @@ def test_movie_rejects_non_positive_fps(tmp_path):
         render_phase_e_v2_pilot_movie(pilot.output_dir, gif_fps=0)
 
 
+def test_movie_classifies_mp4_codec_fallback_gif_correctly(tmp_path, monkeypatch):
+    """Test 6 (Codex `id=1814` BLOCKER 2 fix regression): v1
+    `write_movie(..., gif=False)`가 MP4 codec 실패 시 `.gif` path를
+    `result['mp4']`에 반환하는 케이스 — wrapper가 suffix로 분류해서
+    `mp4_path`가 `.gif`를 가리키지 않도록 보장."""
+    config = PhaseEV2PilotConfig(n_steps=1, dt_s=0.0, frame_interval=1, grid_n=3)
+    pilot = run_phase_e_v2_pilot(str(tmp_path / "fallback"), config, git_commit_hash="m6")
+
+    from acs.v2.viz import phase_e_v2_pilot_movie as movie_mod
+
+    # imageio backend가 가용하다고 강제 표시 + write_mp4_and_gif가
+    # codec fallback 시나리오를 시뮬레이션 (mp4 슬롯에 .gif 반환).
+    fake_gif_path = str(tmp_path / "fallback" / "pilot_movie.gif")
+
+    def _fake_write_mp4_and_gif(png_paths, mp4_path, *, fps, gif_fps, gif_max_frames):
+        # Codec fallback: write a .gif but place it in the mp4 slot
+        # (mirrors v1 write_movie's gif fallback behavior).
+        with open(fake_gif_path, "wb") as fh:
+            fh.write(b"\x00\x01gif-bytes")
+        from pathlib import Path as _Path
+        return {"mp4": _Path(fake_gif_path), "gif": _Path(fake_gif_path)}
+
+    # Monkeypatch the live module attributes directly so the wrapper's
+    # lazy import sees backend as available + the fake helper.
+    import acs.visualization.live_imaging as _live_imaging_real
+    monkeypatch.setattr(_live_imaging_real, "imageio", object())
+    monkeypatch.setattr(_live_imaging_real, "write_mp4_and_gif", _fake_write_mp4_and_gif)
+
+    artifacts = render_phase_e_v2_pilot_movie(pilot.output_dir)
+    # mp4_path는 .gif suffix를 가리키지 않아야 함
+    assert artifacts.mp4_path is None or artifacts.mp4_path.endswith(".mp4")
+    # write_gif=True (default) → gif_path가 .gif를 가리킴
+    assert artifacts.gif_path is not None
+    assert artifacts.gif_path.endswith(".gif")
+    assert os.path.isfile(artifacts.gif_path)
+
+
 def test_movie_cli_smoke_with_graceful_backend_handling(tmp_path):
     """Test 5: CLI smoke — pilot runner CLI + movie CLI 연쇄. backend
     가용 여부와 무관하게 exit code 0; 백엔드 미가용 시 NOTE 메시지 출력."""
