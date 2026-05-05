@@ -20,6 +20,17 @@ results/
 *.hdf5
 frames/
 
+# PI experimental imaging input (V2-1 contract input — symlinks to local
+# disk path, see docs/v2_layer_1_imaging_input_contract*.md). Bulk imaging
+# data (mask PNG, raw stacks, ND2/CZI/TIFF) MUST NOT enter version control.
+data/experimental/imaging/
+*.tif
+*.tiff
+*.ome.tif
+*.nd2
+*.czi
+*.lif
+
 # Editor / OS
 .vscode/
 .idea/
@@ -43,3 +54,7 @@ Thumbs.db
 # Syncthing (not git). Every send rewrites it, so tracking it would generate
 # noisy diffs without adding history beyond what the SQLite DB already stores.
 docs/claude_codex_log.md
+
+# Local code-review-graph SQLite cache. Rebuild with:
+#   .venv-collab/bin/code-review-graph build --repo .
+.code-review-graph/
