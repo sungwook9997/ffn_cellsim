@@ -117,6 +117,7 @@ import numpy as np
 from acs.v2.dynamics.closed_loop_phase_e import (
     PhaseEStepResult,
     step_closed_loop_phase_e_v1,
+    step_closed_loop_phase_e_v2,
 )
 from acs.v2.dynamics.ecm_constitutive_response import (
     K_ORIENT_PER_S,
@@ -210,6 +211,66 @@ class PhaseEV1Item5SweepResult:
     peak_v_active_um2: np.ndarray
     final_v_active_um2: np.ndarray
     metadata: PhaseEV1Item5SweepMetadata
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseEV2Item5SweepConfig:
+    """Typed config for the Phase E v2 Item 5 sweep harness variant.
+
+    This B-tier sister harness reuses the Phase E v1 sweep geometry and
+    validation contract, but swaps the per-step composition call to
+    :func:`acs.v2.dynamics.closed_loop_phase_e.step_closed_loop_phase_e_v2`.
+    It records active HB#4 multiplier summaries as evidence only; it
+    does not claim Item 5 is resolved.
+    """
+
+    spacing_um_values: tuple[float, ...]
+    dt_s_values: tuple[float, ...]
+    n_steps: int
+    domain_size_um_xy: tuple[float, float]
+    origin_um_xy: tuple[float, float]
+    traction_scenario: Literal["rotating_uniform_single_fa"]
+    traction_magnitude_nN: float
+    fa_position_um_xy: tuple[float, float]
+    k_active: float
+    n_revolutions: int = 1
+    git_sha_override: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseEV2Item5SweepMetadata:
+    """Typed v2 sweep metadata for reproducibility; no wall-clock timestamp."""
+
+    config: PhaseEV2Item5SweepConfig
+    git_sha: str
+    numpy_version: str
+    python_version: str
+    k_orient_per_s: float
+    traction_ref_nN_per_um2: float
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseEV2Item5SweepResult:
+    """Typed v2 sweep result; raw evidence only, no pass/fail decision."""
+
+    spacing_um_by_run: np.ndarray
+    dt_s_by_run: np.ndarray
+    nx_by_run: np.ndarray
+    ny_by_run: np.ndarray
+    v_active_um2_traj: np.ndarray
+    v_active_bound_um2_traj: np.ndarray
+    max_convex_weight_traj: np.ndarray
+    max_orientation_delta_frobenius_traj: np.ndarray
+    max_traction_norm_nN_per_um2_traj: np.ndarray
+    active_multiplier_min_traj: np.ndarray
+    active_multiplier_mean_traj: np.ndarray
+    active_multiplier_max_traj: np.ndarray
+    active_multiplier_max_deviation_traj: np.ndarray
+    max_bound_ratio: np.ndarray
+    peak_active_multiplier_max_deviation: np.ndarray
+    peak_v_active_um2: np.ndarray
+    final_v_active_um2: np.ndarray
+    metadata: PhaseEV2Item5SweepMetadata
 
 
 def _validate_config(config: PhaseEV1Item5SweepConfig) -> None:
@@ -382,8 +443,35 @@ def _validate_config(config: PhaseEV1Item5SweepConfig) -> None:
             )
 
 
+def _as_phase_e_v1_config(
+    config: PhaseEV2Item5SweepConfig,
+) -> PhaseEV1Item5SweepConfig:
+    """Reuse the locked v1 sweep geometry validation for the v2 harness."""
+
+    return PhaseEV1Item5SweepConfig(
+        spacing_um_values=config.spacing_um_values,
+        dt_s_values=config.dt_s_values,
+        n_steps=config.n_steps,
+        domain_size_um_xy=config.domain_size_um_xy,
+        origin_um_xy=config.origin_um_xy,
+        traction_scenario=config.traction_scenario,
+        traction_magnitude_nN=config.traction_magnitude_nN,
+        fa_position_um_xy=config.fa_position_um_xy,
+        n_revolutions=config.n_revolutions,
+        git_sha_override=config.git_sha_override,
+    )
+
+
+def _validate_v2_config(config: PhaseEV2Item5SweepConfig) -> None:
+    """Validate v2 sweep config while preserving v1 sister contracts."""
+
+    _validate_config(_as_phase_e_v1_config(config))
+
+
 def _build_rotating_uniform_single_fa(
-    config: PhaseEV1Item5SweepConfig, step_index: int, dt_s: float,
+    config: PhaseEV1Item5SweepConfig | PhaseEV2Item5SweepConfig,
+    step_index: int,
+    dt_s: float,
 ) -> tuple[FocalAdhesionState, ...]:
     """Single-FA scenario with deterministic rotating traction direction (Y9 + Y10)."""
 
@@ -410,7 +498,8 @@ def _build_rotating_uniform_single_fa(
 
 
 def _build_initial_ecm_at_spacing(
-    config: PhaseEV1Item5SweepConfig, spacing_um: float,
+    config: PhaseEV1Item5SweepConfig | PhaseEV2Item5SweepConfig,
+    spacing_um: float,
 ) -> ECMSubstrateState:
     """Sample physical-coordinate IC function onto specified grid (Y1 + Y11)."""
 
@@ -493,6 +582,45 @@ def _record_step(
             np.abs(multipliers - 1.0).max()
         )
     else:
+        multiplier_dev_traj[run_idx, step_idx] = 0.0
+
+
+def _record_step_v2(
+    step_result: PhaseEStepResult,
+    run_idx: int,
+    step_idx: int,
+    v_active_traj: np.ndarray,
+    v_bound_traj: np.ndarray,
+    weight_traj: np.ndarray,
+    delta_traj: np.ndarray,
+    traction_norm_traj: np.ndarray,
+    multiplier_min_traj: np.ndarray,
+    multiplier_mean_traj: np.ndarray,
+    multiplier_max_traj: np.ndarray,
+    multiplier_dev_traj: np.ndarray,
+) -> None:
+    """Write one v2 step's diagnostics, including active multiplier summaries."""
+
+    diag_lyap = step_result.lyapunov_metric.diagnostics
+    diag_orient = step_result.orientation_response.diagnostics
+    multipliers = step_result.ecm_to_fa_bias.multipliers_per_fa
+
+    v_active_traj[run_idx, step_idx] = step_result.lyapunov_metric.v_active_um2
+    v_bound_traj[run_idx, step_idx] = diag_lyap.v_active_max_bound_um2
+    weight_traj[run_idx, step_idx] = diag_orient.max_convex_weight
+    delta_traj[run_idx, step_idx] = diag_orient.max_orientation_delta_frobenius
+    traction_norm_traj[run_idx, step_idx] = diag_lyap.max_traction_norm_nN_per_um2
+    if multipliers.size > 0:
+        multiplier_min_traj[run_idx, step_idx] = float(multipliers.min())
+        multiplier_mean_traj[run_idx, step_idx] = float(multipliers.mean())
+        multiplier_max_traj[run_idx, step_idx] = float(multipliers.max())
+        multiplier_dev_traj[run_idx, step_idx] = float(
+            np.abs(multipliers - 1.0).max()
+        )
+    else:
+        multiplier_min_traj[run_idx, step_idx] = 1.0
+        multiplier_mean_traj[run_idx, step_idx] = 1.0
+        multiplier_max_traj[run_idx, step_idx] = 1.0
         multiplier_dev_traj[run_idx, step_idx] = 0.0
 
 
@@ -634,6 +762,138 @@ def run_phase_e_v1_sensitivity_sweep(
         neutral_multiplier_max_deviation_traj=multiplier_dev_traj,
         max_bound_ratio=max_bound_ratio,
         max_neutral_multiplier_deviation=multiplier_dev_traj.max(axis=1),
+        peak_v_active_um2=v_active_traj.max(axis=1),
+        final_v_active_um2=v_active_traj[:, -1],
+        metadata=metadata,
+    )
+
+
+def run_phase_e_v2_sensitivity_sweep(
+    config: PhaseEV2Item5SweepConfig,
+) -> PhaseEV2Item5SweepResult:
+    """Run the Phase E v2 Item 5 sweep harness variant.
+
+    This function is a B-tier sister of
+    :func:`run_phase_e_v1_sensitivity_sweep`: it preserves the same
+    physical-domain spacing/dt sweep and records raw evidence only, but
+    calls :func:`step_closed_loop_phase_e_v2` with the configured
+    ``k_active``. It does not make a pass/fail decision and does not
+    claim Item 5 is resolved.
+    """
+
+    _validate_v2_config(config)
+
+    n_runs = len(config.spacing_um_values) * len(config.dt_s_values)
+    n_steps_plus_1 = config.n_steps + 1
+
+    spacing_by = np.empty(n_runs, dtype=np.float64)
+    dt_by = np.empty(n_runs, dtype=np.float64)
+    nx_by = np.empty(n_runs, dtype=np.int64)
+    ny_by = np.empty(n_runs, dtype=np.int64)
+    v_active_traj = np.zeros((n_runs, n_steps_plus_1), dtype=np.float64)
+    v_bound_traj = np.zeros((n_runs, n_steps_plus_1), dtype=np.float64)
+    weight_traj = np.zeros((n_runs, n_steps_plus_1), dtype=np.float64)
+    delta_traj = np.zeros((n_runs, n_steps_plus_1), dtype=np.float64)
+    traction_norm_traj = np.zeros((n_runs, n_steps_plus_1), dtype=np.float64)
+    multiplier_min_traj = np.ones((n_runs, n_steps_plus_1), dtype=np.float64)
+    multiplier_mean_traj = np.ones((n_runs, n_steps_plus_1), dtype=np.float64)
+    multiplier_max_traj = np.ones((n_runs, n_steps_plus_1), dtype=np.float64)
+    multiplier_dev_traj = np.zeros((n_runs, n_steps_plus_1), dtype=np.float64)
+
+    run_idx = 0
+    for spacing_um in config.spacing_um_values:
+        for dt_s in config.dt_s_values:
+            ecm = _build_initial_ecm_at_spacing(config, float(spacing_um))
+            spacing_by[run_idx] = float(spacing_um)
+            dt_by[run_idx] = float(dt_s)
+            nx_by[run_idx] = ecm.grid_shape[0]
+            ny_by[run_idx] = ecm.grid_shape[1]
+
+            init_adhesions = _build_rotating_uniform_single_fa(
+                config, 0, float(dt_s)
+            )
+            init_result = step_closed_loop_phase_e_v2(
+                init_adhesions,
+                ecm,
+                dt_s=0.0,
+                k_active=float(config.k_active),
+            )
+            _record_step_v2(
+                init_result,
+                run_idx,
+                0,
+                v_active_traj,
+                v_bound_traj,
+                weight_traj,
+                delta_traj,
+                traction_norm_traj,
+                multiplier_min_traj,
+                multiplier_mean_traj,
+                multiplier_max_traj,
+                multiplier_dev_traj,
+            )
+
+            for step in range(1, config.n_steps + 1):
+                adhesions = _build_rotating_uniform_single_fa(
+                    config, step, float(dt_s)
+                )
+                step_result = step_closed_loop_phase_e_v2(
+                    adhesions,
+                    ecm,
+                    dt_s=float(dt_s),
+                    k_active=float(config.k_active),
+                )
+                _record_step_v2(
+                    step_result,
+                    run_idx,
+                    step,
+                    v_active_traj,
+                    v_bound_traj,
+                    weight_traj,
+                    delta_traj,
+                    traction_norm_traj,
+                    multiplier_min_traj,
+                    multiplier_mean_traj,
+                    multiplier_max_traj,
+                    multiplier_dev_traj,
+                )
+                ecm = step_result.updated_ecm
+
+            run_idx += 1
+
+    max_bound_ratio = np.array(
+        [
+            _compute_max_bound_ratio(v_active_traj[i], v_bound_traj[i])
+            for i in range(n_runs)
+        ],
+        dtype=np.float64,
+    )
+
+    metadata = PhaseEV2Item5SweepMetadata(
+        config=config,
+        git_sha=_detect_git_sha(config.git_sha_override),
+        numpy_version=np.__version__,
+        python_version=sys.version,
+        k_orient_per_s=K_ORIENT_PER_S,
+        traction_ref_nN_per_um2=TRACTION_REF_NN_PER_UM2,
+    )
+
+    return PhaseEV2Item5SweepResult(
+        spacing_um_by_run=spacing_by,
+        dt_s_by_run=dt_by,
+        nx_by_run=nx_by,
+        ny_by_run=ny_by,
+        v_active_um2_traj=v_active_traj,
+        v_active_bound_um2_traj=v_bound_traj,
+        max_convex_weight_traj=weight_traj,
+        max_orientation_delta_frobenius_traj=delta_traj,
+        max_traction_norm_nN_per_um2_traj=traction_norm_traj,
+        active_multiplier_min_traj=multiplier_min_traj,
+        active_multiplier_mean_traj=multiplier_mean_traj,
+        active_multiplier_max_traj=multiplier_max_traj,
+        active_multiplier_max_deviation_traj=multiplier_dev_traj,
+        max_bound_ratio=max_bound_ratio,
+        peak_active_multiplier_max_deviation=multiplier_dev_traj.max(axis=1),
         peak_v_active_um2=v_active_traj.max(axis=1),
         final_v_active_um2=v_active_traj[:, -1],
         metadata=metadata,
