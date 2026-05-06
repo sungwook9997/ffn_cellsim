@@ -1,5 +1,32 @@
 # ActiveCellSim v2 Phase 1 Forward Roadmap
 
+> ⚠️ **CURRENT STATUS NOTE — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2652`, codex approval `mcp_msg:2655`).
+>
+> This roadmap is a 2026-05-04 forward-looking design/ratification
+> artifact, **not current implementation routing**.
+>
+> - PI directives after this roadmap superseded the "pending PI
+>   ratification/update" status, including Option 1 pivot
+>   (`mcp_msg:2187`) and V2-1 Q5 split decision (`mcp_msg:2235`).
+> - The Closed-Loop ECM Gate 6-item blocker list below has since
+>   been addressed through HB#1-5, Phase D no-op, Phase E v1,
+>   Phase E v2 step 2, and Item 5 sweep work. Use the audit chain
+>   and the current build-state doc for current status.
+> - Closed-loop Tier 1 progressed faster than the original
+>   projected timeline; older week-scale projections below are
+>   **historical planning context**.
+> - For current state, see
+>   `docs/v2/v2_current_build_state.md` (refreshed 2026-05-06,
+>   commit `da581cd`).
+>
+> Known caveats that remain current:
+>
+> - F-proper-1 is WIP HALTED (commit `8a24d89`).
+> - Phase E v2 Item 5 sweep is surfaced as a B-tier sister
+>   extension (commit `0f5e96f`).
+
 Date: 2026-05-04 KST
 Status: Claude/Codex design-discussion lock, pending PI ratification/update
 Source discussion: `design-discussion`, topic `v2-layer-2-forward-roadmap`
