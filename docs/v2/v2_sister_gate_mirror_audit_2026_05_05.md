@@ -12,6 +12,47 @@ per Codex `id=1428`) against existing `acs/v2/dynamics/` modules.
 next-touch list. B1 follow-up unit is a separate cycle (brief →
 lock → Sanity Gate); A1 cosmetic stays opportunistic.
 
+> ⚠️ **POST-RESOLUTION NOTE — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2634`, codex approval `mcp_msg:2635`).
+>
+> **B1 result-typed cycle is complete** (no longer in flight). The
+> brief, lock, sanity gate, code, and tests have all landed:
+>
+> - Brief: `docs/v2/v2_focal_adhesion_dynamics_result_typed_brief.md`
+>   (commits `06c3a03` opening + `64db861` Q1/Q2 correction).
+> - Lock: `docs/v2/v2_focal_adhesion_dynamics_result_typed_locked.md`
+>   (commits `ed5c0ca` initial + `7924730` citation correction).
+> - Sanity gate: `docs/v2/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md`.
+> - Code: `acs/v2/dynamics/focal_adhesion.py` +
+>   `acs/v2/dynamics/protrusion_coupled_focal_adhesion.py` migrated
+>   to `@dataclass(frozen=True, slots=True)` with typed
+>   `FocalAdhesionDynamicsDiagnostics` (4 fields) and
+>   `ProtrusionCoupledDynamicsDiagnostics` (4 base + 4 6.3b
+>   extension); `ProtrusionCoupledDynamicsResult` IS-A
+>   `FocalAdhesionDynamicsResult`.
+> - Tests: 7 lock §4 mandatory tests in
+>   `tests/v2/test_v2_focal_adhesion_dynamics.py` and
+>   `tests/v2/test_v2_protrusion_coupled_focal_adhesion.py`.
+>
+> Audited clean post-restructure in A.2 (`mcp_msg:2544`) and the
+> base 6.3a FA dynamics Sanity Gate audited clean in A.22
+> (`mcp_msg:2619`).
+>
+> **A1 `_BOUNDARY_TOL_RELATIVE` `Final[float]` asymmetry remains a
+> deferred next-touch cleanup by design**, not current drift. Per
+> the "Next-touch list (opportunistic A1 fix)" §below and Codex
+> `id=1432`: HB#3 (`acs/v2/dynamics/fa_to_ecm_scattering.py:70`)
+> still has `_BOUNDARY_TOL_RELATIVE = 1e-12` without `Final[float]`
+> while HB#4 (`acs/v2/dynamics/ecm_to_fa_bias.py:91`) has the
+> annotation; the fix is intentionally deferred until HB#3 is
+> opened for substantive non-trivial change.
+>
+> Older "in flight" wording below is retained as **2026-05-05 historical audit context**
+> and must not be used as current status. The findings table row
+> 37 ("brief in flight") and §"B1 brief unit (in flight)" are
+> historical-snapshot framing of the 2026-05-05 audit moment.
+
 ---
 
 ## Scope
