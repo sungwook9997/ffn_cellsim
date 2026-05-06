@@ -51,6 +51,37 @@ returns raw observable summaries.
   no PI-data fitting; no gate tolerance edits; literature-derived
   parameters only.
 
+#### B-tier sister extension — Phase E v2 Item 5 sweep
+
+Added 2026-05-06 KST after post-restructure audit
+(claude-work `mcp_msg:2595`, codex approval `mcp_msg:2596`) to
+reconcile a lock-discipline trail gap: a **Phase E v2 sister sweep
+extension** lives in the same module
+`acs/v2/dynamics/closed_loop_phase_e_sweep.py` (added at commit
+`559e0ee`, 2026-05-05) but is **not** part of this v1 lock's
+original acceptance claim. The sister extension:
+
+- Phase E v2 Item 5 sweep is a B-tier sister extension, not part of
+  this v1 lock's original acceptance claim. The "NOT a Phase E v2
+  harness" bullet above scopes this v1 lock; it does not forbid a
+  sister extension under separate B-tier policy (PI `id=1653`).
+- It reuses v1 sweep geometry and swaps the per-step call to
+  `step_closed_loop_phase_e_v2` (see Phase E v2 step 2 lock at
+  `docs/v2/v2_phase_e_v2_composition_step_2_locked.md`).
+- It reports HB#4-active multiplier summaries (min / mean / max /
+  max-deviation trajectories) as evidence only and **does not claim Item 5 / full-gate satisfaction**
+  — sister wording-discipline with Phase E v1 Y1+Y2 and Phase E v2
+  step 2 Codex C4.
+- Code surface (in `closed_loop_phase_e_sweep.py`):
+  `PhaseEV2Item5SweepConfig`, `PhaseEV2Item5SweepMetadata`,
+  `PhaseEV2Item5SweepResult`, `run_phase_e_v2_sensitivity_sweep`.
+- Test surface: `tests/v2/test_v2_closed_loop_phase_e_sweep_v2.py`
+  (B-tier focused tests; co-resident with the v1 test file).
+
+The sister extension does not require a separate lock file under
+PI's B-tier compressed policy; this banner is the documentation
+provenance trail for it.
+
 ### Wording discipline (Y4 — central anchor)
 
 `dt_s` axis is the **ECM-feedback integration substep**, NOT the
@@ -672,6 +703,18 @@ defense-in-depth validation)**:
     `effective_stiffness` references (sister-pattern with Phase E v1)
 - `acs/v2/dynamics/__init__.py` + `acs/v2/__init__.py` — 4 new exports
 - `tests/v2/test_v2_closed_loop_phase_e_sweep.py` (NEW, **23 tests** per §4)
+
+Phase E v2 sister extension surface (added at commit `559e0ee` under
+PI B-tier compressed policy `id=1653`, see §0 sister-extension
+banner above):
+
+- `acs/v2/dynamics/closed_loop_phase_e_sweep.py` (EXTEND): adds
+  `PhaseEV2Item5SweepConfig`, `PhaseEV2Item5SweepMetadata`,
+  `PhaseEV2Item5SweepResult`, `run_phase_e_v2_sensitivity_sweep`
+  alongside the v1 surface. Swaps per-step call to
+  `step_closed_loop_phase_e_v2` (sister to Phase E v2 step 2 lock).
+- `tests/v2/test_v2_closed_loop_phase_e_sweep_v2.py` (NEW, B-tier
+  focused tests; sister-resident with v1 test file).
 
 ---
 
