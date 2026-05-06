@@ -111,7 +111,12 @@ def test_select_central_contour_rejects_border_touching():
 def test_extract_area_px_byte_exact_on_synthetic_circle():
     h, w = 400, 400
     m = _solid_circle_mask(w, h, w // 2, h // 2, 100)
-    tmp = REPO / "runs" / "v2_layer_2_unit_1" / "_synthetic_circle_mask.png"
+    tmp = (
+        REPO
+        / "runs"
+        / "v2_imaging_measurement_protocol_gate"
+        / "_synthetic_circle_mask.png"
+    )
     tmp.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(tmp), m)
     repro, status = ae.extract_area_px_from_mask(tmp)
@@ -232,7 +237,7 @@ def test_reproduction_byte_exact_on_real_dataset():
     Opt-in via env var ``RUN_FULL_REPRODUCTION_GATE=1`` because the
     script reads all 4551 saved masks (~7 GB cold) and takes
     several minutes. Lock seal verification artefact lives at
-    ``runs/v2_layer_2_unit_1/pi_area_reproduction.csv`` (gitignored)
+    ``runs/v2_imaging_measurement_protocol_gate/pi_area_reproduction.csv`` (gitignored)
     and ships with the seal evidence rather than CI.
     """
     out = subprocess.run(

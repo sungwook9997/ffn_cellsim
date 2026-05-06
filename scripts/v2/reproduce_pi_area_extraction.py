@@ -238,7 +238,12 @@ def main():
         )
 
     df = pd.DataFrame([r.__dict__ for r in all_results])
-    out_csv = REPO / "runs" / "v2_layer_2_unit_1" / "pi_area_reproduction.csv"
+    out_csv = (
+        REPO
+        / "runs"
+        / "v2_imaging_measurement_protocol_gate"
+        / "pi_area_reproduction.csv"
+    )
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_csv, index=False)
     print(f"\nSaved per-row reproduction → {out_csv}")

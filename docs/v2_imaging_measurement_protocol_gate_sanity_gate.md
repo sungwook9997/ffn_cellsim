@@ -164,15 +164,18 @@ The gate fails if any of the following hold:
   layer-agnostic; surviving from the retracted commit `85df64a`
   through `f4e09aa` retraction; algorithm itself is valid).
 - Reproduction artefact:
-  `runs/v2_layer_2_unit_1/pi_area_reproduction.csv` (gitignored;
+  `runs/v2_imaging_measurement_protocol_gate/pi_area_reproduction.csv`
+  (gitignored;
   4551 rows produced, all `rel_residual = 0.0`, all
   `provenance_status` either `normal` or
   `excluded_by_pi_measurement_provenance`).
-- Test catalog: `tests/test_v2_layer_2_unit_1_area_extraction.py`
-  (16/16 PASS; will be renamed to
-  `tests/test_v2_imaging_measurement_protocol_gate.py` at
-  pre-seal step U1.5).
+- Test catalog: `tests/test_v2_imaging_measurement_protocol_gate.py`
+  (16/17 measurement-protocol tests PASS, 1 opt-in full-reproduction
+  subprocess test SKIPPED unless `RUN_FULL_REPRODUCTION_GATE=1`).
 - V2-1 regression: 21/21 PASS (no break from the algorithm work).
+- Combined pre-seal command:
+  `.venv-collab/bin/python -m pytest tests/test_v2_imaging_input_contract.py tests/test_v2_imaging_measurement_protocol_gate.py`
+  reported 37 passed, 1 skipped before this path cleanup.
 
 ---
 

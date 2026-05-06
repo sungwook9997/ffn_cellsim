@@ -259,8 +259,7 @@ preliminary number coincidentally; the principled derivation is
 
 ## 2. Test catalog (lock minimum)
 
-`tests/test_v2_imaging_measurement_protocol_gate.py` covers (renamed
-from `test_v2_layer_2_unit_1_area_extraction.py` after this lock seals):
+`tests/test_v2_imaging_measurement_protocol_gate.py` covers:
 
 1. Algorithm constants frozen against PI source.
 2. `select_central_contour` synthetic-blob behaviour (centred over
@@ -300,11 +299,10 @@ from `test_v2_layer_2_unit_1_area_extraction.py` after this lock seals):
   `configs/imaging/260313.yaml`.
 - Reproduction script: `scripts/v2/reproduce_pi_area_extraction.py`.
 - Reproduction artefact:
-  `runs/v2_layer_2_unit_1/pi_area_reproduction.csv` (gitignored).
+  `runs/v2_imaging_measurement_protocol_gate/pi_area_reproduction.csv`
+  (gitignored).
 - Implementation: `acs/v2/imaging_contract/area_extractor.py`.
-- Tests: `tests/test_v2_imaging_measurement_protocol_gate.py`
-  (renamed from `test_v2_layer_2_unit_1_area_extraction.py` at
-  seal time).
+- Tests: `tests/test_v2_imaging_measurement_protocol_gate.py`.
 - Paired sanity gate:
   `docs/v2_imaging_measurement_protocol_gate_sanity_gate.md`.
 - Superseded retraction:
