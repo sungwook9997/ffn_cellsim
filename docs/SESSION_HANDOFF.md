@@ -30,12 +30,12 @@ file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
 
 | File | Status | Notes |
 |---|---|---|
-| `docs/marangoni_review.md` | DONE (commit d0a7d99) | 6 candidate mechanisms A–F, paper framings |
+| `docs/v1/marangoni_review.md` | DONE (commit d0a7d99) | 6 candidate mechanisms A–F, paper framings |
 | `docs/codex_review_synthesis.md` | DONE (commit 6aa3b27) | 10-item Codex review, Options E/F/G/H |
-| `docs/gate_fail_taxonomy.md` | DONE (this commit) | F1–F9 classification; 4 HARD-BLOCKERs identified |
-| `docs/parameter_registry.md` | DONE (this commit) | 4-tier (L1/L2/L3/L4) registry; 11 L3 placeholders |
-| `docs/10_dev_roadmap.md` Current Status | REFRESHED (this commit) | now reflects Stage 1a → 2 → Production Lam4 → Option F |
-| `docs/production_lam4_finding.md` labeling | FIXED (this commit) | P2 plateau → P3 peak-and-decay |
+| `docs/v1/gate_fail_taxonomy.md` | DONE (this commit) | F1–F9 classification; 4 HARD-BLOCKERs identified |
+| `docs/v1/parameter_registry.md` | DONE (this commit) | 4-tier (L1/L2/L3/L4) registry; 11 L3 placeholders |
+| `docs/v1/10_dev_roadmap.md` Current Status | REFRESHED (this commit) | now reflects Stage 1a → 2 → Production Lam4 → Option F |
+| `docs/v1/production_lam4_finding.md` labeling | FIXED (this commit) | P2 plateau → P3 peak-and-decay |
 | `docs/SESSION_HANDOFF.md` | CONSOLIDATED (this file) | original moved to archive |
 
 ## Hard blockers tracked (post-Week 2)
@@ -50,10 +50,10 @@ file ≤ 2 pages; for archive material see `docs/SESSION_HANDOFF_archive_v10.md`
 ## Week 2 outcomes (this commit)
 
 Both investigations completed read-only:
-- `docs/horizontal_momentum_drift_investigation.md` — F2 root-caused
+- `docs/v1/horizontal_momentum_drift_investigation.md` — F2 root-caused
   to gate normalization too tight in overdamped equilibrium + initial-
   pack asymmetry. Absolute drift bounded ~1e-3 across 4 runs.
-- `docs/anchor_force_balance_investigation.md` — F3 root-caused to
+- `docs/v1/anchor_force_balance_investigation.md` — F3 root-caused to
   Adami-Hu-Adams §3 kernel truncation making F_pressure_down formula
   report negative (tensile) values when contact band is under-densified.
   F_substrate_up is small and stable (~0.038); substrate is
@@ -61,22 +61,22 @@ Both investigations completed read-only:
 
 Three of four hard blockers retired. Marangoni / asymptote
 interpretation unaffected (independent root cause per
-`docs/marangoni_review.md`).
+`docs/v1/marangoni_review.md`).
 
 ## Where to find what
 
 - Project mission + framing: `CLAUDE.md`, `docs/00_project_vision.md`
-- Stage roadmap + current status: `docs/10_dev_roadmap.md`
-- Stage outcome ledgers: `docs/outcomes_*.md` (one per stage)
+- Stage roadmap + current status: `docs/v1/10_dev_roadmap.md`
+- Stage outcome ledgers: `docs/v1/outcomes_*.md` (one per stage)
 - Sanity gate analyses: `docs/*_sanity.md` (one per stage / decision)
 - Active review docs (Option F Week 1):
-  - `docs/marangoni_review.md`
+  - `docs/v1/marangoni_review.md`
   - `docs/codex_review_synthesis.md`
-  - `docs/gate_fail_taxonomy.md`
-  - `docs/parameter_registry.md`
+  - `docs/v1/gate_fail_taxonomy.md`
+  - `docs/v1/parameter_registry.md`
 - Production Lam4 result + finding:
   - `results/production_lam4/` (artefacts)
-  - `docs/production_lam4_finding.md` (revised P3 reading)
+  - `docs/v1/production_lam4_finding.md` (revised P3 reading)
 
 ## What the next session should do
 

@@ -1,6 +1,6 @@
 # Stage 1a++.b pilot — Stochastic boundary events (Lam4 1k 4hr).
-# Per PI directive 2026-04-29 (docs/marangoni_review.md Option β +
-# docs/stage1a_pp_b_stochastic_sanity.md). Inherits Stage 1b.b
+# Per PI directive 2026-04-29 (docs/v1/marangoni_review.md Option β +
+# docs/v1/stage1a_pp_b_stochastic_sanity.md). Inherits Stage 1b.b
 # φ_memory + c_act + Stage 1d.b dynamic γ. Adds Poisson lamellipodia
 # events at contact-band particles with literature-anchored rate +
 # impulse magnitude.

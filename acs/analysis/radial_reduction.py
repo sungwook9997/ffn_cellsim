@@ -3,7 +3,7 @@
 Implements the analytical "Sim A" (axisymmetric reduction) that the Stage 1e
 comparison protocol pits against "Sim B" (= the Stage 1d 3D pilot result).
 
-Sim A captures (per docs/stage1e_sanity.md scope §):
+Sim A captures (per docs/v1/stage1e_sanity.md scope §):
 - Surface-tension recovery: −γ_star · κ(R) (κ = 2/R for spherical cap)
 - Active boundary stress: +ζ_eff(t) where ζ_eff(t) is the Layer 3 φ-ODE
   single-particle limit projected through the Layer 2 ζ(φ) coupling
@@ -20,7 +20,7 @@ Sim A does NOT capture (deliberately, to quantify the validity gap):
 Then `A/A₀ = a + b/R + c/R²` is fitted to each simulation's
 A/A₀(t) trajectory (PI's empirical phenomenological model). The
 (a, b, c) parameter agreement and trajectory RMS deviation feed the
-Stage 1e Bucket E1/E2/E3/E4 classification per `docs/outcomes_stage1e.md`.
+Stage 1e Bucket E1/E2/E3/E4 classification per `docs/v1/outcomes_stage1e.md`.
 
 Anchored to existing project framework only (no new parameters):
 γ_star, ξ_star, ζ_min, ζ_max, k_+_star, k_-_star, φ_initial all from
@@ -92,7 +92,7 @@ def zeta_eff(p: SimAParams, t_array: np.ndarray) -> np.ndarray:
 def simulate_sim_a(params: SimAParams, t_array: np.ndarray) -> dict:
     """Integrate the Sim A 1D radial ODE on `t_array`.
 
-    Force balance (overdamped, per docs/stage1e_sanity.md check 1):
+    Force balance (overdamped, per docs/v1/stage1e_sanity.md check 1):
 
         ξ_eff(R) · dR/dt = −γ_star · κ(R) + ζ_eff(t)
 
@@ -202,7 +202,7 @@ def compare_sim_a_vs_b(
 
     Returns: dict with (a, b, c) relative deviations, A/A₀ trajectory RMS,
     Pearson correlation, max-deviation snapshot — feeds Bucket E1/E2/E3
-    classification per `docs/outcomes_stage1e.md`.
+    classification per `docs/v1/outcomes_stage1e.md`.
     """
     if len(sim_a["t"]) != len(sim_b["t"]):
         raise ValueError(

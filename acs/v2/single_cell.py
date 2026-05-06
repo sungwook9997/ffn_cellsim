@@ -8,7 +8,7 @@ this file simulates anything.
 Slow-biology hooks (``cell_state``, ``cell_age_s``, ``cell_cycle_phase``,
 ``division_count``, ``parent_cell_id``, ``mechanosignal_yap_taz``,
 ``neighbor_cell_ids``) carry schema only and are default OFF per
-``docs/v2_phase1_plan_consolidated.md`` §6.6. Dead cells retain their
+``docs/v2/v2_phase1_plan_consolidated.md`` §6.6. Dead cells retain their
 geometry for visualization, but downstream dynamics modules must skip
 their dynamics.
 

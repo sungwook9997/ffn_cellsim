@@ -18,7 +18,7 @@ All quantities inside the solver are **dimensionless**. The reference units are:
 
 Restoration to SI is the responsibility of the Stage 1a → 1a+ anchor pass; this
 solver never sees Pa, μm, or seconds. The mapping table is captured in
-`docs/stage1a_assumption_review.md` §A6.
+`docs/v1/stage1a_assumption_review.md` §A6.
 
 ================================================================================
 Sanity Gate (per docs/12_validation.md, run before first execution)
@@ -74,7 +74,7 @@ Sanity Gate (per docs/12_validation.md, run before first execution)
    ρ_kernel→0:   v15 (k.3) form 1/ρ_kernel diverges; clamped at
                  ρ_floor = 0.1·ρ_ref_kernel by `_interpolate_rho_runtime`,
                  bounding σ_vol at +9·K. The clamp is a numerical safety
-                 floor — see `docs/outcomes_v15.md` for the literature
+                 floor — see `docs/v1/outcomes_v15.md` for the literature
                  verification record (no exact 0.1 cite found; conservative
                  below the AHA-2010 free-surface kernel-truncation bound
                  ~0.5·ρ_ref and the Liu-Liu 2010 isolated-particle
@@ -123,7 +123,7 @@ Sanity Gate (per docs/12_validation.md, run before first execution)
        just to local F. This is the v15 fix for the (k) interior-pressure-
        transmission failure of v12 (where overdamped + ∇v ≈ 0 made F → I in
        the bulk and σ_vol stayed ≈ 0 even as surface CSF dragged particles
-       inward; see `docs/stage1a_interior_pressure_sanity.md`).
+       inward; see `docs/v1/stage1a_interior_pressure_sanity.md`).
    Maxwell deviatoric        τ_dev_{n+1} = e^(-dt/τ)·τ_dev_n + 2μτ(1−e^(-dt/τ))·ε̇_dev:
        under shear ε̇_dev > 0 ⇒ τ_dev grows toward 2μ·τ·ε̇_dev (steady),
        opposing the shear ⇒ correct. ✓ Unchanged from v12.
@@ -145,7 +145,7 @@ Sanity Gate (per docs/12_validation.md, run before first execution)
    Sense check: PASS.
 
 6. **Measurement-protocol consistency** (codified after v13, see
-   docs/12_validation.md and docs/stage1a_interior_pressure_sanity.md §6)
+   docs/12_validation.md and docs/v1/stage1a_interior_pressure_sanity.md §6)
    The v15 proposal walks through every gate's measurement protocol against
    the new density-based volumetric stress. Salient items:
      • Static-curvature κ gate is unchanged (κ depends only on the colour
@@ -213,7 +213,7 @@ class SolverConfig:
     # (rather than a never-fired box-wall safety net), and per-step impulse
     # delivered into z = 0 is accumulated in `diag_substrate_impulse_z`
     # for the anchor-force-balance gate. See
-    # `docs/stage1a_plus_substrate_sanity.md` and `docs/outcomes_stage1a_plus.md`.
+    # `docs/v1/stage1a_plus_substrate_sanity.md` and `docs/v1/outcomes_stage1a_plus.md`.
     # When False, the −z wall is the same 3-cell safety net as the other five
     # box faces (Stage 1a baseline behaviour, no substrate).
     substrate_enabled: bool = False
@@ -227,8 +227,8 @@ class SolverConfig:
     # `Ca_cc` (Maître Science 2012, IF 47) via the runner's
     # `gamma_sub_alpha` sweep variable: γ_sub_star = α · γ_cc_star =
     # α · Ca_cc · K_star · radius_star. See
-    # `docs/stage1a_plus_substrate_sanity.md` §"Option β addendum" and
-    # `docs/outcomes_stage1a_plus.md` §"Option β addendum". Default 0
+    # `docs/v1/stage1a_plus_substrate_sanity.md` §"Option β addendum" and
+    # `docs/v1/outcomes_stage1a_plus.md` §"Option β addendum". Default 0
     # recovers Option α (mechanical anchor only).
     gamma_sub_star: float = 0.0
 
@@ -244,13 +244,13 @@ class SolverConfig:
     # ζ/K. K is anchored to Fischer-Friedrich Nat Cell Biol 2014 IF 30
     # (already cited in `docs/02_force_models.md` §1.1); Marchetti
     # Rev Mod Phys 2013 IF 50 retained as the framework reference. See
-    # `docs/stage1a_plus_plus_layer2_sanity.md` and
-    # `docs/outcomes_stage1a_plus_plus.md`. Default 0 reproduces Stage 1a+
+    # `docs/v1/stage1a_plus_plus_layer2_sanity.md` and
+    # `docs/v1/outcomes_stage1a_plus_plus.md`. Default 0 reproduces Stage 1a+
     # Option β (carrier baseline).
     zeta_star: float = 0.0
 
     # Stage 1b Layer 3 φ-ODE (Cho et al. 2020 mechanism, see
-    # `docs/03_adhesion_dynamics.md` and `docs/stage1b_layer3_sanity.md`).
+    # `docs/03_adhesion_dynamics.md` and `docs/v1/stage1b_layer3_sanity.md`).
     # When `layer3_enabled` is True, every particle carries a φ ∈ [0, 1]
     # state evolved by the simplified ODE (S ≡ 1 since substrate is single-
     # condition Col1):
@@ -271,7 +271,7 @@ class SolverConfig:
     zeta_max: float = 0.0
 
     # Path C effective gravity (buoyancy-corrected). Per
-    # `docs/path_c_sanity.md` and `docs/outcomes_path_c.md`. When > 0,
+    # `docs/v1/path_c_sanity.md` and `docs/v1/outcomes_path_c.md`. When > 0,
     # every grid cell with mass receives a per-step downward velocity
     # impulse `Δv_z = −gravity_star · dt`, applied in
     # `_grid_op_overdamped` after CSF / before drag / before reflective
@@ -296,7 +296,7 @@ class SolverConfig:
     # (α_osm = β_osm = 0; ρ_osm fixed at rho_osm_initial = 1.0). PI full
     # authorisation 2026-04-29 ("원래 framework standard 풀 적용").
     # Magic-Number Block PARTIAL on the ODE constants — analogous to ζ_star
-    # Option α' precedent; honest disclosure in `docs/stage1c_sanity.md`.
+    # Option α' precedent; honest disclosure in `docs/v1/stage1c_sanity.md`.
     layer5_enabled: bool = False
     rho_osm_initial: float = 1.0
     alpha_osm_star: float = 0.0
@@ -338,8 +338,8 @@ class SolverConfig:
     # `layer3_split` (default True) is the new control.
     layer3_spatial_S: bool = False
 
-    # Stage 1b.b Layer 3 φ split (per `docs/layer3_phi_audit.md` §4 +
-    # `docs/stage1b_b_phi_split_sanity.md`). When True (default if
+    # Stage 1b.b Layer 3 φ split (per `docs/v1/layer3_phi_audit.md` §4 +
+    # `docs/v1/stage1b_b_phi_split_sanity.md`). When True (default if
     # layer3_enabled), φ is split into φ_memory_p (formation phenotype
     # memory, ε-decay toward phi_initial) and c_act_p (contact
     # activation, Cho 2020 ODE on contact-band only). Effective
@@ -350,7 +350,7 @@ class SolverConfig:
     layer3_memory_eps_star: float = 0.0  # ε memory decay rate (PI default 0.0 = exactly fixed)
 
     # Stage 1a++.b stochastic boundary events (per
-    # `docs/stage1a_pp_b_stochastic_sanity.md` + `docs/marangoni_review.md`
+    # `docs/v1/stage1a_pp_b_stochastic_sanity.md` + `docs/v1/marangoni_review.md`
     # Option β + Codex review item 1). Adds discrete lamellipodia-like
     # events at contact-band particles: each step, each band particle
     # fires a Poisson(λ_lam · dt) tangential outward impulse of
@@ -360,7 +360,7 @@ class SolverConfig:
     impulse_lam_star: float = 0.0
 
     # Stage 1d.c ECM-mediated mechanical communication + protrusion
-    # state machine (per `docs/stage1d_c_ecm_communication_sanity.md`,
+    # state machine (per `docs/v1/stage1d_c_ecm_communication_sanity.md`,
     # PI directive 2026-04-30 per Codex analysis). Adds:
     # - 2D substrate ECM displacement field on z=0 plane (screened
     #   Helmholtz: η ∂u/∂t = G·∇²u − k·u + Σ_p T_p · W_p)
@@ -387,7 +387,7 @@ class SolverConfig:
     protrusion_speed_cap_star: float = 0.06  # ~0.1 um/s at R0=100um, tau=60s
 
     # Stage 1d.b Marangoni Mechanism A + F (per
-    # `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
+    # `docs/v1/stage1d_b_marangoni_sanity.md` + `docs/v1/marangoni_review.md`).
     # When `layer4_dynamic_gamma=True` (default if layer4_enabled and
     # `tau_gamma_star > 0`), γ becomes a per-particle state variable
     # γ_p evolved by ODE:
@@ -405,7 +405,7 @@ class SolverConfig:
     alpha_F_star: float = 0.0
 
     # Stage 2 Layer 6 chemistry / ECM remodeling — minimal scope per
-    # `docs/stage2_sanity.md`: MMP secretion + ECM degradation only,
+    # `docs/v1/stage2_sanity.md`: MMP secretion + ECM degradation only,
     # de novo ECM secretion deferred to Stage 2.b.
     # Per-step ODE (forward Euler):
     #   d(mmp_total)/dt = α_MMP · n_contact_band(t)
@@ -456,7 +456,7 @@ class MLSMPMSolver:
                 "increase grid_n or shrink the domain."
             )
         # Stage 1b Layer 3 φ-ODE forward-Euler stiffness invariant
-        # (per docs/stage1b_layer3_sanity.md check 2): factor-2 safety
+        # (per docs/v1/stage1b_layer3_sanity.md check 2): factor-2 safety
         # margin against `dt · (k_+ + k_-) ≤ 1`.
         if cfg.layer3_enabled:
             stiffness = cfg.dt_star * (cfg.k_plus_star + cfg.k_minus_star)
@@ -471,7 +471,7 @@ class MLSMPMSolver:
                     f"phi_initial ({cfg.phi_initial}) must be ∈ [0, 1]."
                 )
         # Stage 1c Layer 5 forward-Euler stability invariant
-        # (per docs/stage1c_sanity.md check 2): dt · β_osm ≤ 0.5
+        # (per docs/v1/stage1c_sanity.md check 2): dt · β_osm ≤ 0.5
         # (factor-2 safety; α-driver bounded by typical |tr(C)| ≤ 1).
         if cfg.layer5_enabled:
             stiffness_osm = cfg.dt_star * cfg.beta_osm_star
@@ -539,8 +539,8 @@ class MLSMPMSolver:
         # `grid_m`. `_rho_ref_kernel` and `_rho_floor` are scalar fields set
         # once by `calibrate_reference_state` (rho_ref = harmonic mean over
         # well-resolved particles; rho_floor = 0.1·rho_ref). See
-        # `docs/stage1a_interior_pressure_sanity.md` for the proposal and
-        # `docs/outcomes_v15.md` for the literature-verification record on
+        # `docs/v1/stage1a_interior_pressure_sanity.md` for the proposal and
+        # `docs/v1/outcomes_v15.md` for the literature-verification record on
         # the 0.1 floor value.
         self._rho_kernel_p = ti.field(dtype=ti.f32, shape=n_p)
         self._rho_ref_kernel = ti.field(dtype=ti.f32, shape=())
@@ -549,8 +549,8 @@ class MLSMPMSolver:
         # initialiser block below can populate it together with the
         # density fields. Diagnostic accumulators are declared later.
         self.phi_p = ti.field(dtype=ti.f32, shape=n_p)
-        # Stage 1b.b Layer 3 φ split (per docs/layer3_phi_audit.md §4 +
-        # docs/stage1b_b_phi_split_sanity.md). φ_memory_p stores the
+        # Stage 1b.b Layer 3 φ split (per docs/v1/layer3_phi_audit.md §4 +
+        # docs/v1/stage1b_b_phi_split_sanity.md). φ_memory_p stores the
         # formation phenotype memory (slow/fixed); c_act_p stores the
         # contact-activation state (Cho 2020 ODE on contact-band only).
         # Effective variable phi_eff_p = φ_memory + κ · c_act ·
@@ -562,13 +562,13 @@ class MLSMPMSolver:
         self.c_act_p = ti.field(dtype=ti.f32, shape=n_p)
         # Stage 1d.b Marangoni dynamic γ state (Mechanism A reaccumulation
         # + Mechanism F osmotic coupling). Per
-        # docs/stage1d_b_marangoni_sanity.md. When `layer4_dynamic_gamma`
+        # docs/v1/stage1d_b_marangoni_sanity.md. When `layer4_dynamic_gamma`
         # is False, this field is populated but never updated — its
         # initial value (γ_eq(phi_initial)) is what the legacy inline
         # γ(φ) scatter would compute.
         self.gamma_p_state = ti.field(dtype=ti.f32, shape=n_p)
         # Stage 1d.c per-particle protrusion + traction state (per
-        # docs/stage1d_c_ecm_communication_sanity.md, PI directive
+        # docs/v1/stage1d_c_ecm_communication_sanity.md, PI directive
         # 2026-04-30). All zero-init except polarity (random unit
         # vectors so initial state machine has well-defined directions).
         self.protrusion_state_p = ti.field(dtype=ti.i32, shape=n_p)
@@ -618,7 +618,7 @@ class MLSMPMSolver:
         )
         # Stage 1b.b φ split initial state: φ_memory := phi_initial,
         # c_act := 0 (no contact activation at t=0). Per
-        # `docs/stage1b_b_phi_split_sanity.md` §"Initialization".
+        # `docs/v1/stage1b_b_phi_split_sanity.md` §"Initialization".
         self.phi_memory_p.from_numpy(
             np.full(cfg.n_particles, float(cfg.phi_initial), dtype=np.float32)
         )
@@ -1028,7 +1028,7 @@ class MLSMPMSolver:
         """Stage 1b Layer 3 forward-Euler φ-ODE integration with Stage 1d
         spatial S_p extension.
 
-        Per `docs/03_adhesion_dynamics.md` and `docs/stage1b_layer3_sanity.md`:
+        Per `docs/03_adhesion_dynamics.md` and `docs/v1/stage1b_layer3_sanity.md`:
 
             dφ/dt = k_+ · S_p · (1 − φ) − k_- · φ
 
@@ -1044,7 +1044,7 @@ class MLSMPMSolver:
         (`dt · (k_+ + k_-) ≤ 0.5`). The `clip(0, 1)` defends against any
         per-step overshoot at the boundaries of the [0, 1] domain.
 
-        Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
+        Stage 1b.b (PI directive 2026-04-29 per docs/v1/layer3_phi_audit.md):
         when `layer3_split=True` (default for layer3_enabled), φ is
         split into φ_memory_p (formation phenotype memory, ε-decay
         toward phi_initial) and c_act_p (contact activation, Cho 2020
@@ -1121,7 +1121,7 @@ class MLSMPMSolver:
     @ti.kernel
     def _integrate_gamma_ode(self):
         """Stage 1d.b Marangoni Mechanism A + F (per
-        `docs/stage1d_b_marangoni_sanity.md` + `docs/marangoni_review.md`).
+        `docs/v1/stage1d_b_marangoni_sanity.md` + `docs/v1/marangoni_review.md`).
 
         Per-particle γ ODE:
           γ_eq_p = γ_max·(1 − φ_eff) + γ_min·φ_eff
@@ -1276,7 +1276,7 @@ class MLSMPMSolver:
     def _integrate_layer6_ode(self) -> None:
         """Stage 2 Layer 6 forward-Euler ODE update (host-side, per step).
 
-        Per `docs/stage2_sanity.md` Tier 2 spec:
+        Per `docs/v1/stage2_sanity.md` Tier 2 spec:
 
             d(mmp_total)/dt   = α_MMP · n_contact_band(t)
             d(ecm_strength)/dt = -β_deg · mmp_total · ecm_strength
@@ -1594,7 +1594,7 @@ class MLSMPMSolver:
         the subsequent central-FD divergence is shielded from the off-peak
         f″/f′ asymmetry of the smoothed colour profile that broke the v13
         Laplacian-form attempt (commit 3ba63c5). See v13 commit message
-        and `docs/stage1a_aha_div_sanity.md` for the failure analysis.
+        and `docs/v1/stage1a_aha_div_sanity.md` for the failure analysis.
 
         References:
         - Brackbill, Kothe, Zemach (1992) "A continuum method for modeling
@@ -1687,7 +1687,7 @@ class MLSMPMSolver:
         Magic-Number Block (`docs/12_validation.md`): derivable from the
         AHA-2010 truncation bound, grid-invariant (a fraction of a
         per-pack-calibrated quantity), not chosen to fit any gate value.
-        See `docs/outcomes_v15.md` for the full literature-verification
+        See `docs/v1/outcomes_v15.md` for the full literature-verification
         record.
 
         Structurally identical to `_interpolate_density_to_particles`
@@ -1879,7 +1879,7 @@ class MLSMPMSolver:
                 # on a kernel-local Expr). The min_cell_mass guard mirrors
                 # the free-surface CSF block above so a low-mass cell does
                 # not blow up via 1/ρ_local. Sign verified in
-                # `docs/stage1a_plus_substrate_sanity.md` §6/§"Option β
+                # `docs/v1/stage1a_plus_substrate_sanity.md` §6/§"Option β
                 # addendum" check 5.
                 i, j, k = I[0], I[1], I[2]
                 if k < sub_band and m > min_cell_mass:
@@ -1891,7 +1891,7 @@ class MLSMPMSolver:
                 # `Δv_z = −gravity_star · dt`. When gravity_star = 0 (Path
                 # C disabled) the impulse is identically zero by arithmetic.
                 # Sign convention: gravity_star > 0 ⇒ dv_z < 0 ⇒ pulls
-                # toward substrate at z = 0. See `docs/path_c_sanity.md`
+                # toward substrate at z = 0. See `docs/v1/path_c_sanity.md`
                 # check 5 for sign verification.
                 v[2] -= dt * gravity_star
 
@@ -1901,7 +1901,7 @@ class MLSMPMSolver:
                 # force. Tangent projection: ∇_s γ = (I − n̂⊗n̂) · ∇γ.
                 # When Layer 4 disabled, grid_gamma_grad is zero
                 # (uncleared in cleared-state) so the impulse is zero by
-                # arithmetic. Sign per docs/stage1d_sanity.md check 5
+                # arithmetic. Sign per docs/v1/stage1d_sanity.md check 5
                 # (Pajic-Lijakovic 2022): velocity flows from low γ
                 # toward high γ. ∇γ points toward higher γ; impulse
                 # adds in +∇γ direction → flow toward high γ. ✓
@@ -2229,7 +2229,7 @@ class MLSMPMSolver:
     @ti.kernel
     def _apply_stochastic_events(self):
         """Stage 1a++.b stochastic boundary events (per
-        `docs/stage1a_pp_b_stochastic_sanity.md`).
+        `docs/v1/stage1a_pp_b_stochastic_sanity.md`).
 
         For each contact-band particle, fires a Bernoulli(λ_lam · dt)
         outward-radial tangential impulse of magnitude
@@ -2562,7 +2562,7 @@ class MLSMPMSolver:
         - n_contact_band_particles: # particles in the contact band z* < n·dx*
         - rho_kernel_contact_over_ref: <ρ_kernel>_band / ρ_ref
             Gate window broadened from [0.85, 1.15] to [0.65, 1.15] in
-            Option F Week 2 (per docs/anchor_force_balance_investigation.md):
+            Option F Week 2 (per docs/v1/anchor_force_balance_investigation.md):
             near the −z reflective substrate boundary the SPH/MPM kernel
             truncation (Adami-Hu-Adams 2010 §3) biases the kernel-density
             estimate low by ≈ 30%, so [0.65, 1.15] is the principled
@@ -2626,7 +2626,7 @@ class MLSMPMSolver:
         # *compressive* part only — see anchor-force-balance gate below.
         P_per_p = K_eff_band * (1.0 - rho_ref / np.clip(rho_band, 1e-30, None))
         # Option F Week 2 contract change (per
-        # docs/anchor_force_balance_investigation.md, PI-authorised
+        # docs/v1/anchor_force_balance_investigation.md, PI-authorised
         # 2026-04-29). The legacy comparison failed systematically because
         # (1) the F_pressure_down formula used `(1 − ρ_ref/ρ_kernel)` which
         # goes negative in the kernel-truncation regime (ρ_kernel < ρ_ref

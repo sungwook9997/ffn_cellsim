@@ -6,8 +6,8 @@ the parameter contract and the rate bound together (they share the lock /
 gate dimensional analysis) while leaving the actual time-stepping to the
 dynamics module.
 
-Reference: ``docs/v2_p1_derivation_locked.md`` §1 §2 §3 §4 (lock) and
-``docs/v2_p1_active_contour_sanity_gate.md`` §1 §2 §3 §6 §7 (gate).
+Reference: ``docs/v2/v2_p1_derivation_locked.md`` §1 §2 §3 §4 (lock) and
+``docs/v2/v2_p1_active_contour_sanity_gate.md`` §1 §2 §3 §6 §7 (gate).
 
 Sanity Gate scope (active_contour.py):
 
@@ -67,7 +67,7 @@ class ActiveContourParametersError(ValueError):
 @dataclass(frozen=True, slots=True)
 class ActiveContourParameters:
     """Locked v2 P1 alpha active-contour parameters per
-    ``docs/v2_p1_derivation_locked.md`` §7.
+    ``docs/v2/v2_p1_derivation_locked.md`` §7.
 
     Cortex coefficient ``lambda_c`` is supplied either directly
     (``lambda_c_nN``) or as the derived product

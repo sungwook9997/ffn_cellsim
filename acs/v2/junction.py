@@ -1,7 +1,7 @@
 """Cell-cell junction state schema.
 
 Canonical Phase 1 ``JunctionState`` per
-``docs/v2_phase1_plan_consolidated.md`` §5.6. A junction lives between
+``docs/v2/v2_phase1_plan_consolidated.md`` §5.6. A junction lives between
 exactly two distinct cells; cells in contact remain separate polygons
 and never merge geometry. Junction dynamics (creation, aging,
 maturation, contact-edge protrusion suppression, contact inhibition

@@ -3,7 +3,7 @@
 **Status:** active operating model for `implementation-work` workroom
 (2026-05-03, MCP ids: PI 567/572/575/578, Claude 570/580/582/585,
 Codex 568/574/576/579/583).
-**Scope:** ActiveCellSim v2 (`acs/v2/`, `docs/10_dev_roadmap_v2.md`).
+**Scope:** ActiveCellSim v2 (`acs/v2/`, `docs/v2/10_dev_roadmap_v2.md`).
 **Mirrors:** `docs/workroom_layout.md` (room split SOP); `CLAUDE.md`
 **and** `AGENTS.md` (Sanity Gate, Magic-Number Block, Hard Rules).
 
@@ -75,7 +75,7 @@ physics term, one analysis function, one config field). Bigger
 changes are split into multiple units.
 
 ### Step 1 — Code (Claude)
-1. Pick the unit from `docs/10_dev_roadmap_v2.md` or PI directive.
+1. Pick the unit from `docs/v2/10_dev_roadmap_v2.md` or PI directive.
 2. Write code under `acs/v2/...`.
 3. Pre-execution checks (mandatory before first run):
    - Sanity Gate 6 checks recorded as docstring section or
@@ -284,8 +284,8 @@ delivery contract even if no substantive progress happened.
   agent-specific mirrors of project rules: vision, Hard Rules, Sanity
   Gate, Magic-Number Block. Conflicts between the two escalate to PI
   per §1.
-- `docs/00_project_vision_v2.md` — v2 framing (image-constrained,
+- `docs/v2/00_project_vision_v2.md` — v2 framing (image-constrained,
   cell-resolved).
-- `docs/10_dev_roadmap_v2.md` — current implementation roadmap.
+- `docs/v2/10_dev_roadmap_v2.md` — current implementation roadmap.
 - `docs/workroom_layout.md` — 2-room workroom SOP.
 - `tools/collab_mcp/tmux_relay.py` — bilingual relay implementation.

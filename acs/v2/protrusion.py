@@ -1,7 +1,7 @@
 """Protrusion (lamellipodia / filopodia) event schema.
 
 This module defines the canonical Phase 1 ``ProtrusionEvent`` schema per
-``docs/v2_phase1_plan_consolidated.md`` §5.4. The event records *what*
+``docs/v2/v2_phase1_plan_consolidated.md`` §5.4. The event records *what*
 happens at the cell boundary; dynamics (event hazard, growth/retraction
 rules, RNG reproducibility) are explicitly out of P0 scope and must
 write their own Sanity Gate before execution.

@@ -1,7 +1,7 @@
 """Focal adhesion state schema.
 
 Canonical Phase 1 ``FocalAdhesionState`` per
-``docs/v2_phase1_plan_consolidated.md`` §5.5. Adhesions live on the
+``docs/v2/v2_phase1_plan_consolidated.md`` §5.5. Adhesions live on the
 substrate plane in v2, so position is two-dimensional (xy in
 micrometers). Per Plan §5.5, the third (z) coordinate is implied zero
 and intentionally not part of the schema; legacy code that used a 3D
@@ -28,7 +28,7 @@ the schema *itself* enforces ``traction_force_nN_xy == (0, 0)``
 (under the no-traction-without-attachment rule, Plan §6.3). The
 6.3a dynamics layer additionally forces ``state == "released"`` to
 zero traction at update time (per
-``docs/v2_focal_adhesion_dynamics_sanity_gate.md`` §5 state table
+``docs/v2/v2_focal_adhesion_dynamics_sanity_gate.md`` §5 state table
 and the field-level docstring on ``traction_force_nN_xy``); the
 schema permits non-zero traction on released so a record can carry
 the "what was bound right before release" snapshot, while the
@@ -61,7 +61,7 @@ class FocalAdhesionState:
     traction_force_nN_xy: tuple[float, float] = (0.0, 0.0)
     """Per-FA cell-on-substrate traction vector in nN. The substrate-on-cell
     reaction is the negation; Newton 3 holds per FA. Convention locked in
-    `docs/v2_focal_adhesion_dynamics_sanity_gate.md` §6.
+    `docs/v2/v2_focal_adhesion_dynamics_sanity_gate.md` §6.
 
     State conventions (locked in the same gate, §5 state table):
 

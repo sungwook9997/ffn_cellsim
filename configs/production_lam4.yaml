@@ -7,7 +7,7 @@
 # All physics inherited from Phase 4-v2 (commit 708b44d). Only
 # computational scale changes: 5× particles, 20× duration.
 #
-# Per docs/production_lam4_sanity.md and docs/production_lam4_outcomes.md.
+# Per docs/v1/production_lam4_sanity.md and docs/v1/production_lam4_outcomes.md.
 
 run:
   name: production_lam4

@@ -1,7 +1,7 @@
 """ECM substrate state schema.
 
 Canonical Phase 1 ``ECMSubstrateState`` per
-``docs/v2_phase1_plan_consolidated.md`` §5.3. Phase 1 represents the ECM
+``docs/v2/v2_phase1_plan_consolidated.md`` §5.3. Phase 1 represents the ECM
 as a coarse continuous field on a regular grid. Full collagen-fiber
 graph representations are deferred.
 

@@ -2,7 +2,7 @@
 artifacts to a UTC-timestamped directory under ``runs/``.
 
 Produces, per gate-test, the visual deliverable bundle defined in
-``docs/v2_p1_active_contour_sanity_gate.md`` §8: HDF5 frame_dump
+``docs/v2/v2_p1_active_contour_sanity_gate.md`` §8: HDF5 frame_dump
 sequence at every K steps, per-frame PNG/HTML, diagnostic 4-panel
 plot, harness-generated ``summary.html`` with the §8 status table,
 ``metadata.json`` mirroring the same status payload, and

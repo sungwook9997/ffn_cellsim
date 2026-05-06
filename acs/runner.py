@@ -64,7 +64,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     layer5 = cfg.get("layer5", {})
     layer6 = cfg.get("layer6", {})
     # Stage 2 Layer 6 chemistry/ECM remodeling ??minimal scope per
-    # docs/stage2_sanity.md. PI full authorisation 2026-04-29.
+    # docs/v1/stage2_sanity.md. PI full authorisation 2026-04-29.
     # PARTIAL Magic-Number Block analogous to 瓘_star Option 慣' / 慣_osm /
     # gravity_star precedent (Egeblad-Werb 2002 IF 70 + Lu 2011 IF 113
     # framework anchored, dimensionless rates derived from cited
@@ -84,7 +84,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     gamma_max_star = float(layer4.get("gamma_max_star", 0.0))
     gamma_min_star = float(layer4.get("gamma_min_star", 0.0))
     # Stage 1d.b Marangoni Mechanism A + F (per
-    # docs/stage1d_b_marangoni_sanity.md). Default OFF (alpha_A = 0,
+    # docs/v1/stage1d_b_marangoni_sanity.md). Default OFF (alpha_A = 0,
     # alpha_F = 0) ??recovers legacy 款(?) static map even with
     # dynamic_gamma=True.
     layer4_dynamic_gamma = bool(layer4.get("dynamic_gamma", False))
@@ -92,12 +92,12 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     alpha_A_star = float(layer4.get("alpha_A_star", 0.0))
     alpha_F_star = float(layer4.get("alpha_F_star", 0.0))
     # Stage 1a++.b stochastic boundary events (per
-    # docs/stage1a_pp_b_stochastic_sanity.md).
+    # docs/v1/stage1a_pp_b_stochastic_sanity.md).
     layer2_b_enabled = bool(layer2_b.get("enabled", False))
     lambda_lam_star = float(layer2_b.get("lambda_lam_star", 0.0))
     impulse_lam_star = float(layer2_b.get("impulse_lam_star", 0.0))
     # Stage 1d.c ECM communication + protrusion state machine (per
-    # docs/stage1d_c_ecm_communication_sanity.md).
+    # docs/v1/stage1d_c_ecm_communication_sanity.md).
     layer7_enabled = bool(layer7.get("enabled", False))
     eta_ecm_star = float(layer7.get("eta_ecm_star", 5.0))
     G_ecm_star = float(layer7.get("G_ecm_star", 1.0))
@@ -113,7 +113,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     beta_ecm_star = float(layer7.get("beta_ecm_star", 0.5))
     beta_traction_star = float(layer7.get("beta_traction_star", 0.5))
     protrusion_speed_cap_star = float(layer7.get("protrusion_speed_cap_star", 0.06))
-    # Stage 1b.b (PI directive 2026-04-29 per docs/layer3_phi_audit.md):
+    # Stage 1b.b (PI directive 2026-04-29 per docs/v1/layer3_phi_audit.md):
     # `layer3_spatial_S` is DEPRECATED in favour of the ?_memory + c_act
     # split (intrinsically encodes contact-band gating in c_act ODE
     # while preserving formation memory). The flag is read for backwards
@@ -136,7 +136,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     # Stage 1c Layer 5 mechano-osmotic Tier 2 (per
     # docs/08_mechano_osmotic.md framework citing Guo PNAS 2017 IF 12 +
     # Venkova eLife 2022). PI full authorisation 2026-04-29 covers PARTIAL
-    # Magic-Number Block on the ODE constants per docs/stage1c_sanity.md.
+    # Magic-Number Block on the ODE constants per docs/v1/stage1c_sanity.md.
     layer5_enabled = bool(layer5.get("enabled", False))
     rho_osm_initial = float(layer5.get("rho_osm_initial", 1.0))
     alpha_osm_star = float(layer5.get("alpha_osm_star", 0.0))
@@ -147,7 +147,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     # (PARTIAL Magic-Number Block per 瓘_star Option 慣' precedent;
     # framework anchored to Stewart Nature 2011 IF 65 cell density,
     # value framed as a body-force coefficient under the overdamped
-    # solver's 刮_star = 1 calibration). See docs/path_c_sanity.md.
+    # solver's 刮_star = 1 calibration). See docs/v1/path_c_sanity.md.
     gravity_star = float(gravity.get("gravity_star", 0.0))
     # Stage 1a++ Layer 2 active stress (Option 慣' resolution 2026-04-29):
     # 瓘/K dimensionless ratio, no Pa claim. K is anchored to Fischer-
@@ -157,7 +157,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     zeta_star = float(layer2.get("zeta_star", 0.0))
     # Stage 1b Layer 3 ?-ODE (PI full authorisation 2026-04-29):
     # Cho et al. 2020 mechanism, Halbleib & Nelson 2006, Hynes 2002 framework.
-    # See docs/stage1b_layer3_sanity.md and docs/03_adhesion_dynamics.md.
+    # See docs/v1/stage1b_layer3_sanity.md and docs/03_adhesion_dynamics.md.
     layer3_enabled = bool(layer3.get("enabled", False))
     phi_initial = float(layer3.get("phi_initial", 0.05))
     k_plus_star = float(layer3.get("k_plus_star", 0.0))
@@ -167,7 +167,7 @@ def _solver_cfg_from_yaml(cfg: dict) -> SolverConfig:
     # Stage 1a+ Option 棺: substrate adhesion energy is anchored to Ca_cc
     # via the sweep multiplier 慣 (Ma챤tre Science 2012, IF 47, anchors
     # 款_cc; 慣 is parameter-free at result level ??see
-    # docs/stage1a_plus_substrate_sanity.md 짠"Option 棺 addendum"
+    # docs/v1/stage1a_plus_substrate_sanity.md 짠"Option 棺 addendum"
     # Magic-Number Block). The dimensionless substrate adhesion is then
     #   款_sub_star = 慣 쨌 款_cc_star = 慣 쨌 Ca_cc 쨌 K_star 쨌 radius_star.
     # Default 慣 = 0 recovers Option 慣 (mechanical anchor only, 款_sub = 0).
@@ -334,7 +334,7 @@ def run_stage1a(config_path: Path | str) -> Path:
         # Stage 1a+ Option 慣: place spheroid in contact with the rigid
         # substrate at z = 0. Spheroid centre at z* = R? ??bottommost
         # particle at z* = 0. No free-fall transient (no gravity at this
-        # stage; see docs/stage1a_plus_substrate_sanity.md scope 짠).
+        # stage; see docs/v1/stage1a_plus_substrate_sanity.md scope 짠).
         centre = np.array(
             [solver_cfg.domain_star * 0.5,
              solver_cfg.domain_star * 0.5,
@@ -393,7 +393,7 @@ def run_stage1a(config_path: Path | str) -> Path:
             "(framework anchored to Stewart Nature 2011 IF 65 cell density "
             "??1.05 g/cm쨀, ?_medium ??1.00 g/cm쨀; specific value framed as "
             "body-force coefficient under overdamped 刮_star = 1 calibration "
-            "per docs/path_c_sanity.md Magic-Number Block PARTIAL "
+            "per docs/v1/path_c_sanity.md Magic-Number Block PARTIAL "
             "resolution; PI full authorisation 2026-04-29).",
             solver_cfg.gravity_star,
         )
@@ -403,7 +403,7 @@ def run_stage1a(config_path: Path | str) -> Path:
             "慣_MMP_star=%.4e, 棺_deg_star=%.4e, ecm_strength_initial=%.3f, "
             "ecm_strength_min=%.3f (Egeblad-Werb 2002 Nat Rev Cancer "
             "IF 70 + Lu 2011 Nat Rev Mol Cell Biol IF 113 framework "
-            "anchors per docs/stage2_sanity.md PARTIAL Magic-Number "
+            "anchors per docs/v1/stage2_sanity.md PARTIAL Magic-Number "
             "Block; PI full authorisation 2026-04-29).",
             solver_cfg.alpha_mmp_star, solver_cfg.beta_deg_star,
             solver_cfg.ecm_strength_initial, solver_cfg.ecm_strength_min,
@@ -514,15 +514,15 @@ def run_stage1a(config_path: Path | str) -> Path:
     # mechanism (Sanity-Gate check 6, measurement-protocol consistency). One row
     # per (frame, radial bin); read by analysis to verify the equilibrium
     # ?_kernel(r/R?) profile is flat across the bulk shell rather than
-    # surface-only. Specification: docs/stage1a_interior_pressure_sanity.md
-    # 짠6 (e) and docs/outcomes_v15.md.
+    # surface-only. Specification: docs/v1/stage1a_interior_pressure_sanity.md
+    # 짠6 (e) and docs/v1/outcomes_v15.md.
     shell_rows: list[dict[str, Any]] = []
     SHELL_N_BINS = 10
     SHELL_R_MAX_FRAC = 1.2
     # Stage 1a+ Option 慣 (款_sub = 0): per-frame substrate diagnostics
     # (anchor force balance, contact-band ?_kernel, contact area, apparent
     # contact angle). Written to contact_metrics.csv. Specification:
-    # docs/stage1a_plus_substrate_sanity.md and docs/outcomes_stage1a_plus.md.
+    # docs/v1/stage1a_plus_substrate_sanity.md and docs/v1/outcomes_stage1a_plus.md.
     contact_rows: list[dict[str, Any]] = []
     step_times: list[float] = []
     halted = False
@@ -798,7 +798,7 @@ def run_stage1a(config_path: Path | str) -> Path:
     # v15 shell-density witness CSV (long format: one row per (frame, bin)).
     # Read by analysis to plot ?_kernel(r/R?) profile over time and verify
     # the v15 bulk-transmission mechanism. See
-    # docs/stage1a_interior_pressure_sanity.md 짠6 (e).
+    # docs/v1/stage1a_interior_pressure_sanity.md 짠6 (e).
     shell_path = out_dir / "shell_profile.csv"
     if shell_rows:
         keys = list(shell_rows[0].keys())
@@ -808,7 +808,7 @@ def run_stage1a(config_path: Path | str) -> Path:
             w.writerows(shell_rows)
 
     # Stage 1a+ Option 慣 substrate diagnostics CSV (one row per frame).
-    # Specification: docs/outcomes_stage1a_plus.md 짠"Files of record".
+    # Specification: docs/v1/outcomes_stage1a_plus.md 짠"Files of record".
     if contact_rows:
         contact_path = out_dir / "contact_metrics.csv"
         keys = list(contact_rows[0].keys())
@@ -888,7 +888,7 @@ def run_stage1a(config_path: Path | str) -> Path:
     ))
 
     # Momentum drift gate ??Option F Week 2 contract change (per
-    # docs/horizontal_momentum_drift_investigation.md, PI-authorised
+    # docs/v1/horizontal_momentum_drift_investigation.md, PI-authorised
     # 2026-04-29). The previous denominator m 쨌 max(v_rms, V_FLOOR=1e-3)
     # collapses to the V_FLOOR scale in overdamped equilibrium, putting the
     # required |?p| below the f32 grain noise floor for ~5e3 particles 횞
@@ -974,7 +974,7 @@ def run_stage1a(config_path: Path | str) -> Path:
         ))
     else:
         # Path C extension: when gravity is active, include U_grav in the
-        # energy-monotone sum (per docs/path_c_sanity.md check 3 contract
+        # energy-monotone sum (per docs/v1/path_c_sanity.md check 3 contract
         # extension). When gravity_star == 0, the term is identically zero
         # and the sum is identical to the original Stage 1a baseline.
         energies = np.array([
@@ -1020,19 +1020,19 @@ def run_stage1a(config_path: Path | str) -> Path:
         # (i) R drift improvement vs Stage 1a v15 baseline (24.4%). This is a
         # *relative-improvement* gate, not an absolute tolerance: the substrate
         # must do *some* mechanical work. See
-        # docs/outcomes_stage1a_plus.md 짠"Bounded outcomes".
+        # docs/v1/outcomes_stage1a_plus.md 짠"Bounded outcomes".
         v15_baseline = float(g.get("v15_R_drift_baseline", 0.244))
         if not np.isnan(R_drift):
             results.append(GateResult(
                 "R drift improvement vs v15 baseline",
                 R_drift < v15_baseline,
                 f"R_drift_1aplus = {R_drift:.3f} vs v15 baseline {v15_baseline:.3f} "
-                f"(strict-less requirement; bucketing ??docs/outcomes_stage1a_plus.md)",
+                f"(strict-less requirement; bucketing ??docs/v1/outcomes_stage1a_plus.md)",
             ))
 
         # (ii) Anchor force balance: substrate reaction = compressive bulk
         # pressure + gravity (Option F Week 2 contract change, per
-        # docs/anchor_force_balance_investigation.md).
+        # docs/v1/anchor_force_balance_investigation.md).
         # F_substrate ??F_compressive + F_gravity_band; tolerance ??0.20.
         rel_errs_after = [
             r.get("anchor_force_balance_rel_err", float("nan"))
@@ -1087,7 +1087,7 @@ def run_stage1a(config_path: Path | str) -> Path:
         # (iv) R drift improvement vs Stage 1a+ Option 棺 慣=1.0 baseline
         # (= 0.247, the best-anchored Layer-1+substrate result). Stage
         # 1a++ must improve on this to demonstrate Layer 2 contribution.
-        # See docs/outcomes_stage1a_plus_plus.md 짠"Mechanism question".
+        # See docs/v1/outcomes_stage1a_plus_plus.md 짠"Mechanism question".
         beta_alpha1_baseline = float(g.get("stage1a_plus_beta_alpha1_R_drift_baseline", 0.247))
         if not np.isnan(R_drift):
             results.append(GateResult(
@@ -1095,7 +1095,7 @@ def run_stage1a(config_path: Path | str) -> Path:
                 R_drift < beta_alpha1_baseline,
                 f"R_drift_1aplusplus = {R_drift:.3f} vs 棺 慣=1.0 baseline "
                 f"{beta_alpha1_baseline:.3f} (strict-less; bucketing ??"
-                f"docs/outcomes_stage1a_plus_plus.md)",
+                f"docs/v1/outcomes_stage1a_plus_plus.md)",
             ))
 
         # (v) Boundary-tag stability: |?n_boundary / n_boundary| per frame
@@ -1136,7 +1136,7 @@ def run_stage1a(config_path: Path | str) -> Path:
         n_p = float(solver_cfg.n_particles)
         if solver_cfg.layer3_split:
             # Stage 1b.b (PI directive 2026-04-29 per
-            # docs/layer3_phi_audit.md 짠5): the legacy F9 "? trajectory
+            # docs/v1/layer3_phi_audit.md 짠5): the legacy F9 "? trajectory
             # toward predicted ?_eq" is DEPRECATED ??it compared global
             # <?> against the boundary-only ?_eq (category error) AND
             # the v11 spatial S=0 interior decay erased formation
@@ -1311,7 +1311,7 @@ def run_stage1a(config_path: Path | str) -> Path:
 
         # (iii) A/A?_topdown trajectory finite & non-pathological.
         # Option F Week 2 contract change (per CLAUDE.md Hard Rule 11 +
-        # docs/gate_fail_taxonomy.md F8): the previous gate measured
+        # docs/v1/gate_fail_taxonomy.md F8): the previous gate measured
         # contact_area_xy_hull, which is the *substrate-contact patch*
         # (depopulates on lift-off ??artefactual A/A? ??0 even when the
         # spheroid is intact). The PI experimental measurement is a top-
@@ -1386,7 +1386,7 @@ def run_stage1a(config_path: Path | str) -> Path:
     # threshold 0.95 was correct for free-floating relaxation but
     # incompatible with substrate spreading: under Stage 1a+ and beyond,
     # the spheroid *must* deform (Codex review item 6 in
-    # docs/codex_review_synthesis.md; F6 in docs/gate_fail_taxonomy.md).
+    # docs/codex_review_synthesis.md; F6 in docs/v1/gate_fail_taxonomy.md).
     # Threshold is now stage-aware:
     #   - Stage 1a (no substrate)            : sphericity_min (default 0.95)
     #   - Stage 1a+ and beyond (substrate)   : sphericity_min_post_spread

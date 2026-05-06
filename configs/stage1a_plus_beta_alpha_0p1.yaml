@@ -4,8 +4,8 @@
 # difference vs Option α is `substrate.gamma_sub_alpha` > 0; the runner
 # computes γ_sub_star = α · Ca_cc · K_star · radius_star and the solver
 # applies the substrate CSF impulse from `_grid_op_overdamped`. See
-# docs/stage1a_plus_substrate_sanity.md §"Option β addendum" and
-# docs/outcomes_stage1a_plus.md §"Option β addendum".
+# docs/v1/stage1a_plus_substrate_sanity.md §"Option β addendum" and
+# docs/v1/outcomes_stage1a_plus.md §"Option β addendum".
 
 run:
   name: stage1a_plus_beta_alpha_0p1

@@ -1,6 +1,6 @@
 # Stage 1d.b pilot — Marangoni Mechanism A + F (Lam4 1k 4hr).
-# Per PI directive 2026-04-29 (docs/marangoni_review.md +
-# docs/stage1d_b_marangoni_sanity.md). Inherits Stage 1b.b φ_memory
+# Per PI directive 2026-04-29 (docs/v1/marangoni_review.md +
+# docs/v1/stage1d_b_marangoni_sanity.md). Inherits Stage 1b.b φ_memory
 # + c_act split. Adds dynamic γ_p ODE with conservative non-zero
 # Mechanism A (α_A) + Mechanism F (α_F) coefficients to test their
 # qualitative effect.

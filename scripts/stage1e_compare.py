@@ -3,7 +3,7 @@
 Reads the existing Stage 1d 3D pilot result (Sim B), runs the analytical
 Sim A 1D radial ODE on the same time grid, fits A/A₀ = a + b/R + c/R² to
 both, computes comparison metrics, classifies into Bucket E1/E2/E3/E4 per
-`docs/outcomes_stage1e.md`, and writes a report.
+`docs/v1/outcomes_stage1e.md`, and writes a report.
 
 Usage:
 
@@ -37,7 +37,7 @@ def _load_sim_b_trajectory(metrics_csv: Path) -> dict:
     """Load Sim B (Stage 1d pilot) trajectory from metrics.csv.
 
     Reconciles A/A₀ measurement to match Sim A's circular-area
-    convention (per docs/stage1e_sanity.md check 6): use
+    convention (per docs/v1/stage1e_sanity.md check 6): use
     R_eff_xy = √(A_hull / π) as the effective spreading radius.
     """
     rows = []
@@ -201,7 +201,7 @@ def main() -> int:
         "",
         f"## Bucket classification: **{cmp['bucket']}**",
         "",
-        "Per `docs/outcomes_stage1e.md`:",
+        "Per `docs/v1/outcomes_stage1e.md`:",
         "- E1: Sim A reproduces Sim B (radial reduction valid) — all (a,b,c) ≤ 25% deviation, RMS ≤ 0.10, Pearson ≥ 0.90",
         "- E2: partial agreement — at least one of (a,b,c) within 25% but at least one > 50%, OR RMS in [0.10, 0.30]",
         "- E3: large difference (anisotropy / 3D-only physics important) — RMS > 0.30 OR Pearson < 0.50 OR all (a,b,c) > 50%",
@@ -240,7 +240,7 @@ def main() -> int:
         f"- `fits.json` — all (a,b,c), trajectory data, comparison metrics",
         f"- `report.md` — this report",
         "",
-        "Stop conditions per `docs/outcomes_stage1e.md`. Stage 2 / 1e.b / inherited",
+        "Stop conditions per `docs/v1/outcomes_stage1e.md`. Stage 2 / 1e.b / inherited",
         "fixes auto-entry FORBIDDEN; PI input required.",
     ]
     (out_dir / "report.md").write_text("\n".join(report), encoding="utf-8")

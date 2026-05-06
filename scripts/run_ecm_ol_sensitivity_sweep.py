@@ -2,8 +2,8 @@
 closed-loop ECM gate phased plan) and persist artifacts to a
 UTC-timestamped directory under ``runs/``.
 
-Per ``docs/v2_ecm_ol_sweep_sanity_gate.md`` and the locked phased
-plan (``docs/v2_closed_loop_ecm_gate_phased_plan_locked.md`` §1
+Per ``docs/v2/v2_ecm_ol_sweep_sanity_gate.md`` and the locked phased
+plan (``docs/v2/v2_closed_loop_ecm_gate_phased_plan_locked.md`` §1
 Phase C), this is **open-loop sweep baseline** evidence — it
 varies ``(grid_n, spacing_um, dt_s)`` over the four ECM-OL
 preflight functions and records per-tuple per-channel summary

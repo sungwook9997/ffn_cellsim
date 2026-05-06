@@ -1,9 +1,9 @@
 """FA→ECM bilinear single-point scatter (Hard Blocker #3).
 
 Implements the locked Hard Blocker #3 design from
-``docs/v2_hard_blocker_3_fa_to_ecm_scattering_locked.md`` and the
+``docs/v2/v2_hard_blocker_3_fa_to_ecm_scattering_locked.md`` and the
 pre-execution Sanity Gate
-``docs/v2_fa_to_ecm_scattering_sanity_gate.md``: a pure function
+``docs/v2/v2_fa_to_ecm_scattering_sanity_gate.md``: a pure function
 that bilinearly scatters per-FA cell-on-substrate traction onto the
 ECM grid as a vector traction-density field in ``nN/μm²``.
 
@@ -28,7 +28,7 @@ Sanity Gate scope (acs/v2/dynamics/fa_to_ecm_scattering.py):
 - §1 dimensional: per-FA per-cell ``[nN] · [dimensionless] /
   [μm²] = [nN/μm²]``. Single Rule 10 chain with no per-volume vs
   per-area mismatch. Spelled out in
-  ``docs/v2_fa_to_ecm_scattering_sanity_gate.md`` §1.
+  ``docs/v2/v2_fa_to_ecm_scattering_sanity_gate.md`` §1.
 - §2 boundary: every failure_kind from the Sanity Gate §2 is
   raised before any state computation; ``ecm.validate()`` runs at
   function entry per the local dynamics precedent
@@ -90,7 +90,7 @@ class FAToECMScatteringError(ValueError):
 def _boundary_tol_um(ecm: ECMSubstrateState) -> float:
     """Recompute the numerical tie-break tolerance per ECM call so
     the inclusion check stays grid-invariant in relative terms.
-    Documented in ``docs/v2_fa_to_ecm_scattering_sanity_gate.md`` §1."""
+    Documented in ``docs/v2/v2_fa_to_ecm_scattering_sanity_gate.md`` §1."""
 
     nx, ny = ecm.grid_shape
     dx = float(ecm.spacing_um)
@@ -108,7 +108,7 @@ def scatter_fa_traction_to_ecm_bilinear(
     accepted as a runtime convenience (matching the
     ``step_focal_adhesions_static`` precedent), but the strict
     contract is the tuple form per
-    ``docs/v2_hard_blocker_3_fa_to_ecm_scattering_locked.md`` §1.
+    ``docs/v2/v2_hard_blocker_3_fa_to_ecm_scattering_locked.md`` §1.
 
     Returns an ``(nx, ny, 2)`` float64 array in ``nN/μm²``. The
     function is pure: ``ecm`` is not mutated, no accumulator is

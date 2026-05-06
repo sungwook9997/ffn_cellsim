@@ -10,7 +10,7 @@ Phase F minimal Y4 guard preserved: this is a NEW pathway, not a
 patch to ``step_phase_f_minimal_motility``. HB#4 multipliers used as
 per-rate scalers ONLY.
 
-Locked at ``docs/v2_phase_f_proper_1_fa_rate_response_locked.md``
+Locked at ``docs/v2/v2_phase_f_proper_1_fa_rate_response_locked.md``
 (commit ``89d6ddc``, Y1-Y20 reasoned-acceptance trace, A-tier full
 debate output).
 

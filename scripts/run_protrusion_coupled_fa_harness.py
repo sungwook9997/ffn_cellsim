@@ -18,7 +18,7 @@ Scenarios are caller-supplied test inputs only — no model defaults,
 no biology decisions, no RNG. The script exists to make the 6.3b
 wrapper visible to PI in a browser, not to claim a physical
 interpretation. Reference biology multipliers from
-``docs/v2_63b_protrusion_coupling_locked.md`` §3 are used as test
+``docs/v2/v2_63b_protrusion_coupling_locked.md`` §3 are used as test
 inputs for the boost scenario; the script keeps them inline as
 explicit test values, NOT as production defaults.
 

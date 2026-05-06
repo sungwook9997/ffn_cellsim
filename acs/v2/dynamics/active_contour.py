@@ -1,7 +1,7 @@
 """Active contour dynamics: cortex + area forces and overdamped Euler step.
 
 Implements the locked P1 alpha force law from
-``docs/v2_p1_derivation_locked.md`` §1, §2, §3 and the runtime contract
+``docs/v2/v2_p1_derivation_locked.md`` §1, §2, §3 and the runtime contract
 from §4. The schema layer (``acs.v2.active_contour``) owns the
 parameter contract and the analytic Gershgorin rate bound; this
 module only computes per-vertex forces and advances the state by one
@@ -27,7 +27,7 @@ Sanity Gate scope (dynamics/active_contour.py):
   form is contractile (regular polygon shrinks under cortex-only).
   Area force per the gradient form pushes outward when ``A < A_0``
   and inward when ``A > A_0``. Both are unit-tested in
-  ``tests/test_v2_active_contour_dynamics.py``.
+  ``tests/v2/test_v2_active_contour_dynamics.py``.
 - §6 measurement-protocol consistency: Hard Rule 11. The post-step
   validation routes through ``MeasurementBoundary.from_array`` so
   the canonical world_um_y_up CCW polygon is enforced after every
@@ -65,7 +65,7 @@ class ActiveContourStepError(RuntimeError):
 def compute_cortex_forces(state: ActiveContourState) -> np.ndarray:
     """Per-vertex cortex force ``F_i^c = λ_c · (t_i − t_{i−1})`` in nN.
 
-    Locked form from ``docs/v2_p1_derivation_locked.md`` §1: cortex
+    Locked form from ``docs/v2/v2_p1_derivation_locked.md`` §1: cortex
     energy ``E_c = λ_c · P`` with perimeter ``P``; the variational
     derivative gives a vertex force equal to the change in unit
     tangents at that vertex. The form never computes a curvature
@@ -93,7 +93,7 @@ def compute_cortex_forces(state: ActiveContourState) -> np.ndarray:
 def compute_area_forces(state: ActiveContourState) -> np.ndarray:
     """Per-vertex area-restoring force ``F_i^A = -p_A · ∇_i A`` in nN.
 
-    Locked form from ``docs/v2_p1_derivation_locked.md`` §2 with
+    Locked form from ``docs/v2/v2_p1_derivation_locked.md`` §2 with
     pressure-like scalar ``p_A = K_A · (A − A_0) / A_0`` and area
     gradient ``∇_i A = ½ (y_{i+1} − y_{i−1}, x_{i−1} − x_{i+1})``.
 

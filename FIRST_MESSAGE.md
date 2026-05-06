@@ -41,8 +41,9 @@ ActiveCellSim/
 
 ## 너의 첫 작업
 1. `CLAUDE.md`만 먼저 읽어 (200줄 이하, 전체 onboarding).
-2. 그 다음 `docs/10_dev_roadmap.md`만 읽어 — Stage 0 시작이야.
-3. 다른 docs는 **필요할 때만** 읽어 (Progressive Disclosure 원칙). 한꺼번에 다 로드하지 마.
+2. `STRUCTURE.md` 한번 훑어 — v1/v2/shared 파일 분류 map.
+3. 그 다음 `docs/v2/10_dev_roadmap_v2.md` 읽어 (v2 active). v1 history가 필요하면 `docs/v1/10_dev_roadmap.md`.
+4. 다른 docs는 **필요할 때만** 읽어 (Progressive Disclosure 원칙). 한꺼번에 다 로드하지 마.
 
 ## 핵심 제약 (절대 어기지 마)
 - 실험 데이터 (`data/experimental/*.csv`) 는 **fitting 금지**, 시각화 오버레이만 허용
@@ -57,14 +58,14 @@ ActiveCellSim/
 - **너 (Claude Code Terminal)**: 환경 셋업, 시뮬 실행, GPU 모니터링, 배치 운영 — execution
 
 ## 시작 명령
-Stage 0 (환경 셋업)부터 시작해. `docs/10_dev_roadmap.md`의 Stage 0 체크리스트를 따라.
+v2 active. `docs/v2/10_dev_roadmap_v2.md`의 active phase부터 진행. v1 Stage 0 절차는 `docs/v1/10_dev_roadmap.md` 참조.
 
 질문은 작업 진행 중에 막힐 때만. 일반적으로는 자율 판단해서 진행해. 막연한 결정이 필요할 때만 확인 요청.
 
 준비 됐으면:
 1. `CLAUDE.md` 읽기 → 한 줄로 "WHY/WHAT/HOW 이해됨" 확인
-2. `docs/10_dev_roadmap.md` Stage 0 읽기
-3. Stage 0 시작 (requirements.txt, conda env, Taichi GPU 검증, configs/ 폴더, 등)
+2. `STRUCTURE.md`로 v1/v2/shared 분류 map 확인
+3. `docs/v2/10_dev_roadmap_v2.md` 현재 phase 확인 후 진행
 
 시작해줘.
 

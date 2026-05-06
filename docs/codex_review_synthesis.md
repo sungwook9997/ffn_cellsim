@@ -1,7 +1,7 @@
 # Codex external review — synthesis with Marangoni review (2026-04-29)
 
 External reviewer (Codex) provided a 10-item gap analysis. Cross-
-referenced with `docs/marangoni_review.md` (committed d0a7d99) and
+referenced with `docs/v1/marangoni_review.md` (committed d0a7d99) and
 current Production Lam4 gate state. This document is the consolidated
 PI decision input. Review-only; no code changes.
 
@@ -165,13 +165,13 @@ the reviewer's list. Without taxonomy, every gate FAIL is ambiguous,
 and the cumulative claim "framework reproduces phenotype ordering" is
 unfalsifiable in a referee context.
 
-**Action implication**: write `docs/gate_fail_taxonomy.md` *before*
+**Action implication**: write `docs/v1/gate_fail_taxonomy.md` *before*
 any further code. Classify every current FAIL into the three
 categories. This is a 1–2 day documentation task with no code risk.
 
 ### Item 7 — Documentation / actual state mismatch
 
-Reviewer: `docs/10_dev_roadmap.md` Stage 0 says "not yet started"
+Reviewer: `docs/v1/10_dev_roadmap.md` Stage 0 says "not yet started"
 (verified line 7 says Stage 0 — but lines 23–28 do mark it complete;
 the rest of the roadmap is stale though). `SESSION_HANDOFF.md` and
 stage outcomes documents are scattered.
@@ -242,7 +242,7 @@ Reviewer's 4-tier registry:
 Currently Magic-Number-Block PARTIAL pattern (v15 ρ_floor, etc.) is
 the closest thing we have, but it is per-decision not per-parameter.
 
-**Synthesis**: writing `docs/parameter_registry.md` consolidates Magic-
+**Synthesis**: writing `docs/v1/parameter_registry.md` consolidates Magic-
 Number-Block PARTIAL entries into a single auditable table. 1 day of
 work, blocks nothing.
 
@@ -385,11 +385,11 @@ PI input required. No code changes pending decision. Auto-STOP.
 These would proceed without PI action since they are documentation
 and investigation only:
 
-- [ ] `docs/gate_fail_taxonomy.md` (new)
-- [ ] `docs/parameter_registry.md` (new)
-- [ ] `docs/10_dev_roadmap.md` refresh through Stage 2
+- [ ] `docs/v1/gate_fail_taxonomy.md` (new)
+- [ ] `docs/v1/parameter_registry.md` (new)
+- [ ] `docs/v1/10_dev_roadmap.md` refresh through Stage 2
 - [ ] `docs/SESSION_HANDOFF.md` consolidation
-- [ ] `docs/production_lam4_finding.md` labeling fix (top-down vs
+- [ ] `docs/v1/production_lam4_finding.md` labeling fix (top-down vs
   contact_xy_hull)
 - [ ] Anchor force balance root-cause analysis (no code change yet)
 - [ ] Horizontal momentum drift root-cause analysis (no code change yet)

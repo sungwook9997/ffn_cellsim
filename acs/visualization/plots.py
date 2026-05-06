@@ -550,7 +550,7 @@ def plot_production_bucket_classification(
 ) -> Path:
     """Visual representation of production bucket P1/P2/P3/P4 boundaries.
 
-    Bands per docs/production_lam4_outcomes.md:
+    Bands per docs/v1/production_lam4_outcomes.md:
     - P1 [4.0, 33.1]: time-budget was sufficient cause; framework reaches PI range
     - P2 [2.5, 4.0]: time + mechanism both contribute; partial reproduction
     - P3 [< 2.5]: mechanism-missing; framework asymptotes below PI range

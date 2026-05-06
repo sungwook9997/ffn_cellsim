@@ -164,7 +164,7 @@ def shell_density_profile(
 
     Sanity-Gate check 6 (measurement-protocol consistency) witness for the
     v15 (k.3) bulk-transmission mechanism. The proposal in
-    `docs/stage1a_interior_pressure_sanity.md` predicts that, at equilibrium,
+    `docs/v1/stage1a_interior_pressure_sanity.md` predicts that, at equilibrium,
     the kernel-density `ρ_kernel(r/R₀)` profile is **flat** across the bulk
     (ρ ≈ ρ_eq ≈ 1.03·ρ_ref) and only deviates in the surface band. A
     surface-only peaked profile (with bulk ρ ≈ ρ_ref unchanged) would

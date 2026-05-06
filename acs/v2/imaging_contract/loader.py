@@ -175,7 +175,7 @@ class ImagingInputContractValidationResult:
 
 def load_imaging_contract(path: str | Path) -> ImagingInputContract:
     """Load a V2-1 imaging input YAML contract per locked schema
-    ``docs/v2_layer_1_imaging_input_contract_locked.md``."""
+    ``docs/v2/v2_layer_1_imaging_input_contract_locked.md``."""
 
     yaml_path = Path(path)
     payload = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))

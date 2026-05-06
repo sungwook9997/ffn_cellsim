@@ -3,10 +3,10 @@
 # Carrier: Layer 1 v15 + Stage 1a+ Option β α=1.0 + Stage 1a++ Layer 2
 # ζ=0.4 + Stage 1b Layer 3 φ-ODE (Pre default phenotype, φ_initial=0.55)
 # + Path C effective gravity (g_star=0.01, recalibrated from Path C
-# baseline 0.1 per docs/path_c_sanity.md dimensional self-correction).
+# baseline 0.1 per docs/v1/path_c_sanity.md dimensional self-correction).
 # Layer 5 entry: K(ρ_osm) coupling only (η, σ_active deferred).
 #
-# Per docs/stage1c_sanity.md and docs/outcomes_stage1c.md.
+# Per docs/v1/stage1c_sanity.md and docs/v1/outcomes_stage1c.md.
 # PI full authorisation 2026-04-29.
 
 run:

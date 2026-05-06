@@ -1,9 +1,9 @@
 """ECM→FA bias target (Hard Blocker #4) — Phase D no-op default.
 
 Implements the locked Hard Blocker #4 design from
-``docs/v2_hard_blocker_4_ecm_to_fa_bias_target_locked.md`` and the
+``docs/v2/v2_hard_blocker_4_ecm_to_fa_bias_target_locked.md`` and the
 pre-execution Sanity Gate
-``docs/v2_ecm_to_fa_bias_sanity_gate.md``: a pure read function
+``docs/v2/v2_ecm_to_fa_bias_sanity_gate.md``: a pure read function
 that bilinearly samples ECM fields at FA positions plus a pure
 neutral function that returns all-1.0 per-FA per-rate multipliers
 (Phase D no-op default).
@@ -14,8 +14,8 @@ The module deliberately does **not**:
 - compute non-1.0 multipliers via :func:`compute_ecm_to_fa_bias_neutral`
   (non-1.0 multipliers are available **only** through the explicit
   :func:`compute_ecm_to_fa_bias_active` entry point — locked at
-  ``docs/v2_hard_blocker_4_active_locked.md``, Sanity Gated at
-  ``docs/v2_hard_blocker_4_active_sanity_gate.md``; function-naming
+  ``docs/v2/v2_hard_blocker_4_active_locked.md``, Sanity Gated at
+  ``docs/v2/v2_hard_blocker_4_active_sanity_gate.md``; function-naming
   separation preserves the silent-activation guard);
 - mutate ``traction_scale_nN`` (locked phased plan §3
   effective-stiffness guard);
@@ -31,8 +31,8 @@ The module deliberately does **not**:
 
 The HB#4-active variant ``compute_ecm_to_fa_bias_active`` is now also
 defined in this module (Phase E v2 step 1; locked at
-``docs/v2_hard_blocker_4_active_locked.md``, Sanity Gated at
-``docs/v2_hard_blocker_4_active_sanity_gate.md``). Function-naming
+``docs/v2/v2_hard_blocker_4_active_locked.md``, Sanity Gated at
+``docs/v2/v2_hard_blocker_4_active_sanity_gate.md``). Function-naming
 separation preserves the silent-activation guard: a caller cannot
 trigger active behavior through ``compute_ecm_to_fa_bias_neutral``;
 the two variants are distinct entry points with distinct validation

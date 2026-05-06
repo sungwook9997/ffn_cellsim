@@ -1,9 +1,9 @@
 """V2 Phase E v1 Item 5 sweep harness — ECM-side sensitivity evidence.
 
 Implements the locked Item 5 sweep harness design from
-``docs/v2_item_5_sweep_harness_locked.md`` (commit ``c5634d5``)
+``docs/v2/v2_item_5_sweep_harness_locked.md`` (commit ``c5634d5``)
 and the impl-work Sanity Gate
-``docs/v2_item_5_sweep_harness_sanity_gate.md`` (commits
+``docs/v2/v2_item_5_sweep_harness_sanity_gate.md`` (commits
 ``338be1b`` + ``19825e9`` + ``774d963``; Codex Sanity Gate PASS
 at ``id=1587``).
 
