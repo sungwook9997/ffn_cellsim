@@ -1,5 +1,26 @@
 # V2 Phase 1 Alpha Implementation Brief
 
+> ⚠️ **STATUS: SUPERSEDED HANDOFF — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2659`, codex approval `mcp_msg:2660`).
+>
+> This was the 2026-05-03 overnight Project alpha implementation
+> handoff, **not current implementation routing**. Project alpha
+> P0/P1 work landed, and post-alpha implementation has progressed
+> substantially through later lock/audit chains.
+>
+> The old source-of-truth pointer to
+> `docs/v2/v2_phase1_plan_consolidated.md` is historical; that
+> consolidated plan is itself banner-marked as **not the current implementation source of truth**
+> (commit `97b6cc2`).
+>
+> For current state, use
+> `docs/v2/v2_current_build_state.md` (refreshed 2026-05-06,
+> commit `da581cd`).
+>
+> Older P0/P1 task lists and Non-Scope items below are retained as
+> **historical handoff context** and must not be used as **current routing status**.
+
 Date: 2026-05-03 KST
 Source of truth: `docs/v2/v2_phase1_plan_consolidated.md`
 Scope: overnight Project alpha handoff to implementation-work
