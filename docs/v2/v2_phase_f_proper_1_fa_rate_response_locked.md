@@ -1,5 +1,23 @@
 # V2 Phase F Proper-1: ECM-Modulated FA Rate Response — Locked Design
 
+> ⚠️ **STATUS: WIP HALTED** (added 2026-05-06 KST after Option A+B
+> restructure post-merge audit, claude-work `mcp_msg:2550`, codex
+> approval `mcp_msg:2551`).
+>
+> Implementation coherent but untested; lock §4/§5 test catalog is
+> not implemented; Phase F proper resume requires explicit PI
+> directive after Option 1 pivot. The module
+> `acs/v2/dynamics/fa_rate_response.py` was landed as "coherent,
+> untested" in commit `a1d97e8` per Codex `id=2196` STOP directive
+> (PI Option 1 pivot — vertical 5-layer framework completion takes
+> priority over Phase F follow-ups). Lock `89d6ddc` remains useful
+> as design / implementation reference and is **not retracted** —
+> only halted before test implementation. Imports / exports through
+> `acs/v2/dynamics/__init__.py` and `acs/v2/__init__.py` are wired
+> but the function `step_fa_rate_response` has zero direct test
+> coverage; consumers must not treat it as execution-ready until PI
+> reopens the mechanism path and the §4 17-test catalog lands.
+
 **Date**: 2026-05-05 KST
 **Authors**: Claude + Codex design-discussion (4-round adversarial lock,
 PI id=809 + id=1985 aggressive debate posture)

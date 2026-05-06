@@ -14,6 +14,16 @@ Locked at ``docs/v2/v2_phase_f_proper_1_fa_rate_response_locked.md``
 (commit ``89d6ddc``, Y1-Y20 reasoned-acceptance trace, A-tier full
 debate output).
 
+STATUS: WIP HALTED. Implementation coherent but untested; lock §4/§5
+test catalog (``tests/v2/test_v2_fa_rate_response.py`` with 17
+Y6/Y14/Y16/Y17/Y18/Y19/Y20-traceable tests) is not implemented.
+Phase F proper resume requires explicit PI directive after Option 1
+pivot. Module landed as "coherent, untested" in commit ``a1d97e8``
+per Codex ``id=2196`` STOP directive (post-merge audit
+``mcp_msg:2550``, codex approval ``mcp_msg:2551``). Imports / exports
+are wired but ``step_fa_rate_response`` has zero direct test
+coverage — consumers must not treat it as execution-ready.
+
 This module is **F-proper-1, Stage 1 of Phase F proper 3-stage**:
 - F-proper-1 (this lock): rate dynamics, NO contour motion → cell
   motility 가시 NOT 발생

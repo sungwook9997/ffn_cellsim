@@ -79,7 +79,12 @@ before editing.
   `adhesion_network_state.py`, `dynamics/focal_adhesion.py`,
   `dynamics/adhesion_network_dynamics.py`,
   `dynamics/protrusion_coupled_focal_adhesion.py`,
-  `dynamics/fa_rate_response.py`,
+  `dynamics/fa_rate_response.py` (**WIP HALTED — implementation
+  coherent but untested; lock §4/§5 test catalog is not implemented;
+  Phase F proper resume requires explicit PI directive after Option 1
+  pivot. See `docs/v2/v2_phase_f_proper_1_fa_rate_response_locked.md`
+  STATUS banner and commit `a1d97e8`. Halt approved post-merge in
+  claude-work mcp_msg:2550, codex mcp_msg:2551.**),
   `dynamics/fa_to_ecm_scattering.py`,
   `dynamics/ecm_to_fa_bias.py`.
 - ECM: `ecm_substrate.py`, `ecm_open_loop_harness.py`,
