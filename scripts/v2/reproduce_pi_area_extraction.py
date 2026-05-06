@@ -1,4 +1,11 @@
-"""V2-2 Unit 1 — reproduce PI's CSV `Area_px` from saved mask PNGs.
+"""V2 imaging measurement-protocol gate — reproduce PI's CSV `Area_px` from saved mask PNGs.
+
+Paired lock: ``docs/v2_imaging_measurement_protocol_gate_locked.md``.
+
+The 260313 dataset is a multi-cell / spheroid-stage validation reservoir
+(V2-3/V2-5 territory), NOT a Layer 1 single-cell anchor; this script
+validates the **measurement protocol** (top-down spheroid projection
+area), not Layer 1 single-cell physics.
 
 Source-pipeline reproduction of PI's analysis at /Users/sw1/Desktop/spread_analysis/spread_infer.py.
 Canonical algorithm = `build_row_from_saved_mask` (spread_infer.py:661):
@@ -220,7 +227,7 @@ def summarise(results: list[RowResult]) -> dict:
 def main():
     all_results: list[RowResult] = []
     for group, csv_path in GROUPS.items():
-        print(f"[V2-2 U1.2] reproducing {group} from {csv_path.name} ...", flush=True)
+        print(f"[measurement-protocol gate] reproducing {group} from {csv_path.name} ...", flush=True)
         rs = reproduce_one_csv(group, csv_path)
         all_results.extend(rs)
         print(

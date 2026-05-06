@@ -1,4 +1,13 @@
-"""V2-2 Unit 1 — area extractor + Hard Rule 11 wording-boundary tests.
+"""V2 imaging measurement-protocol gate — area extractor + Hard Rule 11 wording-boundary tests.
+
+Paired lock: ``docs/v2_imaging_measurement_protocol_gate_locked.md``.
+Paired sanity gate: ``docs/v2_imaging_measurement_protocol_gate_sanity_gate.md``.
+
+The earlier framing as "V2-2 Unit 1 / imaging→SingleCellState loader"
+was retracted in commit ``f4e09aa`` after PI's phase-scope correction
+(260313 = spheroid-level, not single-cell). This test file is the
+live wording-boundary surface for the renamed measurement-protocol
+gate; the retracted lock spec is kept on disk for audit trail only.
 
 Covers (in this order):
 
@@ -20,6 +29,7 @@ Covers (in this order):
 from __future__ import annotations
 
 import math
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -28,11 +38,17 @@ import numpy as np
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-LOCK_SPEC = REPO / "docs" / "v2_layer_2_unit_1_imaging_to_single_cell_state_loader_locked.md"
+LOCK_SPEC = REPO / "docs" / "v2_imaging_measurement_protocol_gate_locked.md"
+SANITY_GATE = REPO / "docs" / "v2_imaging_measurement_protocol_gate_sanity_gate.md"
+RETRACTED_LOCK = (
+    REPO / "docs" / "v2_layer_2_unit_1_imaging_to_single_cell_state_loader_locked.md"
+)
 EXTRACTOR_PY = REPO / "acs" / "v2" / "imaging_contract" / "area_extractor.py"
 REPRO_SCRIPT = REPO / "scripts" / "v2" / "reproduce_pi_area_extraction.py"
 
-cv2 = pytest.importorskip("cv2", reason="V2-2 Unit 1 reproduction needs cv2.")
+cv2 = pytest.importorskip(
+    "cv2", reason="imaging measurement-protocol gate reproduction needs cv2."
+)
 from acs.v2.imaging_contract import area_extractor as ae  # noqa: E402
 
 
@@ -152,15 +168,80 @@ def test_aggregate_only_uses_normal_set_for_acceptance():
     not (REPO / "data" / "experimental" / "260313_Bare.csv").exists(),
     reason="260313 CSVs not present in this checkout",
 )
+def test_reproduction_byte_exact_on_real_dataset_sample():
+    """Spot-check 6 rows per group on the live 260313 dataset (in-process).
+
+    Cheap CI variant of the full-reproduction gate: 18 rows total,
+    runs in <1 s. Uses ``area_extractor`` directly so we still cover
+    the saved-mask path-resolution + cv2 contour pipeline. Per-row
+    rel_residual must be exactly 0 (cv2 4.13.0 deterministic).
+    """
+    import pandas as pd  # local import to keep top-level fast
+    from acs.v2.imaging_contract import area_extractor as _ae
+
+    imaging_root = REPO / "data" / "experimental" / "imaging"
+    rng = np.random.default_rng(seed=20260506)
+    for group, csv_name in [
+        ("Bare", "260313_Bare.csv"),
+        ("Lam4", "260313_Lam4.csv"),
+        ("Pre", "260313_Pre.csv"),
+    ]:
+        df = pd.read_csv(REPO / "data" / "experimental" / csv_name)
+        normal = df[df["Series"].apply(
+            lambda s, g=group: (g, s) not in _ae.PI_DIRECTED_PROVENANCE_EXCLUSIONS
+        )]
+        sample = normal.iloc[rng.integers(0, len(normal), size=6)]
+        for _, row in sample.iterrows():
+            mp = (
+                imaging_root
+                / f"260313_{group}"
+                / str(row["Series"])
+                / f"{Path(str(row['filename'])).stem}_mask.png"
+            )
+            assert mp.exists(), f"sample mask missing: {mp}"
+            res = _ae.reproduce_one_row(
+                group=group,
+                series=str(row["Series"]),
+                frame=int(row["Frame"]),
+                filename=str(row["filename"]),
+                csv_area_px=float(row["Area_px"]),
+                mask_path=mp,
+            )
+            assert res.provenance_status == _ae.PROVENANCE_STATUS_NORMAL
+            assert res.rel_residual == 0.0, (
+                f"non-zero residual on {group}/{row['Series']}/"
+                f"{row['filename']}: rel_residual={res.rel_residual}"
+            )
+
+
+@pytest.mark.skipif(
+    not (REPO / "data" / "experimental" / "260313_Bare.csv").exists(),
+    reason="260313 CSVs not present in this checkout",
+)
+@pytest.mark.skipif(
+    os.environ.get("RUN_FULL_REPRODUCTION_GATE") != "1",
+    reason=(
+        "full 4551-row mask reproduction is opt-in (set "
+        "RUN_FULL_REPRODUCTION_GATE=1; reads ~7 GB of mask PNGs); "
+        "in-process unit tests above already cover the algorithm."
+    ),
+)
 def test_reproduction_byte_exact_on_real_dataset():
-    """Run the V2-2 Unit 1 reproduction script and check ≤1.5% threshold."""
+    """Run the imaging measurement-protocol gate reproduction script and check ≤1.5% threshold.
+
+    Opt-in via env var ``RUN_FULL_REPRODUCTION_GATE=1`` because the
+    script reads all 4551 saved masks (~7 GB cold) and takes
+    several minutes. Lock seal verification artefact lives at
+    ``runs/v2_layer_2_unit_1/pi_area_reproduction.csv`` (gitignored)
+    and ships with the seal evidence rather than CI.
+    """
     out = subprocess.run(
         [str(REPO / ".venv-collab" / "bin" / "python"),
          str(REPRO_SCRIPT)],
         capture_output=True,
         text=True,
         cwd=str(REPO),
-        timeout=600,
+        timeout=1800,
     )
     if out.returncode != 0:
         pytest.fail(
@@ -198,22 +279,28 @@ HARD_RULE_11_REJECT_PHRASES = (
 )
 
 
-@pytest.mark.skipif(not LOCK_SPEC.exists(), reason="V2-2 Unit 1 lock not yet sealed")
+@pytest.mark.skipif(
+    not LOCK_SPEC.exists(),
+    reason="imaging measurement-protocol gate lock not yet sealed",
+)
 def test_lock_spec_contains_required_source_pipeline_wording():
     text = LOCK_SPEC.read_text(encoding="utf-8")
     missing = [p for p in HARD_RULE_11_REQUIRED_PHRASES if p not in text]
     assert not missing, (
-        "V2-2 Unit 1 lock spec is missing required Hard Rule 11 wording: "
+        "Imaging measurement-protocol gate lock spec is missing required Hard Rule 11 wording: "
         f"{missing}. Codex guardrail id=2304 require-list."
     )
 
 
-@pytest.mark.skipif(not LOCK_SPEC.exists(), reason="V2-2 Unit 1 lock not yet sealed")
+@pytest.mark.skipif(
+    not LOCK_SPEC.exists(),
+    reason="imaging measurement-protocol gate lock not yet sealed",
+)
 def test_lock_spec_does_not_contain_fitting_flavoured_wording():
     text = LOCK_SPEC.read_text(encoding="utf-8").lower()
     hits = [p for p in HARD_RULE_11_REJECT_PHRASES if p.lower() in text]
     assert not hits, (
-        "V2-2 Unit 1 lock spec contains rejected fitting-flavoured wording: "
+        "Imaging measurement-protocol gate lock spec contains rejected fitting-flavoured wording: "
         f"{hits}. Codex guardrail id=2304 reject-list."
     )
 
@@ -256,12 +343,12 @@ def test_pos31_exclusion_mirrored_across_code_doc_script():
     if LOCK_SPEC.exists():
         lock_text = LOCK_SPEC.read_text(encoding="utf-8")
         assert pos31_clause.search(lock_text), (
-            "Pos31 exclusion missing from V2-2 Unit 1 lock spec."
+            "Pos31 exclusion missing from imaging measurement-protocol gate lock spec."
         )
 
 
 def test_pixel_size_consistent_with_v2_1_imaging_yaml():
-    """V2-2 Unit 1 PIXEL_AREA_UM2 must match V2-1 imaging contract YAML."""
+    """Gate's PIXEL_AREA_UM2 must match V2-1 imaging contract YAML."""
     yaml_path = REPO / "configs" / "imaging" / "260313.yaml"
     if not yaml_path.exists():
         pytest.skip("V2-1 imaging contract YAML not present")
@@ -269,7 +356,7 @@ def test_pixel_size_consistent_with_v2_1_imaging_yaml():
     # Loose check — the lock-pinned line is `pixel_area_um2: 4.194304`.
     assert "4.194304" in yaml_text, (
         "V2-1 imaging YAML pixel_area_um2 has drifted from "
-        f"V2-2 Unit 1 PIXEL_AREA_UM2 = {ae.PIXEL_AREA_UM2}."
+        f"gate PIXEL_AREA_UM2 = {ae.PIXEL_AREA_UM2}."
     )
 
 

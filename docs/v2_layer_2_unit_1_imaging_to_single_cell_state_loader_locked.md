@@ -1,6 +1,18 @@
 # V2 Layer-2 Unit 1 — Imaging → SingleCellState Loader (Area Extraction Contract)
 
-> ⚠️ **RETRACTED PENDING FRAMING CHECKPOINT** — 2026-05-06 11:35 KST.
+> ⚠️ **RETRACTED — SUPERSEDED BY**
+> [`docs/v2_imaging_measurement_protocol_gate_locked.md`](v2_imaging_measurement_protocol_gate_locked.md)
+> (and paired sanity gate
+> [`docs/v2_imaging_measurement_protocol_gate_sanity_gate.md`](v2_imaging_measurement_protocol_gate_sanity_gate.md)).
+> The retraction below is preserved for audit trail only — DO NOT
+> use this file as a live contract. PI's framing call (this session,
+> 2026-05-06 ~12:00 KST) renamed the unit to "imaging
+> measurement-protocol gate" under V2-1 imaging input contract
+> umbrella; the original V2-2-Unit-1 / SingleCellState-loader framing
+> was retracted in commit `f4e09aa` and the new lock + sanity gate
+> were sealed afterwards.
+>
+> ⚠️ **RETRACTED PENDING FRAMING CHECKPOINT** — 2026-05-06 11:35 KST (original retraction; subsequently superseded as above).
 >
 > Work pane sealed U1.4–U1.6 without re-reading
 > `/tmp/acs-collab/implementation-work/work_briefing.md` after the chat

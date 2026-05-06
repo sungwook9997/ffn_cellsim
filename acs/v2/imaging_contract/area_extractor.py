@@ -1,9 +1,20 @@
-"""V2 Layer-2 Unit 1 — canonical area extractor reproducing PI's CSV ``Area_px``.
+"""V2 imaging measurement-protocol gate — canonical area extractor reproducing PI's CSV ``Area_px``.
+
+Paired lock: ``docs/v2_imaging_measurement_protocol_gate_locked.md``.
+Paired sanity gate: ``docs/v2_imaging_measurement_protocol_gate_sanity_gate.md``.
 
 This module is the **source-pipeline reproduction** of PI's analysis at
 ``/Users/sw1/Desktop/spread_analysis/spread_infer.py``. It is the single
 authoritative implementation of the algorithm that produced the
-``Area_px`` column in ``data/experimental/260313_*.csv``.
+``Area_px`` column in ``data/experimental/260313_*.csv``. The 260313
+dataset is a multi-cell / spheroid-stage validation reservoir
+(V2-3 / V2-5 territory), NOT a Layer 1 single-cell anchor — this gate
+validates the **measurement protocol** (top-down spheroid projection
+area), not Layer 1 single-cell physics.
+
+The earlier framing as "V2 Layer-2 Unit 1 / imaging→SingleCellState
+loader" was retracted in commit ``f4e09aa`` after PI's phase-scope
+correction (260313 = spheroid-level, not single-cell).
 
 PI source = ``spread_infer.py:661`` (``build_row_from_saved_mask``):
 
@@ -31,7 +42,7 @@ Tolerance contract
 ==================
 
 Under the source-pipeline contract on identical OpenCV major version,
-the algorithm is byte-exact. The V2-2 Unit 1 lock pins the contract
+the algorithm is byte-exact. The measurement-protocol gate lock pins the contract
 threshold at **1.5% relative residual** as a cross-version drift
 budget; observed residual on cv2 4.13.0 (validated 2026-05-06) is
 **0.0** on every non-excluded row. The 1.5% slack is reserved for
@@ -260,7 +271,7 @@ def reproduce_one_row(
 def aggregate_normal_residuals(results: Iterable[AreaExtractionResult]) -> dict:
     """Summary statistics over the non-excluded set.
 
-    By contract, the V2-2 Unit 1 acceptance threshold (1.5% relative
+    By contract, the measurement-protocol-gate acceptance threshold (1.5% relative
     residual) is computed here over normal rows ONLY — Pos31 and
     other PI-excluded rows are reported in a separate aggregate so
     they cannot contribute to the acceptance decision.
@@ -298,7 +309,7 @@ def aggregate_normal_residuals(results: Iterable[AreaExtractionResult]) -> dict:
     }
 
 
-# V2-2 Unit 1 acceptance contract — fixed at lock seal time, NOT tuned
+# Measurement-protocol-gate acceptance contract — fixed at lock seal time, NOT tuned
 # to observed residuals. The tolerance is justified as a cv2 cross-
 # version drift budget (PI source uses cv2 4.x; this impl validated
 # under cv2 4.13.0 at 0.0 observed). Lowering this threshold based on
