@@ -39,9 +39,13 @@ Pointers:
   reconciliation in `b463616`, `40ed049`, `79376e7`).
 - 2026-05-06 — V2 imaging measurement-protocol gate sealed
   (`docs/v2/v2_imaging_measurement_protocol_gate_locked.md`,
-  HEAD-side cleanup `49e246c`). 260313 reframed as multi-cell /
-  spheroid-stage validation reservoir for V2-3/V2-5; **NOT** a
-  Layer 1 single-cell calibration source. Hard Rule 11 contract.
+  HEAD-side cleanup `49e246c`). 260313 reframed as v2's primary
+  validation anchor at integrated spheroid stages — v2 is a
+  cell-resolved spheroid simulator, and 260313 spheroid-stage
+  imaging is the experimental anchor for downstream V2-3 / V2-5
+  integrated validation. The measurement-protocol gate (this
+  seal) does **not** validate Layer 1 single-cell physics in
+  isolation. Hard Rule 11 contract.
 - 2026-05-06 — Option A+B repo structure cleanup merged (`0533422`):
   docs split to `docs/v1/` + `docs/v2/`, tests split to
   `tests/v1/` + `tests/v2/`, root `STRUCTURE.md` added, path-reference
@@ -130,13 +134,18 @@ roadmap text):
   `docs/v2_layer_1_sanity_gate_anchors_draft.md`); promotion gated on
   design-discussion Q1-Q3.
 - **Phase V2-3** (cell-resolved multi-cell assembly): not implemented.
-  260313 reservoir is reserved as one possible multi-cell calibration
-  set per the imaging measurement-protocol gate.
+  260313 is v2's primary validation anchor at integrated spheroid
+  stages; V2-3 is the integration stage where integrated
+  cell-resolved spheroid simulation will be validated against
+  260313 imaging.
 - **Phase V2-4** (ECM fiber network) and **Phase V2-5** (brute-force
   spheroid reference): not implemented.
 
-When in doubt, do not jump directly to spheroid dynamics. The Layer 1
-single-cell anchor work is still incomplete (Q1-Q3 unresolved).
+When in doubt, do not jump directly to spheroid dynamics. Layer 1
+component building blocks must be derived first; their integration
+into spheroid validation against 260313 is the V2-3 stage, not
+Layer-1-in-isolation validation. Q1-Q3 design-discussion items
+remain unresolved at the Layer 1 component level.
 
 ## Modeling Rules That Matter Most
 
@@ -154,8 +163,11 @@ single-cell anchor work is still incomplete (Q1-Q3 unresolved).
 - Literature anchors for Layer 1/2 are in
   `docs/v2/10_dev_roadmap_v2.md`; do not use biology papers to
   justify numerical discretization choices.
-- 260313 PI imaging is **multi-cell / spheroid-stage** (V2-3/V2-5
-  reservoir); it is **not** a Layer 1 single-cell calibration source.
+- 260313 PI imaging is **v2's primary validation anchor** at
+  integrated spheroid stages (V2-3 / V2-5 maturation). v2 is a
+  cell-resolved spheroid simulator; Layer 1 dynamics are component
+  building blocks integrated into spheroid validation, not
+  validated in isolation against single-cell PI data.
 - GPU portability remains mandatory. Do not hard-code device IDs or
   paths.
 

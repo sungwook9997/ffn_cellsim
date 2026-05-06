@@ -13,9 +13,15 @@ Codex name-choice + wording review (`id=2328`).
   guardrails + tolerance stance + meta-test reject/require lists).
 - PI phase-scope correction (260313 = spheroid-level) — design-discussion
   `id=2309/2310/2311` + impl-work `id=2312`.
-- This session's PI framing call: RENAME approved, 260313 = multi-cell
-  reservoir (V2-3/V2-5), Layer 1 anchor synthetic+literature only,
-  restructure deferred (option α).
+- This session's PI framing call: RENAME approved, restructure
+  deferred (option α). **PI framing correction (2026-05-06
+  17:55 KST)**: v2 is a cell-resolved spheroid simulator. 260313
+  is v2's primary validation anchor at integrated spheroid stages.
+  Layer 1 dynamics are component building blocks of the integrated
+  spheroid simulation; they are validated downstream when V2-3 /
+  V2-5 stages mature, not in isolation against single-cell PI
+  data. This lock unit validates the measurement-protocol layer
+  (top-down spheroid projection area) of that pipeline.
 - Codex name pick + wording edits `id=2326/2328`.
 **Tier**: B-tier compressed lock (single-iteration; algorithm work
 already complete in `f4e09aa`, this lock re-frames under
@@ -40,14 +46,25 @@ already rasterised — see `spread_infer.py:550` for the manual path
 that writes `cv2.fillPoly([manual_cnt], 255)` into the mask before
 save.
 
-**260313 is a multi-cell / spheroid-stage validation reservoir**
-(V2-3 / V2-5 territory), **NOT a Layer 1 single-cell anchor**.
+**260313 is v2's primary validation anchor at integrated spheroid
+stages** — v2 is a cell-resolved spheroid simulator, and 260313
+spheroid-stage imaging is the experimental anchor against which
+integrated spheroid simulation will be validated downstream
+(V2-3 / V2-5 maturation). It is **not a Layer 1 parameter-fitting
+or single-cell-isolation validation source**: Layer 1 single-cell
+dynamics are component building blocks integrated into spheroid
+validation, not validated alone against single-cell PI data.
 EffectiveRadius_um median 436–490 μm, Solidity median 0.976,
 Area_um2 median 6e5–7.5e5 μm² — far above any single-cell scale
-(MCF7 single-cell projected area ~500–2000 μm² ≈ radius 12–25 μm).
+(MCF7 single-cell projected area ~500–2000 μm² ≈ radius 12–25 μm),
+consistent with the spheroid-stage role.
 
 This unit validates the **measurement protocol** (top-down spheroid
-projection area), **NOT Layer 1 single-cell physics**.
+projection area) for the v2 cell-resolved spheroid simulator's
+downstream validation against 260313. It does not, by itself,
+validate Layer 1 single-cell physics in isolation (Layer 1
+dynamics are integrated into spheroid validation, not validated
+alone).
 
 ### What this unit IS
 
@@ -63,10 +80,14 @@ projection area), **NOT Layer 1 single-cell physics**.
 
 ### What this unit is NOT
 
-- ❌ NOT a Layer 1 single-cell physics validation gate. 260313 is
-  spheroid-stage, NOT single-cell. Layer 1 dynamics validate against
-  synthetic + literature priors only (Phase D/E/F sanity gates;
-  `docs/v2/v2_p1_active_contour_sanity_gate.md`).
+- ❌ NOT a Layer 1 single-cell-isolation physics validation gate.
+  260313 is spheroid-stage; this unit is the measurement-protocol
+  parity gate for that imaging modality. v2 itself is a cell-
+  resolved spheroid simulator that uses 260313 as its primary
+  validation anchor at integrated spheroid stages; Layer 1 dynamics
+  are component building blocks of that integrated pipeline,
+  validated downstream when V2-3 / V2-5 stages mature, not in
+  isolation against single-cell PI data.
 - ❌ NOT a parameter-fitting pipeline (Hard Rule 1; PI data remains
   calibration/validation reference only, never physics input).
 - ❌ NOT a tolerance derived from observed residuals — the 1.5%
@@ -110,7 +131,8 @@ loader sealed".
 > Cross-check: per-row `Area_um2 / Area_px = 4.194304 ± float64 ULP`
 > across all 4551 rows (4469 non-excluded + 82 PI-excluded).
 > Validates the **measurement protocol** (top-down spheroid projection
-> area), NOT Layer 1 single-cell physics.
+> area) for v2's integrated spheroid-stage validation against
+> 260313, not Layer 1 single-cell physics in isolation.
 
 Total accounting:
 
@@ -253,7 +275,7 @@ preliminary number coincidentally; the principled derivation is
 | Manual review state not in saved files (Codex addition) | RESOLVED | All 260313 CSV rows have `review_mode=reconstructed_from_saved_mask`; manual operator state (auto-detected contour OR manual polygon OR re-reviewed contour) is rasterised into the saved mask PNG before save (`spread_infer.py:550`). The saved mask PNG IS the operator's final decision. |
 | Lock spec name not approved by codex | RESOLVED | Name (A) `docs/v2/v2_imaging_measurement_protocol_gate_locked.md` selected by Codex `id=2328`. |
 | Sanity gate proposes threshold beyond cv2 deterministic reproduction | NOT TRIGGERED | Threshold = 1.5% cv2 cross-version budget; observed 0.0. |
-| Lock wording re-asserts Layer 1 single-cell validation against 260313 | NOT TRIGGERED | Scope §0 explicitly disclaims Layer 1 single-cell physics validation. |
+| Lock wording mis-frames v2 as single-cell-isolated or treats 260313 as unused/downstream-only | NOT TRIGGERED | Scope §0 frames 260313 as v2's primary integrated spheroid-stage validation anchor and disclaims only Layer-1-in-isolation validation. |
 
 ---
 
