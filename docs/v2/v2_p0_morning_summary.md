@@ -1,5 +1,47 @@
 # V2 Phase 1 Project alpha — P0 Morning Summary
 
+> ⚠️ **POST-RESOLUTION NOTE — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2663`, PI directive `mcp_msg:2664` selecting β option,
+> codex routing `mcp_msg:2666`).
+>
+> This is a 2026-05-04 morning snapshot, **not current implementation routing**.
+> P0 and P1 have since landed; P1
+> derivation/lock is `docs/v2/v2_p1_derivation_locked.md` and the
+> active-contour audit was clean in A.6 (`mcp_msg:2548`).
+>
+> The **six P1 open questions A-F** in §3 below have all been
+> resolved through the P1 design-discussion lock:
+>
+> - A. Cortex / line tension → locked Q1: `E_c = λ_c · P` energy-
+>   gradient form (`λ_c` units `nN`).
+> - B. Area-restoring → locked Q2: normalized
+>   `E_A = 0.5 · K_A · (A − A_0)² / A_0` (`K_A` units `nN/μm`).
+> - C. Mobility / substrate drag → locked Q3: line drag density
+>   `ζ_i = ξ_line · ℓ_i` (grid-invariant).
+> - D. Timestep → locked Q4: analytic Gershgorin row-sum
+>   `dt · rate_max ≤ 0.5`.
+> - E. Vertex-density adaptive → locked Q5: fixed uniform `N`
+>   vertices for P1 alpha; no remeshing.
+> - F. Boundary / substrate contact → locked Q6 test 4: free
+>   boundary with coupled ellipse → DIAGNOSTIC test (non-gating).
+>
+> Per Codex `mcp_msg:2670`: do not route the §3 open questions
+> back to design-discussion from this summary.
+>
+> The §4 **recommended next steps have completed**: P1 sanity
+> gate `docs/v2/v2_p1_active_contour_sanity_gate.md`,
+> `acs/v2/active_contour.py`, `acs/v2/dynamics/active_contour.py`,
+> and the test catalog all landed.
+>
+> For current state, use
+> `docs/v2/v2_current_build_state.md` (refreshed 2026-05-06,
+> commit `da581cd`).
+>
+> Older "P1 not started" / "design-team input requested" wording
+> below is retained as **historical snapshot context** and must
+> not be used as **current routing status**.
+
 **Generated**: 2026-05-04 ~01:38 KST.
 **Audience**: PI ↔ design-discussion handoff.
 **Status**: P0 (Plan §13.1) **complete and committed**. P1 not started;
