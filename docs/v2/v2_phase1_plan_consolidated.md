@@ -1,5 +1,26 @@
 # ActiveCellSim v2 Phase 1 Consolidated Plan
 
+> ⚠️ **CURRENT STATUS NOTE — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2644`, codex approval `mcp_msg:2645`).
+>
+> This remains the historical Project alpha consolidated handoff /
+> architecture frame, **not the current implementation source of truth**.
+> Project alpha completed and post-alpha implementation
+> progressed substantially (Layer 1 P1 active contour, V2-1 imaging
+> input contract, V2 imaging measurement-protocol gate, HB#1-5,
+> Phase D no-op, Phase E v1/v2 step 2, Item 5 sweep harness, FA
+> result-typed B1, adhesion-network layer, Phase F minimal pilot,
+> F-proper-1 WIP halt, ECM open-loop sweep, etc.).
+>
+> For current state, see
+> `docs/v2/v2_current_build_state.md` (refreshed 2026-05-06,
+> commit `da581cd`).
+>
+> Older "current design source of truth" / morning-alpha acceptance
+> wording below is retained as 2026-05-03 historical context and
+> must not be used as current routing status.
+
 Date: 2026-05-03 KST
 Authors: Codex + Claude design-discussion consolidation
 Inputs:

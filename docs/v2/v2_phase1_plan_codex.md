@@ -1,5 +1,23 @@
 # ActiveCellSim v2 Phase 1 Plan — Codex Independent Draft
 
+> ⚠️ **STATUS: SUPERSEDED DRAFT — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2644`, codex approval `mcp_msg:2645`).
+>
+> This was an independent Project alpha input draft from 2026-05-03.
+> Cross-review and synthesis completed; **do not use this file for
+> current implementation routing**.
+>
+> - For alpha synthesis, see
+>   `docs/v2/v2_phase1_plan_consolidated.md`.
+> - For current post-alpha build state, see
+>   `docs/v2/v2_current_build_state.md` (refreshed 2026-05-06,
+>   commit `da581cd`).
+>
+> The 2026-05-03 "Alpha draft for Claude cross-review and PI
+> synthesis" status line below is retained as historical context
+> and is not the current status.
+
 Date: 2026-05-03 KST
 Author: Codex design-discussion session
 Status: Alpha draft for Claude cross-review and PI synthesis
