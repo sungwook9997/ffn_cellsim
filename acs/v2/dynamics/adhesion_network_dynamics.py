@@ -1,6 +1,6 @@
 """V2 Adhesion-Network Layer dynamics: cadherin/integrin program ODE step.
 
-Locked at ``docs/v2_adhesion_network_layer_locked.md`` (A-tier full
+Locked at ``docs/v2/v2_adhesion_network_layer_locked.md`` (A-tier full
 debate, Y1-Y17 trace, PI ``id=2003`` directive integration).
 
 PI ``id=2003`` directive (verbatim wording boundary, Y16 anchor):
@@ -18,7 +18,7 @@ ODE form (Y3 reciprocal coupling, Y9 exact affine analytical update):
     dC/dt = k_cad_on  · S_junction · (1 - C) - k_cad_off · S_fa       · C
 
 Exact analytical solution per axis (Y9/Y17, sister with HB#1+#2 expm1
-pattern at ``docs/v2_hard_blocker_1_2_constitutive_direction_locked.md``):
+pattern at ``docs/v2/v2_hard_blocker_1_2_constitutive_direction_locked.md``):
 
     a = k_on  · signal_on
     b = k_off · signal_off

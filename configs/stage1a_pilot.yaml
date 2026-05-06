@@ -31,7 +31,7 @@ layers:
   L6_chemistry_necrosis: false
 
 physics:
-  # Stage 1a uses overdamped + dimensionless scheme (see docs/stage1a_assumption_review.md).
+  # Stage 1a uses overdamped + dimensionless scheme (see docs/v1/stage1a_assumption_review.md).
   # Reference units: length = R0 (radius_um below), time = tau_relax_s, stress = K_Pa.
   # Physical placeholders below are RESTORATION targets for the Stage 1a → 1a+ anchor pass;
   # the solver consumes the dimensionless block (`nondim`).

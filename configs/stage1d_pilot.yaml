@@ -5,7 +5,7 @@
 # WITH Stage 1d spatial S_p extension + Stage 1c Layer 5 + Path C g=0.01
 # + Layer 4 Marangoni core only.
 #
-# Per docs/stage1d_sanity.md and docs/outcomes_stage1d.md.
+# Per docs/v1/stage1d_sanity.md and docs/v1/outcomes_stage1d.md.
 # PI full authorisation 2026-04-29; Time-scale mapping verified
 # (pilot 4 hr ≈ 5% of PI experiment 82 hr; Marangoni perturbative,
 # mechanism-test pilot, NOT quantitative reproduction of PI endpoint).

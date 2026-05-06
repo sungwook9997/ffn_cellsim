@@ -4,7 +4,7 @@
 # Option β α=1.0 carrier + Layer 2 boundary active stress. PI Option α'
 # framing: ratio ζ/K only, no Pa claim. K-anchored to Fischer-Friedrich
 # Nat Cell Biol 2014 IF 30; Marchetti Rev Mod Phys 2013 IF 50 framework
-# reference. See docs/stage1a_plus_plus_layer2_sanity.md.
+# reference. See docs/v1/stage1a_plus_plus_layer2_sanity.md.
 
 run:
   name: stage1a_plus_plus_zeta_0p25

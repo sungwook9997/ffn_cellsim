@@ -5,7 +5,7 @@ force (Newton's 3rd law reaction). HB#4 rate multipliers are
 diagnostic-only; ECM->cell motility feedback is NOT implemented here
 (future Phase F proper, separate A-tier cycle).
 
-Locked at ``docs/v2_phase_f_minimal_cell_motility_pilot_locked.md``
+Locked at ``docs/v2/v2_phase_f_minimal_cell_motility_pilot_locked.md``
 (commit ``7f8c171``); A-tier-compressed cycle per PI ASAP directive
 (``id=1894``/``id=1903``). 2 design rounds + Codex single review pass
 + seal; no Sanity Gate doc per compressed protocol.

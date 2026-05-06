@@ -1,6 +1,6 @@
 """HDF5 frame dump writer and reader for v2 single-cell / small-cluster state.
 
-The frame schema is defined in ``docs/v2_phase1_plan_consolidated.md`` §7
+The frame schema is defined in ``docs/v2/v2_phase1_plan_consolidated.md`` §7
 and §10 ("frame_dump = schema fidelity, round-trip, complete artifact
 metadata"). A frame stores one timepoint of a :class:`CellClusterState`
 (or a single :class:`SingleCellState` wrapped in a one-cell cluster)

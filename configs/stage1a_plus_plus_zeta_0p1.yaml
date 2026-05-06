@@ -8,8 +8,8 @@
 # Nat Cell Biol 2014 IF 30 (already cited in docs/02_force_models.md §1.1).
 # Marchetti Rev Mod Phys 2013 IF 50 retained as framework reference.
 #
-# See docs/stage1a_plus_plus_layer2_sanity.md and
-# docs/outcomes_stage1a_plus_plus.md.
+# See docs/v1/stage1a_plus_plus_layer2_sanity.md and
+# docs/v1/outcomes_stage1a_plus_plus.md.
 
 run:
   name: stage1a_plus_plus_zeta_0p1

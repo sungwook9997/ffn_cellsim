@@ -1,7 +1,7 @@
 """Static-boundary focal-adhesion traction preflight (6.3a).
 
 Implements the locked 6.3a dynamics from
-``docs/v2_focal_adhesion_dynamics_sanity_gate.md``: deterministic
+``docs/v2/v2_focal_adhesion_dynamics_sanity_gate.md``: deterministic
 explicit-rate maturation/binding updates plus per-FA cell-on-substrate
 traction algebra on a frozen-centroid static contour. Returns updated
 adhesions, per-FA forces (cell-on-substrate and substrate-on-cell), and
@@ -17,7 +17,7 @@ Sanity Gate scope (dynamics/focal_adhesion.py):
 
 - §1 dimensional: traction in nN; rates in 1/s; ``dt_fa_s`` in s; the
   per-FA update reductions are spelled out in
-  ``docs/v2_focal_adhesion_dynamics_sanity_gate.md`` §1.
+  ``docs/v2/v2_focal_adhesion_dynamics_sanity_gate.md`` §1.
 - §2 boundary: every failure_kind from the gate doc §2 is raised before
   any state mutation; bool/non-finite/negative/wrong-shape inputs all
   reject.
@@ -42,8 +42,8 @@ Magic-Number Block: this module declares no tunable numeric. The reused
 imported from ``acs.v2.active_contour`` rather than redefined.
 
 B1 typed-schema migration scope (per
-``docs/v2_focal_adhesion_dynamics_result_typed_locked.md`` +
-``docs/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md``,
+``docs/v2/v2_focal_adhesion_dynamics_result_typed_locked.md`` +
+``docs/v2/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md``,
 commits ``ed5c0ca`` / ``7924730`` / ``77d4e91`` / ``88eaa4b`` /
 ``3b10df6``): :class:`FocalAdhesionDynamicsResult` is
 ``frozen=True, slots=True`` and its ``diagnostics`` field is the
@@ -54,7 +54,7 @@ fields: ``n_adhesions``, ``aggregate_cell_force_nN_xy``,
 no behavior change to 6.3a force / rate algebra.
 
 B1 forbidden (text-level guard layered on top of the runtime
-tests in ``tests/test_v2_focal_adhesion_dynamics.py``):
+tests in ``tests/v2/test_v2_focal_adhesion_dynamics.py``):
 
 - No 6.3a force / rate algebra change (typing migration only).
 - No HB#4 ``diagnostics_dict`` migration here (HB#4 surface is
@@ -187,7 +187,7 @@ class FocalAdhesionDynamicsDiagnostics:
 
     All fields are populated by ``step_focal_adhesions_static``;
     units carry per locked plan
-    ``docs/v2_focal_adhesion_dynamics_result_typed_locked.md`` §3.
+    ``docs/v2/v2_focal_adhesion_dynamics_result_typed_locked.md`` §3.
 
     Attributes:
         n_adhesions: count of FAs in the step (dimensionless).

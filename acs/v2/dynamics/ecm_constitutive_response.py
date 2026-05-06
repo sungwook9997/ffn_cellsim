@@ -1,11 +1,11 @@
 """ECM orientation constitutive response (HB#1+#2 merged lock).
 
 Implements the locked HB#1+#2 design from
-``docs/v2_hard_blocker_1_2_constitutive_direction_locked.md``
+``docs/v2/v2_hard_blocker_1_2_constitutive_direction_locked.md``
 (commits ``7b1d3cf`` initial + ``c18a5dc`` ``ecm.validate()`` at
 entry + ``42d34e7`` error class + 7 exports + ``7154342``
 stale-count cleanup) and the impl-work Sanity Gate
-``docs/v2_hard_blocker_1_2_constitutive_response_sanity_gate.md``
+``docs/v2/v2_hard_blocker_1_2_constitutive_response_sanity_gate.md``
 (commit ``186fb75`` + same amendments; Codex Sanity Gate PASS at
 ``id=1492``).
 

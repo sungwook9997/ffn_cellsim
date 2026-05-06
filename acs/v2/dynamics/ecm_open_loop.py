@@ -5,7 +5,7 @@ caller-supplied prescribed input fields and integrate them into
 :class:`acs.v2.ecm_substrate.ECMSubstrateState` **without closing the
 loop back to cell motion, FA state, or any biology-derived input**.
 Closed-loop ECM activation is gated behind the six-item gate in
-``docs/v2_phase1_forward_roadmap.md`` "Closed-Loop ECM Gate".
+``docs/v2/v2_phase1_forward_roadmap.md`` "Closed-Loop ECM Gate".
 
 Four preflight functions live here, one per ECM field family:
 

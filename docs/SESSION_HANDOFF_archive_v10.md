@@ -7,7 +7,7 @@ This document records where the overnight Claude Code session stopped so the nex
 | Block | What happened |
 |---|---|
 | **Stage 0** | Conda env `activecellsim` (Python 3.11.15, Taichi 1.7.4), `acs/` editable package, `ACS_GPU_BACKEND` dispatcher (cuda/vulkan/opengl/metal/cpu/auto), structured logging, run-provenance manifest, pytest + ruff, 4 staircase configs (`stage1a_{pilot,mid,prod_burnin,production}.yaml`), `scripts/verify_env.py`. Stage 0 closed. |
-| **Stage 1a — staircase + scheme decisions** | Roadmap §1a updated with 4-step staircase (pilot → mid → prod-burnin → production) and PASS/FAIL gates. Numerical scheme locked: overdamped MLS-MPM (Re ≈ 10⁻¹³), exponential Maxwell integrator, density-based boundary tag, CSF on background grid. Dimensionless units (length=R₀, time=τ_relax, stress=K). `docs/stage1a_assumption_review.md` written before any code ran. |
+| **Stage 1a — staircase + scheme decisions** | Roadmap §1a updated with 4-step staircase (pilot → mid → prod-burnin → production) and PASS/FAIL gates. Numerical scheme locked: overdamped MLS-MPM (Re ≈ 10⁻¹³), exponential Maxwell integrator, density-based boundary tag, CSF on background grid. Dimensionless units (length=R₀, time=τ_relax, stress=K). `docs/v1/stage1a_assumption_review.md` written before any code ran. |
 | **Pilot v1 (Stage 0 deferred CFL fix)** | Discovered explicit-elastic CFL violation (dt=0.02s vs limit ≈1 μs, 16,000× over) before writing solver kernels. PI chose overdamped + dimensionless path. Sanity-Gate Protocol caught the issue and was added to CLAUDE.md Hard Rules. |
 | **Pilot v1 (real)** | NaN at step 200 (`is_boundary` shell colour function double-edged force, plus CSF impulse applied to grid_v *before* mass division). Initial step time 137 ms/step (atomic_max global serialisation). |
 | **Pilot v2** | Boundary tagger rewritten to "empty-neighbour count" (no global atomic_max), CSF moved to `_grid_op_overdamped` after mass division, ρ_local clamp. Step time 1.56 ms/step (88× faster). NaN gone. R/R₀ drifts +12.5% (expansion) — bulk pressure dominated CSF. |
@@ -83,7 +83,7 @@ This is consistent with the symptoms: even with proper Brackbill curvature and c
 
 ## Where to start the next session
 
-1. Read `docs/SESSION_HANDOFF.md` (this file) + `docs/stage1a_assumption_review.md` + the last commit message.
+1. Read `docs/SESSION_HANDOFF.md` (this file) + `docs/v1/stage1a_assumption_review.md` + the last commit message.
 2. Open `acs/physics/mlsmpm.py` and **review `calibrate_reference_state()` directly** (the section between `def calibrate_reference_state` and the end of `_set_F_isotropic_from_calib`). Specifically check:
    - Does `rho_used = well_resolved if len(well_resolved) else rho_np` introduce a population bias when the F-scale is then applied to *all* `rho_np`?
    - Does the `np.clip(rho_ref / rho_np, 1/8, 8)` clamp suppress the violation evidence?
@@ -144,7 +144,7 @@ onto the same Col1-coated confocal dish for the 24–96 hr spreading assay.
   - `Lam4` → high laminin engagement → Int-β1-dominant initial state →
     high initial φ
 - Substrate stays Col1-only across all three runs. Single γ_sub_Col1
-  value (the same anchored in `docs/stage1a_plus_substrate_sanity.md`).
+  value (the same anchored in `docs/v1/stage1a_plus_substrate_sanity.md`).
 
 **Anti-pattern to avoid**: do *not* parameterise Bare/Pre/Lam4 as
 γ_sub_{Bare,Pre,Lam4}. The spreading-time substrate is identical in all

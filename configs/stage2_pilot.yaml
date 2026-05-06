@@ -6,7 +6,7 @@
 # Pre with spatial S + Stage 1c Layer 5 + Stage 1d Layer 4 Marangoni
 # + Path C g=0.01.
 #
-# Per docs/stage2_sanity.md and docs/outcomes_stage2.md.
+# Per docs/v1/stage2_sanity.md and docs/v1/outcomes_stage2.md.
 # PI full authorisation 2026-04-29 (exploratory framing "Layer 6 돌리고 의미 확인").
 
 run:

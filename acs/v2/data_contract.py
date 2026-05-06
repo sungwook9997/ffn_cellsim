@@ -44,7 +44,7 @@ class ArtifactKind(str, Enum):
 
     Phase 1 expands the previously-locked 8-member contract with
     ``ECM_FIELD`` to admit ECM substrate state as a first-class artifact
-    (per `docs/v2_phase1_plan_consolidated.md` §8).
+    (per `docs/v2/v2_phase1_plan_consolidated.md` §8).
     """
 
     CSV_TABLE = "csv_table"

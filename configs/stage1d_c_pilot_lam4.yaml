@@ -1,6 +1,6 @@
 # Stage 1b.b pilot — Layer 3 φ_memory + c_act split (Lam4 1k 4hr).
-# Per PI directive 2026-04-29 (docs/layer3_phi_audit.md +
-# docs/stage1b_b_phi_split_sanity.md). Tests whether the F9 formulation
+# Per PI directive 2026-04-29 (docs/v1/layer3_phi_audit.md +
+# docs/v1/stage1b_b_phi_split_sanity.md). Tests whether the F9 formulation
 # bug (interior φ decay erasing formation phenotype memory) is closed
 # by the φ_memory + c_act split. Identical to final_pilot_v2_lam4 except
 # `layer3.split: true`, κ=1.0, ε=0.
@@ -50,7 +50,7 @@ layer2:
 # Stage 1d.c ECM-mediated communication + protrusion state machine
 # (PI directive 2026-04-30 per Codex analysis). Replaces Stage 1a++.b
 # one-step impulse with biologically-grounded sustained traction.
-# All defaults from docs/stage1d_c_ecm_communication_sanity.md.
+# All defaults from docs/v1/stage1d_c_ecm_communication_sanity.md.
 layer7:
   enabled: true
   eta_ecm_star: 5.0

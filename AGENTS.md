@@ -46,9 +46,12 @@ Targets are written against the **16 GB Laptop A5000 baseline**. The same config
 
 ## Where to find what
 
+Authoritative file→version map: `STRUCTURE.md` at repo root.
+
 ```
 ActiveCellSim/
 ├── AGENTS.md                            # This file (always read at start)
+├── STRUCTURE.md                         # Full repo file→v1/v2/v3/shared map
 ├── README.md                            # Human-facing project overview
 ├── docs/
 │   ├── 00_project_vision.md             # Full WHY + framing + assumptions list
@@ -61,18 +64,19 @@ ActiveCellSim/
 │   ├── 07_internal_flow_dynamics.md     # Marangoni, nematic Q, vortex (drying-inspired)
 │   ├── 08_mechano_osmotic.md            # Tier 2 phenomenological volume regulation
 │   ├── 09_visualization.md              # Vispy viewer + Blender + dashboard specs
-│   ├── 10_dev_roadmap.md                # Bottom-up Stage 1a → 1d → 2 milestones
 │   ├── 11_performance_protocol.md       # Benchmark, profiling, GPU portability
 │   ├── 12_validation.md                 # Literature anchors, assumptions, limitations
 │   ├── 13_data_schema.md                # HDF5 structure, metadata, naming
-│   └── references.bib                   # All citations
+│   ├── references.bib                   # All citations
+│   ├── v1/                              # v1 (frozen) docs: 10_dev_roadmap.md, outcomes_*, stage1*, path_c_*, production_lam4_*, parameter_registry, gate_fail_taxonomy, marangoni/layer3 reviews, …
+│   └── v2/                              # v2 (active) docs: 00_project_vision_v2.md, 10_dev_roadmap_v2.md, all v2_*.md (briefs, locked specs, sanity gates)
 ├── data/
 │   ├── experimental/                    # PI's CSVs (260313_Bare/Lam4/Pre.csv) — READ ONLY for overlay
 │   └── literature/                      # Extracted parameter tables from papers
 └── (code/, results/, etc. — Codex creates these)
 ```
 
-**Progressive disclosure**: Start with this file + `docs/10_dev_roadmap.md`. Pull other docs only when relevant to current task. Do NOT load all docs at once.
+**Progressive disclosure**: Start with this file + `docs/v2/10_dev_roadmap_v2.md` (active). The v1 roadmap is at `docs/v1/10_dev_roadmap.md` for historical reference. Pull other docs only when relevant to current task. Do NOT load all docs at once. Authoritative file→version map: `STRUCTURE.md` at repo root.
 
 ## Code Conventions
 - Modular structure: `physics/`, `boundary/`, `adhesion/`, `viz/`, `io/`, `analysis/` separation
@@ -89,12 +93,12 @@ ActiveCellSim/
 
 ## Active roadmap (v2 supersedes v1 for new work)
 
-The original `docs/10_dev_roadmap.md` (Stage 1a → 2 below) describes the
+The original `docs/v1/10_dev_roadmap.md` (Stage 1a → 2 below) describes the
 v1 spheroid-first continuum prototype, kept frozen for reference and
 reproducibility of prior results. **All new development follows
-`docs/10_dev_roadmap_v2.md`** — image-constrained, cell-resolved,
-single-cell first. See `docs/00_project_vision_v2.md` for why we pivoted
-and `docs/v1_continuum_backup.md` for what v1 deliberately stays as.
+`docs/v2/10_dev_roadmap_v2.md`** — image-constrained, cell-resolved,
+single-cell first. See `docs/v2/00_project_vision_v2.md` for why we pivoted
+and `docs/v1/v1_continuum_backup.md` for what v1 deliberately stays as.
 The `acs/v2/` package is the v2 code home; v1 modules remain under
 `acs/` (non-`v2/` subpaths) and are not deleted.
 
@@ -109,7 +113,7 @@ When in doubt about which roadmap to follow: v2.
 5. **Stage 1c**: Activate Layer 5 Tier 2 (mechano-osmotic) → verify spreading-induced volume loss
 6. **Stage 1d**: Activate Layer 4 (Marangoni, nematic, vortex analysis) → verify internal flow patterns
 7. **Stage 1e**: Build radial-reduced sim B and comparison framework
-8. **Stage 2+**: Reserved for chemistry/necrosis, see `docs/10_dev_roadmap.md`
+8. **Stage 2+**: Reserved for chemistry/necrosis, see `docs/v1/10_dev_roadmap.md`
 
 Run validation tests at each stage end. Don't move forward with broken physics.
 
@@ -213,6 +217,6 @@ and report status.
 
 ## When in doubt
 - Read `docs/00_project_vision.md` for framing
-- Read `docs/10_dev_roadmap.md` for what to do next
+- Read `docs/v2/10_dev_roadmap_v2.md` for what to do next (v2 active); `docs/v1/10_dev_roadmap.md` for v1 history
 - Read `docs/12_validation.md` for assumption list and limitations
 - Ask the PI before deviating from any principle in this file

@@ -7,7 +7,7 @@
 # Stage 1a+ Option β / Stage 1a++ / Stage 1b under Path C is deferred
 # to PI's explicit decision after the result is surfaced.
 #
-# See docs/path_c_sanity.md and docs/outcomes_path_c.md.
+# See docs/v1/path_c_sanity.md and docs/v1/outcomes_path_c.md.
 
 run:
   name: path_c_v15_baseline
@@ -51,7 +51,7 @@ substrate:
 # Path C effective gravity (anchored to Stewart Nature 2011 IF 65 for
 # cell density framework; specific value framed as body-force coefficient
 # under overdamped ξ_star = 1 calibration per Magic-Number Block PARTIAL
-# resolution — see docs/path_c_sanity.md).
+# resolution — see docs/v1/path_c_sanity.md).
 gravity:
   gravity_star: 0.1               # provisional default; PI authorisation 2026-04-29
 

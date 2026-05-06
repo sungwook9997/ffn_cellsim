@@ -7,7 +7,7 @@
 # 2026-04-29 for Bare/Pre/Lam4 → φ_initial mapping (PI domain expertise).
 # All three phenotype runs use IDENTICAL substrate (Col1) — variation is
 # in the spheroid initial state only (formation environment phenotype).
-# See docs/stage1b_layer3_sanity.md and docs/SESSION_HANDOFF.md
+# See docs/v1/stage1b_layer3_sanity.md and docs/SESSION_HANDOFF.md
 # §"Stage 1b framing memo".
 
 run:

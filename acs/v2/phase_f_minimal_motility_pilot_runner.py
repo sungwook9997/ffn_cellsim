@@ -6,7 +6,7 @@ on a synthetic single-cell + multi-FA fixture. Per step it:
 
 - updates the active contour via FA-traction Newton's 3rd law reaction
   (locked Phase F minimal pilot at commit ``bf03e83`` /
-  ``docs/v2_phase_f_minimal_cell_motility_pilot_locked.md``)
+  ``docs/v2/v2_phase_f_minimal_cell_motility_pilot_locked.md``)
 - runs the Phase E v2 wrapper for ECM-side diagnostics in the loop
   (HB#4 multipliers strictly diagnostic-only)
 - writes one HDF5 frame snapshot of the cell + ECM cluster

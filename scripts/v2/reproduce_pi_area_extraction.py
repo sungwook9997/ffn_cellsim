@@ -1,6 +1,6 @@
 """V2 imaging measurement-protocol gate — reproduce PI's CSV `Area_px` from saved mask PNGs.
 
-Paired lock: ``docs/v2_imaging_measurement_protocol_gate_locked.md``.
+Paired lock: ``docs/v2/v2_imaging_measurement_protocol_gate_locked.md``.
 
 The 260313 dataset is a multi-cell / spheroid-stage validation reservoir
 (V2-3/V2-5 territory), NOT a Layer 1 single-cell anchor; this script

@@ -1,9 +1,9 @@
 """Phase D no-op closed-loop scaffolding integrator.
 
 Implements the locked Phase D no-op design from
-``docs/v2_phase_d_no_op_scaffolding_locked.md`` (commit ``18b5430`` /
+``docs/v2/v2_phase_d_no_op_scaffolding_locked.md`` (commit ``18b5430`` /
 ``7786b20``) and the pre-execution Sanity Gate
-``docs/v2_phase_d_no_op_scaffolding_sanity_gate.md`` (commit
+``docs/v2/v2_phase_d_no_op_scaffolding_sanity_gate.md`` (commit
 ``42b8e34``): a pure composition layer that wires Hard Blocker #3
 (FA→ECM scatter primitive) and Hard Blocker #4 (ECM→FA bias
 primitive) into a single integrator step entry point with three

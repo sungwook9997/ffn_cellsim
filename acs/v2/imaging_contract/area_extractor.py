@@ -1,7 +1,7 @@
 """V2 imaging measurement-protocol gate — canonical area extractor reproducing PI's CSV ``Area_px``.
 
-Paired lock: ``docs/v2_imaging_measurement_protocol_gate_locked.md``.
-Paired sanity gate: ``docs/v2_imaging_measurement_protocol_gate_sanity_gate.md``.
+Paired lock: ``docs/v2/v2_imaging_measurement_protocol_gate_locked.md``.
+Paired sanity gate: ``docs/v2/v2_imaging_measurement_protocol_gate_sanity_gate.md``.
 
 This module is the **source-pipeline reproduction** of PI's analysis at
 ``/Users/sw1/Desktop/spread_analysis/spread_infer.py``. It is the single

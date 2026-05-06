@@ -1,5 +1,5 @@
 # Stage 1b.b Pilot 2 — Production Lam4 5k × 80hr with Layer 3 φ_memory
-# + c_act split (per docs/layer3_phi_audit.md §6 + PI directive
+# + c_act split (per docs/v1/layer3_phi_audit.md §6 + PI directive
 # 2026-04-29). Tests whether the pre-fix peak-and-decay (top-down
 # 1.570 at 7.75hr → 1.409 at 80hr) was contaminated by the Layer 3
 # formulation bug. Pilot 1 (1k Lam4 4hr) gave A/A₀_topdown peak 4.28

@@ -1,4 +1,4 @@
-"""Stage 0 verification — corresponds to docs/10_dev_roadmap.md "Validation".
+"""Stage 0 verification — corresponds to docs/v1/10_dev_roadmap.md "Validation".
 
 Run after env install completes:
     python scripts/verify_env.py

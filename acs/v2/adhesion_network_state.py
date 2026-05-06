@@ -1,10 +1,10 @@
 """V2 Adhesion-Network Layer state contract: cadherin/integrin program dynamics.
 
 This is the v2 reformulation of the v1 Layer 3 adhesion-network state
-contract. The v2 roadmap's `Layer 3` (per ``docs/00_project_vision_v2.md``)
+contract. The v2 roadmap's `Layer 3` (per ``docs/v2/00_project_vision_v2.md``)
 refers to the ECM fiber network — a separate unit. This unit is the
 adhesion-network layer per the original CLAUDE.md Layer 3 definition,
-locked at ``docs/v2_adhesion_network_layer_locked.md``.
+locked at ``docs/v2/v2_adhesion_network_layer_locked.md``.
 
 PI ``id=2003`` directive (verbatim wording boundary, Y16 anchor):
 

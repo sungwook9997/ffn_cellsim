@@ -1,9 +1,9 @@
 """Pure read-only ECM orientation Lyapunov-like metric (HB#5 lock).
 
 Implements the locked HB#5 design from
-``docs/v2_hard_blocker_5_lyapunov_metric_locked.md`` (commit
+``docs/v2/v2_hard_blocker_5_lyapunov_metric_locked.md`` (commit
 ``340c353``) and the impl-work Sanity Gate
-``docs/v2_hard_blocker_5_lyapunov_metric_sanity_gate.md`` (commit
+``docs/v2/v2_hard_blocker_5_lyapunov_metric_sanity_gate.md`` (commit
 ``1c9bb0a``; Codex Sanity Gate PASS at ``id=1518``).
 
 This is the **final Phase E upstream hard blocker**: a pure

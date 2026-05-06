@@ -1,9 +1,9 @@
 """V2 Phase E v1 closed-loop ECM gate composition (ECM-side evidence only).
 
 Implements the locked Phase E v1 composition design from
-``docs/v2_phase_e_composition_locked.md`` (commit ``c8b9550``)
+``docs/v2/v2_phase_e_composition_locked.md`` (commit ``c8b9550``)
 and the impl-work Sanity Gate
-``docs/v2_phase_e_composition_sanity_gate.md`` (commit
+``docs/v2/v2_phase_e_composition_sanity_gate.md`` (commit
 ``b0b5baa`` + amendments ``a3bc8a6`` + ``e5a8186``; Codex Sanity
 Gate PASS at ``id=1552``).
 

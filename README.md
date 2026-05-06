@@ -30,9 +30,10 @@ Portable: RTX 4090×2 lab workstation, Google Colab fallback
 
 ## Getting Started (for Claude Code)
 1. Read `CLAUDE.md` (this is automatic).
-2. Read `docs/10_dev_roadmap.md` to understand next milestone.
-3. Read `docs/00_project_vision.md` for full framing.
-4. Pull other `docs/*.md` files only as relevant to the current task.
+2. Read `STRUCTURE.md` for the file→version map (v1 frozen / v2 active / shared).
+3. Read `docs/v2/10_dev_roadmap_v2.md` to understand next milestone (v2 active). The v1 roadmap is at `docs/v1/10_dev_roadmap.md` for historical reference.
+4. Read `docs/00_project_vision.md` and `docs/v2/00_project_vision_v2.md` for full framing.
+5. Pull other docs only as relevant to the current task.
 
 ## Project Lead
 PI: Sungwook Yoon (sungwook999@kaist.ac.kr)

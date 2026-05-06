@@ -1,7 +1,7 @@
 """Cell cluster state schema.
 
 Canonical Phase 1 ``CellClusterState`` per
-``docs/v2_phase1_plan_consolidated.md`` §5.6. A cluster aggregates
+``docs/v2/v2_phase1_plan_consolidated.md`` §5.6. A cluster aggregates
 single-cell states with a shared ECM substrate and an explicit junction
 list; cells remain separate polygons and never merge geometry on
 contact.

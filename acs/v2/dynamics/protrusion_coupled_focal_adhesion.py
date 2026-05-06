@@ -1,8 +1,8 @@
 """Protrusion-coupled focal-adhesion dynamics (6.3b).
 
 Implements the locked 6.3b dynamics from
-``docs/v2_63b_protrusion_coupling_locked.md`` and
-``docs/v2_63b_protrusion_coupled_fa_sanity_gate.md``: a deterministic
+``docs/v2/v2_63b_protrusion_coupling_locked.md`` and
+``docs/v2/v2_63b_protrusion_coupled_fa_sanity_gate.md``: a deterministic
 wrapper around 6.3a static FA traction preflight that computes per-FA
 effective maturation/binding rates from a caller-supplied protrusion
 registry plus a typed multiplier table, then delegates per-FA to
@@ -28,7 +28,7 @@ Sanity Gate scope (dynamics/protrusion_coupled_focal_adhesion.py):
 - §1 dimensional: multiplier dimensionless, effective rate 1/s,
   ``dt_fa_s · max(effective_rate)`` dimensionless, traction nN
   (6.3a delegate). Spelled out in
-  ``docs/v2_63b_protrusion_coupled_fa_sanity_gate.md`` §1.
+  ``docs/v2/v2_63b_protrusion_coupled_fa_sanity_gate.md`` §1.
 - §2 boundary: every failure_kind from the gate doc §2 is raised
   before any state mutation. Typed multiplier-key validation runs
   upfront via :meth:`ProtrusionStateMultipliers.validate`; missing
@@ -63,8 +63,8 @@ documentation only; runtime requires explicit caller-supplied
 multipliers.
 
 B1 typed-schema migration scope (per
-``docs/v2_focal_adhesion_dynamics_result_typed_locked.md`` +
-``docs/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md``,
+``docs/v2/v2_focal_adhesion_dynamics_result_typed_locked.md`` +
+``docs/v2/v2_focal_adhesion_dynamics_result_typed_sanity_gate.md``,
 commits ``ed5c0ca`` / ``7924730`` / ``77d4e91`` / ``88eaa4b`` /
 ``3b10df6``): :func:`step_protrusion_coupled_focal_adhesions`
 returns :class:`ProtrusionCoupledDynamicsResult` (IS-A
@@ -77,7 +77,7 @@ migration is **shape-only**; no behavior change to 6.3a/6.3b
 force / rate algebra.
 
 B1 forbidden (text-level guard layered on top of the runtime
-tests in ``tests/test_v2_protrusion_coupled_focal_adhesion.py``):
+tests in ``tests/v2/test_v2_protrusion_coupled_focal_adhesion.py``):
 
 - No 6.3a/6.3b force / rate algebra change (typing migration
   only).

@@ -1,7 +1,7 @@
 # Stage 1a+ Option α pilot — v15 Layer 1 + rigid Col1 substrate (γ_sub = 0).
 #
-# PI-approved scope and decisions in docs/stage1a_plus_substrate_sanity.md.
-# Bounded outcomes in docs/outcomes_stage1a_plus.md.
+# PI-approved scope and decisions in docs/v1/stage1a_plus_substrate_sanity.md.
+# Bounded outcomes in docs/v1/outcomes_stage1a_plus.md.
 #
 # Mechanism question: does mechanical-only substrate anchoring materially
 # reduce the v15 baseline R drift of 24.4%?
@@ -51,7 +51,7 @@ physics:
 # wetting-energy term. PI selected Option α after literature verification
 # of γ_sub_Col1 = 0.3 mJ/m² failed the Magic-Number Block test 1 (no
 # Col1-specific cellular-aggregate spreading-coefficient value in the
-# cited references — see docs/stage1a_plus_substrate_sanity.md
+# cited references — see docs/v1/stage1a_plus_substrate_sanity.md
 # §"Verification record").
 substrate:
   enabled: true

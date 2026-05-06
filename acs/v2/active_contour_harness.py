@@ -4,7 +4,7 @@ Glues together the schema (`acs.v2.active_contour`), dynamics
 (`acs.v2.dynamics.active_contour`), HDF5 frame writer
 (`acs.v2.output.frame_dump`), and stub3d renderer
 (`acs.v2.viz.stub3d`) into the four gate tests defined in
-``docs/v2_p1_active_contour_sanity_gate.md`` §4 / §8 and lock §6.
+``docs/v2/v2_p1_active_contour_sanity_gate.md`` §4 / §8 and lock §6.
 
 The harness produces every artifact §8 lists for each test, on PASS
 or FAIL. Quantitative gate decisions live in the tests, not the
