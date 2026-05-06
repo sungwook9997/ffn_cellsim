@@ -11,6 +11,36 @@ already-locked design docs. If a future design-discussion round
 changes Phase contracts (Hard Blockers #1–#5), update the link
 table below — do not duplicate Phase contracts here.
 
+> ⚠️ **CURRENT STATUS OVERRIDE — 2026-05-06**
+> (post-Option-A+B restructure audit cycle, claude-work
+> `mcp_msg:2609`, codex approval `mcp_msg:2610`).
+>
+> Phase D no-op, Phase E v1, Phase E v2 step 2, HB#1/#2/#3/#4/#5,
+> and Item 5 sweep have landed and were post-restructure audited.
+> The audit cycle classified each unit as CLEAN or surfaced narrow
+> drift fixes (banners only, no behavior changes); see audit chain
+> `mcp_msg:2542 / 2544 / 2546 / 2548 / 2564 / 2571 / 2575 / 2578 /
+> 2581 / 2585 / 2589 / 2607` for individual reports.
+>
+> Older "BLOCKED" wording below is retained as **2026-05-04 historical navigation context**
+> and **must not be used as current state**. The
+> per-Phase tables and commit chain in §§ Phase D / Phase E / "Commit
+> chain (this session, 2026-05-04 closed-loop work)" stop at the
+> 2026-05-04 KST session and have not been re-extended; refer to the
+> child locks plus `docs/v2/v2_current_build_state.md` (commit
+> `da581cd`, refreshed 2026-05-06) for current status.
+>
+> F-proper-1 remains WIP HALTED / coherent but untested; see
+> `docs/v2/v2_phase_f_proper_1_fa_rate_response_locked.md` and
+> commit `8a24d89`.
+>
+> Phase E v2 Item 5 sweep is a B-tier sister extension surfaced in
+> `docs/v2/v2_item_5_sweep_harness_locked.md`; see commit `0f5e96f`.
+>
+> A future dedicated handoff-doc refresh unit may rewrite the §§
+> Phase D / Phase E / commit-chain tables to current state; until
+> then this banner is the load-bearing current-status pointer.
+
 ---
 
 ## Documents (read in this order)
