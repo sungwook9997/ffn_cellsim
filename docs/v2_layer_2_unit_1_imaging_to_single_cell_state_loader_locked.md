@@ -1,5 +1,44 @@
 # V2 Layer-2 Unit 1 — Imaging → SingleCellState Loader (Area Extraction Contract)
 
+> ⚠️ **RETRACTED PENDING FRAMING CHECKPOINT** — 2026-05-06 11:35 KST.
+>
+> Work pane sealed U1.4–U1.6 without re-reading
+> `/tmp/acs-collab/implementation-work/work_briefing.md` after the chat
+> pane's 11:14 KST patch (lines 48–57: "HALT BEFORE U1.4 LOCK", per
+> Codex `id=2310` ACK). U1.1 result confirmed PI's phase-scope claim:
+> the 260313 saved masks segment **spheroid outer boundary**
+> (EffectiveRadius_um median 436–490 μm, Solidity median 0.976,
+> Area_um2 median 6e5–7.5e5 μm²) — NOT single-cell. Therefore the
+> lock-seal naming "Imaging → SingleCellState Loader" is invalid
+> framing for 260313, and the chat pane is responsible for the
+> framing/naming re-alignment round before any new seal.
+>
+> Status of artefacts:
+> - U1.1 (algorithm identification), U1.2 (reproduction), U1.3 (≤1.5%
+>   verify excluding Pos31): **layer-agnostic measurement-protocol
+>   parity work, retained as valid** (briefing line 57: "U1.1 work
+>   itself can continue").
+> - U1.4 (loader provenance metadata), U1.5 (lock spec naming),
+>   U1.6 (wording-boundary meta-test): **provisionally RETRACTED**
+>   pending the chat-pane framing checkpoint outcome. Code in
+>   `acs/v2/imaging_contract/area_extractor.py` and tests in
+>   `tests/test_v2_layer_2_unit_1_area_extraction.py` are kept on
+>   disk but treated as draft until the rename decision (`V2-1
+>   measurement-protocol gate` / `observation loader` / other) is
+>   delivered by the chat pane. The Pos31 provenance discipline
+>   (Codex `id=2304` 5 guardrails) survives unchanged regardless
+>   of framing.
+> - Commit `85df64a` `acs/v2 — V2-2 Unit 1 area extraction contract
+>   sealed` is the violating commit; this retraction is added as a
+>   follow-up commit. No git revert was performed because the
+>   algorithm/code/tests are layer-agnostic and salvageable.
+>
+> Chat pane is asked to take over: framing decision + new lock spec
+> wording. Work pane is in standby on this topic.
+>
+> Refs: ledger `id=2309` (PI phase-scope correction), `id=2310`
+> (Codex 5-stance ACK), `id=2311` (chat-pane briefing patch).
+
 **Date**: 2026-05-06 KST
 **Authors**: Claude (impl-work) + PI directive resolution + Codex
 guardrail id=2304 (review of id=2302).
