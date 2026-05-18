@@ -118,48 +118,70 @@ def cortical_tension_forces(
     bead_positions: np.ndarray,
     gamma_cortex: float,
     rest_length: float,
-    r_floor: float,
+    R_cell: float,
 ) -> np.ndarray:
-    """Cortical tension inward force per bead (KU-3.5, Phase 1 simplified).
+    """Cortical tension Hookean radial restoring force (KU-3.5; revised brief).
 
-    For a 2D loop with line tension γ_cortex (units N/m), the Laplace-
-    law inward force per arc-length element ds is γ_cortex · κ_local
-    where κ_local ≈ 1/R_eff in the quasi-static surrogate (cortex
-    radius ≫ bead spacing). Discretising onto beads with spacing ℓ₀
-    gives the per-bead force
+    The brief specified a per-bead form ``F = γ_cortex · (1/R_eff) ·
+    (−r̂_eff)`` (Laplace-law magnitude applied at the centroid
+    distance). On an elliptical initial condition this is the wrong
+    sign for rounding: beads on the *minor* axis (small R_eff) see a
+    *larger* inward force than beads on the *major* axis, which
+    pushes the minor poles inward further and **elongates** the
+    cortex instead of rounding it. The same conclusion follows from
+    the geometric identity that, for a smooth convex curve, the
+    centroid distance R_centroid is anti-correlated with the local
+    curvature κ_local — so the brief's "1/R_eff" formula applied
+    per-bead-distance is anti-Laplace.
 
-        F_tension(bead) = − (γ_cortex · ℓ₀ / R̃) · r̂_eff,
-        R̃ = max(|r_bead − centroid|, r_floor),
-        r_floor = caller-supplied minimum radius (Phase 1: 0.5 R_cell).
+    Physically, cell rounding under cortical tension is the energy-
+    minimum of (γ · perimeter) at fixed enclosed area; the
+    cortex-network discretisation of that minimum is a Hookean
+    radial restoring force that pulls beads back toward the nominal
+    cortex radius R_cell:
 
-    Dimensional check: [γ_cortex] = N/m, [ℓ₀] = m, [R̃] = m
-    ⇒ [F] = N ✓.
+        F_tension(bead) = − k_R · (R_eff − R_cell) · r̂_eff,
+        k_R = γ_cortex · ℓ₀ / R_cell².
 
-    The ``r_floor`` parameter is a numerical regulariser for the 1/R
-    divergence at the centroid. Without it, a bead approaching the
-    centroid (R → 0) sees an unbounded inward pull and the
-    overdamped Euler step overshoots, kicking the bead past the
-    centroid and seeding an instability that drives the cortex
-    outward in subsequent steps. Floor R̃ at a fraction of the
-    nominal cortex radius (Phase 1 default: 0.5 R_cell, chosen so
-    the maximum inward force is twice the nominal γ·ℓ₀/R_cell —
-    enough head-room to drive rounding from a 1.5 : 1 elliptical
-    IC but not so much that it triggers oscillation at dt = 0.01 s
-    against the τ_tension CFL bound).
+    Sign check: R_eff > R_cell ⇒ F inward (bead beyond R_cell pulled
+    back). R_eff < R_cell ⇒ F outward (bead too close gets pushed
+    out — cortex won't collapse). At R_eff = R_cell, F = 0
+    (equilibrium). For an elliptical IC, major-axis-pole beads
+    (R_eff > R_cell) feel strong inward pull while minor-axis-pole
+    beads (R_eff < R_cell) feel mild outward push — the shape
+    rounds to a circle of radius R_cell while preserving area. ✓
 
-    The centroid is computed across all beads at every call (cheap;
-    cortex is small) so the inward direction adapts as the cortex
-    deforms toward a circle.
+    Dimensional check: [k_R] = N/m × m / m² = N/m². Force per bead
+    is k_R · (R_eff − R_cell) with [m] → [N/m² × m] = N/m ✗ — needs
+    one more length factor. We adopt
+
+        k_R = γ_cortex / R_cell    [N/m² ⇒ N/m once multiplied by ℓ₀]
+        F_per_bead = − (γ_cortex / R_cell) · (R_eff − R_cell) · r̂.
+
+    With γ_cortex / R_cell having units N/m and (R_eff − R_cell)
+    having units m, the force has units N · m/m = N ✓.
+
+    Magnitude calibration: at the elliptical-IC major pole
+    (R_eff = a = 1.2 R_cell), |F| = (γ_cortex/R_cell) · (0.2 R_cell)
+    = 0.2 γ_cortex = 1e-4 N. Combined with γ_drag = 100 N·s/m per
+    bead, this gives a per-bead velocity ≈ 1 μm/s and a rounding
+    timescale γ_drag / (γ_cortex/R_cell) = γ_drag · R_cell /
+    γ_cortex = 100 · 1e-5 / 5e-4 = 2 s, comfortably under the
+    KU-3.1 "~1 minute" rounding criterion.
     """
     pts = bead_positions.reshape(-1, 2)
     centroid = pts.mean(axis=0)
     rel = pts - centroid                               # (N_beads_total, 2)
     R_eff = np.linalg.norm(rel, axis=1)                # (N_beads_total,)
-    safe_R = np.where(R_eff > 0.0, R_eff, 1.0)         # defensive (R=0 zero force below)
+    safe_R = np.where(R_eff > 0.0, R_eff, 1.0)         # defensive guard
     rhat = rel / safe_R[:, None]
-    R_tilde = np.maximum(R_eff, r_floor)
-    magnitude = gamma_cortex * rest_length / R_tilde
+    k_R = gamma_cortex / R_cell                        # N/m
+    magnitude = k_R * (R_eff - R_cell)                 # N
     F_flat = -magnitude[:, None] * rhat
+    # rest_length is accepted for interface symmetry with earlier drafts
+    # (Phase 1 simplification — the radial-spring discretisation does not
+    # multiply by ℓ₀; keep argument so callers don't need to refactor).
+    del rest_length
     return F_flat.reshape(bead_positions.shape)
 
 
@@ -191,7 +213,7 @@ def solve_overdamped_step(
         cross_links=cortex.cross_links,
     )
     F_tension = cortical_tension_forces(
-        pos, gamma_cortex, cortex.rest_length, r_floor=0.5 * cortex.R_cell
+        pos, gamma_cortex, cortex.rest_length, R_cell=cortex.R_cell
     )
     F = F_internal + F_tension
     if K_area > 0.0:

@@ -146,22 +146,35 @@ def test_ecm_module_reuse_shape_and_finite(cfg, cortex):
 
 
 def test_cortical_tension_force_sign_and_units(cfg, cortex):
-    """KU-3.5: F_tension is inward (negative r̂_eff) and has units N."""
+    """KU-3.5 (revised brief): F_tension is a Hookean radial spring centred on R_cell.
+
+    For beads at R_eff > R_cell the force is inward; for R_eff < R_cell it
+    is outward; the sign of the projection on r̂_eff equals the sign of
+    (R_cell − R_eff). We verify this contract bead-by-bead rather than
+    asserting universal inward force, because the elliptical IC and the
+    fiber-along-tangent offsets put some beads inside R_cell.
+    """
     c = cfg["cell"]
     F_t = cortical_tension_forces(
         cortex.bead_positions, c["gamma_cortex"], cortex.rest_length,
-        r_floor=0.5 * cortex.R_cell,
+        R_cell=cortex.R_cell,
     )
     assert F_t.shape == cortex.bead_positions.shape
     pts = cortex.bead_positions.reshape(-1, 2)
     centroid = pts.mean(axis=0)
     rel = pts - centroid
-    # Project F_t onto r̂_eff: should be negative for every bead.
     rad = np.linalg.norm(rel, axis=1)
     safe = np.where(rad > 0, rad, 1.0)
     rhat = rel / safe[:, None]
     proj = np.einsum("bd,bd->b", F_t.reshape(-1, 2), rhat)
-    assert np.all(proj < 0.0), "F_tension must point inward on every bead."
+    # Sign contract: proj has the same sign as (R_cell − R_eff).
+    expected_sign = np.sign(cortex.R_cell - rad)
+    nontrivial = np.abs(rad - cortex.R_cell) > 1e-12
+    np.testing.assert_array_equal(
+        np.sign(proj[nontrivial]),
+        expected_sign[nontrivial],
+        err_msg="Hookean tension sign contract violated.",
+    )
 
 
 # ------------------------------------------------------------------ #
@@ -215,6 +228,7 @@ def rounding_run(cfg):
         n_steps=r["n_steps"],
         sample_interval=r["sample_interval"],
         keep_frames=False,
+        K_area=c["K_area"],
     )
     return cortex, final_cortex, traj
 
@@ -241,15 +255,21 @@ def test_cell_rounding_acceptance_window(cfg, rounding_run):
 
 
 def test_aspect_ratio_monotonic_trend(rounding_run):
-    """KU-3.1 acceptance text: monotonic decrease (allow small non-monotonicity)."""
+    """KU-3.1 acceptance text: late aspect ratio < initial (rounding happened).
+
+    With τ_round ≈ R_cell · γ_drag / γ_cortex ≈ 2 s and total sim 120 s,
+    the cortex equilibrates in the first few percent of the trajectory.
+    We compare the initial AR (t=0 fixed sample) to the late-trajectory
+    mean — must drop by at least 0.10 for the test to pass.
+    """
     _, _, traj = rounding_run
     ar = traj.aspect_ratios
-    # Compare first quarter mean vs last quarter mean — must be strictly smaller.
     q = max(1, len(ar) // 4)
-    early = float(ar[:q].mean())
-    late = float(ar[-q:].mean())
-    assert late < early - 0.05, (
-        f"Aspect ratio did not decrease: early={early:.3f}, late={late:.3f}"
+    initial = float(ar[0])
+    late_mean = float(ar[-q:].mean())
+    assert late_mean < initial - 0.10, (
+        f"Aspect ratio did not decrease enough: initial={initial:.3f}, "
+        f"late mean={late_mean:.3f}"
     )
 
 
@@ -267,7 +287,7 @@ def test_blebbistatin_slower_rounding(cfg):
     c = cfg["cell"]
     r = c["rounding_test"]
 
-    def _run(gamma: float):
+    def _run(gamma: float, sim_time: float = 2.0):
         cortex = generate_elliptical_cortex(
             semi_major=r["semi_major"], semi_minor=r["semi_minor"],
             n_cortex_fibers=c["n_cortex_fibers"],
@@ -279,26 +299,34 @@ def test_blebbistatin_slower_rounding(cfg):
             seed=c["seed"],
             box_size=c["derived"]["box_size"],
         )
-        # Short run for the test — 30 s is enough to discriminate.
-        n_steps = int(30.0 / r["target_dt"])
+        dt = r["target_dt"]
+        n_steps = int(sim_time / dt)
         _, traj = relax(
             cortex,
             stretching_modulus=c["stretching_modulus"],
             bending_modulus=c["bending_modulus"],
             gamma_cortex=gamma,
             gamma_drag=c["derived"]["gamma_b"],
-            dt=r["target_dt"],
+            dt=dt,
             n_steps=n_steps,
-            sample_interval=r["sample_interval"],
+            sample_interval=5,
             keep_frames=False,
+            K_area=c["K_area"],
         )
-        return traj.aspect_ratios[-1]
+        return traj
 
-    ar_full = _run(c["gamma_cortex"])
-    ar_blebb = _run(c["gamma_cortex_blebbistatin"])
+    # Probe at t = 1.0 s — full-γ run (τ ≈ 2 s) has decayed to ≈ 0.6 of
+    # the initial perturbation; blebbistatin run (τ ≈ 20 s) has barely
+    # moved (≈ 0.95 of initial). The gap at t = 1 s is much larger than
+    # at t = 0.5 s, giving the test reliable headroom above bead noise.
+    traj_full = _run(c["gamma_cortex"])
+    traj_blebb = _run(c["gamma_cortex_blebbistatin"])
+    probe_t = 1.0
+    ar_full = float(traj_full.aspect_ratios[np.argmin(np.abs(traj_full.times - probe_t))])
+    ar_blebb = float(traj_blebb.aspect_ratios[np.argmin(np.abs(traj_blebb.times - probe_t))])
     assert ar_full + 0.05 < ar_blebb, (
-        f"Blebbistatin should round more slowly: full γ → {ar_full:.3f}, "
-        f"blebb → {ar_blebb:.3f}"
+        f"Blebbistatin should round more slowly at t={probe_t} s: "
+        f"full γ → AR={ar_full:.3f}, blebb → AR={ar_blebb:.3f}"
     )
 
 
@@ -351,6 +379,7 @@ def test_one_step_is_smooth(cfg, cortex):
         gamma_cortex=c["gamma_cortex"],
         gamma_drag=c["derived"]["gamma_b"],
         dt=c["rounding_test"]["target_dt"],
+        K_area=c["K_area"],
     )
     assert np.all(np.isfinite(new_cortex.bead_positions))
     # Maximum displacement must be smaller than ℓ₀ (sub-bond motion / step).

@@ -264,3 +264,66 @@ def load_bridge_config(path: str | Path) -> dict[str, Any]:
     with open(path, "r") as f:
         cfg = yaml.safe_load(f)
     return resolve_bridge(cfg)
+
+
+# ---------------------------------------------------------------------- #
+# Bridge / Unit 2.2 (mature FA + ECM adapter)                            #
+# ---------------------------------------------------------------------- #
+
+
+def resolve_bridge_22(cfg: dict[str, Any], unit1_cfg_path: str | Path) -> dict[str, Any]:
+    """Resolve a Phase 1 Unit 2.2 config in place.
+
+    Extends :func:`resolve_bridge` with the maturation derived block
+    (vinculin steady state, k_int_eff, talin rate at 5 pN) and pulls
+    Worker A's μ, κ from the ECM Unit 1.1 YAML so the adapter speaks the
+    same ECM language as Worker A's network.
+    """
+    cfg = resolve_bridge(cfg)
+    b = cfg["bridge"]
+
+    # Cross-load ECM moduli from Worker A's Unit 1.1 config so the adapter
+    # uses the *same* fibre mechanics. Honour explicit overrides (non-null
+    # values in the Unit 2.2 yaml) — only fill blanks.
+    ecm = b.setdefault("ecm_adapter", {})
+    if ecm.get("stretching_modulus") is None or ecm.get("bending_modulus") is None:
+        with open(unit1_cfg_path, "r") as f:
+            unit1 = yaml.safe_load(f)
+        if ecm.get("stretching_modulus") is None:
+            ecm["stretching_modulus"] = float(unit1["ecm"]["stretching_modulus"])
+        if ecm.get("bending_modulus") is None:
+            ecm["bending_modulus"] = float(unit1["ecm"]["bending_modulus"])
+
+    # Maturation derived quantities.
+    vin = b["vinculin"]
+    n_unfolded_target = 1                                # Phase 1: 1-state max
+    N_vin_ss = (
+        float(vin["k_rec"]) * n_unfolded_target * float(vin["N_free"])
+        / max(float(vin["k_diss"]), 1e-30)
+    )
+    mc = b["motor_clutch"]
+    k_int_eff_ss = float(mc["k_int"]) * (1.0 + float(vin["alpha"]) * N_vin_ss)
+
+    talin = b["talin"]
+    k_unfold_5pN = float(talin["k_u0"]) * math.exp(
+        5.0e-12 * float(talin["dx_star"]) / float(talin["kT"])
+    )
+
+    derived = b.setdefault("derived", {})
+    derived["vinculin_steady_state_at_n1"] = N_vin_ss
+    derived["k_int_eff_at_steady_vin"] = k_int_eff_ss
+    derived["talin_unfold_rate_at_5pN"] = k_unfold_5pN
+    return cfg
+
+
+def load_bridge_22_config(
+    path: str | Path,
+    unit1_cfg_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Load and resolve a Unit 2.2 config; cross-load Unit 1.1 by default."""
+    path = Path(path)
+    if unit1_cfg_path is None:
+        unit1_cfg_path = path.parent / "phase1_unit1.yaml"
+    with open(path, "r") as f:
+        cfg = yaml.safe_load(f)
+    return resolve_bridge_22(cfg, unit1_cfg_path)
