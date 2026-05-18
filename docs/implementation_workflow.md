@@ -278,6 +278,33 @@ delivery contract even if no substantive progress happened.
   missed 01:48 and 03:00 KST reports are the reference incident: the
   fix is explicit scheduled send, not relying on backflow or new events.
 
+### Standby watchdog
+
+The `implementation-work` heartbeat daemon also acts as an anti-standby
+watchdog. By default, if no MCP traffic appears in `implementation-work`
+for 30 minutes, it inserts a PI-authored `watchdog-auto-nudge` message
+to `claude,codex`. The relay then wakes both panes and tells them to
+read the room, pick the next small roadmap unit, and continue unless the
+latest item is a true `decision-needed` / `blocker` to PI.
+
+Default knobs:
+
+```bash
+COLLAB_WATCHDOG_ROOMS=implementation-work
+COLLAB_WATCHDOG_IDLE_S=1800
+COLLAB_WATCHDOG_COOLDOWN_S=1800
+```
+
+The watchdog is a liveness guard, not permission to bypass project
+rules. Sanity Gate FAIL, Magic-Number Block, gate-contract changes,
+destructive ops, and production/long GPU authorization still halt
+through the approval queue.
+
+Workroom Claude panes are launched with `--permission-mode
+bypassPermissions` and `--setting-sources project,local`. This keeps
+project/local permissions active while excluding user-level
+`PermissionRequest` hooks that can block unattended overnight runs.
+
 ## 9. References
 
 - `CLAUDE.md` (Claude-facing) and `AGENTS.md` (Codex-facing) —
