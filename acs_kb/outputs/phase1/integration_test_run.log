@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ActiveCellSim
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collected 10 items
+
+tests/integration/test_acs_kb_public_api_contract.py ..                  [ 20%]
+tests/integration/test_cell_cortex_uses_ecm.py ....                      [ 60%]
+tests/integration/test_motor_clutch_substrate_swap.py ....               [100%]
+
+============================== 10 passed in 0.37s ==============================
