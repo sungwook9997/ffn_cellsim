@@ -1,0 +1,135 @@
+{
+  "catch_bond": {
+    "F_star_pN_analytic": 6.9932479208500755,
+    "tau_max_s_analytic": 1.284434296912981,
+    "sample_forces_pN": [
+      0.0,
+      5.0,
+      10.0,
+      20.0,
+      30.0,
+      40.0,
+      50.0,
+      60.0
+    ],
+    "sample_means_s": [
+      1.1347288019112602,
+      1.272845539491512,
+      1.2526924939451833,
+      1.0038749439394496,
+      0.7209214836463705,
+      0.5286635996193948,
+      0.3679608896239704,
+      0.26895018348134586
+    ],
+    "KU_2_5_experimental_F_star_pN": 30.0
+  },
+  "biphasic": {
+    "E_grid_Pa": [
+      1.0,
+      2.8480358684358014,
+      8.11130830789687,
+      23.101297000831593,
+      65.79332246575679,
+      187.3817422860383,
+      533.6699231206308,
+      1519.9110829529332,
+      4328.761281083057,
+      12328.467394420659,
+      35111.917342151275,
+      100000.0
+    ],
+    "mean_F_total_N": [
+      1.46480640239047e-12,
+      4.097357404278025e-12,
+      1.1207576468538925e-11,
+      2.820646185360593e-11,
+      5.950210067952717e-11,
+      8.90779597711079e-11,
+      9.663314220088447e-11,
+      9.624385059431077e-11,
+      9.836468550031172e-11,
+      9.799876922217738e-11,
+      9.635406654389465e-11,
+      9.709336151440562e-11
+    ],
+    "mean_n_engaged": [
+      24.82136,
+      26.5942,
+      25.1768,
+      25.56968,
+      21.67148,
+      22.24052,
+      24.68184,
+      27.31724,
+      32.20528,
+      28.72216,
+      25.46376,
+      25.13352
+    ],
+    "E_argmax_Pa": 4328.761281083057,
+    "E_star_matched_Pa": 6346.303355789328,
+    "E_star_motor_Pa": 197.63730604335564,
+    "ratio_to_matched": 0.6820917687671209,
+    "ratio_to_motor": 21.90255153616321,
+    "factor_acceptance": 2.0
+  },
+  "clutch_force": {
+    "E_Pa": 5000.0,
+    "n_samples": 6780,
+    "mean_pN": 3.5656271270277373,
+    "median_pN": 2.3767350670689487,
+    "in_band_fraction": 0.2674041297935103,
+    "band_pN": [
+      5.0,
+      20.0
+    ]
+  },
+  "performance": {
+    "n_steps": 1000,
+    "n_clutches": 50,
+    "seconds": 0.0208889170025941,
+    "budget_seconds": 1.0
+  },
+  "sanity_gate": {
+    "passed": false,
+    "checks": [
+      {
+        "name": "dt_below_bond_event_rate_cfl",
+        "status": "PASS",
+        "ku": "KU-2.4 / KU-2.5",
+        "detail": "dt=1.000e-04 s, cfl_safe_dt=7.328e-02 s (\u03b1\u00b71/max(k_on, k_off(F_s)), \u03b1=0.1)"
+      },
+      {
+        "name": "catch_peak_F_star_within_analytic",
+        "status": "PASS",
+        "ku": "KU-2.5",
+        "detail": "F*_sim=6.99 pN, F*_analytic=6.99 pN, rel err=0.000, tol=0.2"
+      },
+      {
+        "name": "catch_peak_KU_2_5_experimental_gap_logged",
+        "status": "PASS",
+        "ku": "info",
+        "detail": "analytic F*=6.99 pN; KU-2.5 experimental F*\u224830 pN; gap=-23.01 pN. The KU-2.18 illustrative parameters do not reproduce the Kong 2009 / Elosegui-Artola 2016 experimental peak. Refit deferred to Phase 2."
+      },
+      {
+        "name": "biphasic_peak_E_star_within_factor",
+        "status": "PASS",
+        "ku": "KU-2.8",
+        "detail": "E*_sim=4.329e+03 Pa, E*_analytic=6.346e+03 Pa, ratio=0.682, factor=2.0"
+      },
+      {
+        "name": "per_clutch_force_in_KU_2_12_band",
+        "status": "FAIL",
+        "ku": "KU-2.12",
+        "detail": "mass in [5.0, 20.0] pN = 0.267, required \u2265 0.9"
+      },
+      {
+        "name": "perf_budget_met",
+        "status": "PASS",
+        "ku": "Brief Task 7",
+        "detail": "1000 steps \u00d7 50 clutches in 20.9 ms (budget 1000 ms)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "cfl_gate_report": "Sanity Gate \u00b7 unit1_2_overdamped_langevin\n  PASS cfl_dt_below_alpha_tau_min             [KU-1.26 CFL] dt=1.875e-08 s, \u03b1\u00b7\u03c4_min=1.894e-08 s (\u03c4_xl=6.52e-07, \u03c4_stretch=1.89e-07, \u03c4_bend=1.45e-01, \u03b1=0.1)\n  PASS integrator_supported_in_phase_1        [KU-1.26] integrator='euler_maruyama'; Phase 1 supports 'euler_maruyama' only",
+  "free_diffusion": {
+    "t_ns": [
+      375.01136710680663,
+      937.5284177670165,
+      1875.056835534033,
+      3750.113671068066,
+      7500.227342136132
+    ],
+    "msd_nm2": [
+      9.836975595062402,
+      24.94883535574578,
+      49.43798419804514,
+      98.28136683748318,
+      200.21816589351985
+    ],
+    "expected_nm2": [
+      9.853953488372094,
+      24.634883720930233,
+      49.269767441860466,
+      98.53953488372093,
+      197.07906976744187
+    ],
+    "rel_err_at_last_t": 0.01592810504830473
+  },
+  "equipartition": {
+    "n_links": 111,
+    "n_time_samples": 200,
+    "mean_E_over_half_kT": 1.0309359348965443,
+    "gate_passed": true,
+    "gate_report": "Sanity Gate \u00b7 unit1_2_equipartition\n  PASS link_energy_in_canonical_ensemble      [KU-1.26 equipartition] \u27e8\u00bd k_xl |\u0394r|\u00b2\u27e9=2.206e-21 J, \u00bd k_B T=2.140e-21 J, rel err=0.031, tol=0.12, n_samples=22200"
+  },
+  "preliminary_strain_stiffening": {
+    "gamma": [
+      0.005,
+      0.01,
+      0.02,
+      0.04,
+      0.06,
+      0.08,
+      0.1,
+      0.14,
+      0.18,
+      0.22,
+      0.26,
+      0.3,
+      0.35
+    ],
+    "sigma_xy_2D_N_per_m": [
+      3.222480563142827e-07,
+      8.302396331827755e-07,
+      1.1977167859157258e-06,
+      3.96433323602204e-07,
+      -6.362703532126645e-07,
+      -1.6850865023509543e-06,
+      -2.724785451136445e-06,
+      -4.7494181049957315e-06,
+      -6.677077206282948e-06,
+      -8.485437537037735e-06,
+      -1.0154523343059432e-05,
+      -1.1665742668836787e-05,
+      -1.3306535703281447e-05
+    ],
+    "G_2D_N_per_m": [
+      6.444961126285654e-05,
+      8.302396331827754e-05,
+      5.988583929578629e-05,
+      9.9108330900551e-06,
+      -1.0604505886877743e-05,
+      -2.1063581279386927e-05,
+      -2.724785451136445e-05,
+      -3.3924415035683795e-05,
+      -3.70948733682386e-05,
+      -3.85701706228988e-05,
+      -3.9055859011767044e-05,
+      -3.888580889612263e-05,
+      -3.8018673437946996e-05
+    ],
+    "G_3D_Pa": [
+      32.224805631428275,
+      41.511981659138776,
+      29.94291964789315,
+      4.95541654502755,
+      -5.302252943438872,
+      -10.531790639693464,
+      -13.623927255682226,
+      -16.962207517841897,
+      -18.5474366841193,
+      -19.2850853114494,
+      -19.527929505883524,
+      -19.442904448061316,
+      -19.0093367189735
+    ],
+    "G_0_affine_2D_N_per_m": 6.444961126285654e-05,
+    "G_0_affine_3D_Pa_using_h_2um": 32.224805631428275,
+    "layer_thickness_for_2D_to_3D_m": 2e-06,
+    "publication_grade": false,
+    "method": "affine deformation, no Langevin relaxation, no Lees-Edwards",
+    "deferred_reason": "PI note: revisit exact intersection-node insertion or finer bead discretization, and implement Lees-Edwards PBC, before quantitative KU-1.30 #1, #2 comparison."
+  },
+  "timings_s": {
+    "free_diffusion": 0.08047858299687505,
+    "equipartition": 6.030198042004486,
+    "strain_stiffening": 0.22720845900767017
+  }
+}
