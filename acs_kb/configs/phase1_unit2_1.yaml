@@ -10,10 +10,16 @@ bridge:
 
   # ---- Substrate stub (KU-1.21 / KU-1.5 PAA mid-range) ----
   substrate:
-    young_modulus: 5.0e3        # Pa  E, PAA mid-range, KU-1.5
+    young_modulus: 5.0e+3       # Pa  E, PAA mid-range, KU-1.5 (sign needed: PyYAML 1.1)
     poisson_ratio: 0.45         # —   ν, PAA, KU-1.21
     thickness: 100.0e-6         # m   carried for traceability, not used by stub
-    contact_radius: 1.0e-6      # m   a, matches KU-2.18 FA area = 1 μm²
+    # contact_radius is the *substrate-compliance length scale* in the
+    # Boussinesq form k_sub = π·E_eff·a. It is an INDEPENDENT model
+    # parameter — NOT a geometric projection of motor_clutch.fa_area.
+    # Phase 1 sets a = 1 μm per Brief Task 2; the alternative
+    # a = √(A/π) = 0.564 μm shifts k_sub by ×1.77 and is not what
+    # Phase 1 uses. Unit 2.2's ECM adapter obviates this parameter.
+    contact_radius: 1.0e-6      # m   a (substrate-compliance length, KU-1.21 stub)
 
   # ---- Single-FA motor-clutch (KU-2.4 / KU-2.18) ----
   motor_clutch:
@@ -45,7 +51,9 @@ bridge:
     log10_E_max:   5.0          # 10^5 Pa  (covers PAA soft → glass-like)
     n_points: 12                # 5 decades / 12 points ≈ 0.45 dec spacing
     n_steps_per_E: 50000        # 5 s sim time per stiffness, dt = 1e-4
-    seed: 1234
+    n_seeds: 5                  # replicated-seed validation; argmax_E spread
+                                # decides "true peak" vs "weakly peaked / saturating"
+    seed: 1234                  # root seed; per-(seed, E) sub-seed derived by hash
 
   # ---- Sanity Gate acceptance ranges ----
   acceptance:
@@ -58,10 +66,29 @@ bridge:
     # experimental F* ≈ 30 pN; the gate uses the analytic value as the
     # ground truth and logs the experimental-vs-analytic gap as info.
     catch_peak_tolerance: 0.20
-    # KU-2.12: per-clutch force histogram on E = 5 kPa substrate should
-    # have ≥ 90 % of mass in [5, 20] pN.
-    clutch_force_band_pN: [5.0, 20.0]
-    clutch_force_band_mass: 0.90
+    # Per-clutch force histogram on E = 5 kPa substrate.
+    #
+    # The KU-2.12 literature window 5–20 pN is the **mature-FA** range
+    # (Plotnikov 2012 Cell, Trichet 2012 PNAS) and requires the
+    # vinculin/talin reinforcement of k_int^eff that enters at Unit 2.2
+    # (KU-2.7). Phase 1 Unit 2.1 has no FA growth, no talin unfolding,
+    # no vinculin recruitment — per-clutch force at steady state is
+    # force-balance-limited at ~2–4 pN.
+    #
+    # Per the PI's post-review reclassification (2026-05-18):
+    #   * Unit 2.1 acceptance moves to the **nascent-FA 1–8 pN band**;
+    #   * the mature-FA 5–20 pN band moves to the Unit 2.2 contract.
+    # Both are tracked: Unit 2.1's gate uses ``clutch_force_band_pN``;
+    # the mature-FA target is logged as info under ``ku_2_12_mature_band_pN``.
+    clutch_force_band_pN: [1.0, 8.0]
+    # Mass threshold derived from the expected exponential-tail clutch-force
+    # distribution. With Phase 1 / KU-2.18 defaults the mean per-clutch
+    # force at E=5 kPa is ≈ 3.6 pN; an exponential f(F)∝exp(-F/3.6 pN) has
+    # fraction in [1,8] pN of  exp(-1/3.6) − exp(-8/3.6) = 0.649. The
+    # threshold 0.55 leaves ~10 pp margin for stochastic + non-exponential
+    # tail effects.
+    clutch_force_band_mass: 0.55
+    ku_2_12_mature_band_pN: [5.0, 20.0]   # Unit 2.2 inherits this
     # Performance gate (Brief Task 7): 50 clutches × 1000 steps < 1 s.
     perf_budget_seconds: 1.0
     perf_test_steps: 1000

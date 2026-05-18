@@ -64,12 +64,30 @@ _EXP_CAP = 50.0
 
 @dataclass(frozen=True, slots=True)
 class CatchSlipParams:
-    """Pereverzev two-pathway parameters (KU-2.5 / KU-2.18)."""
+    """Pereverzev two-pathway parameters (KU-2.5 / KU-2.18).
+
+    Defaults mirror the KU-2.18 illustrative values so the dataclass is
+    usable standalone (unit tests, ad-hoc exploration), but the
+    *authoritative* source for a simulation run is
+    ``configs/phase1_unit2_1.yaml`` via :meth:`from_config` — the YAML
+    is the single source of truth (CLAUDE.md Magic-Number Block).
+    """
 
     k_off_slip: float = 0.5
     F_s: float = 30.0e-12
     k_off_catch: float = 0.4
     F_c: float = 7.0e-12
+
+    @classmethod
+    def from_config(cls, cfg: dict) -> "CatchSlipParams":
+        """Build from a resolved ``bridge.catch_bond`` config block."""
+        c = cfg["bridge"]["catch_bond"] if "bridge" in cfg else cfg
+        return cls(
+            k_off_slip=float(c["k_off_slip"]),
+            F_s=float(c["F_s"]),
+            k_off_catch=float(c["k_off_catch"]),
+            F_c=float(c["F_c"]),
+        )
 
 
 DEFAULT_PARAMS = CatchSlipParams()

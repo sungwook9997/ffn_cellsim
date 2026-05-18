@@ -77,7 +77,13 @@ from acs_kb.bridge.types import FocalAdhesion
 
 @dataclass(frozen=True, slots=True)
 class MotorClutchParams:
-    """KU-2.4 / KU-2.18 defaults for a single FA."""
+    """KU-2.4 / KU-2.18 motor-clutch parameters for a single FA.
+
+    Defaults mirror KU-2.18 so the dataclass is usable standalone, but
+    the *authoritative* source for a simulation run is
+    ``configs/phase1_unit2_1.yaml`` via :meth:`from_config` — the YAML
+    is the single source of truth (CLAUDE.md Magic-Number Block).
+    """
 
     n_clutches: int = 50
     n_motors: int = 50
@@ -86,6 +92,21 @@ class MotorClutchParams:
     v_unloaded: float = 100.0e-9       # m/s   (100 nm/s)
     F_stall_per_motor: float = 2.0e-12 # N     (2 pN, KU-2.18)
     bond: CatchSlipParams = DEFAULT_CATCH_PARAMS
+
+    @classmethod
+    def from_config(cls, cfg: dict) -> "MotorClutchParams":
+        """Build from a resolved bridge config (loads catch bond too)."""
+        b = cfg["bridge"] if "bridge" in cfg else cfg
+        m = b["motor_clutch"]
+        return cls(
+            n_clutches=int(m["n_clutches"]),
+            n_motors=int(m["n_motors"]),
+            k_on=float(m["k_on"]),
+            k_int=float(m["k_int"]),
+            v_unloaded=float(m["v_unloaded"]),
+            F_stall_per_motor=float(m["F_stall_per_motor"]),
+            bond=CatchSlipParams.from_config({"bridge": b}),
+        )
 
 
 class MotorClutchFA:

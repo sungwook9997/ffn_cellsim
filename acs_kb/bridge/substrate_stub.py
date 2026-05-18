@@ -11,12 +11,25 @@ small-strain) collapsed to a per-clutch compliance::
     k_sub = π · E_eff · a  [N/m]
     E_eff = E / (1 − ν²)   [Pa]
 
-with the contact radius ``a`` set to the nominal single-clutch footprint
-(~1 μm, matching the KU-2.18 FA area of 1 μm²). This is a *linear*,
-isotropic, half-space approximation: no Hertz contact, no finite
-thickness correction, no inter-clutch elastic coupling. The Brief calls
-out that those are intentionally deferred — Hertz contact validation
-sits with Worker A's KU-1.21 module and need not be re-derived here.
+with the **substrate-compliance length scale** ``a`` (Phase 1 default
+1 μm per Brief Task 2) playing the role of an effective point-contact
+radius in the Boussinesq form. This is a *linear*, isotropic,
+half-space approximation: no Hertz contact, no finite thickness
+correction, no inter-clutch elastic coupling. The Brief calls out that
+those are intentionally deferred — Hertz contact validation sits with
+Worker A's KU-1.21 module and need not be re-derived here.
+
+``a`` (the substrate-stub compliance length) is **distinct** from the
+FocalAdhesion's ``area`` field (the FA's projected footprint on the
+substrate, KU-2.18 default 1 μm²). The two are *independent* model
+parameters in this stub: ``a`` sets the clutch-to-substrate spring
+constant, while ``area`` is an FA state variable used (from Unit 2.2
+onward) for Hill-function FA growth (KU-2.17) and traction stress
+reporting. A geometric disc-radius derivation ``a = √(A/π) ≈ 0.564 μm``
+is also defensible but is *not* what Phase 1 uses — switching to it
+would shift ``k_sub`` by 1/0.564 = 1.77× and re-position the biphasic
+peak. Unit 2.2's ECM adapter eliminates this ambiguity by computing
+``k_sub`` directly from the local fibre network.
 
 Sanity Gate
 -----------
@@ -55,6 +68,9 @@ import numpy as np
 class LinearElasticSubstrate:
     """Linear elastic half-space stub (KU-1.21).
 
+    The four attributes are **independent model parameters**, not
+    geometric projections of each other:
+
     Attributes
     ----------
     young_modulus : float
@@ -66,14 +82,41 @@ class LinearElasticSubstrate:
         Substrate thickness in metres. Carried for downstream
         traceability; not used in the linear half-space stub.
     contact_radius : float
-        Effective single-clutch contact radius ``a`` in metres. Phase 1
-        default 1 μm (matches KU-2.18 FA area = 1 μm²).
+        Phenomenological **substrate-compliance length scale** ``a`` in
+        metres, used by the Boussinesq form ``k_sub = π · E_eff · a``.
+        This is an *effective* point-contact radius that sets the
+        clutch-to-substrate spring constant — it is **not** a geometric
+        projection of the FA's projected area.
+
+        For Phase 1 we follow the Brief Task 2 specification of
+        ``a = 1 μm``. The FocalAdhesion's ``area`` field (Phase 1
+        default 1 μm², KU-2.18) is a separate quantity describing the
+        FA's footprint on the substrate; the two are independent model
+        parameters in this stub (a geometric disc-radius derivation
+        ``a = √(A/π) ≈ 0.564 μm`` is also defensible but is *not* what
+        Phase 1 uses, see ``docstring of substrate_stub`` and the
+        Unit 2.1 REPORT.md for rationale).
+
+        Unit 2.2's ECM adapter will compute the local stiffness from
+        the discrete fibre network and obviate ``contact_radius``
+        altogether.
     """
 
     young_modulus: float = 5.0e3
     poisson_ratio: float = 0.45
     thickness: float = 100.0e-6
     contact_radius: float = 1.0e-6
+
+    @classmethod
+    def from_config(cls, cfg: dict) -> "LinearElasticSubstrate":
+        """Build from a resolved ``bridge.substrate`` config block."""
+        s = cfg["bridge"]["substrate"] if "bridge" in cfg else cfg
+        return cls(
+            young_modulus=float(s["young_modulus"]),
+            poisson_ratio=float(s["poisson_ratio"]),
+            thickness=float(s["thickness"]),
+            contact_radius=float(s["contact_radius"]),
+        )
 
     @property
     def effective_modulus(self) -> float:

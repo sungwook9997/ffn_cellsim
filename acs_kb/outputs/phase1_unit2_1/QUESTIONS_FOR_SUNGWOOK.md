@@ -1,12 +1,15 @@
 # Questions for Sungwook — Phase 1 Unit 2.1 (Worker B)
 
-Two open issues from Unit 2.1 implementation that need PI guidance before
-Unit 2.2. Both are CLAUDE.md "gate-contract" surface-ups, not code bugs —
-the bridge module itself is faithful to KU-2.4 / KU-2.5 / KU-2.8 / KU-2.18.
+Status after PI conditional-acceptance review (2026-05-18):
+
+- **Q1 (Pereverzev refit)** — still open, awaiting decision below.
+- **Q2 (KU-2.12 scope)** — **RESOLVED** by PI: nascent 1–8 pN band for Unit 2.1, mature 5–20 pN band inherited by Unit 2.2.
+- **Q3 (biphasic claim)** — **RESOLVED** by PI: rephrased as saturating, evidenced by replicated-seed validation (n=5 seeds, argmax spread 2.27 decades, prominence 0.34 %).
+- **Q4 (`contact_radius` vs FA area)** — **RESOLVED** by PI: kept as independent model parameters, distinction documented in `substrate_stub.py` and YAML.
 
 ---
 
-## Q1 — KU-2.5 catch-peak F\* with KU-2.18 defaults gives 7 pN, not 30 pN
+## Q1 (still open) — KU-2.5 catch-peak F\* with KU-2.18 defaults gives 7 pN, not 30 pN
 
 **Issue.** With the KU-2.18 illustrative Pereverzev parameters
 
@@ -19,62 +22,38 @@ the closed-form lifetime peak
        = 5.68 pN · ln(3.43) = 6.99 pN.
 
 KU-2.5 separately quotes the *experimental* F\* ≈ 30 pN for α5β1–fibronectin
-(Kong 2009 Nature, Elosegui-Artola 2016 Nat Mater). The two are **not
-simultaneously satisfiable** with the KU-2.18 parameter set — recovering
-F\* ≈ 30 pN with the same Pereverzev form needs either a much larger
-`k_c` (≈ 20 s⁻¹) or substantially different F_s/F_c ratios.
+(Kong 2009 Nature, Elosegui-Artola 2016 Nat Mater). These are not
+simultaneously satisfiable with the KU-2.18 parameter set — recovering
+F\* ≈ 30 pN with the same Pereverzev form needs either `k_c ≈ 20 s⁻¹` or
+substantially different F_s/F_c ratios.
 
-**Brief acceptance.** "peak τ_max at F\* ≈ 30 pN within ±20 %." Cannot be
-met with KU-2.18 defaults.
+**Phase 2 consequence.** Until the parameters are refit, the bridge
+module cannot validate against the canonical Kong 2009 catch peak. The
+saturating biphasic shape (Q3) is also a direct consequence of the
+illustrative defaults: with F* ≈ 7 pN and N_m·F_stall/N_eng ≈ 4 pN, no
+clutch reaches the slip regime, so the system never gets the
+high-stiffness force dump that would produce a true peak.
 
-**Proposed resolution.** Keep KU-2.18 defaults; let the Unit 2.1 Sanity
-Gate validate F\* against the *analytic* value from the chosen parameters
-(rel err < 1e-3 ✓), and log the experimental-vs-analytic gap as info.
-Refit the Pereverzev parameters to Kong 2009 force-clamp data in Phase 2.
+**Proposed resolution.** Three options:
 
-**Decision needed.** Confirm OR (a) update KU-2.18 to a Kong 2009-fit
-parameter set, or (b) keep illustrative defaults but rephrase the brief
-acceptance to "within ±20 % of the closed-form F\* from the chosen
-parameters".
+1. **Refit immediately in Unit 2.2.** Add a Kong 2009-fit Pereverzev
+   parameter set to KU-2.18, alongside the illustrative one. The Unit
+   2.2 brief explicitly mentions "Refit Pereverzev parameters" as a
+   Phase 2 candidate but does not commit; promote it to first-class.
 
----
+2. **Defer to Phase 2.** Keep KU-2.18 illustrative through Phase 1;
+   refit in Phase 2 once Unit 2.2 has confirmed the vinculin
+   reinforcement mechanism produces a true biphasic peak at the
+   refitted parameters.
 
-## Q2 — KU-2.12 per-clutch force 5–20 pN band requires Unit 2.2 maturation
+3. **Update KU-2.18 in-place now.** Change the canonical defaults to
+   the Kong 2009 fit (estimated: `k_c ≈ 20 s⁻¹, F_s ≈ 25 pN, F_c ≈
+   3 pN`, TBD). Re-run all Unit 2.1 validation; the saturating verdict
+   may flip to "peaked" if F* moves into the per-clutch operating range.
 
-**Issue.** The brief's Task 7 asks for ≥ 90 % of per-clutch forces in
-the KU-2.12 5–20 pN band on E = 5 kPa substrate. The simulation gives
-mean 3.6 pN, median 2.4 pN, **27 % in band** → Sanity Gate FAILs.
+**Recommendation.** Option 2 (defer to Phase 2) keeps Unit 2.1 honest
+and Unit 2.2's contract clear: vinculin reinforcement is the mechanism
+that should produce the peak, and a refit *plus* reinforcement is what
+should reproduce Kong 2009 / Bangasser 2017 force-stiffness curves.
 
-KU-2.12's 5–20 pN range is measured on **mature FAs** (Plotnikov 2012
-Cell, Trichet 2012 PNAS), where the integrin spring is reinforced by
-vinculin binding to force-unfolded talin domains:
-
-    k_int^eff = k_int^bare (1 + α N_vin)    (KU-2.7, Han 2021 eLife)
-
-The Phase 1 Unit 2.1 brief explicitly excludes FA growth, talin, and
-vinculin ("Unit 2.2의 일"). With bare `k_int = 1 pN/nm` and the
-force-balance constraint at stall, per-clutch force is naturally
-2–4 pN — at the lower end of the catch peak, *below* the literature
-mature-FA window.
-
-**Brief acceptance.** "90 % of values in 5–20 pN range." Inconsistent
-with the brief's own scope exclusion.
-
-**Proposed resolution.** Either
-
-  (i) move the KU-2.12 acceptance into the Unit 2.2 contract (where
-      vinculin enters and `k_int^eff` rises), or
-  (ii) widen the Phase 1 Unit 2.1 acceptance to the nascent-FA range
-       (1–8 pN), with the mature 5–20 pN band logged as info.
-
-**Decision needed.** Pick (i), (ii), or alternative.
-
----
-
-## Status note
-
-The Unit 2.1 bridge module is **complete and correct** per KU-2.4 / 2.5 /
-2.8 / 2.18; biphasic peak validation passes against the
-Bangasser/Alonso-Matilla matched-stiffness analytic. The two gate FAILs
-above are contract-scope issues, not implementation defects, and need
-PI direction before the Unit 2.2 brief is finalised.
+**Decision needed before Unit 2.2 brief is finalised.**
