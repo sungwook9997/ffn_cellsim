@@ -1,0 +1,11 @@
+acs_kb/outputs
+acs_kb/outputs/phase1_unit2_1
+acs_kb/outputs/phase1_unit2_2
+acs_kb/outputs/phase1
+acs_kb/outputs/v2_audit
+acs_kb/outputs/phase1/unit4_1
+acs_kb/outputs/phase1/visualization_v3
+acs_kb/outputs/phase1/unit3_1
+acs_kb/outputs/phase1/visualization_v2
+acs_kb/outputs/phase1/unit3_1_sensitivity
+acs_kb/outputs/phase1/visualization_v2/ecm
