@@ -43,16 +43,16 @@
 
 | LOC | File | v2 verdict |
 | --- | --- | --- |
-| 450 | `acs_kb/cell/cortex.py` | **ARCHIVE** — single-chain circular cortex; v2 replaces with 1000 effective filaments managed as HOOMD bond/angle topology |
-| 440 | `acs_kb/tests/test_bridge_unit2_2.py` | **REUSE** as validation oracle |
-| 408 | `acs_kb/common/sanity_gate.py` | **REUSE** (the KU gate logic is the regression contract) |
-| 392 | `acs_kb/tests/test_cell.py` | **PORT** (re-target dynamics fixtures onto HOOMD outputs) |
-| 364 | `acs_kb/bridge/motor_clutch.py` | **PORT** — kinetic core stays, HOOMD-state adapter added |
-| 329 | `acs_kb/common/derived_params.py` | **REUSE** (Stokes drag, Mikado ℓ_c, τ_min — analytical, integrator-agnostic) |
-| 306 | `acs_kb/cell/force_balance.py` | **ARCHIVE** — overdamped Euler over cortex beads is replaced by HOOMD `md.methods.Brownian` |
-| 302 | `acs_kb/notebooks/02_motor_clutch_biphasic.py` | **REUSE** (biphasic verdict demo) |
-| 301 | `acs_kb/tests/test_bridge.py` | **REUSE** (KU-2.x rate-law regression) |
-| 271 | `acs_kb/cell/lamellipodia.py` | **PORT** — KU-3.6 closed-form keeps, advance hook re-bound to HOOMD update step |
+| 450 | `acs_kb/cell/cortex.py` | **ARCHIVE** — single-chain circular cortex; v2 = 1000 effective filaments as HOOMD bond/angle topology |
+| 440 | `acs_kb/tests/test_bridge_unit2_2.py` | **ORACLE** — closed-form bridge tests, v1 frozen path |
+| 408 | `acs_kb/common/sanity_gate.py` | **REUSE** as v2 runtime — the KU gate logic is the regression contract |
+| 392 | `acs_kb/tests/test_cell.py` | **ORACLE** — v1 frozen path, acceptance bands port to `acs_hoomd/tests/` |
+| 364 | `acs_kb/bridge/motor_clutch.py` | **ARCHIVE** — Chan-Odde-as-mechanism is v1 paradigm; v2 clutch emerges from HOOMD integrin↔ligand bonds. Closed-form kept as oracle. |
+| 329 | `acs_kb/common/derived_params.py` | **REUSE** as v2 runtime — Stokes drag, Mikado ℓ_c, τ_min — analytical, integrator-agnostic |
+| 306 | `acs_kb/cell/force_balance.py` | **ARCHIVE** — overdamped Euler → `md.methods.Brownian` |
+| 302 | `acs_kb/notebooks/02_motor_clutch_biphasic.py` | **ORACLE** as v1 demo (biphasic verdict) |
+| 301 | `acs_kb/tests/test_bridge.py` | **ORACLE** — KU-2.x rate-law closed-form tests |
+| 271 | `acs_kb/cell/lamellipodia.py` | **ARCHIVE** — single-chain context; v2 = AFINES dendritic Arp2/3 (Plan H.5) |
 
 ---
 
@@ -69,32 +69,17 @@
 | `visualization.py` | 144 | **REUSE** | Plots derived diagnostics; orthogonal to v2 dynamics. |
 | `integrator.py` | 136 | **ARCHIVE** | See §3. |
 | `shear_lees_edwards.py` | 239 | **ARCHIVE** | See §3 (HOOMD ships Lees-Edwards natively). |
-| `shear_protocol.py` | 130 | **PORT** | Strain protocol logic is reusable; only the kernel call swaps to HOOMD's box updater. |
+| `shear_protocol.py` | 130 | **ARCHIVE** | PI decision 2026-05-19: v2 rewrites against HOOMD `BoxResize` from scratch — porting the v1 caller would re-import the archived sheared kernel. |
 
 **Why preserve the numpy kernels as an oracle.** The KU-1.30 stretching/bending Sanity Gate evidence (`max relative gradient error 4.2e-9`, `Σ F ≈ 1e-25 N`) lives in these modules; freezing them gives v2 a per-configuration F and E reference that HOOMD must reproduce within `1e-6` relative before any new physics is added on top.
 
-### 2.2 `acs_kb/bridge/` — Worker B catch-bond + biphasic verdict  →  REUSE rate laws, PORT couplers
+### 2.2 `acs_kb/bridge/` — paper-models-as-mechanism (v1 paradigm)  →  ARCHIVE, oracle only
 
-| File | LOC | Verdict | Rationale |
-| --- | --- | --- | --- |
-| `catch_bond.py` | 136 | **REUSE** | Pereverzev two-pathway `k_off(F) = k_s e^{F/F_s} + k_c e^{−F/F_c}` is a closed-form scalar; KU-2.5 + KU-2.18 defaults port unchanged. The Gillespie regression test (`test_KU_2_4_biphasic.py`) keeps its scientific weight. |
-| `motor_clutch.py` | 364 | **PORT** | Chan-Odde quasi-static substrate balance + per-clutch stochastic engage/disengage runs as a HOOMD `Updater` (custom Action) ticked at the HOOMD timestep boundary. The `SubstrateProtocol` abstraction (stub vs ECM adapter) was *designed* exactly for this swap. |
-| `talin.py` | 119 | **REUSE** | Bell-Evans per-domain unfold rate — pure rate law. |
-| `vinculin.py` | 120 | **REUSE** | Recruitment ODE; `k_int^eff = k_int^bare · (1+α·N_vin)` allostery — pure rate law. |
-| `fa_growth.py` | 155 | **REUSE** | `n_clutches_total` resize ODE; pure state transition. |
-| `ecm_adapter.py` | 209 | **PORT** | Replace stub-style `compute_displacement` with a query against HOOMD particle data on the ECM filaments. |
-| `substrate_stub.py` | 152 | **ARCHIVE-then-keep-as-fallback** | Linear-elastic spring substrate; useful as a degenerate-case fixture even after the HOOMD ECM is online. |
-| `types.py` | 78 | **REUSE** | Frozen dataclass interface (`FocalAdhesion`); week-5 freeze contract. |
-| `traction.py` | 53 | **REUSE** | 1-D reducer; integrator-agnostic. |
+PI 2nd pass: v1's bridge layer wraps Chan-Odde / Pereverzev / Bell-Evans / Hill as the *mechanism* that drives the simulation. v2 builds clutch / catch-bond / talin / vinculin / FA-growth behaviour emergently from HOOMD-level particle dynamics and uses the literature closed-forms as **acceptance oracles**, not as runtime. Details in §3.3. Survives as v2 runtime: only `traction.py` (53 LOC analysis reducer) and `__init__.py`.
 
-**Biphasic verdict status**: `test_bridge.py` + `test_bridge_unit2_2.py` (740 LOC combined) directly anchor the Unit 2.x verdict. They must continue to pass against the ported HOOMD-coupled motor-clutch updater before any v2 claim is made on KU-2.4.
+### 2.3 `acs_kb/junction/cadherin.py` — paper-model-as-mechanism (v1 paradigm)  →  ARCHIVE, oracle only
 
-### 2.3 `acs_kb/junction/cadherin.py` — Buckley 2014 Δx* correction  →  REUSE
-
-- Implements KU-4.17 / KU-4.2 **slip-only** Bell-Evans `k_off(F) = k_off^0 · exp(F · Δx* / kT)` with `Δx* = 4 nm` cited Buckley 2014 Science Fig 4, `k_off^0 = 0.5 s⁻¹`, `k_on = 1 s⁻¹`, `N_cad = 100`, `⟨F_bond⟩ = 30 pN`, `T = 310 K`.
-- `update_bonds` is a binomial two-compartment update on `(n_engaged, n_total − n_engaged)`. **Integrator-agnostic** — runs as a HOOMD `Updater` ticked at `dt_junction` without any HOOMD-internal change.
-- `test_cadherin.py` (157 LOC) plus `test_two_cell_pair.py` (184 LOC) anchor KU-4.x; both reused verbatim.
-- Catch-bond (full Buckley 2014) is *explicitly* a Phase 2 follow-up; the slip-only baseline is the v2 entry point.
+Buckley 2014 Bell-Evans slip-only k_off and the binomial 2-compartment population updater are v1 mechanism. v2: cadherin bonds emerge from HOOMD trans-bonds between cortex particles on adjacent cells with Bell-Evans rate-driven break events. The KU-4.17 constants (Δx* = 4 nm, k_off^0 = 0.5 s⁻¹, k_on = 1 s⁻¹, N_cad = 100, ⟨F_bond⟩ = 30 pN, T = 310 K) move into the v2 config; the closed-form `k_off(F) = k_off^0 · exp(F·Δx*/kT)` survives in `acs_hoomd/validation/buckley.py` as the acceptance oracle. Survives as v2 runtime: `contact_angle.py` (Maître geometry) + `__init__.py`.
 
 ### 2.4 `acs_kb/configs/*.yaml` — KU-anchored parameter dictionaries  →  REUSE (with v2 overrides)
 
@@ -121,51 +106,90 @@ All 5 YAMLs (`phase1_unit1.yaml` … `phase1_unit4_1.yaml`, ~31 KB) cite the sou
 
 10 test files / 2,294 LOC. Two flavours:
 
-1. **Rate-law tests** (`test_cadherin.py`, `test_bridge.py`, `test_bridge_unit2_2.py`, `test_KU_2_4_biphasic.py`, `test_contact_angle.py`, `test_lamellipodia.py`): exercise closed-form rate equations or stochastic updaters; **pass through v2 unchanged**.
-2. **Dynamics tests** (`test_ecm.py`, `test_dynamics.py`, `test_cell.py`, `test_two_cell_pair.py`): exercise the numpy integrator. **Keep the assertion bands**, swap the fixture to drive HOOMD instead of `acs_kb.ecm.integrator`.
+1. **Rate-law tests** that touch no archived module (`test_cadherin.py`, `test_bridge.py`, `test_KU_2_4_biphasic.py`, `test_contact_angle.py`): closed-form rate equations and stochastic updaters; **pass through v2 unchanged**.
+2. **Oracle tests** that run on the v1 frozen path (`test_lamellipodia.py`, `test_bridge_unit2_2.py`, `test_dynamics.py`, `test_ecm.py`, `test_cell.py`, `test_two_cell_pair.py`): exercise either the numpy integrator, the v1 `Cell` shape, the archived ECM adapter, or v1 lamellipodia. They stay green as long as the v1 modules sit unchanged in tree — the validation oracle role. **Acceptance bands** port to `acs_hoomd/tests/` against new HOOMD-driven fixtures.
 
 ---
 
 ## §3 — Modules to archive / deprecate (with rationale)
 
-### 3.1 `acs_kb/cell/cortex.py` (450 LOC) — ARCHIVE
+**PI decisions 2026-05-19**:
 
-- Implements a **single-chain circular cortex**: 2D fiber centres on a circle of radius `R_cell`, each fiber a discrete WLC bead-chain, cross-links by KU-1.27 intersection.
-- v2 conceptually abandons "one cortex = one ring of chained fibers" in favour of **~1000 effective actin filaments per cell** managed as a HOOMD bond/angle topology with the same per-bond Hamiltonian. The construction code (`generate_cortex`, `generate_elliptical_cortex`, `Cortex` dataclass with `(n_fibers, n_beads, 2)` layout) does not generalise to that representation.
-- **Disposition**: leave file in tree (frozen) for reproducibility of v1 cortical-tension equilibrium tests, but mark as v1-only via `acs_kb/_DEPRECATED.md`. v2's equivalent lives at `acs_hoomd/cell/cortex_filaments.py` (new).
-- Counter-cost of *re-using* this: high — the rigid `(n_fibers, n_beads, 2)` indexing pattern would force the HOOMD snapshot to mirror v1 sizing rather than the 1000-filament target.
+1. *First pass*: anything that could warp the v2 design is archived. ⇒ 9 files / ~2,064 LOC (cell/* + ecm integrator/shear + bridge/ecm_adapter).
+2. *Second pass*: **v1 = paper-models-as-mechanism, v2 = paper-models-as-validation-oracle**. Anything that wraps a literature model as the *core implementation* of clutch / bond / FA growth / cadherin dynamics gets archived, because v2 builds those behaviours emergently from fine-grained HOOMD fiber/particle dynamics and only *compares* the emergent rates to the literature closed-forms. Anything that gets in the way of fine-grained fiber network implementation is archived.
 
-### 3.2 `acs_kb/cell/force_balance.py` (306 LOC) — ARCHIVE
+Final scope: **~18 files / ~3,700 LOC (≈ 45 % of `acs_kb/`)** archived.
 
-- Overdamped quasi-static Euler `γ_b · dr/dt = F_WLC + F_xl + F_tension + F_ext` integrated by hand over cortex beads.
-- HOOMD `md.methods.Brownian` (or `Langevin` with appropriate `kT`) replaces the time-stepping entirely. The KU-3.5 `F_tension = γ_cortex / R_eff · (−r̂_eff)` term moves to a HOOMD `md.force.Custom` action so it still ticks each step.
-- **Disposition**: archive with cortex.py.
+> v1 archived files stay in tree as **validation oracles** — v2 acceptance tests may invoke them to compare emergent HOOMD behaviour against the closed-form references. They are **forbidden as v2 runtime mechanism** (no `acs_hoomd/<runtime>/*.py` may import them). The import rule lives in `acs_kb/_DEPRECATED.md`.
 
-### 3.3 `acs_kb/ecm/integrator.py` (136 LOC) — ARCHIVE
+### 3.1 Cell-level (single-chain cortex contamination)
 
-- Euler-Maruyama overdamped Langevin numpy step `r ← r + (F/γ_b) dt + √(2 kT dt/γ_b) ξ` plus a BAOAB stub that has always raised `NotImplementedError`.
-- HOOMD ships overdamped Brownian + BAOAB-class integrators built in.
-- **Disposition**: archive. The CFL discipline (`α = 0.1`) and `τ_min` reasoning that drove `dt` selection move to `acs_hoomd/setup.py` as the HOOMD-side dt picker.
+| File | LOC | v2 replacement / rationale |
+| --- | --- | --- |
+| `acs_kb/cell/cortex.py` | 450 | v2 uses ~1000 effective filaments per cell as HOOMD bond/angle topology. The rigid `(n_fibers, n_beads, 2)` layout cannot represent that without distortion. |
+| `acs_kb/cell/force_balance.py` | 306 | `md.methods.Brownian`. KU-3.5 cortical tension `γ_cortex / R_eff · (−r̂_eff)` becomes `md.force.Custom`. |
+| `acs_kb/cell/cell.py` | 123 | `Cell` dataclass owns a v1 `Cortex` — week-6 freeze interface is a **v1 contract** that warps every junction / bridge consumer toward the single-chain shape. v2 `Cell` lives in `acs_hoomd/cell/` and is HOOMD-particle-group-backed. |
+| `acs_kb/cell/lamellipodia.py` | 271 | Built on the single-chain cortex; v2 rebuilds as AFINES dendritic Arp2/3 branched network (Plan Unit H.5, Bieling 2016 force feedback). The KU-3.6 closed-form `v_p = δ(k_on c_G − k_off · e^{Fδ/kT})` ports as a literal formula but the *module* does not. |
+| `acs_kb/cell/visualization.py` | 200 | Single-chain plot helpers; v2 viz consumes HOOMD GSD via freud / fresnel / PyVista. |
 
-### 3.4 `acs_kb/ecm/shear_lees_edwards.py` (239 LOC) + `shear_protocol.py` (130 LOC, partial) — ARCHIVE the kernels
+### 3.2 ECM integration / shear
 
-- Hand-rolled Lees-Edwards sheared minimum-image MI for a 2D periodic box, including a **duplicated** WLC + cross-link force kernel that uses the sheared MI (the module docstring acknowledges the duplication is "intentional and local").
-- HOOMD-blue provides Lees-Edwards box deformation natively (`hoomd.update.BoxResize` + sheared triclinic boxes / `fix deform`-equivalent). The duplicated kernel is redundant.
-- **Disposition**: archive `shear_lees_edwards.py` entirely. Keep `shear_protocol.py` as a **port** target — the strain ramp / hold schedule logic is reusable; only the kernel calls swap.
+| File | LOC | v2 replacement / rationale |
+| --- | --- | --- |
+| `acs_kb/ecm/integrator.py` | 136 | Euler-Maruyama + dead BAOAB stub. HOOMD ships overdamped Brownian + Langevin natively. CFL discipline `α = 0.1 · τ_min` moves to `acs_hoomd/setup.py` dt picker. |
+| `acs_kb/ecm/shear_lees_edwards.py` | 239 | Hand-rolled sheared MI **plus a duplicated WLC + XL kernel** (docstring acknowledges "intentional and local duplication"). HOOMD-native sheared triclinic box / `BoxResize` makes both redundant. |
+| `acs_kb/ecm/shear_protocol.py` | 130 | **PI decision 2026-05-19**: v2 rewrites the strain ramp/hold schedule from scratch against the HOOMD box updater rather than porting the v1 caller. The v1 caller is glued to the archived sheared kernel and carrying it forward would re-introduce the v1 shape into v2. |
 
-### 3.5 Numpy integrator coupling sites — PORT, not archive
+### 3.3 Bridge — paper-models-as-mechanism (v1 paradigm)
 
-39 lines `import numpy` across the package. After the four archives above (cortex / force_balance / ecm.integrator / shear_lees_edwards = ~1,130 LOC), the residual numpy usage is:
+In v1, `acs_kb/bridge/` *is* a port of the Chan-Odde 2008 / Pereverzev 2005 / Bell-Evans / Hill-function papers, with each module implementing one paper's equations as the mechanism that drives the simulation. v2 inverts this: the mechanism is fine-grained HOOMD particle-and-bond dynamics (integrin particles, ligand particles, dynamic bonds with Bell-Evans rate updates), and the literature closed-forms become **acceptance oracles** (e.g. "our HOOMD-emergent clutch lifetime vs Pereverzev `τ(F) = 1 / k_off(F)` at the catch peak"). Therefore the entire `bridge/` mechanism layer is archived; the closed-form *functions* are kept in tree so v2 validation tests can call them.
 
-- Rate-law kernels (`bridge/catch_bond.py`, `junction/cadherin.py`, `bridge/motor_clutch.py`, `bridge/talin.py`, `bridge/vinculin.py`) — keep numpy; these stay CPU-side as HOOMD `Updater`s.
-- Diagnostics / measurement (`ecm/diagnostics.py`, `cell/visualization.py`) — keep numpy.
-- Test fixtures — keep numpy.
+| File | LOC | v2 replacement / rationale |
+| --- | --- | --- |
+| `acs_kb/bridge/motor_clutch.py` | 364 | Chan-Odde 2008 quasi-static substrate force balance + per-clutch stochastic engage/disengage as the **core clutch mechanism**. v2: clutch behaviour emerges from HOOMD integrin↔ligand dynamic bonds with Bell-Evans rate-driven break events. v1 module becomes a closed-form *acceptance oracle* for the biphasic verdict, not the runtime. |
+| `acs_kb/bridge/catch_bond.py` | 136 | Pereverzev 2005 two-pathway off-rate as a wrapper module. v2: the same Pereverzev formula stays in `acs_hoomd/validation/pereverzev.py` (oracle) so the HOOMD-emergent k_off can be compared to it. The wrapper module is not v2 mechanism. |
+| `acs_kb/bridge/talin.py` | 119 | Bell-Evans per-domain unfold as wrapper. v2: talin unfolding emerges from HOOMD-level domain particles with Bell-Evans bond breaking. Oracle reusable. |
+| `acs_kb/bridge/vinculin.py` | 120 | Allostery ODE `k_int^eff = k_int^bare · (1 + α·N_vin)` as wrapper. v2: vinculin recruitment emerges from HOOMD-level dynamics; the closed-form k_int^eff(N_vin) becomes the oracle. |
+| `acs_kb/bridge/fa_growth.py` | 155 | Hill-function `n_clutches_total` resize as wrapper. v2: FA growth emerges from HOOMD clutch population statistics; the Hill function becomes the oracle. |
+| `acs_kb/bridge/types.py` (FocalAdhesion dataclass) | 78 | Week-5 freeze interface, v1 contract. v2 FA is a HOOMD bond group + per-FA metadata dictionary, not a dataclass. |
+| `acs_kb/bridge/substrate_stub.py` | 152 | Linear-elastic Boussinesq stub — v1 fixture for testing motor-clutch in isolation. v2 substrate is the HOOMD ECM directly; no stub layer needed. |
+| `acs_kb/bridge/ecm_adapter.py` | 209 | v1 numerical-Hessian probe. v2 reads HOOMD ECM particle forces directly at the FA capture radius (Plan H.4, `R_FA = 1.5 μm`). The `SubstrateProtocol` abstraction in `motor_clutch.py` is not carried forward (motor_clutch itself is archived). |
 
-Net effect: v2 does **not** banish numpy from `acs_kb/`; it removes only the four time-integration-bearing modules above.
+Survives in `bridge/`: only `traction.py` (53 LOC, 1-D reducer — pure analysis utility) and `__init__.py`.
 
-### 3.6 Notebooks
+### 3.4 Junction — paper-models-as-mechanism (v1 paradigm)
 
-The four `notebooks/*.py` (909 LOC) demonstrate v1 dynamics. **REUSE** as demos against the frozen v1 path. v2 will ship parallel HOOMD notebooks in `acs_hoomd/notebooks/`.
+| File | LOC | v2 replacement / rationale |
+| --- | --- | --- |
+| `acs_kb/junction/cadherin.py` | 225 | Buckley 2014 Bell-Evans slip-only as a binomial 2-compartment population updater — v1 mechanism. v2: cadherin bonds emerge from HOOMD trans-bonds between cortex particles on adjacent cells with Bell-Evans rate-driven break events. The Buckley `k_off(F) = k_off^0 · exp(F·Δx*/kT)` closed-form stays as oracle in `acs_hoomd/validation/buckley.py`. Δx* = 4 nm constant is in the v2 config. |
+| `acs_kb/junction/types.py` (EcadherinJunction dataclass) | 142 | v1 interface freeze; v2 junctions are HOOMD bond groups. |
+
+Survives in `junction/`: only `contact_angle.py` (212 LOC, pure Maître angle geometry — measurement utility, no v1 mechanism) and `__init__.py`. The `Cell` import in `contact_angle.py` rewires to `acs_hoomd/cell/`.
+
+### 3.5 ECM — visualization
+
+| File | LOC | v2 replacement / rationale |
+| --- | --- | --- |
+| `acs_kb/ecm/visualization.py` | 144 | v1 numpy-state-only plot helpers. v2 viz consumes HOOMD GSD via freud/fresnel/PyVista (Plan §8 cross-cutting). Geometry/diagnostics module-output plots stay (`ecm/diagnostics.py`) but the matplotlib v1 viz layer is archived. |
+
+### 3.6 What is NOT archived (REUSE)
+
+- `acs_kb/ecm/fiber_network.py` (200 LOC) — Mikado geometry generator. Pure construction, integrator-free; used **once** at v2 init to populate HOOMD topology.
+- `acs_kb/ecm/cross_links.py` (247 LOC) — segment-intersection geometry for cross-link seeding; pure construction. Harmonic-spring kernel kept as oracle for `md.bond.Harmonic` cross-validation.
+- `acs_kb/ecm/fiber_mechanics.py` (221 LOC) — KU-1.24 WLC discrete `H` formula. The **formula** is what v2 uses (mapped to HOOMD `md.bond.Harmonic` + `md.angle.Harmonic`); the numpy kernel is the closed-form oracle (max FD error 4.2e-9 reference).
+- `acs_kb/ecm/diagnostics.py` (~80 LOC) — measurement utility on positions/bond-lists. Integrator-agnostic.
+- `acs_kb/junction/contact_angle.py` (212 LOC) — Maître KU-4.4 geometric measurement.
+- `acs_kb/bridge/traction.py` (53 LOC) — 1-D analysis reducer.
+- `acs_kb/common/` (all 3 files, 839 LOC) — Sanity gates + analytical derived parameters. Mechanism-free, contract-only.
+- `acs_kb/configs/*.yaml` (5 files, ~31 KB) — KU-anchored literature constants. **Constants, not models** — port verbatim with two v2 overrides (`ℓ₀: 0.5e-6`, `dynamics.integrator: hoomd_brownian`).
+- Tests — split below.
+
+### 3.7 Tests — split by what they exercise
+
+- **v2-relevant** (run against `acs_hoomd/`): `test_contact_angle.py` (163 LOC, Maître geometry) and the oracle-comparison tests we'll write in `acs_hoomd/tests/validation/`.
+- **v1 frozen oracle** (continue to run against v1 path in tree, used as closed-form reference for v2 acceptance): `test_KU_2_4_biphasic.py`, `test_bridge.py`, `test_bridge_unit2_2.py`, `test_cadherin.py`, `test_cell.py`, `test_dynamics.py`, `test_ecm.py`, `test_lamellipodia.py`, `test_two_cell_pair.py`.
+- v2 ships parallel HOOMD-driven tests in `acs_hoomd/tests/`.
+- Notebooks (909 LOC across 4 files) are v1 demos — historical record, no porting.
 
 ---
 
@@ -210,12 +234,16 @@ System Python 3.9.6 is too old for current HOOMD releases (HOOMD 4 requires Pyth
 
 ---
 
-## Summary verdict
+## Summary verdict (revised 2026-05-19, second PI pass)
 
 | Bucket | LOC | Files | Headline content |
 | --- | --- | --- | --- |
-| **REUSE** (oracle / rate laws / configs / gates) | ~5,000 | 30+ | All of `bridge/`, `junction/`, `common/`, `configs/`, tests, ecm rate kernels and diagnostics |
-| **PORT** (couplers + dynamics-bearing tests) | ~1,200 | 6 | `motor_clutch.py`, `ecm_adapter.py`, `shear_protocol.py`, `lamellipodia.py`, dynamics tests, cell-side glue |
-| **ARCHIVE** (replaced by HOOMD) | ~1,130 | 4 | `cell/cortex.py`, `cell/force_balance.py`, `ecm/integrator.py`, `ecm/shear_lees_edwards.py` |
+| **REUSE as v2 runtime** (geometry / constants / gates / measurement) | ~2,500 | 13 | `ecm/{fiber_network, cross_links geometry, fiber_mechanics formula, diagnostics}`, `common/*`, `configs/*.yaml`, `bridge/traction`, `junction/contact_angle` |
+| **REUSE as validation oracle only** (closed-form references invoked from `acs_hoomd/tests/`) | ~1,800 | 9 | `bridge/{motor_clutch, catch_bond, talin, vinculin, fa_growth}` closed-forms, `junction/cadherin` k_off formula, v1 KU regression test bodies |
+| **ARCHIVE — `acs_hoomd/` runtime import forbidden** | ~3,700 | ~18 | All of `cell/*` (5), `ecm/{integrator, shear_lees_edwards, shear_protocol, visualization}` (4), all of `bridge/*` except `traction.py` (8), `junction/{cadherin, types}` (2) |
 
-≈ **86 %** of v1 LOC (oracle + rate-law + gate code) ports forward without scientific rework; the ~14 % archived is precisely the numpy-integrator + single-chain-cortex layer that v2 is built to replace.
+≈ **45 %** of v1 LOC is archived from v2 runtime — anything that wraps a literature model as the mechanism (v1 paradigm) is gone, anything that warps fine-grained fiber dynamics is gone. The remaining ~55 % is split between:
+- **construction / measurement / gates** (used live in v2 runtime — geometry seeding, KU validation, parameter resolution)
+- **closed-form oracles** (kept in tree as a frozen reference library that v2 acceptance tests invoke for comparison)
+
+v1 frozen test suite continues to run unmodified — it is part of the oracle.
