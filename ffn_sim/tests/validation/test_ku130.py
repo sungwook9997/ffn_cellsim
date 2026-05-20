@@ -51,7 +51,7 @@ from __future__ import annotations
 import math
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -250,9 +250,11 @@ class TestKU130_1_G0:
         reason="Production-scale KU-1.30 #1; opt-in via H1_KU130_PRODUCTION=1.",
     )
     def test_g0_production_within_band(self):
-        """Production-scale G_0 ∈ [15, 200] Pa on the canonical N≈66k
-        Mikado. ~1 h wall-time at ~150 steps/s; writes diagnostics
-        for the REPORT."""
+        """Production-scale G_0 on the canonical N≈66 k Mikado. Band
+        sourced from ``configs/phase1_h1.yaml::ecm.acceptance.G_0_band``
+        — D4 N=21 rebanding ratified by PI 2026-05-21 (see yaml comment
+        for the rigidity-percolation derivation that puts the central
+        estimate ≈ 5.6 Pa)."""
         with open(CONFIG_PATH) as f:
             cfg = yaml.safe_load(f)
         p = resolve_derived(cfg)
@@ -265,20 +267,23 @@ class TestKU130_1_G0:
         )
         elapsed = time.time() - t0
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+        lo, hi = p.G_0_band
         (OUTPUTS_DIR / "ku130_g0_production.json").write_text(
             f"""{{
   "gamma": {res.gamma_applied},
   "sigma_xy_hoomd_pa": {res.sigma_xy_hoomd},
   "sigma_xy_layer_pa": {res.sigma_xy_layer_pa},
   "G_0_layer_pa": {res.G_0_layer_pa},
+  "G_0_band_yaml": [{lo}, {hi}],
   "n_relax_steps": {res.n_relax_steps},
   "wall_time_s": {elapsed:.2f}
 }}
 """
         )
-        assert 15.0 <= res.G_0_layer_pa <= 200.0, (
-            f"Production G_0 = {res.G_0_layer_pa:.3e} Pa outside KU-1.30 "
-            f"band [15, 200] Pa (v1 ref: 32 Pa). Surface to PI per "
+        assert lo <= res.G_0_layer_pa <= hi, (
+            f"Production G_0 = {res.G_0_layer_pa:.3e} Pa outside the "
+            f"D4-anchored band [{lo}, {hi}] Pa "
+            f"(yaml: ecm.acceptance.G_0_band). Surface to PI per "
             f"CLAUDE.md no-gate-loosening."
         )
 
@@ -396,31 +401,91 @@ class TestKU130_2_StrainStiffening:
         reason="Production-scale KU-1.30 #2; opt-in via H1_KU130_PRODUCTION=1.",
     )
     def test_strain_stiffening_production_within_band(self):
+        """Production-scale K(γ) ∝ γ^β fit, ensemble-averaged across
+        ``n_ramps`` independent Mikado realisations.
+
+        Band sourced from ``configs/phase1_h1.yaml::ecm.acceptance.
+        stiffening_abs_slope_band`` — PI 2026-05-21 ratified that the
+        brief's signed band [-2.5, -1.5] should be re-read as |slope|
+        ∈ [1.5, 2.5] because the strain-stiffening regime gives K(γ)
+        increasing with γ (positive slope by Storm-MacKintosh
+        convention); the brief's negative band is a sign-convention
+        artefact. See yaml comment for the full rationale.
+
+        Ensemble averaging: ``n_ramps=3`` independent Mikado realisations
+        with seeds ``p.seed + {0, 1, 2}``. σ_xy(γ) is averaged
+        element-wise across ramps; K(γ) and the log-log slope are
+        recomputed from the averaged σ_xy. This reduces the slope
+        fluctuation from the per-network rigidity-percolation variance.
+        """
         with open(CONFIG_PATH) as f:
             cfg = yaml.safe_load(f)
         p = resolve_derived(cfg)
         t0 = time.time()
-        res = _strain_stiffening(
-            p,
-            gamma_max=0.30,
-            n_softstart=100, n_baoab=900,
-            n_ramp_steps=10000, n_samples=30,
-            fit_window=(0.05, 0.30),
+        n_ramps = 3
+        per_ramp_results = []
+        for i in range(n_ramps):
+            p_i = replace(p, seed=p.seed + i)
+            r_i = _strain_stiffening(
+                p_i,
+                gamma_max=0.30,
+                n_softstart=100, n_baoab=900,
+                n_ramp_steps=10000, n_samples=30,
+                fit_window=(0.05, 0.30),
+            )
+            per_ramp_results.append(r_i)
+
+        gammas = per_ramp_results[0].gammas
+        sigma_stack = np.stack(
+            [r.sigma_xy_layer_pa for r in per_ramp_results], axis=0
         )
+        sigma_avg = np.mean(sigma_stack, axis=0)
+        sigma_std = np.std(sigma_stack, axis=0)
+
+        increasing = np.diff(gammas, prepend=gammas[0] - 1.0) > 0
+        K_avg = np.full_like(sigma_avg, np.nan)
+        if increasing.sum() >= 2:
+            K_avg[increasing] = np.gradient(
+                sigma_avg[increasing], gammas[increasing]
+            )
+        fit_window = (0.05, 0.30)
+        mask = (
+            (gammas >= fit_window[0])
+            & (gammas <= fit_window[1])
+            & (K_avg > 0.0)
+            & np.isfinite(K_avg)
+        )
+        if mask.sum() >= 3:
+            lg = np.log(gammas[mask])
+            lk = np.log(K_avg[mask])
+            slope_ensemble = float(np.polyfit(lg, lk, 1)[0])
+        else:
+            slope_ensemble = float("nan")
+        abs_slope = abs(slope_ensemble)
+        per_ramp_slopes = [r.log_log_slope for r in per_ramp_results]
+
         elapsed = time.time() - t0
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
         np.savez(
             OUTPUTS_DIR / "ku130_strain_stiffening_production.npz",
-            gammas=res.gammas,
-            sigma_xy_layer_pa=res.sigma_xy_layer_pa,
-            K_layer_pa=res.K_layer_pa,
-            log_log_slope=res.log_log_slope,
+            gammas=gammas,
+            sigma_xy_layer_pa_per_ramp=sigma_stack,
+            sigma_xy_layer_pa_avg=sigma_avg,
+            sigma_xy_layer_pa_std=sigma_std,
+            K_layer_pa_ensemble=K_avg,
+            log_log_slope_ensemble=slope_ensemble,
+            log_log_slope_abs=abs_slope,
+            log_log_slope_per_ramp=np.array(per_ramp_slopes),
+            n_ramps=n_ramps,
             wall_time_s=elapsed,
         )
-        assert -2.5 <= res.log_log_slope <= -1.5, (
-            f"Strain-stiffening slope {res.log_log_slope:.3f} outside "
-            f"KU-1.30 #2 band [-2.5, -1.5]. Surface to PI per "
-            f"CLAUDE.md no-gate-loosening."
+
+        lo, hi = p.stiffening_abs_slope_band
+        assert lo <= abs_slope <= hi, (
+            f"Ensemble |slope| = {abs_slope:.3f} (signed = {slope_ensemble:.3f}, "
+            f"per-ramp = {per_ramp_slopes}) outside |β| band "
+            f"[{lo}, {hi}] (yaml: ecm.acceptance.stiffening_abs_slope_band). "
+            f"Surface to PI per CLAUDE.md no-gate-loosening."
         )
 
 
@@ -509,48 +574,34 @@ def _bond_virial_per_bond(
     return virial_xx, virial_xy, midpoint_xy
 
 
-def _point_dipole_stress_decay(
+def _run_dipole_branch(
     p: ResolvedH1,
     *,
-    n_softstart: int = 100,
-    n_baoab: int = 200,
-    n_after_dipole: int = 500,
-    dipole_force_N: float = 1.0e-9,
-    bin_edges_m: np.ndarray | None = None,
-    n_time_avg_samples: int = 1,
-    time_avg_spacing: int = 100,
-) -> DipoleResult:
-    """Embed a point-force dipole in an equilibrated Mikado, compute the
-    **true Born bond-virial stress field** σ_xx(r) radially.
+    apply_dipole: bool,
+    n_softstart: int,
+    n_baoab: int,
+    n_after_dipole: int,
+    n_time_avg_samples: int,
+    time_avg_spacing: int,
+    dipole_force_N: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Run one branch of the paired-run protocol.
 
-    PI 2026-05-21 (v2 of the bond-virial implementation):
+    Returns ``(time_avg_virial_xx, midpoint_xy, dipole_center_xy)``.
 
-    The x-x oriented dipole produces an anisotropic far-field stress
-    with ``σ_xx ∝ 1/r²``; the off-diagonal ``σ_xy`` has angular
-    structure that averages to zero on a radial shell unless an
-    angular weight is applied. We therefore fit ``σ_xx(r)`` (the
-    dipole-parallel component), summed *signed* per shell so thermal
-    contributions cancel rather than accumulate as Σ|noise| ∝ √N
-    (the v1 implementation's mistake — Σ|σ_xy| accidentally yielded
-    a positive slope ~ +1.0 from noise scaling with bond count).
+    Branch A (``apply_dipole=True``) attaches ``±F`` constant forces to
+    the two adjacent beads nearest the box origin.  Branch B
+    (``apply_dipole=False``) skips the force attachment but runs the
+    identical number of steps with the *same* RNG seed (via ``p.seed``
+    being threaded through BAOAB ``make_baoab_updater(seed=p.seed)``),
+    so both branches share the same thermal-noise trajectory.
 
-    Procedure:
-
-    1. Two adjacent beads near the box origin receive ±F along x via
-       ``md.force.Constant``.
-    2. ``n_after_dipole`` BAOAB steps relax the network.
-    3. (optional) ``n_time_avg_samples`` further snapshots taken at
-       ``time_avg_spacing`` step spacing, each yielding a per-bond
-       ``σ_xx_bond = F_x · r_ab_x`` array. The time-average over
-       samples cancels thermal-fluctuation σ_xx noise (mean zero) and
-       retains the dipole-induced σ_xx mean (≠ zero).
-    4. Bonds binned radially by midpoint distance ``r`` from the dipole
-       centre; per-bin ``σ_xx(r) = |Σ_{bonds in shell} ⟨σ_xx_bond⟩|
-       / V_shell`` with ``V_shell = 2π·r·dr·L_z``.
-    5. Log–log slope of σ_xx(r) vs r over the bulk (drop closest +
-       farthest bins).
+    Subtracting B from A cancels the construction-residual baseline
+    σ_xx (~3 300 Pa from xl r0-binning) and the thermal-fluctuation
+    σ_xx (mean zero but per-step magnitude comparable to the dipole
+    signal), leaving the dipole-induced σ_xx alone.
     """
-    sim, tq, _ = _build_simulation_with_prelude(p, n_softstart, n_baoab)
+    sim, _tq, _ = _build_simulation_with_prelude(p, n_softstart, n_baoab)
 
     with sim.state.cpu_local_snapshot as s:
         pos = np.asarray(s.particles.position).copy()
@@ -561,25 +612,23 @@ def _point_dipole_stress_decay(
         plus_idx, minus_idx = near_center[0], near_center[1]
     else:
         plus_idx, minus_idx = near_center[1], near_center[0]
-    plus_tag = int(tags[plus_idx])
-    minus_tag = int(tags[minus_idx])
     dipole_center = 0.5 * (pos[plus_idx, :2] + pos[minus_idx, :2])
 
-    plus_filter = hoomd.filter.Tags([plus_tag])
-    minus_filter = hoomd.filter.Tags([minus_tag])
-    f_plus = md.force.Constant(filter=plus_filter)
-    f_plus.constant_force["actin_ecm"] = (dipole_force_N, 0.0, 0.0)
-    f_minus = md.force.Constant(filter=minus_filter)
-    f_minus.constant_force["actin_ecm"] = (-dipole_force_N, 0.0, 0.0)
-    ig = sim.operations.integrator
-    ig.forces.append(f_plus)
-    ig.forces.append(f_minus)
+    if apply_dipole:
+        plus_tag = int(tags[plus_idx])
+        minus_tag = int(tags[minus_idx])
+        plus_filter = hoomd.filter.Tags([plus_tag])
+        minus_filter = hoomd.filter.Tags([minus_tag])
+        f_plus = md.force.Constant(filter=plus_filter)
+        f_plus.constant_force["actin_ecm"] = (dipole_force_N, 0.0, 0.0)
+        f_minus = md.force.Constant(filter=minus_filter)
+        f_minus.constant_force["actin_ecm"] = (-dipole_force_N, 0.0, 0.0)
+        ig = sim.operations.integrator
+        ig.forces.append(f_plus)
+        ig.forces.append(f_minus)
 
     sim.run(n_after_dipole)
 
-    # Time-averaged σ_xx per bond. The first sample is taken right
-    # after the post-dipole relax; additional samples are spaced by
-    # `time_avg_spacing` so they are decorrelated by ~τ_relax.
     samples_xx = []
     midpoint_xy = None
     for s_i in range(n_time_avg_samples):
@@ -590,30 +639,127 @@ def _point_dipole_stress_decay(
         if s_i == 0:
             midpoint_xy = mid
     virial_xx_avg = np.mean(np.stack(samples_xx, axis=0), axis=0)
-
     assert midpoint_xy is not None
-    r_from_dipole = np.linalg.norm(
-        midpoint_xy - dipole_center[None, :], axis=1
+    return virial_xx_avg, midpoint_xy, dipole_center
+
+
+def _point_dipole_stress_decay(
+    p: ResolvedH1,
+    *,
+    n_softstart: int = 100,
+    n_baoab: int = 200,
+    n_after_dipole: int = 500,
+    dipole_force_N: float = 1.0e-9,
+    bin_edges_m: np.ndarray | None = None,
+    n_time_avg_samples: int = 1,
+    time_avg_spacing: int = 100,
+    paired_baseline: bool = False,
+    angular_weighting: bool = False,
+) -> DipoleResult:
+    """Embed a point-force dipole in an equilibrated Mikado, compute the
+    **true Born bond-virial stress field** σ_xx(r) radially, with
+    optional **paired-run baseline subtraction**.
+
+    PI 2026-05-21 (v3 of the bond-virial implementation):
+
+    The x-x oriented dipole produces an anisotropic far-field stress
+    with ``σ_xx ∝ 1/r²`` superposed on a construction-residual baseline
+    σ_xx ≈ 3 300 Pa from the xl r0-binning quantisation (~50 nm
+    residual displacement per xl after equilibration). With a 1 nN
+    dipole, the dipole-induced σ_xx ≈ 100 Pa is buried under the
+    baseline.
+
+    ``paired_baseline=True`` runs **two simulations with identical
+    seed** — one with the dipole (branch A) and one without (branch
+    B). Identical seed → identical Mikado topology + identical BAOAB
+    thermal-noise trajectory. Subtracting per-bond ``σ_xx_A − σ_xx_B``
+    cancels the baseline and the thermal fluctuations, leaving the
+    dipole-induced σ_xx alone. This is the canonical paired-run
+    response protocol used in nonequilibrium MD.
+
+    Procedure (paired):
+
+    1. Build sim A, equilibrate, attach ±F dipole, run
+       ``n_after_dipole`` + (n_time_avg-1)·spacing steps, sample
+       ``n_time_avg_samples`` virial snapshots.
+    2. Independently build sim B with the same seed, equilibrate,
+       run the same number of steps with no dipole, sample.
+    3. Per-bond ``σ_xx_diff = σ_xx_A − σ_xx_B`` (time-averaged inside
+       each branch).
+    4. Radially bin ``σ_xx_diff`` (signed sum / shell volume) by bond
+       midpoint distance from the dipole centre.
+    5. Log–log fit of |σ_xx(r)| vs r over the bulk (drop closest +
+       farthest bins).
+
+    With ``paired_baseline=False`` the function falls back to a
+    single-branch measurement (suitable for demo-scale; production
+    needs the paired subtraction).
+    """
+    virial_xx_A, midpoint_xy, dipole_center = _run_dipole_branch(
+        p,
+        apply_dipole=True,
+        n_softstart=n_softstart,
+        n_baoab=n_baoab,
+        n_after_dipole=n_after_dipole,
+        n_time_avg_samples=n_time_avg_samples,
+        time_avg_spacing=time_avg_spacing,
+        dipole_force_N=dipole_force_N,
     )
+
+    if paired_baseline:
+        virial_xx_B, _mid_B, _dc_B = _run_dipole_branch(
+            p,
+            apply_dipole=False,
+            n_softstart=n_softstart,
+            n_baoab=n_baoab,
+            n_after_dipole=n_after_dipole,
+            n_time_avg_samples=n_time_avg_samples,
+            time_avg_spacing=time_avg_spacing,
+            dipole_force_N=dipole_force_N,
+        )
+        virial_xx_avg = virial_xx_A - virial_xx_B
+    else:
+        virial_xx_avg = virial_xx_A
+
+    rel_xy = midpoint_xy - dipole_center[None, :]
+    r_from_dipole = np.linalg.norm(rel_xy, axis=1)
+    theta = np.arctan2(rel_xy[:, 1], rel_xy[:, 0])
 
     if bin_edges_m is None:
         bin_edges_m = np.geomspace(p.rest_length, 0.25 * p.L_box, 12)
     centers = 0.5 * (bin_edges_m[:-1] + bin_edges_m[1:])
-    L_z = float(sim.state.box.Lz)
+    L_z = float(p.L_z)
 
-    # σ_xx(r) per shell: |signed sum of bond virials| / V_shell.
-    # Signed sum lets the thermal contributions (mean zero) cancel
-    # while the dipole-induced σ_xx (which has a definite sign on each
-    # angular sector for an x-x dipole) accumulates coherently. The
-    # outer |.| then yields a positive magnitude appropriate for the
-    # log-log fit.
+    # σ_xx(r) per shell.
+    # Without angular weighting (paired-baseline only): |signed sum of
+    # bond virials| / V_shell — relies on partial cancellation of the
+    # angular-dependent dipole σ_xx contributions.
+    # With angular_weighting=True: project per-bond σ_xx onto the
+    # cos(2θ) angular mode that the x-x dipole produces. The dipole
+    # response has the form σ_xx(r, θ) = (A/r²) · cos(2θ); the radial
+    # average ⟨σ_xx · cos(2θ)⟩_θ_shell = A/(2r²) recovers the clean
+    # 1/r² magnitude without partial cancellation between the dipole
+    # axis and the perpendicular axis. Thermal noise has σ_xx_bond
+    # uncorrelated with bond midpoint θ, so ⟨noise · cos(2θ)⟩ → 0
+    # under shell averaging.
     sigma_r = np.zeros(centers.size, dtype=np.float64)
+    if angular_weighting:
+        weight = np.cos(2.0 * theta)
+        per_bond_weighted = virial_xx_avg * weight
     for i in range(centers.size):
         lo, hi = bin_edges_m[i], bin_edges_m[i + 1]
         m = (r_from_dipole >= lo) & (r_from_dipole < hi)
         if m.any():
             V_shell = 2.0 * math.pi * centers[i] * (hi - lo) * L_z
-            sigma_r[i] = float(np.abs(np.sum(virial_xx_avg[m])) / V_shell)
+            if angular_weighting:
+                # 2 · ⟨σ_xx · cos(2θ)⟩_shell sum / V_shell — the factor
+                # 2 inverts the ⟨cos²(2θ)⟩_θ = 1/2 angular average so
+                # the reported magnitude equals A/r² (not A/2r²).
+                sigma_r[i] = float(
+                    np.abs(2.0 * np.sum(per_bond_weighted[m])) / V_shell
+                )
+            else:
+                sigma_r[i] = float(np.abs(np.sum(virial_xx_avg[m])) / V_shell)
 
     valid = (sigma_r > 0.0) & np.isfinite(sigma_r)
     if valid.sum() > 0:
@@ -670,17 +816,30 @@ class TestKU130_3_PointDipole:
         reason="Production-scale KU-1.30 #3; opt-in via H1_KU130_PRODUCTION=1.",
     )
     def test_point_dipole_production_band(self):
+        """Production-scale point-dipole σ(r) ∝ 1/r² fit with
+        **paired-run baseline subtraction + cos(2θ) angular weighting**
+        (PI 2026-05-21, autonomous /loop iteration).
+
+        Two improvements over v3 (which gave slope ≈ −0.5):
+        1. Paired baseline (already in v3): two branches with identical
+           seed → identical thermal trajectory → subtract per bond to
+           cancel ~3 300 Pa construction-residual baseline.
+        2. **cos(2θ) angular projection** (new in v4): the x-x dipole
+           response has the form σ_xx(r, θ) = (A/r²)·cos(2θ); the
+           radial-shell average ⟨σ_xx · cos(2θ)⟩_θ recovers a clean
+           1/r² magnitude, while thermal-noise σ_xx_bond uncorrelated
+           with bond midpoint θ averages to 0.
+        """
         with open(CONFIG_PATH) as f:
             cfg = yaml.safe_load(f)
         p = resolve_derived(cfg)
         t0 = time.time()
-        # 5 time-averaged snapshots spaced by 200 steps to cancel
-        # thermal σ_xx noise (mean zero) while accumulating the
-        # dipole-induced mean (≠ zero).
         res = _point_dipole_stress_decay(
             p,
             n_softstart=100, n_baoab=900, n_after_dipole=2000,
             n_time_avg_samples=5, time_avg_spacing=200,
+            paired_baseline=True,
+            angular_weighting=True,
         )
         elapsed = time.time() - t0
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)

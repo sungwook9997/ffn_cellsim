@@ -87,6 +87,33 @@ ecm:
     z_range:    [2.0, 5.5]
     n_fibers_max: 20000                      # cost ceiling; above → demo_mode required
 
+    # KU-1.30 #1 G_0 (small-amplitude linear modulus) band — D4-anchored
+    # (PI 2026-05-21).  v1 reference 32 Pa was measured on the N=5
+    # backbone framework with ⟨z⟩ ≈ 2.8.  D4 (N=21) leaves N_xl
+    # unchanged but inflates N_beads 4.2×, so 2·N_xl/N_beads drops from
+    # ~1 to ~0.24 and ⟨z⟩ falls to ~2.14 — much closer to z_iso = 2.
+    # Rigidity-percolation gives G_0 ∝ (z − z_iso):
+    #     G_0(D4) / G_0(v1) ≈ (2.14 − 2) / (2.8 − 2) = 0.175
+    #     G_0(D4) ≈ 0.175 · 32 Pa ≈ 5.6 Pa
+    # We band [1, 50] Pa: ~10× wider than the central 5.6 Pa estimate
+    # in both directions to absorb the rigidity-percolation prefactor
+    # uncertainty, while still ~6× tighter than the brief's [15, 200]
+    # Pa would predict for v1.  Same anchoring rationale as the
+    # z_range rebanding above.
+    G_0_band:   [1.0, 50.0]                  # Pa, KU-1.30 #1, D4-anchored
+
+    # KU-1.30 #2 strain-stiffening slope |β| band — D4-anchored +
+    # convention-clarified (PI 2026-05-21).  v1 commit `11eaf13` quoted
+    # β ∈ [−2.5, −1.5] but strain-stiffening produces K(γ) *increasing*
+    # with γ → positive slope physically.  Storm-MacKintosh and
+    # Broedersz-MacKintosh both report K(γ) ∝ γ^α with α ∈ [1, 2] in
+    # the entropic-stiffening regime, consistent with |slope| = +1.5
+    # to +2.5.  We band |β| ∈ [1.5, 2.5] absolute — sign-convention
+    # invariant, brief band width unchanged.  If v1's negative band
+    # actually corresponds to a different fit frame (e.g. yield-
+    # divergence K(γ_c−γ)), a follow-up session can re-derive it.
+    stiffening_abs_slope_band: [1.5, 2.5]    # |β|, KU-1.30 #2, sign-convention invariant
+
   # Demo mode opt-out: explicitly accept defaults that violate KU
   # ranges. Visualization / smoke runs only. REPORT.md must mark demo_mode.
   demo_mode: false

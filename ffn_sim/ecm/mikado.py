@@ -207,6 +207,8 @@ class ResolvedH1:
     segment_length_range: tuple[float, float]
     z_range: tuple[float, float]
     n_fibers_max: int
+    G_0_band: tuple[float, float]                  # Pa, KU-1.30 #1 (D4-anchored)
+    stiffening_abs_slope_band: tuple[float, float] # |β|, KU-1.30 #2 (sign-invariant)
     demo_mode: bool
 
     # Derived
@@ -275,6 +277,10 @@ def resolve_derived(cfg: dict) -> ResolvedH1:
         segment_length_range=tuple(cfg["acceptance"]["segment_length_range"]),
         z_range=tuple(cfg["acceptance"]["z_range"]),
         n_fibers_max=int(cfg["acceptance"]["n_fibers_max"]),
+        G_0_band=tuple(cfg["acceptance"].get("G_0_band", [1.0, 50.0])),
+        stiffening_abs_slope_band=tuple(
+            cfg["acceptance"].get("stiffening_abs_slope_band", [1.5, 2.5])
+        ),
         demo_mode=bool(cfg.get("demo_mode", False)),
     )
 
