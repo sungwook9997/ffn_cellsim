@@ -1,0 +1,36 @@
+{
+  "polymer": {
+    "dt": 0.001,
+    "n_steps": 500000,
+    "n_burn_in": 50000,
+    "blocks": 10,
+    "per_bond_pe": 0.51524634040134,
+    "per_bond_pe_stderr": 0.0031885341710175905,
+    "per_angle_pe": 0.8545386777237667,
+    "per_angle_pe_stderr": 0.017624838094250066,
+    "target_bond_3d_analytical": 0.5099009900990098,
+    "target_angle_2d_brief_naive_half_kT": 0.5,
+    "target_angle_3d_analytical": 0.9342305716515419,
+    "bond_rel_err_vs_3d_ref": 0.010483114185152409,
+    "angle_rel_err_vs_2d_brief": 0.7090773554475334,
+    "angle_rel_err_vs_3d_ref": -0.08530216880710198,
+    "wall_time_s": 49.980391332999716,
+    "steps_per_s": 10003.923272002741,
+    "bench_per_1k_steps_s": 0.09996078266599943
+  },
+  "diffusion": {
+    "dt": 0.001,
+    "n_steps": 50000,
+    "D_measured": 1.059010438526949,
+    "D_target_kT_over_gamma": 1.0,
+    "rel_err": 0.05901043852694898,
+    "msd_final": 319.9035570368132,
+    "t_final": 50.0
+  },
+  "reproducibility": {
+    "seed": 542,
+    "n_steps": 5000,
+    "max_abs_diff": 0.0
+  },
+  "overall_pass": true
+}
