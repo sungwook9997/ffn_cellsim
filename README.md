@@ -1,41 +1,70 @@
-# ActiveCellSim
+# ffn_cellsim — Full Fiber Network Cell Simulator
 
-**Active poroelastic spheroid spreading on adhesive substrate — a drying-thin-film inspired cellular hydrodynamics framework**
+**Mechanistic, fine-grained HOOMD-blue framework for single-cell mechanobiology.**
 
-## Quick Summary
-3D simulation of MCF7 spheroid spreading on Col1-coated dish, built independently from first principles to provide a new mechanobiological lens (NOT to fit existing data).
+Every cytoskeletal filament, every motor head, every adhesion clutch, and every ECM cross-link is an explicit particle / bond — no paper-model wrappers, no lumped mechanisms.
 
-## Key Differentiators
-1. **Hybrid Eulerian-Lagrangian MPM** with cell-equivalent material points (5-layer integrated model)
-2. **Drying-thin-film inspired** — cellular Marangoni, coffee-ring analog, drying-induced concentration via mechano-osmotic coupling
-3. **Adhesion network dynamics** (φ ODE) — E-cadherin ↔ Integrin-β1/Laminin transition, dynamically modulating mechanics
-4. **Radial vs Full 3D anisotropic** parallel simulations — quantifying the validity domain of radial-symmetry approximations
-5. **First-principles validation** from IF≥15 literature, not parameter fitting
+## Why "full fiber network"?
+
+Most published cell-mechanics simulations borrow closed-form models from the literature (Chan-Odde motor-clutch, Pereverzev catch-bond, Bell-Evans, Buckley cadherin, Hill force-velocity) and run them as the **runtime mechanism**. `ffn_cellsim` inverts that: the runtime is fine-grained HOOMD particle/bond dynamics, and those literature closed-forms become **acceptance oracles** — used only in validation tests to cross-check that the emergent behaviour matches the published expressions.
+
+PI directive (2026-05-19): *"full resolution simulation 방향에 맞게 — 처음 프레임워크에 추상화나 다른 과정이 들어가면 안됨."*
+
+## Layout
+
+```
+ffn_cellsim/
+├── ffn_sim/                          # the active HOOMD-blue runtime
+│   ├── ecm/                          # Mikado fiber network + cross-links (H.1)
+│   ├── cell/                         # cell body composition (H.3)
+│   ├── cortex/                       # actin cortex (H.2, H.3)
+│   ├── bridge/                       # focal adhesion + motor-clutch (H.4)
+│   ├── junction/                     # E-cadherin cell-cell adhesion (H.6)
+│   ├── integrator/                   # Leimkuhler-Matthews BAOAB plugin (custom)
+│   ├── common/                       # shared utilities
+│   ├── validation/
+│   │   └── oracles/                  # v1 closed-form oracles (frozen reference)
+│   │       ├── ecm/                  # WLC, Mikado geometry, cross-link energy
+│   │       ├── junction/             # Young-equation contact angle
+│   │       ├── bridge/               # 1-D traction reducer
+│   │       ├── common/               # sanity gates, derived parameters
+│   │       └── configs/              # KU-anchored literature constants (YAML)
+│   ├── docs/                         # active project docs
+│   │   ├── PHASE_0_CLOSEOUT.md
+│   │   ├── PHASE_0_3_DECISIONS.md    # 7 PI-ratified design calls
+│   │   ├── AFINES_ALGORITHM_NOTES.md
+│   │   ├── briefs/                   # per-unit dispatch briefs (H.1..H.7)
+│   │   └── v2_audit/                 # codebase audit + _DEPRECATED rationale
+│   ├── tests/                        # HOOMD runtime tests
+│   ├── scripts/                      # CLI entry points
+│   └── outputs/                      # per-unit deliverables
+├── CLAUDE.md                         # Claude Code project context
+├── STRUCTURE.md                      # detailed file map
+├── pyproject.toml
+└── requirements.txt
+```
+
+## Stack
+
+- Python 3.13
+- HOOMD-blue 7.0.1 (CPU + GPU; Apple silicon CPU-only through Phase 1)
+- Leimkuhler-Matthews BAOAB-limit custom integrator plugin
+- conda env: `conda activate ffn_sim`
 
 ## Status
-🚧 Planning complete, implementation begins.
 
-## Hardware
-Primary: NVIDIA RTX A5000 + Xeon W-11955M workstation (Windows, headless SSH)
-Portable: RTX 4090×2 lab workstation, Google Colab fallback
+Phase 0 closed 2026-05-19 (`v2/foundation` branch). Phase 1 dispatch:
 
-## Workflow Roles
-| Tool | Role |
-|------|------|
-| Claude Desktop App | Brain trust — physics design, model review, paper interpretation, result analysis |
-| VSCode + Claude Code (extension) | Code editing, inline diff, file modification |
-| Claude Code Terminal | Execution, environment setup, SSH commands, GPU monitoring, batch runs |
-| Mac (M1) | Lightweight viz post-processing, interactive review |
-| Windows (A5000) | Heavy simulation runs, Blender renders |
+| Worker | Unit | Brief |
+|---|---|---|
+| A | H.1 ECM Mikado | `ffn_sim/docs/briefs/H1_ecm_mikado.md` |
+| B | H.4 FA + motor-clutch | `ffn_sim/docs/briefs/H4_fa_motor_clutch.md` |
+| C | H.2 single filament → H.3 cortex → H.5 lamellipodium | `ffn_sim/docs/briefs/H2_single_filament.md` |
 
-## Getting Started (for Claude Code)
-1. Read `CLAUDE.md` (this is automatic).
-2. Read `STRUCTURE.md` for the file→version map (v1 frozen / v2 active / shared).
-3. Read `docs/v2/10_dev_roadmap_v2.md` to understand next milestone (v2 active). The v1 roadmap is at `docs/v1/10_dev_roadmap.md` for historical reference.
-4. Read `docs/00_project_vision.md` and `docs/v2/00_project_vision_v2.md` for full framing.
-5. Pull other docs only as relevant to the current task.
+## Origin
 
-## Project Lead
-PI: Sungwook Yoon (sungwook999@kaist.ac.kr)
-Lab: Shin Lab, Dept. of Mechanical Engineering, KAIST
-Corresponding: Jennifer H. Shin (j_shin@kaist.ac.kr)
+This repository was carved out of `~/ActiveCellSim` (v1 Taichi MLS-MPM continuum) on 2026-05-20 as a clean ffn-only workspace. The v1 spheroid-MPM code and the image-constrained intermediate v2 attempt are preserved in the parent repo (`origin` remote → `~/ActiveCellSim`) and are not retained here.
+
+## PI / Lab
+
+Sungwook Yoon · Shin Lab, Dept. of Mechanical Engineering, KAIST

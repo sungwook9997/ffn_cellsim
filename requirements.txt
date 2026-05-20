@@ -1,21 +1,20 @@
-# ActiveCellSim — runtime dependencies (Stage 0).
-# Pinned versions are written by `pip freeze` after the env install completes.
-# This loose set is the source of truth for which packages enter the env.
+# ffn_cellsim — runtime dependencies (Phase 0/1).
+#
+# HOOMD-blue 7.0.1 is installed via conda-forge into the `ffn_sim` env
+# (see CLAUDE.md for the activate command); it is not pip-installable
+# so it does not appear here. This file pins the pure-Python and
+# scientific-stack dependencies that pip resolves on top of the conda env.
 
-# Core simulation
-taichi>=1.7,<2.0
-numpy>=1.26,<3.0
-scipy>=1.11
-
-# Data I/O
+# Core scientific stack
+numpy>=2.0
+scipy>=1.13
 h5py>=3.10
 pyyaml>=6.0
 
-# Visualization / analysis
+# Visualisation / analysis (post-processing GSD trajectories)
 matplotlib>=3.8
-plotly>=5.20
-vispy>=0.14
 
-# Dev tooling
-pytest>=8.0
-ruff>=0.4
+# Trajectory analysis (HOOMD-native)
+# freud and gsd are conda-installed alongside HOOMD; listed here for reference.
+# gsd>=3.0
+# freud-analysis>=3.0

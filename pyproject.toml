@@ -3,35 +3,28 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "activecellsim"
+name = "ffn_cellsim"
 version = "0.0.1.dev0"
-description = "First-principles MCF7 spheroid spreading simulator"
-requires-python = ">=3.11"
+description = "Full Fiber Network Cell Simulator — fine-grained, mechanistic HOOMD-blue framework"
+requires-python = ">=3.13"
 readme = "README.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["acs*"]
-exclude = ["tests*", "scripts*", "configs*", "data*", "docs*", "logs*", "results*"]
+include = ["ffn_sim*"]
+exclude = ["ffn_sim.outputs*", "ffn_sim.docs*"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
-extend-exclude = ["data", "results", "logs", "docs"]
+target-version = "py313"
+extend-exclude = ["ffn_sim/outputs", "ffn_sim/docs"]
 
 [tool.ruff.lint]
-# Conservative starter set; tighten later if the team wants stricter rules.
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 ignore = [
     "E501",  # line length handled by formatter
 ]
 
-[tool.ruff.lint.per-file-ignores]
-# `I` (capital eye) is the Taichi convention for grouped grid indices and is
-# universal in published MLS-MPM code. Keep it readable; suppress E741 here.
-"acs/physics/*.py" = ["E741"]
-"tests/**/test_physics_*.py" = ["E741"]
-
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["ffn_sim/tests"]
 addopts = "-ra -q"

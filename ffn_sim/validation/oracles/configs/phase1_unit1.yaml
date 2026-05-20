@@ -1,0 +1,88 @@
+# Phase 1 — Unit 1.1 ECM defaults.
+#
+# All values SI (m, s, J, N, K). NO hand-tuned numbers; every value below
+# is either a literature constant (with KU tag) or is computed at
+# config-resolve time from the primary scales below by
+# `ffn_sim.validation.oracles.common.derived_params.resolve(config)`.
+#
+# Hard rule reference: ActiveCellSim CLAUDE.md Magic-Number Block.
+
+ecm:
+
+  # ---- Primary biological scales (KU-1.x literature anchors) ----
+  L_box: 200.0e-6              # m   simulation box side
+  dimension: 2                 # Phase 1 = 2D
+  L_fiber: 10.0e-6             # m   contour length per fiber, KU-1.22
+  beads_per_fiber: 5           # discretization, KU-1.22
+  bead_radius: 50.0e-9         # m   collagen fibril radius (KU-1.2)
+
+  persistence_length: 17.0e-6  # m   ℓ_p, KU-1.1
+  bending_modulus: 7.0e-26     # N·m²  κ = ℓ_p k_B T at 310 K, KU-1.1
+  stretching_modulus: 8.6e-9   # N    μ = E π r² with E≈1.1 MPa, r=50 nm, KU-1.2
+
+  # ξ — biological collagen porosity / mesh (experimental observable), KU-1.7
+  biological_mesh: 2.0e-6      # m   ξ ~ c^(-1/2) at 1.5 mg/mL collagen
+  # ℓ_c — Mikado segment length between successive crossings on a fiber,
+  # an emergent property of the discrete network (KU-1.27).
+  # We *match* ℓ_c to ξ as the modelling convention (Storm-MacKintosh, Broedersz-MacKintosh)
+  # but keep both names so downstream code can not silently conflate them.
+  target_segment_length: 2.0e-6  # m  ℓ_c target = ξ here, but kept separate
+  target_coordination_ref: 3.2 # ⟨z⟩ KU-1.3 reference for collagen; NOT the construction
+                               # target — z is emergent from segment intersections.
+
+  xl_stiffness: 1.0e-3         # N/m  1 pN/nm harmonic, KU-1.28
+
+  temperature: 310.0           # K   37 °C
+  kT: 4.28e-21                 # J   k_B · T
+  water_viscosity: 6.913e-4    # Pa·s  η_water at 310 K (NIST), KU-1.26
+
+  seed: 42
+
+  # 2D → 3D unit convention (only used by the affine G(γ) preliminary).
+  # For 1.5 mg/mL collagen the mesh ξ ≈ 2 μm is the natural "slab
+  # thickness" choice that maps 2D virial σ (N/m) to 3D stress (Pa).
+  # Phase 2+ should replace this with a proper 3D model.
+  layer_thickness_for_2d_to_3d: 2.0e-6
+
+  # ---- Time integration (Unit 1.2, KU-1.26) ----
+  dynamics:
+    integrator: euler_maruyama       # 'euler_maruyama' (Phase 1) | 'baoab' (Phase 2+)
+    cfl_safety_factor: 0.1           # dt = α · τ_min; α chosen for overdamped Verlet
+                                     # stability (Leimkuhler-Matthews 2013), conservative.
+    dt: null                         # filled by resolve() unless explicitly set
+    n_steps_equilibrate: 50000
+    n_steps_sample: 50000
+    sample_interval: 50
+
+  # ---- Sanity Gate acceptance ranges ----
+  # If a derived/measured quantity falls outside, SanityGateFailure is raised.
+  # See ffn_sim/validation/oracles/common/sanity_gate.py.
+  acceptance:
+    segment_length_range: [1.0e-6, 4.0e-6]   # ℓ_c band around ξ=2 μm (KU-1.7 ±50%)
+    z_range:    [2.5, 3.9]                   # sub-isostatic, well below z_c=2d=4 (KU-1.3)
+    n_fibers_max: 20000                      # cost ceiling; above → demo_mode required
+
+  # Demo mode opt-out: explicitly accept defaults that violate KU ranges.
+  # Use only for visualization / smoke runs. REPORT.md must mark demo_mode.
+  demo_mode: false
+
+  # ---- Derived parameters (filled by resolve(); do NOT edit by hand) ----
+  derived:
+    # n_fibers derived from Mikado segment-length formula (KU-1.27):
+    #     ℓ_c = π / (2 ρ_L),   ρ_L = N L_fiber / L_box²
+    #   ⇒ N = π L_box² / (2 ℓ_c L_fiber)
+    n_fibers: null
+    rest_length: null              # = L_fiber / (beads_per_fiber - 1)
+    backbone_z: null               # analytic backbone coordination
+    line_density: null             # ρ_L = N L_fiber / L_box²  [1/m]
+    mikado_ell_c_predicted: null   # π/(2ρ_L)  [m]   — *theoretical* Mikado ℓ_c
+    expected_xl_per_fiber: null    # 2 ρ_L L_fiber / π
+    expected_total_z: null         # backbone_z + 2·(expected_xl_per_fiber)/beads_per_fiber
+    fibers_resolved_at: null       # 'KU-1.27_segment_match' or 'demo_mode'
+    # ---- KU-1.26 Stokes drag derivation ----
+    gamma_b: null                  # 6π η_water bead_radius  [N·s/m]
+    tau_xl: null                   # γ_b / k_xl  [s]   — XL relaxation time
+    tau_stretch: null              # γ_b ℓ₀ / μ  [s]   — WLC stretch relaxation
+    tau_bend: null                 # γ_b ℓ₀³ / κ [s]   — WLC bending relaxation
+    tau_min: null                  # min of the three; sets CFL bound
+    dt_cfl: null                   # = cfl_safety_factor · tau_min
