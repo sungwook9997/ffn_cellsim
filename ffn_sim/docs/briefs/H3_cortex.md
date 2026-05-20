@@ -1,9 +1,10 @@
-# Worker C — H.3 Cortex multi-filament network
+# H.3 — Cortex multi-filament network
 
 **Budget**: 3 weeks
-**Branch**: `worker-c/h3-cortex` (cut from `worker-c/h2-single-filament` after H.2 lands)
+**Branch**: `phase1/h3-cortex` (cut from `phase1/h2-single-filament` after H.2 lands)
 **Reference**: Plan v2 §3 Unit H.3 (with 2026-05-19 v3.1 cortex composition revision), [PHASE_0_3_DECISIONS.md](../PHASE_0_3_DECISIONS.md) D2/D5/D7, [AFINES_ALGORITHM_NOTES.md §2/§3/§4/§6](../AFINES_ALGORITHM_NOTES.md)
-**Prereq**: H.2 complete (single filament L_p validated). Reuses `ffn_sim/integrator/baoab.py` from H.1.
+**Owner**: Main Session.
+**Prereq**: H.2 complete (single filament L_p validated). Inherits `ffn_sim/integrator/baoab.py`.
 
 ## Goal
 

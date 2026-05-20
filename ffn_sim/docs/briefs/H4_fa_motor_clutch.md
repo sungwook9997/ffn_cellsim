@@ -1,9 +1,10 @@
-# Worker B — H.4 FA + motor-clutch in HOOMD
+# H.4 — FA + motor-clutch in HOOMD
 
 **Budget**: 3 weeks (Plan v2 said 2 wk; +1 wk for D5 Stam-Hocky minifilament)
-**Branch**: `worker-b/h4-fa-clutch` (cut from `v2/foundation`)
+**Branch**: `phase1/h4-fa-clutch` (cut from `v2/foundation`)
 **Reference**: Plan v2 §3 Unit H.4, [PHASE_0_3_DECISIONS.md](../PHASE_0_3_DECISIONS.md) D2/D5/D6/D7, [AFINES_ALGORITHM_NOTES.md §3/§4/§6](../AFINES_ALGORITHM_NOTES.md)
-**Prereq**: none (parallel with H.1, H.2). Reuses `ffn_sim/integrator/baoab.py` once H.1 lands; for H.4 isolation tests can use vanilla `md.methods.Brownian` temporarily.
+**Owner**: Sub Session. Runs in parallel with Main’s H.2/H.3 once H.1 BAOAB freeze lands.
+**Prereq**: H.1 BAOAB integrator (`ffn_sim/integrator/baoab.py`) merged to `v2/foundation`. Read-only for Sub.
 
 ## Goal
 

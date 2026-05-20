@@ -76,11 +76,68 @@ The v1 project (Taichi MLS-MPM spheroid continuum + image-constrained intermedia
 - Phase 0 (foundation): **closed 2026-05-19**. See `ffn_sim/docs/PHASE_0_CLOSEOUT.md`.
 - Phase 0.3 design decisions: `ffn_sim/docs/PHASE_0_3_DECISIONS.md` (7 PI-ratified calls).
 - AFINES master review: `ffn_sim/docs/AFINES_ALGORITHM_NOTES.md` (897 lines).
-- Phase 1 worker dispatch: `ffn_sim/docs/briefs/H{1,2,3,4}_*.md`.
+- Phase 1 unit briefs: `ffn_sim/docs/briefs/H{1,2,3,4}_*.md` (Owner + Prereq lines at top of each).
+
+## Multi-session orchestration
+
+Phase 1 runs across multiple Claude Code sessions for context efficiency. State lives in Notion + on-disk briefs, NOT in any one session's context.
+
+### Roles
+
+- **Main Session** — sequential ownership of H.1 → H.2 → H.3 → H.5 → H.7 (architectural consistency chain).
+- **Sub Session** — H.4 (FA + motor-clutch, isolated module) after Main's BAOAB freeze, plus debugging interludes and sanity-gate updates after FAIL.
+- **Orchestrator (PI / Sungwook)** — relays state between sessions, reviews each session's closeout, approves each next prompt.
+
+### State stores (read on session boot)
+
+- `ffn_sim/docs/briefs/H*.md` — **immutable unit specs** (contracts). Sessions do not edit.
+- Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) — **per-session closeout + next-prompt drafts** + file-ownership table.
+- Notion [Development Logs & Reviews](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) — **Phase 1 status board** (Status / Owner / Start / End / Log).
+
+### Session boot protocol (minute 0)
+
+1. Read `CLAUDE.md` (this file) fully.
+2. Open the Notion Session Handoff Board, find your role section (Main or Sub), read **only your "Next prompt"**.
+3. Verify branch + commit hash match what the prompt says (`git log --oneline -1`).
+4. `conda activate ffn_sim` and confirm with `python -c "import hoomd; print(hoomd.version.version)"`.
+5. Restate the task in 1–2 sentences before executing anything. If anything is ambiguous, ask PI before moving.
+
+### Session closeout protocol (end of session or when PI says "wrap")
+
+1. Stage and commit work on the session's branch (`phase1/h{N}-*`). Do NOT push to `v2/foundation`.
+2. Write a **closeout block** to your section of the Notion Session Handoff Board, using the template pinned there.
+3. Write a **draft Next prompt** in that section so PI can review/edit and the next session of your role can boot from it.
+4. Update the Phase 1 status board (Status / Owner already set; Start / End / Log columns as appropriate).
+5. Stop. Do not speculate beyond what was actually done in the session.
+
+### File ownership (cross-session enforcement)
+
+Detailed table on the Session Handoff Board. Headline:
+
+- **Main owns**: `ffn_sim/integrator/`, `ffn_sim/ecm/`, `ffn_sim/cortex/`, `ffn_sim/cell/`, `ffn_sim/common/`, `ffn_sim/configs/phase1_h{1,2,3,5,7}.yaml`
+- **Sub owns**: `ffn_sim/bridge/`, `ffn_sim/configs/phase1_h4.yaml`, `*_sanity.md` updates
+- **Both write to** `ffn_sim/tests/`: per-unit files only (`test_h{N}_*.py`); no cross-touching
+- **Read-only for both**: `ffn_sim/validation/oracles/`, `ffn_sim/docs/briefs/`, `CLAUDE.md`, `STRUCTURE.md`, `README.md`, `pyproject.toml`
+- **Cross-boundary change needed**: escalate to PI, do not write directly. One conflict avoided > a few minutes of relay time.
+
+### Closeout block template (copy into your handoff board section)
+
+```
+## Closeout — {YYYY-MM-DD} · {Main|Sub} session
+- **Branch**: `phase1/h{N}-{name}` @ `{commit_short}`
+- **Completed**: <concrete deliverables landed>
+- **Tests**: <added/changed, pass/fail counts>
+- **Sanity gates run**: <list, PASS/FAIL>
+- **Files touched**: <top 5, full count>
+- **Open for PI**: <unanswered questions, magic-number triggers, gate-contract questions>
+- **Recommended next prompt** (PI to review):
+  > <draft next-session task, 3-5 lines, copy-paste-ready>
+```
 
 ## When in doubt
 
 - Read `ffn_sim/docs/PHASE_0_CLOSEOUT.md` for current state.
 - Read `ffn_sim/docs/PHASE_0_3_DECISIONS.md` for the ratified design vocabulary.
 - Read the relevant `ffn_sim/docs/briefs/H*.md` for the unit you're touching.
+- Read the Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) for your role's current task.
 - Ask the PI before deviating from any principle in this file.
