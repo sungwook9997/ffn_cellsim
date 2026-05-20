@@ -76,7 +76,17 @@ The v1 project (Taichi MLS-MPM spheroid continuum + image-constrained intermedia
 - Phase 0 (foundation): **closed 2026-05-19**. See `ffn_sim/docs/PHASE_0_CLOSEOUT.md`.
 - Phase 0.3 design decisions: `ffn_sim/docs/PHASE_0_3_DECISIONS.md` (7 PI-ratified calls).
 - AFINES master review: `ffn_sim/docs/AFINES_ALGORITHM_NOTES.md` (897 lines).
-- Phase 1 worker dispatch: `ffn_sim/docs/briefs/H{1,2,3,4}_*.md`.
+- Phase 1 unit briefs: `ffn_sim/docs/briefs/H{1,2,3,4}_*.md` (Owner + Prereq at top of each).
+
+## Multi-session orchestration (state in Notion, not in this file)
+
+Phase 1 runs across separate Claude Code sessions: **Main** (H.1 → H.2 → H.3 → H.5 → H.7), **Sub** (H.4 + debug), **Orchestrator** (read-only review/drafting). On session boot, read the Notion Session Handoff Board for your role's `[ready]` Next prompt — the boot template, closeout template, and file-ownership table all live there.
+
+- 🎛️ **Session Handoff Board**: https://www.notion.so/366120daec5d815da389c38bc3bfbbe1
+- 🧾 **Dev Logs status board**: https://www.notion.so/365120daec5d81969e74ffbb757d55c8
+- 🚀 **Build Plan v2** (full §3 Phase 1 spec): https://www.notion.so/365120daec5d81799efefcf078f2039e
+
+PI is the human relay between sessions — workers write closeouts to the Handoff Board, Orchestrator drafts the next prompts, PI reviews/approves. Do NOT push branches to `v2/foundation` without PI sign-off.
 
 ## When in doubt
 
