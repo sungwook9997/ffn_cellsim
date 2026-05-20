@@ -1,7 +1,7 @@
 # Worker A — H.1 ECM Mikado in HOOMD
 
 **Budget**: 2 weeks (full-fidelity assumptions absorbed)
-**Branch**: `worker-a/h1-ecm` (cut from `v2/foundation`)
+**Branch**: `worker-a/h1-ecm` (cut from `ffn/foundation`)
 **Reference**: Plan v2 §3 Unit H.1, [PHASE_0_3_DECISIONS.md](../PHASE_0_3_DECISIONS.md), [AFINES_ALGORITHM_NOTES.md §2 + §6](../AFINES_ALGORITHM_NOTES.md)
 **Prereq**: none (parallel with H.2, H.4)
 

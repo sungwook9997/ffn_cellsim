@@ -53,7 +53,7 @@ ffn_cellsim/
 
 ## Status
 
-Phase 0 closed 2026-05-19 (`v2/foundation` branch). Phase 1 dispatch:
+Phase 0 closed 2026-05-19 (`ffn/foundation` branch, renamed from `v2/foundation` 2026-05-20). Phase 1 dispatch:
 
 | Worker | Unit | Brief |
 |---|---|---|

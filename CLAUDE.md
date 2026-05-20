@@ -86,7 +86,7 @@ Phase 1 runs across separate Claude Code sessions: **Main** (H.1 → H.2 → H.3
 - 🧾 **Dev Logs status board**: https://www.notion.so/365120daec5d81969e74ffbb757d55c8
 - 🚀 **Build Plan v2** (full §3 Phase 1 spec): https://www.notion.so/365120daec5d81799efefcf078f2039e
 
-PI is the human relay between sessions — workers write closeouts to the Handoff Board, Orchestrator drafts the next prompts, PI reviews/approves. Do NOT push branches to `v2/foundation` without PI sign-off.
+PI is the human relay between sessions — workers write closeouts to the Handoff Board, Orchestrator drafts the next prompts, PI reviews/approves. Do NOT push branches to `ffn/foundation` (renamed from `v2/foundation` 2026-05-20) without PI sign-off.
 
 ## When in doubt
 

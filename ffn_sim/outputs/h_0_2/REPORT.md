@@ -1,7 +1,7 @@
 # Phase 0.2 — HOOMD-blue environment verification
 
 **Date**: 2026-05-19
-**Branch**: `v2/foundation`
+**Branch**: `ffn/foundation` (renamed from `v2/foundation` 2026-05-20)
 **Plan reference**: Notion Build Plan v2 §2 Unit H.0.2 — <https://www.notion.so/365120daec5d81799efefcf078f2039e>
 
 ## Environment

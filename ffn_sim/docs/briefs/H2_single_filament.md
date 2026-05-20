@@ -1,7 +1,7 @@
 # Worker C — H.2 Single F-actin filament persistence length validation
 
 **Budget**: 1 week
-**Branch**: `worker-c/h2-single-filament` (cut from `v2/foundation`)
+**Branch**: `worker-c/h2-single-filament` (cut from `ffn/foundation`)
 **Reference**: Plan v2 §3 Unit H.2, [PHASE_0_3_DECISIONS.md](../PHASE_0_3_DECISIONS.md), [AFINES_ALGORITHM_NOTES.md §2 + §6](../AFINES_ALGORITHM_NOTES.md)
 **Prereq**: none — start first (H.3, H.5 depend)
 
