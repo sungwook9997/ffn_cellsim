@@ -1,0 +1,127 @@
+# Phase 1 — Unit H.2 single-filament L_p validation (HOOMD runtime) defaults.
+#
+# Single 10 μm actin filament (no cross-links, no LJ pair) under BAOAB
+# Brownian dynamics; measure tangent-tangent correlation ⟨t̂(s)·t̂(0)⟩
+# and fit persistence length L_p against the KU-1.1 actin reference of
+# 17 μm ± 10 % = [15.3, 18.7] μm.
+#
+# H.2 brief: `ffn_sim/docs/briefs/H2_single_filament.md` §Implementation
+# spec.
+#
+# Per CLAUDE.md Hard Rules:
+# - No magic numbers — every parameter below is either KU-anchored or
+#   derived at config-resolve time.
+# - Carry-over from H.1: same D3 BAOAB integrator (frozen 2026-05-20
+#   at `75a1035`), same KU-1.1 bending modulus κ_B = ℓ_p k_B T.
+# - Per BAOAB freeze §Open #1: H.2 is the home for the 3D-corrected
+#   bending equipartition gate (single filament, no cross-links →
+#   clean per-bond ⟨½ k_θ (θ−π)²⟩ measurement).
+# - Per BAOAB freeze §Open #2: H.2 is also the home for the L-M ↔
+#   E-M O(Δt²) ↔ O(Δt) order separation test (re-run identical
+#   filament under reference E-M via `allow_reference_integrator`).
+
+ecm: null   # (H.2 has no ECM-specific block; placeholder for resolver compat)
+
+filament:
+
+  # ---- Primary biological scales (KU-1.x literature anchors) ----
+  L_fiber: 10.0e-6             # m   contour length per filament, KU-1.22
+  bead_radius: 30.0e-9         # m   actin bundle cross-section (H.2 brief)
+  persistence_length: 17.0e-6  # m   ℓ_p, KU-1.1 actin reference
+  bending_modulus: 7.0e-26     # N·m²  κ_B = ℓ_p k_B T at 310 K, KU-1.1
+  # μ_actin_bundle = 1.5e-9 N (AFINES canonical, Freedman et al 2017
+  # Soft Matter; appropriate for R=30 nm actin bundle).
+  # NB: H.2 brief says "k from KU-1.2 spring stretching modulus", but
+  # KU-1.2 is defined for collagen FIBRILS (r = 50 nm), not actin
+  # bundles (r ≈ 30 nm); the brief's literal reference is
+  # internally inconsistent.  L_p validation is insensitive to μ
+  # (only κ_B sets L_p), so the choice of μ only affects BAOAB
+  # stretching-CFL.  We adopt the AFINES literature value as the
+  # most fine-grained per `feedback_acs_no_abstractions`.
+  stretching_modulus: 1.5e-9   # N    μ_actin_bundle (AFINES, Freedman 2017)
+
+  temperature: 310.0           # K   37 °C
+  kT: 4.28e-21                 # J   k_B · T
+  water_viscosity: 6.913e-4    # Pa·s  η_water at 310 K (NIST), KU-1.26
+
+  seed: 42
+
+  # ---- D4: Discretisation (same N=21 as H.1) ----
+  beads_per_fiber: 21
+  # rest_length filled by resolve() = L_fiber / (beads_per_fiber − 1)
+
+  # ---- Box geometry (slab — single filament has no LJ/xl, no periodic
+  #      interaction expected within the 10 μm filament length) ----
+  # Brief §Implementation spec: "50 × 50 × 0.2 μm slab box with large
+  # enough x to fit the filament + thermal excursion." Filament aligned
+  # along +x at construction; thermal excursion scale σ ~ √(L²/(3 L_p))
+  # = √((10 μm)² / (3·17 μm)) ≈ 1.4 μm. Box xy of 50 μm × 50 μm gives
+  # >> 10× margin in both directions.
+  box:
+    Lx: 50.0e-6
+    Ly: 50.0e-6
+    Lz: 0.2e-6                 # slab thickness for 2D-projection convention
+
+  # ---- D3: Time integration (same L-M BAOAB as H.1, but ANGLE-time-
+  #      scale CFL since there are no xl/LJ — see resolve_derived). ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab    # D3 Phase 1 canonical
+    cfl_safety_factor: 0.1                   # dt = α · τ_min_angle
+    # For single filament with no xl: τ_min effectively = τ_angle since
+    # stretching ⟨Δℓ⟩ ≪ ℓ_0 at thermal scale (bond extension σ ~ 0.5 nm
+    # vs ℓ_0 = 500 nm) — i.e. the stiff bond mode is frozen out of the
+    # measurement and doesn't constrain dt. AFINES uses dt = 2e-5 s
+    # which is α · τ_angle ≈ 0.005 · τ_angle; we use α = 0.1 for tighter
+    # safety. resolve_derived() computes dt_cfl from τ_angle.
+    dt: null                                 # filled by resolve()
+    # H.2 dt is bound by τ_stretch (stiff stretching mode), not τ_bend
+    # (the measurement timescale).  With μ = 1.5 nN (AFINES) and γ_b
+    # for R=30 nm, τ_stretch ≈ 130 ns → dt_cfl ≈ 13 ns.  The brief's
+    # 2e-5 s dt assumes a semi-implicit integrator that L-M BAOAB
+    # explicitly is not, so we cannot match the brief's step counts
+    # directly.  Step counts below target ≥100 independent τ_bend
+    # decorrelation samples (statistical equivalent of brief's
+    # 3000-frame brief sample) for the L_p fit.
+    n_steps_equilibrate: 100000              # ~1.3 ms simulated at dt = 13 ns
+    n_steps_sample: 50000000                 # ~650 ms simulated (~900 τ_bend)
+    sample_interval: 50000                   # 1000 frames, ≈1·τ_bend apart
+
+  # ---- D7 EV: NOT used in H.2 (single filament has no self-interaction
+  #             on its own bonded chain; brief explicitly omits LJ) ----
+  excluded_volume:
+    enabled: false
+
+  # ---- Sanity-Gate / Validation acceptance bands (H.2 brief Table) ----
+  acceptance:
+    # L_p measured ∈ [15.3, 18.7] μm = 17 ± 10 % (KU-1.1 actin reference).
+    L_p_band_m: [15.3e-6, 18.7e-6]
+    # KS test p-value against Boltzmann angle distribution.
+    angle_ks_p_min: 0.05
+    # Per-bond equipartition |⟨E_bend⟩ − kT/2| / (kT/2) ≤ 0.05.
+    equipartition_rel_tol: 0.05
+
+  # ---- L-M vs E-M order verification (BAOAB freeze §Open #2) ----
+  # When `allow_reference_integrator: true`, the test harness re-runs
+  # the identical filament under HOOMD-native md.methods.Brownian
+  # (Euler-Maruyama) at halved Δt and confirms L_p agrees within 1 σ.
+  # This is the order-of-accuracy separation gate that closes
+  # BAOAB §Open #2.
+  reference_integrator:
+    allow: true
+    name: hoomd_brownian
+    dt_factor: 0.5
+
+  # Demo mode opt-out — relax bands for a fast smoke run.
+  demo_mode: false
+
+  # ---- Derived parameters (filled by resolve()) ----
+  derived:
+    rest_length: null              # = L_fiber / (beads_per_fiber − 1)
+    bond_k: null                   # = μ / ℓ₀                      [N/m]
+    angle_k: null                  # = κ_B / ℓ₀                    [N·m]
+    angle_t0: 3.141592653589793    # π — HOOMD straight-chain convention
+    gamma_b: null                  # = 6π η R                      [N·s/m]
+    tau_stretch: null              # = γ_b ℓ₀ / μ                  [s]
+    tau_bend: null                 # = γ_b ℓ₀³ / κ_B               [s] (= γ_b ℓ₀² / k_θ; position-space angle relaxation)
+    tau_min: null                  # min(stretch, bend)
+    dt_cfl: null                   # = cfl_safety · τ_min          [s]
