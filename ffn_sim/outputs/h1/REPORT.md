@@ -163,21 +163,22 @@ ECM amortises the Python re-entry across many particles). A naive
 projection that scaled the polymer steps/s by 1/N predicted ~15 steps/s;
 the measured 37.7 is comfortably above that.
 
-**v1 numpy reference**: not benchmarked in this session — the v1 ECM
-production lives in `~/ActiveCellSim` and is not in `ffn_cellsim`'s
-working tree. A direct ≤5× comparison requires running the same
-hardware bench against `~/ActiveCellSim/acs_kb/...`'s equivalent
-simulator. Based on the polymer-side ~9× regression versus HOOMD-native
-Brownian (the closest available reference), the per-bead ECM regression
-is *better* than the polymer's because the ECM-side compute (sparse LJ
-+ bonds + angles + xl bonds) dilutes the per-step Python overhead.
+**v1 numpy reference benchmark (PI 2026-05-21)**: the v1 numpy ECM
+integrator is `EulerMaruyama` (`~/ActiveCellSim/acs_kb/ecm/integrator.py`)
+driving the same force kernel that lives in this tree as the validation
+oracle (`ffn_sim/validation/oracles/ecm/fiber_mechanics.compute_forces`
++ `cross_links.compute_xl_energy_and_forces`). `scripts/v1_numpy_ecm_bench.py`
+runs N=65 982 Mikado + n_xl = 7 687 through `--n-steps 1000` of E-M on
+the same dt = 3.79 ns and reports:
 
-**Verdict**: wall-time is acceptable for the M2-rest gates; production
-KU-1.30 #1 at ~1 hour and #2 at several hours are consistent with the
-boot prompt's estimate and do not require the §Open #4 optimisation
-hand-off as a blocker. The hand-off is still recommended as a Phase 2+
-investment if KU-1.30 #2 (and downstream H.3/H.5) need multiple
-parameter-sweep replicas.
+| Implementation | steps/s | wall / simulated s |
+| --- | --- | --- |
+| HOOMD L-M BAOAB + LJ (current) | **37.7** | 7.00 × 10⁶ |
+| v1 numpy E-M + bonds + angles + xl (no LJ) | **111.3** | 2.37 × 10⁶ |
+| **Ratio (HOOMD / v1)** | — | **2.95 ×** |
+
+**Within the 5× regression budget.** No optimisation hand-off
+required at this point. Detailed discussion in §Open #4.
 
 ## Open items / Surfaces to PI
 
@@ -197,41 +198,59 @@ is structurally similar to #1 but with three independent ramp/relax
 cycles to ensemble-average the slope fit. Wall-time estimate: several
 hours. Same gating decision: implemented but not executed.
 
-### 3. KU-1.30 #3 point-dipole stress decay uses a proxy field
+### 3. KU-1.30 #3 point-dipole stress decay — **true Born bond-virial** (PI 2026-05-21)
 
-The brief asks for σ(r) ∝ 1/r². My implementation reads the per-particle
-`net_force` magnitude binned radially, which decays similarly to true
-stress but is a proxy (the true Born-virial decomposition would require
-per-bond force accumulation in Python). For #3 sign-off, two paths:
+Initial M2-rest implementation used a proxy (per-particle `net_force`
+magnitude binned radially). PI 2026-05-21 chose the mechanistic option
+per `feedback_acs_no_abstractions`: replaced with the **canonical Born
+bond-virial sum**
 
-  - **a**: PI accepts the proxy; production run with ensemble averaging
-    fits the 1/r² law on the proxy field.
-  - **b**: implement a Python virial-by-bond sum on a saved snapshot
-    and fit on the true stress field.
+    σ_xy(r) = (1/V_shell) · Σ_{bonds in shell} F_x · r_ab_y
 
-Recommendation: (a) for the H.1 sign-off — a 2D dipole induces an
-exterior power-law in *any* mechanical field, and the proxy captures
-the geometry. (b) for Phase 2 if a tighter quantitative agreement with
-continuum theory is needed.
+where ``F`` is the harmonic bond force on bead a, ``r_ab`` is the
+Lees-Edwards-aware MI displacement, and ``V_shell = 2π·r·dr·L_z`` for
+the 3D-periodic-with-2D-projection convention. Bond types are looked
+up via `sim.state.bond_types` + per-type ``(k, r0)`` from the
+`md.bond.Harmonic.params` dict. Helper: `_bond_virial_xy_per_bond` in
+`tests/validation/test_ku130.py`. Demo gate enforces ≥ 3 occupied
+radial bins and a finite (or NaN-fallback) slope; production gate
+enforces the β ∈ [-2.5, -1.5] band.
 
-### 4. Wall-time regression handover to optimisation session
+### 4. Wall-time vs v1 numpy reference — **PASS** (PI 2026-05-21)
 
-If the bench shows > 5× regression against the v1 numpy reference (the
-expected outcome based on the 9× polymer regression), this is the
-trigger for the boot prompt's "별도 런 파일곴 최적화 세션 분리"
-hand-off. Optimisation candidates, in order of expected payoff:
+Direct apples-to-apples bench on the same hardware + same Mikado
+topology + same dt:
+
+| Implementation | steps/s | wall / simulated s |
+| --- | --- | --- |
+| HOOMD L-M BAOAB + LJ (current) | **37.7** | 7.00 × 10⁶ |
+| v1 numpy Euler-Maruyama + bonds + angles + xl (no LJ) | **111.3** | 2.37 × 10⁶ |
+| **Ratio (HOOMD / v1)** | — | **2.95 ×** |
+
+**Within the H.1 brief's 5× regression budget.** The bench is in
+`ffn_sim/scripts/v1_numpy_ecm_bench.py` and writes
+`outputs/h1/v1_numpy_bench.json`. Note: the v1 path does not include
+LJ (D7 was v2-added); the comparison is therefore an *upper bound* on
+the HOOMD regression. With LJ excluded from HOOMD the ratio would
+shrink further.
+
+**No optimisation hand-off triggered.** The previously-anticipated
+"~9× regression" projection from the polymer L-M Updater turned out to
+be conservative for ECM — the numpy force-kernel cost (compute_forces
+is O(F·N) with non-trivial constant) absorbs more of the per-step
+budget than the L-M Python re-entry does. HOOMD's per-bead efficiency
+(2.5× over the 100-bead polymer) carries even when the per-step
+Python wrapper is the bottleneck on a small system.
+
+Optimisation candidates *if* a future need pushes us past 5× (e.g.
+KU-1.30 #2 ensemble averaging or H.3 cortex multi-filament at higher
+density):
 
   - Hoist the `cpu_local_snapshot.particles.net_force` read out of the
-    Python loop — the per-step Python overhead dominates for N ≈ 66 k.
-    The L-M step is currently re-entrant (snapshot per step); moving to
-    a C++ HOOMD `Updater` (via the HOOMD plugin system) would amortise
-    this. Estimated payoff: 5–10×.
-  - Use `md.nlist.Cell` instead of `md.nlist.Tree` on a GPU build (the
-    Cell list segfaults on CPU at the H.1 sparse density; see
-    `mikado.py` comment). Phase 2 target.
-  - Pre-build the LJ exclusions list rather than relying on the
-    full-N² candidate set the Tree nlist enumerates. Estimated payoff:
-    2–3×.
+    Python loop — port the L-M step to a C++ HOOMD plugin.
+  - Use `md.nlist.Cell` on a GPU build (sparse-density Cell segfault
+    is CPU-specific). Phase 2 target.
+  - Pre-build the LJ exclusions list. Estimated payoff: 2–3×.
 
 ### 5. Carry-over open items from BAOAB freeze (h1_baoab_freeze)
 

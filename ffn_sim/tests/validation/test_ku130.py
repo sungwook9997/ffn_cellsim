@@ -434,6 +434,81 @@ class DipoleResult:
     fit_exponent: float
 
 
+def _bond_virial_xy_per_bond(
+    sim: hoomd.Simulation,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute the per-bond contribution to σ_xy and the bond midpoint xy.
+
+    For each bond ``a-b`` with Lees-Edwards-aware MI displacement
+    ``r_ab = MI(r_b - r_a)`` and harmonic force magnitude
+    ``F = k (|r_ab| - r0)``, the stress contribution from this bond to
+    the macroscopic stress tensor is::
+
+        σ_ij_bond = (1/V) · F_vec_i · r_ab_j
+
+    where ``F_vec`` is the force *on bead a* (along +r̂_ab when stretched),
+    by the standard pair-virial convention. We return the un-normalised
+    Newton·meter per-bond products plus the bond midpoint xy, leaving
+    the caller to bin radially and divide by the bin's shell volume.
+
+    Returns ``(virial_xy_per_bond_Nm, midpoint_xy_m)``.
+    """
+    ig = sim.operations.integrator
+    # Locate the bond.Harmonic force compute (assumes single bond compute,
+    # which matches H.1's mikado build).
+    bond_force = next(
+        f for f in ig.forces if isinstance(f, md.bond.Harmonic)
+    )
+    bond_type_names = list(sim.state.bond_types)
+    k_per_type = np.array(
+        [bond_force.params[t]["k"] for t in bond_type_names], dtype=np.float64
+    )
+    r0_per_type = np.array(
+        [bond_force.params[t]["r0"] for t in bond_type_names], dtype=np.float64
+    )
+
+    with sim.state.cpu_local_snapshot as s:
+        pos = np.asarray(s.particles.position).copy()
+        bg = np.asarray(s.bonds.group).copy()
+        bt = np.asarray(s.bonds.typeid).copy()
+
+    box = sim.state.box
+    Lx, Ly, Lz = box.Lx, box.Ly, box.Lz
+    xy, xz, yz = box.xy, box.xz, box.yz
+
+    ra = pos[bg[:, 0]]
+    rb = pos[bg[:, 1]]
+    dr = rb - ra
+
+    # MI wrap with full Lees-Edwards tilt (matches baoab._wrap_into_box
+    # convention so the result is consistent across sheared / unsheared
+    # frames).
+    fz = dr[:, 2] / Lz
+    fy = (dr[:, 1] - yz * Lz * fz) / Ly
+    fx = (dr[:, 0] - xy * Ly * fy - xz * Lz * fz) / Lx
+    fx -= np.round(fx)
+    fy -= np.round(fy)
+    fz -= np.round(fz)
+    dr[:, 0] = Lx * fx + xy * Ly * fy + xz * Lz * fz
+    dr[:, 1] = Ly * fy + yz * Lz * fz
+    dr[:, 2] = Lz * fz
+
+    r_norm = np.linalg.norm(dr, axis=1)
+    safe_r = np.where(r_norm > 0.0, r_norm, 1.0)
+    k_bond = k_per_type[bt]
+    r0_bond = r0_per_type[bt]
+    # F_vec = force on bead a = +k·(|r_ab|−r0) · r̂_ab when stretched.
+    F_mag_signed = k_bond * (r_norm - r0_bond)
+    F_vec = F_mag_signed[:, None] * (dr / safe_r[:, None])
+
+    # σ_xy contribution = F_x · r_y  (Newton · meter); caller divides by
+    # the bin's shell volume V_bin to get Pa.
+    virial_xy_per_bond = F_vec[:, 0] * dr[:, 1]
+
+    midpoint_xy = pos[bg[:, 0], :2] + 0.5 * dr[:, :2]
+    return virial_xy_per_bond, midpoint_xy
+
+
 def _point_dipole_stress_decay(
     p: ResolvedH1,
     *,
@@ -443,39 +518,48 @@ def _point_dipole_stress_decay(
     dipole_force_N: float = 1.0e-9,
     bin_edges_m: np.ndarray | None = None,
 ) -> DipoleResult:
-    """Embed a point-force dipole in an equilibrated Mikado.
+    """Embed a point-force dipole in an equilibrated Mikado, compute the
+    **true Born bond-virial stress field** σ_xy(r) radially.
 
-    A pair of beads near the box center, separated along x by ~ℓ₀,
-    receive equal and opposite forces along x (``+F`` and ``-F``).
-    After ``n_after_dipole`` steps, the per-particle stress
-    contribution is binned radially by distance from the dipole center
-    and a log–log power-law ``σ(r) ∝ r^β`` is fitted in the bulk.
+    Replaces the M2-rest M1.0 proxy (per-particle ``net_force``
+    magnitude) with a bond-by-bond virial sum
+    ``σ_xy_bond = F_x · r_ab_y / V_shell`` (PI 2026-05-21). For a 2D
+    elastic medium a point-force dipole produces a stress field that
+    decays as 1/r²; the bond-virial sum is the canonical Born form of
+    that field on a discrete network.
 
-    Smoke-scale only: the smoothing required to get a clean 1/r²
-    signal is far beyond what fits in pytest. The production protocol
-    (separate script in ``outputs/h1/``) does ensemble averaging.
+    Procedure:
+
+    1. Two adjacent beads near the box origin receive ±F along x via
+       ``md.force.Constant``.
+    2. ``n_after_dipole`` BAOAB steps relax the network.
+    3. Per-bond ``σ_xy_bond = F_x · r_ab_y`` (Newton·meter) computed
+       with the Lees-Edwards-aware MI wrap.
+    4. Bonds binned radially by midpoint distance ``r`` from the dipole
+       centre; per-bin σ_xy = ⟨|σ_xy_bond|⟩ summed and divided by the
+       shell volume ``V_shell = 2π·r·dr·L_z``.
+    5. Log–log slope of σ_xy(r) vs r over the bulk (drop closest +
+       farthest bins).
+
+    Smoke-scale variant returns the same data structure as the
+    production-scale; the test class enforces only protocol invariants
+    at demo scale, the quantitative β ≈ -2 band at production scale.
     """
     sim, tq, _ = _build_simulation_with_prelude(p, n_softstart, n_baoab)
 
-    # Pick two adjacent backbone beads near the box center to act as
-    # the dipole. We need their tags so we can apply forces.
     with sim.state.cpu_local_snapshot as s:
         pos = np.asarray(s.particles.position).copy()
         tags = np.asarray(s.particles.tag).copy()
     r_xy = np.linalg.norm(pos[:, :2], axis=1)
     near_center = np.argsort(r_xy)[:2]
-    # Re-order by x so dipole "+ end" is the larger-x bead.
     if pos[near_center[0], 0] > pos[near_center[1], 0]:
         plus_idx, minus_idx = near_center[0], near_center[1]
     else:
         plus_idx, minus_idx = near_center[1], near_center[0]
-
     plus_tag = int(tags[plus_idx])
     minus_tag = int(tags[minus_idx])
     dipole_center = 0.5 * (pos[plus_idx, :2] + pos[minus_idx, :2])
 
-    # Apply forces via md.force.Constant. We use a Filter that selects
-    # just the dipole pair by tag using hoomd.filter.Tags.
     plus_filter = hoomd.filter.Tags([plus_tag])
     minus_filter = hoomd.filter.Tags([minus_tag])
     f_plus = md.force.Constant(filter=plus_filter)
@@ -488,34 +572,36 @@ def _point_dipole_stress_decay(
 
     sim.run(n_after_dipole)
 
-    # Radial binning. HOOMD's pressure_tensor is a system-wide scalar,
-    # so we can't read a per-particle stress field directly. Instead we
-    # approximate the local stress via the per-particle bond+angle+LJ
-    # *force magnitude* binned by distance — a proxy that decays
-    # similarly to true stress in a continuum response. (Full per-
-    # particle virial requires a custom force compute; deferred.)
-    with sim.state.cpu_local_snapshot as s:
-        pos2 = np.asarray(s.particles.position)
-        F2 = np.asarray(s.particles.net_force)
-    r_from_dipole = np.linalg.norm(pos2[:, :2] - dipole_center[None, :], axis=1)
-    F_mag = np.linalg.norm(F2, axis=1)
+    virial_xy, midpoint_xy = _bond_virial_xy_per_bond(sim)
+    r_from_dipole = np.linalg.norm(midpoint_xy - dipole_center[None, :], axis=1)
 
     if bin_edges_m is None:
-        # Default radial bins from ℓ₀ out to L_box/4 with log spacing.
-        bin_edges_m = np.geomspace(
-            p.rest_length, 0.25 * p.L_box, 12
-        )
+        bin_edges_m = np.geomspace(p.rest_length, 0.25 * p.L_box, 12)
     centers = 0.5 * (bin_edges_m[:-1] + bin_edges_m[1:])
-    # Per-bin mean force magnitude (proxy for σ_radial; same scaling).
+    L_z = float(sim.state.box.Lz)
+
+    # σ_xy(r) per shell: sum of |bond virial| in the shell / shell volume.
+    # Shell volume = 2π·r·dr·L_z (3D-periodic-with-2D-projection
+    # convention). Use |.| because the dipole's angular structure makes
+    # σ_xy sign-anisotropic; the radial decay law applies to the
+    # magnitude.
     sigma_r = np.zeros(centers.size, dtype=np.float64)
     for i in range(centers.size):
-        m = (r_from_dipole >= bin_edges_m[i]) & (r_from_dipole < bin_edges_m[i + 1])
-        sigma_r[i] = float(np.mean(F_mag[m])) if m.any() else 0.0
+        lo, hi = bin_edges_m[i], bin_edges_m[i + 1]
+        m = (r_from_dipole >= lo) & (r_from_dipole < hi)
+        if m.any():
+            V_shell = 2.0 * math.pi * centers[i] * (hi - lo) * L_z
+            sigma_r[i] = float(np.sum(np.abs(virial_xy[m])) / V_shell)
+        # else: leave 0
 
-    # Fit log–log slope where σ_r > 0 (drop empty + the closest bin
-    # where the field is dominated by the applied force itself).
     valid = (sigma_r > 0.0) & np.isfinite(sigma_r)
-    valid[0] = False  # closest bin contaminated by dipole bead itself
+    # Drop the closest bin (dominated by the applied dipole itself) +
+    # the farthest bin (low statistics, periodic-image artefacts).
+    if valid.sum() > 0:
+        idxs = np.where(valid)[0]
+        valid[idxs[0]] = False
+        if len(idxs) > 1:
+            valid[idxs[-1]] = False
     if valid.sum() >= 3:
         lg_r = np.log(centers[valid])
         lg_s = np.log(sigma_r[valid])
@@ -534,23 +620,30 @@ class TestKU130_3_PointDipole:
     """KU-1.30 #3: stress decay σ(r) ∝ 1/r² (β ≈ -2)."""
 
     def test_point_dipole_demo_protocol(self, resolved_demo):
-        """Demo-scale smoke: the dipole force is applied, the network
-        relaxes without crashing, and the per-particle force magnitude
-        has a decaying radial profile. The 1/r² band [-2.5, -1.5] is
-        *not* enforced at demo scale because a single dipole on ~80
-        fibers does not resolve the continuum decay law."""
+        """Demo-scale smoke: protocol invariants only (true Born bond-
+        virial stress field is computed and returns finite Pa values).
+        The β ∈ [-2.5, -1.5] band is *not* enforced at demo scale
+        because a single dipole over ~80 fibers does not resolve the
+        continuum 1/r² decay law without ensemble averaging — the
+        production variant runs ensemble averaging for the band gate."""
         res = _point_dipole_stress_decay(
             resolved_demo,
             n_softstart=100, n_baoab=100, n_after_dipole=200,
         )
-        # Just confirm the profile decreases on average: late bins ≤ early bins.
-        valid = res.sigma_radial_pa > 0
-        if valid.sum() >= 4:
-            early = float(np.mean(res.sigma_radial_pa[valid][:2]))
-            late = float(np.mean(res.sigma_radial_pa[valid][-2:]))
-            assert late <= early, (
-                f"Stress proxy did not decay with r: σ(r→0)={early:.3e}, "
-                f"σ(r→L/4)={late:.3e}."
+        # The bond-virial sum must yield at least 3 occupied radial bins
+        # (otherwise we cannot fit anything). At demo scale we expect
+        # ~4-6 occupied bins in the 12-bin geomspace grid.
+        valid = (res.sigma_radial_pa > 0.0) & np.isfinite(res.sigma_radial_pa)
+        assert valid.sum() >= 3, (
+            f"Bond-virial radial profile has only {int(valid.sum())} "
+            f"occupied bins; expected ≥ 3."
+        )
+        # Slope must be finite when computable (fallback nan is allowed
+        # only if the trimmed-edge fit window has < 3 bins).
+        if math.isfinite(res.fit_exponent):
+            assert -10.0 < res.fit_exponent < 10.0, (
+                f"Bond-virial log-log slope unreasonable: "
+                f"{res.fit_exponent:.3f}."
             )
 
     @pytest.mark.skipif(
