@@ -1,7 +1,7 @@
 # Phase 0 — closeout report
 
 **Period**: 2026-05-19 (single intensive session)
-**Branch**: `v2/foundation` (5 commits, +2,179 LOC of docs + 210 LOC of skeleton/scripts)
+**Branch**: `ffn/foundation` (renamed from `v2/foundation` 2026-05-20; 5 commits, +2,179 LOC of docs + 210 LOC of skeleton/scripts)
 **PR**: <https://github.com/sungwook9997/ActiveCellSim/pull/2>
 
 ## Units completed

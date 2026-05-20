@@ -1,7 +1,7 @@
 # H.1 — ECM Mikado in HOOMD
 
 **Budget**: 2 weeks (full-fidelity assumptions absorbed)
-**Branch**: `phase1/h1-ecm` (cut from `v2/foundation`)
+**Branch**: `phase1/h1-ecm` (cut from `ffn/foundation`)
 **Reference**: Plan v2 §3 Unit H.1, [PHASE_0_3_DECISIONS.md](../PHASE_0_3_DECISIONS.md), [AFINES_ALGORITHM_NOTES.md §2 + §6](../AFINES_ALGORITHM_NOTES.md)
 **Owner**: Main Session (Phase 1 chain: H.1 → H.2 → H.3 → H.5 → H.7). After BAOAB sign-off, Sub Session unblocks for H.4.
 **Prereq**: none

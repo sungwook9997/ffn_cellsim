@@ -1,6 +1,6 @@
 # acs_kb Codebase Audit — v1 → v2 (HOOMD-blue) migration
 
-**Branch**: `v2/foundation` (cut from `codex/recover-units` @ `c7e3276`)
+**Branch**: `ffn/foundation` (renamed from `v2/foundation` 2026-05-20; cut from `codex/recover-units` @ `c7e3276`)
 **Date**: 2026-05-19
 **Scope**: classify every `.py` / `.yaml` under `acs_kb/ (deleted in 2026-05-20 rename to ffn_cellsim) /` as **reuse**, **port**, or **archive** for the v2 HOOMD-blue rewrite.
 **Reference**: Notion *🚀 Simulation Build Plan v2 — HOOMD-blue Full-Fidelity* §2 — <https://www.notion.so/365120daec5d81799efefcf078f2039e>
