@@ -817,40 +817,94 @@ class TestKU130_3_PointDipole:
     )
     def test_point_dipole_production_band(self):
         """Production-scale point-dipole σ(r) ∝ 1/r² fit with
-        **paired-run baseline subtraction + cos(2θ) angular weighting**
-        (PI 2026-05-21, autonomous /loop iteration).
+        **multi-seed ensemble + paired baseline + cos(2θ) angular**.
 
-        Two improvements over v3 (which gave slope ≈ −0.5):
-        1. Paired baseline (already in v3): two branches with identical
-           seed → identical thermal trajectory → subtract per bond to
-           cancel ~3 300 Pa construction-residual baseline.
-        2. **cos(2θ) angular projection** (new in v4): the x-x dipole
-           response has the form σ_xx(r, θ) = (A/r²)·cos(2θ); the
-           radial-shell average ⟨σ_xx · cos(2θ)⟩_θ recovers a clean
-           1/r² magnitude, while thermal-noise σ_xx_bond uncorrelated
-           with bond midpoint θ averages to 0.
+        v5 improvements (autonomous /loop iteration 2, mechanistic /
+        fine-grained per acs_no_abstractions):
+        1. Multi-seed ensemble (new in v5): n_seeds=5 independent
+           Mikado realisations.  Each contributes a (σ_r vs r) curve
+           which is averaged element-wise across seeds → smooths the
+           outlier-bond-near-dipole problem that dominated v4's bin-5
+           340 Pa spike on a single realisation.  Same pattern as
+           strain-stiffening #2's 3-ramp ensemble.
+        2. Paired baseline (v3+): identical seed thermal-noise
+           trajectory cancellation.
+        3. cos(2θ) angular projection (v4+): m=2 angular harmonic.
         """
         with open(CONFIG_PATH) as f:
             cfg = yaml.safe_load(f)
         p = resolve_derived(cfg)
         t0 = time.time()
-        res = _point_dipole_stress_decay(
-            p,
-            n_softstart=100, n_baoab=900, n_after_dipole=2000,
-            n_time_avg_samples=5, time_avg_spacing=200,
-            paired_baseline=True,
-            angular_weighting=True,
+
+        # v6 (autonomous /loop iteration 3): scale up to n_seeds=20 for
+        # tight stderr (~stderr/2 vs v5's 5 seeds) AND restrict the
+        # log-log fit to the **KB-gap band** r ∈ [ξ, ℓ_p] explicitly,
+        # matching the brief's "within KB-gap band" qualifier on
+        # KU-1.30 #3.  v5's all-bins fit dragged in near-field
+        # (r < ξ = 2 μm) and far-field (r > ℓ_p = 17 μm) bins where
+        # continuum 1/r² does NOT apply.
+        n_seeds = 20
+        kb_gap_lo = p.biological_mesh       # ξ
+        kb_gap_hi = p.persistence_length    # ℓ_p
+        per_seed_sigma = []
+        per_seed_slope = []
+        bin_centers = None
+        for i in range(n_seeds):
+            p_i = replace(p, seed=p.seed + i)
+            r_i = _point_dipole_stress_decay(
+                p_i,
+                n_softstart=100, n_baoab=900, n_after_dipole=2000,
+                n_time_avg_samples=5, time_avg_spacing=200,
+                paired_baseline=True,
+                angular_weighting=True,
+            )
+            per_seed_sigma.append(r_i.sigma_radial_pa)
+            per_seed_slope.append(r_i.fit_exponent)
+            if bin_centers is None:
+                bin_centers = r_i.bin_centers_m
+
+        sigma_stack = np.stack(per_seed_sigma, axis=0)
+        sigma_avg = np.mean(sigma_stack, axis=0)
+
+        # Re-fit the ensemble-averaged σ_r(r) restricted to KB-gap.
+        in_kb_gap = (bin_centers >= kb_gap_lo) & (bin_centers <= kb_gap_hi)
+        valid_avg = (
+            in_kb_gap
+            & (sigma_avg > 0.0)
+            & np.isfinite(sigma_avg)
         )
+        if valid_avg.sum() >= 3:
+            lg_r = np.log(bin_centers[valid_avg])
+            lg_s = np.log(sigma_avg[valid_avg])
+            slope_ensemble = float(np.polyfit(lg_r, lg_s, 1)[0])
+        else:
+            slope_ensemble = float("nan")
+        # Wrap into a DipoleResult-like for the writeback.
+        res = DipoleResult(
+            bin_centers_m=bin_centers,
+            sigma_radial_pa=sigma_avg,
+            fit_exponent=slope_ensemble,
+        )
+        # Extra ensemble diagnostics (saved to npz below).
+        ensemble_sigma_stack = sigma_stack
+        ensemble_per_seed_slopes = np.array(per_seed_slope)
         elapsed = time.time() - t0
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
         np.savez(
             OUTPUTS_DIR / "ku130_point_dipole_production.npz",
             bin_centers_m=res.bin_centers_m,
-            sigma_radial_pa=res.sigma_radial_pa,
-            fit_exponent=res.fit_exponent,
+            sigma_radial_pa_ensemble_avg=res.sigma_radial_pa,
+            sigma_radial_pa_per_seed=ensemble_sigma_stack,
+            fit_exponent_ensemble=res.fit_exponent,
+            fit_exponent_per_seed=ensemble_per_seed_slopes,
+            n_seeds=n_seeds,
+            kb_gap_lo_m=kb_gap_lo,
+            kb_gap_hi_m=kb_gap_hi,
             wall_time_s=elapsed,
         )
         assert -2.5 <= res.fit_exponent <= -1.5, (
-            f"Point-dipole stress decay exponent {res.fit_exponent:.3f} "
-            f"outside KU-1.30 #3 band [-2.5, -1.5]. Surface to PI."
+            f"Ensemble fit_exponent = {res.fit_exponent:.3f} "
+            f"(per-seed = {ensemble_per_seed_slopes}) outside KU-1.30 "
+            f"#3 band [-2.5, -1.5]. Surface to PI per CLAUDE.md "
+            f"no-gate-loosening."
         )
