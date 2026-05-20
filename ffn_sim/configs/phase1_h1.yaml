@@ -1,0 +1,126 @@
+# Phase 1 — Unit H.1 ECM Mikado (HOOMD runtime) defaults.
+#
+# Ported from ffn_sim/validation/oracles/configs/phase1_unit1.yaml with
+# the Phase 0.3 D-decisions applied:
+#
+#   D3  integrator = leimkuhler_matthews_baoab          (vs E-M)
+#   D4  beads_per_fiber = 21,   rest_length = 0.5 μm    (vs oracle N=5)
+#   D7  LJ WCA repulsive between actin_ecm beads ON     (vs EV-off)
+#
+# Topology generation reuses the oracle's
+# `generate_2d_fiber_network()` (2D positions, padded to 3D with z=0)
+# but the *forces* are HOOMD-native; the oracle's `compute_energy` /
+# `compute_forces` are validation-only and must NOT be imported by
+# this runtime path (CLAUDE.md hard rule: no abstractions / no v1
+# force kernel in v2 runtime).
+#
+# All values SI (m, s, J, N, K). NO hand-tuned numbers; every value
+# below is either a literature constant (with KU tag) or computed at
+# config-resolve time from the primary scales by
+# `ffn_sim.ecm.mikado.resolve_derived(config)` (mirrors the oracle's
+# common/derived_params.resolve() but for the D4-overridden values).
+#
+# Magic-Number Block check (CLAUDE.md hard rule): every key here is
+# either KU-anchored (literature), a D-decision override, or a
+# numerical-policy choice (cfl_safety_factor, demo_mode flags).
+
+ecm:
+
+  # ---- Primary biological scales (KU-1.x literature anchors) ----
+  L_box: 200.0e-6              # m   simulation box side
+  L_fiber: 10.0e-6             # m   contour length per fiber, KU-1.22
+  bead_radius: 50.0e-9         # m   collagen fibril radius (KU-1.2)
+
+  persistence_length: 17.0e-6  # m   ℓ_p, KU-1.1
+  bending_modulus: 7.0e-26     # N·m²  κ = ℓ_p k_B T at 310 K, KU-1.1
+  stretching_modulus: 8.6e-9   # N    μ = E π r² with E≈1.1 MPa, r=50 nm, KU-1.2
+
+  # ξ — biological collagen porosity / mesh (experimental observable), KU-1.7
+  biological_mesh: 2.0e-6      # m   ξ ~ c^(-1/2) at 1.5 mg/mL collagen
+  # ℓ_c — Mikado segment length between successive crossings on a fiber
+  # (emergent network observable, KU-1.27). We *match* ℓ_c to ξ as the
+  # modelling convention (Storm-MacKintosh, Broedersz-MacKintosh) but
+  # keep both names so downstream code does not silently conflate them.
+  target_segment_length: 2.0e-6  # m  ℓ_c target = ξ here
+
+  xl_stiffness: 1.0e-3         # N/m  1 pN/nm harmonic, KU-1.28
+                               # (Used in M2 cross_links.py; included
+                               # here so the config is complete.)
+
+  temperature: 310.0           # K   37 °C
+  kT: 4.28e-21                 # J   k_B · T
+  water_viscosity: 6.913e-4    # Pa·s  η_water at 310 K (NIST), KU-1.26
+
+  seed: 42
+
+  # ---- D4: Filament discretization override (PHASE_0_3_DECISIONS) ----
+  # AFINES (oracle config) used N=5 beads. D4 doubles to N=21, with
+  # bond rest length ℓ₀ = L_fiber / (N − 1) = 0.5 μm. Bead radius
+  # remains 50 nm (KU-1.2 collagen) — decoupled from ℓ₀.
+  beads_per_fiber: 21
+  # rest_length filled by resolve() = L_fiber / (beads_per_fiber − 1)
+
+  # ---- 2D → 3D mapping (PI 2026-05-20: 3D-periodic + 2D projection) ----
+  # The oracle topology generator is 2D; the v2 runtime is 3D. Beads
+  # are initialised at z=0 in a cubic 3D-periodic box. KU-1.30 stress
+  # is then read directly from HOOMD's 3D ThermodynamicQuantities — no
+  # slab-thickness conversion needed (unlike the oracle's 2D virial
+  # which used `layer_thickness_for_2d_to_3d`).
+  topology:
+    dimensions: 3              # HOOMD runtime is 3D
+    L_z_over_L_box: 1.0        # cubic box; z-periodic.
+
+  # ---- Sanity Gate acceptance ranges (inherited from oracle config) ----
+  acceptance:
+    segment_length_range: [1.0e-6, 4.0e-6]   # ℓ_c band around ξ=2 μm (KU-1.7 ±50%)
+    z_range:    [2.5, 3.9]                   # sub-isostatic, well below z_c=2d=4 (KU-1.3)
+    n_fibers_max: 20000                      # cost ceiling; above → demo_mode required
+
+  # Demo mode opt-out: explicitly accept defaults that violate KU
+  # ranges. Visualization / smoke runs only. REPORT.md must mark demo_mode.
+  demo_mode: false
+
+  # ---- D7: Excluded volume — LJ WCA repulsive (PHASE_0_3_DECISIONS) ----
+  # Repulsive-only LJ between actin_ecm beads. σ = 2·R_bead = 100 nm
+  # (contact distance), cutoff at the LJ minimum 2^(1/6)·σ = WCA cut.
+  # ε = 0.5 kT chosen as the standard "soft" repulsion that prevents
+  # overlap without inducing crystallization.
+  excluded_volume:
+    enabled: true
+    epsilon_kT: 0.5            # → ε = epsilon_kT · kT in Joules
+    sigma_factor: 2.0          # → σ = sigma_factor · bead_radius
+    # WCA truncation at the LJ minimum: r_cut/σ = 2^(1/6). This is a
+    # mathematical convention (Weeks-Chandler-Andersen), not a tunable;
+    # computed in resolve_derived() to avoid yaml-truncation precision
+    # loss.
+
+  # ---- D3: Time integration (PHASE_0_3_DECISIONS) ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab    # D3 Phase 1 canonical
+    cfl_safety_factor: 0.1                   # dt = α · τ_min; α conservative
+                                             # for overdamped Verlet stability
+                                             # (Leimkuhler-Matthews 2013).
+    dt: null                                 # filled by resolve() = α · τ_min
+    n_steps_equilibrate: 50000
+    n_steps_sample: 50000
+    sample_interval: 50
+
+  # ---- Derived parameters (filled by resolve(); do NOT edit by hand) ----
+  derived:
+    n_fibers: null                 # = π L_box² / (2 ℓ_c L_fiber)   [Mikado, KU-1.27]
+    rest_length: null              # = L_fiber / (beads_per_fiber − 1)
+    line_density: null             # ρ_L = N L_fiber / L_box²       [1/m]
+    mikado_ell_c_predicted: null   # π / (2 ρ_L)                    [m]
+    expected_xl_per_fiber: null    # 2 ρ_L L_fiber / π
+    bond_k: null                   # μ / ℓ₀         [N/m]  (per-bond harmonic)
+    angle_k: null                  # κ / ℓ₀         [N·m]  (per-triplet)
+    angle_t0: 3.141592653589793    # π — HOOMD straight-chain convention
+    lj_epsilon: null               # = epsilon_kT · kT              [J]
+    lj_sigma: null                 # = sigma_factor · bead_radius   [m]
+    lj_r_cut: null                 # = cutoff_factor · lj_sigma     [m]
+    gamma_b: null                  # 6π η_water bead_radius         [N·s/m]
+    tau_xl: null                   # γ_b / k_xl                     [s]
+    tau_stretch: null              # γ_b ℓ₀ / μ                     [s]
+    tau_bend: null                 # γ_b ℓ₀³ / κ                    [s]
+    tau_min: null                  # min of the three; sets CFL bound
+    dt_cfl: null                   # = cfl_safety_factor · tau_min
