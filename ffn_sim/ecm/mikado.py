@@ -384,14 +384,34 @@ def resolve_derived(cfg: dict) -> ResolvedH1:
 # ---------------------------------------------------------------------------
 # Snapshot / Simulation builders
 # ---------------------------------------------------------------------------
-def build_mikado_state(p: ResolvedH1) -> gsd.hoomd.Frame:
+def build_mikado_state(
+    p: ResolvedH1, *, with_cross_links: bool = True
+) -> gsd.hoomd.Frame:
     """Build a HOOMD GSD frame from a resolved H.1 config.
 
     Calls the oracle's :func:`generate_2d_fiber_network` for the 2D
     Mikado geometry (REUSE only), pads to 3D with z=0, shifts positions
     to HOOMD's [-L/2, L/2) box convention, and assembles bonds + angles.
-    No cross-links (those land in M2 via ``ecm.cross_links``).
+
+    Parameters
+    ----------
+    with_cross_links : bool, default True
+        If True (M2 default), also call
+        ``ffn_sim.ecm.cross_links.generate_xl_bonds`` and append the
+        ``xl``-type bonds onto the frame. Set to False for M1
+        topology-only tests.
     """
+    if with_cross_links:
+        # Generate xl bonds (which internally re-runs the geometry with
+        # the same seed) and obtain the network it ran on, so the
+        # subsequent ecm-bond frame uses the identical FiberNetwork.
+        from ffn_sim.ecm.cross_links import add_xl_to_frame, generate_xl_bonds
+
+        xl, net = generate_xl_bonds(p)
+        snap = _network_to_frame(net, p)
+        snap = add_xl_to_frame(snap, xl)
+        return snap
+
     net = generate_2d_fiber_network(
         L_box=p.L_box,
         n_fibers=p.n_fibers,
@@ -476,6 +496,7 @@ def build_mikado_simulation(
     *,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
+    with_cross_links: bool = True,
 ) -> tuple[hoomd.Simulation, Any, Any]:
     """Construct and wire a HOOMD Simulation for the H.1 Mikado.
 
@@ -503,16 +524,21 @@ def build_mikado_simulation(
     action : LeimkuhlerMatthewsBAOAB or None
         The Action instance if ``with_baoab=True``; else None.
     """
-    snap = build_mikado_state(p)
+    snap = build_mikado_state(p, with_cross_links=with_cross_links)
 
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p.seed
     )
     sim.create_state_from_snapshot(snap)
 
-    # Bond force: U = ½ k_bond (|r| − r0)²
+    # Bond force: U = ½ k_bond (|r| − r0)² for ecm-bond.
+    # Cross-links (KU-1.28) use the same md.bond.Harmonic compute under
+    # type "xl" with k=k_xl and r0=0 per the H.1 brief simplification.
     bond = md.bond.Harmonic()
     bond.params["ecm-bond"] = dict(k=p.bond_k, r0=p.rest_length)
+    if with_cross_links:
+        from ffn_sim.ecm.cross_links import XL_BOND_TYPE_NAME
+        bond.params[XL_BOND_TYPE_NAME] = dict(k=p.xl_stiffness, r0=0.0)
 
     # Angle force: U = ½ k_θ (θ − π)²  (small-bend match to oracle's
     # (κ/ℓ₀)(1 − cos θ_oracle); see module docstring.)

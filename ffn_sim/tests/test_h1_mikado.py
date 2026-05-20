@@ -59,8 +59,15 @@ def resolved() -> ResolvedH1:
 
 @pytest.fixture(scope="module")
 def sim_triplet(resolved):
-    """One full HOOMD setup with BAOAB attached; expensive — cache module-wide."""
-    sim, updater, action = build_mikado_simulation(resolved)
+    """One full HOOMD setup with BAOAB attached; expensive — cache module-wide.
+
+    M1 fixture: ``with_cross_links=False`` so bond / angle counts match the
+    M1 topology contract. Cross-link-aware tests live in
+    ``test_h1_cross_links.py`` with their own fixtures.
+    """
+    sim, updater, action = build_mikado_simulation(
+        resolved, with_cross_links=False
+    )
     sim.run(0)  # trigger force evaluation
     return sim, updater, action
 
@@ -69,13 +76,16 @@ def sim_triplet(resolved):
 def force_eval_sim(resolved):
     """Force-evaluation-only Simulation (no BAOAB Updater attached).
 
-    Used by the energy-oracle and sign-sense tests so callers can write
-    positions via ``cpu_local_snapshot`` and re-evaluate forces with
-    ``sim.run(1)`` without an Updater advancing the state. HOOMD 7's
-    second ``run(0)`` does *not* re-evaluate forces (it caches), so
+    Used by the M1 energy-oracle and sign-sense tests so callers can
+    write positions via ``cpu_local_snapshot`` and re-evaluate forces
+    with ``sim.run(1)`` without an Updater advancing the state. HOOMD
+    7's second ``run(0)`` does *not* re-evaluate forces (it caches), so
     ``run(1)`` is required to refresh ``force.energy`` after a write.
+    M1 contract: cross-links disabled.
     """
-    sim, _, _ = build_mikado_simulation(resolved, with_baoab=False)
+    sim, _, _ = build_mikado_simulation(
+        resolved, with_baoab=False, with_cross_links=False
+    )
     sim.run(0)
     return sim
 
@@ -388,7 +398,11 @@ class TestSignSense:
         cfg["ecm"]["demo_mode"] = True
         p = resolve_derived(cfg)
         p.n_fibers = 1
-        sim, _, _ = build_mikado_simulation(p, with_baoab=False)
+        # Single fiber → no inter-fiber cross-links possible; disable
+        # explicitly so the test isolates bond+angle physics.
+        sim, _, _ = build_mikado_simulation(
+            p, with_baoab=False, with_cross_links=False
+        )
         sim.run(0)
         return sim, p
 
