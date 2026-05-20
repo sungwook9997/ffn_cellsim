@@ -1,7 +1,16 @@
 # H.1 BAOAB freeze point — Main Session closeout
 
 **Date**: 2026-05-20
-**Branch**: `phase1/h1-ecm` cut from `v2/foundation` @ `2543d6a`
+**Branch**: `phase1/h1-ecm` cut from `v2/foundation` @ `2543d6a` (per boot
+prompt). **Actual parent commit at sign-off** is `0a1b682` — between my
+`git checkout -b phase1/h1-ecm 2543d6a` and my final commit, two upstream
+commits landed on the branch base (`06c91d4` CLAUDE.md Notion pointer +
+`0a1b682` `v2/foundation → ffn/foundation` rename across docs refs). I
+did not author or solicit those commits and they do not conflict with
+BAOAB work; they look like Orchestrator-side housekeeping. PI should
+confirm that the freeze point Sub Session inherits is `75a1035`, not the
+sibling state at `2543d6a`. See §Open for PI item 5.
+
 **Scope**: D3 deliverable only (Leimkuhler-Matthews BAOAB-limit Updater).
 Mikado topology / cross-links / shear protocol / KU-1.30 validation are
 **not** in this commit — the boot prompt requires PI sign-off on BAOAB
@@ -118,6 +127,13 @@ disagreed.
 
    PI: please confirm these stashes are accounted for in the Sub /
    Orchestrator queues, or escalate.
+
+5. **Branch base advanced under me during the session.** Documented in the
+   header. The two commits that landed on the branch base while I was
+   working (`06c91d4`, `0a1b682`) are unrelated rename/docs housekeeping
+   and do not conflict with BAOAB. PI: confirm `75a1035` is the
+   intended freeze point and that the rename from `v2/foundation` to
+   `ffn/foundation` is the canonical branch name going forward.
 
 4. **Per-step Python L-M Updater is ~9× slower than HOOMD-native
    Langevin.** Bench: 10 k steps/s vs Phase 0.2's 91 k steps/s on the
