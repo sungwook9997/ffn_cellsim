@@ -1,0 +1,57 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 1 item
+
+ffn_sim/tests/validation/test_ku130.py F
+
+=================================== FAILURES ===================================
+________________ TestKU130_1_G0.test_g0_production_within_band _________________
+
+self = <ffn_sim.tests.validation.test_ku130.TestKU130_1_G0 object at 0x1449f6490>
+
+        @pytest.mark.skipif(
+            os.environ.get("H1_KU130_PRODUCTION", "") != "1",
+            reason="Production-scale KU-1.30 #1; opt-in via H1_KU130_PRODUCTION=1.",
+        )
+        def test_g0_production_within_band(self):
+            """Production-scale G_0 ∈ [15, 200] Pa on the canonical N≈66k
+            Mikado. ~1 h wall-time at ~150 steps/s; writes diagnostics
+            for the REPORT."""
+            with open(CONFIG_PATH) as f:
+                cfg = yaml.safe_load(f)
+            p = resolve_derived(cfg)
+            t0 = time.time()
+            res = _step_strain_G0(
+                p,
+                gamma=0.01,
+                n_softstart=100, n_baoab=900,
+                n_ramp=500, n_relax=4500, n_avg=2000,
+            )
+            elapsed = time.time() - t0
+            OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+            (OUTPUTS_DIR / "ku130_g0_production.json").write_text(
+                f"""{{
+      "gamma": {res.gamma_applied},
+      "sigma_xy_hoomd_pa": {res.sigma_xy_hoomd},
+      "sigma_xy_layer_pa": {res.sigma_xy_layer_pa},
+      "G_0_layer_pa": {res.G_0_layer_pa},
+      "n_relax_steps": {res.n_relax_steps},
+      "wall_time_s": {elapsed:.2f}
+    }}
+    """
+            )
+>           assert 15.0 <= res.G_0_layer_pa <= 200.0, (
+                f"Production G_0 = {res.G_0_layer_pa:.3e} Pa outside KU-1.30 "
+                f"band [15, 200] Pa (v1 ref: 32 Pa). Surface to PI per "
+                f"CLAUDE.md no-gate-loosening."
+            )
+E           AssertionError: Production G_0 = 2.940e+00 Pa outside KU-1.30 band [15, 200] Pa (v1 ref: 32 Pa). Surface to PI per CLAUDE.md no-gate-loosening.
+E           assert 15.0 <= 2.94023342849818
+E            +  where 2.94023342849818 = StepStrainResult(gamma_applied=0.01, sigma_xy_hoomd=0.000294023342849818, sigma_xy_layer_pa=0.029402334284981804, G_0_layer_pa=2.94023342849818, n_relax_steps=6500).G_0_layer_pa
+
+ffn_sim/tests/validation/test_ku130.py:279: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/validation/test_ku130.py::TestKU130_1_G0::test_g0_production_within_band
+======================== 1 failed in 248.53s (0:04:08) =========================

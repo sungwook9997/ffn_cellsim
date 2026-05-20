@@ -1,0 +1,8 @@
+{
+  "gamma": 0.01,
+  "sigma_xy_hoomd_pa": 0.000294023342849818,
+  "sigma_xy_layer_pa": 0.029402334284981804,
+  "G_0_layer_pa": 2.94023342849818,
+  "n_relax_steps": 6500,
+  "wall_time_s": 248.00
+}

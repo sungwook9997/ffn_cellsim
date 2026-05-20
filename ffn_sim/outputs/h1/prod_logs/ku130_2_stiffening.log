@@ -1,0 +1,52 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 1 item
+
+ffn_sim/tests/validation/test_ku130.py F
+
+=================================== FAILURES ===================================
+__ TestKU130_2_StrainStiffening.test_strain_stiffening_production_within_band __
+
+self = <ffn_sim.tests.validation.test_ku130.TestKU130_2_StrainStiffening object at 0x15c8ee490>
+
+    @pytest.mark.skipif(
+        os.environ.get("H1_KU130_PRODUCTION", "") != "1",
+        reason="Production-scale KU-1.30 #2; opt-in via H1_KU130_PRODUCTION=1.",
+    )
+    def test_strain_stiffening_production_within_band(self):
+        with open(CONFIG_PATH) as f:
+            cfg = yaml.safe_load(f)
+        p = resolve_derived(cfg)
+        t0 = time.time()
+        res = _strain_stiffening(
+            p,
+            gamma_max=0.30,
+            n_softstart=100, n_baoab=900,
+            n_ramp_steps=10000, n_samples=30,
+            fit_window=(0.05, 0.30),
+        )
+        elapsed = time.time() - t0
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            OUTPUTS_DIR / "ku130_strain_stiffening_production.npz",
+            gammas=res.gammas,
+            sigma_xy_layer_pa=res.sigma_xy_layer_pa,
+            K_layer_pa=res.K_layer_pa,
+            log_log_slope=res.log_log_slope,
+            wall_time_s=elapsed,
+        )
+>       assert -2.5 <= res.log_log_slope <= -1.5, (
+            f"Strain-stiffening slope {res.log_log_slope:.3f} outside "
+            f"KU-1.30 #2 band [-2.5, -1.5]. Surface to PI per "
+            f"CLAUDE.md no-gate-loosening."
+        )
+E       AssertionError: Strain-stiffening slope 1.495 outside KU-1.30 #2 band [-2.5, -1.5]. Surface to PI per CLAUDE.md no-gate-loosening.
+E       assert 1.4953683692511297 <= -1.5
+E        +  where 1.4953683692511297 = StiffeningResult(gammas=array([0.03996, 0.04995, 0.05994, 0.06996, 0.07995, 0.08994, 0.09996,\n       0.10995, 0.11994,...1883012e+04,\n                   nan,             nan]), log_log_slope=1.4953683692511297, fit_window_gamma=(0.05, 0.3)).log_log_slope
+
+ffn_sim/tests/validation/test_ku130.py:420: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/validation/test_ku130.py::TestKU130_2_StrainStiffening::test_strain_stiffening_production_within_band
+======================== 1 failed in 348.11s (0:05:48) =========================

@@ -434,24 +434,23 @@ class DipoleResult:
     fit_exponent: float
 
 
-def _bond_virial_xy_per_bond(
+def _bond_virial_per_bond(
     sim: hoomd.Simulation,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Compute the per-bond contribution to σ_xy and the bond midpoint xy.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Compute the per-bond Born-virial xx + xy contributions + midpoint xy.
 
     For each bond ``a-b`` with Lees-Edwards-aware MI displacement
     ``r_ab = MI(r_b - r_a)`` and harmonic force magnitude
     ``F = k (|r_ab| - r0)``, the stress contribution from this bond to
     the macroscopic stress tensor is::
 
-        σ_ij_bond = (1/V) · F_vec_i · r_ab_j
+        σ_ij_bond = F_vec_i · r_ab_j        (Newton · meter)
 
     where ``F_vec`` is the force *on bead a* (along +r̂_ab when stretched),
-    by the standard pair-virial convention. We return the un-normalised
-    Newton·meter per-bond products plus the bond midpoint xy, leaving
-    the caller to bin radially and divide by the bin's shell volume.
+    by the standard pair-virial convention. Caller divides by the bin's
+    shell volume to get Pa.
 
-    Returns ``(virial_xy_per_bond_Nm, midpoint_xy_m)``.
+    Returns ``(virial_xx_Nm, virial_xy_Nm, midpoint_xy_m)``.
     """
     ig = sim.operations.integrator
     # Locate the bond.Harmonic force compute (assumes single bond compute,
@@ -501,12 +500,13 @@ def _bond_virial_xy_per_bond(
     F_mag_signed = k_bond * (r_norm - r0_bond)
     F_vec = F_mag_signed[:, None] * (dr / safe_r[:, None])
 
-    # σ_xy contribution = F_x · r_y  (Newton · meter); caller divides by
-    # the bin's shell volume V_bin to get Pa.
-    virial_xy_per_bond = F_vec[:, 0] * dr[:, 1]
+    # σ_ij_bond = F_i · r_ab_j  (Newton · meter); caller divides by the
+    # bin's shell volume V_bin to get Pa.
+    virial_xx = F_vec[:, 0] * dr[:, 0]
+    virial_xy = F_vec[:, 0] * dr[:, 1]
 
     midpoint_xy = pos[bg[:, 0], :2] + 0.5 * dr[:, :2]
-    return virial_xy_per_bond, midpoint_xy
+    return virial_xx, virial_xy, midpoint_xy
 
 
 def _point_dipole_stress_decay(
@@ -517,33 +517,38 @@ def _point_dipole_stress_decay(
     n_after_dipole: int = 500,
     dipole_force_N: float = 1.0e-9,
     bin_edges_m: np.ndarray | None = None,
+    n_time_avg_samples: int = 1,
+    time_avg_spacing: int = 100,
 ) -> DipoleResult:
     """Embed a point-force dipole in an equilibrated Mikado, compute the
-    **true Born bond-virial stress field** σ_xy(r) radially.
+    **true Born bond-virial stress field** σ_xx(r) radially.
 
-    Replaces the M2-rest M1.0 proxy (per-particle ``net_force``
-    magnitude) with a bond-by-bond virial sum
-    ``σ_xy_bond = F_x · r_ab_y / V_shell`` (PI 2026-05-21). For a 2D
-    elastic medium a point-force dipole produces a stress field that
-    decays as 1/r²; the bond-virial sum is the canonical Born form of
-    that field on a discrete network.
+    PI 2026-05-21 (v2 of the bond-virial implementation):
+
+    The x-x oriented dipole produces an anisotropic far-field stress
+    with ``σ_xx ∝ 1/r²``; the off-diagonal ``σ_xy`` has angular
+    structure that averages to zero on a radial shell unless an
+    angular weight is applied. We therefore fit ``σ_xx(r)`` (the
+    dipole-parallel component), summed *signed* per shell so thermal
+    contributions cancel rather than accumulate as Σ|noise| ∝ √N
+    (the v1 implementation's mistake — Σ|σ_xy| accidentally yielded
+    a positive slope ~ +1.0 from noise scaling with bond count).
 
     Procedure:
 
     1. Two adjacent beads near the box origin receive ±F along x via
        ``md.force.Constant``.
     2. ``n_after_dipole`` BAOAB steps relax the network.
-    3. Per-bond ``σ_xy_bond = F_x · r_ab_y`` (Newton·meter) computed
-       with the Lees-Edwards-aware MI wrap.
+    3. (optional) ``n_time_avg_samples`` further snapshots taken at
+       ``time_avg_spacing`` step spacing, each yielding a per-bond
+       ``σ_xx_bond = F_x · r_ab_x`` array. The time-average over
+       samples cancels thermal-fluctuation σ_xx noise (mean zero) and
+       retains the dipole-induced σ_xx mean (≠ zero).
     4. Bonds binned radially by midpoint distance ``r`` from the dipole
-       centre; per-bin σ_xy = ⟨|σ_xy_bond|⟩ summed and divided by the
-       shell volume ``V_shell = 2π·r·dr·L_z``.
-    5. Log–log slope of σ_xy(r) vs r over the bulk (drop closest +
+       centre; per-bin ``σ_xx(r) = |Σ_{bonds in shell} ⟨σ_xx_bond⟩|
+       / V_shell`` with ``V_shell = 2π·r·dr·L_z``.
+    5. Log–log slope of σ_xx(r) vs r over the bulk (drop closest +
        farthest bins).
-
-    Smoke-scale variant returns the same data structure as the
-    production-scale; the test class enforces only protocol invariants
-    at demo scale, the quantitative β ≈ -2 band at production scale.
     """
     sim, tq, _ = _build_simulation_with_prelude(p, n_softstart, n_baoab)
 
@@ -572,31 +577,45 @@ def _point_dipole_stress_decay(
 
     sim.run(n_after_dipole)
 
-    virial_xy, midpoint_xy = _bond_virial_xy_per_bond(sim)
-    r_from_dipole = np.linalg.norm(midpoint_xy - dipole_center[None, :], axis=1)
+    # Time-averaged σ_xx per bond. The first sample is taken right
+    # after the post-dipole relax; additional samples are spaced by
+    # `time_avg_spacing` so they are decorrelated by ~τ_relax.
+    samples_xx = []
+    midpoint_xy = None
+    for s_i in range(n_time_avg_samples):
+        if s_i > 0:
+            sim.run(time_avg_spacing)
+        v_xx, _v_xy, mid = _bond_virial_per_bond(sim)
+        samples_xx.append(v_xx)
+        if s_i == 0:
+            midpoint_xy = mid
+    virial_xx_avg = np.mean(np.stack(samples_xx, axis=0), axis=0)
+
+    assert midpoint_xy is not None
+    r_from_dipole = np.linalg.norm(
+        midpoint_xy - dipole_center[None, :], axis=1
+    )
 
     if bin_edges_m is None:
         bin_edges_m = np.geomspace(p.rest_length, 0.25 * p.L_box, 12)
     centers = 0.5 * (bin_edges_m[:-1] + bin_edges_m[1:])
     L_z = float(sim.state.box.Lz)
 
-    # σ_xy(r) per shell: sum of |bond virial| in the shell / shell volume.
-    # Shell volume = 2π·r·dr·L_z (3D-periodic-with-2D-projection
-    # convention). Use |.| because the dipole's angular structure makes
-    # σ_xy sign-anisotropic; the radial decay law applies to the
-    # magnitude.
+    # σ_xx(r) per shell: |signed sum of bond virials| / V_shell.
+    # Signed sum lets the thermal contributions (mean zero) cancel
+    # while the dipole-induced σ_xx (which has a definite sign on each
+    # angular sector for an x-x dipole) accumulates coherently. The
+    # outer |.| then yields a positive magnitude appropriate for the
+    # log-log fit.
     sigma_r = np.zeros(centers.size, dtype=np.float64)
     for i in range(centers.size):
         lo, hi = bin_edges_m[i], bin_edges_m[i + 1]
         m = (r_from_dipole >= lo) & (r_from_dipole < hi)
         if m.any():
             V_shell = 2.0 * math.pi * centers[i] * (hi - lo) * L_z
-            sigma_r[i] = float(np.sum(np.abs(virial_xy[m])) / V_shell)
-        # else: leave 0
+            sigma_r[i] = float(np.abs(np.sum(virial_xx_avg[m])) / V_shell)
 
     valid = (sigma_r > 0.0) & np.isfinite(sigma_r)
-    # Drop the closest bin (dominated by the applied dipole itself) +
-    # the farthest bin (low statistics, periodic-image artefacts).
     if valid.sum() > 0:
         idxs = np.where(valid)[0]
         valid[idxs[0]] = False
@@ -655,9 +674,13 @@ class TestKU130_3_PointDipole:
             cfg = yaml.safe_load(f)
         p = resolve_derived(cfg)
         t0 = time.time()
+        # 5 time-averaged snapshots spaced by 200 steps to cancel
+        # thermal σ_xx noise (mean zero) while accumulating the
+        # dipole-induced mean (≠ zero).
         res = _point_dipole_stress_decay(
             p,
             n_softstart=100, n_baoab=900, n_after_dipole=2000,
+            n_time_avg_samples=5, time_avg_spacing=200,
         )
         elapsed = time.time() - t0
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
