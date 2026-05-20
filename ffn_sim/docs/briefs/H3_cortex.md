@@ -21,7 +21,7 @@ order.
 | `ffn_sim/cortex/crosslinkers.py` | D2 Bell-Evans slip xlink updater (filamin slip distance from Furuike 2001 / Ferrer 2008). Python `hoomd.custom.Action`, batched every ~100 steps. |
 | `ffn_sim/cortex/myosin.py` | D5 Stam-Hocky bipolar multi-head minifilament: ~14-bead rigid-rod backbone via `md.constrain.Rigid`, ~10 cross-bridge heads per side, each with D2 Bell-Evans slip + D6 Hill stepping. |
 | `ffn_sim/cortex/erm.py` | Harmonic spring from each cortex bead to cell center; `k_ERM = 0.1 N/m` (KU-3.18). |
-| `ffn_sim/cell/cell.py` | New v2 `Cell` class: HOOMD particle-group-backed, owns cortex + ERM + lamellipodium list + FA list. **Replaces archived `<v1 archived> acs_kb/cell/cell.py`** (must not import the v1 version). |
+| `ffn_sim/cell/cell.py` | New v2 `Cell` class: HOOMD particle-group-backed, owns cortex + ERM + lamellipodium list + FA list. **Replaces v1 `acs_kb/cell/cell.py`** (deleted in 2026-05-20 rename; v1 was single-chain Cortex-coupled, do not resurrect). |
 | `ffn_sim/configs/phase1_h3.yaml` | KU-3.x cortex parameters: 1000 filaments, 1000 xlinks (30 % α-actinin + 70 % filamin per KU-3.19), 100 myosin minifilaments, k_ERM, etc. |
 | `ffn_sim/tests/test_h3_cortex_topology.py` | Topology smoke: particle counts, bond/angle/rigid-body counts, no ring-closure failures. |
 | `ffn_sim/tests/validation/test_ku31_rounding.py` | KU-3.1 cell rounding gate. |
