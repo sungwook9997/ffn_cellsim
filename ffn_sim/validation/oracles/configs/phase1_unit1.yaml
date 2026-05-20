@@ -44,9 +44,11 @@ ecm:
   # Phase 2+ should replace this with a proper 3D model.
   layer_thickness_for_2d_to_3d: 2.0e-6
 
-  # ---- Time integration (Unit 1.2, KU-1.26) ----
+  # ---- Time integration (Unit 1.2, KU-1.26 + D3) ----
   dynamics:
-    integrator: euler_maruyama       # 'euler_maruyama' (Phase 1) | 'baoab' (Phase 2+)
+    integrator: leimkuhler_matthews_baoab   # D3 Phase 1 canonical (PHASE_0_3_DECISIONS 2026-05-19).
+                                            # 'euler_maruyama' allowed ONLY as D3 verification
+                                            # reference (H.2 brief: vanilla Brownian at halved Δt).
     cfl_safety_factor: 0.1           # dt = α · τ_min; α chosen for overdamped Verlet
                                      # stability (Leimkuhler-Matthews 2013), conservative.
     dt: null                         # filled by resolve() unless explicitly set
