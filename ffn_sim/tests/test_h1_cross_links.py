@@ -403,24 +403,42 @@ class TestMeasurement:
 # ---------------------------------------------------------------------------
 class TestSimulationSmoke:
     def test_full_h1_simulation_builds_and_steps(self, resolved):
-        """Build the full M2 simulation (mikado + xl + BAOAB) and run 5
-        BAOAB steps. Confirms no force blow-up, no NaN, no crash at
-        ~66k particles + ~8k xl bonds + ~63k ecm bonds + ~60k angles +
-        LJ pair list."""
-        sim, _, _ = build_mikado_simulation(resolved, with_cross_links=True)
-        sim.run(0)
-        # State carries both ecm-bond and xl-type bonds.
-        # Expect total bonds ≈ ecm + xl.
+        """Build the full M2 simulation (mikado + xl + BAOAB), run the
+        equilibrate_no_shear prelude (PI 2026-05-20), and verify
+        ``max |F|`` reaches the thermal scale. Confirms no force blow-up,
+        no NaN, no crash, no int32-image overflow at ~66k particles +
+        ~8k xl bonds + ~63k ecm bonds + ~60k angles + LJ pair list."""
+        from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+
+        sim, updater, action = build_mikado_simulation(
+            resolved, with_cross_links=True
+        )
+        # State carries both ecm-bond and xl-type bonds; check total.
         n_ecm = resolved.n_fibers * (resolved.beads_per_fiber - 1)
         xl, _ = generate_xl_bonds(resolved)
         assert sim.state.N_bonds == n_ecm + xl.group.shape[0]
-        # 5 BAOAB steps — system equilibration prelude.
-        sim.run(5)
+
+        # Short prelude: keep the smoke test under ~10 s. The full
+        # 1000-step prelude is exercised by tests/validation/test_ku130.py.
+        diag = equilibrate_no_shear(
+            sim, action, updater,
+            n_softstart=100, n_baoab=50,
+            rest_length=resolved.rest_length, gamma_b=resolved.gamma_b,
+        )
         with sim.state.cpu_local_snapshot as s:
             F = np.asarray(s.particles.net_force)
             pos = np.asarray(s.particles.position)
-        assert np.all(np.isfinite(F)), "Non-finite net_force after 5 steps."
-        assert np.all(np.isfinite(pos)), "Non-finite position after 5 steps."
+        assert np.all(np.isfinite(F)), "Non-finite net_force after prelude."
+        assert np.all(np.isfinite(pos)), "Non-finite position after prelude."
+        # Soft phase must drain construction force by many decades.
+        assert diag["max_force_before"] > 1.0, (
+            f"Construction max|F| expected > 1 N (LJ overlap); got "
+            f"{diag['max_force_before']:.3e}."
+        )
+        assert diag["max_force_after_soft"] < 1.0e-9, (
+            f"max|F| after soft phase = {diag['max_force_after_soft']:.3e} "
+            "N exceeded the 1 nN BAOAB-safety target."
+        )
 
     def test_topology_smoke_xl_indices_distinct_from_ecm(self, resolved):
         """The xl bond entries (any bin) must not duplicate any ecm-bond

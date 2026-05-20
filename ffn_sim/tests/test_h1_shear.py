@@ -153,10 +153,19 @@ class TestSchedule:
 # ---------------------------------------------------------------------------
 class TestConservation:
     def test_topology_unchanged_through_ramp(self, resolved):
-        sim, _, _ = build_mikado_simulation(
+        from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+
+        sim, updater, action = build_mikado_simulation(
             resolved, with_cross_links=True
         )
-        sim.run(0)
+        # PI 2026-05-20: equilibration prelude before any shear update,
+        # so the construction-time LJ overlaps drain past the BAOAB
+        # int32-image guard.
+        equilibrate_no_shear(
+            sim, action, updater,
+            n_softstart=100, n_baoab=50,
+            rest_length=resolved.rest_length, gamma_b=resolved.gamma_b,
+        )
         n_part_before = sim.state.N_particles
         n_bonds_before = sim.state.N_bonds
         n_angles_before = sim.state.N_angles
@@ -228,12 +237,18 @@ class TestSignSense:
 # ---------------------------------------------------------------------------
 class TestSimulationSmoke:
     def test_full_h1_with_shear_runs_without_nan(self, resolved):
-        """Full Mikado + xl + BAOAB + Lees-Edwards shear: 20 steps with
-        a small strain ramp, confirm no NaN positions or forces."""
-        sim, _, _ = build_mikado_simulation(
+        """Full Mikado + xl + BAOAB + Lees-Edwards shear: prelude +
+        20 strain-ramp steps, confirm no NaN positions or forces."""
+        from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+
+        sim, updater, action = build_mikado_simulation(
             resolved, with_cross_links=True
         )
-        sim.run(0)
+        equilibrate_no_shear(
+            sim, action, updater,
+            n_softstart=100, n_baoab=50,
+            rest_length=resolved.rest_length, gamma_b=resolved.gamma_b,
+        )
         schedule = ShearSchedule(
             gamma_max=0.002, ramp_steps=15, hold_steps=5
         )

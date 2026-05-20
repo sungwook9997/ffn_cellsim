@@ -382,8 +382,6 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
 
         self._steps_run += 1
 
-        self._steps_run += 1
-
     # ------------------------------------------------------------------
     # Introspection (used by tests)
     # ------------------------------------------------------------------
@@ -431,6 +429,33 @@ def _wrap_into_box(
     nx = np.round(fx)
     ny = np.round(fy)
     nz = np.round(fz)
+
+    # §4 numerical-sanity guard (PI 2026-05-20): in a well-behaved
+    # overdamped step the per-step displacement is ≪ ℓ₀, so the
+    # fractional-coordinate magnitude after a single update is O(1).
+    # If a force overflow (e.g. inter-fiber LJ overlap before
+    # equilibration) drives |f| past ~1e8, the subsequent np.round →
+    # int32 cast for ``image_delta`` produces NaN silently and the
+    # simulation continues with corrupt image flags. Catch that here
+    # — well inside the int32 range (≈ 2.1e9) — and raise so the
+    # caller surfaces to PI rather than progressing on garbage state.
+    INT32_GUARD = 1.0e8
+    if (
+        (np.abs(nx) > INT32_GUARD).any()
+        or (np.abs(ny) > INT32_GUARD).any()
+        or (np.abs(nz) > INT32_GUARD).any()
+    ):
+        worst = float(
+            max(np.abs(nx).max(), np.abs(ny).max(), np.abs(nz).max())
+        )
+        raise FloatingPointError(
+            "BAOAB _wrap_into_box: |fractional coord| exceeded the "
+            f"int32-image guard (worst |round(f)|={worst:.3e} > "
+            f"{INT32_GUARD:.0e}). A per-step displacement many box-lengths "
+            "long indicates an unphysical force (e.g. LJ overlap before "
+            "equilibration); add a no-shear equilibration prelude or "
+            "reduce dt. See ffn_sim/ecm/equilibrate.py."
+        )
 
     fx -= nx
     fy -= ny
