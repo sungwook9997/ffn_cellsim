@@ -275,7 +275,14 @@ def run_h2_and_sample(
     for i in range(n_frames):
         sim.run(si)
         with sim.state.cpu_local_snapshot as s:
-            pos = np.asarray(s.particles.position).copy()
+            # HOOMD's ParticleSorter reorders snapshot rows; gather by
+            # stable particle tag so the per-bead position matches the
+            # bond.group tag ordering (which build_h2_simulation laid
+            # out as bead-0, bead-1, ..., bead-N-1 along the filament).
+            pos_row = np.asarray(s.particles.position).copy()
+            tag_row = np.asarray(s.particles.tag).copy()
+            pos = np.empty_like(pos_row)
+            pos[tag_row] = pos_row
         positions[i, 0, :, :] = pos
         frame_steps[i] = int(sim.timestep)
 
