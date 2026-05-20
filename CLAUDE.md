@@ -84,9 +84,10 @@ Phase 1 runs across multiple Claude Code sessions for context efficiency. State 
 
 ### Roles
 
-- **Main Session** — sequential ownership of H.1 → H.2 → H.3 → H.5 → H.7 (architectural consistency chain).
-- **Sub Session** — H.4 (FA + motor-clutch, isolated module) after Main's BAOAB freeze, plus debugging interludes and sanity-gate updates after FAIL.
-- **Orchestrator (PI / Sungwook)** — relays state between sessions, reviews each session's closeout, approves each next prompt.
+- **Main Session** (Claude Code, writes code) — sequential ownership of H.1 → H.2 → H.3 → H.5 → H.7 (architectural consistency chain).
+- **Sub Session** (Claude Code, writes code) — H.4 (FA + motor-clutch, isolated module) after Main's BAOAB freeze, plus debugging interludes and sanity-gate updates after FAIL.
+- **Orchestrator Session** (Claude Code, **read-only on code**) — spun up briefly after every worker closeout. Drafts the next-session prompt + status-board patch + PI-escalation triage. Boot prompt pinned in [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) §Orchestrator Session.
+- **PI (Sungwook)** — human relay between sessions. Copies closeout from worker → Orchestrator session, copies Orchestrator's drafts → next worker session. Final approver on PI-escalation items.
 
 ### State stores (read on session boot)
 
