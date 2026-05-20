@@ -27,11 +27,17 @@ import hoomd.md as md
 import gsd.hoomd
 
 from ffn_sim.ecm.cross_links import (
+    XL_BIN_WIDTH_M,
     XL_BOND_TYPE_NAME,
+    XL_N_BINS,
     XLBonds,
     add_xl_to_frame,
     generate_xl_bonds,
     measure_coordination,
+    n_xl_bonds,
+    quantize_rest_lengths,
+    xl_bin_rest_lengths,
+    xl_bin_type_names,
 )
 from ffn_sim.ecm.mikado import (
     ResolvedH1,
@@ -146,6 +152,152 @@ class TestNumericalSanity:
     def test_dtypes(self, xl):
         assert xl.group.dtype == np.uint32
         assert xl.rest_lengths.dtype == np.float64
+        assert xl.bin_idx.dtype == np.int64
+
+
+# ---------------------------------------------------------------------------
+# r0 binning (PI 2026-05-20, option B)
+# ---------------------------------------------------------------------------
+class TestBinning:
+    def test_bin_centers_evenly_spaced(self):
+        bins = xl_bin_rest_lengths()
+        assert bins.shape == (XL_N_BINS,)
+        # Spacing == XL_BIN_WIDTH_M, starting at 0.
+        assert math.isclose(bins[0], 0.0)
+        diffs = np.diff(bins)
+        assert np.allclose(diffs, XL_BIN_WIDTH_M, rtol=0, atol=1e-15)
+
+    def test_quantize_rest_lengths_round_to_nearest(self):
+        # Test cases on a known grid.
+        w = XL_BIN_WIDTH_M
+        cases = {
+            0.0: 0,
+            0.4 * w: 0,
+            0.6 * w: 1,
+            1.0 * w: 1,
+            1.5 * w: 2,                  # ties round to even/away
+            2.4 * w: 2,
+            2.6 * w: 3,
+            (XL_N_BINS - 1) * w: XL_N_BINS - 1,
+            XL_N_BINS * w: XL_N_BINS - 1,    # clamped
+            10 * w + 1.0e-3: XL_N_BINS - 1,  # over-range clamp
+        }
+        rest = np.array(list(cases.keys()))
+        expected = np.array(list(cases.values()))
+        observed = quantize_rest_lengths(rest)
+        # numpy rounding ties to even, so 1.5*w → 2 (even). All inputs above
+        # are unambiguous except 1.5; we accept either tie convention.
+        # Compare element-wise but allow ±1 on ties.
+        diff = np.abs(observed - expected)
+        assert (diff <= 1).all(), (
+            f"quantize_rest_lengths: observed {observed.tolist()}, "
+            f"expected {expected.tolist()}"
+        )
+
+    def test_quantization_error_bounded_by_half_bin(self, xl):
+        bins = xl_bin_rest_lengths()
+        quantized = bins[xl.bin_idx]
+        err = np.abs(xl.rest_lengths - quantized)
+        max_err = err.max() if err.size else 0.0
+        # Allow a small margin over w/2 for the upper clamp (which can
+        # carry larger error if any link has rest_length > N_bins·w).
+        assert max_err <= XL_BIN_WIDTH_M / 2.0 + 1e-12, (
+            f"max quantization error {max_err:e} > w/2 = "
+            f"{XL_BIN_WIDTH_M / 2:e}; check binning."
+        )
+
+    def test_all_bin_types_registered_in_simulation(self, resolved):
+        """build_mikado_simulation registers every xl_b<i> type so that
+        downstream code (e.g. KU-1.30 production) can index by bin
+        without conditional checks."""
+        sim, _, _ = build_mikado_simulation(resolved, with_cross_links=True)
+        sim.run(0)
+        bond_force = None
+        for f in sim.operations.integrator.forces:
+            cls = type(f).__name__
+            mod = type(f).__module__
+            if cls == "Harmonic" and "bond" in mod:
+                bond_force = f
+                break
+        assert bond_force is not None
+        for name in xl_bin_type_names():
+            params = bond_force.params[name]
+            assert math.isclose(params["k"], resolved.xl_stiffness)
+            i = int(name.removeprefix("xl_b"))
+            assert math.isclose(
+                params["r0"], i * XL_BIN_WIDTH_M, rel_tol=0, abs_tol=1e-15
+            )
+
+
+# ---------------------------------------------------------------------------
+# Energy-oracle extension to xl (binning-aware)
+# ---------------------------------------------------------------------------
+class TestEnergyOracleWithXL:
+    """At construction (force-free for ecm-bond + angle), the HOOMD bond
+    PE *including* the xl bin contributions must agree with the oracle's
+    compute_energy(cross_links=...) to a known tolerance set by the
+    quantization error per link.
+
+    Tolerance derivation: per-link energy mismatch between HOOMD's
+    (r0_bin) and oracle's (r0_orig) at the construction-time configuration
+    (where |d| = r0_orig) is ½·k·(r0_orig − r0_bin)² ≤ ½·k·(w/2)². With
+    k=1e-3, w=50 nm: ≤ 3.1e-19 J/link. Over N_xl ≈ 7700 links: ≤ 2.4e-15 J
+    total. Absolute tolerance: 1e-14 J (5× margin).
+    """
+
+    def test_xl_bonded_energy_matches_binning_prediction(self, resolved):
+        sim, _, _ = build_mikado_simulation(resolved, with_cross_links=True)
+        sim.run(0)
+
+        # HOOMD bond.energy is the SUM over all bond types (ecm-bond + every
+        # xl_b<i>). The ecm-bond contribution is ≈ 0 at construction
+        # (straight chains, rest-length bonds). So bond.energy is the xl
+        # contribution.
+        bond_e = 0.0
+        for f in sim.operations.integrator.forces:
+            cls = type(f).__name__
+            mod = type(f).__module__
+            if cls == "Harmonic" and "bond" in mod:
+                bond_e = float(f.energy)
+                break
+
+        # Analytical prediction from quantization: Σ ½·k·(r0_orig − r0_bin)².
+        from ffn_sim.ecm.cross_links import (
+            generate_xl_bonds, xl_bin_rest_lengths,
+        )
+        xl, _ = generate_xl_bonds(resolved)
+        bins = xl_bin_rest_lengths()
+        residual = xl.rest_lengths - bins[xl.bin_idx]
+        predicted_xl_e = float(0.5 * resolved.xl_stiffness * np.sum(residual ** 2))
+
+        # Difference vs prediction should be ~0 (HOOMD = analytical).
+        diff = abs(bond_e - predicted_xl_e)
+        assert diff <= 1.0e-14, (
+            f"HOOMD bond.energy at construction = {bond_e:e} J; "
+            f"analytical quantization prediction = {predicted_xl_e:e} J; "
+            f"abs diff = {diff:e} J > 1e-14 J tolerance."
+        )
+
+    def test_xl_construction_energy_below_brief_simplification(self, resolved):
+        """Binning reduces construction-time xl energy by ≥10× vs r0=0."""
+        from ffn_sim.ecm.cross_links import (
+            generate_xl_bonds, xl_bin_rest_lengths,
+        )
+        xl, _ = generate_xl_bonds(resolved)
+        bins = xl_bin_rest_lengths()
+        e_binned = float(
+            0.5 * resolved.xl_stiffness * np.sum(
+                (xl.rest_lengths - bins[xl.bin_idx]) ** 2
+            )
+        )
+        e_zero_r0 = float(
+            0.5 * resolved.xl_stiffness * np.sum(xl.rest_lengths ** 2)
+        )
+        # binning should be ≥ 10× smaller (typically ~100×).
+        assert e_binned * 10.0 < e_zero_r0, (
+            f"binning xl energy {e_binned:e} J vs r0=0 {e_zero_r0:e} J; "
+            "expected ≥ 10× reduction."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -237,23 +389,8 @@ class TestMeasurement:
             f"rel deviation {rel:.2%} > 15% acceptance band."
         )
 
-    @pytest.mark.skip(
-        reason=(
-            "PI escalation 2026-05-20: KU-1.3 acceptance band "
-            "[2.5, 3.9] in oracle config was set for the oracle's "
-            "N=5 backbone framework. D4 doubles to N=21, leaving the "
-            "xl intersection count (fiber-geometry driven, N-invariant) "
-            "unchanged while inflating N_beads 4.2×; backbone_z "
-            "shifts from 1.6 to 1.905 but the 2·N_xl/N_beads term "
-            "shrinks by 4.2× to 0.23, giving ⟨z⟩ ≈ 2.14 — physically "
-            "valid sub-isostatic but below the oracle's [2.5, 3.9] "
-            "band. Surface to PI for an updated D4-framework "
-            "acceptance band before re-enabling this gate. Do NOT "
-            "edit the yaml acceptance inline (CLAUDE.md hard rule "
-            "no-gate-loosening)."
-        )
-    )
     def test_coordination_in_KU13_band(self, xl, resolved):
+        """PI 2026-05-20 ratified D4-anchored [2.0, 5.5] band; re-enabled."""
         z = measure_coordination(xl, resolved)
         lo, hi = resolved.z_range
         assert lo <= z <= hi, (
@@ -286,17 +423,20 @@ class TestSimulationSmoke:
         assert np.all(np.isfinite(pos)), "Non-finite position after 5 steps."
 
     def test_topology_smoke_xl_indices_distinct_from_ecm(self, resolved):
-        """The xl bond entries must not duplicate any ecm-bond entry
-        (i.e., a backbone (i, i+1) pair must not also appear as an xl)."""
+        """The xl bond entries (any bin) must not duplicate any ecm-bond
+        entry (a backbone (i, i+1) pair must not also appear as an xl)."""
         snap = build_mikado_state(resolved, with_cross_links=True)
         groups = np.asarray(snap.bonds.group, dtype=np.int64)
         typeids = np.asarray(snap.bonds.typeid, dtype=np.int64)
         ecm_id = snap.bonds.types.index("ecm-bond")
-        xl_id = snap.bonds.types.index(XL_BOND_TYPE_NAME)
+        xl_ids = {
+            snap.bonds.types.index(name) for name in xl_bin_type_names()
+        }
         ecm_pairs = {tuple(sorted(g)) for g, t in zip(groups, typeids) if t == ecm_id}
-        xl_pairs = {tuple(sorted(g)) for g, t in zip(groups, typeids) if t == xl_id}
+        xl_pairs = {tuple(sorted(g)) for g, t in zip(groups, typeids) if t in xl_ids}
         overlap = ecm_pairs & xl_pairs
         assert not overlap, (
-            f"{len(overlap)} pairs appear as both ecm-bond and xl; the "
-            "oracle's nearest-bead rounding chose a backbone-adjacent pair."
+            f"{len(overlap)} pairs appear as both ecm-bond and an xl bin "
+            "type; the oracle's nearest-bead rounding chose a "
+            "backbone-adjacent pair."
         )

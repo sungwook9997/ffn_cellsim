@@ -134,7 +134,42 @@ from ffn_sim.validation.oracles.ecm.fiber_network import (
 )
 
 
-XL_BOND_TYPE_NAME: str = "xl"
+XL_BOND_TYPE_PREFIX: str = "xl_b"
+# Number of r0 bins for cross-link rest-length quantization (PI 2026-05-20,
+# option B). Bin centers at {0, w, 2w, ..., n·w} with w = XL_BIN_WIDTH_M.
+# With L_fiber/2 = 5 μm as the geometric ceiling on bead-to-intersection
+# offset, every realised per-link MI distance falls in [0, ~ℓ₀] = [0, 500 nm].
+# 11 bin centers at 50 nm spacing give quantization error ≤ 25 nm per link
+# and ~0.07 kT residual per-link energy at construction (≈100× reduction
+# vs the brief's r0=0 simplification).
+XL_BIN_WIDTH_M: float = 50.0e-9          # 50 nm
+XL_N_BINS: int = 11                       # bin centers 0, 50, ..., 500 nm
+
+# Public-facing single name kept for backward-compat with M2-pre tests that
+# wired one xl type; modern code should iterate xl_bin_type_names(...).
+XL_BOND_TYPE_NAME: str = XL_BOND_TYPE_PREFIX + "0"
+
+
+def xl_bin_type_names() -> list[str]:
+    """Return the canonical ordered bin type names ``[xl_b0, xl_b1, ...]``."""
+    return [f"{XL_BOND_TYPE_PREFIX}{i}" for i in range(XL_N_BINS)]
+
+
+def xl_bin_rest_lengths() -> np.ndarray:
+    """Quantized r0 (m) for each bin index 0..XL_N_BINS-1."""
+    return XL_BIN_WIDTH_M * np.arange(XL_N_BINS, dtype=np.float64)
+
+
+def quantize_rest_lengths(rest: np.ndarray) -> np.ndarray:
+    """Map each per-link rest length to a bin index in [0, XL_N_BINS).
+
+    Standard "round to nearest bin center" quantization; clamps the upper
+    tail to ``XL_N_BINS - 1`` so an over-range link (rare, > XL_N_BINS·w)
+    still has a valid bin assignment. Max quantization error ≤ w/2.
+    """
+    idx = np.round(np.asarray(rest, dtype=np.float64) / XL_BIN_WIDTH_M)
+    idx = np.clip(idx, 0, XL_N_BINS - 1).astype(np.int64)
+    return idx
 
 
 @dataclass(slots=True)
@@ -147,14 +182,19 @@ class XLBonds:
         Per-link (global_idx_a, global_idx_b) pairs.
     rest_lengths : np.ndarray, shape (N_xl,), dtype float64
         Per-link MI bead-bead distance at construction (oracle
-        convention). Stored for diagnostics; **not** written to HOOMD
-        (HOOMD uses per-type r0). HOOMD r0 is set to 0 per the brief.
+        convention). Diagnostic / quantization input; the actual r0
+        written to HOOMD is the *bin center* `XL_BIN_WIDTH_M · bin_idx`.
+    bin_idx : np.ndarray, shape (N_xl,), dtype int64
+        Per-link bin index in ``[0, XL_N_BINS)``. Maps directly to bond
+        ``typeid`` when the frame is assembled.
     k_xl : float
-        Per-type harmonic stiffness (KU-1.28, default 1e-3 N/m).
+        Per-bin-type harmonic stiffness (KU-1.28, default 1e-3 N/m). The
+        same ``k`` is used across all xl bins; only r0 varies.
     """
 
     group: np.ndarray
     rest_lengths: np.ndarray
+    bin_idx: np.ndarray
     k_xl: float
 
 
@@ -196,8 +236,13 @@ def generate_xl_bonds(p: ResolvedH1) -> tuple[XLBonds, FiberNetwork]:
     if not oracle_links:
         empty_group = np.empty((0, 2), dtype=np.uint32)
         empty_rest = np.empty((0,), dtype=np.float64)
-        return XLBonds(group=empty_group, rest_lengths=empty_rest,
-                       k_xl=p.xl_stiffness), net
+        empty_idx = np.empty((0,), dtype=np.int64)
+        return XLBonds(
+            group=empty_group,
+            rest_lengths=empty_rest,
+            bin_idx=empty_idx,
+            k_xl=p.xl_stiffness,
+        ), net
 
     fa = np.fromiter((xl.fiber_a for xl in oracle_links), dtype=np.int64,
                      count=len(oracle_links))
@@ -239,37 +284,54 @@ def generate_xl_bonds(p: ResolvedH1) -> tuple[XLBonds, FiberNetwork]:
         )
 
     group = np.stack([ia, ib], axis=-1).astype(np.uint32)
+    bin_idx = quantize_rest_lengths(rest)
     return (
-        XLBonds(group=group, rest_lengths=rest, k_xl=p.xl_stiffness),
+        XLBonds(
+            group=group,
+            rest_lengths=rest,
+            bin_idx=bin_idx,
+            k_xl=p.xl_stiffness,
+        ),
         net,
     )
 
 
 def add_xl_to_frame(snap: gsd.hoomd.Frame, xl: XLBonds) -> gsd.hoomd.Frame:
-    """Append ``xl.group`` to ``snap.bonds`` under a new bond type ``"xl"``.
+    """Append cross-link bonds (one bond type per r0 bin) to ``snap``.
 
-    The frame's existing bonds (ecm-bond) are preserved at type-id 0;
-    xl bonds get type-id 1. If ``xl.group`` is empty, the frame is
-    returned unchanged.
+    The frame's existing bonds (ecm-bond) are preserved at type-id 0.
+    xl bin types follow as 'xl_b0' (id 1), 'xl_b1' (id 2), ... up to
+    'xl_b{XL_N_BINS-1}'. All xl bin types are registered even if some
+    bins receive zero links, so that downstream code can always look up
+    ``bond.params["xl_b<i>"]`` without conditional checks.
     """
-    if xl.group.shape[0] == 0:
-        return snap
-
     n_existing = int(snap.bonds.N)
     existing_group = np.asarray(snap.bonds.group, dtype=np.uint32)
     existing_typeid = np.asarray(snap.bonds.typeid, dtype=np.uint32)
     existing_types = list(snap.bonds.types)
 
-    new_types = existing_types + [XL_BOND_TYPE_NAME]
-    new_typeid_for_xl = np.full(
-        xl.group.shape[0], len(existing_types), dtype=np.uint32
-    )
+    bin_names = xl_bin_type_names()
+    # Type IDs for the xl bins: assigned right after existing types.
+    base_id = len(existing_types)
+    new_types = existing_types + bin_names
+
+    if xl.group.shape[0] == 0:
+        snap.bonds.types = new_types
+        return snap
+
+    # Per-link typeid = base_id + bin_idx.
+    xl_typeids = (base_id + xl.bin_idx).astype(np.uint32)
 
     snap.bonds.N = n_existing + xl.group.shape[0]
     snap.bonds.types = new_types
-    snap.bonds.typeid = np.concatenate([existing_typeid, new_typeid_for_xl])
+    snap.bonds.typeid = np.concatenate([existing_typeid, xl_typeids])
     snap.bonds.group = np.concatenate([existing_group, xl.group], axis=0)
     return snap
+
+
+def n_xl_bonds(xl: XLBonds) -> int:
+    """Cross-link bond count (independent of bin distribution)."""
+    return int(xl.group.shape[0])
 
 
 def measure_coordination(xl: XLBonds, p: ResolvedH1) -> float:

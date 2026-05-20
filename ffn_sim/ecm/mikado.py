@@ -533,12 +533,22 @@ def build_mikado_simulation(
 
     # Bond force: U = ½ k_bond (|r| − r0)² for ecm-bond.
     # Cross-links (KU-1.28) use the same md.bond.Harmonic compute under
-    # type "xl" with k=k_xl and r0=0 per the H.1 brief simplification.
+    # per-r0-bin types ("xl_b0" ... "xl_b{N-1}"), k=k_xl on every bin and
+    # r0 = bin_center (PI 2026-05-20, option B — r0 type-binning so the
+    # construction state is approximately force-free for cross-links and
+    # production runs don't need a long xl-equilibration prelude).
     bond = md.bond.Harmonic()
     bond.params["ecm-bond"] = dict(k=p.bond_k, r0=p.rest_length)
     if with_cross_links:
-        from ffn_sim.ecm.cross_links import XL_BOND_TYPE_NAME
-        bond.params[XL_BOND_TYPE_NAME] = dict(k=p.xl_stiffness, r0=0.0)
+        from ffn_sim.ecm.cross_links import (
+            XL_N_BINS, xl_bin_rest_lengths, xl_bin_type_names,
+        )
+        bin_names = xl_bin_type_names()
+        bin_r0 = xl_bin_rest_lengths()
+        for i in range(XL_N_BINS):
+            bond.params[bin_names[i]] = dict(
+                k=p.xl_stiffness, r0=float(bin_r0[i])
+            )
 
     # Angle force: U = ½ k_θ (θ − π)²  (small-bend match to oracle's
     # (κ/ℓ₀)(1 − cos θ_oracle); see module docstring.)

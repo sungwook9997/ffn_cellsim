@@ -73,7 +73,18 @@ ecm:
   # ---- Sanity Gate acceptance ranges (inherited from oracle config) ----
   acceptance:
     segment_length_range: [1.0e-6, 4.0e-6]   # ℓ_c band around ξ=2 μm (KU-1.7 ±50%)
-    z_range:    [2.5, 3.9]                   # sub-isostatic, well below z_c=2d=4 (KU-1.3)
+    # KU-1.3 ⟨z⟩ sub-isostatic band — D4-anchored (PI 2026-05-20).
+    # Floor: backbone-only z_min = 2 − 2/N ≈ 1.905 at N=21; we require ⟨z⟩
+    #   to lie *above* this so the cross-link contribution is mechanically
+    #   meaningful (not just bare backbones).
+    # Ceiling: 3D sub-isostatic limit z_c = 2·d = 6; we require ⟨z⟩ to lie
+    #   *below* a margin (5.5) so a denser-than-canonical Mikado still has
+    #   the rigidity-percolation gap. Oracle's original [2.5, 3.9] was set
+    #   for the N=5 backbone framework where backbone_z = 1.6 and the
+    #   2·N_xl/N_beads term contributed ~1 (close to upper band); D4 N=21
+    #   leaves N_xl unchanged but inflates N_beads 4.2× so the band has to
+    #   be re-anchored.
+    z_range:    [2.0, 5.5]
     n_fibers_max: 20000                      # cost ceiling; above → demo_mode required
 
   # Demo mode opt-out: explicitly accept defaults that violate KU
