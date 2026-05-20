@@ -103,13 +103,20 @@ Phase 1 runs across multiple Claude Code sessions for context efficiency. State 
 4. `conda activate ffn_sim` and confirm with `python -c "import hoomd; print(hoomd.version.version)"`.
 5. Restate the task in 1–2 sentences before executing anything. If anything is ambiguous, ask PI before moving.
 
-### Session closeout protocol (end of session or when PI says "wrap")
+### Session closeout protocol — MUST, every session (end of session, freeze-point, or when PI says "wrap")
 
-1. Stage and commit work on the session's branch (`phase1/h{N}-*`). Do NOT push to `v2/foundation`.
-2. Write a **closeout block** to your section of the Notion Session Handoff Board, using the template pinned there.
-3. Write a **draft Next prompt** in that section so PI can review/edit and the next session of your role can boot from it.
-4. Update the Phase 1 status board (Status / Owner already set; Start / End / Log columns as appropriate).
-5. Stop. Do not speculate beyond what was actually done in the session.
+Applies to every Main / Sub / Orchestrator session. Steps 1–6 must all complete before the final user-facing message; step 7 is the explicit PI receipt without which the session is treated as still open.
+
+1. Stage and commit work on the session's branch (`phase1/h{N}-*`). Do NOT push to `ffn/foundation` (renamed from `v2/foundation` 2026-05-20) without PI sign-off.
+2. **Session Handoff Board** — write a closeout block to your role's §Last closeout using the template pinned at the bottom of that page.
+3. **Session Handoff Board §Next prompt** — draft the next-session prompt for your role, marked `[draft — pending PI sign-off]`.
+4. **Phase 1 status board (Dev Logs)** — update your unit's row: Status / Owner / Start / End / Log.
+5. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page (format pinned in Dev Logs §작성 규칙: start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference).
+6. If Notion MCP is unavailable, rate-limited, or any of the three stores cannot be written: **halt and surface to PI** — do not silently skip.
+7. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`** so PI can confirm the loop closed.
+8. Stop. Do not speculate beyond what was actually done in the session.
+
+Per-prompt §Closeout sections in worker Next prompts only carry *unit-specific* obligations (e.g. PI sign-off after BAOAB freeze, KU FAIL surfacing); the universal 3-store + receipt-line rule above lives only here.
 
 ### File ownership (cross-session enforcement)
 
