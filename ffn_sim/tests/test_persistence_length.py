@@ -279,3 +279,79 @@ class TestH2Production:
             "form is the principled reference per BAOAB §Open #1; if "
             "this fails, surface to PI."
         )
+
+
+# ---------------------------------------------------------------------------
+# BAOAB §Open #2 carry-over: L-M vs E-M reference-integrator
+# order-separation gate
+# ---------------------------------------------------------------------------
+@pytest.mark.skipif(
+    os.environ.get("H2_REFERENCE_INTEGRATOR", "") != "1",
+    reason="L-M vs E-M reference comparison; opt-in via "
+    "H2_REFERENCE_INTEGRATOR=1 (~2 hours wall, two production-scale runs).",
+)
+class TestLMvsEM:
+    """BAOAB §Open #2 carry-over (PI-deferred from BAOAB freeze 2026-05-20).
+
+    Same single-filament + same RNG seed under:
+      A) L-M BAOAB at p.dt_cfl
+      B) HOOMD-native md.methods.Brownian (Euler-Maruyama) at
+         p.dt_cfl · p.reference_integrator_dt_factor (default 0.5)
+
+    Both runs are sampled identically and the tangent-correlation
+    persistence length is fitted.  Gate: |L_p_lm − L_p_em| / max(L_p_lm,
+    L_p_em) ≤ 0.10 (within 10 %) — the two integrators must agree on
+    the same physical observable.  If they disagree by >> 10 %, one of
+    them is systematically biased and BAOAB freeze §Open #2 is OPEN
+    rather than closed.
+    """
+
+    def test_lm_em_lp_agreement(self):
+        p = _load_resolved()
+        # Half-budget per run so the total wall ~ matches a single
+        # production run.  Adequate sampling for a relative comparison.
+        n_eq = p.n_steps_equilibrate
+        n_smp = p.n_steps_sample // 2
+        si = p.sample_interval
+
+        result_lm = run_h2_and_sample(
+            p, n_equilibrate=n_eq, n_sample=n_smp,
+            sample_interval=si, integrator="lm_baoab",
+        )
+        result_em = run_h2_and_sample(
+            p, n_equilibrate=n_eq, n_sample=n_smp,
+            sample_interval=si, integrator="hoomd_brownian",
+        )
+
+        from ffn_sim.common.filament_math import fit_persistence_length
+        pos_lm = result_lm["positions"].reshape(-1, p.beads_per_fiber, 3)
+        pos_em = result_em["positions"].reshape(-1, p.beads_per_fiber, 3)
+        fit_lm = fit_persistence_length(pos_lm, rest_length=p.rest_length, box=None)
+        fit_em = fit_persistence_length(pos_em, rest_length=p.rest_length, box=None)
+
+        OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            OUTPUTS_DIR / "h2_lm_vs_em_reference.npz",
+            L_p_lm_m=fit_lm.L_p_m,
+            L_p_em_m=fit_em.L_p_m,
+            L_p_lm_stderr_m=fit_lm.L_p_stderr_m,
+            L_p_em_stderr_m=fit_em.L_p_stderr_m,
+            log_slope_inv_lm=fit_lm.log_slope_inv_m,
+            log_slope_inv_em=fit_em.log_slope_inv_m,
+            n_frames_each=pos_lm.shape[0],
+            wall_lm_s=result_lm["wall_s"],
+            wall_em_s=result_em["wall_s"],
+        )
+
+        assert math.isfinite(fit_lm.L_p_m) and math.isfinite(fit_em.L_p_m), (
+            f"L_p NaN: lm={fit_lm.L_p_m}, em={fit_em.L_p_m} — slope sign "
+            "issue in one of the integrators. Surface to PI."
+        )
+        denom = max(fit_lm.L_p_m, fit_em.L_p_m)
+        rel = abs(fit_lm.L_p_m - fit_em.L_p_m) / denom
+        assert rel <= 0.10, (
+            f"L-M vs E-M L_p disagreement = {rel:.3f} > 10 % "
+            f"(lm={fit_lm.L_p_m:.3e} m, em={fit_em.L_p_m:.3e} m). "
+            f"BAOAB §Open #2 order-separation closed only if the two "
+            f"integrators agree on the same physical L_p."
+        )

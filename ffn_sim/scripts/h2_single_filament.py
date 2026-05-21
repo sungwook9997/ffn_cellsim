@@ -183,12 +183,28 @@ def resolve_h2_derived(cfg: dict) -> ResolvedH2:
 # Simulation builder
 # ---------------------------------------------------------------------------
 def build_h2_simulation(
-    p: ResolvedH2, *, device: hoomd.device.Device | None = None
+    p: ResolvedH2, *, device: hoomd.device.Device | None = None,
+    integrator: str = "lm_baoab",
 ) -> tuple[hoomd.Simulation, Any, Any]:
     """Build a HOOMD Simulation for the single-filament H.2 setup.
 
-    Returns (sim, updater, action) — the BAOAB Action + Updater pair so
-    the caller can inspect prv_rnds / steps_run.
+    Parameters
+    ----------
+    integrator
+        ``"lm_baoab"`` (default) — D3 canonical L-M BAOAB Updater
+        (`ffn_sim/integrator/baoab.py`).  Returns (sim, updater, action).
+
+        ``"hoomd_brownian"`` — HOOMD-native `md.methods.Brownian`
+        (Euler-Maruyama).  Used as the reference integrator for the
+        BAOAB §Open #2 order-separation gate (PI-ratified in
+        `phase1_h2.yaml::reference_integrator`).  Returns
+        (sim, None, brownian_method) so the caller signature stays
+        symmetric — there is no BAOAB Action in this branch.  dt is
+        scaled by ``p.reference_integrator_dt_factor`` (default 0.5)
+        so E-M's first-order bias is comparable to L-M BAOAB.
+
+    Returns (sim, updater, action_or_method) — the BAOAB Action +
+    Updater pair (lm_baoab) or (None, brownian_method) (hoomd_brownian).
     """
     N = p.beads_per_fiber
 
@@ -232,17 +248,37 @@ def build_h2_simulation(
     angle = md.angle.Harmonic()
     angle.params["actin-angle"] = dict(k=p.angle_k, t0=p.angle_t0)
 
-    ig = md.Integrator(dt=p.dt_cfl)
-    ig.forces.append(bond)
-    ig.forces.append(angle)
-    # No LJ (H.2 brief: single filament, no excluded volume).
-    sim.operations.integrator = ig
-
-    action, updater = make_baoab_updater(
-        kT=p.kT, gamma={"actin": p.gamma_b}, dt=p.dt_cfl, seed=p.seed
-    )
-    sim.operations.updaters.append(updater)
-    return sim, updater, action
+    if integrator == "lm_baoab":
+        ig = md.Integrator(dt=p.dt_cfl)
+        ig.forces.append(bond)
+        ig.forces.append(angle)
+        sim.operations.integrator = ig
+        action, updater = make_baoab_updater(
+            kT=p.kT, gamma={"actin": p.gamma_b}, dt=p.dt_cfl, seed=p.seed
+        )
+        sim.operations.updaters.append(updater)
+        return sim, updater, action
+    elif integrator == "hoomd_brownian":
+        # BAOAB §Open #2 reference integrator — Euler-Maruyama via
+        # md.methods.Brownian.  dt scaled by reference_integrator_dt_factor
+        # (default 0.5) so E-M's O(Δt) bias is comparable to L-M's O(Δt²)
+        # at the same effective error level (Leimkuhler-Matthews 2013).
+        dt_ref = p.dt_cfl * p.reference_integrator_dt_factor
+        ig = md.Integrator(dt=dt_ref)
+        ig.forces.append(bond)
+        ig.forces.append(angle)
+        brownian = md.methods.Brownian(
+            filter=hoomd.filter.All(), kT=p.kT,
+        )
+        brownian.gamma["actin"] = p.gamma_b
+        ig.methods.append(brownian)
+        sim.operations.integrator = ig
+        return sim, None, brownian
+    else:
+        raise ValueError(
+            f"Unknown integrator {integrator!r}; choose 'lm_baoab' or "
+            "'hoomd_brownian'."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -253,6 +289,7 @@ def run_h2_and_sample(
     n_equilibrate: int | None = None,
     n_sample: int | None = None,
     sample_interval: int | None = None,
+    integrator: str = "lm_baoab",
 ) -> dict[str, Any]:
     """Drive the H.2 sim through equilibrate + sample phases.
 
@@ -264,7 +301,7 @@ def run_h2_and_sample(
     n_smp = n_sample if n_sample is not None else p.n_steps_sample
     si = sample_interval if sample_interval is not None else p.sample_interval
 
-    sim, _updater, _action = build_h2_simulation(p)
+    sim, _updater, _action = build_h2_simulation(p, integrator=integrator)
 
     t0 = time.time()
     sim.run(n_eq)
