@@ -308,19 +308,26 @@ class TestLMvsEM:
 
     def test_lm_em_lp_agreement(self):
         p = _load_resolved()
-        # Half-budget per run so the total wall ~ matches a single
-        # production run.  Adequate sampling for a relative comparison.
-        n_eq = p.n_steps_equilibrate
-        n_smp = p.n_steps_sample // 2
-        si = p.sample_interval
+        # Match SIMULATED TIME between the two integrators, not step
+        # count: E-M runs at dt_ref = dt_cfl · dt_factor (default 0.5),
+        # so it needs 1/dt_factor more steps to cover the same simulated
+        # time as L-M.  Bug fixed 2026-05-21 — original implementation
+        # used same n_smp for both, giving E-M only half the simulated
+        # time and a spuriously high L_p from undersampled long modes.
+        n_eq_lm = p.n_steps_equilibrate
+        n_smp_lm = p.n_steps_sample // 2
+        n_eq_em = int(round(n_eq_lm / p.reference_integrator_dt_factor))
+        n_smp_em = int(round(n_smp_lm / p.reference_integrator_dt_factor))
+        si_lm = p.sample_interval
+        si_em = int(round(si_lm / p.reference_integrator_dt_factor))
 
         result_lm = run_h2_and_sample(
-            p, n_equilibrate=n_eq, n_sample=n_smp,
-            sample_interval=si, integrator="lm_baoab",
+            p, n_equilibrate=n_eq_lm, n_sample=n_smp_lm,
+            sample_interval=si_lm, integrator="lm_baoab",
         )
         result_em = run_h2_and_sample(
-            p, n_equilibrate=n_eq, n_sample=n_smp,
-            sample_interval=si, integrator="hoomd_brownian",
+            p, n_equilibrate=n_eq_em, n_sample=n_smp_em,
+            sample_interval=si_em, integrator="hoomd_brownian",
         )
 
         from ffn_sim.common.filament_math import fit_persistence_length
