@@ -98,6 +98,7 @@ class ResolvedH2:
     L_p_band_m_C1: tuple[float, float]               # D4-anchored C(1)-based (PI 2026-05-21)
     L_p_band_m_tail: tuple[float, float]             # D4-anchored fit-tail (PI 2026-05-21)
     angle_ks_p_min: float                            # widened to 1e-6 per PI
+    angle_ks_stat_max: float                         # KS-statistic gate (PI 2026-05-21 iter-15)
     equipartition_rel_tol: float                     # brief literal (diagnostic)
     equipartition_target_3d_kT: float                # PI 2026-05-21 3D-corrected target (unit: kT)
     equipartition_rel_tol_3d: float                  # PI 2026-05-21 widened tolerance
@@ -151,6 +152,9 @@ def resolve_h2_derived(cfg: dict) -> ResolvedH2:
             f["acceptance"].get("L_p_band_m_tail", [20.0e-6, 35.0e-6])
         ),
         angle_ks_p_min=float(f["acceptance"]["angle_ks_p_min"]),
+        angle_ks_stat_max=float(
+            f["acceptance"].get("angle_ks_stat_max", 0.10)
+        ),
         equipartition_rel_tol=float(f["acceptance"]["equipartition_rel_tol"]),
         equipartition_target_3d_kT=float(
             f["acceptance"].get("equipartition_target_3d_kT", 1.0)
