@@ -94,9 +94,13 @@ class ResolvedH2:
     n_steps_sample: int
     sample_interval: int
 
-    L_p_band_m: tuple[float, float]
-    angle_ks_p_min: float
-    equipartition_rel_tol: float
+    L_p_band_m: tuple[float, float]                  # brief literal (diagnostic)
+    L_p_band_m_C1: tuple[float, float]               # D4-anchored C(1)-based (PI 2026-05-21)
+    L_p_band_m_tail: tuple[float, float]             # D4-anchored fit-tail (PI 2026-05-21)
+    angle_ks_p_min: float                            # widened to 1e-6 per PI
+    equipartition_rel_tol: float                     # brief literal (diagnostic)
+    equipartition_target_3d_kT: float                # PI 2026-05-21 3D-corrected target (unit: kT)
+    equipartition_rel_tol_3d: float                  # PI 2026-05-21 widened tolerance
 
     reference_integrator_allow: bool
     reference_integrator_name: str
@@ -140,8 +144,20 @@ def resolve_h2_derived(cfg: dict) -> ResolvedH2:
         n_steps_sample=int(f["dynamics"]["n_steps_sample"]),
         sample_interval=int(f["dynamics"]["sample_interval"]),
         L_p_band_m=tuple(f["acceptance"]["L_p_band_m"]),
+        L_p_band_m_C1=tuple(
+            f["acceptance"].get("L_p_band_m_C1", [7.0e-6, 14.0e-6])
+        ),
+        L_p_band_m_tail=tuple(
+            f["acceptance"].get("L_p_band_m_tail", [20.0e-6, 35.0e-6])
+        ),
         angle_ks_p_min=float(f["acceptance"]["angle_ks_p_min"]),
         equipartition_rel_tol=float(f["acceptance"]["equipartition_rel_tol"]),
+        equipartition_target_3d_kT=float(
+            f["acceptance"].get("equipartition_target_3d_kT", 1.0)
+        ),
+        equipartition_rel_tol_3d=float(
+            f["acceptance"].get("equipartition_rel_tol_3d", 0.60)
+        ),
         reference_integrator_allow=bool(f["reference_integrator"]["allow"]),
         reference_integrator_name=str(f["reference_integrator"]["name"]),
         reference_integrator_dt_factor=float(f["reference_integrator"]["dt_factor"]),

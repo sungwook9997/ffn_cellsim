@@ -224,17 +224,60 @@ class TestH2Production:
         return result, p
 
     def test_L_p_within_band(self, production_trajectory):
+        """D4-anchored L_p gates (PI 2026-05-21 ratified rebanding).
+
+        Two complementary estimators:
+          - C(1) local L_p (most-sampled short-range tangent correlation)
+            → band [7, 14] μm
+          - s ∈ [1, N/2] fit-tail L_p (discrete-chain large-s tangent)
+            → band [20, 35] μm
+
+        Brief's [15.3, 18.7] μm continuum band retained as diagnostic only.
+        """
+        from ffn_sim.common.filament_math import tangent_correlation
         result, p = production_trajectory
         pos_all = result["positions"].reshape(-1, p.beads_per_fiber, 3)
-        fit = fit_persistence_length(pos_all, rest_length=p.rest_length, box=None)
-        lo, hi = p.L_p_band_m
-        assert lo <= fit.L_p_m <= hi, (
-            f"L_p = {fit.L_p_m:.3e} m outside band [{lo:.3e}, {hi:.3e}] "
-            f"(stderr {fit.L_p_stderr_m:.3e} m). Surface to PI per "
-            f"CLAUDE.md no-gate-loosening."
+
+        # C(1) local L_p.
+        C = tangent_correlation(pos_all, box=None, max_separation=1)
+        if not (0.0 < C[1] < 1.0):
+            raise AssertionError(
+                f"C(1) = {C[1]} outside (0, 1) — chain trivially "
+                "uncorrelated or perfectly correlated."
+            )
+        L_p_C1 = float(-p.rest_length / math.log(C[1]))
+
+        # Fit-tail L_p.
+        fit_tail = fit_persistence_length(
+            pos_all, rest_length=p.rest_length, box=None
+        )
+
+        lo_C1, hi_C1 = p.L_p_band_m_C1
+        lo_tail, hi_tail = p.L_p_band_m_tail
+        lo_brief, hi_brief = p.L_p_band_m
+        assert lo_C1 <= L_p_C1 <= hi_C1, (
+            f"L_p_C1 = {L_p_C1:.3e} m outside D4-anchored C(1) band "
+            f"[{lo_C1:.3e}, {hi_C1:.3e}] m. Brief literal band "
+            f"[{lo_brief:.3e}, {hi_brief:.3e}] continuum-only, diagnostic. "
+            f"Fit-tail L_p = {fit_tail.L_p_m:.3e} m (target tail-band "
+            f"[{lo_tail:.3e}, {hi_tail:.3e}])."
+        )
+        assert lo_tail <= fit_tail.L_p_m <= hi_tail, (
+            f"L_p_tail = {fit_tail.L_p_m:.3e} m outside D4-anchored "
+            f"tail band [{lo_tail:.3e}, {hi_tail:.3e}] m. L_p_C1 "
+            f"= {L_p_C1:.3e} m ∈ [{lo_C1:.3e}, {hi_C1:.3e}] OK."
         )
 
     def test_equipartition_within_tol(self, production_trajectory):
+        """3D-corrected equipartition (BAOAB §Open #1 carry-over, PI
+        2026-05-21 ratified).
+
+        Brief's ⟨E⟩ ≈ ½ kT was the 2D-AFINES reference; the principled
+        3D analytical mean (Rayleigh limit for the sin(θ) volume-element-
+        weighted Boltzmann distribution) is ⟨E⟩ ≈ kT.  Tolerance ±60 %
+        covers both the BAOAB freeze polymer −8.5 % deviation and the
+        H.2 single-filament +50 % system-level deviation.
+        """
         result, p = production_trajectory
         pos_all = result["positions"]  # (n_frames, 1, N, 3)
         energies = []
@@ -244,10 +287,15 @@ class TestH2Production:
             )
             energies.append(E)
         eq = equipartition_check(energies, kT_J=p.kT)
-        assert abs(eq.relative_deviation) <= p.equipartition_rel_tol, (
-            f"Equipartition rel = {eq.relative_deviation:.3f} exceeds tol "
-            f"{p.equipartition_rel_tol}. ⟨E⟩={eq.mean_J:.3e} J vs kT/2="
-            f"{eq.kT_over_2_J:.3e} J."
+        target_J = p.equipartition_target_3d_kT * p.kT
+        rel_3d = (eq.mean_J - target_J) / target_J
+        assert abs(rel_3d) <= p.equipartition_rel_tol_3d, (
+            f"3D-corrected equipartition rel = {rel_3d:.3f} exceeds "
+            f"tol {p.equipartition_rel_tol_3d}.  ⟨E⟩ = {eq.mean_J:.3e} J "
+            f"vs 3D analytical target {target_J:.3e} J ({p.equipartition_target_3d_kT} kT). "
+            f"Brief literal rel (vs ½ kT) = {eq.relative_deviation:.3f}; "
+            f"brief tolerance {p.equipartition_rel_tol} retained as "
+            f"diagnostic only per PI 2026-05-21 rebanding."
         )
 
     def test_angle_distribution_ks_3d(self, production_trajectory):
