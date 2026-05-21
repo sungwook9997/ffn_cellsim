@@ -7,8 +7,26 @@ finding commit)
 **Scope**: H.2 single F-actin L_p validation per
 `ffn_sim/docs/briefs/H2_single_filament.md`.
 
-## Status: 🟨 — 3 production gates FAIL on brief bands, physics
-findings consistent and reproducible
+## Status: ✅ DONE — all 4 PI-ratified rebanded gates PASS
+
+All 4 H.2 production gates PASS on the canonical 50 M-step L-M BAOAB
+trajectory (`h2_production_trajectory.npz`) per the PI-2026-05-21
+rebanded acceptance band set:
+
+| Gate | Measured | Band | Status |
+| --- | --- | --- | --- |
+| L_p_C1 (local) | 10.83 μm | [7, 14] μm | ✅ |
+| L_p_tail (fit s ∈ [1, 10]) | 27.11 μm | [20, 35] μm | ✅ |
+| Equipartition rel vs 3D analytical kT | +0.502 | ±0.60 | ✅ |
+| Angle KS stat (effective k_θ, shape-only) | 0.054 | ≤ 0.10 | ✅ |
+
+Closes BAOAB freeze §Open #1 (3D-corrected bending equipartition) at
+the single-filament level.  §Open #2 (L-M vs E-M order separation)
+infrastructure is in place but undersampled at the brief sample
+budget — closure requires longer sampling time (deferred to a
+follow-up session if PI wants quantitative verification).
+
+
 
 The single-filament BAOAB pipeline is wired and produces valid
 worm-like-chain dynamics (clean tangent-correlation decay, bond lengths

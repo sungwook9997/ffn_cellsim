@@ -210,13 +210,30 @@ class TestH2Production:
 
     @pytest.fixture(scope="class")
     def production_trajectory(self):
+        """Load cached production trajectory if present, else run.
+
+        PI 2026-05-21: reusing the existing 50 M-step trajectory across
+        repeated test runs saves ~1h 17m wall per re-run after a gate
+        rebanding (the trajectory itself is integrator-output, not
+        gate-dependent).  Set ``H2_FORCE_REGENERATE=1`` to force a
+        fresh run.
+        """
         p = _load_resolved()
+        cache = OUTPUTS_DIR / "h2_production_trajectory.npz"
+        if cache.exists() and os.environ.get("H2_FORCE_REGENERATE", "") != "1":
+            d = np.load(cache)
+            result = {
+                "positions": d["positions"],
+                "frame_steps": d.get("frame_steps"),
+                "wall_s": float(d.get("wall_s", 0.0)),
+            }
+            return result, p
         t0 = time.time()
         result = run_h2_and_sample(p)
         elapsed = time.time() - t0
         OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
         np.savez(
-            OUTPUTS_DIR / "h2_production_trajectory.npz",
+            cache,
             positions=result["positions"],
             frame_steps=result["frame_steps"],
             wall_s=elapsed,
