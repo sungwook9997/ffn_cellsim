@@ -793,6 +793,32 @@ def _point_dipole_stress_decay(
     )
 
 
+def _ku130_3_one_seed(seed: int, config_path: Path) -> dict:
+    """Top-level (picklable) worker for parallel KU-1.30 #3 ensemble.
+
+    Each subprocess loads its own copy of the yaml, builds a fresh
+    Mikado with the given seed, runs paired-baseline + cos(2θ)
+    angular bond-virial measurement, returns a dict (also picklable).
+    """
+    with open(config_path) as f:
+        cfg = yaml.safe_load(f)
+    p = resolve_derived(cfg)
+    p_i = replace(p, seed=seed)
+    r = _point_dipole_stress_decay(
+        p_i,
+        n_softstart=100, n_baoab=900, n_after_dipole=2000,
+        n_time_avg_samples=5, time_avg_spacing=200,
+        paired_baseline=True,
+        angular_weighting=True,
+    )
+    return {
+        "seed": seed,
+        "bin_centers_m": r.bin_centers_m,
+        "sigma_radial_pa": r.sigma_radial_pa,
+        "fit_exponent": r.fit_exponent,
+    }
+
+
 class TestKU130_3_PointDipole:
     """KU-1.30 #3: stress decay σ(r) ∝ 1/r² (β ≈ -2)."""
 
@@ -858,22 +884,31 @@ class TestKU130_3_PointDipole:
         n_seeds = 20
         kb_gap_lo = p.biological_mesh       # ξ
         kb_gap_hi = p.persistence_length    # ℓ_p
-        per_seed_sigma = []
-        per_seed_slope = []
-        bin_centers = None
-        for i in range(n_seeds):
-            p_i = replace(p, seed=p.seed + i)
-            r_i = _point_dipole_stress_decay(
-                p_i,
-                n_softstart=100, n_baoab=900, n_after_dipole=2000,
-                n_time_avg_samples=5, time_avg_spacing=200,
-                paired_baseline=True,
-                angular_weighting=True,
+
+        # v8 (autonomous /loop iteration 14, PI 2026-05-21 nudge on
+        # multi-thread utilisation): use multiprocessing.Pool to run
+        # the 20 independent seeds in parallel across M1 Max cores.
+        # Each seed is fully independent (separate Mikado, separate
+        # paired sims), so ensemble averaging is trivially parallel.
+        # Falls back to sequential if H1_KU130_SERIAL=1 is set.
+        if os.environ.get("H1_KU130_SERIAL", "") == "1":
+            results = []
+            for i in range(n_seeds):
+                results.append(
+                    _ku130_3_one_seed(p.seed + i, CONFIG_PATH)
+                )
+        else:
+            from ffn_sim.scripts.parallel_ensemble import run_seed_pool
+            results = run_seed_pool(
+                _ku130_3_one_seed,
+                seeds=[p.seed + i for i in range(n_seeds)],
+                extra_args=(CONFIG_PATH,),
+                n_workers=None,   # auto: min(n_seeds, cpu-2, 8)
             )
-            per_seed_sigma.append(r_i.sigma_radial_pa)
-            per_seed_slope.append(r_i.fit_exponent)
-            if bin_centers is None:
-                bin_centers = r_i.bin_centers_m
+
+        per_seed_sigma = [r["sigma_radial_pa"] for r in results]
+        per_seed_slope = [r["fit_exponent"] for r in results]
+        bin_centers = results[0]["bin_centers_m"]
 
         sigma_stack = np.stack(per_seed_sigma, axis=0)
         sigma_avg = np.mean(sigma_stack, axis=0)

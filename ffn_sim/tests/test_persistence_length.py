@@ -333,6 +333,16 @@ class TestH2Production:
 # BAOAB §Open #2 carry-over: L-M vs E-M reference-integrator
 # order-separation gate
 # ---------------------------------------------------------------------------
+def _lm_em_one_branch(branch_idx: int, specs: list) -> dict:
+    """Top-level (picklable) worker for L-M vs E-M parallel branches."""
+    integrator, n_eq, n_smp, si = specs[branch_idx]
+    p = _load_resolved()
+    return run_h2_and_sample(
+        p, n_equilibrate=n_eq, n_sample=n_smp,
+        sample_interval=si, integrator=integrator,
+    )
+
+
 @pytest.mark.skipif(
     os.environ.get("H2_REFERENCE_INTEGRATOR", "") != "1",
     reason="L-M vs E-M reference comparison; opt-in via "
@@ -369,14 +379,32 @@ class TestLMvsEM:
         si_lm = p.sample_interval
         si_em = int(round(si_lm / p.reference_integrator_dt_factor))
 
-        result_lm = run_h2_and_sample(
-            p, n_equilibrate=n_eq_lm, n_sample=n_smp_lm,
-            sample_interval=si_lm, integrator="lm_baoab",
-        )
-        result_em = run_h2_and_sample(
-            p, n_equilibrate=n_eq_em, n_sample=n_smp_em,
-            sample_interval=si_em, integrator="hoomd_brownian",
-        )
+        # PI 2026-05-21 nudge: L-M and E-M are independent runs, so
+        # launch both in parallel via multiprocessing.Pool.  Saves ~1/2
+        # wall time vs sequential.  Set H2_REFERENCE_SERIAL=1 to force
+        # sequential (e.g. for memory-constrained machines).
+        if os.environ.get("H2_REFERENCE_SERIAL", "") == "1":
+            result_lm = run_h2_and_sample(
+                p, n_equilibrate=n_eq_lm, n_sample=n_smp_lm,
+                sample_interval=si_lm, integrator="lm_baoab",
+            )
+            result_em = run_h2_and_sample(
+                p, n_equilibrate=n_eq_em, n_sample=n_smp_em,
+                sample_interval=si_em, integrator="hoomd_brownian",
+            )
+        else:
+            from ffn_sim.scripts.parallel_ensemble import run_seed_pool
+            specs = [
+                ("lm_baoab", n_eq_lm, n_smp_lm, si_lm),
+                ("hoomd_brownian", n_eq_em, n_smp_em, si_em),
+            ]
+            outputs = run_seed_pool(
+                _lm_em_one_branch,
+                seeds=[0, 1],   # used only to dispatch by index
+                extra_args=(specs,),
+                n_workers=2,
+            )
+            result_lm, result_em = outputs[0], outputs[1]
 
         from ffn_sim.common.filament_math import fit_persistence_length
         pos_lm = result_lm["positions"].reshape(-1, p.beads_per_fiber, 3)
