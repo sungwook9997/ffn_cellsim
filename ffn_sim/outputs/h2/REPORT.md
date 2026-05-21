@@ -7,24 +7,83 @@ finding commit)
 **Scope**: H.2 single F-actin L_p validation per
 `ffn_sim/docs/briefs/H2_single_filament.md`.
 
-## Status: ✅ DONE — all 4 PI-ratified rebanded gates PASS
+## Status: 🟨 infrastructure done, gate verdict **provisional** (PI 2026-05-21)
 
-All 4 H.2 production gates PASS on the canonical 50 M-step L-M BAOAB
-trajectory (`h2_production_trajectory.npz`) per the PI-2026-05-21
-rebanded acceptance band set:
+H.2 verdict downgraded from ✅ to 🟨 on PI honest-audit response:
+the 4 PI-rebanded acceptance bands are anchored on the MEASURED
+trajectory values (D4 framework precedent from H.1 Day-4/5
+rebandings), NOT on first-principles derivation of expected L_p /
+equipartition / KS-stat magnitudes.  Strict CLAUDE.md "Magic-Number
+Block test 3 — not chosen to make a gate pass" reading flags this
+as borderline.  The bands pass all 4 measurements **by construction**,
+so the "PASS" verdict is provisional pending strict ratification.
 
-| Gate | Measured | Band | Status |
+### What IS strictly trustworthy (use freely downstream)
+
+Simulation infrastructure has been audited and verified end-to-end:
+
+- **BAOAB Updater** — D3 canonical L-M, PI-approved freeze + int32
+  guard, tag-indexed `prv_rnds` gather/scatter throughout, dt
+  sensitivity probe (1× / 0.1× / 0.01× dt) confirmed integrator
+  is NOT the source of the +50 % bending variance.
+- **HOOMD `bonds.group` tag-row mismatch bug** discovered + fixed
+  in `_bond_virial_per_bond` (H.1 #3) and `run_h2_and_sample` (H.2);
+  full cpu_local_snapshot caller audit complete (single bug + single
+  fix area).
+- **`filament_math.py`** §1-6 Sanity Gate written before execution;
+  C(s), L_p fit, hoomd_angle_array, bending_energy_per_bond,
+  equipartition_check, boltzmann_angle_density_{2d,3d} all match
+  first-principles derivations.
+- **Lees-Edwards MI wrap** in filament_math = BAOAB Action wrap.
+- **HOOMD-native Brownian reference integrator path** functional
+  (BAOAB §Open #2 closure infrastructure landed).
+- Bond lengths physically correct (0.5 ± 3-10 nm after equilibration),
+  C(s) shows monotone WLC-like decay, ⟨E⟩ + C(1) measurements
+  cross-check via WLC identity 2·ℓ_0/L_p.
+
+**Downstream H.3 (cortex multi-filament) / H.5 (lamellipodium) / H.7
+(single cell) units can safely import and build on the H.2 simulation
+infrastructure**: their dependency is on the BAOAB+filament_math
+plumbing being correct, not on the H.2 ratification verdict.
+
+### What is provisional (needs strict first-principles ratification)
+
+| Gate | Measured | Provisional band | Why provisional |
 | --- | --- | --- | --- |
-| L_p_C1 (local) | 10.83 μm | [7, 14] μm | ✅ |
-| L_p_tail (fit s ∈ [1, 10]) | 27.11 μm | [20, 35] μm | ✅ |
-| Equipartition rel vs 3D analytical kT | +0.502 | ±0.60 | ✅ |
-| Angle KS stat (effective k_θ, shape-only) | 0.054 | ≤ 0.10 | ✅ |
+| L_p_C1 (local) | 10.83 μm | [7, 14] μm | Band centred on measurement ±35 %, not first-principles derivation of expected L_p_C1 from continuum WLC + discrete N=21 finite-size correction. |
+| L_p_tail (fit s ∈ [1, 10]) | 27.11 μm | [20, 35] μm | Same pattern. |
+| Equipartition rel vs 3D kT | +0.502 | ±0.60 | Tolerance ±60 % chosen to cover both BAOAB freeze polymer −8.5 % and H.2 +50 % deviation envelope.  +50 % system-level deviation root-cause unidentified (μ-coupling? HOOMD impl?). |
+| KS shape stat (effective k_θ) | 0.054 | ≤ 0.10 | Threshold 0.10 is literature-standard for shape-match but specifically allows measured 0.054. |
 
-Closes BAOAB freeze §Open #1 (3D-corrected bending equipartition) at
-the single-filament level.  §Open #2 (L-M vs E-M order separation)
-infrastructure is in place but undersampled at the brief sample
-budget — closure requires longer sampling time (deferred to a
-follow-up session if PI wants quantitative verification).
+### Strict-PASS follow-up (recommended next session, ~1 session)
+
+1. **L_p band first-principles derivation**: continuum WLC C(s) =
+   exp(−s ℓ_0 / L_p) at L_p = 17 μm, PLUS discrete N=21 finite-size
+   correction (e.g. Conti-MacKintosh sparse-network correction or
+   numerical small-N WLC expectation).  Use derived band, not
+   measurement-anchored.
+2. **+50 % equipartition deviation root-cause**:
+   (a) Re-run H.2 with brief's KU-1.2 collagen μ = 8.6 nN to test
+       AFINES-1.5 nN coupling hypothesis;
+   (b) HOOMD `md.angle.Harmonic` source audit for k-factor convention;
+   (c) Numerical 3D ⟨E⟩ at exact α = 16.4 (vs Rayleigh approximation
+       at α → ∞).
+3. **KS test metric**: replace KS-stat threshold with derivation-
+   based metric (e.g. Kullback-Leibler divergence threshold from
+   information-theoretic bound, or χ² fit to 3D Boltzmann shape with
+   well-defined critical value).
+
+After follow-up, H.2 transitions 🟨 → ✅ strict.
+
+### BAOAB freeze §Open carry-over status
+
+- **§Open #1 (3D-corrected bending equipartition)** — infrastructure
+  landed (3D Rayleigh limit kT target, equipartition_check helper).
+  Verdict provisional pending #2 root-cause above.
+- **§Open #2 (L-M vs E-M order separation)** — infrastructure landed
+  (parallel runner + matched-sim-time test).  v2 result both branches
+  undersampled at brief sample budget (~1 τ_filament); closure needs
+  longer sampling or C(1)-based estimator.
 
 
 
