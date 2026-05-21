@@ -1,0 +1,103 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: /Users/sw1/ffn_cellsim
+configfile: pyproject.toml
+collected 3 items
+
+ffn_sim/tests/test_persistence_length.py FFF
+
+=================================== FAILURES ===================================
+____________________ TestH2Production.test_L_p_within_band _____________________
+
+self = <ffn_sim.tests.test_persistence_length.TestH2Production object at 0x101e40cd0>
+production_trajectory = ({'frame_steps': array([  150000,   200000,   250000,   300000,   350000,   400000,
+         450000,   500000,   55000...59745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None))
+
+    def test_L_p_within_band(self, production_trajectory):
+        result, p = production_trajectory
+        pos_all = result["positions"].reshape(-1, p.beads_per_fiber, 3)
+        fit = fit_persistence_length(pos_all, rest_length=p.rest_length, box=None)
+        lo, hi = p.L_p_band_m
+>       assert lo <= fit.L_p_m <= hi, (
+            f"L_p = {fit.L_p_m:.3e} m outside band [{lo:.3e}, {hi:.3e}] "
+            f"(stderr {fit.L_p_stderr_m:.3e} m). Surface to PI per "
+            f"CLAUDE.md no-gate-loosening."
+        )
+E       AssertionError: L_p = 2.711e-05 m outside band [1.530e-05, 1.870e-05] (stderr 6.589e-07 m). Surface to PI per CLAUDE.md no-gate-loosening.
+E       assert 2.7112390503825267e-05 <= 1.87e-05
+E        +  where 2.7112390503825267e-05 = PersistenceLengthFit(L_p_m=2.7112390503825267e-05, L_p_stderr_m=6.588786178263303e-07, s_bonds=array([ 1.,  2.,  3.,  ..., 0.89754501,\n       0.88021574, 0.86394158, 0.84652414, 0.82936426, 0.81271343]), log_slope_inv_m=-36883.505342655444).L_p_m
+
+ffn_sim/tests/test_persistence_length.py:231: AssertionError
+________________ TestH2Production.test_equipartition_within_tol ________________
+
+self = <ffn_sim.tests.test_persistence_length.TestH2Production object at 0x10bf73250>
+production_trajectory = ({'frame_steps': array([  150000,   200000,   250000,   300000,   350000,   400000,
+         450000,   500000,   55000...59745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None))
+
+    def test_equipartition_within_tol(self, production_trajectory):
+        result, p = production_trajectory
+        pos_all = result["positions"]  # (n_frames, 1, N, 3)
+        energies = []
+        for frame in pos_all:
+            E = bending_energy_per_bond(
+                frame, angle_k=p.angle_k, angle_t0=p.angle_t0, box=None
+            )
+            energies.append(E)
+        eq = equipartition_check(energies, kT_J=p.kT)
+>       assert abs(eq.relative_deviation) <= p.equipartition_rel_tol, (
+            f"Equipartition rel = {eq.relative_deviation:.3f} exceeds tol "
+            f"{p.equipartition_rel_tol}. ⟨E⟩={eq.mean_J:.3e} J vs kT/2="
+            f"{eq.kT_over_2_J:.3e} J."
+        )
+E       AssertionError: Equipartition rel = 2.003 exceeds tol 0.05. ⟨E⟩=6.427e-21 J vs kT/2=2.140e-21 J.
+E       assert 2.0031981186130148 <= 0.05
+E        +  where 2.0031981186130148 = abs(2.0031981186130148)
+E        +    where 2.0031981186130148 = EquipartitionResult(energy_per_bond_J=array([7.17499903e-22, 3.88349216e-21, 6.97327748e-21, ...,\n       1.34737049e-2...27132e-21], shape=(19000,)), mean_J=6.426843973831851e-21, kT_over_2_J=2.14e-21, relative_deviation=2.0031981186130148).relative_deviation
+E        +  and   0.05 = ResolvedH2(L_fiber=1e-05, bead_radius=3e-08, persistence_length=1.7e-05, bending_modulus=7e-26, stretching_modulus=1.5...559745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None).equipartition_rel_tol
+
+ffn_sim/tests/test_persistence_length.py:247: AssertionError
+________________ TestH2Production.test_angle_distribution_ks_3d ________________
+
+self = <ffn_sim.tests.test_persistence_length.TestH2Production object at 0x10bfee780>
+production_trajectory = ({'frame_steps': array([  150000,   200000,   250000,   300000,   350000,   400000,
+         450000,   500000,   55000...59745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None))
+
+    def test_angle_distribution_ks_3d(self, production_trajectory):
+        from scipy import stats
+        result, p = production_trajectory
+        pos_all = result["positions"]
+        theta_samples = []
+        for frame in pos_all:
+            theta = hoomd_angle_array(frame, box=None)
+            theta_samples.append(theta.ravel())
+        theta_all = np.concatenate(theta_samples)
+        # Reference 3D solid-angle Boltzmann CDF.
+        grid = np.linspace(
+            theta_all.min(), theta_all.max(), 4001, dtype=np.float64
+        )
+        density = boltzmann_angle_density_3d(
+            grid, bending_modulus=p.bending_modulus,
+            rest_length=p.rest_length, kT=p.kT,
+        )
+        cdf_vals = np.cumsum(density)
+        cdf_vals /= cdf_vals[-1]
+        # Empirical CDF at grid points (interpolate).
+        def cdf_ref(x):
+            return np.interp(x, grid, cdf_vals)
+        ks_stat, p_value = stats.kstest(theta_all, cdf_ref)
+>       assert p_value > p.angle_ks_p_min, (
+            f"Angle distribution KS p = {p_value:.4f} < threshold "
+            f"{p.angle_ks_p_min} (ks_stat = {ks_stat:.4f}). 3D Boltzmann "
+            "form is the principled reference per BAOAB §Open #1; if "
+            "this fails, surface to PI."
+        )
+E       AssertionError: Angle distribution KS p = 0.0000 < threshold 0.05 (ks_stat = 0.1363). 3D Boltzmann form is the principled reference per BAOAB §Open #1; if this fails, surface to PI.
+E       assert np.float64(3.7166015030951394e-308) > 0.05
+E        +  where 0.05 = ResolvedH2(L_fiber=1e-05, bead_radius=3e-08, persistence_length=1.7e-05, bending_modulus=7e-26, stretching_modulus=1.5...559745e-07, tau_bend=0.0006980731076014152, tau_min=1.3030698008559745e-07, dt_cfl=1.3030698008559747e-08, extras=None).angle_ks_p_min
+
+ffn_sim/tests/test_persistence_length.py:276: AssertionError
+=========================== short test summary info ============================
+FAILED ffn_sim/tests/test_persistence_length.py::TestH2Production::test_L_p_within_band
+FAILED ffn_sim/tests/test_persistence_length.py::TestH2Production::test_equipartition_within_tol
+FAILED ffn_sim/tests/test_persistence_length.py::TestH2Production::test_angle_distribution_ks_3d
+======================== 3 failed in 4529.12s (1:15:29) ========================
