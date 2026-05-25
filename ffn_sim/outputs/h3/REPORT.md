@@ -598,3 +598,48 @@ ALL big-ticket items remain PI sign-off / dedicated session paths:
 5. **Variable-length L_p production sweep** `H3_VARIABLE_LENGTH_PRODUCTION=1` (multi-hour).
 
 H.3 implementation deliverables (cortex.py + crosslinkers.py + erm.py + myosin.py + cell/cell.py + build_cortex_full_simulation + variable-length + 10 figures + tests) **ALL LANDED**. Status H.3 🟨 → ✅ DONE ratification awaits the PI sign-off + dedicated production sessions above.
+
+---
+
+# H.3 — 단계 8 closeout (autonomous /loop: L_p MEDIUM sweep)
+
+**Branch**: `phase1/h3-cortex` (continuation; head commit updated below)
+**Session**: Main, 2026-05-25 (autonomous /loop wake)
+
+## 단계 8 deliverables landed
+
+| Item | Status |
+| --- | --- |
+| `H3_PRODUCTION_MEDIUM=1` gate added to `test_cortex.py::TestH3Production` fixture | ✅ |
+| L_p production test skipif extended to unblock under either MEDIUM or FULL env var | ✅ |
+| L_p MEDIUM sweep (500 filaments × 50 snapshots × 25k step interval = 1.25 M BAOAB steps, ~15 min wall) | (result below) |
+
+## L_p MEDIUM gate result
+
+**Scale**: 500 filaments × 5 interior beads × 50 snapshots = **125 000 angle/bond samples** per s.
+**Statistical reach**: σ_L_p ≈ L_p² / (√N_pairs · ℓ_max) ≈ 17² / (√125k · 1.5) μm ≈ **1.34 μm** — borderline at 1.3σ on the KU-1.1 ±10 % band [15.3, 18.7] μm.
+**Wall**: **28:00** on M1 Max CPU (≈2× the 15 min naïve extrapolation — same per-particle BAOAB Updater overhead pattern observed in 단계 2 smoke vs 단계 4 full ratio).
+
+**Result: 3/3 PASS** (`H3_PRODUCTION=1 H3_PRODUCTION_MEDIUM=1 pytest ffn_sim/tests/test_cortex.py::TestH3Production`):
+- `test_per_filament_L_p_in_KU11_band` ✅ PASS — L_p in [15.3, 18.7] μm (KU-1.1 ±10 %)
+- `test_3d_equipartition_strict` ✅ PASS — ⟨E_bend⟩ within ±5 % of 0.9898 kT
+- `test_3d_boltzmann_angle_KS` ✅ PASS — KS_stat ≤ 0.10
+
+This is the **strongest autonomous-loop signal** that the H.3 cortex correctly recovers KU-1.1 single-actin physics at the multi-filament scale. The H.2 strict-PASS bands carry through to H.3 — as predicted, since per-filament force constants (κ_B, μ, ℓ_0) are identical and the ×40 mesoscopic coarse-graining touches FILAMENT COUNT only.
+
+## Significance
+
+A MEDIUM PASS is **suggestive** that the production simulation correctly recovers KU-1.1 L_p at the H.3 cortex scale (cortex actin shell with random-tangent placement). It does NOT replace the FULL gate (4.7σ resolution required for the PI strict-PASS contract per the 단계 3 ERM CFL precedent — H.2 set the precedent of distinguishing interim from production-sign-off bands). The MEDIUM gate is autonomous-feasible (28 min wall); FULL (~91 min wall) needs a dedicated overnight session.
+
+3D equipartition and 3D Boltzmann KS gates run at MEDIUM scale too — both still PASS, now with ~3× tighter statistical reach than at smoke scale (already strict-PASS in 단계 2).
+
+**Decision per CLAUDE.md no-gate-loosening**: H.3 status remains **🟨 candidate-for-✅** until the FULL gate runs in a dedicated overnight session. The MEDIUM PASS is recorded as interim sign-off evidence, not as the production contract.
+
+## H.3 status assessment
+
+- **Implementation** (단계 1-7): ALL deliverables landed.
+- **Tests** (단계 1-7): 259 PASS / 15 SKIP / 0 FAIL Main scope.
+- **단계 8 production gate (L_p MEDIUM)**: borderline interim signal.
+- **Remaining for H.3 → ✅ DONE ratification**: ERM CFL PI decision · L_p FULL dedicated session · KU-3.x production runs · 3-way 60s production · variable-length L_p production. **None of these are autonomous-feasible in 25-min /loop iterations.**
+
+H.3 has reached the END of the autonomous /loop's productive scope. Further progress requires PI sign-off + dedicated long-running sessions.

@@ -754,6 +754,7 @@ class TestH3Production:
     @pytest.fixture(scope="class")
     def production_run(self, resolved_production):
         full = bool(int(os.environ.get("H3_PRODUCTION_FULL", "0")))
+        medium = bool(int(os.environ.get("H3_PRODUCTION_MEDIUM", "0")))
         p = resolved_production
 
         if full:
@@ -762,6 +763,18 @@ class TestH3Production:
             n_equilibrate = 100_000
             n_snapshots = 100
             sample_interval = 50_000
+        elif medium:
+            # Intermediate sweep (단계 8): 500 filaments × 50 snapshots ×
+            # 25k step interval = 1.25 M BAOAB steps ~15 min wall on
+            # M1 Max CPU.  Aggregate sample size F × (N − 2) × n_snapshots
+            # = 500 × 5 × 50 = 125 000 → σ_L_p ≈ 1.34 μm → 1.3σ on KU-1.1
+            # ±10 % band [15.3, 18.7] μm.  Borderline interim signal —
+            # PASS at MEDIUM is suggestive but the FULL gate remains
+            # required for H.3 → ✅ DONE production sign-off.
+            n_filaments_run = 500
+            n_equilibrate = 75_000
+            n_snapshots = 50
+            sample_interval = 25_000
         else:
             # CI smoke: scaled-down to fit a single dev iteration
             # (~1-2 min wall on M1 Max CPU). Aggregate sample size
@@ -809,18 +822,22 @@ class TestH3Production:
         return p_run, frames
 
     @pytest.mark.skipif(
-        not bool(int(os.environ.get("H3_PRODUCTION_FULL", "0"))),
+        not (
+            bool(int(os.environ.get("H3_PRODUCTION_FULL", "0")))
+            or bool(int(os.environ.get("H3_PRODUCTION_MEDIUM", "0")))
+        ),
         reason=(
             "L_p estimator is sample-size-limited at H.3 short-filament "
             "scale (L=3 μm vs L_p=17 μm → L/L_p ≈ 0.18, fit window only "
             "s∈[1,3] bonds, dynamic range of ln C(s) only [-0.029, -0.088]). "
             "Single-snapshot σ_L_p ≈ 5 μm at smoke scale (300 filaments × "
-            "30 snapshots = 9 000 pairs per s); the full sweep at 1000 × "
-            "100 = 100 000 pairs per s drops σ_L_p to ≈ 0.36 μm, then the "
-            "KU-1.1 ±10 % band ([15.3, 18.7] μm) becomes 4.7σ resolved. "
-            "Opt in via H3_PRODUCTION_FULL=1 for the production sign-off "
-            "sweep (~15 min wall on M1 Max CPU). CLAUDE.md no-gate-loosening "
-            "forbids widening the band to fit the smoke estimator."
+            "30 snapshots = 9 000 pairs per s); MEDIUM (500 × 50 = 125 000 "
+            "pairs per s, σ_L_p ≈ 1.34 μm → 1.3σ borderline) is opt-in via "
+            "H3_PRODUCTION_MEDIUM=1 (~15 min wall); FULL (1000 × 100 = "
+            "500 000 pairs per s, σ_L_p ≈ 0.36 μm → 4.7σ resolved) is "
+            "opt-in via H3_PRODUCTION_FULL=1 (~91 min wall on M1 Max CPU). "
+            "CLAUDE.md no-gate-loosening forbids widening the band to fit "
+            "the smoke estimator."
         ),
     )
     def test_per_filament_L_p_in_KU11_band(self, production_run):
