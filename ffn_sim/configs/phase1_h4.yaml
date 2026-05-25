@@ -1,0 +1,197 @@
+# Phase 1 — Unit H.4 FA + motor-clutch (HOOMD runtime) defaults.
+#
+# All values SI (m, s, J, N, K). Every parameter is either KU-anchored
+# literature (Bangasser 2013 / Stam-Hocky 2024 / Kovács 2003 NMII / Tan
+# 2020 FA growth / Stricker 2013 FA size), a Phase 0.3 D-decision
+# override (D2/D5/D6/D7), or a numerical-policy choice (cfl_safety,
+# demo_mode). No empirical magic numbers.
+#
+# Brief: ffn_sim/docs/briefs/H4_fa_motor_clutch.md
+# Owner: Sub Session (file-ownership table: bridge/ + configs/phase1_h4.yaml)
+#
+# Magic-Number Block check (CLAUDE.md hard rule): every key here is either
+# KU-anchored, a D-decision override, a literature reference, or a
+# numerical-policy choice. All resolved derived values live under
+# ``derived:`` and are filled by ``ffn_sim.bridge.fa.resolve_h4``.
+
+bridge:
+
+  # ---- Primary biological scales (shared with H.1; included for self-
+  #      containment — the FA + motor-clutch sim can run standalone with
+  #      a synthetic substrate, no H.1 ECM required) ----
+  temperature: 310.0           # K   37 °C
+  kT: 4.28e-21                 # J   k_B · T at 310 K, KU-1.1
+  water_viscosity: 6.913e-4    # Pa·s  η_water at 310 K (NIST), KU-1.26
+
+  seed: 42
+
+  # ---- FA topology (H.4 brief §FA topology, KU-2.4 / KU-2.18) ----
+  fa:
+    # Per-cell counts (brief: 20–50 nascent FAs + 5–10 mature). H.4
+    # single-cell isolation tests run with one cell's worth of FAs.
+    n_nascent_per_cell: 35       # midpoint of 20–50, KU-2.4
+    n_mature_per_cell: 8         # midpoint of 5–10, KU-2.4
+    # Per-FA integrin count at construction.
+    n_total_per_fa: 50           # N_total, KU-2.18 (Bangasser 2013)
+    # FA areal extent (used for substrate ligand sampling + FA growth
+    # area↔clutch-count mapping).
+    A_nascent: 1.0e-12           # m²  1 μm² nascent FA, KU-2.2 / KU-2.18
+    A_mature: 4.0e-12            # m²  ~4 μm² mature FA, KU-2.2 reference
+    # Integrin out-of-plane offset above the substrate ligand plane.
+    # Smaller than R_FA capture radius so binding is geometrically
+    # possible at construction. 50 nm = collagen fibril radius scale.
+    h_integrin_above_substrate: 5.0e-8   # m, KU-1.2 scale
+    # FA centre placement: scatter across the H.4 single-cell box face.
+    # Box defaults to a cube of L_box; FAs land on the z=h plane.
+    L_box: 20.0e-6               # m   single-cell box side (20 μm),
+                                 # bracketed between H.3 cortex radius
+                                 # (~10 μm) and lamellipodium extent
+    # Capture radius for integrin → ligand binding (brief §Integrin
+    # off-rate: R_FA = 1.5 μm Plan H.4).
+    capture_radius_R_FA: 1.5e-6  # m, Plan H.4
+
+  # ---- Integrin clutch — bare + vinculin-allosteric stiffness (KU-2.7) ----
+  integrin:
+    k_int_bare: 1.0e-3           # N/m  1 pN/nm, KU-2.7 baseline
+    r0: 0.0                      # m   idealised attachment (brief)
+    # KU-2.7 vinculin allostery: k_int^eff = k_int^bare · (1 + α·N_vin).
+    # α from KU-2.7 (Carisey 2013 reinforcement-factor estimate).
+    # Phase 1 H.4 week-1 disables vinculin (N_vin held at 0); the
+    # ``vinculin.enabled`` flag below toggles the allosteric coupling.
+    alpha_vin: 0.05              # 1/molecule, KU-2.7 (5% per vinculin)
+
+  vinculin:
+    enabled: false               # turn on for KU-2.7 maturation tests
+    k_rec: 0.1                   # s⁻¹  recruitment (KU-2.7 — Carisey 2013 timescale)
+    k_unbind: 0.01               # s⁻¹  unbinding (k_rec/k_unbind = N_vin^max steady-state)
+    N_vin_max: 30                # molecules per mature FA, KU-2.7
+
+  # ---- Talin Bell-Evans unfold (KU-2.6) ----
+  talin:
+    enabled: false               # H.4 week-1 disable; toggle on at week-2
+    k_0: 5.0e-4                  # s⁻¹  zero-force unfold rate, KU-2.6 (Yao 2016)
+    x_beta: 3.0e-10              # m    transition-state distance (0.3 nm, KU-2.6)
+    n_domains: 13                # R1..R13 talin rod domains, KU-2.6
+
+  # ---- Catch-slip bond — D2 Pereverzev two-pathway (KU-2.5 / KU-2.18) ----
+  # ``ffn_sim.validation.pereverzev.PereverzevParams.from_config`` reads
+  # this block. KU-2.18 illustrative defaults; F* analytic ≈ 6.99 pN,
+  # KU-2.5 experimental F* ≈ 30 pN — refit deferred to Phase 2 per D2.
+  catch_bond:
+    k_off_slip: 0.5              # s⁻¹  k_s, KU-2.18
+    F_s: 30.0e-12                # N    slip characteristic force, KU-2.18
+    k_off_catch: 0.4             # s⁻¹  k_c, KU-2.18
+    F_c: 7.0e-12                 # N    catch characteristic force, KU-2.18
+    # On-rate (brief §Integrin off-rate: k_on = 1 s⁻¹ per Δt_batch).
+    k_on: 1.0                    # s⁻¹
+
+  # ---- D5 Stam-Hocky bipolar minifilament (PHASE_0_3_DECISIONS) ----
+  # Mechanistic Stam-Hocky 2024 / Hocky-group convention. NOT AFINES
+  # single 2-head spring (gate_minifilament_topology.bipolar_two_sides
+  # would FAIL if this regressed). Shared with cortex/myosin.py via
+  # ``ffn_sim.bridge.motor`` module.
+  motor:
+    n_backbone_beads: 14         # D5 Stam-Hocky rigid rod ~14 beads
+    n_heads_per_side: 10         # D5 Hocky-group convention
+    backbone_length: 7.0e-7      # m   700 nm thick filament, D5
+    head_rest_length: 2.0e-7     # m   head ↔ backbone perpendicular r0, D5
+    head_spring_k: 1.0e-3        # N/m  AFINES motor stiffness (preserved
+                                 # — see gate_minifilament_topology.cross_bridge_spring_stiffness)
+    # D6 Hill force-velocity (NOT AFINES piecewise-linear stall).
+    # v(F) = v0 · (F_s − F) / (F_s + F/a), Hill 1938 with Kovács 2003 NMII tuning.
+    v0_per_head: 1.0e-6          # m/s  v0 = 1 μm/s unloaded, D6
+    F_stall_per_head: 5.0e-13    # N    F_s = 0.5 pN per head, D6 (Kovács 2003 NMII)
+    a_over_F_stall: 0.5          # —    a/F_s = 0.5, D6 (Kovács 2003 NMII)
+    # Per-FA motor count (brief: N_motors small ∼ 50 per FA).
+    n_motors_per_fa: 5           # bipolar minifilaments per FA (each ~34 beads ~ 170 particles)
+
+  # ---- FA growth — emergent from clutch population (brief §FA growth) ----
+  # NO Hill wrapper at runtime: ``fa.size`` is a direct count of bonded
+  # integrins. The KU-2.17 Hill form k_g(F) = k_g0 · F^n / (F^n + F_th^n)
+  # is invoked ONLY in tests/validation/test_ku217_fa_growth.py as the
+  # oracle the emergent dynamics are compared against.
+  fa_growth:
+    # KU-2.17 (Tan 2020 / Stricker 2013) closed-form oracle parameters.
+    # Used only by the validation test, not by the runtime updater.
+    F_th_per_FA: 5.0e-11         # N   50 pN per-FA threshold, KU-2.17
+    N_engaged_at_threshold: 10   # KU-2.17 expectation at F_th
+    Hill_n: 2.0                  # Hill coefficient (KU-2.17, n ≈ 2–4)
+    k_g0: 0.1                    # s⁻¹  saturating growth rate, KU-2.17
+    k_d: 0.05                    # s⁻¹  decay rate, KU-2.17
+
+  # ---- D7 Excluded volume (PHASE_0_3_DECISIONS) ----
+  # WCA repulsive between integrin × ligand, integrin × actin_ecm
+  # (when H.1 ECM is coupled in week 3), integrin × motor head.
+  # σ taken as the integrin "radius" 5 nm (KU-2.7 stalk scale).
+  excluded_volume:
+    enabled: true
+    integrin_radius: 5.0e-9      # m, integrin stalk
+    ligand_radius: 5.0e-9        # m, paired with integrin contact
+    epsilon_kT: 0.5              # ε = 0.5 kT, D7 standard soft repulsion
+    # WCA r_cut/σ = 2^(1/6) is a math convention; resolved at run time
+    # to avoid yaml-truncation precision loss.
+
+  # ---- D3 Integration (PHASE_0_3_DECISIONS, shared with H.1/H.2/H.3) ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab    # D3 Phase 1 canonical
+    cfl_safety_factor: 0.1                   # dt = α · τ_min, Leimkuhler-Matthews
+    # D2 batched updater spec (gate_bell_evans_batch_cfl):
+    # batch_steps · Δt · k_off_max ≲ 10⁻³.
+    # With k_off_max ≈ max(k_s·exp(F_high/F_s), k_c) ≈ 0.5·exp(60/30) + 0.4
+    # ≈ 0.5·7.39 + 0.4 ≈ 4.1 s⁻¹ at F = 60 pN.
+    integrin_batch_steps: 100                # standard D2 batch cadence
+
+  # ---- Sanity Gate acceptance ranges (KU-2.x; H.4 brief §Validation) ----
+  acceptance:
+    # KU-2.12 per-clutch force band. Phase 1 H.4 with vinculin/talin
+    # disabled is in the nascent-FA regime; the mature-FA 5–20 pN band
+    # is logged as info (matches phase1_unit2_1.yaml convention).
+    clutch_force_band_pN: [1.0, 8.0]
+    clutch_force_band_mass: 0.55
+    ku_2_12_mature_band_pN: [5.0, 20.0]
+    # KU-2.5 catch peak: rel-err vs analytic F* (≈ 6.99 pN with KU-2.18).
+    catch_peak_tolerance: 0.20
+    # KU-2.4 biphasic verdict (matches v1 Worker B 0.34 % prominence
+    # saturating verdict ± 0.1 %).
+    biphasic_verdict: saturating
+    biphasic_prominence_target: 0.0034       # v1 Worker B
+    biphasic_prominence_tolerance: 0.001     # ± 0.1 %
+    # KU-2.17 FA growth threshold (gate_unit2_2_fa_growth defaults).
+    F_th_per_FA_pN: 50.0
+    F_th_rel_tolerance: 0.20
+    N_engaged_target: 10.0
+    N_engaged_rel_tolerance: 0.30
+    # Pereverzev oracle gate force grid (brief: ± 5 % across F ∈ [0, 60] pN).
+    pereverzev_grid_pN: [1.0, 5.0, 7.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+    pereverzev_rel_tolerance: 0.05           # H.4 brief
+    # Hill F-V oracle gate force grid (brief: ± 5 % across F ∈ [0, F_s]).
+    hill_rel_tolerance: 0.05                 # H.4 brief
+    # Cost budget (Plan v2 §11, gate_bead_budget_per_cell — H.4 FA
+    # contribution to the per-cell envelope). 35 nascent + 8 mature FAs
+    # × (50 integrins + 5 motors × ~34 particles) ≈ 43 × (50 + 170)
+    # ≈ 9460 beads per cell — leaves ~5.5 k for cortex + ECM tail.
+    h4_per_cell_bead_budget_cap: 10000
+
+  # Demo mode opt-out for short / smoke runs. REPORT.md flags demo_mode.
+  demo_mode: false
+
+  # ---- Derived parameters (filled by resolve_h4; do NOT edit by hand) ----
+  derived:
+    # Integrin Stokes drag: γ_int = 6π η R_int (KU-1.26).
+    gamma_integrin: null         # [N·s/m]
+    gamma_ligand: null           # [N·s/m]
+    # Bond-event-rate CFL: dt < α / max(k_on, k_off(F at high-end))
+    bond_event_rate_max: null    # [s⁻¹]
+    cfl_safe_dt: null            # [s]   = α · 1/bond_event_rate_max
+    dt_cfl: null                 # [s]   final integrator timestep
+    # Pereverzev analytic landmarks.
+    catch_peak_force: null       # F* analytic, [N]
+    catch_peak_lifetime: null    # τ(F*), [s]
+    # D7 LJ derived.
+    lj_epsilon: null             # [J]   = epsilon_kT · kT
+    lj_sigma: null               # [m]   = integrin_radius + ligand_radius
+    lj_r_cut: null               # [m]   = 2^(1/6) · σ
+    # D5 motor totals (per FA).
+    n_particles_per_minifilament: null   # = n_backbone_beads + 2 · n_heads_per_side
+    # Per-FA cost.
+    n_particles_per_fa: null     # = n_total_per_fa + n_motors_per_fa · particles_per_minifilament
