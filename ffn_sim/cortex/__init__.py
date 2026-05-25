@@ -35,8 +35,18 @@ from ffn_sim.cortex.crosslinkers import (
     xlink_attach_bin_names,
     xlink_attach_bin_rest_lengths,
 )
+from ffn_sim.cortex.erm import (
+    ERMHarmonic,
+    ResolvedERM,
+    attach_erm_to_simulation,
+    resolve_erm,
+)
 
 __all__ = [
+    "ERMHarmonic",
+    "ResolvedERM",
+    "attach_erm_to_simulation",
+    "resolve_erm",
     "CortexTopology",
     "CrosslinkerBonds",
     "ResolvedCrosslinkers",

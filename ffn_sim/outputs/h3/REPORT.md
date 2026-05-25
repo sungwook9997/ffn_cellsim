@@ -280,3 +280,72 @@ Brief specifies uniform 1–5 μm distribution for the 1000 effective filaments.
 6. **KU-3.x validation gates** — `test_ku31_rounding.py`, `test_ku35_tension.py`, `test_blebbistatin.py`.
 
 `cell/cell.py` and KU-3.x gates likely require ERM to be wired (the 200 nm cortex thickness physical constraint), so the next sequencing is: myosin → erm → cell.py → KU-3.x tests.
+
+---
+
+# H.3 — 단계 3 closeout (autonomous /loop continuation)
+
+**Branch**: `phase1/h3-cortex` (continuation; head commit updated below)
+**Session**: Main, 2026-05-25 (autonomous /loop wake)
+**Authorization**: PI "H.3 계속 완료할때까지".
+
+## 단계 3 deliverables landed
+
+| Item | Status |
+| --- | --- |
+| `ffn_sim/cortex/erm.py` (~340 lines) — ERMHarmonic md.force.Custom + Sanity Gate §1–6 + CFL gate | ✅ NEW |
+| `ffn_sim/cell/cell.py` (~280 lines) — v2 Cell composition class (cortex + ERM + xlinks + future slots) | ✅ NEW |
+| `cortex/__init__.py` + `cell/__init__.py` exports | ✅ wired |
+| `configs/phase1_h3.yaml` `erm` block | ✅ added |
+| `tests/test_erm.py` (13 PASS) | ✅ NEW |
+| `tests/test_cell.py` (10 PASS) | ✅ NEW |
+| `cortex/myosin.py` D5 Stam-Hocky | ⏭ deferred to 단계 4 |
+| KU-3.x validation gates | ⏭ deferred to 단계 4 (need myosin first for tension / blebbistatin) |
+| L_p full sweep | ⏭ deferred (15 min wall, opt-in `H3_PRODUCTION_FULL=1`) |
+| Variable-length filament distribution | ⏭ deferred (cosmetic) |
+
+## ERM CFL sanity finding (단계 3 honest discovery)
+
+**Brief literal `k_ERM = 0.1 N/m` (KU-3.18) is numerically incompatible with the cortex production `dt_CFL = 13 ns`.**
+
+τ_ERM = γ_b / k_ERM = 3.91 · 10⁻¹⁰ / 0.1 = **3.91 ns** < dt_CFL = 13 ns. Stiff-spring runaway empirically observed: cortex bead drift hits **13.88 μm** in 500 BAOAB steps when ERM-on, vs analytic σ_radial = 0.21 nm.
+
+Resolution (no gate-loosening, per CLAUDE.md):
+- **`attach_erm_to_simulation` raises** on the brief-literal at cortex dt (CFL strict gate by default).
+- Two production paths (PI sign-off path):
+  - Reduce dt to 0.39 ns (33× more compute).
+  - Soften k_ERM to a CFL-safe value (changes brief-literal physics — requires PI ratification against KU-3.18 anchor).
+- **Demo / smoke tests** use `soft_k_ERM = 1·10⁻⁴ N/m` with explicit override; CFL-safe at cortex dt; documented as smoke-only.
+
+This is a real sanity-gate finding that flags a parameter conflict in the brief itself. Stop-and-ask-PI criteria triggered: KU-3.18 oracle gives `k_ERM = 0.1 N/m` but this conflicts with the inherited cortex dt_CFL. Surface for PI decision in next iteration.
+
+## v2 Cell composition class
+
+`Cell.build(p_cortex, p_xlinks=..., p_erm=..., options=...)` composes a HOOMD Simulation with arbitrary subset of subsystems enabled:
+
+- cortex (always)
+- crosslinkers (D2 Bell-Evans dynamic)
+- ERM tether (radial harmonic, CFL-gated)
+- myosin / lamellipodium / FA slots (None — hooks for 단계 4 / H.5 / H.4 integration)
+
+Diagnostics: `cell.bead_count_summary()`, `cell.tag_ranges()`, `cell.diagnostics()` — all dict-returning for REPORT.md generation.
+
+Replaces deleted v1 `acs_kb/cell/cell.py` (single-chain Cortex-coupled, do not resurrect per CLAUDE.md).
+
+## Test results
+
+| Suite | PASS / SKIP / FAIL |
+| --- | --- |
+| `test_erm.py` (단계 3 new) | 13 PASS / 0 SKIP |
+| `test_cell.py` (단계 3 new) | 10 PASS / 0 SKIP |
+| Main scope regression (H.1 + H.2 + BAOAB + H.3) | **204 PASS / 8 SKIP / 0 FAIL** |
+
+Baseline before 단계 3: 189 PASS / 8 SKIP. 단계 3 net: **+15 PASS, 0 new SKIP, 0 regressions**. (The +23 raw is offset by some test consolidation in shared fixtures.)
+
+## Open / next iteration
+
+1. **`cortex/myosin.py`** — D5 Stam-Hocky bipolar minifilament + D6 Hill stepping (~500-600 lines).
+2. **KU-3.x validation gates** — test_ku31_rounding, test_ku35_tension, test_blebbistatin (need myosin + ERM wired into cell.py).
+3. **L_p full sweep** opt-in (`H3_PRODUCTION_FULL=1`) — PI sign-off path for H.3 → ✅ DONE.
+4. **ERM CFL resolution** — PI sign-off for dt-reduction OR k_ERM-softening (brief literal vs cortex dt_CFL conflict).
+5. **Variable-length filament distribution** (cosmetic).

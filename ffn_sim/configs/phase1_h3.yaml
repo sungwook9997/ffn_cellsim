@@ -125,6 +125,20 @@ cortex:
     n_bins: 10                 # per-r0 binning (mirrors H.1 cortex.py xl)
     seed: 43                   # offset from cortex.seed for RNG isolation
 
+  # ---- ERM tether (KU-3.18) — radial harmonic per cortex bead ----
+  # `cortex/erm.py` implements as md.force.Custom subclass.
+  # k_ERM = 0.1 N/m per brief literal (KU-3.18 anchor). At kT = 4.28 zJ,
+  # this gives σ_radial = √(kT/k_ERM) = 0.65 nm per bead — three orders
+  # of magnitude tighter than the 200 nm KU-3.17 cortex thickness, which
+  # is interpreted as the biological MEMBRANE depth (cortex bundle radius
+  # + lipid bilayer), not single-bead thermal extent. Rounding / tension
+  # gates probe the EMERGENT large-scale curvature, not per-bead radial
+  # distribution.
+  erm:
+    k_ERM: 0.1                 # N/m   per-bead radial spring (KU-3.18, brief literal)
+    # cell_center optional; defaults to box origin (0, 0, 0) — matches
+    # cortex.py topology generator which places the shell at the origin.
+
   # ---- Static crosslinkers (legacy 단계 1 mode, OPTIONAL; default OFF) ----
   # KU-3.19 specifies 30 % α-actinin (35 nm length, k = 0.1 pN/μm) and
   # 70 % filamin (150 nm length, k = 0.1 pN/μm). Brief §Crosslinkers
