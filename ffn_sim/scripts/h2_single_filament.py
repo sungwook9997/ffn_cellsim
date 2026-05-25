@@ -95,13 +95,16 @@ class ResolvedH2:
     sample_interval: int
 
     L_p_band_m: tuple[float, float]                  # brief literal (diagnostic)
-    L_p_band_m_C1: tuple[float, float]               # D4-anchored C(1)-based (PI 2026-05-21)
-    L_p_band_m_tail: tuple[float, float]             # D4-anchored fit-tail (PI 2026-05-21)
-    angle_ks_p_min: float                            # widened to 1e-6 per PI
-    angle_ks_stat_max: float                         # KS-statistic gate (PI 2026-05-21 iter-15)
+    L_p_band_m_C1: tuple[float, float]               # 3σ_empirical, single-seed gate (PI 2026-05-25)
+    L_p_band_m_C1_5sigma: tuple[float, float]        # 5σ analytical, ensemble gate (PI 2026-05-25)
+    L_p_band_m_tail: tuple[float, float]             # ±50 % chain-mode scatter (PI 2026-05-25)
+    angle_chi2_per_df_max: float                     # Pearson χ²/df critical 95 % (PI 2026-05-25)
+    angle_KL_nats_max: float                         # KL nats threshold 95 % (PI 2026-05-25)
+    angle_ks_p_min: float                            # diagnostic only
+    angle_ks_stat_max: float                         # diagnostic only
     equipartition_rel_tol: float                     # brief literal (diagnostic)
-    equipartition_target_3d_kT: float                # PI 2026-05-21 3D-corrected target (unit: kT)
-    equipartition_rel_tol_3d: float                  # PI 2026-05-21 widened tolerance
+    equipartition_target_3d_kT: float                # numerical 3D exact at α=16.4 (PI 2026-05-25)
+    equipartition_rel_tol_3d: float                  # ±5 % strict (PI 2026-05-25)
 
     reference_integrator_allow: bool
     reference_integrator_name: str
@@ -146,10 +149,19 @@ def resolve_h2_derived(cfg: dict) -> ResolvedH2:
         sample_interval=int(f["dynamics"]["sample_interval"]),
         L_p_band_m=tuple(f["acceptance"]["L_p_band_m"]),
         L_p_band_m_C1=tuple(
-            f["acceptance"].get("L_p_band_m_C1", [7.0e-6, 14.0e-6])
+            f["acceptance"].get("L_p_band_m_C1", [14.8e-6, 18.0e-6])
+        ),
+        L_p_band_m_C1_5sigma=tuple(
+            f["acceptance"].get("L_p_band_m_C1_5sigma", [15.81e-6, 17.07e-6])
         ),
         L_p_band_m_tail=tuple(
-            f["acceptance"].get("L_p_band_m_tail", [20.0e-6, 35.0e-6])
+            f["acceptance"].get("L_p_band_m_tail", [8.0e-6, 33.0e-6])
+        ),
+        angle_chi2_per_df_max=float(
+            f["acceptance"].get("angle_chi2_per_df_max", 1.354)
+        ),
+        angle_KL_nats_max=float(
+            f["acceptance"].get("angle_KL_nats_max", 1.94e-3)
         ),
         angle_ks_p_min=float(f["acceptance"]["angle_ks_p_min"]),
         angle_ks_stat_max=float(
@@ -157,10 +169,10 @@ def resolve_h2_derived(cfg: dict) -> ResolvedH2:
         ),
         equipartition_rel_tol=float(f["acceptance"]["equipartition_rel_tol"]),
         equipartition_target_3d_kT=float(
-            f["acceptance"].get("equipartition_target_3d_kT", 1.0)
+            f["acceptance"].get("equipartition_target_3d_kT", 0.9898)
         ),
         equipartition_rel_tol_3d=float(
-            f["acceptance"].get("equipartition_rel_tol_3d", 0.60)
+            f["acceptance"].get("equipartition_rel_tol_3d", 0.05)
         ),
         reference_integrator_allow=bool(f["reference_integrator"]["allow"]),
         reference_integrator_name=str(f["reference_integrator"]["name"]),

@@ -315,25 +315,19 @@ class TestH2Production:
             f"diagnostic only per PI 2026-05-21 rebanding."
         )
 
-    def test_angle_distribution_ks_3d(self, production_trajectory):
-        """3D Boltzmann **shape** KS test, with reference built using
-        the MEASURED effective k_θ (not the theoretical k_θ).
+    def test_angle_distribution_vs_first_principles(self, production_trajectory):
+        """Angle distribution vs first-principles 3D Boltzmann at the
+        THEORETICAL k_θ (not effective).  PI 2026-05-25 strict-PASS.
 
-        Rationale (PI 2026-05-21 autonomous /loop iteration 15):
-        the absolute angular variance deviation (~ +50 %, equivalent
-        to effective k_θ ≈ k_θ_theoretical / 1.5) is a documented
-        system-level finding logged separately by the equipartition
-        gate.  KS testing measured vs Boltzmann-at-theoretical-k_θ
-        conflates two issues: (1) is the distribution Boltzmann-
-        shaped?  (2) does it have the right magnitude?  We split:
-        equipartition gate tests (2); this KS test now tests (1) by
-        building the reference at the MEASURED stiffness.
-
-        With 19 000 samples, residual CDF differences should be below
-        ks_stat ≈ 0.02 if the distribution shape is correctly
-        Boltzmann.
+        Replaces the effective-k_θ shape-only KS test of 2026-05-21
+        (which only tested distribution SHAPE while hiding the +50 %
+        magnitude mismatch — the magnitude lived in the equipartition
+        gate).  After the slab Lz=0.2 μm → 10 μm fix, the chain
+        reproduces 3D Boltzmann at theoretical α to within strict
+        χ²/df ≤ 1.354 (Pearson 95 % critical at df=49) and
+        D_KL ≤ 1.94 × 10⁻³ nats (KL threshold 95 % via 2N·D_KL ~ χ²).
         """
-        from scipy import stats
+        from scipy import integrate, stats
         result, p = production_trajectory
         pos_all = result["positions"]
         theta_samples = []
@@ -341,43 +335,51 @@ class TestH2Production:
             theta = hoomd_angle_array(frame, box=None)
             theta_samples.append(theta.ravel())
         theta_all = np.concatenate(theta_samples)
+        phi_all = np.pi - theta_all
 
-        # Effective k_θ from measured ⟨(π − θ)²⟩.  In the 3D Rayleigh
-        # limit, ⟨(π − θ)²⟩ = 2 kT / k_θ_eff, so
-        #     k_θ_eff = 2 kT / ⟨(π − θ)²⟩.
-        # Then bending_modulus_eff = k_θ_eff · rest_length to feed
-        # boltzmann_angle_density_3d at the matched-magnitude k.
-        delta_sq_mean = float(np.mean((np.pi - theta_all) ** 2))
-        if not (delta_sq_mean > 0):
-            raise AssertionError(
-                f"⟨(π − θ)²⟩ = {delta_sq_mean} non-positive."
-            )
-        k_theta_eff = 2.0 * p.kT / delta_sq_mean
-        bending_modulus_eff = k_theta_eff * p.rest_length
+        alpha = p.angle_k / (2.0 * p.kT)
+        def p_3d(phi): return np.sin(phi) * np.exp(-alpha * phi**2)
 
-        grid = np.linspace(
-            theta_all.min(), theta_all.max(), 4001, dtype=np.float64
+        n_bins = 50
+        edges = np.linspace(0.0, np.pi, n_bins + 1)
+        counts, _ = np.histogram(phi_all, bins=edges)
+        N = counts.sum()
+        expected_p = np.array([
+            integrate.quad(p_3d, edges[i], edges[i + 1])[0]
+            for i in range(n_bins)
+        ])
+        expected_p /= expected_p.sum()
+        expected = N * expected_p
+
+        chi2 = float(np.sum(
+            (counts - expected) ** 2 / np.where(expected > 0, expected, 1.0)
+        ))
+        df = n_bins - 1
+        chi2_per_df = chi2 / df
+
+        widths = np.diff(edges)
+        p_meas = counts / N / widths
+        p_ref = expected / N / widths
+        mask = (p_meas > 0) & (p_ref > 0)
+        D_KL = float(np.sum(
+            p_meas[mask] * np.log(p_meas[mask] / p_ref[mask]) * widths[mask]
+        ))
+
+        # Both gates must pass.  Either passing alone is insufficient
+        # because χ² and KL respond differently to distribution
+        # deviations (χ² emphasises bin variance, KL emphasises tail).
+        assert chi2_per_df <= p.angle_chi2_per_df_max, (
+            f"Angle χ²/df = {chi2_per_df:.3f} > critical {p.angle_chi2_per_df_max:.3f} "
+            f"(Pearson 95 %, df={df}, N={N}); distribution rejected vs "
+            f"first-principles 3D Boltzmann at theoretical α={alpha:.3f}.  "
+            f"D_KL = {D_KL:.5f} nats (threshold {p.angle_KL_nats_max:.5f}).  "
+            f"Surface to PI — possible slab confinement or μ-coupling re-emergence."
         )
-        density = boltzmann_angle_density_3d(
-            grid, bending_modulus=bending_modulus_eff,
-            rest_length=p.rest_length, kT=p.kT,
-        )
-        cdf_vals = np.cumsum(density)
-        cdf_vals /= cdf_vals[-1]
-        def cdf_ref(x):
-            return np.interp(x, grid, cdf_vals)
-        ks_stat, p_value = stats.kstest(theta_all, cdf_ref)
-        # Gate on the KS statistic (max CDF distance) since 19 000
-        # samples make the p-value over-sensitive — even ~5 % CDF
-        # mismatch gives p ≪ 1e-10.  The statistic itself is the
-        # shape-match magnitude.
-        assert ks_stat <= p.angle_ks_stat_max, (
-            f"Angle distribution KS stat = {ks_stat:.4f} > tol "
-            f"{p.angle_ks_stat_max} (p_value = {p_value:.2e}). "
-            f"Reference built at effective k_θ = {k_theta_eff:.3e} "
-            f"J·rad⁻² (vs theoretical {p.angle_k:.3e}); shape mismatch "
-            f"beyond {p.angle_ks_stat_max*100:.0f}% CDF distance — "
-            f"surface to PI."
+        assert D_KL <= p.angle_KL_nats_max, (
+            f"Angle D_KL(meas || 3D) = {D_KL:.5f} nats > threshold "
+            f"{p.angle_KL_nats_max:.5f} nats (95 %, n_indep ≈ {N // 5}); "
+            f"χ²/df = {chi2_per_df:.3f} (critical {p.angle_chi2_per_df_max:.3f}).  "
+            f"Surface to PI."
         )
 
 

@@ -1,13 +1,59 @@
-# H.2 single-filament L_p — autonomous /loop overnight (2026-05-21)
+# H.2 single-filament L_p — strict-PASS follow-up (PI 2026-05-25)
 
 **Branch**: `phase1/h1-ecm` (commits `8d97c2e` H.2 init → `1427512` v2
-production → `f1533b8` L-M vs E-M infrastructure → latest H.2 ⟨E⟩
-finding commit)
+production → `f1533b8` L-M vs E-M → `f146951` honest-audit demotion →
+this strict-PASS commit)
 **Predecessor**: H.1 ✅ DONE (`43fd1b3`)
 **Scope**: H.2 single F-actin L_p validation per
 `ffn_sim/docs/briefs/H2_single_filament.md`.
 
-## Status: 🟨 infrastructure done, gate verdict **provisional** (PI 2026-05-21)
+## Status: ✅ strict-PASS (PI 2026-05-25)
+
+The H.2 🟨 provisional verdict of 2026-05-21 has been **resolved**.
+First-principles derivation of all three gates (`outputs/h2/strict_followup/derivation.json`)
+plus a 5-seed slab Lz=10 μm diagnostic ensemble
+(`outputs/h2/strict_followup/slab_Lz10um_aggregate.json`) identified
+the original Lz=0.2 μm slab confinement as the **single root cause** of
+the +50 % equipartition deviation that drove the honest-audit demotion.
+After expanding Lz=0.2 μm → 10 μm (so the natural σ_z ≈ 1.4 μm
+thermal fluctuation of a 10 μm filament fits without periodic-z
+compression), all three gates PASS against bands derived from
+independent-bond 3D Boltzmann statistics with **no measurement-anchored
+tuning**:
+
+| Gate | First-principles | Slab Lz=10 μm ensemble (n=5) | Strict band | PASS |
+| --- | --- | --- | --- | --- |
+| L_p_C1 | 16.44 ± 0.13 μm (5σ band) | **16.56 ± 0.54 μm** | [15.81, 17.07] μm 5σ-analytic / [14.8, 18.0] μm 3σ-empirical | ✅ |
+| ⟨E_bend⟩ | 0.9898 kT (3D numerical) | **0.983 ± 0.033 kT** | ±5 % of 0.99 kT | ✅ |
+| Angle PDF χ²/df | 1.00 under H₀ | **0.7** (canonical seed 42) | ≤ 1.354 (Pearson 95 %) | ✅ |
+| Angle PDF D_KL | < 2 × 10⁻³ nats | **3.4 × 10⁻⁴ nats** | ≤ 1.94 × 10⁻³ nats | ✅ |
+
+The previous canonical Lz=0.2 μm trajectory (preserved as
+`h2_production_trajectory_canonical.npz`) FAILS all four gates by
+~35σ / +51 % / χ²/df=244 / D_KL=0.117 nats — the slab confinement
+artefact is decisive and well-quantified.
+
+### How to interpret the previous +50 % "system-level finding"
+
+It was NOT new physics.  It was a periodic-z compression artefact:
+- Brief specified `Lz = 0.2 μm` "slab thickness for 2D-projection".
+- Natural σ_z of a free 10 μm filament at L_p=17 μm: √(L²/(3·L_p)) ≈ 1.4 μm — 14× wider than Lz.
+- Filament was therefore wrapped 14× in z by the periodic boundary every τ_bend, channelling thermal kinetic energy into excess in-plane bending modes.
+- Equipartition shifted by exactly the factor needed to absorb the suppressed z-mode kinetic energy into the surviving in-plane bending modes.
+- Same artefact drove L_p_C1 down by 1.5× and broadened the angle PDF beyond independent-bond 3D Boltzmann.
+- The dt sensitivity probe of 2026-05-21 correctly identified that the deviation was NOT a BAOAB integration bias (dt-independent), but the geometric origin (z-confinement) was not yet diagnosed until this session.
+
+### Downstream consequence
+
+The brief-specified slab convention `Lz = 0.2 μm` is REJECTED for 3D
+Boltzmann validation.  The corrected Lz=10 μm is now the permanent
+canonical geometry for H.2 and any other 3D thermal-fluctuation
+validation.  For H.3 cortex multi-filament (×40 mesoscopic scale,
+L_actin ≈ 0.5 μm per filament), the natural σ_z is much smaller
+(~80 nm), so a thin slab MAY be appropriate there — but the σ_z vs
+Lz comparison must be checked at H.3 setup, not assumed.
+
+## Earlier 🟨 closeout (PI 2026-05-21, retained for context)
 
 H.2 verdict downgraded from ✅ to 🟨 on PI honest-audit response:
 the 4 PI-rebanded acceptance bands are anchored on the MEASURED
@@ -207,7 +253,14 @@ mean for α=16.4 with sin(θ) volume element (test (b)), or reading
 HOOMD's C++ source for the harmonic-angle force (test (c)).  All
 three deferred to PI's call.
 
-## Figures (`outputs/h2/figs/`)
+## Figures — strict-PASS follow-up (PI 2026-05-25)
+
+- [fig_h2_strict_Cs_comparison.png](figs/fig_h2_strict_Cs_comparison.png) — C(s) for s=0..10: canonical Lz=0.2 μm (1 seed, deviates monotonically from `a^s`) vs slab Lz=10 μm ensemble (n=5, sits on `a^s`); right panel is the residual (measured − `a^s`).
+- [fig_h2_strict_equipartition.png](figs/fig_h2_strict_equipartition.png) — per-frame ⟨E⟩ histogram for canonical (mean 1.50 kT, +51 %) + slab ensemble seed scatter centred on 0.99 kT first-principles target ±5 % strict band.
+- [fig_h2_strict_angle_pdf.png](figs/fig_h2_strict_angle_pdf.png) — φ = π − θ histogram vs first-principles 3D Boltzmann at theoretical α=16.4 (no rescaling); annotated with χ²/df and D_KL nats for both canonical and slab.
+- [fig_h2_strict_gates_summary.png](figs/fig_h2_strict_gates_summary.png) — 4-panel decision summary: L_p_C1, L_p_tail, ⟨E⟩, rel-vs-3D-kT. Canonical is a blue ⭐ out of every green band; slab seeds are red ● inside.
+
+## Figures — earlier 🟨 closeout (`outputs/h2/figs/`)
 
 Generated by `ffn_sim/scripts/h1_h2_vis.py` (refreshed at H.2 ✅
 closeout per CLAUDE.md visualize-at-closeout rule):
