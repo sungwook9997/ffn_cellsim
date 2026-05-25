@@ -107,18 +107,27 @@ Phase 1 runs across multiple Claude Code sessions for context efficiency. State 
 
 ### Session closeout protocol — MUST, every session (end of session, freeze-point, or when PI says "wrap")
 
-Applies to every Main / Sub / Orchestrator session. Steps 1–6 must all complete before the final user-facing message; step 7 is the explicit PI receipt without which the session is treated as still open.
+Applies to every Main / Sub / Orchestrator session. Steps 1–7 must all complete before the final user-facing message; step 8 is the explicit PI receipt without which the session is treated as still open.
 
 1. Stage and commit work on the session's branch (`phase1/h{N}-*`). Do NOT push to `ffn/foundation` (renamed from `v2/foundation` 2026-05-20) without PI sign-off.
 2. **Session Handoff Board** — write a closeout block to your role's §Last closeout using the template pinned at the bottom of that page.
-3. **Session Handoff Board §Next prompt** — draft the next-session prompt for your role, marked `[draft — pending PI sign-off]`.
-4. **Phase 1 status board (Dev Logs)** — update your unit's row: Status / Owner / Start / End / Log.
-5. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page (format pinned in Dev Logs §작성 규칙: start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference).
-6. If Notion MCP is unavailable, rate-limited, or any of the three stores cannot be written: **halt and surface to PI** — do not silently skip.
-7. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`** so PI can confirm the loop closed.
-8. Stop. Do not speculate beyond what was actually done in the session.
+3. **Session Handoff Board §Next prompt (own role)** — draft the next-session prompt for your role, marked `[draft — pending PI sign-off]`.
+4. **Cross-session signal-routing** — if this closeout closes a unit (H.X ✅ DONE / 🚧 blocked) OR shifts Status Board state, prepend a stale-marker to every *other* role's §Next prompt: `[stale — {your-role} closed {event} on {YYYY-MM-DD}; needs Orchestrator review before dispatch]` plus a one-line summary of what changed. PI must re-route a flagged role through an Orchestrator session before dispatching it. An Orchestrator session that re-drafts the affected prompt removes the marker as part of its own closeout.
+5. **Phase 1 status board (Dev Logs)** — update your unit's row: Status / Owner / Start / End / Log.
+6. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page (format pinned in Dev Logs §작성 규칙: start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference).
+7. If Notion MCP is unavailable, rate-limited, or any of the three stores cannot be written: **halt and surface to PI** — do not silently skip.
+8. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`** so PI can confirm the loop closed.
+9. Stop. Do not speculate beyond what was actually done in the session.
 
-Per-prompt §Closeout sections in worker Next prompts only carry *unit-specific* obligations (e.g. PI sign-off after BAOAB freeze, KU FAIL surfacing); the universal 3-store + receipt-line rule above lives only here.
+Per-prompt §Closeout sections in worker Next prompts only carry *unit-specific* obligations (e.g. PI sign-off after BAOAB freeze, KU FAIL surfacing); the universal 3-store + cross-session signal-routing + receipt-line rule above lives only here.
+
+### PI pre-dispatch checklist (before booting any worker session)
+
+Before dispatching a Main / Sub / Orchestrator session from a Handoff Board §Next prompt, PI verifies:
+
+1. The §Next prompt's `drafted YYYY-MM-DD` is **not older than** the most recent §Last closeout of any other role (Main / Sub / Orchestrator). If older, the draft is presumed stale.
+2. No `[stale — ... needs Orchestrator review before dispatch]` marker is prepended to the §Next prompt body.
+3. If either check fails: dispatch an **Orchestrator session first** to re-draft the affected prompt (which clears the marker), then dispatch the intended role from the refreshed prompt.
 
 ### File ownership (cross-session enforcement)
 
