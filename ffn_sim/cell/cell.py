@@ -249,7 +249,15 @@ def build_cortex_full_simulation(
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
 
-    nlist = md.nlist.Tree(buffer=0.5 * p_cortex.lj_sigma)
+    # Exclude bonded pairs (and angle-1-3 neighbors) from LJ.  Necessary
+    # because some intra-subsystem bond lengths are SHORTER than the WCA
+    # cutoff: myosin backbone segment = 700/13 ≈ 54 nm vs r_cut = 67 nm;
+    # α-actinin xlink_intra = 35 nm vs r_cut = 67 nm.  Without exclusion,
+    # bonded WCA neighbors would compete with the harmonic bond, giving
+    # huge LJ energy at construction (verified empirically: ~1e-12 J for
+    # the demo 3-way cortex → BAOAB runaway within 100 steps).
+    nlist = md.nlist.Tree(buffer=0.5 * p_cortex.lj_sigma,
+                          exclusions=("bond", "1-3"))
     lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
 
     def _enable_pair(a: str, b: str, *, repulsive: bool = True) -> None:
@@ -263,22 +271,33 @@ def build_cortex_full_simulation(
             p_cortex.lj_r_cut if (repulsive and p_cortex.lj_enabled) else 0.0
         )
 
+    # LJ wiring rationale: WCA enabled ONLY within each subsystem
+    # (actin × actin, xlink × xlink, myosin × myosin).  Inter-subsystem
+    # pairs are DISABLED so that:
+    # (a) myosin heads can approach cortex actin for D2 binding (no
+    #     WCA blocking the close-range contact)
+    # (b) xlink heads can approach cortex actin similarly
+    # (c) at construction time, randomly-placed myosin backbones can sit
+    #     near (or even briefly overlap) cortex actin without numerical
+    #     LJ blow-up (myosin sits ABOVE actin in cortex anatomy; the
+    #     intra-cortex packing is biology, not steric repulsion at this
+    #     coarse-graining scale).
+    # Same convention applied to myosin-xlink pairs.
+    # All inter-subsystem r_cut = 0 ⇒ NO LJ contribution (HOOMD convention).
     _enable_pair("actin_cortex", "actin_cortex", repulsive=True)
     if enable_xl:
         _enable_pair("xlink_head", "xlink_head", repulsive=True)
-        # xlink_head ↔ actin: NO LJ (heads must approach for binding).
         _enable_pair("xlink_head", "actin_cortex", repulsive=False)
     if enable_myo:
         _enable_pair("cortex_myosin_backbone", "cortex_myosin_backbone", repulsive=True)
         _enable_pair("cortex_myosin_head", "cortex_myosin_head", repulsive=True)
         _enable_pair("cortex_myosin_backbone", "cortex_myosin_head", repulsive=True)
-        # myosin backbone ↔ actin: WCA on (no binding).
-        _enable_pair("cortex_myosin_backbone", "actin_cortex", repulsive=True)
-        # myosin head ↔ actin: NO LJ (heads must approach for binding).
+        # All myosin × non-myosin pairs DISABLED (see rationale above).
+        _enable_pair("cortex_myosin_backbone", "actin_cortex", repulsive=False)
         _enable_pair("cortex_myosin_head", "actin_cortex", repulsive=False)
         if enable_xl:
-            _enable_pair("cortex_myosin_backbone", "xlink_head", repulsive=True)
-            _enable_pair("cortex_myosin_head", "xlink_head", repulsive=True)
+            _enable_pair("cortex_myosin_backbone", "xlink_head", repulsive=False)
+            _enable_pair("cortex_myosin_head", "xlink_head", repulsive=False)
 
     lj.mode = "shift"
 

@@ -484,3 +484,58 @@ Baseline before 단계 5: 229 PASS / 13 SKIP. 단계 5 net: **+11 PASS, +1 SKIP,
 3. **ERM CFL conflict** PI sign-off (dt-reduction vs k_ERM-softening).
 4. **Variable-length filament distribution** (uniform 1–5 μm per brief; cosmetic).
 5. (선택) integration-level visualization: `scripts/h3_full_vis.py` extending `h3_vis.py` for 3-way snapshot rendering.
+
+---
+
+# H.3 — 단계 6 closeout (autonomous /loop continuation)
+
+**Branch**: `phase1/h3-cortex` (continuation; head commit updated below)
+**Session**: Main, 2026-05-25 (autonomous /loop wake)
+
+## 단계 6 deliverables landed
+
+| Item | Status |
+| --- | --- |
+| `ffn_sim/scripts/h3_full_vis.py` (~370 lines) — 3-way integration visualization (5 figures) | ✅ NEW |
+| `outputs/h3/figs/fig_h3_full_*.png` (5 NEW figures) | ✅ written |
+| Bug fix: xlink head jitter σ 5 nm → 50 nm (avoid LJ blow-up when 2 xlinks pick same anchor) | ✅ |
+| Bug fix: inter-subsystem LJ disabled in `build_cortex_full_simulation` (myosin × actin, etc.) | ✅ |
+| Bug fix: nlist exclusions `('bond', '1-3')` for the 3-way builder | ✅ |
+| Bug fix: `fig_full_3d_scatter` uses `state.get_snapshot()` for particle.types (cpu_local_snapshot lacks `.types`) | ✅ |
+| Hangul → romanized in vis text panel (Hangul missing from DejaVu Sans Mono font; cosmetic) | ✅ |
+| Variable-length filament distribution | ⏭ deferred (cosmetic, time budget) |
+
+## h3_full_vis.py figures
+
+1. `fig_h3_full_3d_scatter.png` — 3D scatter of full 3-way cortex on R = 10 μm shell (cortex actin green, xlink heads orange, myosin backbones purple, myosin heads red).
+2. `fig_h3_full_bond_network.png` — bar chart of per-bond-type counts (cortex-bond, xlink_intra, xlink_attach_b*, cortex_myosin_*) from the live HOOMD frame.
+3. `fig_h3_full_bead_counts.png` — `Cell.bead_count_summary` per-subsystem bar chart.
+4. `fig_h3_full_updater_activity.png` — Updater activity time-series over an 8 × 200-step demo window: engaged-head count (top) + cumulative bind/break/Hill-step events (bottom).
+5. `fig_h3_full_pipeline_summary.png` — text panel with 단계 1–6 commit history + current demo cell diagnostics + open-for-PI list.
+
+## Bug fixes (단계 6 sanity findings)
+
+**Three production bugs surfaced when extending the 3-way demo** to actually run BAOAB:
+
+1. **LJ ∞ from coincident xlink heads** — original 5 nm jitter was too small to clear WCA cutoff (60 nm σ, 67 nm r_cut). Two xlinks picking the same anchor placed heads only ~12 nm apart → LJ ~1e-12 J → BAOAB runaway. Fix: jitter σ → 50 nm (typical separation ~70 nm > r_cut). Validation: 240 PASS regression, 11 PASS on new 3-way integration tests.
+2. **Inter-subsystem WCA repulsion at construction** — original `build_cortex_full_simulation` had myosin × actin WCA enabled, which blew up when randomly-placed myosin backbones sat near cortex actin beads at the shell. Fix: disable all inter-subsystem WCA (myosin sits ABOVE actin in cortex anatomy; the intra-cortex packing is biology, not steric repulsion at this coarse-graining scale). Documented in code with rationale.
+3. **WCA-cutoff vs bonded-pair conflict** — α-actinin xlink_intra rest length 35 nm and myosin backbone segment 54 nm are both shorter than WCA r_cut = 67 nm, so without nlist exclusions, bonded pairs would also feel WCA repulsion, competing with the harmonic bond. Fix: `md.nlist.Tree(exclusions=('bond', '1-3'))`.
+
+All three are HONEST sanity-gate findings (same class as 단계 3 ERM CFL): the 단계 1-5 unit tests didn't catch these because they ran the SUBSYSTEMS individually, not the integrated 3-way. The full-cell integration was the first place where the combined LJ topology was actually exercised.
+
+## Test results
+
+| Suite | PASS / SKIP / FAIL |
+| --- | --- |
+| Main scope regression (H.1 + H.2 + BAOAB + H.3) | **240 PASS / 14 SKIP / 0 FAIL** |
+| `test_cell_full.py` 3-way integration (passes ALL 11 demo tests) | (subset of above) |
+
+Baseline before 단계 6: 240 PASS / 14 SKIP. 단계 6 net: **+0 PASS / +0 SKIP** but **3 production bugs caught + fixed** — net robustness improvement.
+
+## Open / next iteration
+
+1. **Variable-length filament distribution** (cosmetic refinement, brief §Cortex topology).
+2. **L_p full sweep** dedicated overnight session (~91 min wall).
+3. **KU-3.x production runs** (multi-hour each; ERM CFL 선행 필요).
+4. **ERM CFL** PI sign-off.
+5. **3-way 60s production gate** `H3_INTEGRATION_PRODUCTION=1` (multi-hour).

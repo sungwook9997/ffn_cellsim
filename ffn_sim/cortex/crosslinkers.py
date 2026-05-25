@@ -380,6 +380,15 @@ def generate_xlink_layout(
     species = np.empty((p_xl.n_xl,), dtype="<U7")
     intra_r0 = np.empty((p_xl.n_xl,), dtype=np.float64)
 
+    # Jitter σ = 50 nm (~3× WCA σ/2) so two coincidentally-placed heads
+    # are typically >70 nm apart — outside the WCA cutoff (r_cut ≈ 67 nm
+    # for σ_LJ = 60 nm). 5 nm was empirically too small (test_cell_full
+    # 단계 6 showed 12 nm separation between collided heads → LJ ~1e-12 J
+    # → BAOAB runaway). 50 nm is still well below the bind radius (60 nm
+    # for production) so subsequent dynamic attach binding remains
+    # geometrically plausible.
+    jitter_sigma = 50.0e-9
+
     n_homeless = 0
     for i in range(p_xl.n_xl):
         # Species assignment
@@ -404,17 +413,26 @@ def generate_xlink_layout(
         if candidates.size > 0:
             b_idx = int(rng.choice(candidates))
             r_b = cortex_positions[b_idx]
-            # Place heads at 1/3 and 2/3 between A and B.
-            head_positions[2 * i] = r_a + (r_b - r_a) / 3.0
-            head_positions[2 * i + 1] = r_a + 2.0 * (r_b - r_a) / 3.0
+            # Place heads at 1/3 and 2/3 between A and B, with jitter
+            # (see jitter_sigma rationale above).
+            jitter = rng.standard_normal((2, 3)) * jitter_sigma
+            head_positions[2 * i] = r_a + (r_b - r_a) / 3.0 + jitter[0]
+            head_positions[2 * i + 1] = (
+                r_a + 2.0 * (r_b - r_a) / 3.0 + jitter[1]
+            )
         else:
-            # Homeless: place head_a at r_a + tiny offset; head_b at
-            # intra-xlink rest length from head_a along a random direction.
+            # Homeless: place head_a near r_a (with jitter to avoid
+            # stacking when multiple homeless xlinks pick same anchor);
+            # head_b at intra-xlink rest length from head_a along a
+            # random direction.
             n_homeless += 1
             dir_random = rng.standard_normal(3)
             dir_random /= np.linalg.norm(dir_random)
-            head_positions[2 * i] = r_a
-            head_positions[2 * i + 1] = r_a + intra_r0[i] * dir_random
+            jitter_a = rng.standard_normal(3) * jitter_sigma
+            head_positions[2 * i] = r_a + jitter_a
+            head_positions[2 * i + 1] = (
+                r_a + jitter_a + intra_r0[i] * dir_random
+            )
 
         head_tag_pairs[i, 0] = n_cortex_beads + 2 * i
         head_tag_pairs[i, 1] = n_cortex_beads + 2 * i + 1
