@@ -1,0 +1,190 @@
+# Phase 1 — Unit H.3 Cortex multi-filament network (HOOMD runtime) defaults.
+#
+# 1000 effective F-actin filaments arranged on a R = 10 μm spherical shell,
+# each filament representing ×40 native actin filaments bundled (the only
+# sanctioned coarse-graining per CLAUDE.md, ratified in Plan v2 §3 H.3
+# v3.1, 2026-05-19). Per-filament force constants (κ_B, μ, ℓ_0) are
+# identical to H.2's single-actin-bundle values — what is coarse-grained
+# is the *filament count* (1000 effective vs ~38,000 native), not
+# per-filament stiffness.
+#
+# Inherits BAOAB D3, LJ-WCA D7 from H.1; inherits filament_math L_p /
+# equipartition / 3D Boltzmann gates from H.2.
+#
+# H.3 brief: `ffn_sim/docs/briefs/H3_cortex.md` §Cortex topology,
+# §Crosslinkers (D2), §Validation acceptance.
+#
+# σ_z vs L_z pre-flight (H.2 slab lesson, 2026-05-21):
+#   Per-filament free-3D thermal transverse extent for L = 3 μm at
+#   L_p = 17 μm: σ_perp = √(L³/(3 L_p)) ≈ 730 nm. Box is a 30 μm CUBE
+#   (L_box = 3·R_cell), NOT a slab. Half-box 15 μm vs cell-plus-margin
+#   R_cell + σ_perp_max + ℓ_0 ≈ 11.2 μm — well inside. L_box/σ_perp ≈
+#   41× — far above the H.2 strict-PASS safe ratio (≥10×). The 200 nm
+#   cortex thickness (KU-3.17) is a BIOLOGICAL constraint enforced by
+#   the ERM tether (later H.3 deliverable), NOT box geometry.
+#
+# Per CLAUDE.md hard rules:
+# - No magic numbers — every parameter is KU-anchored or derived.
+# - First-principles acceptance bands ONLY (H.2 Day 5 lesson:
+#   measurement-anchored tuning is forbidden).
+# - Sanity Gate §1–6 enforced before first execution
+#   (`ffn_sim/cortex/cortex.py` module docstring §Sanity Gate;
+#   STATIC checks in `ffn_sim/tests/test_cortex.py`).
+
+ecm: null         # H.3 has no ECM-specific block (placeholder for resolver compat)
+filament: null    # H.3 has no single-filament block (placeholder)
+
+cortex:
+
+  # ---- Primary biological scales (KU-3.x literature anchors) ----
+  R_cell: 10.0e-6              # m   cell radius, KU-3.17
+  cortex_thickness: 200.0e-9   # m   cortex shell thickness, KU-3.17
+  n_filaments: 1000            # ×40 mesoscopic count, Plan v2 §3 H.3 v3.1
+
+  # Per-filament discretization (matches H.2 exactly so the per-filament
+  # bond/angle measurement is directly comparable).
+  beads_per_filament: 7        # Plan v2 §3 H.3 v3.1 mean (= L / ℓ_0 + 1 = 6 + 1)
+  L_filament: 3.0e-6           # m   ×40 mesoscopic mean (uniform 1–5 μm
+                               #     distribution per brief approximated as
+                               #     fixed mean here; variable-length is a
+                               #     later refinement in cortex_network.py).
+  bead_radius: 30.0e-9         # m   ×40 actin bundle cross-section (brief).
+
+  persistence_length: 17.0e-6  # m   ℓ_p, KU-1.1 actin reference
+  bending_modulus: 7.0e-26     # N·m²  κ_B = ℓ_p k_B T at 310 K, KU-1.1
+  # AFINES μ_actin_bundle (Freedman 2017 Soft Matter); same value as
+  # H.2 — KU-1.2 collagen value (8.6e-9 N) is for collagen fibrils not
+  # actin bundles, so we use the AFINES literature value per CLAUDE.md
+  # `feedback_acs_no_abstractions` (mechanistic over abstracted).
+  stretching_modulus: 1.5e-9   # N    μ_actin_bundle (AFINES Freedman 2017)
+
+  temperature: 310.0           # K   37 °C
+  kT: 4.28e-21                 # J   k_B · T
+  water_viscosity: 6.913e-4    # Pa·s  η_water at 310 K (NIST), KU-1.26
+
+  seed: 42
+
+  # ---- Box geometry (cube; σ_z vs L_z pre-flight in header comment) ----
+  box:
+    # L_box = L_box_over_R_cell · R_cell.  Default 3.0 gives a 30 μm cube.
+    # Derivation: half-box must exceed R_cell + σ_perp_max + ℓ_0.  For
+    # the brief's max L_filament = 5 μm, σ_perp_max ≈ 1.56 μm; with
+    # ℓ_0 = 0.5 μm and R_cell = 10 μm, this needs half_box ≥ 12.1 μm,
+    # i.e. L_box ≥ 24.1 μm.  L_box_over_R_cell = 3.0 → L_box = 30 μm
+    # gives 2.9 μm radial cushion — comfortable, and the cube remains
+    # square-shaped (no slab artefact).
+    L_box_over_R_cell: 3.0
+
+  # ---- D7 LJ WCA (repulsive only, carried over from H.1) ----
+  excluded_volume:
+    enabled: true
+    epsilon_kT: 0.5            # ε = 0.5 · kT, D7 Phase 1 canonical
+    sigma_factor: 2.0          # σ = 2 · R_bead, D7 Phase 1 canonical
+                               # r_cut = 2^(1/6) · σ ≈ 1.122 · σ (LJ minimum)
+
+  # ---- D3 dynamics (BAOAB, frozen 2026-05-20 in `ffn_sim/integrator/baoab.py`) ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab
+    cfl_safety_factor: 0.1     # dt = α · τ_min (same α as H.1 / H.2)
+    # τ_min derived at config-resolve time. With κ_B / ℓ_0 / μ identical to
+    # H.2, τ_stretch ≈ 130 ns dominates → dt_CFL ≈ 13 ns. Crosslinkers
+    # (k_xl = 1e-7 N/m, very soft per KU-3.19) give τ_xl ≈ 3.9 ms ≫
+    # τ_stretch, so they do NOT tighten CFL.
+
+  # ---- Crosslinkers (OPTIONAL, KU-3.19; default OFF per boot prompt) ----
+  # KU-3.19 specifies 30 % α-actinin (35 nm length, k = 0.1 pN/μm) and
+  # 70 % filamin (150 nm length, k = 0.1 pN/μm). Brief §Crosslinkers
+  # gives `max_bind_dist = 60 nm` for the acceptor search radius.
+  #
+  # NOTE: this YAML block configures the STATIC initial-crosslinker
+  # bonds only — i.e. bonds present at construction time, no D2
+  # Bell-Evans slip kinetics. Dynamic xl kinetics is a later H.3
+  # deliverable (`crosslinkers.py` per brief Deliverables table).
+  crosslinkers:
+    enabled: false             # default OFF for boot-prompt topology-only scope
+    n_xl: 1000                 # KU-3.19 target xl count per cell
+    k_xl: 1.0e-7               # N/m   0.1 pN/μm, KU-3.19 (Furuike 2001)
+    alpha_fraction: 0.30       # KU-3.19 (Stricker 2010 α-actinin/filamin ratio)
+    alpha_length: 35.0e-9      # m     α-actinin extended length
+    filamin_length: 150.0e-9   # m     filamin extended length
+    max_bind_dist: 60.0e-9     # m     acceptor search radius (brief §Xlinkers)
+    # Per-r0 binning (matches H.1 cross_links pattern) keeps construction
+    # state approximately force-free for xl bonds; with k_xl = 1e-7 N/m,
+    # the maximum bin-center r0 error is bin_width/2 = 3 nm, giving xl
+    # construction energy ½·1e-7·(3e-9)² = 4.5e-25 J ≪ kT = 4.28e-21 J.
+    n_bins: 10                 # → bin_width = 6 nm across [0, max_bind_dist]
+
+  # ---- First-principles acceptance bands (NO measurement-anchored tuning,
+  #      H.2 Day 5 lesson) ----
+  acceptance:
+
+    # Per-filament L_p band: KU-1.1 actin literature reference 17 μm ± 10 %.
+    # This is FIRST-PRINCIPLES because the literature value defines the
+    # physical anchor that the simulation must recover — not a band
+    # widened post-hoc to make a run pass.
+    L_p_band_m: [15.3e-6, 18.7e-6]
+
+    # Per-bond equipartition (3D solid-angle Boltzmann).
+    # Analytical 3D-exact mean at α = κ_B/(2·ℓ_0·kT) = 16.4 is 0.9898 kT
+    # (numerical integral of ½ k_θ (θ-π)² weighted by sin θ · exp(-κ_B
+    # (π-θ)²/(2 ℓ_0 kT)) over θ ∈ [0, π], normalised). The H.2 ✅
+    # strict-PASS at the same per-filament parameters validates this
+    # target; H.3 inherits because κ_B, ℓ_0, kT are identical.
+    equipartition_target_3d_kT: 0.9898
+    equipartition_rel_tol: 0.05    # ±5 % first-principles statistical reach
+    # (Aggregate sample size F·(N-2)·n_snapshots = 1000·5·100 = 500 000
+    #  → 1/√500k ≈ 0.0014, so 5 % is 35σ — abundantly within reach.)
+
+    # 3D Boltzmann angle distribution gates (carried over from H.2 ✅
+    # strict-PASS). These are sample-size-dependent critical values;
+    # H.2 calibrated for n=17 100 angles (single-filament ensemble),
+    # H.3 production will have ~500 000 angles (1000 filaments × 5 bonds
+    # × 100 snapshots) so the thresholds become more conservative when
+    # H.3 production sweep recalibrates. Until then, inherit the H.2
+    # values — they remain valid as upper bounds for H.3 too.
+    angle_chi2_per_df_max: 1.354       # H.2 Pearson critical 95 %, df=49
+    angle_KL_nats_max: 1.94e-3         # H.2 KL threshold 95 %, n=17 100
+    angle_ks_stat_max: 0.10            # H.2 diagnostic
+
+    # Radial drift at construction (tangent-plane placement).
+    # Per-filament endpoint radial offset from R_cell = ℓ_end²/(2 R_cell)
+    # = ((N-1)·ℓ_0/2)² / (2·R_cell) = (1.5e-6)²/(2·1e-5) = 112.5 nm.
+    # KU-3.17 cortex thickness is 200 nm, so 0–200 nm is the
+    # first-principles band for radial position deviation at construction.
+    radial_drift_band_m: [0.0, 200.0e-9]
+
+    # Cost ceiling (Plan v2 §11 H.3 single-cell on M1 Max).
+    # Per brief: total beads (cortex + xl heads + myosin + ERM) ≤ 15 000
+    # per cell. Cortex-only contribution at n_filaments × beads_per_filament
+    # = 1000 × 7 = 7000 beads. Cap n_filaments at 2× nominal (= 2000)
+    # for cortex-only sweeps so xl/myosin/ERM still fit under 15k.
+    n_filaments_max: 2000
+
+  demo_mode: false
+
+  # ---- Derived parameters (filled by resolve_h3_derived(); DO NOT edit) ----
+  derived:
+    L_box: null                # = box_factor · R_cell
+    rest_length: null          # = L_filament / (beads_per_filament − 1) = ℓ_0
+    bond_k: null               # = μ / ℓ_0                            [N/m]
+    angle_k: null              # = κ_B / ℓ_0                          [N·m / rad²]
+    angle_t0: 3.141592653589793   # π — HOOMD straight-chain convention
+    lj_epsilon: null           # = epsilon_kT · kT                    [J]
+    lj_sigma: null             # = sigma_factor · bead_radius         [m]
+    lj_r_cut: null             # = 2^(1/6) · σ                        [m]
+    gamma_b: null              # = 6π η R_bead                        [N·s/m]
+    tau_xl: null               # = γ_b / k_xl                         [s] (∞ if xl off)
+    tau_stretch: null          # = γ_b · ℓ_0 / μ                      [s]
+    tau_bend: null             # = γ_b · ℓ_0³ / κ_B                   [s]
+    tau_min: null              # min of {tau_xl, tau_stretch, tau_bend}
+    dt_cfl: null               # = cfl_safety_factor · τ_min          [s]
+    sigma_perp_per_filament: null       # = √(L_filament³ / (3 L_p))  [m]
+    cortex_surface_area: null           # = 4π R_cell²                [m²]
+    filament_areal_density: null        # = n_filaments / area        [1/m²]
+    n_xl_alpha_target: null             # = round(n_xl · alpha_fraction)
+    n_xl_filamin_target: null           # = n_xl − n_xl_alpha_target
+
+# ---- H.3 demo profile (used for fast smoke runs) ----
+# Override with `cortex.demo_mode: true` + reduced n_filaments at use site.
+# The test harness applies these overrides programmatically for the demo
+# gate (no separate yaml file).
