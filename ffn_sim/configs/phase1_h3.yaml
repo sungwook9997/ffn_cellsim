@@ -91,7 +91,41 @@ cortex:
     # (k_xl = 1e-7 N/m, very soft per KU-3.19) give τ_xl ≈ 3.9 ms ≫
     # τ_stretch, so they do NOT tighten CFL.
 
-  # ---- Crosslinkers (OPTIONAL, KU-3.19; default OFF per boot prompt) ----
+  # ---- Dynamic crosslinkers (D2 Bell-Evans slip, KU-3.19) ----
+  # Two-particle head pair per xlink + intra-xlink head-to-head bond +
+  # dynamic xlink_head ↔ actin_cortex bonds via Bell-Evans slip kinetics.
+  # Implemented in `ffn_sim/cortex/crosslinkers.py` (D2 Bell-Evans Updater
+  # mirroring H.4 `bridge/integrin_bonds.py` Pereverzev pattern).
+  #
+  # Bell-Evans rates per species (slip bond — k_off increases with F):
+  # - α-actinin: k_off⁰ ≈ 1 /s (Wachsstock 1994 — fluid xlink),
+  #   x_β ≈ 0.4 nm (Bell strength length).
+  # - Filamin: k_off⁰ ≈ 0.1 /s, x_β ≈ 0.3 nm (Furuike 2001).
+  #
+  # k_on = 10 /s per head; gives equilibrium bind fraction
+  # k_on/(k_on + k_off⁰) ≈ 0.91 (α-actinin) and 0.99 (filamin) at F=0.
+  dynamic_crosslinkers:
+    n_xl: 1000                 # KU-3.19 target xl count per cortex
+    alpha_fraction: 0.30       # KU-3.19 (Stricker 2010)
+    alpha_length: 35.0e-9      # m   α-actinin extended length
+    filamin_length: 150.0e-9   # m   filamin extended length
+    k_intra: 1.0e-7            # N/m intra-xlink head-to-head (0.1 pN/μm, KU-3.19)
+    k_attach: 1.0e-7           # N/m dynamic head-to-actin attach bond
+    max_bind_dist: 60.0e-9     # m   acceptor search radius (brief §Crosslinkers)
+    # Bell-Evans species rates
+    alpha_k_off0: 1.0          # 1/s α-actinin unloaded off-rate (Wachsstock 1994)
+    alpha_x_beta: 0.4e-9       # m   α-actinin Bell strength length
+    filamin_k_off0: 0.1        # 1/s filamin unloaded off-rate (Furuike 2001)
+    filamin_x_beta: 0.3e-9     # m   filamin Bell strength length
+    # Single-head binding rate; tuned to give bound fraction ~ 0.9 at F=0
+    # for α-actinin (the looser bond) — derived from k_on/(k_on + k_off⁰)
+    # with target 0.9 → k_on = 9 × k_off⁰ ≈ 9 /s. Round to 10 /s.
+    k_on: 10.0                 # 1/s per-head binding rate when acceptor present
+    batch_steps: 100           # BAOAB steps between Updater ticks (D2 batch)
+    n_bins: 10                 # per-r0 binning (mirrors H.1 cortex.py xl)
+    seed: 43                   # offset from cortex.seed for RNG isolation
+
+  # ---- Static crosslinkers (legacy 단계 1 mode, OPTIONAL; default OFF) ----
   # KU-3.19 specifies 30 % α-actinin (35 nm length, k = 0.1 pN/μm) and
   # 70 % filamin (150 nm length, k = 0.1 pN/μm). Brief §Crosslinkers
   # gives `max_bind_dist = 60 nm` for the acceptor search radius.
