@@ -420,3 +420,67 @@ Baseline before 단계 4: 204 PASS / 8 SKIP. 단계 4 net: **+25 PASS, +5 SKIP (
 3. **ERM CFL resolution** — PI sign-off for dt-reduction OR k_ERM-softening.
 4. **Variable-length filament distribution** (cosmetic).
 5. **Cell composition with myosin wired into Cell.build** — currently Cell composes cortex + ERM + xlinks, but not yet myosin. Next iteration: extend Cell.build to wire MyosinStepUpdater.
+
+---
+
+# H.3 — 단계 5 closeout (autonomous /loop continuation)
+
+**Branch**: `phase1/h3-cortex` (continuation; head commit updated below)
+**Session**: Main, 2026-05-25 (autonomous /loop wake)
+**Authorization**: PI "H.3 계속 완료할때까지".
+
+## 단계 5 deliverables landed
+
+| Item | Status |
+| --- | --- |
+| `ffn_sim/cell/cell.py` `build_cortex_full_simulation` helper — unified cortex + (optional) xlinks + (optional) myosin builder | ✅ NEW (≈230 lines added) |
+| `Cell.build(with_myosin=True, p_myosin=...)` dispatch path | ✅ wired |
+| `Cell.bead_count_summary` / `tag_ranges` / `diagnostics` extended for myosin | ✅ |
+| `ffn_sim/cell/__init__.py` exports `build_cortex_full_simulation` | ✅ |
+| `tests/test_cell_full.py` (NEW, 11 PASS / 1 SKIP) | ✅ NEW |
+| Variable-length filament distribution | ⏭ deferred (cosmetic) |
+| ERM CFL resolution + L_p full sweep + KU-3.x production | ⏭ awaiting PI sign-off / dedicated session |
+
+## build_cortex_full_simulation architecture
+
+Unified helper that stacks the three cortex subsystems in a single HOOMD Simulation:
+
+1. `build_cortex_state(p_cortex, with_crosslinkers=False)` — base actin shell.
+2. **(optional)** if `p_xlinks and p_xlinks.n_xl > 0`: `generate_xlink_layout` + `extend_cortex_state_with_xlinks` — adds `xlink_head` particles + `xlink_intra` bonds + `xlink_attach_b{i}` bond types.
+3. **(optional)** if `p_myosin and p_myosin.n_motors_per_cell > 0`: `generate_cortex_myosin_layout` + `extend_state_with_cortex_myosin` — adds `cortex_myosin_backbone` + `cortex_myosin_head` particles + 3 new bond types.
+4. HOOMD `md.bond.Harmonic` with ALL bond-type params (cortex-bond + xlink_intra + xlink_attach_b{i} + cortex_myosin_backbone + cortex_myosin_head_backbone + cortex_myosin_attach_b{i}).
+5. `md.angle.Harmonic` (cortex-angle).
+6. `md.pair.LJ` (`md.nlist.Tree`) with per-pair WCA wiring:
+   - WCA enabled: actin × actin, xlink_head × xlink_head, myosin_backbone × *, myosin_head × myosin_*.
+   - **WCA disabled** (so heads can approach and bind): xlink_head × actin, cortex_myosin_head × actin.
+7. `md.Integrator(dt=p_cortex.dt_cfl)` with methods=[].
+8. BAOAB Updater with per-type γ_b for all four particle types.
+9. `XlinkBondUpdater` (Periodic batch_steps trigger).
+10. `MyosinStepUpdater` (Periodic batch_steps trigger).
+
+Returns a `dict[str, Any]` of handles: sim, topology, xlink_layout, myosin_layout, baoab_*, xlink_*, myosin_*, n_cortex_actin, n_xlink_heads, n_myosin_particles.
+
+## Cell.build dispatch logic (extended)
+
+- `options.with_myosin=True` → unified path via `build_cortex_full_simulation`.
+- Else: dispatches to existing `build_cortex_xlink_simulation` (if `with_crosslinkers`) OR `build_cortex_simulation` (bare cortex). Preserves 단계 1-4 behavior verbatim.
+- ERM wiring (`options.with_erm`) attaches AFTER any of the three paths, regardless of myosin/xlinks (CFL gate enforced).
+
+`Cell` dataclass now holds: `p_myosin`, `myosin_layout`, `myosin_action`, `myosin_updater`, `n_myosin_particles`.
+
+## Test results
+
+| Suite | PASS / SKIP / FAIL |
+| --- | --- |
+| `test_cell_full.py` (단계 5 new) | 11 PASS / 1 SKIP |
+| Main scope regression (H.1 + H.2 + BAOAB + H.3) | **240 PASS / 14 SKIP / 0 FAIL** |
+
+Baseline before 단계 5: 229 PASS / 13 SKIP. 단계 5 net: **+11 PASS, +1 SKIP, 0 regressions**.
+
+## Open / next iteration
+
+1. **L_p full sweep** dedicated overnight session (~91 min wall).
+2. **KU-3.x production runs** (multi-hour each; needs ERM CFL resolution).
+3. **ERM CFL conflict** PI sign-off (dt-reduction vs k_ERM-softening).
+4. **Variable-length filament distribution** (uniform 1–5 μm per brief; cosmetic).
+5. (선택) integration-level visualization: `scripts/h3_full_vis.py` extending `h3_vis.py` for 3-way snapshot rendering.

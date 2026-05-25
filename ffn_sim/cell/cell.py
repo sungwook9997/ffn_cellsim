@@ -89,6 +89,7 @@ from typing import Any
 import numpy as np
 
 import hoomd
+import hoomd.md as md
 
 from ffn_sim.cortex.cortex import (
     CortexTopology,
@@ -111,6 +112,230 @@ from ffn_sim.cortex.erm import (
     ResolvedERM,
     attach_erm_to_simulation,
 )
+from ffn_sim.cortex.myosin import (
+    CortexMyosinLayout,
+    MyosinStepUpdater,
+    ResolvedCortexMyosin,
+    cortex_myosin_attach_bin_names,
+    cortex_myosin_attach_bin_rest_lengths,
+    extend_state_with_cortex_myosin,
+    generate_cortex_myosin_layout,
+    make_cortex_myosin_updater,
+    register_cortex_myosin_bond_params,
+)
+from ffn_sim.integrator.baoab import make_baoab_updater
+
+
+def build_cortex_full_simulation(
+    p_cortex: ResolvedH3,
+    *,
+    p_xlinks: ResolvedCrosslinkers | None = None,
+    p_myosin: ResolvedCortexMyosin | None = None,
+    device: hoomd.device.Device | None = None,
+    with_baoab: bool = True,
+    rng: np.random.Generator | None = None,
+):
+    """End-to-end builder for cortex + (optional) xlinks + (optional) myosin.
+
+    Performs the full state composition (no ERM — attach separately via
+    ``attach_erm_to_simulation``):
+
+    1. ``build_cortex_state(p_cortex, with_crosslinkers=False)`` for the
+       cortex actin backbone.
+    2. If ``p_xlinks`` and ``p_xlinks.n_xl > 0``:
+       ``generate_xlink_layout`` + ``extend_cortex_state_with_xlinks``.
+    3. If ``p_myosin`` and ``p_myosin.n_motors_per_cell > 0``:
+       ``generate_cortex_myosin_layout`` +
+       ``extend_state_with_cortex_myosin`` (appended AFTER xlinks so the
+       motor tag block sits at the end of the tag space).
+    4. HOOMD ``Simulation`` + ``bond.Harmonic`` (with all registered
+       bond-type params for the three subsystems) + ``angle.Harmonic``
+       (cortex-angle) + ``pair.LJ`` (WCA repulsive on actin × actin,
+       xlink_head × xlink_head, myosin × myosin; DISABLED on
+       head × actin pairs so binding can occur).
+    5. ``md.Integrator(dt=p_cortex.dt_cfl)`` with all three forces.
+    6. ``methods=[]`` (BAOAB Updater contract).
+    7. If ``with_baoab``: BAOAB Updater attached with per-type γ_b
+       inferred from ``p_cortex.gamma_b``.
+    8. If xlinks enabled: ``XlinkBondUpdater`` attached
+       (``trigger=Periodic(batch_steps)``).
+    9. If myosin enabled: ``MyosinStepUpdater`` attached.
+
+    Returns
+    -------
+    A dict (handles) with keys:
+        ``sim`` (hoomd.Simulation),
+        ``topology`` (CortexTopology),
+        ``xlink_layout`` (XlinkLayout | None),
+        ``myosin_layout`` (CortexMyosinLayout | None),
+        ``baoab_updater``, ``baoab_action``,
+        ``xlink_updater``, ``xlink_action``,
+        ``myosin_updater``, ``myosin_action``,
+        ``n_cortex_actin`` (int), ``n_xlink_heads`` (int),
+        ``n_myosin_particles`` (int).
+    """
+    # 1. Cortex base
+    topology = generate_cortex_topology(p_cortex, rng=rng)
+    cortex_snap, _, _ = build_cortex_state(
+        p_cortex, with_crosslinkers=False, rng=rng
+    )
+    n_cortex_actin = p_cortex.n_filaments * p_cortex.beads_per_filament
+    snap = cortex_snap
+
+    # 2. Optional xlinks
+    xlink_layout = None
+    n_xlink_heads = 0
+    enable_xl = (
+        p_xlinks is not None and p_xlinks.n_xl > 0
+    )
+    if enable_xl:
+        cortex_positions = topology.positions.reshape(n_cortex_actin, 3)
+        cortex_filament_idx = np.repeat(
+            np.arange(p_cortex.n_filaments, dtype=np.int64),
+            p_cortex.beads_per_filament,
+        )
+        xlink_layout = generate_xlink_layout(
+            cortex_positions, cortex_filament_idx, p_xlinks,
+            n_cortex_beads=n_cortex_actin, rng=rng,
+        )
+        snap = extend_cortex_state_with_xlinks(snap, xlink_layout, p_xlinks)
+        n_xlink_heads = 2 * p_xlinks.n_xl
+
+    # 3. Optional myosin
+    myosin_layout = None
+    n_myosin_particles = 0
+    enable_myo = (
+        p_myosin is not None and p_myosin.n_motors_per_cell > 0
+    )
+    if enable_myo:
+        motor_tag_start = int(snap.particles.N)
+        myosin_layout = generate_cortex_myosin_layout(
+            p_myosin, p_cortex.R_cell,
+            motor_tag_start=motor_tag_start, rng=rng,
+        )
+        snap = extend_state_with_cortex_myosin(snap, myosin_layout, p_myosin)
+        n_myosin_particles = (
+            p_myosin.n_motors_per_cell * p_myosin.n_particles_per_motor
+        )
+
+    # 4. HOOMD Simulation + state
+    sim = hoomd.Simulation(
+        device=device or hoomd.device.CPU(), seed=p_cortex.seed
+    )
+    sim.create_state_from_snapshot(snap)
+
+    # 5. Forces
+    bond = md.bond.Harmonic()
+    bond.params["cortex-bond"] = dict(k=p_cortex.bond_k, r0=p_cortex.rest_length)
+    if enable_xl:
+        from ffn_sim.cortex.crosslinkers import (
+            xlink_attach_bin_names, xlink_attach_bin_rest_lengths,
+        )
+        avg_intra_r0 = float(
+            p_xlinks.alpha_fraction * p_xlinks.alpha_length
+            + (1.0 - p_xlinks.alpha_fraction) * p_xlinks.filamin_length
+        )
+        bond.params["xlink_intra"] = dict(k=p_xlinks.k_intra, r0=avg_intra_r0)
+        xl_bin_r0 = xlink_attach_bin_rest_lengths(
+            p_xlinks.n_bins, p_xlinks.max_bind_dist
+        )
+        for i, name in enumerate(xlink_attach_bin_names(p_xlinks.n_bins)):
+            bond.params[name] = dict(
+                k=p_xlinks.k_attach, r0=float(xl_bin_r0[i])
+            )
+    if enable_myo:
+        register_cortex_myosin_bond_params(bond, p_myosin)
+
+    angle = md.angle.Harmonic()
+    angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
+
+    nlist = md.nlist.Tree(buffer=0.5 * p_cortex.lj_sigma)
+    lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
+
+    def _enable_pair(a: str, b: str, *, repulsive: bool = True) -> None:
+        if (a, b) in lj.params:
+            # already wired
+            pass
+        lj.params[(a, b)] = dict(
+            epsilon=p_cortex.lj_epsilon, sigma=p_cortex.lj_sigma
+        )
+        lj.r_cut[(a, b)] = (
+            p_cortex.lj_r_cut if (repulsive and p_cortex.lj_enabled) else 0.0
+        )
+
+    _enable_pair("actin_cortex", "actin_cortex", repulsive=True)
+    if enable_xl:
+        _enable_pair("xlink_head", "xlink_head", repulsive=True)
+        # xlink_head ↔ actin: NO LJ (heads must approach for binding).
+        _enable_pair("xlink_head", "actin_cortex", repulsive=False)
+    if enable_myo:
+        _enable_pair("cortex_myosin_backbone", "cortex_myosin_backbone", repulsive=True)
+        _enable_pair("cortex_myosin_head", "cortex_myosin_head", repulsive=True)
+        _enable_pair("cortex_myosin_backbone", "cortex_myosin_head", repulsive=True)
+        # myosin backbone ↔ actin: WCA on (no binding).
+        _enable_pair("cortex_myosin_backbone", "actin_cortex", repulsive=True)
+        # myosin head ↔ actin: NO LJ (heads must approach for binding).
+        _enable_pair("cortex_myosin_head", "actin_cortex", repulsive=False)
+        if enable_xl:
+            _enable_pair("cortex_myosin_backbone", "xlink_head", repulsive=True)
+            _enable_pair("cortex_myosin_head", "xlink_head", repulsive=True)
+
+    lj.mode = "shift"
+
+    ig = md.Integrator(dt=p_cortex.dt_cfl)
+    ig.forces.append(bond)
+    ig.forces.append(angle)
+    ig.forces.append(lj)
+    sim.operations.integrator = ig
+
+    baoab_updater = None
+    baoab_action = None
+    if with_baoab:
+        gamma_map: dict[str, float] = {"actin_cortex": p_cortex.gamma_b}
+        if enable_xl:
+            gamma_map["xlink_head"] = p_cortex.gamma_b
+        if enable_myo:
+            gamma_map["cortex_myosin_backbone"] = p_cortex.gamma_b
+            gamma_map["cortex_myosin_head"] = p_cortex.gamma_b
+        baoab_action, baoab_updater = make_baoab_updater(
+            kT=p_cortex.kT, gamma=gamma_map,
+            dt=p_cortex.dt_cfl, seed=p_cortex.seed,
+        )
+        sim.operations.updaters.append(baoab_updater)
+
+    xlink_updater = None
+    xlink_action = None
+    if enable_xl:
+        xlink_action, xlink_updater = make_xlink_updater(
+            p=p_xlinks, layout=xlink_layout, kT=p_cortex.kT,
+            n_cortex_actin=n_cortex_actin,
+        )
+        sim.operations.updaters.append(xlink_updater)
+
+    myosin_updater = None
+    myosin_action = None
+    if enable_myo:
+        myosin_action, myosin_updater = make_cortex_myosin_updater(
+            p_myo=p_myosin, layout=myosin_layout, kT=p_cortex.kT,
+            n_cortex_actin=n_cortex_actin,
+        )
+        sim.operations.updaters.append(myosin_updater)
+
+    return {
+        "sim": sim,
+        "topology": topology,
+        "xlink_layout": xlink_layout,
+        "myosin_layout": myosin_layout,
+        "baoab_updater": baoab_updater,
+        "baoab_action": baoab_action,
+        "xlink_updater": xlink_updater,
+        "xlink_action": xlink_action,
+        "myosin_updater": myosin_updater,
+        "myosin_action": myosin_action,
+        "n_cortex_actin": n_cortex_actin,
+        "n_xlink_heads": n_xlink_heads,
+        "n_myosin_particles": n_myosin_particles,
+    }
 
 
 @dataclass(slots=True)
@@ -145,6 +370,7 @@ class Cell:
     p_cortex: ResolvedH3
     p_xlinks: ResolvedCrosslinkers | None
     p_erm: ResolvedERM | None
+    p_myosin: ResolvedCortexMyosin | None
 
     # Build flags applied
     options: CellBuildOptions
@@ -153,18 +379,21 @@ class Cell:
     simulation: hoomd.Simulation
     topology: CortexTopology
     xlink_layout: XlinkLayout | None
+    myosin_layout: CortexMyosinLayout | None
     erm_force: ERMHarmonic | None
     baoab_action: Any | None
     baoab_updater: Any | None
     xlink_action: XlinkBondUpdater | None
     xlink_updater: Any | None
+    myosin_action: MyosinStepUpdater | None
+    myosin_updater: Any | None
 
     # Diagnostics
     n_cortex_actin: int
     n_xlink_heads: int
+    n_myosin_particles: int
 
-    # H.3 단계 3 hooks (None — populated by 단계 4 / H.5 / H.4 integrations).
-    myosin: Any | None = None
+    # Future hooks (H.5 lamellipodium / H.4 FA; None — populated when those modules integrate).
     lamellipodium: Any | None = None
     fa: Any | None = None
 
@@ -180,6 +409,7 @@ class Cell:
         *,
         p_xlinks: ResolvedCrosslinkers | None = None,
         p_erm: ResolvedERM | None = None,
+        p_myosin: ResolvedCortexMyosin | None = None,
         options: CellBuildOptions | None = None,
         device: hoomd.device.Device | None = None,
         rng: np.random.Generator | None = None,
@@ -207,12 +437,37 @@ class Cell:
             HOOMD Simulation handle.
         """
         opts = options or CellBuildOptions()
-
-        # Path A: no xlinks → use the simpler cortex builder
-        # Path B: xlinks → use build_cortex_xlink_simulation
         n_cortex_actin = p_cortex.n_filaments * p_cortex.beads_per_filament
 
-        if opts.with_crosslinkers and p_xlinks is not None and p_xlinks.n_xl > 0:
+        # When myosin is requested, route through the unified
+        # build_cortex_full_simulation helper which handles all subset
+        # combinations (cortex + optional xlinks + optional myosin).
+        # Otherwise dispatch to the simpler cortex / cortex+xlink builders
+        # to preserve the existing 단계 1-3 behavior verbatim.
+        if opts.with_myosin:
+            if p_myosin is None:
+                raise ValueError(
+                    "options.with_myosin=True requires p_myosin to be provided."
+                )
+            handles = build_cortex_full_simulation(
+                p_cortex,
+                p_xlinks=p_xlinks if opts.with_crosslinkers else None,
+                p_myosin=p_myosin,
+                device=device, with_baoab=opts.with_baoab, rng=rng,
+            )
+            sim = handles["sim"]
+            topology = handles["topology"]
+            xl_layout = handles["xlink_layout"]
+            myosin_layout = handles["myosin_layout"]
+            baoab_updater = handles["baoab_updater"]
+            baoab_action = handles["baoab_action"]
+            xlink_updater = handles["xlink_updater"]
+            xlink_action = handles["xlink_action"]
+            myosin_updater = handles["myosin_updater"]
+            myosin_action = handles["myosin_action"]
+            n_xlink_heads = handles["n_xlink_heads"]
+            n_myosin_particles = handles["n_myosin_particles"]
+        elif opts.with_crosslinkers and p_xlinks is not None and p_xlinks.n_xl > 0:
             (sim, baoab_updater, baoab_action,
              xlink_updater, xlink_action, topology, xl_layout) = (
                 build_cortex_xlink_simulation(
@@ -221,6 +476,10 @@ class Cell:
                 )
             )
             n_xlink_heads = 2 * p_xlinks.n_xl
+            myosin_layout = None
+            myosin_updater = None
+            myosin_action = None
+            n_myosin_particles = 0
         else:
             sim, baoab_updater, baoab_action, topology, _ = (
                 build_cortex_simulation(
@@ -235,6 +494,10 @@ class Cell:
             xlink_action = None
             xl_layout = None
             n_xlink_heads = 0
+            myosin_layout = None
+            myosin_updater = None
+            myosin_action = None
+            n_myosin_particles = 0
 
         erm_force = None
         if opts.with_erm:
@@ -254,17 +517,22 @@ class Cell:
             p_cortex=p_cortex,
             p_xlinks=p_xlinks,
             p_erm=p_erm,
+            p_myosin=p_myosin,
             options=opts,
             simulation=sim,
             topology=topology,
             xlink_layout=xl_layout,
+            myosin_layout=myosin_layout,
             erm_force=erm_force,
             baoab_action=baoab_action,
             baoab_updater=baoab_updater,
             xlink_action=xlink_action,
             xlink_updater=xlink_updater,
+            myosin_action=myosin_action,
+            myosin_updater=myosin_updater,
             n_cortex_actin=n_cortex_actin,
             n_xlink_heads=n_xlink_heads,
+            n_myosin_particles=n_myosin_particles,
         )
 
     # ---------------------------------------------------------------
@@ -272,24 +540,48 @@ class Cell:
     # ---------------------------------------------------------------
     def bead_count_summary(self) -> dict[str, int]:
         """Per-subsystem bead counts (sums to ``simulation.state.N_particles``)."""
+        if self.p_myosin is not None and self.myosin_layout is not None:
+            n_myosin_backbone = (
+                self.p_myosin.n_motors_per_cell * self.p_myosin.n_backbone
+            )
+            n_myosin_head = (
+                self.p_myosin.n_motors_per_cell * 2 * self.p_myosin.n_heads_per_side
+            )
+        else:
+            n_myosin_backbone = 0
+            n_myosin_head = 0
         return {
             "cortex_actin": int(self.n_cortex_actin),
             "xlink_head": int(self.n_xlink_heads),
-            "myosin_backbone": 0 if self.myosin is None else self.myosin.n_backbone,
-            "myosin_head": 0 if self.myosin is None else self.myosin.n_heads,
+            "myosin_backbone": int(n_myosin_backbone),
+            "myosin_head": int(n_myosin_head),
             "lamellipodium": 0 if self.lamellipodium is None else self.lamellipodium.n_beads,
             "fa_integrin": 0 if self.fa is None else self.fa.n_integrins,
         }
 
     def tag_ranges(self) -> dict[str, tuple[int, int]]:
         """Map subsystem name → [start, end) tag range. Non-overlapping
-        and contiguous in insertion order."""
+        and contiguous in insertion order: cortex → xlink → myosin
+        backbone → myosin heads → (future) lamellipodium → FA."""
         offsets = {"cortex_actin": (0, self.n_cortex_actin)}
         cur = self.n_cortex_actin
         offsets["xlink_head"] = (cur, cur + self.n_xlink_heads)
         cur += self.n_xlink_heads
-        # 단계 4 / H.5 / H.4 hooks (zero-width for now).
-        offsets["myosin"] = (cur, cur)
+        if self.p_myosin is not None and self.n_myosin_particles > 0:
+            N = self.p_myosin.n_backbone
+            H = self.p_myosin.n_heads_per_side
+            M = self.p_myosin.n_motors_per_cell
+            # Myosin particles are interleaved per-motor:
+            # [backbone (N), +heads (H), −heads (H)] × M motors.
+            # We report the WHOLE myosin block as one range, then split
+            # backbone vs head sub-ranges as zero-width markers at the
+            # block boundary (since they interleave per motor, not as
+            # contiguous global sub-blocks).
+            myo_end = cur + self.n_myosin_particles
+            offsets["myosin"] = (cur, myo_end)
+            cur = myo_end
+        else:
+            offsets["myosin"] = (cur, cur)
         offsets["lamellipodium"] = (cur, cur)
         offsets["fa_integrin"] = (cur, cur)
         return offsets
@@ -309,6 +601,14 @@ class Cell:
             "with_myosin": self.options.with_myosin,
             "with_lamellipodium": self.options.with_lamellipodium,
             "with_fa": self.options.with_fa,
+            "n_xlinks_realised": (
+                int(self.xlink_layout.head_tag_pairs.shape[0])
+                if self.xlink_layout is not None else 0
+            ),
+            "n_myosin_motors_realised": (
+                int(self.myosin_layout.positions.shape[0])
+                if self.myosin_layout is not None else 0
+            ),
         }
 
     # ---------------------------------------------------------------
