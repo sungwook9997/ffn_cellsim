@@ -958,3 +958,291 @@ def build_cortex_simulation(
         return sim, updater, action, topology, xl_bonds
 
     return sim, None, None, topology, xl_bonds
+
+
+# ===========================================================================
+# Variable-length filament distribution (additive — fixed-N functions above
+# are unchanged; new functions below are opt-in via config block
+# cortex.variable_length.enabled or direct function call).
+# ===========================================================================
+#
+# Brief §Cortex topology specifies: "Filament length distribution: uniform
+# 1–5 μm (mean 3 μm) → average 7 beads per filament at ℓ₀=0.5 μm.  Total
+# cortex beads ≈ 7,000 per cell (Plan v2 §3 H.3 v3.1 estimate)."
+#
+# The fixed-N implementation (above) uses L = 3 μm (the brief's MEAN) for
+# all filaments and gives the same total bead count and per-filament force
+# constants.  The variable-length implementation below realises the full
+# distribution: per-filament L_i ~ Uniform(L_min, L_max), quantized to ℓ_0
+# multiples → N_beads_i = round(L_i/ℓ_0) + 1.
+#
+# Sanity Gate (additive — inherits §1-5 from the fixed-N module-level
+# docstring; the only new sense to verify is §3 conservation + §6
+# measurement-protocol consistency at the variable-N level.):
+#
+# §3 Conservation (variable-length):
+#   - Particle count = Σ N_beads_i (per-filament sum, not F · N).
+#   - Bond count    = Σ (N_beads_i − 1).
+#   - Angle count   = Σ (N_beads_i − 2)  with each term ≥ 0 (filaments
+#     with N=2 contribute zero angles, as expected by the harmonic
+#     angle compute which needs three consecutive beads).
+#
+# §6 Measurement (variable-length):
+#   - Per-filament L_i empirical mean approaches (L_min+L_max)/2 with
+#     sample-size N error √(var(L)/F).
+#   - Total bead count near n_filaments × ((L_min+L_max)/2 / ℓ_0 + 1).
+#   - L_i range fills [L_min, L_max] without clipping (each ℓ_0
+#     quantum bin sampled approximately uniformly).
+
+
+@dataclass(slots=True)
+class VariableLengthCortexLayout:
+    """Variable-N cortex shell topology — flat-indexed layout.
+
+    Attributes
+    ----------
+    positions_flat : ndarray, shape (n_total_beads, 3)
+        Bead positions in flat order: filament 0 beads first, then
+        filament 1, etc.  ``positions_flat[filament_starts[i]:
+        filament_starts[i] + n_beads_per_filament[i], :]`` is filament i.
+    n_beads_per_filament : ndarray, shape (n_filaments,), dtype int64
+        Per-filament bead counts (varies per filament).
+    filament_starts : ndarray, shape (n_filaments,), dtype int64
+        Flat start indices for each filament.
+        ``filament_starts[i] = sum(n_beads_per_filament[0:i])``.
+    L_per_filament : ndarray, shape (n_filaments,), dtype float64
+        Per-filament contour length actually realised (after ℓ_0
+        quantization): ``L_i = (n_beads_per_filament[i] - 1) · ℓ_0``.
+    centers_of_mass : ndarray, shape (n_filaments, 3)
+    tangents : ndarray, shape (n_filaments, 3)
+    bond_groups : ndarray, shape (n_total_bonds, 2)
+    angle_groups : ndarray, shape (n_total_angles, 3)
+    """
+
+    positions_flat: np.ndarray
+    n_beads_per_filament: np.ndarray
+    filament_starts: np.ndarray
+    L_per_filament: np.ndarray
+    centers_of_mass: np.ndarray
+    tangents: np.ndarray
+    bond_groups: np.ndarray
+    angle_groups: np.ndarray
+
+
+def generate_variable_length_cortex_layout(
+    p: ResolvedH3,
+    *,
+    L_min: float,
+    L_max: float,
+    n_filaments: int | None = None,
+    rng: np.random.Generator | None = None,
+    n_beads_min: int = 2,
+    n_beads_max: int | None = None,
+) -> VariableLengthCortexLayout:
+    """Place ``n_filaments`` variable-length filaments on the R=R_cell shell.
+
+    Each filament:
+    1. Center sampled uniformly on the sphere (Marsaglia).
+    2. Random tangent-plane axis (uniform azimuth).
+    3. ``L_i`` drawn from ``Uniform(L_min, L_max)``, quantized to ℓ_0
+       multiples → ``N_beads_i = round(L_i/ℓ_0) + 1`` clipped to
+       ``[n_beads_min, n_beads_max]``.
+    4. ``N_beads_i`` beads laid along tangent at ℓ_0 spacing, centered
+       on the CoM.
+
+    Parameters
+    ----------
+    L_min, L_max : float
+        Filament length range [m].  Brief §Cortex topology says 1-5 μm.
+    n_filaments : int, optional
+        Defaults to ``p.n_filaments``.
+    n_beads_min : int, default 2
+        Lower clamp on per-filament bead count (need ≥ 2 for a bond).
+    n_beads_max : int, optional
+        Upper clamp.  Default ``round(L_max/ℓ_0) + 1``.
+    rng : np.random.Generator, optional
+    """
+    if rng is None:
+        rng = np.random.default_rng(p.seed)
+
+    if not (math.isfinite(L_min) and L_min > 0.0):
+        raise ValueError(f"L_min must be finite and > 0; got {L_min}")
+    if not (math.isfinite(L_max) and L_max >= L_min):
+        raise ValueError(f"L_max must be finite and ≥ L_min; got {L_max}")
+    if L_max > 2.0 * p.R_cell:
+        raise ValueError(
+            f"L_max = {L_max:.3e} m exceeds cell diameter 2 R_cell = "
+            f"{2 * p.R_cell:.3e} m — a single tangent filament cannot "
+            "wrap the cell."
+        )
+
+    F = int(n_filaments) if n_filaments is not None else int(p.n_filaments)
+    if F <= 0:
+        raise ValueError(f"n_filaments must be > 0; got {F}")
+
+    L0 = p.rest_length
+    if n_beads_max is None:
+        n_beads_max = int(round(L_max / L0)) + 1
+    if n_beads_min < 2:
+        raise ValueError(f"n_beads_min must be ≥ 2; got {n_beads_min}")
+    if n_beads_max < n_beads_min:
+        raise ValueError(
+            f"n_beads_max ({n_beads_max}) must be ≥ n_beads_min ({n_beads_min})"
+        )
+
+    # Per-filament N_beads via Uniform L sampling + ℓ_0 quantization.
+    L_samples = rng.uniform(L_min, L_max, F)
+    n_beads_per = np.clip(
+        np.round(L_samples / L0).astype(np.int64) + 1,
+        n_beads_min, n_beads_max,
+    )
+    # Realised contour length per filament (after quantization).
+    L_realised = (n_beads_per - 1).astype(np.float64) * L0
+
+    # CoM on sphere (Marsaglia) + tangent basis.
+    centers = _sample_sphere_surface(rng, F, p.R_cell)
+    normals = centers / p.R_cell
+    e1, e2 = _tangent_plane_basis(normals)
+    phi = rng.uniform(0.0, 2.0 * math.pi, F)
+    tangents = (np.cos(phi)[:, None] * e1 + np.sin(phi)[:, None] * e2)
+    tangents = tangents / np.linalg.norm(
+        tangents, axis=1, keepdims=True
+    ).clip(min=1e-30)
+
+    # Flat layout.
+    n_total_beads = int(n_beads_per.sum())
+    filament_starts = np.zeros(F, dtype=np.int64)
+    filament_starts[1:] = np.cumsum(n_beads_per[:-1])
+    positions_flat = np.empty((n_total_beads, 3), dtype=np.float64)
+    bond_pairs: list[tuple[int, int]] = []
+    angle_triplets: list[tuple[int, int, int]] = []
+
+    for f in range(F):
+        N_f = int(n_beads_per[f])
+        start = int(filament_starts[f])
+        offsets = (np.arange(N_f, dtype=np.float64) - 0.5 * (N_f - 1)) * L0
+        positions_flat[start:start + N_f] = (
+            centers[f] + offsets[:, None] * tangents[f]
+        )
+        for j in range(N_f - 1):
+            bond_pairs.append((start + j, start + j + 1))
+        for j in range(N_f - 2):
+            angle_triplets.append((start + j, start + j + 1, start + j + 2))
+
+    bond_groups = np.array(bond_pairs, dtype=np.int64).reshape(-1, 2)
+    angle_groups = (
+        np.array(angle_triplets, dtype=np.int64).reshape(-1, 3)
+        if angle_triplets else np.empty((0, 3), dtype=np.int64)
+    )
+
+    return VariableLengthCortexLayout(
+        positions_flat=positions_flat,
+        n_beads_per_filament=n_beads_per,
+        filament_starts=filament_starts,
+        L_per_filament=L_realised,
+        centers_of_mass=centers,
+        tangents=tangents,
+        bond_groups=bond_groups,
+        angle_groups=angle_groups,
+    )
+
+
+def build_variable_length_cortex_state(
+    p: ResolvedH3, layout: VariableLengthCortexLayout,
+):
+    """HOOMD GSD frame builder for variable-length cortex.
+
+    Mirrors :func:`build_cortex_state` but consumes the variable-N
+    ``VariableLengthCortexLayout`` instead of the fixed-N CortexTopology.
+    No xlinks at this layer (xlinks need fixed per-filament topology to
+    look up filament indices — extend xlinks support in a follow-up).
+    """
+    import gsd.hoomd
+
+    n_total = layout.positions_flat.shape[0]
+    half = 0.5 * p.L_box
+    if (np.abs(layout.positions_flat) > half + 1.0e-9).any():
+        raise RuntimeError(
+            f"Variable-length bead positions outside HOOMD box "
+            f"[-{half:.3e}, {half:.3e}); increase box.L_box_over_R_cell."
+        )
+
+    snap = gsd.hoomd.Frame()
+    snap.particles.N = n_total
+    snap.particles.types = ["actin_cortex"]
+    snap.particles.typeid = np.zeros(n_total, dtype=np.uint32)
+    snap.particles.position = layout.positions_flat
+    snap.particles.mass = np.ones(n_total, dtype=np.float64)
+
+    n_bonds = layout.bond_groups.shape[0]
+    n_angles = layout.angle_groups.shape[0]
+
+    snap.bonds.N = n_bonds
+    snap.bonds.types = ["cortex-bond"]
+    snap.bonds.typeid = np.zeros(n_bonds, dtype=np.uint32)
+    snap.bonds.group = layout.bond_groups.astype(np.uint32)
+
+    if n_angles > 0:
+        snap.angles.N = n_angles
+        snap.angles.types = ["cortex-angle"]
+        snap.angles.typeid = np.zeros(n_angles, dtype=np.uint32)
+        snap.angles.group = layout.angle_groups.astype(np.uint32)
+
+    snap.configuration.box = [p.L_box, p.L_box, p.L_box, 0.0, 0.0, 0.0]
+    return snap
+
+
+def build_variable_length_cortex_simulation(
+    p: ResolvedH3, layout: VariableLengthCortexLayout,
+    *,
+    device: hoomd.device.Device | None = None,
+    with_baoab: bool = True,
+):
+    """Variable-length cortex HOOMD Simulation builder.
+
+    Mirrors :func:`build_cortex_simulation` (no xlinks; flat layout).
+    """
+    snap = build_variable_length_cortex_state(p, layout)
+    sim = hoomd.Simulation(
+        device=device or hoomd.device.CPU(), seed=p.seed
+    )
+    sim.create_state_from_snapshot(snap)
+
+    bond = md.bond.Harmonic()
+    bond.params["cortex-bond"] = dict(k=p.bond_k, r0=p.rest_length)
+
+    angle = md.angle.Harmonic()
+    angle.params["cortex-angle"] = dict(k=p.angle_k, t0=p.angle_t0)
+
+    # Use nlist with bond exclusions (matches build_cortex_full_simulation
+    # 단계 6 lesson: bonded WCA neighbours blow up when bond length
+    # < r_cut).
+    nlist = md.nlist.Tree(
+        buffer=0.5 * p.lj_sigma, exclusions=("bond", "1-3"),
+    )
+    lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
+    lj.params[("actin_cortex", "actin_cortex")] = dict(
+        epsilon=p.lj_epsilon, sigma=p.lj_sigma,
+    )
+    lj.r_cut[("actin_cortex", "actin_cortex")] = (
+        p.lj_r_cut if p.lj_enabled else 0.0
+    )
+    lj.mode = "shift"
+
+    ig = md.Integrator(dt=p.dt_cfl)
+    ig.forces.append(bond)
+    ig.forces.append(angle)
+    ig.forces.append(lj)
+    sim.operations.integrator = ig
+
+    if with_baoab:
+        action, updater = make_baoab_updater(
+            kT=p.kT,
+            gamma={"actin_cortex": p.gamma_b},
+            dt=p.dt_cfl,
+            seed=p.seed,
+        )
+        sim.operations.updaters.append(updater)
+        return sim, updater, action, layout
+
+    return sim, None, None, layout

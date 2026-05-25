@@ -539,3 +539,62 @@ Baseline before 단계 6: 240 PASS / 14 SKIP. 단계 6 net: **+0 PASS / +0 SKIP*
 3. **KU-3.x production runs** (multi-hour each; ERM CFL 선행 필요).
 4. **ERM CFL** PI sign-off.
 5. **3-way 60s production gate** `H3_INTEGRATION_PRODUCTION=1` (multi-hour).
+
+---
+
+# H.3 — 단계 7 closeout (autonomous /loop continuation)
+
+**Branch**: `phase1/h3-cortex` (continuation; head commit updated below)
+**Session**: Main, 2026-05-25 (autonomous /loop wake)
+
+## 단계 7 deliverables landed
+
+| Item | Status |
+| --- | --- |
+| `cortex/cortex.py` `VariableLengthCortexLayout` dataclass + `generate_variable_length_cortex_layout` + `build_variable_length_cortex_state` + `build_variable_length_cortex_simulation` | ✅ NEW (~280 lines added) |
+| `cortex/__init__.py` exports for variable-length API | ✅ wired |
+| `configs/phase1_h3.yaml` `cortex.variable_length` block | ✅ |
+| `tests/test_variable_length.py` (19 PASS / 1 SKIP, opt-in `H3_VARIABLE_LENGTH_PRODUCTION=1`) | ✅ NEW |
+| Brief §Cortex topology (uniform 1–5 μm) realised | ✅ |
+
+## Variable-length filament distribution architecture
+
+**Additive design** (fixed-N functions untouched, no 단계 1-6 baseline regression):
+
+- Per-filament L_i ~ Uniform(L_min=1 μm, L_max=5 μm), quantized to ℓ_0 = 0.5 μm multiples → N_beads_i = round(L_i/ℓ_0) + 1 (range 3–11 beads).
+- Flat layout: `positions_flat` (Σ N_i, 3), `n_beads_per_filament` (F,), `filament_starts` (F,) for navigation.
+- Bond / angle groups generated based on per-filament counts (Σ (N_i-1) bonds, Σ (N_i-2) angles with N=2 filaments contributing 0 angles).
+- `build_variable_length_cortex_simulation` inherits the 단계 6 nlist exclusions lesson: `nlist.Tree(exclusions=('bond', '1-3'))`.
+
+Config opt-in via `cortex.variable_length.enabled` flag (default OFF so existing builders unchanged); functional override via direct call to `generate_variable_length_cortex_layout`.
+
+Production-scale L_p sweep at variable-length deferred to opt-in `H3_VARIABLE_LENGTH_PRODUCTION=1` (same multi-hour rationale as L_p full + KU-3.x gates).
+
+## Brief §Cortex topology realisation
+
+- **Brief literal**: "uniform 1–5 μm (mean 3 μm) → average 7 beads per filament at ℓ_0=0.5 μm. Total cortex beads ≈ 7,000 per cell".
+- **단계 1-6 (fixed-mean)**: L = 3 μm fixed → exactly 7 beads × 1000 filaments = 7,000 beads.
+- **단계 7 (variable-length)**: L_i drawn from Uniform(1, 5) μm, mean 3 μm (empirical with F=80 demo: 2.5–3.5 μm 95% CI). Total beads ≈ F · 7 = 7,000 on average, with σ ≈ F · σ_N ≈ 80 · 1.4 ≈ 112 (production scale: ~370 bead-count variance, ~5% of total). Same per-filament force constants (cortex.bond_k, cortex.angle_k); same dt_CFL.
+
+The brief's distribution is now FULLY REALISABLE; the fixed-mean approximation remains the default for test-baseline preservation.
+
+## Test results
+
+| Suite | PASS / SKIP / FAIL |
+| --- | --- |
+| `test_variable_length.py` (단계 7 new) | 19 PASS / 1 SKIP (opt-in) |
+| Main scope regression (H.1 + H.2 + BAOAB + H.3) | **259 PASS / 15 SKIP / 0 FAIL** |
+
+Baseline before 단계 7: 240 PASS / 14 SKIP. 단계 7 net: **+19 PASS / +1 SKIP / 0 regressions**.
+
+## Open / next iteration (final stretch)
+
+ALL big-ticket items remain PI sign-off / dedicated session paths:
+
+1. **L_p full sweep** dedicated overnight session (~91 min wall).
+2. **KU-3.x production runs** (multi-hour each; ERM CFL 선행 필요).
+3. **ERM CFL** PI sign-off (k_ERM 0.1 N/m vs dt_CFL=13 ns).
+4. **3-way 60s production gate** `H3_INTEGRATION_PRODUCTION=1`.
+5. **Variable-length L_p production sweep** `H3_VARIABLE_LENGTH_PRODUCTION=1` (multi-hour).
+
+H.3 implementation deliverables (cortex.py + crosslinkers.py + erm.py + myosin.py + cell/cell.py + build_cortex_full_simulation + variable-length + 10 figures + tests) **ALL LANDED**. Status H.3 🟨 → ✅ DONE ratification awaits the PI sign-off + dedicated production sessions above.

@@ -125,6 +125,20 @@ cortex:
     n_bins: 10                 # per-r0 binning (mirrors H.1 cortex.py xl)
     seed: 43                   # offset from cortex.seed for RNG isolation
 
+  # ---- Variable-length filament distribution (brief §Cortex topology) ----
+  # Per-brief: "uniform 1–5 μm (mean 3 μm) → average 7 beads per
+  # filament at ℓ₀=0.5 μm".  Additive opt-in via
+  # `generate_variable_length_cortex_layout` + sibling state/sim
+  # builders in cortex.py.  When enabled, replaces the fixed-N layout
+  # used by the default builders.  Default OFF — fixed L = L_filament
+  # = 3 μm (the brief MEAN) preserves the 단계 1-6 behavior + test
+  # baseline of 240 PASS.  Production sweep at variable-length is a
+  # follow-up via opt-in `H3_VARIABLE_LENGTH_PRODUCTION=1`.
+  variable_length:
+    enabled: false
+    L_min: 1.0e-6                # m   brief literal lower bound
+    L_max: 5.0e-6                # m   brief literal upper bound
+
   # ---- ERM tether (KU-3.18) — radial harmonic per cortex bead ----
   # `cortex/erm.py` implements as md.force.Custom subclass.
   # k_ERM = 0.1 N/m per brief literal (KU-3.18 anchor). At kT = 4.28 zJ,
