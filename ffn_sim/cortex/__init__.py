@@ -41,11 +41,33 @@ from ffn_sim.cortex.erm import (
     attach_erm_to_simulation,
     resolve_erm,
 )
+from ffn_sim.cortex.myosin import (
+    CortexMyosinLayout,
+    MyosinStepUpdater,
+    ResolvedCortexMyosin,
+    cortex_myosin_attach_bin_names,
+    cortex_myosin_attach_bin_rest_lengths,
+    extend_state_with_cortex_myosin,
+    generate_cortex_myosin_layout,
+    make_cortex_myosin_updater,
+    register_cortex_myosin_bond_params,
+    resolve_cortex_myosin,
+)
 
 __all__ = [
+    "CortexMyosinLayout",
     "ERMHarmonic",
+    "MyosinStepUpdater",
+    "ResolvedCortexMyosin",
     "ResolvedERM",
     "attach_erm_to_simulation",
+    "cortex_myosin_attach_bin_names",
+    "cortex_myosin_attach_bin_rest_lengths",
+    "extend_state_with_cortex_myosin",
+    "generate_cortex_myosin_layout",
+    "make_cortex_myosin_updater",
+    "register_cortex_myosin_bond_params",
+    "resolve_cortex_myosin",
     "resolve_erm",
     "CortexTopology",
     "CrosslinkerBonds",

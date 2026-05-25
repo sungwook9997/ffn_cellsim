@@ -349,3 +349,74 @@ Baseline before 단계 3: 189 PASS / 8 SKIP. 단계 3 net: **+15 PASS, 0 new SKI
 3. **L_p full sweep** opt-in (`H3_PRODUCTION_FULL=1`) — PI sign-off path for H.3 → ✅ DONE.
 4. **ERM CFL resolution** — PI sign-off for dt-reduction OR k_ERM-softening (brief literal vs cortex dt_CFL conflict).
 5. **Variable-length filament distribution** (cosmetic).
+
+---
+
+# H.3 — 단계 4 closeout (autonomous /loop continuation)
+
+**Branch**: `phase1/h3-cortex` (continuation; head commit updated below)
+**Session**: Main, 2026-05-25 (autonomous /loop wake)
+**Authorization**: PI "H.3 계속 완료할때까지".
+
+## 단계 4 deliverables landed
+
+| Item | Status |
+| --- | --- |
+| `ffn_sim/cortex/myosin.py` (~700 lines) — D5 Stam-Hocky bipolar minifilament + D6 Hill stepping + Sanity Gate §1-6 | ✅ NEW |
+| `ffn_sim/tests/test_myosin.py` (21 PASS) | ✅ NEW |
+| `ffn_sim/tests/validation/test_ku3x_cortex.py` (KU-3.1/3.5/3.18/3.20 skeleton + measurement utilities) | ✅ NEW (4 utility PASS / 5 production SKIP opt-in `H3_KU3_PRODUCTION=1`) |
+| `cortex/__init__.py` exports + `configs/phase1_h3.yaml` `myosin` block | ✅ wired |
+| L_p full sweep `H3_PRODUCTION_FULL=1` | ⏭ wall-time UNDERESTIMATE (실측 11 min in CPU 후 추정 ~91 min full) — defer to dedicated PI sign-off session |
+| KU-3.x production runs | ⏭ multi-hour wall, opt-in skeleton only |
+| ERM CFL resolution | ⏭ awaiting PI sign-off |
+
+## myosin.py architecture (D5 Stam-Hocky bipolar minifilament + D6 Hill)
+
+- **100 minifilaments per cell** (KU-3.x Salbreux 2012 density 3/μm²).
+- **Per minifilament**: 14-bead backbone (700 nm rigid-rod via stiff harmonic, k_backbone = 10·k_head_spring) + 10 cross-bridge heads per side (perpendicular harmonic, k_head_spring = 1 pN/μm = 1e-6 N/m, r0 = 200 nm). Total **34 particles per minifilament × 100 = 3,400 motor beads per cell**.
+- **D2 Bell-Evans slip** head ↔ actin attach bonds (k_off⁰=10 /s, x_β=0.6 nm per Veigel 2002 NMII; mirrors `crosslinkers.py` Bell-Evans pattern).
+- **D6 Hill stepping** while engaged: v(F) = v0·(F_s − F)/(F_s + F/a_over_F_stall), v0 = 1 μm/s, F_s = 0.5 pN, a/F_s = 0.5 (Kovács 2003). Hill closed-form imported from H.4 `bridge/motor.py` (shared module, read-only per CLAUDE.md).
+- **Runtime stepper** `MyosinStepUpdater`: batched `hoomd.custom.Action`, every 100 BAOAB steps; unbinds via Bell-Evans, binds via scipy.spatial.cKDTree, advances `xlink_attach_b{i}` rest-length bin per Hill v(F).
+- **CFL**: τ_head = 0.4 ms, τ_backbone = 39 μs — both ≫ cortex dt_CFL = 13 ns. **No CFL conflict** (unlike ERM where k_ERM = 0.1 N/m violates CFL).
+
+## KU-3.x validation gates (skeleton + measurement utilities)
+
+Production gates (KU-3.1 rounding / KU-3.5 tension / KU-3.18 blebbistatin / KU-3.20 nematic) require **60 s simulated time on a full cortex+myosin+ERM cell** — multi-hour to multi-day wall on M1 Max CPU. Skeletons skip-marked `H3_KU3_PRODUCTION=1`.
+
+**Measurement utilities** that DO run at CI time (4 PASS):
+- `cell_aspect_ratio(positions)` — covariance-tensor principal-eigenvalue ratio of the bounding ellipsoid.
+- `nematic_order_S(axes)` — Q-tensor largest eigenvalue (0 = isotropic, 1 = aligned).
+
+Both validated against analytical cases (isotropic sphere → aspect 1, S → 0; aligned axes → S → 1; 12×8×8 ellipsoid → aspect 1.5).
+
+**KU-3.x first-principles bands** (no measurement-anchoring per H.2 Day 5):
+- KU-3.1: aspect ratio ≤ 1.2 at 60 s (Salbreux 2012 literature criterion).
+- KU-3.5: γ_cortex = 0.5 mN/m ± 30 % (Phase 1 default mid-range epithelial value, 0.1–1 mN/m literature range).
+- KU-3.18: myosin-OFF aspect > 1.3 at 60 s (comparative against KU-3.1).
+- KU-3.20: isotropic S < 0.1; aligned S > 0.3.
+
+All bands derived from literature; tests will surface to PI when production runs land.
+
+## L_p full sweep (deferred — wall-time underestimate)
+
+Background full sweep (`H3_PRODUCTION_FULL=1`) killed after 11+ min CPU — the actual wall-time estimate is **~91 min** (37× the smoke 2:28), not the 15 min I quoted from the 단계 2 smoke. Reason: full sweep = 1000 filaments × 100 snapshots × 50 k step interval = 11.1× more steps × 3.33× more particles vs smoke. PI sign-off path needs a dedicated session (or weekend overnight run) to land this gate.
+
+Alternative path: a **medium-scale sweep** (`H3_PRODUCTION_MEDIUM=1`, ~15 min wall, σ_L_p ≈ 1.34 μm) would resolve the KU-1.1 ±10% (1.7 μm) band at ≈ 1.3σ — borderline but possibly usable for an interim PASS. Add in next iteration if PI wants faster signal-off.
+
+## Test results
+
+| Suite | PASS / SKIP / FAIL |
+| --- | --- |
+| `test_myosin.py` (단계 4 new) | 21 PASS / 0 SKIP |
+| `test_ku3x_cortex.py` (단계 4 new; utils only) | 4 PASS / 5 SKIP (opt-in) |
+| Main scope regression (H.1 + H.2 + BAOAB + H.3) | **229 PASS / 13 SKIP / 0 FAIL** |
+
+Baseline before 단계 4: 204 PASS / 8 SKIP. 단계 4 net: **+25 PASS, +5 SKIP (opt-in only), 0 regressions**.
+
+## Open / next iteration
+
+1. **L_p full sweep** dedicated session (~91 min wall) for H.3 → ✅ DONE production sign-off.
+2. **KU-3.x production runs** (multi-hour each) — PI sign-off required, also needs ERM CFL resolution.
+3. **ERM CFL resolution** — PI sign-off for dt-reduction OR k_ERM-softening.
+4. **Variable-length filament distribution** (cosmetic).
+5. **Cell composition with myosin wired into Cell.build** — currently Cell composes cortex + ERM + xlinks, but not yet myosin. Next iteration: extend Cell.build to wire MyosinStepUpdater.

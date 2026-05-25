@@ -139,6 +139,39 @@ cortex:
     # cell_center optional; defaults to box origin (0, 0, 0) — matches
     # cortex.py topology generator which places the shell at the origin.
 
+  # ---- Cortical myosin (D5 Stam-Hocky + D6 Hill, KU-3.5 / KU-3.18) ----
+  # Bipolar minifilament: 14-bead backbone (700 nm) + 10 cross-bridge heads
+  # per side. 100 minifilaments per cell (Salbreux 2012 density 3/μm²).
+  # Implementation in `ffn_sim/cortex/myosin.py`; runtime stepper
+  # MyosinStepUpdater handles D2 Bell-Evans slip head-to-actin bonds + D6
+  # Hill stepping kernel. Hill closed-form imported from H.4 motor.py
+  # (shared module per CLAUDE.md cross-module read).
+  #
+  # CFL: k_head_spring = 1 pN/μm = 1e-6 N/m gives τ_head ≈ 0.4 ms;
+  # k_backbone = 10× = 1e-5 N/m gives τ_backbone ≈ 39 μs. Both ≫ cortex
+  # dt_CFL = 13 ns → no CFL conflict (unlike ERM at k_ERM = 0.1 N/m).
+  myosin:
+    n_motors_per_cell: 100             # KU-3.x Salbreux 2012 density 3/μm²
+    n_backbone: 14                     # brief literal
+    n_heads_per_side: 10               # brief literal
+    backbone_length: 700.0e-9          # m   brief literal (700 nm rigid rod)
+    head_rest_length: 200.0e-9         # m   brief literal (perpendicular head offset)
+    k_head_spring: 1.0e-6              # N/m brief literal (0.1 pN/μm)
+    k_backbone_factor: 10.0            # k_backbone = factor · k_head_spring (H.4 motor.py)
+    k_head_actin: 1.0e-6               # N/m head-actin attach bond (= k_head_spring)
+    # D6 Hill (NMII per Kovács 2003, brief literal)
+    v0_per_head: 1.0e-6                # m/s 1 μm/s
+    F_stall_per_head: 0.5e-12          # N   0.5 pN
+    a_over_F_stall: 0.5                # Kovács 2003
+    # D2 Bell-Evans head-actin (NMII; Veigel 2002 anchor)
+    head_actin_k_off0: 10.0            # 1/s unloaded off-rate (NMII duty cycle)
+    head_actin_x_beta: 0.6e-9          # m   Bell strength length (Veigel 2002)
+    head_actin_k_on: 50.0              # 1/s per-head bind rate when acceptor present
+    head_actin_max_bind_dist: 50.0e-9  # m   acceptor search radius
+    batch_steps: 100                   # BAOAB steps between Updater ticks
+    n_bins: 10                         # per-r0 binning count
+    seed: 44                           # offset from cortex.seed for RNG isolation
+
   # ---- Static crosslinkers (legacy 단계 1 mode, OPTIONAL; default OFF) ----
   # KU-3.19 specifies 30 % α-actinin (35 nm length, k = 0.1 pN/μm) and
   # 70 % filamin (150 nm length, k = 0.1 pN/μm). Brief §Crosslinkers
