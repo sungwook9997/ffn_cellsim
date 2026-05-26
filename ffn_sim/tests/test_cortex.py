@@ -798,7 +798,30 @@ class TestH3Production:
             p_run, with_baoab=True, with_crosslinkers=False
         )
 
+        # Per-iteration checkpoint + progress print (lesson from H.3 단계 9:
+        # the 5-hour CPU L_p FULL run had to be killed without yielding any
+        # data because frames were memory-only.  Now each snapshot is also
+        # written to ffn_sim/outputs/h3/checkpoints/lp_{scale}/snapshot_NNN.npz
+        # so a midway kill leaves partial data on disk + every snapshot
+        # prints a timestamped progress line for `tail -f` monitoring).
+        import time as _time
+        scale_tag = (
+            "full" if full else ("medium" if medium else "smoke")
+        )
+        ckpt_dir = (
+            Path(__file__).resolve().parents[1] / "outputs" / "h3"
+            / "checkpoints" / f"lp_{scale_tag}"
+        )
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+
+        t_start = _time.time()
         sim.run(n_equilibrate)
+        print(
+            f"[{_time.strftime('%H:%M:%S')}] L_p {scale_tag.upper()} "
+            f"equilibration done ({n_equilibrate} steps, "
+            f"{(_time.time() - t_start):.1f} s wall)", flush=True,
+        )
+
         frames = np.empty(
             (n_snapshots, p_run.n_filaments, p_run.beads_per_filament, 3),
             dtype=np.float64,
@@ -806,19 +829,31 @@ class TestH3Production:
         for k in range(n_snapshots):
             sim.run(sample_interval)
             with sim.state.cpu_local_snapshot as snap:
-                # Use tag indirection so row order matches our (F, N, 3)
+                # Tag indirection so row order matches our (F, N, 3)
                 # construction order even if HOOMD's ParticleSorter has
-                # reordered rows. The (F, N, 3) layout assumes tags 0..N-1
-                # are filament 0 beads 0..N-1, tags N..2N-1 are filament 1, etc.
+                # reordered rows.
                 tag = np.asarray(snap.particles.tag)
                 pos = np.asarray(snap.particles.position)
-                # row[i] holds particle whose tag is tag[i]; we want
-                # frames[k, fil, bead, :] = position of tag fil*N+bead.
                 inv = np.empty_like(tag)
                 inv[tag] = np.arange(tag.size, dtype=tag.dtype)
                 frames[k] = pos[inv].reshape(
                     p_run.n_filaments, p_run.beads_per_filament, 3
                 )
+            # Checkpoint each snapshot to disk (negligible cost vs
+            # sample_interval BAOAB steps).
+            np.savez_compressed(
+                ckpt_dir / f"snapshot_{k:03d}.npz",
+                frame=frames[k], k=k, n_snapshots=n_snapshots,
+                scale=scale_tag, sim_timestep=int(sim.timestep),
+            )
+            elapsed = _time.time() - t_start
+            print(
+                f"[{_time.strftime('%H:%M:%S')}] L_p {scale_tag.upper()} "
+                f"snapshot {k+1}/{n_snapshots} "
+                f"(ts={int(sim.timestep)}, wall={elapsed:.1f}s, "
+                f"est_total={elapsed * n_snapshots / max(k+1, 1):.0f}s)",
+                flush=True,
+            )
         return p_run, frames
 
     @pytest.mark.skipif(

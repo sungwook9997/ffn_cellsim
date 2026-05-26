@@ -643,3 +643,136 @@ A MEDIUM PASS is **suggestive** that the production simulation correctly recover
 - **Remaining for H.3 → ✅ DONE ratification**: ERM CFL PI decision · L_p FULL dedicated session · KU-3.x production runs · 3-way 60s production · variable-length L_p production. **None of these are autonomous-feasible in 25-min /loop iterations.**
 
 H.3 has reached the END of the autonomous /loop's productive scope. Further progress requires PI sign-off + dedicated long-running sessions.
+
+---
+
+# H.3 production gate progress — post-/loop session (2026-05-26)
+
+PI directive 2026-05-26: "프로덕션 돌리자" (let's run production).
+
+## ERM CFL RE-RATIFICATION (PI option A)
+
+Per the 단계 3 sanity finding, the brief literal `k_ERM = 0.1 N/m` was numerically incompatible with the cortex production `dt_CFL = 13 ns`.
+
+PI selected **option A: soften k_ERM to 1.0 × 10⁻⁴ N/m** (1000× softer than brief literal). KU-3.18 RE-RATIFIED.
+
+- `configs/phase1_h3.yaml` updated with full rationale comment.
+- `tests/test_erm.py` + `tests/test_cell.py` CFL-boundary tests updated to test the gate against the OLD 0.1 N/m hardcoded value (preserves the sanity check; anyone reverting to old value still gets the CFL gate raised).
+- 23/23 ERM + Cell tests PASS after ratification.
+
+**Physical implication**: σ_radial = √(kT/k_ERM) ≈ **6.5 nm** per bead (was 0.21 nm under old k_ERM). Still ≈30× tighter than the 200 nm KU-3.17 cortex thickness band — the biological "tight pinning relative to membrane band" interpretation carries through. Rounding / tension / blebbistatin / nematic gates probe EMERGENT large-scale curvature, not per-bead radial distribution, so the σ_radial change does NOT affect KU-3.x acceptance.
+
+## L_p FULL sweep (autonomous-feasible production)
+
+Launched in background on `phase1/h3-cortex` after ERM ratification:
+
+```
+H3_PRODUCTION=1 H3_PRODUCTION_FULL=1 pytest test_cortex.py::TestH3Production
+```
+
+Scale: 1000 filaments × 100 snapshots × 50k step interval = **5.1 M BAOAB steps** with N_pairs = 500k per s → σ_L_p ≈ **0.36 μm** → **4.7σ resolution** on the KU-1.1 ±10 % band [15.3, 18.7] μm (production-sign-off resolution per CLAUDE.md no-gate-loosening).
+
+Wall-time estimate: ~91 min (37× the 단계 2 smoke).
+
+*(Result fills here when sweep notification arrives.)*
+
+## Remaining production gates assessment
+
+| Gate | Autonomous-feasible? | Status |
+| --- | --- | --- |
+| ERM CFL | ✅ PI-ratified (option A, 2026-05-26) | DONE |
+| L_p FULL | ✅ running in background | in progress |
+| Variable-length L_p production | Needs `filament_math` adaptation for variable-N + ~91 min run | NEEDS implementation work |
+| KU-3.1 cell rounding | Needs ellipsoid initial topology (cortex.py currently spherical only) + 60 s simulated → multi-day wall | NEEDS implementation + dedicated session |
+| KU-3.5 cortex tension | Needs HOOMD pressure_tensor Writer wiring + multi-hour steady-state | NEEDS implementation + dedicated session |
+| KU-3.18 blebbistatin | Comparative gate (KU-3.1 with myosin OFF); needs KU-3.1 first | DOWNSTREAM |
+| KU-3.20 nematic | Q_ij measurement utility already in `tests/validation/test_ku3x_cortex.py`; production run is multi-hour | NEEDS multi-hour |
+| 3-way 60s production | 60 s simulated × 10k particles × 2 Updaters → multi-day wall | OUT OF AUTONOMOUS SCOPE |
+
+**Realistic delivery this session**: ERM ratification + L_p FULL (production sign-off contract). Remaining gates have either non-trivial implementation gaps (ellipsoid topology, variable-N L_p adaptation, pressure_tensor wiring) OR multi-day wall-time requirements that exceed even dedicated overnight sessions.
+
+---
+
+# H.3 단계 9 — L_p FULL CPU 시도 중단 + 윈도우 GPU 이전 결정 (2026-05-26)
+
+## L_p FULL CPU 시도 결과
+
+PI 결정 (option A: k_ERM 소프트닝)으로 ERM CFL 해결 직후 L_p FULL 백그라운드 시작.
+
+| Metric | Value |
+| --- | --- |
+| Wall elapsed at kill | 5h 21m 43s |
+| CPU TIME at kill | 222 min |
+| CPU utilization | 68% (laptop sleep으로 32% loss) |
+| 추정 잔여 | 30-80분 CPU |
+| 결과 | **중단** (PI 결정) |
+
+**중단 이유**:
+1. 추정이 계속 어긋남 — 단계 4의 91분 추정 → MEDIUM 기반 215분 → 실측 222min CPU 후에도 미완 (실제는 280-300분 CPU 예상)
+2. M1 Max 단일-스레드 CPU가 5.1M-step 5-particle-density 시뮬레이션에 부적합
+3. 윈도우 RTX A5000 Laptop GPU 이전이 곧 예정 → 같은 sweep 15-25분 wall 가능
+4. 현재 fixture 디자인 결함: frames 메모리만 보존, 중단 시 sunk cost 전부 손실 → MEDIUM (단계 8, 3/3 PASS) interim signal 유지
+
+## 단계 9 fixture 개선 (lesson learned)
+
+PI가 진행률 모니터링 불가 + 중단 시 데이터 손실을 지적. `test_cortex.py::TestH3Production.production_run` fixture에 두 가지 개선:
+
+1. **Per-snapshot checkpoint 저장** — `outputs/h3/checkpoints/lp_{smoke|medium|full}/snapshot_NNN.npz` 매 스냅샷마다 디스크에 저장. 중단 시 0..k까지 데이터 보존 → partial 평가 가능.
+2. **Progress print** — 매 스냅샷마다 timestamped 한 줄 stdout 출력 (`flush=True`). `tee` 우회 + 실시간 `tail -f`로 모니터링 가능.
+
+```python
+# Each snapshot now:
+np.savez_compressed(ckpt_dir / f"snapshot_{k:03d}.npz", ...)
+print(f"[{HH:MM:SS}] L_p FULL snapshot {k+1}/{n_snapshots} "
+      f"(ts=..., wall=..., est_total=...)", flush=True)
+```
+
+이 fixture 패치는 윈도우 GPU 이전 후 첫 L_p FULL 재시도 시 진행률 실시간 모니터링 + 안전한 중단 가능하게 함.
+
+## 윈도우 GPU 이전 결정
+
+PI가 RTX A5000 Laptop 보유 확인. CLAUDE.md `Stack` 섹션 "Phase 2+ target: CUDA GPU" 이 조기 활성화:
+
+| Target | Spec |
+| --- | --- |
+| GPU | RTX A5000 Laptop (Ampere, CC 8.6, 6144 cores, 16 GB) |
+| OS | Windows (WSL2 권장) |
+| HOOMD 설치 | `conda install -c conda-forge "hoomd=7.*=*cuda*"` |
+| 코드 변경 | `device=hoomd.device.GPU()` (한 줄 + auto_select 활용) |
+| 예상 가속 | 10-30× (BAOAB only) / 5-15× (Updater 무거운 sim) |
+
+### 이전 후 production gates 재시도 일정
+
+| Gate | CPU (현재) | GPU (예상) | 자율-feasible? |
+| --- | --- | --- | --- |
+| L_p FULL | 5h+ 미완 | **15-25 min** | ✅ YES |
+| Variable-length L_p production | ~10h CPU | ~30 min | ✅ YES |
+| KU-3.1 cell rounding (60s simulated) | 수일 | **수시간** | ✅ YES (ellipsoid topology 구현 후) |
+| KU-3.5 cortex tension | 수일 | 수시간 | ✅ YES (pressure_tensor wiring 후) |
+| KU-3.18 blebbistatin | 수일 | 수시간 | ✅ YES (KU-3.1 downstream) |
+| KU-3.20 nematic order | 수일 | 수시간 | ✅ YES |
+| 3-way 60s production | 수일 | **수시간** | ✅ YES |
+| H.5 KU-5.1/5.2/5.3 | 수일 | 수시간 | ✅ YES |
+
+윈도우 GPU 이전 후 **거의 모든 production gates가 autonomous /loop 안에서 다시 다룰 수 있는 시간 범위로 단축됨**.
+
+## 이 세션 최종 commit 내용
+
+| File | Change |
+| --- | --- |
+| `configs/phase1_h3.yaml` | k_ERM 0.1 → 1.0e-4 (PI option A 비준) + rationale 코멘트 |
+| `tests/test_erm.py` | CFL gate 테스트 → 하드코드 0.1 값으로 테스트 (게이트 자체는 보존) |
+| `tests/test_cell.py` | CFL propagation 테스트 → 같은 패턴 적용 |
+| `tests/test_cortex.py` | production fixture에 per-snapshot checkpoint + progress print 추가 (단계 9 lesson) |
+| `outputs/h3/REPORT.md` | 단계 9 섹션 추가 (CPU 중단 + 윈도우 GPU 이전 결정 기록) |
+
+Main scope 회귀: 변동 없이 ERM ratification 후 모든 기존 tests 통과 (276 PASS / 16 SKIP / 0 FAIL — H.5 단계 1 baseline).
+
+## H.3 상태 (Phase 1 closeout 시점)
+
+- **🟨 implementation 완료** (단계 1-7)
+- **🟨 L_p MEDIUM 3/3 PASS** (단계 8, interim 1.3σ signal)
+- **⏸ L_p FULL CPU 시도 중단** (단계 9, 윈도우 GPU 이전 대기)
+- **✅ DONE 비준 대기**: L_p FULL (GPU) + KU-3.x production runs (GPU)
+
+다음 H.3 작업은 모두 **윈도우 GPU 이전 후 dedicated 세션**으로 이관.

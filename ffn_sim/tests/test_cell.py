@@ -63,14 +63,23 @@ class TestBoundary:
             Cell.build(p_cortex, options=opts)
 
     def test_with_erm_propagates_cfl_violation(self, p_cortex):
-        """Brief-literal k_ERM = 0.1 N/m at cortex dt_cfl violates CFL;
-        Cell.build must raise (not silently swallow)."""
-        p_erm = resolve_erm(
-            _load_cfg(), kT=p_cortex.kT, R_cell=p_cortex.R_cell
+        """Cell.build propagates ERM CFL violation when caller passes
+        an old-style k_ERM that violates CFL at cortex dt_cfl.
+
+        KU-3.18 RE-RATIFIED 2026-05-26 to k_ERM=1e-4 N/m (CFL-safe).
+        The yaml default no longer raises — but the gate is still
+        guarded against caller-supplied old values (e.g. legacy 0.1 N/m
+        from external configs).
+        """
+        import math
+        # Construct an ERM with the OLD 0.1 N/m value (NOT from yaml).
+        p_erm_old = ResolvedERM(
+            k_ERM=0.1, R_cell=p_cortex.R_cell, cell_center=(0.0, 0.0, 0.0),
         )
+        p_erm_old.sigma_radial_thermal = math.sqrt(p_cortex.kT / p_erm_old.k_ERM)
         opts = CellBuildOptions(with_erm=True)
         with pytest.raises(RuntimeError, match="ERM CFL violated"):
-            Cell.build(p_cortex, p_erm=p_erm, options=opts)
+            Cell.build(p_cortex, p_erm=p_erm_old, options=opts)
 
     def test_with_zero_xlinks_idle(self, p_cortex):
         """with_crosslinkers=True + n_xl=0 builds a bare cortex (no xlink

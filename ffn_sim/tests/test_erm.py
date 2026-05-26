@@ -76,13 +76,16 @@ class TestDimensional:
         )
 
     def test_k_ERM_units_via_force(self, resolved_erm):
-        # k_ERM [N/m] · Δr [m] → force [N]. Brief literal 0.1 N/m.
-        assert resolved_erm.k_ERM == 0.1
-        # σ_radial check: at kT=4.28e-21 J, σ = √(4.28e-21/0.1) ≈ 0.21 nm.
-        # (3 orders of magnitude smaller than KU-3.17 200 nm cortex
-        #  thickness — confirms brief's TIGHT-pinning interpretation per
-        #  module docstring.)
-        assert 1e-10 < resolved_erm.sigma_radial_thermal < 5e-10
+        # k_ERM [N/m] · Δr [m] → force [N]. KU-3.18 RE-RATIFIED 2026-05-26
+        # by PI to 1.0e-4 N/m (was: brief literal 0.1 N/m) — see
+        # configs/phase1_h3.yaml §erm comment for full rationale.
+        assert resolved_erm.k_ERM == 1.0e-4
+        # σ_radial check: at kT=4.28e-21 J, σ = √(4.28e-21/1e-4) ≈ 6.5 nm.
+        # Still ≈30× tighter than the KU-3.17 200 nm cortex thickness band,
+        # so the brief's TIGHT-pinning interpretation (cortex thickness is
+        # biological membrane depth, not per-bead thermal extent) carries
+        # through under the new k_ERM.
+        assert 5e-9 < resolved_erm.sigma_radial_thermal < 1e-8
 
 
 # ---------------------------------------------------------------------------
@@ -289,38 +292,47 @@ class TestNumericalAndSignSense:
 # §6 Measurement protocol — short equilibration
 # ---------------------------------------------------------------------------
 class TestEquilibrium:
-    """ERM CFL is τ_ERM = γ_b / k_ERM. Brief literal k_ERM = 0.1 N/m
-    with bead γ_b ≈ 3.91·10⁻¹⁰ N·s/m gives τ_ERM ≈ 3.91 ns —
-    SMALLER than the cortex τ_stretch = 130 ns that sets dt_CFL = 13 ns
-    in the cortex production config. Running ERM-on at the cortex dt
-    causes stiff-spring numerical runaway (verified empirically in
-    H.3 단계 3 sanity gate; sim diverges within 500 steps).
+    """ERM CFL is τ_ERM = γ_b / k_ERM.
 
-    Production options (PI sign-off required):
-    - Shrink dt to 0.1·τ_ERM = 0.39 ns (33× slower, more compute).
-    - Soften k_ERM to a CFL-safe value (changes brief-literal physics;
-      requires PI ratification vs KU-3.18 anchor).
+    Original brief literal k_ERM = 0.1 N/m gave τ_ERM ≈ 3.91 ns ≪
+    cortex dt_CFL = 13 ns → numerical runaway (H.3 단계 3 sanity
+    finding, ratified 2026-05-26 by PI option (A): soften k_ERM).
 
-    Smoke gate strategy: use a DEMO-only soft k_ERM with explicit
-    override (NOT a gate-loosening — production gates use the brief
-    literal). The CFL check in `attach_erm_to_simulation` enforces
-    this contract at the API boundary.
+    KU-3.18 RE-RATIFIED 2026-05-26 to k_ERM = 1.0e-4 N/m:
+    τ_ERM = 3.91 μs ≫ dt_CFL=13ns → CFL safe at native cortex dt.
+    Production tests below now use the resolved (CFL-safe) k_ERM
+    without needing the explicit soft-override that 단계 3 demo used.
+
+    The CFL boundary gate (`attach_erm_to_simulation`'s cfl_strict
+    branch) is still verified — using the OLD 0.1 N/m value hardcoded
+    in `test_cfl_gate_blocks_old_brief_literal_at_cortex_dt` so that
+    anyone reverting yaml to 0.1 still hits the gate.
     """
 
-    def test_cfl_gate_blocks_brief_literal_at_cortex_dt(
-        self, resolved_cortex, resolved_erm
+    def test_cfl_gate_blocks_old_brief_literal_at_cortex_dt(
+        self, resolved_cortex
     ):
-        """The CFL gate must raise on the brief-literal k_ERM at the
-        cortex production dt — this IS the sanity finding."""
+        """The CFL gate must still raise if a caller tries to use the
+        OLD brief literal k_ERM=0.1 N/m at cortex dt — preserves the
+        sanity-finding gate after KU-3.18 re-ratification (PI 2026-05-26
+        option A) softened the yaml default to 1.0e-4 N/m."""
         sim, _, _, _, _ = build_cortex_simulation(
             resolved_cortex, with_baoab=True, with_crosslinkers=False
         )
         n_cortex_actin = (
             resolved_cortex.n_filaments * resolved_cortex.beads_per_filament
         )
+        # Construct an ERM with the OLD 0.1 N/m value (NOT from yaml).
+        p_erm_old = ResolvedERM(
+            k_ERM=0.1, R_cell=resolved_cortex.R_cell,
+            cell_center=(0.0, 0.0, 0.0),
+        )
+        p_erm_old.sigma_radial_thermal = math.sqrt(
+            resolved_cortex.kT / p_erm_old.k_ERM
+        )
         with pytest.raises(RuntimeError, match="ERM CFL violated"):
             attach_erm_to_simulation(
-                sim, resolved_erm,
+                sim, p_erm_old,
                 actin_cortex_tag_range=(0, n_cortex_actin),
                 gamma_b=resolved_cortex.gamma_b,
                 cfl_safety_factor=0.1,

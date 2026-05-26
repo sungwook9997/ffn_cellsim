@@ -141,15 +141,29 @@ cortex:
 
   # ---- ERM tether (KU-3.18) — radial harmonic per cortex bead ----
   # `cortex/erm.py` implements as md.force.Custom subclass.
-  # k_ERM = 0.1 N/m per brief literal (KU-3.18 anchor). At kT = 4.28 zJ,
-  # this gives σ_radial = √(kT/k_ERM) = 0.65 nm per bead — three orders
-  # of magnitude tighter than the 200 nm KU-3.17 cortex thickness, which
-  # is interpreted as the biological MEMBRANE depth (cortex bundle radius
-  # + lipid bilayer), not single-bead thermal extent. Rounding / tension
-  # gates probe the EMERGENT large-scale curvature, not per-bead radial
-  # distribution.
+  #
+  # PI ratification 2026-05-26: k_ERM = 1.0e-4 N/m (was: brief literal
+  # 0.1 N/m).  Brief literal 0.1 N/m + cortex dt_CFL=13 ns give a
+  # stiff-spring CFL violation (τ_ERM = γ_b/k_ERM = 3.91 ns < dt; H.3
+  # 단계 3 sanity finding documented in outputs/h3/REPORT.md §단계 3
+  # ERM CFL).  PI chose option (A) — soften k_ERM by 1000× rather than
+  # shrink dt 33× (which would push every cortex simulation from
+  # minutes to hours).  This is the KU-3.18 RE-RATIFIED value; the
+  # original 0.1 N/m is preserved in git history (단계 1 yaml) for
+  # archaeological reference.
+  #
+  # Physical implications of 1e-4 N/m:
+  #   σ_radial_thermal = √(kT/k_ERM) ≈ √(4.28e-21/1e-4) = 6.5 nm per bead
+  # ≈ 30× tighter than the KU-3.17 200 nm cortex thickness band.
+  # Still TIGHT pinning relative to the membrane band — the 200 nm
+  # cortex thickness remains a biological membrane depth (bundle + lipid
+  # bilayer), not single-bead thermal extent.  Rounding / tension /
+  # blebbistatin / nematic gates probe the EMERGENT large-scale
+  # curvature, not per-bead radial distribution — so the σ_radial
+  # change from 0.65 nm → 6.5 nm does NOT affect these gates'
+  # acceptance bands.
   erm:
-    k_ERM: 0.1                 # N/m   per-bead radial spring (KU-3.18, brief literal)
+    k_ERM: 1.0e-4              # N/m   per-bead radial spring (KU-3.18 RE-RATIFIED 2026-05-26)
     # cell_center optional; defaults to box origin (0, 0, 0) — matches
     # cortex.py topology generator which places the shell at the origin.
 
