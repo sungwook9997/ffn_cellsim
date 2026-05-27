@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -126,6 +127,22 @@ def main() -> None:
         json.dumps(result, indent=2)
     )
     print("RESULT " + json.dumps(result), flush=True)
+
+    # Visualize-at-closeout (CLAUDE.md hard rule): every production run
+    # auto-refreshes its figures so the physics is always inspectable —
+    # baked into the driver so it can never be forgotten (PI 2026-05-28).
+    # Best-effort: a viz failure must NOT discard the production result.
+    try:
+        import subprocess
+        subprocess.run(
+            [sys.executable, str(PKG / "scripts" / "h3_lp_vis.py"),
+             "--scale", args.scale, "--device", args.device],
+            check=True, cwd=str(PKG.parent),
+        )
+        print("FIGS auto-generated (visualize-at-closeout)", flush=True)
+    except Exception as e:  # noqa: BLE001  (viz is non-critical to the gate)
+        print(f"WARN visualize-at-closeout failed (result still valid): {e}",
+              flush=True)
 
 
 if __name__ == "__main__":
