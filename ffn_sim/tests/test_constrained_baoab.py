@@ -321,3 +321,24 @@ def test_trimer_rigid_fixman_consistent_with_analytic_flexible():
         f"E_bend rigid+Fixman {eB:.4f} vs analytic flexible {e_analytic:.4f} "
         f"(rel {abs(eB - e_analytic) / e_analytic:.3f}) — gross Fixman error."
     )
+
+
+@pytest.mark.skipif(
+    not PRODUCTION,
+    reason=(
+        "Milestone 2 single-filament L_p re-validation (~60k steps × seeds). "
+        "Opt-in via CONSTRAINED_BAOAB_PRODUCTION=1. The DECISIVE Fixman +1 sign "
+        "check at the chain level (19 cumulative angles + tight KU-1.1 band)."
+    ),
+)
+def test_milestone2_single_filament_Lp_and_equipartition():
+    """constrained-BD (rigid bond + Fixman +1) reproduces H.2 single-filament
+    L_p + 3D equipartition at the fast dt — locks in the Milestone-2 result."""
+    from ffn_sim.scripts.constrained_baoab_lp_validate import run
+    E, Lp = [], []
+    for s in range(1, 4):
+        r = run("constrained", "bend", s, n_eq=20_000, n_sample=2000, interval=10)
+        E.append(r["E_bend_kT"]); Lp.append(r["L_p_C1_um"])
+    Em = float(np.mean(E)); Lm = float(np.mean(Lp))
+    assert 0.940 <= Em <= 1.039, f"equipartition {Em:.4f} ∉ 0.9898±5%"
+    assert 15.3 <= Lm <= 18.7, f"L_p_C1 {Lm:.3f}μm ∉ KU-1.1 [15.3,18.7]"
