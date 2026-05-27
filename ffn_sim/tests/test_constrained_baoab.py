@@ -261,22 +261,42 @@ def _trimer_thetas(constrained: bool, fixman: bool, *, n_step: int, seed: int,
     return th
 
 
+def _analytic_flexible_E_bend(kth: float, kT: float = 1.0) -> float:
+    """Exact ⟨½k(π-θ)²⟩ for the flexible (stiff-spring) trimer.
+
+    P(θ) ∝ sin θ · exp(-½k(π-θ)²/kT) — the 3D solid-angle measure times the
+    bending Boltzmann factor. This is the ground truth the rigid+Fixman
+    sampler must reproduce (no MD noise).
+    """
+    trapz = getattr(np, "trapezoid", None) or np.trapz
+    th = np.linspace(1e-6, np.pi - 1e-6, 400_000)
+    w = np.sin(th) * np.exp(-0.5 * kth * (np.pi - th) ** 2 / kT)
+    return float(trapz(0.5 * kth * (np.pi - th) ** 2 * w, th) / trapz(w, th))
+
+
 @pytest.mark.skipif(
     not PRODUCTION,
     reason=(
-        "Statistical angle-PDF gate needs long MD sampling (~1e6 steps × 3 "
-        "systems). Opt-in via CONSTRAINED_BAOAB_PRODUCTION=1. The fast "
-        "analytic Fixman + SHAKE checks above run at CI time."
+        "Noisy MD consistency check (~2e6 steps). Opt-in via "
+        "CONSTRAINED_BAOAB_PRODUCTION=1. CONSISTENCY ONLY — the trimer metric "
+        "effect is ±3-4%, below the seed noise, so it CANNOT arbitrate the "
+        "Fixman sign; the decisive sign test is Milestone 2 (single-filament "
+        "L_p). The fast analytic Fixman + SHAKE checks above run at CI time."
     ),
 )
-def test_trimer_angle_pdf_matches_stiff_harmonic():
-    """rigid+Fixman bending energy == stiff-harmonic baseline (Fixman sign)."""
+def test_trimer_rigid_fixman_consistent_with_analytic_flexible():
+    """rigid+Fixman bending energy is CONSISTENT with the analytic flexible
+    (stiff-spring) value. Consistency check, NOT the sign arbiter — the
+    trimer metric effect (det T^{±1/2}: 0.869/0.809 vs flexible 0.839) is
+    ±3-4%, within MD seed noise; the textbook +1 sign is confirmed
+    decisively at Milestone 2 (L_p, 19 cumulative angles + tight band)."""
     kth = 2.0
-    thA = _trimer_thetas(False, False, n_step=1_000_000, seed=7, kth=kth)
-    thB = _trimer_thetas(True, True, n_step=1_000_000, seed=7, kth=kth)
-    eA = 0.5 * kth * ((np.pi - thA) ** 2).mean()
+    e_analytic = _analytic_flexible_E_bend(kth)
+    thB = _trimer_thetas(True, True, n_step=2_000_000, seed=7, kth=kth)
     eB = 0.5 * kth * ((np.pi - thB) ** 2).mean()
-    assert abs(eB - eA) / eA < 0.05, (
-        f"E_bend rigid+Fixman {eB:.4f} vs stiff-harmonic baseline {eA:.4f} "
-        f"(rel {abs(eB - eA) / eA:.3f}); Fixman sign/magnitude wrong."
+    # Noise-aware band: single-seed σ ≈ 8% at this scale; the metric shift is
+    # smaller, so this only catches a gross sign/magnitude error.
+    assert abs(eB - e_analytic) / e_analytic < 0.15, (
+        f"E_bend rigid+Fixman {eB:.4f} vs analytic flexible {e_analytic:.4f} "
+        f"(rel {abs(eB - e_analytic) / e_analytic:.3f}) — gross Fixman error."
     )

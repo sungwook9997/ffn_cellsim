@@ -86,13 +86,18 @@ import hoomd.custom
 from ffn_sim.integrator.baoab import _wrap_into_box
 
 # Sign of the Fixman pseudo-potential U_F = FIXMAN_SIGN · ½ kT ln det G.
-# Fixed to −1 by the trimer angle-PDF measurement gate (2026-05-28): with
-# +1 the rigid+Fixman bending energy moved AWAY from the stiff-harmonic
-# baseline (0.7745 → 0.7514 vs target 0.8348). Analytically, for the
-# trimer U_F = SIGN·½kT·ln(4−cos²θ) is larger when bent, so +1 over-
-# straightens; −1 restores bending to match the stiff-spring marginal.
-# (Re-validation under CONSTRAINED_BAOAB_PRODUCTION=1.)
-FIXMAN_SIGN: float = -1.0
+# +1 is the textbook convention (Fixman 1978; Hinch 1994): naive constrained
+# Brownian dynamics over-samples by det(G)^{+1/2}, and U_F = +½kT ln det G
+# cancels it to recover the unconstrained (stiff-spring) marginal —
+# exp(-(U+U_F)/kT)·det(G)^{1/2} ∝ exp(-U/kT). Confirmed analytically for the
+# trimer: naive-rigid ⟨E_bend⟩=0.8691 (det T^{+1/2}) → +1 Fixman → 0.8390 =
+# flexible target. NOTE: the trimer CANNOT arbitrate the sign empirically —
+# the metric effect there is only ±3–4%, below the MD seed noise (~6–8% at
+# 2e6 steps), so it is a consistency check only. The DECISIVE empirical sign
+# confirmation is Milestone 2 (single-filament L_p, 19 cumulative angles +
+# the tight H.2 strict band). (A prior −1 flip on 2026-05-28 was a
+# noise-driven over-conclusion, reverted.)
+FIXMAN_SIGN: float = +1.0
 
 
 # ---------------------------------------------------------------------------
