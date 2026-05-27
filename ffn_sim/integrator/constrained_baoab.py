@@ -86,11 +86,13 @@ import hoomd.custom
 from ffn_sim.integrator.baoab import _wrap_into_box
 
 # Sign of the Fixman pseudo-potential U_F = FIXMAN_SIGN · ½ kT ln det G.
-# +1 makes the constrained sampler reproduce the stiff-harmonic-spring
-# marginal (validated by the trimer angle-PDF gate in
-# tests/test_constrained_baoab.py). Kept as a named constant so the
-# decisive measurement gate, not a guess, fixes it.
-FIXMAN_SIGN: float = +1.0
+# Fixed to −1 by the trimer angle-PDF measurement gate (2026-05-28): with
+# +1 the rigid+Fixman bending energy moved AWAY from the stiff-harmonic
+# baseline (0.7745 → 0.7514 vs target 0.8348). Analytically, for the
+# trimer U_F = SIGN·½kT·ln(4−cos²θ) is larger when bent, so +1 over-
+# straightens; −1 restores bending to match the stiff-spring marginal.
+# (Re-validation under CONSTRAINED_BAOAB_PRODUCTION=1.)
+FIXMAN_SIGN: float = -1.0
 
 
 # ---------------------------------------------------------------------------
