@@ -69,7 +69,8 @@ def _build_state(p) -> gsd.hoomd.Frame:
 
 
 def run(mode: str, dt_mode: str, seed: int, *,
-        n_eq: int, n_sample: int, interval: int) -> dict[str, Any]:
+        n_eq: int, n_sample: int, interval: int,
+        dt_factor: float | None = None) -> dict[str, Any]:
     with open(CFG) as f:
         cfg = yaml.safe_load(f)
     p = resolve_h2_derived(cfg)
@@ -78,7 +79,14 @@ def run(mode: str, dt_mode: str, seed: int, *,
 
     dt = p.dt_cfl
     if mode == "constrained" and dt_mode == "bend":
-        dt = p.cfl_safety_factor * p.tau_bend     # rigid → CFL set by τ_bend
+        # rigid → CFL set by τ_bend, but the explicit-predictor + SHAKE step
+        # also needs per-step displacement ≲ ℓ₀, which can cap dt below
+        # cfl_safety·τ_bend. dt_factor overrides for the ceiling scan.
+        # 0.03 is the validated ceiling: M-SHAKE stays machine-precision and
+        # equipartition/L_p match H.2 (factor 0.1 = cfl_safety diverges — the
+        # explicit-predictor displacement exceeds what SHAKE can project).
+        f = dt_factor if dt_factor is not None else 0.03
+        dt = f * p.tau_bend
 
     sim = hoomd.Simulation(device=hoomd.device.CPU(notice_level=0), seed=seed)
     sim.create_state_from_snapshot(_build_state(p))
@@ -106,29 +114,38 @@ def run(mode: str, dt_mode: str, seed: int, *,
     sim.run(0)
     sim.run(n_eq)
 
-    Lp, Ebend = [], []
-    for _ in range(n_sample):
+    # Collect ALL sample frames then fit the POOLED tangent correlation once
+    # (H.2's robust protocol — per-snapshot single-filament fits are far too
+    # noisy). C(1) = ⟨t̂_i·t̂_{i+1}⟩ gives the low-scatter local L_p_C1;
+    # equipartition ⟨E_bend⟩ is the robust, fast-equilibrating primary gate.
+    frames = np.empty((n_sample, N, 3))
+    tang_dot = []   # adjacent unit-tangent dots → C(1)
+    Ebend = []
+    for k in range(n_sample):
         sim.run(interval)
         with sim.state.cpu_local_snapshot as s:
             pos = np.asarray(s.particles.position); tg = np.asarray(s.particles.tag)
             inv = np.empty_like(tg); inv[tg] = np.arange(tg.size)
             r = pos[inv]
-        fit = fit_persistence_length(r[None, :, :], rest_length=l0)
-        if np.isfinite(fit.L_p_m):
-            Lp.append(fit.L_p_m)
+        frames[k] = r
         bv = r[1:] - r[:-1]
         bn = bv / np.linalg.norm(bv, axis=1, keepdims=True)
-        cs = -np.einsum("ij,ij->i", bn[:-1], bn[1:])
-        th = np.arccos(np.clip(cs, -1, 1))
+        d = np.einsum("ij,ij->i", bn[:-1], bn[1:])     # t̂_i·t̂_{i+1} = cos(bend)
+        tang_dot.append(d)
+        th = np.arccos(np.clip(-d, -1, 1))             # interior angle (t0=π)
         Ebend.append(0.5 * p.angle_k * (th - np.pi) ** 2 / p.kT)
-    Lp = np.asarray(Lp); Eb = np.concatenate(Ebend)
+    fit = fit_persistence_length(frames, rest_length=l0)      # pooled over frames
+    Eb = np.concatenate(Ebend)
+    C1 = float(np.mean(np.concatenate(tang_dot)))
+    L_p_C1_um = float(-l0 / math.log(C1) * 1e6) if 0.0 < C1 < 1.0 else float("nan")
     return dict(
         mode=mode, dt_mode=dt_mode, seed=int(seed), dt_s=float(dt),
         n_eq=int(n_eq), n_sample=int(n_sample), interval=int(interval),
-        L_p_mean_um=float(Lp.mean() * 1e6),
-        L_p_sem_um=float(Lp.std(ddof=1) / math.sqrt(len(Lp)) * 1e6),
+        phys_time_s=float(n_sample * interval * dt),
+        L_p_pooled_um=float(fit.L_p_m * 1e6),
+        L_p_C1_um=L_p_C1_um, C1=C1,
         E_bend_kT=float(Eb.mean()), E_bend_sem=float(Eb.std(ddof=1) / math.sqrt(Eb.size)),
-        KU11_band_um=[15.3, 18.7], eq_target_kT=0.9898, eq_tol=0.05,
+        KU11_band_um=[15.3, 18.7], L_p_C1_ref_um=16.56, eq_target_kT=0.9898, eq_tol=0.05,
         max_drift=float(getattr(upd.action, "max_constraint_drift", 0.0)),
     )
 
