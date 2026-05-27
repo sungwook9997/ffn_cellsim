@@ -179,6 +179,93 @@ def shake_project(
     )
 
 
+def _thomas(sub: np.ndarray, diag: np.ndarray, sup: np.ndarray,
+            rhs: np.ndarray) -> np.ndarray:
+    """Solve a tridiagonal system (Thomas algorithm). sub[0], sup[-1] unused."""
+    n = diag.shape[0]
+    cp = np.empty(n); dp = np.empty(n)
+    cp[0] = sup[0] / diag[0]
+    dp[0] = rhs[0] / diag[0]
+    for k in range(1, n):
+        m = diag[k] - sub[k] * cp[k - 1]
+        cp[k] = sup[k] / m
+        dp[k] = (rhs[k] - sub[k] * dp[k - 1]) / m
+    x = np.empty(n)
+    x[-1] = dp[-1]
+    for k in range(n - 2, -1, -1):
+        x[k] = dp[k] - cp[k] * x[k + 1]
+    return x
+
+
+def shake_project_chains(
+    pred_pos: np.ndarray,
+    ref_pos: np.ndarray,
+    chains: "list[np.ndarray]",
+    rest_length: float,
+    inv_mass: np.ndarray,
+    box: hoomd.box.Box,
+    *,
+    tol: float = 1.0e-10,
+    max_iter: int = 100,
+) -> np.ndarray:
+    """Matrix-SHAKE (tridiagonal Newton) for linear-chain bond constraints.
+
+    Same convention as :func:`shake_project` (mobility-weighted corrections
+    along the reference-configuration bond gradient ``d0``), but for each
+    chain it solves the tridiagonal constraint Jacobian ``J Δλ = −g`` with
+    the Thomas algorithm and iterates Newton steps — converging in a handful
+    of iterations instead of the O(N²) Gauss-Seidel sweeps. ``chains`` are
+    ordered bead row-index arrays; all bonds use length ``rest_length``.
+
+    Per-bead correction with multipliers λ (bond a between beads p_a, p_{a+1},
+    reference bond vector ``d0_a = r_ref[p_a] − r_ref[p_{a+1}]``):
+        Δr[p_k] = M_{p_k} (λ_{k-1} d0_{k-1} − λ_k d0_k).
+    Newton linearisation of ``|s_a + Δ|² = ℓ²`` gives the tridiagonal system
+        2 s_a·[M_{p_a} d0_{a-1} λ_{a-1}
+               − (M_{p_a}+M_{p_{a+1}}) d0_a λ_a
+               + M_{p_{a+1}} d0_{a+1} λ_{a+1}] = −g_a .
+    """
+    pos = pred_pos.copy()
+    L2 = rest_length * rest_length
+    for chain in chains:
+        p = np.asarray(chain)
+        m = p.shape[0] - 1
+        if m == 0:
+            continue
+        M = inv_mass[p]                                   # (m+1,)
+        d0 = _min_image_orthorhombic(ref_pos[p[:-1]] - ref_pos[p[1:]], box)  # (m,3)
+        ok = False
+        for _ in range(max_iter):
+            s = _min_image_orthorhombic(pos[p[:-1]] - pos[p[1:]], box)       # (m,3)
+            g = np.einsum("ab,ab->a", s, s) - L2
+            if np.max(np.abs(g)) / L2 <= tol:
+                ok = True
+                break
+            sd_diag = np.einsum("ab,ab->a", s, d0)                          # s_a·d0_a
+            # tridiagonal coefficients
+            diag = -2.0 * (M[:-1] + M[1:]) * sd_diag                        # (m,)
+            sub = np.zeros(m); sup = np.zeros(m)
+            if m > 1:
+                sd_lower = np.einsum("ab,ab->a", s[1:], d0[:-1])            # s_a·d0_{a-1}
+                sub[1:] = 2.0 * M[1:-1] * sd_lower
+                sd_upper = np.einsum("ab,ab->a", s[:-1], d0[1:])           # s_a·d0_{a+1}
+                sup[:-1] = 2.0 * M[1:-1] * sd_upper
+            lam = _thomas(sub, diag, sup, -g)
+            # apply Δr[p_k] = M_k (λ_{k-1} d0_{k-1} − λ_k d0_k)
+            disp = np.zeros((m + 1, 3))
+            disp[:-1] -= (M[:-1] * lam)[:, None] * d0      # −λ_a d0_a on bead p_a
+            disp[1:] += (M[1:] * lam)[:, None] * d0        # +λ_a d0_a on bead p_{a+1}
+            pos[p] += disp
+        if not ok:
+            s = _min_image_orthorhombic(pos[p[:-1]] - pos[p[1:]], box)
+            drift = float(np.max(np.abs(np.einsum("ab,ab->a", s, s) - L2)) / L2)
+            raise RuntimeError(
+                f"M-SHAKE chain (len {m + 1}) failed in {max_iter} iters; "
+                f"max relative drift = {drift:.3e} > tol={tol}."
+            )
+    return pos
+
+
 # ---------------------------------------------------------------------------
 # Fixman metric pseudo-force (pure function — unit-testable without HOOMD)
 # ---------------------------------------------------------------------------
@@ -320,6 +407,12 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._chains_tag = (
             [np.asarray(c, dtype=np.int64) for c in chains] if chains else []
         )
+        # Uniform bond length enables the fast per-chain tridiagonal M-SHAKE;
+        # mixed lengths fall back to Gauss-Seidel shake_project.
+        self._chain_rest_length: float | None = (
+            float(cl[0]) if cl.shape[0] and np.allclose(cl, cl[0], rtol=1e-12, atol=0)
+            else None
+        )
         self.shake_tol = float(shake_tol)
         self.shake_max_iter = int(shake_max_iter)
 
@@ -442,11 +535,20 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
             # 3. SHAKE projection onto the rigid-bond manifold.
             if self._constraint_pairs_tag.shape[0]:
                 pairs_row = row_of_tag[self._constraint_pairs_tag]
-                projected = shake_project(
-                    pred, pos, pairs_row, self._constraint_lengths,
-                    self._inv_gamma_by_tag[tag], box,
-                    tol=self.shake_tol, max_iter=self.shake_max_iter,
-                )
+                inv_g = self._inv_gamma_by_tag[tag]
+                if self._chains_tag and self._chain_rest_length is not None:
+                    # Fast tridiagonal M-SHAKE per chain (uniform bond length).
+                    projected = shake_project_chains(
+                        pred, pos, [row_of_tag[c] for c in self._chains_tag],
+                        self._chain_rest_length, inv_g, box,
+                        tol=self.shake_tol, max_iter=self.shake_max_iter,
+                    )
+                else:
+                    projected = shake_project(
+                        pred, pos, pairs_row, self._constraint_lengths,
+                        inv_g, box,
+                        tol=self.shake_tol, max_iter=self.shake_max_iter,
+                    )
                 # §4 drift guard.
                 s = _min_image_orthorhombic(
                     projected[pairs_row[:, 0]] - projected[pairs_row[:, 1]], box

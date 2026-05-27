@@ -22,6 +22,7 @@ from ffn_sim.integrator.constrained_baoab import (
     fixman_logdet_and_force,
     make_constrained_baoab_updater,
     shake_project,
+    shake_project_chains,
 )
 
 PRODUCTION = bool(int(os.environ.get("CONSTRAINED_BAOAB_PRODUCTION", "0")))
@@ -107,6 +108,26 @@ class TestShake:
         pred = np.array([[0.0, 0, 0], [1.2, 0.1, 0], [2.3, -0.1, 0.05]])
         proj = shake_project(pred, ref, pairs, lengths, invm, CUBE, tol=1e-12)
         assert np.allclose(proj.mean(0), pred.mean(0), atol=1e-9)
+
+    def test_mshake_chain_matches_gauss_seidel_fast(self):
+        """Tridiagonal M-SHAKE projects a 21-bond chain to machine precision
+        in a few iterations and agrees with Gauss-Seidel (same convention)."""
+        N, l0 = 21, 0.5
+        ref = np.zeros((N, 3)); ref[:, 0] = np.linspace(-5, 5, N)
+        pairs = np.stack([np.arange(N - 1), np.arange(1, N)], -1)
+        lengths = np.full(N - 1, l0); invm = np.ones(N)
+        rng = np.random.default_rng(0)
+        for scale in (0.01, 0.05, 0.10):
+            pred = ref + scale * rng.standard_normal(ref.shape)
+            pm = shake_project_chains(
+                pred, ref, [np.arange(N)], l0, invm, CUBE, tol=1e-11, max_iter=100)
+            b = pm[pairs[:, 0]] - pm[pairs[:, 1]]
+            drift = np.abs(np.linalg.norm(b, axis=1) - l0).max() / l0
+            assert drift < 1e-10, f"M-SHAKE drift {drift:.2e} at scale {scale}"
+            pg = shake_project(pred, ref, pairs, lengths, invm, CUBE,
+                               tol=1e-12, max_iter=20000)
+            assert np.abs(pm - pg).max() < 1e-9, (
+                f"M-SHAKE vs Gauss-Seidel mismatch at scale {scale}")
 
 
 # ---------------------------------------------------------------------------
