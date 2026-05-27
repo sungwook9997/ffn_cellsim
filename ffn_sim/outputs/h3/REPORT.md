@@ -776,3 +776,50 @@ Main scope 회귀: 변동 없이 ERM ratification 후 모든 기존 tests 통과
 - **✅ DONE 비준 대기**: L_p FULL (GPU) + KU-3.x production runs (GPU)
 
 다음 H.3 작업은 모두 **윈도우 GPU 이전 후 dedicated 세션**으로 이관.
+
+---
+
+# H.3 — 단계 10-11 closeout (Lead 세션 2026-05-28)
+
+start commit `2218222` → end commit (figs) on `phase1/h3-cortex`. gbook A5000 GPU production + Mac dev. PI 정정: 새 1-Lead 모델에서 Lead가 production을 직접 구동 (SSH/백그라운드/Syncthing 회수).
+
+## L_p FULL production — ✅ in-band (production sign-off 증거)
+
+`h3_lp_gpu_production.py --scale full --device gpu` on gbook A5000: 1000 filaments × 7 beads, eq 100k + 100×50k = 5.1M steps, wall 6315 s (105 min), TPS ~853 (안정, AC 연결, throttle 0).
+
+| 측정 | 값 | 판정 |
+| --- | --- | --- |
+| L_p (all 100 snap) | 16.74 μm | ∈ [15.3, 18.7] ✅ |
+| **L_p (eq-transient 첫 5 제외)** | **16.64 ± 0.06 μm** | ∈ [15.3, 18.7] **✅ (4.7σ resolved)** |
+| eq-transient (snap 0–4) | 21.5 → 17.1 μm 감쇠 | eq=100k 잔여 transient (단계 8 예측대로) |
+| **⟨E_bend⟩ per angle** | **0.9877 ± 0.0014 kT** | target 0.9898 ±5% → **0.2% off, deep in-band ✅** |
+
+→ L_p 게이트 + 3D equipartition 게이트 모두 **FULL-scale production 증거 확보**. MEDIUM(17.46 μm, 125k pairs/s) 대비 통계 4× (500k pairs/s). **PI ✅ DONE 비준 대기.** (transient-제외 mean±stderr는 production driver의 raw L_p 평균이 아닌 평형 plateau — h3_lp_vis.py `--exclude-transient`.)
+
+## KU-3.20 nematic order — ✅ 비준 (`b04b779`)
+
+구조 측정(Q-tensor 최대 고유값) → multi-hour opt-in에서 CI 상시 게이트로 승격. `generate_cortex_topology` default-off von-Mises bias. 10-seed: S_iso 0.025 (<0.1), S_aligned 0.384 (>0.3). 밴드 불변 (no-gate-loosening).
+
+## KU-3.5 cortical tension — 동역학 바운드 확정 → constrained-BD 이관
+
+진단(`h3_ku35_tension_diag.py`): 100k step(1.3 ms sim)에서 tension ±1e-3 Pa 노이즈(기대 ~100 Pa의 0.001%). 모터 stall 로드까지 ~3.8e7 step(~0.5 s) 필요 → ~860 TPS에서 수시간~수일. KU-3.1/3.18과 동일 dt-병목 클래스 → constrained-BD(dt 523×)에 탑승.
+
+## constrained-BD Milestone 1 (rigid-bond SHAKE + Fixman) — `integrator/constrained_baoab.py`
+
+PI 경로 A. 백본 stretch만 rigid 제약, dt 13ns→69.8μs(523×), 60s 게이트 4.6e9→8.6e5 step. SHAKE + Fixman route-1 pseudo-force. 검증 8 PASS: Fixman 해석 gradient=유한차분(2e-9), dimer force=0, SHAKE 투영/부호/COM, **empty-constraint=baoab bit-for-bit**, rigid dimer D_com=Stokes-Einstein. **Fixman 부호 = 교과서 +1** (앞선 −1 flip은 단일-시드 trimer 노이즈 위 과잉결론 → `178d5b0`로 자기수정; trimer 효과 ±3-4% < 노이즈라 부호 판정 불가, **결정적 확인은 Milestone 2 = L_p 재검증**). PI sign-off 트리거(oracle tau_min 계약, ERM k_ERM 5.6e-7 재충돌)는 M2-4에서.
+
+## Figures (이 세션 — 시각화 규칙, L_p FULL production landing)
+
+| Figure | Caption |
+| --- | --- |
+| `fig_h3_lp_distribution.png` | per-snapshot L_p vs KU-1.1 band; eq-transient 첫 5개(회색, 21.5→17.1) 명시 + plateau mean 16.64±0.06 μm. |
+| `fig_h3_lp_tangent_correlation.png` | C(s) tangent 상관 (per-snapshot 얇은 선 + ensemble mean) + WLC fit L_p=16.7 μm. |
+| `fig_h3_lp_bending_equipartition.png` | per-angle E_bend/kT 분포 + 평균 0.9877 kT vs equipartition target 0.9898 ±5% (IN-band). |
+| `fig_h3_lp_angle_pdf.png` | interior 각도 PDF vs 3D Boltzmann (∝ sinθ·exp(−½k_θ(θ−π)²/kT)). |
+| `fig_h3_lp_bending_3d.png` | cortex 필라멘트 3D 렌더(구면 shell), bead를 굽힘에너지 E_bend/kT로 색칠 (curvature 시각화). |
+| `fig_h3_lp_filament_configs.png` | 표본 cortex 필라멘트 3D 형태 (마지막 snapshot). |
+
+## H.3 상태 업데이트
+
+- **🟨 → ✅ 후보**: L_p (FULL) + 3D equipartition + 3D Boltzmann(KS, H.2 상속) + KU-3.20 모두 PASS/비준. **남은 ✅ DONE 차단**: KU-3.5/3.1/3.18 (constrained-BD Milestone 2-4 경유) + L_p 게이트 PI 사인오프.
+- 다음: L_p 게이트 PI ✅ 비준 요청 / constrained-BD M2 (oracle tau_min 계약 PI 재논의 선행).
