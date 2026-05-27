@@ -859,3 +859,17 @@ KU-3.1/3.5/3.18 동역학 게이트가 dt=13ns(τ_stretch 묶임)에서 비현�
 2. **myosin 동역학 large-dt 정확도** 검증(stepping/Bell-Evans가 dt↑에서 물리 보존하는지).
 3. **tension 측정 프로토콜** = Sanity Gate measurement-protocol-consistency 결정 → **PI 비준**. 후보: method-of-planes(직경 절단면 가로지르는 bond/motor 장력 합 / 2πR; 박스 virial보다 shell 기하에 견고). KU-3.5 target γ≈0.5 mN/m ±30%.
 4. **oracle tau_min 계약**: constrained 모드 τ_stretch 제외 분기(PI 보류 중).
+
+## 🔴 KU-3.5 BLOCKER — myosin 모듈(단계-4) 결합 기하 결함 (2026-05-28 /loop 발견, Codex 진단)
+
+constrained-BD로 myosin-active cortex를 **안정 구동**(warm-up handoff → 54×, drift 머신정밀도)했으나 **myosin이 actin에 결합하지 않아 수축이 발생하지 않음** → KU-3.5 시연 불가. 측정 진단:
+- myosin head ↔ 최근접 cortex actin 거리: **중앙값 824nm** (min 92nm), `head_actin_max_bind_dist=50nm` → **0/2000 head 결합** (60000 step에서 engaged≈1, step_advances=0). cortex 반경 10.10→10.12μm (수축 0).
+
+**근본 원인 (Codex read-only 진단, 제 기하 측정과 일치):**
+1. `head_rest_length=200nm` offset이 **radial(막 법선) 방향**으로 적용 → head가 actin shell 평면에서 radially 벗어남. 올바른 건 **tangent-plane lateral offset**(필라멘트 방향 cross 법선)로 cortex 면 안에 두는 것.
+2. binding이 actin **bead 중심**만 cKDTree 검색(`myosin.py:747`). bead 간격 ℓ0=500nm → segment 중간 head는 끝점 bead에서 ~250nm. **segment 기반 검색** 필요(capture 50-63nm), 또는 임시 bead-center 시 유도반경 √(250²+50²)≈**255nm**(grid-derived, biological reach 아님으로 명기).
+3. (별도) myosin **construction LJ overlap**(myosin-myosin intra): 150-fil에서 cfl-dt warm-up도 int32 guard 발산(120-fil은 benign) → myosin 배치 overlap-free 보장 + robust warm-up(energy-min/dt ramp) 필요.
+
+**→ PI 결정 필요 (단계-4 myosin mechanism 수정, KU-3.5/3.1/3.18 전부 영향):** (a) tangent-plane head 배치, (b) segment 기반 binding(또는 grid-derived 255nm), (c) overlap-free myosin construction. 이는 magic-number 패치가 아니라 placement 물리 정정 → 무감독 rewrite 대신 PI surface. 수정 후 KU-3.5 tension(constrained-BD feasible 확인됨)으로 진행.
+
+driver `scripts/h3_ku35_tension.py`(warm-up handoff + frame/diag, contraction proxy; γ는 PI 프로토콜) — benign 구성에선 안정, overlap 구성에선 warm-up 발산(myosin construction 수정 후 안정 예상).
