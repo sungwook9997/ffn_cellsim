@@ -80,83 +80,55 @@ The v1 project (Taichi MLS-MPM spheroid continuum + image-constrained intermedia
 - AFINES master review: `ffn_sim/docs/AFINES_ALGORITHM_NOTES.md` (897 lines).
 - Phase 1 unit briefs: `ffn_sim/docs/briefs/H{1,2,3,4}_*.md` (Owner + Prereq lines at top of each).
 
-## Multi-session orchestration
+## Working model (redesigned 2026-05-28 — PI-ratified)
 
-Phase 1 runs across multiple Claude Code sessions for context efficiency. State lives in Notion + on-disk briefs, NOT in any one session's context.
+Phase 1 runs as a **single Lead Claude Code session** driving the whole H.1 → H.2 → H.3 → H.5 → H.7 chain, with **on-demand subagents** for parallelism and context isolation.
+
+The previous 4-role split (Main / Sub / Orchestrator + PI-as-relay) is **retired**. It cost PI copy-paste relay between sessions, bred stale boot-prompts (Orchestrator #12 booted "doubly stale"), and caused the `phase1/h4-fa-clutch` branch-divergence (Main + Sub shared one working tree). With this model's 1M context + subagents, the context-efficiency rationale for splitting no longer holds. State now lives on disk + Dev Logs as **durable state a fresh session boots from** — not in a human relay.
 
 ### Roles
 
-- **Main Session** (Claude Code, writes code) — sequential ownership of H.1 → H.2 → H.3 → H.5 → H.7 (architectural consistency chain).
-- **Sub Session** (Claude Code, writes code) — H.4 (FA + motor-clutch, isolated module) after Main's BAOAB freeze, plus debugging interludes and sanity-gate updates after FAIL.
-- **Orchestrator Session** (Claude Code, **read-only on code**) — spun up briefly after every worker closeout. Drafts the next-session prompt + status-board patch + PI-escalation triage. Boot prompt pinned in [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) §Orchestrator Session.
-- **PI (Sungwook)** — human relay between sessions. Copies closeout from worker → Orchestrator session, copies Orchestrator's drafts → next worker session. Final approver on PI-escalation items.
+- **Lead session** (Claude Code, this session) — owns H.1 → H.2 → H.3 → H.5 → H.7 end-to-end: writes code, drives production (SSH to Gbook / background jobs / Syncthing 회수), maintains Notion at closeout. Self-orchestrates; there is no separate read-only orchestrator and no next-prompt relay.
+- **Subagents** (spawned by the Lead, no PI relay):
+  - `isolation:"worktree"` coding subagent for genuinely independent modules (e.g. H.4 FA/bridge) — true file isolation; the Lead integrates. This is the structural fix for the shared-tree divergence.
+  - `Explore` / `Plan` subagent for heavy search / reads — keeps the Lead's context clean.
+  - `code-review` (or a review subagent) at closeout — independent audit pass, replacing the old orchestrator's review function without a standing role.
+- **PI (Sungwook)** — **approver, not relay**. Talks directly to the Lead. Final sign-off on: gate-contract changes, magic-number triggers, ✅ DONE ratification, `ffn/foundation` pushes, and `integrator/`-freeze changes.
 
 ### State stores (read on session boot)
 
-- `ffn_sim/docs/briefs/H*.md` — **immutable unit specs** (contracts). Sessions do not edit.
-- Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) — **per-session closeout + next-prompt drafts** + file-ownership table.
-- Notion [Development Logs & Reviews](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) — **Phase 1 status board** (Status / Owner / Start / End / Log).
+- `ffn_sim/docs/briefs/H*.md` — **immutable unit specs** (contracts). Not edited.
+- Notion [Development Logs & Reviews](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) — **Phase 1 status board** (Status / Owner / Start / End / Log) + per-unit milestone Day-logs + **Open items**. The authoritative project record.
+- On disk — latest commit on `phase1/h{N}-*`, `ffn_sim/outputs/h{X}/REPORT.md`, working tree.
+- The Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) is **retired for relay** (banner at its top). No more next-prompt drafts, stale-markers, cross-session signal-routing, or PI pre-dispatch checklist.
 
 ### Session boot protocol (minute 0)
 
 1. Read `CLAUDE.md` (this file) fully.
-2. Open the Notion Session Handoff Board, find your role section (Main or Sub), read **only your "Next prompt"**.
-3. Verify branch + commit hash match what the prompt says (`git log --oneline -1`).
-4. `conda activate ffn_sim` and confirm with `python -c "import hoomd; print(hoomd.version.version)"`.
-5. Restate the task in 1–2 sentences before executing anything. If anything is ambiguous, ask PI before moving.
+2. Read the Dev Logs status board + Open items.
+3. `git log --oneline -5`; confirm current branch + latest commit.
+4. `conda activate ffn_sim`; confirm `python -c "import hoomd; print(hoomd.version.version)"`.
+5. Restate the next task in 1–2 sentences (derived from the status board + open items — no boot-prompt needed). Ask PI if ambiguous.
 
-### Session closeout protocol — MUST, every session (end of session, freeze-point, or when PI says "wrap")
+### Session closeout protocol — MUST (end of session, freeze-point, or when PI says "wrap")
 
-Applies to every Main / Sub / Orchestrator session. Steps 1–7 must all complete before the final user-facing message; step 8 is the explicit PI receipt without which the session is treated as still open.
+Steps 1–4 complete before the final user-facing message; step 5 is the explicit PI receipt.
 
-1. Stage and commit work on the session's branch (`phase1/h{N}-*`). Do NOT push to `ffn/foundation` (renamed from `v2/foundation` 2026-05-20) without PI sign-off.
-2. **Session Handoff Board** — write a closeout block to your role's §Last closeout using the template pinned at the bottom of that page.
-3. **Session Handoff Board §Next prompt (own role)** — draft the next-session prompt for your role, marked `[draft — pending PI sign-off]`.
-4. **Cross-session signal-routing** — if this closeout closes a unit (H.X ✅ DONE / 🚧 blocked) OR shifts Status Board state, prepend a stale-marker to every *other* role's §Next prompt: `[stale — {your-role} closed {event} on {YYYY-MM-DD}; needs Orchestrator review before dispatch]` plus a one-line summary of what changed. PI must re-route a flagged role through an Orchestrator session before dispatching it. An Orchestrator session that re-drafts the affected prompt removes the marker as part of its own closeout.
-5. **Phase 1 status board (Dev Logs)** — update your unit's row: Status / Owner / Start / End / Log.
-6. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page (format pinned in Dev Logs §작성 규칙: start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference).
-7. If Notion MCP is unavailable, rate-limited, or any of the three stores cannot be written: **halt and surface to PI** — do not silently skip.
-8. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`** so PI can confirm the loop closed.
-9. Stop. Do not speculate beyond what was actually done in the session.
+1. Commit work on `phase1/h{N}-*`. Do NOT push to `ffn/foundation` (renamed from `v2/foundation` 2026-05-20) without PI sign-off.
+2. **Dev Logs status board** — update the unit's row (Status / Owner / Start / End / Log) and the **Open items** list. Append a `Phase {N} — Unit H.{X} {milestone}` child Day-log (start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference — format in Dev Logs §작성 규칙). Large-body table-cell edits time out (~100K page); prefer a small milestone child page + a short inline note (see `reference_notion_handoff_board_size`).
+3. If a unit hits ✅ DONE / 🚧 / a production run lands / a sanity-gate flags a non-trivial finding: refresh figures per the visualize-at-closeout rule.
+4. If Notion MCP is unavailable or a store cannot be written: **halt and surface to PI** — do not silently skip.
+5. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`**.
+6. Stop. Do not speculate beyond what was actually done.
 
-Per-prompt §Closeout sections in worker Next prompts only carry *unit-specific* obligations (e.g. PI sign-off after BAOAB freeze, KU FAIL surfacing); the universal 3-store + cross-session signal-routing + receipt-line rule above lives only here.
+### File ownership
 
-### PI pre-dispatch checklist (before booting any worker session)
-
-Before dispatching a Main / Sub / Orchestrator session from a Handoff Board §Next prompt, PI verifies:
-
-1. The §Next prompt's `drafted YYYY-MM-DD` is **not older than** the most recent §Last closeout of any other role (Main / Sub / Orchestrator). If older, the draft is presumed stale.
-2. No `[stale — ... needs Orchestrator review before dispatch]` marker is prepended to the §Next prompt body.
-3. If either check fails: dispatch an **Orchestrator session first** to re-draft the affected prompt (which clears the marker), then dispatch the intended role from the refreshed prompt.
-
-### File ownership (cross-session enforcement)
-
-Detailed table on the Session Handoff Board. Headline:
-
-- **Main owns**: `ffn_sim/integrator/`, `ffn_sim/ecm/`, `ffn_sim/cortex/`, `ffn_sim/cell/`, `ffn_sim/common/`, `ffn_sim/configs/phase1_h{1,2,3,5,7}.yaml`
-- **Sub owns**: `ffn_sim/bridge/`, `ffn_sim/configs/phase1_h4.yaml`, `*_sanity.md` updates
-- **Both write to** `ffn_sim/tests/`: per-unit files only (`test_h{N}_*.py`); no cross-touching
-- **Read-only for both**: `ffn_sim/validation/oracles/`, `ffn_sim/docs/briefs/`, `CLAUDE.md`, `STRUCTURE.md`, `README.md`, `pyproject.toml`
-- **Cross-boundary change needed**: escalate to PI, do not write directly. One conflict avoided > a few minutes of relay time.
-
-### Closeout block template (copy into your handoff board section)
-
-```
-## Closeout — {YYYY-MM-DD} · {Main|Sub} session
-- **Branch**: `phase1/h{N}-{name}` @ `{commit_short}`
-- **Completed**: <concrete deliverables landed>
-- **Tests**: <added/changed, pass/fail counts>
-- **Sanity gates run**: <list, PASS/FAIL>
-- **Files touched**: <top 5, full count>
-- **Open for PI**: <unanswered questions, magic-number triggers, gate-contract questions>
-- **Recommended next prompt** (PI to review):
-  > <draft next-session task, 3-5 lines, copy-paste-ready>
-```
+The single Lead owns all of `ffn_sim/`. When a `worktree` subagent is spawned for a parallel module, that subagent owns its module directory for the duration and the Lead does not touch those files until integration. Cross-module changes are sequenced by the Lead. `ffn_sim/validation/oracles/`, `ffn_sim/docs/briefs/`, `STRUCTURE.md`, `README.md`, `pyproject.toml` stay read-only during normal unit work.
 
 ## When in doubt
 
 - Read `ffn_sim/docs/PHASE_0_CLOSEOUT.md` for current state.
 - Read `ffn_sim/docs/PHASE_0_3_DECISIONS.md` for the ratified design vocabulary.
 - Read the relevant `ffn_sim/docs/briefs/H*.md` for the unit you're touching.
-- Read the Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) for your role's current task.
+- Read the Notion [Development Logs status board](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) + Open items for the current task.
 - Ask the PI before deviating from any principle in this file.
