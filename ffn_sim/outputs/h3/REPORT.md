@@ -823,3 +823,39 @@ PI 경로 A. 백본 stretch만 rigid 제약, dt 13ns→69.8μs(523×), 60s 게�
 
 - **🟨 → ✅ 후보**: L_p (FULL) + 3D equipartition + 3D Boltzmann(KS, H.2 상속) + KU-3.20 모두 PASS/비준. **남은 ✅ DONE 차단**: KU-3.5/3.1/3.18 (constrained-BD Milestone 2-4 경유) + L_p 게이트 PI 사인오프.
 - 다음: L_p 게이트 PI ✅ 비준 요청 / constrained-BD M2 (oracle tau_min 계약 PI 재논의 선행).
+
+---
+
+# constrained-BD 역량 (rigid-bond Brownian dynamics) — /loop 자율 2026-05-28
+
+KU-3.1/3.5/3.18 동역학 게이트가 dt=13ns(τ_stretch 묶임)에서 비현실적(60s=4.6e9 step)인 문제를 해소하는 기반 역량. `ffn_sim/integrator/constrained_baoab.py` (frozen baoab.py 미수정, 새 모듈).
+
+## 알고리즘
+- 백본 stretch bond → **rigid distance constraint**(M-SHAKE) → CFL가 τ_stretch→τ_bend로 이동. angle/LJ/myosin/ERM/xlink는 force 유지.
+- **L-M predictor**(baoab 동일) + **Fixman pseudo-force**(route 1, +½kT·ln det G; 교과서 Fixman 1978/Hinch 1994) + **M-SHAKE 투영** + wrap.
+- **M-SHAKE**: 선형 사슬 제약 Jacobian이 삼중대각 → Thomas 직접해 + Newton(머신정밀도 수렴, Gauss-Seidel 분-단위 대비 2663 TPS). 필라멘트축 벡터화((F,m,m) 배치 slogdet/inv + 배치 Thomas) → cortex 5.5×.
+
+## 검증 (Milestones)
+| | 결과 |
+|---|---|
+| **M1** dimer/trimer 해석 | Fixman 해석 gradient=유한차분(2e-9), dimer force=0, empty=baoab bit-for-bit, dimer D_com=Stokes-Einstein |
+| **M2** 단일 필라멘트 L_p (Fixman 부호 결정적 확인) | 5-seed @ dt=0.03·τ_bend(**1600×**): ⟨E_bend⟩=0.9960±0.0127 kT(eq 0.9898 IN-band), L_p_C1=16.35±0.21μm(H.2 16.56) |
+| **M3** cortex 150-fil equipartition/L_p | LJ-off: E_bend=0.9828±0.0040, L_p_C1=16.56μm, drift 4.5e-10 |
+| **Fixman 부호** | trimer는 효과±3-4%<노이즈로 판정 불가 → M2(19 누적 각도)가 +1 결정적 확인 |
+
+## dt 상한 (실현 가속)
+- bending-only(단일 필라멘트): **1600×** (factor 0.03·τ_bend). factor 0.1(이론 CFL)은 explicit-predictor 변위가 SHAKE 한계 초과로 발산.
+- **LJ-on cortex: ~54×** (factor 0.001) — LJ WCA 배제부피가 자체 fast CFL 부과. 밀도↑면 더 감소. → KU-3.x 가속은 가장 빠른 미제약 힘(LJ)이 결정.
+
+## KU-3.x feasibility (vectorized cortex ~150-200 TPS CPU @ 54×)
+- **KU-3.5 tension(~0.1-0.5s)** = 1.4e5-7e5 step → **~16분-1.3시간 FEASIBLE**.
+- KU-3.1/3.18(60s) = ~8.5e7 step → 수일 (GPU-SHAKE 또는 추가 dt 이득 필요).
+
+## full-cell wiring (KU-3.x 진입점)
+`build_cortex_full_simulation(constrained=True, constrained_dt=…)` 추가(additive, default-off, 회귀 10 PASS). actin backbone k=0+M-SHAKE, myosin/xlink/ERM은 predictor. 4100-입자 cortex+myosin 빌드·적분 확인.
+
+## PI-collaborative 잔여 (KU-3.5)
+1. **warm-up handoff**: 신선 construction은 factor 0.001서도 LJ overlap으로 발산 → 표준 baoab cfl-dt warm-up → 전체 위치 전달 → constrained large-dt.
+2. **myosin 동역학 large-dt 정확도** 검증(stepping/Bell-Evans가 dt↑에서 물리 보존하는지).
+3. **tension 측정 프로토콜** = Sanity Gate measurement-protocol-consistency 결정 → **PI 비준**. 후보: method-of-planes(직경 절단면 가로지르는 bond/motor 장력 합 / 2πR; 박스 virial보다 shell 기하에 견고). KU-3.5 target γ≈0.5 mN/m ±30%.
+4. **oracle tau_min 계약**: constrained 모드 τ_stretch 제외 분기(PI 보류 중).
