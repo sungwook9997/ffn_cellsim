@@ -47,7 +47,8 @@ import pytest
 import yaml
 
 from ffn_sim.cell import Cell, CellBuildOptions
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.cortex.cortex import generate_cortex_topology, resolve_h3_derived
+from ffn_sim.validation.oracles.common.sanity_gate import gate_nematic_order
 
 
 CONFIG_PATH = (
@@ -172,25 +173,88 @@ class TestKU318Blebbistatin:
 
 
 # ---------------------------------------------------------------------------
-# KU-3.20 nematic order gate (skeleton)
+# KU-3.20 nematic order gate (STRUCTURAL — always runs)
 # ---------------------------------------------------------------------------
-@pytest.mark.skipif(
-    not H3_KU3_PRODUCTION,
-    reason="H3_KU3_PRODUCTION=1 required (see KU-3.1 reason).",
-)
+def _cortex_tangents(
+    *, n_filaments: int, seed: int,
+    bias_axis=None, bias_kappa: float = 0.0,
+) -> np.ndarray:
+    """Build a cortex topology and return its per-filament tangent axes.
+
+    Pure topology construction (no HOOMD dynamics) — the nematic order
+    parameter S is a structural property of the constructed cortex
+    filament-axis ensemble (PI 2026-05-28: KU-3.20 = structural measure,
+    no 60 s dynamics run needed). ``demo_mode`` relaxes the cost ceiling
+    so the full ×40 mesoscopic count (1000 filaments) can be built for
+    good Q-tensor statistics.
+    """
+    cfg = _load_cfg()
+    cfg["cortex"]["n_filaments"] = n_filaments
+    cfg["cortex"]["demo_mode"] = True
+    p = resolve_h3_derived(cfg)
+    topo = generate_cortex_topology(
+        p, rng=np.random.default_rng(seed),
+        tangent_bias_axis=bias_axis, tangent_bias_kappa=bias_kappa,
+    )
+    return topo.tangents
+
+
 class TestKU320NematicOrder:
     """KU-3.20: emergent nematic order parameter S satisfies:
 
     * Isotropic cell (no orientation bias): S < 0.1.
     * Cortex with biased alignment (von-Mises tangent at construction):
       S > 0.3 along the bias axis.
+
+    S is a *structural* property of the cortex filament-axis ensemble
+    (Q-tensor max eigenvalue), so unlike the dynamics gates (KU-3.1/3.5/
+    3.18) this runs at CI time on the full ×40 mesoscopic filament count
+    — no multi-hour ``H3_KU3_PRODUCTION`` run required (PI 2026-05-28).
+    The acceptance bands (S<0.1 isotropic / S>0.3 aligned) are the brief
+    KU-3.20 contract, verified through the oracle ``gate_nematic_order``.
     """
 
+    # ×40 mesoscopic full count → Q-tensor statistics are well-converged.
+    N_FIL = 1000
+
+    def test_isotropic_and_aligned_S_satisfy_KU320(self):
+        # Isotropic: uniform azimuth → S → 0.
+        S_iso = nematic_order_S(
+            _cortex_tangents(n_filaments=self.N_FIL, seed=20)
+        )
+        # Aligned: strongly-concentrated von-Mises about a global stress
+        # axis (κ=8 ⇒ "aligned cortex" experimental condition, NOT tuned
+        # to the band — a perfectly combed sphere caps at S=0.5 > 0.3).
+        S_aligned = nematic_order_S(
+            _cortex_tangents(
+                n_filaments=self.N_FIL, seed=20,
+                bias_axis=(0.0, 0.0, 1.0), bias_kappa=8.0,
+            )
+        )
+        report = gate_nematic_order(
+            S_isotropic_cell=S_iso, S_aligned_cell=S_aligned
+        )
+        assert report.passed, (
+            f"KU-3.20 nematic gate FAIL: S_iso={S_iso:.4f} (need <0.1), "
+            f"S_aligned={S_aligned:.4f} (need >0.3)\n{report.summary()}"
+        )
+
     def test_isotropic_cell_S_below_0_1(self):
-        pytest.skip("Production sign-off skeleton; see module docstring.")
+        S_iso = nematic_order_S(
+            _cortex_tangents(n_filaments=self.N_FIL, seed=20)
+        )
+        assert S_iso < 0.1, f"Isotropic cortex S={S_iso:.4f} should be <0.1."
 
     def test_aligned_cell_S_above_0_3(self):
-        pytest.skip("Production sign-off skeleton; see module docstring.")
+        S_aligned = nematic_order_S(
+            _cortex_tangents(
+                n_filaments=self.N_FIL, seed=20,
+                bias_axis=(0.0, 0.0, 1.0), bias_kappa=8.0,
+            )
+        )
+        assert S_aligned > 0.3, (
+            f"Aligned cortex S={S_aligned:.4f} should be >0.3."
+        )
 
 
 # ---------------------------------------------------------------------------

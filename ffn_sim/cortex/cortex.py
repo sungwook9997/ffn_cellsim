@@ -588,7 +588,11 @@ def _tangent_plane_basis(normals: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def generate_cortex_topology(
-    p: ResolvedH3, rng: np.random.Generator | None = None
+    p: ResolvedH3,
+    rng: np.random.Generator | None = None,
+    *,
+    tangent_bias_axis: np.ndarray | tuple[float, float, float] | None = None,
+    tangent_bias_kappa: float = 0.0,
 ) -> CortexTopology:
     """Place ``n_filaments`` tangent-plane filaments on the R=R_cell shell.
 
@@ -599,8 +603,9 @@ def generate_cortex_topology(
     2. For each CoM, compute the local outward normal ``n̂ = CoM/R_cell``.
     3. Build a deterministic tangent-plane basis (e1, e2) at the CoM
        (deterministic given seed — so the topology is reproducible).
-    4. Sample one angle ``φ ∈ U(0, 2π)`` → tangent direction
-       ``t̂ = cos(φ) e1 + sin(φ) e2``.
+    4. Sample one azimuth ``φ`` → tangent direction
+       ``t̂ = cos(φ) e1 + sin(φ) e2``.  Without a bias, ``φ ∈ U(0, 2π)``
+       → isotropic tangent field (KU-3.20 isotropic case, S → 0).
     5. Lay ``beads_per_filament`` beads along ``t̂`` at spacing ℓ₀,
        centered on the CoM. Bonds at exact ℓ₀ → bond Harmonic 0 at
        construction; collinear beads → angle Harmonic 0.
@@ -608,6 +613,20 @@ def generate_cortex_topology(
     The construction-time radial drift at filament endpoints is
     ``ℓ_end²/(2 R_cell)`` ≈ 110 nm for L = 3 μm on R = 10 μm shell —
     within the KU-3.17 200 nm cortex thickness, no projection needed.
+
+    Nematic alignment (KU-3.20 aligned case)
+    ----------------------------------------
+    When ``tangent_bias_axis`` is given with ``tangent_bias_kappa > 0``,
+    each filament's azimuth is drawn from a von-Mises distribution
+    concentrated about the projection of the global bias axis ``g`` onto
+    the local tangent plane: ``φ ~ vonMises(φ₀, κ)`` with
+    ``φ₀ = atan2(g·e2, g·e1)``. This realises a meridionally-combed
+    tangent field (cf. cortical actin alignment along a stress axis). The
+    spherical geometry caps the achievable scalar nematic order at
+    ``S = 0.5`` in the κ → ∞ limit (a perfectly combed sphere has
+    ⟨t_∥²⟩ = 2/3 → Q_max eigenvalue 0.5), comfortably above the KU-3.20
+    aligned threshold S > 0.3. ``κ = 0`` (default) reproduces the
+    isotropic ``U(0, 2π)`` behaviour exactly.
     """
     if rng is None:
         rng = np.random.default_rng(p.seed)
@@ -619,7 +638,14 @@ def generate_cortex_topology(
     centers = _sample_sphere_surface(rng, F, p.R_cell)
     normals = centers / p.R_cell
     e1, e2 = _tangent_plane_basis(normals)
-    phi = rng.uniform(0.0, 2.0 * math.pi, F)
+    if tangent_bias_axis is not None and tangent_bias_kappa > 0.0:
+        g = np.asarray(tangent_bias_axis, dtype=np.float64)
+        g = g / np.maximum(np.linalg.norm(g), 1.0e-30)
+        # Preferred azimuth = projection of the global axis into each plane.
+        phi0 = np.arctan2(e2 @ g, e1 @ g)
+        phi = rng.vonmises(phi0, tangent_bias_kappa)
+    else:
+        phi = rng.uniform(0.0, 2.0 * math.pi, F)
     tangents = (
         np.cos(phi)[:, None] * e1 + np.sin(phi)[:, None] * e2
     )
