@@ -197,6 +197,24 @@ def _thomas(sub: np.ndarray, diag: np.ndarray, sup: np.ndarray,
     return x
 
 
+def _thomas_batched(sub: np.ndarray, diag: np.ndarray, sup: np.ndarray,
+                    rhs: np.ndarray) -> np.ndarray:
+    """Batched tridiagonal solve over the leading axis. All (F, m)."""
+    F, m = diag.shape
+    cp = np.empty((F, m)); dp = np.empty((F, m))
+    cp[:, 0] = sup[:, 0] / diag[:, 0]
+    dp[:, 0] = rhs[:, 0] / diag[:, 0]
+    for k in range(1, m):
+        den = diag[:, k] - sub[:, k] * cp[:, k - 1]
+        cp[:, k] = sup[:, k] / den
+        dp[:, k] = (rhs[:, k] - sub[:, k] * dp[:, k - 1]) / den
+    x = np.empty((F, m))
+    x[:, -1] = dp[:, -1]
+    for k in range(m - 2, -1, -1):
+        x[:, k] = dp[:, k] - cp[:, k] * x[:, k + 1]
+    return x
+
+
 def shake_project_chains(
     pred_pos: np.ndarray,
     ref_pos: np.ndarray,
@@ -227,6 +245,40 @@ def shake_project_chains(
     """
     pos = pred_pos.copy()
     L2 = rest_length * rest_length
+
+    # ---- Vectorised fast path: all chains the same length (cortex N=7) ----
+    lens = [np.asarray(c).shape[0] for c in chains]
+    if chains and len(set(lens)) == 1 and lens[0] >= 3:
+        P = np.stack([np.asarray(c) for c in chains], axis=0)   # (F, m+1)
+        F, Np1 = P.shape; m = Np1 - 1
+        M = inv_mass[P]                                          # (F, m+1)
+        d0 = _min_image_orthorhombic(ref_pos[P[:, :-1]] - ref_pos[P[:, 1:]], box)
+        for _ in range(max_iter):
+            s = _min_image_orthorhombic(pos[P[:, :-1]] - pos[P[:, 1:]], box)
+            g = np.einsum("fab,fab->fa", s, s) - L2             # (F, m)
+            if np.max(np.abs(g)) / L2 <= tol:
+                break
+            sd = np.einsum("fab,fab->fa", s, d0)
+            diag = -2.0 * (M[:, :-1] + M[:, 1:]) * sd           # (F, m)
+            sub = np.zeros((F, m)); sup = np.zeros((F, m))
+            if m > 1:
+                sub[:, 1:] = 2.0 * M[:, 1:-1] * np.einsum(
+                    "fab,fab->fa", s[:, 1:], d0[:, :-1])
+                sup[:, :-1] = 2.0 * M[:, 1:-1] * np.einsum(
+                    "fab,fab->fa", s[:, :-1], d0[:, 1:])
+            lam = _thomas_batched(sub, diag, sup, -g)            # (F, m)
+            disp = np.zeros((F, m + 1, 3))
+            disp[:, :-1] -= (M[:, :-1] * lam)[:, :, None] * d0
+            disp[:, 1:] += (M[:, 1:] * lam)[:, :, None] * d0
+            pos[P] += disp                                       # chains disjoint
+        else:
+            drift = float(np.max(np.abs(g)) / L2)
+            raise RuntimeError(
+                f"M-SHAKE (vectorised, {F} chains len {m + 1}) failed in "
+                f"{max_iter} iters; max relative drift = {drift:.3e} > tol={tol}.")
+        return pos
+
+    # ---- Ragged fallback: per-chain (mixed lengths) ----
     for chain in chains:
         p = np.asarray(chain)
         m = p.shape[0] - 1
@@ -296,6 +348,45 @@ def fixman_logdet_and_force(
     force = np.zeros((N, 3), dtype=np.float64)
     U_F = 0.0
     half_kT = 0.5 * kT
+
+    # ---- Vectorised fast path: all chains the same length (cortex N=7) ----
+    lens = [np.asarray(c).shape[0] for c in chains]
+    if chains and len(set(lens)) == 1 and lens[0] >= 3:
+        P = np.stack([np.asarray(c) for c in chains], axis=0)   # (F, m+1)
+        F = P.shape[0]; m = P.shape[1] - 1
+        b = _min_image_orthorhombic(pos[P[:, 1:]] - pos[P[:, :-1]], box)  # (F,m,3)
+        M = inv_gamma[P]                                         # (F, m+1)
+        b2 = np.einsum("fab,fab->fa", b, b)
+        G = np.zeros((F, m, m))
+        for a in range(m):
+            G[:, a, a] = 4.0 * b2[:, a] * (M[:, a] + M[:, a + 1])
+        bdot = np.einsum("fab,fab->fa", b[:, :-1], b[:, 1:])     # (F, m-1)
+        for a in range(m - 1):
+            off = -4.0 * M[:, a + 1] * bdot[:, a]
+            G[:, a, a + 1] = off; G[:, a + 1, a] = off
+        sign, logdet = np.linalg.slogdet(G)                     # (F,)
+        if np.any(sign <= 0):
+            raise FloatingPointError("Fixman metric det G non-positive (vectorised).")
+        U_F = FIXMAN_SIGN * half_kT * float(logdet.sum())
+        Ginv = np.linalg.inv(G)                                 # (F, m, m)
+        dlogdet_db = np.zeros((F, m, 3))
+        for a in range(m):
+            dlogdet_db[:, a, :] += (Ginv[:, a, a, None] * 8.0
+                                    * (M[:, a] + M[:, a + 1])[:, None] * b[:, a, :])
+            if a >= 1:
+                dlogdet_db[:, a, :] += (2.0 * Ginv[:, a - 1, a, None]
+                                        * (-4.0 * M[:, a, None]) * b[:, a - 1, :])
+            if a <= m - 2:
+                dlogdet_db[:, a, :] += (2.0 * Ginv[:, a, a + 1, None]
+                                        * (-4.0 * M[:, a + 1, None]) * b[:, a + 1, :])
+        grad = FIXMAN_SIGN * half_kT * dlogdet_db               # (F, m, 3)
+        bf = np.zeros((F, m + 1, 3))
+        bf[:, :-1, :] += grad
+        bf[:, 1:, :] -= grad
+        force[P] += bf                                          # chains disjoint
+        return U_F, force
+
+    # ---- Ragged fallback: per-chain (mixed lengths) ----
     for chain in chains:
         p = np.asarray(chain)
         m = p.shape[0] - 1            # number of bonds
