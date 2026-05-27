@@ -133,6 +133,8 @@ def build_cortex_full_simulation(
     p_myosin: ResolvedCortexMyosin | None = None,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
+    constrained: bool = False,
+    constrained_dt: float | None = None,
     rng: np.random.Generator | None = None,
 ):
     """End-to-end builder for cortex + (optional) xlinks + (optional) myosin.
@@ -226,7 +228,11 @@ def build_cortex_full_simulation(
 
     # 5. Forces
     bond = md.bond.Harmonic()
-    bond.params["cortex-bond"] = dict(k=p_cortex.bond_k, r0=p_cortex.rest_length)
+    # constrained mode: the actin backbone stretch becomes a rigid distance
+    # constraint (M-SHAKE) → zero its harmonic force; keep r0 for the
+    # constraint length. Myosin/xlink bonds stay harmonic.
+    bond.params["cortex-bond"] = dict(
+        k=(0.0 if constrained else p_cortex.bond_k), r0=p_cortex.rest_length)
     if enable_xl:
         from ffn_sim.cortex.crosslinkers import (
             xlink_attach_bin_names, xlink_attach_bin_rest_lengths,
@@ -301,7 +307,8 @@ def build_cortex_full_simulation(
 
     lj.mode = "shift"
 
-    ig = md.Integrator(dt=p_cortex.dt_cfl)
+    dt_used = constrained_dt if (constrained and constrained_dt) else p_cortex.dt_cfl
+    ig = md.Integrator(dt=dt_used)
     ig.forces.append(bond)
     ig.forces.append(angle)
     ig.forces.append(lj)
@@ -316,10 +323,29 @@ def build_cortex_full_simulation(
         if enable_myo:
             gamma_map["cortex_myosin_backbone"] = p_cortex.gamma_b
             gamma_map["cortex_myosin_head"] = p_cortex.gamma_b
-        baoab_action, baoab_updater = make_baoab_updater(
-            kT=p_cortex.kT, gamma=gamma_map,
-            dt=p_cortex.dt_cfl, seed=p_cortex.seed,
-        )
+        if constrained:
+            # Rigid actin backbone (M-SHAKE + Fixman); cortex filaments are
+            # contiguous N-bead blocks [f·N, (f+1)·N). Myosin/xlink/ERM beads
+            # get the predictor step only (soft forces, no constraint).
+            from ffn_sim.integrator.constrained_baoab import (
+                make_constrained_baoab_updater,
+            )
+            N = p_cortex.beads_per_filament
+            Ffil = p_cortex.n_filaments
+            chains = [np.arange(f * N, (f + 1) * N, dtype=np.int64) for f in range(Ffil)]
+            cpairs = np.asarray(topology.bond_groups, dtype=np.int64)
+            baoab_action, baoab_updater = make_constrained_baoab_updater(
+                kT=p_cortex.kT, gamma=gamma_map, dt=dt_used,
+                constraint_pairs=cpairs,
+                constraint_lengths=np.full(cpairs.shape[0], p_cortex.rest_length),
+                chains=chains, seed=p_cortex.seed,
+                shake_tol=1.0e-9, shake_max_iter=200,
+            )
+        else:
+            baoab_action, baoab_updater = make_baoab_updater(
+                kT=p_cortex.kT, gamma=gamma_map,
+                dt=p_cortex.dt_cfl, seed=p_cortex.seed,
+            )
         sim.operations.updaters.append(baoab_updater)
 
     xlink_updater = None
