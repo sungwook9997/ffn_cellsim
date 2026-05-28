@@ -199,9 +199,12 @@ def build_cortex_full_simulation(
             np.arange(p_cortex.n_filaments, dtype=np.int64),
             p_cortex.beads_per_filament,
         )
+        # Use xlink's own seed-derived rng (not the shared rng), so topology
+        # generation choices don't reshuffle xlink placement and trip stability.
         xlink_layout = generate_xlink_layout(
             cortex_positions, cortex_filament_idx, p_xlinks,
-            n_cortex_beads=n_cortex_actin, rng=rng,
+            n_cortex_beads=n_cortex_actin,
+            rng=np.random.default_rng(p_xlinks.seed),
         )
         snap = extend_cortex_state_with_xlinks(snap, xlink_layout, p_xlinks)
         n_xlink_heads = 2 * p_xlinks.n_xl
@@ -216,7 +219,8 @@ def build_cortex_full_simulation(
         motor_tag_start = int(snap.particles.N)
         myosin_layout = generate_cortex_myosin_layout(
             p_myosin, p_cortex.R_cell,
-            motor_tag_start=motor_tag_start, rng=rng,
+            motor_tag_start=motor_tag_start,
+            rng=np.random.default_rng(p_myosin.seed),
             # Actin-aware placement (KU-3.5 fix 2026-05-29, PI Option C):
             # minifilaments sit at random cortex actin beads, backbone along
             # local actin tangent, heads in tangent-plane lateral. Removes the
