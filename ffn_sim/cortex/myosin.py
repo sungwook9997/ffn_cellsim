@@ -729,6 +729,13 @@ class MyosinStepUpdater(hoomd.custom.Action):
         # Per-head state — bound to which actin tag (−1 if free).
         n_heads_total = 2 * p_myo.n_heads_per_side * p_myo.n_motors_per_cell
         self._head_bound_to_actin = np.full(n_heads_total, -1, dtype=np.int64)
+        # Per-head Hill-stepping FRACTIONAL ACCUMULATOR (KU-3.5 단계-4 fix
+        # 2026-05-29). Without this the original `round(d_bin)` was always 0
+        # at the model's timescale (v·batch_dt = 70 pm ≪ bin_width = 33 nm)
+        # → no stepping → no contraction. Accumulate d_bin (float) per tick;
+        # advance an integer bin only when accum ≥ 1, retain the remainder.
+        # Reset on unbind so re-binding starts fresh.
+        self._head_step_accum = np.zeros(n_heads_total, dtype=np.float64)
         # head local index → (motor_idx, head_offset_in_motor)
         self._sim_ref: hoomd.Simulation | None = None
         self._steps_run = 0
@@ -827,6 +834,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     h_local = self._head_local_from_tag(int(ht))
                     if h_local >= 0:
                         self._head_bound_to_actin[h_local] = -1
+                        self._head_step_accum[h_local] = 0.0  # fresh on re-bind
                 attach_bonds = attach_bonds[~broke]
                 bond_bins = bond_bins[~broke]
         else:
@@ -954,9 +962,12 @@ class MyosinStepUpdater(hoomd.custom.Action):
                 bond_bins = np.concatenate([bond_bins, new_bins], axis=0)
                 self._n_bind_total += int(new_bonds.shape[0])
 
-        # ---- Step 3: D6 Hill stepping (advance bin) ----
-        # For each engaged attach bond, advance bin index "inward" by
-        # the Hill v(F) · batch_dt / bin_width. Clamped to bin 0.
+        # ---- Step 3: D6 Hill stepping (FRACTIONAL ACCUMULATOR — 단계-4 fix) ----
+        # For each engaged attach bond, accumulate Hill v(F)·batch_dt/bin_width
+        # (a float, typically O(1e-3) at constrained dt) into a per-head
+        # accumulator and advance integer bins when the accumulator ≥ 1.
+        # Clamped to bin 0 (head reached its bound bead — translates as
+        # max-tension state at the bin-coordinate scale).
         if attach_bonds.shape[0] > 0:
             head_tags = attach_bonds[:, 0]
             actin_tags = attach_bonds[:, 1]
@@ -969,10 +980,22 @@ class MyosinStepUpdater(hoomd.custom.Action):
                 F_mag, v0=self.p.v0_per_head, F_stall=self.p.F_stall_per_head,
                 a_over_F_stall=self.p.a_over_F_stall,
             )
-            d_bin = (v_step * self.p.batch_dt) / bin_width
+            d_bin = (v_step * self.p.batch_dt) / bin_width   # float, per-bond
+            # Map head_tags → head local indices (vectorised arithmetic
+            # inverse of _head_global_tag).
+            H = self.p.n_heads_per_side
+            N = self.p.n_backbone
+            per_motor = self.p.n_particles_per_motor
+            offset = head_tags - self.layout.motor_tag_start
+            motor_idx = offset // per_motor
+            head_within = (offset % per_motor) - N           # ∈ [0, 2H)
+            head_locals = motor_idx * (2 * H) + head_within
+            # Accumulate and advance whole bins.
+            self._head_step_accum[head_locals] += d_bin
+            adv = np.floor(self._head_step_accum[head_locals]).astype(np.int64)
+            self._head_step_accum[head_locals] -= adv.astype(np.float64)
             new_bins = np.clip(
-                bond_bins - np.round(d_bin).astype(np.int64),
-                0, self.p.n_bins - 1,
+                bond_bins - adv, 0, self.p.n_bins - 1,
             )
             n_advanced = int((new_bins != bond_bins).sum())
             self._n_step_advances_total += n_advanced
