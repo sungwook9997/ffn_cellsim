@@ -12,9 +12,14 @@ Reads N ``seed{i}.json`` outputs from
   fig_h3_ku35_engagement_sweep.png  myosin engagement + step_advances vs
                                     time + radius contraction r/r_0.
 
+  fig_h3_ku35_gamma_breakdown.png   (R1 schema only) γ_soft / γ_rigid /
+                                    γ_total stacked + rigid fraction with
+                                    Luo 2013 1/7 force-sharing reference.
+
   REPORT_ku35.md                   per-seed plateau γ + ensemble mean +
                                    gate decision (in-band / below band
-                                   / above band).
+                                   / above band) + Luo 2013 oracle
+                                   comparison if R1 fields present.
 
 Run AFTER all seeds complete:
 
@@ -22,7 +27,10 @@ Run AFTER all seeds complete:
         --indir ffn_sim/outputs/h3/production/ku35_canonical
 
 The script tolerates missing seeds (silently skips) so it can be run as
-an in-progress preview as well.
+an in-progress preview as well. The γ-breakdown panel is rendered only
+when seed JSONs carry the R1 schema fields (tension_{soft,rigid,total}_
+mN_per_m). Pre-R1 sweeps populate only tension_mN_per_m (soft-bond only,
+no rigid backbone contribution); the breakdown panel is skipped silently.
 """
 from __future__ import annotations
 
@@ -57,11 +65,29 @@ def _per_seed_arrays(seed: dict) -> tuple[np.ndarray, ...]:
     t_s = step * seed["dt_s"]
     t_ms = t_s * 1e3
     gamma = np.array([d["tension_mN_per_m"] for d in diag])
-    eng = np.array([d["myoss_engaged"] if "myoss_engaged" in d else d.get("myosin_engaged", 0) for d in diag])
+    eng = np.array([d.get("myosin_engaged", d.get("myoss_engaged", 0)) for d in diag])
     bind_total = np.array([d.get("bind_total", 0) for d in diag])
     step_advances = np.array([d.get("step_advances", 0) for d in diag])
     r_over_r0 = np.array([d["r_over_r0"] for d in diag])
     return t_ms, gamma, eng, bind_total, step_advances, r_over_r0
+
+
+def _per_seed_gamma_breakdown(seed: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None:
+    """Extract R1 γ_{soft,rigid,total} arrays per seed.
+
+    Returns None when the seed JSON lacks the R1 schema fields (pre-R1 sweep —
+    only ``tension_mN_per_m`` populated = soft-bond only). Callers use this
+    to gate-render the breakdown panel without crashing on legacy JSONs.
+    """
+    diag = seed["diag"]
+    if not diag or "tension_soft_mN_per_m" not in diag[0]:
+        return None
+    step = np.array([d["step"] for d in diag])
+    t_ms = step * seed["dt_s"] * 1e3
+    g_soft = np.array([d["tension_soft_mN_per_m"] for d in diag])
+    g_rigid = np.array([d["tension_rigid_mN_per_m"] for d in diag])
+    g_total = np.array([d["tension_total_mN_per_m"] for d in diag])
+    return t_ms, g_soft, g_rigid, g_total
 
 
 def render_tension(seeds: list[dict], out_path: Path) -> dict:
@@ -117,6 +143,105 @@ def render_tension(seeds: list[dict], out_path: Path) -> dict:
     )
 
 
+def render_gamma_breakdown(seeds: list[dict], out_path: Path) -> dict | None:
+    """γ_soft + γ_rigid + γ_total breakdown vs time + rigid-fraction panel.
+
+    Pedagogical for the R1 (RIGID_LAGRANGE_TENSION_DESIGN.md) split: shows
+    that for our cortex parameters γ_rigid dominates (~200× soft per the
+    R1 motivation §1), which is the structural reason pre-R1 KU-3.5 under-
+    reported tension by ~200×. Plots also overlay Luo et al. 2013 (Nature
+    Materials 12:1064) WT Dictyostelium force-sharing fit ``ζ = 1/7``
+    (myosin II carries ~14% of cortical tension, crosslinkers ~86%) as a
+    soft-bond-fraction reference ``γ_soft/γ_total ≈ 6/7 = 0.857``. NB our
+    γ_soft includes xlinks + myosin head-actin attach + ERM + myosin
+    internal bonds together — to map cleanly onto Luo's ζ we'd need
+    finer per-bond-type instrumentation (KU-3.21 candidate, see
+    Notion 단계 14c). This panel reports the geometric (soft vs rigid)
+    decomposition and overlays Luo's reference for orientation, NOT as
+    a strict gate.
+    """
+    broken = [(sd, _per_seed_gamma_breakdown(sd)) for sd in seeds]
+    broken = [(sd, b) for sd, b in broken if b is not None]
+    if not broken:
+        print("SKIP_GAMMA_BREAKDOWN — no R1 schema fields in any seed JSON.",
+              flush=True)
+        return None
+
+    fig, axs = plt.subplots(2, 1, figsize=(9, 7.5), sharex=True,
+                            gridspec_kw=dict(height_ratios=[2.0, 1.0]))
+    a_g, a_frac = axs
+
+    all_t = []; all_soft = []; all_rigid = []; all_total = []
+    for sd, (t_ms, g_soft, g_rigid, g_total) in broken:
+        a_g.plot(t_ms, g_total, lw=1.0, alpha=0.75,
+                 label=f"seed {sd['seed']} γ_total")
+        a_g.plot(t_ms, g_soft, lw=0.7, alpha=0.5, ls="--",
+                 label=f"seed {sd['seed']} γ_soft")
+        a_g.plot(t_ms, g_rigid, lw=0.7, alpha=0.5, ls=":",
+                 label=f"seed {sd['seed']} γ_rigid")
+        all_t.append(t_ms); all_soft.append(g_soft)
+        all_rigid.append(g_rigid); all_total.append(g_total)
+
+    # KU-3.5 band overlay on absolute γ panel.
+    a_g.axhspan(0.35, 0.65, color="#a8d8a8", alpha=0.25,
+                label="KU-3.5 band [0.35, 0.65] mN/m")
+    a_g.set_yscale("symlog", linthresh=1e-4)
+    a_g.set_ylabel(r"γ [mN/m]")
+    a_g.set_title("KU-3.5 — R1 γ breakdown (soft / rigid / total) + Luo 2013 oracle overlay")
+    a_g.grid(alpha=0.25); a_g.legend(fontsize=7, loc="lower right", ncol=2)
+
+    # Bottom panel: γ_soft / γ_total fraction per seed.
+    # Luo 2013 WT Dictyostelium: ζ = F_myosin / F_internal = 1/7
+    # → crosslinker share (1 - ζ) = 6/7 = 0.857. Our γ_soft includes
+    # xlinks + motors + ERM together so this is a PROXY, not a strict
+    # gate (motor fraction is bundled inside γ_soft).
+    LUO_CROSSLINKER_SHARE = 6.0 / 7.0
+    nmin = min(len(t) for t in all_t)
+    T = all_t[0][:nmin]
+    soft_frac_per_seed = []
+    for sd, soft, total in zip([b[0] for b in broken], all_soft, all_total):
+        st = soft[:nmin]; to = total[:nmin]
+        # Guard against zero γ_total at the very first samples (no motor
+        # engagement yet → both γ_soft and γ_rigid ~ 0).
+        with np.errstate(divide="ignore", invalid="ignore"):
+            frac = np.where(np.abs(to) > 1e-20, st / to, np.nan)
+        a_frac.plot(T, frac, lw=0.9, alpha=0.65, label=f"seed {sd['seed']}")
+        soft_frac_per_seed.append(frac)
+
+    a_frac.axhline(LUO_CROSSLINKER_SHARE, color="#a0522d", ls="--", lw=1.4,
+                   label=f"Luo 2013 WT ζ=1/7 → soft-share ≈ {LUO_CROSSLINKER_SHARE:.3f}")
+    a_frac.axhline(0.5, color="gray", ls=":", lw=0.6, alpha=0.5,
+                   label="50/50 split")
+    a_frac.set_ylabel(r"$\gamma_{soft} / \gamma_{total}$")
+    a_frac.set_xlabel("sim time $t$ [ms]")
+    a_frac.set_ylim(-0.05, 1.10)
+    a_frac.grid(alpha=0.25); a_frac.legend(fontsize=8, loc="upper right")
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=160, bbox_inches="tight"); plt.close(fig)
+    print(f"WROTE_GAMMA_BREAKDOWN {out_path}", flush=True)
+
+    # Plateau (last third) summary of soft fraction per seed.
+    plateau_slice = slice(2 * nmin // 3, nmin)
+    plateau_soft_frac = float(np.nanmean(
+        np.stack([f[plateau_slice] for f in soft_frac_per_seed], axis=0)))
+    plateau_total = float(np.nanmean(
+        np.stack([t[plateau_slice] for t in all_total], axis=0)))
+    plateau_soft = float(np.nanmean(
+        np.stack([s[plateau_slice] for s in all_soft], axis=0)))
+    plateau_rigid = float(np.nanmean(
+        np.stack([r[plateau_slice] for r in all_rigid], axis=0)))
+    return dict(
+        n_seeds=len(broken),
+        plateau_soft_mN_per_m=plateau_soft,
+        plateau_rigid_mN_per_m=plateau_rigid,
+        plateau_total_mN_per_m=plateau_total,
+        plateau_soft_fraction=plateau_soft_frac,
+        luo_wt_crosslinker_share=LUO_CROSSLINKER_SHARE,
+        soft_vs_luo_delta=plateau_soft_frac - LUO_CROSSLINKER_SHARE,
+    )
+
+
 def render_engagement(seeds: list[dict], out_path: Path) -> None:
     fig, axs = plt.subplots(3, 1, figsize=(8.5, 9), sharex=True)
     a_eng, a_step, a_r = axs
@@ -145,7 +270,8 @@ def render_engagement(seeds: list[dict], out_path: Path) -> None:
     print(f"WROTE_ENGAGEMENT_SWEEP {out_path}", flush=True)
 
 
-def write_report(seeds: list[dict], summary: dict, out_path: Path) -> None:
+def write_report(seeds: list[dict], summary: dict,
+                  breakdown: dict | None, out_path: Path) -> None:
     lines = [
         "# KU-3.5 canonical multi-seed sweep — REPORT",
         "",
@@ -169,6 +295,37 @@ def write_report(seeds: list[dict], summary: dict, out_path: Path) -> None:
                 f"r_final/r₀={sd['r_final_over_r0']:.6f}, "
                 f"max_drift={sd['max_drift']:.3e}",
             ]
+    if breakdown is not None:
+        lines += [
+            "",
+            "## R1 γ breakdown (soft + rigid + total)",
+            "",
+            "Per RIGID_LAGRANGE_TENSION_DESIGN.md (PI 2026-05-28 verbal):",
+            "the rigid actin backbone Lagrange contribution is now exposed",
+            "alongside the soft-bond method-of-planes sum. Plateau (last 1/3):",
+            "",
+            f"- ⟨γ_soft⟩  = {breakdown['plateau_soft_mN_per_m']:.4e} mN/m",
+            f"- ⟨γ_rigid⟩ = {breakdown['plateau_rigid_mN_per_m']:.4e} mN/m",
+            f"- ⟨γ_total⟩ = {breakdown['plateau_total_mN_per_m']:.4e} mN/m",
+            f"- soft fraction γ_soft/γ_total = {breakdown['plateau_soft_fraction']:.4f}",
+            "",
+            "### Luo 2013 oracle comparison (Nature Materials 12:1064–1071)",
+            "",
+            "Luo, Mohan, Iglesias & Robinson 2013 fit Dictyostelium WT cortex to",
+            "ζ = F_myosin / F_internal = 1/7 — myosin II carries ~14% of cortical",
+            "tension, crosslinkers ~86%. Our γ_soft bundles xlinks + motor-actin",
+            "attach + ERM + myosin internal bonds together, so:",
+            "",
+            f"- Luo expected ‘soft share’ proxy (1 - ζ) = 6/7 = {breakdown['luo_wt_crosslinker_share']:.4f}",
+            f"- Our γ_soft/γ_total                          = {breakdown['plateau_soft_fraction']:.4f}",
+            f"- Δ (ours − Luo)                              = {breakdown['soft_vs_luo_delta']:+.4f}",
+            "",
+            "Note: this is a PROXY, not a strict gate. Mapping cleanly to Luo's",
+            "ζ requires per-bond-type itemisation of γ_soft (KU-3.21 candidate).",
+            "Even so, the magnitude is informative: γ_soft/γ_total ≪ 1 would",
+            "indicate the rigid backbone dominates (consistent with the R1",
+            "motivation's ~200× under-report claim for soft-only KU-3.5).",
+        ]
     out_path.write_text("\n".join(lines) + "\n")
     print(f"WROTE_REPORT {out_path}", flush=True)
 
@@ -190,7 +347,9 @@ def main() -> None:
                              FIGS / "fig_h3_ku35_tension_sweep.png")
     render_engagement(seeds,
                        FIGS / "fig_h3_ku35_engagement_sweep.png")
-    write_report(seeds, summary, args.indir / "REPORT_ku35.md")
+    breakdown = render_gamma_breakdown(
+        seeds, FIGS / "fig_h3_ku35_gamma_breakdown.png")
+    write_report(seeds, summary, breakdown, args.indir / "REPORT_ku35.md")
     print("KU35_ANALYSIS_DONE", flush=True)
 
 

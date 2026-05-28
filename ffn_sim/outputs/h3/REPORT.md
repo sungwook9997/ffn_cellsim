@@ -873,3 +873,111 @@ constrained-BD로 myosin-active cortex를 **안정 구동**(warm-up handoff → 
 **→ PI 결정 필요 (단계-4 myosin mechanism 수정, KU-3.5/3.1/3.18 전부 영향):** (a) tangent-plane head 배치, (b) segment 기반 binding(또는 grid-derived 255nm), (c) overlap-free myosin construction. 이는 magic-number 패치가 아니라 placement 물리 정정 → 무감독 rewrite 대신 PI surface. 수정 후 KU-3.5 tension(constrained-BD feasible 확인됨)으로 진행.
 
 driver `scripts/h3_ku35_tension.py`(warm-up handoff + frame/diag, contraction proxy; γ는 PI 프로토콜) — benign 구성에선 안정, overlap 구성에선 warm-up 발산(myosin construction 수정 후 안정 예상).
+
+---
+
+## 2026-05-28/29 Session — KU-3.5 v2 sweep + R1 rigid Lagrange + literature integration
+
+(Lead session, 4 hours wall — commits `1d0c8c6` → `7a1e4a5` H.3 + `3306eb1` H.5)
+
+### Driver hardening (KU-3.5 v1 → v2)
+
+After the 2026-05-28 v1 canonical sweep failed (seed2 LJ-CFL crash @ 2h21m, other
+seeds killed @ ~4h with 0 progress signal → 16h CPU loss), the driver
+`scripts/h3_ku35_tension.py` was hardened:
+
+- `--device gpu/cpu` flag mirroring `h3_lp_gpu_production.py` (commit `1d0c8c6`)
+- Per-sample `PROGRESS` print: `wall/eta/r-ratio/engaged/steps_adv/gamma/drift/max_disp_um`
+- Min-image LJ-CFL guard: raw inter-snap displacement > 5·box_L → `WARN_LJ_CFL`
+  (commit `85946d6`)
+- Auto-viz subprocess to `h3_ku35_sweep_analysis.py` at seed end (commit `7a1e4a5`)
+
+### CuPy GPU port attempt (option B0 from FIXMAN_LAZY_EVAL_DESIGN.md §7)
+
+- `integrator/baoab.py` xp-dispatch port committed `d18d7fb` (CPU bit-for-bit;
+  GPU compute path via `gpu_local_snapshot` + `cupy.random.Generator`)
+- `integrator/constrained_baoab.py` xp-dispatch port attempted, **reverted**:
+  KU-3.5 (cortex 120×6 SHAKE/Fixman) ran **3× SLOWER** on GPU (3.55 → 11.18
+  ms/step) due to kernel-launch overhead on the small 6×6 SHAKE/Fixman matrices.
+  Honest findings recorded in design doc §7 (commit `a49314a`).
+- L_p smoke GPU re-benchmark (300 fil × 200K step): 1.52 ms/step vs pre-port
+  FULL 1.26 ms/step — baoab port gives no clear gain at our Phase 1 scale either.
+  Retained as CPU safety only; GPU acceleration deferred to Phase 2 cell-scale.
+
+### R1 — Rigid actin backbone Lagrange tension exposure (commit `fb66028`)
+
+Implements `RIGID_LAGRANGE_TENSION_DESIGN.md` (PI verbal "(가)" 2026-05-28).
+
+The SHAKE M-SHAKE-converged Lagrange multiplier λ was already computed inside
+`shake_project_chains` (`constrained_baoab.py:266`) but discarded. R1 exposes it
+through a new `return_lambdas` kwarg and an Action `record_lambda` flag → the
+KU-3.5 driver records `tension_{soft,rigid,total}_mN_per_m` per sample. The
+soft-bond-only γ was systematically under-reporting cortical tension by ~200×;
+γ_total (soft + rigid) is now the gate quantity.
+
+CPU regression: 123 PASS / 6 SKIP / 0 FAIL with 6 new STATIC tests
+(`TestR1LambdaCapture` in `tests/test_constrained_baoab.py`):
+- record_lambda toggle bit-for-bit position match
+- λ buffer shape (uniform-chain fast path returns `(F, m)` ndarray;
+  ragged fallback returns list of per-chain `(m_i,)` arrays)
+- same-seed reproducibility
+- stretched-chain accumulated λ > 0 (SHAKE convention)
+
+### H.5 단계 2 — Cell.build(with_lamellipodium=True) wiring (commit `3306eb1`)
+
+Worktree subagent (`general-purpose` agent, parallel to Lead's R1 work; off-limits
+surfaces respected). `cell/cell.py` `build_cortex_full_simulation` now extends
+the snapshot with WAVE + mother-actin beads BEFORE `create_state_from_snapshot`,
+registers `lamel_*` bond/angle params, attaches `WaveMembranePin` force,
+appends 3 D2-batched Updaters. `Cell.build` routes through the unified builder
+when `with_myosin OR with_lamellipodium` is True; legacy cortex-only paths stay
+bit-for-bit unchanged when both flags are False. 4 new `TestLamellipodiumWiring`
+tests; 309 PASS / 13 SKIP / 0 FAIL on the full non-validation tree.
+
+### Literature integration (2026-05-29)
+
+Read two papers on PI's recommendation:
+
+- **Kim, Neal, Kamm, Asada 2013** (PLOS Comp Bio, PMC3585413) — cell migration
+  on fibronectin via 549-node continuum mesh + Hill SF + Bell ligand-integrin.
+  Lumped approach; useful only as reference numerical values + Palecek CHO
+  experimental dataset for future H.4+H.5+H.7 oracles. Not directly applicable
+  to H.3.
+- **Luo, Mohan, Iglesias, Robinson 2013** (Nature Materials 12:1064-1071,
+  PMC3838893, doi:10.1038/nmat3772) — directly maps onto our H.3 cortex
+  (Dictyostelium actin cortex + myosin II + α-actinin + filamin). Three
+  oracles immediately useful:
+  1. **ζ = 1/7 force-sharing**: myosin carries ~14% of cortical tension,
+     crosslinkers ~86% (Luo Fig. 1d fit, WT). Now plotted as a proxy line in
+     `sweep_analysis.py` `render_gamma_breakdown` panel: γ_soft / γ_total vs
+     time, with horizontal reference at 6/7 = 0.857.
+  2. **Deformation-specificity**: α-actinin → dilation (pipette tip),
+     filamin → shear (pipette neck), myosin → dilation (lever-arm dependent).
+     Captured as `KU_3_21_DEFORMATION_SPECIFICITY.md` candidate gate.
+  3. **Quantitative parameters**: aspiration 0.5-2.0 nN/μm², accumulation peak
+     30-60 s, Δx ≈ 1-2 nm. Drop-in inputs for the KU-3.21 implementation.
+
+### `sweep_analysis.py` extension
+
+New `render_gamma_breakdown(seeds)` function + `fig_h3_ku35_gamma_breakdown.png`:
+top panel = γ_soft / γ_rigid / γ_total vs t (per-seed lines, KU-3.5 band
+overlay); bottom panel = γ_soft / γ_total fraction vs t with Luo 6/7 reference.
+`REPORT_ku35.md` extended with R1 γ breakdown section + Luo 2013 oracle
+comparison. Backward-compatible: pre-R1 sweeps (only `tension_mN_per_m`
+populated) skip the breakdown panel gracefully without crashing.
+
+### Documents added / updated
+
+- New: `ffn_sim/docs/briefs/KU_3_21_DEFORMATION_SPECIFICITY.md` (candidate gate)
+- Updated: `ffn_sim/docs/briefs/FIXMAN_LAZY_EVAL_DESIGN.md` §7 (B0 findings)
+- This REPORT section
+
+### Next session boot point
+
+- `phase1/h3-cortex` HEAD `3306eb1` (this session added 5 new commits)
+- KU-3.5 v2 sweep on gbook 4-seed CPU still running (ETA ~05:20 KST)
+- After sweep: `h3_ku35_sweep_analysis.py` auto-vizes → confirms R1 schema if
+  re-launched with the new driver, OR falls back to pre-R1 panels for the
+  in-flight sweep
+- R1 PI sign-off → KU-3.5 re-run with γ_total → H.3 ✅ DONE candidate
+- KU-3.21 candidate awaits PI decision (D0 defer / D1 Phase A only / D2 full)
