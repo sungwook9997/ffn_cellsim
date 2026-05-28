@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -121,7 +122,7 @@ def _tagpos(sim) -> np.ndarray:
 def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = True,
         with_erm: bool = True, k_erm_fast: float = 5.6e-5,
         n_warmup: int = 40_000, n_sample: int = 80, interval: int = 5_000,
-        out: str | None = None) -> dict:
+        device: str = "cpu", out: str | None = None) -> dict:
     cfg = yaml.safe_load(open(CFG))
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
@@ -139,7 +140,7 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         from dataclasses import replace
         try: p_erm = replace(p_erm, k_ERM=k_erm_fast)
         except Exception: p_erm.k_ERM = k_erm_fast
-    dev = hoomd.device.CPU(notice_level=0)
+    dev = hoomd.device.GPU() if device == "gpu" else hoomd.device.CPU(notice_level=0)
 
     # Phase 1 — warm-up (standard BAOAB, CFL dt) to relax overlaps.
     hw = build_cortex_full_simulation(
@@ -178,12 +179,26 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
 
     frames = np.empty((n_sample, F, N, 3))
     diag = []
-    r0 = float(np.linalg.norm(_tagpos(sim)[:nca], axis=1).mean())
+    r_prev = _tagpos(sim)
+    r0 = float(np.linalg.norm(r_prev[:nca], axis=1).mean())
+    t0 = time.time()
+    print(
+        f"[start] device={device} n_fil={F} n_part={r_prev.shape[0]} "
+        f"dt_s={dtc:.3e} dt_factor={dt_factor} n_warmup={n_warmup} "
+        f"n_sample={n_sample} interval={interval} "
+        f"hoomd={hoomd.version.version} gpu_build={hoomd.version.gpu_enabled}",
+        flush=True,
+    )
     for k in range(n_sample):
         sim.run(interval)
         r = _tagpos(sim)
         frames[k] = r[:nca].reshape(F, N, 3)
         rmean = float(np.linalg.norm(r[:nca], axis=1).mean())
+        # LJ-CFL early-warning: max per-bead displacement over the interval
+        # (canonical seed2 crash 2026-05-28 was runaway LJ overlap after motor
+        # saturation → int32 image-guard overflow with no warning).
+        max_disp = float(np.linalg.norm(r - r_prev, axis=1).max())
+        r_prev = r
         # KU-3.5 method-of-planes cortical tension (soft-bond contribution).
         gamma = _tension_method_of_planes(sim, p.R_cell)
         diag.append(dict(
@@ -192,7 +207,20 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
             bind_total=int(ma.n_bind_total), step_advances=int(ma.n_step_advances_total),
             tension_mN_per_m=gamma * 1e3,
             max_drift=float(act.max_constraint_drift),
+            max_disp_um=max_disp * 1e6,
         ))
+        wall = time.time() - t0
+        eta_min = wall * (n_sample - (k + 1)) / max(k + 1, 1) / 60.0
+        warn = " WARN_LJ_CFL" if max_disp > 0.1 * p.R_cell else ""
+        print(
+            f"PROGRESS sample={k + 1}/{n_sample} step={int(sim.timestep)} "
+            f"wall={wall:.1f}s eta={eta_min:.1f}min "
+            f"r/r0={rmean / r0:.3f} engaged={int(ma.n_engaged)} "
+            f"steps_adv={int(ma.n_step_advances_total)} "
+            f"gamma_mN/m={gamma * 1e3:.3e} drift={float(act.max_constraint_drift):.2e} "
+            f"max_disp_um={max_disp * 1e6:.3f}{warn}",
+            flush=True,
+        )
 
     outdir = PKG / "outputs" / "h3" / "production" / "ku35"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -236,11 +264,13 @@ def main() -> None:
     ap.add_argument("--n-warmup", type=int, default=40_000)
     ap.add_argument("--n-sample", type=int, default=80)
     ap.add_argument("--interval", type=int, default=5_000)
+    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
     ap.add_argument("--out", type=str, default=None)
     args = ap.parse_args()
     run(args.n_fil, args.seed, dt_factor=args.dt_factor,
         with_xlinks=args.with_xlinks, with_erm=args.with_erm, k_erm_fast=args.k_erm,
-        n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval, out=args.out)
+        n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
+        device=args.device, out=args.out)
 
 
 if __name__ == "__main__":
