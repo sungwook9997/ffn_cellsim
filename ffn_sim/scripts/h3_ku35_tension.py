@@ -196,8 +196,15 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         rmean = float(np.linalg.norm(r[:nca], axis=1).mean())
         # LJ-CFL early-warning: max per-bead displacement over the interval
         # (canonical seed2 crash 2026-05-28 was runaway LJ overlap after motor
-        # saturation → int32 image-guard overflow with no warning).
-        max_disp = float(np.linalg.norm(r - r_prev, axis=1).max())
+        # saturation → int32 image-guard overflow with no warning). Track both
+        # min-image disp (physical signal for diag) and RAW disp (catches the
+        # actual runaway: canonical crash had |frac coord|~1e9·box_L; legitimate
+        # wraps ≤ box_L; runaway ≫ box_L).
+        box_L = float(sim.state.box.L[0])
+        dvec_raw = r - r_prev
+        dvec = dvec_raw - box_L * np.round(dvec_raw / box_L)
+        max_disp = float(np.linalg.norm(dvec, axis=1).max())
+        max_disp_raw = float(np.linalg.norm(dvec_raw, axis=1).max())
         r_prev = r
         # KU-3.5 method-of-planes cortical tension (soft-bond contribution).
         gamma = _tension_method_of_planes(sim, p.R_cell)
@@ -211,7 +218,7 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         ))
         wall = time.time() - t0
         eta_min = wall * (n_sample - (k + 1)) / max(k + 1, 1) / 60.0
-        warn = " WARN_LJ_CFL" if max_disp > 0.1 * p.R_cell else ""
+        warn = " WARN_LJ_CFL" if max_disp_raw > 5.0 * box_L else ""
         print(
             f"PROGRESS sample={k + 1}/{n_sample} step={int(sim.timestep)} "
             f"wall={wall:.1f}s eta={eta_min:.1f}min "
