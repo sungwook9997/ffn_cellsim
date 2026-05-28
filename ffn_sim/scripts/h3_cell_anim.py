@@ -569,6 +569,114 @@ def render_crosssection_mp4(data: dict, out_path: Path, *, fps: int = 12,
     print(f"WROTE_CROSSSECTION_MP4 {out_path}", flush=True)
 
 
+def render_motor_zoom(data: dict, out_path: Path, *, motor_idx: int = 0,
+                      pad_um: float = 1.0) -> None:
+    """Single-motor atomistic-detail PNG.
+
+    Picks one minifilament and renders a tight (~2 μm box) view of its
+    backbone + heads + nearest cortex actin filaments + any active attach
+    bonds. Reveals the per-motor binding geometry that the full-cell PNG
+    cannot show (heads + actin bonds → too small at the 20-μm scale).
+    """
+    meta = {k: v for k, v in data.items() if k != "frames"}
+    if meta["n_motors"] == 0:
+        return
+    frame = data["frames"][-1]  # equilibrated
+    n_back = meta["n_back"]
+    n_heads_per_side = meta["n_heads_per_side"]
+    n_particles_per_motor = meta["n_particles_per_motor"]
+
+    myo_um = frame["myo_pos"] * 1e6  # all motor particles
+    blocks = myo_um.reshape(meta["n_motors"], n_particles_per_motor, 3)
+    target_motor = blocks[motor_idx]
+    back = target_motor[:n_back]
+    heads = target_motor[n_back:].reshape(2 * n_heads_per_side, 3)
+    center = back.mean(axis=0)
+
+    # Cortex actins in zoom window.
+    cortex_um = frame["cortex_pos"].reshape(meta["n_fil"], meta["n_beads"], 3) * 1e6
+    # Distance from motor backbone-center to filament-center, OR to any
+    # of the filament's beads (whichever is closer). Bead-level check
+    # catches filaments that pass near the motor even if their centroid
+    # is far.
+    diffs = cortex_um - center[None, None, :]
+    bead_dists = np.linalg.norm(diffs, axis=-1)  # (n_fil, n_beads)
+    min_bead_dist = bead_dists.min(axis=1)
+    keep = min_bead_dist < 2.5  # filaments with any bead within 2.5 μm
+    nearby = cortex_um[keep]
+
+    # Attach bonds touching this motor's heads.
+    btypes = frame["bond_types"]
+    attach_idx = [i for i, n in enumerate(btypes)
+                  if n.startswith("cortex_myosin_attach_b")]
+    bg = frame["bond_group"]; bt = frame["bond_typeid"]
+    motor_head_tag_lo = (meta["tag_ranges"]["myosin"][0] +
+                        motor_idx * n_particles_per_motor + n_back)
+    motor_head_tag_hi = motor_head_tag_lo + 2 * n_heads_per_side
+    attach_mask = np.isin(bt, attach_idx) & (
+        ((bg[:, 0] >= motor_head_tag_lo) & (bg[:, 0] < motor_head_tag_hi)) |
+        ((bg[:, 1] >= motor_head_tag_lo) & (bg[:, 1] < motor_head_tag_hi))
+    )
+
+    # 3D scatter + lines.
+    fig = plt.figure(figsize=(10, 9))
+    ax = fig.add_subplot(111, projection="3d")
+    # Cortex actin filaments in zoom — golden lines.
+    for fil in nearby:
+        ax.plot(fil[:, 0], fil[:, 1], fil[:, 2],
+                color="#f6c34a", lw=1.6, alpha=0.85)
+        ax.scatter(fil[:, 0], fil[:, 1], fil[:, 2], s=14,
+                   c="#cc9633", alpha=0.7, edgecolors="black", linewidths=0.3)
+    # Motor backbone — thick magenta line.
+    ax.plot(back[:, 0], back[:, 1], back[:, 2], color="#e040d0",
+            lw=4.0, alpha=1.0, label=f"minifilament backbone (motor {motor_idx})")
+    ax.scatter(back[:, 0], back[:, 1], back[:, 2], s=30,
+               c="#e040d0", alpha=1.0, edgecolors="black", linewidths=0.4)
+    # Heads — red.
+    ax.scatter(heads[:n_heads_per_side, 0], heads[:n_heads_per_side, 1],
+               heads[:n_heads_per_side, 2], s=80, c="#e02020", alpha=0.95,
+               edgecolors="black", linewidths=0.5, label="+ side heads")
+    ax.scatter(heads[n_heads_per_side:, 0], heads[n_heads_per_side:, 1],
+               heads[n_heads_per_side:, 2], s=80, c="#900000", alpha=0.95,
+               edgecolors="black", linewidths=0.5, label="− side heads")
+    # Attach bonds from this motor's heads.
+    if attach_mask.any():
+        pos_all = np.zeros((max(meta["tag_ranges"]["myosin"][1], meta["nca"]), 3))
+        pos_all[:meta["nca"]] = frame["cortex_pos"]
+        if frame["xl_pos"].shape[0] > 0:
+            pos_all[meta["tag_ranges"]["xlink_head"][0]:meta["tag_ranges"]["xlink_head"][1]] = frame["xl_pos"]
+        pos_all[meta["tag_ranges"]["myosin"][0]:meta["tag_ranges"]["myosin"][1]] = frame["myo_pos"]
+        for pair in bg[attach_mask]:
+            a = pos_all[pair[0]] * 1e6
+            b = pos_all[pair[1]] * 1e6
+            ax.plot([a[0], b[0]], [a[1], b[1]], [a[2], b[2]],
+                    color="#ff8000", lw=2.5, alpha=0.95,
+                    label="attach bond (engaged)")
+    # Set zoom limits.
+    lim = pad_um + 1.0  # 2*pad_um cube
+    ax.set_xlim(center[0] - lim, center[0] + lim)
+    ax.set_ylim(center[1] - lim, center[1] + lim)
+    ax.set_zlim(center[2] - lim, center[2] + lim)
+    ax.set_xlabel("x [μm]"); ax.set_ylabel("y [μm]"); ax.set_zlabel("z [μm]")
+    n_engaged_motor = int(attach_mask.sum())
+    ax.set_title(
+        f"H.3 single myosin zoom — motor {motor_idx} "
+        f"({n_engaged_motor} engaged heads / {2*n_heads_per_side} total)\n"
+        f"center = ({center[0]:.2f}, {center[1]:.2f}, {center[2]:.2f}) μm")
+    # Dedupe legend.
+    handles, labels = ax.get_legend_handles_labels()
+    seen = set(); h2 = []; l2 = []
+    for h, l in zip(handles, labels):
+        if l in seen:
+            continue
+        seen.add(l); h2.append(h); l2.append(l)
+    ax.legend(h2, l2, loc="upper right", fontsize=9, framealpha=0.92)
+    ax.view_init(elev=22, azim=35)
+    fig.savefig(out_path, dpi=170, bbox_inches="tight")
+    plt.close(fig)
+    print(f"WROTE_MOTOR_ZOOM {out_path}", flush=True)
+
+
 def render_mp4(data: dict, out_path: Path, *, fps: int = 12) -> None:
     """MP4 of full internal dynamics — single perspective with slow orbit."""
     meta = {k: v for k, v in data.items() if k != "frames"}
@@ -638,6 +746,31 @@ def main() -> None:
     render_mp4(data, OUT / args.mp4_name)
     render_crosssection_mp4(data, OUT / args.cross_mp4_name,
                              slab_um=args.slab_um)
+    # Single-motor zoom (pick the motor with the most engaged heads in
+    # the final frame for a representative atomistic detail view).
+    if args.n_motors > 0:
+        final = data["frames"][-1]
+        btypes = final["bond_types"]
+        attach_idx = [i for i, n in enumerate(btypes)
+                      if n.startswith("cortex_myosin_attach_b")]
+        bg = final["bond_group"]; bt = final["bond_typeid"]
+        am = np.isin(bt, attach_idx)
+        if am.any():
+            mhead_range = data["tag_ranges"]["myosin"]
+            n_back = data["n_back"]
+            n_ppm = data["n_particles_per_motor"]
+            # Motor index for each engaged head bond.
+            head_tags = bg[am].flatten()
+            head_in_motor = head_tags - mhead_range[0]
+            motor_idxs = head_in_motor // n_ppm
+            # Most engaged motor.
+            vals, cnts = np.unique(motor_idxs[(motor_idxs >= 0) & (motor_idxs < args.n_motors)],
+                                    return_counts=True)
+            best = int(vals[cnts.argmax()]) if vals.size else 0
+        else:
+            best = 0
+        render_motor_zoom(data, OUT / "fig_h3_cell_motor_zoom.png",
+                           motor_idx=best)
     print("CELL_ANIM_DONE", flush=True)
 
 
