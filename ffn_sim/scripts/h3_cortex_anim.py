@@ -1,19 +1,23 @@
 #!/usr/bin/env python
-"""H.3 cortex structure visualisation — dense PNG + rotating/dynamics MP4.
+"""H.3 cortex structure visualisation — dense PNG + multi-angle dynamics MP4s.
 
 Renders the actual cell-cortex structure from a production trajectory
 (``outputs/h3/production/lp_{scale}_{device}.npz``, frames (S,F,N,3)):
 
-    fig_h3_cortex_structure.png   all F filaments on the R=10 μm shell,
-                                  bending-energy coloured (clear cell shape)
-    h3_cortex_rotate.mp4          360° camera orbit of one equilibrated frame
-                                  (reveals the hollow 3D cortical shell)
-    h3_cortex_dynamics.mp4        time evolution across snapshots + slow orbit
-                                  (thermal motion of the internal structure)
+    fig_h3_cortex_structure.png         all F filaments on the R=10 μm shell,
+                                        bending-energy coloured.
+    h3_cortex_dynamics_equatorial_x.mp4 time evolution, camera fixed at +x.
+    h3_cortex_dynamics_equatorial_y.mp4 time evolution, camera fixed at +y.
+    h3_cortex_dynamics_top.mp4          time evolution, top-down view.
+    h3_cortex_dynamics_perspective.mp4  time evolution, oblique perspective.
 
 Visualization integrity (CLAUDE.md): SI/μm axes, no truncation, a colour
 scale annotated in physical units (E_bend/kT), the R_cell shell radius in
-the title. MP4 via matplotlib FFMpegWriter (ffmpeg).
+the title. MP4 via matplotlib FFMpegWriter (ffmpeg). Per PI 2026-05-29: no
+rotating-camera MP4 (mixes camera motion with time evolution); each
+viewpoint gets its own stable-camera MP4 so frame-to-frame comparison is
+unambiguous. The earlier ``h3_cortex_rotate.mp4`` (360° orbit) and the
+in-frame orbit on ``h3_cortex_dynamics.mp4`` are both retired.
 
 Usage:
     python ffn_sim/scripts/h3_cortex_anim.py --scale full --device gpu
@@ -72,7 +76,6 @@ def main() -> None:
     ap.add_argument("--device", default="gpu")
     ap.add_argument("--n-filaments", type=int, default=0,
                     help="subset for MP4 (0 = all; dynamics MP4 caps at 400).")
-    ap.add_argument("--rotate-frames", type=int, default=120)
     ap.add_argument("--fps", type=int, default=24)
     args = ap.parse_args()
 
@@ -115,40 +118,41 @@ def main() -> None:
     f_png = FIGS / "fig_h3_cortex_structure.png"
     fig.savefig(f_png, dpi=150, bbox_inches="tight"); plt.close(fig)
 
-    writer = FFMpegWriter(fps=args.fps, bitrate=3200)
-
-    # --- MP4 1: 360° orbit of one equilibrated frame ---
-    fig = plt.figure(figsize=(8, 7))
-    ax = fig.add_subplot(111, projection="3d")
-    draw(ax, frames[-1], f"H.3 cortex shell (R={R:.0f} μm) — 360° orbit")
-    cb = fig.colorbar(ax.collections[0], ax=ax, shrink=0.6, pad=0.1)
-    cb.set_label(r"$E_{bend}/k_BT$")
-    mp4_rot = FIGS / "h3_cortex_rotate.mp4"
-    with writer.saving(fig, str(mp4_rot), dpi=120):
-        for i in range(args.rotate_frames):
-            ax.view_init(elev=18, azim=360 * i / args.rotate_frames)
-            writer.grab_frame()
-    plt.close(fig)
-
-    # --- MP4 2: time evolution (thermal internal dynamics) + slow orbit ---
+    # --- MP4s: time evolution (thermal internal dynamics) from N fixed
+    # viewpoints, one MP4 per view. Per PI 2026-05-29: no rotating-camera
+    # MP4 (mixes camera motion with time evolution in the same frame).
+    # The 360° orbit MP4 from earlier versions of this script is retired.
     nf = F if args.n_filaments <= 0 else min(args.n_filaments, F)
     nf = min(nf, 400)                       # cap for redraw cost
     sel = np.random.default_rng(0).choice(F, size=nf, replace=False)
     sub = frames[:, sel]                    # (S, nf, N, 3)
-    fig = plt.figure(figsize=(8, 7))
-    ax = fig.add_subplot(111, projection="3d")
-    mp4_dyn = FIGS / "h3_cortex_dynamics.mp4"
-    with writer.saving(fig, str(mp4_dyn), dpi=120):
-        for k in range(S):
-            draw(ax, sub[k],
-                 f"H.3 cortex thermal dynamics — snapshot {k + 1}/{S} "
-                 f"({nf} filaments)")
-            ax.view_init(elev=18, azim=20 + 90 * k / S)
-            writer.grab_frame()
-    plt.close(fig)
 
-    print(f"VIZ_WRITTEN {f_png.name} {mp4_rot.name} {mp4_dyn.name} "
-          f"F={F} N={N} S={S} R={R:.1f}um vmax_EkT={vmax:.2f}", flush=True)
+    cortex_views = [
+        ("equatorial_x", "equatorial — +x axis", dict(elev=0, azim=0)),
+        ("equatorial_y", "equatorial — +y axis", dict(elev=0, azim=90)),
+        ("top",          "top (−z axis)",        dict(elev=88, azim=-90)),
+        ("perspective",  "perspective",          dict(elev=22, azim=35)),
+    ]
+    mp4_paths = []
+    for slug, title_suffix, view in cortex_views:
+        writer = FFMpegWriter(fps=args.fps, bitrate=3200)
+        fig = plt.figure(figsize=(8, 7))
+        ax = fig.add_subplot(111, projection="3d")
+        out_mp4 = FIGS / f"h3_cortex_dynamics_{slug}.mp4"
+        with writer.saving(fig, str(out_mp4), dpi=120):
+            for k in range(S):
+                draw(ax, sub[k],
+                     f"H.3 cortex — {title_suffix} — snapshot {k + 1}/{S} "
+                     f"({nf} filaments)")
+                ax.view_init(**view)
+                writer.grab_frame()
+        plt.close(fig)
+        mp4_paths.append(out_mp4)
+        print(f"WROTE_MP4 {out_mp4}", flush=True)
+
+    print(f"VIZ_WRITTEN {f_png.name} " +
+          " ".join(p.name for p in mp4_paths) +
+          f" F={F} N={N} S={S} R={R:.1f}um vmax_EkT={vmax:.2f}", flush=True)
 
 
 if __name__ == "__main__":

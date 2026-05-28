@@ -15,12 +15,16 @@ mini-filaments + ERM tethers) over a short driven window and renders:
                                     ⇒ outline); ERM tethers as faint radial
                                     lines.
 
-    h3_cell_dynamics.mp4           ~6 s animation showing the same render
-                                    evolving over the captured trajectory.
-                                    Myosin attach bonds redrawn each frame
-                                    so you can see motors binding /
-                                    walking / dissociating; xlink intra
-                                    bonds redrawn as bridges.
+    h3_cell_dynamics_<view>.mp4    ~6 s animation per view (4 fixed angles:
+                                    equatorial_x, equatorial_y, top,
+                                    perspective). Camera is FIXED across
+                                    frames of each MP4 so time evolution
+                                    isn't confounded with orbit motion
+                                    (PI 2026-05-29 visualization integrity:
+                                    no rotating-camera MP4). Myosin attach
+                                    bonds redrawn each frame so you can see
+                                    motors binding / walking / dissociating;
+                                    xlink intra bonds redrawn as bridges.
 
 Designed for clarity over throughput (PI: 완벽한 모델 시각화). Uses a
 modest filament count (default 120) — large enough to look like a cortex
@@ -677,8 +681,32 @@ def render_motor_zoom(data: dict, out_path: Path, *, motor_idx: int = 0,
     print(f"WROTE_MOTOR_ZOOM {out_path}", flush=True)
 
 
-def render_mp4(data: dict, out_path: Path, *, fps: int = 12) -> None:
-    """MP4 of full internal dynamics — single perspective with slow orbit."""
+# Fixed-angle views for the multi-MP4 renderer. Same camera positions as
+# render_png so that PNG panels and MP4 angles can be read together. Per PI
+# 2026-05-29: rotating-camera MP4s confound time evolution with camera
+# motion in the same frame (visualization integrity rule, CLAUDE.md);
+# each viewpoint gets its own stable-camera MP4 so frame-to-frame
+# comparison is unambiguous.
+DYNAMICS_VIEWS = [
+    ("equatorial_x", "equatorial — +x axis", dict(elev=0, azim=0)),
+    ("equatorial_y", "equatorial — +y axis", dict(elev=0, azim=90)),
+    ("top",          "top (−z axis)",        dict(elev=88, azim=-90)),
+    ("perspective",  "perspective",          dict(elev=22, azim=40)),
+]
+
+
+def render_mp4_multi_view(
+    data: dict, out_base: Path, *, fps: int = 12, views=DYNAMICS_VIEWS
+) -> list[Path]:
+    """Render N separate fixed-angle MP4s of full internal dynamics.
+
+    Each entry in ``views`` is ``(slug, title_suffix, view_kwargs)``. Output
+    files are derived from ``out_base`` by appending ``_<slug>`` to the
+    stem (e.g. ``h3_cell_dynamics.mp4`` → ``h3_cell_dynamics_perspective.mp4``).
+    Camera is fixed across all frames of each MP4.
+
+    Returns the list of paths written.
+    """
     meta = {k: v for k, v in data.items() if k != "frames"}
     Eall = []
     for fr in data["frames"]:
@@ -687,28 +715,43 @@ def render_mp4(data: dict, out_path: Path, *, fps: int = 12) -> None:
                                          meta["kT"]).ravel())
     vmax = float(np.percentile(np.concatenate(Eall), 98)) or 1.0
 
-    fig = plt.figure(figsize=(11, 9))
-    ax = fig.add_subplot(111, projection="3d")
-    writer = FFMpegWriter(fps=fps, bitrate=3500)
+    base = Path(out_base)
+    stem = base.stem; suffix = base.suffix; parent = base.parent
     S = len(data["frames"])
-    with writer.saving(fig, str(out_path), dpi=130):
-        for k, frame in enumerate(data["frames"]):
-            n_engaged = int((np.isin(
-                frame["bond_typeid"],
-                [j for j, n in enumerate(frame["bond_types"])
-                 if n.startswith("cortex_myosin_attach_b")]
-            )).sum())
-            t_ms = frame["step"] * meta["dt"] * 1e3
-            title = (f"H.3 cortex + xlinks + myosin — frame {k+1}/{S} "
-                     f"(t = {t_ms:.2f} ms, engaged = {n_engaged})")
-            _draw_frame(ax, frame, meta=meta, vmax=vmax,
-                        show_legend=(k == 0), title=title, show_shell=True)
-            ax.view_init(elev=18, azim=20 + 70 * k / max(S - 1, 1))
-            if k == 0:
-                ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
-            writer.grab_frame()
-    plt.close(fig)
-    print(f"WROTE_MP4 {out_path}", flush=True)
+    written: list[Path] = []
+    for slug, title_suffix, view in views:
+        fig = plt.figure(figsize=(11, 9))
+        ax = fig.add_subplot(111, projection="3d")
+        writer = FFMpegWriter(fps=fps, bitrate=3500)
+        out_path = parent / f"{stem}_{slug}{suffix}"
+        with writer.saving(fig, str(out_path), dpi=130):
+            for k, frame in enumerate(data["frames"]):
+                n_engaged = int((np.isin(
+                    frame["bond_typeid"],
+                    [j for j, n in enumerate(frame["bond_types"])
+                     if n.startswith("cortex_myosin_attach_b")]
+                )).sum())
+                t_ms = frame["step"] * meta["dt"] * 1e3
+                title = (f"H.3 cell — {title_suffix} — frame {k+1}/{S} "
+                         f"(t = {t_ms:.2f} ms, engaged = {n_engaged})")
+                _draw_frame(ax, frame, meta=meta, vmax=vmax,
+                            show_legend=(k == 0), title=title, show_shell=True)
+                ax.view_init(**view)
+                if k == 0:
+                    ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
+                writer.grab_frame()
+        plt.close(fig)
+        written.append(out_path)
+        print(f"WROTE_MP4 {out_path}", flush=True)
+    return written
+
+
+# Backward-compat alias: pre-2026-05-29 callers used render_mp4(data, path).
+# Now delegates to the multi-view renderer with the canonical view set so
+# existing scripts and notebooks transparently get all 4 angles.
+def render_mp4(data: dict, out_path: Path, *, fps: int = 12) -> list[Path]:
+    """Backward-compat wrapper → render_mp4_multi_view (4 fixed angles)."""
+    return render_mp4_multi_view(data, out_path, fps=fps)
 
 
 # ===========================================================================
