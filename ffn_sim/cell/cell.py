@@ -83,6 +83,7 @@ References
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -123,6 +124,17 @@ from ffn_sim.cortex.myosin import (
     make_cortex_myosin_updater,
     register_cortex_myosin_bond_params,
 )
+from ffn_sim.cell.lamellipodium import (
+    ArpBranchingUpdater,
+    BarbedEndElongationUpdater,
+    CappingUpdater,
+    LamellipodiumLayout,
+    LamellipodiumState,
+    ResolvedH5,
+    WaveMembranePin,
+    attach_lamellipodium_to_simulation,
+    extend_cortex_snapshot_with_lamellipodium,
+)
 from ffn_sim.integrator.baoab import make_baoab_updater
 
 
@@ -131,13 +143,14 @@ def build_cortex_full_simulation(
     *,
     p_xlinks: ResolvedCrosslinkers | None = None,
     p_myosin: ResolvedCortexMyosin | None = None,
+    p_lamellipodium: ResolvedH5 | None = None,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
     constrained: bool = False,
     constrained_dt: float | None = None,
     rng: np.random.Generator | None = None,
 ):
-    """End-to-end builder for cortex + (optional) xlinks + (optional) myosin.
+    """End-to-end builder for cortex + (optional) xlinks + myosin + lamellipodium.
 
     Performs the full state composition (no ERM — attach separately via
     ``attach_erm_to_simulation``):
@@ -150,18 +163,26 @@ def build_cortex_full_simulation(
        ``generate_cortex_myosin_layout`` +
        ``extend_state_with_cortex_myosin`` (appended AFTER xlinks so the
        motor tag block sits at the end of the tag space).
-    4. HOOMD ``Simulation`` + ``bond.Harmonic`` (with all registered
-       bond-type params for the three subsystems) + ``angle.Harmonic``
-       (cortex-angle) + ``pair.LJ`` (WCA repulsive on actin × actin,
-       xlink_head × xlink_head, myosin × myosin; DISABLED on
-       head × actin pairs so binding can occur).
-    5. ``md.Integrator(dt=p_cortex.dt_cfl)`` with all three forces.
-    6. ``methods=[]`` (BAOAB Updater contract).
-    7. If ``with_baoab``: BAOAB Updater attached with per-type γ_b
-       inferred from ``p_cortex.gamma_b``.
-    8. If xlinks enabled: ``XlinkBondUpdater`` attached
+    4. If ``p_lamellipodium`` and ``p_lamellipodium.n_WAVE > 0``:
+       :func:`ffn_sim.cell.lamellipodium.extend_cortex_snapshot_with_lamellipodium`
+       (appended AFTER myosin so the WAVE / mother-actin tag block sits at
+       the end of the tag space — H.5 단계 2 composition).
+    5. HOOMD ``Simulation`` + ``bond.Harmonic`` (with all registered
+       bond-type params for the four subsystems) + ``angle.Harmonic``
+       (cortex-angle + optional lamel_branch_angle) + ``pair.LJ`` (WCA
+       repulsive on intra-subsystem pairs; DISABLED on cross-subsystem
+       pairs so binding / branching can occur).
+    6. ``md.Integrator(dt=p_cortex.dt_cfl)`` with all forces.
+    7. ``methods=[]`` (BAOAB Updater contract).
+    8. If ``with_baoab``: BAOAB Updater attached with per-type γ_b
+       inferred from ``p_cortex.gamma_b`` (and per-type Stokes drag for
+       the lamellipodium beads when present).
+    9. If xlinks enabled: ``XlinkBondUpdater`` attached
        (``trigger=Periodic(batch_steps)``).
-    9. If myosin enabled: ``MyosinStepUpdater`` attached.
+    10. If myosin enabled: ``MyosinStepUpdater`` attached.
+    11. If lamellipodium enabled: ``BarbedEndElongationUpdater`` +
+        ``ArpBranchingUpdater`` + ``CappingUpdater`` attached, plus the
+        ``WaveMembranePin`` custom force on the integrator.
 
     Returns
     -------
@@ -170,11 +191,18 @@ def build_cortex_full_simulation(
         ``topology`` (CortexTopology),
         ``xlink_layout`` (XlinkLayout | None),
         ``myosin_layout`` (CortexMyosinLayout | None),
+        ``lamellipodium_layout`` (LamellipodiumLayout | None),
+        ``lamellipodium_state`` (LamellipodiumState | None),
+        ``wave_pin_force`` (WaveMembranePin | None),
         ``baoab_updater``, ``baoab_action``,
         ``xlink_updater``, ``xlink_action``,
         ``myosin_updater``, ``myosin_action``,
+        ``elong_action``, ``elong_updater``,
+        ``branch_action``, ``branch_updater``,
+        ``cap_action``, ``cap_updater``,
         ``n_cortex_actin`` (int), ``n_xlink_heads`` (int),
-        ``n_myosin_particles`` (int).
+        ``n_myosin_particles`` (int), ``n_wave_particles`` (int),
+        ``n_lamellipodium_actin`` (int).
     """
     # 1. Cortex base — use the topology returned by build_cortex_state so the
     # myosin/xlink layouts see the SAME actin positions the snapshot has.
@@ -234,7 +262,36 @@ def build_cortex_full_simulation(
             p_myosin.n_motors_per_cell * p_myosin.n_particles_per_motor
         )
 
-    # 4. HOOMD Simulation + state
+    # 4. Optional lamellipodium (H.5 단계 2 composition).  Appended AFTER
+    # myosin so the WAVE / mother-actin block sits at the END of the
+    # tag space, leaving the cortex / xlink / myosin tag ranges
+    # unchanged.  Must run BEFORE create_state_from_snapshot because the
+    # new particle / bond / angle TYPES (wave_particle, actin_lamel,
+    # lamel_wave_anchor, lamel_actin_bond, lamel_branch_bond,
+    # lamel_branch_angle) cannot be added once HOOMD has initialised
+    # the state from a snapshot.
+    lamellipodium_layout = None
+    lamellipodium_state = None
+    n_wave_particles = 0
+    n_lamellipodium_actin = 0
+    enable_lamel = (
+        p_lamellipodium is not None and p_lamellipodium.n_WAVE > 0
+    )
+    if enable_lamel:
+        snap, lamellipodium_layout, lamellipodium_state = (
+            extend_cortex_snapshot_with_lamellipodium(
+                snap, p_lamellipodium,
+                wave_tag_start=int(snap.particles.N),
+                rng=np.random.default_rng(p_lamellipodium.seed),
+            )
+        )
+        n_wave_particles = int(p_lamellipodium.n_WAVE)
+        # One mother actin seed per WAVE at construction; runtime
+        # elongation / branching events grow this count via
+        # sim.state.set_snapshot in the D2 Updaters.
+        n_lamellipodium_actin = int(p_lamellipodium.n_WAVE)
+
+    # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p_cortex.seed
     )
@@ -265,9 +322,25 @@ def build_cortex_full_simulation(
             )
     if enable_myo:
         register_cortex_myosin_bond_params(bond, p_myosin)
+    if enable_lamel:
+        # Soft WAVE-mother anchor (10× softer than WAVE plane pin so it
+        # never tightens CFL — see lamellipodium.py module docstring).
+        bond.params["lamel_wave_anchor"] = dict(
+            k=p_lamellipodium.k_wave_pin * 0.1, r0=p_lamellipodium.rest_length,
+        )
+        bond.params["lamel_actin_bond"] = dict(
+            k=p_lamellipodium.bond_k, r0=p_lamellipodium.rest_length,
+        )
+        bond.params["lamel_branch_bond"] = dict(
+            k=p_lamellipodium.bond_k, r0=p_lamellipodium.rest_length,
+        )
 
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
+    if enable_lamel:
+        angle.params["lamel_branch_angle"] = dict(
+            k=p_lamellipodium.angle_branch_k, t0=p_lamellipodium.angle_branch_t0,
+        )
 
     # Exclude bonded pairs (and angle-1-3 neighbors) from LJ.  Necessary
     # because some intra-subsystem bond lengths are SHORTER than the WCA
@@ -318,6 +391,32 @@ def build_cortex_full_simulation(
         if enable_xl:
             _enable_pair("cortex_myosin_backbone", "xlink_head", repulsive=False)
             _enable_pair("cortex_myosin_head", "xlink_head", repulsive=False)
+    if enable_lamel:
+        # Intra-lamellipodium WCA: lamellipodial actin × itself; WAVE
+        # particles are pinned to the membrane plane so we leave the
+        # WAVE × WAVE pair at r_cut = 0 (no steric blockade between
+        # adjacent WAVE / NPF — the membrane is the steric barrier).
+        _enable_pair("actin_lamel", "actin_lamel", repulsive=True)
+        _enable_pair("wave_particle", "wave_particle", repulsive=False)
+        # All lamellipodium × non-lamellipodium pairs DISABLED — the
+        # cortex shell and the leading-edge lamellipodium sit in
+        # different spatial domains (cortex at radius R_cell, WAVE plane
+        # at y = Y_max).  Suppressing WCA between subsystems matches
+        # the (myosin × non-myosin = DISABLED) convention from the
+        # myosin block: no steric runaway from incidental construction-
+        # time proximity, and the D2 Updaters' search-radius bonds do
+        # not have to fight WCA repulsion.
+        _enable_pair("actin_lamel", "actin_cortex", repulsive=False)
+        _enable_pair("wave_particle", "actin_cortex", repulsive=False)
+        _enable_pair("actin_lamel", "wave_particle", repulsive=False)
+        if enable_xl:
+            _enable_pair("actin_lamel", "xlink_head", repulsive=False)
+            _enable_pair("wave_particle", "xlink_head", repulsive=False)
+        if enable_myo:
+            _enable_pair("actin_lamel", "cortex_myosin_backbone", repulsive=False)
+            _enable_pair("actin_lamel", "cortex_myosin_head", repulsive=False)
+            _enable_pair("wave_particle", "cortex_myosin_backbone", repulsive=False)
+            _enable_pair("wave_particle", "cortex_myosin_head", repulsive=False)
 
     lj.mode = "shift"
 
@@ -326,6 +425,16 @@ def build_cortex_full_simulation(
     ig.forces.append(bond)
     ig.forces.append(angle)
     ig.forces.append(lj)
+    # WAVE membrane plane pin — registered now so the BAOAB gamma_map
+    # check at attach time sees the WAVE force in the integrator.
+    wave_pin_force = None
+    if enable_lamel:
+        wave_pin_force = WaveMembranePin(
+            p_lamellipodium,
+            wave_tag_start=lamellipodium_layout.wave_tag_start,
+            n_WAVE=p_lamellipodium.n_WAVE,
+        )
+        ig.forces.append(wave_pin_force)
     sim.operations.integrator = ig
 
     baoab_updater = None
@@ -337,6 +446,16 @@ def build_cortex_full_simulation(
         if enable_myo:
             gamma_map["cortex_myosin_backbone"] = p_cortex.gamma_b
             gamma_map["cortex_myosin_head"] = p_cortex.gamma_b
+        if enable_lamel:
+            # WAVE + actin_lamel inherit the cortex bead Stokes drag at
+            # the lamellipodium's own bead_radius (yaml-anchored, same
+            # 30 nm ×40 bundle as the cortex bead by default but kept
+            # subsystem-local so KU-5.x can sweep independently).
+            gamma_lamel = float(
+                6.0 * math.pi * 6.913e-4 * p_lamellipodium.bead_radius
+            )
+            gamma_map["wave_particle"] = gamma_lamel
+            gamma_map["actin_lamel"] = gamma_lamel
         if constrained:
             # Rigid actin backbone (M-SHAKE + Fixman); cortex filaments are
             # contiguous N-bead blocks [f·N, (f+1)·N). Myosin/xlink/ERM beads
@@ -384,20 +503,65 @@ def build_cortex_full_simulation(
         )
         sim.operations.updaters.append(myosin_updater)
 
+    elong_action = None
+    elong_updater = None
+    branch_action = None
+    branch_updater = None
+    cap_action = None
+    cap_updater = None
+    if enable_lamel:
+        elong_action = BarbedEndElongationUpdater(
+            p=p_lamellipodium, lamel_state=lamellipodium_state,
+        )
+        elong_updater = hoomd.update.CustomUpdater(
+            action=elong_action,
+            trigger=hoomd.trigger.Periodic(p_lamellipodium.batch_steps),
+        )
+        branch_action = ArpBranchingUpdater(
+            p=p_lamellipodium, lamel_state=lamellipodium_state,
+            wave_tag_start=lamellipodium_layout.wave_tag_start,
+            n_WAVE=p_lamellipodium.n_WAVE,
+        )
+        branch_updater = hoomd.update.CustomUpdater(
+            action=branch_action,
+            trigger=hoomd.trigger.Periodic(p_lamellipodium.batch_steps),
+        )
+        cap_action = CappingUpdater(
+            p=p_lamellipodium, lamel_state=lamellipodium_state,
+        )
+        cap_updater = hoomd.update.CustomUpdater(
+            action=cap_action,
+            trigger=hoomd.trigger.Periodic(p_lamellipodium.batch_steps),
+        )
+        sim.operations.updaters.append(elong_updater)
+        sim.operations.updaters.append(branch_updater)
+        sim.operations.updaters.append(cap_updater)
+
     return {
         "sim": sim,
         "topology": topology,
         "xlink_layout": xlink_layout,
         "myosin_layout": myosin_layout,
+        "lamellipodium_layout": lamellipodium_layout,
+        "lamellipodium_state": lamellipodium_state,
+        "wave_pin_force": wave_pin_force,
         "baoab_updater": baoab_updater,
         "baoab_action": baoab_action,
         "xlink_updater": xlink_updater,
         "xlink_action": xlink_action,
         "myosin_updater": myosin_updater,
         "myosin_action": myosin_action,
+        "elong_action": elong_action,
+        "elong_updater": elong_updater,
+        "branch_action": branch_action,
+        "branch_updater": branch_updater,
+        "cap_action": cap_action,
+        "cap_updater": cap_updater,
         "n_cortex_actin": n_cortex_actin,
         "n_xlink_heads": n_xlink_heads,
         "n_myosin_particles": n_myosin_particles,
+        "n_wave_particles": n_wave_particles,
+        "n_lamellipodium_actin": n_lamellipodium_actin,
     }
 
 
@@ -434,6 +598,7 @@ class Cell:
     p_xlinks: ResolvedCrosslinkers | None
     p_erm: ResolvedERM | None
     p_myosin: ResolvedCortexMyosin | None
+    p_lamellipodium: ResolvedH5 | None
 
     # Build flags applied
     options: CellBuildOptions
@@ -450,13 +615,25 @@ class Cell:
     xlink_updater: Any | None
     myosin_action: MyosinStepUpdater | None
     myosin_updater: Any | None
+    # H.5 lamellipodium handles (None when options.with_lamellipodium=False)
+    lamellipodium_layout: LamellipodiumLayout | None
+    lamellipodium_state: LamellipodiumState | None
+    wave_pin_force: WaveMembranePin | None
+    elong_action: BarbedEndElongationUpdater | None
+    elong_updater: Any | None
+    branch_action: ArpBranchingUpdater | None
+    branch_updater: Any | None
+    cap_action: CappingUpdater | None
+    cap_updater: Any | None
 
     # Diagnostics
     n_cortex_actin: int
     n_xlink_heads: int
     n_myosin_particles: int
+    n_wave_particles: int
+    n_lamellipodium_actin: int
 
-    # Future hooks (H.5 lamellipodium / H.4 FA; None — populated when those modules integrate).
+    # Future hooks (H.5 lamellipodium populated when wired; H.4 FA when integrated).
     lamellipodium: Any | None = None
     fa: Any | None = None
 
@@ -473,6 +650,7 @@ class Cell:
         p_xlinks: ResolvedCrosslinkers | None = None,
         p_erm: ResolvedERM | None = None,
         p_myosin: ResolvedCortexMyosin | None = None,
+        p_lamellipodium: ResolvedH5 | None = None,
         options: CellBuildOptions | None = None,
         device: hoomd.device.Device | None = None,
         rng: np.random.Generator | None = None,
@@ -489,6 +667,16 @@ class Cell:
         p_erm : ResolvedERM, optional
             If provided AND options.with_erm, attaches the ERMHarmonic
             custom force (with CFL gate against cortex.dt_cfl).
+        p_myosin : ResolvedCortexMyosin, optional
+            If provided AND options.with_myosin, builds the bipolar
+            minifilament + D5 Stam-Hocky / D6 Hill / D2 Bell-Evans wiring.
+        p_lamellipodium : ResolvedH5, optional
+            If provided AND options.with_lamellipodium, extends the
+            cortex snapshot with WAVE + mother-actin beads and attaches
+            the D1 Bieling/Funk Updaters (BarbedEndElongation, ArpBranching,
+            Capping) plus the WAVE membrane plane pin.  ``p_lamellipodium.dt``
+            must equal ``p_cortex.dt_cfl`` (lamellipodium shares the host
+            BAOAB integrator).
         options : CellBuildOptions, optional
             Feature flags. Defaults to all-off (bare cortex + BAOAB).
         device, rng : HOOMD device, numpy RNG (both optional).
@@ -502,20 +690,45 @@ class Cell:
         opts = options or CellBuildOptions()
         n_cortex_actin = p_cortex.n_filaments * p_cortex.beads_per_filament
 
-        # When myosin is requested, route through the unified
-        # build_cortex_full_simulation helper which handles all subset
-        # combinations (cortex + optional xlinks + optional myosin).
-        # Otherwise dispatch to the simpler cortex / cortex+xlink builders
-        # to preserve the existing 단계 1-3 behavior verbatim.
-        if opts.with_myosin:
-            if p_myosin is None:
-                raise ValueError(
-                    "options.with_myosin=True requires p_myosin to be provided."
-                )
+        # Pre-validate add-on options that require resolved configs so we
+        # surface a clear error BEFORE any HOOMD state is created.
+        if opts.with_myosin and p_myosin is None:
+            raise ValueError(
+                "options.with_myosin=True requires p_myosin to be provided."
+            )
+        if opts.with_lamellipodium and p_lamellipodium is None:
+            raise ValueError(
+                "options.with_lamellipodium=True requires p_lamellipodium "
+                "to be provided."
+            )
+
+        # Initialise lamellipodium handles (overwritten by the unified
+        # builder when with_lamellipodium=True).
+        lamellipodium_layout: LamellipodiumLayout | None = None
+        lamellipodium_state: LamellipodiumState | None = None
+        wave_pin_force: WaveMembranePin | None = None
+        elong_action: BarbedEndElongationUpdater | None = None
+        elong_updater = None
+        branch_action: ArpBranchingUpdater | None = None
+        branch_updater = None
+        cap_action: CappingUpdater | None = None
+        cap_updater = None
+        n_wave_particles = 0
+        n_lamellipodium_actin = 0
+
+        # Route through build_cortex_full_simulation whenever myosin OR
+        # lamellipodium is requested (both need the unified snapshot-
+        # construction path so the extra particle / bond / angle TYPES
+        # are registered BEFORE HOOMD initialises the state — types
+        # cannot be added post-create_state).  Otherwise dispatch to
+        # the simpler cortex / cortex+xlink builders to preserve the
+        # existing 단계 1-3 behavior verbatim.
+        if opts.with_myosin or opts.with_lamellipodium:
             handles = build_cortex_full_simulation(
                 p_cortex,
                 p_xlinks=p_xlinks if opts.with_crosslinkers else None,
-                p_myosin=p_myosin,
+                p_myosin=p_myosin if opts.with_myosin else None,
+                p_lamellipodium=p_lamellipodium if opts.with_lamellipodium else None,
                 device=device, with_baoab=opts.with_baoab, rng=rng,
             )
             sim = handles["sim"]
@@ -530,6 +743,17 @@ class Cell:
             myosin_action = handles["myosin_action"]
             n_xlink_heads = handles["n_xlink_heads"]
             n_myosin_particles = handles["n_myosin_particles"]
+            lamellipodium_layout = handles["lamellipodium_layout"]
+            lamellipodium_state = handles["lamellipodium_state"]
+            wave_pin_force = handles["wave_pin_force"]
+            elong_action = handles["elong_action"]
+            elong_updater = handles["elong_updater"]
+            branch_action = handles["branch_action"]
+            branch_updater = handles["branch_updater"]
+            cap_action = handles["cap_action"]
+            cap_updater = handles["cap_updater"]
+            n_wave_particles = handles["n_wave_particles"]
+            n_lamellipodium_actin = handles["n_lamellipodium_actin"]
         elif opts.with_crosslinkers and p_xlinks is not None and p_xlinks.n_xl > 0:
             (sim, baoab_updater, baoab_action,
              xlink_updater, xlink_action, topology, xl_layout) = (
@@ -581,6 +805,7 @@ class Cell:
             p_xlinks=p_xlinks,
             p_erm=p_erm,
             p_myosin=p_myosin,
+            p_lamellipodium=p_lamellipodium,
             options=opts,
             simulation=sim,
             topology=topology,
@@ -593,16 +818,34 @@ class Cell:
             xlink_updater=xlink_updater,
             myosin_action=myosin_action,
             myosin_updater=myosin_updater,
+            lamellipodium_layout=lamellipodium_layout,
+            lamellipodium_state=lamellipodium_state,
+            wave_pin_force=wave_pin_force,
+            elong_action=elong_action,
+            elong_updater=elong_updater,
+            branch_action=branch_action,
+            branch_updater=branch_updater,
+            cap_action=cap_action,
+            cap_updater=cap_updater,
             n_cortex_actin=n_cortex_actin,
             n_xlink_heads=n_xlink_heads,
             n_myosin_particles=n_myosin_particles,
+            n_wave_particles=n_wave_particles,
+            n_lamellipodium_actin=n_lamellipodium_actin,
         )
 
     # ---------------------------------------------------------------
     # Diagnostics
     # ---------------------------------------------------------------
     def bead_count_summary(self) -> dict[str, int]:
-        """Per-subsystem bead counts (sums to ``simulation.state.N_particles``)."""
+        """Per-subsystem bead counts (sums to ``simulation.state.N_particles``).
+
+        ``lamellipodium`` reports the CONSTRUCTION-TIME bead count
+        (``2 · n_WAVE`` = WAVE + one mother seed per WAVE).  The
+        BarbedEndElongation / ArpBranching Updaters grow this block at
+        runtime via ``sim.state.set_snapshot``; query
+        ``simulation.state.N_particles`` for the current total.
+        """
         if self.p_myosin is not None and self.myosin_layout is not None:
             n_myosin_backbone = (
                 self.p_myosin.n_motors_per_cell * self.p_myosin.n_backbone
@@ -618,14 +861,21 @@ class Cell:
             "xlink_head": int(self.n_xlink_heads),
             "myosin_backbone": int(n_myosin_backbone),
             "myosin_head": int(n_myosin_head),
-            "lamellipodium": 0 if self.lamellipodium is None else self.lamellipodium.n_beads,
+            "wave_particle": int(self.n_wave_particles),
+            "lamellipodium_actin": int(self.n_lamellipodium_actin),
             "fa_integrin": 0 if self.fa is None else self.fa.n_integrins,
         }
 
     def tag_ranges(self) -> dict[str, tuple[int, int]]:
         """Map subsystem name → [start, end) tag range. Non-overlapping
         and contiguous in insertion order: cortex → xlink → myosin
-        backbone → myosin heads → (future) lamellipodium → FA."""
+        backbone → myosin heads → wave_particle → lamellipodium_actin → FA.
+
+        Lamellipodium ranges reflect the CONSTRUCTION-TIME tag block;
+        runtime elongation / branching events append actin_lamel beads
+        at tags ``≥ lamellipodium_actin[1]`` (see
+        ``LamellipodiumState.actin_next_tag``).
+        """
         offsets = {"cortex_actin": (0, self.n_cortex_actin)}
         cur = self.n_cortex_actin
         offsets["xlink_head"] = (cur, cur + self.n_xlink_heads)
@@ -645,7 +895,10 @@ class Cell:
             cur = myo_end
         else:
             offsets["myosin"] = (cur, cur)
-        offsets["lamellipodium"] = (cur, cur)
+        offsets["wave_particle"] = (cur, cur + self.n_wave_particles)
+        cur += self.n_wave_particles
+        offsets["lamellipodium_actin"] = (cur, cur + self.n_lamellipodium_actin)
+        cur += self.n_lamellipodium_actin
         offsets["fa_integrin"] = (cur, cur)
         return offsets
 
@@ -672,6 +925,8 @@ class Cell:
                 int(self.myosin_layout.positions.shape[0])
                 if self.myosin_layout is not None else 0
             ),
+            "n_wave_particles": int(self.n_wave_particles),
+            "n_lamellipodium_actin_realised": int(self.n_lamellipodium_actin),
         }
 
     # ---------------------------------------------------------------

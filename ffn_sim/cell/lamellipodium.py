@@ -1035,3 +1035,325 @@ def build_lamellipodium_simulation(
         "wave_pin_force": wave_pin,
         "n_wave": p.n_WAVE,
     }
+
+
+# ---------------------------------------------------------------------------
+# H.5 단계 2 — Cell composition helpers
+# ---------------------------------------------------------------------------
+# These two helpers expose the lamellipodium subsystem as an additive layer
+# on top of an existing cortex (+ optional xlinks / myosin / ERM) HOOMD
+# Simulation, mirroring the cortex.crosslinkers.extend_cortex_state_with_xlinks
+# + cortex.myosin.extend_state_with_cortex_myosin pattern.
+#
+# The Cell.build() factory in `cell/cell.py` calls
+# extend_cortex_snapshot_with_lamellipodium() to grow the cortex snapshot
+# with WAVE + mother-actin particles + the WAVE-anchor bonds, then calls
+# attach_lamellipodium_to_simulation() to wire bond / angle / membrane-pin
+# forces + the three D2-batched Updaters into the live simulation.
+#
+# Both helpers assume the host simulation has NOT yet been ``sim.run(...)``
+# (the BAOAB Action attaches at first run, so mutating its ``gamma_map`` is
+# safe up until that point).
+
+
+def extend_cortex_snapshot_with_lamellipodium(
+    base_snap,
+    p: ResolvedH5,
+    *,
+    wave_tag_start: int,
+    rng: np.random.Generator | None = None,
+) -> tuple["LamellipodiumLayout", "LamellipodiumState", Any]:
+    """Extend an existing cortex (+ optional xlinks / myosin) snapshot.
+
+    Mirrors :func:`ffn_sim.cortex.crosslinkers.extend_cortex_state_with_xlinks`
+    and :func:`ffn_sim.cortex.myosin.extend_state_with_cortex_myosin`.
+
+    Appends ``n_WAVE`` ``wave_particle`` beads at the WAVE membrane plane,
+    ``n_WAVE`` ``actin_lamel`` mother-actin seed beads one rest-length
+    below each WAVE, plus ``n_WAVE`` ``lamel_wave_anchor`` bonds joining
+    each WAVE to its mother seed.  The bond types ``lamel_actin_bond``
+    and ``lamel_branch_bond`` and the angle type ``lamel_branch_angle``
+    are registered (with zero initial instances) so the runtime Updaters'
+    snapshot-rebuild calls do not have to grow the type registry.
+
+    Parameters
+    ----------
+    base_snap : gsd.hoomd.Frame | hoomd.Snapshot
+        Snapshot from the cortex (+ xlinks / myosin) construction step,
+        prior to ``sim.create_state_from_snapshot`` OR after via
+        ``sim.state.get_snapshot()`` — both share the .particles/.bonds/
+        .angles attribute layout.
+    p : ResolvedH5
+        Resolved lamellipodium parameters (provides ``n_WAVE``,
+        ``Y_max``, ``rest_length``, etc.).
+    wave_tag_start : int
+        Global tag offset for the first WAVE particle (= current snapshot
+        ``particles.N`` — the lamellipodium block is appended at the end
+        of the tag space, after cortex / xlinks / myosin).
+    rng : np.random.Generator, optional
+        WAVE-placement RNG. Defaults to ``np.random.default_rng(p.seed)``.
+
+    Returns
+    -------
+    snap_new : gsd.hoomd.Frame
+        New snapshot extending ``base_snap`` with the lamellipodium beads
+        and bonds.  Particle / bond / angle TYPES are registered for the
+        downstream D2-batched Updaters even when the per-type instance
+        count is zero at construction.
+    layout : LamellipodiumLayout
+        WAVE + mother-seed layout (positions, tag ranges, anchor pairs).
+    state : LamellipodiumState
+        Pre-seeded runtime state: each mother is registered as a
+        barbed-end with unit tangent ``-ŷ`` (grows away from the WAVE
+        plane at ``+Y_max`` into cytosol).
+    """
+    import gsd.hoomd
+
+    if rng is None:
+        rng = np.random.default_rng(p.seed)
+
+    layout = generate_lamellipodium_layout(
+        p, wave_tag_start=wave_tag_start, rng=rng,
+    )
+
+    snap_old = base_snap
+    n_part_old = int(snap_old.particles.N)
+    n_WAVE = p.n_WAVE
+    n_new_particles = 2 * n_WAVE   # WAVE + mother actin (one each)
+
+    snap = gsd.hoomd.Frame()
+    snap.particles.N = n_part_old + n_new_particles
+
+    # ---- Particle types: existing + (wave_particle, actin_lamel) ----
+    old_ptypes = list(snap_old.particles.types)
+    new_ptypes = list(old_ptypes)
+    if "wave_particle" not in new_ptypes:
+        new_ptypes.append("wave_particle")
+    if "actin_lamel" not in new_ptypes:
+        new_ptypes.append("actin_lamel")
+    wave_typeid = new_ptypes.index("wave_particle")
+    actin_lamel_typeid = new_ptypes.index("actin_lamel")
+    snap.particles.types = new_ptypes
+
+    typeids = np.empty(snap.particles.N, dtype=np.uint32)
+    typeids[:n_part_old] = np.asarray(snap_old.particles.typeid)
+    if n_WAVE > 0:
+        typeids[n_part_old:n_part_old + n_WAVE] = wave_typeid
+        typeids[n_part_old + n_WAVE:] = actin_lamel_typeid
+    snap.particles.typeid = typeids
+
+    # ---- Positions ----
+    pos_new = np.empty((snap.particles.N, 3), dtype=np.float64)
+    pos_new[:n_part_old] = np.asarray(snap_old.particles.position)
+    if n_WAVE > 0:
+        pos_new[n_part_old:n_part_old + n_WAVE] = layout.wave_positions
+        pos_new[n_part_old + n_WAVE:] = layout.mother_seed_positions
+    snap.particles.position = pos_new
+
+    # ---- Masses ----
+    mass_new = np.empty(snap.particles.N, dtype=np.float64)
+    mass_new[:n_part_old] = np.asarray(snap_old.particles.mass)
+    mass_new[n_part_old:] = 1.0
+    snap.particles.mass = mass_new
+
+    # ---- Bond types: existing + lamel_wave_anchor + lamel_actin_bond +
+    #      lamel_branch_bond.  Only lamel_wave_anchor has instances at
+    #      construction; the two filament-growth types are pre-registered
+    #      so the runtime Updaters' snapshot-rebuilds don't grow the
+    #      registry mid-simulation. ----
+    old_btypes = list(snap_old.bonds.types)
+    new_btypes = list(old_btypes)
+    for name in (
+        "lamel_wave_anchor", "lamel_actin_bond", "lamel_branch_bond",
+    ):
+        if name not in new_btypes:
+            new_btypes.append(name)
+    anchor_btid = new_btypes.index("lamel_wave_anchor")
+
+    old_bg = np.asarray(snap_old.bonds.group, dtype=np.uint32)
+    old_bt = np.asarray(snap_old.bonds.typeid, dtype=np.uint32)
+    if n_WAVE > 0:
+        anchor_bg = layout.wave_to_mother_bond_pairs.astype(np.uint32)
+        anchor_bt = np.full(n_WAVE, anchor_btid, dtype=np.uint32)
+        merged_bg = np.concatenate([old_bg, anchor_bg], axis=0)
+        merged_bt = np.concatenate([old_bt, anchor_bt])
+    else:
+        merged_bg = old_bg
+        merged_bt = old_bt
+    snap.bonds.N = int(merged_bg.shape[0])
+    snap.bonds.types = new_btypes
+    snap.bonds.group = merged_bg
+    snap.bonds.typeid = merged_bt
+
+    # ---- Angle types: existing + lamel_branch_angle (no instances yet). ----
+    old_atypes = list(snap_old.angles.types) if int(snap_old.angles.N) > 0 \
+        else list(snap_old.angles.types)
+    new_atypes = list(old_atypes)
+    if "lamel_branch_angle" not in new_atypes:
+        new_atypes.append("lamel_branch_angle")
+    snap.angles.N = int(snap_old.angles.N)
+    snap.angles.types = new_atypes
+    if int(snap_old.angles.N) > 0:
+        snap.angles.group = np.asarray(snap_old.angles.group)
+        snap.angles.typeid = np.asarray(snap_old.angles.typeid)
+
+    # ---- Pass-through dihedrals / impropers if present. ----
+    for grp_name in ("dihedrals", "impropers"):
+        src = getattr(snap_old, grp_name)
+        dst = getattr(snap, grp_name)
+        if int(src.N) > 0:
+            dst.N = int(src.N)
+            dst.types = list(src.types)
+            dst.group = np.asarray(src.group)
+            dst.typeid = np.asarray(src.typeid)
+
+    snap.configuration.box = list(snap_old.configuration.box)
+
+    # ---- Initialise the runtime state: each mother is a barbed end with
+    #      tangent -ŷ (away from membrane). ----
+    state = LamellipodiumState()
+    mother_tangent = np.array([0.0, -1.0, 0.0], dtype=np.float64)
+    for i in range(n_WAVE):
+        mother_tag = layout.mother_tag_start + i
+        state.barbed_end_tags.append(mother_tag)
+        state.tangent_of[mother_tag] = mother_tangent.copy()
+    state.actin_next_tag = layout.mother_tag_start + n_WAVE
+
+    return snap, layout, state
+
+
+def attach_lamellipodium_to_simulation(
+    sim: hoomd.Simulation,
+    p: ResolvedH5,
+    *,
+    layout: "LamellipodiumLayout",
+    state: "LamellipodiumState",
+    baoab_action: Any | None = None,
+) -> dict:
+    """Wire lamellipodium bond / angle / membrane-pin forces + 3 Updaters.
+
+    Pre-conditions
+    --------------
+    * ``sim.state`` already contains the WAVE + mother-actin particles
+      AND the ``wave_particle`` / ``actin_lamel`` particle types AND the
+      ``lamel_wave_anchor`` / ``lamel_actin_bond`` / ``lamel_branch_bond``
+      bond types AND the ``lamel_branch_angle`` angle type.  Caller must
+      have invoked :func:`extend_cortex_snapshot_with_lamellipodium` and
+      built the sim from that extended snapshot via
+      ``sim.create_state_from_snapshot`` (note: HOOMD's ``set_snapshot``
+      CANNOT add new particle / bond / angle types post-init; only
+      ``create_state_from_snapshot`` registers them).
+    * ``sim.operations.integrator`` exists with a ``md.bond.Harmonic``
+      force, a ``md.angle.Harmonic`` force, and ``md.Integrator.dt == p.dt``.
+    * If ``baoab_action`` is provided, it has NOT yet been
+      ``sim.run(...)``-attached (its ``gamma_map`` is still mutable).
+
+    Side-effects on ``sim``:
+
+    1. Registers ``lamel_wave_anchor`` / ``lamel_actin_bond`` /
+       ``lamel_branch_bond`` params on the existing ``bond.Harmonic`` force.
+    2. Registers ``lamel_branch_angle`` params on the existing
+       ``angle.Harmonic`` force.
+    3. Appends a fresh :class:`WaveMembranePin` custom force to the
+       integrator.
+    4. If ``baoab_action`` is passed, extends its ``gamma_map`` with the
+       new particle types so the BAOAB attach-time validation passes.
+    5. Appends the three D2-batched lamellipodium Updaters
+       (``BarbedEndElongationUpdater``, ``ArpBranchingUpdater``,
+       ``CappingUpdater``) wrapped in ``hoomd.update.CustomUpdater`` with
+       ``hoomd.trigger.Periodic(p.batch_steps)``.
+
+    Returns
+    -------
+    dict
+        Handles: ``layout``, ``state``, ``wave_pin_force``,
+        ``elong_action`` / ``elong_updater``, ``branch_action`` /
+        ``branch_updater``, ``cap_action`` / ``cap_updater``,
+        ``n_wave_particles``, ``n_lamellipodium_actin``.
+    """
+    ig = sim.operations.integrator
+    if ig is None:
+        raise RuntimeError(
+            "attach_lamellipodium_to_simulation requires "
+            "sim.operations.integrator to be wired."
+        )
+    if not math.isclose(float(ig.dt), p.dt, rel_tol=0.0, abs_tol=0.0):
+        raise ValueError(
+            f"Lamellipodium dt={p.dt!r} must equal host integrator "
+            f"dt={float(ig.dt)!r}; they share the BAOAB step."
+        )
+
+    # 1. Locate existing bond / angle forces and register the new types.
+    bond_force: md.bond.Harmonic | None = None
+    angle_force: md.angle.Harmonic | None = None
+    for f in ig.forces:
+        if isinstance(f, md.bond.Harmonic) and bond_force is None:
+            bond_force = f
+        elif isinstance(f, md.angle.Harmonic) and angle_force is None:
+            angle_force = f
+    if bond_force is None or angle_force is None:
+        raise RuntimeError(
+            "attach_lamellipodium_to_simulation requires the host "
+            "integrator to expose both md.bond.Harmonic and md.angle.Harmonic "
+            "force objects (cortex builders attach both)."
+        )
+
+    # WAVE-anchor harmonic is intentionally SOFT (k = 0.1 · k_wave_pin) so
+    # it never tightens the integration CFL relative to the WAVE plane
+    # pin itself (which is gated against dt at resolve time).
+    bond_force.params["lamel_wave_anchor"] = dict(
+        k=p.k_wave_pin * 0.1, r0=p.rest_length,
+    )
+    bond_force.params["lamel_actin_bond"] = dict(k=p.bond_k, r0=p.rest_length)
+    bond_force.params["lamel_branch_bond"] = dict(k=p.bond_k, r0=p.rest_length)
+    angle_force.params["lamel_branch_angle"] = dict(
+        k=p.angle_branch_k, t0=p.angle_branch_t0,
+    )
+
+    # 2. WAVE plane membrane pin force compute.
+    wave_pin = WaveMembranePin(
+        p, wave_tag_start=layout.wave_tag_start, n_WAVE=p.n_WAVE,
+    )
+    ig.forces.append(wave_pin)
+
+    # 3. Extend the BAOAB gamma_map with the new particle types so attach()
+    # doesn't trip the missing-types guard.  WAVE + actin_lamel inherit
+    # the cortex bead drag via the standard Stokes formula 6πη·R.
+    if baoab_action is not None:
+        gamma_lamel = 6.0 * math.pi * 6.913e-4 * p.bead_radius
+        baoab_action.gamma_map.setdefault("wave_particle", gamma_lamel)
+        baoab_action.gamma_map.setdefault("actin_lamel", gamma_lamel)
+
+    # 4. Three D2-batched lamellipodium Updaters.
+    elong_action = BarbedEndElongationUpdater(p=p, lamel_state=state)
+    elong_updater = hoomd.update.CustomUpdater(
+        action=elong_action, trigger=hoomd.trigger.Periodic(p.batch_steps),
+    )
+    branch_action = ArpBranchingUpdater(
+        p=p, lamel_state=state,
+        wave_tag_start=layout.wave_tag_start, n_WAVE=p.n_WAVE,
+    )
+    branch_updater = hoomd.update.CustomUpdater(
+        action=branch_action, trigger=hoomd.trigger.Periodic(p.batch_steps),
+    )
+    cap_action = CappingUpdater(p=p, lamel_state=state)
+    cap_updater = hoomd.update.CustomUpdater(
+        action=cap_action, trigger=hoomd.trigger.Periodic(p.batch_steps),
+    )
+    sim.operations.updaters.append(elong_updater)
+    sim.operations.updaters.append(branch_updater)
+    sim.operations.updaters.append(cap_updater)
+
+    return {
+        "layout": layout,
+        "state": state,
+        "wave_pin_force": wave_pin,
+        "elong_action": elong_action,
+        "elong_updater": elong_updater,
+        "branch_action": branch_action,
+        "branch_updater": branch_updater,
+        "cap_action": cap_action,
+        "cap_updater": cap_updater,
+        "n_wave_particles": int(p.n_WAVE),
+        "n_lamellipodium_actin": int(p.n_WAVE),  # 1 mother per WAVE at construction
+    }
