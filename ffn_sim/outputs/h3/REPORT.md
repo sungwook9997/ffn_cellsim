@@ -790,7 +790,7 @@ start commit `2218222` → end commit (figs) on `phase1/h3-cortex`. gbook A5000 
 | 측정 | 값 | 판정 |
 | --- | --- | --- |
 | L_p (all 100 snap) | 16.74 μm | ∈ [15.3, 18.7] ✅ |
-| **L_p (eq-transient 첫 5 제외)** | **16.64 ± 0.06 μm** | ∈ [15.3, 18.7] **✅ (4.7σ resolved)** |
+| **L_p (eq-transient 첫 5 제외)** | **16.64 ± 0.06 μm** | ∈ [15.3, 18.7] **✅ (4.7σ resolved) — PI 비준 2026-05-29** |
 | eq-transient (snap 0–4) | 21.5 → 17.1 μm 감쇠 | eq=100k 잔여 transient (단계 8 예측대로) |
 | **⟨E_bend⟩ per angle** | **0.9877 ± 0.0014 kT** | target 0.9898 ±5% → **0.2% off, deep in-band ✅** |
 
