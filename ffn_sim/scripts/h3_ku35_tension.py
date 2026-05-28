@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -278,6 +279,27 @@ def main() -> None:
         with_xlinks=args.with_xlinks, with_erm=args.with_erm, k_erm_fast=args.k_erm,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
         device=args.device, out=args.out)
+
+    # Visualize-at-closeout (CLAUDE.md hard rule + memory
+    # feedback_production_driver_auto_viz): subprocess to the sweep analysis
+    # so each completed seed refreshes the ensemble figures + REPORT_ku35.md
+    # from whatever seeds are present on disk. Race between parallel seeds is
+    # benign — the analysis is idempotent and matplotlib savefig is atomic;
+    # the last writer (typically the last seed to finish) wins. Best-effort:
+    # a viz failure must NOT mask a valid seed result.
+    try:
+        import subprocess
+        indir = (Path(args.out).resolve().parent if args.out
+                 else PKG / "outputs" / "h3" / "production" / "ku35")
+        subprocess.run(
+            [sys.executable, str(PKG / "scripts" / "h3_ku35_sweep_analysis.py"),
+             "--indir", str(indir)],
+            check=True, cwd=str(PKG.parent),
+        )
+        print("FIGS auto-generated (visualize-at-closeout)", flush=True)
+    except Exception as e:  # noqa: BLE001  (viz is non-critical to the seed result)
+        print(f"WARN visualize-at-closeout failed (seed result still valid): {e}",
+              flush=True)
 
 
 if __name__ == "__main__":
