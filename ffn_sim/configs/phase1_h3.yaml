@@ -195,7 +195,16 @@ cortex:
     head_actin_k_off0: 10.0            # 1/s unloaded off-rate (NMII duty cycle)
     head_actin_x_beta: 0.6e-9          # m   Bell strength length (Veigel 2002)
     head_actin_k_on: 50.0              # 1/s per-head bind rate when acceptor present
-    head_actin_max_bind_dist: 50.0e-9  # m   acceptor search radius
+    # KU-3.5 fix 2026-05-29 (PI Option C, segment-projection binding):
+    # heads sit ~head_rest_length=200nm laterally from the actin segment
+    # they bind. Eligibility = perpendicular distance to segment LINE ≤
+    # head_actin_capture_perp (head's physical reach via its spring).
+    # Bond r0 binning ceiling = √((ℓ₀/2)² + capture_perp²) = √(250²+210²)
+    # ≈ 327nm (geometric, not magic). Legacy 50nm was for the wrong
+    # radial-offset placement that left heads ~824nm from any actin
+    # (docs/KU35_myosin_binding_diagnosis.md).
+    head_actin_max_bind_dist: 3.3e-7   # m   max head-bead bond r0 (bin ceiling, derived)
+    head_actin_capture_perp: 2.1e-7    # m   = head_rest_length + 10nm slack
     batch_steps: 100                   # BAOAB steps between Updater ticks
     n_bins: 10                         # per-r0 binning count
     seed: 44                           # offset from cortex.seed for RNG isolation

@@ -176,10 +176,13 @@ def build_cortex_full_simulation(
         ``n_cortex_actin`` (int), ``n_xlink_heads`` (int),
         ``n_myosin_particles`` (int).
     """
-    # 1. Cortex base
-    topology = generate_cortex_topology(p_cortex, rng=rng)
-    cortex_snap, _, _ = build_cortex_state(
-        p_cortex, with_crosslinkers=False, rng=rng
+    # 1. Cortex base — use the topology returned by build_cortex_state so the
+    # myosin/xlink layouts see the SAME actin positions the snapshot has.
+    # (Previous dual call to generate_cortex_topology + build_cortex_state
+    # with a shared rng mutated state between calls → divergent topologies,
+    # which made the actin-aware myosin placement land on the wrong beads.)
+    cortex_snap, topology, _ = build_cortex_state(
+        p_cortex, with_crosslinkers=False, rng=rng,
     )
     n_cortex_actin = p_cortex.n_filaments * p_cortex.beads_per_filament
     snap = cortex_snap
@@ -214,6 +217,13 @@ def build_cortex_full_simulation(
         myosin_layout = generate_cortex_myosin_layout(
             p_myosin, p_cortex.R_cell,
             motor_tag_start=motor_tag_start, rng=rng,
+            # Actin-aware placement (KU-3.5 fix 2026-05-29, PI Option C):
+            # minifilaments sit at random cortex actin beads, backbone along
+            # local actin tangent, heads in tangent-plane lateral. Removes the
+            # radial-offset bug that left heads ~824 nm from any actin.
+            cortex_positions=topology.positions.reshape(-1, 3),
+            cortex_tangents=topology.tangents,
+            beads_per_filament=p_cortex.beads_per_filament,
         )
         snap = extend_state_with_cortex_myosin(snap, myosin_layout, p_myosin)
         n_myosin_particles = (
@@ -363,6 +373,10 @@ def build_cortex_full_simulation(
         myosin_action, myosin_updater = make_cortex_myosin_updater(
             p_myo=p_myosin, layout=myosin_layout, kT=p_cortex.kT,
             n_cortex_actin=n_cortex_actin,
+            # KU-3.5 segment-projection binding (Option C): pass actin
+            # bond topology so the updater can match heads to segments,
+            # not just bead centers (bead-only is a 500 nm grid artefact).
+            cortex_bond_groups=topology.bond_groups,
         )
         sim.operations.updaters.append(myosin_updater)
 

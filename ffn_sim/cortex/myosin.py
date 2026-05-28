@@ -160,7 +160,16 @@ class ResolvedCortexMyosin:
     head_actin_k_off0: float     # 1/s unloaded off-rate
     head_actin_x_beta: float     # m   Bell strength length
     head_actin_k_on: float       # 1/s per-head binding rate when acceptor present
-    head_actin_max_bind_dist: float   # m   binding-acceptor search radius
+    # head_actin_max_bind_dist: BOND R0 BIN-SCHEME max (largest head-bead bond r0
+    # accepted). Segment-derived: √((ℓ₀/2)² + capture_perp²) ≈ 327nm at ℓ₀=500nm,
+    # capture_perp=210nm. Larger than the legacy 50nm because heads now sit
+    # head_off≈200nm laterally from the actin segment they bind (Option C).
+    head_actin_max_bind_dist: float   # m   max head-bead bond r0 (binning ceiling)
+    # head_actin_capture_perp: PERPENDICULAR distance from a head to an actin
+    # segment LINE that counts as binding-eligible (segment-projection,
+    # KU-3.5 fix 2026-05-29 Option C). Set to head_rest_length + small slack
+    # (=210nm for head_off=200nm) — the physical head reach via its spring.
+    head_actin_capture_perp: float    # m  segment perp capture (derived from head_off+slack)
 
     # D2 batch
     batch_steps: int             # BAOAB steps between MyosinStepUpdater ticks
@@ -208,6 +217,9 @@ def resolve_cortex_myosin(cfg: dict, *, dt: float) -> ResolvedCortexMyosin:
         head_actin_x_beta=float(cfg["head_actin_x_beta"]),
         head_actin_k_on=float(cfg["head_actin_k_on"]),
         head_actin_max_bind_dist=float(cfg["head_actin_max_bind_dist"]),
+        head_actin_capture_perp=float(
+            cfg.get("head_actin_capture_perp", float(cfg["head_rest_length"]) + 10.0e-9)
+        ),
         batch_steps=int(cfg["batch_steps"]),
         dt=float(dt),
         n_bins=int(cfg.get("n_bins", 10)),
@@ -351,19 +363,35 @@ def _tangent_plane_basis(normals: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 def generate_cortex_myosin_layout(
     p: ResolvedCortexMyosin, R_cell: float,
     *, motor_tag_start: int, rng: np.random.Generator | None = None,
+    cortex_positions: np.ndarray | None = None,
+    cortex_tangents: np.ndarray | None = None,
+    beads_per_filament: int | None = None,
 ) -> CortexMyosinLayout:
     """Place ``n_motors_per_cell`` minifilaments on the cortex shell.
 
-    Each minifilament:
+    Two placement modes:
 
-    1. Center sampled uniformly on sphere ``r = R_cell`` (Marsaglia).
-    2. Random tangent-plane axis ``u`` (uniform azimuth).
-    3. Backbone beads laid along ``u`` at ``backbone_segment_length``
-       spacing, centered on the minifilament center.
-    4. Heads placed perpendicular to ``u`` along the local outward
-       normal ``n``: + polarity heads at ``+head_rest_length · n``,
-       − polarity heads at ``−head_rest_length · n``, distributed evenly
-       along the backbone span.
+    **Actin-aware (preferred)** — when ``cortex_positions`` (F·N, 3) +
+    ``cortex_tangents`` (F, 3) + ``beads_per_filament`` are provided:
+
+    1. Pick ``M`` random cortex actin BEADS as minifilament centres
+       (without replacement, so no two minifilaments share a center bead
+       — gives overlap-avoidance at construction).
+    2. Backbone axis ``u`` = the local actin filament tangent (the
+       minifilament lies along the actin it sits on, biologically
+       meaningful — myosin minifilaments crosslink cortical actin).
+    3. Heads offset in the **tangent plane** perpendicular to the
+       backbone: lateral direction ``w = normalize(cross(n, u))`` where
+       ``n`` is the local outward shell normal. + polarity heads at
+       ``+head_rest_length · w``, − heads at ``−head_rest_length · w``.
+       Heads stay IN the cortex shell (radius ≈ R_cell), within reach of
+       the actin filament they sit on (and adjacent ones).
+
+    **Legacy sphere-random** — when cortex info is omitted: keeps the
+    original (buggy for binding — heads radially off shell, 824 nm median
+    from actin) placement for back-compat with tests that don't have
+    a cortex topology in hand. KU-3.5/3.1/3.18 production needs the
+    actin-aware mode (PI ratified 2026-05-29 — Option C).
     """
     if rng is None:
         rng = np.random.default_rng(p.seed)
@@ -383,14 +411,64 @@ def generate_cortex_myosin_layout(
             motor_tag_start=motor_tag_start,
         )
 
-    centers = _sample_sphere_surface(rng, M, R_cell)
-    normals = centers / R_cell
-    e1, e2 = _tangent_plane_basis(normals)
-    phi = rng.uniform(0.0, 2.0 * math.pi, M)
-    axes = (
-        np.cos(phi)[:, None] * e1 + np.sin(phi)[:, None] * e2
+    actin_aware = (
+        cortex_positions is not None
+        and cortex_tangents is not None
+        and beads_per_filament is not None
     )
-    axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
+
+    if actin_aware:
+        # Pick M actin beads as minifilament centers with PAIRWISE SPACING
+        # ≥ backbone_length + slack, so two minifilaments don't overlap
+        # (intra-myosin LJ would blow up the integrator otherwise — the
+        # backbones span ~700 nm + heads ±head_off laterally).
+        n_actin = cortex_positions.shape[0]
+        if M > n_actin:
+            raise ValueError(
+                f"n_motors_per_cell={M} > n_cortex_actin={n_actin}; "
+                "cannot place each minifilament at a unique actin bead.")
+        from scipy.spatial import cKDTree
+        # Greedy: shuffle, accept if far enough from already-picked.
+        min_sep = float(L) + 100.0e-9   # backbone_length + 100 nm slack
+        order = rng.permutation(n_actin)
+        picked: list[int] = []
+        picked_pos: list[np.ndarray] = []
+        for idx in order:
+            if not picked_pos:
+                picked.append(int(idx)); picked_pos.append(cortex_positions[idx])
+                if len(picked) == M: break
+                continue
+            d = np.linalg.norm(
+                np.stack(picked_pos) - cortex_positions[idx], axis=1
+            ).min()
+            if d >= min_sep:
+                picked.append(int(idx)); picked_pos.append(cortex_positions[idx])
+                if len(picked) == M: break
+        if len(picked) < M:
+            raise RuntimeError(
+                f"Could not place {M} minifilaments with ≥{min_sep*1e9:.0f}nm "
+                f"pairwise spacing on {n_actin} actin beads (got {len(picked)}). "
+                "Reduce n_motors_per_cell or relax spacing.")
+        bead_choice = np.asarray(picked, dtype=np.int64)
+        centers = cortex_positions[bead_choice].copy()
+        # Filament index for each chosen bead (contiguous bead blocks).
+        fil_idx = bead_choice // beads_per_filament
+        axes = cortex_tangents[fil_idx].copy()
+        axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
+        normals = centers / np.linalg.norm(centers, axis=1, keepdims=True).clip(min=1e-30)
+        # In-plane lateral direction perpendicular to backbone, in tangent plane.
+        lateral = np.cross(normals, axes)
+        lateral = lateral / np.linalg.norm(lateral, axis=1, keepdims=True).clip(min=1e-30)
+    else:
+        centers = _sample_sphere_surface(rng, M, R_cell)
+        normals = centers / R_cell
+        e1, e2 = _tangent_plane_basis(normals)
+        phi = rng.uniform(0.0, 2.0 * math.pi, M)
+        axes = (
+            np.cos(phi)[:, None] * e1 + np.sin(phi)[:, None] * e2
+        )
+        axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
+        lateral = normals  # legacy: heads offset RADIALLY (the binding bug)
 
     positions = np.empty((M, N + 2 * H, 3), dtype=np.float64)
     # Backbone bead offsets along axis: i − (N−1)/2, scaled by seg.
@@ -404,16 +482,16 @@ def generate_cortex_myosin_layout(
     for m in range(M):
         cm = centers[m]
         u = axes[m]
-        n = normals[m]
+        w = lateral[m]    # tangent-plane lateral (actin-aware) OR n (legacy)
         # Backbone
         for i in range(N):
             positions[m, i] = cm + backbone_offsets[i] * u
-        # + heads (outward direction)
+        # + heads (one lateral direction)
         for i in range(H):
-            positions[m, N + i] = cm + head_axis_offsets[i] * u + head_off * n
-        # − heads (inward direction)
+            positions[m, N + i] = cm + head_axis_offsets[i] * u + head_off * w
+        # − heads (opposite lateral)
         for i in range(H):
-            positions[m, N + H + i] = cm + head_axis_offsets[i] * u - head_off * n
+            positions[m, N + H + i] = cm + head_axis_offsets[i] * u - head_off * w
 
     return CortexMyosinLayout(
         centers=centers,
@@ -620,6 +698,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
         layout: CortexMyosinLayout,
         kT: float,
         n_cortex_actin: int,
+        cortex_bond_groups: np.ndarray | None = None,
         seed_offset: int = 3,
     ) -> None:
         super().__init__()
@@ -628,6 +707,24 @@ class MyosinStepUpdater(hoomd.custom.Action):
         self.kT = float(kT)
         self.n_cortex_actin = int(n_cortex_actin)
         self._rng = np.random.default_rng(p_myo.seed + seed_offset)
+        # Segment-projection binding precompute (KU-3.5 Option C). When
+        # cortex_bond_groups provided: for each actin bead, list the segment
+        # indices it participates in (1 or 2 segments per bead in a chain).
+        # Segments use the bond-group ordering; each segment is the pair
+        # (bg[s,0], bg[s,1]) which are two consecutive cortex actin beads.
+        self._cortex_bond_groups = (
+            np.asarray(cortex_bond_groups, dtype=np.int64)
+            if cortex_bond_groups is not None else None
+        )
+        if self._cortex_bond_groups is not None:
+            # Per-bead adjacency: which segments touch each bead.
+            adj: list[list[int]] = [[] for _ in range(int(n_cortex_actin))]
+            for s, (a, b) in enumerate(self._cortex_bond_groups):
+                if 0 <= a < n_cortex_actin: adj[int(a)].append(s)
+                if 0 <= b < n_cortex_actin: adj[int(b)].append(s)
+            self._bead_to_segs = [np.asarray(v, dtype=np.int64) for v in adj]
+        else:
+            self._bead_to_segs = None
 
         # Per-head state — bound to which actin tag (−1 if free).
         n_heads_total = 2 * p_myo.n_heads_per_side * p_myo.n_motors_per_cell
@@ -735,7 +832,15 @@ class MyosinStepUpdater(hoomd.custom.Action):
         else:
             bond_bins = np.empty((0,), dtype=np.int64)
 
-        # ---- Step 2: binding (KDTree) ----
+        # ---- Step 2: binding ----
+        # Two modes:
+        #  - segment-projection (KU-3.5 Option C, when cortex_bond_groups
+        #    is set at construction): a head is eligible if its perpendicular
+        #    distance to an actin SEGMENT line is ≤ capture_perp AND its
+        #    projection lies within the segment (or the endpoint is within
+        #    capture_perp). Bind to the segment's NEARER endpoint bead.
+        #  - legacy bead-center (when no bond_groups): KDTree within
+        #    max_bind_dist. Preserved for back-compat with old tests.
         from scipy.spatial import cKDTree
         unbound_head_locals = np.flatnonzero(self._head_bound_to_actin < 0)
         if unbound_head_locals.size > 0:
@@ -745,29 +850,101 @@ class MyosinStepUpdater(hoomd.custom.Action):
             )
             r_heads = pos[unbound_head_tags]
             r_actin_all = pos[:self.n_cortex_actin]
-            tree = cKDTree(r_actin_all)
-            nbr_lists = tree.query_ball_point(
-                r_heads, r=self.p.head_actin_max_bind_dist
-            )
             p_bind = 1.0 - np.exp(-self.p.head_actin_k_on * self.p.batch_dt)
             u2 = self._rng.uniform(0.0, 1.0, size=unbound_head_locals.size)
             new_bonds_list = []
             new_bins_list = []
-            for k, nbrs in enumerate(nbr_lists):
-                if len(nbrs) == 0 or u2[k] >= p_bind:
-                    continue
-                nbrs_arr = np.asarray(nbrs, dtype=np.int64)
-                d_nbrs = np.linalg.norm(
-                    r_actin_all[nbrs_arr] - r_heads[k], axis=1
+            if self._cortex_bond_groups is not None and self._bead_to_segs is not None:
+                # Segment-projection mode.
+                bg = self._cortex_bond_groups
+                tree = cKDTree(r_actin_all)
+                # Search radius covers any bead whose adjacent segment could
+                # be perpendicular-eligible: head can be √(capture_perp² +
+                # (ℓ₀/2)²) from a bead's center yet still be perp-close to
+                # the segment midpoint. Use head_actin_max_bind_dist as that
+                # geometric ceiling (already sized).
+                nbr_lists = tree.query_ball_point(
+                    r_heads, r=self.p.head_actin_max_bind_dist
                 )
-                nearest_local = int(np.argmin(d_nbrs))
-                actin_tag = int(nbrs_arr[nearest_local])
-                d_use = float(d_nbrs[nearest_local])
-                idx_bin = int(min(self.p.n_bins - 1, max(0, int(d_use / bin_width))))
-                head_tag = int(unbound_head_tags[k])
-                new_bonds_list.append((head_tag, actin_tag))
-                new_bins_list.append(idx_bin)
-                self._head_bound_to_actin[unbound_head_locals[k]] = actin_tag
+                cap = self.p.head_actin_capture_perp
+                # Per-actin-bead binding cap. Each actin bead already carries
+                # ~2 backbone bonds + ~2 1-3 angle exclusions; HOOMD's nlist
+                # has a compile-time max of 7 exclusions per particle. Cap
+                # head-actin attach bonds at 3 per bead → ≤7 total. Also
+                # biologically defensible (steric: one cortical actin bead
+                # ≈ 500nm × ~90 monomers cannot host arbitrarily many myosin
+                # heads simultaneously).
+                MAX_HEADS_PER_BEAD = 3
+                bead_attach_count = np.zeros(self.n_cortex_actin, dtype=np.int32)
+                if attach_bonds.shape[0] > 0:
+                    for ab in attach_bonds[:, 1]:
+                        ab = int(ab)
+                        if 0 <= ab < self.n_cortex_actin:
+                            bead_attach_count[ab] += 1
+                for k, nbrs in enumerate(nbr_lists):
+                    if len(nbrs) == 0 or u2[k] >= p_bind:
+                        continue
+                    h = r_heads[k]
+                    # Collect candidate segments from each nearby bead's adjacency.
+                    cand_segs = np.unique(np.concatenate(
+                        [self._bead_to_segs[int(b)] for b in nbrs]
+                        + [np.empty(0, dtype=np.int64)]
+                    ))
+                    best_perp = np.inf; best_bead = -1; best_d_use = 0.0
+                    for s in cand_segs:
+                        a_idx = int(bg[s, 0]); b_idx = int(bg[s, 1])
+                        A = r_actin_all[a_idx]; B = r_actin_all[b_idx]
+                        seg = B - A; L2 = float(seg @ seg)
+                        if L2 <= 0.0: continue
+                        t = float((h - A) @ seg) / L2          # axial parameter
+                        t_cl = max(0.0, min(1.0, t))           # clamp to segment
+                        closest = A + t_cl * seg
+                        perp = float(np.linalg.norm(h - closest))
+                        if perp <= cap and perp < best_perp:
+                            # Bind to the NEARER endpoint bead.
+                            dA = float(np.linalg.norm(h - A))
+                            dB = float(np.linalg.norm(h - B))
+                            if dA <= dB:
+                                best_bead = a_idx; best_d_use = dA
+                            else:
+                                best_bead = b_idx; best_d_use = dB
+                            best_perp = perp
+                    if best_bead < 0:
+                        continue
+                    # Enforce per-bead exclusion-safe cap.
+                    if bead_attach_count[best_bead] >= MAX_HEADS_PER_BEAD:
+                        continue
+                    # Bin r0 from actual head-bead distance (clamp to bin range).
+                    d_use = min(best_d_use, self.p.head_actin_max_bind_dist - 1e-12)
+                    idx_bin = int(min(self.p.n_bins - 1,
+                                      max(0, int(d_use / bin_width))))
+                    head_tag = int(unbound_head_tags[k])
+                    new_bonds_list.append((head_tag, best_bead))
+                    new_bins_list.append(idx_bin)
+                    self._head_bound_to_actin[unbound_head_locals[k]] = best_bead
+                    bead_attach_count[best_bead] += 1
+            else:
+                # Legacy bead-center mode.
+                tree = cKDTree(r_actin_all)
+                nbr_lists = tree.query_ball_point(
+                    r_heads, r=self.p.head_actin_max_bind_dist
+                )
+                for k, nbrs in enumerate(nbr_lists):
+                    if len(nbrs) == 0 or u2[k] >= p_bind:
+                        continue
+                    nbrs_arr = np.asarray(nbrs, dtype=np.int64)
+                    d_nbrs = np.linalg.norm(
+                        r_actin_all[nbrs_arr] - r_heads[k], axis=1
+                    )
+                    nearest_local = int(np.argmin(d_nbrs))
+                    actin_tag = int(nbrs_arr[nearest_local])
+                    d_use = float(d_nbrs[nearest_local])
+                    idx_bin = int(min(self.p.n_bins - 1,
+                                      max(0, int(d_use / bin_width))))
+                    head_tag = int(unbound_head_tags[k])
+                    new_bonds_list.append((head_tag, actin_tag))
+                    new_bins_list.append(idx_bin)
+                    self._head_bound_to_actin[unbound_head_locals[k]] = actin_tag
             if new_bonds_list:
                 new_bonds = np.array(new_bonds_list, dtype=np.int64)
                 new_bins = np.array(new_bins_list, dtype=np.int64)
@@ -875,11 +1052,13 @@ def make_cortex_myosin_updater(
     layout: CortexMyosinLayout,
     kT: float,
     n_cortex_actin: int,
+    cortex_bond_groups: np.ndarray | None = None,
     seed_offset: int = 3,
 ) -> tuple[MyosinStepUpdater, hoomd.update.CustomUpdater]:
     action = MyosinStepUpdater(
         p_myo=p_myo, layout=layout, kT=kT,
-        n_cortex_actin=n_cortex_actin, seed_offset=seed_offset,
+        n_cortex_actin=n_cortex_actin,
+        cortex_bond_groups=cortex_bond_groups, seed_offset=seed_offset,
     )
     updater = hoomd.update.CustomUpdater(
         action=action, trigger=hoomd.trigger.Periodic(p_myo.batch_steps)
