@@ -84,17 +84,24 @@ def render(rows: list[dict], out_path: Path, *, n_fil: int, n_motors: int,
     ax1.set_ylabel("# bonds in snapshot")
     ax1.grid(alpha=0.25); ax1.legend(fontsize=9, loc="lower right")
 
-    # Annotate inferred binding rate.
+    # Annotate inferred binding rate (mid-right to avoid legend overlap).
     if len(t_ms) > 1:
         dt_ms = t_ms[-1] - t_ms[0]
         d_eng = eng[-1] - eng[0]
         rate = d_eng / dt_ms if dt_ms > 0 else float("nan")
-        ax0.text(0.02, 0.98,
+        # Bell-Evans theoretical equilibrium fraction (no load): k_on /
+        # (k_on + k_off0) = 50 / 60 = 83%. Geometric availability is
+        # much smaller (only motor heads within head_actin_capture_perp
+        # of an actin segment can bind) — this is the simulation's
+        # actual equilibrium, not 83%.
+        bell_eq_pct = 50.0 / (50.0 + 10.0) * 100
+        ax0.text(0.98, 0.40,
                  f"binding gain: {d_eng} heads in {dt_ms:.1f} ms\n"
                  f"net rate ≈ {rate:.1f} heads/ms\n"
-                 f"engagement at end: {100*eng[-1]/n_heads:.1f}% of {n_heads} heads",
-                 transform=ax0.transAxes, va="top", ha="left", fontsize=9,
-                 bbox=dict(boxstyle="round", fc="#fff7e0", ec="#888", alpha=0.85))
+                 f"engagement at end: {100*eng[-1]/n_heads:.1f}% of {n_heads} heads\n"
+                 f"Bell-Evans no-load max: {bell_eq_pct:.0f}% of geometrically eligible heads",
+                 transform=ax0.transAxes, va="center", ha="right", fontsize=9,
+                 bbox=dict(boxstyle="round", fc="#fff7e0", ec="#888", alpha=0.92))
     fig.tight_layout()
     fig.savefig(out_path, dpi=160, bbox_inches="tight")
     plt.close(fig)
