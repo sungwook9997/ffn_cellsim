@@ -103,16 +103,27 @@ FIXMAN_SIGN: float = +1.0
 # ---------------------------------------------------------------------------
 # Geometry helpers
 # ---------------------------------------------------------------------------
-def _min_image_orthorhombic(dr: np.ndarray, box: hoomd.box.Box) -> np.ndarray:
+def _min_image_orthorhombic(dr: np.ndarray, box) -> np.ndarray:
     """Minimum-image displacement for an orthorhombic (cube) box.
 
-    Cortex / single-filament boxes are cubes with no tilt; rigid bonds are
-    never used with Lees-Edwards shear (an H.1-only feature), so the
-    orthorhombic image is exact here. Bond lengths ℓ₀ ≪ L guarantee the
-    nearest image is the physical bond.
+    Accepts EITHER a HOOMD box object (legacy) or a precomputed (3,)
+    ``np.ndarray`` of ``[Lx, Ly, Lz]`` (preferred — avoids repeated
+    HOOMD-property getattr that dominated profile traces). Cortex /
+    single-filament boxes are cubes with no tilt; rigid bonds are never
+    used with Lees-Edwards shear, so orthorhombic is exact. ℓ₀ ≪ L
+    guarantees the nearest image is the physical bond.
     """
-    L = np.array([box.Lx, box.Ly, box.Lz], dtype=np.float64)
+    if isinstance(box, np.ndarray):
+        L = box
+    else:
+        L = np.array([box.Lx, box.Ly, box.Lz], dtype=np.float64)
     return dr - L * np.round(dr / L)
+
+
+def _box_L(box) -> np.ndarray:
+    """Cache HOOMD box → (3,) numpy array once per act() to avoid
+    per-call getattr overhead (the dominant cost in the profile)."""
+    return np.array([box.Lx, box.Ly, box.Lz], dtype=np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -247,10 +258,18 @@ def shake_project_chains(
     L2 = rest_length * rest_length
 
     # ---- Vectorised fast path: all chains the same length (cortex N=7) ----
-    lens = [np.asarray(c).shape[0] for c in chains]
-    if chains and len(set(lens)) == 1 and lens[0] >= 3:
-        P = np.stack([np.asarray(c) for c in chains], axis=0)   # (F, m+1)
-        F, Np1 = P.shape; m = Np1 - 1
+    # Accept EITHER a pre-stacked (F, N) ndarray (fast path — saves ~10%
+    # per profile) OR a list of per-chain arrays (legacy).
+    if isinstance(chains, np.ndarray) and chains.ndim == 2 and chains.shape[1] >= 3:
+        P = chains; F, Np1 = P.shape; m = Np1 - 1
+        _uniform_chains = True
+    else:
+        lens = [np.asarray(c).shape[0] for c in chains]
+        _uniform_chains = bool(chains) and len(set(lens)) == 1 and lens[0] >= 3
+        if _uniform_chains:
+            P = np.stack([np.asarray(c) for c in chains], axis=0)
+            F, Np1 = P.shape; m = Np1 - 1
+    if _uniform_chains:
         M = inv_mass[P]                                          # (F, m+1)
         d0 = _min_image_orthorhombic(ref_pos[P[:, :-1]] - ref_pos[P[:, 1:]], box)
         for _ in range(max_iter):
@@ -350,10 +369,19 @@ def fixman_logdet_and_force(
     half_kT = 0.5 * kT
 
     # ---- Vectorised fast path: all chains the same length (cortex N=7) ----
-    lens = [np.asarray(c).shape[0] for c in chains]
-    if chains and len(set(lens)) == 1 and lens[0] >= 3:
-        P = np.stack([np.asarray(c) for c in chains], axis=0)   # (F, m+1)
-        F = P.shape[0]; m = P.shape[1] - 1
+    # Accept pre-stacked (F, N) ndarray (avoids per-step np.stack — was the
+    # #2 profile hotspot) OR a list of per-chain arrays.
+    _is_stacked = isinstance(chains, np.ndarray) and chains.ndim == 2 and chains.shape[1] >= 3
+    if _is_stacked:
+        P = chains; F = P.shape[0]; m = P.shape[1] - 1
+        _uniform_chains = True
+    else:
+        lens = [np.asarray(c).shape[0] for c in chains]
+        _uniform_chains = bool(chains) and len(set(lens)) == 1 and lens[0] >= 3
+        if _uniform_chains:
+            P = np.stack([np.asarray(c) for c in chains], axis=0)
+            F = P.shape[0]; m = P.shape[1] - 1
+    if _uniform_chains:
         b = _min_image_orthorhombic(pos[P[:, 1:]] - pos[P[:, :-1]], box)  # (F,m,3)
         M = inv_gamma[P]                                         # (F, m+1)
         b2 = np.einsum("fab,fab->fa", b, b)
@@ -498,6 +526,15 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._chains_tag = (
             [np.asarray(c, dtype=np.int64) for c in chains] if chains else []
         )
+        # Pre-stack chain TAGs to a (F, N) array (chains don't change shape
+        # during a run). Each step's chains_row is then ONE numpy index op,
+        # not a Python list comprehension + stack — saves ~10% per the profile
+        # (np.stack was the #2 hotspot at 142 ms / 1000 steps).
+        self._chains_tag_stacked: np.ndarray | None = None
+        if self._chains_tag:
+            lens = {c.shape[0] for c in self._chains_tag}
+            if len(lens) == 1:
+                self._chains_tag_stacked = np.stack(self._chains_tag, axis=0)
         # Uniform bond length enables the fast per-chain tridiagonal M-SHAKE;
         # mixed lengths fall back to Gauss-Seidel shake_project.
         self._chain_rest_length: float | None = (
@@ -599,6 +636,10 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                 )
 
             box = sim.state.box
+            # Cache box dimensions ONCE per act() — avoids the dominant
+            # per-call getattr overhead seen in cProfile (box.Lx/Ly/Lz +
+            # box.L + _vec3_to_array totalled ~30% of step time).
+            box_L = _box_L(box)
             inv_gamma_row = self._inv_gamma_by_tag[tag].reshape(-1, 1)
             bd_prefactor_row = self._bd_prefactor_by_tag[tag]
             prv_W_row = self._prv_rnds[tag]
@@ -611,9 +652,14 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
             # 1. Fixman pseudo-force (added to net_force before predictor).
             F_total = F
             if self._chains_tag:
-                chains_row = [row_of_tag[c] for c in self._chains_tag]
+                # Vectorised: stacked tag array → one indexing op (avoids
+                # Python list comprehension + per-step np.stack hotspot).
+                if self._chains_tag_stacked is not None:
+                    chains_row_arg = row_of_tag[self._chains_tag_stacked]
+                else:
+                    chains_row_arg = [row_of_tag[c] for c in self._chains_tag]
                 _, F_fixman = fixman_logdet_and_force(
-                    pos, chains_row, self.kT, self._inv_gamma_by_tag[tag], box
+                    pos, chains_row_arg, self.kT, self._inv_gamma_by_tag[tag], box_L
                 )
                 F_total = F + F_fixman
 
@@ -629,20 +675,24 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                 inv_g = self._inv_gamma_by_tag[tag]
                 if self._chains_tag and self._chain_rest_length is not None:
                     # Fast tridiagonal M-SHAKE per chain (uniform bond length).
+                    if self._chains_tag_stacked is not None:
+                        chains_row_arg = row_of_tag[self._chains_tag_stacked]
+                    else:
+                        chains_row_arg = [row_of_tag[c] for c in self._chains_tag]
                     projected = shake_project_chains(
-                        pred, pos, [row_of_tag[c] for c in self._chains_tag],
-                        self._chain_rest_length, inv_g, box,
+                        pred, pos, chains_row_arg,
+                        self._chain_rest_length, inv_g, box_L,
                         tol=self.shake_tol, max_iter=self.shake_max_iter,
                     )
                 else:
                     projected = shake_project(
                         pred, pos, pairs_row, self._constraint_lengths,
-                        inv_g, box,
+                        inv_g, box_L,
                         tol=self.shake_tol, max_iter=self.shake_max_iter,
                     )
                 # §4 drift guard.
                 s = _min_image_orthorhombic(
-                    projected[pairs_row[:, 0]] - projected[pairs_row[:, 1]], box
+                    projected[pairs_row[:, 0]] - projected[pairs_row[:, 1]], box_L
                 )
                 drift = np.abs(
                     np.linalg.norm(s, axis=1) - self._constraint_lengths
