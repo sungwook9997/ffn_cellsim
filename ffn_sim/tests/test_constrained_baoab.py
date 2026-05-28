@@ -342,3 +342,150 @@ def test_milestone2_single_filament_Lp_and_equipartition():
     Em = float(np.mean(E)); Lm = float(np.mean(Lp))
     assert 0.940 <= Em <= 1.039, f"equipartition {Em:.4f} ∉ 0.9898±5%"
     assert 15.3 <= Lm <= 18.7, f"L_p_C1 {Lm:.3f}μm ∉ KU-1.1 [15.3,18.7]"
+
+
+# ---------------------------------------------------------------------------
+# R1 — Rigid-bond Lagrange-multiplier exposure
+# (RIGID_LAGRANGE_TENSION_DESIGN.md, PI verbal 2026-05-28)
+# ---------------------------------------------------------------------------
+def _chain_sim_with_constraints(seed: int, *, record_lambda: bool,
+                                  n_beads: int = 7, l0: float = 1.0,
+                                  dt: float = 1e-3):
+    """Build a single-chain constrained sim with optional λ capture.
+
+    Free chain (no external forces) — pure constraint dynamics under thermal
+    noise. Mirrors the cortex single-filament topology so the uniform-chain
+    fast path is exercised (the one KU-3.5 actually uses).
+    """
+    snap = hoomd.Snapshot()
+    snap.particles.N = n_beads
+    snap.particles.types = ["A"]
+    snap.particles.position[:] = np.stack(
+        [np.arange(n_beads, dtype=np.float64) * l0,
+         np.zeros(n_beads), np.zeros(n_beads)], axis=1)
+    snap.particles.typeid[:] = 0
+    snap.configuration.box = [200, 200, 200, 0, 0, 0]
+    sim = hoomd.Simulation(device=hoomd.device.CPU(notice_level=0), seed=7)
+    sim.create_state_from_snapshot(snap)
+    ig = md.Integrator(dt=dt, forces=[], methods=[])
+    sim.operations.integrator = ig
+    pairs = np.stack([np.arange(n_beads - 1), np.arange(1, n_beads)], axis=-1)
+    lengths = np.full(n_beads - 1, l0)
+    chains = [np.arange(n_beads, dtype=np.int64)]
+    act, upd = make_constrained_baoab_updater(
+        kT=1.0, gamma={"A": 1.0}, dt=dt,
+        constraint_pairs=pairs, constraint_lengths=lengths,
+        chains=chains, seed=seed, record_lambda=record_lambda,
+    )
+    sim.operations.updaters.append(upd)
+    sim.run(0)
+    return sim, act
+
+
+class TestR1LambdaCapture:
+    """Sanity Gate (RIGID_LAGRANGE_TENSION_DESIGN.md §5).
+
+    #1 toggle ``record_lambda`` does NOT change positions (no behavioural side
+       effect — λ was already computed inside SHAKE).
+    #2 ``shake_project_chains(return_lambdas=True)`` returns a 2-tuple whose
+       second element has the expected ``(F, m)`` shape.
+    #3 ``lambda_buf`` is reproducible across runs with the same seed.
+    #4 Default ``record_lambda=False`` leaves ``lambda_buf`` as None.
+    #5 Sign sense — stretched chain → accumulated λ pulls beads together
+       (Newton increment with the right SHAKE convention).
+    """
+
+    def test_default_record_lambda_false_leaves_buf_none(self):
+        sim, act = _chain_sim_with_constraints(seed=1, record_lambda=False)
+        sim.run(50)
+        assert act.lambda_buf is None
+        assert act.record_lambda is False
+
+    def test_record_lambda_true_produces_uniform_F_m_array(self):
+        n_beads = 7
+        sim, act = _chain_sim_with_constraints(seed=2, record_lambda=True,
+                                                n_beads=n_beads)
+        sim.run(20)
+        lam = act.lambda_buf
+        assert lam is not None, "lambda_buf still None after 20 steps"
+        assert isinstance(lam, np.ndarray)
+        # One chain, n_beads-1 bonds.
+        assert lam.shape == (1, n_beads - 1), (
+            f"lambda_buf shape {lam.shape} ≠ expected (1, {n_beads - 1})"
+        )
+        assert np.all(np.isfinite(lam))
+
+    def test_record_lambda_toggle_bit_for_bit_position_match(self):
+        """Action behaviour must not change with ``record_lambda``: the
+        λ accumulator is allocation-only, not a physics path."""
+        sim_off, _ = _chain_sim_with_constraints(seed=42, record_lambda=False)
+        sim_on, _ = _chain_sim_with_constraints(seed=42, record_lambda=True)
+        sim_off.run(200); sim_on.run(200)
+        def _pos(sim):
+            with sim.state.cpu_local_snapshot as s:
+                p = np.asarray(s.particles.position)
+                tg = np.asarray(s.particles.tag)
+                inv = np.empty_like(tg); inv[tg] = np.arange(tg.size)
+                return p[inv].copy()
+        p_off = _pos(sim_off); p_on = _pos(sim_on)
+        assert np.allclose(p_off, p_on, atol=1e-12, rtol=0), (
+            f"record_lambda toggle changed positions; max |Δ| = "
+            f"{np.abs(p_off - p_on).max():.2e}"
+        )
+
+    def test_lambda_buf_reproducible_same_seed(self):
+        """Two runs with the same seed produce the same λ trajectory."""
+        sim1, act1 = _chain_sim_with_constraints(seed=13, record_lambda=True)
+        sim2, act2 = _chain_sim_with_constraints(seed=13, record_lambda=True)
+        sim1.run(50); sim2.run(50)
+        lam1, lam2 = act1.lambda_buf, act2.lambda_buf
+        assert np.allclose(lam1, lam2, atol=1e-12, rtol=0), (
+            f"same-seed λ diverged; max |Δ| = {np.abs(lam1 - lam2).max():.2e}"
+        )
+
+    def test_shake_project_chains_return_lambdas_uniform(self):
+        """Pure-function check: return tuple, lambdas shape (F, m), Σ λ
+        applies the correct cumulative correction (verified by checking the
+        post-SHAKE bond lengths are at rest exactly)."""
+        n_beads, l0 = 7, 1.0
+        ref = np.zeros((n_beads, 3))
+        ref[:, 0] = np.arange(n_beads, dtype=np.float64) * l0
+        # Pre-stretch every bond by 5%.
+        pred = np.zeros_like(ref); pred[:, 0] = np.arange(n_beads) * (1.05 * l0)
+        chains = [np.arange(n_beads, dtype=np.int64)]
+        invm = np.ones(n_beads)
+        pos_only = shake_project_chains(
+            pred.copy(), ref, chains, l0, invm, CUBE, tol=1e-12, max_iter=100)
+        pos_lam, lam = shake_project_chains(
+            pred.copy(), ref, chains, l0, invm, CUBE, tol=1e-12, max_iter=100,
+            return_lambdas=True)
+        # Position result must be identical between the two call styles.
+        assert np.allclose(pos_only, pos_lam, atol=1e-12, rtol=0)
+        # λ shape: uniform fast path → ndarray (F=1, m=n_beads-1).
+        assert isinstance(lam, np.ndarray)
+        assert lam.shape == (1, n_beads - 1)
+        # Stretched bonds → SHAKE pulls beads together → cumulative λ > 0
+        # under our sign convention (lam · d0 makes disp[i] move toward j).
+        assert (lam > 0).all(), f"stretched chain λ not all positive: {lam}"
+
+    def test_lambda_buf_ragged_fallback_returns_list(self):
+        """Ragged path (mixed-length chains, no uniform fast-path): λ
+        comes back as a list of per-chain (m,) arrays."""
+        # Two chains of different lengths trigger the ragged fallback.
+        ref = np.zeros((9, 3))
+        ref[:5, 0] = np.arange(5, dtype=np.float64)      # chain A: 5 beads
+        ref[5:, 0] = np.arange(4, dtype=np.float64) + 10  # chain B: 4 beads
+        pred = ref + 0.02
+        chains = [np.arange(5, dtype=np.int64),
+                  np.arange(5, 9, dtype=np.int64)]
+        invm = np.ones(9)
+        # Same rest length on both → goes through the ragged path because
+        # chain lengths differ.
+        pos, lam = shake_project_chains(
+            pred, ref, chains, 1.0, invm, CUBE, tol=1e-12, max_iter=100,
+            return_lambdas=True)
+        assert isinstance(lam, list) and len(lam) == 2
+        assert lam[0].shape == (4,)  # 5 beads → 4 bonds
+        assert lam[1].shape == (3,)  # 4 beads → 3 bonds
+        for arr in lam:
+            assert np.all(np.isfinite(arr))

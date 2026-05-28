@@ -120,6 +120,76 @@ def _tagpos(sim) -> np.ndarray:
         return pos[inv].copy()
 
 
+def _tension_method_of_planes_rigid(
+    sim, action, R_cell: float, dt: float, n_planes: int = 12
+) -> float:
+    """Rigid-bond Lagrange contribution to cortical tension γ (KU-3.5).
+
+    Companion to :func:`_tension_method_of_planes` (soft-bond M-OP), which
+    misses the dominant tension source — the rigid actin backbone under
+    M-SHAKE constraint. Per ``RIGID_LAGRANGE_TENSION_DESIGN.md §2`` (R1):
+    the SHAKE Lagrange multiplier ``λ`` already carries the bond's
+    constraint impulse; conversion via ``T_bond = λ · r₀ / Δt`` recovers
+    the scalar bond tension (signed: + stretched, − compressed) which is
+    then projected onto each cut normal exactly as in the soft-bond M-OP.
+
+    Returns 0.0 if ``action.lambda_buf`` is None (``record_lambda=False``
+    or no production step has run yet) — keeps the caller safe to enable
+    R1 incrementally without crashing when the buffer hasn't filled.
+    """
+    lam = action.lambda_buf
+    if lam is None or not isinstance(lam, np.ndarray):
+        return 0.0
+    chains = action._chains_tag_stacked
+    if chains is None or chains.ndim != 2:
+        return 0.0  # ragged path: not implemented here (cortex is uniform).
+    r0 = float(action._chain_rest_length)
+
+    # Bond endpoints in tag-ordered position frame (mirrors the soft M-OP).
+    with sim.state.cpu_local_snapshot as s:
+        pos = np.asarray(s.particles.position)
+        tg = np.asarray(s.particles.tag)
+        inv = np.empty_like(tg); inv[tg] = np.arange(tg.size)
+        pos_byTag = pos[inv]
+
+    rA = pos_byTag[chains[:, :-1]]    # (F, m, 3) bond endpoint a
+    rB = pos_byTag[chains[:, 1:]]     # (F, m, 3) bond endpoint b
+    d = rB - rA                       # (F, m, 3) bond vector
+    L = np.linalg.norm(d, axis=-1)    # (F, m)
+    L_safe = np.where(L > 0, L, 1.0)
+    u = d / L_safe[..., None]         # (F, m, 3) unit bond direction
+    # T_bond = λ · r₀ / Δt   (signed scalar tension, units: N)
+    T = lam * (r0 / dt)               # (F, m)
+
+    # Fibonacci-like isotropic plane normals (same convention as the
+    # soft-bond M-OP so the two contributions are sampled consistently).
+    phi = (1 + 5 ** 0.5) / 2
+    i = np.arange(n_planes, dtype=np.float64)
+    z = 1 - 2 * (i + 0.5) / n_planes
+    rxy = np.sqrt(1 - z * z); theta = 2 * np.pi * i / phi
+    normals = np.stack([rxy * np.cos(theta), rxy * np.sin(theta), z], axis=1)
+
+    # Flatten (F, m) bond list for the plane-crossing reduction.
+    rA_flat = rA.reshape(-1, 3)
+    rB_flat = rB.reshape(-1, 3)
+    u_flat = u.reshape(-1, 3)
+    T_flat = T.reshape(-1)
+
+    gammas = []
+    for n_hat in normals:
+        a_side = rA_flat @ n_hat
+        b_side = rB_flat @ n_hat
+        crossing = (a_side * b_side) < 0
+        if not crossing.any():
+            gammas.append(0.0); continue
+        # Force along the cut normal = T · (u · n̂); cortex γ = sum / (2π R).
+        f_cut = T_flat[crossing] * (u_flat[crossing] @ n_hat)
+        gammas.append(float(np.sum(f_cut)) / (2.0 * np.pi * R_cell))
+    arr = np.asarray(gammas)
+    # Match the soft-bond M-OP convention (mean of |γ| over orientations).
+    return float(np.mean(np.abs(arr)))
+
+
 def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = True,
         with_erm: bool = True, k_erm_fast: float = 5.6e-5,
         n_warmup: int = 40_000, n_sample: int = 80, interval: int = 5_000,
@@ -172,6 +242,13 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
             cfl_strict=True,
         )
     sim = hc["sim"]; ma = hc["myosin_action"]; act = hc["baoab_action"]
+    # R1 — RIGID_LAGRANGE_TENSION_DESIGN.md: enable Lagrange-multiplier
+    # capture on the constrained Action so the rigid-bond shell-tension
+    # contribution becomes available to the production-loop M-OP. No
+    # behavioural change (λ is already computed inside SHAKE every step);
+    # only the discarded result is now captured into act.lambda_buf.
+    if hasattr(act, "record_lambda"):
+        act.record_lambda = True
     snap = sim.state.get_snapshot()
     if snap.communicator.rank == 0:
         snap.particles.position[:] = pos_warm
@@ -207,13 +284,27 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         max_disp = float(np.linalg.norm(dvec, axis=1).max())
         max_disp_raw = float(np.linalg.norm(dvec_raw, axis=1).max())
         r_prev = r
-        # KU-3.5 method-of-planes cortical tension (soft-bond contribution).
-        gamma = _tension_method_of_planes(sim, p.R_cell)
+        # KU-3.5 method-of-planes cortical tension.
+        # γ_soft = soft-bond contribution (xlinks + myosin head-actin
+        # attach + ERM + myosin internal); γ_rigid = M-SHAKE Lagrange
+        # contribution (R1, RIGID_LAGRANGE_TENSION_DESIGN.md) — without
+        # the latter KU-3.5 systematically under-reports tension by ~200×
+        # (dominant cortex stress propagates through the actin backbone
+        # which is invisible to soft-bond summation). γ_total = γ_soft + γ_rigid.
+        gamma_soft = _tension_method_of_planes(sim, p.R_cell)
+        gamma_rigid = _tension_method_of_planes_rigid(sim, act, p.R_cell, dtc)
+        gamma_total = gamma_soft + gamma_rigid
         diag.append(dict(
             step=int(sim.timestep), r_cortex_um=rmean * 1e6,
             r_over_r0=rmean / r0, myosin_engaged=int(ma.n_engaged),
             bind_total=int(ma.n_bind_total), step_advances=int(ma.n_step_advances_total),
-            tension_mN_per_m=gamma * 1e3,
+            tension_soft_mN_per_m=gamma_soft * 1e3,
+            tension_rigid_mN_per_m=gamma_rigid * 1e3,
+            tension_total_mN_per_m=gamma_total * 1e3,
+            # Backward-compat: existing sweep_analysis reads tension_mN_per_m
+            # as the gate quantity; promote γ_total there so analysis pipes
+            # the corrected value through with no changes.
+            tension_mN_per_m=gamma_total * 1e3,
             max_drift=float(act.max_constraint_drift),
             max_disp_um=max_disp * 1e6,
         ))
@@ -240,9 +331,11 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         out_json.parent.mkdir(parents=True, exist_ok=True)
         frames_npz = out_json.with_suffix(".npz")
     np.savez_compressed(frames_npz, frames=frames)
-    # Plateau (last third) tension mean.
+    # Plateau (last third) tension mean — γ_total (soft + rigid).
     last_third = diag[max(0, len(diag) * 2 // 3):]
-    g_plateau = float(np.mean([d["tension_mN_per_m"] for d in last_third]))
+    g_plateau_total = float(np.mean([d["tension_total_mN_per_m"] for d in last_third]))
+    g_plateau_soft = float(np.mean([d["tension_soft_mN_per_m"] for d in last_third]))
+    g_plateau_rigid = float(np.mean([d["tension_rigid_mN_per_m"] for d in last_third]))
     result = dict(
         n_fil=int(F), seed=int(seed), dt_s=float(dtc), dt_factor=float(dt_factor),
         dt_speedup_vs_cfl=float(dtc / p.dt_cfl), r0_um=r0 * 1e6,
@@ -250,10 +343,19 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         k_erm_fast=float(k_erm_fast) if with_erm else None,
         r_final_over_r0=diag[-1]["r_over_r0"], myosin_engaged_final=diag[-1]["myosin_engaged"],
         step_advances_final=diag[-1]["step_advances"],
-        tension_plateau_mN_per_m=g_plateau, tension_final_mN_per_m=diag[-1]["tension_mN_per_m"],
+        # γ split (R1): soft + rigid + total. Backward-compat field
+        # tension_plateau_mN_per_m now refers to γ_total (the gate quantity).
+        tension_plateau_mN_per_m=g_plateau_total,
+        tension_plateau_soft_mN_per_m=g_plateau_soft,
+        tension_plateau_rigid_mN_per_m=g_plateau_rigid,
+        tension_final_mN_per_m=diag[-1]["tension_total_mN_per_m"],
+        tension_final_soft_mN_per_m=diag[-1]["tension_soft_mN_per_m"],
+        tension_final_rigid_mN_per_m=diag[-1]["tension_rigid_mN_per_m"],
         ku35_target_mN_per_m=0.5, ku35_band_mN_per_m=[0.35, 0.65],
         n_motors=int(p_myo.n_motors_per_cell), max_drift=diag[-1]["max_drift"],
-        note="method-of-planes γ (soft bonds; rigid-constraint Lagrange shell-tension separate; PI ratification pending)",
+        note=("method-of-planes γ_total = γ_soft + γ_rigid (R1 in "
+              "RIGID_LAGRANGE_TENSION_DESIGN.md). γ_rigid via SHAKE λ · r₀/dt; "
+              "γ_soft = harmonic bond stretch sum."),
         diag=diag,
     )
     out_json.write_text(json.dumps(result, indent=2))

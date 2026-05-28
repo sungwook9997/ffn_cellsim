@@ -236,7 +236,8 @@ def shake_project_chains(
     *,
     tol: float = 1.0e-10,
     max_iter: int = 100,
-) -> np.ndarray:
+    return_lambdas: bool = False,
+):
     """Matrix-SHAKE (tridiagonal Newton) for linear-chain bond constraints.
 
     Same convention as :func:`shake_project` (mobility-weighted corrections
@@ -253,6 +254,20 @@ def shake_project_chains(
         2 s_a·[M_{p_a} d0_{a-1} λ_{a-1}
                − (M_{p_a}+M_{p_{a+1}}) d0_a λ_a
                + M_{p_{a+1}} d0_{a+1} λ_{a+1}] = −g_a .
+
+    Lagrange-multiplier exposure (PI 2026-05-28 verbal, R1 in
+    RIGID_LAGRANGE_TENSION_DESIGN.md): when ``return_lambdas=True`` the
+    accumulated per-bond Lagrange multiplier ``λ_total = Σ_iter Δλ`` is
+    returned alongside the projected positions. ``λ_total`` carries the
+    full constraint impulse applied this step (units: ``[M] · [r] = [r]/[F]``
+    in our scaled mobility convention — the consumer converts to per-bond
+    scalar tension via ``T_bond = λ_total · r₀ / Δt`` and projects onto
+    the cut normal for method-of-planes γ).
+
+    Backward-compat: ``return_lambdas`` defaults to False; existing callers
+    that only expect a position array get bit-for-bit prior behaviour. The
+    only in-tree caller (``ConstrainedLeimkuhlerMatthewsBAOAB.act``) opts
+    in via the flag and unpacks the tuple.
     """
     pos = pred_pos.copy()
     L2 = rest_length * rest_length
@@ -272,6 +287,10 @@ def shake_project_chains(
     if _uniform_chains:
         M = inv_mass[P]                                          # (F, m+1)
         d0 = _min_image_orthorhombic(ref_pos[P[:, :-1]] - ref_pos[P[:, 1:]], box)
+        # Accumulated per-bond Lagrange multiplier across Newton iterations.
+        # Allocated only when the caller actually needs it so the default
+        # path stays zero-allocation extra.
+        lambda_total = np.zeros((F, m)) if return_lambdas else None
         for _ in range(max_iter):
             s = _min_image_orthorhombic(pos[P[:, :-1]] - pos[P[:, 1:]], box)
             g = np.einsum("fab,fab->fa", s, s) - L2             # (F, m)
@@ -286,6 +305,8 @@ def shake_project_chains(
                 sup[:, :-1] = 2.0 * M[:, 1:-1] * np.einsum(
                     "fab,fab->fa", s[:, :-1], d0[:, 1:])
             lam = _thomas_batched(sub, diag, sup, -g)            # (F, m)
+            if lambda_total is not None:
+                lambda_total += lam
             disp = np.zeros((F, m + 1, 3))
             disp[:, :-1] -= (M[:, :-1] * lam)[:, :, None] * d0
             disp[:, 1:] += (M[:, 1:] * lam)[:, :, None] * d0
@@ -295,16 +316,23 @@ def shake_project_chains(
             raise RuntimeError(
                 f"M-SHAKE (vectorised, {F} chains len {m + 1}) failed in "
                 f"{max_iter} iters; max relative drift = {drift:.3e} > tol={tol}.")
+        if return_lambdas:
+            return pos, lambda_total
         return pos
 
     # ---- Ragged fallback: per-chain (mixed lengths) ----
+    # Per-chain lambda accumulators (list of (m,) arrays) when requested.
+    lambda_per_chain = [] if return_lambdas else None
     for chain in chains:
         p = np.asarray(chain)
         m = p.shape[0] - 1
         if m == 0:
+            if return_lambdas:
+                lambda_per_chain.append(np.zeros(0))
             continue
         M = inv_mass[p]                                   # (m+1,)
         d0 = _min_image_orthorhombic(ref_pos[p[:-1]] - ref_pos[p[1:]], box)  # (m,3)
+        lambda_total = np.zeros(m) if return_lambdas else None
         ok = False
         for _ in range(max_iter):
             s = _min_image_orthorhombic(pos[p[:-1]] - pos[p[1:]], box)       # (m,3)
@@ -322,6 +350,8 @@ def shake_project_chains(
                 sd_upper = np.einsum("ab,ab->a", s[:-1], d0[1:])           # s_a·d0_{a+1}
                 sup[:-1] = 2.0 * M[1:-1] * sd_upper
             lam = _thomas(sub, diag, sup, -g)
+            if lambda_total is not None:
+                lambda_total += lam
             # apply Δr[p_k] = M_k (λ_{k-1} d0_{k-1} − λ_k d0_k)
             disp = np.zeros((m + 1, 3))
             disp[:-1] -= (M[:-1] * lam)[:, None] * d0      # −λ_a d0_a on bead p_a
@@ -334,6 +364,10 @@ def shake_project_chains(
                 f"M-SHAKE chain (len {m + 1}) failed in {max_iter} iters; "
                 f"max relative drift = {drift:.3e} > tol={tol}."
             )
+        if return_lambdas:
+            lambda_per_chain.append(lambda_total)
+    if return_lambdas:
+        return pos, lambda_per_chain
     return pos
 
 
@@ -497,6 +531,7 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         seed: int = 0,
         shake_tol: float = 1.0e-10,
         shake_max_iter: int = 500,
+        record_lambda: bool = False,
     ) -> None:
         super().__init__()
         if not (np.isfinite(kT) and kT >= 0.0):
@@ -551,6 +586,16 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._sim_ref: hoomd.Simulation | None = None
         self._steps_run = 0
         self._max_drift = 0.0
+        # Rigid-bond Lagrange-multiplier exposure (R1 in
+        # RIGID_LAGRANGE_TENSION_DESIGN.md, PI verbal 2026-05-28). When
+        # ``record_lambda=True`` the M-SHAKE-converged per-bond Lagrange
+        # multiplier vector is captured into ``self._lambda_buf`` each step
+        # so consumers (KU-3.5 tension method-of-planes) can include the
+        # rigid-bond shell tension that is otherwise invisible to soft-bond
+        # summation. ``record_lambda=False`` → zero overhead (the
+        # accumulator isn't allocated inside ``shake_project_chains``).
+        self.record_lambda = bool(record_lambda)
+        self._lambda_buf = None  # most-recent step's λ; shape depends on chains
 
     # ------------------------------------------------------------------
     def attach(self, simulation: hoomd.Simulation) -> None:  # noqa: D401
@@ -679,11 +724,19 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                         chains_row_arg = row_of_tag[self._chains_tag_stacked]
                     else:
                         chains_row_arg = [row_of_tag[c] for c in self._chains_tag]
-                    projected = shake_project_chains(
-                        pred, pos, chains_row_arg,
-                        self._chain_rest_length, inv_g, box_L,
-                        tol=self.shake_tol, max_iter=self.shake_max_iter,
-                    )
+                    if self.record_lambda:
+                        projected, self._lambda_buf = shake_project_chains(
+                            pred, pos, chains_row_arg,
+                            self._chain_rest_length, inv_g, box_L,
+                            tol=self.shake_tol, max_iter=self.shake_max_iter,
+                            return_lambdas=True,
+                        )
+                    else:
+                        projected = shake_project_chains(
+                            pred, pos, chains_row_arg,
+                            self._chain_rest_length, inv_g, box_L,
+                            tol=self.shake_tol, max_iter=self.shake_max_iter,
+                        )
                 else:
                     projected = shake_project(
                         pred, pos, pairs_row, self._constraint_lengths,
@@ -733,6 +786,20 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         """Largest relative bond-length drift after the last SHAKE."""
         return self._max_drift
 
+    @property
+    def lambda_buf(self):
+        """Most-recent step's accumulated per-bond Lagrange-multiplier vector.
+
+        Shape (F, m) ndarray for the uniform-chain fast path (cortex case);
+        list of (m_chain,) ndarrays for the ragged fallback. ``None`` if
+        ``record_lambda=False`` or before any ``act()`` call. Per R1 in
+        RIGID_LAGRANGE_TENSION_DESIGN.md: consumers convert each
+        ``λ`` element to physical scalar bond tension via
+        ``T_bond = λ · r₀ / Δt`` and project onto the cut normal for
+        method-of-planes γ.
+        """
+        return self._lambda_buf
+
 
 def make_constrained_baoab_updater(
     *,
@@ -745,12 +812,14 @@ def make_constrained_baoab_updater(
     seed: int = 0,
     shake_tol: float = 1.0e-10,
     shake_max_iter: int = 500,
+    record_lambda: bool = False,
 ) -> tuple[ConstrainedLeimkuhlerMatthewsBAOAB, hoomd.update.CustomUpdater]:
     """Build the constrained L-M Action wrapped in a per-step CustomUpdater."""
     action = ConstrainedLeimkuhlerMatthewsBAOAB(
         kT=kT, gamma=gamma, dt=dt,
         constraint_pairs=constraint_pairs, constraint_lengths=constraint_lengths,
         chains=chains, seed=seed, shake_tol=shake_tol, shake_max_iter=shake_max_iter,
+        record_lambda=record_lambda,
     )
     updater = hoomd.update.CustomUpdater(
         action=action, trigger=hoomd.trigger.Periodic(1)

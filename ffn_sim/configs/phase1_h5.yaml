@@ -1,0 +1,80 @@
+# Phase 1 — Unit H.5 Lamellipodium (Bieling/Funk greenfield) defaults.
+#
+# Implements PHASE_0_3_DECISIONS.md §D1 (greenfield Arp2/3 branching, NOT
+# AFINES port).  Per the H.5 brief `ffn_sim/docs/briefs/H5_lamellipodium.md`.
+#
+# Inherits per-filament force constants (κ_B, μ, ℓ_0) from H.1/H.2/H.3 so
+# the lamellipodial actin physics matches the cortex actin physics —
+# brief: "WLC formulas live in ffn_sim/common/filament_math.py".
+#
+# Per CLAUDE.md hard rules:
+# - No magic numbers — every parameter is KU-anchored or derived.
+# - First-principles acceptance bands ONLY (no measurement-anchored
+#   tuning, H.2 Day 5 lesson).
+# - Sanity Gate §1-6 enforced in `ffn_sim/cell/lamellipodium.py`.
+
+cortex: null      # Lamellipodium-only mode (Cell.build composes with cortex separately).
+filament: null    # placeholder for resolver compat.
+
+lamellipodium:
+
+  # ---- WAVE membrane plane geometry ----
+  # Default Y_max sits inside the box top (= 0.45 · L_box) leaving a
+  # sliver of space for thermal excursion of WAVE-pinned particles.
+  # n_WAVE = sigma_NPF · wave_area (defaults below give n_WAVE = 100 for
+  # the 30 μm cube box used by H.3 cortex; cell.h5 production overrides).
+  Y_max: 13.5e-6              # m   = 0.45 × L_box (L_box=30 μm cortex default)
+  wave_area: 9.0e-10          # m²  = L_box² = (30 μm)² = 9·10⁻¹⁰ m²
+  sigma_NPF: 1.11e11          # 1/m² ≈ 100 WAVE / wave_area (KU-5.1 reference)
+  n_WAVE: 100                 # explicit override (computed as sigma·area otherwise)
+  k_wave_pin: 1.0e-4          # N/m radial pin stiffness (CFL-safe at dt=13ns)
+                              # rationale: τ_wave = γ_b / k_wave_pin
+                              # = 3.91e-10 / 1e-4 = 3.91 μs ≫ dt_CFL=13ns
+
+  # ---- Actin per-filament force constants (mirrors H.2 single bundle) ----
+  bead_radius: 30.0e-9         # m   ×40 actin bundle cross-section (brief)
+  rest_length: 0.5e-6          # m   ℓ_0 (= L_filament/(N-1) = 0.5 μm)
+  bond_k: 3.0e-3               # N/m μ_actin / ℓ_0 = 1.5 nN / 0.5 μm
+                               #     (AFINES Freedman 2017; matches H.2)
+
+  # ---- Arp2/3 branch geometry (D1 + Mullins 1998) ----
+  angle_branch_t0: 1.2566370614   # rad  72° = 5π/12 (Arp2/3 crystal)
+  angle_branch_k: 1.0e-19        # J/rad² ≈ 100 pN·μm/rad²
+                                 # (literature TBD; D1 brief default)
+
+  # ---- D1 elongation (Bieling 2016 slip Bell-Evans) ----
+  k_elong_0: 11.6                # 1/s unloaded per barbed end (Bieling 2016)
+  delta_elong: 2.7e-9            # m   G-actin attachment length (Bieling 2016)
+  F_stall_elong: 1.0e-12         # N   per-barbed-end stall (~1 pN, Bieling)
+
+  # ---- D1 Arp2/3 branching (Bieling 2016 + Funk 2022 abortive) ----
+  k_b_0: 0.037                   # 1/s per WAVE unloaded (Bieling 2016)
+  F_stall_branch: 1.0e-12        # N   per-WAVE branching stall
+  r_branch: 30.0e-9              # m   WAVE-to-mother-barbed search radius
+  abortive_pressure_Pa: 500.0    # Pa  Funk 2022 abortive-failure threshold
+
+  # ---- D1 capping (Funk 2022) ----
+  k_cap_0: 3.0                   # 1/s at 100 nM capping protein
+  delta_cap: 3.0e-10             # m   Bell length (Funk 2022 ≈ 0.3 nm)
+
+  # ---- D2 batch + numerical ----
+  batch_steps: 100               # BAOAB steps between Updater ticks
+  seed: 45
+
+  # ---- First-principles acceptance bands (H.2 Day 5 lesson) ----
+  acceptance:
+    # KU-5.1 dendritic density: Bieling 2016 reports ~100 barbed ends per μm²
+    # at steady state; first-principles emergent target from k_b · k_cap balance.
+    dendritic_density_target: 1.0e14  # 1/m² = 100 / μm² (literature anchor)
+
+    # KU-5.2 force-velocity: ±30% on Bieling 2016 Fig 2 reference curve.
+    # First-principles: Bell-Evans slip ⇒ v(F)/v(0) = exp(-F·δ_elong/kT)
+    # which the simulation must recover within ±30% literature spread.
+    force_velocity_rel_tol: 0.30
+
+    # KU-5.3 abortive branching: Funk 2022 — branching rate drops > 50%
+    # above the per-WAVE force threshold ``F > F_abortive`` (= 500 Pa ×
+    # area_per_WAVE = 500 · (wave_area/n_WAVE) ≈ 4.5 pN per WAVE for
+    # defaults).  Modeled as the Bieling (1 - 0.2 F/F_stall) factor
+    # going negative ⇒ k_b clamped to zero, hence rate drop.
+    abortive_drop_min: 0.5
