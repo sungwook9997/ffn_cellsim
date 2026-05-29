@@ -41,6 +41,8 @@ from ffn_sim.cortex.myosin import resolve_cortex_myosin
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cortex.erm import resolve_erm, attach_erm_to_simulation
 from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.common import checkpoint as _ckpt
+from ffn_sim.common import integrity as _integrity
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
@@ -120,6 +122,73 @@ def _tagpos(sim) -> np.ndarray:
         return pos[inv].copy()
 
 
+def _run_fingerprint(
+    *, n_fil: int, seed: int, dt_factor: float, with_xlinks: bool,
+    with_erm: bool, k_erm_fast: float, n_warmup: int, n_sample: int,
+    interval: int,
+) -> str:
+    """Resume-gating fingerprint for this run's physics + schedule parameters.
+
+    Covers every parameter that, if changed, must invalidate an existing
+    checkpoint (filament count, seed, timestep, physics toggles, sampling
+    schedule). Output-only / operational flags (``out``, checkpoint cadence,
+    integrity toggle, ``device``) are deliberately excluded so the same
+    physical run resumes regardless of where it is written or which machine
+    continues it.
+
+    Returns:
+        Hex fingerprint from :func:`ffn_sim.common.checkpoint.compute_fingerprint`.
+    """
+    return _ckpt.compute_fingerprint(
+        {
+            "ku": "KU-3.5",
+            "n_fil": int(n_fil),
+            "seed": int(seed),
+            "dt_factor": float(dt_factor),
+            "with_xlinks": bool(with_xlinks),
+            "with_erm": bool(with_erm),
+            "k_erm_fast": float(k_erm_fast) if with_erm else None,
+            "n_warmup": int(n_warmup),
+            "n_sample": int(n_sample),
+            "interval": int(interval),
+        }
+    )
+
+
+def _restore_positions(sim, positions_by_tag: np.ndarray) -> None:
+    """Write checkpointed per-tag positions back into a freshly built sim.
+
+    Used on resume: the sim is rebuilt from scratch (same topology / forces /
+    constraints), then the last-checkpointed configuration is written into the
+    state via tag-ordered ``set_snapshot``. Velocities keep the rebuild
+    defaults — the integrator thermostat re-randomises momenta, the documented
+    (minor) statistical seam at the resume boundary.
+
+    Args:
+        sim: Active HOOMD ``Simulation`` (already built, before sampling).
+        positions_by_tag: ``(N, 3)`` array of positions to restore (tag order).
+
+    Raises:
+        ValueError: If the saved particle count does not match the rebuilt sim.
+    """
+    snap = sim.state.get_snapshot()
+    if snap.communicator.rank == 0:
+        n_now = int(snap.particles.N)
+        saved = np.asarray(positions_by_tag, dtype=np.float64)
+        if saved.shape != (n_now, 3):
+            raise ValueError(
+                f"checkpoint position shape {saved.shape} != rebuilt sim "
+                f"({n_now}, 3); refusing to restore"
+            )
+        # Mirror the warm-up restore path exactly (see below in run()): the
+        # checkpointed positions come from _tagpos(), the same ordering in
+        # which pos_warm is written straight into snap.particles.position, so
+        # a direct assignment is correct. (The aggregate get_snapshot()
+        # SnapshotParticleData exposes no per-particle .tag, hence no reindex.)
+        snap.particles.position[:] = saved
+    sim.state.set_snapshot(snap)
+
+
 def _tension_method_of_planes_rigid(
     sim, action, R_cell: float, dt: float, n_planes: int = 12
 ) -> float:
@@ -193,7 +262,28 @@ def _tension_method_of_planes_rigid(
 def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = True,
         with_erm: bool = True, k_erm_fast: float = 5.6e-5,
         n_warmup: int = 40_000, n_sample: int = 80, interval: int = 5_000,
-        device: str = "cpu", out: str | None = None) -> dict:
+        device: str = "cpu", out: str | None = None,
+        checkpoint_every: int = 10, skip_integrity: bool = False,
+        resume: bool = True) -> dict:
+    # Pre-run module-integrity guard (best-effort): a cosmetic Syncthing issue
+    # must never abort an otherwise valid run, so any failure is caught and
+    # downgraded to a warning here. Skipped entirely with skip_integrity=True.
+    if not skip_integrity:
+        try:
+            _integrity.assert_clean()
+            print("PROGRESS integrity check passed", flush=True)
+        except _integrity.IntegrityError as exc:
+            print(
+                "PROGRESS WARNING integrity check flagged issues "
+                f"(continuing):\n{exc}",
+                flush=True,
+            )
+        except Exception as exc:  # noqa: BLE001  (never crash on the guard)
+            print(
+                f"PROGRESS WARNING integrity check errored ({exc}); continuing",
+                flush=True,
+            )
+
     cfg = yaml.safe_load(open(CFG))
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
@@ -213,22 +303,37 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         except Exception: p_erm.k_ERM = k_erm_fast
     dev = hoomd.device.GPU() if device == "gpu" else hoomd.device.CPU(notice_level=0)
 
-    # Phase 1 — warm-up (standard BAOAB, CFL dt) to relax overlaps.
-    hw = build_cortex_full_simulation(
-        p, p_xlinks=p_xl, p_myosin=p_myo, device=dev, with_baoab=True,
-        constrained=False, rng=np.random.default_rng(seed))
-    # Attach ERM at WARM-UP dt (cfl) with config k_ERM (=1e-4); stable here.
-    if with_erm:
-        from dataclasses import replace as _replace
-        p_erm_warm = resolve_erm(cfg, kT=p.kT, R_cell=p.R_cell)
-        attach_erm_to_simulation(
-            hw["sim"], p_erm_warm, actin_cortex_tag_range=(0, nca),
-            gamma_b=p.gamma_b, cfl_safety_factor=p.cfl_safety_factor,
-            cfl_strict=True,
-        )
-    hw["sim"].run(0); hw["sim"].run(n_warmup)
-    pos_warm = _tagpos(hw["sim"])
-    del hw
+    # Resume probe (default ON): if a fingerprint-matching checkpoint exists we
+    # seed the production sim directly from it and SKIP the (expensive) warm-up,
+    # since the checkpointed configuration is already past equilibration. The
+    # fingerprint covers the physics + schedule, so a mismatch falls back to a
+    # full fresh run with no risk of splicing incompatible state.
+    fingerprint = _run_fingerprint(
+        n_fil=n_fil, seed=seed, dt_factor=dt_factor, with_xlinks=with_xlinks,
+        with_erm=with_erm, k_erm_fast=k_erm_fast, n_warmup=n_warmup,
+        n_sample=n_sample, interval=interval,
+    )
+    ckpt_state = _ckpt.load_checkpoint(out, fingerprint) if (resume and out) else None
+
+    # Phase 1 — warm-up (standard BAOAB, CFL dt) to relax overlaps. Skipped on
+    # a checkpoint resume (the saved configuration is already equilibrated).
+    pos_warm = None
+    if ckpt_state is None:
+        hw = build_cortex_full_simulation(
+            p, p_xlinks=p_xl, p_myosin=p_myo, device=dev, with_baoab=True,
+            constrained=False, rng=np.random.default_rng(seed))
+        # Attach ERM at WARM-UP dt (cfl) with config k_ERM (=1e-4); stable here.
+        if with_erm:
+            from dataclasses import replace as _replace
+            p_erm_warm = resolve_erm(cfg, kT=p.kT, R_cell=p.R_cell)
+            attach_erm_to_simulation(
+                hw["sim"], p_erm_warm, actin_cortex_tag_range=(0, nca),
+                gamma_b=p.gamma_b, cfl_safety_factor=p.cfl_safety_factor,
+                cfl_strict=True,
+            )
+        hw["sim"].run(0); hw["sim"].run(n_warmup)
+        pos_warm = _tagpos(hw["sim"])
+        del hw
 
     # Phase 2 — constrained production (rigid actin backbone, fast dt).
     hc = build_cortex_full_simulation(
@@ -249,14 +354,31 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
     # only the discarded result is now captured into act.lambda_buf.
     if hasattr(act, "record_lambda"):
         act.record_lambda = True
-    snap = sim.state.get_snapshot()
-    if snap.communicator.rank == 0:
-        snap.particles.position[:] = pos_warm
-    sim.state.set_snapshot(snap)
+
+    # Seed Phase-2 positions: from the resumed checkpoint, else from warm-up.
+    if ckpt_state is not None:
+        _restore_positions(sim, ckpt_state["positions_by_tag"])
+    else:
+        snap = sim.state.get_snapshot()
+        if snap.communicator.rank == 0:
+            snap.particles.position[:] = pos_warm
+        sim.state.set_snapshot(snap)
     sim.run(0)
 
     frames = np.empty((n_sample, F, N, 3))
     diag = []
+    start_sample = 0
+    # Preload accumulated history on resume so the saved JSON/npz are complete
+    # (resumed work only computes the remaining samples).
+    if ckpt_state is not None:
+        start_sample = int(ckpt_state["sample_index"])
+        diag = list(ckpt_state["diag_list"])
+        for j, fr in enumerate(ckpt_state["frames_so_far"]):
+            if j < n_sample:
+                frames[j] = np.asarray(fr, dtype=frames.dtype).reshape(F, N, 3)
+        print(f"RESUMED from sample {start_sample}/{n_sample}", flush=True)
+
+    checkpoint_every = max(1, int(checkpoint_every))
     r_prev = _tagpos(sim)
     r0 = float(np.linalg.norm(r_prev[:nca], axis=1).mean())
     t0 = time.time()
@@ -267,7 +389,7 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
         f"hoomd={hoomd.version.version} gpu_build={hoomd.version.gpu_enabled}",
         flush=True,
     )
-    for k in range(n_sample):
+    for k in range(start_sample, n_sample):
         sim.run(interval)
         r = _tagpos(sim)
         frames[k] = r[:nca].reshape(F, N, 3)
@@ -320,6 +442,28 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
             f"max_disp_um={max_disp * 1e6:.3f}{warn}",
             flush=True,
         )
+
+        # Periodic position-level checkpoint (every checkpoint_every completed
+        # samples, plus a final one). Best-effort: a checkpoint write failure
+        # must NOT crash a valid production run. Needs an --out path to derive
+        # the checkpoint location; the no-out (default-path) case skips it.
+        if out and (((k + 1) % checkpoint_every == 0) or ((k + 1) == n_sample)):
+            try:
+                _ckpt.save_checkpoint(
+                    out,
+                    sample_index=k + 1,
+                    positions_by_tag=r,
+                    diag_list=diag,
+                    frames_so_far=[frames[j] for j in range(k + 1)],
+                    params_fingerprint=fingerprint,
+                    rng_seed=int(seed),
+                )
+                print(
+                    f"PROGRESS checkpoint saved at sample {k + 1}/{n_sample}",
+                    flush=True,
+                )
+            except Exception as exc:  # noqa: BLE001  (ckpt failure non-fatal)
+                print(f"WARN checkpoint save failed: {exc}", flush=True)
 
     outdir = PKG / "outputs" / "h3" / "production" / "ku35"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -376,11 +520,27 @@ def main() -> None:
     ap.add_argument("--interval", type=int, default=5_000)
     ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
     ap.add_argument("--out", type=str, default=None)
+    ap.add_argument(
+        "--checkpoint-every", type=int, default=10,
+        help="Write a position-level checkpoint every N completed samples "
+             "(requires --out to derive the checkpoint path)",
+    )
+    ap.add_argument(
+        "--skip-integrity", action="store_true",
+        help="Skip the pre-run module-integrity guard",
+    )
+    ap.add_argument(
+        "--resume", action=argparse.BooleanOptionalAction, default=True,
+        help="Resume from a fingerprint-matching checkpoint if one exists "
+             "(default: on; disable with --no-resume)",
+    )
     args = ap.parse_args()
     run(args.n_fil, args.seed, dt_factor=args.dt_factor,
         with_xlinks=args.with_xlinks, with_erm=args.with_erm, k_erm_fast=args.k_erm,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
-        device=args.device, out=args.out)
+        device=args.device, out=args.out,
+        checkpoint_every=args.checkpoint_every, skip_integrity=args.skip_integrity,
+        resume=args.resume)
 
     # Visualize-at-closeout (CLAUDE.md hard rule + memory
     # feedback_production_driver_auto_viz): subprocess to the sweep analysis
