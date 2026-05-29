@@ -119,6 +119,11 @@ from ffn_sim.cortex.enclosed_volume import (
     ResolvedEnclosedVolume,
     attach_enclosed_volume_to_simulation,
 )
+from ffn_sim.cortex.turnover import (
+    ActinTurnoverUpdater,
+    ResolvedTurnover,
+    make_turnover_updater,
+)
 from ffn_sim.cortex.myosin import (
     CortexMyosinLayout,
     MyosinStepUpdater,
@@ -497,6 +502,7 @@ def build_cortex_full_simulation(
     fa_clutch_capture_radius: float | None = None,
     fa_clutch_k: float | None = None,
     p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
+    p_turnover: "ResolvedTurnover | None" = None,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
     constrained: bool = False,
@@ -944,6 +950,27 @@ def build_cortex_full_simulation(
         )
         sim.operations.updaters.append(myosin_updater)
 
+    # Optional actin turnover (cofilin severing + pointed-end re-annealing).
+    # ADDITIVE + DEFAULT-OFF: when p_turnover is None this block is skipped and
+    # the builder is bit-for-bit identical to the pre-turnover version. When
+    # provided, attach the ActinTurnoverUpdater (D2 batched) which mutates the
+    # cortex-bond + cortex-angle topology only (particle count invariant; the
+    # BAOAB Action stays the sole position integrator). It is appended AFTER the
+    # BAOAB updater so its bond-topology rewrite happens after the position step
+    # each tick (matching the other bond-mutating subsystem updaters); it
+    # touches a DISJOINT bond type (cortex-bond) from xlink / myosin / FA, so
+    # update order among them does not matter.
+    turnover_updater = None
+    turnover_action = None
+    if p_turnover is not None:
+        turnover_action, turnover_updater = make_turnover_updater(
+            p=p_turnover,
+            rest_length=p_cortex.rest_length,
+            kT=p_cortex.kT,
+            bond_k=p_cortex.bond_k,
+        )
+        sim.operations.updaters.append(turnover_updater)
+
     elong_action = None
     elong_updater = None
     branch_action = None
@@ -1063,6 +1090,8 @@ def build_cortex_full_simulation(
         "xlink_action": xlink_action,
         "myosin_updater": myosin_updater,
         "myosin_action": myosin_action,
+        "turnover_updater": turnover_updater,
+        "turnover_action": turnover_action,
         "elong_action": elong_action,
         "elong_updater": elong_updater,
         "branch_action": branch_action,

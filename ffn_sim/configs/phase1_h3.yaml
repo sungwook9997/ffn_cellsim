@@ -200,6 +200,61 @@ cortex:
     # K_vol omitted → derived as dP_ref/(3·strain_ref) ≈ 1.333e3 Pa.
     # V0 omitted → defaults to the construction sphere 4/3 π R_cell³.
 
+  # ---- Actin turnover (cofilin severing + pointed-end re-annealing) — ADDITIVE, OFF ----
+  # `cortex/turnover.py` implements an ActinTurnoverUpdater (D2 batched
+  # hoomd.custom.Action) that mutates the cortex-bond + cortex-angle topology:
+  # cofilin SEVERS backbone bonds (first-order kinetics) and pointed-end
+  # re-annealing RESTORES them, giving a force-/age-aware filament-disassembly
+  # process with a bounded steady state (mechanism audit 2026-05-30 §5 #1).
+  # Without it the H.3 cortex is a FROZEN permanently-connected network — it can
+  # only stiffen, never relax — so KU-3.5 steady-state cortical tension (Chugh
+  # 2017; Saha 2016; Fritzsche 2013 identify turnover as its SINGLE DOMINANT
+  # determinant) is unreachable even after FA wiring. This term supplies the
+  # missing disassembly so a steady-state tension can EMERGE.
+  #
+  # Runtime mechanism (mutates bonds/angles only — particle count INVARIANT;
+  # the BAOAB Action stays the sole position integrator, no double-stepping):
+  #   sever:    p_sev    = 1 − exp(−k_sev   · Δt_batch)   per intact junction
+  #   anneal:   p_anneal = 1 − exp(−k_anneal · Δt_batch)  per severed junction
+  #                        WITHIN r0·(1 + reanneal_tol) (same-junction pointed-
+  #                        end re-addition; keeps particle count fixed).
+  # The first-order severing law 1−exp(−k_sev·Δt) is the ACCEPTANCE ORACLE in
+  # test_turnover.py — the runtime is the per-bond Bernoulli draw, NOT the
+  # closed form.
+  #
+  # k_sev Magic-Number Block (no magic number): k_sev = ln2/tau_half — the
+  # cofilin severing rate DERIVED from the filament half-life tau_half. tau_half
+  # is the KU-3.5 / Chugh-2017 / Fritzsche-2013 cortical-actin-turnover anchor
+  # (τ ≈ 5–30 s); 10 s is the mid-band default → k_sev ≈ 0.0693 1/s. k_sev is an
+  # intensive rate [1/s] (grid-invariant: each junction severs independently, so
+  # the per-junction probability is N-independent). Steady-state connected
+  # fraction f_ss = k_anneal/(k_sev + k_anneal); with k_anneal = 0.1 1/s and
+  # k_sev ≈ 0.069 1/s, f_ss ≈ 0.59 — a turned-over (not collapsed, not frozen)
+  # network. DEFAULT OFF: nothing references this block unless a caller resolves
+  # + attaches it (resolve_turnover + cell.build_cortex_full_simulation
+  # p_turnover=...).
+  turnover:
+    enabled: false            # default OFF — additive module (CLAUDE.md pattern)
+    tau_half: 10.0            # s    cortical actin filament half-life (Chugh 2017
+                              #      / Fritzsche 2013 mid-band of 5–30 s anchor).
+                              #      k_sev = ln2/tau_half ≈ 0.0693 1/s (DERIVED).
+    k_anneal: 0.1             # 1/s  pointed-end re-annealing rate (sets f_ss with
+                              #      k_sev; same per-junction first-order form).
+    reanneal_tol: 0.1         # —    re-anneal only if the two beads are within
+                              #      r0·(1+tol) — a severed junction that has
+                              #      drifted apart cannot re-close (mechanistic
+                              #      same-junction pointed-end re-addition).
+    # Force / age dependence HOOKS — Phase-1 default 0 (clean first-order sever):
+    k_sev_age_factor: 0.0     # —    cofilin age/ADP-actin preference (De La Cruz
+                              #      2009): k_sev·(1 + factor·age/tau_half). 0 = off.
+    k_sev_force_x_beta: 0.0   # m    Bell-Evans-style force-enhanced severing:
+                              #      k_sev·exp(F·x_β/kT). 0 = force-independent.
+    batch_steps: 100          # BAOAB steps between Updater ticks (D2 batch; shrunk
+                              #      by resolve_turnover if it would break the
+                              #      events_per_batch ≤ 1e-3 CFL ceiling).
+    seed: 47                  # offset from cortex.seed for RNG isolation
+                              #      (BAOAB 0 / integrin 1 / xlink 2 / myosin 44 / turnover 47).
+
   # ---- Cortical myosin (D5 Stam-Hocky + D6 Hill, KU-3.5 / KU-3.18) ----
   # Bipolar minifilament: 14-bead backbone (700 nm) + 10 cross-bridge heads
   # per side. 100 minifilaments per cell (Salbreux 2012 density 3/μm²).
