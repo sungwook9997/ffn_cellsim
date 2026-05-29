@@ -156,19 +156,44 @@ class IntegrinBondUpdater(hoomd.custom.Action):
         self._batch_dt = batch_dt
         self._n_FAs = len(layouts)
 
-        # Per-integrin state, indexed by global integrin tag.
+        # --- S5 tag-space unification (2026-05-30) -------------------------
+        # Per-integrin runtime state (_engaged / _ligand_for_integrin /
+        # _fa_for_integrin) is indexed by a CONTIGUOUS LOCAL index in
+        # [0, n_int_total), NOT by the integrin's global HOOMD tag. Previously
+        # these arrays were indexed directly by global tag (lo = L.
+        # integrin_tag_start; self._engaged[lo:hi] = ...), which only works if
+        # integrins occupy global tags [0, n_int_total). The whole-cell builder
+        # places the focal-adhesion block in natural append order (AFTER cortex
+        # / myosin / xlink / lamellipodium), so integrin tags are an arbitrary
+        # contiguous-per-FA set, not [0, n_int).
+        #
+        # We therefore build an explicit global-tag -> local-index map (and its
+        # inverse, local-index -> global-tag, as an array). Snapshot POSITIONS
+        # are still read by global tag (pos[tag]) because a HOOMD snapshot is
+        # tag-ordered (row i == particle with tag i). When integrins do occupy
+        # [0, n_int) the local index equals the global tag, so this is
+        # bit-for-bit identical to the previous behavior (the H.4 standalone
+        # build_h4_simulation path is unaffected).
         n_int_total = sum(L.n_total for L in layouts)
         self._engaged = np.zeros(n_int_total, dtype=bool)
-        # Map each integrin (global tag) to its FA's ligand tag.
+        # Map each integrin (LOCAL index) to its FA's ligand GLOBAL tag.
         self._ligand_for_integrin = np.full(n_int_total, -1, dtype=np.int64)
         # And to its FA index.
         self._fa_for_integrin = np.full(n_int_total, -1, dtype=np.int64)
+        # LOCAL index -> GLOBAL integrin tag (used for snapshot position reads).
+        self._integrin_global_tag = np.full(n_int_total, -1, dtype=np.int64)
+        # GLOBAL integrin tag -> LOCAL state index (used to resolve bond cols).
+        self._integrin_tag_to_local: dict[int, int] = {}
+        local = 0
         for fa_idx, L in enumerate(layouts):
-            lo = L.integrin_tag_start
-            hi = lo + L.n_total
-            self._engaged[lo:hi] = L.initial_engaged
-            self._ligand_for_integrin[lo:hi] = L.ligand_tag
-            self._fa_for_integrin[lo:hi] = fa_idx
+            for k in range(L.n_total):
+                gtag = int(L.integrin_tag_start) + k
+                self._engaged[local] = bool(L.initial_engaged[k])
+                self._ligand_for_integrin[local] = int(L.ligand_tag)
+                self._fa_for_integrin[local] = fa_idx
+                self._integrin_global_tag[local] = gtag
+                self._integrin_tag_to_local[gtag] = local
+                local += 1
 
         self._sim_ref: hoomd.Simulation | None = None
         self._steps_run: int = 0
@@ -252,15 +277,27 @@ class IntegrinBondUpdater(hoomd.custom.Action):
             self._n_break_total += n_broke
 
             if n_broke > 0:
-                self._engaged[int_tags[broke]] = False
+                # int_tags are GLOBAL integrin tags (bond col 0). Map to LOCAL
+                # state indices before clearing _engaged (S5 tag-space
+                # unification; identity map when integrins occupy [0, n_int)).
+                broke_local = np.fromiter(
+                    (self._integrin_tag_to_local[int(t)]
+                     for t in int_tags[broke]),
+                    dtype=np.int64, count=int(n_broke),
+                )
+                self._engaged[broke_local] = False
                 # Keep only the survivors.
                 int_bonds = int_bonds[~broke]
 
         # ---- Step 2: bind unbound integrins within capture radius ----
-        unbound_tags = np.flatnonzero(~self._engaged)
-        if unbound_tags.size > 0:
-            r_int_u = pos[unbound_tags]
-            lig_tags_u = self._ligand_for_integrin[unbound_tags]
+        # _engaged is LOCAL-indexed (S5), so flatnonzero gives LOCAL indices.
+        # Positions are read by GLOBAL tag (snapshot is tag-ordered);
+        # _ligand_for_integrin is LOCAL-indexed and stores GLOBAL ligand tags.
+        unbound_local = np.flatnonzero(~self._engaged)
+        if unbound_local.size > 0:
+            unbound_global = self._integrin_global_tag[unbound_local]
+            r_int_u = pos[unbound_global]
+            lig_tags_u = self._ligand_for_integrin[unbound_local]
             r_lig_u = pos[lig_tags_u]
             d = np.linalg.norm(r_int_u - r_lig_u, axis=1)
             in_range = d <= self.p.capture_radius_R_FA
@@ -272,9 +309,12 @@ class IntegrinBondUpdater(hoomd.custom.Action):
                 n_bound = int(bind_mask.sum())
                 self._n_bind_total += n_bound
                 if n_bound > 0:
-                    bind_int_tags = unbound_tags[in_range][bind_mask]
+                    bind_local = unbound_local[in_range][bind_mask]
+                    bind_int_tags = self._integrin_global_tag[bind_local]
                     bind_lig_tags = lig_tags_u[in_range][bind_mask]
-                    self._engaged[bind_int_tags] = True
+                    self._engaged[bind_local] = True
+                    # Bond col 0 = GLOBAL integrin tag, col 1 = GLOBAL ligand
+                    # tag (so the break loop's tag->local lookup round-trips).
                     new_bonds = np.stack(
                         [bind_int_tags, bind_lig_tags], axis=1
                     ).astype(np.int64)

@@ -256,20 +256,21 @@ def _extend_snapshot_with_fa(
     (``integrin``, ``ligand``) and bond types (``integrin_ligand``,
     ``fa_actin_clutch``) cannot be added after HOOMD initialises the state.
 
-    Tag layout — integrins are PREPENDED to global tags ``[0, n_int)``.
-    This is a HARD CONTRACT of the reused
-    :class:`ffn_sim.bridge.integrin_bonds.IntegrinBondUpdater`, which
-    indexes its per-integrin state arrays (``_engaged``, ``_ligand_for_
-    integrin``) by ``FALayout.integrin_tag_start`` AND uses that same value
-    as the snapshot-position index (``pos[integrin_tag]``). Both only hold
-    simultaneously if integrin global tag == dense 0-based index, i.e. the
-    integrins occupy ``[0, n_int)``. To keep the updater REUSED AS-IS (no
-    edit to bridge/), the FA extension therefore shifts every pre-existing
-    particle (cortex / xlink / myosin / lamellipodium) by ``+n_int`` and
-    re-indexes their bond / angle groups; substrate ligands go LAST with
-    their real (shifted) global tags. This re-tagging only happens on the
-    FA-on path; the FA-off path never calls this function, so the pre-FA
-    builder stays bit-for-bit identical.
+    Tag layout — the FA block (integrins then substrate ligands) is APPENDED
+    LAST, in natural append order after cortex / myosin / xlink /
+    lamellipodium (mirroring the lamellipodium block). Integrins occupy the
+    contiguous range ``[N0, N0 + n_int)`` and ligands ``[N0 + n_int, ...)``,
+    where ``N0`` is the pre-FA particle count. NOTHING already present is
+    re-tagged, so every other subsystem's absolute-tag Updater bookkeeping
+    (myosin head→actin, xlink head→actin, lamellipodium) is unchanged — this
+    is the S5 tag-space unification (2026-05-30) that lets FA coexist with
+    those subsystems. The reused
+    :class:`ffn_sim.bridge.integrin_bonds.IntegrinBondUpdater` was
+    generalized (S5) to resolve per-integrin state by an explicit
+    tag->local-index map (built from ``FALayout.integrin_tag_start``) and to
+    read positions by global tag (a HOOMD snapshot is tag-ordered), so it no
+    longer requires integrins at ``[0, n_int)``. The FA-off path never calls
+    this function, so the pre-FA builder stays bit-for-bit identical.
 
     * S0: ligands placed at z=0 (the mechanical ground; held immobile at
       runtime by :class:`SubstrateLigandPin`).
@@ -294,18 +295,26 @@ def _extend_snapshot_with_fa(
     N0 = int(snap.particles.N)
     n_int = int(integrin_pos_local.shape[0])
     n_lig = int(ligand_pos_local.shape[0])
-    integrin_tag_start = 0           # PREPENDED — updater requires [0, n_int)
-    ligand_tag_start = n_int + N0    # ligands last, after shifted old particles
+    # S5 tag-space unification (2026-05-30): the FA block is APPENDED LAST,
+    # in natural append order (after cortex / myosin / xlink / lamellipodium),
+    # mirroring how the lamellipodium block is appended. Integrins occupy the
+    # contiguous range [N0, N0 + n_int); substrate ligands [N0 + n_int, ...).
+    # NOTHING that already exists is re-tagged — the cortex / myosin / xlink /
+    # lamellipodium tag ranges (and their Updaters' absolute-tag bookkeeping)
+    # are untouched. The reused IntegrinBondUpdater no longer requires
+    # integrins at [0, n_int): it resolves per-integrin state by an explicit
+    # tag->local map built from FALayout.integrin_tag_start (the S5 fix in
+    # bridge/integrin_bonds.py), and reads positions by global tag (snapshot
+    # is tag-ordered).
+    integrin_tag_start = N0
+    ligand_tag_start = N0 + n_int
 
-    # Re-tag the layout: integrin tags stay 0-based (the updater indexes
-    # _engaged[integrin_tag_start:...]); each FA's ligand tag becomes its
-    # real GLOBAL tag (the updater uses it only as pos[ligand_tag], which is
-    # fine for any value). _build_fa_layout assigned ligand tags
-    # [n_int, n_int + n_lig); shift those by N0 to land after the (shifted)
-    # cortex/myosin/lamellipodium block.
+    # Re-tag the layout to GLOBAL tags: _build_fa_layout numbered integrins
+    # [0, n_int) and ligands [n_int, n_int + n_lig) in a self-contained 0-based
+    # space; shift both blocks up by N0 so they land in the appended region.
     for lay in layouts:
-        # integrin_tag_start already 0-based local — leave it.
-        lay.ligand_tag = lay.ligand_tag + N0
+        lay.integrin_tag_start = lay.integrin_tag_start + N0
+        lay.ligand_tag = (lay.ligand_tag - n_int) + ligand_tag_start
 
     # 2. Particle-type registration (append new types after existing ones).
     old_types = list(snap.particles.types)
@@ -320,26 +329,26 @@ def _extend_snapshot_with_fa(
     old_typeid = np.asarray(snap.particles.typeid, dtype=np.uint32)
     old_mass = np.asarray(snap.particles.mass, dtype=np.float64)
 
-    # Order: [integrins (0..n_int)] [old particles (n_int..n_int+N0)]
-    #        [ligands (n_int+N0..)]
+    # Order: [old particles (0..N0)] [integrins (N0..N0+n_int)]
+    #        [ligands (N0+n_int..)]  — FA block appended LAST (S5).
     pos_all = np.concatenate(
-        [integrin_pos_local, old_pos, ligand_pos_local], axis=0
+        [old_pos, integrin_pos_local, ligand_pos_local], axis=0
     )
     typeid_all = np.concatenate(
         [
-            np.full(n_int, int_typeid, dtype=np.uint32),
             old_typeid,
+            np.full(n_int, int_typeid, dtype=np.uint32),
             np.full(n_lig, lig_typeid, dtype=np.uint32),
         ]
     )
     mass_all = np.concatenate(
-        [np.ones(n_int, dtype=np.float64), old_mass, np.ones(n_lig, dtype=np.float64)]
+        [old_mass, np.ones(n_int, dtype=np.float64), np.ones(n_lig, dtype=np.float64)]
     )
 
     # 3. S2 static clutch bonds: each integrin → nearest cortex-actin bead
     #    within capture_radius. cortex_positions is the (n_cortex_actin, 3)
-    #    flat actin array (its beads now live at SHIFTED global tags
-    #    [n_int, n_int + n_cortex_actin) after the prepend).
+    #    flat actin array; cortex beads keep their ORIGINAL global tags
+    #    [0, n_cortex_actin) because the FA block is appended last (no shift).
     #
     #    Geometric reality (honest, documented): the substrate-ligand plane
     #    (z≈0) and the cortex shell (r≈R_cell) are SPATIALLY DISJOINT, so
@@ -361,9 +370,9 @@ def _extend_snapshot_with_fa(
         d = np.linalg.norm(cortex_xyz - r_int, axis=1)
         j = int(np.argmin(d))
         if d[j] <= capture_radius:
-            # integrin global tag = i (prepended); cortex bead j global tag
-            # = j + n_int (shifted).
-            clutch_pairs_list.append((i, j + n_int))
+            # integrin global tag = i + N0 (appended); cortex bead j keeps its
+            # original global tag j (no shift, FA block is last).
+            clutch_pairs_list.append((i + N0, j))
             clutch_r0_list.append(float(d[j]))
     clutch_pairs = (
         np.asarray(clutch_pairs_list, dtype=np.int64).reshape(-1, 2)
@@ -384,8 +393,10 @@ def _extend_snapshot_with_fa(
     #      ``fa_actin_clutch``; extra bonds are ``fa_actin_clutch_b1 ..``.
     old_bond_types = list(snap.bonds.types)
     old_bond_N = int(snap.bonds.N)
+    # FA block is appended LAST (S5), so existing bonds keep their tags — NO
+    # shift (was +n_int when integrins were prepended).
     old_bond_group = (
-        np.asarray(snap.bonds.group, dtype=np.int64).reshape(old_bond_N, 2) + n_int
+        np.asarray(snap.bonds.group, dtype=np.int64).reshape(old_bond_N, 2)
         if old_bond_N > 0
         else np.empty((0, 2), dtype=np.int64)
     ).astype(np.uint32)
@@ -448,9 +459,10 @@ def _extend_snapshot_with_fa(
         out.angles.N = n_ang
         out.angles.types = list(snap.angles.types)
         out.angles.typeid = np.asarray(snap.angles.typeid, dtype=np.uint32)
-        # Angle groups reference the SHIFTED old-particle tags (+n_int).
+        # FA block appended last (S5): angle groups keep their original tags
+        # (was +n_int when integrins were prepended).
         out.angles.group = (
-            np.asarray(snap.angles.group, dtype=np.int64) + n_int
+            np.asarray(snap.angles.group, dtype=np.int64)
         ).astype(np.uint32)
 
     out.configuration.box = list(snap.configuration.box)
@@ -618,39 +630,27 @@ def build_cortex_full_simulation(
         n_wave_particles = int(p_lamellipodium.n_WAVE)
         n_lamellipodium_actin = int(p_lamellipodium.n_WAVE)
 
-    # 4b. Optional FA (H.4 α restart — S0/S1/S2). The reused
-    # IntegrinBondUpdater (bridge/integrin_bonds.py) REQUIRES integrin
-    # global tags == dense [0, n_int) (it indexes its per-integrin state by
-    # FALayout.integrin_tag_start AND uses that as a snapshot-position
-    # index). So _extend_snapshot_with_fa PREPENDS the integrin block at
-    # tags [0, n_int) and shifts every pre-existing particle + bond/angle
-    # group up by n_int. MUST run BEFORE create_state_from_snapshot (new
-    # particle / bond types cannot be added post-create). ADDITIVE +
-    # DEFAULT-OFF: when p_fa is None nothing here executes and the snapshot
-    # / forces / updaters are bit-for-bit identical to the pre-FA builder.
+    # 4b. Optional FA (H.4 α restart — S0/S1/S2 + S5 tag-space unification).
+    # _extend_snapshot_with_fa APPENDS the integrin + substrate-ligand block
+    # LAST (natural append order, after cortex / myosin / xlink /
+    # lamellipodium), leaving every earlier tag range unchanged. The reused
+    # IntegrinBondUpdater was generalized (S5, bridge/integrin_bonds.py) to
+    # resolve per-integrin state by an explicit tag->local map instead of
+    # assuming integrins at [0, n_int), so FA now coexists with the other
+    # subsystems. MUST run BEFORE create_state_from_snapshot (new particle /
+    # bond types cannot be added post-create). ADDITIVE + DEFAULT-OFF: when
+    # p_fa is None nothing here executes and the snapshot / forces / updaters
+    # are bit-for-bit identical to the pre-FA builder.
     fa_integration = None
     enable_fa = p_fa is not None
-    if enable_fa and (enable_myo or enable_xl or enable_lamel):
-        # S5 boundary (honest, in-scope finding): the integrin-prepend tag
-        # contract collides with the ABSOLUTE-tag bookkeeping the myosin /
-        # xlink / lamellipodium Updaters captured at layout-generation time
-        # (e.g. the myosin head→actin binder assumes cortex actin occupies
-        # tags [0, n_cortex_actin); after a +n_int prepend it would bind to
-        # the WRONG beads — runs without crashing but is SILENTLY WRONG
-        # physics). Unifying all subsystem tag bookkeeping under the FA
-        # prepend is the S5 integration step (close-the-clutch-loop), which
-        # is out of scope for this S0/S1/S2 slice. Refuse the combination
-        # loudly rather than produce wrong forces.
-        raise NotImplementedError(
-            "FA (p_fa) combined with myosin / crosslinkers / lamellipodium "
-            "is not supported in the H.4 α restart S0/S1/S2 slice: the "
-            "reused IntegrinBondUpdater requires integrins at global tags "
-            "[0, n_int), which forces a tag-prepend that collides with "
-            "those subsystems' absolute-tag Updaters (silently-wrong head/"
-            "xlink binding). Unifying the tag bookkeeping is S5 (close the "
-            "clutch loop). For this slice wire FA onto the cortex alone "
-            "(p_fa with p_myosin / p_xlinks / p_lamellipodium all None)."
-        )
+    # S5 tag-space unification (2026-05-30): FA now coexists with myosin /
+    # xlink / lamellipodium. The FA block is appended LAST (see
+    # _extend_snapshot_with_fa), so NO existing particle is re-tagged and the
+    # myosin / xlink / lamellipodium Updaters' absolute cortex-actin tag
+    # bookkeeping stays valid. The reused IntegrinBondUpdater was generalized
+    # to resolve per-integrin state by an explicit tag->local map (so
+    # integrins need not be at [0, n_int)). The previous NotImplementedError
+    # guard for FA + (myosin | xlink | lamellipodium) is therefore removed.
     if enable_fa:
         # Clutch geometry: each integrin → nearest cortex actin bead within
         # the capture radius (default = KU-anchored Plan H.4
@@ -1400,46 +1400,24 @@ class Cell:
         lamellipodium_actin → fa_integrin (zero-width slot). Identical to
         the pre-FA Cell (regression-clean).
 
-        FA ON (H.4 α restart S0/S1/S2): the reused IntegrinBondUpdater
-        forces integrins to global tags ``[0, n_int)``, so the FA-on map is
-        **integrin first**: fa_integrin → cortex → (xlink/myosin/
-        lamellipodium are mutually exclusive with FA in this slice; see the
-        builder's NotImplementedError) → substrate_ligand last. The
-        integrin / substrate-ligand offsets here therefore match the actual
-        prepended snapshot layout.
+        FA ON (S5 tag-space unification, 2026-05-30): the FA block is
+        APPENDED LAST, so the map is cortex → xlink → myosin → wave_particle
+        → lamellipodium_actin → fa_integrin (real range) → substrate_ligand.
+        Because nothing is re-tagged, FA coexists with myosin / xlink /
+        lamellipodium; the integrin / substrate-ligand offsets match the
+        actual appended snapshot layout.
 
         Lamellipodium ranges reflect the CONSTRUCTION-TIME tag block;
         runtime elongation / branching events append actin_lamel beads at
         tags ``≥ lamellipodium_actin[1]``.
         """
-        if self.fa is not None:
-            # FA-on layout: integrins prepended at [0, n_int); all other
-            # subsystems shifted up by n_int; substrate ligands last.
-            n_int = int(self.fa.n_integrins)
-            n_lig = int(self.fa.n_substrate_ligands)
-            offsets = {"fa_integrin": (0, n_int)}
-            cur = n_int
-            offsets["cortex_actin"] = (cur, cur + self.n_cortex_actin)
-            cur += self.n_cortex_actin
-            offsets["xlink_head"] = (cur, cur + self.n_xlink_heads)
-            cur += self.n_xlink_heads
-            if self.p_myosin is not None and self.n_myosin_particles > 0:
-                myo_end = cur + self.n_myosin_particles
-                offsets["myosin"] = (cur, myo_end)
-                cur = myo_end
-            else:
-                offsets["myosin"] = (cur, cur)
-            offsets["wave_particle"] = (cur, cur + self.n_wave_particles)
-            cur += self.n_wave_particles
-            offsets["lamellipodium_actin"] = (
-                cur, cur + self.n_lamellipodium_actin
-            )
-            cur += self.n_lamellipodium_actin
-            offsets["substrate_ligand"] = (cur, cur + n_lig)
-            cur += n_lig
-            return offsets
-
-        # FA-off layout (unchanged from the pre-FA Cell).
+        # Single append-order layout (S5 tag-space unification, 2026-05-30):
+        # cortex → xlink → myosin → wave → lamellipodium → FA (integrin then
+        # substrate_ligand). The FA block is appended LAST, so this is the
+        # SAME order whether FA is on or off — when FA is off the fa_integrin
+        # slot is zero-width and substrate_ligand is omitted (bit-for-bit the
+        # pre-FA Cell map). When FA is on, fa_integrin is a real range followed
+        # by substrate_ligand.
         offsets = {"cortex_actin": (0, self.n_cortex_actin)}
         cur = self.n_cortex_actin
         offsets["xlink_head"] = (cur, cur + self.n_xlink_heads)
@@ -1454,7 +1432,15 @@ class Cell:
         cur += self.n_wave_particles
         offsets["lamellipodium_actin"] = (cur, cur + self.n_lamellipodium_actin)
         cur += self.n_lamellipodium_actin
-        offsets["fa_integrin"] = (cur, cur)
+        if self.fa is not None:
+            n_int = int(self.fa.n_integrins)
+            n_lig = int(self.fa.n_substrate_ligands)
+            offsets["fa_integrin"] = (cur, cur + n_int)
+            cur += n_int
+            offsets["substrate_ligand"] = (cur, cur + n_lig)
+            cur += n_lig
+        else:
+            offsets["fa_integrin"] = (cur, cur)
         return offsets
 
     def diagnostics(self) -> dict[str, Any]:

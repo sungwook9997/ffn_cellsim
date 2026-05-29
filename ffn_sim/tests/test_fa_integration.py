@@ -23,17 +23,19 @@ Contract (CLAUDE.md, H4_FA_INTEGRATION_DESIGN.md):
 
 Two honest, documented findings pinned by these tests
 -----------------------------------------------------
-1. **Integrin-tag prepend -> FA is cortex-only in this slice.** The reused
-   ``IntegrinBondUpdater`` requires integrin global tags == dense
-   ``[0, n_int)`` (it indexes its per-integrin state by
-   ``integrin_tag_start`` AND uses that as a snapshot-position index). So
-   the FA extension PREPENDS integrins at ``[0, n_int)`` and shifts every
-   other particle up by ``n_int``. That collides with the absolute-tag
-   bookkeeping the myosin / xlink / lamellipodium Updaters captured at
-   layout time (silently-wrong head/xlink binding), so the builder raises
-   ``NotImplementedError`` for those combinations -- unifying the tag
-   bookkeeping is the S5 integration step.
-   :func:`test_fa_with_myosin_raises` pins that guard.
+1. **S5 tag-space unification -> FA coexists with myosin/xlink/lamellipodium.**
+   The FA block (integrins then substrate ligands) is APPENDED LAST, in
+   natural append order after cortex / myosin / xlink / lamellipodium, so
+   NOTHING already present is re-tagged and every other subsystem's
+   absolute-tag Updater bookkeeping stays valid. The reused
+   ``IntegrinBondUpdater`` was generalized to resolve per-integrin state by
+   an explicit global-tag->local-index map (built from
+   ``integrin_tag_start``) and to read positions by global tag (a HOOMD
+   snapshot is tag-ordered), so integrins no longer need to occupy
+   ``[0, n_int)``. The previous ``NotImplementedError`` for FA +
+   (myosin|xlink|lamellipodium) is removed.
+   :func:`test_fa_with_myosin_builds` (+ xlink / lamellipodium smoke tests)
+   pin the coexistence.
 
 2. **Physical capture radius barely clutches.** At the real cell geometry
    the substrate plane (z~0) and the cortex shell (r~R_cell ~10 um) are
@@ -199,18 +201,181 @@ def test_cell_build_fa_off_is_noop(p_cortex, p_myosin):
 
 
 # ---------------------------------------------------------------------------
-# S5 boundary -- FA + (myosin/xlink/lamellipodium) refused loudly
+# S5 tag-space unification -- FA + (myosin/xlink/lamellipodium) now COEXIST
 # ---------------------------------------------------------------------------
-def test_fa_with_myosin_raises(p_cortex, p_myosin, p_fa):
-    """FA + myosin must raise NotImplementedError in this slice.
+def test_fa_with_myosin_builds(p_cortex, p_myosin, p_fa):
+    """S5: FA + myosin coexist (was NotImplementedError before tag-space
+    unification).
 
-    The integrin-tag prepend collides with the myosin Updater's absolute
-    cortex-actin tag bookkeeping (silently-wrong binding); unifying that is
-    S5. The builder refuses the combination rather than produce wrong
-    forces.
+    Replaces the old ``test_fa_with_myosin_raises``. The FA block is appended
+    LAST so the myosin Updater's absolute cortex-actin tag bookkeeping is
+    untouched, and the generalized IntegrinBondUpdater resolves integrin state
+    by an explicit tag->local map. Asserts:
+
+    * all three bond families present (integrin_ligand + fa_actin_clutch +
+      cortex_myosin_*),
+    * clutch bonds connect integrins to CORTEX-ACTIN tags (NOT myosin tags),
+    * a short BAOAB warm-up runs with no NaN/Inf and substrate ligands stay
+      at z=0.
+
+    Full production stability still needs the PI-gated B2 equilibration +
+    B1 dt reconciliation (out of scope); this is construction + warm-up only.
     """
-    with pytest.raises(NotImplementedError, match="not supported"):
-        build_cortex_full_simulation(p_cortex, p_myosin=p_myosin, p_fa=p_fa)
+    big_R = 2.0 * p_cortex.R_cell  # span the substrate<->cortex gap
+    h = build_cortex_full_simulation(
+        p_cortex, p_myosin=p_myosin, p_fa=p_fa,
+        fa_clutch_capture_radius=big_R, with_baoab=True,
+    )
+    sim = h["sim"]
+    snap = sim.state.get_snapshot()
+    fi = h["fa_integration"]
+    assert fi is not None
+    assert h["n_myosin_particles"] > 0
+
+    # All three bond families coexist.
+    btypes = list(snap.bonds.types)
+    assert "integrin_ligand" in btypes
+    assert "fa_actin_clutch" in btypes
+    assert any(b.startswith("cortex_myosin") for b in btypes), (
+        f"cortex_myosin bond types missing from {btypes}"
+    )
+
+    # Particle types coexist.
+    ptypes = list(snap.particles.types)
+    assert "integrin" in ptypes and "ligand" in ptypes
+    assert "cortex_myosin_backbone" in ptypes
+    assert "cortex_myosin_head" in ptypes
+
+    # Tag-range bookkeeping: cortex actin at the FRONT, FA appended LAST.
+    n_cortex = int(h["n_cortex_actin"])
+    n_int = int(h["n_fa_integrins"])
+    assert fi.integrin_tag_start >= n_cortex + h["n_myosin_particles"], (
+        "integrins must be appended AFTER cortex + myosin (S5)"
+    )
+
+    # S2: clutch bonds connect integrins to CORTEX-ACTIN beads, NOT myosin.
+    # cortex actin keeps its original tags [0, n_cortex_actin); myosin sits in
+    # [n_cortex, n_cortex + n_myosin); integrins are appended after both.
+    cp = np.asarray(fi.clutch_pairs)
+    assert cp.shape[0] > 0, "expected clutch bonds with the wide capture radius"
+    assert np.all(cp[:, 0] >= fi.integrin_tag_start), "col 0 must be an integrin"
+    assert np.all(cp[:, 0] < fi.integrin_tag_start + n_int)
+    assert np.all(cp[:, 1] < n_cortex), (
+        "clutch col 1 must be a cortex-actin tag (< n_cortex_actin), NOT a "
+        "myosin tag"
+    )
+
+    # A clutch bond joins an integrin to a REAL cortex-actin bead, by tag +
+    # particle type, AFTER unification (mechanistic-integrity check).
+    typeid = np.asarray(snap.particles.typeid)
+    int_tid = ptypes.index("integrin")
+    actin_tid = ptypes.index("actin_cortex")
+    a0, b0 = int(cp[0, 0]), int(cp[0, 1])
+    assert typeid[a0] == int_tid, "clutch col 0 particle must be type integrin"
+    assert typeid[b0] == actin_tid, (
+        "clutch col 1 particle must be type actin_cortex (a real cortex bead)"
+    )
+
+    # Short BAOAB warm-up: no NaN/Inf, substrate ligands immobile at z=0.
+    lig = np.arange(
+        fi.ligand_tag_start, fi.ligand_tag_start + fi.n_substrate_ligands
+    )
+    pre = np.asarray(sim.state.get_snapshot().particles.position).copy()
+    sim.run(0)
+    sim.run(200)
+    post = np.asarray(sim.state.get_snapshot().particles.position)
+    assert np.all(np.isfinite(post)), "NaN/Inf after FA+myosin warm-up"
+    assert np.allclose(post[lig], pre[lig]), "substrate ligands drifted (S0 pin)"
+    assert np.allclose(post[lig, 2], 0.0), "substrate ligands left z=0"
+
+
+def _resolve_xlinks_or_skip(cortex_cfg, p_cortex):
+    """Resolve the cortex crosslinker block from the h3 config (small demo)."""
+    from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
+    cfg = deepcopy(cortex_cfg)
+    if "dynamic_crosslinkers" not in cfg.get("cortex", {}):
+        pytest.skip("no dynamic_crosslinkers block in phase1_h3.yaml")
+    cfg["cortex"]["dynamic_crosslinkers"]["n_xl"] = 8  # small demo
+    return resolve_crosslinkers(cfg, dt=p_cortex.dt_cfl)
+
+
+def test_fa_with_xlinks_builds(cortex_cfg, p_cortex, p_fa):
+    """S5 smoke: FA + crosslinkers coexist + build (was NotImplementedError).
+
+    Asserts integrin/ligand + integrin_ligand + xlink bond types all present
+    and the FA block is appended after the cortex + xlink-head block.
+    """
+    p_xlinks = _resolve_xlinks_or_skip(cortex_cfg, p_cortex)
+    big_R = 2.0 * p_cortex.R_cell
+    h = build_cortex_full_simulation(
+        p_cortex, p_xlinks=p_xlinks, p_fa=p_fa,
+        fa_clutch_capture_radius=big_R,
+    )
+    snap = h["sim"].state.get_snapshot()
+    btypes = list(snap.bonds.types)
+    assert "integrin_ligand" in btypes
+    assert "fa_actin_clutch" in btypes
+    assert any(b.startswith("xlink") for b in btypes), btypes
+    assert h["n_xlink_heads"] > 0
+    fi = h["fa_integration"]
+    n_cortex = int(h["n_cortex_actin"])
+    assert fi.integrin_tag_start >= n_cortex + h["n_xlink_heads"], (
+        "integrins appended after cortex + xlink heads (S5)"
+    )
+    # clutch col 1 stays a cortex-actin tag (not an xlink-head tag).
+    cp = np.asarray(fi.clutch_pairs)
+    if cp.shape[0] > 0:
+        assert np.all(cp[:, 1] < n_cortex)
+
+
+def _resolve_lamel_or_skip(cortex_cfg, p_cortex):
+    """Resolve a small lamellipodium demo from configs/phase1_h5.yaml.
+
+    The lamellipodium config lives in its own ``phase1_h5.yaml`` (it is not a
+    sub-block of the cortex config), loaded the same way test_lamellipodium.py
+    does. Override n_WAVE to a small demo count for a fast smoke build.
+    """
+    from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
+    h5_path = CONFIG_DIR / "phase1_h5.yaml"
+    if not h5_path.exists():
+        pytest.skip("configs/phase1_h5.yaml not found")
+    cfg = deepcopy(yaml.safe_load(h5_path.read_text()))
+    block = cfg.get("lamellipodium", cfg)
+    block["n_WAVE"] = 3  # small demo
+    return resolve_h5_lamellipodium(
+        cfg, L_box=p_cortex.L_box, dt=p_cortex.dt_cfl, kT=p_cortex.kT,
+    )
+
+
+def test_fa_with_lamellipodium_builds(cortex_cfg, p_cortex, p_fa):
+    """S5 smoke: FA + lamellipodium coexist + build (was NotImplementedError).
+
+    Asserts integrin/ligand + integrin_ligand + lamellipodium types present
+    and the FA block is appended after the wave/lamellipodium block.
+    """
+    p_lamel = _resolve_lamel_or_skip(cortex_cfg, p_cortex)
+    big_R = 2.0 * p_cortex.R_cell
+    h = build_cortex_full_simulation(
+        p_cortex, p_lamellipodium=p_lamel, p_fa=p_fa,
+        fa_clutch_capture_radius=big_R,
+    )
+    snap = h["sim"].state.get_snapshot()
+    ptypes = list(snap.particles.types)
+    btypes = list(snap.bonds.types)
+    assert "integrin" in ptypes and "ligand" in ptypes
+    assert "wave_particle" in ptypes
+    assert "integrin_ligand" in btypes
+    assert "fa_actin_clutch" in btypes
+    assert h["n_wave_particles"] > 0
+    fi = h["fa_integration"]
+    n_cortex = int(h["n_cortex_actin"])
+    # integrins appended after cortex + wave + lamellipodium actin block.
+    assert fi.integrin_tag_start >= (
+        n_cortex + h["n_wave_particles"] + h["n_lamellipodium_actin"]
+    ), "integrins appended after cortex + lamellipodium (S5)"
+    cp = np.asarray(fi.clutch_pairs)
+    if cp.shape[0] > 0:
+        assert np.all(cp[:, 1] < n_cortex)
 
 
 # ---------------------------------------------------------------------------
@@ -218,8 +383,9 @@ def test_fa_with_myosin_raises(p_cortex, p_myosin, p_fa):
 # ---------------------------------------------------------------------------
 def test_fa_on_builds(p_cortex, p_fa):
     """FA on (cortex + FA): substrate ligands at z=0, both bond types
-    registered, integrins prepended at tags [0, n_int), and a
-    fa_actin_clutch bond actually connects an integrin to a cortex-actin tag.
+    registered, integrins APPENDED last (S5) at tags
+    [n_cortex_actin, +n_int), and a fa_actin_clutch bond actually connects an
+    integrin to a cortex-actin tag.
 
     The clutch is exercised with an explicit capture radius spanning the
     construction substrate<->cortex gap (documented in the module
@@ -248,14 +414,16 @@ def test_fa_on_builds(p_cortex, p_fa):
     assert h["n_fa_integrins"] == n_int_expected
     assert h["n_substrate_ligands"] == n_lig_expected
 
-    # integrins prepended at global tags [0, n_int)
-    assert fi.integrin_tag_start == 0
+    # S5: integrins APPENDED last, just after the cortex-actin block (no other
+    # subsystems here), at global tags [n_cortex_actin, n_cortex_actin+n_int).
+    n_cortex = int(h["n_cortex_actin"])
+    assert fi.integrin_tag_start == n_cortex
     pos = np.asarray(snap.particles.position)
     typeid = np.asarray(snap.particles.typeid)
     int_tid = list(snap.particles.types).index("integrin")
-    assert np.all(typeid[:n_int_expected] == int_tid), (
-        "the reused IntegrinBondUpdater requires integrins at tags [0, n_int)"
-    )
+    assert np.all(
+        typeid[n_cortex:n_cortex + n_int_expected] == int_tid
+    ), "S5: integrins occupy the appended block [n_cortex_actin, +n_int)"
 
     # substrate ligands at z=0
     lig = np.arange(
@@ -273,18 +441,19 @@ def test_fa_on_builds(p_cortex, p_fa):
     assert h["ligand_pin_updater"] is not None
 
     # S2: clutch bonds connect integrin -> cortex-actin (the literal load path).
-    # cortex actin lives at SHIFTED tags [n_int, n_int + n_cortex_actin).
+    # S5 append-last: cortex actin keeps tags [0, n_cortex_actin); integrins
+    # are appended at [n_cortex_actin, +n_int).
     assert fi.n_clutch_bonds == n_int_expected, (
         "with a cell-diameter capture radius every integrin should clutch to "
         "its nearest cortex-actin bead"
     )
     cp = np.asarray(fi.clutch_pairs)
-    n_cortex = int(h["n_cortex_actin"])
-    assert np.all(cp[:, 0] < n_int_expected), "clutch col 0 must be an integrin tag"
-    assert np.all(cp[:, 1] >= n_int_expected), (
-        "clutch col 1 must be a (shifted) cortex-actin tag"
+    # S5 append-last: integrin tags >= n_cortex, cortex-actin tags < n_cortex.
+    assert np.all(cp[:, 0] >= n_cortex), "clutch col 0 must be an integrin tag"
+    assert np.all(cp[:, 0] < n_cortex + n_int_expected)
+    assert np.all(cp[:, 1] < n_cortex), (
+        "clutch col 1 must be an (unshifted) cortex-actin tag"
     )
-    assert np.all(cp[:, 1] < n_int_expected + n_cortex)
 
     # S2 construction force-free: each clutch bond's r0 == its initial
     # integrin<->actin separation (per-bond exact-r0 binning).
@@ -334,8 +503,9 @@ def test_cell_build_fa_on_tag_ranges(p_cortex, p_fa):
     """Cell.build(with_fa=True), cortex + FA: populates cell.fa + integrin /
     substrate_ligand tag ranges; tag ranges stay contiguous & cover N.
 
-    FA-on layout is integrin-first (the prepend contract), so
-    ``fa_integrin`` starts at 0 and ``cortex_actin`` is shifted up.
+    FA-on layout (S5 tag-space unification) APPENDS the FA block LAST, so
+    ``fa_integrin`` starts AFTER the cortex block and ``substrate_ligand``
+    follows it (cortex_actin keeps tag 0).
     """
     big_R = 2.0 * p_cortex.R_cell
     cell = Cell.build(
@@ -346,8 +516,10 @@ def test_cell_build_fa_on_tag_ranges(p_cortex, p_fa):
     assert cell.fa is not None
     tr = cell.tag_ranges()
     assert "substrate_ligand" in tr
+    # Cortex actin keeps tag 0 (S5 append-last); FA block comes after it.
+    assert tr["cortex_actin"][0] == 0
     lo, hi = tr["fa_integrin"]
-    assert lo == 0, "FA-on layout prepends integrins at tag 0"
+    assert lo >= cell.n_cortex_actin, "FA-on layout appends integrins last (S5)"
     assert hi - lo == cell.fa.n_integrins > 0
     lo2, hi2 = tr["substrate_ligand"]
     assert hi2 - lo2 == cell.fa.n_substrate_ligands > 0
