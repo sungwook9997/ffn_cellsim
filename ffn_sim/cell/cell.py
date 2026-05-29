@@ -7,7 +7,7 @@ class, HOOMD particle-group-backed, owns:
 * ERM tether (`ffn_sim.cortex.erm.ERMHarmonic` custom force)
 * dynamic crosslinkers (`ffn_sim.cortex.crosslinkers.XlinkBondUpdater`)
 * lamellipodium slot (H.5 deliverable — None for H.3)
-* FA / adhesion slot (H.4 Sub-owned — None for H.3 from Main side)
+* FA / adhesion slot (H.4 α restart S0/S1/S2 — wired behind `p_fa`)
 * myosin slot (H.3 next-iteration deliverable — None for now)
 
 PER CLAUDE.md the v1 `acs_kb/cell/cell.py` (single-chain Cortex-coupled)
@@ -19,12 +19,13 @@ computes + Updaters.
 Sanity Gate
 -----------
 *Per CLAUDE.md Hard Rule. STATIC checks in
-``ffn_sim/tests/test_cell.py``.*
+``ffn_sim/tests/test_cell.py``; FA S0/S1/S2 checks in
+``ffn_sim/tests/test_fa_integration.py``.*
 
 1. **Dimensional analysis**
    - All particle-count / bond-count diagnostics are integer counts.
      No unit-bearing scalars introduced here (Cell wraps already-
-     resolved Cortex / ERM / Crosslinker dataclasses; the underlying
+     resolved Cortex / ERM / Crosslinker / FA dataclasses; the underlying
      SI dimensions are validated in those modules' own sanity gates).
 
 2. **Boundary cases**
@@ -40,21 +41,20 @@ Sanity Gate
 
 3. **Conservation invariants**
    - Particle count: ``n_cortex_actin + 2·n_xl + n_myosin_beads +
-     n_lamellipodium_beads + n_fa_integrins``. Each subsystem
-     contributes to ``Cell.bead_count_summary()``.
+     n_lamellipodium_beads + n_fa_integrins + n_substrate_ligands``. Each
+     subsystem contributes to ``Cell.bead_count_summary()``.
    - Bond count: cortex backbone + xlink_intra + (dynamic attach,
-     variable) + future myosin rigid-body + FA bonds. Diagnostic
+     variable) + myosin rigid-body + FA clutch bonds. Diagnostic
      ``Cell.bond_count_summary()`` reports current totals.
    - Tag conventions: tags 0..n_cortex_actin-1 = cortex; subsequent
      ranges follow the strict insertion order (xlink_head next, then
-     myosin_backbone + myosin_head, then lamellipodium, then FA).
+     myosin, then lamellipodium, then FA integrin + substrate ligand).
      Diagnostic ``Cell.tag_ranges()`` exposes the map.
 
 4. **Numerical sanity**
    - All resolved parameter dataclasses (``ResolvedH3``,
-     ``ResolvedCrosslinkers``, ``ResolvedERM``) carry their own
-     finite-positive guards; Cell.build does NOT re-validate (would
-     double-cover).
+     ``ResolvedCrosslinkers``, ``ResolvedERM``, ``ResolvedH4``) carry
+     their own finite-positive guards; Cell.build does NOT re-validate.
    - The HOOMD Simulation is built with the cortex.dt_cfl integrator;
      ERM CFL gate at attach time prevents stiff-spring runaway.
 
@@ -77,6 +77,7 @@ References
 ----------
 - Brief: ``ffn_sim/docs/briefs/H3_cortex.md`` Deliverables table row
   `ffn_sim/cell/cell.py`.
+- FA brief: ``ffn_sim/docs/briefs/H4_FA_INTEGRATION_DESIGN.md`` (S0/S1/S2).
 - v1 archive: ``~/ActiveCellSim/acs_kb/cell/cell.py`` (NOT used in v2;
   preserved for historical reference only).
 """
@@ -84,7 +85,7 @@ References
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import numpy as np
@@ -125,17 +126,348 @@ from ffn_sim.cortex.myosin import (
     register_cortex_myosin_bond_params,
 )
 from ffn_sim.cell.lamellipodium import (
+    ResolvedH5,
+    WaveMembranePin,
     ArpBranchingUpdater,
     BarbedEndElongationUpdater,
     CappingUpdater,
     LamellipodiumLayout,
     LamellipodiumState,
-    ResolvedH5,
-    WaveMembranePin,
     attach_lamellipodium_to_simulation,
     extend_cortex_snapshot_with_lamellipodium,
 )
 from ffn_sim.integrator.baoab import make_baoab_updater
+
+# H.4 FA integration (α restart — S0/S1/S2 vertical slice, additive +
+# default-off). The p_fa=None path never touches any FA code, so the
+# pre-FA builder stays bit-for-bit identical.
+from ffn_sim.bridge.fa import (
+    ResolvedH4,
+    _build_fa_layout,
+)
+from ffn_sim.bridge.integrin_bonds import make_integrin_updater
+
+
+# H.4 FA topology type / bond names (S0/S1/S2). Externalised so the
+# substrate-anchor + clutch wiring agree on the strings; the off-path
+# (p_fa=None) registers none of them.
+FA_TYPE_INTEGRIN: str = "integrin"
+FA_TYPE_SUBSTRATE_LIGAND: str = "ligand"
+FA_BOND_INTEGRIN_LIGAND: str = "integrin_ligand"   # S1 catch bond (reuses bridge name)
+FA_BOND_ACTIN_CLUTCH: str = "fa_actin_clutch"      # S2 NEW load-path bond
+
+
+class SubstrateLigandPin(hoomd.custom.Action):
+    """S0 substrate immobility — post-BAOAB position reset for ligand tags.
+
+    The substrate ligand layer at z=0 is the mechanical *ground*: it must
+    not move under the BAOAB heat bath. The frozen BAOAB integrator
+    (``ffn_sim/integrator/baoab.py``) integrates **every** particle tag and
+    exposes no integration-group-exclusion hook, so — per the H.4 design
+    brief S0 ("integration-group exclusion or stiff pin … whichever the
+    existing BAOAB Action supports cleanly") — this Action is appended to
+    ``sim.operations.updaters`` AFTER the BAOAB Updater and resets each
+    ligand tag to its construction position every step. HOOMD runs
+    updaters in append order, so the reset overwrites the BAOAB
+    displacement: the ligand is bit-exactly immobile (no magic-number pin
+    stiffness, no CFL interaction, no edit to the frozen integrator). This
+    is the literal "omit their tags from the integrated set" mechanism —
+    BAOAB still *touches* the rows (it must, to satisfy its dense-tag
+    contract + gamma_map coverage), but a pinned ligand's net per-step
+    motion is zero.
+
+    Parameters
+    ----------
+    ligand_tags : np.ndarray
+        Global HOOMD tags of the substrate ligand particles.
+    anchor_positions : np.ndarray, shape (len(ligand_tags), 3)
+        Construction-time (z=0) positions to hold each ligand at.
+    """
+
+    def __init__(
+        self,
+        *,
+        ligand_tags: np.ndarray,
+        anchor_positions: np.ndarray,
+    ) -> None:
+        super().__init__()
+        self._ligand_tags = np.asarray(ligand_tags, dtype=np.int64)
+        self._anchor = np.asarray(anchor_positions, dtype=np.float64).copy()
+        if self._anchor.shape != (self._ligand_tags.shape[0], 3):
+            raise ValueError(
+                "anchor_positions must have shape (n_ligand, 3); got "
+                f"{self._anchor.shape} for {self._ligand_tags.shape[0]} tags."
+            )
+        self._anchor_by_tag = dict(
+            zip(self._ligand_tags.tolist(), self._anchor)
+        )
+        self._sim_ref: hoomd.Simulation | None = None
+
+    def attach(self, simulation: hoomd.Simulation) -> None:  # noqa: D401
+        super().attach(simulation)
+        self._sim_ref = simulation
+
+    def act(self, timestep: int) -> None:  # noqa: D401
+        sim = self._sim_ref
+        if sim is None:
+            return
+        with sim.state.cpu_local_snapshot as snap:
+            pos = np.asarray(snap.particles.position)
+            tag = np.asarray(snap.particles.tag)
+            rows = np.flatnonzero(np.isin(tag, self._ligand_tags))
+            for r in rows:
+                pos[r] = self._anchor_by_tag[int(tag[r])]
+
+
+@dataclass(slots=True)
+class FAIntegration:
+    """Bookkeeping for the S0/S1/S2 FA slice wired into a cell build.
+
+    Returned in the builder handles dict (key ``fa_integration``) and
+    stored on ``Cell.fa`` so diagnostics / tag-ranges report the real
+    integrin block instead of the dead zero-width slot.
+    """
+
+    layouts: list                      # list[FALayout] with GLOBAL tags
+    integrin_tag_start: int            # first integrin global tag
+    n_integrins: int                   # total integrin particles
+    ligand_tag_start: int              # first ligand global tag
+    n_substrate_ligands: int           # total substrate ligand particles
+    n_clutch_bonds: int                # static fa_actin_clutch bonds at construction
+    clutch_pairs: np.ndarray           # shape (n_clutch_bonds, 2) [integrin, actin] global tags
+    clutch_bin_names: list             # per-r0-bin fa_actin_clutch bond type names
+    clutch_bin_r0: np.ndarray          # per-bin rest length [m]
+    clutch_max_separation: float       # max integrin↔actin separation realised [m]
+
+
+def _extend_snapshot_with_fa(
+    snap,
+    p_fa: ResolvedH4,
+    *,
+    cortex_positions: np.ndarray,
+    n_cortex_actin: int,
+    clutch_k: float,
+    capture_radius: float,
+):
+    """Append integrin + immobile substrate-ligand particles + FA bonds (S0/S1/S2).
+
+    Mirrors the lamellipodium snapshot-extension pattern: MUST run BEFORE
+    ``create_state_from_snapshot`` because the new particle types
+    (``integrin``, ``ligand``) and bond types (``integrin_ligand``,
+    ``fa_actin_clutch``) cannot be added after HOOMD initialises the state.
+
+    Tag layout — integrins are PREPENDED to global tags ``[0, n_int)``.
+    This is a HARD CONTRACT of the reused
+    :class:`ffn_sim.bridge.integrin_bonds.IntegrinBondUpdater`, which
+    indexes its per-integrin state arrays (``_engaged``, ``_ligand_for_
+    integrin``) by ``FALayout.integrin_tag_start`` AND uses that same value
+    as the snapshot-position index (``pos[integrin_tag]``). Both only hold
+    simultaneously if integrin global tag == dense 0-based index, i.e. the
+    integrins occupy ``[0, n_int)``. To keep the updater REUSED AS-IS (no
+    edit to bridge/), the FA extension therefore shifts every pre-existing
+    particle (cortex / xlink / myosin / lamellipodium) by ``+n_int`` and
+    re-indexes their bond / angle groups; substrate ligands go LAST with
+    their real (shifted) global tags. This re-tagging only happens on the
+    FA-on path; the FA-off path never calls this function, so the pre-FA
+    builder stays bit-for-bit identical.
+
+    * S0: ligands placed at z=0 (the mechanical ground; held immobile at
+      runtime by :class:`SubstrateLigandPin`).
+    * S1: ``integrin_ligand`` bond TYPE registered (Pereverzev catch bonds
+      are added dynamically by the IntegrinBondUpdater; none at
+      construction, matching ``build_h4_state``).
+    * S2: ``fa_actin_clutch`` bonds created statically between each integrin
+      and its nearest cortex-actin bead within ``capture_radius`` (the
+      literal load path; dynamic load-and-fail kinetics is the S5 TODO).
+
+    Returns ``(snap, FAIntegration)``.
+    """
+    import gsd.hoomd
+
+    # 1. Build the FA layout. ``_build_fa_layout`` numbers integrins
+    #    [0, n_int) and ligands [n_int, n_int + n_lig) — a self-contained
+    #    0-based tag space. We KEEP the integrins at [0, n_int) (the updater
+    #    contract) and move everything else up by n_int.
+    rng = np.random.default_rng(p_fa.seed)
+    layouts, integrin_pos_local, ligand_pos_local = _build_fa_layout(p_fa, rng)
+
+    N0 = int(snap.particles.N)
+    n_int = int(integrin_pos_local.shape[0])
+    n_lig = int(ligand_pos_local.shape[0])
+    integrin_tag_start = 0           # PREPENDED — updater requires [0, n_int)
+    ligand_tag_start = n_int + N0    # ligands last, after shifted old particles
+
+    # Re-tag the layout: integrin tags stay 0-based (the updater indexes
+    # _engaged[integrin_tag_start:...]); each FA's ligand tag becomes its
+    # real GLOBAL tag (the updater uses it only as pos[ligand_tag], which is
+    # fine for any value). _build_fa_layout assigned ligand tags
+    # [n_int, n_int + n_lig); shift those by N0 to land after the (shifted)
+    # cortex/myosin/lamellipodium block.
+    for lay in layouts:
+        # integrin_tag_start already 0-based local — leave it.
+        lay.ligand_tag = lay.ligand_tag + N0
+
+    # 2. Particle-type registration (append new types after existing ones).
+    old_types = list(snap.particles.types)
+    new_types = list(old_types)
+    for t in (FA_TYPE_INTEGRIN, FA_TYPE_SUBSTRATE_LIGAND):
+        if t not in new_types:
+            new_types.append(t)
+    int_typeid = new_types.index(FA_TYPE_INTEGRIN)
+    lig_typeid = new_types.index(FA_TYPE_SUBSTRATE_LIGAND)
+
+    old_pos = np.asarray(snap.particles.position, dtype=np.float64)
+    old_typeid = np.asarray(snap.particles.typeid, dtype=np.uint32)
+    old_mass = np.asarray(snap.particles.mass, dtype=np.float64)
+
+    # Order: [integrins (0..n_int)] [old particles (n_int..n_int+N0)]
+    #        [ligands (n_int+N0..)]
+    pos_all = np.concatenate(
+        [integrin_pos_local, old_pos, ligand_pos_local], axis=0
+    )
+    typeid_all = np.concatenate(
+        [
+            np.full(n_int, int_typeid, dtype=np.uint32),
+            old_typeid,
+            np.full(n_lig, lig_typeid, dtype=np.uint32),
+        ]
+    )
+    mass_all = np.concatenate(
+        [np.ones(n_int, dtype=np.float64), old_mass, np.ones(n_lig, dtype=np.float64)]
+    )
+
+    # 3. S2 static clutch bonds: each integrin → nearest cortex-actin bead
+    #    within capture_radius. cortex_positions is the (n_cortex_actin, 3)
+    #    flat actin array (its beads now live at SHIFTED global tags
+    #    [n_int, n_int + n_cortex_actin) after the prepend).
+    #
+    #    Geometric reality (honest, documented): the substrate-ligand plane
+    #    (z≈0) and the cortex shell (r≈R_cell) are SPATIALLY DISJOINT, so
+    #    the nearest-actin separation can be up to capture_radius (~µm) —
+    #    far larger than ℓ₀. To keep the clutch FORCE-FREE at construction
+    #    (so the short BAOAB warm-up is stable WITHOUT the PI-gated
+    #    equilibration prelude), each clutch bond gets r0 = its EXACT
+    #    initial separation via a per-bond r0 bin (one HOOMD bond type per
+    #    realised separation; type family ``fa_actin_clutch[_b{i}]``). Same
+    #    per-r0-bin pattern the cortex crosslinkers use, taken to the exact
+    #    one-bond-per-bin limit: ½k·0² = 0 J per clutch at construction.
+    cortex_xyz = np.asarray(cortex_positions, dtype=np.float64).reshape(
+        n_cortex_actin, 3
+    )
+    clutch_pairs_list: list[tuple[int, int]] = []
+    clutch_r0_list: list[float] = []
+    for i in range(n_int):
+        r_int = integrin_pos_local[i]
+        d = np.linalg.norm(cortex_xyz - r_int, axis=1)
+        j = int(np.argmin(d))
+        if d[j] <= capture_radius:
+            # integrin global tag = i (prepended); cortex bead j global tag
+            # = j + n_int (shifted).
+            clutch_pairs_list.append((i, j + n_int))
+            clutch_r0_list.append(float(d[j]))
+    clutch_pairs = (
+        np.asarray(clutch_pairs_list, dtype=np.int64).reshape(-1, 2)
+        if clutch_pairs_list
+        else np.empty((0, 2), dtype=np.int64)
+    )
+    clutch_r0_arr = np.asarray(clutch_r0_list, dtype=np.float64)
+    n_clutch = int(clutch_pairs.shape[0])
+    clutch_max_sep = float(clutch_r0_arr.max()) if n_clutch > 0 else 0.0
+
+    # 4. Bond-type registration. Carry existing bonds across (SHIFTED by
+    #    +n_int because all old particles moved up), then append the FA
+    #    bond types:
+    #    - integrin_ligand (S1): registered TYPE only; Pereverzev catch
+    #      bonds populated dynamically by IntegrinBondUpdater.
+    #    - fa_actin_clutch (S2): one type per clutch bond, each carrying its
+    #      exact construction separation as r0. Canonical family name is
+    #      ``fa_actin_clutch``; extra bonds are ``fa_actin_clutch_b1 ..``.
+    old_bond_types = list(snap.bonds.types)
+    old_bond_N = int(snap.bonds.N)
+    old_bond_group = (
+        np.asarray(snap.bonds.group, dtype=np.int64).reshape(old_bond_N, 2) + n_int
+        if old_bond_N > 0
+        else np.empty((0, 2), dtype=np.int64)
+    ).astype(np.uint32)
+    old_bond_typeid = (
+        np.asarray(snap.bonds.typeid, dtype=np.uint32)
+        if old_bond_N > 0
+        else np.empty((0,), dtype=np.uint32)
+    )
+    new_bond_types = list(old_bond_types)
+    if FA_BOND_INTEGRIN_LIGAND not in new_bond_types:
+        new_bond_types.append(FA_BOND_INTEGRIN_LIGAND)
+
+    clutch_bin_names: list[str] = []
+    clutch_bin_r0_list: list[float] = []
+    if FA_BOND_ACTIN_CLUTCH not in new_bond_types:
+        new_bond_types.append(FA_BOND_ACTIN_CLUTCH)
+    if n_clutch == 0:
+        clutch_bin_names = [FA_BOND_ACTIN_CLUTCH]
+        clutch_bin_r0_list = [0.0]
+    else:
+        for i in range(n_clutch):
+            name = (
+                FA_BOND_ACTIN_CLUTCH if i == 0
+                else f"{FA_BOND_ACTIN_CLUTCH}_b{i}"
+            )
+            clutch_bin_names.append(name)
+            clutch_bin_r0_list.append(float(clutch_r0_arr[i]))
+            if name not in new_bond_types:
+                new_bond_types.append(name)
+
+    if n_clutch > 0:
+        clutch_typeids = np.array(
+            [new_bond_types.index(nm) for nm in clutch_bin_names],
+            dtype=np.uint32,
+        )
+        bond_group_all = np.concatenate(
+            [old_bond_group, clutch_pairs.astype(np.uint32)], axis=0
+        )
+        bond_typeid_all = np.concatenate([old_bond_typeid, clutch_typeids])
+    else:
+        bond_group_all = old_bond_group
+        bond_typeid_all = old_bond_typeid
+    clutch_bin_r0 = np.asarray(clutch_bin_r0_list, dtype=np.float64)
+
+    # 5. Write a fresh GSD frame: particles + bonds + (passthrough) angles.
+    out = gsd.hoomd.Frame()
+    out.particles.N = int(pos_all.shape[0])
+    out.particles.types = new_types
+    out.particles.typeid = typeid_all
+    out.particles.position = pos_all
+    out.particles.mass = mass_all
+
+    out.bonds.N = int(bond_group_all.shape[0])
+    out.bonds.types = new_bond_types
+    out.bonds.typeid = bond_typeid_all.astype(np.uint32)
+    out.bonds.group = bond_group_all.astype(np.uint32)
+
+    n_ang = int(snap.angles.N)
+    if n_ang > 0:
+        out.angles.N = n_ang
+        out.angles.types = list(snap.angles.types)
+        out.angles.typeid = np.asarray(snap.angles.typeid, dtype=np.uint32)
+        # Angle groups reference the SHIFTED old-particle tags (+n_int).
+        out.angles.group = (
+            np.asarray(snap.angles.group, dtype=np.int64) + n_int
+        ).astype(np.uint32)
+
+    out.configuration.box = list(snap.configuration.box)
+
+    fa_info = FAIntegration(
+        layouts=layouts,
+        integrin_tag_start=integrin_tag_start,
+        n_integrins=n_int,
+        ligand_tag_start=ligand_tag_start,
+        n_substrate_ligands=n_lig,
+        n_clutch_bonds=n_clutch,
+        clutch_pairs=clutch_pairs,
+        clutch_bin_names=clutch_bin_names,
+        clutch_bin_r0=clutch_bin_r0,
+        clutch_max_separation=clutch_max_sep,
+    )
+    return out, fa_info
 
 
 def build_cortex_full_simulation(
@@ -144,13 +476,16 @@ def build_cortex_full_simulation(
     p_xlinks: ResolvedCrosslinkers | None = None,
     p_myosin: ResolvedCortexMyosin | None = None,
     p_lamellipodium: ResolvedH5 | None = None,
+    p_fa: "ResolvedH4 | None" = None,
+    fa_clutch_capture_radius: float | None = None,
+    fa_clutch_k: float | None = None,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
     constrained: bool = False,
     constrained_dt: float | None = None,
     rng: np.random.Generator | None = None,
 ):
-    """End-to-end builder for cortex + (optional) xlinks + myosin + lamellipodium.
+    """End-to-end builder for cortex + (optional) xlinks + myosin + lamellipodium + FA.
 
     Performs the full state composition (no ERM — attach separately via
     ``attach_erm_to_simulation``):
@@ -161,28 +496,22 @@ def build_cortex_full_simulation(
        ``generate_xlink_layout`` + ``extend_cortex_state_with_xlinks``.
     3. If ``p_myosin`` and ``p_myosin.n_motors_per_cell > 0``:
        ``generate_cortex_myosin_layout`` +
-       ``extend_state_with_cortex_myosin`` (appended AFTER xlinks so the
-       motor tag block sits at the end of the tag space).
+       ``extend_state_with_cortex_myosin`` (appended AFTER xlinks).
     4. If ``p_lamellipodium`` and ``p_lamellipodium.n_WAVE > 0``:
-       :func:`ffn_sim.cell.lamellipodium.extend_cortex_snapshot_with_lamellipodium`
-       (appended AFTER myosin so the WAVE / mother-actin tag block sits at
-       the end of the tag space — H.5 단계 2 composition).
-    5. HOOMD ``Simulation`` + ``bond.Harmonic`` (with all registered
-       bond-type params for the four subsystems) + ``angle.Harmonic``
-       (cortex-angle + optional lamel_branch_angle) + ``pair.LJ`` (WCA
-       repulsive on intra-subsystem pairs; DISABLED on cross-subsystem
-       pairs so binding / branching can occur).
+       :func:`extend_cortex_snapshot_with_lamellipodium` (appended AFTER
+       myosin).
+    4b. If ``p_fa`` (H.4 α restart S0/S1/S2):
+       :func:`_extend_snapshot_with_fa` appends integrin + immobile
+       substrate-ligand particles + the fa_actin_clutch load-path bonds
+       (appended LAST so all earlier tag ranges are unchanged).
+    5. HOOMD ``Simulation`` + ``bond.Harmonic`` + ``angle.Harmonic`` +
+       ``pair.LJ`` (WCA repulsive intra-subsystem; cross-subsystem off).
     6. ``md.Integrator(dt=p_cortex.dt_cfl)`` with all forces.
     7. ``methods=[]`` (BAOAB Updater contract).
-    8. If ``with_baoab``: BAOAB Updater attached with per-type γ_b
-       inferred from ``p_cortex.gamma_b`` (and per-type Stokes drag for
-       the lamellipodium beads when present).
-    9. If xlinks enabled: ``XlinkBondUpdater`` attached
-       (``trigger=Periodic(batch_steps)``).
-    10. If myosin enabled: ``MyosinStepUpdater`` attached.
-    11. If lamellipodium enabled: ``BarbedEndElongationUpdater`` +
-        ``ArpBranchingUpdater`` + ``CappingUpdater`` attached, plus the
-        ``WaveMembranePin`` custom force on the integrator.
+    8. If ``with_baoab``: BAOAB Updater with per-type γ_b.
+    9-11. Subsystem Updaters (xlink / myosin / lamellipodium D2 batched).
+    12. If FA on: ``IntegrinBondUpdater`` (S1) + ``SubstrateLigandPin``
+        (S0), attached LAST so the pin reset runs after the BAOAB step.
 
     Returns
     -------
@@ -203,12 +532,21 @@ def build_cortex_full_simulation(
         ``n_cortex_actin`` (int), ``n_xlink_heads`` (int),
         ``n_myosin_particles`` (int), ``n_wave_particles`` (int),
         ``n_lamellipodium_actin`` (int).
+
+    When ``p_fa`` is provided (H.4 α restart S0/S1/S2) the dict also
+    carries: ``fa_integration`` (FAIntegration), ``fa_layout``
+    (list[FALayout]), ``integrin_action`` / ``integrin_updater`` (S1
+    Pereverzev catch), ``ligand_pin_action`` / ``ligand_pin_updater`` (S0
+    substrate immobility), ``n_fa_integrins``, ``n_substrate_ligands``,
+    ``n_fa_clutch_bonds`` (int). When ``p_fa`` is None these are None / 0
+    and the build is bit-for-bit identical to the pre-FA builder.
+    ``fa_clutch_capture_radius`` / ``fa_clutch_k`` override the S2 clutch
+    geometry / stiffness (default: ``p_fa.capture_radius_R_FA`` /
+    ``p_fa.k_int_bare``) — used to bridge the construction substrate↔cortex
+    gap without touching the governed resolve_h4 defaults.
     """
     # 1. Cortex base — use the topology returned by build_cortex_state so the
     # myosin/xlink layouts see the SAME actin positions the snapshot has.
-    # (Previous dual call to generate_cortex_topology + build_cortex_state
-    # with a shared rng mutated state between calls → divergent topologies,
-    # which made the actin-aware myosin placement land on the wrong beads.)
     cortex_snap, topology, _ = build_cortex_state(
         p_cortex, with_crosslinkers=False, rng=rng,
     )
@@ -227,8 +565,6 @@ def build_cortex_full_simulation(
             np.arange(p_cortex.n_filaments, dtype=np.int64),
             p_cortex.beads_per_filament,
         )
-        # Use xlink's own seed-derived rng (not the shared rng), so topology
-        # generation choices don't reshuffle xlink placement and trip stability.
         xlink_layout = generate_xlink_layout(
             cortex_positions, cortex_filament_idx, p_xlinks,
             n_cortex_beads=n_cortex_actin,
@@ -249,10 +585,6 @@ def build_cortex_full_simulation(
             p_myosin, p_cortex.R_cell,
             motor_tag_start=motor_tag_start,
             rng=np.random.default_rng(p_myosin.seed),
-            # Actin-aware placement (KU-3.5 fix 2026-05-29, PI Option C):
-            # minifilaments sit at random cortex actin beads, backbone along
-            # local actin tangent, heads in tangent-plane lateral. Removes the
-            # radial-offset bug that left heads ~824 nm from any actin.
             cortex_positions=topology.positions.reshape(-1, 3),
             cortex_tangents=topology.tangents,
             beads_per_filament=p_cortex.beads_per_filament,
@@ -266,10 +598,8 @@ def build_cortex_full_simulation(
     # myosin so the WAVE / mother-actin block sits at the END of the
     # tag space, leaving the cortex / xlink / myosin tag ranges
     # unchanged.  Must run BEFORE create_state_from_snapshot because the
-    # new particle / bond / angle TYPES (wave_particle, actin_lamel,
-    # lamel_wave_anchor, lamel_actin_bond, lamel_branch_bond,
-    # lamel_branch_angle) cannot be added once HOOMD has initialised
-    # the state from a snapshot.
+    # new particle / bond / angle TYPES cannot be added once HOOMD has
+    # initialised the state from a snapshot.
     lamellipodium_layout = None
     lamellipodium_state = None
     n_wave_particles = 0
@@ -286,10 +616,72 @@ def build_cortex_full_simulation(
             )
         )
         n_wave_particles = int(p_lamellipodium.n_WAVE)
-        # One mother actin seed per WAVE at construction; runtime
-        # elongation / branching events grow this count via
-        # sim.state.set_snapshot in the D2 Updaters.
         n_lamellipodium_actin = int(p_lamellipodium.n_WAVE)
+
+    # 4b. Optional FA (H.4 α restart — S0/S1/S2). The reused
+    # IntegrinBondUpdater (bridge/integrin_bonds.py) REQUIRES integrin
+    # global tags == dense [0, n_int) (it indexes its per-integrin state by
+    # FALayout.integrin_tag_start AND uses that as a snapshot-position
+    # index). So _extend_snapshot_with_fa PREPENDS the integrin block at
+    # tags [0, n_int) and shifts every pre-existing particle + bond/angle
+    # group up by n_int. MUST run BEFORE create_state_from_snapshot (new
+    # particle / bond types cannot be added post-create). ADDITIVE +
+    # DEFAULT-OFF: when p_fa is None nothing here executes and the snapshot
+    # / forces / updaters are bit-for-bit identical to the pre-FA builder.
+    fa_integration = None
+    enable_fa = p_fa is not None
+    if enable_fa and (enable_myo or enable_xl or enable_lamel):
+        # S5 boundary (honest, in-scope finding): the integrin-prepend tag
+        # contract collides with the ABSOLUTE-tag bookkeeping the myosin /
+        # xlink / lamellipodium Updaters captured at layout-generation time
+        # (e.g. the myosin head→actin binder assumes cortex actin occupies
+        # tags [0, n_cortex_actin); after a +n_int prepend it would bind to
+        # the WRONG beads — runs without crashing but is SILENTLY WRONG
+        # physics). Unifying all subsystem tag bookkeeping under the FA
+        # prepend is the S5 integration step (close-the-clutch-loop), which
+        # is out of scope for this S0/S1/S2 slice. Refuse the combination
+        # loudly rather than produce wrong forces.
+        raise NotImplementedError(
+            "FA (p_fa) combined with myosin / crosslinkers / lamellipodium "
+            "is not supported in the H.4 α restart S0/S1/S2 slice: the "
+            "reused IntegrinBondUpdater requires integrins at global tags "
+            "[0, n_int), which forces a tag-prepend that collides with "
+            "those subsystems' absolute-tag Updaters (silently-wrong head/"
+            "xlink binding). Unifying the tag bookkeeping is S5 (close the "
+            "clutch loop). For this slice wire FA onto the cortex alone "
+            "(p_fa with p_myosin / p_xlinks / p_lamellipodium all None)."
+        )
+    if enable_fa:
+        # Clutch geometry: each integrin → nearest cortex actin bead within
+        # the capture radius (default = KU-anchored Plan H.4
+        # capture_radius_R_FA = 1.5 μm). Clutch stiffness reuses k_int_bare
+        # (KU-2.7, 1 pN/nm) — the actin-side half of the same molecular
+        # clutch.
+        #
+        # HONEST geometric finding: at the real cell geometry the substrate
+        # plane (z≈0) and the cortex shell (r≈R_cell ~10 μm) are spatially
+        # DISJOINT, so the nearest integrin↔cortex-actin separation is
+        # several μm — larger than capture_radius_R_FA. With the physical
+        # radius ZERO clutch bonds form at construction (the literal load
+        # path needs the cell brought onto the substrate, i.e. the PI-gated
+        # equilibration / cell-positioning of S5/B2). The
+        # ``fa_clutch_capture_radius`` / ``fa_clutch_k`` overrides let a
+        # caller / test bridge the construction gap and exercise the real
+        # clutch topology without changing the governed resolve_h4 default.
+        # Dynamic load-and-fail clutch kinetics is S5 (TODO).
+        snap, fa_integration = _extend_snapshot_with_fa(
+            snap, p_fa,
+            cortex_positions=topology.positions,
+            n_cortex_actin=n_cortex_actin,
+            clutch_k=(
+                fa_clutch_k if fa_clutch_k is not None else p_fa.k_int_bare
+            ),
+            capture_radius=(
+                fa_clutch_capture_radius
+                if fa_clutch_capture_radius is not None
+                else p_fa.capture_radius_R_FA
+            ),
+        )
 
     # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
@@ -334,6 +726,22 @@ def build_cortex_full_simulation(
         bond.params["lamel_branch_bond"] = dict(
             k=p_lamellipodium.bond_k, r0=p_lamellipodium.rest_length,
         )
+    if enable_fa:
+        # S1 integrin-ligand catch bond: k = k_int_bare, r0 = integrin_r0.
+        # No bonds at construction (IntegrinBondUpdater adds them); the type
+        # params must still be registered so the bond force is defined.
+        bond.params[FA_BOND_INTEGRIN_LIGAND] = dict(
+            k=p_fa.k_int_bare, r0=p_fa.integrin_r0,
+        )
+        # S2 fa_actin_clutch: per-clutch-bond exact-r0 types (force-free at
+        # construction). k reuses the integrin bare clutch stiffness.
+        clutch_k = (
+            fa_clutch_k if fa_clutch_k is not None else p_fa.k_int_bare
+        )
+        for name, r0 in zip(
+            fa_integration.clutch_bin_names, fa_integration.clutch_bin_r0,
+        ):
+            bond.params[name] = dict(k=clutch_k, r0=float(r0))
 
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
@@ -347,8 +755,7 @@ def build_cortex_full_simulation(
     # cutoff: myosin backbone segment = 700/13 ≈ 54 nm vs r_cut = 67 nm;
     # α-actinin xlink_intra = 35 nm vs r_cut = 67 nm.  Without exclusion,
     # bonded WCA neighbors would compete with the harmonic bond, giving
-    # huge LJ energy at construction (verified empirically: ~1e-12 J for
-    # the demo 3-way cortex → BAOAB runaway within 100 steps).
+    # huge LJ energy at construction.
     nlist = md.nlist.Tree(buffer=0.5 * p_cortex.lj_sigma,
                           exclusions=("bond", "1-3"))
     lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
@@ -364,19 +771,10 @@ def build_cortex_full_simulation(
             p_cortex.lj_r_cut if (repulsive and p_cortex.lj_enabled) else 0.0
         )
 
-    # LJ wiring rationale: WCA enabled ONLY within each subsystem
-    # (actin × actin, xlink × xlink, myosin × myosin).  Inter-subsystem
-    # pairs are DISABLED so that:
-    # (a) myosin heads can approach cortex actin for D2 binding (no
-    #     WCA blocking the close-range contact)
-    # (b) xlink heads can approach cortex actin similarly
-    # (c) at construction time, randomly-placed myosin backbones can sit
-    #     near (or even briefly overlap) cortex actin without numerical
-    #     LJ blow-up (myosin sits ABOVE actin in cortex anatomy; the
-    #     intra-cortex packing is biology, not steric repulsion at this
-    #     coarse-graining scale).
-    # Same convention applied to myosin-xlink pairs.
-    # All inter-subsystem r_cut = 0 ⇒ NO LJ contribution (HOOMD convention).
+    # LJ wiring rationale: WCA enabled ONLY within each subsystem.
+    # Inter-subsystem pairs are DISABLED so binding / branching / clutch
+    # contact can occur and randomly-placed construction-time positions do
+    # not blow up. All inter-subsystem r_cut = 0 ⇒ NO LJ (HOOMD convention).
     _enable_pair("actin_cortex", "actin_cortex", repulsive=True)
     if enable_xl:
         _enable_pair("xlink_head", "xlink_head", repulsive=True)
@@ -385,27 +783,14 @@ def build_cortex_full_simulation(
         _enable_pair("cortex_myosin_backbone", "cortex_myosin_backbone", repulsive=True)
         _enable_pair("cortex_myosin_head", "cortex_myosin_head", repulsive=True)
         _enable_pair("cortex_myosin_backbone", "cortex_myosin_head", repulsive=True)
-        # All myosin × non-myosin pairs DISABLED (see rationale above).
         _enable_pair("cortex_myosin_backbone", "actin_cortex", repulsive=False)
         _enable_pair("cortex_myosin_head", "actin_cortex", repulsive=False)
         if enable_xl:
             _enable_pair("cortex_myosin_backbone", "xlink_head", repulsive=False)
             _enable_pair("cortex_myosin_head", "xlink_head", repulsive=False)
     if enable_lamel:
-        # Intra-lamellipodium WCA: lamellipodial actin × itself; WAVE
-        # particles are pinned to the membrane plane so we leave the
-        # WAVE × WAVE pair at r_cut = 0 (no steric blockade between
-        # adjacent WAVE / NPF — the membrane is the steric barrier).
         _enable_pair("actin_lamel", "actin_lamel", repulsive=True)
         _enable_pair("wave_particle", "wave_particle", repulsive=False)
-        # All lamellipodium × non-lamellipodium pairs DISABLED — the
-        # cortex shell and the leading-edge lamellipodium sit in
-        # different spatial domains (cortex at radius R_cell, WAVE plane
-        # at y = Y_max).  Suppressing WCA between subsystems matches
-        # the (myosin × non-myosin = DISABLED) convention from the
-        # myosin block: no steric runaway from incidental construction-
-        # time proximity, and the D2 Updaters' search-radius bonds do
-        # not have to fight WCA repulsion.
         _enable_pair("actin_lamel", "actin_cortex", repulsive=False)
         _enable_pair("wave_particle", "actin_cortex", repulsive=False)
         _enable_pair("actin_lamel", "wave_particle", repulsive=False)
@@ -417,6 +802,37 @@ def build_cortex_full_simulation(
             _enable_pair("actin_lamel", "cortex_myosin_head", repulsive=False)
             _enable_pair("wave_particle", "cortex_myosin_backbone", repulsive=False)
             _enable_pair("wave_particle", "cortex_myosin_head", repulsive=False)
+    if enable_fa:
+        # FA WCA: intra-FA steric repulsion only (integrin × integrin,
+        # ligand × ligand). All FA × non-FA pairs AND integrin × ligand are
+        # DISABLED (r_cut = 0), mirroring the myosin / lamellipodium
+        # convention: the fa_actin_clutch bonded integrin↔actin pair is
+        # already excluded from WCA by exclusions=("bond","1-3"), and
+        # disabling cross-subsystem WCA prevents construction-time LJ
+        # runaway from the spatially-disjoint substrate (z≈0) vs cortex
+        # (r≈R_cell) layers. integrin↔ligand is left WCA-off so the
+        # IntegrinBondUpdater's dynamic catch bond can close the gap to z=0
+        # without fighting steric repulsion.
+        _enable_pair(FA_TYPE_INTEGRIN, FA_TYPE_INTEGRIN, repulsive=True)
+        _enable_pair(
+            FA_TYPE_SUBSTRATE_LIGAND, FA_TYPE_SUBSTRATE_LIGAND, repulsive=True
+        )
+        _enable_pair(FA_TYPE_INTEGRIN, FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
+        _enable_pair(FA_TYPE_INTEGRIN, "actin_cortex", repulsive=False)
+        _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "actin_cortex", repulsive=False)
+        if enable_xl:
+            _enable_pair(FA_TYPE_INTEGRIN, "xlink_head", repulsive=False)
+            _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "xlink_head", repulsive=False)
+        if enable_myo:
+            _enable_pair(FA_TYPE_INTEGRIN, "cortex_myosin_backbone", repulsive=False)
+            _enable_pair(FA_TYPE_INTEGRIN, "cortex_myosin_head", repulsive=False)
+            _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "cortex_myosin_backbone", repulsive=False)
+            _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "cortex_myosin_head", repulsive=False)
+        if enable_lamel:
+            _enable_pair(FA_TYPE_INTEGRIN, "actin_lamel", repulsive=False)
+            _enable_pair(FA_TYPE_INTEGRIN, "wave_particle", repulsive=False)
+            _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "actin_lamel", repulsive=False)
+            _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "wave_particle", repulsive=False)
 
     lj.mode = "shift"
 
@@ -447,19 +863,22 @@ def build_cortex_full_simulation(
             gamma_map["cortex_myosin_backbone"] = p_cortex.gamma_b
             gamma_map["cortex_myosin_head"] = p_cortex.gamma_b
         if enable_lamel:
-            # WAVE + actin_lamel inherit the cortex bead Stokes drag at
-            # the lamellipodium's own bead_radius (yaml-anchored, same
-            # 30 nm ×40 bundle as the cortex bead by default but kept
-            # subsystem-local so KU-5.x can sweep independently).
             gamma_lamel = float(
                 6.0 * math.pi * 6.913e-4 * p_lamellipodium.bead_radius
             )
             gamma_map["wave_particle"] = gamma_lamel
             gamma_map["actin_lamel"] = gamma_lamel
+        if enable_fa:
+            # Integrin / substrate-ligand Stokes drag from resolve_h4
+            # (γ = 6π η R). The ligand drag is moot at runtime (its position
+            # is pinned by SubstrateLigandPin every step), but BAOAB
+            # requires every present particle type in gamma_map and asserts
+            # γ > 0 finite, so both are supplied.
+            gamma_map[FA_TYPE_INTEGRIN] = p_fa.gamma_integrin
+            gamma_map[FA_TYPE_SUBSTRATE_LIGAND] = p_fa.gamma_ligand
         if constrained:
             # Rigid actin backbone (M-SHAKE + Fixman); cortex filaments are
-            # contiguous N-bead blocks [f·N, (f+1)·N). Myosin/xlink/ERM beads
-            # get the predictor step only (soft forces, no constraint).
+            # contiguous N-bead blocks [f·N, (f+1)·N).
             from ffn_sim.integrator.constrained_baoab import (
                 make_constrained_baoab_updater,
             )
@@ -496,9 +915,6 @@ def build_cortex_full_simulation(
         myosin_action, myosin_updater = make_cortex_myosin_updater(
             p_myo=p_myosin, layout=myosin_layout, kT=p_cortex.kT,
             n_cortex_actin=n_cortex_actin,
-            # KU-3.5 segment-projection binding (Option C): pass actin
-            # bond topology so the updater can match heads to segments,
-            # not just bead centers (bead-only is a 500 nm grid artefact).
             cortex_bond_groups=topology.bond_groups,
         )
         sim.operations.updaters.append(myosin_updater)
@@ -537,6 +953,76 @@ def build_cortex_full_simulation(
         sim.operations.updaters.append(branch_updater)
         sim.operations.updaters.append(cap_updater)
 
+    # FA Updaters (S0 + S1). Attached LAST so the SubstrateLigandPin reset
+    # runs AFTER the BAOAB position step each tick (HOOMD runs updaters in
+    # append order) — that is what makes the substrate ligands immobile
+    # without editing the frozen integrator.
+    integrin_action = None
+    integrin_updater = None
+    ligand_pin_action = None
+    ligand_pin_updater = None
+    if enable_fa:
+        # S1: Pereverzev catch-slip dynamic integrin↔ligand bonds (reused
+        # as-is from bridge/integrin_bonds.py). The PI-gated Pereverzev→Kong
+        # migration is NOT done here — the Pereverzev catch parameters are
+        # used verbatim.
+        #
+        # B1 dt reconciliation (in-builder half; the GLOBAL dt = min(τ)
+        # reconciliation is PI-gated per the design brief §6). The
+        # IntegrinBondUpdater's D2 batch-CFL contract is
+        # ``integrin_batch_steps · dt · k_off_max ≤ 1e-3``, and the updater
+        # checks it against ``p_fa.dt`` — the dt resolve_h4 computed in
+        # ISOLATION for a standalone FA sim. But the integrated cell runs on
+        # the cortex integrator's ``dt_used`` (= cortex dt_cfl ≈ 1.5e-9 s),
+        # which is ~10³× SMALLER than the standalone FA dt. Feeding the
+        # standalone FA dt into the updater both (a) mis-states the batch
+        # window (the real per-batch wall-time is batch_steps · dt_used) and
+        # (b) trips the 1e-3 ceiling at the small-demo FA scale. So pass the
+        # updater a dt-reconciled copy of p_fa: dt := the host dt_used, and
+        # integrin_batch_steps recomputed so the SAME physical batch window
+        # (≈ resolve_h4's batch_steps · fa.dt) is preserved while honoring
+        # the 1e-3 ceiling at the host dt. This is a derived, grid-invariant
+        # reconciliation — no magic number, no governed-param edit, no
+        # change to integrin_bonds.py or resolve_h4. (Dynamic clutch
+        # kinetics + the global multi-timescale dt policy is S5/B1, gated.)
+        BATCH_CFL_CEILING = 1.0e-3   # D2 contract (gate_bell_evans_batch_cfl)
+        target_batch_window = p_fa.integrin_batch_steps * p_fa.dt
+        reconciled_batch_steps = max(1, int(round(target_batch_window / dt_used)))
+        # Clamp so events_per_batch = batch · dt_used · k_off_max ≤ ceiling.
+        max_batch_at_host_dt = int(
+            BATCH_CFL_CEILING / (dt_used * p_fa.bond_event_rate_max)
+        )
+        if max_batch_at_host_dt >= 1:
+            reconciled_batch_steps = min(
+                reconciled_batch_steps, max_batch_at_host_dt
+            )
+        p_fa_host = replace(
+            p_fa, dt=dt_used, integrin_batch_steps=reconciled_batch_steps,
+        )
+        integrin_action, integrin_updater = make_integrin_updater(
+            sim=sim, p=p_fa_host, layouts=fa_integration.layouts, bond=bond,
+        )
+        sim.operations.updaters.append(integrin_updater)
+
+        # S0: pin substrate ligands to their construction z=0 positions
+        # every step (post-BAOAB reset → bit-exact immobile ground).
+        lig_tags = np.arange(
+            fa_integration.ligand_tag_start,
+            fa_integration.ligand_tag_start + fa_integration.n_substrate_ligands,
+            dtype=np.int64,
+        )
+        read_snap = sim.state.get_snapshot()
+        anchor_pos = np.asarray(
+            read_snap.particles.position, dtype=np.float64
+        )[lig_tags].copy()
+        ligand_pin_action = SubstrateLigandPin(
+            ligand_tags=lig_tags, anchor_positions=anchor_pos,
+        )
+        ligand_pin_updater = hoomd.update.CustomUpdater(
+            action=ligand_pin_action, trigger=hoomd.trigger.Periodic(1),
+        )
+        sim.operations.updaters.append(ligand_pin_updater)
+
     return {
         "sim": sim,
         "topology": topology,
@@ -562,6 +1048,20 @@ def build_cortex_full_simulation(
         "n_myosin_particles": n_myosin_particles,
         "n_wave_particles": n_wave_particles,
         "n_lamellipodium_actin": n_lamellipodium_actin,
+        # H.4 FA (S0/S1/S2) handles — None / 0 when p_fa is None.
+        "fa_integration": fa_integration,
+        "fa_layout": (fa_integration.layouts if fa_integration else None),
+        "integrin_action": integrin_action,
+        "integrin_updater": integrin_updater,
+        "ligand_pin_action": ligand_pin_action,
+        "ligand_pin_updater": ligand_pin_updater,
+        "n_fa_integrins": (fa_integration.n_integrins if fa_integration else 0),
+        "n_substrate_ligands": (
+            fa_integration.n_substrate_ligands if fa_integration else 0
+        ),
+        "n_fa_clutch_bonds": (
+            fa_integration.n_clutch_bonds if fa_integration else 0
+        ),
     }
 
 
@@ -651,6 +1151,9 @@ class Cell:
         p_erm: ResolvedERM | None = None,
         p_myosin: ResolvedCortexMyosin | None = None,
         p_lamellipodium: ResolvedH5 | None = None,
+        p_fa: "ResolvedH4 | None" = None,
+        fa_clutch_capture_radius: float | None = None,
+        fa_clutch_k: float | None = None,
         options: CellBuildOptions | None = None,
         device: hoomd.device.Device | None = None,
         rng: np.random.Generator | None = None,
@@ -673,10 +1176,15 @@ class Cell:
         p_lamellipodium : ResolvedH5, optional
             If provided AND options.with_lamellipodium, extends the
             cortex snapshot with WAVE + mother-actin beads and attaches
-            the D1 Bieling/Funk Updaters (BarbedEndElongation, ArpBranching,
-            Capping) plus the WAVE membrane plane pin.  ``p_lamellipodium.dt``
-            must equal ``p_cortex.dt_cfl`` (lamellipodium shares the host
-            BAOAB integrator).
+            the D1 Bieling/Funk Updaters plus the WAVE membrane plane pin.
+        p_fa : ResolvedH4, optional
+            If provided AND options.with_fa, wires the H.4 α restart
+            S0/S1/S2 slice: a fixed substrate-ligand layer at z=0
+            (immobile via SubstrateLigandPin), the integrin–ligand catch
+            bond (IntegrinBondUpdater), and the fa_actin_clutch load-path
+            bonds. ``fa_clutch_capture_radius`` / ``fa_clutch_k`` override
+            the S2 clutch geometry / stiffness (see
+            ``build_cortex_full_simulation``).
         options : CellBuildOptions, optional
             Feature flags. Defaults to all-off (bare cortex + BAOAB).
         device, rng : HOOMD device, numpy RNG (both optional).
@@ -701,6 +1209,11 @@ class Cell:
                 "options.with_lamellipodium=True requires p_lamellipodium "
                 "to be provided."
             )
+        if opts.with_fa and p_fa is None:
+            raise ValueError(
+                "options.with_fa=True requires p_fa (ResolvedH4) to be "
+                "provided."
+            )
 
         # Initialise lamellipodium handles (overwritten by the unified
         # builder when with_lamellipodium=True).
@@ -717,18 +1230,27 @@ class Cell:
         n_lamellipodium_actin = 0
 
         # Route through build_cortex_full_simulation whenever myosin OR
-        # lamellipodium is requested (both need the unified snapshot-
+        # lamellipodium OR FA is requested (all need the unified snapshot-
         # construction path so the extra particle / bond / angle TYPES
-        # are registered BEFORE HOOMD initialises the state — types
-        # cannot be added post-create_state).  Otherwise dispatch to
-        # the simpler cortex / cortex+xlink builders to preserve the
-        # existing 단계 1-3 behavior verbatim.
-        if opts.with_myosin or opts.with_lamellipodium:
+        # are registered BEFORE HOOMD initialises the state — types cannot
+        # be added post-create_state).  Otherwise dispatch to the simpler
+        # cortex / cortex+xlink builders to preserve the existing 단계 1-3
+        # behavior verbatim.
+        #
+        # FA gates on the with_fa flag AND a resolved p_fa, mirroring the
+        # per-subsystem flag+config convention. When with_fa is False OR
+        # p_fa is None the FA path is fully inert (additive + default-off).
+        enable_fa = opts.with_fa and p_fa is not None
+        fa_integration = None
+        if opts.with_myosin or opts.with_lamellipodium or enable_fa:
             handles = build_cortex_full_simulation(
                 p_cortex,
                 p_xlinks=p_xlinks if opts.with_crosslinkers else None,
                 p_myosin=p_myosin if opts.with_myosin else None,
                 p_lamellipodium=p_lamellipodium if opts.with_lamellipodium else None,
+                p_fa=p_fa if enable_fa else None,
+                fa_clutch_capture_radius=fa_clutch_capture_radius,
+                fa_clutch_k=fa_clutch_k,
                 device=device, with_baoab=opts.with_baoab, rng=rng,
             )
             sim = handles["sim"]
@@ -754,6 +1276,7 @@ class Cell:
             cap_updater = handles["cap_updater"]
             n_wave_particles = handles["n_wave_particles"]
             n_lamellipodium_actin = handles["n_lamellipodium_actin"]
+            fa_integration = handles["fa_integration"]
         elif opts.with_crosslinkers and p_xlinks is not None and p_xlinks.n_xl > 0:
             (sim, baoab_updater, baoab_action,
              xlink_updater, xlink_action, topology, xl_layout) = (
@@ -832,6 +1355,7 @@ class Cell:
             n_myosin_particles=n_myosin_particles,
             n_wave_particles=n_wave_particles,
             n_lamellipodium_actin=n_lamellipodium_actin,
+            fa=fa_integration,
         )
 
     # ---------------------------------------------------------------
@@ -840,8 +1364,7 @@ class Cell:
     def bead_count_summary(self) -> dict[str, int]:
         """Per-subsystem bead counts (sums to ``simulation.state.N_particles``).
 
-        ``lamellipodium`` reports the CONSTRUCTION-TIME bead count
-        (``2 · n_WAVE`` = WAVE + one mother seed per WAVE).  The
+        ``lamellipodium`` reports the CONSTRUCTION-TIME bead count.  The
         BarbedEndElongation / ArpBranching Updaters grow this block at
         runtime via ``sim.state.set_snapshot``; query
         ``simulation.state.N_particles`` for the current total.
@@ -863,33 +1386,65 @@ class Cell:
             "myosin_head": int(n_myosin_head),
             "wave_particle": int(self.n_wave_particles),
             "lamellipodium_actin": int(self.n_lamellipodium_actin),
-            "fa_integrin": 0 if self.fa is None else self.fa.n_integrins,
+            "fa_integrin": 0 if self.fa is None else int(self.fa.n_integrins),
+            "substrate_ligand": (
+                0 if self.fa is None else int(self.fa.n_substrate_ligands)
+            ),
         }
 
     def tag_ranges(self) -> dict[str, tuple[int, int]]:
         """Map subsystem name → [start, end) tag range. Non-overlapping
-        and contiguous in insertion order: cortex → xlink → myosin
-        backbone → myosin heads → wave_particle → lamellipodium_actin → FA.
+        and contiguous.
+
+        FA OFF (default): cortex → xlink → myosin → wave_particle →
+        lamellipodium_actin → fa_integrin (zero-width slot). Identical to
+        the pre-FA Cell (regression-clean).
+
+        FA ON (H.4 α restart S0/S1/S2): the reused IntegrinBondUpdater
+        forces integrins to global tags ``[0, n_int)``, so the FA-on map is
+        **integrin first**: fa_integrin → cortex → (xlink/myosin/
+        lamellipodium are mutually exclusive with FA in this slice; see the
+        builder's NotImplementedError) → substrate_ligand last. The
+        integrin / substrate-ligand offsets here therefore match the actual
+        prepended snapshot layout.
 
         Lamellipodium ranges reflect the CONSTRUCTION-TIME tag block;
-        runtime elongation / branching events append actin_lamel beads
-        at tags ``≥ lamellipodium_actin[1]`` (see
-        ``LamellipodiumState.actin_next_tag``).
+        runtime elongation / branching events append actin_lamel beads at
+        tags ``≥ lamellipodium_actin[1]``.
         """
+        if self.fa is not None:
+            # FA-on layout: integrins prepended at [0, n_int); all other
+            # subsystems shifted up by n_int; substrate ligands last.
+            n_int = int(self.fa.n_integrins)
+            n_lig = int(self.fa.n_substrate_ligands)
+            offsets = {"fa_integrin": (0, n_int)}
+            cur = n_int
+            offsets["cortex_actin"] = (cur, cur + self.n_cortex_actin)
+            cur += self.n_cortex_actin
+            offsets["xlink_head"] = (cur, cur + self.n_xlink_heads)
+            cur += self.n_xlink_heads
+            if self.p_myosin is not None and self.n_myosin_particles > 0:
+                myo_end = cur + self.n_myosin_particles
+                offsets["myosin"] = (cur, myo_end)
+                cur = myo_end
+            else:
+                offsets["myosin"] = (cur, cur)
+            offsets["wave_particle"] = (cur, cur + self.n_wave_particles)
+            cur += self.n_wave_particles
+            offsets["lamellipodium_actin"] = (
+                cur, cur + self.n_lamellipodium_actin
+            )
+            cur += self.n_lamellipodium_actin
+            offsets["substrate_ligand"] = (cur, cur + n_lig)
+            cur += n_lig
+            return offsets
+
+        # FA-off layout (unchanged from the pre-FA Cell).
         offsets = {"cortex_actin": (0, self.n_cortex_actin)}
         cur = self.n_cortex_actin
         offsets["xlink_head"] = (cur, cur + self.n_xlink_heads)
         cur += self.n_xlink_heads
         if self.p_myosin is not None and self.n_myosin_particles > 0:
-            N = self.p_myosin.n_backbone
-            H = self.p_myosin.n_heads_per_side
-            M = self.p_myosin.n_motors_per_cell
-            # Myosin particles are interleaved per-motor:
-            # [backbone (N), +heads (H), −heads (H)] × M motors.
-            # We report the WHOLE myosin block as one range, then split
-            # backbone vs head sub-ranges as zero-width markers at the
-            # block boundary (since they interleave per motor, not as
-            # contiguous global sub-blocks).
             myo_end = cur + self.n_myosin_particles
             offsets["myosin"] = (cur, myo_end)
             cur = myo_end
@@ -927,6 +1482,13 @@ class Cell:
             ),
             "n_wave_particles": int(self.n_wave_particles),
             "n_lamellipodium_actin_realised": int(self.n_lamellipodium_actin),
+            "n_fa_integrins": (0 if self.fa is None else int(self.fa.n_integrins)),
+            "n_substrate_ligands": (
+                0 if self.fa is None else int(self.fa.n_substrate_ligands)
+            ),
+            "n_fa_clutch_bonds": (
+                0 if self.fa is None else int(self.fa.n_clutch_bonds)
+            ),
         }
 
     # ---------------------------------------------------------------
