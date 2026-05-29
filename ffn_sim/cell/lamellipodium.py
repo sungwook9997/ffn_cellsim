@@ -166,10 +166,17 @@ class ResolvedH5:
     delta_elong: float            # m   2.7 nm G-actin attachment length
     F_stall_elong: float          # N   per-barbed-end stall force (Bieling)
 
-    # D1 Arp2/3 branching (Bieling 2016 + Funk 2022 abortive)
-    k_b_0: float                  # 1/s 0.037 per WAVE unloaded
+    # D1 Arp2/3 branching (Bieling 2016 + Funk 2021 mechanistic coupling, γ-Phase 1)
+    # PI-ratified 2026-05-29: branching rate is gated by the CP-NPF release
+    # mechanism (rate ∝ n_capped / n_total = "free-NPF fraction"), and the
+    # geometry searches ANY actin_lamel bead within r_branch_eff (Arp2/3
+    # binds along F-actin side, not only at the barbed tip).
+    # See docs/briefs/H5_GAMMA_BRANCHING_DESIGN.md (commit 62d6fbc) §3.
+    k_b_0: float                  # 1/s 0.037 per WAVE unloaded (Bieling 2016)
     F_stall_branch: float         # N   per-WAVE branching stall (Bieling)
-    r_branch: float               # m   WAVE-to-mother-barbed search radius
+    r_branch_eff: float           # m   WAVE→any actin_lamel reach (PI 2026-05-29: 100 nm,
+                                  #     ≈ Arp2/3 physical reach: Arp2/3 ⌀22nm + F-actin ⌀7nm
+                                  #     + access window. Funk 2021 + Bieling 2023 review.)
     abortive_pressure_Pa: float   # 500 Pa Funk 2022 threshold
 
     # D1 capping (Funk 2022)
@@ -237,7 +244,7 @@ def resolve_h5_lamellipodium(
         F_stall_elong=float(cfg["F_stall_elong"]),
         k_b_0=float(cfg["k_b_0"]),
         F_stall_branch=float(cfg["F_stall_branch"]),
-        r_branch=float(cfg["r_branch"]),
+        r_branch_eff=float(cfg["r_branch_eff"]),
         abortive_pressure_Pa=float(cfg.get("abortive_pressure_Pa", 500.0)),
         k_cap_0=float(cfg["k_cap_0"]),
         delta_cap=float(cfg["delta_cap"]),
@@ -259,7 +266,7 @@ def resolve_h5_lamellipodium(
         ("bond_k", p.bond_k), ("angle_branch_k", p.angle_branch_k),
         ("k_elong_0", p.k_elong_0), ("delta_elong", p.delta_elong),
         ("F_stall_elong", p.F_stall_elong), ("k_b_0", p.k_b_0),
-        ("F_stall_branch", p.F_stall_branch), ("r_branch", p.r_branch),
+        ("F_stall_branch", p.F_stall_branch), ("r_branch_eff", p.r_branch_eff),
         ("k_cap_0", p.k_cap_0), ("delta_cap", p.delta_cap),
         ("kT", p.kT), ("L_box", p.L_box), ("dt", p.dt),
     ]:
@@ -564,22 +571,47 @@ class BarbedEndElongationUpdater(_BatchedLamelUpdater):
 
 
 class ArpBranchingUpdater(_BatchedLamelUpdater):
-    """D1 Arp2/3 daughter nucleation:
-    ``k_b(F) = k_b⁰ · (1 − 0.2 · F / F_stall)`` per WAVE (Bieling 2016).
+    """D1 Arp2/3 daughter nucleation (γ-Phase 1, PI-ratified 2026-05-29).
 
-    Per batch tick, for every WAVE particle whose nearest mother
-    barbed-end is within ``r_branch``:
+    Funk 2021 mechanistic coupling — branching rate is gated by the
+    "free-NPF fraction" (CP-mediated release of NPF sequestered on
+    barbed ends). Brief implementation pre-γ treated branching and
+    capping as independent and located branching only at the barbed
+    tip; both were incorrect per Funk 2021 + Bieling 2016 + Abraham
+    1999 evidence (KU-5.1 v1 production sweep, 2026-05-29 Lead session).
 
-    1. Compute per-WAVE load (uses the same partition as elongation, with
-       the WAVE's force allotment).
-    2. Sample ``p_branch = 1 − exp(−k_b(F) · Δt_batch)``.
-    3. On fire: insert a DAUGHTER actin bead at the mother barbed-end's
-       position + ``ℓ_0`` along a tangent rotated 72° from the mother's
-       tangent (random azimuthal angle in the plane perpendicular to the
-       mother).  Add a branch bond + branch angle.
+    Rate (per batch tick, per WAVE)::
+
+        free_npf_fraction = n_capped / max(n_barbed + n_capped, 1)
+        k_b_eff = k_b⁰ · (1 − 0.2 · F / F_stall_branch) · free_npf_fraction
+        p_branch = 1 − exp(−k_b_eff · Δt_batch)
+
+    - When ``n_capped = 0`` (initial): ``k_b_eff = 0`` → no branching
+      (matches Funk 2021 sequestered-NPF regime).
+    - When ``n_capped / n_total → 1`` (all ends capped):
+      ``k_b_eff → k_b⁰ · force_factor`` (asymptotic free-NPF regime).
+
+    Geometry (per WAVE that fires):
+
+    1. Enumerate ALL ``actin_lamel`` particles in the snapshot
+       (not only ``barbed_end_tags``) — Arp2/3 binds along F-actin
+       side, not only at the barbed tip.
+    2. Filter to particles within ``r_branch_eff`` of the WAVE
+       (PI-ratified 2026-05-29: 100 nm, ≈ Arp2/3 physical reach).
+    3. Pick mother from candidates weighted by 1/r² (diffusion-limited
+       kinetics, PI-ratified 2026-05-29).
+    4. Insert DAUGHTER actin bead at ``r_mother + ℓ₀ · t_daughter``
+       where ``t_daughter`` is the mother's local tangent rotated 72°
+       around a random perpendicular axis (Arp2/3 crystal angle).
+    5. Add ``lamel_branch_bond`` (mother→daughter) + (if mother has
+       a parent) ``lamel_branch_angle`` harmonic.
+    6. Daughter starts as a new barbed end.
 
     Funk 2022 abortive emerges: when ``F > F_stall / 0.2 = 5 · F_stall``,
-    ``k_b`` clamps to 0 (no separate scalar override).
+    the force factor ``(1 − 0.2 F / F_stall)`` clamps to 0 (no separate
+    scalar override).
+
+    Design: ``docs/briefs/H5_GAMMA_BRANCHING_DESIGN.md`` (commit 62d6fbc).
     """
 
     def __init__(
@@ -598,87 +630,136 @@ class ArpBranchingUpdater(_BatchedLamelUpdater):
     def act(self, timestep: int) -> None:  # noqa: D401
         sim = self._sim_ref
         assert sim is not None
-        if self.n_WAVE == 0 or not self.state.barbed_end_tags:
+        if self.n_WAVE == 0:
             self._steps_run += 1
             return
+
+        # γ-Phase 1 rate factor (Funk 2021): free-NPF fraction. With
+        # n_capped = 0 (start of simulation), branching is OFF until
+        # capping has released NPFs from sequestered barbed ends.
+        n_barbed = len(self.state.barbed_end_tags)
+        n_capped = len(self.state.capped_tags)
+        n_total = n_barbed + n_capped
+        if n_total == 0:
+            self._steps_run += 1
+            return
+        free_npf_fraction = n_capped / n_total
+        if free_npf_fraction == 0.0:
+            self._steps_run += 1
+            return
+
+        # Per-WAVE force allotment (Bieling 2016, unchanged from pre-γ).
+        F_per_wave = self._F_network_total / max(self.n_WAVE, 1)
+        ratio = 0.2 * F_per_wave / max(self.p.F_stall_branch, 1.0e-30)
+        k_b_eff = max(0.0, self.p.k_b_0 * (1.0 - ratio)) * free_npf_fraction
+        if k_b_eff == 0.0:
+            self._steps_run += 1
+            return
+        p_branch = 1.0 - math.exp(-k_b_eff * self.p.batch_dt)
 
         read_snap = sim.state.get_snapshot()
         if read_snap.communicator.rank != 0:
             return
         pos = np.asarray(read_snap.particles.position, dtype=np.float64).copy()
-
-        free_be = [
-            t for t in self.state.barbed_end_tags if t not in self.state.capped_tags
-        ]
-        if not free_be:
+        typeid = np.asarray(read_snap.particles.typeid)
+        type_names = list(read_snap.particles.types)
+        if "actin_lamel" not in type_names:
             self._steps_run += 1
             return
+        actin_lamel_tid = type_names.index("actin_lamel")
 
-        # Per-WAVE force allotment (same partition as elongation).
-        F_per_wave = self._F_network_total / max(self.n_WAVE, 1)
-        ratio = 0.2 * F_per_wave / max(self.p.F_stall_branch, 1.0e-30)
-        k_b = max(0.0, self.p.k_b_0 * (1.0 - ratio))   # Funk abortive clamp
-        if k_b == 0.0:
+        # The global (rank-0 aggregated) snapshot is tag-ordered:
+        # `position[i]`, `typeid[i]` correspond to particle with tag=i. So
+        # row index IS the tag here — no separate tag lookup needed. This
+        # is different from the local snapshot (cpu_local_snapshot) which
+        # is row-permuted by HOOMD's ParticleSorter.
+
+        # γ-Phase 1: enumerate ALL actin_lamel beads (mother sites can be
+        # anywhere along F-actin per Funk 2021 + Bieling 2023 review).
+        actin_rows = np.where(typeid == actin_lamel_tid)[0]
+        if actin_rows.size == 0:
             self._steps_run += 1
             return
-        p_branch = 1.0 - math.exp(-k_b * self.p.batch_dt)
+        actin_pos = pos[actin_rows]
+        actin_tags = actin_rows  # row == tag in global snapshot
 
-        # For each WAVE, find nearest free barbed end within r_branch.
-        wave_tags = np.arange(
+        # Pairwise WAVE→actin distance. WAVE tags are contiguous starting
+        # at wave_tag_start (set at Cell.build time); row == tag here.
+        wave_rows = np.arange(
             self.wave_tag_start, self.wave_tag_start + self.n_WAVE,
         )
-        be_tags = np.asarray(free_be, dtype=np.int64)
-        be_pos = pos[be_tags]
-        wave_pos = pos[wave_tags]
-        # Pairwise distance (n_WAVE, n_be); for small n use brute force.
+        wave_pos = pos[wave_rows]
         d = np.linalg.norm(
-            wave_pos[:, None, :] - be_pos[None, :, :], axis=-1
-        )
-        nearest_idx = np.argmin(d, axis=1)
-        nearest_dist = d[np.arange(self.n_WAVE), nearest_idx]
-        candidate_mask = nearest_dist < self.p.r_branch
+            wave_pos[:, None, :] - actin_pos[None, :, :], axis=-1
+        )  # (n_WAVE, n_actin)
+        eligible = d < self.p.r_branch_eff
+        any_eligible = eligible.any(axis=1)
 
         u = self._rng.uniform(0.0, 1.0, size=self.n_WAVE)
-        fires = candidate_mask & (u < p_branch)
+        fires = (u < p_branch) & any_eligible
         if not fires.any():
             self._steps_run += 1
             return
 
         new_positions = []
-        new_actin_bonds = []
+        new_actin_bonds: list = []  # γ-Phase 1 has no backbone bonds, branch-only
         new_branch_bonds = []
         new_branch_angles = []
         for w in np.nonzero(fires)[0]:
-            mother_tag = int(be_tags[nearest_idx[w]])
-            if mother_tag not in self.state.tangent_of:
+            # γ-Phase 1: pick mother from all eligible actin_lamel within
+            # r_branch_eff, weighted by 1/r² (diffusion-limited kinetics,
+            # PI-ratified 2026-05-29). Floor on r² to avoid div-zero when
+            # WAVE sits on top of an actin bead (numerical edge).
+            elig_idx = np.where(eligible[w])[0]
+            d_w = d[w, elig_idx]
+            r2_floor = (0.1 * self.p.r_branch_eff) ** 2  # 10% of reach
+            weights = 1.0 / np.maximum(d_w * d_w, r2_floor)
+            weights /= weights.sum()
+            mother_local = int(self._rng.choice(elig_idx.size, p=weights))
+            mother_row = int(elig_idx[mother_local])
+            mother_tag = int(actin_tags[mother_row])
+
+            # Mother tangent lookup. Priority: tangent_of (set at construction
+            # / elongation / branching) → derive from parent_of → fallback
+            # random (only for orphan beads that should not exist).
+            if mother_tag in self.state.tangent_of:
+                t_mother = self.state.tangent_of[mother_tag]
+            elif mother_tag in self.state.parent_of:
+                # Global snapshot row == tag, so parent_tag indexes pos directly.
+                parent_tag = int(self.state.parent_of[mother_tag])
+                t_mother = pos[parent_tag] - actin_pos[mother_row]  # parent→mother
+                norm = float(np.linalg.norm(t_mother))
+                if norm < 1.0e-12:
+                    continue  # degenerate; skip this WAVE this tick
+                t_mother = t_mother / norm
+            else:
+                # Orphan — should not happen for well-formed assemblies.
+                # Skip rather than fabricate a direction.
                 continue
-            t_mother = self.state.tangent_of[mother_tag]
-            # Daughter tangent: rotate mother tangent by 72° around a
-            # random axis perpendicular to the mother.
+
+            # Daughter tangent: rotate mother tangent 72° around a random
+            # perpendicular axis (Arp2/3 crystal, Mullins 1998).
             perp = _random_perpendicular(t_mother, self._rng)
             theta = self.p.angle_branch_t0
-            t_daughter = (
-                math.cos(theta) * t_mother + math.sin(theta) * perp
-            )
+            t_daughter = math.cos(theta) * t_mother + math.sin(theta) * perp
             t_daughter /= np.linalg.norm(t_daughter)
-            r_mother = pos[mother_tag]
+            r_mother = actin_pos[mother_row]
             r_daughter = r_mother + self.p.rest_length * t_daughter
+
             new_tag = self.state.actin_next_tag
             self.state.actin_next_tag += 1
             new_positions.append(r_daughter)
-            # Mother-to-daughter branch bond + angle (parent_of_mother, mother, daughter).
             new_branch_bonds.append((mother_tag, new_tag))
-            # For the branch angle, we need a parent of the mother (so the
-            # triplet is well defined).  Use parent_of if present, else
-            # fall back to the mother's tangent direction by inserting a
-            # phantom anchor (skip the angle for that branch).
             if mother_tag in self.state.parent_of:
-                grand_parent = self.state.parent_of[mother_tag]
+                grand_parent = int(self.state.parent_of[mother_tag])
                 new_branch_angles.append((grand_parent, mother_tag, new_tag))
-            # Promote daughter to barbed-end (mother remains as barbed end
-            # too — branch off mid-tip; D1 allows continued mother growth).
+
             self.state.parent_of[new_tag] = mother_tag
             self.state.tangent_of[new_tag] = t_daughter.copy()
+            # γ-Phase 1: daughter is a new barbed end. Mother stays whatever
+            # it was (barbed, capped, or interior — Funk 2021 + Bieling 2023
+            # both report branch site is NOT bound to mother's barbed-vs-other
+            # state).
             self.state.barbed_end_tags.append(new_tag)
 
         if not new_positions:

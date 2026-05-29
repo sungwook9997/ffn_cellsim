@@ -76,24 +76,55 @@ Per batch tick, for every eligible (non-capped) barbed-end tag:
 3. On fire: append one actin bead at rest length `ℓ_0` along the
    filament's local tangent direction.
 
-### `ArpBranchingUpdater` (Bieling 2016 + Funk 2022 abortive)
+### `ArpBranchingUpdater` (Bieling 2016 + Funk 2021 mechanistic, γ-Phase 1 PI-ratified 2026-05-29)
+
+Revised by H.5/γ ratification 2026-05-29 (design:
+`H5_GAMMA_BRANCHING_DESIGN.md`, commit `62d6fbc`). The pre-γ rate
+equation was independent per-WAVE; per Funk 2021 ("A barbed end
+interference mechanism reveals how capping protein promotes
+nucleation"), branching rate is gated by the CP-mediated release of
+NPFs sequestered to free barbed ends:
 
 ```
-k_b(F) = k_b⁰ · (1 − 0.2 · F / F_stall_branch)
-k_b⁰ = 0.037 s⁻¹  (per WAVE molecule)
+free_npf_fraction = n_capped / max(n_barbed + n_capped, 1)
+k_b_eff(F) = k_b⁰ · (1 − 0.2 · F / F_stall_branch) · free_npf_fraction
+k_b⁰ = 0.037 s⁻¹  (per WAVE molecule, Bieling 2016)
 ```
+
+At `n_capped = 0` (initial): `k_b_eff = 0` — no branching (Funk's
+NPF-sequestered regime). At `n_capped → n_total`: branching at
+`k_b⁰ · force_factor` (asymptotic free-NPF regime).
 
 Per batch tick, for every WAVE molecule:
-1. Search for an eligible mother barbed-end within `r_branch` radius.
-2. Compute per-WAVE force; sample firing probability.
-3. On fire: insert a daughter actin bead bonded to the mother's
-   barbed-end via `lamel_branch_bond` + `lamel_branch_angle` harmonic.
+
+1. Compute `free_npf_fraction` (global state).
+2. Sample `p_branch = 1 − exp(−k_b_eff · Δt_batch)`.
+3. On fire: enumerate ALL `actin_lamel` beads within `r_branch_eff`
+   of the WAVE (Funk 2021 + Bieling 2023: Arp2/3 binds along F-actin
+   side, not only at the barbed tip).
+4. Pick mother site weighted by `1/r²` (diffusion-limited kinetics,
+   PI-ratified 2026-05-29).
+5. Insert a daughter actin bead at `r_mother + ℓ₀ · t_daughter` where
+   `t_daughter` is the mother's local tangent rotated 72° around a
+   random perpendicular axis (Arp2/3 crystal).
+6. Add `lamel_branch_bond` (mother→daughter) + (if mother has a
+   parent) `lamel_branch_angle` harmonic.
+7. Daughter starts as a new barbed end; mother's barbed/capped/interior
+   state is unchanged.
 
 **Funk 2022 abortive-failure emerges naturally**: above the per-WAVE
 force threshold `F > 500 Pa · WAVE_area`, the `(1 − 0.2 F/F_stall)`
 factor becomes negative and is clamped to zero. No separate scalar
 override — the abortive regime is the same mechanism with the rate
 running to zero.
+
+**Pre-γ (KU-5.1 v1 baseline)**: branching searched only `barbed_end_tags`
+within `r_branch = 30 nm`. After the first elongation step
+(`Δℓ = ℓ₀ = 500 nm ≫ 30 nm`), every mother barbed-end left the search
+sphere; system-wide branchings ≈ 0.32 events permanently. KU-5.1 v1
+production sweep (1.85M step, `outputs/h5/production/ku51_v1/seed1.log`,
+killed after analytical prediction 100%-confirmed) measured density
+0.05 /μm² (target ≈100 /μm²) — falsified the pre-γ implementation.
 
 ### `CappingUpdater` (Funk 2022 slip Bell-Evans)
 

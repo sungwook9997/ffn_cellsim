@@ -47,10 +47,15 @@ lamellipodium:
   delta_elong: 2.7e-9            # m   G-actin attachment length (Bieling 2016)
   F_stall_elong: 1.0e-12         # N   per-barbed-end stall (~1 pN, Bieling)
 
-  # ---- D1 Arp2/3 branching (Bieling 2016 + Funk 2022 abortive) ----
+  # ---- D1 Arp2/3 branching (Bieling 2016 + Funk 2021 mechanistic, γ-Phase 1) ----
+  # γ-Phase 1 (PI-ratified 2026-05-29, design `H5_GAMMA_BRANCHING_DESIGN.md`):
+  # - Rate gated by CP-NPF release: `k_b_eff = k_b⁰ · force · (n_capped/n_total)`.
+  # - Geometry: search ANY actin_lamel bead within r_branch_eff (Funk 2021 +
+  #   Bieling 2023: Arp2/3 binds along F-actin side, not only at barbed tip).
   k_b_0: 0.037                   # 1/s per WAVE unloaded (Bieling 2016)
   F_stall_branch: 1.0e-12        # N   per-WAVE branching stall
-  r_branch: 30.0e-9              # m   WAVE-to-mother-barbed search radius
+  r_branch_eff: 100.0e-9         # m   WAVE → any actin_lamel reach (PI 2026-05-29)
+                                 #     ≈ Arp2/3 ⌀22nm + F-actin ⌀7nm + access window
   abortive_pressure_Pa: 500.0    # Pa  Funk 2022 abortive-failure threshold
 
   # ---- D1 capping (Funk 2022) ----

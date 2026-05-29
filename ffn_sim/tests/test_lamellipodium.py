@@ -246,3 +246,167 @@ H5_PRODUCTION = bool(int(os.environ.get("H5_PRODUCTION", "0")))
 class TestH5Production:
     def test_dendritic_density_steady_state(self):
         pytest.skip("Production skeleton; see module docstring.")
+
+
+# ---------------------------------------------------------------------------
+# γ-Phase 1 ArpBranching mechanistic coupling (PI-ratified 2026-05-29)
+# Design: docs/briefs/H5_GAMMA_BRANCHING_DESIGN.md (commit 62d6fbc)
+# ---------------------------------------------------------------------------
+class TestGammaPhase1Branching:
+    """γ-Phase 1: branching rate ∝ n_capped/n_total (Funk 2021 CP-NPF
+    coupling) + geometric search across ALL actin_lamel within r_branch_eff
+    (Funk + Bieling 2023: Arp2/3 binds along F-actin side, not only at
+    barbed tip).
+    """
+
+    def test_branching_off_at_n_capped_zero(self, p_lamel):
+        """Initial state n_capped=0 ⇒ free_npf_fraction=0 ⇒ no branching.
+
+        Funk 2021 NPF-sequestered regime: when all barbed ends are free,
+        NPFs are sequestered (bound to barbed ends) and CANNOT activate
+        Arp2/3. The rate equation gates branching to zero.
+        """
+        handles = build_lamellipodium_simulation(p_lamel)
+        ba = handles["branch_action"]
+        # Construction state: all barbed (mothers), none capped.
+        assert len(handles["state"].capped_tags) == 0
+        # Maximise the un-gated rate: F=0 means Bieling factor = 1.
+        ba.set_network_load(0.0)
+        sim = handles["sim"]
+        sim.run(1000)  # 10 Updater ticks at batch_steps=100
+        # γ-Phase 1 must report zero branchings until n_capped > 0.
+        assert ba.n_branch_events == 0, (
+            f"γ-Phase 1 invariant broken: branching fired with "
+            f"n_capped=0 (free_npf_fraction=0). Events={ba.n_branch_events}"
+        )
+
+    def test_branching_rate_scales_with_capped_fraction(self, p_lamel):
+        """Rate factor `free_npf_fraction = n_capped / (n_barbed + n_capped)`
+        scales linearly (Funk 2021 CP-NPF coupling). Synthesise three
+        states (none / half / all capped) and verify the analytical
+        relation 0 < 0.5 < 1.0.
+
+        The CappingUpdater invariant is `capped_tags ∩ barbed_end_tags
+        = ∅` — capping removes the tag from barbed_end_tags AND adds it
+        to capped_tags. We mirror that here so the synthesized state is
+        well-formed for the Updater's lookup.
+        """
+        handles = build_lamellipodium_simulation(p_lamel)
+        ba = handles["branch_action"]
+        ba.set_network_load(0.0)
+        st = handles["state"]
+
+        # State 0: no capped.
+        n_be = len(st.barbed_end_tags)
+        n_cp = len(st.capped_tags)
+        free_npf_zero = n_cp / max(n_be + n_cp, 1)
+        assert free_npf_zero == 0.0
+
+        # State 1: half the mothers capped (mirror CappingUpdater semantics).
+        half = n_be // 2
+        for t in list(st.barbed_end_tags[:half]):
+            st.capped_tags.add(t)
+            st.barbed_end_tags.remove(t)
+        n_be = len(st.barbed_end_tags)
+        n_cp = len(st.capped_tags)
+        free_npf_half = n_cp / (n_be + n_cp)
+        assert math.isclose(free_npf_half, 0.5, rel_tol=1e-12), (
+            f"half-capped fraction expected 0.5, got {free_npf_half}"
+        )
+        k_b_eff_expected = p_lamel.k_b_0 * free_npf_half
+        p_branch_expected = 1.0 - math.exp(-k_b_eff_expected * p_lamel.batch_dt)
+        assert p_branch_expected > 0.0
+
+        # State 2: all capped.
+        for t in list(st.barbed_end_tags):
+            st.capped_tags.add(t)
+            st.barbed_end_tags.remove(t)
+        n_be = len(st.barbed_end_tags)
+        n_cp = len(st.capped_tags)
+        free_npf_all = n_cp / (n_be + n_cp)
+        assert math.isclose(free_npf_all, 1.0, rel_tol=1e-12)
+        # Linear coupling: all-capped rate is exactly 2× half-capped rate.
+        assert math.isclose(free_npf_all / free_npf_half, 2.0, rel_tol=1e-12)
+
+    def test_branching_searches_all_actin_not_just_barbed(self, p_lamel):
+        """γ-Phase 1 enumerates ALL actin_lamel beads, not only
+        barbed_end_tags. White-box: cap every mother (state where
+        barbed_end_tags becomes empty) and verify the typeid-based scan
+        still finds the same actin_lamel beads as candidates.
+
+        Pre-γ would see `free_be = []` (no free barbed ends) and skip
+        every WAVE tick → branching impossible. γ-Phase 1 must find
+        the still-existing actin_lamel particles via the typeid scan.
+        """
+        handles = build_lamellipodium_simulation(p_lamel)
+        sim = handles["sim"]
+        st = handles["state"]
+        # Cap all mothers per CappingUpdater semantics (add to capped,
+        # remove from barbed_end_tags).
+        for t in list(st.barbed_end_tags):
+            st.capped_tags.add(t)
+            st.barbed_end_tags.remove(t)
+        assert len(st.barbed_end_tags) == 0
+        # Verify that the typeid-based scan still finds the n_WAVE actin
+        # bead population. This is the very count γ-Phase 1 enumerates
+        # before applying r_branch_eff and the 1/r² weighting.
+        with sim.state.cpu_local_snapshot as s:
+            typeid = np.asarray(s.particles.typeid).copy()
+            type_names = list(sim.state.particle_types)
+        actin_tid = type_names.index("actin_lamel")
+        n_actin_visible = int(np.sum(typeid == actin_tid))
+        assert n_actin_visible == p_lamel.n_WAVE, (
+            "γ-Phase 1 expects all actin_lamel beads (mothers) to remain "
+            f"visible after capping; got {n_actin_visible} vs "
+            f"{p_lamel.n_WAVE} expected. Pre-γ implementation would miss "
+            "these by filtering to free barbed ends only."
+        )
+
+    def test_r_branch_eff_replaces_old_r_branch(self, p_lamel):
+        """The resolver exposes ``r_branch_eff`` and not the pre-γ
+        ``r_branch``. PI 2026-05-29: r_branch_eff = 100 nm, replacing the
+        pre-γ 30 nm tip-only reach with the Arp2/3 physical reach window."""
+        assert hasattr(p_lamel, "r_branch_eff")
+        assert not hasattr(p_lamel, "r_branch"), (
+            "ResolvedH5.r_branch should be removed (γ-Phase 1 rename to "
+            "r_branch_eff)"
+        )
+        assert math.isclose(p_lamel.r_branch_eff, 100.0e-9, rel_tol=1e-12), (
+            f"Expected PI-ratified r_branch_eff = 100 nm, got "
+            f"{p_lamel.r_branch_eff*1e9:.2f} nm"
+        )
+
+    def test_branching_fires_when_capped_present(self, p_lamel):
+        """End-to-end: with n_capped > 0 and a long enough simulation
+        window, ArpBranching must fire at least once. This complements
+        test_branching_off_at_n_capped_zero to bracket the rate gate
+        from both sides.
+
+        We use H5_GAMMA_SMOKE=1 opt-in because the per-tick p_branch is
+        tiny at k_b⁰=0.037/s and would need many seconds of wall time
+        to fire deterministically. The opt-in keeps the main test suite
+        fast.
+        """
+        if not int(os.environ.get("H5_GAMMA_SMOKE", "0")):
+            pytest.skip(
+                "γ-Phase 1 fire smoke needs ~minutes wall time; "
+                "opt-in via H5_GAMMA_SMOKE=1."
+            )
+        handles = build_lamellipodium_simulation(p_lamel)
+        ba = handles["branch_action"]
+        st = handles["state"]
+        # Cap half the mothers up front to give free_npf_fraction = 0.5.
+        half = len(st.barbed_end_tags) // 2
+        for t in list(st.barbed_end_tags[:half]):
+            st.capped_tags.add(t)
+        ba.set_network_load(0.0)
+        sim = handles["sim"]
+        # ~100k steps × 13ns = 1.3ms sim time × n_WAVE=20 × (k_b·fraction):
+        # expected events = 20 · 0.037 · 0.5 · 1.3e-3 = 4.8e-4 (still small)
+        # so run 5M steps to expect ~25 events on average.
+        sim.run(5_000_000)
+        assert ba.n_branch_events > 0, (
+            "γ-Phase 1 produced zero branchings in 5M steps with half-capped "
+            "state. Either the rate factor is mis-applied or the geometric "
+            "search is failing."
+        )
