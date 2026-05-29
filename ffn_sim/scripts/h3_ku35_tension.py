@@ -316,7 +316,7 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
             f"wall={wall:.1f}s eta={eta_min:.1f}min "
             f"r/r0={rmean / r0:.3f} engaged={int(ma.n_engaged)} "
             f"steps_adv={int(ma.n_step_advances_total)} "
-            f"gamma_mN/m={gamma * 1e3:.3e} drift={float(act.max_constraint_drift):.2e} "
+            f"gamma_total_mN/m={gamma_total * 1e3:.3e} gamma_soft={gamma_soft * 1e3:.3e} gamma_rigid={gamma_rigid * 1e3:.3e} drift={float(act.max_constraint_drift):.2e} "
             f"max_disp_um={max_disp * 1e6:.3f}{warn}",
             flush=True,
         )
