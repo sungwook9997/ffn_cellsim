@@ -14,6 +14,10 @@
 | A5 | **Arp2/3 debranching** breaks the "monotonic bond count" invariant | bond count grows monotonically | allow force-dependent debranching (Pandit 2020) | Bounds n_total + adds real physics; current invariant would fail | §5#5 |
 | A6 | **D4 ECM rebanding** re-derivation | G_0 [1,50] Pa (PI-authorized 2026-05-21) | optionally tighten via re-derived percolation prefactor | transparency; already ratified, low priority | §2 |
 
+| A7 | **S5 tag-space unification (FA + myosin coexistence)** | FA path raises `NotImplementedError` for FA + {myosin, xlink, lamellipodium} | generalize `IntegrinBondUpdater` tag→row lookup so integrins need not be tags `[0,n_int)`; FA block in natural append order | **EMPIRICALLY CONFIRMED 2026-05-30** by the S0–S2 wiring (commit `0f655f6`): reused `IntegrinBondUpdater` assumes integrins at global tags `[0,n_int)`, colliding with cortex-actin tag bookkeeping. This is the gating dependency for KU-3.5 v4 (cortex+myosin+FA). A subagent is implementing it (additive, no physics change). | §6 S5 |
+
+> **Note on A7:** this is additive code (no governed-surface edit — no gate band, no frozen integrator, no Pereverzev/Kong param change), so it is being IMPLEMENTED autonomously, not held for PI. It is listed here only because it is the empirical confirmation of the §6 S5 design step and the gate that unblocks KU-3.5 v4. The genuinely PI-gated co-dependencies for v4 remain **B1** (global dt) + **B2** (equilibration prelude) + **A3/A4** (KU-5.1 band / KU-3.5 regime).
+
 ## B. Frozen-integrator changes (`integrator/` freeze → PI only)
 
 | # | Item | Proposed | Rationale | Audit ref |
@@ -37,7 +41,7 @@ Additive-documented in code comments where possible; the ones that change runtim
 | C5 | Arp2/3 branch t0 | 72° | 70° (68±9°) | Fäßler 2020 | + derive k_angle from the distribution (replaces "TBD" magic number) |
 | C6 | WAVE k_wave_pin | 1e-4 N/m (CFL magic number) | replace with explicit membrane OR document as CFL-bounded confinement | — | resolved by S7 membrane |
 
-**Citation fixes (doc-only, auto-applied):** every "Funk 2022" → Li/Bieling eLife 2022 (capping); Furuike 2001 re-cite (wrong observable for filamin); k_ERM 1e-4 provenance note (it is the *correct* per-linker value per Alert 2015, not a softening error).
+**Citation fixes (doc-only).** Pending a precise per-occurrence pass (NOT a blanket replace — "Funk 2022" is a phantom paper that maps to TWO real papers by context): capping (`k_cap_0`, `delta_cap`, "D1 capping") → **Li/Bieling eLife 2022**; abortive-branching threshold (`abortive_pressure_Pa`) → **Funk 2021 Nat Commun** (the real branching/CP-NPF paper). Locations: `configs/phase1_h5.yaml` (3×: lines ~59/61/63) + `cell/lamellipodium.py` (7×). Also: Furuike 2001 re-cite for filamin (wrong observable — measures Ig unfolding, not bond off-rate); k_ERM 1e-4 provenance note (it is the *correct* per-linker value per Alert 2015, not a softening error). Deferred from the 2026-05-30 autonomous pass to keep citation attribution exact.
 
 ## D. Governance
 
