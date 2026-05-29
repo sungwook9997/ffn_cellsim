@@ -601,7 +601,7 @@ Plan v2 Unit H.5 ("AFINES branched mode port") therefore needs
 ### 5.2 Bieling 2016 + Funk 2021 + Li/Bieling 2022 phenomenology (what HOOMD must reproduce)
 
 From [Bieling et al. 2016 Cell](https://doi.org/10.1016/j.cell.2015.11.057)
-[PMC5033619] + [Funk et al. 2022 eLife](https://doi.org/10.7554/eLife.73145)
+[PMC5033619] + [Li, Bieling et al. 2022 eLife](https://doi.org/10.7554/eLife.73145)
 [PMC9328761]:
 
 #### Single-molecule nucleation

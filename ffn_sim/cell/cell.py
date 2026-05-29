@@ -114,6 +114,11 @@ from ffn_sim.cortex.erm import (
     ResolvedERM,
     attach_erm_to_simulation,
 )
+from ffn_sim.cortex.enclosed_volume import (
+    EnclosedVolumePressure,
+    ResolvedEnclosedVolume,
+    attach_enclosed_volume_to_simulation,
+)
 from ffn_sim.cortex.myosin import (
     CortexMyosinLayout,
     MyosinStepUpdater,
@@ -491,6 +496,7 @@ def build_cortex_full_simulation(
     p_fa: "ResolvedH4 | None" = None,
     fa_clutch_capture_radius: float | None = None,
     fa_clutch_k: float | None = None,
+    p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
     constrained: bool = False,
@@ -853,6 +859,25 @@ def build_cortex_full_simulation(
         ig.forces.append(wave_pin_force)
     sim.operations.integrator = ig
 
+    # Optional enclosed-volume / intracellular-pressure term (KU-3.1).
+    # ADDITIVE + DEFAULT-OFF: when p_enclosed_volume is None this whole
+    # block is skipped and the builder is bit-for-bit identical to the
+    # pre-enclosed-volume version. When provided, attach the
+    # EnclosedVolumePressure custom force over the cortex-actin shell tags
+    # [0, n_cortex_actin). The force participates in HOOMD net_force (read
+    # by the BAOAB Updater). Its effective per-bead stiffness is far softer
+    # than bond/angle/xl, so the CFL gate (parity with erm.py) never fires
+    # at the cortex dt_cfl — but it is enforced for safety.
+    enclosed_volume_force = None
+    if p_enclosed_volume is not None:
+        enclosed_volume_force = attach_enclosed_volume_to_simulation(
+            sim, p_enclosed_volume,
+            shell_tag_range=(0, n_cortex_actin),
+            n_shell=n_cortex_actin,
+            gamma_b=p_cortex.gamma_b,
+            cfl_safety_factor=p_cortex.cfl_safety_factor,
+        )
+
     baoab_updater = None
     baoab_action = None
     if with_baoab:
@@ -1031,6 +1056,7 @@ def build_cortex_full_simulation(
         "lamellipodium_layout": lamellipodium_layout,
         "lamellipodium_state": lamellipodium_state,
         "wave_pin_force": wave_pin_force,
+        "enclosed_volume_force": enclosed_volume_force,
         "baoab_updater": baoab_updater,
         "baoab_action": baoab_action,
         "xlink_updater": xlink_updater,

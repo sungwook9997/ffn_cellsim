@@ -167,6 +167,39 @@ cortex:
     # cell_center optional; defaults to box origin (0, 0, 0) — matches
     # cortex.py topology generator which places the shell at the origin.
 
+  # ---- Enclosed-volume / intracellular pressure (KU-3.1) — ADDITIVE, OFF ----
+  # `cortex/enclosed_volume.py` implements an md.force.Custom that gives the
+  # closed cortex shell a resistance to volume change, supplying the missing
+  # intracellular-pressure term (mechanism audit 2026-05-30 §5 #2;
+  # docs/briefs/H4_FA_INTEGRATION_DESIGN.md §4). Without it the cortex is an
+  # OPEN shell that can be deflated to a point at no cost, so KU-3.1 mitotic
+  # rounding is non-mechanistic. The physical law is the Young-Laplace
+  # balance ΔP = 2γ/R; this term supplies ΔP so that balance can EMERGE.
+  #
+  # Runtime law:  ΔP = −K_vol·(V−V0)/V0   (linear osmotic/bulk response)
+  #               F_i = ΔP·(S/N)·n̂_i      (per-bead outward normal force)
+  # Volume estimator: sphere-equivalent V = 4/3 π R_mean³ from the mean bead
+  # radius about the shell centroid (defensible at this ×40 coarse scale;
+  # centroid-relative → no spurious COM drift). Young-Laplace ΔP=2γ/R is the
+  # ACCEPTANCE ORACLE in test_enclosed_volume.py, NOT a runtime input.
+  #
+  # K_vol Magic-Number Block (no magic number): K_vol = dP_ref/(3·strain_ref)
+  # — the osmotic modulus that makes ΔP at a `strain_ref` radius compression
+  # equal the KU-3.1 interphase anchor `dP_ref` ≈ 40 Pa (Stewart 2011). With
+  # dP_ref=40 Pa, strain_ref=0.01 → K_vol ≈ 1.333e3 Pa. K_vol is an intensive
+  # material modulus [Pa] (grid-invariant: the per-bead 1/N area share keeps
+  # the TOTAL pressure load ΔP·S N-independent). Cross-check: at R_cell=10 μm
+  # and KU-3.5 γ=1 mN/m (Salbreux 2012), ΔP=2γ/R=200 Pa — between the 40 Pa
+  # interphase and 400 Pa metaphase anchors (Stewart 2011; Fischer-Friedrich
+  # 2014). DEFAULT OFF: nothing references this block unless a caller resolves
+  # + attaches it (resolve_enclosed_volume + attach_enclosed_volume_to_simulation).
+  enclosed_volume:
+    enabled: false            # default OFF — additive module (CLAUDE.md pattern)
+    dP_ref: 40.0              # Pa   KU-3.1 interphase osmotic anchor (Stewart 2011)
+    strain_ref: 0.01          # —    1 % radius compression (linear reference point)
+    # K_vol omitted → derived as dP_ref/(3·strain_ref) ≈ 1.333e3 Pa.
+    # V0 omitted → defaults to the construction sphere 4/3 π R_cell³.
+
   # ---- Cortical myosin (D5 Stam-Hocky + D6 Hill, KU-3.5 / KU-3.18) ----
   # Bipolar minifilament: 14-bead backbone (700 nm) + 10 cross-bridge heads
   # per side. 100 minifilaments per cell (Salbreux 2012 density 3/μm²).
