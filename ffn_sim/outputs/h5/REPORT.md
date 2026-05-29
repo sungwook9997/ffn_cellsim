@@ -31,9 +31,9 @@ into `phase1/h3-cortex` via this session's parallel-track work.
   - 3 D1 D2-batched Updaters:
     - `BarbedEndElongationUpdater` (Bieling 2016 slip Bell-Evans
       `k_elong(F) = k⁰ · exp(−F δ / kT)`)
-    - `ArpBranchingUpdater` (Bieling 2016 force-stalled; Funk 2022
+    - `ArpBranchingUpdater` (Bieling 2016 force-stalled; Funk 2021 Nat Commun
       abortive emergent from `(1 − 0.2F/F_stall) ≤ 0` clamp)
-    - `CappingUpdater` (Funk 2022 slip Bell-Evans)
+    - `CappingUpdater` (Li/Bieling 2022 slip Bell-Evans)
   - `LamellipodiumState`: `barbed_end_tags`, `capped_tags`, `parent_of`,
     `tangent_of`, `actin_next_tag` (Python-level state, not HOOMD
     topology — capping mutates state, branching appends actin beads)

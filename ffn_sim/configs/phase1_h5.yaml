@@ -56,11 +56,11 @@ lamellipodium:
   F_stall_branch: 1.0e-12        # N   per-WAVE branching stall
   r_branch_eff: 100.0e-9         # m   WAVE → any actin_lamel reach (PI 2026-05-29)
                                  #     ≈ Arp2/3 ⌀22nm + F-actin ⌀7nm + access window
-  abortive_pressure_Pa: 500.0    # Pa  Funk 2022 abortive-failure threshold
+  abortive_pressure_Pa: 500.0    # Pa  Funk 2021 Nat Commun abortive-failure threshold
 
-  # ---- D1 capping (Funk 2022) ----
+  # ---- D1 capping (Li/Bieling 2022, eLife 11:e73145) ----
   k_cap_0: 3.0                   # 1/s at 100 nM capping protein
-  delta_cap: 3.0e-10             # m   Bell length (Funk 2022 ≈ 0.3 nm)
+  delta_cap: 3.0e-10             # m   Bell length (Li/Bieling 2022 ≈ 0.3 nm)
 
   # ---- D2 batch + numerical ----
   batch_steps: 100               # BAOAB steps between Updater ticks
@@ -77,7 +77,7 @@ lamellipodium:
     # which the simulation must recover within ±30% literature spread.
     force_velocity_rel_tol: 0.30
 
-    # KU-5.3 abortive branching: Funk 2022 — branching rate drops > 50%
+    # KU-5.3 abortive branching: Funk 2021 Nat Commun — branching rate drops > 50%
     # above the per-WAVE force threshold ``F > F_abortive`` (= 500 Pa ×
     # area_per_WAVE = 500 · (wave_area/n_WAVE) ≈ 4.5 pN per WAVE for
     # defaults).  Modeled as the Bieling (1 - 0.2 F/F_stall) factor

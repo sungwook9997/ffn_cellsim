@@ -25,9 +25,9 @@ mechanistic form with thermal angle fluctuation and Bell-Evans capping.
 
 | Component | Implementation |
 | --- | --- |
-| Per-Arp2/3 nucleation rate | `k_b(F) = k_b⁰ · (1 − 0.2 · F / F_stall)` with abortive-failure population above ~500 Pa (Funk 2022 mechanism); k_b⁰ = 0.037 s⁻¹ per WAVE molecule (Bieling 2016). **Not** the lumped network-level `(1 − 0.4 F/F_stall)` form. |
+| Per-Arp2/3 nucleation rate | `k_b(F) = k_b⁰ · (1 − 0.2 · F / F_stall)` with abortive-failure population above ~500 Pa (Funk 2021 mechanism); k_b⁰ = 0.037 s⁻¹ per WAVE molecule (Bieling 2016). **Not** the lumped network-level `(1 − 0.4 F/F_stall)` form. |
 | Branch angle | `md.angle.Harmonic` with `t0 = 72°` (Arp2/3 crystal structure) and `k_angle` from Arp2/3 binding stiffness (≈ 100 pN·μm/rad²; literature TBD). Thermal fluctuation emerges naturally — no manual `±5°` jitter. |
-| Capping | Bell-Evans: `k_cap(F) = k_cap⁰ · exp(−F · δ_cap · sinθ / kT)`, δ_cap = 0.3 pN (Funk 2022). k_cap⁰ ≈ 3 s⁻¹ at 100 nM CP. NOT constant rate. |
+| Capping | Bell-Evans: `k_cap(F) = k_cap⁰ · exp(−F · δ_cap · sinθ / kT)`, δ_cap = 0.3 pN (Li/Bieling 2022). k_cap⁰ ≈ 3 s⁻¹ at 100 nM CP. NOT constant rate. |
 | Daughter seed | 1 actin bead at nucleation, elongates by Bell-Evans `k_elong(F) = k_elong⁰ · exp(−F · δ_elong / kT)`. NOT pre-seeded at 3 beads. Accept the early-capping rate; that is the mechanism. |
 | Force partition | Network load divided by N_free_barbed_ends in the WAVE zone, per timestep. |
 | Membrane geometry | Flat surface at `y = Y_max` with WAVE density σ_NPF (simplest). |
@@ -205,7 +205,7 @@ overhead at Phase 1 density.
 
 | # | Decision | v1 / AFINES default | **v2 full-fidelity choice** |
 | --- | --- | --- | --- |
-| 1 | Branching | none in AFINES | per-Arp2/3 `(1 − 0.2 F/F_s)` + abortive + Funk 2022 capping + 1-bead daughter seed |
+| 1 | Branching | none in AFINES | per-Arp2/3 `(1 − 0.2 F/F_s)` + abortive + Li/Bieling 2022 capping + 1-bead daughter seed |
 | 2 | Bond off-rates | Metropolis (AFINES); slip-only cadherin (Plan Phase 1) | **Bell-Evans per bond type; full catch-bond cadherin from Phase 1** |
 | 3 | Integrator | E-M (HOOMD vanilla) | **Leimkuhler-Matthews BAOAB-limit (custom Updater)** |
 | 4 | Bead resolution | N=11, l_link=1.0 μm (AFINES) | **N=21, ℓ₀=0.5 μm** (Plan v2 confirmed) |

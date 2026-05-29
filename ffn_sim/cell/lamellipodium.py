@@ -18,7 +18,7 @@ Implements three batched D2 Updaters per the D1 spec:
   ``k_b⁰ = 0.037 s⁻¹`` per WAVE molecule.  On fire, inserts a
   DAUGHTER actin bead bonded to the mother's barbed-end via a
   branch-angle harmonic ``md.angle.Harmonic`` at ``t0 = 72°``
-  (Arp2/3 crystal-structure angle).  Funk 2022 abortive-failure
+  (Arp2/3 crystal-structure angle).  Funk 2021 Nat Commun abortive-failure
   branch emerges naturally: above the per-WAVE force threshold
   ``F > 500 Pa · WAVE_area`` the ``(1 − 0.2 F/F_stall)`` factor
   becomes negative and is clamped to zero — no separate scalar
@@ -26,7 +26,8 @@ Implements three batched D2 Updaters per the D1 spec:
 
 * :class:`CappingUpdater` — per-barbed-end Bell-Evans
   ``k_cap(F) = k_cap⁰ · exp(−F · δ_cap · sin θ / kT)`` with
-  ``k_cap⁰ = 3 s⁻¹``, ``δ_cap = 0.3 pN`` (Funk 2022).  On fire,
+  ``k_cap⁰ = 3 s⁻¹``, ``δ_cap = 0.3 nm`` (Li/Bieling 2022; value
+  PI-pending per audit: may be 2.7 nm = δ_elong, Li/Bieling 2022).  On fire,
   marks the barbed end CAPPED — no further elongation or
   branching; the actin chain is preserved.
 
@@ -80,7 +81,7 @@ Sanity Gate
 2. **Boundary cases**
    - ``n_WAVE == 0``: empty membrane plane, all Updaters idle.
    - ``F > F_stall / 0.2`` in branching rate: ``k_b`` would go negative;
-     clamp to zero (Funk 2022 abortive-failure regime emerges naturally).
+     clamp to zero (Funk 2021 Nat Commun abortive-failure regime emerges naturally).
    - Membrane plane outside box: validated via ``Y_max ≤ L_box / 2``.
    - All barbed ends capped: elongation + branching idle; capping idle
      (no eligible ends).
@@ -113,7 +114,7 @@ Sanity Gate
    - Force-velocity: membrane-recession rate under imposed cortex-side
      load.  KU-5.2 Bieling 2016 reference curve.
    - Abortive-branching: branching-event count per WAVE per second,
-     plotted vs F.  KU-5.3 Funk 2022 reference: 50 % drop at 500 Pa
+     plotted vs F.  KU-5.3 Funk 2021 Nat Commun reference: 50 % drop at 500 Pa
      · WAVE_area.
 
 References
@@ -121,7 +122,7 @@ References
 - Brief: `ffn_sim/docs/briefs/H5_lamellipodium.md`.
 - PHASE_0_3_DECISIONS.md §D1 (greenfield Arp2/3 Bieling/Funk).
 - Bieling 2016 Cell (force-velocity + dendritic density).
-- Funk 2022 Nature (abortive branching, capping Bell-Evans).
+- Funk 2021 Nat Commun (abortive branching/NPF); Li/Bieling 2022 eLife (capping Bell-Evans).
 - Mullins 1998 Nature (Arp2/3 72° crystal structure).
 - ``ffn_sim/cortex/crosslinkers.py`` (D2 batched Updater pattern).
 - ``ffn_sim/cortex/erm.py`` (md.force.Custom membrane confinement pattern).
@@ -177,11 +178,11 @@ class ResolvedH5:
     r_branch_eff: float           # m   WAVE→any actin_lamel reach (PI 2026-05-29: 100 nm,
                                   #     ≈ Arp2/3 physical reach: Arp2/3 ⌀22nm + F-actin ⌀7nm
                                   #     + access window. Funk 2021 + Bieling 2023 review.)
-    abortive_pressure_Pa: float   # 500 Pa Funk 2022 threshold
+    abortive_pressure_Pa: float   # 500 Pa Funk 2021 Nat Commun threshold
 
-    # D1 capping (Funk 2022)
+    # D1 capping (Li/Bieling 2022, eLife 11:e73145)
     k_cap_0: float                # 1/s 3 at 100 nM CP
-    delta_cap: float              # m   Funk 2022 ≈ 0.3 nm equiv (we store as length)
+    delta_cap: float              # m   Li/Bieling 2022 ≈ 0.3 nm equiv (we store as length)
 
     kT: float                     # J
     seed: int
@@ -607,7 +608,7 @@ class ArpBranchingUpdater(_BatchedLamelUpdater):
        a parent) ``lamel_branch_angle`` harmonic.
     6. Daughter starts as a new barbed end.
 
-    Funk 2022 abortive emerges: when ``F > F_stall / 0.2 = 5 · F_stall``,
+    Funk 2021 Nat Commun abortive emerges: when ``F > F_stall / 0.2 = 5 · F_stall``,
     the force factor ``(1 − 0.2 F / F_stall)`` clamps to 0 (no separate
     scalar override).
 

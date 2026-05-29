@@ -24,7 +24,7 @@
 Implement a 3D HOOMD-blue lamellipodium subsystem that produces the
 correct **dendritic density** (≈ 100 barbed ends per μm² of WAVE plane),
 **Bieling 2016 force-velocity** behaviour for barbed-end elongation, and
-**Funk 2022 abortive-branching** (rate drops > 50 % above 500 Pa per-WAVE
+**Funk 2021 Nat Commun abortive-branching** (rate drops > 50 % above 500 Pa per-WAVE
 force). All three are emergent mechanistic outputs, not lumped
 phenomenology (per CLAUDE.md hard rule).
 
@@ -112,7 +112,7 @@ Per batch tick, for every WAVE molecule:
 7. Daughter starts as a new barbed end; mother's barbed/capped/interior
    state is unchanged.
 
-**Funk 2022 abortive-failure emerges naturally**: above the per-WAVE
+**Funk 2021 Nat Commun abortive-failure emerges naturally**: above the per-WAVE
 force threshold `F > 500 Pa · WAVE_area`, the `(1 − 0.2 F/F_stall)`
 factor becomes negative and is clamped to zero. No separate scalar
 override — the abortive regime is the same mechanism with the rate
@@ -126,7 +126,7 @@ production sweep (1.85M step, `outputs/h5/production/ku51_v1/seed1.log`,
 killed after analytical prediction 100%-confirmed) measured density
 0.05 /μm² (target ≈100 /μm²) — falsified the pre-γ implementation.
 
-### `CappingUpdater` (Funk 2022 slip Bell-Evans)
+### `CappingUpdater` (Li/Bieling 2022 slip Bell-Evans)
 
 ```
 k_cap(F) = k_cap⁰ · exp(−F · δ_cap · sin θ / kT)
@@ -223,7 +223,8 @@ Public helpers in `cell/lamellipodium.py`:
 - **Bieling 2016** (force-velocity, elongation Bell-Evans):
   `delta_elong = 2.7 nm`, `k_elong⁰ = 11.6 s⁻¹`,
   `F_stall_elong = 0.85 pN` per barbed end.
-- **Funk 2022** (abortive branching threshold 500 Pa, capping
+- **Funk 2021 Nat Commun** (abortive branching/NPF, threshold 500 Pa).
+- **Li/Bieling 2022 eLife** (capping
   Bell-Evans `delta_cap = 0.3 pN`, `k_cap⁰ = 3 s⁻¹`).
 - **Crystal-structure** Arp2/3 branch angle `t0 = 72°`.
 - `CLAUDE.md` H.5 hard rule (lamellipodium is Bieling/Funk greenfield,

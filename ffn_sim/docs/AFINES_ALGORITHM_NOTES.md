@@ -3,7 +3,7 @@
 *ActiveCellSim v2 HOOMD-blue migration. Compiled 2026-05-19 from primary
 source review of [github.com/Simfreed/AFINES](https://github.com/Simfreed/AFINES)
 (master @ 2025-03-31) and the Freedman 2017 BPJ / Bieling 2016 Cell /
-Funk 2022 eLife papers. Source files inspected listed at the end.*
+Funk 2021 + Li/Bieling 2022 eLife papers. Source files inspected listed at the end.*
 
 > **Audience**: PI + future Worker A/B/C who will implement Phase 1 Units
 > H.1–H.5 (ECM Mikado / single filament / cortex multi-filament / FA +
@@ -21,7 +21,7 @@ Each is expanded in the relevant section below.
 | --- | --- | --- | --- |
 | 1 | Canonical AFINES repo is `github.com/Simfreed/AFINES` | `github.com/Shibalab-Lehigh/AFINES` (flagged as needing reconfirmation) | Update Plan §2 H.0.3 URL. `Shibalab-Lehigh/AFINES` does not exist. |
 | 2 | AFINES motors/xlinks use **Metropolis** (Glauber detailed-balance) off-acceptance, with constant `k_off` × ΔU-dependent acceptance | "Bell-Evans break events" (force-dependent k_off(F) = k_0·exp(F·xβ/kT)) | Different physical models. Bell-Evans is the v2 *upgrade*, not a port. Need explicit decision: stay-with-AFINES (Metropolis) or upgrade to Bell-Evans. |
-| 3 | **AFINES has no Arp2/3 branching code** anywhere — not in master, not in any of the 9 forks. The closest feature is the `dinner-group/AFINES@growing` branch which does **linear barbed-end elongation only** | Plan H.5 = "AFINES branched mode port" | Plan H.5 is **greenfield design** from Bieling 2016 / Funk 2022 phenomenology, not a port. Adds ~2 weeks scope vs the original "port AFINES branched mode" estimate. |
+| 3 | **AFINES has no Arp2/3 branching code** anywhere — not in master, not in any of the 9 forks. The closest feature is the `dinner-group/AFINES@growing` branch which does **linear barbed-end elongation only** | Plan H.5 = "AFINES branched mode port" | Plan H.5 is **greenfield design** from Bieling 2016 / Funk 2021 + Li/Bieling 2022 phenomenology, not a port. Adds ~2 weeks scope vs the original "port AFINES branched mode" estimate. |
 | 4 | AFINES integrator is **Leimkuhler-Matthews BAOAB-limit** (O(Δt²) on harmonic systems) | not specified in Plan (just "HOOMD Brownian") | HOOMD's `md.methods.Brownian` is Euler-Maruyama (O(Δt)). Two options: (a) accept E-M and halve Δt; (b) write a custom L-M HOOMD updater (~1–2 days). Recommend (a) for Phase 1 baseline. |
 | 5 | AFINES default filament: N=11 beads, l_link=1.0 μm, R_bead=0.5 μm — these are **decoupled** (beads don't touch) | Plan v2: "ℓ₀ = 0.5 μm, 21 beads per fiber" | Probably a length-scale clarification: with L_f=10 μm and ℓ₀=0.5 μm bond rest length, N=21 beads is consistent (twice the AFINES bead density). But "ℓ₀ = 0.5 μm" might be conflated with AFINES's `R_bead = 0.5 μm`. Disambiguate. |
 | 6 | AFINES is **2D, CPU-only, single-threaded** (`#pragma omp parallel for` lines are commented out in all hot loops) | Plan v2 = HOOMD GPU + 3D | We are gaining GPU + 3D + parallel for free; we are losing every AFINES-side performance optimisation we might have implicitly counted on. Wall-time projections in Plan §11 are HOOMD-from-scratch, not AFINES-port. |
@@ -598,7 +598,7 @@ Plan v2 Unit H.5 ("AFINES branched mode port") therefore needs
 **greenfield design** from experimental phenomenology, not a port. Adds
 ~2 weeks scope vs the original estimate.
 
-### 5.2 Bieling 2016 + Funk 2022 phenomenology (what HOOMD must reproduce)
+### 5.2 Bieling 2016 + Funk 2021 + Li/Bieling 2022 phenomenology (what HOOMD must reproduce)
 
 From [Bieling et al. 2016 Cell](https://doi.org/10.1016/j.cell.2015.11.057)
 [PMC5033619] + [Funk et al. 2022 eLife](https://doi.org/10.7554/eLife.73145)
@@ -621,7 +621,7 @@ Both elongation and capping are well-fit by **single exponential decay in
 force per filament**:
 
 - `k_elong(f) = k_elong⁰ · exp(−f · δ_elong / kT)` — Brownian ratchet.
-- `k_cap(f)   = k_cap⁰   · exp(−f · δ_cap · sin θ / kT)` — Funk 2022.
+- `k_cap(f)   = k_cap⁰   · exp(−f · δ_cap · sin θ / kT)` — Li/Bieling 2022.
 
 Funk fits: `δ_cap ≈ 0.3 pN` (tethering force), `sin θ` accounts for
 barbed-end geometry. Zero-force capping: `k_cap⁰ ≈ 3 s⁻¹ · (100 nM CP)⁻¹`.
