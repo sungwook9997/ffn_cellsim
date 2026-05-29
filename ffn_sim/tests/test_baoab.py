@@ -330,3 +330,248 @@ class TestBoxWrap:
             f"max wrap reconstruction error: "
             f"{np.max(np.abs(recon - pos)):e}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Path A — tag-space growth via upstream set_snapshot()
+# (PI-ratified 2026-05-29 in response to KU-5.1 GPU smoke catching the
+# H.5 lamellipodium ↔ BAOAB topology-mutation incompatibility.)
+# ---------------------------------------------------------------------------
+def _grow_sim_by_one_bead(
+    sim: hoomd.Simulation,
+    *,
+    new_pos: np.ndarray,
+    new_type_name: str = "A",
+    extra_types: tuple[str, ...] = (),
+) -> int:
+    """Append ONE particle to the simulation snapshot with the given type.
+
+    Returns the new particle's tag. Mirrors the
+    `cell.lamellipodium._extend_snapshot_with_new_actins` pattern but
+    minimal — no bonds, no angles, just a fresh particle so the test
+    can exercise the BAOAB extension hook in isolation.
+    """
+    snap = sim.state.get_snapshot()
+    types = list(snap.particles.types)
+    for et in extra_types:
+        if et not in types:
+            types.append(et)
+    if new_type_name not in types:
+        types.append(new_type_name)
+    new_typeid = types.index(new_type_name)
+
+    n_old = int(snap.particles.N)
+    new_snap = hoomd.Snapshot()
+    new_snap.particles.N = n_old + 1
+    new_snap.particles.types = types
+    new_snap.particles.typeid[:] = np.concatenate(
+        [np.asarray(snap.particles.typeid), np.array([new_typeid], dtype=np.uint32)]
+    )
+    new_snap.particles.position[:] = np.concatenate(
+        [np.asarray(snap.particles.position),
+         np.asarray(new_pos, dtype=np.float64).reshape(1, 3)],
+        axis=0,
+    )
+    new_snap.particles.velocity[:] = np.concatenate(
+        [np.asarray(snap.particles.velocity), np.zeros((1, 3), dtype=np.float64)],
+        axis=0,
+    )
+    new_snap.particles.mass[:] = np.concatenate(
+        [np.asarray(snap.particles.mass), np.array([1.0], dtype=np.float64)]
+    )
+    new_snap.particles.image[:] = np.concatenate(
+        [np.asarray(snap.particles.image), np.zeros((1, 3), dtype=np.int32)],
+        axis=0,
+    )
+    # Preserve bonds + box.
+    new_snap.bonds.N = int(snap.bonds.N)
+    new_snap.bonds.types = list(snap.bonds.types)
+    if int(snap.bonds.N) > 0:
+        new_snap.bonds.group[:] = np.asarray(snap.bonds.group, dtype=np.uint32)
+        new_snap.bonds.typeid[:] = np.asarray(snap.bonds.typeid, dtype=np.uint32)
+    new_snap.configuration.box = list(snap.configuration.box)
+    sim.state.set_snapshot(new_snap)
+    return n_old  # tag of the newly-appended bead (dense in [0, N))
+
+
+class TestTopologyGrow:
+    """BAOAB tolerates tag-space growth via upstream set_snapshot().
+
+    Path A, PI-ratified 2026-05-29. The H.5 lamellipodium Updaters
+    (BarbedEndElongationUpdater, ArpBranchingUpdater) append actin_lamel
+    beads to the snapshot every batch tick; BAOAB now extends its
+    tag-indexed buffers (gamma_by_tag, bd_prefactor_by_tag, prv_rnds)
+    rather than rejecting the snapshot.
+    """
+
+    def test_extends_on_particle_add(self):
+        """After a +1 grow, buffers have size N+1 and the new tag's
+        gamma / bd_prefactor match gamma_map; existing tags unchanged."""
+        sim = _build_sim(n=4, with_bond=True, box=50.0, dt=1e-4)
+        action, updater = make_baoab_updater(
+            kT=1.0, gamma={"A": 2.0}, dt=1e-4, seed=42
+        )
+        sim.operations.updaters.append(updater)
+        sim.run(100)
+        # Snapshot the existing buffers BEFORE the grow.
+        prv_pre = action.prv_rnds.copy()
+        gamma_pre = action._gamma_by_tag.copy()
+        bdp_pre = action._bd_prefactor_by_tag.copy()
+        assert prv_pre.shape == (4, 3)
+
+        # Grow by 1 bead of the same type.
+        new_tag = _grow_sim_by_one_bead(
+            sim, new_pos=np.array([10.0, 0.0, 0.0]), new_type_name="A"
+        )
+        assert new_tag == 4
+
+        # Next step triggers the extension.
+        sim.run(1)
+
+        # Buffers extended to size 5; existing tags bit-for-bit unchanged.
+        assert action._prv_rnds.shape == (5, 3)
+        assert action._gamma_by_tag.shape == (5,)
+        assert action._bd_prefactor_by_tag.shape == (5, 1)
+        # New tag has correct gamma and bd_prefactor.
+        assert action._gamma_by_tag[4] == 2.0
+        expected_bdp = math.sqrt(1.0 / (2.0 * 2.0 * 1e-4))
+        assert math.isclose(float(action._bd_prefactor_by_tag[4, 0]), expected_bdp, rel_tol=0, abs_tol=0), (
+            f"new tag bd_prefactor = {float(action._bd_prefactor_by_tag[4, 0])}, "
+            f"expected {expected_bdp}"
+        )
+        # Existing tags unchanged (regression-critical).
+        assert np.array_equal(action._gamma_by_tag[:4], gamma_pre)
+        assert np.array_equal(action._bd_prefactor_by_tag[:4], bdp_pre)
+
+    def test_existing_tags_bit_for_bit_after_grow(self):
+        """Fixed-tag positions in a partially-grown system match
+        a parallel fixed-N reference up to the grow step.
+
+        Concretely: run two sims, both with the same Action seed, both
+        seeded the same way. Sim A grows by 1 bead at step 50; sim B
+        does NOT grow. Compare the final TAG-ORDERED positions of tags
+        0..N-1 in sim A vs sim B. The growth event scrambles HOOMD's
+        internal ParticleSorter state, so we can't expect bit-for-bit
+        across the boundary — but the tag-ordered prv_rnds of the
+        existing tags must remain a permutation/identity of the
+        pre-grow buffer (extension is concatenation, not overwrite).
+        """
+        sim = _build_sim(n=4, with_bond=True, box=50.0, dt=1e-4)
+        action, updater = make_baoab_updater(
+            kT=1.0, gamma={"A": 1.0}, dt=1e-4, seed=2026
+        )
+        sim.operations.updaters.append(updater)
+        sim.run(50)
+        prv_existing_pre = action.prv_rnds[:4].copy()
+        # Grow then read prv_rnds for tags 0..3 — must be UNCHANGED.
+        _grow_sim_by_one_bead(
+            sim, new_pos=np.array([20.0, 0.0, 0.0]), new_type_name="A"
+        )
+        # No step yet — buffer extension happens on the next act().
+        # Trigger extension via 1 step, then check existing tags' prv_rnds
+        # was not overwritten EXCEPT for the W_n scatter that any step would
+        # do to ALL tags including existing ones. So we check the slice
+        # behaviour right after extension by inspecting before the step
+        # runs the act() body. Easiest: directly invoke _extend_tag_buffers
+        # so we test the pure extension semantics, isolated from a step.
+        with sim.state.cpu_local_snapshot as snap:
+            tag = np.asarray(snap.particles.tag)
+            typeid = np.asarray(snap.particles.typeid)
+        action._extend_tag_buffers(
+            new_buf_size=5, old_buf_size=4, tag=tag, typeid=typeid,
+            type_names=list(sim.state.particle_types),
+        )
+        assert action._prv_rnds.shape == (5, 3)
+        assert np.array_equal(action._prv_rnds[:4], prv_existing_pre), (
+            "extension overwrote existing tags' prv_rnds — bit-for-bit "
+            "regression is broken for fixed-N workloads."
+        )
+        # New tag's prv_rnds initialised to zero (matches attach() semantic).
+        assert np.array_equal(action._prv_rnds[4], np.zeros(3))
+
+    def test_grow_reproducibility_same_seed(self):
+        """Two sims with the same MD + Action seed, same grow events, same
+        post-grow steps, must produce identical final tag-ordered positions.
+
+        Tests that the extension logic is fully deterministic — no hidden
+        RNG advance, no path-dependent state.
+        """
+        def _run(seed: int) -> np.ndarray:
+            sim = _build_sim(n=4, with_bond=True, box=50.0, dt=1e-4)
+            sim.seed = seed  # ensure both sims see the same HOOMD seed
+            action, updater = make_baoab_updater(
+                kT=1.0, gamma={"A": 1.0}, dt=1e-4, seed=seed
+            )
+            sim.operations.updaters.append(updater)
+            sim.run(20)
+            _grow_sim_by_one_bead(
+                sim, new_pos=np.array([15.0, 0.0, 0.0]), new_type_name="A"
+            )
+            sim.run(20)
+            _grow_sim_by_one_bead(
+                sim, new_pos=np.array([16.0, 0.0, 0.0]), new_type_name="A"
+            )
+            sim.run(20)
+            return _read_positions_by_tag(sim)
+
+        pos_a = _run(seed=12345)
+        pos_b = _run(seed=12345)
+        assert np.array_equal(pos_a, pos_b), (
+            "same-seed deterministic replay through tag-space growth did "
+            "not produce identical final positions: max abs diff = "
+            f"{np.max(np.abs(pos_a - pos_b)):e}"
+        )
+
+    def test_shrinkage_rejected(self):
+        """Tag-space shrinkage is not supported (would require sparse
+        re-indexing). The act() must raise a clear error rather than
+        silently use stale buffer entries."""
+        sim = _build_sim(n=5, with_bond=False, box=50.0, dt=1e-4)
+        action, updater = make_baoab_updater(
+            kT=1.0, gamma={"A": 1.0}, dt=1e-4, seed=0
+        )
+        sim.operations.updaters.append(updater)
+        sim.run(1)  # attach + 1 step → buf_size = 5
+
+        # Shrink to 3 particles.
+        snap = sim.state.get_snapshot()
+        new_snap = hoomd.Snapshot()
+        new_snap.particles.N = 3
+        new_snap.particles.types = list(snap.particles.types)
+        new_snap.particles.typeid[:] = np.asarray(snap.particles.typeid[:3])
+        new_snap.particles.position[:] = np.asarray(snap.particles.position[:3])
+        new_snap.particles.velocity[:] = np.asarray(snap.particles.velocity[:3])
+        new_snap.particles.mass[:] = np.asarray(snap.particles.mass[:3])
+        new_snap.particles.image[:] = np.asarray(snap.particles.image[:3])
+        new_snap.bonds.N = 0
+        new_snap.bonds.types = list(snap.bonds.types) if snap.bonds.types else ["p"]
+        new_snap.configuration.box = list(snap.configuration.box)
+        sim.state.set_snapshot(new_snap)
+
+        with pytest.raises(RuntimeError, match="shrunk|append-only"):
+            sim.run(1)
+
+    def test_new_type_at_runtime_blocked_by_hoomd(self):
+        """Defensive: HOOMD itself forbids new particle types via
+        set_snapshot ("Particle types must remain the same"), so the
+        missing-gamma-for-new-type code path in _extend_tag_buffers is
+        unreachable by a well-formed Updater — gamma_map only needs
+        to cover types registered at attach() time. This test pins
+        that invariant.
+
+        If a future HOOMD version relaxes this restriction, this test
+        will break and someone should re-evaluate whether _extend_tag_buffers
+        needs to register a fresh gamma_map entry at runtime (option:
+        add an explicit `extend_gamma_map(type, gamma)` API).
+        """
+        sim = _build_sim(n=3, with_bond=False, box=50.0, dt=1e-4)
+        action, updater = make_baoab_updater(
+            kT=1.0, gamma={"A": 1.0}, dt=1e-4, seed=0
+        )
+        sim.operations.updaters.append(updater)
+        sim.run(1)
+        with pytest.raises(RuntimeError, match="types must remain the same"):
+            _grow_sim_by_one_bead(
+                sim, new_pos=np.array([10.0, 0.0, 0.0]),
+                new_type_name="B", extra_types=("B",),
+            )

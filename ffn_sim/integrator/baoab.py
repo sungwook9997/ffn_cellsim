@@ -203,6 +203,16 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
 
     Notes
     -----
+    *Topology mutation* — PI-ratified Path A (2026-05-29): BAOAB tolerates
+    upstream ``sim.state.set_snapshot()`` calls that append new particle
+    tags (e.g. H.5 lamellipodium elongation/branching). At each ``act()``
+    the per-tag buffers (``_gamma_by_tag``, ``_bd_prefactor_by_tag``,
+    ``_prv_rnds``) are extended for new tags via
+    :meth:`_extend_tag_buffers`; existing tags read bit-for-bit identical
+    (fixed-N regression-safe). New tag types must already be in
+    ``gamma_map``. Tag-space SHRINKAGE is rejected (would require sparse
+    re-indexing).
+
     See the module docstring §Sanity Gate for the dimensional / boundary
     / conservation / numerical / sign / measurement checks this
     implementation must satisfy. RUNTIME checks are enforced here; STATIC
@@ -311,8 +321,80 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._prv_rnds = np.zeros((N, 3), dtype=np.float64)
         self._steps_run = 0
 
+    def _extend_tag_buffers(
+        self,
+        *,
+        new_buf_size: int,
+        old_buf_size: int,
+        tag: np.ndarray,
+        typeid: np.ndarray,
+        type_names: list[str],
+    ) -> None:
+        """Extend tag-indexed buffers to cover newly-appeared tags.
+
+        Called from :meth:`act` when ``max(tag) + 1 > len(_prv_rnds)``,
+        i.e. an upstream Updater appended particles to the snapshot.
+        New tags (in ``[old_buf_size, new_buf_size)``) are matched to
+        their row in the current snapshot, their particle-type name is
+        looked up via ``type_names[typeid[row]]``, and the per-tag
+        buffers are extended with the corresponding gamma / bd_prefactor
+        and zero-initialised prv_rnds.
+
+        Invariants:
+          - Existing tags' buffer entries are unchanged (bit-for-bit
+            regression for fixed-N workloads).
+          - New tag type must already be in ``self.gamma_map`` — the
+            upstream Updater must extend gamma_map BEFORE the topology
+            mutation (typically: register the new type's drag at
+            ``Cell.build`` time, when the actin_lamel type is first
+            added to the simulation state).
+        """
+        new_gamma = np.empty(new_buf_size - old_buf_size, dtype=np.float64)
+        for t in range(old_buf_size, new_buf_size):
+            rows = np.where(tag == t)[0]
+            if rows.size != 1:
+                raise RuntimeError(
+                    f"New tag {t} expected to appear exactly once in "
+                    f"snapshot; found {rows.size}. Tag-space mutation "
+                    "must be append-only with dense tags."
+                )
+            tname = type_names[int(typeid[rows[0]])]
+            if tname not in self.gamma_map:
+                raise RuntimeError(
+                    f"gamma_map missing entry for type '{tname}' of "
+                    f"new tag {t}. Extend gamma_map BEFORE the topology "
+                    "mutation (typically at Cell.build time)."
+                )
+            new_gamma[t - old_buf_size] = self.gamma_map[tname]
+        new_bd_pref = np.sqrt(
+            self.kT / (2.0 * new_gamma * self.dt)
+        ).reshape(-1, 1)
+        self._gamma_by_tag = np.concatenate([self._gamma_by_tag, new_gamma])
+        self._bd_prefactor_by_tag = np.concatenate(
+            [self._bd_prefactor_by_tag, new_bd_pref], axis=0
+        )
+        self._prv_rnds = np.concatenate(
+            [
+                self._prv_rnds,
+                np.zeros(
+                    (new_buf_size - old_buf_size, 3), dtype=np.float64
+                ),
+            ],
+            axis=0,
+        )
+
     def act(self, timestep: int) -> None:
-        """Apply one L-M BAOAB-limit step to all filtered particles."""
+        """Apply one L-M BAOAB-limit step to all filtered particles.
+
+        Topology mutation (Phase 1 H.5+, PI-ratified 2026-05-29 Path A):
+            BAOAB tolerates tag-space growth via upstream
+            ``sim.state.set_snapshot()`` calls. At each ``act()``, if
+            ``max(tag) >= len(_prv_rnds)`` the per-tag buffers are
+            extended (see :meth:`_extend_tag_buffers`). Existing tags
+            read bit-for-bit identical, so fixed-N workloads (KU-3.5
+            cortex, L_p single-filament, KU-3.20 nematic) are
+            regression-clean. Tag-space shrinkage is not supported.
+        """
         if self._prv_rnds is None or self._gamma_by_tag is None:
             raise RuntimeError(
                 "LeimkuhlerMatthewsBAOAB.act called before attach(); "
@@ -328,13 +410,42 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
             F = np.asarray(snap.particles.net_force)          # (N, 3) ro
             image = np.asarray(snap.particles.image)          # (N, 3) rw
             tag = np.asarray(snap.particles.tag)              # (N,) stable id
+            typeid = np.asarray(snap.particles.typeid)        # (N,) type lookup
             N = pos.shape[0]
 
-            if N != self._prv_rnds.shape[0]:
+            # Tag-space mutation handling (Path A, PI-ratified 2026-05-29).
+            # H.5 lamellipodium Updaters (BarbedEndElongationUpdater +
+            # ArpBranchingUpdater) append new actin_lamel beads to the
+            # snapshot via set_snapshot(); the next act() sees an enlarged
+            # tag space. Extend the tag-indexed buffers (_gamma_by_tag,
+            # _bd_prefactor_by_tag, _prv_rnds) to cover the new tags
+            # — existing tags' buffer values are preserved bit-for-bit,
+            # which is the regression-critical invariant for fixed-N
+            # workloads (KU-3.5 cortex tension, L_p, KU-3.20 nematic).
+            # New tags get γ from gamma_map[type_name] (looked up via
+            # current snapshot typeid), bd_prefactor from √(kT/(2γΔt)),
+            # and prv_rnds initialised to zero (matches attach()
+            # "post-fracture" semantics — first step is effectively
+            # half-noise, converges to L-M from step 2).
+            # Tag-space SHRINKAGE is rejected — supporting it would
+            # require sparse re-indexing.
+            max_tag = int(tag.max()) if N > 0 else -1
+            buf_size = self._prv_rnds.shape[0]
+            if max_tag + 1 > buf_size:
+                self._extend_tag_buffers(
+                    new_buf_size=max_tag + 1,
+                    old_buf_size=buf_size,
+                    tag=tag,
+                    typeid=typeid,
+                    type_names=list(sim.state.particle_types),
+                )
+            elif max_tag + 1 < buf_size:
                 raise RuntimeError(
-                    "Particle count changed between attach() and act() "
-                    f"(was {self._prv_rnds.shape[0]}, now {N}); "
-                    "topology mutation requires a fresh attach()."
+                    "Tag space shrunk between attach() and act() "
+                    f"(was {buf_size}, now max_tag+1={max_tag + 1}); "
+                    "BAOAB does not support tag-space shrinkage (would "
+                    "require sparse re-indexing). Topology mutation must "
+                    "be append-only."
                 )
 
             if not np.all(np.isfinite(F)):
