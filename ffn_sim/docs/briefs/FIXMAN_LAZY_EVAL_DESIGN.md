@@ -161,8 +161,8 @@ ops do not parallelise enough to amortise the launch cost.
 | | Original estimate (this doc, pre-experiment) | Measurement (post-experiment) |
 |---|---|---|
 | B0 speedup on KU-3.5 (cortex 120 × 7) | 5–15× plausible | **0.32×** (i.e. 3× *slower*) |
-| B0 speedup on non-constrained workloads (L_p) | not separately estimated | **unmeasured** — separate benchmark needed; baoab.py port left in place specifically so future L_p-on-GPU tests can quantify it. |
-| Recommendation | "B0 as parallel track" | **Do not run KU-3.5 on GPU.** For Phase 2 cell-scale sims (larger N, more chains), kernel-launch overhead amortises better — re-benchmark before assuming the same outcome. |
+| B0 speedup on non-constrained workloads (L_p) | not separately estimated | **0.81×** (1.24× slower) — `lp_full_gpu_baoab_port.log` wall=7812s vs pre-port `lp_full_gpu.log` wall=6315s, identical n_fil=1000 × 5.1M ts, physics in-band on both (16.74 vs 16.83 μm). |
+| Recommendation | "B0 as parallel track" | **REVERT baoab.py port (PI-ratified 2026-05-29).** Both Phase-1 GPU workloads (KU-3.5, L_p) measured net negative. CPU path is bit-for-bit either way so revert risk is 0. For Phase 2 cell-scale sims (larger N, more chains), kernel-launch overhead amortises better — re-attempt with fused RawKernel (§7.6) before assuming the same outcome. |
 
 ### 7.5 What this means for KU-3.5 production
 
@@ -173,6 +173,14 @@ total wall). The KU-3.5 driver now has per-sample PROGRESS print + min-image
 LJ-CFL guard (commits `1d0c8c6`, `85946d6`) so the seed2 canonical crash mode
 (motor saturation → runaway LJ overlap, silent for 2h21m before the int32
 image-guard hit) is now visible in real time.
+
+**Update 2026-05-29 (PI-ratified, this session)**: L_p FULL GPU re-bench
+falsified the "may help non-SHAKE workloads like L_p" hypothesis that justified
+keeping baoab.py port in place. Both Phase-1 GPU workloads now measured net
+negative (KU-3.5 3× slower, L_p 1.24× slower). PI ratified revert of `d18d7fb`;
+CPU code path is bit-for-bit, zero CPU regression risk. KU-3.5 v3 sweep launches
+on CPU canonical (gbook 4-seed concurrent) with R1 active for γ_total
+measurement.
 
 ### 7.6 What future GPU work would need
 

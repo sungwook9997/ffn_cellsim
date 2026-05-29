@@ -1083,3 +1083,52 @@ PI sign-off recommendation: **revert `d18d7fb`** for Phase 1 — no
 workload benefits, costs 25-300% wall. Keep the xp-dispatch design as
 a reference for Phase 2 cell-scale work where larger N may amortise
 kernel-launch overhead better.
+
+## 2026-05-29 PI ratification — R1 + baoab port revert
+
+PI Sungwook ratified two decisions this Lead session:
+
+### Decision 1: R1 (rigid Lagrange tension exposure) — ✅ RATIFIED
+
+- Design: `docs/briefs/RIGID_LAGRANGE_TENSION_DESIGN.md` (Status header now
+  `✅ RATIFIED 2026-05-29`).
+- Implementation: commit `fb66028` (already on `phase1/h3-cortex`). Behaviour
+  bit-for-bit when `record_lambda=False` (default); 5 new tests in
+  `TestR1LambdaCapture` cover Sanity Gate §5 #1-7.
+- Evidence justifying ratification: v2 sweep `⟨γ_soft⟩ = 3.07e-5 mN/m` vs
+  target `[0.35, 0.65] mN/m` = **~16,300× under-report** (more than 80× larger
+  than the design §1 conservative 200× estimate). R1 is necessary for KU-3.5
+  to be honestly comparable to literature.
+- Sanity Gate §5 #6 (the actual gate check — γ_total in band) will be measured
+  by the v3 sweep (this session), not the design doc itself.
+
+### Decision 2: `baoab.py` port revert — ✅ RATIFIED
+
+- Target: revert commit `d18d7fb` ("H.3 baoab.py: xp-dispatch port").
+- Falsifying evidence: Both Phase-1 GPU workloads measured net-negative
+  post-port. KU-3.5 3× slower (already drove `constrained_baoab.py` port
+  revert via `a49314a`); L_p FULL 1.24× slower (this session's re-bench).
+  No remaining workload that benefits.
+- CPU code path is bit-for-bit either way; revert risk on CPU = 0.
+  16/16 baoab + 146 cortex/myosin/erm/xlink CPU tests PASS pre-revert;
+  same passes expected post-revert.
+- Phase 2 future: re-attempt with fused CuPy `RawKernel` or native
+  HOOMD CUDA module (FIXMAN_LAZY_EVAL_DESIGN §7.6) when cell-scale N
+  amortises kernel-launch overhead.
+
+### Follow-up: KU-3.5 v3 sweep launched
+
+- gbook 4-seed CPU concurrent (matches v2 conditions: n_fil=120,
+  dt_factor=0.0003, 4M production steps).
+- Driver flips `act.record_lambda = True`; tension measured via
+  `_tension_method_of_planes_rigid` → γ_soft + γ_rigid + γ_total per sample.
+- Pre-existing instrumentation retained: PROGRESS print (commit `1d0c8c6`),
+  min-image LJ-CFL guard (`85946d6`), auto-viz subprocess (`7a1e4a5`).
+- Output: `outputs/h3/production/ku35_canonical_v3/`.
+- `sweep_analysis.py` `render_gamma_breakdown` panel + Luo 2013 ζ=1/7
+  oracle overlay (commit `c59cc0b`) auto-activates because schema now
+  contains γ_total.
+- If v3 γ_total ∈ `[0.35, 0.65] mN/m` → KU-3.5 ✅ candidate, H.3 ✅ DONE
+  unblocked. If still under-report → diagnostic next step (likely a
+  per-plane Luo decomposition or KU-3.21 deformation-specificity sweep).
+

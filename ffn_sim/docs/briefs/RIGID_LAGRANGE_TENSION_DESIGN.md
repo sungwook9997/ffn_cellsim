@@ -1,11 +1,21 @@
 # Rigid-constraint Lagrange shell tension — design + Sanity Gate
 
-> **Status**: EXPERIMENTAL. **NOT** yet PI-ratified. Touches
-> `ffn_sim/integrator/constrained_baoab.py` (integrator-freeze) for a
-> *diagnostic exposure*, not a behavioural change. Requires PI sign-off.
+> **Status**: ✅ **RATIFIED 2026-05-29** (PI sign-off, this session). Implementation
+> committed at `fb66028` ("H.3 R1: rigid-bond Lagrange tension exposure (KU-3.5
+> 200× under-report fix)"). Sanity Gate §5 #1-7 covered by
+> `tests/test_constrained_baoab.py::TestR1LambdaCapture` (5 tests, behaviour
+> bit-for-bit when `record_lambda=False`).
 >
-> **Author**: Lead session, 2026-05-28 autonomous /loop.
-> **Reference commit (baseline)**: `0f65e75`.
+> **Decision evidence**: KU-3.5 v2 canonical sweep (`ku35_canonical_v2/`) measured
+> `⟨γ_soft⟩ = 3.07e-5 mN/m` (3-seed ensemble) vs target band `[0.35, 0.65] mN/m` =
+> **~16,300× under-report** — the §1 estimate of 200× was conservative; the actual
+> rigid-backbone share dominates more strongly. R1 is required to make KU-3.5
+> honest. v3 sweep (this session, `record_lambda=True` + `_tension_method_of_planes_rigid`)
+> will measure γ_total = γ_soft + γ_rigid as the gate quantity.
+>
+> **Author**: Lead session, 2026-05-28 autonomous /loop (design); ratified
+> 2026-05-29 Lead session.
+> **Reference commit (baseline)**: `0f65e75`. **Implementation commit**: `fb66028`.
 
 ## 1. Problem
 
