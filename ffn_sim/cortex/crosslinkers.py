@@ -616,6 +616,21 @@ class XlinkBondUpdater(hoomd.custom.Action):
         bt = np.asarray(read_snap.bonds.typeid, dtype=np.uint32).copy()
         bond_type_names = list(read_snap.bonds.types)
 
+        # Per-cortex-bead total bonded-degree budget (HOOMD nlist exclusion cap).
+        # A cortex-actin bead accrues bonds from backbone + FA clutch + myosin +
+        # xlink; HOOMD's neighbour list has a hard compile-time max of 7 bonded
+        # exclusions/particle and a bead reaching degree 8 raises "Too many bonds
+        # to process exclusions" (the pre-existing long-run v4 crash). This binder
+        # had NO per-bead cap; enforce the SHARED budget over ALL current bonds on
+        # the bead. Margin of 1 under the 7-limit covers sequential-binder timing.
+        # (Library-capacity bound, not physics; same class as MAX_HEADS_PER_BEAD.)
+        _flat_bg = bg.reshape(-1)
+        _cortex_bead_degree = np.bincount(
+            _flat_bg[_flat_bg < self.n_cortex_actin],
+            minlength=self.n_cortex_actin,
+        ).astype(np.int64)
+        _MAX_CORTEX_BEAD_DEGREE = 6
+
         # Indices of xlink_attach_* bin types in the bond type list.
         attach_bin_typeids = [
             i for i, name in enumerate(bond_type_names)
@@ -735,6 +750,10 @@ class XlinkBondUpdater(hoomd.custom.Action):
                 # but a defensive check is cheap.
                 if head_tag == actin_tag:
                     continue
+                # Shared per-cortex-bead degree budget (HOOMD exclusion cap).
+                if _cortex_bead_degree[actin_tag] >= _MAX_CORTEX_BEAD_DEGREE:
+                    continue
+                _cortex_bead_degree[actin_tag] += 1
                 new_bonds_list.append((head_tag, actin_tag))
                 new_bins_list.append(bin_idx)
                 self._head_bound_to_actin[unbound_local[k]] = actin_tag

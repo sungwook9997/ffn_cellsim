@@ -789,6 +789,22 @@ class MyosinStepUpdater(hoomd.custom.Action):
         bt = np.asarray(read_snap.bonds.typeid, dtype=np.uint32).copy()
         bond_type_names = list(read_snap.bonds.types)
 
+        # Per-cortex-bead total bonded-degree budget (HOOMD nlist exclusion cap).
+        # MAX_HEADS_PER_BEAD below caps only MYOSIN attach bonds and is blind to
+        # backbone + FA clutch + xlink, so 3 heads on an already-loaded bead can
+        # push its raw degree to 8 -> HOOMD's "Too many bonds to process
+        # exclusions" crash (hard limit 7; the pre-existing long-run v4 crash).
+        # Also enforce the SHARED budget over ALL current bonds on the bead.
+        # Margin of 1 under 7 covers sequential-binder timing. (bg is reassigned
+        # to the cortex backbone groups later, so compute this from the full
+        # bonds.group HERE.)
+        _flat_bg = bg.reshape(-1)
+        _cortex_bead_degree = np.bincount(
+            _flat_bg[_flat_bg < self.n_cortex_actin],
+            minlength=self.n_cortex_actin,
+        ).astype(np.int64)
+        _MAX_CORTEX_BEAD_DEGREE = 6
+
         attach_bin_typeids = [
             i for i, name in enumerate(bond_type_names)
             if name.startswith("cortex_myosin_attach_b")
@@ -919,8 +935,11 @@ class MyosinStepUpdater(hoomd.custom.Action):
                             best_perp = perp
                     if best_bead < 0:
                         continue
-                    # Enforce per-bead exclusion-safe cap.
+                    # Enforce per-bead exclusion-safe cap (myosin-specific count
+                    # AND the shared total-degree budget across all bond sources).
                     if bead_attach_count[best_bead] >= MAX_HEADS_PER_BEAD:
+                        continue
+                    if _cortex_bead_degree[best_bead] >= _MAX_CORTEX_BEAD_DEGREE:
                         continue
                     # Bin r0 from actual head-bead distance (clamp to bin range).
                     d_use = min(best_d_use, self.p.head_actin_max_bind_dist - 1e-12)
@@ -931,6 +950,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     new_bins_list.append(idx_bin)
                     self._head_bound_to_actin[unbound_head_locals[k]] = best_bead
                     bead_attach_count[best_bead] += 1
+                    _cortex_bead_degree[best_bead] += 1
             else:
                 # Legacy bead-center mode.
                 tree = cKDTree(r_actin_all)
