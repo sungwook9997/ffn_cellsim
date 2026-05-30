@@ -504,10 +504,16 @@ def test_fa_physical_capture_radius_fully_clutches(p_cortex, p_fa):
     h = build_cortex_full_simulation(p_cortex, p_fa=p_fa)  # physical radius
     fi = h["fa_integration"]
     n_int = h["n_fa_integrins"]
-    assert fi.n_clutch_bonds >= 0.9 * n_int, (
-        f"physical capture_radius_R_FA={p_fa.capture_radius_R_FA:.2e} m should now "
-        f"clutch (nearly) ALL {n_int} integrins via contact-footprint seeding "
-        f"(empirically full); got {fi.n_clutch_bonds}."
+    # The clutch fan-in cap (_MAX_CLUTCH_FANIN in cell.py) trades a few clutch
+    # bonds for HOOMD nlist-exclusion safety (the "Too many bonds to process
+    # exclusions" overflow on long production runs), so a small fraction of
+    # integrins in dense FA disks stay unclutched. The contact-footprint fix is
+    # proven by clutching the MAJORITY (>=70%) vs the old disjoint-geometry ~17%
+    # (9/52). (PI-flagged: the clutch count is a HOOMD-capacity tradeoff.)
+    assert fi.n_clutch_bonds >= 0.7 * n_int, (
+        f"physical capture_radius_R_FA={p_fa.capture_radius_R_FA:.2e} m should "
+        f"clutch most of the {n_int} integrins via contact-footprint seeding; "
+        f"got {fi.n_clutch_bonds} (old disjoint geometry clutched ~17%)."
     )
     assert n_int > 0
     assert h["n_substrate_ligands"] > 0

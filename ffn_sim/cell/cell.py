@@ -428,7 +428,7 @@ def _extend_snapshot_with_fa(
     # physics parameter: each integrin instead clutches its nearest WITHIN-CAPTURE
     # cortex bead that still has spare capacity. The clutch stays force-free
     # (r0 = the EXACT realised separation to whichever bead it bonds).
-    _MAX_CLUTCH_FANIN = 2
+    _MAX_CLUTCH_FANIN = 1
     _fanin = np.zeros(n_cortex_actin, dtype=np.int64)
     for i in range(n_int):
         r_int = integrin_pos_local[i]
