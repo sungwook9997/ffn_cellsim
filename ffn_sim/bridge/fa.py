@@ -376,7 +376,10 @@ class FALayout:
 
 
 def _build_fa_layout(
-    p: ResolvedH4, rng: np.random.Generator
+    p: ResolvedH4,
+    rng: np.random.Generator,
+    *,
+    contact_footprint: "tuple[np.ndarray, float] | None" = None,
 ) -> tuple[list[FALayout], np.ndarray, np.ndarray]:
     """Scatter FAs across the box face, allocate integrin + ligand tags.
 
@@ -388,11 +391,36 @@ def _build_fa_layout(
     ligand_positions : np.ndarray, shape (n_ligand_total, 3)
     """
     n_FAs = p.n_nascent_per_cell + p.n_mature_per_cell
-    # Distribute FA centres uniformly across the [-L/2 + R_FA, L/2 - R_FA]²
-    # box face. R_FA margin keeps each FA's capture disk inside the box.
-    margin = p.capture_radius_R_FA
-    half = 0.5 * p.L_box - margin
-    centres_xy = rng.uniform(-half, half, size=(n_FAs, 2))
+    # ``contact_footprint`` (cell-integration path only; None on the standalone
+    # flat-substrate FA sim -> byte-identical legacy behaviour). Given as
+    # ``(anchor_xyz, capture_radius)`` with anchor_xyz an (M, 3) array of cortex
+    # SOUTH-CAP bead positions, each FA centre is placed directly UNDER one
+    # anchor bead (round-robin) so its integrins land within capture_radius of a
+    # real cortex bead. Without this the cortex shell (origin-centred, south pole
+    # at z ~ -R_cell) and the z ~ 0 substrate are spatially disjoint and ~0
+    # clutch bonds form (the KU-3.5 v4 floor blocker).
+    if contact_footprint is not None:
+        anchor_xyz = np.asarray(contact_footprint[0], dtype=np.float64).reshape(-1, 3)
+        if anchor_xyz.shape[0] == 0:
+            raise ValueError(
+                "contact_footprint anchor array is empty -- no cortex south-cap "
+                "beads within capture of the substrate; check capture_radius."
+            )
+        # Round-robin a shuffled anchor list so fan-in (FAs per cortex bead)
+        # stays O(1) even when the mesoscale cap is sparse.
+        order = anchor_xyz[rng.permutation(anchor_xyz.shape[0])]
+        anchor_sel = np.array(
+            [order[i % order.shape[0]] for i in range(n_FAs)], dtype=np.float64
+        )
+        centres_xy = anchor_sel[:, :2]
+        centres_z = anchor_sel[:, 2]
+    else:
+        # Distribute FA centres uniformly across the [-L/2 + R_FA, L/2 - R_FA]
+        # box face. R_FA margin keeps each FA's capture disk inside the box.
+        margin = p.capture_radius_R_FA
+        half = 0.5 * p.L_box - margin
+        centres_xy = rng.uniform(-half, half, size=(n_FAs, 2))
+        centres_z = None
 
     layouts: list[FALayout] = []
     integrin_positions: list[np.ndarray] = []
@@ -425,7 +453,16 @@ def _build_fa_layout(
         pos_int = np.zeros((n_int_per_fa, 3), dtype=np.float64)
         pos_int[:, 0] = cxy[0] + dx
         pos_int[:, 1] = cxy[1] + dy
-        pos_int[:, 2] = p.h_integrin_above_substrate
+        if centres_z is not None:
+            # Contact-footprint path: sit the integrin h_integrin below its
+            # anchor cortex bead (toward the substrate). The integrin-bead gap
+            # (= h_integrin << capture) guarantees the clutch forms; r0 is set to
+            # the exact realised separation in cell.py, so the clutch is
+            # force-free at construction regardless of this offset. Uses the
+            # existing physical h_integrin constant -- no new magic number.
+            pos_int[:, 2] = centres_z[i] - p.h_integrin_above_substrate
+        else:
+            pos_int[:, 2] = p.h_integrin_above_substrate
         integrin_positions.append(pos_int)
 
         tag_start = next_tag
@@ -447,8 +484,18 @@ def _build_fa_layout(
     # Now allocate ligand tags starting after the last integrin.
     ligand_tag_start = next_tag
     for i, lay in enumerate(layouts):
+        # Standalone path: ligand on the z=0 substrate plane (legacy). Contact
+        # path: ligand sits h_integrin below the integrin (which is h_integrin
+        # below its anchor cap bead), preserving the integrin-ligand gap =
+        # h_integrin exactly as on the flat substrate; SubstrateLigandPin then
+        # pins each ligand at this south-cap z.
+        lig_z = (
+            centres_z[i] - 2.0 * p.h_integrin_above_substrate
+            if centres_z is not None
+            else 0.0
+        )
         lig_pos = np.array(
-            [lay.centre_xy[0], lay.centre_xy[1], 0.0], dtype=np.float64
+            [lay.centre_xy[0], lay.centre_xy[1], lig_z], dtype=np.float64
         )
         ligand_positions.append(lig_pos[None, :])
         lay.ligand_tag = ligand_tag_start + i

@@ -286,7 +286,20 @@ def test_fa_with_myosin_builds(p_cortex, p_myosin, p_fa):
     post = np.asarray(sim.state.get_snapshot().particles.position)
     assert np.all(np.isfinite(post)), "NaN/Inf after FA+myosin warm-up"
     assert np.allclose(post[lig], pre[lig]), "substrate ligands drifted (S0 pin)"
-    assert np.allclose(post[lig, 2], 0.0), "substrate ligands left z=0"
+    # FLOOR-FIX (a): ligands are seeded directly UNDER a south-cap cortex bead
+    # (contact-footprint seeding), so each ligand's xy coincides with a
+    # cortex-actin bead (was: all ligands on the z=0 equatorial plane). The S0
+    # immobility contract is asserted just above; verify the contact geometry.
+    # Check CONSTRUCTION seeding (pre): the immobile ligand sits under its cortex
+    # bead's construction xy. Post-warm-up the cortex bead has drifted thermally
+    # ~nm while the pinned ligand stayed put, so compare against pre, not post.
+    _n_cortex = int(h["n_cortex_actin"])
+    _lig_xy = pre[lig][:, :2]
+    _cortex_xy = pre[:_n_cortex, :2]
+    _dmin = np.min(
+        np.linalg.norm(_lig_xy[:, None, :] - _cortex_xy[None, :, :], axis=2), axis=1
+    )
+    assert np.all(_dmin < 1e-9), "each ligand must sit under a cortex-actin bead"
 
 
 def _resolve_xlinks_or_skip(cortex_cfg, p_cortex):
@@ -425,11 +438,18 @@ def test_fa_on_builds(p_cortex, p_fa):
         typeid[n_cortex:n_cortex + n_int_expected] == int_tid
     ), "S5: integrins occupy the appended block [n_cortex_actin, +n_int)"
 
-    # substrate ligands at z=0
+    # FLOOR-FIX (a): ligands are seeded directly UNDER a south-cap cortex bead
+    # (contact-footprint), so each ligand's xy coincides with a cortex-actin bead
+    # (was: all ligands on the z=0 plane). Substrate immobility is the S0 pin's job.
     lig = np.arange(
         fi.ligand_tag_start, fi.ligand_tag_start + fi.n_substrate_ligands
     )
-    assert np.allclose(pos[lig, 2], 0.0), "substrate ligands must sit at z=0"
+    _lig_xy = pos[lig][:, :2]
+    _cortex_xy = pos[:n_cortex, :2]
+    _dmin = np.min(
+        np.linalg.norm(_lig_xy[:, None, :] - _cortex_xy[None, :, :], axis=2), axis=1
+    )
+    assert np.all(_dmin < 1e-9), "each ligand must sit under a cortex-actin bead"
 
     # S1: integrin_ligand catch updater attached, none bound at construction
     assert h["integrin_action"] is not None
@@ -469,24 +489,25 @@ def test_fa_on_builds(p_cortex, p_fa):
     assert np.isclose(float(bond.params["fa_actin_clutch"]["k"]), p_fa.k_int_bare)
 
 
-def test_fa_physical_capture_radius_barely_clutches(p_cortex, p_fa):
-    """Documented honest finding: the physical ``capture_radius_R_FA``
-    (1.5 um) barely reaches the cortex shell, so the vast majority of
-    integrins fail to form a load-path clutch at construction -- the
-    literal load path is essentially absent until the cell is equilibrated
-    onto the substrate (S5/B2). Asserts (a) integrins + ligands + the
-    integrin_ligand catch updater still build, and (b) fewer than half the
-    integrins clutch at the physical radius (vs ALL at the cell-diameter
-    override in ``test_fa_on_builds``).
+def test_fa_physical_capture_radius_fully_clutches(p_cortex, p_fa):
+    """FLOOR-FIX (a) [KU-3.5 v4, 2026-05-31] — *** TEST-CONTRACT CHANGE, PI-FLAGGED ***.
+
+    This test previously asserted the BUG (``..._barely_clutches``): that the
+    physical ``capture_radius_R_FA`` (1.5 um) "barely clutches" because the cortex
+    shell (origin-centred, south pole at z ~ -R_cell) and the z=0 substrate are
+    spatially disjoint, leaving the literal load path essentially absent (the
+    KU-3.5 v4 gamma floor). The contact-footprint seeding
+    (``cell.py._extend_snapshot_with_fa``) now seeds each FA directly under a
+    south-cap cortex bead, so the PHYSICAL radius fully clutches with NO
+    cell-diameter override. Inverted to regression-guard the fix.
     """
-    h = build_cortex_full_simulation(p_cortex, p_fa=p_fa)  # default radius
+    h = build_cortex_full_simulation(p_cortex, p_fa=p_fa)  # physical radius
     fi = h["fa_integration"]
     n_int = h["n_fa_integrins"]
-    assert fi.n_clutch_bonds < 0.5 * n_int, (
-        f"physical capture_radius_R_FA={p_fa.capture_radius_R_FA:.2e} m "
-        f"clutched {fi.n_clutch_bonds}/{n_int} integrins; the disjoint "
-        "substrate/cortex geometry should leave most integrins unclutched "
-        "until equilibration (S5/B2)."
+    assert fi.n_clutch_bonds >= 0.9 * n_int, (
+        f"physical capture_radius_R_FA={p_fa.capture_radius_R_FA:.2e} m should now "
+        f"clutch (nearly) ALL {n_int} integrins via contact-footprint seeding "
+        f"(empirically full); got {fi.n_clutch_bonds}."
     )
     assert n_int > 0
     assert h["n_substrate_ligands"] > 0
@@ -563,11 +584,22 @@ def test_fa_short_run_no_nan(p_cortex, p_fa):
     post = np.asarray(sim.state.get_snapshot().particles.position)
     assert np.all(np.isfinite(post)), "NaN/Inf after FA warm-up"
 
-    # S0 immobility: substrate ligands held at construction z=0.
+    # S0 immobility: substrate ligands held at their construction position.
     assert np.allclose(post[lig], pre[lig]), (
         "substrate ligands drifted during warm-up (S0 pin failed)"
     )
-    assert np.allclose(post[lig, 2], 0.0), "substrate ligands left z=0"
+    # FLOOR-FIX (a): ligands sit UNDER south-cap cortex beads (contact-footprint),
+    # not on the old z=0 plane — verify the contact geometry (xy under a bead).
+    # Check CONSTRUCTION seeding (pre): the immobile ligand sits under its cortex
+    # bead's construction xy. Post-warm-up the cortex bead has drifted thermally
+    # ~nm while the pinned ligand stayed put, so compare against pre, not post.
+    _n_cortex = int(h["n_cortex_actin"])
+    _lig_xy = pre[lig][:, :2]
+    _cortex_xy = pre[:_n_cortex, :2]
+    _dmin = np.min(
+        np.linalg.norm(_lig_xy[:, None, :] - _cortex_xy[None, :, :], axis=2), axis=1
+    )
+    assert np.all(_dmin < 1e-9), "each ligand must sit under a cortex-actin bead"
 
 
 @pytest.mark.skipif(

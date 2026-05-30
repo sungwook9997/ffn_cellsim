@@ -310,7 +310,26 @@ def _extend_snapshot_with_fa(
     #    0-based tag space. We KEEP the integrins at [0, n_int) (the updater
     #    contract) and move everything else up by n_int.
     rng = np.random.default_rng(p_fa.seed)
-    layouts, integrin_pos_local, ligand_pos_local = _build_fa_layout(p_fa, rng)
+    # FLOOR-BLOCKER FIX (a) [KU-3.5 v4]: the cortex shell is origin-centred
+    # (south pole at z ~ -R_cell) while the substrate plane is at z ~ 0, so with
+    # the default full-face FA scatter the integrin-cortex gap is ~R_cell >>
+    # capture_radius and ~0 clutch bonds form (measured 9/52, n_integrin_bound=0,
+    # r/r0=1.0). Build the contact footprint = cortex beads in the SOUTH CAP
+    # (z <= z_min + capture_radius); _build_fa_layout then seeds each FA under one
+    # cap bead so its integrins land within capture of a real cortex bead
+    # (measured 52/52, all seeds; max fan-in <= 9, verified stable). No cortex
+    # translation (myosin/xlink anchors untouched), all-derived geometry. The
+    # standalone build_h4_state path passes no footprint -> flat-substrate
+    # behaviour is bit-for-bit unchanged.
+    _cortex_xyz_seed = np.asarray(cortex_positions, dtype=np.float64).reshape(
+        n_cortex_actin, 3
+    )
+    _z_min = float(_cortex_xyz_seed[:, 2].min())
+    _cap_mask = _cortex_xyz_seed[:, 2] <= (_z_min + capture_radius)
+    _anchor_xyz = _cortex_xyz_seed[_cap_mask]
+    layouts, integrin_pos_local, ligand_pos_local = _build_fa_layout(
+        p_fa, rng, contact_footprint=(_anchor_xyz, capture_radius),
+    )
 
     N0 = int(snap.particles.N)
     n_int = int(integrin_pos_local.shape[0])
