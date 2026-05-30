@@ -84,6 +84,7 @@ References
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -92,6 +93,8 @@ import numpy as np
 
 import hoomd
 import hoomd.md as md
+
+_LOG = logging.getLogger(__name__)
 
 from ffn_sim.cortex.cortex import (
     CortexTopology,
@@ -516,6 +519,11 @@ def build_cortex_full_simulation(
     with_baoab: bool = True,
     constrained: bool = False,
     constrained_dt: float | None = None,
+    p_erm: "ResolvedERM | None" = None,
+    reconcile_dt: bool = False,
+    equilibrate: bool = False,
+    equilibrate_steps: int = 0,
+    equilibrate_softstart_steps: int = 100,
     rng: np.random.Generator | None = None,
 ):
     """End-to-end builder for cortex + (optional) xlinks + myosin + lamellipodium + FA.
@@ -858,6 +866,44 @@ def build_cortex_full_simulation(
     lj.mode = "shift"
 
     dt_used = constrained_dt if (constrained and constrained_dt) else p_cortex.dt_cfl
+
+    # B1 — global CFL dt reconciliation (additive, default-off).
+    # When reconcile_dt is True, compute the binding CFL timestep across ALL
+    # active stiff subsystems (cortex + xlinks/myosin/fa/erm/...) and lower
+    # the integrator dt to min(requested dt_used, dt_min). This catches the
+    # case where a stiff optional bond (e.g. FA k_int_bare) has a relaxation
+    # timescale shorter than any cortex timescale, which would otherwise
+    # violate CFL at the cortex dt and trip the int32 image guard. When False
+    # (default) dt_used is unchanged and the builder is bit-for-bit identical
+    # to the pre-B1 version. Does NOT touch the frozen integrator — it only
+    # computes/lowers the dt scalar passed to md.Integrator + the BAOAB
+    # Action.
+    cfl_result = None
+    if reconcile_dt:
+        from ffn_sim.cell.dt_reconcile import compute_global_cfl_dt
+        cfl_result = compute_global_cfl_dt(
+            p_cortex,
+            p_xlinks=p_xlinks, p_myosin=p_myosin,
+            p_lamellipodium=p_lamellipodium, p_fa=p_fa, p_erm=p_erm,
+            p_enclosed_volume=p_enclosed_volume, p_turnover=p_turnover,
+            p_membrane=p_membrane,
+            constrained=constrained,
+            constrained_dt=(dt_used if constrained else None),
+        )
+        if cfl_result.dt_min < dt_used:
+            _LOG.info(
+                "B1 dt reconciliation: lowering integrator dt from %.4e s to "
+                "%.4e s.\n%s", dt_used, cfl_result.dt_min,
+                cfl_result.format_breakdown(),
+            )
+            dt_used = cfl_result.dt_min
+        else:
+            _LOG.info(
+                "B1 dt reconciliation: requested dt %.4e s already within the "
+                "global CFL bound %.4e s; unchanged.\n%s",
+                dt_used, cfl_result.dt_min, cfl_result.format_breakdown(),
+            )
+
     ig = md.Integrator(dt=dt_used)
     ig.forces.append(bond)
     ig.forces.append(angle)
@@ -936,7 +982,7 @@ def build_cortex_full_simulation(
         else:
             baoab_action, baoab_updater = make_baoab_updater(
                 kT=p_cortex.kT, gamma=gamma_map,
-                dt=p_cortex.dt_cfl, seed=p_cortex.seed,
+                dt=dt_used, seed=p_cortex.seed,
             )
         sim.operations.updaters.append(baoab_updater)
 
@@ -1113,7 +1159,9 @@ def build_cortex_full_simulation(
         )
         sim.operations.updaters.append(ligand_pin_updater)
 
-    return {
+    # Assemble the handles dict (also surfaces B1 results: cfl_result is None
+    # when reconcile_dt is False; dt_used is the integrator dt actually used).
+    handles = {
         "sim": sim,
         "topology": topology,
         "xlink_layout": xlink_layout,
@@ -1160,7 +1208,34 @@ def build_cortex_full_simulation(
         "n_fa_clutch_bonds": (
             fa_integration.n_clutch_bonds if fa_integration else 0
         ),
+        # B1 — global CFL dt reconciliation results (None / cortex dt_cfl on
+        # the default off-path). dt_used is the dt actually passed to the
+        # integrator + BAOAB Action.
+        "cfl_result": cfl_result,
+        "dt_used": dt_used,
+        # B2 — equilibration prelude diagnostics. None unless the prelude ran
+        # (equilibrate=True or equilibrate_steps>0). Populated just below.
+        "equilibrate_diagnostics": None,
     }
+
+    # B2 — optional equilibration prelude (additive, default-off). When
+    # neither equilibrate nor equilibrate_steps is requested this block is
+    # skipped entirely and the builder is bit-for-bit identical to the
+    # pre-B2 version (no equilibrate_cell call, no sim.run). When requested,
+    # drain construction overlaps / let the cell settle BEFORE the production
+    # loop, then stash the diagnostics dict under "equilibrate_diagnostics".
+    if equilibrate or equilibrate_steps > 0:
+        from ffn_sim.cell.equilibration import equilibrate_cell
+
+        handles["equilibrate_diagnostics"] = equilibrate_cell(
+            handles,
+            n_softstart=equilibrate_softstart_steps,
+            n_baoab=equilibrate_steps,
+            rest_length=p_cortex.rest_length,
+            gamma_b=p_cortex.gamma_b,
+        )
+
+    return handles
 
 
 @dataclass(slots=True)
