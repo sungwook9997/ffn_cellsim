@@ -404,15 +404,31 @@ def _extend_snapshot_with_fa(
     )
     clutch_pairs_list: list[tuple[int, int]] = []
     clutch_r0_list: list[float] = []
+    # Per-cortex-bead clutch fan-in cap. With contact-footprint seeding (FLOOR
+    # FIX a) many integrins argmin to the SAME south-cap bead; an unbounded
+    # fan-in pushes that bead's bonded-exclusion count (clutch + cortex backbone
+    # + myosin/xlink) past HOOMD's neighbour-list exclusion capacity (the
+    # runtime "Too many bonds to process exclusions for particle with tag ..."
+    # crash, seed-dependent). This cap is a HOOMD library-capacity bound, NOT a
+    # physics parameter: each integrin instead clutches its nearest WITHIN-CAPTURE
+    # cortex bead that still has spare capacity. The clutch stays force-free
+    # (r0 = the EXACT realised separation to whichever bead it bonds).
+    _MAX_CLUTCH_FANIN = 4
+    _fanin = np.zeros(n_cortex_actin, dtype=np.int64)
     for i in range(n_int):
         r_int = integrin_pos_local[i]
         d = np.linalg.norm(cortex_xyz - r_int, axis=1)
-        j = int(np.argmin(d))
-        if d[j] <= capture_radius:
-            # integrin global tag = i + N0 (appended); cortex bead j keeps its
-            # original global tag j (no shift, FA block is last).
-            clutch_pairs_list.append((i + N0, j))
-            clutch_r0_list.append(float(d[j]))
+        # nearest beads first; bond the closest within-capture bead with capacity.
+        for j in np.argsort(d):
+            if d[j] > capture_radius:
+                break  # no within-capture bead has spare capacity → unclutched
+            if _fanin[j] < _MAX_CLUTCH_FANIN:
+                # integrin global tag = i + N0 (appended); cortex bead j keeps
+                # its original global tag j (no shift, FA block is last).
+                clutch_pairs_list.append((i + N0, int(j)))
+                clutch_r0_list.append(float(d[j]))
+                _fanin[j] += 1
+                break
     clutch_pairs = (
         np.asarray(clutch_pairs_list, dtype=np.int64).reshape(-1, 2)
         if clutch_pairs_list
