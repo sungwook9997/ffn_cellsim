@@ -249,7 +249,7 @@ def resolve_substrate(cfg: dict, *, kT: float) -> ResolvedSubstrate:
 def effective_E_sub(
     k_sub: float, n_ligand: int, A_substrate: float
 ) -> float:
-    """First-order ``k_sub → E_sub`` dimensional bridge [Pa] (DIAGNOSTIC).
+    """First-order ``k_sub`` → substrate stiffness DENSITY [N/m³] (DIAGNOSTIC).
 
     Maps the per-ligand spring stiffness to an effective substrate modulus
     via the ligand areal density (KU-1.V.1)::
@@ -271,7 +271,11 @@ def effective_E_sub(
         A_substrate: Substrate contact (projected) area [m²].
 
     Returns:
-        Leading-order effective substrate Young's modulus [Pa].
+        Leading-order substrate stiffness DENSITY ``k_sub·n_ligand/A`` [N/m³]
+        (= N/m · 1/m²). NOTE: this is NOT yet a Pa Young's modulus — it needs a
+        contact length-scale factor; ratify the calibration oracle (flat-punch
+        vs Hertzian, KU-1.V.1) with the PI before reading it as E_sub [Pa].
+        (PI-flag 2026-05-31: the old "[Pa]" label was dimensionally wrong.)
 
     Raises:
         ValueError: If ``k_sub`` or ``A_substrate`` is non-finite-positive,
