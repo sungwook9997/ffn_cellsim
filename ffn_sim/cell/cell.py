@@ -325,7 +325,22 @@ def _extend_snapshot_with_fa(
         n_cortex_actin, 3
     )
     _z_min = float(_cortex_xyz_seed[:, 2].min())
-    _cap_mask = _cortex_xyz_seed[:, 2] <= (_z_min + capture_radius)
+    _z_max = float(_cortex_xyz_seed[:, 2].max())
+    # South-cap depth: expose ~2*n_int anchor beads so the clutch spreads thin
+    # (<=2 bonds/bead via the fan-in cap below). This keeps each cortex bead's
+    # bonded-exclusion count -- including HOOMD's "1-3" exclusion expansion
+    # through neighbouring clutch beads + dynamic myosin/xlink binding -- within
+    # the neighbour-list exclusion capacity (the "Too many bonds to process
+    # exclusions" crash). Derived from the geometry (no magic number); floored at
+    # capture_radius so the nearest-bead clutch still forms.
+    _n_int_expected = (
+        (p_fa.n_nascent_per_cell + p_fa.n_mature_per_cell) * p_fa.n_total_per_fa
+    )
+    _cap_depth = max(
+        capture_radius,
+        2.0 * (_z_max - _z_min) * (_n_int_expected / max(1, n_cortex_actin)),
+    )
+    _cap_mask = _cortex_xyz_seed[:, 2] <= (_z_min + _cap_depth)
     _anchor_xyz = _cortex_xyz_seed[_cap_mask]
     layouts, integrin_pos_local, ligand_pos_local = _build_fa_layout(
         p_fa, rng, contact_footprint=(_anchor_xyz, capture_radius),
@@ -413,7 +428,7 @@ def _extend_snapshot_with_fa(
     # physics parameter: each integrin instead clutches its nearest WITHIN-CAPTURE
     # cortex bead that still has spare capacity. The clutch stays force-free
     # (r0 = the EXACT realised separation to whichever bead it bonds).
-    _MAX_CLUTCH_FANIN = 4
+    _MAX_CLUTCH_FANIN = 2
     _fanin = np.zeros(n_cortex_actin, dtype=np.int64)
     for i in range(n_int):
         r_int = integrin_pos_local[i]
