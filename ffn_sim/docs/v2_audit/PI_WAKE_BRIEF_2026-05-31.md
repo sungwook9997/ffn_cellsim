@@ -40,6 +40,19 @@ sidedness. Detail + file:line in `KU35_FLOOR_ROOT_CAUSE_2026-05-31.md` §3. **On
 re-run the now-crash-free v4 production to confirm γ lifts into [0.35, 0.65].** (Note: a full v4
 production run is ~40 h wall at the constrained dt — a dt co-tune / GPU is worth considering.)
 
+**A concrete, implementable design brief is now ready: `KU35_GRIP_WALK_DESIGN_2026-05-31.md`** —
+exact file:line change table (the single load-bearing edit is the kernel at `myosin.py:985-1022`; the
+bond re-target primitive ALREADY exists via the per-tick `set_snapshot`), an **opt-in `stepping_mode`
+(default = current `binned_r0`, for safe A/B)**, a 3-tier validation plan whose Tier-1 micro-diagnostic
+proves sustained-tension-vs-relaxation in MINUTES (~1e5 steps, no 40 h run), and the PI design
+decisions to ratify — esp. **(a) cortex filament polarity** (the cortex actin has NONE; minus-end must
+be ASSIGNED — recommend label-only "minus = bead 0") and **(b) the bipolar sidedness binding rule**.
+**Critical new finding in the brief:** at v0=0.2 µm/s + the FA-limited dt, walking ONE integer bead
+takes ~3.7e6 steps (2.5 s sim) → the walk must use a CONTINUOUS sub-bead `pos_a_end` to make force
+from step 1, AND **prior production runs (≤4e5 steps) were too short to show contraction even if the
+mechanism had been right** — a run-length issue independent of the proxy. **Process: ratify the design
+(esp. a+b), then it implements from the spec** (additive opt-in first, A/B, then make default).
+
 ## DECISION #2 — ratify or revert the autonomous PI-flags (all documented, all reversible)
 
 - **Test-contract change:** `test_fa_physical_capture_radius_barely_clutches` → `_fully_clutches`
