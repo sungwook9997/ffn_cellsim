@@ -122,6 +122,10 @@ from ffn_sim.cortex.enclosed_volume import (
     ResolvedEnclosedVolume,
     attach_enclosed_volume_to_simulation,
 )
+from ffn_sim.cell.membrane_surface import (  # H.8 (additive, default-off)
+    ResolvedMembraneSurface,
+    attach_membrane_surface,
+)
 from ffn_sim.cortex.turnover import (
     ActinTurnoverUpdater,
     ResolvedTurnover,
@@ -562,6 +566,7 @@ def build_cortex_full_simulation(
     fa_clutch_capture_radius: float | None = None,
     fa_clutch_k: float | None = None,
     p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
+    p_membrane_surface: "ResolvedMembraneSurface | None" = None,
     p_turnover: "ResolvedTurnover | None" = None,
     p_membrane: "ResolvedMembrane | None" = None,
     membrane_with_reaction_force: bool = False,
@@ -989,6 +994,23 @@ def build_cortex_full_simulation(
             cfl_safety_factor=p_cortex.cfl_safety_factor,
         )
 
+    # H.8 membrane surface (ADDITIVE + DEFAULT-OFF): when p_membrane_surface is
+    # None this block is skipped and the builder is bit-for-bit identical. When
+    # provided, attach the MembraneSurfaceTension custom force over the same
+    # cortex-actin shell tags [0, n_cortex_actin) (Template-1, mirrors
+    # enclosed_volume). Supplies whole-cell surface tension toward the composite
+    # KU-3.5 (gamma_total = gamma_membrane + gamma_cortex). Soft k_eff -> the CFL
+    # gate (parity with erm/enclosed_volume) essentially never fires.
+    membrane_surface_force = None
+    if p_membrane_surface is not None:
+        membrane_surface_force = attach_membrane_surface(
+            sim, p_membrane_surface,
+            shell_tag_range=(0, n_cortex_actin),
+            n_shell=n_cortex_actin,
+            gamma_b=p_cortex.gamma_b,
+            cfl_safety_factor=p_cortex.cfl_safety_factor,
+        )
+
     baoab_updater = None
     baoab_action = None
     if with_baoab:
@@ -1220,6 +1242,7 @@ def build_cortex_full_simulation(
         "lamellipodium_state": lamellipodium_state,
         "wave_pin_force": wave_pin_force,
         "enclosed_volume_force": enclosed_volume_force,
+        "membrane_surface_force": membrane_surface_force,
         "baoab_updater": baoab_updater,
         "baoab_action": baoab_action,
         "xlink_updater": xlink_updater,
