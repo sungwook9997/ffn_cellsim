@@ -62,6 +62,30 @@ lamellipodium:
   k_cap_0: 3.0                   # 1/s at 100 nM capping protein
   delta_cap: 3.0e-10             # m   Bell length (Li/Bieling 2022 ≈ 0.3 nm)
 
+  # ---- Plasma-membrane load (ADDITIVE, DEFAULT-OFF) ----
+  # Mechanism audit 2026-05-30 §5 #6 + §6 #7; H4_FA_INTEGRATION_DESIGN §4.
+  # Supplies the leading-edge membrane reaction load F the Bell-Evans
+  # elongation/capping laws consume (today F=0 → laws inert → KU-5.1 ~10,000×
+  # under, KU-5.2 force-velocity cannot emerge). See ffn_sim/cell/membrane.py.
+  # OFF by default (enabled: false) → builder bit-for-bit unchanged.
+  membrane:
+    enabled: false               # default-off additive module
+    # Membrane tension γ_mem — KU-5.x anchor 10–300 pN/µm (Bieling 2016;
+    # Lieber 2013 resting HeLa ≈30–40 pN/µm; Sens 2015 review). Default =
+    # mid-band 50 pN/µm. F_per = γ_mem · sqrt(A_mem/n_contact) (tented-
+    # membrane / Brownian-ratchet load, Mogilner-Oster 1996; Peskin 1993).
+    gamma_mem: 5.0e-5            # N/m = 50 pN/µm (mid 10–300 pN/µm band)
+    gamma_mem_min: 1.0e-5       # N/m = 10 pN/µm  (band lower bound, range guard)
+    gamma_mem_max: 3.0e-4       # N/m = 300 pN/µm (band upper bound, range guard)
+    # Contact range: barbed-end tip reaches the membrane when within
+    # δ_contact of the plane (= one actin-bundle bead radius, 30 nm).
+    contact_range: 30.0e-9      # m   δ_contact (= bead_radius, ×40 bundle)
+    # Bending modulus (Helfrich) — cross-check only (tension dominates the
+    # per-filament load at lamellipodial density; λ=sqrt(κ_m/γ_mem)≈41 nm).
+    kappa_m_kT: 20.0            # κ_m / kT (Helfrich 1973; Bieling 2016)
+    # y_plane / A_mem default to the lamellipodium Y_max / wave_area (the
+    # WAVE plane the barbed ends grow toward); override here if needed.
+
   # ---- D2 batch + numerical ----
   batch_steps: 100               # BAOAB steps between Updater ticks
   seed: 45

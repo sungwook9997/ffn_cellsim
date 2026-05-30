@@ -146,6 +146,13 @@ from ffn_sim.cell.lamellipodium import (
     attach_lamellipodium_to_simulation,
     extend_cortex_snapshot_with_lamellipodium,
 )
+# Plasma-membrane load (KU-5.2 leading-edge Brownian-ratchet brake; additive +
+# default-off). The p_membrane=None path never touches it, so the pre-membrane
+# builder stays bit-for-bit identical.
+from ffn_sim.cell.membrane import (
+    ResolvedMembrane,
+    attach_membrane_to_simulation,
+)
 from ffn_sim.integrator.baoab import make_baoab_updater
 
 # H.4 FA integration (α restart — S0/S1/S2 vertical slice, additive +
@@ -503,6 +510,8 @@ def build_cortex_full_simulation(
     fa_clutch_k: float | None = None,
     p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
     p_turnover: "ResolvedTurnover | None" = None,
+    p_membrane: "ResolvedMembrane | None" = None,
+    membrane_with_reaction_force: bool = False,
     device: hoomd.device.Device | None = None,
     with_baoab: bool = True,
     constrained: bool = False,
@@ -1005,6 +1014,35 @@ def build_cortex_full_simulation(
         sim.operations.updaters.append(branch_updater)
         sim.operations.updaters.append(cap_updater)
 
+    # Optional plasma-membrane load (KU-5.2 leading-edge Brownian-ratchet
+    # brake; mechanism audit 2026-05-30 §5 #6 / §6 #7; ffn_sim/cell/membrane.py).
+    # ADDITIVE + DEFAULT-OFF: when p_membrane is None this whole block is
+    # skipped and the builder is bit-for-bit identical to the pre-membrane
+    # version. The membrane supplies the per-barbed-end reaction load F the
+    # lamellipodium's Bell-Evans elongation/capping laws consume (today F=0 →
+    # laws inert → KU-5.1 ~10,000× under). It is a MembraneLoad Action wired
+    # to feed elong_action / cap_action, attached AFTER the lamellipodium
+    # updaters but BEFORE FA so its load is current; HOOMD runs updaters in
+    # append order. Requires the lamellipodium to be present (it drives the
+    # barbed-end rates) — a membrane with no lamellipodium has nothing to
+    # load, so it is a no-op guarded by enable_lamel.
+    membrane_load_action = None
+    membrane_updater = None
+    membrane_reaction_force = None
+    if p_membrane is not None and enable_lamel:
+        membrane_handles = attach_membrane_to_simulation(
+            sim, p_membrane,
+            lamel_state=lamellipodium_state,
+            barbed_load_consumers=[elong_action, cap_action],
+            batch_steps=p_lamellipodium.batch_steps,
+            gamma_b=p_cortex.gamma_b,
+            with_reaction_force=membrane_with_reaction_force,
+            cfl_safety_factor=p_cortex.cfl_safety_factor,
+        )
+        membrane_load_action = membrane_handles["membrane_load"]
+        membrane_updater = membrane_handles["membrane_updater"]
+        membrane_reaction_force = membrane_handles["membrane_reaction_force"]
+
     # FA Updaters (S0 + S1). Attached LAST so the SubstrateLigandPin reset
     # runs AFTER the BAOAB position step each tick (HOOMD runs updaters in
     # append order) — that is what makes the substrate ligands immobile
@@ -1098,6 +1136,11 @@ def build_cortex_full_simulation(
         "branch_updater": branch_updater,
         "cap_action": cap_action,
         "cap_updater": cap_updater,
+        # Plasma-membrane load (KU-5.2) — None when p_membrane is None or no
+        # lamellipodium is present (additive + default-off).
+        "membrane_load_action": membrane_load_action,
+        "membrane_updater": membrane_updater,
+        "membrane_reaction_force": membrane_reaction_force,
         "n_cortex_actin": n_cortex_actin,
         "n_xlink_heads": n_xlink_heads,
         "n_myosin_particles": n_myosin_particles,
