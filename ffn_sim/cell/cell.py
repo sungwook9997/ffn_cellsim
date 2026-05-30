@@ -126,6 +126,10 @@ from ffn_sim.cell.membrane_surface import (  # H.8 (additive, default-off)
     ResolvedMembraneSurface,
     attach_membrane_surface,
 )
+from ffn_sim.ecm.substrate import (  # Track A (additive, default-off)
+    ResolvedSubstrate,
+    attach_substrate_spring,
+)
 from ffn_sim.cortex.turnover import (
     ActinTurnoverUpdater,
     ResolvedTurnover,
@@ -567,6 +571,7 @@ def build_cortex_full_simulation(
     fa_clutch_k: float | None = None,
     p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
     p_membrane_surface: "ResolvedMembraneSurface | None" = None,
+    p_substrate: "ResolvedSubstrate | None" = None,
     p_turnover: "ResolvedTurnover | None" = None,
     p_membrane: "ResolvedMembrane | None" = None,
     membrane_with_reaction_force: bool = False,
@@ -1169,6 +1174,7 @@ def build_cortex_full_simulation(
     integrin_updater = None
     ligand_pin_action = None
     ligand_pin_updater = None
+    substrate_spring_force = None
     if enable_fa:
         # S1: Pereverzev catch-slip dynamic integrin↔ligand bonds (reused
         # as-is from bridge/integrin_bonds.py). The PI-gated Pereverzev→Kong
@@ -1223,13 +1229,24 @@ def build_cortex_full_simulation(
         anchor_pos = np.asarray(
             read_snap.particles.position, dtype=np.float64
         )[lig_tags].copy()
-        ligand_pin_action = SubstrateLigandPin(
-            ligand_tags=lig_tags, anchor_positions=anchor_pos,
-        )
-        ligand_pin_updater = hoomd.update.CustomUpdater(
-            action=ligand_pin_action, trigger=hoomd.trigger.Periodic(1),
-        )
-        sim.operations.updaters.append(ligand_pin_updater)
+        if p_substrate is not None:
+            # Track A compliant substrate (ADDITIVE, default-off): a tunable
+            # k_sub anchor spring over the ligand tags REPLACES the rigid pin
+            # (mutually exclusive — substrate.py docstring). Default
+            # (p_substrate is None) keeps the bit-for-bit rigid SubstrateLigandPin.
+            substrate_spring_force = attach_substrate_spring(
+                sim, p_substrate.k_sub, lig_tags, anchor_pos,
+                p_fa.gamma_ligand,
+                cfl_safety_factor=p_cortex.cfl_safety_factor,
+            )
+        else:
+            ligand_pin_action = SubstrateLigandPin(
+                ligand_tags=lig_tags, anchor_positions=anchor_pos,
+            )
+            ligand_pin_updater = hoomd.update.CustomUpdater(
+                action=ligand_pin_action, trigger=hoomd.trigger.Periodic(1),
+            )
+            sim.operations.updaters.append(ligand_pin_updater)
 
     # Assemble the handles dict (also surfaces B1 results: cfl_result is None
     # when reconcile_dt is False; dt_used is the integrator dt actually used).
@@ -1274,6 +1291,7 @@ def build_cortex_full_simulation(
         "integrin_updater": integrin_updater,
         "ligand_pin_action": ligand_pin_action,
         "ligand_pin_updater": ligand_pin_updater,
+        "substrate_spring_force": substrate_spring_force,
         "n_fa_integrins": (fa_integration.n_integrins if fa_integration else 0),
         "n_substrate_ligands": (
             fa_integration.n_substrate_ligands if fa_integration else 0
