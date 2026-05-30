@@ -1,4 +1,8 @@
-"""D2 Bell-Evans slip dynamic xlink_head↔actin_cortex bond updater (KU-3.19).
+"""D2 dynamic xlink_head↔actin_cortex bond updater (KU-3.19).
+
+Off-rate per species (mechanism audit 2026-05-30, PI-ratified):
+α-actinin = Bell SLIP; filamin = Pereverzev two-pathway CATCH-SLIP
+(A1 correction — filamin is a documented catch bond, not a slip bond).
 
 Phase 1 H.3 brief §Crosslinkers (D2). The updater is a
 ``hoomd.custom.Action`` wrapped in a periodic ``CustomUpdater`` that runs
@@ -92,11 +96,17 @@ Sanity Gate
    - RNG isolated per Action (``np.random.default_rng`` with
      ``simulation.seed + seed_offset``).
 
-5. **Sign / sense**
-   - Bell-Evans is a SLIP bond: ``k_off(F)`` monotonically INCREASES
-     with F (force accelerates unbinding). This is the opposite of
-     catch-bond (KU-2.5 Pereverzev for H.4 integrin↔ligand). STATIC
-     test asserts the sign of ``d k_off / d F > 0`` at all F.
+5. **Sign / sense** (A1 correction 2026-05-30: filamin is a CATCH bond)
+   - α-actinin: Bell SLIP bond — ``k_off(F)`` monotonically INCREASES
+     with F (force accelerates unbinding). STATIC test asserts
+     ``d k_off / d F > 0`` at all F for α-actinin params.
+   - filamin: Pereverzev two-pathway CATCH-SLIP bond — ``k_off(F)``
+     FALLS with F (force stabilises) up to a peak force F*, then RISES
+     (slip branch). Filamin is a documented catch bond (Ehrlicher 2011
+     Nature; Rognoni 2012 PNAS; Gieseke/Rief 2013), same catch-slip
+     family as KU-2.5 Pereverzev for H.4 integrin↔ligand. STATIC test
+     asserts the catch-slip signature (off-rate falls then rises;
+     ``k_off(F*) < k_off(0)``).
    - Bond force magnitude ``F = k_attach · max(0, |Δr| − r0)``; with
      binned ``r0 = bin_center`` and ``|Δr| ≈ bin_center`` at construction,
      F ≈ 0 → ``k_off ≈ k_off⁰`` → binding equilibrium dominated by
@@ -151,11 +161,20 @@ class ResolvedCrosslinkers:
     k_attach: float              # N/m head-to-actin attach bond k
     max_bind_dist: float         # m   acceptor search radius (60 nm)
 
-    # Bell-Evans species params (slip; k_off(F) = k_off⁰ · exp(F·x_β/kT))
-    alpha_k_off0: float          # 1/s α-actinin unloaded off-rate (Wachsstock 1994)
+    # α-actinin: Bell SLIP (k_off(F) = k_off⁰ · exp(+F·x_β/kT)).
+    # C4 correction 2026-05-30: re-anchored to Ferrer 2008 PNAS single-
+    # molecule value 0.066 /s (was 1.0 /s, bulk Wachsstock 1994).
+    alpha_k_off0: float          # 1/s α-actinin unloaded off-rate (Ferrer 2008 PNAS)
     alpha_x_beta: float          # m   α-actinin Bell strength length (0.4 nm)
-    filamin_k_off0: float        # 1/s filamin unloaded off-rate (Furuike 2001 ≈ 0.1)
-    filamin_x_beta: float        # m   filamin Bell strength length (0.3 nm)
+    # filamin: Pereverzev two-pathway CATCH-SLIP (A1 correction 2026-05-30).
+    # k_off(F) = k_catch0·exp(−F·x_catch/kT) + k_slip0·exp(+F·x_slip/kT).
+    # Filamin is a documented catch bond (Ehrlicher 2011; Rognoni 2012;
+    # Gieseke/Rief 2013) — force stabilises the bond up to peak F* then
+    # destabilises it. Previously mis-modelled as a pure slip bond.
+    filamin_k_catch0: float      # 1/s filamin catch-pathway zero-force rate (Furuike 2001)
+    filamin_x_catch: float       # m   filamin catch-pathway distance (Ehrlicher 2011 / Rognoni 2012)
+    filamin_k_slip0: float       # 1/s filamin slip-pathway zero-force prefactor (Pereverzev 2005)
+    filamin_x_slip: float        # m   filamin slip-pathway distance (Furuike 2001 Bell length)
 
     k_on: float                  # 1/s single-head binding rate when acceptor present
 
@@ -202,8 +221,10 @@ def resolve_crosslinkers(cfg: dict, *, dt: float) -> ResolvedCrosslinkers:
         max_bind_dist=float(cfg["max_bind_dist"]),
         alpha_k_off0=float(cfg["alpha_k_off0"]),
         alpha_x_beta=float(cfg["alpha_x_beta"]),
-        filamin_k_off0=float(cfg["filamin_k_off0"]),
-        filamin_x_beta=float(cfg["filamin_x_beta"]),
+        filamin_k_catch0=float(cfg["filamin_k_catch0"]),
+        filamin_x_catch=float(cfg["filamin_x_catch"]),
+        filamin_k_slip0=float(cfg["filamin_k_slip0"]),
+        filamin_x_slip=float(cfg["filamin_x_slip"]),
         k_on=float(cfg["k_on"]),
         batch_steps=int(cfg["batch_steps"]),
         dt=float(dt),
@@ -219,8 +240,10 @@ def resolve_crosslinkers(cfg: dict, *, dt: float) -> ResolvedCrosslinkers:
         ("max_bind_dist", p.max_bind_dist),
         ("alpha_k_off0", p.alpha_k_off0),
         ("alpha_x_beta", p.alpha_x_beta),
-        ("filamin_k_off0", p.filamin_k_off0),
-        ("filamin_x_beta", p.filamin_x_beta),
+        ("filamin_k_catch0", p.filamin_k_catch0),
+        ("filamin_x_catch", p.filamin_x_catch),
+        ("filamin_k_slip0", p.filamin_k_slip0),
+        ("filamin_x_slip", p.filamin_x_slip),
         ("k_on", p.k_on), ("dt", p.dt),
     ]:
         _require_finite_positive(name, x)
@@ -239,21 +262,30 @@ def resolve_crosslinkers(cfg: dict, *, dt: float) -> ResolvedCrosslinkers:
     p.batch_dt = p.batch_steps * p.dt
 
     # ---- §2 batch CFL: shrink batch_steps until k_off_max · batch_dt ≤ 1e-3 ----
-    # Max credible Bell-Evans force: roughly k_attach · max_bind_dist ~ 6 pN
+    # Max credible bond force: roughly k_attach · max_bind_dist ~ 6 pN
     # for the brief defaults (1e-7 · 60e-9 = 6e-15 N — far smaller than 1 pN
     # = 1e-12 N because k_attach is tiny). Use a more meaningful bound:
     # at thermal-scale displacement |Δr| ~ √(kT/k_attach) ≈ 200 nm, force ≈
-    # k · 200 nm = 2e-14 N ≈ 0.02 pN. Bell-Evans amplification at this F:
-    # exp(F · x_β / kT) = exp(0.02 pN · 0.3 nm / 4.28 zJ) ≈ exp(0.0014) ≈ 1.
-    # So at smoke scale k_off_max ≈ max(α_k_off0, filamin_k_off0). For brief
-    # defaults this is the α_k_off0 = 1.0 /s. CFL: batch_dt · 1.0 ≤ 1e-3 →
-    # batch_dt ≤ 1 ms. With dt ≈ 13 ns, batch_steps ≤ 1e-3/13e-9 = 7.7e4 — so
-    # any reasonable batch_steps (100 default) is well within bound.
-    p.k_off_max = max(p.alpha_k_off0, p.filamin_k_off0) * math.exp(
-        # Conservative Bell-Evans envelope at F = k_attach · max_bind_dist
-        # (i.e. fully-stretched dynamic bond at the bind-radius edge).
-        max(p.alpha_x_beta, p.filamin_x_beta) * p.k_attach * p.max_bind_dist / 4.28e-21
+    # k · 200 nm = 2e-14 N ≈ 0.02 pN. The force-dependent amplification at
+    # this F is ≈ 1 for both species (α-actinin slip exp(+F·x_β/kT) and
+    # filamin catch-slip). So at smoke scale k_off_max ≈ max(α_k_off0,
+    # filamin k_catch0 + k_slip0). With α_k_off0 = 0.066 /s (Ferrer 2008)
+    # and filamin ≈ 0.12 /s (catch0 0.1 + slip0 0.02), k_off_max ≈ 0.12 /s.
+    # CFL: batch_dt · 0.12 ≤ 1e-3 → batch_dt ≤ 8.3 ms. With dt ≈ 13 ns,
+    # batch_steps ≤ 6.4e5 — any reasonable batch_steps (100) is well within.
+    # F at fully-stretched dynamic bond at the bind-radius edge (envelope).
+    _F_env = p.k_attach * p.max_bind_dist
+    _kT = 4.28e-21
+    # α-actinin slip envelope: k_off0 · exp(+F·x_β/kT).
+    _k_off_alpha = p.alpha_k_off0 * math.exp(p.alpha_x_beta * _F_env / _kT)
+    # filamin catch-slip envelope: catch branch decays, slip branch grows;
+    # at large F the slip branch dominates → take catch0 (F=0 ceiling of the
+    # catch branch) + slip0·exp(+F·x_slip/kT) as a conservative upper bound.
+    _k_off_filamin = (
+        p.filamin_k_catch0
+        + p.filamin_k_slip0 * math.exp(p.filamin_x_slip * _F_env / _kT)
     )
+    p.k_off_max = max(_k_off_alpha, _k_off_filamin)
     cfl_product = p.batch_dt * p.k_off_max
     if cfl_product > 1.0e-3:
         # Shrink batch_steps to satisfy the CFL.
@@ -454,8 +486,47 @@ def generate_xlink_layout(
 # Dynamic xlink_head ↔ actin_cortex Bell-Evans Updater
 # ---------------------------------------------------------------------------
 def _bell_evans_k_off(F_mag: np.ndarray, k_off0: float, x_beta: float, kT: float) -> np.ndarray:
-    """Bell-Evans slip off-rate ``k_off(F) = k_off⁰ · exp(F · x_β / kT)``."""
+    """Bell-Evans SLIP off-rate ``k_off(F) = k_off⁰ · exp(+F · x_β / kT)``.
+
+    Used for α-actinin (the fluid, force-released crosslinker). Off-rate
+    rises monotonically with force.
+    """
     return k_off0 * np.exp(F_mag * x_beta / kT)
+
+
+def _pereverzev_catch_slip_k_off(
+    F_mag: np.ndarray,
+    k_catch0: float,
+    x_catch: float,
+    k_slip0: float,
+    x_slip: float,
+    kT: float,
+) -> np.ndarray:
+    """Pereverzev (2005) two-pathway CATCH-SLIP off-rate.
+
+    ``k_off(F) = k_catch0 · exp(−F · x_catch / kT)
+               + k_slip0  · exp(+F · x_slip  / kT)``
+
+    Used for filamin, a documented catch bond (Ehrlicher 2011 Nature;
+    Rognoni 2012 PNAS; Gieseke/Rief 2013). The catch branch DECREASES the
+    off-rate with force (force stabilises the bond); the slip branch
+    INCREASES it. With ``k_catch0 > k_slip0`` and ``x_catch > x_slip`` the
+    catch branch dominates at low force, giving the catch-slip signature:
+    ``k_off`` falls to a minimum at the peak force
+
+        ``F* = (kT/(x_catch+x_slip))·ln((k_catch0·x_catch)/(k_slip0·x_slip))``
+
+    then rises. This is the same two-pathway functional structure the H.4
+    integrin updater uses via ``validation/pereverzev.pereverzev_k_off``;
+    re-implemented locally here because runtime modules may not import the
+    validation oracles (CLAUDE.md hard rule). The oracle remains the
+    acceptance authority in the tests.
+    """
+    F_mag = np.asarray(F_mag, dtype=np.float64)
+    return (
+        k_catch0 * np.exp(-F_mag * x_catch / kT)
+        + k_slip0 * np.exp(+F_mag * x_slip / kT)
+    )
 
 
 class XlinkBondUpdater(hoomd.custom.Action):
@@ -589,13 +660,18 @@ class XlinkBondUpdater(hoomd.custom.Action):
             sp_per_bond = self._head_species[head_local_idx]
             alpha_mask = sp_per_bond == "alpha"
             k_off = np.empty(attach_bonds.shape[0], dtype=np.float64)
+            # α-actinin: Bell SLIP (k_off rises with F).
             k_off[alpha_mask] = _bell_evans_k_off(
                 F_mag[alpha_mask], self.p.alpha_k_off0,
                 self.p.alpha_x_beta, self.kT,
             )
-            k_off[~alpha_mask] = _bell_evans_k_off(
-                F_mag[~alpha_mask], self.p.filamin_k_off0,
-                self.p.filamin_x_beta, self.kT,
+            # filamin: Pereverzev two-pathway CATCH-SLIP (A1 correction;
+            # k_off falls then rises with F, peak at F*).
+            k_off[~alpha_mask] = _pereverzev_catch_slip_k_off(
+                F_mag[~alpha_mask],
+                self.p.filamin_k_catch0, self.p.filamin_x_catch,
+                self.p.filamin_k_slip0, self.p.filamin_x_slip,
+                self.kT,
             )
             p_break = 1.0 - np.exp(-k_off * self.p.batch_dt)
             u = self._rng.uniform(0.0, 1.0, size=attach_bonds.shape[0])

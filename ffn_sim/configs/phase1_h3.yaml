@@ -91,19 +91,29 @@ cortex:
     # (k_xl = 1e-7 N/m, very soft per KU-3.19) give τ_xl ≈ 3.9 ms ≫
     # τ_stretch, so they do NOT tighten CFL.
 
-  # ---- Dynamic crosslinkers (D2 Bell-Evans slip, KU-3.19) ----
+  # ---- Dynamic crosslinkers (D2, KU-3.19) — α-actinin SLIP + filamin CATCH-SLIP ----
   # Two-particle head pair per xlink + intra-xlink head-to-head bond +
-  # dynamic xlink_head ↔ actin_cortex bonds via Bell-Evans slip kinetics.
-  # Implemented in `ffn_sim/cortex/crosslinkers.py` (D2 Bell-Evans Updater
+  # dynamic xlink_head ↔ actin_cortex bonds via force-dependent off-rate.
+  # Implemented in `ffn_sim/cortex/crosslinkers.py` (D2 batched Updater
   # mirroring H.4 `bridge/integrin_bonds.py` Pereverzev pattern).
   #
-  # Bell-Evans rates per species (slip bond — k_off increases with F):
-  # - α-actinin: k_off⁰ ≈ 1 /s (Wachsstock 1994 — fluid xlink),
-  #   x_β ≈ 0.4 nm (Bell strength length).
-  # - Filamin: k_off⁰ ≈ 0.1 /s, x_β ≈ 0.3 nm (Furuike 2001).
+  # Off-rate model per species (mechanism audit 2026-05-30 §A1, PI-ratified):
+  # - α-actinin (30 %): pure Bell SLIP bond, k_off(F)=k_off0·exp(+F·x_β/kT)
+  #   — k_off monotonically rises with force (the fluid, force-released
+  #   crosslinker). Off-rate ANCHOR re-set to the single-molecule value
+  #   (see alpha_k_off0 Magic-Number Block below).
+  # - filamin (70 %): TWO-PATHWAY CATCH-SLIP off-rate (Pereverzev 2005
+  #   functional form), k_off(F)=k_catch0·exp(−F·x_catch/kT)
+  #   + k_slip0·exp(+F·x_slip/kT). Filamin is a DOCUMENTED catch bond
+  #   (Ehrlicher 2011 Nature 478:260; Rognoni 2012 PNAS 109:19679;
+  #   Gieseke/Rief 2013) — force STABILISES the filamin–actin bond up to a
+  #   peak F* (catch branch dominates), then destabilises it (slip branch).
+  #   Previously mis-modelled as a pure slip bond; corrected here. The
+  #   slip-sign Sanity-Gate test in test_crosslinkers.py becomes a CATCH
+  #   contract (off-rate falls then rises with F; peak at F*).
   #
   # k_on = 10 /s per head; gives equilibrium bind fraction
-  # k_on/(k_on + k_off⁰) ≈ 0.91 (α-actinin) and 0.99 (filamin) at F=0.
+  # k_on/(k_on + k_off⁰) at F=0 (≈ 0.99 for α-actinin at 0.066/s).
   dynamic_crosslinkers:
     n_xl: 1000                 # KU-3.19 target xl count per cortex
     alpha_fraction: 0.30       # KU-3.19 (Stricker 2010)
@@ -112,14 +122,60 @@ cortex:
     k_intra: 1.0e-7            # N/m intra-xlink head-to-head (0.1 pN/μm, KU-3.19)
     k_attach: 1.0e-7           # N/m dynamic head-to-actin attach bond
     max_bind_dist: 60.0e-9     # m   acceptor search radius (brief §Crosslinkers)
-    # Bell-Evans species rates
-    alpha_k_off0: 1.0          # 1/s α-actinin unloaded off-rate (Wachsstock 1994)
-    alpha_x_beta: 0.4e-9       # m   α-actinin Bell strength length
-    filamin_k_off0: 0.1        # 1/s filamin unloaded off-rate (Furuike 2001)
-    filamin_x_beta: 0.3e-9     # m   filamin Bell strength length
-    # Single-head binding rate; tuned to give bound fraction ~ 0.9 at F=0
-    # for α-actinin (the looser bond) — derived from k_on/(k_on + k_off⁰)
-    # with target 0.9 → k_on = 9 × k_off⁰ ≈ 9 /s. Round to 10 /s.
+    # ---- α-actinin: Bell SLIP off-rate (k_off = k_off0·exp(+F·x_β/kT)) ----
+    # alpha_k_off0 Magic-Number Block (C4 correction, mechanism audit
+    # 2026-05-30 §C4, PI-ratified "전부 진행"): RE-ANCHORED 1.0 → 0.066 /s.
+    #   Value:   k_off0 = 0.066 1/s (α-actinin / F-actin unloaded off-rate).
+    #   Primary citation: Ferrer, Lee, Chen, Pelz, Nakamura, Kamm, Lang
+    #     2008 PNAS 105:9221 — single-molecule AFM force-clamp of the
+    #     α-actinin/F-actin bond gives an unloaded dissociation rate
+    #     k_off0 ≈ 0.066 1/s (lifetime ≈ 15 s at zero load).
+    #   Why re-anchor (not keep): the previous 1.0 /s cited Wachsstock 1994
+    #     (Biophys J 66:801), a BULK falling-ball viscometry rate, not a
+    #     single-molecule rate. CLAUDE.md prefers the single-molecule
+    #     literature value; the audit found no derivation justifying a
+    #     mesoscale-effective 1.0 /s, so per the "prefer literature unless
+    #     justified" judgment we re-anchor to Ferrer 2008.
+    #   Grid-invariance: intensive per-bond rate [1/s]; N-independent.
+    alpha_k_off0: 0.066        # 1/s α-actinin unloaded off-rate (Ferrer 2008 PNAS, single-molecule)
+    alpha_x_beta: 0.4e-9       # m   α-actinin Bell strength length (Ferrer 2008 ~0.4 nm)
+    # ---- filamin: Pereverzev two-pathway CATCH-SLIP off-rate ----
+    # k_off(F) = filamin_k_catch0·exp(−F·x_catch/kT)
+    #          + filamin_k_slip0 ·exp(+F·x_slip /kT)
+    # Magic-Number Block (A1 correction, mechanism audit 2026-05-30 §A1,
+    # PI-ratified): filamin is a CATCH bond, not a slip bond.
+    #   filamin_k_catch0 = 0.1 1/s — zero-force catch-pathway rate, anchored
+    #     to the filamin/F-actin unloaded off-rate (Furuike 2001 Nature
+    #     Cell Biol 3:744 single-molecule AFM; lifetime ≈ 10 s at zero load).
+    #   filamin_k_slip0  = 0.02 1/s — zero-force slip-pathway prefactor;
+    #     set so the catch branch dominates at low force (k_slip0 < k_catch0)
+    #     and the slip branch takes over above the catch peak (Pereverzev
+    #     2005 PNAS 102:11281 two-pathway structure; the FilGAP/filamin
+    #     force-stabilisation of Ehrlicher 2011 / the mechanical catch of
+    #     Rognoni 2012 PNAS 109:19679 establish that filamin–actin lifetime
+    #     INCREASES with load up to a peak then falls).
+    #   filamin_x_catch = 0.8 nm — catch-pathway distance; controls how fast
+    #     the catch branch (exp(−F·x/kT)) suppresses k_off with force. Larger
+    #     than the slip distance so the bond is force-stabilised at low F.
+    #   filamin_x_slip  = 0.3 nm — slip-pathway distance (the original Bell
+    #     strength length retained; Furuike 2001). Governs the rising slip
+    #     branch above the peak.
+    #   Catch peak F* (where d k_off/dF = 0):
+    #     F* = (kT/(x_catch+x_slip))·ln( (k_catch0·x_catch)/(k_slip0·x_slip) )
+    #        = (4.28e-21/1.1e-9)·ln( (0.1·0.8)/(0.02·0.3) )
+    #        ≈ 3.89e-12 · ln(13.33) ≈ 3.89e-12 · 2.59 ≈ 1.0e-11 N ≈ 10 pN
+    #     — a physiological cytoskeletal load (Ehrlicher 2011 / Rognoni 2012
+    #     report filamin catch behaviour in the pN range). The off-rate FALLS
+    #     for F<F* (catch) then RISES for F>F* (slip), the catch-slip
+    #     signature the revised Sanity-Gate test asserts.
+    #   Grid-invariance: all intensive per-bond rates [1/s] / lengths [m].
+    filamin_k_catch0: 0.1      # 1/s filamin catch-pathway zero-force rate (Furuike 2001)
+    filamin_x_catch: 0.8e-9    # m   filamin catch-pathway distance (Ehrlicher 2011 / Rognoni 2012 pN-scale catch)
+    filamin_k_slip0: 0.02      # 1/s filamin slip-pathway zero-force prefactor (Pereverzev 2005 form; < k_catch0)
+    filamin_x_slip: 0.3e-9     # m   filamin slip-pathway distance (Furuike 2001 Bell length)
+    # Single-head binding rate; gives bound fraction k_on/(k_on + k_off⁰) at
+    # F=0. With α-actinin at 0.066 /s this is ≈ 0.993; with filamin catch+slip
+    # (≈0.12 /s at F=0) ≈ 0.988 — both near-fully bound at zero load.
     k_on: 10.0                 # 1/s per-head binding rate when acceptor present
     batch_steps: 100           # BAOAB steps between Updater ticks (D2 batch)
     n_bins: 10                 # per-r0 binning (mirrors H.1 cortex.py xl)
@@ -275,8 +331,24 @@ cortex:
     k_head_spring: 1.0e-6              # N/m brief literal (0.1 pN/μm)
     k_backbone_factor: 10.0            # k_backbone = factor · k_head_spring (H.4 motor.py)
     k_head_actin: 1.0e-6               # N/m head-actin attach bond (= k_head_spring)
-    # D6 Hill (NMII per Kovács 2003, brief literal)
-    v0_per_head: 1.0e-6                # m/s 1 μm/s
+    # D6 Hill (NMII per Kovács 2003)
+    # v0_per_head Magic-Number Block (C3 correction, mechanism audit
+    # 2026-05-30 §C3, PI-ratified "전부 진행"): RE-ANCHORED 1.0 → 0.2 µm/s.
+    #   Value:   v0 = 0.2 µm/s (NMIIA unloaded head sliding velocity).
+    #   Primary citation: Kovács, Wang, Ikebe, Sellers 2003 J Biol Chem
+    #     278:38132 — in-vitro motility of non-muscle myosin IIA on F-actin
+    #     gives an unloaded actin-sliding velocity ≈ 0.1–0.3 µm/s (NMIIA is
+    #     a slow, high-duty-ratio motor, unlike fast skeletal myosin II at
+    #     ~1–8 µm/s). 0.2 µm/s is the mid-band.
+    #   Why re-anchor (not keep): the previous 1.0 µm/s did NOT match the
+    #     Kovács 2003 NMIIA value it cited (that is the skeletal/fast-myosin
+    #     range). The audit found no derivation justifying a mesoscale-
+    #     effective 1.0 µm/s; per CLAUDE.md "prefer literature value unless
+    #     justified" we re-anchor to the NMIIA single-molecule value.
+    #   Grid-invariance: intensive per-head velocity [m/s]; N-independent.
+    #     The Hill stepping kernel uses v0 only to set the rest-length
+    #     advance per tick (v0·batch_dt), so this is a pure rate rescale.
+    v0_per_head: 0.2e-6                # m/s 0.2 µm/s NMIIA (Kovács 2003 JBC, single-molecule)
     F_stall_per_head: 0.5e-12          # N   0.5 pN
     a_over_F_stall: 0.5                # Kovács 2003
     # D2 Bell-Evans head-actin (NMII; Veigel 2002 anchor)

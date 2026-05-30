@@ -34,6 +34,7 @@ from ffn_sim.cortex.crosslinkers import (
     XlinkBondUpdater,
     XlinkLayout,
     _bell_evans_k_off,
+    _pereverzev_catch_slip_k_off,
     build_cortex_xlink_simulation,
     extend_cortex_state_with_xlinks,
     generate_xlink_layout,
@@ -90,15 +91,18 @@ class TestDimensional:
         assert p.batch_dt > 0.0
 
     def test_bell_evans_dimensionless_exponent(self, resolved_xl):
-        # F · x_β / kT should be dimensionless. With F ~ pN, x_β ~ nm, kT ~ zJ
-        # → 1e-12 · 1e-9 / 1e-21 = O(1).
+        # F · x / kT should be dimensionless. With F ~ pN, x ~ nm, kT ~ zJ
+        # → 1e-12 · 1e-9 / 1e-21 = O(1). A1 correction: filamin now carries
+        # two distances (catch + slip) instead of a single Bell x_β.
         p = resolved_xl
         kT_J = 4.28e-21
         F = 1.0e-12   # 1 pN
         exponent_alpha = F * p.alpha_x_beta / kT_J
-        exponent_filamin = F * p.filamin_x_beta / kT_J
+        exponent_filamin_catch = F * p.filamin_x_catch / kT_J
+        exponent_filamin_slip = F * p.filamin_x_slip / kT_J
         assert 0.0 < exponent_alpha < 1.0
-        assert 0.0 < exponent_filamin < 1.0
+        assert 0.0 < exponent_filamin_catch < 1.0
+        assert 0.0 < exponent_filamin_slip < 1.0
 
     def test_k_off_at_zero_force_equals_k_off0(self, resolved_xl):
         p = resolved_xl
@@ -125,9 +129,11 @@ class TestBoundary:
             resolve_crosslinkers(cfg, dt=resolved_cortex.dt_cfl)
 
     def test_negative_k_off0_raises(self, resolved_cortex):
+        # A1 correction: filamin is now a two-pathway catch-slip bond; its
+        # catch-pathway rate must be finite-positive.
         cfg = _demo_xl_cfg()
-        cfg["cortex"]["dynamic_crosslinkers"]["filamin_k_off0"] = -0.1
-        with pytest.raises(ValueError, match="filamin_k_off0"):
+        cfg["cortex"]["dynamic_crosslinkers"]["filamin_k_catch0"] = -0.1
+        with pytest.raises(ValueError, match="filamin_k_catch0"):
             resolve_crosslinkers(cfg, dt=resolved_cortex.dt_cfl)
 
     def test_alpha_fraction_out_of_range_raises(self, resolved_cortex):
@@ -233,28 +239,80 @@ class TestNumerical:
 
 
 # ---------------------------------------------------------------------------
-# §5 Sign / sense — slip bond (k_off increases with F)
+# §5 Sign / sense — α-actinin SLIP + filamin CATCH-SLIP
+# (A1 correction 2026-05-30: filamin is a documented catch bond — Ehrlicher
+#  2011 Nature; Rognoni 2012 PNAS; Gieseke/Rief 2013. The previous gate
+#  asserted filamin slip-sign; this is the PI-ratified gate-contract change.)
 # ---------------------------------------------------------------------------
 class TestBellEvansSlip:
-    def test_k_off_monotonic_in_F(self, resolved_xl):
+    def test_alpha_k_off_monotonic_slip_in_F(self, resolved_xl):
+        """α-actinin is a Bell SLIP bond: k_off rises monotonically with F."""
         kT_J = 4.28e-21
         F = np.linspace(0.0, 5.0e-12, 50)   # 0 to 5 pN
-        k = _bell_evans_k_off(F, resolved_xl.filamin_k_off0,
-                              resolved_xl.filamin_x_beta, kT_J)
-        # Monotonically increasing.
+        k = _bell_evans_k_off(F, resolved_xl.alpha_k_off0,
+                              resolved_xl.alpha_x_beta, kT_J)
         diffs = np.diff(k)
         assert (diffs >= 0).all(), (
-            f"Bell-Evans should be monotonic slip; saw diff<0 at indices "
-            f"{np.where(diffs < 0)[0][:5]}"
+            f"α-actinin Bell-Evans should be monotonic slip; saw diff<0 at "
+            f"indices {np.where(diffs < 0)[0][:5]}"
         )
         # At F=0, k = k_off⁰.
-        assert math.isclose(k[0], resolved_xl.filamin_k_off0)
+        assert math.isclose(k[0], resolved_xl.alpha_k_off0)
 
-    def test_alpha_faster_than_filamin_at_F0(self, resolved_xl):
-        """KU-3.19 confirms α-actinin is the fluid xlink (faster k_off⁰)
-        and filamin the stable one (slower k_off⁰). The simulation parameters
-        must respect this physical ordering."""
-        assert resolved_xl.alpha_k_off0 > resolved_xl.filamin_k_off0
+
+class TestFilaminCatchSlip:
+    """Filamin off-rate must be CATCH-SLIP: it FALLS with force up to a peak
+    force F*, then RISES (slip branch). A1 correction — filamin is a
+    documented catch bond, not a pure slip bond."""
+
+    def test_filamin_k_off_falls_then_rises(self, resolved_xl):
+        kT_J = 4.28e-21
+        F = np.linspace(0.0, 40.0e-12, 400)   # 0 to 40 pN, fine grid
+        k = _pereverzev_catch_slip_k_off(
+            F,
+            resolved_xl.filamin_k_catch0, resolved_xl.filamin_x_catch,
+            resolved_xl.filamin_k_slip0, resolved_xl.filamin_x_slip,
+            kT_J,
+        )
+        i_min = int(np.argmin(k))
+        # Catch branch: a strict interior minimum (not at F=0, not at the end).
+        assert 0 < i_min < len(F) - 1, (
+            f"filamin off-rate minimum at boundary index {i_min} — not a "
+            "catch-slip bond (expected interior minimum = catch peak F*)."
+        )
+        # Off-rate falls before the peak (catch) and rises after (slip).
+        assert k[i_min] < k[0], "catch branch: k_off(F*) must be < k_off(0)"
+        assert k[-1] > k[i_min], "slip branch: k_off must rise past the peak"
+
+    def test_filamin_catch_peak_matches_analytic_Fstar(self, resolved_xl):
+        """The numerical minimum must sit at the analytic catch peak
+        F* = (kT/(x_catch+x_slip))·ln((k_catch0·x_catch)/(k_slip0·x_slip))."""
+        kT_J = 4.28e-21
+        p = resolved_xl
+        F_star = (kT_J / (p.filamin_x_catch + p.filamin_x_slip)) * math.log(
+            (p.filamin_k_catch0 * p.filamin_x_catch)
+            / (p.filamin_k_slip0 * p.filamin_x_slip)
+        )
+        assert F_star > 0.0, "catch peak F* must be positive for a catch bond"
+        F = np.linspace(0.0, 4.0 * F_star, 4000)
+        k = _pereverzev_catch_slip_k_off(
+            F, p.filamin_k_catch0, p.filamin_x_catch,
+            p.filamin_k_slip0, p.filamin_x_slip, kT_J,
+        )
+        F_num = F[int(np.argmin(k))]
+        assert math.isclose(F_num, F_star, rel_tol=0.05), (
+            f"numerical catch peak {F_num:.3e} N vs analytic {F_star:.3e} N"
+        )
+
+    def test_filamin_k_off_at_F0_is_catch_plus_slip(self, resolved_xl):
+        """At F=0 the two-pathway off-rate is k_catch0 + k_slip0."""
+        kT_J = 4.28e-21
+        p = resolved_xl
+        k0 = _pereverzev_catch_slip_k_off(
+            np.zeros(3), p.filamin_k_catch0, p.filamin_x_catch,
+            p.filamin_k_slip0, p.filamin_x_slip, kT_J,
+        )
+        assert np.allclose(k0, p.filamin_k_catch0 + p.filamin_k_slip0)
 
 
 # ---------------------------------------------------------------------------
@@ -351,7 +409,11 @@ class TestProductionEquilibrium:
             )
         if n_filamin_heads > 0:
             frac_filamin = n_filamin_bound / n_filamin_heads
-            target_filamin = p_xl.k_on / (p_xl.k_on + p_xl.filamin_k_off0)
+            # A1 correction: filamin off-rate at F≈0 is the two-pathway
+            # zero-force sum k_catch0 + k_slip0 (catch-slip), not a single
+            # Bell k_off0. Equilibrium bound fraction at zero load uses it.
+            filamin_k_off0_at_F0 = p_xl.filamin_k_catch0 + p_xl.filamin_k_slip0
+            target_filamin = p_xl.k_on / (p_xl.k_on + filamin_k_off0_at_F0)
             assert abs(frac_filamin - target_filamin) < 0.5, (
                 f"filamin bound fraction {frac_filamin:.3f} too far from "
                 f"target {target_filamin:.3f}"

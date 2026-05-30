@@ -21,12 +21,14 @@ via subprocess; multi-seed sweeps converge to the full ensemble after the
 last seed finishes). The script tolerates missing seeds (silently skips),
 so it can be run as an in-progress preview as well.
 
-Scaffold limits (2026-05-29 autonomous /loop):
-- Target band is PI calibration pending — H.5 brief reports ≈ 100/μm²
-  as the target value, no tolerance band given. Current code uses a
-  placeholder ±50% window [50, 150]/μm² so the figure decoration shows
-  what a band would look like; per CLAUDE.md "no empirical magic numbers"
-  this band is NOT a ratified gate criterion — PI sign-off required.
+Acceptance band (PI-ratified 2026-05-30, audit A3):
+- KU-5.1 acceptance band = [141, 341] barbed ends/µm², the in-cell
+  leading-edge filament-end areal density 241 ± 100/µm² from Abraham
+  et al. 1999 (Biophys J 77:1721) ±1σ. This replaces the prior un-ratified
+  placeholder ±50% window [50, 150]/µm². The H.5-brief target ≈ 100/µm²
+  (Bieling 2016 reconstituted) is drawn as the dashed line; the gate band
+  is the Abraham in-cell range. Derivation lives in configs/phase1_h5.yaml
+  acceptance block (Magic-Number Block).
 - No Bieling F-V or Funk abortive viz here (those are separate gates
   KU-5.2 / KU-5.3 with their own drivers + vis scripts).
 
@@ -48,12 +50,15 @@ import numpy as np
 PKG = Path(__file__).resolve().parents[1]
 FIGS = PKG / "outputs" / "h5" / "figs"
 
-# H.5 brief KU-5.1 target (≈ 100 barbed ends per μm² of WAVE plane). The
-# ±50% band drawn on the figure is a PLACEHOLDER for visual orientation —
-# NOT a ratified gate. Real band requires PI calibration tied to
-# Bieling/Funk reference data (per CLAUDE.md no-magic-numbers rule).
+# H.5 brief KU-5.1 target (≈ 100 barbed ends per μm² of WAVE plane;
+# Bieling 2016 reconstituted) drawn as the dashed reference line. The
+# acceptance BAND is the in-cell leading-edge filament-end areal density
+# 241 ± 100/µm² (Abraham et al. 1999, Biophys J 77:1721) ±1σ → [141, 341]
+# /µm². PI-ratified 2026-05-30 (audit A3), replacing the prior un-ratified
+# placeholder [50, 150]. Derivation: configs/phase1_h5.yaml acceptance
+# block Magic-Number Block.
 KU51_TARGET = 100.0
-KU51_BAND_PLACEHOLDER = (50.0, 150.0)
+KU51_BAND = (141.0, 341.0)   # Abraham 1999 241 ± 100 /µm² in-cell ±1σ
 
 
 def _load_seeds(indir: Path) -> list[dict]:
@@ -80,8 +85,9 @@ def _per_seed_arrays(seed: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray, np
 
 def render_density(seeds: list[dict], out_path: Path) -> dict:
     fig, ax = plt.subplots(figsize=(9, 6))
-    ax.axhspan(*KU51_BAND_PLACEHOLDER, color="#a8c8d8", alpha=0.25,
-               label=f"KU-5.1 placeholder band {KU51_BAND_PLACEHOLDER} (NOT ratified)")
+    ax.axhspan(*KU51_BAND, color="#a8c8d8", alpha=0.25,
+               label=(f"KU-5.1 band {KU51_BAND}/μm² "
+                      "(Abraham 1999 241±100, ±1σ)"))
     ax.axhline(KU51_TARGET, color="#306080", ls="--", lw=1.0, alpha=0.7,
                label=f"KU-5.1 target ≈ {KU51_TARGET:.0f}/μm² (H.5 brief)")
     all_t: list[np.ndarray] = []; all_d: list[np.ndarray] = []
@@ -104,22 +110,22 @@ def render_density(seeds: list[dict], out_path: Path) -> dict:
         plateau_slice = slice(2 * nmin // 3, nmin)
         plateau_mean = float(dm[plateau_slice].mean())
         plateau_seed_means = D[:, plateau_slice].mean(axis=1)
-        in_band = KU51_BAND_PLACEHOLDER[0] <= plateau_mean <= KU51_BAND_PLACEHOLDER[1]
-        verdict = ("placeholder PASS" if in_band else
-                   "placeholder FAIL (below)" if plateau_mean < KU51_BAND_PLACEHOLDER[0]
-                   else "placeholder FAIL (above)")
+        in_band = KU51_BAND[0] <= plateau_mean <= KU51_BAND[1]
+        verdict = ("PASS" if in_band else
+                   "FAIL (below)" if plateau_mean < KU51_BAND[0]
+                   else "FAIL (above)")
         ax.text(0.02, 0.97,
                 f"plateau (last 1/3) ⟨ρ⟩ = {plateau_mean:.2f}/μm²\n"
                 f"per-seed plateau: {[f'{x:.1f}' for x in plateau_seed_means.tolist()]}\n"
-                f"verdict (placeholder band): {verdict}",
+                f"verdict (Abraham 1999 band): {verdict}",
                 transform=ax.transAxes, va="top", ha="left", fontsize=9,
                 bbox=dict(boxstyle="round", fc="#fffae0", ec="#888", alpha=0.92))
         summary = dict(
             n_seeds=int(D.shape[0]),
             plateau_mean=plateau_mean,
             plateau_per_seed=plateau_seed_means.tolist(),
-            in_band_placeholder=bool(in_band),
-            verdict_placeholder=verdict,
+            in_band=bool(in_band),
+            verdict=verdict,
         )
 
     ax.set_xlabel("sim time $t$ [ms]")
@@ -162,10 +168,11 @@ def write_report(seeds: list[dict], summary: dict, out_path: Path) -> None:
         lines += [
             f"plateau ensemble ⟨ρ⟩ = {summary['plateau_mean']:.2f} barbed ends / μm²",
             f"per-seed plateau ρ: {summary['plateau_per_seed']}",
-            f"target (H.5 brief): ≈ {KU51_TARGET:.0f}/μm²",
-            f"placeholder band: {list(KU51_BAND_PLACEHOLDER)} barbed ends / μm² "
-            "(NOT ratified — PI calibration pending per CLAUDE.md no-magic-numbers)",
-            f"verdict (placeholder): **{summary['verdict_placeholder']}**",
+            f"target (H.5 brief, Bieling 2016 reconstituted): ≈ {KU51_TARGET:.0f}/μm²",
+            f"acceptance band: {list(KU51_BAND)} barbed ends / μm² "
+            "(Abraham et al. 1999 Biophys J 77:1721 in-cell 241±100, ±1σ; "
+            "PI-ratified 2026-05-30 audit A3)",
+            f"verdict (Abraham 1999 band): **{summary['verdict']}**",
             "",
             "## Per-seed metadata",
         ]

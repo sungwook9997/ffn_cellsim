@@ -74,12 +74,13 @@ class TestDimensional:
         )
         assert math.isclose(p_lamel.F_abortive_per_wave, expected, rel_tol=1e-12)
 
-    def test_branch_angle_72_degrees(self, p_lamel):
-        # 5π/12 = 75°? No, 72° = 0.4·π. Let me verify.
-        # 72° in radians = 72 · π/180 = 0.4·π = 2π/5 = 1.2566...
-        expected = 72.0 * math.pi / 180.0
+    def test_branch_angle_70_degrees(self, p_lamel):
+        # Audit C5 (2026-05-30): Arp2/3 branch angle corrected from the
+        # 72° crystal value (Mullins 1998) to the in-cell cryo-ET central
+        # value 70° (Fäßler 2020, 68 ± 9°).  70° in rad = 70·π/180 = 1.2217…
+        expected = 70.0 * math.pi / 180.0
         assert math.isclose(p_lamel.angle_branch_t0, expected, rel_tol=1e-6), (
-            f"Expected 72° = {expected} rad, got {p_lamel.angle_branch_t0}"
+            f"Expected 70° = {expected} rad, got {p_lamel.angle_branch_t0}"
         )
 
 
@@ -162,8 +163,9 @@ class TestSignSense:
                 f"(growing away from membrane at Y_max=+{p_lamel.Y_max})."
             )
 
-    def test_branch_angle_value_72_deg(self, p_lamel):
-        """Daughter tangent should be ~72° off mother tangent at branching."""
+    def test_branch_angle_value_matches_t0(self, p_lamel):
+        """Daughter tangent should be angle_branch_t0 (70°, Fäßler 2020)
+        off the mother tangent at branching."""
         # Synthetic check: rotate -ŷ by 72° using the same algorithm.
         from ffn_sim.cell.lamellipodium import _random_perpendicular
         mother = np.array([0.0, -1.0, 0.0])

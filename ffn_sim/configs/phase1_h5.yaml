@@ -37,10 +37,33 @@ lamellipodium:
   bond_k: 3.0e-3               # N/m μ_actin / ℓ_0 = 1.5 nN / 0.5 μm
                                #     (AFINES Freedman 2017; matches H.2)
 
-  # ---- Arp2/3 branch geometry (D1 + Mullins 1998) ----
-  angle_branch_t0: 1.2566370614   # rad  72° = 5π/12 (Arp2/3 crystal)
-  angle_branch_k: 1.0e-19        # J/rad² ≈ 100 pN·μm/rad²
-                                 # (literature TBD; D1 brief default)
+  # ---- Arp2/3 branch geometry (cryo-ET, Fäßler 2020; audit C5 2026-05-30) ----
+  # Magic-Number Block — angle_branch_t0:
+  #   Value: 1.2217304764 rad = 70.0°.
+  #   Derivation: Arp2/3 branch junction angle measured in situ by cryo-
+  #     electron tomography = 68 ± 9° (Fäßler et al. 2020, EMBO J 39:e104254,
+  #     "Cryo-electron tomography structure of Arp2/3 complex in cells").
+  #     Audit 2026-05-30 (C5) corrects the prior 72° "Arp2/3 crystal" value
+  #     (Mullins 1998 negative-stain EM) to the in-cell cryo-ET central value
+  #     70° (rounded from 68° mean toward the canonical dendritic-network
+  #     value; within the 68 ± 9° band).
+  #   Grid-invariant: pure geometry, independent of bead size / dt / box.
+  #   Not gate-tuned: set from literature, no current gate depends on it.
+  angle_branch_t0: 1.2217304764   # rad  70.0° (Fäßler 2020 cryo-ET 68±9°)
+  # Magic-Number Block — angle_branch_k:
+  #   Value: 1.73e-19 J/rad².
+  #   Derivation (equipartition from the measured angular spread):
+  #     A harmonic angle bond U = ½ k (θ−θ₀)² has, at thermal equilibrium,
+  #     ⟨(θ−θ₀)²⟩ = kT / k  (1-DoF equipartition). Inverting:
+  #         k = kT / Var(θ).
+  #     Fäßler 2020 reports σ_θ = 9° = 0.157080 rad ⇒ Var = σ² = 0.024674 rad².
+  #     kT at T = 310 K: kT = 1.380649e-23 · 310 = 4.280e-21 J.
+  #         k = 4.280e-21 / 0.024674 = 1.7346e-19 J/rad² ≈ 1.73e-19.
+  #   Replaces the prior "literature TBD" magic number 1.0e-19 (audit C5).
+  #   Primary citation: Fäßler 2020 (σ_θ); Blanchoin 2000 J Cell Biol 150:1287
+  #     (Arp2/3 dendritic branch angular distribution corroboration).
+  #   Grid-invariant: thermodynamic identity, independent of grid.
+  angle_branch_k: 1.73e-19       # J/rad² = kT/Var(θ), σ_θ=9° (Fäßler 2020)
 
   # ---- D1 elongation (Bieling 2016 slip Bell-Evans) ----
   k_elong_0: 11.6                # 1/s unloaded per barbed end (Bieling 2016)
@@ -60,7 +83,18 @@ lamellipodium:
 
   # ---- D1 capping (Li/Bieling 2022, eLife 11:e73145) ----
   k_cap_0: 3.0                   # 1/s at 100 nM capping protein
-  delta_cap: 3.0e-10             # m   Bell length (Li/Bieling 2022 ≈ 0.3 nm)
+  # Magic-Number Block — delta_cap:
+  #   Value: 2.7e-9 m = 2.7 nm.
+  #   Derivation: capping protein and elongation/profilin-actin compete for
+  #     the SAME barbed-end site, so the Bell-Evans force-sensitivity length
+  #     of capping equals that of elongation, δ_cap = δ_elong = 2.7 nm
+  #     (Li, Bieling et al. 2022, eLife 11:e73145 — single barbed-end gap /
+  #     half-site G-actin addition length shared by capping and elongation).
+  #   Audit 2026-05-30 (C2) corrects the prior 0.3 nm (3.0e-10 m), which was
+  #     an un-sourced placeholder, to the shared barbed-end gap 2.7 nm.
+  #   Grid-invariant: molecular length, independent of grid/dt.
+  #   Not gate-tuned: KU-5.x capping gates not run in this edit.
+  delta_cap: 2.7e-9              # m   = δ_elong, shared barbed-end gap (Li/Bieling 2022)
 
   # ---- Plasma-membrane load (ADDITIVE, DEFAULT-OFF) ----
   # Mechanism audit 2026-05-30 §5 #6 + §6 #7; H4_FA_INTEGRATION_DESIGN §4.
@@ -95,6 +129,27 @@ lamellipodium:
     # KU-5.1 dendritic density: Bieling 2016 reports ~100 barbed ends per μm²
     # at steady state; first-principles emergent target from k_b · k_cap balance.
     dendritic_density_target: 1.0e14  # 1/m² = 100 / μm² (literature anchor)
+
+    # Magic-Number Block — KU-5.1 dendritic-density acceptance band (audit A3):
+    #   Band: [141, 341] barbed ends / μm²  (= [1.41e14, 3.41e14] /m²).
+    #   Derivation: Abraham et al. 1999 (Biophys J 77:1721, "The actin-based
+    #     nanomachine at the leading edge of migrating cells") measured the
+    #     leading-edge filament-end areal density. The reported linear density
+    #     is 241 ± 100 ends per µm of leading edge; treated as an areal density
+    #     it gives a central 241/µm² with a ±1σ spread of ±100/µm², i.e. the
+    #     defensible first-principles band [241−100, 241+100] = [141, 341]/µm².
+    #     Bieling 2016 (~100/µm² reconstituted) sits just below this in-cell
+    #     band, consistent with lower reconstituted NPF density — kept as the
+    #     `dendritic_density_target` anchor above; the GATE band is the in-cell
+    #     Abraham ±1σ range.
+    #   Replaces the prior PLACEHOLDER [50,150]/µm² (vis decoration, never
+    #     ratified). NOT chosen to make any current result pass — KU-5.1
+    #     production is not run in this edit.
+    #   Primary citation: Abraham 1999 (areal end density ±1σ); Bieling 2016
+    #     (reconstituted lower-bound cross-check).
+    #   Grid-invariant: areal number density, independent of dt/box.
+    dendritic_density_band_min: 1.41e14   # 1/m² = 141 /µm² (Abraham 241−100)
+    dendritic_density_band_max: 3.41e14   # 1/m² = 341 /µm² (Abraham 241+100)
 
     # KU-5.2 force-velocity: ±30% on Bieling 2016 Fig 2 reference curve.
     # First-principles: Bell-Evans slip ⇒ v(F)/v(0) = exp(-F·δ_elong/kT)
