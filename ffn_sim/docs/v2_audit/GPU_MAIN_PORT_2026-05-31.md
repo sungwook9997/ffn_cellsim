@@ -22,6 +22,59 @@ non-interactive SSH PATH — use the absolute interpreter
 cupy-cuda12x: backward-compatible, but a from-scratch GPU `sim.run()` smoke should
 confirm the toolkit match (probe only exercised device instantiation, not a run).
 
+## 1b. Profile — where per-step wall time ACTUALLY goes (2026-05-31)
+
+`scripts/h3_profile_constrained.py`, constrained-BD, n_fil=150, n_motors=100,
+1500 steps on M1 Max CPU (265 steps/s myosin-ON):
+
+| share of wall | bucket |
+|---|---|
+| **71%** | **HOOMD-native C++** (LJ + neighbor list + bond force + integrate dispatch) |
+| ~22% | constrained solver (Python/numpy): `shake_project_chains` 7%, `fixman_logdet_and_force` 5%, linalg `inv`/`slogdet`/`_thomas_batched`/`einsum`/`_min_image` ~10% |
+| ~7% | other Python (get_snapshot, wrap, …) |
+
+**This corrects the prior assumption.** At mesoscale production size (n_fil=150) the
+dominant cost is **HOOMD-native C++ forces (71%)**, NOT SHAKE+Fixman (those are ~12%,
+~22% with their linalg). (The 2026-05-30 "SHAKE+Fixman dominate" note was a different
+config, likely FA-heavy.)
+
+**Amdahl consequence for the port target:**
+- The 71% C++ is GPU-accelerated *for free* by `device.GPU()` — but only if the GPU
+  isn't stalled. Our per-step BAOAB+SHAKE Action uses `cpu_local_snapshot` EVERY step →
+  on a GPU device that forces a device→host sync + CPU-side SHAKE every step, so the GPU
+  idles and the 71% win is throttled, while the 22% Python solver becomes the new
+  bottleneck.
+- **Therefore the essential port target = the FULL constrained BAOAB Action (BAOAB step +
+  `shake_project_chains` + `fixman_logdet_and_force`) → `gpu_local_snapshot` + cupy.** This
+  simultaneously (a) removes the per-step sync that throttles the C++ 71% and (b) moves the
+  22% solver onto the GPU. The SHAKE solver is batched linear algebra (Thomas/inv/slogdet)
+  — all cupy-portable. Binding updaters (every batch_steps, not per-step) are secondary.
+
+## 1c. GPU smoke — zero-code `device.GPU()` on gbook (2026-05-31)
+
+Same driver, `--device gpu`, gbook (A5000) vs gbook CPU, n_fil=150:
+
+| | gbook CPU | gbook GPU | speedup |
+|---|---|---|---|
+| myosin ON (~4500 particles) | 232 steps/s | 294 | **1.27×** |
+| myosin OFF (~1050 particles) | 377 steps/s | 408 | **1.08×** |
+
+**Zero-code GPU is NOT a win at mesoscale** — two compounding causes: (1) the per-step
+`cpu_local_snapshot` sync + CPU-side SHAKE stalls the GPU (Amdahl, §1b), and (2) at
+~4500 particles the A5000 (8192 cores) is massively underutilized — GPUs only pay off at
+large N.
+
+**Strategic consequence — the GPU port and large/native scale go TOGETHER:**
+- At pure mesoscale (N~4500, Route B), the GPU barely helps even after the cupy port — CPU
+  is adequate (~232 steps/s → 10⁷ steps ≈ 12 h; ×5 Route-B dt tax ≈ 2.5 d).
+- The GPU payoff materialises at **native / near-native scale** (N~10⁵–10⁶), where the 71%
+  C++ dominates and saturates the GPU — but ONLY once the per-step sync is removed by the
+  cupy port. So the cupy port is the prerequisite for the **native gold-standard KU-3.5
+  run** (no force-scaling assumption), which is exactly where GPU is essential and CPU is
+  infeasible.
+- Net: cupy-port the constrained Action → then run at native scale on GPU. The two are one
+  coherent path, not independent wins.
+
 ## 2. Why a GPU device alone gives ~no speedup (the blocker)
 
 HOOMD already runs force eval + neighbor list on GPU. Our custom Python operators
@@ -69,6 +122,33 @@ vectorise — inherently serial per head).
 - **Rank 4 — compiled CUDA plugin: contingency only.** Needed solely if, after Rank 1,
   the per-step cupy Action dispatch/kernel-launch latency dominates at the mesoscale
   N~10⁴. A profiling question, not a-priori. **Do not start here.**
+
+## 3b. Function-by-function cupy port plan (constrained BAOAB Action — the locked target)
+
+`constrained_baoab.py` hot functions are pure vectorised numpy over `(F, m)` chain
+arrays with small fixed iteration loops → near-mechanical np→cp port, dispatched by an
+`xp = cp if gpu else np` backend handle. Plan (additive, device-aware; CPU path untouched
+so the existing gates stay valid as the reference):
+
+| function | cupy port | validation |
+|---|---|---|
+| `_min_image_orthorhombic` | np→`xp` (`xp.round`); already takes a precomputed L array | exact numeric match vs numpy on random input |
+| `_thomas_batched` | np→`xp`; the `k`-loop over chain length m(~6) stays (sequential recurrence) — cheap, launches m cupy kernels | match vs numpy tridiagonal solve |
+| `shake_project_chains` (uniform fast path) | np→`xp`, `einsum`→`xp.einsum`; the `max_iter` Newton loop stays; `pos[P]+=disp` scatter is cupy-native (chains disjoint) | constraint drift ≤ tol; positions match numpy to ~1e-10 |
+| `fixman_logdet_and_force` | np→`xp`; batched `inv`/`slogdet`→`cupy.linalg` (present in cupy 14) | U_F + force match numpy |
+| BAOAB predictor + wrap (in `act`) | cupy elementwise; **cupy RNG** (`cupy.random.Generator.standard_normal`) for the per-step Gaussian | equipartition/diffusion gates (statistical, RNG stream changes — re-pass, not bit-exact) |
+| `act()` snapshot | `cpu_local_snapshot` → `gpu_local_snapshot`; positions/forces stay device-resident across the step | constraint-drift RUNTIME guard still asserted |
+
+Dispatch: add a `device`/`xp` field to the Action (detected from `sim.device`); the pure
+functions take an `xp=np` kwarg (default numpy → existing callers/tests unchanged). Lagrange
+`lambda_total` (for γ_rigid) ports trivially (it's `xp.zeros`+accumulate). The per-step
+Python `act()` dispatch remains (latency only, no data transfer) — removable later via a
+compiled plugin (Rank 4) iff it profiles as bottleneck at mesoscale N.
+
+**Validation ladder:** (1) per-function numeric match GPU-vs-CPU on random fixtures; (2) a
+short constrained run GPU-vs-CPU same seed → constraint drift + trajectory agreement within
+RNG noise; (3) re-pass equipartition / diffusion / L_p gates on the GPU path; (4) re-profile
+GPU steps/s at mesoscale AND a larger N to confirm the sync is gone and GPU scales with N.
 
 ## 4. Sequencing vs Route B (parallel tracks)
 
