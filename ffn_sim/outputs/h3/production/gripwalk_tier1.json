@@ -1,0 +1,196 @@
+{
+  "verdict": {
+    "stretch_grows": false,
+    "bead_transport_engaged": true,
+    "gamma_total_10x_off_floor": false,
+    "no_cfl_blowup": true,
+    "binned_r0_gamma_total_floor_mN_per_m": 4.75890289506843e-05,
+    "grip_walk_gamma_total_final_mN_per_m": 4.232018358741205e-05,
+    "ratio": 0.8892844531723423,
+    "grip_walk_final_s_grip_nm": 329.60474580458686,
+    "grip_walk_final_step_advances": 81,
+    "grip_walk_final_r_over_r0": 1.0014508330408984,
+    "binned_r0_final_r_over_r0": 0.9992931045285337,
+    "PASS": false
+  },
+  "arm_binned_r0": {
+    "stepping_mode": "binned_r0",
+    "wall_s": 206.85063099861145,
+    "v0_accel": 300.0,
+    "samples": [
+      {
+        "sample": 1,
+        "step": 20000,
+        "r_over_r0": 1.0007077198093597,
+        "gamma_soft_mN_per_m": 1.6650607245659853e-06,
+        "gamma_rigid_mN_per_m": 3.092476685094028e-05,
+        "gamma_total_mN_per_m": 3.258982757550627e-05,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 43,
+        "step_advances": 194,
+        "max_drift": 2.752857078576476e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 2,
+        "step": 40000,
+        "r_over_r0": 1.0045991628426165,
+        "gamma_soft_mN_per_m": 1.9163682876448185e-06,
+        "gamma_rigid_mN_per_m": 3.443791559136841e-05,
+        "gamma_total_mN_per_m": 3.635428387901323e-05,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 56,
+        "step_advances": 304,
+        "max_drift": 2.964615315390051e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 3,
+        "step": 60000,
+        "r_over_r0": 1.0031432551720232,
+        "gamma_soft_mN_per_m": 1.3371197284852233e-06,
+        "gamma_rigid_mN_per_m": 1.6517184413326916e-05,
+        "gamma_total_mN_per_m": 1.785430414181214e-05,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 64,
+        "step_advances": 413,
+        "max_drift": 2.117582368135751e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 4,
+        "step": 80000,
+        "r_over_r0": 1.0037462371863721,
+        "gamma_soft_mN_per_m": 1.6091033450795027e-06,
+        "gamma_rigid_mN_per_m": 2.972526499020685e-05,
+        "gamma_total_mN_per_m": 3.133436833528635e-05,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 70,
+        "step_advances": 498,
+        "max_drift": 3.5998900258307764e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 5,
+        "step": 100000,
+        "r_over_r0": 0.9986454999679447,
+        "gamma_soft_mN_per_m": 3.4121320262964287e-06,
+        "gamma_rigid_mN_per_m": 3.233206834778514e-05,
+        "gamma_total_mN_per_m": 3.5744200374081567e-05,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 66,
+        "step_advances": 585,
+        "max_drift": 1.6940658945086007e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 6,
+        "step": 120000,
+        "r_over_r0": 0.9992931045285337,
+        "gamma_soft_mN_per_m": 1.3589928894598215e-06,
+        "gamma_rigid_mN_per_m": 4.623003606122448e-05,
+        "gamma_total_mN_per_m": 4.75890289506843e-05,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 70,
+        "step_advances": 669,
+        "max_drift": 3.5998900258307764e-15,
+        "lj_cfl_warn": false
+      }
+    ]
+  },
+  "arm_grip_walk": {
+    "stepping_mode": "grip_walk",
+    "wall_s": 221.52972292900085,
+    "v0_accel": 300.0,
+    "samples": [
+      {
+        "sample": 1,
+        "step": 20000,
+        "r_over_r0": 1.0017004327772037,
+        "gamma_soft_mN_per_m": 1.6248039808971103e-06,
+        "gamma_rigid_mN_per_m": 3.120226682833558e-05,
+        "gamma_total_mN_per_m": 3.2827070809232687e-05,
+        "mean_grip_s_nm": 252.48905363690488,
+        "n_engaged": 12,
+        "step_advances": 0,
+        "max_drift": 2.329340604949326e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 2,
+        "step": 40000,
+        "r_over_r0": 1.0059353605218726,
+        "gamma_soft_mN_per_m": 1.0853250870395599e-06,
+        "gamma_rigid_mN_per_m": 3.705981494226036e-05,
+        "gamma_total_mN_per_m": 3.814514002929992e-05,
+        "mean_grip_s_nm": 263.37922395803247,
+        "n_engaged": 24,
+        "step_advances": 12,
+        "max_drift": 3.1763735522036263e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 3,
+        "step": 60000,
+        "r_over_r0": 1.004417083562611,
+        "gamma_soft_mN_per_m": 8.313457133541091e-07,
+        "gamma_rigid_mN_per_m": 2.2686919393802534e-05,
+        "gamma_total_mN_per_m": 2.3518265107156643e-05,
+        "mean_grip_s_nm": 234.7041698932549,
+        "n_engaged": 35,
+        "step_advances": 33,
+        "max_drift": 2.752857078576476e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 4,
+        "step": 80000,
+        "r_over_r0": 1.0056970360343098,
+        "gamma_soft_mN_per_m": 1.8487331984075498e-06,
+        "gamma_rigid_mN_per_m": 3.534235641109479e-05,
+        "gamma_total_mN_per_m": 3.719108960950234e-05,
+        "mean_grip_s_nm": 328.97468245210064,
+        "n_engaged": 36,
+        "step_advances": 49,
+        "max_drift": 3.1763735522036263e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 5,
+        "step": 100000,
+        "r_over_r0": 1.0002754925913186,
+        "gamma_soft_mN_per_m": 2.7059025280091082e-06,
+        "gamma_rigid_mN_per_m": 3.2251852784684164e-05,
+        "gamma_total_mN_per_m": 3.4957755312693274e-05,
+        "mean_grip_s_nm": 319.3913626897823,
+        "n_engaged": 40,
+        "step_advances": 65,
+        "max_drift": 2.964615315390051e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 6,
+        "step": 120000,
+        "r_over_r0": 1.0014508330408984,
+        "gamma_soft_mN_per_m": 1.7728476489255688e-06,
+        "gamma_rigid_mN_per_m": 4.054733593848649e-05,
+        "gamma_total_mN_per_m": 4.232018358741205e-05,
+        "mean_grip_s_nm": 329.60474580458686,
+        "n_engaged": 45,
+        "step_advances": 81,
+        "max_drift": 6.564505341220828e-15,
+        "lj_cfl_warn": false
+      }
+    ]
+  },
+  "params": {
+    "n_fil": 60,
+    "n_motors": 10,
+    "seed": 1,
+    "dt_factor": 0.001,
+    "v0_accel": 300.0,
+    "n_warmup": 15000,
+    "n_sample": 6,
+    "interval": 20000
+  }
+}

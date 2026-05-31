@@ -256,3 +256,104 @@ class TestMeasurement:
         )
         # First backbone bead of motor 0 sits at tag 500.
         assert upd._head_local_from_tag(500) == -1
+
+
+# ---------------------------------------------------------------------------
+# KU-3.5 grip-walk redesign (PI-ratified 2026-05-31) — opt-in stepping_mode.
+# Tier-2 unit tests per KU35_GRIP_WALK_DESIGN_2026-05-31.md §5.2 (helper-level;
+# the decisive sustained-tension test is the Tier-1 micro-diagnostic script).
+# ---------------------------------------------------------------------------
+def _grip_walk_p_myo(p_cortex, n_motors: int = 1):
+    cfg = _demo_cfg(n_motors=n_motors)
+    cfg["cortex"]["myosin"]["stepping_mode"] = "grip_walk"
+    return resolve_cortex_myosin(cfg, dt=p_cortex.dt_cfl)
+
+
+def _gw_updater(p_cortex, *, n_cortex_actin: int, beads_per_filament: int):
+    """A grip_walk updater wired for the helper-level (no-sim) gate tests."""
+    pgw = _grip_walk_p_myo(p_cortex)
+    layout = generate_cortex_myosin_layout(
+        pgw, p_cortex.R_cell, motor_tag_start=n_cortex_actin,
+    )
+    return MyosinStepUpdater(
+        p_myo=pgw, layout=layout, kT=p_cortex.kT,
+        n_cortex_actin=n_cortex_actin,
+        ell0_cortex=p_cortex.rest_length,
+        cortex_beads_per_filament=beads_per_filament,
+    )
+
+
+class TestGripWalk:
+    def test_default_is_binned_r0(self, p_myo):
+        """The default mode is the legacy proxy (additive opt-in)."""
+        assert p_myo.stepping_mode == "binned_r0"
+
+    def test_grip_walk_requires_geometry(self, p_cortex):
+        """grip_walk needs the bead-tag↔(fil,pos) map + ℓ₀; binned_r0 does not."""
+        layout = generate_cortex_myosin_layout(
+            _grip_walk_p_myo(p_cortex), p_cortex.R_cell, motor_tag_start=500,
+        )
+        pgw = _grip_walk_p_myo(p_cortex)
+        with pytest.raises(ValueError, match="grip_walk"):
+            MyosinStepUpdater(
+                p_myo=pgw, layout=layout, kT=p_cortex.kT, n_cortex_actin=500,
+            )
+        # With geometry supplied it constructs fine.
+        upd = MyosinStepUpdater(
+            p_myo=pgw, layout=layout, kT=p_cortex.kT, n_cortex_actin=500,
+            ell0_cortex=p_cortex.rest_length,
+            cortex_beads_per_filament=p_cortex.beads_per_filament,
+        )
+        assert upd.stepping_mode == "grip_walk"
+        # binned_r0 (default) needs no geometry.
+        MyosinStepUpdater(
+            p_myo=resolve_cortex_myosin(_demo_cfg(), dt=p_cortex.dt_cfl),
+            layout=layout, kT=p_cortex.kT, n_cortex_actin=500,
+        )
+
+    def test_tag_fil_pos_roundtrip(self, p_cortex):
+        """Fixed-N bead-tag ↔ (filament, pos) map is an exact inverse."""
+        upd = _gw_updater(p_cortex, n_cortex_actin=8, beads_per_filament=4)
+        for tag in range(8):
+            fil, pos_j = upd._tag_to_fil_pos(tag)
+            assert (fil, pos_j) == (tag // 4, tag % 4)
+            assert upd._bead_tag(fil, pos_j) == tag
+
+    def test_walk_toward_minus_clamps_at_zero(self, p_cortex):
+        """Walking decrements toward the minus end (bead 0) and clamps there."""
+        upd = _gw_updater(p_cortex, n_cortex_actin=8, beads_per_filament=4)
+        assert upd._walk_toward_minus(3, 1) == 2
+        assert upd._walk_toward_minus(2, 5) == 0   # clamp, never negative
+        assert upd._walk_toward_minus(0, 1) == 0   # AFINES minus-end latch
+
+    def test_bipolar_gate_orientation(self, p_cortex):
+        """+ side accepts m̂·û>0 filaments, − side accepts m̂·û<0 (antiparallel)."""
+        upd = _gw_updater(p_cortex, n_cortex_actin=8, beads_per_filament=4)
+        H = upd.p.n_heads_per_side
+        ell0 = p_cortex.rest_length
+        pos = np.zeros((8, 3), dtype=np.float64)
+        # fil0 (tags 0..3) along +x → minus-ward m̂ = (-1,0,0).
+        pos[0:4, 0] = np.arange(4) * ell0
+        # fil1 (tags 4..7) along -x (decreasing) → minus-ward m̂ = (+1,0,0).
+        pos[4:8, 0] = (3 - np.arange(4)) * ell0
+        upd.layout.axes[0] = np.array([-1.0, 0.0, 0.0])  # û
+        # + side head (local 0): accepts fil0 (dot=+1), rejects fil1 (dot=-1).
+        assert upd._bipolar_accepts(0, 1, pos) is True
+        assert upd._bipolar_accepts(0, 5, pos) is False
+        # − side head (local H): rejects fil0, accepts fil1.
+        assert upd._bipolar_accepts(H, 1, pos) is False
+        assert upd._bipolar_accepts(H, 5, pos) is True
+
+    def test_bipolar_gate_different_filament(self, p_cortex):
+        """A side is rejected from a filament the motor's OTHER side grips."""
+        upd = _gw_updater(p_cortex, n_cortex_actin=8, beads_per_filament=4)
+        H = upd.p.n_heads_per_side
+        ell0 = p_cortex.rest_length
+        pos = np.zeros((8, 3), dtype=np.float64)
+        pos[0:4, 0] = np.arange(4) * ell0          # fil0 minus-ward (-1,0,0)
+        upd.layout.axes[0] = np.array([-1.0, 0.0, 0.0])
+        # Orientation alone would accept + side on fil0.
+        assert upd._bipolar_accepts(0, 1, pos) is True
+        # But if the − side already grips fil0, the + side is rejected.
+        upd._head_bound_filament[H] = 0
+        assert upd._bipolar_accepts(0, 1, pos) is False

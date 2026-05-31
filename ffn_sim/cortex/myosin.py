@@ -176,6 +176,18 @@ class ResolvedCortexMyosin:
     dt: float                    # host sim dt [s]
     n_bins: int                  # per-r0 binning count for dynamic attach bonds
 
+    # Contractile stepping mechanism (KU-3.5 grip-walk redesign 2026-05-31).
+    # "binned_r0"  — legacy lumped proxy: a "step" relabels the head-actin bond
+    #                to a lower-r0 bin on the SAME actin bead (transports no
+    #                material → the diagnosed KU-3.5 floor). DEFAULT (A/B base).
+    # "grip_walk"  — AFINES pos_a_end: the head's grip point WALKS toward the
+    #                filament minus end (re-targets the bond to downstream beads),
+    #                a continuous commanded sub-bead stretch s_grip carries force
+    #                (r0_eff = max(r − s_grip, 0)); sustained contraction.
+    # PI-ratified 2026-05-31 (decisions 1.4 continuous sub-bead / 2 Option-A
+    # polarity / 3 bipolar antiparallel gate / 4 no param change). Opt-in.
+    stepping_mode: str           # "binned_r0" | "grip_walk"
+
     # Seed
     seed: int
 
@@ -223,6 +235,7 @@ def resolve_cortex_myosin(cfg: dict, *, dt: float) -> ResolvedCortexMyosin:
         batch_steps=int(cfg["batch_steps"]),
         dt=float(dt),
         n_bins=int(cfg.get("n_bins", 10)),
+        stepping_mode=str(cfg.get("stepping_mode", "binned_r0")),
         seed=int(cfg.get("seed", 44)),
     )
 
@@ -255,6 +268,11 @@ def resolve_cortex_myosin(cfg: dict, *, dt: float) -> ResolvedCortexMyosin:
         raise ValueError(f"batch_steps must be ≥ 1; got {p.batch_steps}")
     if p.n_bins < 1:
         raise ValueError(f"n_bins must be ≥ 1; got {p.n_bins}")
+    if p.stepping_mode not in ("binned_r0", "grip_walk"):
+        raise ValueError(
+            f"stepping_mode must be 'binned_r0' or 'grip_walk'; "
+            f"got {p.stepping_mode!r}"
+        )
 
     # §1 derived
     p.backbone_segment_length = p.backbone_length / (p.n_backbone - 1)
@@ -699,6 +717,8 @@ class MyosinStepUpdater(hoomd.custom.Action):
         kT: float,
         n_cortex_actin: int,
         cortex_bond_groups: np.ndarray | None = None,
+        ell0_cortex: float | None = None,
+        cortex_beads_per_filament: int | None = None,
         seed_offset: int = 3,
     ) -> None:
         super().__init__()
@@ -707,6 +727,24 @@ class MyosinStepUpdater(hoomd.custom.Action):
         self.kT = float(kT)
         self.n_cortex_actin = int(n_cortex_actin)
         self._rng = np.random.default_rng(p_myo.seed + seed_offset)
+        # Grip-walk geometry (KU-3.5 redesign). Required iff stepping_mode is
+        # "grip_walk": the bead-tag ↔ (filament, position) map + the bead
+        # spacing ℓ₀ that one walked sub-bead step is measured in.
+        self.stepping_mode = str(p_myo.stepping_mode)
+        self._ell0_cortex = (
+            float(ell0_cortex) if ell0_cortex is not None else None
+        )
+        self._cortex_beads_per_filament = (
+            int(cortex_beads_per_filament)
+            if cortex_beads_per_filament is not None else None
+        )
+        if self.stepping_mode == "grip_walk":
+            if self._ell0_cortex is None or self._cortex_beads_per_filament is None:
+                raise ValueError(
+                    "grip_walk stepping_mode requires ell0_cortex + "
+                    "cortex_beads_per_filament (the fixed-N bead-tag ↔ "
+                    "(filament, pos) map); got None."
+                )
         # Segment-projection binding precompute (KU-3.5 Option C). When
         # cortex_bond_groups provided: for each actin bead, list the segment
         # indices it participates in (1 or 2 segments per bead in a chain).
@@ -736,6 +774,14 @@ class MyosinStepUpdater(hoomd.custom.Action):
         # advance an integer bin only when accum ≥ 1, retain the remainder.
         # Reset on unbind so re-binding starts fresh.
         self._head_step_accum = np.zeros(n_heads_total, dtype=np.float64)
+        # --- Grip-walk per-head state (KU-3.5 redesign, used iff grip_walk) ---
+        # The decomposition of _head_bound_to_actin (global bead tag) into the
+        # (filament, position-within-filament) that the walk increments toward
+        # the minus end (Option A: minus = bead 0), plus the continuous
+        # commanded sub-bead stretch s_grip ∈ [0, ℓ₀) (AFINES pos_a_end).
+        self._head_bound_bead_pos = np.full(n_heads_total, -1, dtype=np.int64)
+        self._head_bound_filament = np.full(n_heads_total, -1, dtype=np.int64)
+        self._head_grip_s = np.zeros(n_heads_total, dtype=np.float64)
         # head local index → (motor_idx, head_offset_in_motor)
         self._sim_ref: hoomd.Simulation | None = None
         self._steps_run = 0
@@ -773,6 +819,71 @@ class MyosinStepUpdater(hoomd.custom.Action):
         # Head local index inside this motor
         head_within = within_motor - N
         return motor_idx * 2 * H + head_within
+
+    # --- Grip-walk geometry helpers (fixed-N cortex; Option-A polarity) ---
+    def _tag_to_fil_pos(self, bead_tag: int) -> tuple[int, int]:
+        """Decompose a cortex actin bead tag → (filament, pos-in-filament).
+
+        Fixed-N contiguous block ``[0, n_cortex_actin)``:
+        ``filament = tag // N``, ``pos = tag % N`` (exact O(1)).
+        """
+        nb = self._cortex_beads_per_filament
+        return bead_tag // nb, bead_tag % nb
+
+    def _bead_tag(self, fil: int, pos: int) -> int:
+        """Inverse of :meth:`_tag_to_fil_pos` (fixed-N)."""
+        return fil * self._cortex_beads_per_filament + pos
+
+    def _walk_toward_minus(self, pos_j: int, n: int) -> int:
+        """Advance a grip position ``n`` beads toward the minus end.
+
+        Option A (PI-ratified 2026-05-31): minus end = bead ``j=0``, so
+        walking decrements the position and clamps at 0 (AFINES at-minus-end
+        latch — the head dwells, keeps pulling, never walks off the filament).
+        """
+        return max(0, pos_j - n)
+
+    def _bipolar_accepts(
+        self, head_local: int, bead_tag: int, pos: np.ndarray
+    ) -> bool:
+        """Bipolar sidedness gate (PI decision 3); grip_walk only.
+
+        Accept a candidate head→bead bind iff (a) the candidate filament's
+        minus-end-ward tangent ``m̂`` is oriented with the rod axis ``û`` per
+        the head's side (+ side: ``m̂·û > 0``; − side: ``< 0``), AND (b) the
+        motor's OTHER side does not already grip this filament (the
+        different-filament clause that removes the zero-dipole degeneracy).
+        """
+        H = self.p.n_heads_per_side
+        nb = self._cortex_beads_per_filament
+        motor_idx = head_local // (2 * H)
+        head_within = head_local % (2 * H)
+        side_plus = head_within < H
+        fil, pos_j = self._tag_to_fil_pos(int(bead_tag))
+        # Minus-end-ward tangent m̂ from bead positions (Option A: minus=bead 0).
+        if pos_j > 0:
+            m_vec = pos[self._bead_tag(fil, pos_j - 1)] - pos[bead_tag]
+        elif nb > 1:
+            # At the minus end: extrapolate the minus direction from j=1→j=0.
+            m_vec = pos[bead_tag] - pos[self._bead_tag(fil, 1)]
+        else:
+            return True  # single-bead filament: no defined polarity
+        norm = float(np.linalg.norm(m_vec))
+        if norm <= 0.0:
+            return True
+        dot = float((m_vec / norm) @ self.layout.axes[motor_idx])
+        if side_plus and not (dot > 0.0):
+            return False
+        if (not side_plus) and not (dot < 0.0):
+            return False
+        base = motor_idx * 2 * H
+        other = (
+            slice(base + H, base + 2 * H) if side_plus
+            else slice(base, base + H)
+        )
+        if np.any(self._head_bound_filament[other] == fil):
+            return False
+        return True
 
     def act(self, timestep: int) -> None:  # noqa: D401
         sim = self._sim_ref
@@ -851,6 +962,9 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     if h_local >= 0:
                         self._head_bound_to_actin[h_local] = -1
                         self._head_step_accum[h_local] = 0.0  # fresh on re-bind
+                        self._head_bound_bead_pos[h_local] = -1
+                        self._head_bound_filament[h_local] = -1
+                        self._head_grip_s[h_local] = 0.0
                 attach_bonds = attach_bonds[~broke]
                 bond_bins = bond_bins[~broke]
         else:
@@ -941,6 +1055,22 @@ class MyosinStepUpdater(hoomd.custom.Action):
                         continue
                     if _cortex_bead_degree[best_bead] >= _MAX_CORTEX_BEAD_DEGREE:
                         continue
+                    head_local = int(unbound_head_locals[k])
+                    bw_fil = bw_pos = -1
+                    if self.stepping_mode == "grip_walk":
+                        # ---- Bipolar sidedness gate (PI decision 3) ----
+                        # Organize the +/− head sets into a net contractile
+                        # dipole (Stam–Hocky): + side binds filaments whose
+                        # minus-end-ward tangent m̂ points along the rod axis û,
+                        # − side binds the antiparallel ones; and the two sides
+                        # must grip DIFFERENT filaments (no zero-dipole
+                        # degeneracy). m̂ is computed from bead positions under
+                        # Option-A polarity (minus = bead 0).
+                        if not self._bipolar_accepts(
+                            head_local, best_bead, pos
+                        ):
+                            continue
+                        bw_fil, bw_pos = self._tag_to_fil_pos(best_bead)
                     # Bin r0 from actual head-bead distance (clamp to bin range).
                     d_use = min(best_d_use, self.p.head_actin_max_bind_dist - 1e-12)
                     idx_bin = int(min(self.p.n_bins - 1,
@@ -948,7 +1078,13 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     head_tag = int(unbound_head_tags[k])
                     new_bonds_list.append((head_tag, best_bead))
                     new_bins_list.append(idx_bin)
-                    self._head_bound_to_actin[unbound_head_locals[k]] = best_bead
+                    self._head_bound_to_actin[head_local] = best_bead
+                    if self.stepping_mode == "grip_walk":
+                        # Initialise the grip at the bound bead, zero stretch
+                        # (r0_eff = r at bind → force-free construction, §6.2).
+                        self._head_bound_filament[head_local] = bw_fil
+                        self._head_bound_bead_pos[head_local] = bw_pos
+                        self._head_grip_s[head_local] = 0.0
                     bead_attach_count[best_bead] += 1
                     _cortex_bead_degree[best_bead] += 1
             else:
@@ -982,44 +1118,112 @@ class MyosinStepUpdater(hoomd.custom.Action):
                 bond_bins = np.concatenate([bond_bins, new_bins], axis=0)
                 self._n_bind_total += int(new_bonds.shape[0])
 
-        # ---- Step 3: D6 Hill stepping (FRACTIONAL ACCUMULATOR — 단계-4 fix) ----
-        # For each engaged attach bond, accumulate Hill v(F)·batch_dt/bin_width
-        # (a float, typically O(1e-3) at constrained dt) into a per-head
-        # accumulator and advance integer bins when the accumulator ≥ 1.
-        # Clamped to bin 0 (head reached its bound bead — translates as
-        # max-tension state at the bin-coordinate scale).
+        # ---- Step 3: D6 Hill stepping ----
         if attach_bonds.shape[0] > 0:
             head_tags = attach_bonds[:, 0]
             actin_tags = attach_bonds[:, 1]
-            r_head = pos[head_tags]
-            r_actin = pos[actin_tags]
-            r = np.linalg.norm(r_head - r_actin, axis=1)
-            r0_per_bond = bin_r0[bond_bins]
-            F_mag = self.p.k_head_actin * np.clip(r - r0_per_bond, 0.0, None)
-            v_step = hill_velocity_clamped(
-                F_mag, v0=self.p.v0_per_head, F_stall=self.p.F_stall_per_head,
-                a_over_F_stall=self.p.a_over_F_stall,
-            )
-            d_bin = (v_step * self.p.batch_dt) / bin_width   # float, per-bond
+            r = np.linalg.norm(pos[head_tags] - pos[actin_tags], axis=1)
             # Map head_tags → head local indices (vectorised arithmetic
             # inverse of _head_global_tag).
             H = self.p.n_heads_per_side
             N = self.p.n_backbone
             per_motor = self.p.n_particles_per_motor
             offset = head_tags - self.layout.motor_tag_start
-            motor_idx = offset // per_motor
-            head_within = (offset % per_motor) - N           # ∈ [0, 2H)
-            head_locals = motor_idx * (2 * H) + head_within
-            # Accumulate and advance whole bins.
-            self._head_step_accum[head_locals] += d_bin
-            adv = np.floor(self._head_step_accum[head_locals]).astype(np.int64)
-            self._head_step_accum[head_locals] -= adv.astype(np.float64)
-            new_bins = np.clip(
-                bond_bins - adv, 0, self.p.n_bins - 1,
+            head_locals = (offset // per_motor) * (2 * H) + (
+                (offset % per_motor) - N
             )
-            n_advanced = int((new_bins != bond_bins).sum())
-            self._n_step_advances_total += n_advanced
-            bond_bins = new_bins
+
+            if self.stepping_mode == "binned_r0":
+                # Legacy lumped proxy (FRACTIONAL ACCUMULATOR — 단계-4 fix):
+                # accumulate Hill v(F)·batch_dt/bin_width into a per-head
+                # accumulator and advance integer bins when accum ≥ 1, clamped
+                # to bin 0. This relabels the bond's r0 on the SAME bead — the
+                # diagnosed KU-3.5 lumped proxy (transports no material).
+                r0_per_bond = bin_r0[bond_bins]
+                F_mag = self.p.k_head_actin * np.clip(r - r0_per_bond, 0.0, None)
+                v_step = hill_velocity_clamped(
+                    F_mag, v0=self.p.v0_per_head,
+                    F_stall=self.p.F_stall_per_head,
+                    a_over_F_stall=self.p.a_over_F_stall,
+                )
+                d_bin = (v_step * self.p.batch_dt) / bin_width  # float, per-bond
+                self._head_step_accum[head_locals] += d_bin
+                adv = np.floor(
+                    self._head_step_accum[head_locals]
+                ).astype(np.int64)
+                self._head_step_accum[head_locals] -= adv.astype(np.float64)
+                new_bins = np.clip(bond_bins - adv, 0, self.p.n_bins - 1)
+                n_advanced = int((new_bins != bond_bins).sum())
+                self._n_step_advances_total += n_advanced
+                bond_bins = new_bins
+            else:
+                # ---- grip_walk (AFINES pos_a_end; PI-ratified 2026-05-31) ----
+                # The commanded sub-bead stretch s_grip carries the force via
+                # r0_eff = max(r − s_grip, 0)  ⇒  F = k·min(s_grip, r). Crucially
+                # r0_eff is RE-DERIVED from the current r every tick, so the
+                # force does NOT relax to 0 as the bead approaches (the proxy's
+                # failure); s_grip GROWS by Hill v(F)·batch_dt (pos_a_end), and
+                # when it overflows one bead spacing ℓ₀ the grip RE-TARGETS to
+                # the next minus-ward bead (material transport).
+                ell0 = self._ell0_cortex
+                s = self._head_grip_s[head_locals]            # commanded stretch
+                F_mag = self.p.k_head_actin * np.clip(
+                    np.minimum(s, r), 0.0, None
+                )
+                v_step = hill_velocity_clamped(
+                    F_mag, v0=self.p.v0_per_head,
+                    F_stall=self.p.F_stall_per_head,
+                    a_over_F_stall=self.p.a_over_F_stall,
+                )
+                s_new = s + v_step * self.p.batch_dt          # pos_a_end advance
+                # Per-head overflow → minus-ward re-target (with the shared
+                # degree budget re-checked AT WALK TIME, not just bind time).
+                for row in range(attach_bonds.shape[0]):
+                    h = int(head_locals[row])
+                    s_h = float(s_new[row])
+                    if s_h < ell0:
+                        self._head_grip_s[h] = s_h
+                        continue
+                    fil = int(self._head_bound_filament[h])
+                    pos_j = int(self._head_bound_bead_pos[h])
+                    while s_h >= ell0:
+                        if pos_j <= 0:
+                            # AFINES minus-end latch: dwell, hold max sub-bead
+                            # stretch (just under ℓ₀), keep pulling.
+                            s_h = ell0 * (1.0 - 1e-9)
+                            break
+                        new_j = self._walk_toward_minus(pos_j, 1)
+                        new_tag = self._bead_tag(fil, new_j)
+                        if (_cortex_bead_degree[new_tag]
+                                >= _MAX_CORTEX_BEAD_DEGREE):
+                            # Downstream bead full → defer the walk (clean
+                            # stall), hold just under overflow, retry next tick.
+                            s_h = ell0 * (1.0 - 1e-9)
+                            break
+                        old_tag = self._bead_tag(fil, pos_j)
+                        _cortex_bead_degree[old_tag] = max(
+                            0, _cortex_bead_degree[old_tag] - 1
+                        )
+                        _cortex_bead_degree[new_tag] += 1
+                        pos_j = new_j
+                        s_h -= ell0
+                        attach_bonds[row, 1] = new_tag
+                        self._head_bound_to_actin[h] = new_tag
+                        self._head_bound_bead_pos[h] = pos_j
+                        self._n_step_advances_total += 1
+                    self._head_grip_s[h] = s_h
+                # Requantize r0_eff into the bin coordinate (HOOMD Harmonic
+                # carries r0 per bond TYPE → pick the bin whose r0 ≈ the
+                # commanded rest length). Recompute r at the (possibly
+                # re-targeted) bead.
+                r2 = np.linalg.norm(
+                    pos[head_tags] - pos[attach_bonds[:, 1]], axis=1
+                )
+                r0_eff = np.clip(r2 - self._head_grip_s[head_locals], 0.0, None)
+                bond_bins = np.clip(
+                    np.round(r0_eff / bin_width).astype(np.int64),
+                    0, self.p.n_bins - 1,
+                )
 
         # ---- Rebuild bonds.group + bonds.typeid + write_snap ----
         attach_typeids = (
@@ -1096,12 +1300,17 @@ def make_cortex_myosin_updater(
     kT: float,
     n_cortex_actin: int,
     cortex_bond_groups: np.ndarray | None = None,
+    ell0_cortex: float | None = None,
+    cortex_beads_per_filament: int | None = None,
     seed_offset: int = 3,
 ) -> tuple[MyosinStepUpdater, hoomd.update.CustomUpdater]:
     action = MyosinStepUpdater(
         p_myo=p_myo, layout=layout, kT=kT,
         n_cortex_actin=n_cortex_actin,
-        cortex_bond_groups=cortex_bond_groups, seed_offset=seed_offset,
+        cortex_bond_groups=cortex_bond_groups,
+        ell0_cortex=ell0_cortex,
+        cortex_beads_per_filament=cortex_beads_per_filament,
+        seed_offset=seed_offset,
     )
     updater = hoomd.update.CustomUpdater(
         action=action, trigger=hoomd.trigger.Periodic(p_myo.batch_steps)

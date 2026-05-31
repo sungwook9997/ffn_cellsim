@@ -1079,6 +1079,11 @@ def build_cortex_full_simulation(
             p_myo=p_myosin, layout=myosin_layout, kT=p_cortex.kT,
             n_cortex_actin=n_cortex_actin,
             cortex_bond_groups=topology.bond_groups,
+            # Grip-walk geometry (used iff p_myosin.stepping_mode=="grip_walk";
+            # harmless otherwise). Fixed-N bead-tag ↔ (filament, pos) map + the
+            # bead spacing ℓ₀ one walked sub-bead step is measured in.
+            ell0_cortex=p_cortex.rest_length,
+            cortex_beads_per_filament=p_cortex.beads_per_filament,
         )
         sim.operations.updaters.append(myosin_updater)
 
