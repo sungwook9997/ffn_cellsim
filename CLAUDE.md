@@ -34,8 +34,15 @@ When in doubt, write down the option's Plan reference, the abstraction it introd
 - **Active filament model**: AFINES (Simfreed/AFINES canonical) re-implemented on HOOMD
 - **Env**: `conda activate ffn_sim`
 - **Sanity bench**: `python ffn_sim/scripts/hoomd_polymer_sanity.py --steps 50000 --bench`
-- **Hardware through Phase 1**: Apple silicon CPU (M1 Max benchmark: 1 M-step polymer in ~11 s)
-- **Phase 2+ target**: CUDA GPU (HOOMD GPU build); no hard-coded device IDs
+- **Hardware baseline (PI-ratified 2026-05-31, HARD)**: **CUDA GPU — RTX A5000 (gbook
+  laptop) or better is the MANDATORY minimum** for production. CPU (Apple silicon M1 Max;
+  1 M-step polymer in ~11 s) is now **dev/fallback only**, not a production target. The
+  Phase 0/1/2 distinction is **RETIRED** — "GPU is Phase 2" no longer applies; GPU is now.
+- **Code direction: GPU-main (PI 2026-05-31).** New/ported code must run GPU-resident by
+  default — the custom BAOAB integrator + binding updaters (myosin/xlink) are being ported
+  off per-step `cpu_local_snapshot` (which forces a GPU→CPU sync every step) to
+  `gpu_local_snapshot`/cupy (or compiled CUDA plugins). No hard-coded device IDs; CPU stays
+  selectable for dev. Tracking: `ffn_sim/docs/v2_audit/GPU_MAIN_PORT_*.md`.
 
 ## Repo layout (authoritative map: `STRUCTURE.md`)
 

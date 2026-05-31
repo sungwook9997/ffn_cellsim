@@ -357,3 +357,53 @@ class TestGripWalk:
         # But if the − side already grips fil0, the + side is rejected.
         upd._head_bound_filament[H] = 0
         assert upd._bipolar_accepts(0, 1, pos) is False
+
+
+class TestMesoscaleForceScaling:
+    """KU-3.5 Route B: derived per-motor force scaling (parallel bundle)."""
+
+    def _cfg(self, **myo):
+        cfg = _demo_cfg()
+        cfg["cortex"]["myosin"]["stepping_mode"] = "grip_walk"
+        cfg["cortex"]["myosin"]["mesoscale_force_scaling"] = True
+        cfg["cortex"]["myosin"].update(myo)
+        return cfg
+
+    def test_factor_derived_and_applied(self, p_cortex):
+        """k_head_spring/k_head_actin/F_stall ×factor; x_beta ÷factor; factor
+        = areal_density · 4πR² / n_motors (derived, not tuned)."""
+        cfg = self._cfg()
+        base = resolve_cortex_myosin(_demo_cfg(), dt=p_cortex.dt_cfl)  # unscaled
+        scaled = resolve_cortex_myosin(
+            cfg, dt=p_cortex.dt_cfl, R_cell=p_cortex.R_cell)
+        dens = float(cfg["cortex"]["myosin"].get("areal_density_per_um2", 3.0))
+        native = dens * 1e12 * 4.0 * math.pi * p_cortex.R_cell ** 2
+        factor = native / cfg["cortex"]["myosin"]["n_motors_per_cell"]
+        assert scaled.extras["mesoscale_force_scaling"] is True
+        assert scaled.extras["mesoscale_force_factor"] == pytest.approx(factor)
+        assert scaled.k_head_spring == pytest.approx(base.k_head_spring * factor)
+        assert scaled.k_head_actin == pytest.approx(base.k_head_actin * factor)
+        assert scaled.F_stall_per_head == pytest.approx(base.F_stall_per_head * factor)
+        assert scaled.head_actin_x_beta == pytest.approx(base.head_actin_x_beta / factor)
+        # s_grip_max = F_stall/k is INVARIANT (stretch stays physical).
+        assert (scaled.F_stall_per_head / scaled.k_head_actin) == pytest.approx(
+            base.F_stall_per_head / base.k_head_actin)
+
+    def test_gated_to_grip_walk_only(self, p_cortex):
+        """binned_r0 (legacy proxy) is NOT scaled even with the flag set."""
+        cfg = self._cfg()
+        cfg["cortex"]["myosin"]["stepping_mode"] = "binned_r0"
+        base = resolve_cortex_myosin(_demo_cfg(), dt=p_cortex.dt_cfl)
+        got = resolve_cortex_myosin(cfg, dt=p_cortex.dt_cfl, R_cell=p_cortex.R_cell)
+        assert got.extras["mesoscale_force_scaling"] is False
+        assert got.k_head_actin == pytest.approx(base.k_head_actin)
+        assert got.F_stall_per_head == pytest.approx(base.F_stall_per_head)
+
+    def test_requires_R_cell(self, p_cortex):
+        with pytest.raises(ValueError, match="R_cell"):
+            resolve_cortex_myosin(self._cfg(), dt=p_cortex.dt_cfl)  # no R_cell
+
+    def test_default_off(self, p_cortex):
+        """Without the flag, nothing scales (additive)."""
+        base = resolve_cortex_myosin(_demo_cfg(), dt=p_cortex.dt_cfl)
+        assert base.extras.get("mesoscale_force_scaling", False) is False

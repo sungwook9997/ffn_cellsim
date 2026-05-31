@@ -131,6 +131,46 @@ budget gap.
 - Re-examine the KU-3.5 band's mapping to the method-of-planes great-circle
   measurement at the mesoscale.
 
+## 4c. Route B implemented + validated for STABILITY — but γ still does not lift (2026-05-31)
+
+Route B (mesoscale force scaling) is implemented as a derived, opt-in, grip_walk-only
+parameter transform (resolver, `mesoscale_force_scaling`): the effective minifilament =
+`factor = areal_density·4πR²/n_motors` native ones **in parallel** →
+`k_head_spring, k_head_actin, F_stall ×= factor`, `x_β ÷= factor` (preserves per-native
+Bell-Evans load-sensitivity; without it the ×factor force would strip heads ~exp(factor)×
+faster). `s_grip_max = F_stall/k` is invariant → stretch stays physical. 4 unit tests green.
+
+Empirical A/B at the **production factor** (n_motors=100, factor≈37.7, n_fil=150,
+dt_factor=2e-4, `gripwalk_tier1_scaled.json`):
+
+| | binned_r0 floor | grip_walk + scaling |
+|---|---|---|
+| γ_total | 1.9–2.6 ×10⁻⁴ mN/m | 1.9–2.5 ×10⁻⁴ mN/m (ratio 0.81) |
+| per-head force | ~0 | ~6 pN/head × 94 ≈ 560 pN total |
+| `s_grip` | 0 | 30→160 nm (sub-bead only) |
+| bead re-targets `adv` | n/a | **0** |
+| drift | 1e-15 | 1e-15 (**stable — CFL OK at factor 37.7 + dt 2e-4**) |
+
+**Findings:**
+1. ✅ Force scaling is **stable** at the production factor (no CFL blow-up); the CFL tax is
+   the smaller dt (~1µs τ_backbone needs dt ≲ 0.14µs → ~5–7× more steps than unscaled).
+2. ❌ **γ_total still does NOT lift** — the scaled 560 pN of myosin force does not appear in
+   the great-circle tension (measured ~10 pN). Two confounds, not separable at this scale:
+   - **Transport regime never reached:** `adv=0` — `s_grip` stayed < ℓ₀, so the head never
+     re-targeted to a downstream bead. Only sub-bead pre-stretch acted; the actual
+     filament-sliding contraction (the thing that builds network strain) requires **long
+     runs** (ℓ₀/v0 ≈ 2.5 s sim time per bead — the run-length finding, design brief §5.3),
+     infeasible on CPU.
+   - **Coherence/transmission:** local myosin forces are short-range + randomly oriented;
+     they cancel in the great-circle sum unless transmitted as long-range stress through a
+     percolating actin+crosslink network over many walked beads.
+
+**Conclusion — the tracks converge.** The KU-3.5 floor has THREE layers: (1) the lumped
+proxy [fixed], (2) the force budget [Route B, implemented + stable], and (3) reaching the
+**transport/coherence regime**, which needs long runs at production scale — **infeasible on
+CPU, the unlock is the GPU-main port** (`GPU_MAIN_PORT_2026-05-31.md`). Route B is necessary
+and ready; it cannot be *validated as sufficient* until a long GPU run reaches adv ≫ 0.
+
 ## 5. Next (PI-gated)
 
 - **PI decides the force-budget resolution (§4b)** — most likely the ×40

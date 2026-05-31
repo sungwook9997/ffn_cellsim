@@ -71,7 +71,7 @@ def _mean_grip_s(ma) -> float:
 def _run_arm(
     *, stepping_mode: str, n_fil: int, n_motors: int, seed: int,
     dt_factor: float, v0_accel: float, n_warmup: int, n_sample: int,
-    interval: int,
+    interval: int, force_scaling: bool = False,
 ) -> dict:
     """Build + warm-up + short constrained run for one stepping mode."""
     cfg = yaml.safe_load(open(CFG))
@@ -79,13 +79,15 @@ def _run_arm(
     cfg["cortex"]["demo_mode"] = True
     cfg["cortex"]["myosin"]["n_motors_per_cell"] = n_motors
     cfg["cortex"]["myosin"]["stepping_mode"] = stepping_mode
+    # Route B: mesoscale force scaling (grip_walk only; derived factor).
+    cfg["cortex"]["myosin"]["mesoscale_force_scaling"] = bool(force_scaling)
     p = resolve_h3_derived(cfg)
     N = p.beads_per_filament
     F = p.n_filaments
     nca = F * N
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
     dtc = dt_factor * tau_bend
-    p_myo_lit = resolve_cortex_myosin(cfg, dt=dtc)             # literal v0
+    p_myo_lit = resolve_cortex_myosin(cfg, dt=dtc, R_cell=p.R_cell)  # literal v0
     # Diagnostic accelerant — multiply the literal v0 so walks are observable
     # within the SHORT measured window. Applied ONLY to the constrained
     # production phase: during warm-up the accelerated proxy over-contracts an
@@ -180,6 +182,8 @@ def main() -> None:
     ap.add_argument("--n-warmup", type=int, default=15_000)
     ap.add_argument("--n-sample", type=int, default=6)
     ap.add_argument("--interval", type=int, default=20_000)
+    ap.add_argument("--force-scaling", action="store_true",
+                    help="Route B: derived mesoscale force scaling on the grip_walk arm")
     ap.add_argument("--out", type=str, default=None)
     args = ap.parse_args()
 
@@ -188,10 +192,10 @@ def main() -> None:
         dt_factor=args.dt_factor, v0_accel=args.v0_accel,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
     )
-    print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×) ===",
-          flush=True)
-    arm_a = _run_arm(stepping_mode="binned_r0", **common)
-    arm_b = _run_arm(stepping_mode="grip_walk", **common)
+    print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×"
+          f"{', force-scaling ON' if args.force_scaling else ''}) ===", flush=True)
+    arm_a = _run_arm(stepping_mode="binned_r0", **common)  # floor (scaling is grip_walk-gated)
+    arm_b = _run_arm(stepping_mode="grip_walk", force_scaling=args.force_scaling, **common)
 
     # --- PASS contract evaluation ---
     # γ is measured on the DOMINANT channel (γ_total = γ_soft + γ_rigid); the

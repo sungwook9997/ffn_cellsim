@@ -291,7 +291,7 @@ def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = 
     N = p.beads_per_filament; F = p.n_filaments; nca = F * N
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
     dtc = dt_factor * tau_bend
-    p_myo = resolve_cortex_myosin(cfg, dt=dtc)
+    p_myo = resolve_cortex_myosin(cfg, dt=dtc, R_cell=p.R_cell)
     p_xl = resolve_crosslinkers(cfg, dt=dtc) if with_xlinks else None
     # ERM at fast dt: re-derive k_ERM from CFL (PI 2026-05-29).
     # k_ERM = cfl_safety · γ_b / dt → k=0.1·3.9e-10/dt ≈ 5.6e-5 at dt=0.7μs.

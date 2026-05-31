@@ -1,0 +1,144 @@
+{
+  "verdict": {
+    "stretch_grows": true,
+    "bead_transport_engaged": false,
+    "gamma_total_10x_off_floor": false,
+    "no_cfl_blowup": true,
+    "binned_r0_gamma_total_floor_mN_per_m": 0.0002584862692673543,
+    "grip_walk_gamma_total_final_mN_per_m": 0.00020880937036099799,
+    "ratio": 0.807816101616697,
+    "grip_walk_final_s_grip_nm": 159.49403860863134,
+    "grip_walk_final_step_advances": 0,
+    "grip_walk_final_r_over_r0": 0.9984848066134009,
+    "binned_r0_final_r_over_r0": 0.9981846445593865,
+    "PASS": false
+  },
+  "arm_binned_r0": {
+    "stepping_mode": "binned_r0",
+    "wall_s": 149.9464509487152,
+    "v0_accel": 300.0,
+    "samples": [
+      {
+        "sample": 1,
+        "step": 10000,
+        "r_over_r0": 0.9996716590740382,
+        "gamma_soft_mN_per_m": 5.017777009152842e-05,
+        "gamma_rigid_mN_per_m": 0.00019210537077323121,
+        "gamma_total_mN_per_m": 0.00024228314086475962,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 54,
+        "step_advances": 25,
+        "max_drift": 2.329340604949326e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 2,
+        "step": 20000,
+        "r_over_r0": 0.9998806911274838,
+        "gamma_soft_mN_per_m": 2.7205947344503406e-05,
+        "gamma_rigid_mN_per_m": 0.0001665218996808769,
+        "gamma_total_mN_per_m": 0.0001937278470253803,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 102,
+        "step_advances": 157,
+        "max_drift": 2.329340604949326e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 3,
+        "step": 30000,
+        "r_over_r0": 0.9993518891522117,
+        "gamma_soft_mN_per_m": 4.207081082263681e-05,
+        "gamma_rigid_mN_per_m": 0.00021641545844471748,
+        "gamma_total_mN_per_m": 0.0002584862692673543,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 132,
+        "step_advances": 347,
+        "max_drift": 2.329340604949326e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 4,
+        "step": 40000,
+        "r_over_r0": 0.9981846445593865,
+        "gamma_soft_mN_per_m": 2.376080509712729e-05,
+        "gamma_rigid_mN_per_m": 0.00017937038945822905,
+        "gamma_total_mN_per_m": 0.00020313119455535634,
+        "mean_grip_s_nm": 0.0,
+        "n_engaged": 159,
+        "step_advances": 561,
+        "max_drift": 2.541098841762901e-15,
+        "lj_cfl_warn": false
+      }
+    ]
+  },
+  "arm_grip_walk": {
+    "stepping_mode": "grip_walk",
+    "wall_s": 149.7414939403534,
+    "v0_accel": 300.0,
+    "samples": [
+      {
+        "sample": 1,
+        "step": 10000,
+        "r_over_r0": 0.9995349939355327,
+        "gamma_soft_mN_per_m": 5.1157920011022136e-05,
+        "gamma_rigid_mN_per_m": 0.00019929214661357716,
+        "gamma_total_mN_per_m": 0.00025045006662459927,
+        "mean_grip_s_nm": 29.982919515389433,
+        "n_engaged": 32,
+        "step_advances": 0,
+        "max_drift": 2.541098841762901e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 2,
+        "step": 20000,
+        "r_over_r0": 0.999964976764919,
+        "gamma_soft_mN_per_m": 3.031926648094732e-05,
+        "gamma_rigid_mN_per_m": 0.00015794699034301857,
+        "gamma_total_mN_per_m": 0.00018826625682396588,
+        "mean_grip_s_nm": 71.09276132882951,
+        "n_engaged": 59,
+        "step_advances": 0,
+        "max_drift": 2.964615315390051e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 3,
+        "step": 30000,
+        "r_over_r0": 0.9993676328059679,
+        "gamma_soft_mN_per_m": 4.9672175385025264e-05,
+        "gamma_rigid_mN_per_m": 0.00019777221004109796,
+        "gamma_total_mN_per_m": 0.00024744438542612324,
+        "mean_grip_s_nm": 120.49251550348524,
+        "n_engaged": 74,
+        "step_advances": 0,
+        "max_drift": 2.752857078576476e-15,
+        "lj_cfl_warn": false
+      },
+      {
+        "sample": 4,
+        "step": 40000,
+        "r_over_r0": 0.9984848066134009,
+        "gamma_soft_mN_per_m": 3.3933640924388996e-05,
+        "gamma_rigid_mN_per_m": 0.000174875729436609,
+        "gamma_total_mN_per_m": 0.00020880937036099799,
+        "mean_grip_s_nm": 159.49403860863134,
+        "n_engaged": 94,
+        "step_advances": 0,
+        "max_drift": 2.541098841762901e-15,
+        "lj_cfl_warn": false
+      }
+    ]
+  },
+  "params": {
+    "n_fil": 150,
+    "n_motors": 100,
+    "seed": 1,
+    "dt_factor": 0.0002,
+    "v0_accel": 300.0,
+    "n_warmup": 12000,
+    "n_sample": 4,
+    "interval": 10000
+  }
+}

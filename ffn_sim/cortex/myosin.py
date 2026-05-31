@@ -206,8 +206,14 @@ def _require_finite_positive(name: str, x: float) -> None:
         raise ValueError(f"{name} must be finite and > 0; got {x!r}")
 
 
-def resolve_cortex_myosin(cfg: dict, *, dt: float) -> ResolvedCortexMyosin:
-    """Resolve cortical-myosin config block with D5 boundary + CFL gates."""
+def resolve_cortex_myosin(
+    cfg: dict, *, dt: float, R_cell: float | None = None
+) -> ResolvedCortexMyosin:
+    """Resolve cortical-myosin config block with D5 boundary + CFL gates.
+
+    ``R_cell`` is required only when ``mesoscale_force_scaling`` is enabled
+    (KU-3.5 Route B) — it sets the native minifilament count from areal density.
+    """
     if "cortex" in cfg:
         cfg = cfg["cortex"]
     if "myosin" in cfg:
@@ -272,6 +278,45 @@ def resolve_cortex_myosin(cfg: dict, *, dt: float) -> ResolvedCortexMyosin:
         raise ValueError(
             f"stepping_mode must be 'binned_r0' or 'grip_walk'; "
             f"got {p.stepping_mode!r}"
+        )
+
+    # Mesoscale myosin FORCE scaling (KU-3.5 Route B, PI-ratified 2026-05-31).
+    # The ×40 mesoscopic coarse-graining reduces the MOTOR count (native
+    # ~areal_density·4πR² minifilaments → n_motors_per_cell), so each EFFECTIVE
+    # minifilament stands in for `factor = native/effective` native ones. To
+    # carry the aggregate contractile force — the KU-3.5 floor's SECOND cause,
+    # a ~63× force-budget gap at n_motors=100 (impl doc §4b) — model the
+    # effective minifilament as `factor` native ones IN PARALLEL:
+    #   • springs add in parallel  → k_head_spring, k_head_actin ×= factor
+    #     (k_backbone follows, since k_backbone = k_head_spring·k_backbone_factor)
+    #   • stall force adds          → F_stall_per_head ×= factor
+    #     (so s_grip can still grow to ℓ₀: s_grip_max = F_stall/k is INVARIANT
+    #      under the scaling — the stretch stays physical)
+    #   • Bell-Evans load-sensitivity per NATIVE head is preserved → x_β ÷= factor
+    #     (a parallel bundle shares load: each native bond bears F_eff/factor, so
+    #      k_off(F_eff; x_β/factor) = k_off(F_native; x_β) — without this the
+    #      ×factor force would strip the effective head ~exp(factor)× faster).
+    # `factor` is DERIVED (density·area/n_motors), grid-invariant, not tuned —
+    # satisfies the Magic-Number Block. Opt-in + grip_walk only (binned_r0 legacy
+    # proxy stays byte-identical). v0 (per-motor kinetics) is unchanged.
+    p.extras["mesoscale_force_scaling"] = False
+    if bool(cfg.get("mesoscale_force_scaling", False)) and p.stepping_mode == "grip_walk":
+        if R_cell is None or not (math.isfinite(R_cell) and R_cell > 0.0):
+            raise ValueError(
+                "mesoscale_force_scaling requires a finite R_cell > 0 (to derive "
+                "the native minifilament count from areal density × surface area)."
+            )
+        density_per_um2 = float(cfg.get("areal_density_per_um2", 3.0))  # Salbreux 2012
+        native_n_motors = density_per_um2 * 1.0e12 * 4.0 * math.pi * R_cell ** 2
+        factor = native_n_motors / max(p.n_motors_per_cell, 1)
+        p.k_head_spring *= factor
+        p.k_head_actin *= factor
+        p.F_stall_per_head *= factor
+        p.head_actin_x_beta /= factor
+        p.extras.update(
+            mesoscale_force_scaling=True,
+            mesoscale_force_factor=float(factor),
+            native_n_motors=float(native_n_motors),
         )
 
     # §1 derived
