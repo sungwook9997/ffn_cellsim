@@ -11,17 +11,24 @@ claim↔claim dependency edges and Code/Test/Doc nodes from `ffn_sim/`.
 Every note has an *Open in Notion* link; papers have DOI links.
 Color groups (by node `type`) are pre-baked into `vault/.obsidian/graph.json`.
 
-## Regenerate
+## Regenerate (on-demand — Notion changed, want the graph fresh)
+One command (Notion = source of truth; vault rebuilt from scratch):
 ```bash
-conda activate ffn_sim
-cd ffn_sim/outputs/obsidian_rag_full
-# 1. token (PI; internal integration secret, connected to the Contract Graph page)
-echo 'NOTION_TOKEN=ntn_...' > .notion_token      # gitignored
-# 2. pull Notion → vault (claims, papers, params, gates, contracts + relations)
-python notion_to_obsidian.py
-# 3. add code/test/doc nodes from the repo (links code → KB claims)
-python add_code_nodes.py
-# 4. open
+bash ffn_sim/outputs/obsidian_rag_full/refresh.sh          # rebuild
+bash ffn_sim/outputs/obsidian_rag_full/refresh.sh --open   # rebuild + open in Obsidian
+```
+Or, to a Claude session: just say "옵시디언 갱신해줘" / "refresh the Obsidian mirror".
+
+First-time token setup (PI, once):
+```bash
+# Internal Integration secret, connected to the Contract Graph page
+echo 'NOTION_TOKEN=ntn_...' > ffn_sim/outputs/obsidian_rag_full/.notion_token  # gitignored
+```
+Manual steps (what refresh.sh runs):
+```bash
+conda activate ffn_sim && cd ffn_sim/outputs/obsidian_rag_full
+python notion_to_obsidian.py   # Notion → vault (claims/papers/params/gates/contracts + relations)
+python add_code_nodes.py       # repo code/tests/docs → linked to KB claims
 open -a Obsidian ./vault
 ```
 
