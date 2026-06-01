@@ -73,13 +73,18 @@ def _run_arm(
     *, stepping_mode: str, n_fil: int, n_motors: int, seed: int,
     dt_factor: float, v0_accel: float, n_warmup: int, n_sample: int,
     interval: int, force_scaling: bool = False, device: str = "cpu",
-    gsd_path: str | None = None, gsd_period: int = 0,
+    gsd_path: str | None = None, gsd_period: int = 0, couple_accel: bool = False,
+    n_xl: int | None = None,
 ) -> dict:
     """Build + warm-up + short constrained run for one stepping mode."""
     cfg = yaml.safe_load(open(CFG))
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
     cfg["cortex"]["myosin"]["n_motors_per_cell"] = n_motors
+    if n_xl is not None:
+        # Override crosslinker count (native percolation needs ~1/filament, vs
+        # the mesoscale default 1000). Don't mutate the shared YAML default.
+        cfg["cortex"]["dynamic_crosslinkers"]["n_xl"] = int(n_xl)
     cfg["cortex"]["myosin"]["stepping_mode"] = stepping_mode
     # Route B: mesoscale force scaling (grip_walk only; derived factor).
     cfg["cortex"]["myosin"]["mesoscale_force_scaling"] = bool(force_scaling)
@@ -94,8 +99,23 @@ def _run_arm(
     # within the SHORT measured window. Applied ONLY to the constrained
     # production phase: during warm-up the accelerated proxy over-contracts an
     # un-equilibrated network → LJ-overlap blow-up, so warm-up uses literal v0.
-    p_myo_acc = replace(p_myo_lit, v0_per_head=p_myo_lit.v0_per_head * v0_accel)
-    p_xl = resolve_crosslinkers(cfg, dt=dtc)
+    # COUPLED accelerant (2026-06-02): the v0-only accelerant speeds the myosin
+    # WALK but not crosslink/myosin BINDING (literal k_on) -> the two timescales
+    # desync -> the network never percolates -> gamma stays ~100x short
+    # (transport engages but coherence does not). couple_accel scales the binding
+    # rates k_on by the SAME factor so crosslinking keeps pace with the walk ->
+    # the network percolates in the accelerated window. k_off is left literal
+    # (scaling it triggers the batch-CFL -> binder fires factor x more often);
+    # so the k_on/k_off equilibrium shifts UP a bit (mildly over-crosslinked) ->
+    # this is a COHERENCE UPPER BOUND: if even a well-crosslinked network does
+    # not lift gamma, the force budget (motor count) is the wall, not coherence.
+    if couple_accel:
+        p_myo_acc = replace(p_myo_lit, v0_per_head=p_myo_lit.v0_per_head * v0_accel,
+                            head_actin_k_on=p_myo_lit.head_actin_k_on * v0_accel)
+    else:
+        p_myo_acc = replace(p_myo_lit, v0_per_head=p_myo_lit.v0_per_head * v0_accel)
+    p_xl = resolve_crosslinkers(cfg, dt=dtc)              # literal (warm-up)
+    p_xl_acc = (replace(p_xl, k_on=p_xl.k_on * v0_accel) if couple_accel else p_xl)
     dev = (hoomd.device.GPU(notice_level=0) if device == "gpu"
            else hoomd.device.CPU(notice_level=0))
 
@@ -119,7 +139,7 @@ def _run_arm(
     # Same particle topology as the warm-up build (only v0/mode differ), so the
     # relaxed positions transfer by tag directly.
     hc = build_cortex_full_simulation(
-        p, p_xlinks=p_xl, p_myosin=p_myo_acc, device=dev, with_baoab=True,
+        p, p_xlinks=p_xl_acc, p_myosin=p_myo_acc, device=dev, with_baoab=True,
         constrained=True, constrained_dt=dtc, rng=np.random.default_rng(seed))
     sim = hc["sim"]
     ma = hc["myosin_action"]
@@ -217,6 +237,14 @@ def main() -> None:
                     help="if >0, dump a GSD trajectory every N production steps "
                          "for 3D structural viz (OVITO/Blender). File is "
                          "<out>.<arm>.gsd, or gpu_run.<arm>.gsd if --out unset.")
+    ap.add_argument("--n-xl", type=int, default=None,
+                    help="override crosslinker count (native percolation ~1/filament "
+                         "= n_fil; mesoscale default 1000). Doesn't touch the YAML.")
+    ap.add_argument("--couple-accel", action="store_true",
+                    help="COUPLED accelerant: scale binding k_on (myosin + xlink) "
+                         "by v0_accel too, so crosslinking keeps pace with the "
+                         "accelerated walk (network percolates) — removes the "
+                         "walk/bind desync that flattens γ. Coherence upper bound.")
     args = ap.parse_args()
 
     def _gsd_path(mode: str) -> str | None:
@@ -233,6 +261,7 @@ def main() -> None:
         dt_factor=args.dt_factor, v0_accel=args.v0_accel,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
         device=args.device, gsd_period=args.gsd_period,
+        couple_accel=args.couple_accel, n_xl=args.n_xl,
     )
     print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×"
           f"{', force-scaling ON' if args.force_scaling else ''}, arm={args.arm}) ===",
