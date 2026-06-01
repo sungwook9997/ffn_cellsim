@@ -194,6 +194,10 @@ def main() -> None:
                     help="Route B: derived mesoscale force scaling on the grip_walk arm")
     ap.add_argument("--out", type=str, default=None)
     ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    ap.add_argument("--arm", choices=["both", "binned_r0", "grip_walk"],
+                    default="both",
+                    help="run a single arm (skips the A/B verdict) for fast "
+                         "per-arm stability/config iteration")
     args = ap.parse_args()
 
     common = dict(
@@ -203,9 +207,31 @@ def main() -> None:
         device=args.device,
     )
     print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×"
-          f"{', force-scaling ON' if args.force_scaling else ''}) ===", flush=True)
-    arm_a = _run_arm(stepping_mode="binned_r0", **common)  # floor (scaling is grip_walk-gated)
-    arm_b = _run_arm(stepping_mode="grip_walk", force_scaling=args.force_scaling, **common)
+          f"{', force-scaling ON' if args.force_scaling else ''}, arm={args.arm}) ===",
+          flush=True)
+    arm_a = arm_b = None
+    if args.arm in ("both", "binned_r0"):
+        arm_a = _run_arm(stepping_mode="binned_r0", **common)  # floor (scaling is grip_walk-gated)
+    if args.arm in ("both", "grip_walk"):
+        arm_b = _run_arm(stepping_mode="grip_walk", force_scaling=args.force_scaling, **common)
+
+    # Single-arm mode: print that arm's trajectory + write it, skip the A/B
+    # verdict (which compares both arms). Used to iterate fast on one arm's
+    # stability/config without re-running the floor each time.
+    if args.arm != "both":
+        single = arm_a if args.arm == "binned_r0" else arm_b
+        sbx = single["samples"]
+        print(f"\n=== {args.arm} single-arm summary ===", flush=True)
+        print(f"  final s_grip_nm = {sbx[-1].get('mean_grip_s_nm', 0.0)}", flush=True)
+        print(f"  final step_advances = {sbx[-1]['step_advances']}", flush=True)
+        print(f"  final gamma_total_mN/m = {sbx[-1]['gamma_total_mN_per_m']*1e3:.3e}",
+              flush=True)
+        print(f"  any_cfl_blowup = {any(s['lj_cfl_warn'] for s in sbx)}", flush=True)
+        if args.out:
+            Path(args.out).write_text(json.dumps(
+                dict(arm=args.arm, samples=sbx, params=common), indent=2))
+            print(f"wrote {args.out}", flush=True)
+        return
 
     # --- PASS contract evaluation ---
     # γ is measured on the DOMINANT channel (γ_total = γ_soft + γ_rigid); the
