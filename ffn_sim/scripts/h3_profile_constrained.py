@@ -70,11 +70,18 @@ def _build(n_fil, n_motors, seed, dt_factor, with_myosin, device="cpu"):
 
 
 def _warm_and_constrain(p, p_myo, p_xl, dtc, dev, seed, n_warmup):
+    # Use the build's soft-start + BAOAB-drain equilibration (clipped-Brownian
+    # _softstart_step) instead of a raw sim.run(n_warmup): a raw warmup at large
+    # n_fil drives LJ-overlap displacements past the int32-image guard (the
+    # blow-up seen at n_fil>=1000). Soft-start clips per-step displacement so
+    # overlaps drain safely regardless of N. softstart count scales with N.
+    n_soft = max(300, n_warmup // 8)
     hw = build_cortex_full_simulation(
         p, p_xlinks=p_xl, p_myosin=p_myo, device=dev, with_baoab=True,
-        constrained=False, rng=np.random.default_rng(seed))
+        constrained=False, rng=np.random.default_rng(seed),
+        equilibrate=True, equilibrate_steps=n_warmup,
+        equilibrate_softstart_steps=n_soft)
     hw["sim"].run(0)
-    hw["sim"].run(n_warmup)
     pos_warm = _tagpos(hw["sim"])
     del hw
     hc = build_cortex_full_simulation(
