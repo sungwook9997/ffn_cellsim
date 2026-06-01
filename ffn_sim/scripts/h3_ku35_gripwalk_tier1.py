@@ -143,7 +143,7 @@ def _run_arm(
     if gsd_path and gsd_period > 0:
         gsd_writer = hoomd.write.GSD(
             filename=gsd_path, trigger=hoomd.trigger.Periodic(int(gsd_period)),
-            mode="wb", dynamic=["property"],
+            mode="wb", dynamic=["property", "topology"],
         )
         sim.operations.writers.append(gsd_writer)
         print(f"[gsd] writing trajectory -> {gsd_path} every {gsd_period} steps",
