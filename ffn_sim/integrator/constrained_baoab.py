@@ -101,29 +101,112 @@ FIXMAN_SIGN: float = +1.0
 
 
 # ---------------------------------------------------------------------------
+# Device backend dispatch (GPU-main port 2026-06-01)
+# ---------------------------------------------------------------------------
+def array_backend(use_gpu: bool):
+    """Return the array module for the constrained Action (cupy or numpy).
+
+    Centralises the ``xp = cp if gpu else np`` dispatch. The cupy import is
+    deferred so the CPU/dev path (and every existing caller, which defaults
+    to ``xp=np``) never requires cupy to be installed. On GPU hosts (gbook,
+    A5000) ``use_gpu=True`` returns the cupy module; the pure constrained
+    functions then run device-resident over ``gpu_local_snapshot`` arrays.
+    """
+    if use_gpu:
+        import cupy as cp  # deferred: only needed on GPU hosts
+        return cp
+    return np
+
+
+# ---------------------------------------------------------------------------
 # Geometry helpers
 # ---------------------------------------------------------------------------
-def _min_image_orthorhombic(dr: np.ndarray, box) -> np.ndarray:
+def _min_image_orthorhombic(dr, box, xp=np):
     """Minimum-image displacement for an orthorhombic (cube) box.
 
     Accepts EITHER a HOOMD box object (legacy) or a precomputed (3,)
-    ``np.ndarray`` of ``[Lx, Ly, Lz]`` (preferred — avoids repeated
-    HOOMD-property getattr that dominated profile traces). Cortex /
-    single-filament boxes are cubes with no tilt; rigid bonds are never
-    used with Lees-Edwards shear, so orthorhombic is exact. ℓ₀ ≪ L
-    guarantees the nearest image is the physical bond.
+    array of ``[Lx, Ly, Lz]`` (preferred — avoids repeated HOOMD-property
+    getattr that dominated profile traces). Cortex / single-filament boxes
+    are cubes with no tilt; rigid bonds are never used with Lees-Edwards
+    shear, so orthorhombic is exact. ℓ₀ ≪ L guarantees the nearest image
+    is the physical bond.
+
+    Device dispatch (GPU-main port 2026-06-01): ``xp`` selects the array
+    backend (``np`` default → bit-identical to the pre-port CPU path; ``cp``
+    for cupy/GPU). When ``box`` is a precomputed array the caller is
+    responsible for placing it on the same device as ``dr`` (the GPU ``act``
+    builds ``box_L`` as a cupy array once per step). The HOOMD-box legacy
+    path stays host/numpy.
     """
-    if isinstance(box, np.ndarray):
-        L = box
-    else:
+    if hasattr(box, "Lx"):
         L = np.array([box.Lx, box.Ly, box.Lz], dtype=np.float64)
-    return dr - L * np.round(dr / L)
+    else:
+        L = box  # precomputed (3,) array, already on the xp device
+    return dr - L * xp.round(dr / L)
 
 
 def _box_L(box) -> np.ndarray:
     """Cache HOOMD box → (3,) numpy array once per act() to avoid
     per-call getattr overhead (the dominant cost in the profile)."""
     return np.array([box.Lx, box.Ly, box.Lz], dtype=np.float64)
+
+
+def _wrap_into_box_xp(pos, box, xp):
+    """Device-aware minimum-image box wrap (GPU-main port 2026-06-01).
+
+    Sibling of the FROZEN ``baoab._wrap_into_box`` (CLAUDE.md
+    §integrator-freeze — that module is untouched; the CPU constrained path
+    still calls it for bit-identical behaviour). Same upper-triangular
+    fractional-coordinate algorithm + the int32-image overflow guard, but
+    every array op dispatches through ``xp`` so it runs on cupy
+    (``gpu_local_snapshot`` positions stay device-resident). Box dimensions
+    are HOST scalars (reading ``box.Lx`` etc. does not sync device arrays);
+    ``pos`` is the only device array.
+
+    Returns ``(wrapped_pos, image_delta)`` as ``xp`` arrays (float64 / int32),
+    matching the frozen reference's contract.
+    """
+    Lx, Ly, Lz = box.Lx, box.Ly, box.Lz
+    xy, xz, yz = box.xy, box.xz, box.yz
+
+    rx = pos[:, 0]; ry = pos[:, 1]; rz = pos[:, 2]
+    fz = rz / Lz
+    fy = (ry - yz * Lz * fz) / Ly
+    fx = (rx - xy * Ly * fy - xz * Lz * fz) / Lx
+
+    nx = xp.round(fx); ny = xp.round(fy); nz = xp.round(fz)
+
+    # §4 int32-image overflow guard (mirrors baoab._wrap_into_box). The three
+    # ``.any()`` reductions are 0-d device→host scalars (a tiny, necessary
+    # safety sync — not a full-array transfer).
+    INT32_GUARD = 1.0e8
+    if (
+        bool((xp.abs(nx) > INT32_GUARD).any())
+        or bool((xp.abs(ny) > INT32_GUARD).any())
+        or bool((xp.abs(nz) > INT32_GUARD).any())
+    ):
+        worst = float(
+            max(float(xp.abs(nx).max()), float(xp.abs(ny).max()),
+                float(xp.abs(nz).max()))
+        )
+        raise FloatingPointError(
+            "Constrained BAOAB _wrap_into_box_xp: |fractional coord| exceeded "
+            f"the int32-image guard (worst |round(f)|={worst:.3e} > "
+            f"{INT32_GUARD:.0e}); see baoab._wrap_into_box for the rationale."
+        )
+
+    fx = fx - nx; fy = fy - ny; fz = fz - nz
+
+    out = xp.empty_like(pos)
+    out[:, 0] = Lx * fx + xy * Ly * fy + xz * Lz * fz
+    out[:, 1] = Ly * fy + yz * Lz * fz
+    out[:, 2] = Lz * fz
+
+    img_delta = xp.empty_like(pos, dtype=np.int32)
+    img_delta[:, 0] = nx.astype(np.int32)
+    img_delta[:, 1] = ny.astype(np.int32)
+    img_delta[:, 2] = nz.astype(np.int32)
+    return out, img_delta
 
 
 # ---------------------------------------------------------------------------
@@ -191,38 +274,50 @@ def shake_project(
 
 
 def _thomas(sub: np.ndarray, diag: np.ndarray, sup: np.ndarray,
-            rhs: np.ndarray) -> np.ndarray:
-    """Solve a tridiagonal system (Thomas algorithm). sub[0], sup[-1] unused."""
+            rhs: np.ndarray, xp=np) -> np.ndarray:
+    """Solve a tridiagonal system (Thomas algorithm). sub[0], sup[-1] unused.
+
+    ``xp`` is the array backend (np default → bit-identical CPU path; cp for
+    cupy). The forward/backward recurrence is sequential over the chain
+    length so each ``k`` launches one small ``xp`` op — cheap (m≈6).
+    """
     n = diag.shape[0]
-    cp = np.empty(n); dp = np.empty(n)
-    cp[0] = sup[0] / diag[0]
+    cc = xp.empty(n); dp = xp.empty(n)
+    cc[0] = sup[0] / diag[0]
     dp[0] = rhs[0] / diag[0]
     for k in range(1, n):
-        m = diag[k] - sub[k] * cp[k - 1]
-        cp[k] = sup[k] / m
+        m = diag[k] - sub[k] * cc[k - 1]
+        cc[k] = sup[k] / m
         dp[k] = (rhs[k] - sub[k] * dp[k - 1]) / m
-    x = np.empty(n)
+    x = xp.empty(n)
     x[-1] = dp[-1]
     for k in range(n - 2, -1, -1):
-        x[k] = dp[k] - cp[k] * x[k + 1]
+        x[k] = dp[k] - cc[k] * x[k + 1]
     return x
 
 
 def _thomas_batched(sub: np.ndarray, diag: np.ndarray, sup: np.ndarray,
-                    rhs: np.ndarray) -> np.ndarray:
-    """Batched tridiagonal solve over the leading axis. All (F, m)."""
+                    rhs: np.ndarray, xp=np) -> np.ndarray:
+    """Batched tridiagonal solve over the leading axis. All (F, m).
+
+    ``xp`` is the array backend (np default → bit-identical CPU path; cp for
+    cupy). The ``k``-loop over chain length m (~6) is a sequential recurrence
+    that stays a Python loop; each iteration is one batched ``xp`` op over the
+    F chains, so it launches m cupy kernels (cheap vs the per-step host sync
+    it removes).
+    """
     F, m = diag.shape
-    cp = np.empty((F, m)); dp = np.empty((F, m))
-    cp[:, 0] = sup[:, 0] / diag[:, 0]
+    cc = xp.empty((F, m)); dp = xp.empty((F, m))
+    cc[:, 0] = sup[:, 0] / diag[:, 0]
     dp[:, 0] = rhs[:, 0] / diag[:, 0]
     for k in range(1, m):
-        den = diag[:, k] - sub[:, k] * cp[:, k - 1]
-        cp[:, k] = sup[:, k] / den
+        den = diag[:, k] - sub[:, k] * cc[:, k - 1]
+        cc[:, k] = sup[:, k] / den
         dp[:, k] = (rhs[:, k] - sub[:, k] * dp[:, k - 1]) / den
-    x = np.empty((F, m))
+    x = xp.empty((F, m))
     x[:, -1] = dp[:, -1]
     for k in range(m - 2, -1, -1):
-        x[:, k] = dp[:, k] - cp[:, k] * x[:, k + 1]
+        x[:, k] = dp[:, k] - cc[:, k] * x[:, k + 1]
     return x
 
 
@@ -237,6 +332,7 @@ def shake_project_chains(
     tol: float = 1.0e-10,
     max_iter: int = 100,
     return_lambdas: bool = False,
+    xp=np,
 ):
     """Matrix-SHAKE (tridiagonal Newton) for linear-chain bond constraints.
 
@@ -268,14 +364,27 @@ def shake_project_chains(
     that only expect a position array get bit-for-bit prior behaviour. The
     only in-tree caller (``ConstrainedLeimkuhlerMatthewsBAOAB.act``) opts
     in via the flag and unpacks the tuple.
+
+    Device dispatch (GPU-main port 2026-06-01): ``xp`` is the array backend
+    (np default → bit-identical CPU reference; cp for cupy/GPU). The GPU path
+    requires the uniform fast path — pass a pre-stacked ``(F, m+1)`` cupy index
+    array as ``chains`` with cupy ``pred_pos``/``ref_pos``/``inv_mass``; the
+    ragged per-chain fallback stays numpy-only (mixed-length chains never
+    occur on the GPU cortex path). The ``if drift <= tol`` break reads one
+    0-d scalar back each iteration (a tiny, unavoidable sync for the
+    convergence test).
     """
     pos = pred_pos.copy()
     L2 = rest_length * rest_length
 
     # ---- Vectorised fast path: all chains the same length (cortex N=7) ----
-    # Accept EITHER a pre-stacked (F, N) ndarray (fast path — saves ~10%
-    # per profile) OR a list of per-chain arrays (legacy).
-    if isinstance(chains, np.ndarray) and chains.ndim == 2 and chains.shape[1] >= 3:
+    # Accept EITHER a pre-stacked (F, N) array — numpy OR cupy (GPU path) — or
+    # a list of per-chain arrays (legacy ragged path, numpy-only fallback
+    # below). Detection is duck-typed (``ndim``) so a stacked cupy array takes
+    # the fast path too; ``xp`` dispatches every array op (np default →
+    # bit-identical CPU reference).
+    _stacked = getattr(chains, "ndim", 0) == 2 and chains.shape[1] >= 3
+    if _stacked:
         P = chains; F, Np1 = P.shape; m = Np1 - 1
         _uniform_chains = True
     else:
@@ -286,33 +395,35 @@ def shake_project_chains(
             F, Np1 = P.shape; m = Np1 - 1
     if _uniform_chains:
         M = inv_mass[P]                                          # (F, m+1)
-        d0 = _min_image_orthorhombic(ref_pos[P[:, :-1]] - ref_pos[P[:, 1:]], box)
+        d0 = _min_image_orthorhombic(
+            ref_pos[P[:, :-1]] - ref_pos[P[:, 1:]], box, xp=xp)
         # Accumulated per-bond Lagrange multiplier across Newton iterations.
         # Allocated only when the caller actually needs it so the default
         # path stays zero-allocation extra.
-        lambda_total = np.zeros((F, m)) if return_lambdas else None
+        lambda_total = xp.zeros((F, m)) if return_lambdas else None
         for _ in range(max_iter):
-            s = _min_image_orthorhombic(pos[P[:, :-1]] - pos[P[:, 1:]], box)
-            g = np.einsum("fab,fab->fa", s, s) - L2             # (F, m)
-            if np.max(np.abs(g)) / L2 <= tol:
+            s = _min_image_orthorhombic(
+                pos[P[:, :-1]] - pos[P[:, 1:]], box, xp=xp)
+            g = xp.einsum("fab,fab->fa", s, s) - L2             # (F, m)
+            if xp.max(xp.abs(g)) / L2 <= tol:                   # 0-d sync (1 scalar)
                 break
-            sd = np.einsum("fab,fab->fa", s, d0)
+            sd = xp.einsum("fab,fab->fa", s, d0)
             diag = -2.0 * (M[:, :-1] + M[:, 1:]) * sd           # (F, m)
-            sub = np.zeros((F, m)); sup = np.zeros((F, m))
+            sub = xp.zeros((F, m)); sup = xp.zeros((F, m))
             if m > 1:
-                sub[:, 1:] = 2.0 * M[:, 1:-1] * np.einsum(
+                sub[:, 1:] = 2.0 * M[:, 1:-1] * xp.einsum(
                     "fab,fab->fa", s[:, 1:], d0[:, :-1])
-                sup[:, :-1] = 2.0 * M[:, 1:-1] * np.einsum(
+                sup[:, :-1] = 2.0 * M[:, 1:-1] * xp.einsum(
                     "fab,fab->fa", s[:, :-1], d0[:, 1:])
-            lam = _thomas_batched(sub, diag, sup, -g)            # (F, m)
+            lam = _thomas_batched(sub, diag, sup, -g, xp=xp)     # (F, m)
             if lambda_total is not None:
                 lambda_total += lam
-            disp = np.zeros((F, m + 1, 3))
+            disp = xp.zeros((F, m + 1, 3))
             disp[:, :-1] -= (M[:, :-1] * lam)[:, :, None] * d0
             disp[:, 1:] += (M[:, 1:] * lam)[:, :, None] * d0
             pos[P] += disp                                       # chains disjoint
         else:
-            drift = float(np.max(np.abs(g)) / L2)
+            drift = float(xp.max(xp.abs(g)) / L2)
             raise RuntimeError(
                 f"M-SHAKE (vectorised, {F} chains len {m + 1}) failed in "
                 f"{max_iter} iters; max relative drift = {drift:.3e} > tol={tol}.")
@@ -380,6 +491,7 @@ def fixman_logdet_and_force(
     kT: float,
     inv_gamma: np.ndarray,
     box: hoomd.box.Box,
+    xp=np,
 ) -> tuple[float, np.ndarray]:
     """Fixman pseudo-potential ``U_F`` and force ``F_F = −∇U_F``.
 
@@ -393,19 +505,28 @@ def fixman_logdet_and_force(
     analytic gradient. Chains with < 2 bonds have a configuration-
     independent ``det G`` (bond lengths are fixed) → zero force.
 
+    Device dispatch (GPU-main port 2026-06-01): ``xp`` is the array backend
+    (np default → bit-identical CPU reference; cp for cupy/GPU). The batched
+    ``slogdet``/``inv`` use ``xp.linalg`` (present in cupy 14). The GPU path
+    needs the uniform fast path (pre-stacked ``(F, m+1)`` cupy index array +
+    cupy ``pos``/``inv_gamma``); the ragged per-chain fallback stays
+    numpy-only. ``U_F`` is returned as a python float (one 0-d sync); ``force``
+    is an ``xp`` array.
+
     Returns
     -------
     (U_F, force) with force shape (N, 3).
     """
     N = pos.shape[0]
-    force = np.zeros((N, 3), dtype=np.float64)
+    force = xp.zeros((N, 3), dtype=np.float64)
     U_F = 0.0
     half_kT = 0.5 * kT
 
     # ---- Vectorised fast path: all chains the same length (cortex N=7) ----
-    # Accept pre-stacked (F, N) ndarray (avoids per-step np.stack — was the
-    # #2 profile hotspot) OR a list of per-chain arrays.
-    _is_stacked = isinstance(chains, np.ndarray) and chains.ndim == 2 and chains.shape[1] >= 3
+    # Accept pre-stacked (F, N) array — numpy OR cupy (GPU path) — (avoids
+    # per-step np.stack, the #2 profile hotspot) OR a list of per-chain arrays
+    # (legacy ragged, numpy-only). Detection is duck-typed (``ndim``).
+    _is_stacked = getattr(chains, "ndim", 0) == 2 and chains.shape[1] >= 3
     if _is_stacked:
         P = chains; F = P.shape[0]; m = P.shape[1] - 1
         _uniform_chains = True
@@ -416,22 +537,23 @@ def fixman_logdet_and_force(
             P = np.stack([np.asarray(c) for c in chains], axis=0)
             F = P.shape[0]; m = P.shape[1] - 1
     if _uniform_chains:
-        b = _min_image_orthorhombic(pos[P[:, 1:]] - pos[P[:, :-1]], box)  # (F,m,3)
+        b = _min_image_orthorhombic(
+            pos[P[:, 1:]] - pos[P[:, :-1]], box, xp=xp)  # (F,m,3)
         M = inv_gamma[P]                                         # (F, m+1)
-        b2 = np.einsum("fab,fab->fa", b, b)
-        G = np.zeros((F, m, m))
+        b2 = xp.einsum("fab,fab->fa", b, b)
+        G = xp.zeros((F, m, m))
         for a in range(m):
             G[:, a, a] = 4.0 * b2[:, a] * (M[:, a] + M[:, a + 1])
-        bdot = np.einsum("fab,fab->fa", b[:, :-1], b[:, 1:])     # (F, m-1)
+        bdot = xp.einsum("fab,fab->fa", b[:, :-1], b[:, 1:])     # (F, m-1)
         for a in range(m - 1):
             off = -4.0 * M[:, a + 1] * bdot[:, a]
             G[:, a, a + 1] = off; G[:, a + 1, a] = off
-        sign, logdet = np.linalg.slogdet(G)                     # (F,)
-        if np.any(sign <= 0):
+        sign, logdet = xp.linalg.slogdet(G)                     # (F,)
+        if bool(xp.any(sign <= 0)):
             raise FloatingPointError("Fixman metric det G non-positive (vectorised).")
         U_F = FIXMAN_SIGN * half_kT * float(logdet.sum())
-        Ginv = np.linalg.inv(G)                                 # (F, m, m)
-        dlogdet_db = np.zeros((F, m, 3))
+        Ginv = xp.linalg.inv(G)                                 # (F, m, m)
+        dlogdet_db = xp.zeros((F, m, 3))
         for a in range(m):
             dlogdet_db[:, a, :] += (Ginv[:, a, a, None] * 8.0
                                     * (M[:, a] + M[:, a + 1])[:, None] * b[:, a, :])
@@ -442,7 +564,7 @@ def fixman_logdet_and_force(
                 dlogdet_db[:, a, :] += (2.0 * Ginv[:, a, a + 1, None]
                                         * (-4.0 * M[:, a + 1, None]) * b[:, a + 1, :])
         grad = FIXMAN_SIGN * half_kT * dlogdet_db               # (F, m, 3)
-        bf = np.zeros((F, m + 1, 3))
+        bf = xp.zeros((F, m + 1, 3))
         bf[:, :-1, :] += grad
         bf[:, 1:, :] -= grad
         force[P] += bf                                          # chains disjoint
@@ -555,6 +677,13 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self.kT = float(kT)
         self.dt = float(dt)
         self.gamma_map = dict(gamma)
+        self._seed = int(seed)
+        # Device backend, resolved in attach() from sim.device. ``xp=np`` /
+        # CPU snapshot until then; on a GPU device attach() flips these to
+        # cupy + gpu_local_snapshot (GPU-main port 2026-06-01). The CPU path
+        # is bit-identical to the pre-port Action.
+        self._xp = np
+        self._on_gpu = False
         self._rng = np.random.default_rng(seed)
         self._constraint_pairs_tag = cp
         self._constraint_lengths = cl
@@ -657,42 +786,89 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                     "mixed-γ rigid bonds are out of scope for this Action."
                 )
 
+        # ---- Device backend (GPU-main port 2026-06-01) ----
+        # Follow the simulation's device: a GPU device flips the per-step Action
+        # onto gpu_local_snapshot + cupy so positions/forces stay device-resident
+        # (removing the per-step host sync that throttled the C++ 71%). A CPU
+        # device leaves everything on the bit-identical numpy path.
+        self._on_gpu = isinstance(simulation.device, hoomd.device.GPU)
+        if self._on_gpu:
+            xp = array_backend(True)
+            self._xp = xp
+            # cupy RNG for the per-step Gaussian (own stream — gates are
+            # statistical, re-passed not bit-matched vs the numpy stream).
+            self._rng = xp.random.default_rng(self._seed)
+            # GPU requires the vectorised uniform fast path (stacked chains);
+            # the ragged per-chain + Gauss-Seidel shake_project fallbacks are
+            # numpy-only. Cortex backbone chains are uniform → stacked.
+            if self._chains_tag and self._chains_tag_stacked is None:
+                raise RuntimeError(
+                    "GPU constrained Action requires uniform-length chains "
+                    "(stacked fast path); got ragged chains. Run on CPU or "
+                    "pad/uniformise the backbone chains."
+                )
+            if (self._constraint_pairs_tag.shape[0]
+                    and (not self._chains_tag or self._chain_rest_length is None)):
+                raise RuntimeError(
+                    "GPU constrained Action requires uniform-length chain "
+                    "constraints (the cupy M-SHAKE fast path); the generic "
+                    "shake_project fallback is CPU-only."
+                )
+            # Move the per-tag + topology buffers onto the device once.
+            self._inv_gamma_by_tag = xp.asarray(self._inv_gamma_by_tag)
+            self._bd_prefactor_by_tag = xp.asarray(self._bd_prefactor_by_tag)
+            self._prv_rnds = xp.asarray(self._prv_rnds)
+            self._constraint_pairs_tag = xp.asarray(self._constraint_pairs_tag)
+            self._constraint_lengths = xp.asarray(self._constraint_lengths)
+            if self._chains_tag_stacked is not None:
+                self._chains_tag_stacked = xp.asarray(self._chains_tag_stacked)
+
     # ------------------------------------------------------------------
     def act(self, timestep: int) -> None:
         if self._prv_rnds is None or self._inv_gamma_by_tag is None:
             raise RuntimeError("act() called before attach().")
         sim = self._sim_ref
         assert sim is not None
-        with sim.state.cpu_local_snapshot as snap:
-            pos = np.asarray(snap.particles.position)
-            F = np.asarray(snap.particles.net_force)
-            image = np.asarray(snap.particles.image)
-            tag = np.asarray(snap.particles.tag)
+        xp = self._xp
+        # GPU-main port 2026-06-01: on a GPU device the whole step stays
+        # device-resident via gpu_local_snapshot + cupy (xp=cp), removing the
+        # per-step host sync. On CPU xp=np and this is the bit-identical
+        # pre-port path (xp.asarray on a numpy view is a no-op).
+        snap_ctx = (sim.state.gpu_local_snapshot if self._on_gpu
+                    else sim.state.cpu_local_snapshot)
+        with snap_ctx as snap:
+            pos = xp.asarray(snap.particles.position)
+            F = xp.asarray(snap.particles.net_force)
+            image = xp.asarray(snap.particles.image)
+            tag = xp.asarray(snap.particles.tag)
             N = pos.shape[0]
             if N != self._prv_rnds.shape[0]:
                 raise RuntimeError(
                     f"Particle count changed ({self._prv_rnds.shape[0]}→{N})."
                 )
-            if not np.all(np.isfinite(F)):
-                bad = np.argwhere(~np.isfinite(F))
+            if not bool(xp.all(xp.isfinite(F))):
+                bad = xp.argwhere(~xp.isfinite(F))[:5]
+                if self._on_gpu:
+                    bad = xp.asnumpy(bad)
                 raise FloatingPointError(
                     f"Non-finite net_force at timestep={timestep}; "
-                    f"first: {bad[:5].tolist()}."
+                    f"first: {bad.tolist()}."
                 )
 
             box = sim.state.box
             # Cache box dimensions ONCE per act() — avoids the dominant
             # per-call getattr overhead seen in cProfile (box.Lx/Ly/Lz +
-            # box.L + _vec3_to_array totalled ~30% of step time).
-            box_L = _box_L(box)
+            # box.L + _vec3_to_array totalled ~30% of step time). On GPU the
+            # (3,) L array is moved to the device once (tiny — not a sync).
+            box_L = xp.asarray(_box_L(box)) if self._on_gpu else _box_L(box)
             inv_gamma_row = self._inv_gamma_by_tag[tag].reshape(-1, 1)
             bd_prefactor_row = self._bd_prefactor_by_tag[tag]
             prv_W_row = self._prv_rnds[tag]
             W_row = self._rng.standard_normal(size=(N, 3))
 
             # tag → row map so constraint/chain TAG lists index current rows.
-            row_of_tag = np.empty(N, dtype=np.int64)
-            row_of_tag[tag] = np.arange(N, dtype=np.int64)
+            row_of_tag = xp.empty(N, dtype=xp.int64)
+            row_of_tag[tag] = xp.arange(N, dtype=xp.int64)
 
             # 1. Fixman pseudo-force (added to net_force before predictor).
             F_total = F
@@ -704,7 +880,8 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                 else:
                     chains_row_arg = [row_of_tag[c] for c in self._chains_tag]
                 _, F_fixman = fixman_logdet_and_force(
-                    pos, chains_row_arg, self.kT, self._inv_gamma_by_tag[tag], box_L
+                    pos, chains_row_arg, self.kT,
+                    self._inv_gamma_by_tag[tag], box_L, xp=xp,
                 )
                 F_total = F + F_fixman
 
@@ -729,15 +906,18 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                             pred, pos, chains_row_arg,
                             self._chain_rest_length, inv_g, box_L,
                             tol=self.shake_tol, max_iter=self.shake_max_iter,
-                            return_lambdas=True,
+                            return_lambdas=True, xp=xp,
                         )
                     else:
                         projected = shake_project_chains(
                             pred, pos, chains_row_arg,
                             self._chain_rest_length, inv_g, box_L,
                             tol=self.shake_tol, max_iter=self.shake_max_iter,
+                            xp=xp,
                         )
                 else:
+                    # Generic Gauss-Seidel fallback (CPU-only; attach() forbids
+                    # this path on GPU — uniform chains are required there).
                     projected = shake_project(
                         pred, pos, pairs_row, self._constraint_lengths,
                         inv_g, box_L,
@@ -745,24 +925,30 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                     )
                 # §4 drift guard.
                 s = _min_image_orthorhombic(
-                    projected[pairs_row[:, 0]] - projected[pairs_row[:, 1]], box_L
+                    projected[pairs_row[:, 0]] - projected[pairs_row[:, 1]],
+                    box_L, xp=xp,
                 )
-                drift = np.abs(
-                    np.linalg.norm(s, axis=1) - self._constraint_lengths
+                drift = xp.abs(
+                    xp.linalg.norm(s, axis=1) - self._constraint_lengths
                 ) / self._constraint_lengths
                 self._max_drift = float(drift.max())
             else:
                 projected = pred
 
-            if not np.all(np.isfinite(projected)):
-                bad = np.argwhere(~np.isfinite(projected))
+            if not bool(xp.all(xp.isfinite(projected))):
+                bad = xp.argwhere(~xp.isfinite(projected))[:5]
+                if self._on_gpu:
+                    bad = xp.asnumpy(bad)
                 raise FloatingPointError(
                     f"Non-finite position after SHAKE at timestep={timestep}; "
-                    f"first: {bad[:5].tolist()}."
+                    f"first: {bad.tolist()}."
                 )
 
-            # 4. Wrap.
-            wrapped, img_delta = _wrap_into_box(projected, box)
+            # 4. Wrap (device-aware sibling on GPU; frozen baoab helper on CPU).
+            if self._on_gpu:
+                wrapped, img_delta = _wrap_into_box_xp(projected, box, xp)
+            else:
+                wrapped, img_delta = _wrap_into_box(projected, box)
             pos[:] = wrapped
             image[:] = image + img_delta
             self._prv_rnds[tag] = W_row
@@ -797,8 +983,16 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         ``λ`` element to physical scalar bond tension via
         ``T_bond = λ · r₀ / Δt`` and project onto the cut normal for
         method-of-planes γ.
+
+        On GPU the buffer is moved to host numpy here so downstream consumers
+        keep the numpy contract — λ is read at most once per binding batch
+        (~1% of steps), so the device→host copy is cheap and not on the hot
+        per-step path.
         """
-        return self._lambda_buf
+        buf = self._lambda_buf
+        if buf is not None and self._on_gpu:
+            buf = self._xp.asnumpy(buf)
+        return buf
 
 
 def make_constrained_baoab_updater(
