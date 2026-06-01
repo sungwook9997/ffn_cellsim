@@ -221,7 +221,7 @@ Interim handle: the Layer-1 affinity-vs-avidity mechanism row, applied by analog
 - [x] α6β1–LN-111 **clutch-force kinetics** → **RESOLVED (dossier `wf_1494c786-e79`)**: direct force kinetics GENUINELY ABSENT in lit. Use the fallback recipe (K_D 1–20 nM affinity + α7β1-invasin slip-bond shape proxy, scaled weaker than FN). Optional cheap follow-up: recover α6β1–LN-111 K_D from paywalled Nishiuchi 2006 via gbook/KAIST.
 - [x] **iCVD pV4D4 adsorption** → **PI: accepts no data exists** (web). Im Sung Gap lab is the only route; no further action this session.
 - [ ] Validation flag to ratify: single-cell laminin traction is *lower* (lit) while Lam4 collective is *higher* (poster) — confirm this is the single-cell↔Layer-2 split, not a model error.
-- [ ] Port bands into Notion KU v2 layer (KU-1.V / KU-3.B) as formal anchors.
+- [x] **Bands ported into Notion KU v2 layer** as KnowledgeClaim rows **KB-PIV-1…10** (2026-06-02; Subtopic "PI-exp validation", Status `verified`, provenance in Citations-text). Evidence→SourceEvidence relation backfill deferred (same standing step as rest of Contract Graph).
 - [ ] Ratify ligand-identity FA extension scope (col-I α2β1 + laminin-111 α6β1 first).
 - [ ] Confirm Layer-2 multi-cell is the right vehicle for A/A₀ (the model has no clean lit analog — it is novel).
 - [ ] Method-tag the contested MCF7-vs-MDA stiffness ordering (dual band, not single value).
