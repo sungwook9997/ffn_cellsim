@@ -45,6 +45,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 import hoomd
+import hoomd.write
 
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.cortex.myosin import resolve_cortex_myosin
@@ -72,6 +73,7 @@ def _run_arm(
     *, stepping_mode: str, n_fil: int, n_motors: int, seed: int,
     dt_factor: float, v0_accel: float, n_warmup: int, n_sample: int,
     interval: int, force_scaling: bool = False, device: str = "cpu",
+    gsd_path: str | None = None, gsd_period: int = 0,
 ) -> dict:
     """Build + warm-up + short constrained run for one stepping mode."""
     cfg = yaml.safe_load(open(CFG))
@@ -133,6 +135,19 @@ def _run_arm(
         snap.particles.position[:] = pos_warm
     sim.state.set_snapshot(snap)
     sim.run(0)
+
+    # Optional GSD trajectory dump for 3D structural viz (OVITO direct / Blender
+    # import) — the "GSD writer unlock" (viz-decisions). HOOMD-native, writes
+    # device-resident state (positions + box + frame-0 topology) every
+    # gsd_period steps with no extra per-step host sync. Opt-in (period 0 = off).
+    if gsd_path and gsd_period > 0:
+        gsd_writer = hoomd.write.GSD(
+            filename=gsd_path, trigger=hoomd.trigger.Periodic(int(gsd_period)),
+            mode="wb", dynamic=["property"],
+        )
+        sim.operations.writers.append(gsd_writer)
+        print(f"[gsd] writing trajectory -> {gsd_path} every {gsd_period} steps",
+              flush=True)
 
     r0 = float(np.linalg.norm(_tagpos(sim)[:nca], axis=1).mean())
     box_L = float(sim.state.box.L[0])
@@ -198,22 +213,37 @@ def main() -> None:
                     default="both",
                     help="run a single arm (skips the A/B verdict) for fast "
                          "per-arm stability/config iteration")
+    ap.add_argument("--gsd-period", type=int, default=0,
+                    help="if >0, dump a GSD trajectory every N production steps "
+                         "for 3D structural viz (OVITO/Blender). File is "
+                         "<out>.<arm>.gsd, or gpu_run.<arm>.gsd if --out unset.")
     args = ap.parse_args()
+
+    def _gsd_path(mode: str) -> str | None:
+        if args.gsd_period <= 0:
+            return None
+        base = args.out if args.out else "gpu_run"
+        # strip a trailing .json so the gsd sits beside the json artefact
+        if base.endswith(".json"):
+            base = base[:-5]
+        return f"{base}.{mode}.gsd"
 
     common = dict(
         n_fil=args.n_fil, n_motors=args.n_motors, seed=args.seed,
         dt_factor=args.dt_factor, v0_accel=args.v0_accel,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
-        device=args.device,
+        device=args.device, gsd_period=args.gsd_period,
     )
     print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×"
           f"{', force-scaling ON' if args.force_scaling else ''}, arm={args.arm}) ===",
           flush=True)
     arm_a = arm_b = None
     if args.arm in ("both", "binned_r0"):
-        arm_a = _run_arm(stepping_mode="binned_r0", **common)  # floor (scaling is grip_walk-gated)
+        arm_a = _run_arm(stepping_mode="binned_r0",
+                         gsd_path=_gsd_path("binned_r0"), **common)  # floor (scaling is grip_walk-gated)
     if args.arm in ("both", "grip_walk"):
-        arm_b = _run_arm(stepping_mode="grip_walk", force_scaling=args.force_scaling, **common)
+        arm_b = _run_arm(stepping_mode="grip_walk", force_scaling=args.force_scaling,
+                         gsd_path=_gsd_path("grip_walk"), **common)
 
     # Single-arm mode: print that arm's trajectory + write it, skip the A/B
     # verdict (which compares both arms). Used to iterate fast on one arm's

@@ -1,0 +1,32 @@
+# ffn_cellsim — GPU conda environment (cloud / gbook production).
+#
+# Reproduces the `ffn_sim` env on a fresh CUDA GPU VM (RunPod / Lambda / Vast /
+# Paperspace / KAIST-KISTI). HOOMD-blue is conda-forge-only (not pip); on a box
+# with an NVIDIA driver, conda-forge auto-selects the GPU build via the `__cuda`
+# virtual package. cupy is installed via pip (cupy-cuda12x) by the bootstrap
+# script, NOT here, so the CUDA toolkit minor can be matched to the host driver.
+#
+# Usage (or just run scripts/cloud_bootstrap.sh which wraps this):
+#   conda env create -f environment-gpu.yml
+#   conda activate ffn_sim
+#   python -c "import hoomd; assert hoomd.version.gpu_enabled, 'CPU-only build!'"
+#
+# If conda installs the CPU build (gpu_enabled False) because __cuda wasn't
+# detected, force it:  CONDA_OVERRIDE_CUDA=12.4 conda env create -f environment-gpu.yml
+name: ffn_sim
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13.13
+  - hoomd=7.0.1
+  - gsd
+  - freud
+  - numpy>=2.0
+  - scipy>=1.13
+  - h5py>=3.10
+  - pyyaml>=6.0
+  - matplotlib>=3.8
+  - pytest
+  - pip
+  # cupy is pip-installed by cloud_bootstrap.sh (cupy-cuda12x) to match the host
+  # CUDA driver; do not pin a conda cupy here (it can pull a mismatched toolkit).
