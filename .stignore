@@ -40,3 +40,6 @@ dist
 // Note: results/ IS synced for now — toggle below if HDF5 frames balloon.
 // results
 // logs
+
+// Notion export token (per-host secret)
+.notion_token

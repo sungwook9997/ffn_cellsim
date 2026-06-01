@@ -58,3 +58,13 @@ docs/claude_codex_log.md
 # Local code-review-graph SQLite cache. Rebuild with:
 #   .venv-collab/bin/code-review-graph build --repo .
 .code-review-graph/
+
+# Notion export token (never commit) + Obsidian vault internals
+**/.notion_token
+ffn_sim/.obsidian/
+ffn_sim/outputs/.obsidian/
+.baoab_probe.json
+
+# Obsidian RAG export — vault is regeneratable from the scripts (do not commit)
+ffn_sim/outputs/obsidian_rag_full/vault/
+ffn_sim/outputs/obsidian_rag_demo/vault/
