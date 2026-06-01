@@ -160,3 +160,18 @@ DEPS_V2 = {
     "KB-1.V.3.3": ["KB-3.B2.3", "KB-1.8"],
     "KB-1.V.3.4": ["KB-3.5", "KB-1.V.3.2"],
 }
+
+# --- KB-PIV (PI-exp validation layer, added 2026-06-02) -> connect to base claims ---
+# Mappings from each PIV claim's unit/aliases/concept to the Unit 1-5/3.B base claims.
+DEPS_PIV = {
+    "KB-PIV-1":  ["KB-2.5", "KB-2.4"],            # ITGB1 catch-bond / clutch (Pereverzev anchor)
+    "KB-PIV-2":  ["KB-2.5"],                        # col-I catch-slip + rupture
+    "KB-PIV-3":  ["KB-2.2", "KB-2.17"],           # FA maturation / adhesion growth
+    "KB-PIV-4":  ["KB-2.4"],                        # Chan-Odde motor-clutch base set
+    "KB-PIV-5":  ["KB-2.1", "KB-2.5"],            # Lam4 = a6b1 + laminin kinetics
+    "KB-PIV-6":  ["KB-2.11", "KB-PIV-5"],         # Pre vs Lam4 = affinity-vs-avidity / presentation
+    "KB-PIV-7":  ["KB-3.B3.1"],                     # cytoplasm viscosity refine (already auto-linked)
+    "KB-PIV-8":  ["KB-3.5", "KB-3.1", "KB-3.B2.1"],# whole-cell AFM / cortical tension
+    "KB-PIV-9":  ["KB-4.2", "KB-5.3", "KB-5.4"],  # active-wetting + E-cad cohesion (cadherin KU-4.2)
+    "KB-PIV-10": ["KB-5.1", "KB-5.8"],            # unjamming solid/liquid/gas
+}

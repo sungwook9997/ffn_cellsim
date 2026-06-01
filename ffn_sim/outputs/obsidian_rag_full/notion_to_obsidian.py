@@ -33,6 +33,11 @@ try:
     from ku_dependencies import DEPS_V2  # KB-x -> [KB-x, ...] for KU v2 layer
 except Exception:
     DEPS_V2 = {}
+try:
+    from ku_dependencies import DEPS_PIV  # KB-PIV-x -> [KB-x, ...] PI-exp validation layer
+    DEPS_V2 = {**DEPS_V2, **DEPS_PIV}     # merge: both are KB-keyed
+except Exception:
+    pass
 
 HERE = pathlib.Path(__file__).parent
 VAULT = HERE / "vault"
