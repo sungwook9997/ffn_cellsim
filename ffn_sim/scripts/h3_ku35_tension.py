@@ -209,7 +209,9 @@ def _tension_method_of_planes_rigid(
     lam = action.lambda_buf
     if lam is None or not isinstance(lam, np.ndarray):
         return 0.0
-    chains = action._chains_tag_stacked
+    # Host-numpy view (the Action's private buffer is device-resident cupy on a
+    # GPU device after the GPU-main port; this property copies to host).
+    chains = action.chains_tag_stacked
     if chains is None or chains.ndim != 2:
         return 0.0  # ragged path: not implemented here (cortex is uniform).
     r0 = float(action._chain_rest_length)

@@ -71,7 +71,7 @@ def _mean_grip_s(ma) -> float:
 def _run_arm(
     *, stepping_mode: str, n_fil: int, n_motors: int, seed: int,
     dt_factor: float, v0_accel: float, n_warmup: int, n_sample: int,
-    interval: int, force_scaling: bool = False,
+    interval: int, force_scaling: bool = False, device: str = "cpu",
 ) -> dict:
     """Build + warm-up + short constrained run for one stepping mode."""
     cfg = yaml.safe_load(open(CFG))
@@ -94,14 +94,22 @@ def _run_arm(
     # un-equilibrated network → LJ-overlap blow-up, so warm-up uses literal v0.
     p_myo_acc = replace(p_myo_lit, v0_per_head=p_myo_lit.v0_per_head * v0_accel)
     p_xl = resolve_crosslinkers(cfg, dt=dtc)
-    dev = hoomd.device.CPU(notice_level=0)
+    dev = (hoomd.device.GPU(notice_level=0) if device == "gpu"
+           else hoomd.device.CPU(notice_level=0))
 
     # Warm-up (standard BAOAB, CFL dt, LITERAL v0) to relax construction overlaps.
+    # Use the build's soft-start equilibration (clipped-Brownian _softstart_step
+    # + BAOAB drain) rather than a raw sim.run(n_warmup): at large n_fil a raw
+    # warm-up drives LJ-overlap displacements past the int32-image guard. The
+    # soft-start clips per-step displacement so overlaps drain safely regardless
+    # of N (GPU-main port 2026-06-01). softstart count scales with N.
+    n_soft = max(300, n_warmup // 8)
     hw = build_cortex_full_simulation(
         p, p_xlinks=p_xl, p_myosin=p_myo_lit, device=dev, with_baoab=True,
-        constrained=False, rng=np.random.default_rng(seed))
+        constrained=False, rng=np.random.default_rng(seed),
+        equilibrate=True, equilibrate_steps=n_warmup,
+        equilibrate_softstart_steps=n_soft)
     hw["sim"].run(0)
-    hw["sim"].run(n_warmup)
     pos_warm = _tagpos(hw["sim"])
     del hw
 
@@ -185,12 +193,14 @@ def main() -> None:
     ap.add_argument("--force-scaling", action="store_true",
                     help="Route B: derived mesoscale force scaling on the grip_walk arm")
     ap.add_argument("--out", type=str, default=None)
+    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
     args = ap.parse_args()
 
     common = dict(
         n_fil=args.n_fil, n_motors=args.n_motors, seed=args.seed,
         dt_factor=args.dt_factor, v0_accel=args.v0_accel,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
+        device=args.device,
     )
     print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×"
           f"{', force-scaling ON' if args.force_scaling else ''}) ===", flush=True)

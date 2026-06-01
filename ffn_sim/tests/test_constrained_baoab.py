@@ -415,6 +415,24 @@ class TestR1LambdaCapture:
         )
         assert np.all(np.isfinite(lam))
 
+    def test_chains_tag_stacked_property_returns_host_numpy(self):
+        """``chains_tag_stacked`` is the device-safe consumer accessor (the
+        KU-3.5 method-of-planes rigid-bond tension reads it). On CPU it returns
+        the numpy stacked bead-TAG array; on GPU the property copies cupy→host
+        (symmetric). Locks the consumer contract the GPU port would otherwise
+        break — a device-resident cupy buffer indexed by host positions raised
+        'Implicit conversion to a NumPy array is not allowed' in the native
+        pilot until this accessor was added. ``prv_rnds`` is likewise host-safe."""
+        n_beads = 7
+        sim, act = _chain_sim_with_constraints(seed=3, record_lambda=False,
+                                               n_beads=n_beads)
+        sim.run(1)
+        chains = act.chains_tag_stacked
+        assert isinstance(chains, np.ndarray), "chains_tag_stacked must be numpy"
+        assert chains.shape == (1, n_beads)
+        pr = act.prv_rnds
+        assert isinstance(pr, np.ndarray) and pr.shape[1] == 3
+
     def test_record_lambda_toggle_bit_for_bit_position_match(self):
         """Action behaviour must not change with ``record_lambda``: the
         λ accumulator is allocation-only, not a physics path."""

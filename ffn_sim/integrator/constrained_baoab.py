@@ -957,8 +957,16 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
     # ------------------------------------------------------------------
     @property
     def prv_rnds(self) -> np.ndarray | None:
+        """Read-only host (numpy) view of the previous-step Gaussian buffer.
+
+        On a GPU device the buffer is cupy; it is copied to host here so the
+        accessor always returns a numpy array (cupy has no ``.flags.writeable``,
+        so the read-only view below would otherwise raise on GPU). Off the hot
+        path — only used by tests / inspection."""
         if self._prv_rnds is None:
             return None
+        if self._on_gpu:
+            return self._xp.asnumpy(self._prv_rnds)
         v = self._prv_rnds.view()
         v.flags.writeable = False
         return v
@@ -993,6 +1001,22 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         if buf is not None and self._on_gpu:
             buf = self._xp.asnumpy(buf)
         return buf
+
+    @property
+    def chains_tag_stacked(self):
+        """Host (numpy) view of the stacked per-filament bead-TAG array.
+
+        External consumers (e.g. the KU-3.5 method-of-planes rigid-bond tension
+        in ``scripts/h3_ku35_tension.py``) index host positions with this, so
+        on GPU the cupy hot-path buffer is copied to host here. Read off the
+        per-step path (once per tension measurement), so the device→host copy
+        is cheap. ``None`` if the Action carries no uniform chains. Use this
+        rather than the private ``_chains_tag_stacked`` (which is device-resident
+        cupy on a GPU device — the port moved it there for the hot path)."""
+        c = self._chains_tag_stacked
+        if c is not None and self._on_gpu:
+            c = self._xp.asnumpy(c)
+        return c
 
 
 def make_constrained_baoab_updater(
