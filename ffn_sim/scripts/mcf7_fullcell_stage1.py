@@ -86,12 +86,15 @@ def _resolve_compartments(p_cortex):
 
 
 def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
-           dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu"):
+           dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu", kon_scale=1.0):
+    from dataclasses import replace as _replace
     p = resolve_h3_derived(cfg)
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
     dtc = dtc if dtc is not None else 0.001 * tau_bend
     p_myo = resolve_cortex_myosin(cfg, dt=dtc, R_cell=p.R_cell)
     p_xl = resolve_crosslinkers(cfg, dt=dtc)
+    if kon_scale != 1.0:  # couple_accel: accelerate xlink binding so the network
+        p_xl = _replace(p_xl, k_on=p_xl.k_on * kon_scale)   # PERCOLATES (z->[2,4])
     dev = (hoomd.device.GPU(notice_level=0) if device == "gpu"
            else hoomd.device.CPU(notice_level=0))
     kw = dict(p_xlinks=p_xl, p_myosin=p_myo, device=dev, with_baoab=True,
@@ -105,9 +108,15 @@ def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
     return p, p_myo, p_xl, dtc, hw
 
 
-def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling):
+def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm=700):
     cfg = deepcopy(yaml.safe_load(open(CFG)))
     cfg["cortex"]["R_cell"] = MCF7["R_cell"]          # MCF7 7.5 µm
+    # Minifilament backbone length override. Brief literal is 700 nm (14-bead grid
+    # artifact); literature NMII bipolar minifilament ≈ 300 nm (Billington; bare
+    # zone ~160 nm). 300 nm shrinks the placement exclusion (backbone+100 nm) from
+    # 800→400 nm, so the NATIVE motor density fits without coarse-graining → denser,
+    # more native-like motor field → better force TRANSMISSION (the γ wall).
+    cfg["cortex"]["myosin"]["backbone_length"] = backbone_nm * 1e-9
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
     cfg["cortex"]["myosin"]["n_motors_per_cell"] = n_motors
@@ -120,8 +129,8 @@ def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling):
 
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
-            compartments_on=True, only=None):
-    cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling)
+            compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0):
+    cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
     if compartments_on and only:
@@ -143,7 +152,7 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
     _, _, _, dtc, hw = _build(cfg, stepping_mode=stepping_mode,
                               force_scaling=force_scaling, constrained=False,
                               compartments=comp, equilibrate=True, n_warmup=n_warmup,
-                              device=device)
+                              device=device, kon_scale=kon_scale)
     hw["sim"].run(0)
     pos_warm = _tagpos(hw["sim"])
     del hw
@@ -153,7 +162,7 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
     p, p_myo_lit, p_xl, dtc, hc = _build(cfg, stepping_mode=stepping_mode,
                                          force_scaling=force_scaling,
                                          constrained=True, compartments=comp, dtc=dtc,
-                                         device=device)
+                                         device=device, kon_scale=kon_scale)
     sim = hc["sim"]
     act = hc["baoab_action"]
     if hasattr(act, "record_lambda"):
@@ -203,6 +212,10 @@ def main() -> int:
     ap.add_argument("--only", choices=["p_enclosed_volume", "p_cytoplasm",
                                        "p_nucleus", "p_membrane_surface"], default=None,
                     help="attribution: enable ONLY this one compartment")
+    ap.add_argument("--backbone-nm", type=float, default=700,
+                    help="myosin minifilament backbone length [nm] (700=brief, 300=literature NMII)")
+    ap.add_argument("--kon-scale", type=float, default=1.0,
+                    help="couple_accel: scale xlink k_on for percolation (z->[2,4]); native needs ~300")
     args = ap.parse_args()
 
     if args.smoke:
@@ -223,7 +236,7 @@ def main() -> int:
             couple_accel=args.couple_accel, n_warmup=args.n_warmup,
             n_sample=args.n_sample, interval=args.interval, smoke=args.smoke,
             device=args.device, compartments_on=not args.no_compartments,
-            only=args.only,
+            only=args.only, backbone_nm=args.backbone_nm, kon_scale=args.kon_scale,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"
