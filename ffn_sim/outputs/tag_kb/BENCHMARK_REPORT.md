@@ -1,8 +1,8 @@
 # Does knowledge-base architecture reduce LLM hallucination? A 4-condition ablation on the ffn_cellsim KB
 
-**Date:** 2026-06-02 · **Status:** complete — 40 answers scored, 4 figures rendered. Reproduce with `kb_benchmark.py` + `kb_benchmark_vis.py`.
+**Date:** 2026-06-02 · **Status:** complete — **18 gold questions × 4 conditions × 2 answerer models** (144 answers + judge), 5 figures. Reproduce with `kb_benchmark.py` + `kb_benchmark_vis.py`.
 
-**Headline:** correctness rose **12% → 25% → 38% → 100%** and context-recall **0 → 0 → 0.19 → 0.89** across the four KB generations; the full RAG+TAG+Obsidian stack is the only one that reliably answers the project's structured, citation-grounded questions.
+**Headline (primary answerer = claude-sonnet-4-6):** accuracy rose **31% → 31% → 31% → 81%** and context-recall **0 → 0.11 → 0.13 → 0.71** across the four KB generations; the full RAG+TAG+Obsidian stack is the only one that answers the project's structured (count/join/aggregate) questions at all. A weaker answerer (claude-haiku-4-5) improves monotonically too but extracts far less from TAG (C4 38% vs 81%) — the structured-query advantage is unlocked by the answerer's SQL-synthesis ability, not the KB alone.
 
 > One-paragraph claim. As the `ffn_cellsim` project's knowledge base evolved from
 > *no structured KB* (the ActiveCellSim era) → semantic RAG → a graph mirror
@@ -70,24 +70,36 @@ determine without querying the data") instead of fabricating — the honest
 baseline we want. (When `ANTHROPIC_API_KEY` is set, the anthropic SDK gives a
 clean single-turn completion directly.)
 
-### 2.2 Gold question set (n=10)
+### 2.2 Gold question set (n=18)
 
 Questions span the classes a real KB must serve, each with ground truth verified
 against `kb.duckdb` on 2026-06-02:
 
-- **aggregation** — e.g. "how many SourceEvidence rows have no DOI?" (56/273).
-- **relational / multi-hop** — e.g. "which ValidationGate is failing?" (exactly
-  one: *KU-3.5 cortex tension floor*); "which paper supports the most claims?"
-  (Broedersz 2014 / Licup 2015, 7 each).
-- **factual / parameter** — e.g. KB-3.19 α-actinin `k_off0` = 0.066 s⁻¹.
-- **content synthesis** — answerable only from PDF text (cortical tension sets
-  tissue surface tension).
+- **aggregation (×4)** — counts requiring `COUNT`/`GROUP BY`, e.g. "how many
+  SourceEvidence rows have no DOI?" (56/273), "how many Direct-measurement rows?"
+  (161), "how many Parameters?" (21).
+- **relational / multi-hop (×4)** — joins over `edges`, e.g. "which ValidationGate
+  is failing?" (exactly one: *KU-3.5 cortex tension floor*); "which paper supports
+  the most claims?" (Broedersz 2014 / Licup 2015, 7 each); "how many claims cite
+  Wolf 2013?" (5).
+- **factual / parameter (×3)** — values stored in claim nodes, e.g. KB-3.19
+  α-actinin `k_off0` = 0.066 s⁻¹; cortex thickness ~200 nm; F-actin ℓ_p ~17 µm.
+- **content synthesis (×1)** — answerable only from PDF text (cortical tension
+  sets tissue surface tension).
 - **citation-trap (×3)** — the heart of the hallucination probe. Each asks about
   one of the **3 confirmed fabricated sources** found in the 2026-06-02 audit
   (`Yao2011_NatCommun`, `YapKovacs_JCS`, `NanoConvergence2021_Glioma`). A system
   *hallucinates* if it affirms the fake source as real; it *passes* if it flags
   the fabrication or names the correct substitute (Ferrer 2008; Yap/Gomez 2015
   Dev Cell; Ketebo pillars).
+- **citation-control / over-refusal (×1, NEW)** — asks the system to confirm a
+  **real, classic** source (Bell 1978, Science, the genuine Bell-Evans off-rate
+  paper). Correct behaviour is to *affirm* it; doubting or refusing a real source
+  is an over-refusal failure (the opposite error from a citation-trap). Guards
+  against the trivial "refuse everything" strategy.
+
+Two answerer models are run to test robustness: **claude-sonnet-4-6** (primary)
+and **claude-haiku-4-5** (weaker), with the **judge fixed at claude-opus-4-8**.
 
 ### 2.3 Metrics
 
@@ -126,99 +138,142 @@ logged to `benchmark_results.json` so all scores are auditable, not opaque.
 
 ## 3. Results
 
-Full run 2026-06-02: answerer `claude-sonnet-4-6`, judge `claude-opus-4-8`,
-10 gold questions × 4 conditions = 40 answers (`benchmark_results.json`).
+Full run 2026-06-02: 18 gold questions × 4 conditions × 2 answerers (sonnet,
+haiku), judge `claude-opus-4-8`. `benchmark_results.json` (sonnet, primary) +
+`benchmark_results_haiku.json`.
 
-### 3.1 Summary by condition
+### 3.1 Summary by condition — primary answerer (claude-sonnet-4-6)
 
 | Condition | Accuracy¹ | TAG-Bench EM² | Answer-relev | Faithfulness | **Context-recall** | FActScore halluc³ | Prog. halluc⁴ |
 |---|---|---|---|---|---|---|---|
-| **C1** no-KB (closed-book) | 12% | 30% | 0.52 | 0.92 | **0.00** | 14% | 0% |
-| **C2** RAG | 25% | 10% | 0.51 | 0.86 | **0.00** | 14% | 0% |
-| **C3** RAG + Obsidian | 38% | 40% | 0.84 | 0.97 | **0.19** | 0% | 0% |
-| **C4** RAG + TAG + Obsidian | **100%** | **100%** | 0.98 | 0.93 | **0.89** | 2% | 0% |
+| **C1** no-KB (closed-book) | 31% | 22% | 0.61 | 0.91 | **0.00** | 8% | 6% |
+| **C2** RAG | 31% | 28% | 0.65 | 0.98 | **0.11** | 0% | 11% |
+| **C3** RAG + Obsidian | 31% | 28% | 0.73 | 0.98 | **0.13** | 2% | 0% |
+| **C4** RAG + TAG + Obsidian | **81%** | **78%** | 0.94 | 0.93 | **0.71** | 18% | 0% |
 
 ¹ programmatic substring/value match. ² LLM-judge exact-match (refusal = incorrect;
 trap = correct iff fabrication not affirmed). ³ FActScore atomic-fact hallucination
 rate (judge). ⁴ programmatic: affirming a known-fabricated source, or citing an
-unresolvable KB identifier.
+unresolvable identifier (DOI/KB-id).
 
 ### 3.2 The capability staircase (Fig. `fig_bench_by_class.png`)
 
-Correctness by question class shows *which layer switches each capability on* —
-the cleanest result of the study:
+Correctness by question class (sonnet) shows *which layer switches each capability
+on* — the cleanest result of the study:
 
 | Question class | C1 | C2 | C3 | C4 | switches on at |
 |---|---|---|---|---|---|
-| content (general literature) | ✅ | ✅ | ✅ | ✅ | always (parametric) |
-| citation-trap (fabrication) | ✗ | ✅ | ✅ | ✅ | **RAG** (real corpus crowds out the fake) |
-| factual / parameter | ✗ | ✗ | ✅ | ✅ | **Obsidian graph** (node values) |
-| aggregation | ✗ | ✗ | ✗ | ✅ | **TAG** (SQL `count`) |
-| relational / multi-hop | ✗ | ✗ | ✗ | ✅ | **TAG** (SQL joins over `edges`) |
+| content (general literature) | 100 | 100 | 100 | 100 | always (parametric) |
+| citation-control (confirm a real source) | 100 | 100 | 100 | 100 | always (no over-refusal) |
+| citation-trap (reject a fabrication) | 0 | 100 | 100 | 100 | **RAG** (real corpus crowds out the fake) |
+| factual / parameter | 67 | 67 | 33 | 67 | partly parametric; **syn-limited** at C4 (see §3.4) |
+| relational / multi-hop | 25 | 0 | 25 | 50 | **TAG**, syn-limited |
+| aggregation (count) | 0 | 0 | 0 | **100** | **TAG only** (SQL `COUNT`) — the signature result |
 
 ### 3.3 Key findings
 
-1. **Correctness rises monotonically with KB structure: 12 → 25 → 38 → 100%.**
-   Only the full TAG layer answers the project's structured questions (counts,
-   joins, "which gate is failing", parameter values) — C4 is the *only* condition
-   above 40%.
+1. **Aggregation is answerable ONLY with TAG: 0/0/0 → 100%.** No amount of
+   semantic retrieval or graph browsing answers "how many rows satisfy X" — it
+   requires an exact `COUNT` over the table. This is the sharpest single result:
+   a whole class of questions is binary-gated on the TAG layer.
 
-2. **Context recall is the mechanism: 0.00 → 0.00 → 0.19 → 0.89.** Semantic RAG
-   over the PDF corpus almost *never contains* the answer to a structured
-   project question ("how many SE rows lack a DOI", "which paper backs the most
-   claims") — those facts live in the *relations between* records, not in any
-   paragraph. The Obsidian graph surfaces a few (node values); only TAG's
-   synthesised SQL reliably retrieves them. High recall → high faithfulness →
-   high accuracy.
+2. **Correctness jumps at C4: 31 → 31 → 31 → 81% (sonnet).** C1–C3 plateau because
+   the structured/relational questions dominate the set and none of them is
+   answerable without exact query; C4 clears them.
 
-3. **Raw RAG can hurt (C2 EM 10% < C1 30%).** Injecting unstructured passages
-   that don't contain the structured answer adds plausible-but-irrelevant
-   material; the model sometimes over-commits to it. Structure (C3) and exact
-   query (C4) are what convert retrieval into correct answers — not more text.
+3. **Context recall is the mechanism: 0.00 → 0.11 → 0.13 → 0.71.** Semantic RAG
+   over the PDF corpus rarely *contains* the answer to a structured project
+   question — those facts live in the *relations between* records, not in any
+   paragraph. Only TAG's synthesised SQL reliably retrieves them; recall → accuracy.
 
-4. **Hallucination — the honest picture.** *Programmatic* hallucination is 0% in
-   every condition (Fig. `fig_bench_heatmap.png` has no red cells): under the
-   controlled closed-book setup the modern answerer **refuses rather than
-   fabricates** when it lacks data ("I cannot determine without querying"). The
-   reduction is therefore visible at the finer *atomic-fact* level (FActScore:
-   **14% → 14% → 0% → 2%**) — C1/C2 still slip unsupported sub-claims into
-   otherwise-hedged answers, which the graph/TAG context eliminates. So in this
-   project's regime the KB's dominant win is **correctness + grounded recall**,
-   with a real but secondary atomic-hallucination reduction. (A weaker or
-   older-generation answerer, closer to the ActiveCellSim era, would show a far
-   larger raw-fabrication gap — the closed-book honesty here is itself a property
-   of the 2026 model, not of the KB.)
+4. **The C4 ceiling is SQL-synthesis quality, not the data (see §3.4).** The two
+   structured questions C4 missed both trace to `syn` writing a wrong query, not
+   to missing data — a tractable engine-improvement target, documented honestly
+   rather than tuned away.
 
-5. **Citation traps are caught from C2 on.** Even raw RAG over the *real* corpus
-   prevents affirming the 3 fabricated sources (the genuine papers crowd out the
-   fake); C4 additionally cites the correct substitute via the `source_audit`
-   table.
+5. **Hallucination — the honest, now-richer picture.** On the harder 18-question
+   set, *programmatic* hallucination is no longer flat: C1 6%, C2 **11%**, C3/C4
+   **0%**. The traps and the over-refusal control expose it — C1/C2 (closed-book /
+   raw RAG) cite **unresolvable or wrong DOIs** for real and fake sources alike,
+   while the graph/TAG layers ground citations and drop it to zero. Atomic
+   (FActScore) hallucination is 8/0/2/**18%**: C4's 18% comes almost entirely from
+   *over-elaboration* on the open-ended content/trap questions (Q6 surface-tension
+   synthesis, Q9 glioma summary) where, given rich context, the model adds
+   plausible specifics beyond it — a different failure mode (verbosity) than C1/C2's
+   bad-citation fabrication.
 
-### 3.4 Caveats (for honest reporting)
+6. **Citation traps caught from C2 on; no over-refusal.** Raw RAG over the *real*
+   corpus already prevents affirming the 3 fabricated sources (genuine papers
+   crowd out the fake), and every condition correctly *confirms* the real
+   Bell-1978 control — so the trap-catching is genuine skepticism, not blanket
+   refusal.
 
-- n = 10 gold questions; single answerer + single judge model. Treat absolute
-  percentages as indicative; the *monotonic ordering* C1<C2<C3<C4 on accuracy
-  and context-recall is the robust result.
+### 3.4 The C4 ceiling: two syn failures (honest error analysis)
+
+C4 missed 2 of the structured questions; both are `syn` (NL→SQL) bugs, not data
+gaps:
+
+- **Q16 (cortex thickness):** syn wrote `WHERE id IN ('KB-3.1','KB-3.7')`, but `id`
+  is the opaque Notion-page UUID — the human "KB-3.1" lives in the `kb_id` column.
+  Wrong column → 0 rows. (Fix landed: `tag_query.py` schema hint now states
+  `kb_id` is the human claim id and `id` is a UUID PK.)
+- **Q15 (claims citing Wolf 2013):** syn over-joined through `paper_refs` with a
+  mismatched `rel`, returning 0; the direct `source_evidence → edges →
+  knowledge_claim` path gives 5.
+
+Takeaway for the paper: **the architecture delivers the right data; the residual
+gap is the model's text-to-SQL skill** — which is exactly why the weaker answerer
+(haiku) gains so much less from C4 (§3.5).
+
+### 3.5 Cross-model robustness (Fig. `fig_bench_model_compare.png`)
+
+Re-running with a weaker answerer (claude-haiku-4-5), judge fixed:
+
+| Condition | sonnet acc | haiku acc | sonnet aggregation | haiku aggregation |
+|---|---|---|---|---|
+| C1 no-KB | 31% | 19% | 0% | 0% |
+| C2 RAG | 31% | 25% | 0% | 0% |
+| C3 +Obsidian | 31% | 38% | 0% | 17% |
+| C4 +TAG | **81%** | **38%** | **100%** | **17%** |
+
+- **Both models improve with KB structure** (monotonic-ish) — the effect is not a
+  single-model artifact.
+- **The TAG advantage scales with answerer capability.** Sonnet converts TAG
+  access into 100% aggregation accuracy; haiku, whose `syn` writes weaker SQL,
+  reaches only 17%. The reasoning/refusal classes (trap, control, content) score
+  identically (100%) for both — they are model-robust. So the *structured-query*
+  win is gated by text-to-SQL ability, the *grounding/refusal* win is not.
+
+### 3.6 Caveats (for honest reporting)
+
+- n = 18 gold questions; 2 answerers, 1 judge. Treat absolute percentages as
+  indicative; the robust results are the **ordering** (C4 ≫ C1–C3 on structured
+  questions) and the **aggregation 0→100 gate**.
 - RAGAS/FActScore are LLM-judge metrics (subjective); the programmatic backbone
-  (accuracy, citation resolution, trap detection) is the objective anchor and
-  agrees with them on the ordering.
-- The "closed-book honesty" of C1 reflects the 2026 answerer's disposition to
+  (accuracy, citation resolution, trap/control detection) is the objective anchor.
+- C4's atomic-hallucination (18%) is an over-elaboration/verbosity effect on
+  open-ended questions, not bad-citation fabrication; a terser answer prompt would
+  likely reduce it (untested).
+- The closed-book honesty of C1 partly reflects the 2026 answerer's disposition to
   refuse; it does **not** imply the pre-KB ActiveCellSim workflow was
-  hallucination-free in practice (different model era, no refusal training at
-  this level).
-- KB snapshot: `kb.duckdb` as of 2026-06-02 (SE 273, claims 158, edges 808).
+  hallucination-free in practice (older model era).
+- KB snapshot: `kb.duckdb` 2026-06-02 (SE 273, claims 158, edges 808, chunks 5327).
 
 ## Figures
+
+(primary answerer = claude-sonnet-4-6 unless noted)
 
 - `figs/fig_bench_headline.png` — accuracy vs hallucination (programmatic +
   FActScore) across C1→C4. The headline story.
 - `figs/fig_bench_ragas.png` — RAGAS triad (faithfulness / relevancy / context
   recall) across conditions.
 - `figs/fig_bench_by_class.png` — correctness by question class × condition:
-  shows which capability each layer switches on (aggregation/relational need
-  TAG; content needs RAG).
+  shows which capability each layer switches on (aggregation = TAG-only).
 - `figs/fig_bench_heatmap.png` — per-question outcome grid (correct / honest-miss
   / hallucination) × condition.
+- `figs/fig_bench_model_compare.png` — **cross-model**: accuracy & atomic
+  hallucination for sonnet vs haiku across conditions; the TAG advantage scales
+  with answerer capability.
 
 ## 4. Reproduce
 

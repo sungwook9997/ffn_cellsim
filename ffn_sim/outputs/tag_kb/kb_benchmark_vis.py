@@ -195,6 +195,55 @@ def fig_heatmap(d, rows):
     plt.close(fig)
 
 
+def fig_model_compare():
+    """Answerer-robustness panel: accuracy & FActScore-hallucination across
+    conditions for two answerer models (primary vs weaker), if both exist."""
+    haiku = HERE / "benchmark_results_haiku.json"
+    if not haiku.exists():
+        return False
+    da = json.loads(RES.read_text())
+    dh = json.loads(haiku.read_text())
+
+    def agg(rows):
+        acc, fh = [], []
+        for c in CONDS:
+            rs = by_cond(rows, c)
+            acc.append(100 * _mean([r["accuracy"] for r in rs if r["accuracy"] is not None]))
+            js = [r.get("judge", {}) for r in rs if r.get("judge")]
+            tc = sum((j.get("n_atomic_claims") or 0) for j in js)
+            th = sum((j.get("n_hallucinated") or 0) for j in js)
+            fh.append(100 * th / tc if tc else float("nan"))
+        return acc, fh
+
+    a_acc, a_fh = agg(da["results"])
+    h_acc, h_fh = agg(dh["results"])
+    x = np.arange(len(CONDS))
+    w = 0.2
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.5))
+    for ax, (sa, ha, ylab, ttl) in zip(
+            (ax1, ax2),
+            [((a_acc, h_acc), None, "accuracy (%)", "Accuracy"),
+             ((a_fh, h_fh), None, "FActScore hallucinated-fact (%)", "Atomic hallucination")]):
+        svals, hvals = sa
+        b1 = ax.bar(x - w / 2, svals, w, label=f"answerer: {da['model']}", color="#2b8cbe")
+        b2 = ax.bar(x + w / 2, hvals, w, label=f"answerer: {dh['model']}", color="#fdae61")
+        for bars in (b1, b2):
+            for b in bars:
+                h = b.get_height()
+                if not np.isnan(h):
+                    ax.annotate(f"{h:.0f}", (b.get_x() + b.get_width() / 2, h),
+                                ha="center", va="bottom", fontsize=8)
+        ax.set_xticks(x); ax.set_xticklabels(CONDS)
+        ax.set_ylabel(ylab); ax.set_title(ttl); ax.set_ylim(0, 105)
+        ax.grid(axis="y", alpha=0.3); ax.legend(fontsize=8)
+    fig.suptitle("Answerer-model robustness: KB-architecture effect holds across a "
+                 "stronger and a weaker model (judge fixed = opus)", fontsize=11)
+    fig.tight_layout()
+    fig.savefig(FIGS / "fig_bench_model_compare.png", dpi=150)
+    plt.close(fig)
+    return True
+
+
 def main():
     if not RES.exists():
         raise SystemExit(f"{RES} not found — run kb_benchmark.py first.")
@@ -203,7 +252,8 @@ def main():
     fig_ragas(d, rows)
     fig_by_class(d, rows)
     fig_heatmap(d, rows)
-    print(f"wrote 4 figures to {FIGS}/")
+    n = 4 + (1 if fig_model_compare() else 0)
+    print(f"wrote {n} figures to {FIGS}/")
 
 
 if __name__ == "__main__":

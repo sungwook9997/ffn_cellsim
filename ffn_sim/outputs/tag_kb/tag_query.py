@@ -73,7 +73,15 @@ def llm(prompt: str, system: str = "", model: str | None = None,
 # schema introspection — give syn an accurate world model
 # --------------------------------------------------------------------------- #
 def schema_text(con) -> str:
-    out: list[str] = ["TABLES (all node columns are TEXT; CAST when comparing numbers):"]
+    out: list[str] = [
+        "TABLES (all node columns are TEXT; CAST when comparing numbers):",
+        "KEY IDS — every node's `id` is an OPAQUE Notion-page UUID (e.g. "
+        "'372120da…'), used only for JOINs via the edges table. The HUMAN-READABLE "
+        "identifier is a separate column: knowledge_claim.kb_id ('KB-3.19'), "
+        "source_evidence.citation_key ('Bell1978_Science') and .uid ('SE119'). "
+        "To filter by a 'KB-x.y' value use kb_id, NEVER id. Prefer the direct "
+        "source_evidence→edges→knowledge_claim path over joining through paper_refs.",
+    ]
     tables = [r[0] for r in con.execute(
         "SELECT table_name FROM information_schema.tables "
         "WHERE table_schema='main' ORDER BY 1").fetchall()]

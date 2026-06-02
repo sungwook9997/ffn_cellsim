@@ -197,6 +197,38 @@ GOLD = [
          q="List the KnowledgeClaims that cite Buckley 2014 (Science). How many are there?",
          gold=["BUCKLEY_COUNT"],  # filled at runtime
          truth="Buckley 2014 (Science) is cited by BUCKLEY_COUNT KnowledgeClaims."),
+    # ---- expansion 2026-06-02 (n=10 -> 18); ground truth verified vs kb.duckdb ----
+    dict(id="Q11", cls="aggregation",
+         q="How many SourceEvidence rows are classified with source_type 'Direct measurement'? Give the number.",
+         gold=["161"], truth="161 SourceEvidence rows are source_type 'Direct measurement'."),
+    dict(id="Q12", cls="aggregation",
+         q="How many ValidationGates have status 'not-started'? Give the number.",
+         gold=["17"], truth="17 ValidationGates have status 'not-started'."),
+    dict(id="Q13", cls="aggregation",
+         q="How many Parameter records does the knowledge base contain? Give the number.",
+         gold=["21"], truth="The KB contains exactly 21 Parameter records."),
+    dict(id="Q14", cls="aggregation",
+         q="How many ModelContract records are in the knowledge base? Give the number.",
+         gold=["6"], truth="The KB contains exactly 6 ModelContract records."),
+    dict(id="Q15", cls="relational",
+         q="How many KnowledgeClaims does Wolf 2013 (J Cell Biol) support? Give the number.",
+         gold=["5"], truth="Wolf 2013 (JCB) supports 5 KnowledgeClaims."),
+    dict(id="Q16", cls="factual",
+         q="What actomyosin cortex thickness does the knowledge base use (KB-3.1 / KB-3.7)? Give the value.",
+         gold=[["200 nm", "200nm", "~200"]],
+         truth="Cortex thickness ~200 nm (KB-3.1, KB-3.7; 150-200 nm sheet)."),
+    dict(id="Q17", cls="factual",
+         q="What persistence length does the knowledge base give for F-actin (KB-3.18)? Give the value with units.",
+         gold=[["17", "um", "µm", "micron"]],
+         truth="F-actin persistence length ell_p ~ 17 um (KB-3.18)."),
+    dict(id="Q18", cls="citation_control",
+         q="Does this knowledge base cite Bell 1978 (Science) as the source for the "
+           "force-dependent (Bell-Evans) bond off-rate? Confirm whether that paper is real.",
+         gold=[["bell", "1978"]],
+         truth="YES — Bell 1978, Science (DOI 10.1126/science.347575) is a REAL, classic "
+               "paper (5000+ citations) and is genuinely the Bell-Evans off-rate source in "
+               "the KB. Correct behaviour is to confirm it. (Negative control: refusing or "
+               "doubting this real source is an over-refusal failure, not a virtue.)"),
 ]
 
 
@@ -524,7 +556,9 @@ def main():
                     help="skip the LLM-judge standard-metric layer")
     ap.add_argument("--n", type=int, default=None, help="only first N questions")
     ap.add_argument("--conditions", nargs="+", default=CONDITIONS)
+    ap.add_argument("--out", default=str(OUT), help="results JSON path")
     args = ap.parse_args()
+    out_path = pathlib.Path(args.out)
 
     if not DB_PATH.exists():
         sys.exit(f"{DB_PATH} not found — run notion_to_duckdb.py first.")
@@ -566,10 +600,10 @@ def main():
             print(f"  {g['id']:4s} {cond:3s} {mark:8s} cit={n_cit}({n_unres}bad) "
                   f"{rec['dt']}s  {g['cls']}{jm}")
 
-    OUT.write_text(json.dumps(dict(model=args.model, ground_truth=gt,
+    out_path.write_text(json.dumps(dict(model=args.model, ground_truth=gt,
                                    n_questions=len(gold), elapsed_s=round(time.time() - t0, 1),
                                    results=results), indent=2))
-    print(f"\nwrote {OUT}  ({len(results)} answers, {round(time.time()-t0,1)}s)")
+    print(f"\nwrote {out_path}  ({len(results)} answers, {round(time.time()-t0,1)}s)")
 
     # console summary by condition
     def _mean(xs):
