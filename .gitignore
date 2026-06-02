@@ -71,6 +71,7 @@ ffn_sim/outputs/obsidian_rag_demo/vault/
 
 # TAG (Table-Augmented Generation) backend — kb.duckdb regenerable via refresh.sh
 ffn_sim/outputs/tag_kb/kb.duckdb
+ffn_sim/outputs/tag_kb/pass2_dossiers.json
 
 # Reference PDF corpus — large binaries, synced via Syncthing not git
 # (the lightweight index tag_corpus.json + analysis/_manifest.json stay tracked)
