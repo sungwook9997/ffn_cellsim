@@ -125,3 +125,16 @@ last processed HEAD → still `7dcca72` (no new session commits during iter-1).
   devlog nodes; no errors. ⚠️ `ZZ-OFFTOPIC Balog2007` still a vault node (flag-only; PI must
   delete the Notion SE row to drop it from the graph — MCP can't archive).
 - **iter-5 COMPLETE (no-op + health-OK).** last processed HEAD → `dfc6cac`.
+
+### iter 6 — 2026-06-03 ~06:15 KST — QUIET (3rd consecutive no-op)
+- No new commits (HEAD `10d2f44` = my sync commits only; Lead idle ~3 h since `dfc6cac`).
+  SE 0 new, 172 PDFs. Stores still consistent (no change since iter-5 health check).
+- Decision held: the SE→KnowledgeClaim relation backlog (catch-bond 3 → KB-4.2 etc., iter-1)
+  stays a PI-review suggestion, NOT auto-wired — SoT-graph curation is the pipeline's human step;
+  the auto machinery already connects the nodes. No churn commit.
+- **iter-6 COMPLETE (no-op).** last processed HEAD → `dfc6cac`.
+
+### iter 7 — 2026-06-03 ~07:15 KST — QUIET (4th no-op; Lead idle ~4 h)
+- No new commits, SE 0 new, 172 PDFs, stores consistent. Light poll only (sustained-quiet =
+  idle correctly, no manufactured work). Everything synced through `dfc6cac`.
+- **iter-7 COMPLETE (no-op).**
