@@ -1315,11 +1315,18 @@ def build_cortex_full_simulation(
     turnover_updater = None
     turnover_action = None
     if p_turnover is not None:
+        # In constrained mode the backbone stretch DOF is held by the BAOAB
+        # Action's M-SHAKE chains (cortex-bond k=0), so severing must ALSO split
+        # those chains — wire the baoab_action so the updater calls resync_chains
+        # (STAGE-2 2026-06-03). In unconstrained mode baoab_action is harmless to
+        # pass but the soft cortex-bond carries the sever directly; pass it only
+        # when constrained to keep the soft path bit-identical.
         turnover_action, turnover_updater = make_turnover_updater(
             p=p_turnover,
             rest_length=p_cortex.rest_length,
             kT=p_cortex.kT,
             bond_k=p_cortex.bond_k,
+            baoab_action=(baoab_action if constrained else None),
         )
         sim.operations.updaters.append(turnover_updater)
 

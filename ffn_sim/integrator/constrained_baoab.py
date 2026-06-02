@@ -727,6 +727,62 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._lambda_buf = None  # most-recent step's λ; shape depends on chains
 
     # ------------------------------------------------------------------
+    def resync_chains(self, chains: "Sequence[np.ndarray]") -> None:
+        """Rebuild the SHAKE chain topology mid-run (actin turnover sever/anneal).
+
+        ADDITIVE / OPT-IN: nothing in the frozen step path calls this — it is a
+        no-op on the dynamics unless an external updater (``ActinTurnoverUpdater``
+        wired with ``baoab_action=``) invokes it. The default constrained run is
+        bit-identical to the pre-method behaviour.
+
+        Turnover SEVERS the actin backbone, which in constrained mode means the
+        rigid stretch constraint (the M-SHAKE chain) must SPLIT at the severed
+        junction — otherwise the cortex-bond removal (k=0 in constrained mode) is
+        dynamically silent and the filament stays rigidly whole (the elastic-jam
+        that pins r/r0=1, STAGE-2 finding 2026-06-03). ``chains`` is the new list
+        of ordered bead-TAG arrays (each contiguous intact fragment); the severed
+        bond simply no longer appears inside any single chain, so M-SHAKE stops
+        projecting it. ``_constraint_pairs_tag`` / ``_constraint_lengths`` are
+        rebuilt from the surviving intra-chain bonds (drift guard + SHAKE count
+        gate consistency); the uniform rest length is unchanged.
+
+        Splitting makes fragments variable-length → the ragged per-chain M-SHAKE
+        path (CPU-only; ``shake_project_chains`` handles len-1/len-2 fragments).
+        The GPU fast path REQUIRES uniform stacked chains, so a split on GPU
+        raises — turnover-in-constrained runs on CPU until the fragments are
+        padded (documented later refinement). Singleton fragments (a fully
+        isolated bead) carry zero constraints and are dropped from the chain set.
+        """
+        xp = self._xp
+        new_chains = [np.asarray(c, dtype=np.int64) for c in chains
+                      if np.asarray(c).shape[0] >= 2]  # len-1 = no bond → drop
+        self._chains_tag = new_chains
+        lens = {c.shape[0] for c in new_chains}
+        if len(lens) == 1 and new_chains and next(iter(lens)) >= 3:
+            stacked = np.stack(new_chains, axis=0)
+            self._chains_tag_stacked = xp.asarray(stacked) if self._on_gpu else stacked
+        else:
+            if self._on_gpu:
+                raise RuntimeError(
+                    "resync_chains produced ragged (split) chains; the GPU "
+                    "constrained fast path requires uniform stacked chains. "
+                    "Run turnover-in-constrained on CPU (or pad fragments)."
+                )
+            self._chains_tag_stacked = None
+        # Rebuild constraint pairs from the surviving intra-chain bonds so the
+        # §4 drift guard and the SHAKE count gate (act() line ~895) stay honest.
+        pairs = [(int(c[k]), int(c[k + 1]))
+                 for c in new_chains for k in range(c.shape[0] - 1)]
+        cp = (np.asarray(pairs, dtype=np.int64) if pairs
+              else np.zeros((0, 2), dtype=np.int64))
+        cl = np.full(cp.shape[0], float(self._chain_rest_length), dtype=np.float64)
+        if self._on_gpu:
+            cp = xp.asarray(cp)
+            cl = xp.asarray(cl)
+        self._constraint_pairs_tag = cp
+        self._constraint_lengths = cl
+
+    # ------------------------------------------------------------------
     def attach(self, simulation: hoomd.Simulation) -> None:  # noqa: D401
         super().attach(simulation)
         self._sim_ref = simulation

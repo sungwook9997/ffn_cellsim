@@ -492,6 +492,7 @@ class ActinTurnoverUpdater(hoomd.custom.Action):
         kT: float,
         bond_k: float | None = None,
         seed_offset: int = 5,
+        baoab_action: "Any | None" = None,
     ) -> None:
         super().__init__()
         self.p = p
@@ -499,6 +500,18 @@ class ActinTurnoverUpdater(hoomd.custom.Action):
         self.kT = float(kT)
         self.bond_k = float(bond_k) if bond_k is not None else None
         self._rng = np.random.default_rng(p.seed + seed_offset)
+        # CONSTRAINED-MODE wiring (STAGE-2, 2026-06-03). In constrained mode the
+        # backbone stretch DOF is held by the BAOAB Action's M-SHAKE chains, NOT
+        # the cortex-bond (whose k=0). Severing the cortex-bond is then silent
+        # unless the SHAKE chain is ALSO split at the severed junction. When a
+        # ``baoab_action`` (ConstrainedLeimkuhlerMatthewsBAOAB) is wired, each
+        # tick that changes connectivity recomputes the split chains and calls
+        # ``baoab_action.resync_chains`` so M-SHAKE stops constraining the broken
+        # bond. ``None`` (unconstrained / soft-backbone runs) → current behaviour
+        # unchanged (cortex-bond k>0 carries the sever directly).
+        self._baoab_action = baoab_action
+        self._orig_chains: list[np.ndarray] | None = None
+        self._last_intact_hash: int | None = None
 
         _require_finite_positive("rest_length", self.rest_length)
         _require_finite_positive("kT", self.kT)
@@ -660,7 +673,55 @@ class ActinTurnoverUpdater(hoomd.custom.Action):
 
         self._write_snapshot(read_snap, pos, new_bg, new_bt, bond_type_names,
                              new_angles, angle_types)
+
+        # ---- Step 4 (constrained mode): split the M-SHAKE chains at severed
+        # junctions so the rigid stretch constraint actually releases. Only when
+        # a BAOAB Action is wired AND connectivity changed since the last resync.
+        if self._baoab_action is not None and n0 > 0:
+            ih = hash(intact.tobytes())
+            if ih != self._last_intact_hash:
+                self._baoab_action.resync_chains(self._split_chains(intact))
+                self._last_intact_hash = ih
+
         self._steps_run += 1
+
+    # ------------------------------------------------------------------
+    def _split_chains(self, intact: np.ndarray) -> list[np.ndarray]:
+        """Split the original backbone chains at every currently-severed junction.
+
+        Captures the BAOAB Action's construction chains (ordered bead-TAG arrays)
+        on first use, then for each chain walks its consecutive (b_k, b_{k+1})
+        bonds and starts a new contiguous fragment wherever that junction is in
+        the severed set. Returns the list of intact fragments (len ≥ 1 each);
+        ``resync_chains`` drops singleton fragments (no bond to constrain).
+        """
+        if self._orig_chains is None:
+            src = getattr(self._baoab_action, "_chains_tag", None)
+            if not src:
+                self._orig_chains = []
+            else:
+                # _chains_tag may be device-resident (cupy) on GPU; turnover-in-
+                # constrained is CPU-only, so a plain np.asarray suffices here.
+                self._orig_chains = [np.asarray(c).astype(np.int64) for c in src]
+        severed = set()
+        if self._junctions is not None:
+            for row in np.flatnonzero(~intact):
+                a, b = self._junctions[row]
+                severed.add(self._norm_pair(int(a), int(b)))
+        fragments: list[np.ndarray] = []
+        for chain in self._orig_chains:
+            if chain.shape[0] == 0:
+                continue
+            frag = [int(chain[0])]
+            for k in range(chain.shape[0] - 1):
+                a, b = int(chain[k]), int(chain[k + 1])
+                if self._norm_pair(a, b) in severed:
+                    fragments.append(np.asarray(frag, dtype=np.int64))
+                    frag = [b]
+                else:
+                    frag.append(b)
+            fragments.append(np.asarray(frag, dtype=np.int64))
+        return fragments
 
     # ------------------------------------------------------------------
     def _rebuild_angles(self, read_snap, intact: np.ndarray):
@@ -791,11 +852,17 @@ def make_turnover_updater(
     kT: float,
     bond_k: float | None = None,
     seed_offset: int = 5,
+    baoab_action: "Any | None" = None,
 ) -> tuple[ActinTurnoverUpdater, hoomd.update.CustomUpdater]:
-    """Build the ActinTurnoverUpdater Action wrapped in a periodic CustomUpdater."""
+    """Build the ActinTurnoverUpdater Action wrapped in a periodic CustomUpdater.
+
+    ``baoab_action`` (optional): the ConstrainedLeimkuhlerMatthewsBAOAB Action.
+    When supplied, the updater splits its M-SHAKE chains on sever/anneal so the
+    rigid stretch constraint releases at the break (constrained-mode turnover).
+    """
     action = ActinTurnoverUpdater(
         p=p, rest_length=rest_length, kT=kT, bond_k=bond_k,
-        seed_offset=seed_offset,
+        seed_offset=seed_offset, baoab_action=baoab_action,
     )
     updater = hoomd.update.CustomUpdater(
         action=action, trigger=hoomd.trigger.Periodic(p.batch_steps)

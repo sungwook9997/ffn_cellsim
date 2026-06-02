@@ -87,7 +87,7 @@ def _resolve_compartments(p_cortex):
 
 def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
            dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu", kon_scale=1.0,
-           bind_scale=1.0):
+           bind_scale=1.0, turnover_tau=None):
     from dataclasses import replace as _replace
     p = resolve_h3_derived(cfg)
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
@@ -101,10 +101,37 @@ def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
         # mesh; scaling the partner-search radius (NOT k) restores binding. See
         # stage2_diagnostics: bind×6 + n_xl/n_fil=1.5 → z=2.96 (Ennomani optimum).
         p_xl = _replace(p_xl, max_bind_dist=p_xl.max_bind_dist * bind_scale)
+    # STAGE-2 actin turnover: cofilin sever + pointed-end re-anneal. In constrained
+    # mode the updater is wired to the BAOAB Action (cell.py) so severing SPLITS the
+    # M-SHAKE chain — releasing the rigid stretch jam that pins r/r0=1 even on a
+    # percolated network (2026-06-03 finding). tau_half is the Chugh/Fritzsche anchor.
+    p_turnover = None
+    if turnover_tau is not None:
+        from ffn_sim.cortex.turnover import resolve_turnover
+        tcfg = deepcopy(cfg)
+        tblk = tcfg["cortex"].setdefault("turnover", {})
+        # ACCELERATED-DYNAMICS probe (same pattern as v0_accel / kon_scale): the
+        # physical cortical-actin half-life is ~10s but the constrained dt is set
+        # by the stiff bending CFL (~1e-6s) → ~1e7 steps to see one turnover at
+        # the physical rate (infeasible). We shrink tau_half by A=tau_phys/tau and
+        # scale k_anneal by the SAME A, which leaves the steady-state connected
+        # fraction f_ss = k_anneal/(k_sev+k_anneal) INVARIANT (the physical
+        # observable) while moving the events into a feasible step budget. Only
+        # the RATE is accelerated, not the equilibrium — the mechanism test
+        # (does turnover release the elastic jam?) is rate-independent.
+        tau_phys = float(tblk.get("tau_half", 10.0))
+        kann_phys = float(tblk.get("k_anneal", 0.1))
+        accel = tau_phys / float(turnover_tau)
+        tblk["enabled"] = True
+        tblk["tau_half"] = float(turnover_tau)
+        tblk["k_anneal"] = kann_phys * accel
+        p_turnover = resolve_turnover(tcfg, dt=dtc, rest_length=p.rest_length)
     dev = (hoomd.device.GPU(notice_level=0) if device == "gpu"
            else hoomd.device.CPU(notice_level=0))
     kw = dict(p_xlinks=p_xl, p_myosin=p_myo, device=dev, with_baoab=True,
               rng=np.random.default_rng(seed), **compartments)
+    if p_turnover is not None:
+        kw["p_turnover"] = p_turnover
     if constrained:
         kw.update(constrained=True, constrained_dt=dtc)
     if equilibrate:
@@ -136,7 +163,7 @@ def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm=70
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
             compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0,
-            bind_scale=1.0):
+            bind_scale=1.0, turnover_tau=None):
     cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
@@ -170,9 +197,14 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                                          force_scaling=force_scaling,
                                          constrained=True, compartments=comp, dtc=dtc,
                                          device=device, kon_scale=kon_scale,
-                                         bind_scale=bind_scale)
+                                         bind_scale=bind_scale, turnover_tau=turnover_tau)
     sim = hc["sim"]
     act = hc["baoab_action"]
+    turn_act = hc.get("turnover_action")
+    if turn_act is not None:
+        print(f"  [turnover ON] tau_half={turnover_tau}s k_sev={turn_act.p.k_sev:.3e} "
+              f"k_anneal={turn_act.p.k_anneal:.3e} f_ss={turn_act.p.f_ss:.3f} "
+              f"batch_steps={turn_act.p.batch_steps} → SHAKE-chain split wired", flush=True)
     if hasattr(act, "record_lambda"):
         act.record_lambda = True
     # transfer warmed positions by tag
@@ -194,9 +226,13 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
         g_soft = _tension_method_of_planes(sim, p.R_cell)
         g_rigid = _tension_method_of_planes_rigid(sim, act, p.R_cell, dtc)
         samples.append((rmean / r0, g_soft, g_rigid))
+        turn_str = ""
+        if turn_act is not None:
+            turn_str = (f" | turnover cf={turn_act.connected_fraction:.3f} "
+                        f"sev={turn_act.n_sever_total} ann={turn_act.n_anneal_total}")
         print(f"  [{stepping_mode}] s={k+1}/{n} r/r0={rmean/r0:.5f} "
               f"g_soft={g_soft*1e3:.3e} g_rigid={g_rigid*1e3:.3e} "
-              f"g_tot={(g_soft+g_rigid)*1e3:.3e} mN/m", flush=True)
+              f"g_tot={(g_soft+g_rigid)*1e3:.3e} mN/m{turn_str}", flush=True)
     return samples
 
 
@@ -227,6 +263,9 @@ def main() -> int:
     ap.add_argument("--bind-scale", type=float, default=1.0,
                     help="mesoscale-consistent xlink reach (scales max_bind_dist, NOT k); "
                          "bind×6 + n_xl/n_fil=1.5 → z=2.96 at mesoscale (fast STAGE-2)")
+    ap.add_argument("--turnover-tau", type=float, default=None,
+                    help="enable actin turnover; tau_half [s] (Chugh/Fritzsche 5-30s). "
+                         "In constrained mode splits M-SHAKE chains on sever (STAGE-2)")
     args = ap.parse_args()
 
     if args.smoke:
@@ -248,7 +287,7 @@ def main() -> int:
             n_sample=args.n_sample, interval=args.interval, smoke=args.smoke,
             device=args.device, compartments_on=not args.no_compartments,
             only=args.only, backbone_nm=args.backbone_nm, kon_scale=args.kon_scale,
-            bind_scale=args.bind_scale,
+            bind_scale=args.bind_scale, turnover_tau=args.turnover_tau,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"
