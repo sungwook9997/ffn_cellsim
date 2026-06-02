@@ -1,12 +1,14 @@
-"""E-cadherin X-dimer catch-slip bond oracle — Rakshit 2012 sliding-rebinding model (L2.5).
+"""E-cadherin X-dimer catch-slip bond — Rakshit 2012 sliding-rebinding model (L2.5).
 
-VALIDATION oracle (runtime-import-forbidden, pure NumPy). Faithful implementation of the
-sliding-rebinding catch-bond model that Rakshit et al. 2012 fit to E-cadherin X-dimer
-single-molecule force spectroscopy — the PI-chosen "option B" (the two-pathway/Pereverzev
-form did NOT fit their data; the sliding-rebinding model did). The runtime
-``ffn_sim.spheroid.cadherin_bonds.CadherinBondUpdater`` samples bond lifetimes from this
-oracle's force-dependent off-rate; this module is the closed-form right-hand side of the
-emergent-vs-oracle gate (G5), never imported by the runtime path (CLAUDE.md hard rule).
+Runtime-importable closed form (pure NumPy), placed at the ``validation/`` level exactly like
+``validation/pereverzev.py`` (the catch-slip k_off that ``bridge/integrin_bonds.py`` imports)
+— NOT under ``validation/oracles/`` (that dir is runtime-import-forbidden). Faithful
+implementation of the sliding-rebinding catch-bond model that Rakshit et al. 2012 fit to
+E-cadherin X-dimer single-molecule force spectroscopy — the PI-chosen "option B" (the
+two-pathway/Pereverzev form did NOT fit their data; the sliding-rebinding model did). The
+runtime ``ffn_sim.spheroid.cadherin_bonds.CadherinBondUpdater`` samples bond lifetimes from
+this module's force-dependent off-rate, and it is also the closed-form right-hand side of the
+emergent-vs-oracle gate (G5).
 
 Model (Rakshit 2012 SI, three transient states + absorbing dissociated state)
 -----------------------------------------------------------------------------

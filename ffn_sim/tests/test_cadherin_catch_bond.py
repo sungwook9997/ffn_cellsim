@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.validation.oracles.spheroid import cadherin_catch_bond as cb
+from ffn_sim.validation import cadherin_sliding_rebinding as cb
 
 
 def test_params_are_rakshit_table_s1():

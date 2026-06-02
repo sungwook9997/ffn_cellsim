@@ -95,7 +95,7 @@ def _cadherin_catch_bond_figure() -> None:
     import matplotlib.pyplot as plt
     import numpy as np
 
-    from ffn_sim.validation.oracles.spheroid import cadherin_catch_bond as cb
+    from ffn_sim.validation import cadherin_sliding_rebinding as cb
 
     P = cb.RAKSHIT_W2A
     f_pN = np.linspace(0.0, 60.0, 400)
