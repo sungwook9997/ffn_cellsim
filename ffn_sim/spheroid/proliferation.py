@@ -354,6 +354,8 @@ def run_growth_pooled(
     cohesion: str = "morse",
     cad: "Any" = None,
     substrate: "Any" = None,
+    f_traction: float = 0.0,
+    Lp: float = 11.0e-6,
 ) -> dict[str, Any]:
     """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
 
@@ -405,6 +407,16 @@ def run_growth_pooled(
         sim.state.set_snapshot(snap0)
         add_substrate_wall(sim, substrate)
 
+    # optional active edge-directed traction (L2.2 active wetting) — the ligand-modulated
+    # spreading driver. Per-cell force needs tag==index, so disable the particle sorter.
+    edge_force = None
+    if f_traction > 0.0:
+        from ffn_sim.spheroid.spreading import SettableForce, edge_outward_forces
+        sim.operations.tuners.clear()
+        edge_force = SettableForce(max_cells)
+        sim.operations.integrator.forces.append(edge_force)
+        _edge_outward = edge_outward_forces  # local alias
+
     sim.run(0)
     snap = sim.state.get_snapshot()
     pos_all = np.array(snap.particles.position, dtype=np.float64, copy=True)
@@ -435,6 +447,13 @@ def run_growth_pooled(
     search_r = prolif.split_distance + prolif.min_gap
 
     while t < total_time:
+        if edge_force is not None:
+            # recompute edge-directed outward traction for active cells (cheap, per epoch)
+            ap = active_positions()
+            ef_active = _edge_outward(ap, f_traction=f_traction, Lp=Lp)
+            full = np.zeros((max_cells, 3), dtype=np.float64)
+            full[np.where(active)[0]] = ef_active
+            edge_force.set_vectors(full)
         sim.run(epoch_steps)
         dt_epoch = epoch_steps * dt
         t += dt_epoch

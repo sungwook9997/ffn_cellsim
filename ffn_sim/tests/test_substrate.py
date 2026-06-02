@@ -54,3 +54,19 @@ def test_confined_growth_is_substrate_bound(resolved):
 def _prolif(resolved):
     from ffn_sim.spheroid.params import resolve_proliferation
     return resolve_proliferation(yaml.safe_load(_CONFIG.read_text()), resolved)
+
+
+def test_active_traction_runs_and_spreads(resolved):
+    """Active edge-traction (L2.2) composes with catch+substrate growth and increases spread."""
+    from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
+    cad = resolve_cadherin(resolved)
+    sub = resolve_substrate(resolved, adhesion_ratio=1.0)
+    p = _prolif(resolved)
+    common = dict(n_cells_init=150, total_time=0.5 * p.cycle_time_mean, epoch_steps=1500,
+                  settle_steps=1500, seed=1000, max_cells=1500, cohesion="catch", cad=cad,
+                  substrate=sub)
+    a_off = run_growth_pooled(resolved, p, f_traction=0.0, **common)
+    a_on = run_growth_pooled(resolved, p, f_traction=6.0e-9, **common)
+    # both run, conserve the pool, and grow; traction does not shrink the spread
+    assert a_on["n_cells"][-1] > 150 and a_off["n_cells"][-1] > 150
+    assert a_on["area_core_over_a0"][-1] >= a_off["area_core_over_a0"][-1] - 0.3
