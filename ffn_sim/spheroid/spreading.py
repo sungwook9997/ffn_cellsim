@@ -88,6 +88,100 @@ class ActiveMotility(md.force.Custom):
             arr.force[:] = self._f * self._dirs
 
 
+class SettableForce(md.force.Custom):
+    """A per-cell force whose (N,3) vector array is set externally between runs.
+
+    Used by the active-wetting driver: the run loop periodically recomputes the
+    edge-localized outward traction (cheap, from a position snapshot) and pushes it here;
+    ``set_forces`` just applies the current vectors each step (no in-force snapshot read).
+    Assumes particle order == tag order (sorter disabled in ``build_cbm_spreading``).
+    """
+
+    def __init__(self, n_cells: int) -> None:
+        super().__init__()
+        self._f = np.zeros((n_cells, 3), dtype=np.float64)
+
+    def set_vectors(self, f: npt.NDArray[np.float64]) -> None:
+        self._f = np.ascontiguousarray(f, dtype=np.float64)
+
+    def set_forces(self, timestep: int) -> None:
+        with self.cpu_local_force_arrays as arr:
+            arr.force[:] = self._f
+
+
+def edge_outward_forces(
+    positions: npt.NDArray[np.float64], *, f_traction: float, Lp: float
+) -> npt.NDArray[np.float64]:
+    """Active-wetting traction: outward radial force localized to within Lp of the edge.
+
+    Each cell gets an outward (from the cluster centroid) force of magnitude
+    ``f_traction * exp(-depth/Lp)``, where depth = R_cluster - |r-COM| is how far the cell
+    sits from the cluster boundary. Edge cells (depth≈0) crawl out at ~f_traction; bulk
+    cells (depth >> Lp) feel ~0 — the screening-length localization that makes the edge/bulk
+    fraction (~1/R) produce the A/A0 = a + b/R + c/R^2 size dependence.
+
+    Args:
+        positions: (N,3) cell centers (m).
+        f_traction: edge-cell outward traction magnitude (N).
+        Lp: traction screening length (m); ~11 µm (Pérez-González 2019, non-MCF7 proxy).
+    """
+    com = positions.mean(axis=0)
+    d = positions - com
+    r = np.linalg.norm(d, axis=1)
+    r_cluster = float(r.max())
+    depth = r_cluster - r
+    weight = np.exp(-depth / Lp)
+    rhat = np.zeros_like(d)
+    nz = r > 0
+    rhat[nz] = d[nz] / r[nz, None]
+    return f_traction * weight[:, None] * rhat
+
+
+def run_edge_spreading(
+    resolved: ResolvedL2,
+    n_cells: int = 200,
+    *,
+    f_traction: float,
+    Lp: float = 11.0e-6,
+    settle_steps: int = 2_000,
+    spread_steps: int = 20_000,
+    recompute_every: int = 500,
+    device: hoomd.device.Device | None = None,
+) -> dict[str, Any]:
+    """Active-wetting spreading: edge-localized outward traction vs cohesion. Returns A(t)."""
+    sim, _a, _u, r_cut = build_cbm_simulation(resolved, n_cells, device=device)
+    sim.operations.tuners.clear()
+    edge = SettableForce(n_cells)
+    sim.operations.integrator.forces.append(edge)
+    sim.run(0)
+    pos_init = get_positions(sim)
+    sim.run(settle_steps)
+    pos_settled = get_positions(sim)
+    a0 = projected_area(pos_settled)
+
+    ts, areas = [], []
+    done = 0
+    while done < spread_steps:
+        pos = get_positions(sim)
+        edge.set_vectors(edge_outward_forces(pos, f_traction=f_traction, Lp=Lp))
+        step = min(recompute_every, spread_steps - done)
+        sim.run(step)
+        done += step
+        ts.append(done)
+        areas.append(projected_area(get_positions(sim)))
+    pos_final = get_positions(sim)
+    det = detached_fraction(
+        pos_final, d_crit=3.0 * resolved.morse_r0, neighbor_radius=1.5 * resolved.morse_r0
+    )
+    return {
+        "n_cells": n_cells, "f_traction": f_traction, "Lp": Lp, "a0": a0,
+        "t": np.array(ts), "area": np.array(areas),
+        "area_over_a0": np.array(areas) / a0 if a0 > 0 else np.array(areas),
+        "detached_fraction_final": det,
+        "pos_init": pos_init, "pos_settled": pos_settled, "pos_final": pos_final,
+    }
+
+
 def build_cbm_spreading(
     resolved: ResolvedL2,
     n_cells: int,
