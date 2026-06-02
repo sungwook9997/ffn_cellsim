@@ -1,0 +1,19 @@
+[growth-sweep] cohesion=catch
+[growth-sweep] cycle=30 h, total=60 h (~2.0 doublings), n_seeds=3, min_gap=0.90·r0
+  N0=  60  R0=  31.7 µm  A/A0(hull)=2.95±0.17  A/A0(core)=2.95±0.17  growth=2.97  rim=0.50
+  N0= 120  R0=  40.4 µm  A/A0(hull)=2.81±0.05  A/A0(core)=2.81±0.05  growth=2.60  rim=0.64
+  N0= 250  R0=  53.1 µm  A/A0(hull)=2.22±0.11  A/A0(core)=2.22±0.11  growth=2.24  rim=0.78
+  N0= 400  R0=  67.1 µm  A/A0(hull)=1.82±0.04  A/A0(core)=1.82±0.04  growth=1.99  rim=0.88
+  N0= 600  R0=  78.3 µm  A/A0(hull)=1.72±0.05  A/A0(core)=1.72±0.05  growth=1.88  rim=0.93
+
+[fit hull] A/A0 = -0.328 + (188.677 µm)/R + (-2654.907 µm²)/R²   r²=0.980
+[fit core] A/A0 = -0.328 + (188.677 µm)/R + (-2654.907 µm²)/R²   r²=0.980   <-- fragmentation-robust (largest connected component)
+   R0= 31.7 µm: dominant term = 'b'  fractions a/b/c = 0.04/0.67/0.30
+   R0= 78.3 µm: dominant term = 'b'  fractions a/b/c = 0.10/0.76/0.14
+
+[G3 fit r² ≥ 0.95] PASS  (r²=0.980)
+[G3 ≥5 radii        ] PASS  (5)
+[G4 rim-localised   ≥ 0.7] PASS  (largest-spheroid rim frac=0.93)
+[G4 sub-exponential       ] PASS  (all sizes below 2^(t/τ))
+[signal Δ(A/A0)] 1.229  (measurable)
+[viz] wrote /Users/sw1/ffn_cellsim/ffn_sim/outputs/layer2/figs/fig_layer2_aa0_growth_law.png

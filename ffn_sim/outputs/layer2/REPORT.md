@@ -15,7 +15,37 @@
 | **L2.4** | **contact-inhibited proliferation** (the size-dependent driver) + **G4 gate** | ✅ DONE, G4 PASS; A/A₀ signal now Δ≈12 but fit blocked by fragmentation (below) |
 | **L2.4.1** | **connected-core spread-area estimator** (fragmentation-robust A/A₀) | ✅ DONE; de-noises the signal (fit r² 0.27→**0.74**, Δ 23→**1.0**) but G3≥0.95 **still FAILs** — confirms L2.5 is needed, not optional (below) |
 | **L2.4b** | **leak-free pooled growth** (`run_growth_pooled`): ONE Simulation + pre-allocated particle pool, division activates a parked particle via `set_snapshot` | ✅ DONE; fixes the HOOMD per-rebuild memory leak (peak RSS **7 GB→240 MB**, flat), same physics. All growth drivers now use it. |
-| L2.5 / L2.6 | cadherin catch-bond (KU-4.2) upgrade; 3D-Mikado invasion | ⬜ (L2.5 now the indicated next step — see L2.4.1 finding) |
+| **L2.5** | **E-cadherin catch-bond cohesion** (faithful Rakshit-2012 sliding-rebinding) replaces the static Morse well | ✅ DONE; **resists proliferation fragmentation (catch 0/5 vs morse 1/5 seeds, variance halved) → G3 r² 0.74→0.98 PASS** (below) |
+| **L2.6** | **substrate confinement** (z=0 adhesive Morse wall, quasi-2D wetting) | ✅ DONE; cohesive MCF7 forms a 3D **cap** (not a monolayer) — the correct low-invasion phenotype; D_sub = the Bare/Pre/Lam4 ligand axis |
+
+## ⭐ HEADLINE (L2.5) — the PI spreading law A/A₀ = a + b/R + c/R² EMERGES (G3 PASS, r²=0.98)
+
+With the fully mechanistic model — **contact-inhibited proliferation** (the 1/R proliferating-rim
+driver, L2.4) + **faithful E-cadherin catch-bond cohesion** (Rakshit 2012 sliding-rebinding,
+L2.5) + the **connected-core spread observable** (L2.4a) — the experiment's novel law extracts
+cleanly:
+
+```
+A/A0 = −0.33 + (188.7 µm)/R + (−2655 µm²)/R²       r² = 0.980   (5 R₀, 3 seeds each)
+```
+
+| R₀ (µm) | 31.7 | 40.4 | 53.1 | 67.1 | 78.3 |
+|---|---|---|---|---|---|
+| A/A₀ (core, mean±sd) | 2.95±0.17 | 2.81±0.05 | 2.22±0.11 | 1.82±0.04 | 1.72±0.05 |
+
+**Why catch-bond unlocked G3.** The L2.4 static Morse cohesion let a *growing* spheroid
+fragment (proliferation tension > fixed cohesion), inflating/scattering A/A₀ (morse r²=0.74,
+1/5 seeds fragment). The Rakshit catch bond *strengthens under tension up to f₀≈29 pN* — exactly
+the proliferation regime — so it holds the spheroid together (catch **0/5** fragment, variance
+**halved** ±0.10→±0.05). hull≡core (no fragments). All signs match the PI law: b>0 (traction/
+curvature, the dominant term, 0.67–0.76), c<0 (the documented "Bare" small-size cohesion
+penalty). Gates G3 (r²≥0.95) **PASS**, G4 (rim 0.93, sub-exponential) **PASS**.
+
+**Mechanistic chain (all measured/derived-anchored, no tuned constants):** MCF7 doubling 30 h
+(BNID 100685) → proliferating rim ∝ 1/R; cohesion = N_cad≈223 cadherins/contact (Iturri 6.5 nN
+de-adhesion / Rakshit f₀) each a sliding-rebinding catch bond (Rakshit 2012 SI Table S1) →
+force-strengthening to f₀; spread measured as the connected-core footprint. The PI A/A₀ values
+remain overlay-only (never fit). Figure: `fig_layer2_aa0_growth_law_catch.png`.
 
 ## Anchored / derived parameters (MCF7)
 
@@ -183,6 +213,19 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   ±20 error bars and a fit that dips below A/A₀=1 (unphysical), inflated by drifting fragments.
   Same axes, no truncation, SI units. The figure is the visual proof that the core estimator
   de-noises the signal but the residual scatter (→ L2.5) is real.
+- `figs/fig_layer2_l2_5_cadherin_catch_bond.png` — **L2.5 catch-bond oracle.** **Left**: the
+  faithful Rakshit-2012 sliding-rebinding lifetime τ(f) (catch peak F*≈28.5 pN ≈ f₀=29.2 pN,
+  then slip) vs a pure Bell slip; **right**: the new-interaction probability Pₙ(f) ramp and the
+  effective k_off(f) (dips at the catch peak, rises in the slip regime). SI units.
+- `figs/fig_layer2_l2_5_fragmentation_resistance.png` — **L2.5 catch resists fragmentation.**
+  **Left**: per-seed core A/A₀ (N₀=400, 5 seeds) for morse vs catch — morse 1/5 seeds fragment
+  (annotated) with ±0.10 scatter, catch 0/5 with ±0.05. **Right**: why — the effective cohesion
+  force law F_coh(ext) strengthens to a peak at per-cadherin f₀≈29 pN (overlaid: measured 6.5 nN
+  de-adhesion) then slip-ruptures. The force-strengthening is the fragmentation fix.
+- `figs/fig_layer2_aa0_growth_law_catch.png` — **⭐ L2.5 G3-PASS A/A₀(R₀) law.** The catch-bond
+  ensemble (5 R₀ × 3 seeds): A/A₀ vs R₀ with tight error bars + the a+b/R+c/R² fit (**r²=0.980**)
+  + the A/A₀=1 reference; right panel shows growth-factor∝1/R + rim fraction (G4). The clean
+  emergence of the PI's novel law from the fully mechanistic model. PI A/A₀ overlay-only.
 
 ## Verification
 
