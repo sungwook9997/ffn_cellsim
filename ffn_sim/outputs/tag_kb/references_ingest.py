@@ -60,9 +60,10 @@ def slug(s: str, n: int = 60) -> str:
 
 def pdf_paths() -> list[pathlib.Path]:
     paths = sorted(REF_DIR.glob("*.pdf"))
-    bundle = REF_DIR / "cellpress_bundle"
-    if bundle.exists():
-        paths += sorted(bundle.glob("*.pdf"))
+    for sub in ("cellpress_bundle", "downloaded"):
+        d = REF_DIR / sub
+        if d.exists():
+            paths += sorted(d.glob("*.pdf"))
     return paths
 
 
@@ -118,8 +119,8 @@ def ingest():
             skipped_dups.append((str(p.name), seen_sha[sha]))
             continue
         seen_sha[sha] = p.name
-        rel = p.name if p.parent == REF_DIR else f"cellpress_bundle/{p.name}"
-        source = "new" if p.parent == REF_DIR else "bundle"
+        rel = p.name if p.parent == REF_DIR else f"{p.parent.name}/{p.name}"
+        source = "new" if p.parent == REF_DIR else p.parent.name
         try:
             doc = fitz.open(p)
         except Exception as e:
