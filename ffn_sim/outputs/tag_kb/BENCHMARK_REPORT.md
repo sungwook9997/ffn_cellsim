@@ -343,9 +343,24 @@ higher-entropy lookup targets (unit/subtopic) — flagged, not silently kept.
 
 ### 4.5 RAGAS / FActScore (judge subset)
 
-<!-- FILLED FROM judge_subset.py on the stratified subset -->
-_Pending the judge subset run; will report faithfulness / answer-relevancy /
-context-recall / atomic-hallucination per condition on the stratified subset._
+G-Eval judge (`claude-opus-4-8`) on a stratified subset (2 questions/class × 4
+conditions = 56 answers; `judge_subset.py`, scoring the stored answers — no
+re-answering):
+
+| Condition | EM | Answer-relevancy | Faithfulness | **Context-recall** | FActScore halluc |
+|---|---|---|---|---|---|
+| C1 no-KB | 21% | 0.54 | 0.99 | **0.00** | 0% |
+| C2 RAG | 21% | 0.68 | 0.95 | **0.04** | 7% |
+| C3 +Obsidian | 36% | 0.83 | 0.97 | **0.28** | 2% |
+| C4 +TAG | **100%** | **0.99** | 0.96 | **0.96** | 4% |
+
+The RAGAS layer corroborates the programmatic backbone and **pins the mechanism**:
+**context-recall climbs 0.00 → 0.04 → 0.28 → 0.96** — i.e. only TAG reliably gets
+the answer *into the context* at all; everything downstream (relevancy 0.54→0.99,
+EM 21→100) follows from that. Faithfulness stays high everywhere (~0.95–0.99:
+answers are grounded in whatever context they are given, including honest refusals
+under C1), and atomic hallucination is low (0–7%, worst for raw RAG) — consistent
+with the corrected T8 finding.
 
 ### 4.6 What Study 2 establishes vs what still needs work
 - **Established:** with n=108, deterministic gold, CIs and a paired significance
