@@ -59,6 +59,60 @@ ffn_cellsim/
 └── .gitignore  .stignore
 ```
 
+## Knowledge base — RAG + TAG + Obsidian (read this before answering KB questions)
+
+The project's literature/decision knowledge lives in a **Notion Contract-Graph**
+(8 atomic, bidirectionally-related databases) that is the **single source of
+truth (SoT)**. Two read layers are materialised *from* Notion — never edited
+directly — plus a query engine. All three live under `ffn_sim/outputs/`.
+
+```
+Notion 8-DB Contract-Graph  (SoT — edit here only)
+  SourceEvidence · KnowledgeClaim(KB-x.y) · ModelContract · Parameter
+  · ValidationGate · CodeMapping · RunResult · DecisionLedger
+        │  query_all() (Notion API pull)
+        ├──────────────► outputs/obsidian_rag_full/   [GRAPH layer]
+        │                  ~640-node Obsidian vault: typed wikilinks, color
+        │                  groups, code/test/doc nodes, Dev-Logs day-logs.
+        │                  Use for: visual graph exploration, "what links to X",
+        │                  neighbourhood browsing. Cannot do joins/aggregation.
+        │                  Refresh: bash outputs/obsidian_rag_full/refresh.sh
+        │                  (or say "옵시디언 갱신해줘")
+        └──────────────► outputs/tag_kb/kb.duckdb      [TABLE + QUERY layer]
+                           8 node tables + edges(808) + references(95 PDFs)
+                           + paper_chunks(4054, BM25 FTS). TAG engine answers
+                           relational/aggregation/multi-hop questions the graph
+                           can't: syn(NL→SQL) → exec(DuckDB) → gen(answer+cites).
+                           Use for: "how many…", joins, "which Param feeds a
+                           failing gate", citation-integrity lookups.
+                           Query:  python outputs/tag_kb/tag_query.py "<question>"
+                           Refresh: bash outputs/tag_kb/refresh.sh
+```
+
+**Which layer to use.** Need to *see* structure or follow links → Obsidian.
+Need an *exact relational/aggregate answer with citations* → TAG (`tag_query.py`).
+Need a passage from a paper → TAG content layer (BM25 over `paper_chunks`). Both
+read layers are regeneratable; **never hand-edit the vault or the .duckdb — fix
+Notion and refresh.** TAG/Obsidian use the dual LLM backend (anthropic SDK if
+`ANTHROPIC_API_KEY`, else `claude -p` headless — no new secret needed).
+
+**Citation integrity (hard).** A 2026-06-02 audit of all 243 SourceEvidence rows
+found **3 confirmed hallucinated sources** (`Yao2011_NatCommun`→KB-3.18/3.19,
+`YapKovacs_JCS`→KB-4.1, `NanoConvergence2021_Glioma`→KB-6.2.3); verdicts live in
+the `source_audit` table (`web_verdict='HALLUCINATION'`) and
+`outputs/tag_kb/AUDIT_FINDINGS.md`. Before citing a KB source in any
+deliverable, check it isn't one of these (the α-actinin `k_off0` was re-anchored
+0.4→**0.066 s⁻¹**, Ferrer 2008, as a result). Dominant issue is metadata drift,
+not fabrication (~1.2% fabricated).
+
+**Architecture benchmark.** `outputs/tag_kb/kb_benchmark.py` measures how much
+each KB layer reduces hallucination (4-condition ablation C1 no-KB → C2 RAG →
+C3 +Obsidian → C4 +TAG, scored with RAGAS/FActScore/TAG-Bench-style metrics);
+see `outputs/tag_kb/BENCHMARK_REPORT.md`. Run it (controlled pure-LLM, tools
+disabled) to re-validate after KB changes.
+
+> ⚠️ TAG = **Table-Augmented Generation** (Biswal et al. 2024), *not* "태그/label".
+
 ## Code conventions
 
 - Type hints everywhere, Google-style docstrings.
@@ -107,6 +161,7 @@ The previous 4-role split (Main / Sub / Orchestrator + PI-as-relay) is **retired
 - `ffn_sim/docs/briefs/H*.md` — **immutable unit specs** (contracts). Not edited.
 - Notion [Development Logs & Reviews](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) — **Phase 1 status board** (Status / Owner / Start / End / Log) + per-unit milestone Day-logs + **Open items**. The authoritative project record.
 - On disk — latest commit on `phase1/h{N}-*`, `ffn_sim/outputs/h{X}/REPORT.md`, working tree.
+- **Knowledge base** — Notion Contract-Graph (SoT) + the Obsidian graph mirror and TAG/DuckDB query layer under `ffn_sim/outputs/{obsidian_rag_full,tag_kb}/`. See the *Knowledge base — RAG + TAG + Obsidian* section above for which layer to query and how. Ask KB questions via `tag_kb/tag_query.py`, not by guessing from memory.
 - The Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) is **retired for relay** (banner at its top). No more next-prompt drafts, stale-markers, cross-session signal-routing, or PI pre-dispatch checklist.
 
 ### Session boot protocol (minute 0)

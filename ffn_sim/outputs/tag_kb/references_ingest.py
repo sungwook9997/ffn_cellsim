@@ -143,7 +143,10 @@ def ingest():
         nc = 0
         for pi, ptext in enumerate(pages_text):
             for ci, ch in enumerate(page_chunks(ptext)):
-                chunk_rows.append((f"{ck}:p{pi}:{ci}", ck, se_uid or None, pi, ch))
+                # include the file sha so two distinct PDFs that resolve to the
+                # SAME citation_key (e.g. publisher + preprint of one DOI) do not
+                # collide on chunk_id — a duplicate PK breaks the BM25 FTS macro.
+                chunk_rows.append((f"{ck}:{sha[:6]}:p{pi}:{ci}", ck, se_uid or None, pi, ch))
                 nc += 1
         ref_rows.append((ck, title, doi or None, rel, n_pages, sha, source,
                          se_uid or None, se_ck or None, nc))

@@ -34,6 +34,34 @@ Design rationale + decisions: [`TAG_DESIGN.md`](TAG_DESIGN.md).
 | `tag_query.py` | the syn→exec→gen engine (CLI). |
 | `refresh.sh` | rebuild `kb.duckdb` from Notion + PDFs (Notion = SoT). |
 | `kb.duckdb` | generated table+content layer (gitignored — regenerable). |
+| `tag_eval.py` | regression guard: gold NL questions → assert `tag_query.py` returns the right substrings. |
+| `verify_sources*.py` + `AUDIT_FINDINGS.md` | citation-integrity audit (CrossRef→web). Verdicts in `source_audit` table; 3 confirmed hallucinations flagged. |
+| `kb_benchmark.py` + `kb_benchmark_vis.py` + `BENCHMARK_REPORT.md` | KB-architecture ablation benchmark (below). |
+
+## KB-architecture benchmark (`kb_benchmark.py`)
+
+Quantifies how much each KB layer reduces hallucination, holding the answering
+LLM fixed. **4 strictly-additive conditions** mirroring the project's KB
+evolution — C1 no-KB (closed-book, ActiveCellSim era) ⊂ C2 RAG ⊂ C3 RAG+Obsidian
+(graph) ⊂ C4 RAG+TAG+Obsidian (full). Only the *context block* differs; same
+model, prompt, and gold questions throughout.
+
+Methodological crux: `claude -p` is a full agent — left default it would *read*
+`kb.duckdb` even under "closed-book", invalidating the ablation. The harness
+forces a true single-turn completion (`--tools ""`, empty scratch cwd,
+tool-call artifacts stripped), so C1 only has parametric memory.
+
+Two scoring tiers: **(1) programmatic backbone** (exact-match accuracy, citation
+resolution against the live DB, 3-fabrication trap detection) and **(2) standard
+LLM-eval metrics** via a stronger G-Eval judge — RAGAS triad (faithfulness /
+answer-relevancy / context-recall), FActScore atomic-hallucination rate,
+TAG-Bench exact-match. See `BENCHMARK_REPORT.md` for results + figures.
+
+```bash
+python kb_benchmark.py                       # full run (answerer=sonnet, judge=opus)
+python kb_benchmark.py --n 3 --no-judge      # quick programmatic-only smoke test
+python kb_benchmark_vis.py                   # render figs/ from benchmark_results.json
+```
 
 ## Data model (`kb.duckdb`)
 
