@@ -26,7 +26,7 @@ sweep scripts). Additive/safe ops only. Shared-tree collision is live (see memor
 - L2.4a/b Notion page: `373120daec5d815e8df0cbdbc6aaa7cd` · KB-v3: `373120daec5d81f19bbfe4086277f5ea`
 
 ## State
-- **last processed HEAD: `9a79a9f`** (iter-2; L2.5/L2.6 posted+verified. Scan `9a79a9f..HEAD` next.)
+- **last processed HEAD: `dfc6cac`** (iter-3; L2.6 ligand/active-traction posted. Scan `dfc6cac..HEAD` next.)
 - TAG kb.duckdb rebuilt 2026-06-03 ~01:22 (144 keys / 6292 chunks / 150 PDFs; 94 SE-linked).
 - SourceEvidence count before iter-1 SE creation: 273.
 
@@ -93,3 +93,17 @@ last processed HEAD → still `7dcca72` (no new session commits during iter-1).
 - **Posted** L2.5/L2.6 Dev-Log (verified) → `373120daec5d81eb9d3ddf9dfe1b202c`.
 - SE dry-run: 0 new rows (50 skipped, all registered) — iter-1 caught all new papers.
 - **iter-2 COMPLETE.** last processed HEAD → `9a79a9f`.
+
+### iter 3 — 2026-06-03 ~03:15 KST — L2.6 ligand/active-traction
+- New commits `9a79a9f..dfc6cac` (6, minus my 85f6525): L2.5 A/B (`1ead471`: morse r²=0.80 FAIL
+  vs catch 0.98 PASS, same pooled path — **corroborates iter-2 fresh-seed verification**);
+  L2.6 ligand axis (`02e1db7`), oracle move (`69abc66`), active traction in pooled growth
+  (`b2d86db`), REPORT (`f32d50e`), traction→b-coefficient (`dfc6cac`).
+- **Posted** L2.6 ligand Dev-Log → `373120daec5d81588be5e336792d3196`. Faithfully relays the
+  honest finding: passive Bare/Pre/Lam4 adhesion ≈ flat (overlap, Lam4 slightly higher);
+  **ACTIVE edge-traction is the real ligand driver** (core A/A₀ 1.53→1.56→1.81 at 0/3/6 nN);
+  b-coefficient grows with traction (0/3 nN: 2.55/2.25/1.82→2.80/2.35/1.92). Caveat carried:
+  6 nN hit a numerical box/wall limit (known fix, not physics). No success over-claim → posted.
+- SE dry-run 0 new (172 PDFs on disk now, +2 = Rakshit SI / Lou-Zhu already registered).
+  No 8-DB change → only Obsidian devlogs refreshed (60 day-log nodes; L2.6 page pulled).
+- **iter-3 COMPLETE.** last processed HEAD → `dfc6cac`.
