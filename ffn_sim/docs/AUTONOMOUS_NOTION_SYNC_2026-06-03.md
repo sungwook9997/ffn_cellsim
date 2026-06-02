@@ -107,3 +107,21 @@ last processed HEAD → still `7dcca72` (no new session commits during iter-1).
 - SE dry-run 0 new (172 PDFs on disk now, +2 = Rakshit SI / Lou-Zhu already registered).
   No 8-DB change → only Obsidian devlogs refreshed (60 day-log nodes; L2.6 page pulled).
 - **iter-3 COMPLETE.** last processed HEAD → `dfc6cac`.
+
+### iter 4 — 2026-06-03 ~04:15 KST — QUIET (no new session work)
+- `dfc6cac..HEAD` = only my own iter-3 commit `12a95fd`. No new Lead commits in the last hour
+  (session paused or working uncommitted: untracked `scripts/stage2_diagnostics.py`,
+  `mcf7_fullcell_stage1.py` = MCF7-fullcell workstream WIP, not mine to touch).
+- SE dry-run 0 new (172 PDFs, unchanged). tag_corpus.json +264 lines = iter-1 ingest linkage
+  metadata, not new papers. No 8-DB change → no refresh needed.
+- Storage: nothing safe to tidy (the accumulating tag_kb/*.log + 22 byte-dup PDFs are other
+  sessions' / references — left per PI). No churn commit for a no-op iteration.
+- **iter-4 COMPLETE (no-op).** last processed HEAD → `dfc6cac` (unchanged).
+
+### iter 5 — 2026-06-03 ~05:15 KST — QUIET + storage health check
+- No new commits (HEAD `12a95fd`, Lead idle ~2 h since `dfc6cac` 03:13). SE 0 new, 172 PDFs.
+- **Storage health check (read-only) — all three stores consistent:** TAG kb.duckdb SE=289,
+  chunks=6292, KnowledgeClaim=158 (no drift since iter-1); Obsidian vault ~305 paper nodes +
+  devlog nodes; no errors. ⚠️ `ZZ-OFFTOPIC Balog2007` still a vault node (flag-only; PI must
+  delete the Notion SE row to drop it from the graph — MCP can't archive).
+- **iter-5 COMPLETE (no-op + health-OK).** last processed HEAD → `dfc6cac`.
