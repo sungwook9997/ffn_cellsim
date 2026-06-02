@@ -349,9 +349,69 @@ H.8 Helfrich-κ_m discrete-curvature note).
 - `ALIGNED` (active run): advanced to 213 B, GSD-writer line + initial frame (5376 B) —
   same healthy native-38k warm-up pattern as v300full; no crash. Watching for first
   sample + the transport-engage point (~sample 9, where v300full died).
+- **NOTION UPLOAD (PI-authorized, overrides the no-Notion clause):** posted the prep
+  portfolio (constructive output only — Lead-watch/monitoring excluded per request) as a
+  new milestone child page under the Dev-Logs board:
+  https://www.notion.so/373120daec5d8194a068c9f3792e9633 (created additively, no board-
+  body edit ⇒ no race with the active Lead). 15 files / 34 tests + integration order +
+  PI decision roll-up.
 - `nxl5k_diag` dormant (header-only since 15:01) — gbook has ONE GPU ⇒ runs are
   sequential; nxl5k was likely superseded by ALIGNED (no crash sig — not a 2nd crash).
 - HEAD c3fafed; no sync-conflicts. Active-watch continues; holding builds.
+
+### iter 44 (logged early, ahead of iter 43 entry) — 16:39 KST — 🟢 Lead LANDED my prep
+- **New Lead commit `7bc2ea7`: "Land parallel-prep EXTEND/PI-exp artifacts + crash
+  diagnostic + gamma-breakdown viz"** — the Lead integrated + committed all 15 of my
+  prep files (the EXTEND/PI-exp portfolio + the crash diagnostic). **HANDOFF COMPLETE** —
+  my untracked artifacts are now in the repo history. Intended outcome achieved.
+- `ALIGNED` healthy at sample 3/12 (g_tot ~3.5e-3 mN/m, engaged 23959, adv=0 pre-engage,
+  drift 3.39e-15); GSD 18.5 MB; no crash; no sync-conflicts. Watching toward transport-
+  engage for crash recurrence.
+- **iter 45 — 17:15 KST:** ALIGNED still sample 4/12 (log+GSD frozen at 16:53, ~22 min,
+  modestly over the ~14 min/sample cadence). adv=0 (pre-engage); no crash; HEAD 7bc2ea7;
+  no sync-conflicts. Not a stall escalation yet (no crash sig; could be a slow sample /
+  pre-engage dynamics). If still at sample 4 next cycle (~40 min+), give the PI a soft
+  heads-up. Hypothesis (alignment lifts γ?) still UNVERIFIED — decisive point (transport
+  engage, ~sample 9) not reached.
+- **iter 46 — 17:20 KST:** plateau resolved (slow sample) — ALIGNED now sample 6/12
+  (s5 g_tot 4.85e-3 soft 5.25e-4; s6 2.24e-3 soft 5.7e-5; s_grip 281→335 nm); GSD 43.4 MB;
+  drift stable; no crash; HEAD 7bc2ea7; no sync-conflicts. **adv still 0 (pre-engage)** —
+  s_grip still monotone (no engage-point reset yet); γ still floor, soft noisy (no lift).
+  Hypothesis still UNVERIFIED. Note: 12-sample run may finish before transport engages →
+  alignment test could be inconclusive in this short run. Watching.
+- **iter 47 — 17:34 KST:** ALIGNED sample 7/12 (g_tot 3.08e-3, soft 5.3e-5, s_grip
+  388 nm, adv=0, drift stable); no crash; HEAD 7bc2ea7; no sync-conflicts. s_grip 388 nm
+  is near v300full's engage point (~440 nm, its sample 8→9) ⇒ **sample 8–9 is the
+  decisive window** (= both the crash-recurrence risk AND the γ-lift test). Still
+  pre-engage / γ floor / hypothesis UNVERIFIED. Watching closely next cycles.
+
+### iter 48 — 17:55 KST — 🔴 CRASH RECURRED on ALIGNED (same point, confirms diagnosis)
+- ALIGNED crashed during the sample 8→9 interval: same `FloatingPointError`
+  (`constrained_baoab.py:192 _wrap_into_box_xp`), **|round(f)|=1.777e9** (worse than
+  v300full's 3.255e8).
+- **Reproduced at the SAME point:** both runs had sample 8 at **s_grip=440.4 nm, adv=0**,
+  then blew up at/just-after that point. The crash is a **reproducible instability of
+  force-scaling-ON + v0_accel=300× at the grip-walk transport-engage transition**
+  (s_grip≈440 nm) — NOT a one-off. Confirms the iter-13/14 diagnosis (over-large force at
+  engage) across two runs.
+- **Hypothesis STILL UNVERIFIED & now BLOCKED:** ALIGNED stayed adv=0 / γ-floor through
+  sample 8, then died exactly at the engage transition — so post-engage γ (the alignment
+  test) was never measured. The crash is the common blocker for BOTH the γ run and the
+  alignment test. Recovery (Lead/PI): force-scaling-OFF gold-standard, or lower v0_accel,
+  to survive engage. Data samples 1–8 + 55.9 MB GSD intact.
+- **STOP building** (already maintenance); did NOT touch integrator/run/git/Notion. HEAD
+  7bc2ea7; no sync-conflicts. Surfaced to PI. (Did not edit the now-committed crash-diag
+  note — recorded the recurrence here instead.)
+- **iter 49 — 18:15 KST:** ALIGNED crash unchanged (17:55); Lead has not relaunched
+  (~20 min, no new run/artifact); HEAD 7bc2ea7; no sync-conflicts. Crash already surfaced
+  + recorded (disk + git). No new build. Holding; recovery = Lead/PI. (NOTE for PI: the
+  crash findings are on disk + git but NOT yet in Notion — offered to add, awaiting OK.)
+- **iter 50+ — ROLLING POST-CRASH WATCH (updated in place):** last check **18:35 KST** ·
+  ALIGNED crashed 17:55, Lead not yet relaunched · HEAD 7bc2ea7 · no new run/artifact · no
+  sync-conflicts. Crash surfaced + recorded (disk+git). Holding; recovery = Lead/PI. Will
+  report verbosely on relaunch / new crash / new commit / PI direction.
+  · update **19:15 KST** — still no relaunch (~1 h 20 m post-crash), HEAD 7bc2ea7, no
+  sync-conflicts.
 
 ### iter 43 — 16:11 KST — ALIGNED sample 1/12 (healthy)
 - `ALIGNED` sample 1/12: g_tot 4.46e-3 mN/m, s_grip 60.5 nm, engaged 23851, adv=0
