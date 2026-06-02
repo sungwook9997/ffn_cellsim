@@ -57,9 +57,16 @@ each driver also auto-generates its own figure at run end (production-driver-aut
 - `figs/fig_layer2_l2_2_motility_mechanism.png` — L2.2 motility mechanism. **Top**: settled
   aggregate (f_active=0) vs under active traction (6 nN). **Bottom**: A/A₀ and detached
   fraction vs active traction, with the measured cohesion/detachment force (6.5 nN, Iturri
-  2020) overlaid. Honest mechanism check: with the corrected nN cohesion, MCF7 is
-  appropriately cohesive — sub-detachment traction does not shred it (detached=0). The
-  quantitative active-wetting A/A₀(R) sweep awaits the per-cell migration-drag anchor.
+  2020) overlaid. Honest: isotropic self-propulsion does NOT spread a cohesive cluster — the
+  spreading driver is edge-directed traction (active wetting), built in L2.3.
+- `figs/fig_layer2_aa0_law.png` — **L2.3 first emergent A/A₀(R₀) spreading law.** Edge-directed
+  active-wetting traction (6 nN, Lp=11 µm) vs cohesion (6.5 nN), swept over initial radius
+  R₀=29–78 µm. The CBM produces a measurable (Δ≈7.6%), non-monotonic A/A₀(R₀) — small clusters
+  (high edge fraction) and intermediate sizes spread, large cohesion-dominated ones do not —
+  fittable to the PI's a + b/R + c/R² form (peak ≈42 µm; r²=0.67 single-seed). This is the
+  first quantitative contact with the experiment's collective term. G3-clean (r²≥0.95) needs
+  ensemble averaging (multiple seeds/R₀) to suppress single-realization noise. PI A/A₀ values
+  are overlay-only at comparison time (not shown — we hold only the functional form).
 
 ## Verification
 

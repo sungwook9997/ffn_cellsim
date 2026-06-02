@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import sys
 
-from ffn_sim.scripts import layer2_g1_smoke, layer2_spread_smoke
+from ffn_sim.scripts import layer2_aa0_sweep, layer2_g1_smoke, layer2_spread_smoke
 
 
 def main() -> int:
@@ -20,6 +20,8 @@ def main() -> int:
     layer2_g1_smoke.main(["--n-cells", "200", "--settle", "20000", "--measure", "10000"])
     print("\n=== [layer2_vis] L2.2 motility-mechanism figure ===")
     layer2_spread_smoke.main([])
+    print("\n=== [layer2_vis] L2.3 A/A0(R0) law figure (slow: R0 sweep) ===")
+    layer2_aa0_sweep.main([])
     print("\n[layer2_vis] done — figures in ffn_sim/outputs/layer2/figs/")
     return 0
 
