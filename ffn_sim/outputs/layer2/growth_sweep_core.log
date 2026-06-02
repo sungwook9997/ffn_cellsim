@@ -1,0 +1,10 @@
+  N0=  60  R0= 29.1 um  core=2.53+/-0.16  hull=2.73+/-0.44  (nseeds=3)
+  N0= 120  R0= 38.0 um  core=2.22+/-0.10  hull=2.45+/-0.22  (nseeds=3)
+  N0= 250  R0= 52.2 um  core=1.78+/-0.11  hull=3.34+/-2.11  (nseeds=3)
+  N0= 400  R0= 63.7 um  core=2.12+/-0.62  hull=25.48+/-21.55  (nseeds=3)
+  N0= 600  R0= 75.2 um  core=1.49+/-0.03  hull=20.17+/-20.24  (nseeds=3)
+
+[fit CORE] A/A0 = 0.953 + (58.988 um)/R + (-394.245 um^2)/R^2   r^2=0.737
+[fit HULL] A/A0 = 80.674 + (-5551.845 um)/R + (95713.883 um^2)/R^2   r^2=0.750
+
+[G3 fit r^2 >= 0.95] FAIL (core r^2=0.737) -- gate scored on the fragmentation-robust CORE area
