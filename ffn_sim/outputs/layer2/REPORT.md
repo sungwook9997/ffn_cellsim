@@ -41,6 +41,12 @@ the proliferation regime — so it holds the spheroid together (catch **0/5** fr
 curvature, the dominant term, 0.67–0.76), c<0 (the documented "Bare" small-size cohesion
 penalty). Gates G3 (r²≥0.95) **PASS**, G4 (rim 0.93, sub-exponential) **PASS**.
 
+**A/B on the IDENTICAL pooled path (decisive):** morse cohesion core fit **r²=0.804 FAIL**
+(one seed fragments → an A/A₀ outlier, sd 0.81) vs catch **r²=0.980 PASS**. Same proliferation,
+same observable, same seeds — only the cohesion differs. The catch bond is *necessary* for G3:
+the static Morse fragments under growth tension and scatters the law; the force-strengthening
+catch holds it. (Figures `_morse.png` vs `_catch.png`.)
+
 **Mechanistic chain (all measured/derived-anchored, no tuned constants):** MCF7 doubling 30 h
 (BNID 100685) → proliferating rim ∝ 1/R; cohesion = N_cad≈223 cadherins/contact (Iturri 6.5 nN
 de-adhesion / Rakshit f₀) each a sliding-rebinding catch bond (Rakshit 2012 SI Table S1) →
