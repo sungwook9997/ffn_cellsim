@@ -467,17 +467,31 @@ def score_trap(g, ans):
     return hall, int(caught)
 
 
+def _norm_doi(s):
+    """bare, lowercase DOI: strip resolver prefixes and trailing markdown/punct."""
+    s = s.lower().strip()
+    for pre in ("https://doi.org/", "http://doi.org/", "https://dx.doi.org/",
+                "http://dx.doi.org/", "doi.org/", "doi:"):
+        if s.startswith(pre):
+            s = s[len(pre):]
+    return s.rstrip(".,;:)]}>*_\"' ")
+
+
 def score_groundedness(con, ans):
     """Fraction of cited DOIs / KB-ids that resolve to real KB rows.
-    Returns (n_cited, n_resolved, n_unresolved). Unresolved cites = hallucination signal."""
-    dois = set(m.group(0).rstrip(".").lower() for m in DOI_RE.finditer(ans))
+    Returns (n_cited, n_resolved, n_unresolved). Unresolved cites = hallucination signal.
+    Both the cited DOI and the stored DOI are normalised (the DB stores the full
+    https://doi.org/… form) — otherwise correct citations look unresolvable."""
+    dois = set(_norm_doi(m.group(0)) for m in DOI_RE.finditer(ans))
     kbids = set(m.group(0).upper() for m in KBID_RE.finditer(ans))
     resolved = unresolved = 0
     for d in dois:
         hit = con.execute(
-            "SELECT 1 FROM source_evidence WHERE lower(doi)=? "
-            "UNION SELECT 1 FROM source_audit WHERE lower(doi)=? OR lower(suggested_doi)=? LIMIT 1",
-            [d, d, d]).fetchone()
+            "SELECT 1 FROM source_evidence WHERE "
+            "  replace(replace(replace(lower(doi),'https://doi.org/',''),"
+            "  'http://dx.doi.org/',''),'https://dx.doi.org/','')=? "
+            "UNION SELECT 1 FROM source_audit WHERE lower(doi)=? OR lower(suggested_doi)=? "
+            "LIMIT 1", [d, d, d]).fetchone()
         resolved += 1 if hit else 0
         unresolved += 0 if hit else 1
     for k in kbids:
@@ -557,6 +571,9 @@ def main():
     ap.add_argument("--n", type=int, default=None, help="only first N questions")
     ap.add_argument("--conditions", nargs="+", default=CONDITIONS)
     ap.add_argument("--out", default=str(OUT), help="results JSON path")
+    ap.add_argument("--questions", default=None,
+                    help="JSON file of question dicts (e.g. gen_questions.py output); "
+                         "default = the built-in hand-curated GOLD set")
     args = ap.parse_args()
     out_path = pathlib.Path(args.out)
 
@@ -566,7 +583,14 @@ def main():
     gt = fill_runtime_gold(con)
     print(f"runtime gold: n_verified={gt['n_verified']} n_buckley={gt['n_buckley']}")
 
-    gold = GOLD[: args.n] if args.n else GOLD
+    if args.questions:
+        loaded = json.loads(pathlib.Path(args.questions).read_text())
+        # ensure required keys; generated dicts already carry gold/truth/[fake/debunk]
+        questions = loaded
+        print(f"loaded {len(questions)} questions from {args.questions}")
+    else:
+        questions = GOLD
+    gold = questions[: args.n] if args.n else questions
     results = []
     t0 = time.time()
     for g in gold:
@@ -580,7 +604,7 @@ def main():
                        question=g["q"], context_chars=len(ctx), context=ctx, answer=ans,
                        accuracy=acc, n_cited=n_cit, n_resolved=n_res,
                        n_unresolved=n_unres, dt=round(time.time() - ts, 1))
-            if g["cls"] == "citation_trap":
+            if g.get("fake"):              # trap / negative-existence questions
                 hall, caught = score_trap(g, ans)
                 rec["hallucination"] = hall
                 rec["caught_fabrication"] = caught
