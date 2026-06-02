@@ -52,11 +52,22 @@ def _save_ckpt(d: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    import sys as _sys
+    args = _sys.argv[1:] if argv is None else argv
+    cohesion = "catch" if "--catch" in args else ("morse" if "--morse" in args else "catch")
     cfg = yaml.safe_load(_CFG.read_text())
     resolved = resolve_layer2(cfg)
     prolif = resolve_proliferation(cfg, resolved)
+    cad = None
+    if cohesion == "catch":
+        from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
+        cad = resolve_cadherin(resolved)
     gates = yaml.safe_load(_OCFG.read_text())["spheroid"]["acceptance"]
     g3, g4 = gates["g3"], gates["g4"]
+    # cohesion-tagged checkpoint so morse/catch runs don't collide
+    global _CKPT
+    _CKPT = _ROOT / "outputs" / "layer2" / f"growth_sweep_{cohesion}.checkpoint.json"
+    print(f"[growth-sweep] cohesion={cohesion}")
 
     n_list = [60, 120, 250, 400, 600]
     n_seeds = 3
@@ -79,6 +90,7 @@ def main(argv: list[str] | None = None) -> int:
             res = run_growth_pooled(
                 resolved, prolif, n_cells_init=n, total_time=total_time,
                 epoch_steps=1200, settle_steps=1000, seed=1000 + s, max_cells=4000,
+                cohesion=cohesion, cad=cad,
             )
             r0r.append(effective_radius(res["a0"]))
             aar.append(float(res["area_over_a0"][-1]))
