@@ -20,6 +20,7 @@ Usage: python -m ffn_sim.scripts.layer2_aa0_growth_sweep
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -35,6 +36,19 @@ _ROOT = Path(__file__).resolve().parents[1]
 _CFG = _ROOT / "configs" / "layer2_cbm.yaml"
 _OCFG = _ROOT / "validation" / "oracles" / "configs" / "layer2_cbm.yaml"
 _FIG_DIR = _ROOT / "outputs" / "layer2" / "figs"
+# Per-size checkpoint so a killed long-running sweep resumes instead of restarting (the big
+# sizes accumulate wall-time/memory and the sweep can be killed by the environment).
+_CKPT = _ROOT / "outputs" / "layer2" / "growth_sweep_core.checkpoint.json"
+
+
+def _load_ckpt() -> dict:
+    if _CKPT.exists():
+        return json.loads(_CKPT.read_text())
+    return {}
+
+
+def _save_ckpt(d: dict) -> None:
+    _CKPT.write_text(json.dumps(d, indent=2))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,9 +65,16 @@ def main(argv: list[str] | None = None) -> int:
           f"(~{total_time/prolif.cycle_time_mean:.1f} doublings), n_seeds={n_seeds}, "
           f"min_gap={prolif.min_gap/resolved.morse_r0:.2f}·r0")
 
-    R0s, AA0m, AA0e, rims, growths, subexp = [], [], [], [], [], []
+    exp_ceiling = 2.0 ** (total_time / prolif.cycle_time_mean)
+    ckpt = _load_ckpt()
     for n in n_list:
-        r0r, aar, rimr, grr = [], [], [], []
+        key = str(n)
+        if key in ckpt:
+            row = ckpt[key]
+            print(f"  N0={n:4d}  [resumed]  R0={row['R0']*1e6:6.1f} µm  "
+                  f"A/A0(core)={row['aac_m']:.2f}±{row['aac_e']:.2f}")
+            continue
+        r0r, aar, acr, rimr, grr = [], [], [], [], []
         for s in range(n_seeds):
             res = run_growth(
                 resolved, prolif, n_cells_init=n, total_time=total_time,
@@ -61,23 +82,41 @@ def main(argv: list[str] | None = None) -> int:
             )
             r0r.append(effective_radius(res["a0"]))
             aar.append(float(res["area_over_a0"][-1]))
+            acr.append(float(res["area_core_over_a0"][-1]))  # fragmentation-robust
             if not np.isnan(res["rim_fraction_mean"]):
                 rimr.append(res["rim_fraction_mean"])
             grr.append(res["growth_factor"])
-        R0i = float(np.mean(r0r))
-        # sub-exponential check: realised growth < contact-inhibition-free 2^(t/tau)
-        exp_ceiling = 2.0 ** (total_time / prolif.cycle_time_mean)
-        sub = bool(np.mean(grr) < exp_ceiling)
-        R0s.append(R0i); AA0m.append(float(np.mean(aar))); AA0e.append(float(np.std(aar)))
-        rims.append(float(np.mean(rimr)) if rimr else float("nan"))
-        growths.append(float(np.mean(grr))); subexp.append(sub)
-        print(f"  N0={n:4d}  R0={R0i*1e6:6.1f} µm  A/A0={np.mean(aar):.3f}±{np.std(aar):.3f}  "
-              f"growth={np.mean(grr):.2f} (ceil {exp_ceiling:.1f})  rim={rims[-1]:.2f}")
+        row = {
+            "R0": float(np.mean(r0r)),
+            "aa_m": float(np.mean(aar)), "aa_e": float(np.std(aar)),
+            "aac_m": float(np.mean(acr)), "aac_e": float(np.std(acr)),
+            "rim": float(np.mean(rimr)) if rimr else float("nan"),
+            "growth": float(np.mean(grr)),
+            "sub": bool(np.mean(grr) < exp_ceiling),
+        }
+        ckpt[key] = row
+        _save_ckpt(ckpt)  # checkpoint after EACH size so a kill resumes here
+        print(f"  N0={n:4d}  R0={row['R0']*1e6:6.1f} µm  A/A0(hull)={row['aa_m']:.2f}±{row['aa_e']:.2f}  "
+              f"A/A0(core)={row['aac_m']:.2f}±{row['aac_e']:.2f}  growth={row['growth']:.2f}  rim={row['rim']:.2f}")
 
+    rows = [ckpt[str(n)] for n in n_list]
+    R0s = [r["R0"] for r in rows]
+    AA0m = [r["aa_m"] for r in rows]; AA0e = [r["aa_e"] for r in rows]
+    AAcm = [r["aac_m"] for r in rows]; AAce = [r["aac_e"] for r in rows]
+    rims = [r["rim"] for r in rows]; growths = [r["growth"] for r in rows]
+    subexp = [r["sub"] for r in rows]
     R0 = np.array(R0s); AA0 = np.array(AA0m); AA0err = np.array(AA0e)
+    AAcore = np.array(AAcm); AAcerr = np.array(AAce)
     fit = fit_aa0(R0, AA0)
+    fit_core = fit_aa0(R0, AAcore)
     a, b, c, r2 = fit["a"], fit["b"], fit["c"], fit["r_squared"]
-    print(f"\n[fit] A/A0 = {a:.3f} + ({b*1e6:.3f} µm)/R + ({c*1e12:.3f} µm²)/R²   r²={r2:.3f}")
+    ac, bc, cc, r2c = fit_core["a"], fit_core["b"], fit_core["c"], fit_core["r_squared"]
+    print(f"\n[fit hull] A/A0 = {a:.3f} + ({b*1e6:.3f} µm)/R + ({c*1e12:.3f} µm²)/R²   r²={r2:.3f}")
+    print(f"[fit core] A/A0 = {ac:.3f} + ({bc*1e6:.3f} µm)/R + ({cc*1e12:.3f} µm²)/R²   r²={r2c:.3f}"
+          f"   <-- fragmentation-robust (largest connected component)")
+    # the headline fit for the gate is the robust CORE area (hull is fragmentation-inflated)
+    fit, r2 = fit_core, r2c
+    AA0, AA0err = AAcore, AAcerr
     # edge-vs-bulk readout at the smallest and largest R0
     for R_eval in (R0.min(), R0.max()):
         tc = term_contributions(R_eval, a, b, c)

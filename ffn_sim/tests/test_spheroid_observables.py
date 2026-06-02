@@ -153,3 +153,41 @@ def test_term_contributions_dominance_crosses_over():
     large = oracle.term_contributions(1.0e-3, a, b, c)
     assert small["dominant"] == "c"
     assert large["dominant"] == "a"
+
+
+# --------------------------------------------------------------------------- #
+# Connected-component / fragmentation-robust core area (L2.4 spread observable)
+# --------------------------------------------------------------------------- #
+def test_connected_components_two_separated_clusters():
+    """Two clusters far apart → 2 components; label 0 is the larger one."""
+    r0 = 1.0
+    a = _uniform_disk_xy(40, 2.0 * r0)                       # bigger cluster at origin
+    b = _uniform_disk_xy(15, 1.0 * r0) + np.array([50.0, 0.0, 0.0])  # smaller, far away
+    pos = np.vstack([a, b])
+    labels = obs.connected_components(pos, link_radius=1.6 * r0)
+    assert labels.max() == 1                                 # exactly two components
+    assert (labels == 0).sum() == 40                         # label 0 = largest
+
+
+def test_core_area_ignores_drifting_fragment():
+    """Core area = the big cluster's hull, NOT the whole-set hull spanning the gap."""
+    r0 = 1.0
+    big = _uniform_disk_xy(60, 3.0 * r0)
+    stray = _uniform_disk_xy(8, 0.5 * r0) + np.array([80.0, 0.0, 0.0])
+    pos = np.vstack([big, stray])
+    a_core = obs.core_projected_area(pos, link_radius=1.6 * r0)
+    a_hull = obs.projected_area(pos)
+    assert a_core < 0.3 * a_hull                             # hull is inflated by the gap
+    assert a_core == pytest.approx(obs.projected_area(big), rel=1e-9)
+
+
+def test_connected_components_single_cluster_is_one_label():
+    pos = _uniform_disk_xy(50, 2.0)
+    labels = obs.connected_components(pos, link_radius=3.0)  # generous link → all one cluster
+    assert labels.max() == 0
+    assert obs.largest_connected_component(pos, link_radius=3.0).all()
+
+
+def test_connected_components_rejects_nonpositive_link():
+    with pytest.raises(ValueError):
+        obs.connected_components(_uniform_disk_xy(5, 1.0), link_radius=0.0)

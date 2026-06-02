@@ -41,6 +41,7 @@ Sanity Gate
 
 from __future__ import annotations
 
+import gc
 from typing import Any
 
 import hoomd
@@ -51,9 +52,15 @@ from scipy.spatial.distance import cdist
 
 from ffn_sim.spheroid.cbm import build_cbm_simulation, get_positions
 from ffn_sim.spheroid.observables import (
+    core_projected_area,
     projected_area,
     radius_of_gyration,
 )
+
+# Single-linkage cluster threshold for the fragmentation-robust core area, in units of r0:
+# just past the rest separation (1st shell) so cohesive/touching cells link but a detached
+# fragment does not. A measurement-policy choice (between the 1st and 2nd coordination shell).
+_CORE_LINK_FACTOR = 1.6
 from ffn_sim.spheroid.params import ResolvedL2, ResolvedProliferation
 
 __all__ = [
@@ -239,6 +246,7 @@ def run_growth(
     epoch_steps: int = 2_000,
     settle_steps: int = 1_500,
     max_cells: int = 4_000,
+    max_epochs: int = 80,
     device: hoomd.device.Device | None = None,
     seed: int | None = None,
     f_traction: float = 0.0,
@@ -249,6 +257,15 @@ def run_growth(
     Settles a loose blob (G1), then advances the population in epochs: relax → read back →
     divide → rebuild. Optionally superposes edge-directed active-wetting traction
     (``f_traction`` > 0, recomputed per epoch) so growth and motility act together.
+
+    ⚠️ MEMORY (known limitation): HOOMD's ``State`` has a fixed particle count, so growth
+    rebuilds the ``Simulation`` each epoch. HOOMD leaks ~tens of MB per ``Simulation`` rebuild
+    on the C++ side (NOT freeable from Python via ``del``/``gc``), so a long run (many epochs)
+    can balloon to multi-GB. ``max_epochs`` is a HARD GUARD that stops the run before it can
+    run away (it raises if the biological ``total_time`` would need more than ``max_epochs``
+    rebuilds at the given ``epoch_steps``). The leak-free fix is a single-Simulation
+    pre-allocated particle pool (activate parked particles on division via ``set_snapshot``) —
+    the planned L2.4b refactor; until then keep runs SMALL and never launch many concurrently.
 
     Args:
         resolved: resolved CBM parameters.
@@ -271,13 +288,34 @@ def run_growth(
     rng = np.random.default_rng(seed)
     dt = resolved.dt_cfl
 
+    # HARD memory guard: cap the number of epoch rebuilds (HOOMD leaks per rebuild — see
+    # docstring). Refuse up front rather than ballooning to multi-GB mid-run.
+    needed_epochs = int(np.ceil(total_time / (epoch_steps * dt)))
+    if needed_epochs > max_epochs:
+        raise ValueError(
+            f"run_growth would need {needed_epochs} epoch rebuilds "
+            f"(total_time/{epoch_steps}·dt) but max_epochs={max_epochs}. HOOMD leaks per "
+            f"rebuild — raise epoch_steps, lower total_time, or wait for the single-Simulation "
+            f"L2.4b refactor. (Guard against the multi-GB runaway.)"
+        )
+
+    # Reuse ONE device across all epoch rebuilds. HOOMD State has a fixed particle count, so
+    # growth must rebuild the Simulation each epoch — but creating a fresh device every epoch
+    # (and not releasing the old Simulation) leaks GBs over ~100 epochs. One device + an
+    # explicit per-epoch release (below) keeps the footprint at a single sim's worth.
+    device = device or hoomd.device.CPU(notice_level=0)
+
     # --- initial blob + settle (defines A0) ---
     sim, _a, _u, _rc = build_cbm_simulation(resolved, n_cells_init, device=device, seed=seed)
     sim.run(0)
     pos_init = get_positions(sim)
     sim.run(settle_steps)
     pos = get_positions(sim)
+    del sim, _a, _u, _rc
+    gc.collect()
+    link_r = _CORE_LINK_FACTOR * resolved.morse_r0
     a0 = projected_area(pos)
+    a0_core = core_projected_area(pos, link_r)
 
     ages = np.zeros(pos.shape[0], dtype=np.float64)
     targets = sample_cycle_targets(pos.shape[0], prolif, rng)
@@ -287,6 +325,7 @@ def run_growth(
     t = 0.0
     epoch = 0
     ts, ns, areas, rgs = [0.0], [pos.shape[0]], [a0], [radius_of_gyration(pos)]
+    areas_core = [a0_core]
     rim_frac_mean = []  # fraction of divisions that were above-median-radial (rim) per epoch
     capped = False
 
@@ -309,6 +348,11 @@ def run_growth(
         sim.run(0)
         sim.run(epoch_steps)
         pos = get_positions(sim)
+        # release this epoch's Simulation/forces before building the next (leak fix)
+        del sim, _a, _u, _rc
+        if f_traction > 0.0:
+            del edge
+        gc.collect()
 
         dt_epoch = epoch_steps * dt
         ages = ages + dt_epoch
@@ -322,15 +366,20 @@ def run_growth(
 
         ts.append(t); ns.append(pos.shape[0])
         areas.append(projected_area(pos)); rgs.append(radius_of_gyration(pos))
+        areas_core.append(core_projected_area(pos, link_r))
 
     areas = np.asarray(areas)
+    areas_core = np.asarray(areas_core)
     return {
         "n_cells_init": n_cells_init,
         "a0": a0,
+        "a0_core": a0_core,
         "t": np.asarray(ts),
         "n_cells": np.asarray(ns),
         "area": areas,
         "area_over_a0": areas / a0 if a0 > 0 else areas,
+        "area_core": areas_core,
+        "area_core_over_a0": areas_core / a0_core if a0_core > 0 else areas_core,
         "rg": np.asarray(rgs),
         "rim_fraction_mean": float(np.mean(rim_frac_mean)) if rim_frac_mean else float("nan"),
         "n_division_epochs": len(rim_frac_mean),

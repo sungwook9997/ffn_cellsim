@@ -38,6 +38,9 @@ __all__ = [
     "nearest_neighbor_distances",
     "nearest_neighbor_stats",
     "detached_fraction",
+    "connected_components",
+    "largest_connected_component",
+    "core_projected_area",
 ]
 
 
@@ -182,3 +185,85 @@ def detached_fraction(
     isolated = n_within < 2
     detached = far & isolated
     return float(detached.sum() / p.shape[0])
+
+
+def connected_components(
+    positions: npt.ArrayLike, link_radius: float
+) -> npt.NDArray[np.int64]:
+    """Label connected components: cells within ``link_radius`` are in the same cluster.
+
+    Single-linkage clustering via a KD-tree + union-find. Two cells are "linked" (same
+    aggregate) if their centre separation is <= ``link_radius`` — a caller argument (no baked
+    constant), typically set just past the rest separation (e.g. 1.5-1.6 r0, between the 1st
+    and 2nd coordination shell) so touching/cohesive cells link but a detached fragment does
+    not. This separates a fragmented population into its drifting pieces — the structure the
+    raw convex hull conflates.
+
+    Args:
+        positions: (N, 3) cell centers (m).
+        link_radius: maximum centre separation for two cells to share a cluster (m, > 0).
+
+    Returns:
+        (N,) integer component labels in ``[0, n_components)``, ordered by descending size
+        (label 0 is the largest component).
+    """
+    p = _as_positions(positions)
+    n = p.shape[0]
+    if link_radius <= 0.0:
+        raise ValueError("link_radius must be strictly positive.")
+    if n == 0:
+        return np.zeros(0, dtype=np.int64)
+
+    parent = np.arange(n)
+
+    def find(a: int) -> int:
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]  # path halving
+            a = parent[a]
+        return int(a)
+
+    tree = cKDTree(p)
+    for i, j in tree.query_pairs(link_radius):  # unique unordered pairs within link_radius
+        ri, rj = find(int(i)), find(int(j))
+        if ri != rj:
+            parent[ri] = rj
+
+    roots = np.array([find(i) for i in range(n)])
+    # relabel by descending component size so label 0 is the largest cluster
+    uniq, counts = np.unique(roots, return_counts=True)
+    order = uniq[np.argsort(-counts)]
+    remap = {int(r): k for k, r in enumerate(order)}
+    return np.array([remap[int(r)] for r in roots], dtype=np.int64)
+
+
+def largest_connected_component(
+    positions: npt.ArrayLike, link_radius: float
+) -> npt.NDArray[np.bool_]:
+    """Boolean mask of the cells in the largest connected component (the spheroid core)."""
+    labels = connected_components(positions, link_radius)
+    if labels.size == 0:
+        return np.zeros(0, dtype=bool)
+    return labels == 0  # label 0 is the largest (connected_components orders by size)
+
+
+def core_projected_area(
+    positions: npt.ArrayLike, link_radius: float, plane: tuple[int, int] = (0, 1)
+) -> float:
+    """Projected area of the LARGEST connected component (fragmentation-robust footprint).
+
+    The raw ``projected_area`` convex hull spans the gaps between drifting fragments and so
+    explodes when a growing/active aggregate fragments. Restricting the hull to the largest
+    connected component measures the spreading footprint of the cohesive core, ignoring
+    flung-off pieces — the honest spread observable for a proliferating spheroid.
+
+    Args:
+        positions: (N, 3) cell centers (m).
+        link_radius: single-linkage cluster threshold (m); see ``connected_components``.
+        plane: the two axis indices to project onto (default x, y).
+
+    Returns:
+        Core convex-hull area in m^2 (0.0 if the largest component has < 3 non-collinear cells).
+    """
+    p = _as_positions(positions)
+    mask = largest_connected_component(p, link_radius)
+    return projected_area(p[mask], plane=plane)
