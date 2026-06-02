@@ -104,9 +104,15 @@ def _tension_method_of_planes(sim, R_cell: float, n_planes: int = 12) -> float:
         crossing = (a_side * b_side) < 0
         if not crossing.any():
             gammas.append(0.0); continue
-        # Force along cut normal: |T| · |u · n_hat| (signed by tension dir).
-        # The total force across the cut (tensile) = sum over crossing bonds.
-        f_cut = (T[crossing] * (u[crossing] @ n_hat))
+        # Tensile force across the cut = T · |u · n_hat|, summed over crossing
+        # bonds. The ABS on the projection is REQUIRED: u is the raw HOOMD A->B
+        # bond direction, so sign(u · n_hat) is set by storage order vs an
+        # ARBITRARY cut plane (~random) — without |·| the per-plane sum cancels as
+        # sqrt(N) instead of N, fabricating the "isotropy" gamma floor (the
+        # ~97x suppression: estimator audit 2026-06-02, h3_ku35_estimator_audit.py;
+        # corrected == Irving-Kirkwood to <0.5% on a synthetic shell). T keeps its
+        # own sign (+ tension / - compression).
+        f_cut = (T[crossing] * np.abs(u[crossing] @ n_hat))
         # The cortex tension γ = force / circumference of the great circle.
         gammas.append(float(np.sum(f_cut)) / (2.0 * np.pi * R_cell))
     arr = np.asarray(gammas)
@@ -253,8 +259,11 @@ def _tension_method_of_planes_rigid(
         crossing = (a_side * b_side) < 0
         if not crossing.any():
             gammas.append(0.0); continue
-        # Force along the cut normal = T · (u · n̂); cortex γ = sum / (2π R).
-        f_cut = T_flat[crossing] * (u_flat[crossing] @ n_hat)
+        # Tensile force across the cut = T · |u · n̂| (cortex γ = sum / 2π R).
+        # |·| on the projection is required for the same reason as the soft-bond
+        # M-OP: raw bond orientation otherwise gives a spurious sqrt(N)
+        # cancellation (estimator audit 2026-06-02). T (= λ·r₀/Δt) keeps its sign.
+        f_cut = T_flat[crossing] * np.abs(u_flat[crossing] @ n_hat)
         gammas.append(float(np.sum(f_cut)) / (2.0 * np.pi * R_cell))
     arr = np.asarray(gammas)
     # Match the soft-bond M-OP convention (mean of |γ| over orientations).
