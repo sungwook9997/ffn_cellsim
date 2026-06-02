@@ -72,9 +72,43 @@ def toks(s):
     return {w for w in re.findall(r"[a-z]{5,}", (s or "").lower()) if w not in STOP}
 
 
-def verify_backfill(doi, ctx):
-    """The suggested DOI must resolve AND its title must share a topical word
-    with the row's own description — guards against coincidental author+year hits."""
+ACRONYM = {  # citation-key journal token -> distinctive container-title words
+    "pnas": ["proceedings", "national", "academy"], "prl": ["physical", "review", "letters"],
+    "prx": ["physical", "review"], "pre": ["physical", "review"],
+    "jcb": ["journal", "cell", "biology"], "jcs": ["journal", "cell", "science"],
+    "bbrc": ["biochemical", "biophysical", "research"], "mboc": ["molecular", "biology", "cell"],
+    "mbc": ["molecular", "biology", "cell"], "nrmcb": ["nature", "reviews", "molecular"],
+    "tcb": ["trends", "cell"], "rmp": ["reviews", "modern", "physics"],
+    "ncb": ["nature", "cell", "biology"], "nrc": ["nature", "reviews", "cancer"],
+    "biophysj": ["biophysical", "journal"], "natcommun": ["nature", "communications"],
+    "natphys": ["nature", "physics"], "natmater": ["nature", "materials"],
+    "natmethods": ["nature", "methods"], "sciadv": ["science", "advances"],
+    "scirep": ["scientific", "reports"], "devcell": ["developmental", "cell"],
+}
+
+
+def journal_match(ck, container):
+    """citation_key journal token (e.g. 'NatPhys', 'Cell', 'PNAS') vs CrossRef
+    container-title. Tolerates CamelCase abbreviations + known acronyms."""
+    if "_" not in ck or not container:
+        return False
+    tok = ck.rsplit("_", 1)[1].lower()
+    cwords = re.findall(r"[a-z]+", container.lower())
+    if tok in ACRONYM:
+        wanted = ACRONYM[tok]
+    else:  # split CamelCase -> word fragments
+        spaced = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", ck.rsplit("_", 1)[1])
+        wanted = [w.lower() for w in re.findall(r"[A-Za-z]+", spaced) if len(w) >= 3]
+    if not wanted:
+        return False
+    return all(any(cw.startswith(w[:4]) for cw in cwords) for w in wanted)
+
+
+def verify_backfill(doi, ctx, ck):
+    """Accept a suggested DOI only if it resolves AND either the CrossRef title
+    topically matches the row OR the resolved journal matches the citation key —
+    guards against coincidental author+year hits while recovering real papers
+    a strict topic-only gate would over-reject."""
     try:
         r = SESS.get(f"{CR}/{norm_doi(doi)}", timeout=20)
         if r.status_code != 200:
@@ -83,10 +117,12 @@ def verify_backfill(doi, ctx):
     except Exception:
         return False, "fetch error"
     title = (m.get("title") or [""])[0]
-    overlap = toks(title) & toks(ctx)
-    if not overlap:
-        return False, f"topic mismatch — CrossRef title: {title[:55]!r}"
-    return True, "topic ok: " + ",".join(sorted(overlap)[:3])
+    container = (m.get("container-title") or [""])[0] if m.get("container-title") else ""
+    if toks(title) & toks(ctx):
+        return True, "topic ok: " + ",".join(sorted(toks(title) & toks(ctx))[:3])
+    if journal_match(ck, container):
+        return True, f"journal ok: {container[:40]}"
+    return False, f"mismatch — CrossRef: {title[:45]!r} / {container[:25]!r}"
 
 
 def patch_doi(tok, page_id, doi):
@@ -136,7 +172,7 @@ def main():
           f"{sum(1 for p in plan if p[4]=='BACKFILL')} backfill)\n")
     for pid, ck, old, new, kind, ctx in plan:
         if kind == "BACKFILL":
-            ok, why = verify_backfill(new, ctx)
+            ok, why = verify_backfill(new, ctx, ck)
             time.sleep(0.1)
             if not ok:
                 skipped += 1

@@ -88,8 +88,9 @@ def build():
             id2type[pg["id"].replace("-", "")] = TABLE[ds]
         print(f"  {len(rows)} rows", flush=True)
 
-    if DB_PATH.exists():
-        DB_PATH.unlink()
+    # non-destructive: only the 8 node tables + edges + _meta are rebuilt
+    # (CREATE OR REPLACE below); content/audit tables (paper_refs, paper_chunks,
+    # source_audit) added by sibling scripts survive a refresh.
     con = duckdb.connect(str(DB_PATH))
 
     edges: list[tuple] = []
@@ -129,7 +130,7 @@ def build():
         # CREATE TABLE (all TEXT — Notion props flatten to strings; CAST in SQL
         # when a query needs a number; keeps the schema robust to prop drift)
         cols_ddl = ", ".join(f'"{c}" TEXT' for c in colset)
-        con.execute(f'CREATE TABLE "{tname}" ({cols_ddl})')
+        con.execute(f'CREATE OR REPLACE TABLE "{tname}" ({cols_ddl})')
         placeholders = ", ".join("?" for _ in colset)
         con.executemany(
             f'INSERT INTO "{tname}" VALUES ({placeholders})',
@@ -140,11 +141,11 @@ def build():
 
     # ---- edges + meta --------------------------------------------------------
     con.execute(
-        "CREATE TABLE edges (src_id TEXT, src_type TEXT, rel TEXT, "
+        "CREATE OR REPLACE TABLE edges (src_id TEXT, src_type TEXT, rel TEXT, "
         "dst_id TEXT, dst_type TEXT)"
     )
     con.executemany("INSERT INTO edges VALUES (?, ?, ?, ?, ?)", edges)
-    con.execute("CREATE TABLE _meta (table_name TEXT, n_rows INTEGER)")
+    con.execute("CREATE OR REPLACE TABLE _meta (table_name TEXT, n_rows INTEGER)")
     con.executemany("INSERT INTO _meta VALUES (?, ?)", meta)
 
     n_nodes = sum(n for _, n in meta)
