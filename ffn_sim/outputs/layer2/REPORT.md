@@ -192,6 +192,14 @@ gave almost none. So the faithful Bare/Pre/Lam4 separation is **ligand-modulated
 (per-species integrin catch-slip, `bridge/ligand_species.py`), the next anchoring step — not
 substrate-adhesion depth.
 
+**Traction axis (mechanism → law coefficient).** Sweeping active traction (0 vs 3 nN) over R₀
+raises A/A₀ at *every* size (0 nN: 2.55/2.25/1.82 → 3 nN: 2.80/2.35/1.92), i.e. the law's
+**b-coefficient (the 1/R traction term) grows with traction** — the platform doing its stated
+job: mapping the a/b/c terms to mechanism. Figure `fig_layer2_traction_axis.png`. ⚠️ The 6 nN
+level hit a numerical box/substrate-wall limit (a cell ejected past the box under
+traction+growth+wall) — a known fix (size the pool box for the grown+spread footprint + soften
+the Morse wall repulsive branch), not a physics error.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
