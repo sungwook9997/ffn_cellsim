@@ -171,6 +171,19 @@ growing spheroid together even when measured robustly. **This confirms L2.5 (cat
 required, not optional** — the robust estimator was necessary to *see* the residual instability
 cleanly, but the cohesion model itself is the remaining blocker.
 
+## L2.6 — ligand-condition axis (Bare / Pre / Lam4) — mild passive effect (honest)
+
+Sweeping the cell-substrate adhesion (the coarse ligand knob; Bare/Pre/Lam4 = ×0.5/×1.0/×2.0
+the cohesion D_e) over R₀ gives three emergent A/A₀(R₀) curves that **nearly overlap** (e.g.
+R₀≈40 µm: Bare 2.57, Pre 2.55, Lam4 2.78 — Lam4 highest, the correct direction, but small;
+they converge at larger R₀). **Finding:** passive substrate adhesion alone does *not* reproduce
+a strong ligand-condition separation — cohesive MCF7 forms a 3D cap regardless (L2.6). The
+experiment's Bare/Pre/Lam4 differences therefore likely require the **active** ligand mechanism
+(per-species integrin catch-slip kinetics in `bridge/ligand_species.py` driving edge traction),
+the documented faithful upgrade — not the passive adhesion depth. (The per-condition r²=1.000 is
+degenerate: 3 R₀ vs 3 coefficients; a trend comparison only.) Figure
+`fig_layer2_ligand_conditions.png`. PI A/A₀ overlay-only.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);

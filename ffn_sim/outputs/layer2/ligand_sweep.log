@@ -1,0 +1,13 @@
+  Bare (adh×0.5) N0= 120 R0= 40.6µm A/A0=2.57±0.17
+  Bare (adh×0.5) N0= 250 R0= 53.3µm A/A0=2.21±0.06
+  Bare (adh×0.5) N0= 450 R0= 69.6µm A/A0=1.89±0.10
+  Pre  (adh×1.0) N0= 120 R0= 40.6µm A/A0=2.55±0.04
+  Pre  (adh×1.0) N0= 250 R0= 53.3µm A/A0=2.25±0.01
+  Pre  (adh×1.0) N0= 450 R0= 69.6µm A/A0=1.82±0.12
+  Lam4 (adh×2.0) N0= 120 R0= 40.6µm A/A0=2.78±0.08
+  Lam4 (adh×2.0) N0= 250 R0= 53.3µm A/A0=2.25±0.05
+  Lam4 (adh×2.0) N0= 450 R0= 69.6µm A/A0=1.82±0.05
+[Bare] A/A0 = 0.51 + (113.7µm)/R + (-1222µm²)/R²  r²=1.000
+[Pre] A/A0 = -0.80 + (247.5µm)/R + (-4536µm²)/R²  r²=1.000
+[Lam4] A/A0 = 0.18 + (125.4µm)/R + (-808µm²)/R²  r²=1.000
+[viz] wrote /Users/sw1/ffn_cellsim/ffn_sim/outputs/layer2/figs/fig_layer2_ligand_conditions.png
