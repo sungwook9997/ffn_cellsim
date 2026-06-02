@@ -355,9 +355,35 @@ def cortex_myosin_attach_bin_names(n_bins: int) -> list[str]:
     return [f"cortex_myosin_attach_b{i}" for i in range(n_bins)]
 
 
+# Near-zero rest length for the grip_walk attach bond TYPES (KU-3.5 STAGE-1,
+# CH1). AFINES pos_a_end / bridge/motor.py:209 precedent: the head-actin bond
+# carries force from the REAL geometry F = k·(physical stretch), so r0 ≈ 0 and
+# the stretch == the head-to-grip-bead distance r. A tiny POSITIVE value (not
+# exactly 0) keeps the legacy ``bins > 0`` contract and is force-negligible:
+# k·ℓ_grip = 1e-6·1e-12 = 1e-18 N ≪ F_stall = 5e-13 N. The grip_walk force is
+# carried by the s_grip pos_a_end accumulator (Step 3), NOT by the bond r0.
+_GRIP_WALK_R0_EPS = 1.0e-12  # m  (1 pm; ~6 orders below ℓ₀ = 500 nm)
+
+
 def cortex_myosin_attach_bin_rest_lengths(
-    n_bins: int, max_bind_dist: float
+    n_bins: int, max_bind_dist: float, stepping_mode: str = "binned_r0"
 ) -> np.ndarray:
+    """Per-r0 rest lengths for the ``n_bins`` head-actin attach bond TYPES.
+
+    The bond TYPE *count* and *names* are identical across modes (cell.py wires
+    them) — only the rest-length VALUES differ:
+
+    * ``binned_r0`` (default, A/B baseline + legacy-test contract): bin-centre
+      linspace over ``[0, max_bind_dist]`` — BYTE-IDENTICAL to the pre-STAGE-1
+      behaviour. The legacy lumped proxy relabels the bond onto a lower-r0 bin
+      to encode a "step".
+    * ``grip_walk`` (KU-3.5 STAGE-1 CH1): all bins ≈ 0 so every attach bond
+      carries F = k·(r − r0) ≈ k·r from the real head-to-bead geometry; the
+      contractile force is carried by the s_grip pos_a_end accumulator, not the
+      bond rest length (no in-grip requantization).
+    """
+    if stepping_mode == "grip_walk":
+        return np.full(n_bins, _GRIP_WALK_R0_EPS, dtype=np.float64)
     edges = np.linspace(0.0, max_bind_dist, n_bins + 1, dtype=np.float64)
     return 0.5 * (edges[:-1] + edges[1:])
 
@@ -737,7 +763,8 @@ def register_cortex_myosin_bond_params(
         k=p_myo.k_head_spring, r0=p_myo.head_rest_length
     )
     bin_r0 = cortex_myosin_attach_bin_rest_lengths(
-        p_myo.n_bins, p_myo.head_actin_max_bind_dist
+        p_myo.n_bins, p_myo.head_actin_max_bind_dist,
+        stepping_mode=p_myo.stepping_mode,
     )
     for name, r0 in zip(cortex_myosin_attach_bin_names(p_myo.n_bins), bin_r0):
         bond.params[name] = dict(k=p_myo.k_head_actin, r0=float(r0))
@@ -998,7 +1025,8 @@ class MyosinStepUpdater(hoomd.custom.Action):
         other_bt = bt[~is_attach]
 
         bin_r0 = cortex_myosin_attach_bin_rest_lengths(
-            self.p.n_bins, self.p.head_actin_max_bind_dist
+            self.p.n_bins, self.p.head_actin_max_bind_dist,
+            stepping_mode=self.stepping_mode,
         )
         bin_width = self.p.head_actin_max_bind_dist / self.p.n_bins
 
@@ -1222,40 +1250,117 @@ class MyosinStepUpdater(hoomd.custom.Action):
                 self._n_step_advances_total += n_advanced
                 bond_bins = new_bins
             else:
-                # ---- grip_walk (AFINES pos_a_end; PI-ratified 2026-05-31) ----
-                # The commanded sub-bead stretch s_grip carries the force via
-                # r0_eff = max(r − s_grip, 0)  ⇒  F = k·min(s_grip, r). Crucially
-                # r0_eff is RE-DERIVED from the current r every tick, so the
-                # force does NOT relax to 0 as the bead approaches (the proxy's
-                # failure); s_grip GROWS by Hill v(F)·batch_dt (pos_a_end), and
-                # when it overflows one bead spacing ℓ₀ the grip RE-TARGETS to
-                # the next minus-ward bead (material transport).
+                # ---- grip_walk (AFINES pos_a_end; KU-3.5 STAGE-1) ------------
+                # CH1: the head-actin bond carries force from the REAL geometry
+                # F = k·(r − r0) with r0 ≈ 0 (the grip_walk attach TYPES were
+                # wired ≈0 by register_cortex_myosin_bond_params). The bond
+                # rest length is NO LONGER requantized from a re-derived r0_eff
+                # (the old :1280-1291 distortion is deleted) — bond_bins is left
+                # untouched, since every grip_walk attach type has r0 ≈ 0 and so
+                # the delivered force is k·r regardless of which bin label rides.
+                #
+                # CH2: the Hill load is the SIGNED projection of the head-spring
+                # force onto the bound filament's minus-end-ward tangent t̂; the
+                # STALL test uses the SERIES tension k_series·min(s,r) (the two
+                # head springs add in series), DELIBERATELY a DIFFERENT force
+                # definition from the Bell-Evans strip's FULL bond-frame tension
+                # k_head_actin·(r−r0) in Step 1 (the two are written side by side
+                # and asserted distinct in the STAGE-1 test). The rod axis û is
+                # RECOMPUTED from the backbone end beads each tick (GAP-1 fix) so
+                # a >90° rod reorientation keeps the dipole contractile rather
+                # than flipping it expandile.
                 ell0 = self._ell0_cortex
                 s = self._head_grip_s[head_locals]            # commanded stretch
-                F_mag = self.p.k_head_actin * np.clip(
-                    np.minimum(s, r), 0.0, None
+                # ---- CH2(iii): SERIES-tension rod-frame load for the stall ----
+                # k_series = 1/(1/k_head_actin + 1/k_head_spring): the head's
+                # backbone spring and the head-actin bond bear the load in
+                # series, so the motor stalls when the ROD-frame load (not the
+                # full bond-frame tension) reaches F_stall. min(s, r) bounds the
+                # carried stretch by the physical bond length.
+                k_series = 1.0 / (
+                    1.0 / self.p.k_head_actin + 1.0 / self.p.k_head_spring
                 )
+                F_series = k_series * np.clip(np.minimum(s, r), 0.0, None)
+                # ---- CH2(i)+(ii): sign the load by the rod-frame projection ----
+                # Per engaged row: recompute û (backbone end-to-end, per tick),
+                # the minus-end-ward tangent t̂ = bead_{j−1}−bead_j, and the
+                # spring-force direction ĝ = unit(bead − head). The Hill load
+                # sign is the INTRINSIC stretch-growth criterion (ĝ·t̂): stepping
+                # one bead minus-ward changes the separation vector by +t̂_vec, so
+                # |r| GROWS iff (bead−head)·t̂ > 0 ⇔ ĝ·t̂ > 0. A growing stretch is
+                # a CONTRACTILE (resisting) load → +ve → Hill slows toward stall;
+                # a shrinking stretch is ASSISTING → −ve → Hill runs faster. This
+                # is intrinsically side-correct for the bipolar pair (each head
+                # slows when ITS OWN walking builds tension), so it needs no
+                # explicit (−1)^side flip; û is recomputed (CH2(ii)) and used to
+                # report the rod-frame polarity for the bipolar dipole bookkeeping
+                # below.
+                H = self.p.n_heads_per_side
+                N = self.p.n_backbone
+                per_motor = self.p.n_particles_per_motor
+                mt0 = self.layout.motor_tag_start
+                nrow = attach_bonds.shape[0]
+                load_sign = np.ones(nrow, dtype=np.float64)
+                for row in range(nrow):
+                    h = int(head_locals[row])
+                    motor_idx = h // (2 * H)
+                    # CH2(ii): recompute û from the two backbone end beads each
+                    # tick (frozen layout.axes would build an expandile dipole
+                    # after a >90° rod reorientation). u_vec retained for the
+                    # rod-frame polarity report; the LOAD sign uses ĝ·t̂.
+                    tag_b0 = mt0 + motor_idx * per_motor + 0
+                    tag_bN = mt0 + motor_idx * per_motor + (N - 1)
+                    u_vec = pos[tag_bN] - pos[tag_b0]
+                    u_n = float(np.linalg.norm(u_vec))
+                    fil = int(self._head_bound_filament[h])
+                    pos_j = int(self._head_bound_bead_pos[h])
+                    # Minus-end-ward tangent t̂ (Option A: minus = bead 0).
+                    if pos_j > 0:
+                        t_vec = (pos[self._bead_tag(fil, pos_j - 1)]
+                                 - pos[self._bead_tag(fil, pos_j)])
+                    elif self._cortex_beads_per_filament > 1:
+                        t_vec = (pos[self._bead_tag(fil, 0)]
+                                 - pos[self._bead_tag(fil, 1)])
+                    else:
+                        load_sign[row] = 1.0
+                        continue
+                    t_n = float(np.linalg.norm(t_vec))
+                    # Spring-force direction on the head: toward the bound bead.
+                    head_tag = int(head_tags[row])
+                    bead_tag = int(attach_bonds[row, 1])
+                    g_vec = pos[bead_tag] - pos[head_tag]
+                    g_n = float(np.linalg.norm(g_vec))
+                    if t_n <= 0.0 or g_n <= 0.0:
+                        load_sign[row] = 1.0
+                        continue
+                    load_sign[row] = float((g_vec / g_n) @ (t_vec / t_n))
+                F_load = load_sign * F_series
                 v_step = hill_velocity_clamped(
-                    F_mag, v0=self.p.v0_per_head,
+                    F_load, v0=self.p.v0_per_head,
                     F_stall=self.p.F_stall_per_head,
                     a_over_F_stall=self.p.a_over_F_stall,
                 )
                 s_new = s + v_step * self.p.batch_dt          # pos_a_end advance
+                # CH2: raise the s_grip overflow cap from ℓ₀ to 2·ℓ₀ so the
+                # series ceiling can reach F_stall (k_series·2ℓ₀ = F_stall).
+                s_cap = 2.0 * ell0
                 # Per-head overflow → minus-ward re-target (with the shared
                 # degree budget re-checked AT WALK TIME, not just bind time).
-                for row in range(attach_bonds.shape[0]):
+                for row in range(nrow):
                     h = int(head_locals[row])
                     s_h = float(s_new[row])
                     if s_h < ell0:
-                        self._head_grip_s[h] = s_h
+                        self._head_grip_s[h] = max(0.0, s_h)
                         continue
                     fil = int(self._head_bound_filament[h])
                     pos_j = int(self._head_bound_bead_pos[h])
                     while s_h >= ell0:
                         if pos_j <= 0:
-                            # AFINES minus-end latch: dwell, hold max sub-bead
-                            # stretch (just under ℓ₀), keep pulling.
-                            s_h = ell0 * (1.0 - 1e-9)
+                            # AFINES minus-end latch: dwell, hold the max
+                            # sub-bead stretch (just under the 2ℓ₀ cap), keep
+                            # pulling — the series ceiling k_series·2ℓ₀ = F_stall
+                            # stalls the head cleanly.
+                            s_h = min(s_h, s_cap * (1.0 - 1e-9))
                             break
                         new_j = self._walk_toward_minus(pos_j, 1)
                         new_tag = self._bead_tag(fil, new_j)
@@ -1263,7 +1368,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
                                 >= _MAX_CORTEX_BEAD_DEGREE):
                             # Downstream bead full → defer the walk (clean
                             # stall), hold just under overflow, retry next tick.
-                            s_h = ell0 * (1.0 - 1e-9)
+                            s_h = min(s_h, s_cap * (1.0 - 1e-9))
                             break
                         old_tag = self._bead_tag(fil, pos_j)
                         _cortex_bead_degree[old_tag] = max(
@@ -1277,18 +1382,10 @@ class MyosinStepUpdater(hoomd.custom.Action):
                         self._head_bound_bead_pos[h] = pos_j
                         self._n_step_advances_total += 1
                     self._head_grip_s[h] = s_h
-                # Requantize r0_eff into the bin coordinate (HOOMD Harmonic
-                # carries r0 per bond TYPE → pick the bin whose r0 ≈ the
-                # commanded rest length). Recompute r at the (possibly
-                # re-targeted) bead.
-                r2 = np.linalg.norm(
-                    pos[head_tags] - pos[attach_bonds[:, 1]], axis=1
-                )
-                r0_eff = np.clip(r2 - self._head_grip_s[head_locals], 0.0, None)
-                bond_bins = np.clip(
-                    np.round(r0_eff / bin_width).astype(np.int64),
-                    0, self.p.n_bins - 1,
-                )
+                # CH1: NO requantization of r0_eff. The grip_walk attach bond
+                # TYPES carry r0 ≈ 0 (wired at registration), so F = k·r is
+                # delivered straight from the head-to-bead geometry; bond_bins
+                # is left as-is (its only role is to label a valid attach type).
 
         # ---- Rebuild bonds.group + bonds.typeid + write_snap ----
         attach_typeids = (
