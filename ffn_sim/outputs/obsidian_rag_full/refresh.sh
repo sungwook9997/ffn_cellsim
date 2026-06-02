@@ -17,11 +17,14 @@ fi
 source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null || true
 conda activate ffn_sim 2>/dev/null || true
 
-echo "[1/2] Notion -> vault (claims, papers, params, gates, contracts, relations)"
+echo "[1/3] Notion -> vault (claims, papers, params, gates, contracts, relations)"
 python notion_to_obsidian.py
 
-echo "[2/2] repo -> code/test/doc nodes linked to KB claims"
+echo "[2/3] repo -> code/test/doc nodes linked to KB claims"
 python add_code_nodes.py
+
+echo "[3/3] Notion Dev Logs board -> day-log nodes cross-linked into the graph"
+python devlogs_to_obsidian.py
 
 echo "done. vault = $(pwd)/vault"
 if [ "${1:-}" = "--open" ]; then
