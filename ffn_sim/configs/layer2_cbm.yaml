@@ -44,6 +44,16 @@ spheroid:
   dynamics:
     integrator: leimkuhler_matthews_baoab   # reuse ffn_sim.integrator.baoab (CPU)
     cfl_safety_factor: 0.1                   # dt = safety · γ/k_spring (overdamped relax)
+    # Per-cell MIGRATION drag γ = adhesion-limited motor-clutch friction (NOT water-Stokes
+    # 6πηR ≈ 9.8e-8, which is ~6.5 OOM too small for crawling — a nN traction → mm/s).
+    # γ = n_eng·κ/k_off, n_eng = N·k_on/(k_on+k_off); KU-2.18 (Bangasser 2013), the single-
+    # cell clutch the project already holds (scale-bridge). = 37.5·8e-4/0.1 = 0.30 N·s/m.
+    # Cross-validated: MCF7 0.2-0.5 µm/min under nN traction → ~0.3 N·s/m (Maiuri PMC4245034,
+    # SICM-TFM PMC8697701). At γ=0.3, 1 nN → v=0.2 µm/min (slow epithelial MCF7).
+    clutch_n: 50                # KU-2.18 clutches per adhesion module (Bangasser 2013)
+    clutch_k_on: 0.3            # s⁻¹  KU-2.18
+    clutch_k_off: 0.1           # s⁻¹  KU-2.18
+    clutch_stiffness: 8.0e-4    # N/m  (0.8 pN/nm) KU-2.18
 
   # ---- Derived (filled by resolve_layer2; do NOT edit by hand) ----
   derived:
@@ -52,5 +62,5 @@ spheroid:
     morse_r0: null          # [m]    = diameter
     morse_alpha: null       # [1/m]  = 1/contact_zone_width
     morse_k_spring: null    # [N/m]  = 2·D_e·alpha²
-    gamma_cell: null        # [N·s/m]= 6π·η·R_cell
+    gamma_cell: null        # [N·s/m]= n_eng·κ/k_off (clutch migration drag, ≈0.30)
     dt_cfl: null            # [s]    = safety·γ/k_spring

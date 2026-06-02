@@ -58,11 +58,15 @@ def test_morse_spring_constant_is_curvature_at_minimum(resolved):
     assert resolved.morse_k_spring == pytest.approx(expected)
 
 
-def test_per_cell_stokes_drag(resolved):
-    """gamma = 6π η R_cell (KU-1.26), matching the single-cell BAOAB drag form."""
-    expected = 6.0 * math.pi * resolved.water_viscosity * resolved.R_cell
-    assert resolved.gamma_cell == pytest.approx(expected)
-    assert resolved.gamma_cell == pytest.approx(9.77e-8, rel=1e-2)
+def test_per_cell_migration_drag_from_clutch(resolved):
+    """gamma = n_eng·kappa/k_off (clutch-ensemble MIGRATION drag, KU-2.18) ~ 0.3 N·s/m.
+
+    RETIRES water-Stokes (~1e-7, ~6.5 OOM too small for crawling). Sanity: a 1 nN net
+    traction => v = F/gamma ~ µm/min (slow epithelial MCF7), not mm/s.
+    """
+    assert resolved.gamma_cell == pytest.approx(0.30, rel=0.05)
+    v_at_1nn = 1e-9 / resolved.gamma_cell  # m/s
+    assert 1e-9 < v_at_1nn < 1e-7  # ~0.06-6 µm/min, physical (not mm/s)
 
 
 def test_cfl_timestep_positive_and_overdamped(resolved):

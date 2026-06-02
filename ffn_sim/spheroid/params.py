@@ -27,8 +27,13 @@ COMPUTED from primaries (never hand-set):
   PNAS, deferred to the L2.5 KU-4.2 upgrade). The measured work-of-de-adhesion (~200 fJ)
   is a scale cross-check; it exceeds 2*F_detach*contact_zone because SCFS work integrates
   membrane-tether pulling beyond the CBM contact range (~µm).
-- ``gamma_cell = 6*pi*eta*R_cell`` -- per-cell Stokes drag (KU-1.26), DERIVED; matches the
-  single-cell BAOAB drag form (``cell/dt_reconcile.py``).
+- ``gamma_cell = n_eng * kappa_clutch / k_off`` (n_eng = N_clutch * k_on/(k_on+k_off)) --
+  per-cell MIGRATION drag = adhesion-limited motor-clutch friction, DERIVED from the
+  single-cell clutch ensemble (scale-bridge from Layer-1; KU-2.18 Bangasser 2013). This
+  RETIRES the water-Stokes 6*pi*eta*R (~9.8e-8 N·s/m), which is ~6.5 orders too small for
+  crawling (a nN traction would give an unphysical mm/s). Cross-validated against measured
+  MCF7 motility (0.2-0.5 um/min under nN traction => ~0.3 N·s/m; Maiuri PMC4245034,
+  SICM-TFM PMC8697701). At gamma=0.3, a 1 nN net traction gives v=0.2 um/min (slow epithelial).
 - ``morse_r0 = diameter`` -- two R_cell spheres touch (surfaces) at center-to-center 2R.
 - ``morse_alpha = 1/contact_zone_width`` -- inverse adhesive range; contact_zone_width is a
   geometric modeling choice (~10% of diameter), not a literature constant.
@@ -115,6 +120,10 @@ def resolve_layer2(cfg: dict) -> ResolvedL2:
         "adhesion.contact_zone_width", float(adh["contact_zone_width"])
     )
     safety = _require_positive("dynamics.cfl_safety_factor", float(dyn["cfl_safety_factor"]))
+    clutch_n = _require_positive("dynamics.clutch_n", float(dyn["clutch_n"]))
+    clutch_k_on = _require_positive("dynamics.clutch_k_on", float(dyn["clutch_k_on"]))
+    clutch_k_off = _require_positive("dynamics.clutch_k_off", float(dyn["clutch_k_off"]))
+    clutch_kappa = _require_positive("dynamics.clutch_stiffness", float(dyn["clutch_stiffness"]))
 
     # ---- derivations ----
     R_cell = diameter / 2.0
@@ -125,7 +134,10 @@ def resolve_layer2(cfg: dict) -> ResolvedL2:
     # N_cad·<F>·x_beta seed (was ~4 OOM too small).
     D_e = 2.0 * f_detach * contact_zone
     morse_k_spring = 2.0 * D_e * morse_alpha * morse_alpha   # Morse curvature at min
-    gamma_cell = 6.0 * math.pi * eta * R_cell        # Stokes drag, KU-1.26
+    # Per-cell migration drag = motor-clutch ensemble friction (KU-2.18 scale-bridge),
+    # NOT water-Stokes (~6.5 OOM too small for crawling). gamma = n_eng * kappa / k_off.
+    n_eng = clutch_n * clutch_k_on / (clutch_k_on + clutch_k_off)
+    gamma_cell = n_eng * clutch_kappa / clutch_k_off
     dt_cfl = safety * gamma_cell / morse_k_spring    # overdamped relaxation CFL
 
     for name, val in [

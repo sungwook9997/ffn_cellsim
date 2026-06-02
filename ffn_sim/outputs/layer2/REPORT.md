@@ -46,11 +46,20 @@ multicellular aggregate — the Layer-2 line now simulates.
 
 ## Figures
 
+Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
+each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
+
 - `figs/fig_layer2_g1_stable_aggregate.png` — G1 result. **Left**: initial loose blob
   (1.1·r₀ jittered cubic lattice). **Middle**: settled aggregate (lattice → disordered
   cohesive packing, slightly compacted). **Right**: nearest-neighbour-distance histogram
   with the r₀=15 µm rest separation overlaid (median/r₀ = 0.981). No axis truncation; SI
   (µm) units; reference line shown.
+- `figs/fig_layer2_l2_2_motility_mechanism.png` — L2.2 motility mechanism. **Top**: settled
+  aggregate (f_active=0) vs under active traction (6 nN). **Bottom**: A/A₀ and detached
+  fraction vs active traction, with the measured cohesion/detachment force (6.5 nN, Iturri
+  2020) overlaid. Honest mechanism check: with the corrected nN cohesion, MCF7 is
+  appropriately cohesive — sub-detachment traction does not shred it (detached=0). The
+  quantitative active-wetting A/A₀(R) sweep awaits the per-cell migration-drag anchor.
 
 ## Verification
 
