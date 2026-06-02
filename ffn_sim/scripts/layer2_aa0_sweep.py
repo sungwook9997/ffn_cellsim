@@ -33,23 +33,30 @@ def main(argv: list[str] | None = None) -> int:
     resolved = resolve_layer2(yaml.safe_load(_CFG.read_text()))
     g3 = yaml.safe_load(_OCFG.read_text())["spheroid"]["acceptance"]["g3"]
 
-    n_list = [60, 120, 250, 450, 700]
-    f_tr, Lp = 6.0e-9, 11.0e-6  # near (below) the 6.5 nN cohesion; edge screening 11 µm
+    n_list = [60, 120, 250, 450, 650]
+    n_seeds = 8
+    # f_traction kept safely below the 6.5 nN cohesion (further from the detachment threshold
+    # = stable spreading, lower realization variance); ensemble-averaged over n_seeds.
+    f_tr, Lp = 5.0e-9, 11.0e-6
     print(f"[sweep] f_traction={f_tr*1e9:.1f} nN, Lp={Lp*1e6:.0f} µm, cohesion="
-          f"{resolved.D_e*resolved.morse_alpha/2*1e9:.1f} nN")
+          f"{resolved.D_e*resolved.morse_alpha/2*1e9:.1f} nN, n_seeds={n_seeds}")
 
-    R0s, AA0s, dets = [], [], []
+    R0s, AA0m, AA0e, dets = [], [], [], []
     for n in n_list:
-        res = run_edge_spreading(
-            resolved, n_cells=n, f_traction=f_tr, Lp=Lp,
-            settle_steps=2_000, spread_steps=16_000, recompute_every=500,
-        )
-        R0 = effective_radius(res["a0"])
-        AA0 = float(res["area_over_a0"][-1])
-        R0s.append(R0); AA0s.append(AA0); dets.append(res["detached_fraction_final"])
-        print(f"  N={n:4d}  R0={R0*1e6:6.1f} µm  A/A0={AA0:.4f}  detached={res['detached_fraction_final']:.4f}")
+        r0r, aar, detr = [], [], []
+        for s in range(n_seeds):
+            res = run_edge_spreading(
+                resolved, n_cells=n, f_traction=f_tr, Lp=Lp,
+                settle_steps=1_500, spread_steps=8_000, recompute_every=400, seed=1000 + s,
+            )
+            r0r.append(effective_radius(res["a0"]))
+            aar.append(float(res["area_over_a0"][-1]))
+            detr.append(res["detached_fraction_final"])
+        R0i, m, e = float(np.mean(r0r)), float(np.mean(aar)), float(np.std(aar))
+        R0s.append(R0i); AA0m.append(m); AA0e.append(e); dets.append(max(detr))
+        print(f"  N={n:4d}  R0={R0i*1e6:6.1f} µm  A/A0={m:.4f}±{e:.4f}  detached={max(detr):.4f}")
 
-    R0 = np.array(R0s); AA0 = np.array(AA0s)
+    R0 = np.array(R0s); AA0 = np.array(AA0m); AA0err = np.array(AA0e)
     fit = fit_aa0(R0, AA0)
     a, b, c, r2 = fit["a"], fit["b"], fit["c"], fit["r_squared"]
     print(f"\n[fit] A/A0 = {a:.4f} + ({b*1e6:.4f} µm)/R + ({c*1e12:.4f} µm²)/R²   r²={r2:.3f}")
@@ -63,13 +70,13 @@ def main(argv: list[str] | None = None) -> int:
           f"({'measurable' if signal > 0.02 else 'SMALL — needs longer runs / ensemble avg'})")
 
     try:
-        _make_figure(R0, AA0, dets, fit, f_tr, signal)
+        _make_figure(R0, AA0, AA0err, fit, f_tr, signal)
     except Exception as exc:
         print(f"[viz] skipped figure: {exc}")
     return 0 if (ok_r2 and ok_n) else 1
 
 
-def _make_figure(R0, AA0, dets, fit, f_tr, signal) -> None:
+def _make_figure(R0, AA0, AA0err, fit, f_tr, signal) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -78,7 +85,8 @@ def _make_figure(R0, AA0, dets, fit, f_tr, signal) -> None:
     _FIG_DIR.mkdir(parents=True, exist_ok=True)
     Rg = np.linspace(R0.min() * 0.9, R0.max() * 1.05, 200)
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
-    ax.scatter(R0 * 1e6, AA0, s=70, color="steelblue", zorder=3, label="CBM (emergent)")
+    ax.errorbar(R0 * 1e6, AA0, yerr=AA0err, fmt="o", ms=8, color="steelblue", capsize=4,
+                zorder=3, label="CBM (mean ± sd, ensemble)")
     ax.plot(Rg * 1e6, aa0_model(Rg, fit["a"], fit["b"], fit["c"]), "-", color="crimson",
             label=f"fit a+b/R+c/R²  (r²={fit['r_squared']:.3f})")
     ax.axhline(fit["a"], color="gray", ls=":", lw=1, label=f"a (baseline) = {fit['a']:.3f}")

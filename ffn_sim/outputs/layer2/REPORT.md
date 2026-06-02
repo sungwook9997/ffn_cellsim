@@ -59,14 +59,17 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   fraction vs active traction, with the measured cohesion/detachment force (6.5 nN, Iturri
   2020) overlaid. Honest: isotropic self-propulsion does NOT spread a cohesive cluster — the
   spreading driver is edge-directed traction (active wetting), built in L2.3.
-- `figs/fig_layer2_aa0_law.png` — **L2.3 first emergent A/A₀(R₀) spreading law.** Edge-directed
-  active-wetting traction (6 nN, Lp=11 µm) vs cohesion (6.5 nN), swept over initial radius
-  R₀=29–78 µm. The CBM produces a measurable (Δ≈7.6%), non-monotonic A/A₀(R₀) — small clusters
-  (high edge fraction) and intermediate sizes spread, large cohesion-dominated ones do not —
-  fittable to the PI's a + b/R + c/R² form (peak ≈42 µm; r²=0.67 single-seed). This is the
-  first quantitative contact with the experiment's collective term. G3-clean (r²≥0.95) needs
-  ensemble averaging (multiple seeds/R₀) to suppress single-realization noise. PI A/A₀ values
-  are overlay-only at comparison time (not shown — we hold only the functional form).
+- `figs/fig_layer2_aa0_law.png` — **L2.3 emergent A/A₀(R₀), ensemble-averaged (8 seeds/R₀).**
+  Edge-directed active-wetting traction (5 nN, Lp=11 µm) vs measured cohesion (6.5 nN), swept
+  over R₀=29–76 µm. **Honest finding:** at the measured MCF7 scales the minimal CBM
+  (cohesion + edge-traction) is **cohesion-locked** — A/A₀ ≈ 1.0 ± 0.02 at most sizes (MCF7 is
+  low-invasion, barely spreads), with a size-specific fragmentation instability near R₀≈40 µm
+  (high variance). The smooth PI law a + b/R + c/R² does **NOT** cleanly emerge from the
+  minimal model (fit r²≈0.5). Regime sweeps (traction 5–6 nN, 3–8 seeds) do not change this —
+  it is a model-limit finding, not a tuning miss: reproducing the experiment's spreading law
+  needs ADDITIONAL mechanism (proliferation / longer biological timescale / the ligand
+  conditions the experiment varies), the next research direction. The full L2.3 machinery
+  (ensemble R₀-sweep → fit → error-bar figure) is in place for that. PI A/A₀ is overlay-only.
 
 ## Verification
 

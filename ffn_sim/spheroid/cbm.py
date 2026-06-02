@@ -97,6 +97,7 @@ def build_cbm_simulation(
     init_spacing_factor: float = 1.1,
     box_margin_ranges: float = 2.0,
     rng: np.random.Generator | None = None,
+    seed: int | None = None,
 ) -> tuple[hoomd.Simulation, Any, Any, float]:
     """Construct and wire a HOOMD center-based spheroid simulation.
 
@@ -117,7 +118,8 @@ def build_cbm_simulation(
     """
     if init_spacing_factor < 1.0:
         raise ValueError("init_spacing_factor must be >= 1 (else cells start overlapping).")
-    rng = rng if rng is not None else np.random.default_rng(resolved.seed)
+    seed = resolved.seed if seed is None else int(seed)  # realization key (ensemble)
+    rng = rng if rng is not None else np.random.default_rng(seed)
 
     r_cut = resolved.morse_r0 + _CUTOFF_N_RANGES / resolved.morse_alpha
     pos = make_blob_positions(
@@ -134,7 +136,7 @@ def build_cbm_simulation(
     snap.particles.mass = np.ones(n_cells, dtype=np.float64)
     snap.configuration.box = [L, L, L, 0.0, 0.0, 0.0]
 
-    sim = hoomd.Simulation(device=device or hoomd.device.CPU(), seed=resolved.seed)
+    sim = hoomd.Simulation(device=device or hoomd.device.CPU(), seed=seed)
     sim.create_state_from_snapshot(snap)
 
     nlist = md.nlist.Tree(buffer=resolved.contact_zone_width)
@@ -153,7 +155,7 @@ def build_cbm_simulation(
         kT=resolved.kT,
         gamma={"cell": resolved.gamma_cell},
         dt=resolved.dt_cfl,
-        seed=resolved.seed,
+        seed=seed,
     )
     sim.operations.updaters.append(updater)
     return sim, action, updater, r_cut

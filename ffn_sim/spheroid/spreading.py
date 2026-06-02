@@ -147,9 +147,10 @@ def run_edge_spreading(
     spread_steps: int = 20_000,
     recompute_every: int = 500,
     device: hoomd.device.Device | None = None,
+    seed: int | None = None,
 ) -> dict[str, Any]:
     """Active-wetting spreading: edge-localized outward traction vs cohesion. Returns A(t)."""
-    sim, _a, _u, r_cut = build_cbm_simulation(resolved, n_cells, device=device)
+    sim, _a, _u, r_cut = build_cbm_simulation(resolved, n_cells, device=device, seed=seed)
     sim.operations.tuners.clear()
     edge = SettableForce(n_cells)
     sim.operations.integrator.forces.append(edge)
