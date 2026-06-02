@@ -533,6 +533,26 @@ def generate_cortex_myosin_layout(
         axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
         lateral = normals  # legacy: heads offset RADIALLY (the binding bug)
 
+    # DIAGNOSTIC (γ-flat root-cause, 2026-06-02; env-gated, default OFF so the
+    # physical random/filament-tangent orientation is unchanged): override the
+    # minifilament axes with a COHERENT global meridional director field (the
+    # projection of +z onto each tangent plane) instead of the
+    # isotropic/filament-tangent orientation. Tests whether force ISOTROPY is the
+    # cortical-tension wall — aligned bipolar motors sum into net great-circle
+    # tension, isotropic ones cancel. NOT a physical claim that cortex myosin is
+    # globally aligned; a probe to separate isotropy from transmission loss.
+    import os
+    if os.environ.get("FFN_MYOSIN_ALIGN") == "meridional":
+        zg = np.array([0.0, 0.0, 1.0])
+        proj = zg[None, :] - (normals @ zg)[:, None] * normals
+        nrm = np.linalg.norm(proj, axis=1, keepdims=True)
+        e1_pole = _tangent_plane_basis(normals)[0]
+        bad = nrm[:, 0] < 1e-6                              # near the poles
+        axes = np.where(bad[:, None], e1_pole, proj / nrm.clip(min=1e-30))
+        axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
+        lateral = np.cross(normals, axes)
+        lateral = lateral / np.linalg.norm(lateral, axis=1, keepdims=True).clip(min=1e-30)
+
     positions = np.empty((M, N + 2 * H, 3), dtype=np.float64)
     # Backbone bead offsets along axis: i − (N−1)/2, scaled by seg.
     backbone_offsets = (np.arange(N, dtype=np.float64) - 0.5 * (N - 1)) * seg
