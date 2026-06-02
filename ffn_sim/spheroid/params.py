@@ -52,7 +52,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-__all__ = ["ResolvedL2", "resolve_layer2"]
+__all__ = ["ResolvedL2", "resolve_layer2", "ResolvedProliferation", "resolve_proliferation"]
 
 
 @dataclass(frozen=True)
@@ -78,6 +78,75 @@ class ResolvedL2:
     morse_k_spring: float       # N/m = 2·D_e·alpha²  (curvature at minimum)
     gamma_cell: float           # N·s/m = 6π·η·R_cell
     dt_cfl: float               # s  = safety·gamma/k_spring
+
+
+@dataclass(frozen=True)
+class ResolvedProliferation:
+    """Resolved Layer-2 contact-inhibited proliferation parameters (L2.4).
+
+    Kept SEPARATE from ``ResolvedL2`` so the G1/G3 parameter contract (and its tests) is
+    unchanged: proliferation is an additive mechanism layer, resolved on demand.
+    """
+
+    cycle_time_mean: float      # s   uncrowded MCF7 doubling (BNID 100685)
+    cycle_time_cv: float        # –   per-cell cycle-time CV (modeling choice)
+    kissing_number: int         # –   3D sphere kissing number Z=12 (geometric)
+    shell_factor: float         # –   first-shell cutoff in units of r0 (geometric)
+    split_factor: float         # –   daughter separation in units of r0
+    # derived (need r0 from ResolvedL2 → resolved against it)
+    shell_cutoff: float         # m   = shell_factor · morse_r0
+    split_distance: float       # m   = split_factor · morse_r0
+    min_gap: float              # m   free-space threshold = morse_r0 − contact_zone_width
+                                #     (Morse repulsive-core onset; the Drasdo-Höhme room test)
+
+
+def resolve_proliferation(cfg: dict, resolved: "ResolvedL2") -> ResolvedProliferation:
+    """Resolve the ``spheroid.proliferation`` block against an already-resolved ``ResolvedL2``.
+
+    Args:
+        cfg: parsed YAML dict containing ``spheroid.proliferation``.
+        resolved: the resolved CBM parameters (supplies ``morse_r0`` for the length derivations).
+
+    Returns:
+        ``ResolvedProliferation`` with the two length scales (shell cutoff, daughter split)
+        derived from ``morse_r0``.
+
+    Raises:
+        KeyError: if a required key is missing.
+        ValueError: if any value is out of its valid range.
+    """
+    p = cfg["spheroid"]["proliferation"]
+    cycle_mean = _require_positive("proliferation.cycle_time_mean", float(p["cycle_time_mean"]))
+    cycle_cv = float(p["cycle_time_cv"])
+    if not (0.0 <= cycle_cv < 1.0):
+        raise ValueError(f"proliferation.cycle_time_cv must be in [0, 1); got {cycle_cv!r}.")
+    z = int(p["kissing_number"])
+    if z < 1:
+        raise ValueError(f"proliferation.kissing_number must be >= 1; got {z!r}.")
+    shell_factor = _require_positive("proliferation.shell_factor", float(p["shell_factor"]))
+    if shell_factor < 1.0:
+        raise ValueError(
+            f"proliferation.shell_factor must be >= 1 (>= rest separation); got {shell_factor!r}."
+        )
+    split_factor = _require_positive("proliferation.split_factor", float(p["split_factor"]))
+
+    # Free-space (room) threshold = Morse repulsive-core onset, one contact-zone inside the
+    # rest separation. DERIVED from the pair potential, not tuned. Must stay positive.
+    min_gap = _require_positive(
+        "proliferation.min_gap (= morse_r0 − contact_zone_width)",
+        resolved.morse_r0 - resolved.contact_zone_width,
+    )
+
+    return ResolvedProliferation(
+        cycle_time_mean=cycle_mean,
+        cycle_time_cv=cycle_cv,
+        kissing_number=z,
+        shell_factor=shell_factor,
+        split_factor=split_factor,
+        shell_cutoff=shell_factor * resolved.morse_r0,
+        split_distance=split_factor * resolved.morse_r0,
+        min_gap=min_gap,
+    )
 
 
 def _require_positive(name: str, value: float) -> float:

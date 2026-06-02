@@ -37,6 +37,26 @@ spheroid:
       aa0_fit_r_squared_min: 0.95         # the novel form must fit the emergent curve
       n_radii_min: 5                      # >= 5 distinct R0 to constrain (a,b,c) + dof
 
+    # ---- G4 contact-inhibited proliferation gate (phase L2.4) ----
+    # Proliferation is the size-dependent spreading driver the minimal (cohesion-locked) CBM
+    # lacks. The mechanism is validated by STRUCTURE, not a tuned amount: (a) division must
+    # be RIM-localised — a buried bulk cell (first shell ≈ kissing number) is contact-
+    # inhibited, so the fraction of divisions occurring at above-median radial position must
+    # be high; (b) the dilute limit (an isolated cell, no neighbours) must double every cycle
+    # (exponential), confirming the timer; (c) a populated aggregate must grow SUB-
+    # exponentially (surface-limited), the signature that the bulk is inhibited. Bands are
+    # ratios / fractions (invariant to D_e magnitude), written before the run.
+    g4:
+      # ≥ this fraction of divisions happen on the rim (radial >= population median). A
+      # purely surface-limited divider → 1.0; we allow slack for thermal rim roughness.
+      rim_division_fraction_min: 0.70
+      # dilute-limit doubling: an isolated cell over n cycles must reach ~2^n (allow a
+      # ±1-cycle timing/CV tolerance band on the count).
+      dilute_doubling_rel_tol: 0.25
+      # populated growth must be SUB-exponential: realised growth factor over the run must be
+      # strictly below the contact-inhibition-free exponential 2^(t/τ) (bulk is quiescent).
+      subexponential: true
+
     # ---- G5 cadherin catch-bond gate (phase L2.5, mechanistic upgrade) ----
     # When the static Morse well is replaced by the KU-4.2 force-dependent bond, the
     # contact-angle (Young) oracle and the emergent MCF7>MDA de-adhesion ranking validate.

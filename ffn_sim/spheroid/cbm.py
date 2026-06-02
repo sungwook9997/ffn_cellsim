@@ -98,17 +98,24 @@ def build_cbm_simulation(
     box_margin_ranges: float = 2.0,
     rng: np.random.Generator | None = None,
     seed: int | None = None,
+    positions: npt.NDArray[np.float64] | None = None,
 ) -> tuple[hoomd.Simulation, Any, Any, float]:
     """Construct and wire a HOOMD center-based spheroid simulation.
 
     Args:
         resolved: fully-resolved Layer-2 parameters (``resolve_layer2``).
-        n_cells: number of cells (1 particle each).
+        n_cells: number of cells (1 particle each). Ignored when ``positions`` is given
+            (the count is taken from ``positions``).
         device: HOOMD device (defaults to CPU).
         init_spacing_factor: initial lattice spacing as a multiple of r0 (>= 1 keeps the
             seed in the attractive branch; default 1.1 = slightly loose, adhesion settles).
         box_margin_ranges: extra box half-margin in units of r_cut beyond the blob extent.
         rng: optional numpy Generator (defaults to one seeded by ``resolved.seed``).
+        positions: optional explicit (N, 3) cell centers (metres). When given, the blob
+            generator is bypassed and these centers are used verbatim (centered on their
+            centroid) — the entry point the proliferation epoch loop uses to re-seed a
+            grown population into a fresh HOOMD state. Must already be in the attractive
+            branch (centre separations >= r0) to keep the timestep stable.
 
     Returns:
         ``(sim, baoab_action, baoab_updater, r_cut)``.
@@ -122,9 +129,16 @@ def build_cbm_simulation(
     rng = rng if rng is not None else np.random.default_rng(seed)
 
     r_cut = resolved.morse_r0 + _CUTOFF_N_RANGES / resolved.morse_alpha
-    pos = make_blob_positions(
-        n_cells, resolved.morse_r0 * init_spacing_factor, rng=rng
-    )
+    if positions is not None:
+        pos = np.asarray(positions, dtype=np.float64)
+        if pos.ndim != 2 or pos.shape[1] != 3 or pos.shape[0] < 1:
+            raise ValueError("positions must be a non-empty (N, 3) array.")
+        pos = pos - pos.mean(axis=0)
+        n_cells = pos.shape[0]
+    else:
+        pos = make_blob_positions(
+            n_cells, resolved.morse_r0 * init_spacing_factor, rng=rng
+        )
     extent = float(np.linalg.norm(pos, axis=1).max())
     L = 2.0 * extent + 2.0 * box_margin_ranges * r_cut + resolved.morse_r0
 

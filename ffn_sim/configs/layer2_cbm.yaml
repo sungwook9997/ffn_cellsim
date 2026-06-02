@@ -55,6 +55,47 @@ spheroid:
     clutch_k_off: 0.1           # s⁻¹  KU-2.18
     clutch_stiffness: 8.0e-4    # N/m  (0.8 pN/nm) KU-2.18
 
+  # ---- Cell proliferation (L2.4: contact-inhibited division) ----
+  # The minimal CBM (cohesion + edge-traction) is COHESION-LOCKED → A/A0 ≈ 1 and the PI law
+  # A/A0 = a + b/R + c/R² does NOT emerge (a model-limit finding, not a tuning miss — L2.3
+  # REPORT). The experiment runs over days; spreading is partly proliferation-driven. This
+  # block adds MECHANISTIC contact-inhibited proliferation: a cell divides when its cell-cycle
+  # timer elapses AND it sits on a free surface (not fully coordinated). Bulk cells are
+  # contact-inhibited (quiescent) ⇒ a proliferating RIM of ~constant thickness ⇒ the
+  # proliferating fraction ∝ surface/volume ∝ 1/R — the geometric origin of the law's 1/R,
+  # 1/R² terms (EMERGENT, never hard-coded).
+  proliferation:
+    # Uncrowded MCF7 cell-cycle (population doubling) time. MCF7 doubling is density-dependent
+    # (~30 h dense → ~75 h sparse; range 20-48 h across studies — the density dependence is
+    # itself the contact-inhibition arm this block models mechanically). We anchor the
+    # UNCROWDED baseline to the dense-culture low end ~30 h and let CIP slow the crowded bulk.
+    # Source: BNID 100685 (cancerous-cell-line doubling); MCF7 30-40 h standard culture.
+    cycle_time_mean: 1.08e5     # s   (30 h uncrowded doubling, MCF7; BNID 100685)
+    # Cell-cycle length variability (CV) — desynchronizes divisions so growth is smooth, not
+    # in lockstep. A flagged MODELING CHOICE (typical mammalian intercell cycle-time CV
+    # ~0.1-0.3); 0.15 is mid-range. Not tuned to any gate.
+    cycle_time_cv: 0.15         # –   (Gaussian CV on per-cell cycle target; modeling choice)
+    # Contact-inhibition PRIMARY gate = the Drasdo-Höhme FREE-SPACE rule: a cell divides only
+    # if it can place a daughter (bud) at least one repulsive-core radius from EVERY existing
+    # cell — i.e. there is room. The room threshold is the Morse repulsive-core onset
+    # r0 − contact_zone_width ≈ 0.9·r0 (DERIVED from the pair potential, not tuned; α is so
+    # large that significant repulsion sets in one contact-zone inside r0). A buried bulk cell
+    # has no free face (measured free-gap ≈ 0.7·r0 in the settled liquid-like packing) ⇒
+    # quiescent; a rim cell (free-gap ≈ 1.3·r0) proliferates. This — NOT a neighbour count —
+    # is the operative discriminator (the settled bulk coordination is only ≈11, below Z, so a
+    # count threshold mis-classifies; the diagnostic is in the L2.4 REPORT).
+    # SECONDARY hard ceiling: a cell whose first shell reaches the 3D sphere kissing number Z
+    # (a pathologically dense spot) is also blocked. Z=12 is geometric (FCC/HCP/RCP), not tuned.
+    kissing_number: 12          # –   (secondary ceiling = 3D kissing number; geometric)
+    # First-coordination-shell cutoff = shell_factor · r0. Between the rest separation (1·r0)
+    # and the 2nd shell (FCC √2·r0 ≈ 1.41·r0; RCP ~1.3-1.4·r0). 1.25 captures the 1st shell
+    # only — a GEOMETRIC numerical-policy choice (like contact_zone_width / r_cut).
+    shell_factor: 1.25          # –   (first-shell cutoff in units of r0; geometric policy)
+    # Daughters are placed at parent ± (r0/2)·n̂ ⇒ born exactly at the rest separation r0
+    # (no repulsive-core blow-up, no gap), n̂ pointing into the least-crowded direction. COM-
+    # conserving. split_factor·r0 = daughter centre-to-centre; 1.0 = rest separation.
+    split_factor: 1.0           # –   (daughter separation in units of r0; = rest length)
+
   # ---- Derived (filled by resolve_layer2; do NOT edit by hand) ----
   derived:
     R_cell: null            # [m]    = diameter/2
