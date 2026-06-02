@@ -1,0 +1,39 @@
+{
+  "ku": "KU-3.B1.1",
+  "gate": "membrane_surface_tension",
+  "n_beads": 2000,
+  "R": 1e-05,
+  "gamma_mem_input": 0.0001,
+  "gamma_measured": 9.999998965251668e-05,
+  "gamma_measured_mNpm": 0.09999998965251668,
+  "band_Npm": [
+    3e-05,
+    0.0003
+  ],
+  "band_mNpm": [
+    0.030000000000000002,
+    0.3
+  ],
+  "in_band": true,
+  "dP_measured_Pa": 19.99999793093448,
+  "dP_analytic_Pa": 20.000000000431147,
+  "laplace_consistent": true,
+  "gamma_recovers_input": true,
+  "measurement": {
+    "gamma": 9.999998965251668e-05,
+    "dP": 19.99999793093448,
+    "R_mean": 9.999999999784428e-06,
+    "S": 1.256637061381738e-09,
+    "A_i": 6.283185306908691e-13,
+    "n_shell": 2000,
+    "f_in_mean": 1.2566369313785174e-11,
+    "f_in_std": 3.749589445092572e-27,
+    "f_in_min": 1.2566369313785166e-11,
+    "f_in_max": 1.2566369313785176e-11,
+    "force_last_tension": 9.999998965251665e-05,
+    "force_last_pressure": 19.999997930934477,
+    "force_last_R_mean": 9.999999999784428e-06,
+    "force_last_area": 1.256637061381738e-09
+  },
+  "PASS": true
+}

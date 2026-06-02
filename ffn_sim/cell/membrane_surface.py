@@ -58,19 +58,26 @@ measured γ by + γ_mem, making the reading composite. THIS MODULE DOES NOT CLAI
 KU-3.5 gate passes — it supplies the missing additive term; re-validation is a Lead
 integration step.
 
-Helfrich bending κ_m — documented TODO (NOT implemented here)
--------------------------------------------------------------
+Helfrich bending κ_m — Tier-A MEASUREMENT-ONLY (no runtime force)
+-----------------------------------------------------------------
 The Helfrich curvature-elastic energy ``U_bend = ½ κ_m ∮ (2H − c0)² dA`` requires a
 per-bead estimate of the local mean curvature ``H`` on an unstructured particle shell
-(no fixed mesh connectivity at this ×40 coarse scale). A defensible discrete mean-
-curvature operator (cotangent Laplacian / Meyer 2003, or a local quadric fit) is a
-non-trivial later refinement and is **deliberately deferred** to keep this first
-version correct-and-minimal (brief: "mean-curvature estimation on a particle shell is
-non-trivial"). What IS provided is the bending modulus as a literature-anchored
-constant and the **tether-force oracle** ``f_t = 2π √(2 κ_m (T_m + γ_MCA))`` (Hochmuth
-1996; Derényi 2002) as a TEST-ONLY closed form, used to sanity-check that the κ_m / T
-constants land the membrane tether force in the KU-3.B1 band 5–40 pN. κ_m enters NO
-runtime force in this version. See :func:`tether_force`.
+(no fixed mesh connectivity at this ×40 coarse scale). Per the staged design
+``docs/H8_HELFRICH_CURVATURE_DESIGN.md``, **Tier-A (measurement-only)** is now
+provided: a per-bead discrete mean-curvature operator by **local quadric fit**
+(:func:`discrete_mean_curvature`) plus the discrete Canham-Helfrich energy
+(:func:`helfrich_energy`) and a live-shell diagnostic
+(:meth:`MembraneSurfaceTension.measure_bending`). The decisive validation is the
+ANALYTIC SPHERE: a perfect sphere of radius ``R`` has uniform ``H = 1/R``, so
+``∮(2H)² dA → 16π`` and ``U_bend → 8π κ_m``, INDEPENDENT of ``R``
+(``tests/test_h8b1_*``). This measurement lets H.8 *report* the bending state with
+ZERO runtime risk. The **bending FORCE (Tier-B)** — penalising local curvature
+deviation from ``c0`` via a Laplace-Beltrami curvature normal — is a **later
+PI-gate** and is deliberately NOT added to the runtime here; ``κ_m`` enters NO runtime
+force in this version. The bending modulus is also a literature-anchored constant
+feeding the **tether-force oracle** ``f_t = 2π √(2 κ_m (T_m + γ_MCA))`` (Hochmuth
+1996; Derényi 2002), a TEST-ONLY closed form checking the κ_m / T constants land the
+membrane tether force in the KU-3.B1 band 5–40 pN. See :func:`tether_force`.
 
 Magic-Number Block — physical constants
 ----------------------------------------
@@ -199,12 +206,19 @@ DEFAULT_K_A: float = 0.24               # N/m   area-expansion modulus
 LYSIS_TENSION_BAND: tuple[float, float] = (3.0e-3, 1.0e-2)  # N/m (3–10 mN/m)
 MAX_AREAL_STRAIN_BAND: tuple[float, float] = (0.02, 0.05)   # 2–5 %
 
-# Helfrich bending modulus (TODO stub — used only by the tether oracle here).
-# KU-3.B1.2 (Rawicz 2000); 1e-19 J ≈ 24 k_BT at 300 K.
+# Helfrich bending modulus. KU-3.B1.2 (Rawicz 2000); 1e-19 J ≈ 24 k_BT at 300 K.
+# Used by (a) the tether oracle and (b) the Tier-A discrete-curvature MEASUREMENT
+# (analytic-sphere unit test) — NO runtime bending force in this version.
 DEFAULT_KAPPA_M: float = 1.0e-19        # J     bending modulus, 10–30 k_BT
+KAPPA_M_KT_BAND: tuple[float, float] = (10.0, 30.0)  # κ_m/k_BT band (KU-3.B1.2)
 
 # Membrane tether-force acceptance band. KU-3.B1.4 (Hochmuth 1996; Derényi 2002).
 TETHER_FORCE_BAND: tuple[float, float] = (5.0e-12, 4.0e-11)  # N  (5–40 pN)
+
+# KU-3.B1.1 membrane surface-tension acceptance band (the H.8 gate). The membrane
+# Laplace term is INVISIBLE to the harmonic-bond method-of-planes, so the gate
+# measures γ on the net_force/Laplace path; the recovered γ must land here.
+SURFACE_TENSION_BAND: tuple[float, float] = (3.0e-5, 3.0e-4)  # N/m (0.03–0.30 mN/m)
 
 
 def _require_finite_positive(name: str, x: float) -> None:
@@ -362,6 +376,162 @@ def tether_force(kappa_m: float, tension: float) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Helfrich bending κ_m — Tier-A discrete mean-curvature MEASUREMENT (no force)
+# ---------------------------------------------------------------------------
+# Design: ``docs/H8_HELFRICH_CURVATURE_DESIGN.md`` — Tier-A is measurement-only
+# (no runtime force; pure validation). A per-bead mean curvature H is estimated by
+# a LOCAL QUADRIC FIT on the k-NN neighbourhood of each shell bead (mesh-free,
+# robust, density-invariant — the recommended operator for *measurement* in the
+# design doc). The decisive validation is the ANALYTIC SPHERE: a perfect sphere of
+# radius R has uniform H = 1/R, so ∮(2H)² dA → 16π and the Helfrich energy
+# U_bend = ½ κ_m ∮(2H)² dA → 8π κ_m, INDEPENDENT of R. Tier-B (the bending FORCE)
+# is a separate PI-gate and is NOT implemented here. κ_m enters NO runtime force.
+
+
+def discrete_mean_curvature(
+    positions: np.ndarray,
+    *,
+    k_neighbors: int = 12,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Per-bead mean curvature ``H`` on an unstructured shell by local quadric fit.
+
+    MEASUREMENT-ONLY (Tier-A; ``docs/H8_HELFRICH_CURVATURE_DESIGN.md``). For each
+    bead the local neighbourhood (the ``k_neighbors`` nearest beads) is fit by a
+    height-over-tangent-plane quadric ``w = a u² + b u v + c v² + d u + e v`` in a
+    PCA tangent frame (the smallest-eigenvalue PCA axis is the local normal). The
+    mean curvature is the standard height-field expression
+
+        H = ((1 + e²) a − b d e + (1 + d²) c) / (1 + d² + e²)^{3/2}            [1/m]
+
+    (a + c for a flat-tangent fit d=e=0; this is the trace of the second
+    fundamental form over (1+|∇w|²)^{3/2}). Sign convention: the PCA normal is
+    oriented OUTWARD (away from the bead-cloud centroid), so a convex shell
+    (sphere) gives H > 0 with H ≈ 1/R. This function computes NO force and is never
+    called by the runtime — it is a validation/diagnostic estimator.
+
+    Args:
+        positions: Shell-bead positions [m], shape (n, 3).
+        k_neighbors: Number of nearest neighbours per local fit (excludes the bead
+            itself). Must be ≥ 5 (a quadric height field has 5 coefficients). The
+            estimate is reported AT a stated ``k_neighbors`` and must be
+            density-invariant (Sanity Gate §6 of the design doc) — it is NOT a
+            magic count chosen to pass the sphere test (the analytic-sphere test
+            holds across a range of k; see ``tests/test_h8b1_*``).
+
+    Returns:
+        A tuple ``(H, n_hat)`` where ``H`` is the per-bead mean curvature [1/m]
+        (shape (n,)) and ``n_hat`` is the per-bead outward unit normal [-]
+        (shape (n, 3)) from the PCA local frame.
+
+    Raises:
+        ValueError: if ``k_neighbors < 5`` or there are fewer than
+            ``k_neighbors + 1`` beads (cannot form a local quadric neighbourhood).
+    """
+    if k_neighbors < 5:
+        raise ValueError(
+            f"k_neighbors must be ≥ 5 (a quadric height field has 5 "
+            f"coefficients); got {k_neighbors}."
+        )
+    pos = np.asarray(positions, dtype=np.float64).reshape(-1, 3)
+    n = pos.shape[0]
+    if n < k_neighbors + 1:
+        raise ValueError(
+            f"need ≥ k_neighbors+1 = {k_neighbors + 1} beads for a local "
+            f"quadric fit; got {n}."
+        )
+
+    cloud_centroid = pos.mean(axis=0)
+    H = np.empty(n, dtype=np.float64)
+    n_hat = np.empty((n, 3), dtype=np.float64)
+
+    for i in range(n):
+        # k nearest neighbours (including self) by Euclidean distance.
+        d2 = np.sum((pos - pos[i]) ** 2, axis=1)
+        nbr_idx = np.argpartition(d2, k_neighbors)[: k_neighbors + 1]
+        patch = pos[nbr_idx]
+        patch_c = patch.mean(axis=0)
+        Q = patch - patch_c
+
+        # PCA: the eigenvector of the smallest eigenvalue is the local normal.
+        cov = Q.T @ Q
+        evals, evecs = np.linalg.eigh(cov)            # ascending eigenvalues
+        normal = evecs[:, 0]                          # smallest-variance axis
+        t1 = evecs[:, 1]
+        t2 = evecs[:, 2]
+
+        # Orient the normal OUTWARD (away from the whole-cloud centroid) so a
+        # convex sphere shell yields H > 0 (H ≈ +1/R).
+        if np.dot(normal, pos[i] - cloud_centroid) < 0.0:
+            normal = -normal
+            # Keep a right-handed (t1, t2, normal) frame after the flip.
+            t2 = -t2
+
+        # Height field over the tangent plane (origin at the bead i itself, so the
+        # constant term is absorbed — fit through the local point set). The height
+        # is measured along the OUTWARD normal ``normal``; for a convex shell the
+        # surface curves AWAY from the outward normal (neighbours sit at w < 0), so
+        # the raw height-field H_raw = (a+c)/… is NEGATIVE there. We adopt the
+        # convention (design doc §`discrete_mean_curvature`) that a convex shell has
+        # H > 0 w.r.t. its OUTWARD normal (principal curvatures of a sphere are +1/R
+        # looking from outside), i.e. H = −H_raw, so a sphere gives H ≈ +1/R.
+        rel = pos[nbr_idx] - pos[i]
+        u = rel @ t1
+        v = rel @ t2
+        w = rel @ normal
+        # Design matrix for w = a u² + b u v + c v² + d u + e v.
+        M = np.column_stack([u * u, u * v, v * v, u, v])
+        coeffs, *_ = np.linalg.lstsq(M, w, rcond=None)
+        a, b, c, d, e = coeffs
+
+        denom = (1.0 + d * d + e * e) ** 1.5
+        H_raw = ((1.0 + e * e) * a - b * d * e + (1.0 + d * d) * c) / denom
+        H[i] = -H_raw           # convex-outward convention: sphere → H ≈ +1/R
+        n_hat[i] = normal
+
+    return H, n_hat
+
+
+def helfrich_energy(
+    H: np.ndarray,
+    area_per_bead: np.ndarray | float,
+    kappa_m: float,
+    *,
+    c0: float = 0.0,
+) -> tuple[float, float]:
+    """Discrete Helfrich bending energy from a per-bead curvature field.
+
+    MEASUREMENT-ONLY (Tier-A). Evaluates the Canham-Helfrich curvature integral
+
+        ∮ (2H − c0)² dA  ≈  Σ_i (2 H_i − c0)² · A_i                          [1/m² · m² = dimensionless]
+        U_bend = ½ κ_m ∮ (2H − c0)² dA                                       [J]
+
+    as a per-bead Riemann sum (``A_i`` the per-bead area share). For a perfect
+    sphere (c0 = 0, H = 1/R) the integral → 16π and U_bend → 8π κ_m, INDEPENDENT
+    of R — the decisive analytic-sphere check (``docs/H8_HELFRICH_CURVATURE_DESIGN.md``
+    Sanity Gate §2). Computes NO force.
+
+    Args:
+        H: Per-bead mean curvature [1/m], shape (n,).
+        area_per_bead: Per-bead area share [m²] — a scalar (uniform share) or an
+            array of shape (n,).
+        kappa_m: Bending modulus [J].
+        c0: Spontaneous curvature [1/m] (default 0).
+
+    Returns:
+        A tuple ``(willmore_integral, U_bend)`` where ``willmore_integral`` is the
+        dimensionless ``∮(2H − c0)² dA`` and ``U_bend`` is the Helfrich energy [J].
+    """
+    H = np.asarray(H, dtype=np.float64).reshape(-1)
+    A = np.asarray(area_per_bead, dtype=np.float64)
+    if A.ndim == 0:
+        A = np.full(H.shape, float(A))
+    integrand = (2.0 * H - c0) ** 2
+    willmore_integral = float(np.sum(integrand * A))
+    U_bend = 0.5 * kappa_m * willmore_integral
+    return willmore_integral, U_bend
+
+
+# ---------------------------------------------------------------------------
 # Custom force compute
 # ---------------------------------------------------------------------------
 class MembraneSurfaceTension(md.force.Custom):
@@ -483,6 +653,48 @@ class MembraneSurfaceTension(md.force.Custom):
         N = float(n_shell)
         return (8.0 * math.pi * self.p.gamma_mem
                 + 16.0 * math.pi * self.p.K_A) / (N * N)
+
+    def measure_bending(
+        self,
+        positions: np.ndarray,
+        *,
+        k_neighbors: int = 12,
+        c0: float = 0.0,
+    ) -> dict:
+        """Tier-A Helfrich MEASUREMENT on a shell-bead array (NO runtime force).
+
+        Estimates the per-bead mean curvature (local quadric fit) and the discrete
+        Canham-Helfrich energy ``U_bend = ½ κ_m ∮(2H − c0)² dA`` for the current
+        shell, using the resolved κ_m. This is a DIAGNOSTIC ONLY — it computes no
+        force and is never called by ``set_forces`` (Tier-B bending force is a
+        later PI-gate; ``docs/H8_HELFRICH_CURVATURE_DESIGN.md``).
+
+        Args:
+            positions: Shell-bead positions [m], shape (n, 3).
+            k_neighbors: Neighbours per local quadric fit (see
+                :func:`discrete_mean_curvature`).
+            c0: Spontaneous curvature [1/m] (default 0).
+
+        Returns:
+            A dict with keys ``H`` (per-bead curvature [1/m]), ``H_mean``,
+            ``R_mean`` [m], ``willmore_integral`` (∮(2H−c0)²dA), ``U_bend`` [J],
+            and ``k_neighbors``.
+        """
+        S, R_mean, _centroid, _radii = self.estimate_area(positions)
+        n = np.asarray(positions, dtype=np.float64).reshape(-1, 3).shape[0]
+        H, _n_hat = discrete_mean_curvature(positions, k_neighbors=k_neighbors)
+        area_per_bead = S / n if n > 0 else 0.0
+        willmore_integral, U_bend = helfrich_energy(
+            H, area_per_bead, self.p.kappa_m, c0=c0
+        )
+        return {
+            "H": H,
+            "H_mean": float(np.mean(H)) if H.size else float("nan"),
+            "R_mean": R_mean,
+            "willmore_integral": willmore_integral,
+            "U_bend": U_bend,
+            "k_neighbors": k_neighbors,
+        }
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
         with self._state.cpu_local_snapshot as snap:

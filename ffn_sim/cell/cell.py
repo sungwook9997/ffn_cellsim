@@ -122,9 +122,19 @@ from ffn_sim.cortex.enclosed_volume import (
     ResolvedEnclosedVolume,
     attach_enclosed_volume_to_simulation,
 )
+from ffn_sim.cell.nucleus import (  # H.9 (additive, default-off; Template-2)
+    NucleusConfinement,
+    ResolvedNucleus,
+    attach_nucleus_confinement,
+    build_nucleus_beads,
+)
 from ffn_sim.cell.membrane_surface import (  # H.8 (additive, default-off)
     ResolvedMembraneSurface,
     attach_membrane_surface,
+)
+from ffn_sim.cell.cytoplasm import (  # H.10 Tier-1 (additive, default-off; FDT-safe)
+    CytoplasmTier1,
+    apply_cytoplasm_drag,
 )
 from ffn_sim.ecm.substrate import (  # Track A (additive, default-off)
     ResolvedSubstrate,
@@ -560,6 +570,121 @@ def _extend_snapshot_with_fa(
     return out, fa_info
 
 
+@dataclass(slots=True)
+class NucleusIntegration:
+    """Bookkeeping for the H.9 nucleus block appended into a cell build.
+
+    Returned in the builder handles dict (key ``nucleus_integration``). The
+    nucleus is a ``nucleus_bead`` particle cloud APPENDED LAST (after cortex /
+    myosin / xlink / lamellipodium / FA), so its tags occupy the contiguous
+    range ``[nucleus_tag_start, nucleus_tag_start + n_beads)`` and NOTHING
+    already present is re-tagged.
+    """
+
+    nucleus_tag_start: int             # first nucleus_bead global tag
+    n_beads: int                       # nucleus bead count
+    centroid: np.ndarray               # (3,) seed centroid [m]
+    R_nuc: float                       # m   nuclear radius
+    gamma_nuc: float                   # N·s/m per-bead Stokes drag
+
+
+def _extend_snapshot_with_nucleus(
+    snap,
+    p_nuc: ResolvedNucleus,
+    *,
+    centroid: np.ndarray,
+    gamma_nuc: float,
+):
+    """Append a ``nucleus_bead`` particle cloud to a snapshot (H.9, Template-2).
+
+    Mirrors :func:`ffn_sim.cell.lamellipodium.extend_cortex_snapshot_with_lamellipodium`
+    and :func:`_extend_snapshot_with_fa`: writes a fresh GSD frame extending
+    ``snap`` with ``p_nuc.n_beads`` ``nucleus_bead`` particles seeded by the
+    PURE :func:`ffn_sim.cell.nucleus.build_nucleus_beads` helper. MUST run
+    BEFORE ``create_state_from_snapshot`` because the new ``nucleus_bead``
+    particle type cannot be added once HOOMD initialises the state.
+
+    Tag layout — the nucleus block is APPENDED LAST (after cortex / myosin /
+    xlink / lamellipodium / FA), occupying ``[N0, N0 + n_beads)`` where ``N0``
+    is the pre-nucleus particle count. The nucleus adds NO bonds/angles and
+    references NO existing tags, so every earlier subsystem's absolute-tag
+    bookkeeping (myosin head→actin, xlink head→actin, lamellipodium, FA
+    clutch/integrin Updaters) is UNCHANGED — this is the CRITICAL tag-APPEND
+    invariant (inserting mid-sequence would shift downstream tags and break the
+    absolute-tag Updaters). Existing bonds / angles are carried over verbatim
+    (no shift, because the nucleus is appended after them).
+
+    The nucleus-off path never calls this function, so the pre-H.9 builder
+    stays bit-for-bit identical.
+
+    Returns ``(snap_new, NucleusIntegration)``.
+    """
+    import gsd.hoomd
+
+    N0 = int(snap.particles.N)
+    built = build_nucleus_beads(
+        centroid, p_nuc.R_nuc, p_nuc.n_beads,
+        gamma_nuc=gamma_nuc, type_name="nucleus_bead",
+        seed=0, fill=True,
+    )
+    nuc_pos = built["positions"]
+    n_beads = int(nuc_pos.shape[0])
+
+    # --- Particle types: existing + nucleus_bead (appended after existing) ---
+    old_types = list(snap.particles.types)
+    new_types = list(old_types)
+    if "nucleus_bead" not in new_types:
+        new_types.append("nucleus_bead")
+    nuc_typeid = new_types.index("nucleus_bead")
+
+    old_pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(N0, 3)
+    old_typeid = np.asarray(snap.particles.typeid, dtype=np.uint32)
+    old_mass = np.asarray(snap.particles.mass, dtype=np.float64)
+
+    out = gsd.hoomd.Frame()
+    out.particles.N = N0 + n_beads
+    out.particles.types = new_types
+    out.particles.position = np.concatenate([old_pos, nuc_pos], axis=0)
+    out.particles.typeid = np.concatenate(
+        [old_typeid, np.full(n_beads, nuc_typeid, dtype=np.uint32)]
+    )
+    out.particles.mass = np.concatenate(
+        [old_mass, np.ones(n_beads, dtype=np.float64)]
+    )
+
+    # --- Bonds / angles: carry over verbatim (nucleus appended last → no
+    #     existing tag shifts; nucleus contributes no bonds/angles). ---
+    n_bond = int(snap.bonds.N)
+    if n_bond > 0:
+        out.bonds.N = n_bond
+        out.bonds.types = list(snap.bonds.types)
+        out.bonds.typeid = np.asarray(snap.bonds.typeid, dtype=np.uint32)
+        out.bonds.group = np.asarray(snap.bonds.group, dtype=np.uint32)
+    elif len(list(snap.bonds.types)) > 0:
+        # Preserve a registered-but-empty bond-type registry.
+        out.bonds.types = list(snap.bonds.types)
+
+    n_ang = int(snap.angles.N)
+    if n_ang > 0:
+        out.angles.N = n_ang
+        out.angles.types = list(snap.angles.types)
+        out.angles.typeid = np.asarray(snap.angles.typeid, dtype=np.uint32)
+        out.angles.group = np.asarray(snap.angles.group, dtype=np.uint32)
+    elif len(list(snap.angles.types)) > 0:
+        out.angles.types = list(snap.angles.types)
+
+    out.configuration.box = list(snap.configuration.box)
+
+    nuc_info = NucleusIntegration(
+        nucleus_tag_start=N0,
+        n_beads=n_beads,
+        centroid=np.asarray(centroid, dtype=np.float64).reshape(3).copy(),
+        R_nuc=float(p_nuc.R_nuc),
+        gamma_nuc=float(gamma_nuc),
+    )
+    return out, nuc_info
+
+
 def build_cortex_full_simulation(
     p_cortex: ResolvedH3,
     *,
@@ -571,6 +696,10 @@ def build_cortex_full_simulation(
     fa_clutch_k: float | None = None,
     p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
     p_membrane_surface: "ResolvedMembraneSurface | None" = None,
+    p_nucleus: "ResolvedNucleus | None" = None,
+    nucleus_centroid: "np.ndarray | tuple[float, float, float] | None" = None,
+    nucleus_gamma: float | None = None,
+    p_cytoplasm: "CytoplasmTier1 | None" = None,
     p_substrate: "ResolvedSubstrate | None" = None,
     p_turnover: "ResolvedTurnover | None" = None,
     p_membrane: "ResolvedMembrane | None" = None,
@@ -772,6 +901,34 @@ def build_cortex_full_simulation(
             ),
         )
 
+    # 4c. Optional nucleus (H.9 — KU-3.B2; EXTEND Template-2). The
+    # nucleus_bead cloud is APPENDED LAST (after cortex / myosin / xlink /
+    # lamellipodium / FA), leaving every earlier tag range UNCHANGED — the
+    # CRITICAL tag-APPEND invariant (inserting mid-sequence would shift
+    # downstream tags and break the absolute-tag myosin/xlink/FA Updaters).
+    # MUST run BEFORE create_state_from_snapshot (the nucleus_bead particle
+    # type cannot be added post-create). ADDITIVE + DEFAULT-OFF: when
+    # p_nucleus is None nothing here executes and the snapshot is bit-for-bit
+    # identical to the pre-H.9 builder. The seed centroid defaults to the
+    # cortex shell centroid (origin-centred per build_cortex_state); the host
+    # may override via nucleus_centroid.
+    nucleus_integration = None
+    enable_nucleus = p_nucleus is not None
+    if enable_nucleus:
+        if nucleus_centroid is None:
+            cortex_xyz = topology.positions.reshape(n_cortex_actin, 3)
+            nuc_centroid = cortex_xyz.mean(axis=0)
+        else:
+            nuc_centroid = np.asarray(
+                nucleus_centroid, dtype=np.float64
+            ).reshape(3)
+        gamma_nuc = (
+            nucleus_gamma if nucleus_gamma is not None else p_cortex.gamma_b
+        )
+        snap, nucleus_integration = _extend_snapshot_with_nucleus(
+            snap, p_nucleus, centroid=nuc_centroid, gamma_nuc=gamma_nuc,
+        )
+
     # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p_cortex.seed
@@ -923,6 +1080,30 @@ def build_cortex_full_simulation(
             _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "actin_lamel", repulsive=False)
             _enable_pair(FA_TYPE_SUBSTRATE_LIGAND, "wave_particle", repulsive=False)
 
+    if enable_nucleus:
+        # H.9 nucleus WCA: the nucleus is an INTERNAL bead cloud held by its
+        # own NucleusConfinement custom force, NOT a steric body. ALL
+        # nucleus_bead pairs (including nucleus×nucleus) are DISABLED
+        # (r_cut = 0), mirroring the cross-subsystem disabled convention: the
+        # confinement law alone shapes the cloud, and registering every
+        # type-pair is required because md.pair.LJ demands params for EVERY
+        # present type pair. Cross pairs are r_cut=0 so the nucleus cloud
+        # (seeded near the cell centroid, r ≈ 0) does not sterically fight the
+        # cortex shell at r ≈ R_cell.
+        _enable_pair("nucleus_bead", "nucleus_bead", repulsive=False)
+        _enable_pair("nucleus_bead", "actin_cortex", repulsive=False)
+        if enable_xl:
+            _enable_pair("nucleus_bead", "xlink_head", repulsive=False)
+        if enable_myo:
+            _enable_pair("nucleus_bead", "cortex_myosin_backbone", repulsive=False)
+            _enable_pair("nucleus_bead", "cortex_myosin_head", repulsive=False)
+        if enable_lamel:
+            _enable_pair("nucleus_bead", "actin_lamel", repulsive=False)
+            _enable_pair("nucleus_bead", "wave_particle", repulsive=False)
+        if enable_fa:
+            _enable_pair("nucleus_bead", FA_TYPE_INTEGRIN, repulsive=False)
+            _enable_pair("nucleus_bead", FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
+
     lj.mode = "shift"
 
     dt_used = constrained_dt if (constrained and constrained_dt) else p_cortex.dt_cfl
@@ -1016,6 +1197,28 @@ def build_cortex_full_simulation(
             cfl_safety_factor=p_cortex.cfl_safety_factor,
         )
 
+    # H.9 nucleus confinement (ADDITIVE + DEFAULT-OFF; Template-2 step 3).
+    # When p_nucleus is None this block is skipped and the builder is
+    # bit-for-bit identical. When provided, attach the NucleusConfinement
+    # custom force over the appended nucleus_bead tags [nucleus_tag_start,
+    # nucleus_tag_start + n_beads) — attached AFTER the integrator is set
+    # (the helper requires it) and BEFORE the BAOAB Updater (parity with
+    # enclosed_volume / membrane_surface). The two-regime radial force
+    # participates in HOOMD net_force (read by the BAOAB Updater). CFL gate
+    # (k_hi = k_chrom + k_lamin; τ = γ_nuc / k_hi) is enforced strict at the
+    # host integrator dt for parity with erm / enclosed_volume — a violation
+    # surfaces to the host rather than silently using an unstable dt.
+    nucleus_force = None
+    if enable_nucleus:
+        nuc_start = nucleus_integration.nucleus_tag_start
+        nucleus_force = attach_nucleus_confinement(
+            sim, p_nucleus,
+            nucleus_tags=(nuc_start, nuc_start + nucleus_integration.n_beads),
+            gamma_nuc=nucleus_integration.gamma_nuc,
+            cfl_safety_factor=p_cortex.cfl_safety_factor,
+            cfl_strict=True,
+        )
+
     baoab_updater = None
     baoab_action = None
     if with_baoab:
@@ -1039,6 +1242,18 @@ def build_cortex_full_simulation(
             # γ > 0 finite, so both are supplied.
             gamma_map[FA_TYPE_INTEGRIN] = p_fa.gamma_integrin
             gamma_map[FA_TYPE_SUBSTRATE_LIGAND] = p_fa.gamma_ligand
+        if enable_nucleus:
+            # H.9 nucleus_bead Stokes drag (= 6π η R_bead, supplied by the
+            # host like the cortex gamma_b). BAOAB asserts every PRESENT
+            # particle type has a gamma_map entry (γ > 0 finite) or HALTS,
+            # and the appended nucleus_bead cloud is now a present type.
+            gamma_map["nucleus_bead"] = nucleus_integration.gamma_nuc
+        # H.10 cytoplasm Tier-1 (per-type effective-viscosity drag): scale the
+        # immersed types' Stokes drag by eta_eff/eta_water once gamma_map is fully
+        # assembled. p_cytoplasm is None => bit-for-bit identical (water). FDT-safe:
+        # BAOAB reads gamma per-type for the noise amplitude, so D=kT/gamma_b stays
+        # exact under any per-type eta_eff (H.10 design; cell/cytoplasm.py).
+        gamma_map = apply_cytoplasm_drag(gamma_map, p_cytoplasm)
         if constrained:
             # Rigid actin backbone (M-SHAKE + Fixman); cortex filaments are
             # contiguous N-bead blocks [f·N, (f+1)·N).
@@ -1265,6 +1480,12 @@ def build_cortex_full_simulation(
         "wave_pin_force": wave_pin_force,
         "enclosed_volume_force": enclosed_volume_force,
         "membrane_surface_force": membrane_surface_force,
+        # H.9 nucleus (KU-3.B2) — None / 0 when p_nucleus is None.
+        "nucleus_force": nucleus_force,
+        "nucleus_integration": nucleus_integration,
+        "n_nucleus_beads": (
+            nucleus_integration.n_beads if nucleus_integration else 0
+        ),
         "baoab_updater": baoab_updater,
         "baoab_action": baoab_action,
         "xlink_updater": xlink_updater,
