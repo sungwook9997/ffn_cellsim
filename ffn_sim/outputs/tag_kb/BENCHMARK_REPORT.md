@@ -384,7 +384,11 @@ with the corrected T8 finding.
 - `figs/fig_mechanism_ablation.png` — the 4 conditions as strictly-additive
   context layers feeding one fixed answerer.
 
-**Results:**
+**Results — scaled study (n=108, the main figure):**
+- `figs/fig_bench_scaled.png` — accuracy per condition with **bootstrap 95% CI**
+  error bars (C1≈C2≈C3 overlap, C4 separate at 100%) + per-class accuracy heatmap.
+
+**Results — pilot (n=18):**
 
 - `figs/fig_bench_headline.png` — accuracy vs hallucination (programmatic +
   FActScore) across C1→C4. The headline story.

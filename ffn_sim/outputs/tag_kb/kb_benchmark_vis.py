@@ -244,6 +244,75 @@ def fig_model_compare():
     return True
 
 
+def _correct(r):
+    if r.get("cls") in ("citation_trap", "negative"):
+        return int(not r.get("hallucination", 0))
+    if r.get("accuracy") is not None:
+        return int(r["accuracy"])
+    return int(bool((r.get("judge") or {}).get("correct")))
+
+
+def fig_scaled():
+    """The rigorous-study figure: accuracy per condition with bootstrap 95% CI
+    error bars + per-class heatmap (n=108, deterministic SQL gold)."""
+    scaled = HERE / "benchmark_results_scaled.json"
+    if not scaled.exists():
+        return False
+    d = json.loads(scaled.read_text())
+    rows = d["results"]
+    n = d.get("n_questions", len({r["qid"] for r in rows}))
+    rng = np.random.default_rng(20260603)
+
+    def ci(vals, B=5000):
+        vals = np.asarray(vals, float)
+        means = [rng.choice(vals, len(vals), replace=True).mean() for _ in range(B)]
+        return 100 * vals.mean(), 100 * np.percentile(means, 2.5), 100 * np.percentile(means, 97.5)
+
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(13.5, 5.6),
+                                   gridspec_kw={"width_ratios": [1, 1.25]})
+    # left: accuracy + 95% CI
+    pts, los, his = [], [], []
+    for c in CONDS:
+        m, lo, hi = ci([_correct(r) for r in rows if r["cond"] == c])
+        pts.append(m); los.append(m - lo); his.append(hi - m)
+    bars = axL.bar(range(4), pts, color=[COLORS[c] for c in CONDS],
+                   yerr=[los, his], capsize=6, edgecolor="#222")
+    for i, m in enumerate(pts):
+        axL.annotate(f"{m:.0f}%", (i, m + 3), ha="center", fontsize=10, fontweight="bold")
+    axL.set_xticks(range(4)); axL.set_xticklabels([LABELS[c] for c in CONDS])
+    axL.set_ylabel("accuracy (%)"); axL.set_ylim(0, 108)
+    axL.set_title(f"Accuracy with bootstrap 95% CI  (n={n})\nMcNemar C3→C4: 80/80 wins, χ²=78, p≪.05",
+                  fontsize=10.5)
+    axL.grid(axis="y", alpha=0.3)
+
+    # right: per-class heatmap
+    classes = sorted({r["cls"] for r in rows})
+    data = np.full((len(classes), 4), np.nan)
+    for i, cls in enumerate(classes):
+        for j, c in enumerate(CONDS):
+            cs = [_correct(r) for r in rows if r["cls"] == cls and r["cond"] == c]
+            data[i, j] = 100 * np.mean(cs) if cs else np.nan
+    im = axR.imshow(data, cmap="RdYlGn", vmin=0, vmax=100, aspect="auto")
+    axR.set_xticks(range(4)); axR.set_xticklabels(CONDS)
+    nq = {cls: len({r["qid"] for r in rows if r["cls"] == cls}) for cls in classes}
+    axR.set_yticks(range(len(classes)))
+    axR.set_yticklabels([f"{c} (n={nq[c]})" for c in classes])
+    for i in range(len(classes)):
+        for j in range(4):
+            if not np.isnan(data[i, j]):
+                axR.text(j, i, f"{data[i,j]:.0f}", ha="center", va="center",
+                         fontsize=9, fontweight="bold")
+    axR.set_title("Accuracy (%) by question class × condition\naggregation/relational/factual switch on ONLY with TAG",
+                  fontsize=10.5)
+    fig.colorbar(im, ax=axR, label="correct (%)", fraction=0.046)
+    fig.suptitle(f"Scaled study (n={n}, deterministic SQL gold) — only TAG significantly improves structured KB-QA",
+                 fontsize=12, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(FIGS / "fig_bench_scaled.png", dpi=150)
+    plt.close(fig)
+    return True
+
+
 def main():
     if not RES.exists():
         raise SystemExit(f"{RES} not found — run kb_benchmark.py first.")
@@ -252,7 +321,7 @@ def main():
     fig_ragas(d, rows)
     fig_by_class(d, rows)
     fig_heatmap(d, rows)
-    n = 4 + (1 if fig_model_compare() else 0)
+    n = 4 + (1 if fig_model_compare() else 0) + (1 if fig_scaled() else 0)
     print(f"wrote {n} figures to {FIGS}/")
 
 
