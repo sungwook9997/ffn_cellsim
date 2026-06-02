@@ -82,6 +82,56 @@ def _proliferation_mechanism_figure() -> None:
     print(f"[viz] wrote {out}")
 
 
+def _cadherin_catch_bond_figure() -> None:
+    """L2.5 — E-cadherin sliding-rebinding catch bond: lifetime τ(f), off-rate, and Pn(f).
+
+    Shows the faithful Rakshit-2012 catch-slip oracle (catch peak near f0≈29 pN) against a
+    pure Bell slip bond (k_off0 same, no rebinding) — the qualitative difference that lets a
+    catch-bond cohesion resist proliferation-driven tension where a static/slip bond cannot.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from ffn_sim.validation.oracles.spheroid import cadherin_catch_bond as cb
+
+    P = cb.RAKSHIT_W2A
+    f_pN = np.linspace(0.0, 60.0, 400)
+    f = f_pN * 1e-12
+    tau = np.array([cb.mean_lifetime(x) for x in f])
+    koff = 1.0 / tau
+    pn = cb.new_interaction_probability(f)
+    bell = 1.0 / cb.single_pair_off_rate(f)  # pure Bell slip lifetime (no rebinding)
+    f_star, tau_star = cb.catch_peak_force(P)
+
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.5, 5.0))
+    ax.plot(f_pN, tau * 1e3, "-", color="crimson", lw=2, label="X-dimer catch bond τ(f)")
+    ax.plot(f_pN, bell * 1e3, "--", color="gray", lw=1.5, label="pure Bell slip (no rebinding)")
+    ax.axvline(P.f0 * 1e12, color="seagreen", ls=":", lw=1.2, label=f"f₀ = {P.f0*1e12:.1f} pN")
+    ax.plot([f_star * 1e12], [tau_star * 1e3], "o", color="black", ms=8,
+            label=f"catch peak F*={f_star*1e12:.1f} pN")
+    ax.set_xlabel("bond tension f (pN)"); ax.set_ylabel("mean bond lifetime τ (ms)")
+    ax.set_title("L2.5 — E-cadherin sliding-rebinding catch bond (Rakshit 2012 SI Table S1)\n"
+                 "catch (τ↑) to ~29 pN, then slip (τ↓) — resists growth tension", fontsize=9)
+    ax.legend(fontsize=8)
+
+    ax2.plot(f_pN, pn, "-", color="purple", lw=2, label="new-interaction prob. Pₙ(f)")
+    ax2.plot(f_pN, koff, "-", color="darkorange", lw=2, label="effective k_off(f) = 1/τ")
+    ax2.axvline(P.f0 * 1e12, color="seagreen", ls=":", lw=1.2)
+    ax2.set_xlabel("bond tension f (pN)")
+    ax2.set_ylabel("Pₙ  /  k_off (s⁻¹)")
+    ax2.set_title("sliding-rebinding mechanism: Pₙ ramps 0→1 over [0,f₀] (the catch)\n"
+                  "k_off dips at the catch peak then rises (the slip)", fontsize=9)
+    ax2.legend(fontsize=8)
+    fig.tight_layout()
+    _FIG_DIR.mkdir(parents=True, exist_ok=True)
+    out = _FIG_DIR / "fig_layer2_l2_5_cadherin_catch_bond.png"
+    fig.savefig(out, dpi=130); plt.close(fig)
+    print(f"[viz] wrote {out}")
+
+
 def main() -> int:
     print("=== [layer2_vis] G1 stable-aggregate figure ===")
     layer2_g1_smoke.main(["--n-cells", "200", "--settle", "20000", "--measure", "10000"])
@@ -91,6 +141,8 @@ def main() -> int:
     layer2_aa0_sweep.main([])
     print("\n=== [layer2_vis] L2.4 proliferation-mechanism figure ===")
     _proliferation_mechanism_figure()
+    print("\n=== [layer2_vis] L2.5 cadherin catch-bond figure ===")
+    _cadherin_catch_bond_figure()
     print("\n=== [layer2_vis] L2.4 proliferation-driven A/A0(R0) law (slow: growth sweep) ===")
     layer2_aa0_growth_sweep.main([])
     print("\n[layer2_vis] done — figures in ffn_sim/outputs/layer2/figs/")
