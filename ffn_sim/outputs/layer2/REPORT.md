@@ -13,7 +13,9 @@
 | **L2.2** | edge-directed active-wetting traction (spreading driver) | ✅ DONE |
 | **L2.3** | ensemble A/A₀(R₀) sweep + fit — **minimal CBM is cohesion-locked** (Δ A/A₀≈0.02) | ✅ DONE (model-limit finding) |
 | **L2.4** | **contact-inhibited proliferation** (the size-dependent driver) + **G4 gate** | ✅ DONE, G4 PASS; A/A₀ signal now Δ≈12 but fit blocked by fragmentation (below) |
-| L2.5 / L2.6 | cadherin catch-bond (KU-4.2) upgrade; 3D-Mikado invasion | ⬜ (L2.5 now the indicated next step — see L2.4 finding) |
+| **L2.4.1** | **connected-core spread-area estimator** (fragmentation-robust A/A₀) | ✅ DONE; de-noises the signal (fit r² 0.27→**0.74**, Δ 23→**1.0**) but G3≥0.95 **still FAILs** — confirms L2.5 is needed, not optional (below) |
+| **L2.4b** | **leak-free pooled growth** (`run_growth_pooled`): ONE Simulation + pre-allocated particle pool, division activates a parked particle via `set_snapshot` | ✅ DONE; fixes the HOOMD per-rebuild memory leak (peak RSS **7 GB→240 MB**, flat), same physics. All growth drivers now use it. |
+| L2.5 / L2.6 | cadherin catch-bond (KU-4.2) upgrade; 3D-Mikado invasion | ⬜ (L2.5 now the indicated next step — see L2.4.1 finding) |
 
 ## Anchored / derived parameters (MCF7)
 
@@ -99,6 +101,40 @@ the physically-correct fix for fragmentation. Secondary refinements (also non-tu
 geometry) and an **outlier-robust / connected-core area** estimator (the alpha-shape refinement
 already flagged in `observables.projected_area`). All preserve the literature-first discipline.
 
+## L2.4.1 — connected-core spread-area estimator (fragmentation-robust A/A₀)
+
+The first of the secondary refinements above is now built and measured. `observables.py` gains
+`connected_components` (single-linkage KD-tree + union-find, `link_radius` a caller argument set
+to 1.6·r₀ — between the 1st and 2nd coordination shell, **no baked constant**),
+`largest_connected_component`, and `core_projected_area` (convex hull of the **largest connected
+component** only). `proliferation.run_growth` now reports `area_core_over_a0` alongside the raw
+hull; the growth sweep fits the PI law to the **core** area as the G3 headline (the hull is
+fragmentation-inflated and unphysical — its fit even dips below A/A₀=1). 3 new observable tests
+(two-cluster labelling, drifting-fragment rejection, single-cluster identity) → **39 green**.
+
+**Result (5 R₀ × 3 seeds, memory-safe per-size driver — see Verification):**
+
+| R₀ (µm) | A/A₀ core (mean±sd) | A/A₀ hull (mean±sd) |
+|---|---|---|
+| 29.1 | 2.53 ± 0.16 | 2.73 ± 0.44 |
+| 38.0 | 2.22 ± 0.10 | 2.45 ± 0.22 |
+| 52.2 | 1.78 ± 0.11 | 3.34 ± 2.11 |
+| 63.7 | 2.12 ± 0.62 | 25.48 ± 21.55 |
+| 75.2 | 1.49 ± 0.03 | 20.17 ± 20.24 |
+
+- **fit CORE:** A/A₀ = 0.953 + (58.99 µm)/R + (−394.2 µm²)/R²  **r²=0.737**
+- **fit HULL:** A/A₀ = 80.67 + (−5551.8 µm)/R + (95714 µm²)/R²  r²=0.750 (large `a`, sub-1 dip — unphysical)
+
+**Honest verdict — the core estimator helps but does NOT rescue G3.** It collapses the
+fragmentation inflation (signal Δ 23→**1.0**, error bars from ±21 down to ±0.03–0.16) and recovers
+a near-monotone 1/R decrease (the correct sign) — fit r² rises **0.27→0.74**. But r²=0.74 is still
+below the **G3 ≥0.95 band → G3 remains FAIL (gate NOT loosened)**. The residual scatter is real
+physics, not estimator noise: at R₀=63.7 µm one of three seeds fragments so hard that even the
+*core* inflates (core 2.12±0.62, the visible outlier), so a static Morse well cannot hold a
+growing spheroid together even when measured robustly. **This confirms L2.5 (catch-bond) is
+required, not optional** — the robust estimator was necessary to *see* the residual instability
+cleanly, but the cohesion model itself is the remaining blocker.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
@@ -139,18 +175,32 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   (∝ surface/volume ∝ 1/R) and rim-localised fraction (≥0.70 G4) vs the 2^(t/τ) exponential
   ceiling. The clean law extraction needs L2.5 catch-bond cohesion + substrate confinement
   (REPORT §L2.4). PI A/A₀ overlay-only.
+- `figs/fig_layer2_aa0_core_vs_hull.png` — **L2.4.1 connected-core vs raw-hull A/A₀(R₀)**
+  (5 R₀ × 3 seeds, per-size driver). **Left (CORE, G3 headline)**: fragmentation-robust A/A₀
+  with per-realisation points + ensemble mean±sd + a+b/R+c/R² fit (r²=0.74) and the A/A₀=1
+  reference — tight error bars, near-monotone 1/R decrease, with the R₀=63.7 µm outlier (one
+  seed fragments even the core) visible. **Right (HULL)**: the raw convex hull for contrast —
+  ±20 error bars and a fit that dips below A/A₀=1 (unphysical), inflated by drifting fragments.
+  Same axes, no truncation, SI units. The figure is the visual proof that the core estimator
+  de-noises the signal but the residual scatter (→ L2.5) is real.
 
 ## Verification
 
-- `tests/test_spheroid_observables.py` (13) + `tests/test_layer2_params.py` (8) +
-  `tests/test_spheroid_proliferation.py` (15) = **36 green** (synthetic clouds vs closed-form
+- `tests/test_spheroid_observables.py` (16) + `tests/test_layer2_params.py` (8) +
+  `tests/test_spheroid_proliferation.py` (15) = **39 green** (synthetic clouds vs closed-form
   oracle; resolve derivations vs Magic-Number-Block; free-space gate / rim-localisation /
-  contact-inhibition / dilute-doubling / G1-reduction).
+  contact-inhibition / dilute-doubling / G1-reduction; **+ connected-component labelling /
+  drifting-fragment rejection / single-cluster identity** for the L2.4.1 core estimator).
 - `scripts/layer2_g1_smoke.py` — reproducible G1 run; `scripts/layer2_growth_smoke.py` —
   reproducible single-spheroid growth + G4 verdict; `scripts/layer2_aa0_growth_sweep.py` —
   proliferation-driven A/A₀(R₀) sweep + fit + figure (`layer2_aa0_sweep.py` kept as the
   cohesion-locked baseline). Re-running the baseline confirms it is unchanged (still
   cohesion-locked); the growth sweep is the L2.4 headline.
+- **L2.4.1 reproducible result:** `scripts/layer2_aa0_growth_persize.py` — memory-safe per-size
+  driver (one `(N0,seed)` per process; the all-in-one sweep OOM/SIGKILLs around N0≈250–400 on a
+  16 GB CPU box because the HOOMD epoch-rebuild loop accumulates resident memory across sizes).
+  Canonical numbers + the core-vs-hull fit are in `outputs/layer2/growth_sweep_core_results.jsonl`
+  + `growth_sweep_core.log` (run `… --fit growth_sweep_core_results.jsonl`).
 - Isolation: runtime imports NO oracle (hard rule); **additive new files only**
   (`spheroid/proliferation.py`, growth scripts, `test_spheroid_proliferation.py`);
   `build_cbm_simulation` gained a backward-compatible optional `positions=` arg; single-cell
@@ -161,16 +211,19 @@ each driver also auto-generates its own figure at run end (production-driver-aut
 1. D_e: measured Iturri-2020 nN force-anchor adopted (was the retired pN seed) — FYI only.
 2. Surface-tension validation target: emergent-only vs non-MCF7 proxy (MCF10DCIS ~21 mN/m).
 3. Cell-size band position: 15 µm (low end) vs 17–18 µm.
-4. **L2.4 result for PI direction:** proliferation is the correct size-dependent driver
-   (G4 PASS, strong signal) but exposes a fragmentation instability under the static Morse
-   cohesion → the indicated next unit is **L2.5 catch-bond** (force-strengthening cohesion),
-   optionally with **substrate confinement** + a **robust spread-area** estimator, to extract
-   the clean a+b/R+c/R² law. Confirm this direction.
+4. **L2.4 / L2.4.1 result for PI direction:** proliferation is the correct size-dependent
+   driver (G4 PASS, strong signal). The robust connected-core spread-area estimator (L2.4.1) is
+   now built and de-noises the signal (fit r² 0.27→0.74, Δ 23→1.0) — but **G3 still FAILs
+   (r²=0.74 < 0.95)** because a static Morse well cannot hold a *growing* spheroid together even
+   when measured robustly (one R₀=63.7 µm seed fragments the core). So **L2.5 catch-bond is
+   confirmed necessary, not optional**; substrate confinement remains the secondary refinement.
+   Confirm this direction (and the L2.5 entry point).
 
 ## Next (L2.5)
 
 Replace the static Morse well with the mechanistic KU-4.2 cadherin **catch-bond** (Rakshit
 2012 PNAS, force-strengthening) so cohesion resists the proliferation-driven tension that
 currently fragments the growing spheroid; add z=0 **substrate confinement** (`ecm/substrate.py`,
-quasi-2D wetting = the experiment geometry) and an outlier-robust connected-core spread area;
-then re-run the growth sweep → fit A/A₀ = a + b/R + c/R² (G3) and overlay the PI poster.
+quasi-2D wetting = the experiment geometry). The outlier-robust connected-core spread area is
+**done (L2.4.1)** — it is the area observable L2.5 will be scored on; then re-run the growth
+sweep → fit A/A₀ = a + b/R + c/R² (G3) and overlay the PI poster.

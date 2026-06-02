@@ -44,13 +44,21 @@ from __future__ import annotations
 import gc
 from typing import Any
 
+import gsd.hoomd
 import hoomd
 import numpy as np
 import numpy.typing as npt
+from hoomd import md
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist
 
-from ffn_sim.spheroid.cbm import build_cbm_simulation, get_positions
+from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.spheroid.cbm import (
+    _CUTOFF_N_RANGES,
+    build_cbm_simulation,
+    get_positions,
+    make_blob_positions,
+)
 from ffn_sim.spheroid.observables import (
     core_projected_area,
     projected_area,
@@ -70,6 +78,8 @@ __all__ = [
     "sample_cycle_targets",
     "apply_divisions",
     "run_growth",
+    "build_pool_simulation",
+    "run_growth_pooled",
 ]
 
 # Number of candidate bud directions probed for free space (a NUMERICAL sampling count, not
@@ -234,6 +244,239 @@ def apply_divisions(
         "positions": pos2, "ages": ages2, "targets": targets2,
         "divided_idx": divided_idx, "divided_radial": radial_all[divided_idx],
         "median_radial": float(np.median(radial_all)),
+    }
+
+
+def build_pool_simulation(
+    resolved: ResolvedL2,
+    n_active_init: int,
+    n_max: int,
+    *,
+    device: hoomd.device.Device,
+    seed: int,
+) -> tuple[hoomd.Simulation, npt.NDArray[np.bool_], float]:
+    """Build ONE leak-free Simulation with a pre-allocated particle pool (L2.4b).
+
+    The State holds ``n_max`` particles for the whole run (N never changes → no Simulation
+    rebuild → no HOOMD per-rebuild leak). Two types: ``cell`` (active, interacting via the
+    Morse cohesion exactly as ``cbm.py``) and ``void`` (parked, non-interacting — every pair
+    involving ``void`` has ``r_cut=0``, and ``void`` is frozen with a large drag so it does not
+    drift). Division ACTIVATES a parked ``void`` into a ``cell`` in place via ``set_snapshot``
+    (no new Simulation). The first ``n_active_init`` particles are active (a settled-ready
+    blob at the origin); the rest are parked far away.
+
+    Returns ``(sim, active_mask, link_unused)`` — ``active_mask`` (n_max,) marks the initial
+    active cells; the caller mutates it as voids are activated.
+    """
+    if not (1 <= n_active_init <= n_max):
+        raise ValueError("require 1 <= n_active_init <= n_max.")
+    rng = np.random.default_rng(seed)
+    r0 = resolved.morse_r0
+    r_cut = r0 + _CUTOFF_N_RANGES / resolved.morse_alpha
+
+    # active blob at origin (slightly loose so adhesion settles it, like G1)
+    act = make_blob_positions(n_active_init, 1.1 * r0, rng=rng)
+
+    # generous max active-cluster radius (cells pack at ~r0); park voids well beyond it
+    r_cluster_max = r0 * (n_max ** (1.0 / 3.0)) * 1.3
+    n_void = n_max - n_active_init
+    park_center = np.array([r_cluster_max + 40.0 * r0, 0.0, 0.0])
+    if n_void > 0:
+        m = int(np.ceil(n_void ** (1.0 / 3.0)))
+        g = (np.arange(m) - (m - 1) / 2.0) * (2.0 * r0)
+        xx, yy, zz = np.meshgrid(g, g, g, indexing="ij")
+        grid = np.column_stack([xx.ravel(), yy.ravel(), zz.ravel()])[:n_void]
+        void = grid + park_center
+    else:
+        void = np.zeros((0, 3))
+
+    pos = np.vstack([act, void]).astype(np.float64)
+    typeid = np.zeros(n_max, dtype=np.uint32)
+    typeid[n_active_init:] = 1  # void
+    # box must contain the grown cluster AND the parking region with margin (no PBC contact)
+    extent = float(np.linalg.norm(pos, axis=1).max())
+    L = 2.0 * (extent + r_cluster_max) + 20.0 * r_cut
+
+    snap = gsd.hoomd.Frame()
+    snap.particles.N = n_max
+    snap.particles.types = ["cell", "void"]
+    snap.particles.typeid = typeid
+    snap.particles.position = pos
+    snap.particles.mass = np.ones(n_max, dtype=np.float64)
+    snap.configuration.box = [L, L, L, 0.0, 0.0, 0.0]
+
+    sim = hoomd.Simulation(device=device, seed=seed)
+    sim.create_state_from_snapshot(snap)
+
+    nlist = md.nlist.Tree(buffer=resolved.contact_zone_width)
+    morse = md.pair.Morse(nlist=nlist, default_r_cut=0.0)
+    morse.params[("cell", "cell")] = dict(
+        D0=resolved.D_e, alpha=resolved.morse_alpha, r0=resolved.morse_r0
+    )
+    morse.r_cut[("cell", "cell")] = r_cut
+    # void interacts with NOTHING (parked ghost): r_cut 0 for any pair involving void
+    for pair in (("cell", "void"), ("void", "void")):
+        morse.params[pair] = dict(D0=0.0, alpha=resolved.morse_alpha, r0=resolved.morse_r0)
+        morse.r_cut[pair] = 0.0
+    morse.mode = "shift"
+
+    ig = md.Integrator(dt=resolved.dt_cfl)
+    ig.forces.append(morse)
+    sim.operations.integrator = ig
+
+    # void frozen via a large drag (1e6×) so thermal kicks don't move the parked ghosts
+    _action, updater = make_baoab_updater(
+        kT=resolved.kT,
+        gamma={"cell": resolved.gamma_cell, "void": resolved.gamma_cell * 1.0e6},
+        dt=resolved.dt_cfl,
+        seed=seed,
+    )
+    sim.operations.updaters.append(updater)
+    # keep the action alive for the sim's lifetime by stashing it on the sim object
+    sim._baoab_action = _action  # noqa: SLF001 — intentional lifetime anchor
+
+    active = np.zeros(n_max, dtype=bool)
+    active[:n_active_init] = True
+    return sim, active, r_cut
+
+
+def run_growth_pooled(
+    resolved: ResolvedL2,
+    prolif: ResolvedProliferation,
+    n_cells_init: int = 120,
+    *,
+    total_time: float,
+    epoch_steps: int = 1_200,
+    settle_steps: int = 1_000,
+    max_cells: int = 4_000,
+    device: hoomd.device.Device | None = None,
+    seed: int | None = None,
+) -> dict[str, Any]:
+    """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
+
+    Same physics as ``run_growth`` (contact-inhibited free-space division, MCF7 cycle timer)
+    but a parked-``void`` pool replaces the per-epoch Simulation rebuild, so memory stays flat
+    (one State of ``max_cells`` particles for the whole run — see the HOOMD-leak note on
+    ``run_growth``). Division activates a parked void via ``set_snapshot`` (no rebuild).
+    Returns the same record dict as ``run_growth``.
+    """
+    seed = resolved.seed if seed is None else int(seed)
+    rng = np.random.default_rng(seed)
+    dt = resolved.dt_cfl
+    r0 = resolved.morse_r0
+    link_r = _CORE_LINK_FACTOR * r0
+    device = device or hoomd.device.CPU(notice_level=0)
+
+    sim, active, _r_cut = build_pool_simulation(
+        resolved, n_cells_init, max_cells, device=device, seed=seed
+    )
+    sim.run(0)
+    snap = sim.state.get_snapshot()
+    pos_all = np.array(snap.particles.position, dtype=np.float64, copy=True)
+    pos_init = pos_all[active].copy()
+
+    sim.run(settle_steps)
+
+    n_max = max_cells
+    ages = np.zeros(n_max, dtype=np.float64)
+    targets = np.full(n_max, np.inf, dtype=np.float64)  # voids never divide (inf target)
+    n0 = int(active.sum())
+    targets[active] = sample_cycle_targets(n0, prolif, rng)
+    ages[active] = rng.uniform(0.0, 1.0, n0) * targets[active]  # random cycle phase
+
+    def active_positions() -> npt.NDArray[np.float64]:
+        s = sim.state.get_snapshot()
+        p = np.array(s.particles.position, dtype=np.float64, copy=True)
+        return p[active]
+
+    a0 = projected_area(active_positions())
+    a0_core = core_projected_area(active_positions(), link_r)
+
+    t = 0.0
+    ts, ns, areas, rgs, areas_core = [0.0], [n0], [a0], [radius_of_gyration(active_positions())], [a0_core]
+    rim_frac_mean = []
+    capped = False
+    cands = candidate_directions()
+    search_r = prolif.split_distance + prolif.min_gap
+
+    while t < total_time:
+        sim.run(epoch_steps)
+        dt_epoch = epoch_steps * dt
+        t += dt_epoch
+        ages[active] += dt_epoch
+
+        snap = sim.state.get_snapshot()
+        pos_all = np.array(snap.particles.position, dtype=np.float64, copy=True)
+        act_idx = np.where(active)[0]
+        pos_act = pos_all[act_idx]
+        com = pos_act.mean(axis=0)
+        radial = np.linalg.norm(pos_act - com, axis=1)
+        median_radial = float(np.median(radial))
+        counts = first_shell_counts(pos_act, prolif.shell_cutoff)
+        tree = cKDTree(pos_act)
+
+        free_voids = list(np.where(~active)[0])
+        due_local = np.where(
+            (ages[act_idx] >= targets[act_idx]) & (counts < prolif.kissing_number)
+        )[0]
+        divided_radial = []
+        new_typeid = np.array(snap.particles.typeid, dtype=np.uint32, copy=True)
+        changed = False
+        for li in due_local:
+            if not free_voids:
+                capped = True
+                break
+            nbr = np.array(
+                [j for j in tree.query_ball_point(pos_act[li], search_r) if j != li],
+                dtype=np.int64,
+            )
+            nhat, gap = best_bud_direction(pos_act, int(li), nbr, prolif.split_distance, candidates=cands)
+            if gap < prolif.min_gap:
+                continue  # contact-inhibited (no room)
+            v = free_voids.pop()                     # activate a parked void as the daughter
+            pos_all[v] = pos_act[li] + prolif.split_distance * nhat
+            new_typeid[v] = 0                        # void -> cell
+            active[v] = True
+            ages[v] = 0.0
+            targets[v] = float(sample_cycle_targets(1, prolif, rng)[0])
+            gi = act_idx[li]
+            ages[gi] = 0.0
+            targets[gi] = float(sample_cycle_targets(1, prolif, rng)[0])
+            divided_radial.append(radial[li])
+            changed = True
+
+        if changed:
+            snap.particles.position[:] = pos_all
+            snap.particles.typeid[:] = new_typeid
+            sim.state.set_snapshot(snap)
+        if divided_radial:
+            rim_frac_mean.append(float(np.mean(np.array(divided_radial) >= median_radial)))
+
+        ap = active_positions()
+        ts.append(t); ns.append(int(active.sum()))
+        areas.append(projected_area(ap)); rgs.append(radius_of_gyration(ap))
+        areas_core.append(core_projected_area(ap, link_r))
+        if capped:
+            break
+
+    areas = np.asarray(areas); areas_core = np.asarray(areas_core)
+    pos_final = active_positions()
+    del sim
+    gc.collect()
+    return {
+        "n_cells_init": n_cells_init,
+        "a0": a0, "a0_core": a0_core,
+        "t": np.asarray(ts), "n_cells": np.asarray(ns),
+        "area": areas, "area_over_a0": areas / a0 if a0 > 0 else areas,
+        "area_core": areas_core,
+        "area_core_over_a0": areas_core / a0_core if a0_core > 0 else areas_core,
+        "rg": np.asarray(rgs),
+        "rim_fraction_mean": float(np.mean(rim_frac_mean)) if rim_frac_mean else float("nan"),
+        "n_division_epochs": len(rim_frac_mean),
+        "growth_factor": ns[-1] / ns[0] if ns[0] else float("nan"),
+        "capped_at_max_cells": capped,
+        "f_traction": 0.0,
+        "pos_init": pos_init, "pos_final": pos_final,
     }
 
 

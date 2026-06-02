@@ -29,7 +29,7 @@ import yaml
 
 from ffn_sim.spheroid.observables import effective_radius
 from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-from ffn_sim.spheroid.proliferation import run_growth
+from ffn_sim.spheroid.proliferation import run_growth_pooled
 from ffn_sim.validation.oracles.spheroid.aa0_law import aa0_model, fit_aa0, term_contributions
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         r0r, aar, acr, rimr, grr = [], [], [], [], []
         for s in range(n_seeds):
-            res = run_growth(
+            res = run_growth_pooled(
                 resolved, prolif, n_cells_init=n, total_time=total_time,
                 epoch_steps=1200, settle_steps=1000, seed=1000 + s, max_cells=4000,
             )

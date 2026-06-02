@@ -37,13 +37,13 @@ def _proliferation_mechanism_figure() -> None:
     import yaml
 
     from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-    from ffn_sim.spheroid.proliferation import first_shell_counts, run_growth
+    from ffn_sim.spheroid.proliferation import first_shell_counts, run_growth_pooled
 
     cfg_path = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
     cfg = yaml.safe_load(cfg_path.read_text())
     resolved = resolve_layer2(cfg)
     prolif = resolve_proliferation(cfg, resolved)
-    res = run_growth(
+    res = run_growth_pooled(
         resolved, prolif, n_cells_init=250, total_time=2.0 * prolif.cycle_time_mean,
         epoch_steps=1200, settle_steps=1000, seed=42, max_cells=4000,
     )

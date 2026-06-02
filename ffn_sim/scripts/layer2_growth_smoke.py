@@ -18,7 +18,7 @@ import yaml
 
 from ffn_sim.spheroid.observables import effective_radius
 from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-from ffn_sim.spheroid.proliferation import run_growth
+from ffn_sim.spheroid.proliferation import run_growth_pooled
 
 _ROOT = Path(__file__).resolve().parents[1]
 _CFG = _ROOT / "configs" / "layer2_cbm.yaml"
@@ -33,7 +33,7 @@ def main(argv: list[str] | None = None) -> int:
 
     n0 = 250  # a spheroid large enough to have a genuine (inhibited) bulk + a rim
     total_time = 2.0 * prolif.cycle_time_mean
-    res = run_growth(
+    res = run_growth_pooled(
         resolved, prolif, n_cells_init=n0, total_time=total_time,
         epoch_steps=1200, settle_steps=1000, seed=42, max_cells=4000,
     )

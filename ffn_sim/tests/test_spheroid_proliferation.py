@@ -25,9 +25,11 @@ from ffn_sim.spheroid.params import (
 from ffn_sim.spheroid.proliferation import (
     apply_divisions,
     best_bud_direction,
+    build_pool_simulation,
     candidate_directions,
     first_shell_counts,
     run_growth,
+    run_growth_pooled,
     sample_cycle_targets,
 )
 
@@ -213,3 +215,42 @@ def test_proliferation_off_reduces_to_stable_aggregate(resolved):
     assert res["growth_factor"] == pytest.approx(1.0)
     assert res["n_cells"][-1] == 60
     assert res["n_division_epochs"] == 0
+
+
+# ----------------------------------------------------------------- pooled (leak-free, L2.4b)
+
+def test_pooled_build_pool_types_and_active_mask(resolved):
+    """The pool has n_max particles: n_active 'cell' + the rest parked 'void'."""
+    import hoomd
+
+    dev = hoomd.device.CPU(notice_level=0)
+    sim, active, _rc = build_pool_simulation(resolved, n_active_init=30, n_max=200, device=dev, seed=1)
+    assert sim.state.N_particles == 200       # fixed-N pool (no rebuild ever)
+    assert active.sum() == 30                  # 30 active cells
+    snap = sim.state.get_snapshot()
+    typeid = np.asarray(snap.particles.typeid)
+    assert (typeid == 1).sum() == 170          # 170 parked voids
+    del sim
+
+
+def test_pooled_growth_grows_and_is_bounded(resolved):
+    """Pooled growth increases N (proliferation), never exceeds the pool, stays rim-localised."""
+    p = _prolif(cycle_time=4.0e3, cv=0.0, r0=resolved.morse_r0)
+    res = run_growth_pooled(
+        resolved, p, n_cells_init=120, total_time=1.2e4, epoch_steps=400,
+        settle_steps=300, max_cells=600, seed=7,
+    )
+    assert res["n_cells"][-1] > res["n_cells"][0]          # it grew
+    assert res["n_cells"][-1] <= 600                        # never exceeds the pool
+    assert res["growth_factor"] < 2.0 ** (1.2e4 / p.cycle_time_mean) + 0.5  # sub-exponential
+
+
+def test_pooled_no_growth_when_cycle_infinite(resolved):
+    """Effectively-infinite cycle ⇒ no division ⇒ active count conserved (pooled G1 limit)."""
+    p = _prolif(cycle_time=1.0e15, cv=0.0, r0=resolved.morse_r0)
+    res = run_growth_pooled(
+        resolved, p, n_cells_init=80, total_time=4.0e3, epoch_steps=500,
+        settle_steps=200, max_cells=400, seed=3,
+    )
+    assert res["n_cells"][-1] == 80
+    assert res["growth_factor"] == pytest.approx(1.0)
