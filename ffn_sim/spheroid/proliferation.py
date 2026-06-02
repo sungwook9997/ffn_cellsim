@@ -351,6 +351,8 @@ def run_growth_pooled(
     max_cells: int = 4_000,
     device: hoomd.device.Device | None = None,
     seed: int | None = None,
+    cohesion: str = "morse",
+    cad: "Any" = None,
 ) -> dict[str, Any]:
     """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
 
@@ -359,6 +361,11 @@ def run_growth_pooled(
     (one State of ``max_cells`` particles for the whole run — see the HOOMD-leak note on
     ``run_growth``). Division activates a parked void via ``set_snapshot`` (no rebuild).
     Returns the same record dict as ``run_growth``.
+
+    ``cohesion``: ``"morse"`` (L2.4 static Morse well) or ``"catch"`` (L2.5 force-dependent
+    E-cadherin catch bond, ``spheroid.cadherin_bonds``; pass the resolved ``cad``). The catch
+    cohesion is a tabulated ``cell``-``cell`` pair, so an activated void daughter feels it
+    automatically — no bond bookkeeping. The contact-inhibition / division logic is identical.
     """
     seed = resolved.seed if seed is None else int(seed)
     rng = np.random.default_rng(seed)
@@ -367,9 +374,23 @@ def run_growth_pooled(
     link_r = _CORE_LINK_FACTOR * r0
     device = device or hoomd.device.CPU(notice_level=0)
 
-    sim, active, _r_cut = build_pool_simulation(
-        resolved, n_cells_init, max_cells, device=device, seed=seed
-    )
+    if cohesion == "catch":
+        if cad is None:
+            from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
+            cad = resolve_cadherin(resolved)
+        from ffn_sim.spheroid.cadherin_bonds import build_cbm_catch
+        init_pos = make_blob_positions(n_cells_init, 1.1 * r0, rng=np.random.default_rng(seed))
+        sim, _r_cut = build_cbm_catch(
+            resolved, cad, n_cells_init, device=device, seed=seed,
+            positions=init_pos, n_max=max_cells,
+        )
+        active = np.asarray(sim.state.get_snapshot().particles.typeid) == 0
+    elif cohesion == "morse":
+        sim, active, _r_cut = build_pool_simulation(
+            resolved, n_cells_init, max_cells, device=device, seed=seed
+        )
+    else:
+        raise ValueError(f"cohesion must be 'morse' or 'catch'; got {cohesion!r}.")
     sim.run(0)
     snap = sim.state.get_snapshot()
     pos_all = np.array(snap.particles.position, dtype=np.float64, copy=True)
