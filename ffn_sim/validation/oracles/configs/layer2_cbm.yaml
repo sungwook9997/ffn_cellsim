@@ -1,0 +1,45 @@
+# Layer-2 CBM spheroid — acceptance bands (the gate contract, written BEFORE the run).
+#
+# Sanity gates for the multicellular spheroid line. Bands are expressed as DIMENSIONLESS
+# RATIOS wherever possible so the gate is invariant to the (PI-ratification-pending) D_e
+# magnitude and to the cell-size point value within its band. No gate may be loosened
+# inline — a wrong gate goes to the PI for a contract change (CLAUDE.md hard rule).
+#
+# Companion runtime config: ffn_sim/configs/layer2_cbm.yaml
+# Brief: ffn_sim/docs/LAYER2_MULTICELL_DESIGN.md  (phases L2.1–L2.6, gates G1–G6)
+
+spheroid:
+
+  acceptance:
+
+    # ---- G1 stable-aggregate gate (phase L2.1) ----
+    # A loose initial blob of cells, run overdamped with adhesion + excluded volume and
+    # NO motility, must settle into a stable aggregate: it neither disperses (adhesion
+    # holds it) nor collapses (excluded volume resists). Tests the force balance, NOT any
+    # absolute energy — hence ratios.
+    g1:
+      # equilibrium nearest-neighbour spacing as a fraction of the Morse rest separation
+      # (= cell diameter). Within [0.9, 1.2] = settled to contact, not collapsed/dispersed.
+      nn_median_over_r0: [0.90, 1.20]
+      # gas-like detached-cell fraction (Herold 2023 criterion) must stay near zero.
+      detached_fraction_max: 0.02
+      # radius of gyration must not run away: Rg(final)/Rg(after first settle) bounded.
+      rg_growth_factor_max: 1.50
+      # detached-fraction thresholds (as multiples of rest separation r0) for the metric:
+      detached_d_crit_over_r0: 3.0        # > 3 cell-diameters from centre
+      detached_neighbor_radius_over_r0: 1.5  # and no neighbour within 1.5 r0
+
+    # ---- G3 A/A0 spreading-law gate (phase L2.3) ----
+    # The R0 sweep must yield a spreading curve fittable by A/A0 = a + b/R + c/R² with the
+    # 1/R, 1/R² terms emerging from the edge/bulk cell ratio (no hard-coded term). The PI
+    # poster A/A0 is OVERLAID, never fit to (overlay-only).
+    g3:
+      aa0_fit_r_squared_min: 0.95         # the novel form must fit the emergent curve
+      n_radii_min: 5                      # >= 5 distinct R0 to constrain (a,b,c) + dof
+
+    # ---- G5 cadherin catch-bond gate (phase L2.5, mechanistic upgrade) ----
+    # When the static Morse well is replaced by the KU-4.2 force-dependent bond, the
+    # contact-angle (Young) oracle and the emergent MCF7>MDA de-adhesion ranking validate.
+    g5:
+      emergent_deadhesion_ranking: ["MCF7", "T47D", "MDA-MB-231"]   # Omidvar 2014 order
+      contact_angle_tol_rad: 0.2          # reuse oracles/junction/contact_angle.py band

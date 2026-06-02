@@ -1,0 +1,56 @@
+# Layer-2 CBM spheroid (HOOMD runtime) defaults — 1 particle per cell.
+#
+# All values SI (m, s, J, N, K). Every primary is literature-anchored (citation in
+# comment), a DERIVED value (filled by ffn_sim.spheroid.params.resolve_layer2; never
+# hand-set), or a flagged modeling/numerical-policy choice. No empirical magic numbers.
+#
+# Brief:     ffn_sim/docs/LAYER2_MULTICELL_DESIGN.md
+# Anchors:   ffn_sim/docs/LAYER2_ANCHORS_2026-06-02.md  (dossier wf_6369ec0f-1bb provenance)
+# Isolated:  separate line; reuses integrator/baoab.py + common/gsd_traj.py read-only.
+
+spheroid:
+
+  # ---- Primary scales (shared with the single-cell line; same SI units) ----
+  temperature: 310.0          # K    37 °C
+  kT: 4.28e-21                # J    k_B·T at 310 K, KU-1.1
+  water_viscosity: 6.913e-4   # Pa·s η_water at 310 K (NIST), KU-1.26
+  seed: 42
+
+  # ---- Cell geometry ----
+  cell:
+    # MCF7 suspended single-cell diameter. Wagner 2011 (Free Radic Biol Med 51:700,
+    # PMC3147247) MEASURED 14.8 µm / 1.70 pL by Coulter Counter. 15 µm = low end of the
+    # measured 15-20 µm band; band-position is a documented modeling choice (ANCHORS doc).
+    diameter: 1.5e-5          # m   (Wagner 2011: 14.8 µm → 15 µm)
+
+  # ---- Cell–cell adhesion (Morse pair, MVP) ----
+  # D_e is set so the Morse MAX attractive force (D_e·alpha/2) == the MEASURED MCF7-MCF7
+  # de-adhesion FORCE. Anchor: Iturri 2020 Cells PMC7227807 (MCF7-MCF7 SCFS, MEASURED, OA):
+  # ~6-7 nN at 120 s mature (~1-2 nN at 5 s nascent); corroborated Omidvar 2014 J Biomech
+  # (ranking MCF7>T47D>MDA, nN) + Omidvar 2016 Mol Cell Biochem (1.42-2.85 nN). This nN
+  # cohesion balances nN single-cell traction (the spreading physics).
+  # ⚠️ RETIRES the earlier cadherin N_cad·⟨F⟩·Δx* = 1.2e-17 J seed (~4 OOM too small, a pN
+  # single-bond product) + the Buckley-2014 Δx*=4nm misattribution (that is αE-catenin–actin,
+  # NOT E-cadherin homophilic; real E-cadherin catch-bond = Rakshit 2012 PNAS, for L2.5).
+  adhesion:
+    deadhesion_force_mature: 6.5e-9   # N  MCF7-MCF7 120s mature, Iturri 2020 (6-7 nN midpoint)
+    deadhesion_force_nascent: 1.5e-9  # N  MCF7-MCF7 5s nascent (maturation range)
+    # Adhesive interaction range = Morse 1/alpha. contact_zone_width ~ 10% of the cell
+    # diameter (cell-cell contact-zone scale) — a GEOMETRIC MODELING CHOICE, not a
+    # literature constant. Morse energy-minimum (center-to-center) = diameter (= 2R).
+    contact_zone_width: 1.5e-6    # m   (~0.1 · diameter)
+
+  # ---- Integration (reuse integrator/baoab.py, overdamped Langevin) ----
+  dynamics:
+    integrator: leimkuhler_matthews_baoab   # reuse ffn_sim.integrator.baoab (CPU)
+    cfl_safety_factor: 0.1                   # dt = safety · γ/k_spring (overdamped relax)
+
+  # ---- Derived (filled by resolve_layer2; do NOT edit by hand) ----
+  derived:
+    R_cell: null            # [m]    = diameter/2
+    D_e: null               # [J]    = N_cad·⟨F⟩·Δx*   (PI-ratification pending)
+    morse_r0: null          # [m]    = diameter
+    morse_alpha: null       # [1/m]  = 1/contact_zone_width
+    morse_k_spring: null    # [N/m]  = 2·D_e·alpha²
+    gamma_cell: null        # [N·s/m]= 6π·η·R_cell
+    dt_cfl: null            # [s]    = safety·γ/k_spring
