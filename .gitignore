@@ -68,3 +68,12 @@ ffn_sim/outputs/.obsidian/
 # Obsidian RAG export — vault is regeneratable from the scripts (do not commit)
 ffn_sim/outputs/obsidian_rag_full/vault/
 ffn_sim/outputs/obsidian_rag_demo/vault/
+
+# TAG (Table-Augmented Generation) backend — kb.duckdb regenerable via refresh.sh
+ffn_sim/outputs/tag_kb/kb.duckdb
+
+# Reference PDF corpus — large binaries, synced via Syncthing not git
+# (the lightweight index tag_corpus.json + analysis/_manifest.json stay tracked)
+ffn_sim/references/*.pdf
+ffn_sim/references/**/*.pdf
+ffn_sim/references/*.zip
