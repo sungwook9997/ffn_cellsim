@@ -184,6 +184,14 @@ the documented faithful upgrade — not the passive adhesion depth. (The per-con
 degenerate: 3 R₀ vs 3 coefficients; a trend comparison only.) Figure
 `fig_layer2_ligand_conditions.png`. PI A/A₀ overlay-only.
 
+**Active traction = the actual ligand driver (validated direction).** Adding edge-directed
+active-wetting traction (L2.2 `spreading.edge_outward_forces`, now composed into the pooled
+catch+substrate growth via `run_growth_pooled(f_traction=…)`) increases the spread monotonically
+(core A/A₀ 1.53→1.56→1.81 at 0/3/6 nN) — the correct mechanism, where passive substrate adhesion
+gave almost none. So the faithful Bare/Pre/Lam4 separation is **ligand-modulated active traction**
+(per-species integrin catch-slip, `bridge/ligand_species.py`), the next anchoring step — not
+substrate-adhesion depth.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
