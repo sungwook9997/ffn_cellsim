@@ -26,7 +26,7 @@ sweep scripts). Additive/safe ops only. Shared-tree collision is live (see memor
 - L2.4a/b Notion page: `373120daec5d815e8df0cbdbc6aaa7cd` · KB-v3: `373120daec5d81f19bbfe4086277f5ea`
 
 ## State
-- **last processed HEAD: `7dcca72`** (update each iteration)
+- **last processed HEAD: `9a79a9f`** (iter-2; L2.5/L2.6 posted+verified. Scan `9a79a9f..HEAD` next.)
 - TAG kb.duckdb rebuilt 2026-06-03 ~01:22 (144 keys / 6292 chunks / 150 PDFs; 94 SE-linked).
 - SourceEvidence count before iter-1 SE creation: 273.
 
@@ -72,3 +72,24 @@ Set Source Type per row when wiring (most = "model/method" or "measurement").
 
 last processed HEAD → still `7dcca72` (no new session commits during iter-1).
 **iter-1 COMPLETE.** Next cron fire :13 → re-scan for new session commits + repeat.
+
+### iter 2 — 2026-06-03 ~02:30 KST — **L2.5 G3-PASS milestone (verifying before posting)**
+- New session commits `b8a95a4..9a79a9f` (6): L2.5a catch-bond oracle (`7a6a11b`), L2.5b/c
+  (`fee53d1`), L2.5c+L2.6 substrate (`fcd2b20`), --catch/--morse flag (`bbf02b2`),
+  **L2.5 HEADLINE G3 PASS r²=0.98 (`5113f70`)**, L2.6 ligand axis (`9a79a9f`).
+- ⚠️ **Did NOT blindly post the "G3 PASS r²=0.98 EMERGES" claim** (the auto-classifier rightly
+  blocked it, and it's exactly the L2.4a 0.987-was-under-sampled trap). **Independently verifying
+  first** (the whole reason PI asked for this check):
+  - Re-fit the Lead's `growth_sweep_catch.checkpoint.json` (5 sizes) → **r²=0.980 reproduced**
+    (a=-0.33, b=188.7µm, c=-2655µm²; matches REPORT). morse ckpt re-fit = r²=0.874 (n=4,
+    ±0.097) — re-confirms morse is seed-unstable (0.74–0.87), catch tight (±0.082).
+  - Running N0=400 (the size where morse fragments) × **5 FRESH seeds (2000-2004)** × {catch,morse}
+    to test the crux claim "catch 0/5 vs morse 1/5 fragment" with independent seeds. (in progress)
+- **VERIFIED ✅** — N0=400 × 5 fresh seeds: **catch 0/5 fragment (core 1.86±0.029), morse 1/5
+  (one seed hull=739×, core 1.95±0.119)**. Reproduces "catch 0/5 vs morse 1/5" with independent
+  seeds; catch ~4× tighter. Combined with the re-fit r²=0.980, L2.5 G3-PASS is **genuinely robust**
+  (unlike L2.4a's under-sampled 0.987 — here the catch bond prevents fragmentation at the
+  *mechanism* level, not just the measurement). Artifact: `outputs/layer2/l2_5_catch_fragmentation_verify.jsonl`.
+- **Posted** L2.5/L2.6 Dev-Log (verified) → `373120daec5d81eb9d3ddf9dfe1b202c`.
+- SE dry-run: 0 new rows (50 skipped, all registered) — iter-1 caught all new papers.
+- **iter-2 COMPLETE.** last processed HEAD → `9a79a9f`.
