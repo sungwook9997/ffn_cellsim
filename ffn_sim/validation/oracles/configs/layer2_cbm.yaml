@@ -57,9 +57,31 @@ spheroid:
       # strictly below the contact-inhibition-free exponential 2^(t/τ) (bulk is quiescent).
       subexponential: true
 
-    # ---- G5 cadherin catch-bond gate (phase L2.5, mechanistic upgrade) ----
-    # When the static Morse well is replaced by the KU-4.2 force-dependent bond, the
-    # contact-angle (Young) oracle and the emergent MCF7>MDA de-adhesion ranking validate.
+    # ---- G5 cadherin catch-bond gate (phase L2.5, mechanistic cohesion upgrade) ----
+    # The static Morse well is replaced by the faithful Rakshit-2012 sliding-rebinding catch
+    # bond (validation/cadherin_sliding_rebinding.py), applied as an adiabatic force-dependent
+    # cohesion (spheroid/cadherin_bonds.py). The catch SIGNATURE and the cohesion scale validate:
     g5:
-      emergent_deadhesion_ranking: ["MCF7", "T47D", "MDA-MB-231"]   # Omidvar 2014 order
-      contact_angle_tol_rad: 0.2          # reuse oracles/junction/contact_angle.py band
+      # the effective cohesion holding force must PEAK at the per-cadherin catch force f0 (the
+      # force-strengthening signature) — within this tolerance of f0=29.2 pN.
+      catch_peak_force_tol_pN: 3.0
+      # peak holding force as a fraction of the measured de-adhesion force (Iturri 6.5 nN):
+      # a substantial fraction (force-strengthened), not the full SCFS peak (adiabatic duty cycle).
+      peak_cohesion_frac_band: [0.3, 1.0]
+      # catch cohesion must still settle a STABLE aggregate (G1 bands) and be at least as
+      # fragmentation-resistant as the static Morse over a seed ensemble (research finding,
+      # logged not hard-asserted — fragmentation is stochastic and rare in the pooled path).
+      g1_bands_apply: true
+      # FUTURE (needs multi-cell-type): emergent MCF7>T47D>MDA de-adhesion ranking (Omidvar 2014).
+
+    # ---- G6 substrate-confinement gate (phase L2.6, quasi-2D wetting) ----
+    # A z=0 adhesive Morse wall (spheroid/substrate.py) pins the spheroid to the substrate so
+    # the projected area is a real footprint. MCF7 is cohesive (low-invasion) → a 3D CAP with a
+    # finite contact angle, NOT a flat monolayer (passive adhesion alone does not wet a cohesive
+    # cluster — the experimentally-correct phenotype; active edge traction would flatten it).
+    g6:
+      # substrate-bound: the footprint must be pinned (no 3D COM drift away from the wall) and
+      # the cap must contact the substrate (min z within one cell radius of the wall).
+      substrate_contact_within_R_cell: true
+      # adhesion is the Bare/Pre/Lam4 ligand axis: higher D_sub → flatter (smaller z-span), a
+      # monotone wetting trend (logged), not a fixed band (no MCF7 contact-angle datum).

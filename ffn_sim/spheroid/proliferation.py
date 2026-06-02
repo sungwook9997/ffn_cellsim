@@ -353,6 +353,7 @@ def run_growth_pooled(
     seed: int | None = None,
     cohesion: str = "morse",
     cad: "Any" = None,
+    substrate: "Any" = None,
 ) -> dict[str, Any]:
     """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
 
@@ -391,6 +392,19 @@ def run_growth_pooled(
         )
     else:
         raise ValueError(f"cohesion must be 'morse' or 'catch'; got {cohesion!r}.")
+
+    if substrate is not None:
+        # quasi-2D wetting: lift the active cells above the z=0 wall so they settle ONTO the
+        # substrate (cells can only live on the +z side), then add the adhesive Morse wall.
+        from ffn_sim.spheroid.substrate import add_substrate_wall
+        snap0 = sim.state.get_snapshot()
+        pos0 = np.array(snap0.particles.position, dtype=np.float64, copy=True)
+        zmin = pos0[active, 2].min()
+        pos0[active, 2] += (substrate.r0_sub - zmin) + 2.0 * resolved.contact_zone_width
+        snap0.particles.position[:] = pos0
+        sim.state.set_snapshot(snap0)
+        add_substrate_wall(sim, substrate)
+
     sim.run(0)
     snap = sim.state.get_snapshot()
     pos_all = np.array(snap.particles.position, dtype=np.float64, copy=True)
