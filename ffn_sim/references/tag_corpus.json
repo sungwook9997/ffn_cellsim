@@ -624,6 +624,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "data-acquisition-and-analysis-64c325",
+    "title": "Data acquisition and analysis",
+    "doi": "10.1038/nature02581",
+    "path": "downloaded/Bertet2004_Nature.pdf",
+    "n_pages": 5,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 22,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Betorz2023_JournalOfTheMechanicsAnd",
+    "title": "J. Mech. Phys. Solids 179 (2023) 105390",
+    "doi": "10.1016/j.jmps.2023.105390",
+    "path": "downloaded/Betorz2023_JournalOfTheMechanicsAnd.pdf",
+    "n_pages": 18,
+    "source": "downloaded",
+    "se_uid": "SE248",
+    "se_citation_key": "Betorz2023_JournalOfTheMechanicsAnd",
+    "n_chunks": 63,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "motility-driven-glass-and-jamming-transi-320c1a",
+    "title": "Motility-driven glass and jamming transitions in biological tissues",
+    "doi": "",
+    "path": "downloaded/Bi2015_PRX.pdf",
+    "n_pages": 12,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 42,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "a-density-independent-rigidity-transitio-73d330",
     "title": "A density-independent rigidity transition in biological tissues",
     "doi": "",
@@ -646,6 +682,18 @@
     "se_citation_key": "",
     "n_chunks": 151,
     "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Cavey2008_Cell",
+    "title": "A two-tiered mechanism for stabilization",
+    "doi": "10.1038/nature06953",
+    "path": "downloaded/Cavey2008_Cell.pdf",
+    "n_pages": 7,
+    "source": "downloaded",
+    "se_uid": "SE149",
+    "se_citation_key": "Cavey2008_Cell",
+    "n_chunks": 28,
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Chaudhuri2015_NatCommun",
@@ -720,6 +768,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "EloseguiArtola2017_Cell",
+    "title": "King’s Research Portal",
+    "doi": "10.1016/j.cell.2017.10.008",
+    "path": "downloaded/EloseguiArtola2017_Cell.pdf",
+    "n_pages": 45,
+    "source": "downloaded",
+    "se_uid": "SE80",
+    "se_citation_key": "EloseguiArtola2017_Cell",
+    "n_chunks": 80,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "FengSun2021_FCDB",
     "title": "ORIGINAL RESEARCH",
     "doi": "10.3389/fcell.2021.718834",
@@ -729,6 +789,30 @@
     "se_uid": "SE206",
     "se_citation_key": "FengSun2021_FCDB",
     "n_chunks": 42,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Franz2023_NatCommun",
+    "title": "Reply to Comment on Franz et al. (2023): A reinterpretation of the 1.5 billion year old Volyn",
+    "doi": "10.5194/egusphere-2024-217",
+    "path": "downloaded/Franz2023_NatCommun.pdf",
+    "n_pages": 14,
+    "source": "downloaded",
+    "se_uid": "SE66",
+    "se_citation_key": "Franz2023_NatCommun",
+    "n_chunks": 31,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "GalWeihs2012_CBB",
+    "title": "Intracellular Mechanics and Activity of Breast Cancer Cells",
+    "doi": "10.1007/s12013-012-9356-z",
+    "path": "downloaded/GalWeihs2012_CBB.pdf",
+    "n_pages": 11,
+    "source": "downloaded",
+    "se_uid": "SE227",
+    "se_citation_key": "GalWeihs2012_CBB",
+    "n_chunks": 36,
     "linked_to_source_evidence": true
   },
   {
@@ -756,6 +840,18 @@
     "linked_to_source_evidence": false
   },
   {
+    "citation_key": "huerta-l-pez-et-al-sci-adv-10-eadf9758-2-d962e1",
+    "title": "Huerta-López et al., Sci. Adv. 10, eadf9758 (2024)     15 November 2024",
+    "doi": "10.13039/501100011033",
+    "path": "downloaded/HuertaLopez2024_SciAdv.pdf",
+    "n_pages": 15,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 61,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Jetta2023_FCDB",
     "title": "Epithelial cells sense local stiffness",
     "doi": "10.3389/fcell.2023.1198109",
@@ -764,6 +860,42 @@
     "source": "downloaded",
     "se_uid": "SE107",
     "se_citation_key": "Jetta2023_FCDB",
+    "n_chunks": 29,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Jin2020_Jour",
+    "title": "Mathematical model of tumour spheroid experiments",
+    "doi": "10.1101/2020.12.06.413856",
+    "path": "downloaded/Jin2020_Jour.pdf",
+    "n_pages": 40,
+    "source": "downloaded",
+    "se_uid": "SE260",
+    "se_citation_key": "Jin2020_Jour",
+    "n_chunks": 68,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Kage2017_NatCommun",
+    "title": "Received 12 Jan 2017 | Accepted 3 Feb 2017 | Published 22 Mar 2017",
+    "doi": "10.1038/ncomms14832",
+    "path": "downloaded/Kage2017_NatCommun.pdf",
+    "n_pages": 16,
+    "source": "downloaded",
+    "se_uid": "SE96",
+    "se_citation_key": "Kage2017_NatCommun",
+    "n_chunks": 64,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Kanchanawong2010_Nature",
+    "title": "doi:10.1038/nature09621",
+    "doi": "10.1038/nature09621",
+    "path": "downloaded/Kanchanawong2010_Nature.pdf",
+    "n_pages": 7,
+    "source": "downloaded",
+    "se_uid": "SE57",
+    "se_citation_key": "Kanchanawong2010_Nature",
     "n_chunks": 29,
     "linked_to_source_evidence": true
   },
@@ -804,6 +936,18 @@
     "linked_to_source_evidence": false
   },
   {
+    "citation_key": "arxiv-1503-00924v3-cond-mat-soft-26-jun--6fbbb4",
+    "title": "arXiv:1503.00924v3  [cond-mat.soft]  26 Jun 2015",
+    "doi": "",
+    "path": "downloaded/Licup2015_PNAS.pdf",
+    "n_pages": 14,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 35,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Liew2024_CMBE",
     "title": "Vol.:(0123456789)",
     "doi": "10.1007/s12195-024-00811-4",
@@ -813,6 +957,18 @@
     "se_uid": "SE183",
     "se_citation_key": "Liew2024_CMBE",
     "n_chunks": 43,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Lindstrom2010_Biomaterials",
+    "title": "Biopolymer network geometries:",
+    "doi": "10.1103/physreve.82.051905",
+    "path": "downloaded/Lindstrom2010_Biomaterials.pdf",
+    "n_pages": 6,
+    "source": "downloaded",
+    "se_uid": "SE12",
+    "se_citation_key": "Lindstrom2010_Biomaterials",
+    "n_chunks": 14,
     "linked_to_source_evidence": true
   },
   {
@@ -826,6 +982,18 @@
     "se_citation_key": "Lomakin2020_Science",
     "n_chunks": 64,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "confidential-manuscript-submitted-to-geo-c8737e",
+    "title": "Confidential manuscript submitted to Geophysical Research Letters",
+    "doi": "10.1306/13231314m933424",
+    "path": "downloaded/Malinverno2016_NatMater.pdf",
+    "n_pages": 32,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 46,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Manibog2014_NatCommun",
@@ -888,6 +1056,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Moeendarbary2013_NatMater",
+    "title": "The cytoplasm of living cells behaves",
+    "doi": "10.1038/nmat3517",
+    "path": "downloaded/Moeendarbary2013_NatMater.pdf",
+    "n_pages": 20,
+    "source": "downloaded",
+    "se_uid": "SE87",
+    "se_citation_key": "Moeendarbary2013_NatMater",
+    "n_chunks": 40,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "biophysical-journal-85dd32",
     "title": "Biophysical Journal",
     "doi": "",
@@ -898,6 +1078,18 @@
     "se_citation_key": "",
     "n_chunks": 53,
     "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Molter2022_FCDB",
+    "title": "Prostate cancer cells of",
+    "doi": "10.3389/fcell.2022.932510",
+    "path": "downloaded/Molter2022_FCDB.pdf",
+    "n_pages": 13,
+    "source": "downloaded",
+    "se_uid": "SE184",
+    "se_citation_key": "Molter2022_FCDB",
+    "n_chunks": 45,
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Mueller2017_Cell",
@@ -924,6 +1116,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Panzetta2019_PNAS",
+    "title": "Cell mechanosensing is regulated by substrate strain",
+    "doi": "10.1073/pnas.1904660116",
+    "path": "downloaded/Panzetta2019_PNAS.pdf",
+    "n_pages": 10,
+    "source": "downloaded",
+    "se_uid": "SE41",
+    "se_citation_key": "Panzetta2019_PNAS",
+    "n_chunks": 37,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Park2015_NatMater",
+    "title": "PUBLISHED ONLINE: 3 AUGUST 2015 | DOI: 10.1038/NMAT4357",
+    "doi": "10.1038/nmat4357",
+    "path": "downloaded/Park2015_NatMater.pdf",
+    "n_pages": 10,
+    "source": "downloaded",
+    "se_uid": "SE6",
+    "se_citation_key": "Park2015_NatMater",
+    "n_chunks": 40,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "independent-regulation-of-tumor-cell-mig-785403",
+    "title": "Independent regulation of tumor cell migration by",
+    "doi": "10.1073/pnas.1118073109/-/dcsupplemental",
+    "path": "downloaded/PathakKumar2012_PNAS.pdf",
+    "n_pages": 6,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 24,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Petitjean2010_BiophysJ",
     "title": "Velocity Fields in a Collectively Migrating Epithelium",
     "doi": "10.1016/j.bpj.2010.01.030",
@@ -936,6 +1164,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Plodinec2012_NatNanotechnol",
+    "title": "The nanomechanical signature of breast cancer",
+    "doi": "10.1038/nnano.2012.167",
+    "path": "downloaded/Plodinec2012_NatNanotechnol.pdf",
+    "n_pages": 9,
+    "source": "downloaded",
+    "se_uid": "SE229",
+    "se_citation_key": "Plodinec2012_NatNanotechnol",
+    "n_chunks": 29,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Plotnikov2012_Cell",
     "title": "Force Fluctuations within Focal",
     "doi": "10.1016/j.cell.2012.11.034",
@@ -945,6 +1185,42 @@
     "se_uid": "SE69",
     "se_citation_key": "Plotnikov2012_Cell",
     "n_chunks": 41,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Prost2015_NatPhys",
+    "title": "INSIGHT | PROGRESS ARTICLES",
+    "doi": "10.1038/nphys3224",
+    "path": "downloaded/Prost2015_NatPhys.pdf",
+    "n_pages": 7,
+    "source": "downloaded",
+    "se_uid": "SE90",
+    "se_citation_key": "Prost2015_NatPhys",
+    "n_chunks": 32,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Provenzano2006_BMCMed",
+    "title": "(page number not for citation purposes)",
+    "doi": "10.1186/1741-7015-4-38",
+    "path": "downloaded/Provenzano2006_BMCMed.pdf",
+    "n_pages": 15,
+    "source": "downloaded",
+    "se_uid": "SE24",
+    "se_citation_key": "Provenzano2006_BMCMed",
+    "n_chunks": 46,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Rakshit2012_PNAS",
+    "title": "Ideal, catch, and slip bonds in cadherin adhesion",
+    "doi": "10.1073/pnas.1208349109",
+    "path": "downloaded/Rakshit2012_PNAS.pdf",
+    "n_pages": 6,
+    "source": "downloaded",
+    "se_uid": "SE129",
+    "se_citation_key": "Rakshit2012_PNAS",
+    "n_chunks": 24,
     "linked_to_source_evidence": true
   },
   {
@@ -972,6 +1248,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "interplay-of-rhoa-and-mechanical-forces--d374f7",
+    "title": "Interplay of RhoA and mechanical forces in collective",
+    "doi": "10.1038/ncb2917;",
+    "path": "downloaded/Reffay2014_NCB.pdf",
+    "n_pages": 27,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 54,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Riahi2015_NatCommun",
     "title": "Received 8 Aug 2014 | Accepted 6 Feb 2015 | Published 13 Mar 2015",
     "doi": "10.1038/ncomms7556",
@@ -982,6 +1270,18 @@
     "se_citation_key": "Riahi2015_NatCommun",
     "n_chunks": 36,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "multiscale-modeling-of-spheroid-tumors-e-b3d7db",
+    "title": "Multiscale Modeling of Spheroid Tumors: Effect of",
+    "doi": "",
+    "path": "downloaded/Rosenbauer2023_JPhysChemB.pdf",
+    "n_pages": 4,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 4,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Rosenbluth2006_BiophysJ",
@@ -1032,6 +1332,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "SerraPicamal2012_NatPhys",
+    "title": "PUBLISHED ONLINE: 8 JULY 2012 | DOI: 10.1038/NPHYS2355",
+    "doi": "10.1038/nphys2355",
+    "path": "downloaded/SerraPicamal2012_NatPhys.pdf",
+    "n_pages": 7,
+    "source": "downloaded",
+    "se_uid": "SE142",
+    "se_citation_key": "SerraPicamal2012_NatPhys",
+    "n_chunks": 24,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Sharma2014_IntegrBiol",
+    "title": "This journal is ©The Royal Society of Chemistry 2014",
+    "doi": "10.1039/c3ib40246k",
+    "path": "downloaded/Sharma2014_IntegrBiol.pdf",
+    "n_pages": 7,
+    "source": "downloaded",
+    "se_uid": "SE202",
+    "se_citation_key": "Sharma2014_IntegrBiol",
+    "n_chunks": 23,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Stewart2011_Nature",
+    "title": "doi:10.1038/nature09642",
+    "doi": "10.1038/nature09642",
+    "path": "downloaded/Stewart2011_Nature.pdf",
+    "n_pages": 7,
+    "source": "downloaded",
+    "se_uid": "SE111",
+    "se_citation_key": "Stewart2011_Nature",
+    "n_chunks": 25,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "nonlinear-elasticity-in-biological-gels-250bd7",
     "title": "Nonlinear Elasticity in Biological Gels",
     "doi": "",
@@ -1053,6 +1389,18 @@
     "se_uid": "SE241",
     "se_citation_key": "Stroka2014_Cell",
     "n_chunks": 40,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Stylianopoulos2012_PNAS",
+    "title": "Causes, consequences, and remedies for growth-induced",
+    "doi": "10.1073/pnas.1213353109",
+    "path": "downloaded/Stylianopoulos2012_PNAS.pdf",
+    "n_pages": 8,
+    "source": "downloaded",
+    "se_uid": "SE172",
+    "se_citation_key": "Stylianopoulos2012_PNAS",
+    "n_chunks": 33,
     "linked_to_source_evidence": true
   },
   {
@@ -1080,6 +1428,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Trepat2009_NatPhys",
+    "title": "PUBLISHED ONLINE: 3 MAY 2009 | DOI: 10.1038/NPHYS1269",
+    "doi": "10.1038/nphys1269",
+    "path": "downloaded/Trepat2009_NatPhys.pdf",
+    "n_pages": 5,
+    "source": "downloaded",
+    "se_uid": "SE141",
+    "se_citation_key": "Trepat2009_NatPhys",
+    "n_chunks": 20,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Tsujita2021_NatCommun",
     "title": "Homeostatic membrane tension constrains cancer",
     "doi": "10.1038/s41467-021-26156-4",
@@ -1089,6 +1449,18 @@
     "se_uid": "SE213",
     "se_citation_key": "Tsujita2021_NatCommun",
     "n_chunks": 56,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Woodcock2023_Cells",
+    "title": "Citation: Woodcock, E.; Gorelkin,",
+    "doi": "10.3390/cells12192401",
+    "path": "downloaded/Woodcock2023_Cells.pdf",
+    "n_pages": 15,
+    "source": "downloaded",
+    "se_uid": "SE187",
+    "se_citation_key": "Woodcock2023_Cells",
+    "n_chunks": 38,
     "linked_to_source_evidence": true
   },
   {
@@ -1102,6 +1474,18 @@
     "se_citation_key": "XuSulchek2012_PLoSOne",
     "n_chunks": 34,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "extensive-research-on-cell-migration-usi-430f16",
+    "title": "Extensive research on cell migration using flat, 2D tissue",
+    "doi": "10.1038/s41580-",
+    "path": "downloaded/Yamada2019_NRMCB.pdf",
+    "n_pages": 15,
+    "source": "downloaded",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 66,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "YangKaufman2009_BiophysJ",
@@ -1137,6 +1521,18 @@
     "se_uid": "SE126",
     "se_citation_key": "Yap2015_DevCell",
     "n_chunks": 37,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Yonemura2010_NCB",
+    "title": "α-Catenin as a tension transducer that induces",
+    "doi": "10.1038/ncb2055",
+    "path": "downloaded/Yonemura2010_NCB.pdf",
+    "n_pages": 22,
+    "source": "downloaded",
+    "se_uid": "SE128",
+    "se_citation_key": "Yonemura2010_NCB",
+    "n_chunks": 50,
     "linked_to_source_evidence": true
   }
 ]

@@ -11,8 +11,9 @@
  },
  "Arruda2026_NpjSystBiolAppl": {
   "doi": "10.1038/s41540-026-00648-9",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 10217687,
+  "url": "https://doi.org/10.1038/s41540-026-00648-9"
  },
  "Audoin2022_SciRep": {
   "doi": "10.1038/s41598-022-18950-x",
@@ -22,12 +23,14 @@
  "BakerChen2012_JCS": {
   "doi": "10.1242/jcs.079509",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Bangasser2013_BiophysJ": {
   "doi": "10.1016/j.bpj.2013.06.027",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Bastatas2012_BBA": {
   "doi": "10.1016/j.bbagen.2012.02.006",
@@ -40,7 +43,8 @@
  "Berens2015_JoVE": {
   "doi": "10.3791/53409",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Bertet2004_Nature": {
   "doi": "10.1038/nature02590",
@@ -48,13 +52,15 @@
  },
  "Betorz2023_JournalOfTheMechanicsAnd": {
   "doi": "10.1016/j.jmps.2023.105390",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 2834956,
+  "url": "https://upcommons.upc.edu/bitstream/2117/393546/1/1-s2.0-S0022509623001941-main.pdf"
  },
  "Bi2015_PRX": {
   "doi": "10.1103/physrevx.6.021011",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 2933369,
+  "url": "https://arxiv.org/pdf/1509.06578"
  },
  "Bi2016_NatPhys": {
   "doi": "10.1038/nphys3471",
@@ -64,22 +70,26 @@
  "Bieling2016_Cell": {
   "doi": "10.1016/j.cell.2015.11.057",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Boot2021_AdvancesInPhysicsX": {
   "doi": "10.1080/23746149.2021.1978316",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Borghi2012_PNAS": {
   "doi": "10.1073/pnas.1204390109",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Botticelli2025_FrontBioengBiotechnol": {
   "doi": "10.3389/fbioe.2025.1515962",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 3041891,
+  "url": "https://doi.org/10.3389/fbioe.2025.1515962"
  },
  "Bredfeldt2014_JBiomedOpt": {
   "doi": "10.1117/1.jbo.19.1.016007",
@@ -93,7 +103,8 @@
  "BrochardWyart2006_PNAS": {
   "doi": "10.1073/pnas.0602012103",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Brodland2002": {
   "doi": "10.1115/1.1449491",
@@ -107,7 +118,8 @@
  "Buckley2014_Science": {
   "doi": "10.1126/science.1254211",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Bustamante1994_Science": {
   "doi": "10.1126/science.8079175",
@@ -120,22 +132,26 @@
  "Cadart2019_NatPhysics": {
   "doi": "10.1038/s41567-019-0629-y",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Caille2002_JBiomech": {
   "doi": "10.1016/s0021-9290(01)00201-9",
   "status": "dl-fail",
-  "http": 405
+  "http": 405,
+  "tried_urls": 1
  },
  "CalzadoMartin2016_ACSNano": {
   "doi": "10.1021/acsnano.5b07162",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Cambria2024_NatRevCancer": {
   "doi": "10.1038/s41568-023-00656-5",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Cavey2008_Cell": {
   "doi": "10.1038/nature06953",
@@ -148,7 +164,8 @@
  "Charras2008_BJ": {
   "doi": "10.1529/biophysj.107.113605",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Chaudhuri2015_NatCommun": {
   "doi": "10.1038/ncomms7365",
@@ -162,8 +179,9 @@
  },
  "Chen2017_MBE": {
   "doi": "10.3934/mbe.2018016",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 3649460,
+  "url": "https://doi.org/10.3934/mbe.2018016"
  },
  "Chen2020_BeilsteinJNanotechnol": {
   "doi": "10.3762/bjnano.11.45",
@@ -173,17 +191,20 @@
  "ChughPaluch2018_JCS": {
   "doi": "10.1242/jcs.186254",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 4
  },
  "Coceano2016_Nanotechnology": {
   "doi": "10.1088/0957-4484/27/6/065102",
   "status": "dl-fail",
-  "http": 202
+  "http": 202,
+  "tried_urls": 1
  },
  "Conklin2011_AmJPathol": {
   "doi": "10.1016/j.ajpath.2010.11.076",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Cox_NatCommun": {
   "doi": "10.1038/ncomms10366",
@@ -202,7 +223,8 @@
  "DelRio2009_Science": {
   "doi": "10.1126/science.1162912",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "DenaisRaab2016_Science": {
   "doi": "10.1126/science.aad7297",
@@ -241,22 +263,26 @@
  "DoyleYamada2009_JCB": {
   "doi": "10.1083/jcb.200810041",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Dupont2011_Nature": {
   "doi": "10.1038/nature10137",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "EloseguiArtola2017_Cell": {
   "doi": "10.1016/j.cell.2017.10.008",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 524399,
+  "url": "https://kclpure.kcl.ac.uk/ws/files/116961608/Force_triggers_YAP_nuclear_ELOSEGUI_ARTOLA_Accepted4Oct2017Epub26Oct2017_GREEN_AAM_CC_BY_NC_ND_.pdf"
  },
  "Engler2006_Cell": {
   "doi": "10.1016/j.cell.2006.06.044",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Evans2007_RBP": {
   "doi": "10.1353/scu.2007.0015",
@@ -265,7 +291,8 @@
  "EvansRitchie1997_BiophysJ": {
   "doi": "10.1016/s0006-3495(97)78802-7",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 2
  },
  "Fang2016_PhysRevE": {
   "doi": "10.1103/physreve.93.042404",
@@ -283,7 +310,8 @@
  "Ferrer2008_PNAS": {
   "doi": "10.1073/pnas.0706124105",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Foty1996_PNAS": {
   "doi": "10.1242/dev.122.5.1611",
@@ -291,13 +319,15 @@
  },
  "Franz2023_NatCommun": {
   "doi": "10.5194/egusphere-2024-217",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 988274,
+  "url": "https://doi.org/10.5194/egusphere-2024-217"
  },
  "Friedl2011_Cell": {
   "doi": "10.1083/jcb.200909003",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "Funk2021_eLife": {
   "doi": "10.7554/elife.72860",
@@ -315,7 +345,8 @@
  "Gittes1993_JCB": {
   "doi": "10.1083/jcb.120.4.923",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Goldmann2002": {
   "doi": "10.1006/cbir.2002.0900",
@@ -333,12 +364,14 @@
  "Hammerick2010_TissueEngA": {
   "doi": "10.1089/ten.tea.2010.0211",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Harada2014_JCB": {
   "doi": "10.1083/jcb.201308029",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "HeadLevineMacKintosh2003_PRL": {
   "doi": "10.1103/physrevlett.91.108102",
@@ -353,17 +386,20 @@
  "Hochmuth1996_BiophysJ": {
   "doi": "10.1016/s0006-3495(96)79577-2",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 2
  },
  "Hosseini2020_AdvSci": {
   "doi": "10.1002/advs.202001276",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "Hosseini2021_BiophysJ": {
   "doi": "10.1016/j.bpj.2021.05.006",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Hou2018_SciRep": {
   "doi": "10.1038/s41598-018-25337-4",
@@ -372,23 +408,27 @@
  },
  "HuertaLopez2024_SciAdv": {
   "doi": "10.1126/sciadv.adf9758",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 3178887,
+  "url": "https://upcommons.upc.edu/bitstreams/e5615c05-2e45-4d2e-a88e-7b1b5b8ee8d1/download"
  },
  "Hynes2002_Cell": {
   "doi": "10.1016/s0092-8674(02)00971-6",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Isambert1995_JBC": {
   "doi": "10.1074/jbc.270.19.11437",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Janmey2019_PhysiolRev": {
   "doi": "10.1152/physrev.00013.2019",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Jetta2023_FCDB": {
   "doi": "10.3389/fcell.2023.1198109",
@@ -397,8 +437,9 @@
  },
  "Jin2020_Jour": {
   "doi": "10.1101/2020.12.06.413856",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 3687402,
+  "url": "https://www.biorxiv.org/content/biorxiv/early/2020/12/07/2020.12.06.413856.full.pdf.full.pdf"
  },
  "K562_BBRC2019": {
   "doi": "10.1016/j.bbrc.2019.06.054",
@@ -406,8 +447,9 @@
  },
  "Kage2017_NatCommun": {
   "doi": "10.1038/ncomms14832",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 4492085,
+  "url": "https://doi.org/10.1038/ncomms14832"
  },
  "Kanchanawong2010_Nature": {
   "doi": "10.1038/nature09621",
@@ -425,7 +467,8 @@
  "Kong2009_Nature": {
   "doi": "10.1083/jcb.200810002",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "KraningRush2012_PLoSOne": {
   "doi": "10.1371/journal.pone.0032572",
@@ -435,12 +478,14 @@
  "Kunda2008_CurrBiol": {
   "doi": "10.1016/j.cub.2007.12.051",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Labernadie2017_NCB": {
   "doi": "10.1038/ncb3478",
   "status": "dl-fail",
-  "http": 202
+  "http": 202,
+  "tried_urls": 2
  },
  "Lammerding2004_JCI": {
   "doi": "10.1172/jci19670",
@@ -450,7 +495,8 @@
  "LeDuc2010_JCB": {
   "doi": "10.1083/jcb.201001149",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "LeimkuhlerMatthews2013": {
   "doi": "10.1063/1.4802990",
@@ -460,12 +506,14 @@
  "Levental2009_Cell": {
   "doi": "10.1016/j.cell.2009.10.027",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "LewisGrandl2015_eLife": {
   "doi": "10.7554/elife.12088",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 3
  },
  "Li2008_BBRC": {
   "doi": "10.1016/j.bbrc.2008.07.078",
@@ -473,8 +521,9 @@
  },
  "Licup2015_PNAS": {
   "doi": "10.1073/pnas.1504258112",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 1946335,
+  "url": "https://arxiv.org/pdf/1503.00924"
  },
  "Liew2024_CMBE": {
   "doi": "10.1007/s12195-024-00811-4",
@@ -483,18 +532,21 @@
  },
  "Lindstrom2010_Biomaterials": {
   "doi": "10.1103/physreve.82.051905",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 317037,
+  "url": "http://nrs.harvard.edu/urn-3:HUL.InstRepos:41511269"
  },
  "Liu2015_Cell": {
   "doi": "10.1016/j.cell.2015.01.007",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Lo2000_BiophysJ": {
   "doi": "10.1016/s0006-3495(00)76279-5",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Lomakin2020_Science": {
   "doi": "10.1126/science.aba2894",
@@ -503,18 +555,21 @@
  },
  "Malinverno2016_NatMater": {
   "doi": "10.1002/2016gl070096",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 1798743,
+  "url": "https://www.osti.gov/servlets/purl/1314040"
  },
  "MalyBorisy2001_PNAS": {
   "doi": "10.1073/pnas.181338798",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Mangani2025_Cancers": {
   "doi": "10.3390/cancers17213512",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 4
  },
  "Manibog2014_NatCommun": {
   "doi": "10.1038/ncomms4941",
@@ -551,13 +606,15 @@
  },
  "Moeendarbary2013_NatMater": {
   "doi": "10.1038/nmat3517",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 2136841,
+  "url": "http://nrs.harvard.edu/urn-3:HUL.InstRepos:11879812"
  },
  "Mogilner2005_BiophysJ": {
   "doi": "10.1529/biophysj.104.056515",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "MogilnerOster1996_BiophysJ": {
   "doi": "10.1016/s0006-3495(96)79496-1",
@@ -570,8 +627,9 @@
  },
  "Molter2022_FCDB": {
   "doi": "10.3389/fcell.2022.932510",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 2549821,
+  "url": "https://doi.org/10.3389/fcell.2022.932510"
  },
  "MotteKaufman2013_Biopolymers": {
   "doi": "10.1002/bip.22133",
@@ -585,32 +643,38 @@
  "Mui2016_PNAS": {
   "doi": "10.1242/jcs.183699",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Murrell2015_NRMCB": {
   "doi": "10.1038/nrm4012",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Nakamura2007": {
   "doi": "10.1083/jcb.200707073",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Nam2016_PNAS": {
   "doi": "10.1073/pnas.1523906113",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Nayak2023_Cancers": {
   "doi": "10.3390/cancers15194846",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "Nieto2026_EuropeanJournalOfPharmac": {
   "doi": "10.1016/j.ejps.2025.107370",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Odenthal2013_PLoSComputBiol": {
   "doi": "10.1371/journal.pcbi.1003267",
@@ -620,7 +684,8 @@
  "Ofek2009_JBiomech": {
   "doi": "10.1016/j.jbiomech.2009.01.024",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Omidvar2014_JBiomech": {
   "doi": "10.1016/j.jbiomech.2014.08.002",
@@ -629,7 +694,8 @@
  "Oria2017_Nature": {
   "doi": "10.1038/nature24662",
   "status": "dl-fail",
-  "http": 410
+  "http": 410,
+  "tried_urls": 1
  },
  "Otto2015_NatMethods": {
   "doi": "10.1038/nmeth.3281",
@@ -646,23 +712,27 @@
  },
  "Panzetta2019_PNAS": {
   "doi": "10.1073/pnas.1904660116",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 1654744,
+  "url": "https://www.pnas.org/content/pnas/116/44/22004.full.pdf"
  },
  "Park2015_NatMater": {
   "doi": "10.1038/nmat4357",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 5373456,
+  "url": "http://doi.org/10.1038/nmat4357"
  },
  "PathakKumar2012_PNAS": {
   "doi": "10.1073/pnas.1118073109",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 1117781,
+  "url": "https://www.pnas.org/content/pnas/109/26/10334.full.pdf"
  },
  "PaulKonstantopoulos2017_NatRevCancer": {
   "doi": "10.1038/nrc.2016.123",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Petitjean2010_BiophysJ": {
   "doi": "10.1016/j.bpj.2010.01.030",
@@ -672,7 +742,8 @@
  "Pillarisetti2011_CellReprogram": {
   "doi": "10.1089/cell.2011.0028",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Plodinec2012_NatNanotechnol": {
   "doi": "10.1038/nnano.2012.167",
@@ -693,13 +764,15 @@
  },
  "Provenzano2006_BMCMed": {
   "doi": "10.1186/1741-7015-4-38",
-  "status": "dl-fail",
-  "http": 200
+  "status": "downloaded",
+  "bytes": 12593155,
+  "url": "https://doi.org/10.1186/1741-7015-4-38"
  },
  "Rakshit2012_PNAS": {
   "doi": "10.1073/pnas.1208349109",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 715370,
+  "url": "https://www.pnas.org/content/pnas/109/46/18815.full.pdf"
  },
  "Rawicz2000_BiophysJ": {
   "doi": "10.1016/s0006-3495(00)76295-3",
@@ -726,8 +799,9 @@
  },
  "Rosenbauer2023_JPhysChemB": {
   "doi": "10.1021/acs.jpcb.2c08114",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 435927,
+  "url": "https://doi.org/10.1021/acs.jpcb.2c08114"
  },
  "Rosenbluth2006_BiophysJ": {
   "doi": "10.1529/biophysj.105.067496",
@@ -756,7 +830,8 @@
  "Saraswathibhatla2023_NRMCB": {
   "doi": "10.1038/s41580-023-00583-1",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "SciRep2025_GliomaAFM": {
   "doi": "10.1038/s41598-025-04841-4",
@@ -770,7 +845,8 @@
  "Shah2025_Cells": {
   "doi": "10.3390/cells14100732",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "Sharma2014_IntegrBiol": {
   "doi": "10.1039/c3ib40246k",
@@ -779,7 +855,8 @@
  "Smelser2015_BMMB": {
   "doi": "10.1007/s10237-015-0677-x",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Stephens2017_MBoC": {
   "doi": "10.1091/mbc.e16-09-0653",
@@ -801,13 +878,15 @@
  },
  "Stylianopoulos2012_PNAS": {
   "doi": "10.1073/pnas.1213353109",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 2191681,
+  "url": "https://www.pnas.org/content/pnas/109/38/15101.full.pdf"
  },
  "Swaminathan2011_CancerRes": {
   "doi": "10.1158/0008-5472.can-11-0247",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Swift2013_Science": {
   "doi": "10.1126/science.1240104",
@@ -816,7 +895,8 @@
  "Tambe2011_NatMater": {
   "doi": "10.1038/nmat3025",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Thiery2009_Cell": {
   "doi": "10.1016/j.cell.2009.11.007",
@@ -826,7 +906,8 @@
  "Tinevez2009_PNAS": {
   "doi": "10.1073/pnas.0903353106",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "TitushkinCho2007_BiophysJ": {
   "doi": "10.1529/biophysj.107.107797",
@@ -840,7 +921,8 @@
  "TrepatFredberg2011_TCB": {
   "doi": "10.1016/j.tcb.2011.06.006",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Tsujita2021_NatCommun": {
   "doi": "10.1038/s41467-021-26156-4",
@@ -850,12 +932,14 @@
  "VincentEngler2013_BiotechnolJ": {
   "doi": "10.1002/biot.201200205",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "WalcottSun2010_PNAS": {
   "doi": "10.1073/pnas.0912739107",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "Wang2016_PLoSONE": {
   "doi": "10.1371/journal.pone.0161915",
@@ -865,17 +949,20 @@
  "Wolf2013_JCB": {
   "doi": "10.1083/jcb.201210152",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 1
  },
  "Woodcock2023_Cells": {
   "doi": "10.3390/cells12192401",
-  "status": "dl-fail",
-  "http": 403
+  "status": "downloaded",
+  "bytes": 3494493,
+  "url": "https://openaccess.sgul.ac.uk/id/eprint/115801/1/cells-12-02401.pdf"
  },
  "Xiong2007_NatPrec": {
   "doi": "10.1038/npre.2007.62.2",
   "status": "dl-fail",
-  "err": "ConnectTimeout"
+  "err": "ConnectTimeout",
+  "tried_urls": 2
  },
  "XuSulchek2012_PLoSOne": {
   "doi": "10.1371/journal.pone.0046609",
@@ -889,7 +976,8 @@
  "YangAnseth2014_NatMater": {
   "doi": "10.1038/nmat3889",
   "status": "dl-fail",
-  "http": 200
+  "http": 200,
+  "tried_urls": 1
  },
  "YangKaufman2009_BiophysJ": {
   "doi": "10.1016/j.bpj.2008.10.063",
@@ -913,12 +1001,14 @@
  "Zbiral2023_IJMS": {
   "doi": "10.3390/ijms241512208",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 3
  },
  "Zhu2022_Organoids": {
   "doi": "10.3390/organoids1020012",
   "status": "dl-fail",
-  "http": 403
+  "http": 403,
+  "tried_urls": 2
  },
  "Zhuo2018_LightSciAppl": {
   "doi": "10.1038/s41377-018-0001-5",
