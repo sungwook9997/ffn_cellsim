@@ -8,7 +8,26 @@ proposed next diagnostics (one touches the stiffen-forbidden crosslinker `k`).
 
 ---
 
-## TL;DR
+## TL;DR — RESOLVED (root cause found 2026-06-03)
+
+**The floor was a dead flag, not a physics wall.** `--v0-accel` (motor stepping-rate
+acceleration, default 300) was accepted by the driver but **never applied to the
+myosin `v0_per_head`**. So the motors crawled at the physical 1µm/s over the tiny
+constrained-dt sim-time, walking ~1nm per full run (`s_grip/ℓ₀≈0.003`) — never
+completing a step, acting as **static elastic crosslinks** (net-zero tension at
+equilibrium) instead of active force generators. Wiring the flag (commit `e4faea9`)
+makes the motors walk → climb to stall → `g_soft` rises **17× (v0×300) to 150×
+(v0×3000)** off the floor and keeps climbing. The active channel works. This single
+cause explains all seven eliminations below: a static network has balanced forces, so
+**no** rearrangement (percolation/turnover/coherence/coupling/buckling) can produce
+net tension. Remaining work: derive `v0_accel` from timescale separation (not tuned
+to band; ≈300 = the couple_accel `kon_scale`, also = τ_motor/τ_sim-run), fix the CH2
+over-driving (delivered `k·r` exceeds the softer series stall cap → `F/F_stall=2.7` at
+v0×3000), and a long run to the plateau / band check.
+
+---
+
+### The elimination chain that LED here (all symptoms of the dead flag)
 
 The active cortical-tension floor (`g_soft ≈ 2e-4 mN/m`, ~1000× under the KU-3.5
 band `[0.35, 0.65]`) is **NOT** a transmission problem. Five independent levers —
