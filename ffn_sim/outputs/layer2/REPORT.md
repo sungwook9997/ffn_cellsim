@@ -352,6 +352,54 @@ next step (collective-Lam4 mechanism; raw-area + longer time; native-N GPU). PI 
 overlay-only throughout. Figure `fig_layer2_pi_overlay.png`; summary
 `outputs/layer2/pi_overlay_summary.json`.
 
+## A4 — the collective-Lam4 mechanism: uniform β1 → traction localization (2026-06-03)
+
+A2 confirmed the single-cell↔collective laminin SPLIT (PI collective Lam4 > Pre > Bare; A1
+single-cell Pre > Lam4 ≳ Bare) and implicated a *collective* mechanism rooted in laminin's
+measured **"uniform β1"** IF pattern (vs Bare "diffuse" / Pre "peripheral";
+LIGAND_PRESENTATION_MECHANISM.md). A4 tests it with ONE faithful change: the β1 distribution
+sets the traction SCREENING LENGTH `Lp` (`ligand_traction.py`, new A4 axis). Bare/Pre stay
+edge-localised (Lp = 11 µm, peripheral β1 = the A1 baseline); **Lam4 = uniform** (Lp ≫ spheroid,
+"uniform β1") so *every basal cell* — not just the rim — transmits traction. The MAGNITUDE is
+unchanged (Lam4 1.53 nN from A1 clutch kinetics); cohesion / substrate / proliferation are
+identical to A1. Only the distribution differs — isolating the mechanism.
+
+**Result (Lam4 uniform vs A1 edge, 4 R₀ × 2 seeds, connected-core):**
+
+| R₀ (µm) | 40.4 | 53.5 | 67.3 | 78.3 | corr(R₀,A/A₀) |
+|---|---|---|---|---|---|
+| Lam4 EDGE β1 (A1) | 2.68 | 2.26 | 1.92 | 1.75 | **−0.99** (1/R, penalty present) |
+| Lam4 UNIFORM β1 (A4) | 1.87 | 1.90 | 2.40 | 2.86 | **+0.95** (penalty reversed) |
+
+**The mechanism is the right knob (direction CONFIRMED).** Uniform β1 engages the interior
+(traction ∝ N ∝ volume, not rim ∝ surface), so it lifts LARGE spheroids relatively more and
+**flips the size-dependence sign (corr −0.99 → +0.95)** — i.e. the small-size penalty is
+removed/reversed, the documented Lam4 "scale-independent / c→0" phenotype emerging *from the
+mechanism*. At large R₀ Lam4-uniform overtakes Pre (R₀=78 µm: Lam4 2.86 ≫ Pre 1.77; crossover
+≈67 µm), so the ordering DOES flip to Lam4-highest **at large size** — the collective resolution
+of the split that single-cell traction (A1) could not produce.
+
+**Honest limits (full-uniform OVERSHOOTS → partial uniformity is the physical Lam4):**
+- **Sign overshoot.** The PI Lam4 still DECREASES with R₀ (corr −0.91, §A2); full-uniform
+  *reverses* the slope (+0.95). The real Lam4 is between edge and fully-uniform → a **partial
+  β1 uniformity (intermediate Lp)** that lifts magnitude / flattens the penalty *without*
+  flipping the sign. (Not tuned here — flagged as the indicated refinement; an Lp sweep is the
+  A4′ next step, overlay-only.)
+- **No mid-R₀ flip.** At R₀≈60 µm the ordering is still Pre (2.16) ≳ Lam4 (2.13) > Bare (2.02);
+  the flip is large-R₀-only at full uniformity.
+- **Large stochastic variance.** Uniform per-cell outward traction pushes the cluster toward the
+  cohesion-destabilisation limit → seed sd ±0.6–1.2 (vs A1 edge ±0.05–0.09). No ejection (B1
+  guard clean), but robust Lam4-uniform statistics need more seeds (B2/GPU, A3).
+
+**Net (A4 verdict):** the collective **uniform-β1 mechanism is validated in direction** — it
+removes/reverses Lam4's small-size penalty and lifts Lam4 above Pre at large R₀, the
+mechanistic resolution of the A2 single-cell↔collective split (Lam4's enhancement is uniform-β1
+collective engagement, NOT single-cell clutch traction). Full uniformity overshoots (sign flip
++ variance); **partial β1 uniformity (intermediate Lp) is the physical Lam4** — the next
+refinement, alongside native-N/GPU (B2) for the magnitude and R₀-range gaps (§A2). 2 new tests
+(β1-distribution → Lp mapping; uniform override leaves magnitude unchanged) → layer-2 suite
+**98 green**. Figure `fig_layer2_a4_uniform_beta1.png`.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
@@ -409,6 +457,12 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   (annotated) with ±0.10 scatter, catch 0/5 with ±0.05. **Right**: why — the effective cohesion
   force law F_coh(ext) strengthens to a peak at per-cadherin f₀≈29 pN (overlaid: measured 6.5 nN
   de-adhesion) then slip-ruptures. The force-strengthening is the fragmentation fix.
+- `figs/fig_layer2_a4_uniform_beta1.png` — **A4 collective-Lam4 (uniform β1).** **Left**: the
+  three emergent curves with Bare/Pre edge-β1 (A1) + Lam4 UNIFORM-β1 (solid green) and the Lam4
+  EDGE-β1 A/B reference (dashed green); uniform β1 flips Lam4's slope (decreasing→increasing),
+  overtaking Pre at large R₀ (crossover ≈67 µm). **Right**: mid-R₀ A/A₀, A1-edge (hatched) vs A4
+  (solid) per condition, annotated with the A1/A4/PI orderings (A4 = Pre>Lam4>Bare at mid-R₀; PI
+  collective = Lam4>Pre>Bare). A/A₀=1 ref, SI units, no truncation.
 - `figs/fig_layer2_pi_overlay.png` — **A2 PI poster overlay (overlay-only).** **Left**: PI
   per-spheroid points (○) + their a+b/R+c/R² fit (solid) for Bare/Pre/Lam4, with the platform's
   A1 emergent points (◇) + fit (dashed) and its extrapolation into the PI R₀ range (dotted,

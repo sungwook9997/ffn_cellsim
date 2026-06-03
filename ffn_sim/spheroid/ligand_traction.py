@@ -81,6 +81,9 @@ __all__ = [
     "T_REF_DEFAULT",
     "DENSITY_FACTORS_DEFAULT",
     "STABLE_TRACTION_CEILING",
+    "LP_EDGE",
+    "LP_UNIFORM",
+    "BETA1_DISTRIBUTION",
     "clutch_strength",
     "resolve_ligand_traction",
 ]
@@ -107,6 +110,27 @@ DENSITY_FACTORS_DEFAULT: dict[str, float] = {
     "Lam4": 1.0,   # + soluble laminin-111, uniform β1 (= Pre availability; isolates identity)
 }
 
+# --- A4: traction DISTRIBUTION axis (β1 uniformity → traction screening length Lp) ----------
+# A1 set the traction MAGNITUDE from clutch kinetics. A4 adds the orthogonal DISTRIBUTION axis
+# from the measured β1 IF pattern (LIGAND_PRESENTATION_MECHANISM.md): Bare "diffuse" / Pre
+# "peripheral" / Lam4 "uniform". In the active-wetting model the traction is screened to within
+# Lp of the cluster edge (`spreading.edge_outward_forces`): a SMALL Lp = edge/peripheral
+# engagement (the rim ∝ 1/R drives the law), a LARGE Lp = whole-footprint UNIFORM engagement.
+# So β1 distribution maps onto Lp: peripheral/diffuse → edge Lp; uniform → Lp ≫ spheroid.
+LP_EDGE: float = 11.0e-6        # m  edge screening length (Pérez-González 2019; A1 default)
+# "uniform-β1 sentinel": Lp ≫ any spheroid radius ⇒ exp(−depth/Lp) ≈ 1 ⇒ every basal cell
+# transmits traction (uniform engagement), the measured Lam4 phenotype. NOT a fitted length —
+# it is the Lp→∞ (uniform) limit expressed as a value far above the cluster scale (~0.1–0.4 mm).
+LP_UNIFORM: float = 1.0e-3      # m
+
+# β1 IF distribution per condition (LIGAND_PRESENTATION_MECHANISM.md). "uniform" (Lam4) is the
+# A4 collective axis; "diffuse"/"peripheral" (col-I) are edge-localized for traction transmission
+# (the Bare diffuse-vs-Pre peripheral sub-distinction is carried by the density factor, A1).
+BETA1_DISTRIBUTION: dict[str, str] = {"Bare": "diffuse", "Pre": "peripheral", "Lam4": "uniform"}
+_LP_FOR_DISTRIBUTION: dict[str, float] = {
+    "diffuse": LP_EDGE, "peripheral": LP_EDGE, "uniform": LP_UNIFORM,
+}
+
 
 @dataclass(frozen=True)
 class ResolvedLigandTraction:
@@ -120,6 +144,9 @@ class ResolvedLigandTraction:
     clutch_strength: float  # φ·F_s relative to the col-I reference (=1.0)    [–]
     density_factor: float   # ligand availability (FLAGGED modeling axis)     [–]
     f_traction: float       # edge-cell traction = T_ref·density·strength     [N]
+    beta1_distribution: str # measured β1 IF pattern: diffuse|peripheral|uniform
+    Lp: float               # traction screening length (m): edge vs uniform (A4 axis)
+    uniform_beta1: bool     # True for Lam4 ("uniform β1" → whole-footprint traction, A4)
     proxy: bool             # True if the ligand kinetics are a literature proxy (laminin)
 
 
@@ -156,6 +183,7 @@ def resolve_ligand_traction(
     t_ref: float = T_REF_DEFAULT,
     k_on: float = KU_2_4_K_ON,
     density_factors: dict[str, float] | None = None,
+    uniform_beta1: bool = False,
 ) -> ResolvedLigandTraction:
     """Resolve a PI condition (Bare/Pre/Lam4) → active edge-traction from clutch kinetics.
 
@@ -166,6 +194,11 @@ def resolve_ligand_traction(
         k_on: generic integrin on-rate (KU-2.4 default 0.3 s⁻¹).
         density_factors: per-condition availability factors (FLAGGED modeling axis; defaults
             to ``DENSITY_FACTORS_DEFAULT``). Pass a custom dict to sweep the density axis (A3).
+        uniform_beta1: A4 axis. ``False`` (default) → the traction screening length ``Lp`` is
+            taken from the condition's measured β1 IF pattern (``BETA1_DISTRIBUTION``: Lam4
+            "uniform" → ``LP_UNIFORM``, col-I edge → ``LP_EDGE``). ``True`` forces the uniform
+            (whole-footprint) limit regardless of condition — used to A/B the uniform-β1
+            mechanism against the A1 edge-localized baseline.
 
     Returns:
         ``ResolvedLigandTraction`` with the resolved ``f_traction`` and its provenance.
@@ -192,6 +225,10 @@ def resolve_ligand_traction(
     density = float(dens[condition])
     f_traction = float(t_ref * density * strength)
 
+    distribution = BETA1_DISTRIBUTION[condition]
+    is_uniform = bool(uniform_beta1 or distribution == "uniform")
+    Lp = LP_UNIFORM if is_uniform else _LP_FOR_DISTRIBUTION[distribution]
+
     if f_traction > STABLE_TRACTION_CEILING:
         raise ValueError(
             f"resolve_ligand_traction({condition!r}) → {f_traction*1e9:.2f} nN exceeds the "
@@ -208,5 +245,8 @@ def resolve_ligand_traction(
         clutch_strength=float(strength),
         density_factor=density,
         f_traction=f_traction,
+        beta1_distribution=distribution,
+        Lp=float(Lp),
+        uniform_beta1=is_uniform,
         proxy=bool(lig.proxy),
     )

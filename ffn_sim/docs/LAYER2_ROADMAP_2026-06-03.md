@@ -51,6 +51,19 @@
   3 R₀ (degenerate r²=1). More R₀ / seeds / biological time → a/b/c with real error bars
   (needs B2 for scale).
 
+- ~~**A4. Collective-Lam4 mechanism (uniform β1 → traction localization).**~~ ✅ **DONE
+  2026-06-03** (REPORT §A4; `ligand_traction.py` β1→Lp axis + `scripts/layer2_a4_uniform_beta1.py`;
+  fig `fig_layer2_a4_uniform_beta1.png`; +2 tests, 98 green). Tested the A2-implicated collective
+  hypothesis: Lam4's measured "uniform β1" → uniform (Lp≫spheroid) traction (vs Bare/Pre edge,
+  Lp 11 µm), magnitude unchanged. **Direction CONFIRMED**: uniform β1 engages the interior
+  (∝volume) → flips Lam4's size-dependence (corr −0.99→+0.95 = small-size penalty removed/
+  reversed, the documented "scale-independent" Lam4 phenotype emergent) and lifts Lam4 above Pre
+  at large R₀ (crossover ≈67 µm) — the collective resolution of the single-cell↔collective split
+  (Lam4 enhancement = uniform-β1 collective engagement, NOT single-cell clutch traction). ⚠️ But
+  full-uniform OVERSHOOTS: PI Lam4 still decreases (corr −0.91) while full-uniform reverses the
+  slope; + large seed variance (±0.6–1.2, near cohesion-destabilization). → **A4′ next: partial
+  β1 uniformity (intermediate Lp sweep, overlay-only) + more seeds (B2/GPU)** = the physical Lam4.
+
 ### B. Numerics / production robustness (needed to run A at scale)
 
 - ~~**B1. Box-sizing + substrate-wall fix.**~~ ✅ **DONE 2026-06-03** (REPORT §B1).
@@ -93,21 +106,18 @@
 ## Dependency graph / recommended next step
 
 ```
-B1 ✅ ─► A1 ✅ (3 separated curves) ─► A2 ✅ (PI overlay: SHAPE matches; 3 gaps) ─┬─► A4 collective-Lam4 mechanism (the ordering split)
-                                                                                  ├─► magnitude: raw-area readout + longer time
-                                                                                  └─► B2 native-N GPU ─► A3 robust a/b/c (PI R₀ range)
+B1 ✅ ─► A1 ✅ ─► A2 ✅ (SHAPE matches; 3 gaps) ─► A4 ✅ (uniform-β1 = right knob; full overshoots) ─┬─► A4′ partial-uniformity Lp sweep (+ more seeds)
+                                                                                                     ├─► magnitude: raw-area + longer time
+                                                                                                     └─► B2 native-N GPU ─► A3 robust a/b/c (PI R₀ range)
 C (integration) and D (extensions) run in parallel / after.
 ```
 
-**Recommended next single step (A2 done — the validation comparison landed):** pick one of the
-three gap-driven follow-ups (each now well-defined):
-- **A4 (most scientific) — the collective-Lam4 mechanism.** A2 confirmed Lam4's enhancement is
-  NOT single-cell traction (the split). Test the *collective* hypothesis: soluble laminin →
-  "uniform β1" → more uniform proliferation / a cohesion modulation that lifts the small-size
-  c-penalty (the documented Lam4 "c→0"). Does adding that mechanism flip the emergent ordering
-  to Lam4-highest *emergently*? (Still overlay-only.)
-- **Magnitude (quick) — raw-area + longer biological time** readout alongside the connected-core,
-  to close the ~4–5× gap honestly (core/raw + 60→82 h are the two known contributors).
-- **B2 → A3 — native-N GPU** to reach the PI R₀ range (87–419 µm) and give robust per-condition
-  a/b/c with error bars (the CPU first-pass is degenerate at 4 R₀).
-Ask PI which to prioritise; A4 is the highest-science next move.
+**Recommended next single step (A4 done — collective mechanism validated in direction):**
+- **A4′ — partial β1 uniformity (intermediate Lp sweep).** A4 showed full-uniform is the right
+  knob but overshoots (slope sign flip + variance). Sweep Lp between edge (11 µm) and uniform to
+  find the partial uniformity that lifts Lam4's magnitude / flattens the penalty *without*
+  reversing the sign — the physical Lam4. Overlay-only; needs more seeds (variance) → pairs with B2.
+- **Magnitude (quick) — raw-area + longer biological time** readout (close the §A2 ~4–5× gap).
+- **B2 → A3 — native-N GPU** for the PI R₀ range (87–419 µm) + robust per-condition a/b/c.
+Ask PI which to prioritise. (The platform now reproduces the law SHAPE (A2) and the collective
+ligand mechanism in direction (A4); the remaining gaps are scale/statistics = the GPU axis B2.)

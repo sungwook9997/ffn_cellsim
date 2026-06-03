@@ -15,6 +15,8 @@ import pytest
 from ffn_sim.bridge.ligand_species import DEFAULT_LIGAND_FOR_CONDITION, K_BT, LIGAND_REGISTRY
 from ffn_sim.spheroid.ligand_traction import (
     KU_2_4_K_ON,
+    LP_EDGE,
+    LP_UNIFORM,
     STABLE_TRACTION_CEILING,
     T_REF_DEFAULT,
     clutch_strength,
@@ -83,6 +85,29 @@ def test_density_factor_scales_traction_linearly():
     full = resolve_ligand_traction("Pre", density_factors={"Pre": 1.0})
     half = resolve_ligand_traction("Pre", density_factors={"Pre": 0.5})
     assert half.f_traction == pytest.approx(0.5 * full.f_traction)
+
+
+def test_a4_beta1_distribution_sets_traction_localization():
+    """A4 axis: Lam4 'uniform β1' → uniform (large-Lp) traction; col-I edge-localized (LP_EDGE).
+
+    The MAGNITUDE is unchanged by the distribution axis (still the A1 clutch-kinetics value);
+    only Lp (where the traction engages: rim vs whole footprint) differs."""
+    bare, pre, lam = (resolve_ligand_traction(c) for c in _CONDITIONS)
+    assert bare.beta1_distribution == "diffuse" and pre.beta1_distribution == "peripheral"
+    assert lam.beta1_distribution == "uniform"
+    # col-I conditions are edge-localized; Lam4 is uniform (Lp far larger, engages the interior)
+    assert bare.Lp == LP_EDGE and pre.Lp == LP_EDGE
+    assert lam.Lp == LP_UNIFORM and lam.uniform_beta1 is True
+    assert lam.Lp > 10.0 * pre.Lp                       # genuinely uniform (>> spheroid scale)
+    assert bare.uniform_beta1 is False and pre.uniform_beta1 is False
+
+
+def test_a4_uniform_flag_forces_uniform_without_changing_magnitude():
+    """The uniform_beta1=True override forces uniform Lp on any condition; f_traction unchanged."""
+    edge = resolve_ligand_traction("Pre")
+    forced = resolve_ligand_traction("Pre", uniform_beta1=True)
+    assert edge.Lp == LP_EDGE and forced.Lp == LP_UNIFORM and forced.uniform_beta1 is True
+    assert forced.f_traction == pytest.approx(edge.f_traction)   # distribution ≠ magnitude
 
 
 def test_resolver_rejects_bad_inputs():
