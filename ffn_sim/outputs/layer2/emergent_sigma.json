@@ -1,0 +1,159 @@
+{
+  "cohesive": {
+    "n_cells": 200,
+    "n_core": 200,
+    "n_interior": 58,
+    "n_exterior": 142,
+    "n_pairs_interior": 265,
+    "n_pairs_exterior": 537,
+    "n_pairs_whole": 1129,
+    "settle_steps": 40000,
+    "seed": 42,
+    "repulsive_control": false,
+    "R_edge_um": 55.39494992588753,
+    "Rg_um": 39.06147568937425,
+    "nn_median_over_r0": 0.9812041986630804,
+    "P_interior_Pa": 6.691735412480684,
+    "P_exterior_Pa": -1.9111301016927118,
+    "P_whole_Pa": 0.0007917976564740599,
+    "dP_diag_Pa": -8.602865514173395,
+    "sigma_emergent_mN_m": 0.027512637075253376,
+    "gamma_cortical_mN_m": 0.57,
+    "sigma_over_gamma": 0.04826778434254978,
+    "contact_radius_um": 1.4472924823905666,
+    "contact_area_um2": 6.580554423543112,
+    "work_deadhesion_fJ": 19.500000000000004,
+    "beta_mN_m": 2.963276153485679,
+    "beta_over_gamma": 5.1987300938345244,
+    "roffay_beta_over_gamma_window": [
+      0.375,
+      0.5
+    ],
+    "beta_over_gamma_in_roffay": false,
+    "beta_over_gamma_above_roffay": true
+  },
+  "control_repulsive": {
+    "n_cells": 200,
+    "n_core": 200,
+    "n_interior": 58,
+    "n_exterior": 142,
+    "n_pairs_interior": 95,
+    "n_pairs_exterior": 206,
+    "n_pairs_whole": 419,
+    "settle_steps": 40000,
+    "seed": 42,
+    "repulsive_control": true,
+    "R_edge_um": 55.39494992588753,
+    "Rg_um": 39.06147568937425,
+    "nn_median_over_r0": 0.9812041986630804,
+    "P_interior_Pa": 32.44863174358376,
+    "P_exterior_Pa": 8.278853477798112,
+    "P_whole_Pa": 21.78592800855599,
+    "dP_diag_Pa": -24.16977826578565,
+    "sigma_emergent_mN_m": -0.0029305422907539153,
+    "gamma_cortical_mN_m": 0.57,
+    "sigma_over_gamma": -0.005141302264480553,
+    "contact_radius_um": 1.4472924823905666,
+    "contact_area_um2": 6.580554423543112,
+    "work_deadhesion_fJ": 19.500000000000004,
+    "beta_mN_m": 2.963276153485679,
+    "beta_over_gamma": 5.1987300938345244,
+    "roffay_beta_over_gamma_window": [
+      0.375,
+      0.5
+    ],
+    "beta_over_gamma_in_roffay": false,
+    "beta_over_gamma_above_roffay": true
+  },
+  "sign_convention_validated": true,
+  "ensemble": {
+    "runs": [
+      {
+        "seed": 42,
+        "n_cells": 150,
+        "sigma_emergent_mN_m": 0.020904828359331443,
+        "sigma_over_gamma": 0.036675137472511304,
+        "beta_over_gamma": 6.187422354704717,
+        "R_edge_um": 53.4157492933549
+      },
+      {
+        "seed": 42,
+        "n_cells": 200,
+        "sigma_emergent_mN_m": 0.027512637075253376,
+        "sigma_over_gamma": 0.04826778434254978,
+        "beta_over_gamma": 5.1987300938345244,
+        "R_edge_um": 55.39494992588753
+      },
+      {
+        "seed": 42,
+        "n_cells": 300,
+        "sigma_emergent_mN_m": 0.01577147148509199,
+        "sigma_over_gamma": 0.027669248219459628,
+        "beta_over_gamma": 4.880729187243147,
+        "R_edge_um": 65.05343807260526
+      },
+      {
+        "seed": 7,
+        "n_cells": 150,
+        "sigma_emergent_mN_m": 0.04403112915100557,
+        "sigma_over_gamma": 0.07724759500176416,
+        "beta_over_gamma": 4.989227315733957,
+        "R_edge_um": 49.97844504865808
+      },
+      {
+        "seed": 7,
+        "n_cells": 200,
+        "sigma_emergent_mN_m": 0.01500980830283415,
+        "sigma_over_gamma": 0.026332997022516055,
+        "beta_over_gamma": 5.611186071611745,
+        "R_edge_um": 57.14524647276629
+      },
+      {
+        "seed": 7,
+        "n_cells": 300,
+        "sigma_emergent_mN_m": -0.007231752073849469,
+        "sigma_over_gamma": -0.012687284340086789,
+        "beta_over_gamma": 5.173788104296957,
+        "R_edge_um": 65.22912428425353
+      },
+      {
+        "seed": 101,
+        "n_cells": 150,
+        "sigma_emergent_mN_m": 0.007219835972458378,
+        "sigma_over_gamma": 0.012666378899049785,
+        "beta_over_gamma": 11.197604266442664,
+        "R_edge_um": 56.440595852382664
+      },
+      {
+        "seed": 101,
+        "n_cells": 200,
+        "sigma_emergent_mN_m": -0.01629788608583532,
+        "sigma_over_gamma": -0.028592782606728633,
+        "beta_over_gamma": 5.145069220667337,
+        "R_edge_um": 57.097923336131444
+      },
+      {
+        "seed": 101,
+        "n_cells": 300,
+        "sigma_emergent_mN_m": 0.00487748934865966,
+        "sigma_over_gamma": 0.00855699885729765,
+        "beta_over_gamma": 5.058057842608583,
+        "R_edge_um": 65.29953377109736
+      }
+    ],
+    "sigma_mean_mN_m": 0.012421951281661087,
+    "sigma_std_mN_m": 0.017035330737152243,
+    "sigma_over_gamma_mean": 0.02179289698537033,
+    "beta_over_gamma_mean": 5.93797938412707,
+    "beta_over_gamma_min": 4.880729187243147,
+    "beta_over_gamma_max": 11.197604266442664
+  },
+  "resolved": {
+    "morse_r0_um": 15.0,
+    "D_e_J": 1.9500000000000002e-14,
+    "morse_alpha_1_per_m": 666666.6666666666,
+    "gamma_cell_Ns_per_m": 0.3,
+    "dt_cfl_s": 1.7307692307692308
+  },
+  "method": "EMERGENT sigma = mechanical Irving-Kirkwood SPHERICAL surface tension of a settled CBM spheroid: sigma = -(1/(16 pi R^2)) sum_pairs (r_ij.f_ij)[1 - 3(s.r_hat_c)^2/s^2], f_ij the analytic Morse pair force (matches the run's md.pair.Morse), R the radial-density inflection radius. The isotropic interior/exterior virial split is a DIAGNOSTIC only (P_whole ~ 0 for a self-bound drop). beta from emergent contact area (NN-separation chord) and work-of-de-adhesion D_e. Sign control: repulsive-only config flips sigma sign (no cohesion => no surface)."
+}

@@ -442,11 +442,35 @@ DITH Γ=cortical−adhesion, Fastabend R=λ/σ, Okuda 3D-cap, Roffay ratio); obs
 virial ΔP → `surface_tension_from_pressure`); 22 tests (`tests/test_surface_tension_bridge.py`,
 all green; layer-2 suite **120 green**); figure `fig_layer2_surface_tension_bridge.png`.
 
-**Next (needs a run, PI to prioritise):** measure σ *emergently* from a CBM spheroid via
-`virial_pressure` over an interior/exterior split → `surface_tension_from_pressure`, and compare
-the emergent σ to γ (closing the bridge with a measurement, not just anchors). This also yields
-the MCF7-specific β/γ from the emergent contact area. Pairs with C1 (cross-line consistency seam:
-the single-cell γ and Layer-2 σ share one MCF7 anchor).
+**Emergent measurement — the bridge closed with a measurement (2026-06-03, honest correction).**
+`scripts/layer2_emergent_sigma.py` measures σ *emergently* from a stable G1 CBM spheroid. Two
+findings refine the anchor-level claim above:
+1. **Method:** the naive interior/exterior virial split does NOT work for a self-bound drop
+   (no confining wall → P_whole ≈ +8e-4 Pa ≈ 0; cells settle at nn/r₀≈0.98, the repulsive
+   branch, so a radial split reads positive). The faithful estimator is the **Irving-Kirkwood
+   spherical mechanical surface tension** σ = −(1/16πR²)Σ(r_ij·f_ij)[1−3(ŝ·r̂)²], which isolates
+   the surface tangential-vs-normal pressure anisotropy → a positive σ. **Sign control validated:**
+   a repulsive-only config flips σ negative (no cohesion → no surface).
+2. **Result:** σ_emergent = **0.012 ± 0.017 mN/m** (3 seeds × 3 sizes), i.e. **σ/γ ≈ 0.02–0.05** —
+   same sign and order ~1/20 of γ, directionally consistent with the bridge but **NOT the σ=γ
+   anchor identity** (which was an idealization). The gap is understood: the **center-particle
+   Morse CBM does not explicitly resolve the cortex**, and the static Morse D_e is anchored to the
+   full-nN MCF7-MCF7 de-adhesion (Iturri 2020), which over-weights cohesion relative to the
+   cortical-tension scale → emergent **β/γ ≈ 5–6** (strong-adhesion/wetting; confirms the demo's
+   "MCF7 above the Roffay window" direction). The IK signal is **noisy** at N≤300 (range −0.03 to
+   +0.08 mN/m) — magnitude not robustly resolved.
+
+   **Honest status:** the bridge holds *structurally and directionally* (cohesion → positive
+   emergent surface tension, same order as γ/20, sign-validated); the anchor-level σ=γ identity is
+   an idealization the center-particle CBM cannot be expected to reproduce exactly. Artifacts:
+   `scripts/layer2_emergent_sigma.py`, `outputs/layer2/emergent_sigma.{json,png}` (settled
+   aggregate, radial profile, sign control, σ vs γ band).
+
+**Next:** (1) re-measure under the **L2.5 catch-bond cohesion** (changes β directly) with larger N +
+time-averaged IK over many snapshots (the IK sum is a fluctuating quantity, under-sampled at one
+frame); (2) C1 cross-line consistency seam (single-cell γ ↔ Layer-2 σ share one MCF7 anchor);
+(3) the cortex is only emergent in the single-cell line, so an exact σ=γ match is a single-cell-line
+question, not a CBM one.
 
 ## Figures
 
