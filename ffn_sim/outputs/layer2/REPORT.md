@@ -299,6 +299,59 @@ traction → spread, end-to-end mechanistic. Figure `fig_layer2_ligand_traction_
 8 new tests (`test_ligand_traction.py`: anchored col-I/laminin ordering, ≤3 nN band, Bare/Pre
 density-only difference, sign-sense, input guards) → layer-2 suite **96 green**.
 
+## A2 — PI poster overlay (OVERLAY-ONLY, never fit; 2026-06-03)
+
+The PI provided the poster A/A₀ exports (`references/260313_{Bare,Pre,Lam4}.csv`, per-spheroid
+time series of segmented area / effective radius; kept LOCAL/gitignored per the hard rule —
+only this overlay figure + the extracted summary are committed). Each spheroid (`Series`)
+gives one law point: R₀ = its effective radius at t=0, A/A₀ = its spread ratio at a common
+observation time (sampled at t≈60 h to match the platform's 2-doubling biological time; 82 h
+secondary). `scripts/layer2_pi_overlay.py` overlays these on the A1 emergent curves and reports
+the agreements/gaps — **no model parameter is tuned to the PI data** (overlay-only).
+
+**PI dataset (extracted):** Bare 8 spheroids R₀ 140–419 µm; Pre 25, R₀ 103–386 µm; Lam4 26,
+R₀ 87–255 µm; all run ~82 h.
+
+**⭐ The headline — the novel law's SHAPE is mechanistically reproduced.** In all three
+conditions the PI A/A₀ **decreases with R₀** (corr(R₀,A/A₀) = −0.86 / −0.81 / −0.91; fitted
+b > 0 dominant) — i.e. the experiment's own data carries the **1/R size dependence** that the
+platform's fully-mechanistic model produces *emergently* (proliferating-rim surface/volume,
+L2.4 → L2.5). The PI's genuinely novel A/A₀ = a + b/R + c/R² law (no published analog) and the
+mechanistic CBM **agree on the fundamental sign/shape** — the platform reproduces *why* small
+spheroids spread relatively more. This is the qualitative validation A2 set out to test.
+
+**The three honest gaps (each points to a concrete next step):**
+
+| Axis | PI (experiment) | Platform (A1) | Verdict |
+|---|---|---|---|
+| law shape / sign | A/A₀↓ with R₀ (corr ≈ −0.85, b>0) | A/A₀↓ with R₀ (b>0) | **MATCH ✓** |
+| condition ordering | **Lam4 > Pre > Bare** (collective) | **Pre > Lam4 ≳ Bare** (single-cell) | **SPLIT** |
+| magnitude (med A/A₀) | ≈ 7.5 (60 h) / 10 (82 h) | ≈ 2.1 | platform under-spreads **~4–5×** |
+| R₀ range | 87–419 µm | 40–78 µm | **no overlap** → native-N (GPU) |
+
+1. **Ordering = the single-cell↔collective laminin split, now CONFIRMED with data.** The
+   experiment's *collective* ranking puts **Lam4 highest**; the platform's *single-cell*
+   active-traction (A1) puts Lam4 ≈ Bare (laminin is the weaker single-cell clutch, 0.61×).
+   This is exactly the split the PI-exp map flagged. **Implication:** the Lam4 collective
+   enhancement is NOT single-cell traction — it must be a *collective* mechanism (the "uniform
+   β1" → more uniform proliferation / a cohesion-modulation that lifts the small-size c-penalty,
+   the documented Lam4 "c→0" phenotype). That is the next mechanistic hypothesis to test — and
+   the platform predicting Lam4 ≠ single-cell-traction-driven is itself a useful, falsifiable
+   result, not a failure.
+2. **Magnitude ~4–5×.** The platform's connected-CORE area (deliberately conservative, L2.4a)
+   + cohesion-locked catch bond vs the experiment's RAW segmented area (which includes spread
+   protrusions / scattering the cohesive model resists) + the platform's 60 h vs 82 h. Expected;
+   the core/raw and time axes are recoverable (a raw-area readout + longer biological time).
+3. **R₀ range — no overlap.** The PI spheroids (R₀ 87–419 µm ≈ 10³–10⁴ cells) dwarf the
+   platform's CPU first-pass (R₀ 40–78 µm). Matching the experiment's sizes needs native-N on
+   GPU (B2) — the platform fit is shown EXTRAPOLATED (dotted) into the PI range and flagged.
+
+**Net:** the platform reproduces the experiment's novel-law SHAPE (the science win); the
+ordering, magnitude, and size-range gaps are characterized honestly and each maps to a defined
+next step (collective-Lam4 mechanism; raw-area + longer time; native-N GPU). PI A/A₀ stays
+overlay-only throughout. Figure `fig_layer2_pi_overlay.png`; summary
+`outputs/layer2/pi_overlay_summary.json`.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
@@ -356,6 +409,13 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   (annotated) with ±0.10 scatter, catch 0/5 with ±0.05. **Right**: why — the effective cohesion
   force law F_coh(ext) strengthens to a peak at per-cadherin f₀≈29 pN (overlaid: measured 6.5 nN
   de-adhesion) then slip-ruptures. The force-strengthening is the fragmentation fix.
+- `figs/fig_layer2_pi_overlay.png` — **A2 PI poster overlay (overlay-only).** **Left**: PI
+  per-spheroid points (○) + their a+b/R+c/R² fit (solid) for Bare/Pre/Lam4, with the platform's
+  A1 emergent points (◇) + fit (dashed) and its extrapolation into the PI R₀ range (dotted,
+  flagged) — both families DECREASE with R₀ (the shared 1/R law); the platform sits ~4–5× lower
+  and at smaller R₀. **Right**: median A/A₀ per condition, PI (solid) vs platform (hatched) —
+  the ordering split (PI Lam4>Pre>Bare collective vs model Pre>Lam4≳Bare single-cell) and the
+  magnitude gap. A/A₀=1 reference shown, SI units, no truncation.
 - `figs/fig_layer2_ligand_traction_conditions.png` — **A1 ligand→active-traction.** **Left**:
   the three emergent A/A₀(R₀) curves (Bare/Pre/Lam4) with per-realisation points + a+b/R+c/R²
   fit and the A/A₀=1 reference — Pre (highest traction) above, Lam4≈Bare, separation Δ≈0.14 at

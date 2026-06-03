@@ -78,3 +78,8 @@ ffn_sim/outputs/tag_kb/pass2_dossiers.json
 ffn_sim/references/*.pdf
 ffn_sim/references/**/*.pdf
 ffn_sim/references/*.zip
+
+# PI experimental data (poster A/A0 exports) — overlay-only, kept LOCAL (hard rule: PI
+# experimental data is not committed; lives in ~/ActiveCellSim/data/experimental). Used by
+# the A2 overlay at comparison time; figures (the sanctioned overlay) ARE committed.
+ffn_sim/references/260313_*.csv

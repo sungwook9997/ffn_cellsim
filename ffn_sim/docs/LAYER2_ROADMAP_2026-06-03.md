@@ -36,9 +36,17 @@
   collaborator pV4D4 datum; **single-cell↔collective laminin split** — Lam4 single-cell traction
   is low (weak laminin clutch) so it does NOT out-spread via single-cell traction; the poster's
   *collective* Lam4 enhancement (if shown) is that split, the A2 question (do NOT engineer it).
-- **A2. PI poster overlay (the payoff).** Overlay the PI's measured A/A₀(R) on the emergent
-  curves (OVERLAY-ONLY, never fit — hard rule). Does the platform's emergent a/b/c match the
-  experiment's a/b/c (qualitatively / quantitatively)? = the validation comparison.
+- ~~**A2. PI poster overlay (the payoff).**~~ ✅ **DONE 2026-06-03** (REPORT §A2;
+  `scripts/layer2_pi_overlay.py`; fig `fig_layer2_pi_overlay.png`; PI CSVs gitignored/local).
+  PI provided `references/260313_{Bare,Pre,Lam4}.csv` (59 spheroids total, R₀ 87–419 µm, ~82 h).
+  **⭐ HEADLINE: the novel law's SHAPE is reproduced** — PI A/A₀ DECREASES with R₀ in all 3
+  conditions (corr −0.81…−0.91, b>0) = the platform's emergent 1/R. Three honest gaps, each →
+  a next step: (1) **ordering SPLIT** — PI collective Lam4>Pre>Bare vs model single-cell
+  Pre>Lam4≳Bare = the single-cell↔collective laminin split CONFIRMED → Lam4's collective
+  enhancement is NOT single-cell traction (→ a collective mechanism: uniform-β1 proliferation /
+  cohesion-modulation lifting the c-penalty = next hypothesis, "D/A4"); (2) **magnitude ~4–5×**
+  (PI raw-segmented area + 82 h vs platform connected-core + 60 h → recoverable: raw-area readout
+  + longer time); (3) **R₀ range no overlap** (PI 87–419 µm ≫ model 40–78 µm → native-N GPU, B2).
 - **A3. Statistics.** Current fit = 5 R₀ × 3 seeds × 2 doublings; the ligand fits used only
   3 R₀ (degenerate r²=1). More R₀ / seeds / biological time → a/b/c with real error bars
   (needs B2 for scale).
@@ -85,16 +93,21 @@
 ## Dependency graph / recommended next step
 
 ```
-B1 ✅DONE ──► A1 ✅DONE (ligand→traction, 3 separated curves) ──► A2 (PI overlay) = experiment reproduced
-                                                                  A3 (more R₀/seeds, needs B2/GPU) ──┘
+B1 ✅ ─► A1 ✅ (3 separated curves) ─► A2 ✅ (PI overlay: SHAPE matches; 3 gaps) ─┬─► A4 collective-Lam4 mechanism (the ordering split)
+                                                                                  ├─► magnitude: raw-area readout + longer time
+                                                                                  └─► B2 native-N GPU ─► A3 robust a/b/c (PI R₀ range)
 C (integration) and D (extensions) run in parallel / after.
 ```
 
-**Recommended next single step (A1 done):** **A2 — overlay the PI poster A/A₀(R) on the three
-emergent curves** (OVERLAY-ONLY, never fit). Does the platform's emergent ordering/shape match
-the experiment's Bare/Pre/Lam4? Key A2 question carried from A1: the **single-cell↔collective
-laminin split** — A1's single-cell traction puts Lam4 ≈ Bare; if the poster shows Lam4 spreading
-*most* (collective enhancement), that gap is the finding (it implicates a collective mechanism —
-cohesion modulation / uniform-β1 proliferation — not single-cell traction). A2 needs the PI
-poster numbers (ask PI). **A3** (more R₀/seeds for robust per-condition a/b/c error bars) needs
-B2/GPU and runs alongside.
+**Recommended next single step (A2 done — the validation comparison landed):** pick one of the
+three gap-driven follow-ups (each now well-defined):
+- **A4 (most scientific) — the collective-Lam4 mechanism.** A2 confirmed Lam4's enhancement is
+  NOT single-cell traction (the split). Test the *collective* hypothesis: soluble laminin →
+  "uniform β1" → more uniform proliferation / a cohesion modulation that lifts the small-size
+  c-penalty (the documented Lam4 "c→0"). Does adding that mechanism flip the emergent ordering
+  to Lam4-highest *emergently*? (Still overlay-only.)
+- **Magnitude (quick) — raw-area + longer biological time** readout alongside the connected-core,
+  to close the ~4–5× gap honestly (core/raw + 60→82 h are the two known contributors).
+- **B2 → A3 — native-N GPU** to reach the PI R₀ range (87–419 µm) and give robust per-condition
+  a/b/c with error bars (the CPU first-pass is degenerate at 4 R₀).
+Ask PI which to prioritise; A4 is the highest-science next move.
