@@ -11,10 +11,10 @@ proposed next diagnostics (one touches the stiffen-forbidden crosslinker `k`).
 ## TL;DR
 
 The active cortical-tension floor (`g_soft ≈ 2e-4 mN/m`, ~1000× under the KU-3.5
-band `[0.35, 0.65]`) is **NOT** a transmission problem. Four independent levers —
-crosslink **percolation**, actin **turnover**, measurement **channel**, and global
-**coherence** — were each tested in the full MCF7 constrained cell and **none**
-move `g_soft` off the floor. The floor therefore traces **upstream** of
+band `[0.35, 0.65]`) is **NOT** a transmission problem. Five independent levers —
+crosslink **percolation**, actin **turnover**, measurement **channel**, global
+**coherence**, and **buckling** — were each tested in the full MCF7 constrained cell
+and **none** move `g_soft` off the floor. The floor therefore traces **upstream** of
 transmission, to force **generation / soft-coupling / force-budget** (STAGE-1
 territory or model fidelity), not to the cortex network's connectivity or the
 random-dipole √N cancellation we had hypothesised. The **structural/passive**
@@ -35,6 +35,7 @@ via the bind-scale recipe (or native `n_fil=38000`), CPU.
 | ④b | **turnover** (sustained-stress, Hiraiwa-Salbreux) | implemented turnover-in-constrained (chain split, f_ss=0.591) and ran ON vs OFF | `g_soft` ON ≤ OFF at matched samples — **no lift** |
 | — | measurement **channel** misattribution | motors ON (n=100) vs OFF (n=0) | `g_soft` ×340 motor-responsive (= the true active channel); `g_rigid` motor-**independent** (~0.09 both) = purely structural |
 | ⑤ | global **coherence** (√N random-dipole cancellation) | `FFN_MYOSIN_ALIGN=meridional` — impose a perfectly coherent director (verified \|axis·meridian\|=1.000) | `g_soft` 2.32e-4 vs random 2.18e-4 — **no jump** |
+| ⑥ | **buckling**-mediated contractility (Murrell-Gardel/Lenz) | cortex-angle θ readout under active load | θ≈179° (thermal, straight); **buckled<150° = 0.0%** — filaments do not buckle |
 
 The coherence negative is the decisive surprise: a perfectly aligned bipolar
 field still does not raise the active tension. So the force the motors produce is
@@ -85,11 +86,14 @@ This is **STAGE-1 (force generation/ceiling) / model-fidelity**, not STAGE-2.
 2. **Grip-walk head-tension instrumentation** — measure the head-spring extension
    distribution directly. Are the heads at rest (transport-only) or loaded but
    small? Decides generation-ceiling vs force-budget-magnitude.
-3. **Buckling diagnostic** (Murrell-Gardel / Lenz) — the one un-tested
-   contractility mechanism: filament L_p collapse 17µm→<1µm from a GSD trajectory.
-   Constrained mode preserves bending (only stretch is SHAKE'd), so buckling
-   *should* be live — verify it is, and whether it contributes contraction.
-4. **Model fidelity** — does the model miss a load path (filament-filament steric
+3. ~~Buckling diagnostic~~ **DONE (negative)** — θ readout shows filaments stay
+   straight (θ≈179°, buckled<150°=0.0%); the Euler threshold F_B≈6.9pN per 7-bead
+   segment exceeds the distributed per-filament motor compression. Buckling
+   contractility is not realized — a sixth eliminated lever.
+4. **Force-budget re-examination** — is the per-motor stall force (after
+   mesoscale_force_scaling) large enough to localize compression / build head
+   tension? The 4b force-budget gap may be under-compensated.
+5. **Model fidelity** — does the model miss a load path (filament-filament steric
    load-bearing under excluded volume; native filament density; a non-spring
    transmission element)? A focused question for the mechanism audit.
 
