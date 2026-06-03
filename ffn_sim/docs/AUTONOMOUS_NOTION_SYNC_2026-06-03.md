@@ -146,3 +146,11 @@ last processed HEAD → still `7dcca72` (no new session commits during iter-1).
 ### iter 9 — 2026-06-03 ~09:15 KST — QUIET (6th no-op; Lead idle ~6 h)
 - No new commits, SE 0 new, 172 PDFs, stores synced through `dfc6cac`. Minimal poll.
 - **iter-9 COMPLETE (no-op).**
+
+### iter 10 — 2026-06-03 ~10:15 KST — QUIET (7th no-op; Lead idle ~7 h)
+- No new commits, SE 0 new, 172 PDFs, stores synced through `dfc6cac`. Minimal poll.
+- **iter-10 COMPLETE (no-op).**
+
+### iter 11 — 2026-06-03 ~11:15 KST — QUIET (8th no-op; Lead idle ~8 h)
+- No new commits, SE 0 new, 172 PDFs, stores synced through `dfc6cac`. Minimal poll.
+- **iter-11 COMPLETE (no-op).**
