@@ -72,6 +72,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "supporting-information-c2d14d",
+    "title": "Supporting Information",
+    "doi": "",
+    "path": "1208349109_sapp.pdf",
+    "n_pages": 30,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 31,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Lou2007_BiophysicalJournal",
+    "title": "A Structure-Based Sliding-Rebinding Mechanism for Catch Bonds",
+    "doi": "10.1529/biophysj.106.097048",
+    "path": "1471.pdf",
+    "n_pages": 15,
+    "source": "new",
+    "se_uid": "SE289",
+    "se_citation_key": "Lou2007_BiophysicalJournal",
+    "n_chunks": 54,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "ZZ-OFFTOPIC Balog2007_BiophysicalJournal",
+    "title": "The Inﬂuence of Interdomain Interactions on the Intradomain Motions in",
+    "doi": "10.1529/biophysj.106.093195",
+    "path": "1709.pdf",
+    "n_pages": 8,
+    "source": "new",
+    "se_uid": "SE288",
+    "se_citation_key": "ZZ-OFFTOPIC Balog2007_BiophysicalJournal",
+    "n_chunks": 25,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Jin2020_Jour",
     "title": "Mathematical model of tumour spheroid experiments with real-time cell cycle imaging",
     "doi": "10.1101/2020.12.06.413856",
@@ -81,6 +117,30 @@
     "se_uid": "SE260",
     "se_citation_key": "Jin2020_Jour",
     "n_chunks": 68,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Tam2021_Jour",
+    "title": "Protein Friction and Filament Bending Facilitate",
+    "doi": "10.1101/2021.02.23.432588",
+    "path": "2021.02.23.432588v1.full.pdf",
+    "n_pages": 40,
+    "source": "new",
+    "se_uid": "SE283",
+    "se_citation_key": "Tam2021_Jour",
+    "n_chunks": 72,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Banerjee2017_NatCommun",
+    "title": "Actomyosin pulsation and ﬂows in an active",
+    "doi": "10.1038/s41467-017-01130-1",
+    "path": "41467_2017_Article_1130.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE278",
+    "se_citation_key": "Banerjee2017_NatCommun",
+    "n_chunks": 44,
     "linked_to_source_evidence": true
   },
   {
@@ -117,6 +177,18 @@
     "se_uid": "SE265",
     "se_citation_key": "Geiger2022_PLoSONE",
     "n_chunks": 36,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Dessard2024_NanoscaleAdv",
+    "title": "Cytoplasmic viscosity is a potential biomarker for",
+    "doi": "10.1039/d4na00003j",
+    "path": "NA-006-D4NA00003J.pdf",
+    "n_pages": 12,
+    "source": "new",
+    "se_uid": "SE225",
+    "se_citation_key": "Dessard2024_NanoscaleAdv",
+    "n_chunks": 38,
     "linked_to_source_evidence": true
   },
   {
@@ -228,6 +300,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Freedman2017_BiophysicalJournal",
+    "title": "A Versatile Framework for Simulating the Dynamic",
+    "doi": "10.1016/j.bpj.2017.06.003",
+    "path": "main.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE274",
+    "se_citation_key": "Freedman2017_BiophysicalJournal",
+    "n_chunks": 45,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Manibog2016_ProcNatlAcadSciUSA",
+    "title": "Molecular determinants of cadherin ideal bond",
+    "doi": "10.1073/pnas.1604012113",
+    "path": "manibog-et-al-2016-molecular-determinants-of-cadherin-ideal-bond-formation-conformation-dependent-unbinding-on-a.pdf",
+    "n_pages": 10,
+    "source": "new",
+    "se_uid": "SE280",
+    "se_citation_key": "Manibog2016_ProcNatlAcadSciUSA",
+    "n_chunks": 43,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Belmonte2017_MolSystBiol",
+    "title": "A theory that predicts behaviors of disordered",
+    "doi": "10.15252/msb.20177796",
+    "path": "msb.20177796 (1).pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE287",
+    "se_citation_key": "Belmonte2017_MolSystBiol",
+    "n_chunks": 41,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Rosenbauer2023_JPhysChemB",
     "title": "Multiscale Modeling of Spheroid Tumors: Effect of Nutrient Availability on Tumor Evolution",
     "doi": "10.1021/acs.jpcb.2c08114",
@@ -240,6 +348,66 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Murrell2012_ProcNatlAcadSciUSA",
+    "title": "F-actin buckling coordinates contractility and severing",
+    "doi": "10.1073/pnas.1214753109",
+    "path": "murrell-gardel-2012-f-actin-buckling-coordinates-contractility-and-severing-in-a-biomimetic-actomyosin-cortex.pdf",
+    "n_pages": 6,
+    "source": "new",
+    "se_uid": "SE279",
+    "se_citation_key": "Murrell2012_ProcNatlAcadSciUSA",
+    "n_chunks": 25,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Chugh2017_NatCellBiol",
+    "title": "Actin cortex architecture regulates cell surface tension",
+    "doi": "10.1038/ncb3525",
+    "path": "ncb3525.pdf",
+    "n_pages": 29,
+    "source": "new",
+    "se_uid": "SE276",
+    "se_citation_key": "Chugh2017_NatCellBiol",
+    "n_chunks": 75,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Linsmeier2016_NatCommun",
+    "title": "Received 8 Feb 2016 | Accepted 13 Jul 2016 | Published 25 Aug 2016",
+    "doi": "10.1038/ncomms12615",
+    "path": "ncomms12615.pdf",
+    "n_pages": 9,
+    "source": "new",
+    "se_uid": "SE277",
+    "se_citation_key": "Linsmeier2016_NatCommun",
+    "n_chunks": 29,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Lenz2012_PhysRevLett",
+    "title": "Contractile Units in Disordered Actomyosin Bundles Arise from",
+    "doi": "10.1103/physrevlett.108.238107",
+    "path": "nihms686104.pdf",
+    "n_pages": 11,
+    "source": "new",
+    "se_uid": "SE284",
+    "se_citation_key": "Lenz2012_PhysRevLett",
+    "n_chunks": 20,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Ennomani2016_CurrentBiology",
+    "title": "Architecture and Connectivity Govern Actin Network",
+    "doi": "10.1016/j.cub.2015.12.069",
+    "path": "nihms803347.pdf",
+    "n_pages": 26,
+    "source": "new",
+    "se_uid": "SE275",
+    "se_citation_key": "Ennomani2016_CurrentBiology",
+    "n_chunks": 47,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Xiong2007_NatPrec",
     "title": "SPATIO-TEMPORAL MODEL OF ISOTROPIC CELL SPREADING",
     "doi": "10.1038/npre.2007.62.2",
@@ -249,6 +417,18 @@
     "se_uid": "SE250",
     "se_citation_key": "Xiong2007_NatPrec",
     "n_chunks": 60,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Murrell2015_NRMCB",
+    "title": "Cells use contractile stresses to drive shape changes and",
+    "doi": "10.1038/nrm4012",
+    "path": "nrm4012.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE4",
+    "se_citation_key": "Murrell2015_NRMCB",
+    "n_chunks": 51,
     "linked_to_source_evidence": true
   },
   {
@@ -276,6 +456,30 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Popov2016_PLoSComputBiol",
+    "title": "RESEARCH ARTICLE",
+    "doi": "10.1371/journal.pcbi.1004877",
+    "path": "pcbi.1004877.pdf",
+    "n_pages": 35,
+    "source": "new",
+    "se_uid": "SE285",
+    "se_citation_key": "Popov2016_PLoSComputBiol",
+    "n_chunks": 88,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "McFadden2017_PLoSComputBiol",
+    "title": "RESEARCH ARTICLE",
+    "doi": "10.1371/journal.pcbi.1005811",
+    "path": "pcbi.1005811.pdf",
+    "n_pages": 27,
+    "source": "new",
+    "se_uid": "SE286",
+    "se_citation_key": "McFadden2017_PLoSComputBiol",
+    "n_chunks": 66,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Herold2023_PLoSComputBiol",
     "title": "Development of a scoring function for comparing simulated and experimental tumor spheroids",
     "doi": "10.1371/journal.pcbi.1010471",
@@ -285,6 +489,54 @@
     "se_uid": "SE263",
     "se_citation_key": "Herold2023_PLoSComputBiol",
     "n_chunks": 63,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Rakshit2012_PNAS",
+    "title": "Ideal, catch, and slip bonds in cadherin adhesion",
+    "doi": "10.1073/pnas.1208349109",
+    "path": "pnas.201208349.pdf",
+    "n_pages": 6,
+    "source": "new",
+    "se_uid": "SE129",
+    "se_citation_key": "Rakshit2012_PNAS",
+    "n_chunks": 24,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Stam2017_ProcNatlAcadSciUSA",
+    "title": "Filament rigidity and connectivity tune the deformation",
+    "doi": "10.1073/pnas.1708625114",
+    "path": "pnas.201708625.pdf",
+    "n_pages": 9,
+    "source": "new",
+    "se_uid": "SE281",
+    "se_citation_key": "Stam2017_ProcNatlAcadSciUSA",
+    "n_chunks": 31,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Rakshit2012_PNAS",
+    "title": "Ideal, catch, and slip bonds in cadherin adhesion",
+    "doi": "10.1073/pnas.1208349109",
+    "path": "rakshit-et-al-2012-ideal-catch-and-slip-bonds-in-cadherin-adhesion.pdf",
+    "n_pages": 6,
+    "source": "new",
+    "se_uid": "SE129",
+    "se_citation_key": "Rakshit2012_PNAS",
+    "n_chunks": 24,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "JuelPrtner2025_JRSocInterface",
+    "title": "royalsocietypublishing.org/journal/rsif",
+    "doi": "10.1098/rsif.2024.0885",
+    "path": "rsif.2024.0885.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE282",
+    "se_citation_key": "JuelPrtner2025_JRSocInterface",
+    "n_chunks": 40,
     "linked_to_source_evidence": true
   },
   {
@@ -369,6 +621,18 @@
     "se_uid": "SE244",
     "se_citation_key": "Rodenhizer2018_AdvHealthcareMaterials",
     "n_chunks": 45,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Stephens2017_MBoC",
+    "title": "1984  |  A. D. Stephens et al.",
+    "doi": "10.1091/mbc.e16-09-0653",
+    "path": "stephens-et-al-2017-chromatin-and-lamin-a-determine-two-different-mechanical-response-regimes-of-the-cell-nucleus.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE221",
+    "se_citation_key": "Stephens2017_MBoC",
+    "n_chunks": 52,
     "linked_to_source_evidence": true
   },
   {
@@ -1534,5 +1798,137 @@
     "se_citation_key": "Yonemura2010_NCB",
     "n_chunks": 50,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Chugh2017_NatureCellBiology",
+    "title": "Actin cortex architecture regulates cell surface tension",
+    "doi": "10.1038/ncb3525",
+    "path": "emss-72183.pdf",
+    "n_pages": 26,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "DeBelly2023_Cell",
+    "title": "Cell protrusions and contractions generate long-range membrane tension propagation",
+    "doi": "10.1016/j.cell.2023.05.014",
+    "path": "1-s2.0-S0092867423005330-main.pdf",
+    "n_pages": 29,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Keren2023_Cell",
+    "title": "Membrane tension goes the distance (preview)",
+    "doi": "10.1016/j.cell.2023.05.033",
+    "path": "1-s2.0-S0092867423005858-main.pdf",
+    "n_pages": 3,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Luchtefeld2024_NatureMethods",
+    "title": "Dynamic monitoring of membrane tension changes by FLIM (membrane, not cortical)",
+    "doi": "10.1038/s41592-024-02277-8",
+    "path": "s41592-024-02277-8.pdf",
+    "n_pages": 17,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "NishitaniMiura2025_arXiv",
+    "title": "Quantitative analysis of cell membrane tension via the curvature-velocity law V=sigma*kappa",
+    "doi": "10.48550/arXiv.2504.14887",
+    "path": "Quantitative_Analysis_of_Cell_Membrane_Tension_in_.pdf",
+    "n_pages": 27,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Fastabend2026_PhysicalReviewE",
+    "title": "Cortical tension links curvature to tissue growth in the cellular Potts model",
+    "doi": "10.1103/z152-x4l1",
+    "path": "z152-x4l1.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Thiticharoentam2026_bioRxiv",
+    "title": "3D vertex model of interfacial-tension modulation (Gamma = cortical contractility - adhesion)",
+    "doi": "10.1101/2026.03.17.712503",
+    "path": "2026.03.17.712503v1.full.pdf",
+    "n_pages": 32,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Roffay2021_Development",
+    "title": "Inferring cell junction tension and pressure from cell geometry",
+    "doi": "10.1242/dev.192773",
+    "path": "DownloadCombinedArticleAndSupplmentPdf.pdf",
+    "n_pages": 19,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Runser2023_bioRxiv",
+    "title": "3D simulation of tissue mechanics with cell polarization",
+    "doi": "10.3929/ethz-b-000653764",
+    "path": "2023.03.28.534574v1.full.pdf",
+    "n_pages": 11,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "Tao2020_BiophysicalJournal",
+    "title": "Tuning cell motility via cell tension with a mechanochemical cell migration model",
+    "doi": "10.1016/j.bpj.2020.07.030",
+    "path": "main (1).pdf",
+    "n_pages": 11,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "DeVecchis2021_BiophysicalJournal_mmc4",
+    "title": "Molecular dynamics simulations of Piezo1 channel opening by increases in membrane tension (supplement mmc4)",
+    "doi": "10.1016/j.bpj.2021.02.006",
+    "path": "mmc4.pdf",
+    "n_pages": 23,
+    "source": "new",
+    "se_uid": null,
+    "se_citation_key": null,
+    "n_chunks": 0,
+    "linked_to_source_evidence": false
   }
 ]

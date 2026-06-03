@@ -1,0 +1,65 @@
+{
+  "anchors": {
+    "gamma_cortical_mN_m": 0.57,
+    "f_deadhesion_nN": 6.5,
+    "contact_zone_width_um": 1.5,
+    "work_deadhesion_fJ": 19.500000000000004,
+    "cortical_band_mN_m": [
+      0.35,
+      0.65
+    ]
+  },
+  "sigma_tissue_mN_m": 0.57,
+  "sigma_in_band": true,
+  "contact_radii_um": [
+    1.5,
+    2.5,
+    4.0
+  ],
+  "beta_mN_m": [
+    2.758685680259519,
+    0.9931268448934274,
+    0.3879401737864949
+  ],
+  "beta_over_gamma": [
+    4.839799439051788,
+    1.7423277980586445,
+    0.6805967961166578
+  ],
+  "gamma_cc_mN_m": [
+    0.0,
+    0.0,
+    0.18205982621350505
+  ],
+  "surface_interior_ratio": [
+    Infinity,
+    Infinity,
+    3.1308389766974187
+  ],
+  "roffay_ratio_band": [
+    1.6,
+    2.0
+  ],
+  "roffay_beta_over_gamma_window": [
+    0.375,
+    0.5
+  ],
+  "beta_over_gamma_overlaps_roffay": false,
+  "R0_L25_um": [
+    31.7,
+    40.4,
+    53.099999999999994,
+    67.1,
+    78.3
+  ],
+  "young_laplace_dP_Pa": [
+    35.9621451104101,
+    28.217821782178216,
+    21.468926553672315,
+    16.989567809239944,
+    14.559386973180077
+  ],
+  "is_3d_cap": true,
+  "tissue_sigma_proxy_mN_m": 21.0,
+  "notes": "sigma_tissue = gamma (in-band) bridges the single-cell cortical tension to the aggregate surface tension; Young-Laplace dP = 2 sigma / R gives the 1/R curvature that the A/A0 b/R term encodes. The Roffay outer/interior ratio (1.6-2.0) is reproduced for beta/gamma in (0.375, 0.5). Absolute aggregate-sigma band is a PROXY (MCF10DCIS 21 mN/m); the emergent sigma is measured in a CBM run via virial_pressure -> surface_tension_from_pressure (next step)."
+}

@@ -17,6 +17,7 @@
 | **L2.4b** | **leak-free pooled growth** (`run_growth_pooled`): ONE Simulation + pre-allocated particle pool, division activates a parked particle via `set_snapshot` | ✅ DONE; fixes the HOOMD per-rebuild memory leak (peak RSS **7 GB→240 MB**, flat), same physics. All growth drivers now use it. |
 | **L2.5** | **E-cadherin catch-bond cohesion** (faithful Rakshit-2012 sliding-rebinding) replaces the static Morse well | ✅ DONE; **resists proliferation fragmentation (catch 0/5 vs morse 1/5 seeds, variance halved) → G3 r² 0.74→0.98 PASS** (below) |
 | **L2.6** | **substrate confinement** (z=0 adhesive Morse wall, quasi-2D wetting) | ✅ DONE; cohesive MCF7 forms a 3D **cap** (not a monolayer) — the correct low-invasion phenotype; D_sub = the Bare/Pre/Lam4 ligand axis |
+| **D2** | **single-cell γ → spheroid surface-tension bridge** (Chugh/Roffay/Fastabend/Okuda oracle + virial-σ observable) | ✅ DONE (demonstration); σ_tissue=γ=0.57 mN/m in-band; Young-Laplace ΔP=2σ/R = the A/A₀ b/R term; Okuda 3D-cap confirms L2.6. Emergent-σ CBM measurement = next run. |
 
 ## ⭐ HEADLINE (L2.5) — the PI spreading law A/A₀ = a + b/R + c/R² EMERGES (G3 PASS, r²=0.98)
 
@@ -400,11 +401,63 @@ refinement, alongside native-N/GPU (B2) for the magnitude and R₀-range gaps (�
 (β1-distribution → Lp mapping; uniform override leaves magnitude unchanged) → layer-2 suite
 **98 green**. Figure `fig_layer2_a4_uniform_beta1.png`.
 
+## D2 — single-cell cortical tension → spheroid surface-tension BRIDGE (2026-06-03)
+
+The PI thesis (2026-06-03): **single-cell cortical tension γ is the root of the spheroid's
+aggregate surface tension.** Triaged 11 PI-supplied cell-tension papers
+(`docs/CORTICAL_TENSION_TRIAGE_2026-06-03.md`) and built the published bridge as a
+runtime-forbidden acceptance oracle + a runtime measurement observable — NOT a fit, NOT a
+runtime mechanism (inversion rule).
+
+**The chain (all literature-anchored):**
+```
+γ (single-cell cortical tension, KU-3.5; g_rigid native 0.57 mN/m — IN band [0.35,0.65])
+  − β (E-cadherin adhesion energy density)              [DITH; Okuda 2026]
+  = Γ_cc (interior cell-cell tension)
+σ_tissue (aggregate FREE-surface tension) = γ           [Roffay 2021: outer = free cortex]
+Young-Laplace  ΔP = σ(1/R + 1/R')                       [Roffay 2021, 3D mean curvature]
+  ⇒ the 1/R curvature scaling encoded by the A/A₀ b/R term.
+```
+
+**Result (`scripts/layer2_surface_tension_bridge.py`, demonstration from anchors):**
+- **σ_tissue = γ = 0.57 mN/m — IN the KU-3.5 band.** The aggregate surface tension is the
+  single-cell cortical tension (the surface cells' free cortex). Chugh 2017 independently
+  validates the band (model peak ~0.37 mN/m = band floor; T₀=230 pN/µm).
+- **Young-Laplace ΔP(R) = 36.0 → 14.6 Pa** over the L2.5 radii R₀=31.7→78.3 µm — the clean 1/R
+  interior overpressure that the A/A₀ **b/R** term encodes (b>0).
+- **Okuda 3D-cap criterion = True** (free-surface tension > 0.2·cell-cell) — independently
+  underwrites the L2.6 "MCF7 = 3D cap, not monolayer" finding.
+- **Honest finding (not tuned):** the anchored MCF7 adhesion β/γ ≈ 0.68–4.8 (from de-adhesion
+  work over plausible contact areas) sits **above** the Roffay mouse-embryo outer/interior
+  window (β/γ 0.375–0.5 → ratio 1.6–2.0). MCF7 (epithelial, strongly cohesive) is in a
+  **higher-adhesion regime** than the early embryo — consistent with tight 3D aggregation and
+  the L2.5 catch-bond holding the spheroid together. The MCF7-specific β/γ should come from the
+  **emergent** cell-cell contact area in a CBM run, not the geometric estimate.
+- **Magnitude band is a PROXY** (MCF10DCIS ~21 mN/m, Nagle 2022 — no MCF7 tissue-tensiometry
+  datum). The single-cell anchors are MCF7-specific.
+
+**Artifacts:** oracle `validation/oracles/spheroid/surface_tension_bridge.py` (Young-Laplace,
+DITH Γ=cortical−adhesion, Fastabend R=λ/σ, Okuda 3D-cap, Roffay ratio); observable
+`spheroid/observables.py::virial_pressure` + `convex_hull_volume` (emergent-σ measurement route:
+virial ΔP → `surface_tension_from_pressure`); 22 tests (`tests/test_surface_tension_bridge.py`,
+all green; layer-2 suite **120 green**); figure `fig_layer2_surface_tension_bridge.png`.
+
+**Next (needs a run, PI to prioritise):** measure σ *emergently* from a CBM spheroid via
+`virial_pressure` over an interior/exterior split → `surface_tension_from_pressure`, and compare
+the emergent σ to γ (closing the bridge with a measurement, not just anchors). This also yields
+the MCF7-specific β/γ from the emergent contact area. Pairs with C1 (cross-line consistency seam:
+the single-cell γ and Layer-2 σ share one MCF7 anchor).
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_surface_tension_bridge.png` — **D2 bridge** (3 panels): **A** aggregate
+  surface tension σ_tissue = γ = 0.57 mN/m inside the KU-3.5 band (tissue proxy 21 mN/m above);
+  **B** Young-Laplace ΔP = 2σ/R over R₀=31.7→78.3 µm (the 1/R curvature behind the A/A₀ b/R
+  term); **C** Roffay outer/interior ratio 1/(1−β/γ) with the [1.6,2.0] band reproduced at
+  β/γ∈[0.375,0.5] and the anchored MCF7 β/γ (higher-adhesion regime) marked.
 - `figs/fig_layer2_g1_stable_aggregate.png` — G1 result. **Left**: initial loose blob
   (1.1·r₀ jittered cubic lattice). **Middle**: settled aggregate (lattice → disordered
   cohesive packing, slightly compacted). **Right**: nearest-neighbour-distance histogram

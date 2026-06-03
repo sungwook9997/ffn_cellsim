@@ -41,6 +41,8 @@ __all__ = [
     "connected_components",
     "largest_connected_component",
     "core_projected_area",
+    "convex_hull_volume",
+    "virial_pressure",
 ]
 
 
@@ -244,6 +246,91 @@ def largest_connected_component(
     if labels.size == 0:
         return np.zeros(0, dtype=bool)
     return labels == 0  # label 0 is the largest (connected_components orders by size)
+
+
+def convex_hull_volume(positions: npt.ArrayLike) -> float:
+    """3D convex-hull volume of the cell centers [m^3] (0.0 if < 4 non-coplanar points).
+
+    The aggregate volume used to normalise the virial pressure. For a spheroid this is the
+    natural enclosing volume; for a substrate-confined 3D cap it is the cap's hull volume.
+    """
+    p = _as_positions(positions)
+    if p.shape[0] < 4:
+        return 0.0
+    try:
+        hull = ConvexHull(p)
+    except QhullError:
+        return 0.0  # coplanar / degenerate -> no volume
+    return float(hull.volume)  # scipy: 3D ConvexHull.volume == enclosed volume
+
+
+def virial_pressure(
+    positions: npt.ArrayLike,
+    pair_indices: npt.ArrayLike,
+    pair_forces: npt.ArrayLike,
+    volume: float | None = None,
+    *,
+    kT: float = 0.0,
+) -> float:
+    """Mechanical (virial) pressure of the cell aggregate [Pa] — the emergent-tension route.
+
+    Configurational virial pressure of a set of cell centers under pairwise interactions::
+
+        P = (N*kT + W/3) / V ,   W = sum over pairs of  r_ij . f_ij
+
+    where ``r_ij = r_i - r_j`` is the centre-to-centre separation of an interacting pair and
+    ``f_ij`` is the force on cell ``i`` due to cell ``j`` (Newton's third law: the force on
+    ``j`` is ``-f_ij``, so each unordered pair contributes once). Sign convention: a *repulsive*
+    pair (``f_ij`` along ``+r_ij``) gives ``W > 0`` (positive pressure); a *cohesive* pair
+    (``f_ij`` pulling ``i`` toward ``j``, opposite ``r_ij``) gives ``W < 0`` (tension). The
+    athermal overdamped CBM uses ``kT = 0`` for the configurational pressure; pass the
+    thermostat ``kT`` (J) to include the ideal-gas kinetic term.
+
+    The aggregate surface tension is then recovered from the interior-vs-exterior pressure
+    difference via Young-Laplace in the oracle
+    ``validation.oracles.spheroid.surface_tension_bridge.surface_tension_from_pressure``
+    (``sigma = dP / (1/R + 1/R')``) — this observable provides the measured ``P``; the oracle
+    is the runtime-forbidden acceptance relation. Pure numpy; no HOOMD, no physics constants.
+
+    Args:
+        positions: (N, 3) cell-center positions [m].
+        pair_indices: (M, 2) integer array of interacting pair indices ``(i, j)`` into
+            ``positions`` (each unordered pair listed once).
+        pair_forces: (M, 3) force on cell ``i`` due to cell ``j`` for each pair [N].
+        volume: aggregate volume [m^3] (> 0). Defaults to ``convex_hull_volume(positions)``.
+        kT: thermal energy [J] for the kinetic term (default 0.0 = configurational only).
+
+    Returns:
+        Virial pressure P [Pa]. Positive = net repulsive (over-pressured); negative = net
+        cohesive (under tension).
+
+    Raises:
+        ValueError: on shape mismatch, out-of-range indices, non-positive/zero volume, or
+            ``kT < 0``.
+    """
+    p = _as_positions(positions)
+    idx = np.asarray(pair_indices, dtype=np.int64)
+    f = np.asarray(pair_forces, dtype=np.float64)
+    if kT < 0.0:
+        raise ValueError("kT must be non-negative [J].")
+    if idx.ndim != 2 or idx.shape[1] != 2:
+        raise ValueError(f"pair_indices must be (M, 2); got shape {idx.shape}.")
+    if f.shape != idx.shape[:1] + (3,):
+        raise ValueError(
+            f"pair_forces must be (M, 3) matching pair_indices; got {f.shape}."
+        )
+    if idx.size and (idx.min() < 0 or idx.max() >= p.shape[0]):
+        raise ValueError("pair_indices out of range for positions.")
+    V = convex_hull_volume(p) if volume is None else float(volume)
+    if V <= 0.0:
+        raise ValueError("volume must be strictly positive [m^3] (degenerate hull?).")
+    if idx.size:
+        r_ij = p[idx[:, 0]] - p[idx[:, 1]]
+        W = float(np.sum(np.sum(r_ij * f, axis=1)))
+    else:
+        W = 0.0
+    n = p.shape[0]
+    return float((n * kT + W / 3.0) / V)
 
 
 def core_projected_area(
