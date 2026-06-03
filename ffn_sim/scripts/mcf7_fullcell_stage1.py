@@ -71,6 +71,30 @@ def _tagpos(sim) -> np.ndarray:
         return pos[inv].copy()
 
 
+def _cortex_angle_theta(sim) -> np.ndarray:
+    """θ [deg] at the middle bead of every cortex-angle triplet (straight≈180°).
+
+    Buckling diagnostic (Murrell-Gardel/Lenz): constrained mode SHAKEs only stretch,
+    so bending is free — a contracting filament should BUCKLE (θ ≪ 180°). Measures
+    whether the active load actually bends the backbone.
+    """
+    snap = sim.state.get_snapshot()       # tag-ordered; local snapshot lacks .types
+    if snap.communicator.rank != 0:
+        return np.empty(0)
+    ag = np.asarray(snap.angles.group, dtype=np.int64)
+    at = np.asarray(snap.angles.typeid, dtype=np.int64)
+    atypes = list(snap.angles.types)
+    if "cortex-angle" not in atypes or ag.shape[0] == 0:
+        return np.empty(0)
+    trip = ag[at == atypes.index("cortex-angle")]
+    pos = np.asarray(snap.particles.position, dtype=np.float64)
+    v1 = pos[trip[:, 0]] - pos[trip[:, 1]]
+    v2 = pos[trip[:, 2]] - pos[trip[:, 1]]
+    v1 /= np.linalg.norm(v1, axis=1, keepdims=True).clip(min=1e-30)
+    v2 /= np.linalg.norm(v2, axis=1, keepdims=True).clip(min=1e-30)
+    return np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", v1, v2), -1.0, 1.0)))
+
+
 def _resolve_compartments(p_cortex):
     """Resolve the 4 MCF7 compartments (all ON)."""
     R = p_cortex.R_cell
@@ -230,9 +254,14 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
         if turn_act is not None:
             turn_str = (f" | turnover cf={turn_act.connected_fraction:.3f} "
                         f"sev={turn_act.n_sever_total} ann={turn_act.n_anneal_total}")
+        th = _cortex_angle_theta(sim)
+        buck_str = ""
+        if th.size:
+            buck_str = (f" | θ mean={th.mean():.1f}° buckled(<150°)={(th<150).mean()*100:.1f}%"
+                        f" sharp(<120°)={(th<120).mean()*100:.1f}%")
         print(f"  [{stepping_mode}] s={k+1}/{n} r/r0={rmean/r0:.5f} "
               f"g_soft={g_soft*1e3:.3e} g_rigid={g_rigid*1e3:.3e} "
-              f"g_tot={(g_soft+g_rigid)*1e3:.3e} mN/m{turn_str}", flush=True)
+              f"g_tot={(g_soft+g_rigid)*1e3:.3e} mN/m{turn_str}{buck_str}", flush=True)
     return samples
 
 
