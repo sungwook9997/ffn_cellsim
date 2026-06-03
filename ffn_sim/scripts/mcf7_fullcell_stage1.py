@@ -150,12 +150,22 @@ def _resolve_compartments(p_cortex):
 
 def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
            dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu", kon_scale=1.0,
-           bind_scale=1.0, turnover_tau=None, xl_k_scale=1.0):
+           bind_scale=1.0, turnover_tau=None, xl_k_scale=1.0, v0_accel=1.0):
     from dataclasses import replace as _replace
     p = resolve_h3_derived(cfg)
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
     dtc = dtc if dtc is not None else 0.001 * tau_bend
     p_myo = resolve_cortex_myosin(cfg, dt=dtc, R_cell=p.R_cell)
+    if v0_accel != 1.0:  # ACCELERATED-DYNAMICS (same class as kon_scale / turnover
+        # accel): the physical motor velocity v0=1µm/s (Kovács 2003) over the tiny
+        # constrained-dt sim-time walks only ~0.6nm (s_grip/ℓ₀≈0.003) in a full run
+        # → the motor never completes a step and acts as a STATIC elastic crosslink
+        # (net-zero tension at equilibrium) rather than an active force generator.
+        # This was the dead --v0-accel flag (accepted by run_arm but never applied
+        # to p_myo) — the force-generation floor (2026-06-03). v0 only sets stepping
+        # RATE, not the per-step force (F_stall/k unchanged), so the physics is the
+        # accelerated-rate probe, not a force tune.
+        p_myo = _replace(p_myo, v0_per_head=p_myo.v0_per_head * v0_accel)
     p_xl = resolve_crosslinkers(cfg, dt=dtc)
     if kon_scale != 1.0:  # couple_accel: accelerate xlink binding so the network
         p_xl = _replace(p_xl, k_on=p_xl.k_on * kon_scale)   # PERCOLATES (z->[2,4])
@@ -270,7 +280,7 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                                          constrained=True, compartments=comp, dtc=dtc,
                                          device=device, kon_scale=kon_scale,
                                          bind_scale=bind_scale, turnover_tau=turnover_tau,
-                                         xl_k_scale=xl_k_scale)
+                                         xl_k_scale=xl_k_scale, v0_accel=v0_accel)
     sim = hc["sim"]
     act = hc["baoab_action"]
     turn_act = hc.get("turnover_action")
