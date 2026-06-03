@@ -238,6 +238,67 @@ detachment threshold** (≤ ~3 nN at the measured 6.5 nN cohesion); the ligand�
 detachment regime the overdamped CBM cannot resolve (a GPU sub-stepped-bond option, roadmap D3),
 not a numerical bug to patch.
 
+## A1 — ligand → ACTIVE edge-traction (the faithful Bare/Pre/Lam4 driver, 2026-06-03)
+
+L2.6 mapped the ligand condition onto the *passive* substrate-adhesion depth and the three
+A/A₀(R₀) curves barely separated (Δ≈0.03 — a cohesive MCF7 caps regardless). A1 is the faithful
+upgrade: each PI condition maps onto the cell's **active edge-traction** through the per-species
+integrin-clutch kinetics (`spheroid/ligand_traction.py`, anchored to `bridge/ligand_species.py`,
+the literature SoT), the validated spreading knob. The passive wall is held COMMON so the *only*
+thing differing is the ligand-set active traction — isolating the A1 mechanism.
+
+**Mechanism (anchored, no fit to PI):** `f_traction = T_ref · density · clutch_strength`.
+`clutch_strength(ligand) = φ·F_s` relative to col-I, with `φ = k_on/(k_on+k_off0)` (k_on =
+KU-2.4 0.3 s⁻¹) and `F_s = k_BT/x_β` — both from the registry kinetics. With col-I (k_off0
+1.3 s⁻¹, x_β 0.23 nm) and laminin-111 (k_off0 1.85 s⁻¹, x_β 0.28 nm, α7β1-invasin slip proxy):
+
+| Condition | ligand | φ | F_s | clutch strength | density | **f_traction** |
+|---|---|---|---|---|---|---|
+| Bare | col-I (α2β1) | 0.187 | 18.6 pN | 1.000 | 0.60 | **1.50 nN** |
+| Pre | col-I (α2β1) | 0.187 | 18.6 pN | 1.000 | 1.00 | **2.50 nN** |
+| Lam4 | laminin-111 (α6β1) | 0.140 | 15.3 pN | **0.611** | 1.00 | **1.53 nN** (proxy) |
+
+The col-I-vs-laminin ordering (laminin = 0.61× the col-I clutch — weaker occupancy AND smaller
+per-bond force) is **the measured direction** (breast-epithelial traction lower on LN-111,
+P=0.016–0.028), not guessed. All three sit in the B1 stable ≤3 nN band.
+
+**Emergent result (5 R₀×… → here 4 R₀ × 2 seeds, catch cohesion, common substrate):**
+
+| R₀ (µm) | 40.4 | 53.5 | 67.3 | 78.3 |
+|---|---|---|---|---|
+| Bare (1.50 nN) | 2.71 | 2.18 | 1.89 | 1.79 |
+| Pre  (2.50 nN) | 2.90 | 2.38 | 1.95 | 1.77 |
+| Lam4 (1.53 nN) | 2.68 | 2.26 | 1.92 | 1.75 |
+
+**The active mechanism SEPARATES the conditions** — Δ(A/A₀) ≈ **0.139** at R₀≈60 µm (and ≈0.22
+at R₀≈40 µm, above the ±0.05–0.09 seed sd), **~4.6× the L2.6 passive-adhesion separation
+(~0.03)**. The ordering **Pre > Lam4 ≳ Bare tracks the resolved traction monotonically**
+(2.50 > 1.53 > 1.50 nN) — the platform doing its job: ligand identity → clutch kinetics →
+traction → spread, end-to-end mechanistic. Figure `fig_layer2_ligand_traction_conditions.png`.
+
+**Honest caveats (reported, not smoothed over):**
+- **Per-condition a/b/c are UNDER-DETERMINED.** 4 R₀ vs 3 coefficients = 1 dof; the fits are
+  near-perfect r²≈1.00 by interpolation, and the *individual* a/b/c swing wildly (Bare a=1.41,
+  b=5.3 µm, c=+1911 µm² with an unphysical c>0; Pre a=0.10, b=147 µm, c=−1369 µm²) — an artifact
+  of the degeneracy (same caveat the REPORT flagged for L2.6's 3-point fit), NOT physics. **The
+  A/A₀(R₀) CURVES and their SEPARATION are the robust A1 result; robust per-condition a/b/c with
+  error bars need A3** (more R₀ / seeds / biological time, on GPU = B2).
+- **Absolute traction scale is unanchored** (no MCF7 single-cell traction in the literature; the
+  15–25 nN micropillar value was REFUTED). `T_ref` is set in the B1 stable band — the **relative**
+  ordering is the anchored science, not the magnitude.
+- **Density axis (Bare<Pre) is a flagged modeling knob** pending the collaborator's pV4D4 col-I
+  adsorption-density data (PI-exp map: literature gap, route to Im Sung Gap / KAIST). The
+  ligand-IDENTITY axis (col-I vs laminin) is the fully-anchored part.
+- **Single-cell ↔ collective laminin split (expected).** Lam4's *single-cell* traction (1.53 nN,
+  the weak laminin clutch) sits just above Bare, so via single-cell active traction Lam4 does
+  **not** dramatically out-spread (it lands between Bare and Pre). The PI poster's *collective*
+  Lam4 enhancement, if present, is the documented single-cell↔collective split (PI-exp map) —
+  the A2 overlay question. A1 reports what the measured single-cell clutch kinetics produce and
+  deliberately does NOT engineer the collective ordering (overlay-only hard rule).
+
+8 new tests (`test_ligand_traction.py`: anchored col-I/laminin ordering, ≤3 nN band, Bare/Pre
+density-only difference, sign-sense, input guards) → layer-2 suite **96 green**.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
@@ -295,6 +356,12 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   (annotated) with ±0.10 scatter, catch 0/5 with ±0.05. **Right**: why — the effective cohesion
   force law F_coh(ext) strengthens to a peak at per-cadherin f₀≈29 pN (overlaid: measured 6.5 nN
   de-adhesion) then slip-ruptures. The force-strengthening is the fragmentation fix.
+- `figs/fig_layer2_ligand_traction_conditions.png` — **A1 ligand→active-traction.** **Left**:
+  the three emergent A/A₀(R₀) curves (Bare/Pre/Lam4) with per-realisation points + a+b/R+c/R²
+  fit and the A/A₀=1 reference — Pre (highest traction) above, Lam4≈Bare, separation Δ≈0.14 at
+  mid-R₀ (4.6× the L2.6 passive). **Right**: the mechanism — resolved `f_traction` per condition
+  (= T_ref·density·φ·F_s) with the col-I/laminin clutch strength (0.61×) + density annotated and
+  the B1 stable 3 nN ceiling overlaid. SI units, no truncation.
 - `figs/fig_layer2_aa0_growth_law_catch.png` — **⭐ L2.5 G3-PASS A/A₀(R₀) law.** The catch-bond
   ensemble (5 R₀ × 3 seeds): A/A₀ vs R₀ with tight error bars + the a+b/R+c/R² fit (**r²=0.980**)
   + the A/A₀=1 reference; right panel shows growth-factor∝1/R + rim fraction (G4). The clean

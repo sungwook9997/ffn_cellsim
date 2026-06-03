@@ -22,14 +22,20 @@
 
 ### A. Make it experiment-comparable (the scientific completion)
 
-- **A1. Ligand mechanism (Bare/Pre/Lam4) — the real driver** ⭐ TOP PRIORITY.
-  Passive substrate adhesion alone barely separates the conditions (L2.6 finding); the actual
-  driver is ACTIVE traction (validated: traction↑→A/A₀↑). Anchor ligand→traction via the
-  per-species integrin catch-slip in `bridge/ligand_species.py` (col-I vs laminin-111 → engaged
-  clutch count → traction magnitude) so the three conditions yield three distinct a/b/c curves
-  emergently. This is the experiment's actual variable. ⚠️ Anchor the relative-traction ordering
-  carefully (laminin notes say LOWER traction than FN; don't guess the Bare/Pre/Lam4 order — use
-  the measured relative tractions / clutch kinetics). Depends on B1.
+- ~~**A1. Ligand mechanism (Bare/Pre/Lam4) — the real driver**~~ ✅ **DONE 2026-06-03**
+  (REPORT §A1; `spheroid/ligand_traction.py` + `scripts/layer2_ligand_traction_sweep.py`;
+  fig `fig_layer2_ligand_traction_conditions.png`; +8 tests, 96 green).
+  Mapped each condition → ACTIVE edge-traction `f = T_ref·density·(φ·F_s)` from the
+  `bridge/ligand_species.py` clutch kinetics: **col-I clutch 1.0 vs laminin 0.61× (measured
+  ordering, not guessed)**; Bare<Pre = flagged density axis. Resolved Bare 1.50 / Pre 2.50 /
+  Lam4 1.53 nN (all in the B1 ≤3 nN band). **Result: the active mechanism SEPARATES the
+  conditions — Δ(A/A₀)≈0.14 at mid-R₀, ~4.6× the L2.6 passive (~0.03); ordering Pre>Lam4≳Bare
+  tracks resolved traction.** ⚠️ Honest limits → feed A2/A3: per-condition a/b/c are
+  UNDER-DETERMINED (4 R₀, 1 dof — curves+separation are robust, the a/b/c split is not; need
+  A3); absolute T_ref unanchored (relative ordering is the science); density axis pending the
+  collaborator pV4D4 datum; **single-cell↔collective laminin split** — Lam4 single-cell traction
+  is low (weak laminin clutch) so it does NOT out-spread via single-cell traction; the poster's
+  *collective* Lam4 enhancement (if shown) is that split, the A2 question (do NOT engineer it).
 - **A2. PI poster overlay (the payoff).** Overlay the PI's measured A/A₀(R) on the emergent
   curves (OVERLAY-ONLY, never fit — hard rule). Does the platform's emergent a/b/c match the
   experiment's a/b/c (qualitatively / quantitatively)? = the validation comparison.
@@ -79,12 +85,16 @@
 ## Dependency graph / recommended next step
 
 ```
-B1 (box/eject-guard) ✅DONE ──► A1 (ligand→traction anchor, ≤~3 nN band) ──► A2 (PI overlay) = experiment reproduced
-                                 A3 (more stats, needs B2/GPU) ──┘
+B1 ✅DONE ──► A1 ✅DONE (ligand→traction, 3 separated curves) ──► A2 (PI overlay) = experiment reproduced
+                                                                  A3 (more R₀/seeds, needs B2/GPU) ──┘
 C (integration) and D (extensions) run in parallel / after.
 ```
 
-**Recommended next single step (B1 done):** A1 — anchor the Bare/Pre/Lam4 ligand conditions to
-per-species integrin catch-slip → edge-traction *within the stable ≤~3 nN band B1 established*,
-yielding three distinct a/b/c curves emergently. Then A2 (PI overlay) = the next headline
-("the platform reproduces the PI Bare/Pre/Lam4 conditions mechanistically").
+**Recommended next single step (A1 done):** **A2 — overlay the PI poster A/A₀(R) on the three
+emergent curves** (OVERLAY-ONLY, never fit). Does the platform's emergent ordering/shape match
+the experiment's Bare/Pre/Lam4? Key A2 question carried from A1: the **single-cell↔collective
+laminin split** — A1's single-cell traction puts Lam4 ≈ Bare; if the poster shows Lam4 spreading
+*most* (collective enhancement), that gap is the finding (it implicates a collective mechanism —
+cohesion modulation / uniform-β1 proliferation — not single-cell traction). A2 needs the PI
+poster numbers (ask PI). **A3** (more R₀/seeds for robust per-condition a/b/c error bars) needs
+B2/GPU and runs alongside.

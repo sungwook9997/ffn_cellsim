@@ -1,0 +1,95 @@
+"""A1 tests: ligand identity → active edge-traction (clutch-kinetics anchored ordering).
+
+These check the ANCHORED part of A1 — that the col-I vs laminin ordering falls out of the
+measured registry kinetics (not a guess), that the resolved tractions sit in the B1 stable
+band, and that the resolver's boundary/sign-sense contracts hold. The density axis (Bare<Pre)
+is a flagged modeling knob and is checked only for the qualitative ordering it asserts.
+"""
+
+from __future__ import annotations
+
+import math
+
+import pytest
+
+from ffn_sim.bridge.ligand_species import DEFAULT_LIGAND_FOR_CONDITION, K_BT, LIGAND_REGISTRY
+from ffn_sim.spheroid.ligand_traction import (
+    KU_2_4_K_ON,
+    STABLE_TRACTION_CEILING,
+    T_REF_DEFAULT,
+    clutch_strength,
+    resolve_ligand_traction,
+)
+
+_CONDITIONS = ("Bare", "Pre", "Lam4")
+
+
+def test_clutch_strength_colI_reference_is_unity():
+    """The reference ligand (col-I) has clutch strength 1.0 by definition."""
+    assert clutch_strength("collagen_I") == pytest.approx(1.0)
+
+
+def test_laminin_clutch_weaker_than_colI_from_measured_kinetics():
+    """ANCHORED ordering: laminin's φ·F_s < col-I's (higher k_off0 AND smaller F_s) → < 1.
+
+    Matches the measured direction (breast-epithelial traction lower on LN-111). The value
+    falls out of the registry kinetics, recomputed here independently from k_off0/x_β."""
+    s = clutch_strength("laminin_111")
+    assert 0.0 < s < 1.0
+    # independent recompute: φ·F_s ratio
+    def phi_Fs(lig):
+        L = LIGAND_REGISTRY[lig]
+        phi = KU_2_4_K_ON / (KU_2_4_K_ON + L.k_off0)
+        return phi * (K_BT / L.x_beta)
+    assert s == pytest.approx(phi_Fs("laminin_111") / phi_Fs("collagen_I"), rel=1e-12)
+    assert s == pytest.approx(0.61, abs=0.02)  # ~0.611 with the registry anchors
+
+
+def test_resolved_tractions_in_stable_band_and_finite():
+    """Every condition resolves to 0 < f_traction ≤ the B1 stable ceiling (no detachment)."""
+    for c in _CONDITIONS:
+        r = resolve_ligand_traction(c)
+        assert 0.0 < r.f_traction <= STABLE_TRACTION_CEILING
+        assert math.isfinite(r.engaged_fraction) and 0.0 < r.engaged_fraction < 1.0
+
+
+def test_condition_ligand_mapping_matches_registry():
+    """Bare/Pre → col-I (not proxy); Lam4 → laminin-111 (proxy-flagged)."""
+    assert resolve_ligand_traction("Bare").ligand == "collagen_I"
+    assert resolve_ligand_traction("Pre").ligand == "collagen_I"
+    assert resolve_ligand_traction("Lam4").ligand == "laminin_111"
+    assert resolve_ligand_traction("Bare").proxy is False
+    assert resolve_ligand_traction("Lam4").proxy is True
+    for c in _CONDITIONS:
+        assert resolve_ligand_traction(c).ligand == DEFAULT_LIGAND_FOR_CONDITION[c]
+
+
+def test_bare_pre_same_ligand_differ_only_by_density():
+    """Bare and Pre share col-I kinetics (same strength) and differ ONLY in density factor."""
+    b, p = resolve_ligand_traction("Bare"), resolve_ligand_traction("Pre")
+    assert b.clutch_strength == pytest.approx(p.clutch_strength)   # same ligand
+    assert b.density_factor < p.density_factor                     # Bare lower availability
+    assert b.f_traction < p.f_traction                            # → less traction (flagged axis)
+
+
+def test_sign_sense_lower_koff_gives_more_traction():
+    """Sign-sense: a lower off-rate (longer-lived bond) → higher occupancy → stronger clutch."""
+    # col-I (k_off0 1.3) vs laminin (1.85): col-I lower k_off → higher strength
+    assert clutch_strength("collagen_I") > clutch_strength("laminin_111")
+
+
+def test_density_factor_scales_traction_linearly():
+    """Boundary/scaling: f_traction ∝ density (density→0 ⇒ traction→0)."""
+    full = resolve_ligand_traction("Pre", density_factors={"Pre": 1.0})
+    half = resolve_ligand_traction("Pre", density_factors={"Pre": 0.5})
+    assert half.f_traction == pytest.approx(0.5 * full.f_traction)
+
+
+def test_resolver_rejects_bad_inputs():
+    """Unknown condition, non-positive t_ref, and over-ceiling traction all raise (surfaced)."""
+    with pytest.raises(ValueError):
+        resolve_ligand_traction("FN")
+    with pytest.raises(ValueError):
+        resolve_ligand_traction("Pre", t_ref=0.0)
+    with pytest.raises(ValueError):  # density 10× pushes col-I past the 3 nN ceiling
+        resolve_ligand_traction("Pre", density_factors={"Pre": 10.0})
