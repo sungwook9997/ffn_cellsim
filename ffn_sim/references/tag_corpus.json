@@ -1807,9 +1807,9 @@
     "n_pages": 26,
     "source": "new",
     "se_uid": null,
-    "se_citation_key": null,
+    "se_citation_key": "Chugh2017_NatCellBiol",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "DeBelly2023_Cell",
@@ -1818,10 +1818,10 @@
     "path": "1-s2.0-S0092867423005330-main.pdf",
     "n_pages": 29,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-817f-8556-d6684a519f2e",
+    "se_citation_key": "DeBelly2023_Cell",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Keren2023_Cell",
@@ -1830,10 +1830,10 @@
     "path": "1-s2.0-S0092867423005858-main.pdf",
     "n_pages": 3,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-8190-b5bd-fa92a0db6369",
+    "se_citation_key": "Keren2023_Cell",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Luchtefeld2024_NatureMethods",
@@ -1842,10 +1842,10 @@
     "path": "s41592-024-02277-8.pdf",
     "n_pages": 17,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-810c-ade6-d63b158be015",
+    "se_citation_key": "Lchtefeld2024_NatMethods",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "NishitaniMiura2025_arXiv",
@@ -1854,10 +1854,10 @@
     "path": "Quantitative_Analysis_of_Cell_Membrane_Tension_in_.pdf",
     "n_pages": 27,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-8140-8a61-f14fd74f80a0",
+    "se_citation_key": "NishitaniMiura2025_arXiv",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Fastabend2026_PhysicalReviewE",
@@ -1866,10 +1866,10 @@
     "path": "z152-x4l1.pdf",
     "n_pages": 13,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-81d7-9ca8-fbd58bba9293",
+    "se_citation_key": "Fastabend2026_PhysRevE",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Thiticharoentam2026_bioRxiv",
@@ -1878,10 +1878,10 @@
     "path": "2026.03.17.712503v1.full.pdf",
     "n_pages": 32,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-81ed-a230-c68f81c8b7e8",
+    "se_citation_key": "Thiticharoentam2026_bioRxiv",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Roffay2021_Development",
@@ -1890,10 +1890,10 @@
     "path": "DownloadCombinedArticleAndSupplmentPdf.pdf",
     "n_pages": 19,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-81d6-847c-d0ae4c883dc6",
+    "se_citation_key": "Roffay2021_Development",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Runser2023_bioRxiv",
@@ -1902,10 +1902,10 @@
     "path": "2023.03.28.534574v1.full.pdf",
     "n_pages": 11,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-812e-99ee-f0a01f34c354",
+    "se_citation_key": "Runser2023_bioRxiv",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Tao2020_BiophysicalJournal",
@@ -1914,10 +1914,10 @@
     "path": "main (1).pdf",
     "n_pages": 11,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-8116-a058-d69f2b320b52",
+    "se_citation_key": "Mykuliak2020_BiophysicalJournal",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "DeVecchis2021_BiophysicalJournal_mmc4",
@@ -1926,9 +1926,9 @@
     "path": "mmc4.pdf",
     "n_pages": 23,
     "source": "new",
-    "se_uid": null,
-    "se_citation_key": null,
+    "se_uid": "374120da-ec5d-815a-a2f3-f6362396491f",
+    "se_citation_key": "DeVecchis2021_BiophysicalJournal",
     "n_chunks": 0,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   }
 ]
