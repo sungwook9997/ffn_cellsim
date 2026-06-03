@@ -111,7 +111,7 @@ def _resolve_compartments(p_cortex):
 
 def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
            dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu", kon_scale=1.0,
-           bind_scale=1.0, turnover_tau=None):
+           bind_scale=1.0, turnover_tau=None, xl_k_scale=1.0):
     from dataclasses import replace as _replace
     p = resolve_h3_derived(cfg)
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
@@ -120,6 +120,14 @@ def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
     p_xl = resolve_crosslinkers(cfg, dt=dtc)
     if kon_scale != 1.0:  # couple_accel: accelerate xlink binding so the network
         p_xl = _replace(p_xl, k_on=p_xl.k_on * kon_scale)   # PERCOLATES (z->[2,4])
+    if xl_k_scale != 1.0:  # ⚠️ DIAGNOSTIC ONLY (PI-approved 2026-06-03, NOT adopted):
+        # soft-coupling-ceiling probe. Crosslinker stiffening is hard-rule FORBIDDEN
+        # (k=1e-7 is the Furuike/Ferrer literature constant) — this scales k_intra +
+        # k_attach to test whether the soft inter-filament coupling is what caps g_soft.
+        # If g_soft rises with k → ceiling confirmed (generation vs coupling separated).
+        # The value is never kept; same status as the FFN_MYOSIN_ALIGN meridional probe.
+        p_xl = _replace(p_xl, k_intra=p_xl.k_intra * xl_k_scale,
+                        k_attach=p_xl.k_attach * xl_k_scale)
     if bind_scale != 1.0:  # mesoscale-consistent reach (geometric dual of ×40 areal
         # coarse-graining): the physical 60nm filamin can't bridge the sparse mesoscale
         # mesh; scaling the partner-search radius (NOT k) restores binding. See
@@ -187,7 +195,7 @@ def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm=70
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
             compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0,
-            bind_scale=1.0, turnover_tau=None):
+            bind_scale=1.0, turnover_tau=None, xl_k_scale=1.0):
     cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
@@ -210,7 +218,8 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
     _, _, _, dtc, hw = _build(cfg, stepping_mode=stepping_mode,
                               force_scaling=force_scaling, constrained=False,
                               compartments=comp, equilibrate=True, n_warmup=n_warmup,
-                              device=device, kon_scale=kon_scale, bind_scale=bind_scale)
+                              device=device, kon_scale=kon_scale, bind_scale=bind_scale,
+                              xl_k_scale=xl_k_scale)
     hw["sim"].run(0)
     pos_warm = _tagpos(hw["sim"])
     del hw
@@ -221,7 +230,8 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                                          force_scaling=force_scaling,
                                          constrained=True, compartments=comp, dtc=dtc,
                                          device=device, kon_scale=kon_scale,
-                                         bind_scale=bind_scale, turnover_tau=turnover_tau)
+                                         bind_scale=bind_scale, turnover_tau=turnover_tau,
+                                         xl_k_scale=xl_k_scale)
     sim = hc["sim"]
     act = hc["baoab_action"]
     turn_act = hc.get("turnover_action")
@@ -295,6 +305,9 @@ def main() -> int:
     ap.add_argument("--turnover-tau", type=float, default=None,
                     help="enable actin turnover; tau_half [s] (Chugh/Fritzsche 5-30s). "
                          "In constrained mode splits M-SHAKE chains on sever (STAGE-2)")
+    ap.add_argument("--xl-k-scale", type=float, default=1.0,
+                    help="⚠️ DIAGNOSTIC ONLY (PI-approved): scale crosslinker k_intra+k_attach "
+                         "(soft-coupling-ceiling probe; stiffen is hard-rule forbidden, never adopted)")
     args = ap.parse_args()
 
     if args.smoke:
@@ -317,6 +330,7 @@ def main() -> int:
             device=args.device, compartments_on=not args.no_compartments,
             only=args.only, backbone_nm=args.backbone_nm, kon_scale=args.kon_scale,
             bind_scale=args.bind_scale, turnover_tau=args.turnover_tau,
+            xl_k_scale=args.xl_k_scale,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"
