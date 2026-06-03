@@ -60,19 +60,23 @@ def main(argv: list[str] | None = None) -> int:
             if key in ckpt:
                 continue
             r0r, aar = [], []
+            n_ejected = 0
             for s in range(n_seeds):
                 res = run_growth_pooled(
                     resolved, prolif, n_cells_init=n, total_time=total_time,
                     epoch_steps=1200, settle_steps=1000, seed=2000 + s, max_cells=3000,
                     cohesion="catch", cad=cad, substrate=sub,
                 )
+                if res.get("ejected"):
+                    n_ejected += 1  # surfaced below (no silent truncation)
                 r0r.append(effective_radius(res["a0_core"]))
                 aar.append(float(res["area_core_over_a0"][-1]))
             ckpt[key] = {"R0": float(np.mean(r0r)), "aa": float(np.mean(aar)),
-                         "aa_sd": float(np.std(aar))}
+                         "aa_sd": float(np.std(aar)), "ejected": n_ejected}
             _CKPT.write_text(json.dumps(ckpt, indent=2))
+            ej = f"  ⚠EJECTED {n_ejected}/{n_seeds}" if n_ejected else ""
             print(f"  {lig:5s}(adh×{ratio}) N0={n:4d} R0={ckpt[key]['R0']*1e6:5.1f}µm "
-                  f"A/A0={ckpt[key]['aa']:.2f}±{ckpt[key]['aa_sd']:.2f}", flush=True)
+                  f"A/A0={ckpt[key]['aa']:.2f}±{ckpt[key]['aa_sd']:.2f}{ej}", flush=True)
 
     fits = {}
     for lig in _LIGANDS:

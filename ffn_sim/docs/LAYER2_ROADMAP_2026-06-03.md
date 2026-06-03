@@ -39,10 +39,19 @@
 
 ### B. Numerics / production robustness (needed to run A at scale)
 
-- **B1. Box-sizing + substrate-wall fix.** The 6 nN traction-axis run ejected a cell past the
-  fixed pool box (substrate Morse-wall repulsion spike + footprint exceeds the box). Size the
-  pool box for the grown+spread footprint AND soften the wall repulsive branch (or cap forces).
-  Quick, unblocks high-traction + large-spheroid production. (NOT a physics error.)
+- ~~**B1. Box-sizing + substrate-wall fix.**~~ ✅ **DONE 2026-06-03** (REPORT §B1).
+  Root cause was the pool box being sized for a *3D ball* (`r0·N^(1/3)`) while a substrate-
+  confined spheroid *wets into a √N 2D disk* → footprint exceeded the box → PBC out-of-bounds.
+  Fixed with `cbm.pool_cluster_radius` (3D-pack vs 2D-wetting + spread safety) in both pool
+  builders. ALSO surfaced a genuine model limit: f_traction ≳ cohesion (~6.5 nN) physically
+  detaches an edge cell (instant in the overdamped large-dt CBM); the old 6 nN "success" was a
+  too-small-box PBC artifact. Added a graceful **ejection guard** (`ejected=True`, no crash, no
+  silent truncation). In-regime (≤3 nN) clean; G3 headline unchanged; +4 tests (88 green).
+  **Refines A1:** anchor the ligand→traction map into the stable ≤~3 nN band (above = a
+  detachment regime needing GPU sub-stepped bonds, D3 — not a numerics patch). The substrate
+  Morse-wall repulsion spike was a *downstream* symptom of the xy runaway (now caught by the
+  guard), so the wall potential is left untouched — changing it touches physics and would need
+  PI sign-off; flag if a future in-regime case ever penetrates the wall.
 - **B2. GPU port.** Port `run_growth_pooled` GPU-resident (project hard rule: RTX A5000+ is the
   mandatory production minimum) for native-N + long-time sweeps.
 
@@ -70,10 +79,12 @@
 ## Dependency graph / recommended next step
 
 ```
-B1 (box/wall fix, quick) ──► A1 (ligand→traction anchor) ──► A2 (PI overlay) = experiment reproduced
-                              A3 (more stats, needs B2/GPU) ──┘
+B1 (box/eject-guard) ✅DONE ──► A1 (ligand→traction anchor, ≤~3 nN band) ──► A2 (PI overlay) = experiment reproduced
+                                 A3 (more stats, needs B2/GPU) ──┘
 C (integration) and D (extensions) run in parallel / after.
 ```
 
-**Recommended next single step:** B1 → A1 → A2. Reaching A2 = the next headline
+**Recommended next single step (B1 done):** A1 — anchor the Bare/Pre/Lam4 ligand conditions to
+per-species integrin catch-slip → edge-traction *within the stable ≤~3 nN band B1 established*,
+yielding three distinct a/b/c curves emergently. Then A2 (PI overlay) = the next headline
 ("the platform reproduces the PI Bare/Pre/Lam4 conditions mechanistically").

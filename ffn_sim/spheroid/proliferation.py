@@ -58,6 +58,7 @@ from ffn_sim.spheroid.cbm import (
     build_cbm_simulation,
     get_positions,
     make_blob_positions,
+    pool_cluster_radius,
 )
 from ffn_sim.spheroid.observables import (
     core_projected_area,
@@ -277,8 +278,9 @@ def build_pool_simulation(
     # active blob at origin (slightly loose so adhesion settles it, like G1)
     act = make_blob_positions(n_active_init, 1.1 * r0, rng=rng)
 
-    # generous max active-cluster radius (cells pack at ~r0); park voids well beyond it
-    r_cluster_max = r0 * (n_max ** (1.0 / 3.0)) * 1.3
+    # worst-case active-cluster radius (3D pack vs substrate-wetting 2D disk + spread safety);
+    # park voids well beyond it so a spreading spheroid never reaches the box edge (B1 fix).
+    r_cluster_max = pool_cluster_radius(r0, n_max)
     n_void = n_max - n_active_init
     park_center = np.array([r_cluster_max + 40.0 * r0, 0.0, 0.0])
     if n_void > 0:
@@ -443,8 +445,16 @@ def run_growth_pooled(
     ts, ns, areas, rgs, areas_core = [0.0], [n0], [a0], [radius_of_gyration(active_positions())], [a0_core]
     rim_frac_mean = []
     capped = False
+    ejected = False
     cands = candidate_directions()
     search_r = prolif.split_distance + prolif.min_gap
+    # box-containment guard (B1): if an active cell wanders past this radius it is about to
+    # wrap across the periodic boundary (PBC) and corrupt the run — stop cleanly and flag it
+    # rather than letting HOOMD throw a C++ "particle out of bounds" mid-epoch. 0.45·L leaves
+    # a 5% margin before the L/2 wrap. A legitimately wetting/growing cluster stays well inside
+    # (the box is sized for the worst-case spread via pool_cluster_radius); exceeding this is a
+    # runaway (e.g. traction ≳ cohesion → genuine detachment, beyond the model's valid regime).
+    eject_radius = 0.45 * float(sim.state.box.Lx)
 
     while t < total_time:
         if edge_force is not None:
@@ -454,13 +464,30 @@ def run_growth_pooled(
             full = np.zeros((max_cells, 3), dtype=np.float64)
             full[np.where(active)[0]] = ef_active
             edge_force.set_vectors(full)
-        sim.run(epoch_steps)
+        try:
+            sim.run(epoch_steps)
+        except RuntimeError as exc:
+            # HOOMD "particle out of bounds" from a within-epoch force runaway (traction ≳
+            # cohesion). Stop gracefully on the last good state instead of crashing the run.
+            ejected = True
+            print(f"[run_growth_pooled] ejection at t={t/3600:.1f} h (HOOMD: {exc}); "
+                  f"stopping cleanly (ejected=True).")
+            break
         dt_epoch = epoch_steps * dt
         t += dt_epoch
         ages[active] += dt_epoch
 
         snap = sim.state.get_snapshot()
         pos_all = np.array(snap.particles.position, dtype=np.float64, copy=True)
+        # post-epoch containment / finiteness guard (catches a slow drift before it wraps)
+        act_pos_now = pos_all[np.where(active)[0]]
+        if (not np.all(np.isfinite(act_pos_now))) or (
+            np.abs(act_pos_now).max() > eject_radius
+        ):
+            ejected = True
+            print(f"[run_growth_pooled] ejection at t={t/3600:.1f} h "
+                  f"(cell beyond {eject_radius*1e6:.0f} µm box-guard); stopping cleanly.")
+            break
         act_idx = np.where(active)[0]
         pos_act = pos_all[act_idx]
         com = pos_act.mean(axis=0)
@@ -514,7 +541,12 @@ def run_growth_pooled(
             break
 
     areas = np.asarray(areas); areas_core = np.asarray(areas_core)
-    pos_final = active_positions()
+    try:
+        pos_final = active_positions()
+        if not np.all(np.isfinite(pos_final)):
+            raise ValueError("non-finite final positions")
+    except (RuntimeError, ValueError):
+        pos_final = pos_init  # ejected run: the final snapshot is corrupt; report the seed
     del sim
     gc.collect()
     return {
@@ -529,6 +561,7 @@ def run_growth_pooled(
         "n_division_epochs": len(rim_frac_mean),
         "growth_factor": ns[-1] / ns[0] if ns[0] else float("nan"),
         "capped_at_max_cells": capped,
+        "ejected": ejected,
         "f_traction": 0.0,
         "pos_init": pos_init, "pos_final": pos_final,
     }

@@ -53,6 +53,38 @@ from ffn_sim.spheroid.params import ResolvedL2
 # beyond the rest separation. e^-5 ~ 0.7% of the well depth -> negligible truncation.
 _CUTOFF_N_RANGES = 5.0
 
+# Numerical-policy: a pre-allocated pool box (L2.4b) is sized ONCE for the whole run, so it
+# must contain the WORST-case spread of n_max cells. A free 3D aggregate packs to radius
+# ~ r0·n_max^(1/3); a substrate-confined spheroid (L2.6) instead WETS into a quasi-2D disk
+# whose in-plane radius scales as sqrt(n_max) — much larger. The earlier 3D-only sizing
+# (`r0·n_max^(1/3)·1.3`) under-sized the box for a wetting + traction-driven spread, so a
+# spreading cell left the box mid-epoch (HOOMD "particle out of bounds"). See B1, roadmap
+# 2026-06-03. _POOL_2D_PACKING is the hex-monolayer area/cell coefficient (area = (sqrt3/2)·r0²
+# per cell ⇒ r_disk = r0·sqrt(0.2757·N)); _POOL_SPREAD_SAFETY is the over-wetting headroom
+# (the box tolerates A/A0 up to ~SAFETY² of close-packing before overflow). Both are box-
+# containment policy, NOT physics constants (they never enter a force or a measurement).
+_POOL_2D_PACKING = 3.0 ** 0.5 / (2.0 * np.pi)   # = 0.2757 ; area/cell over pi
+_POOL_SPREAD_SAFETY = 2.0
+
+
+def pool_cluster_radius(r0: float, n_max: int) -> float:
+    """Worst-case active-cluster radius for a pre-allocated pool box (3D pack vs 2D wetting).
+
+    Returns whichever of the free-3D-packing radius (``r0·n_max^(1/3)``) and the
+    substrate-wetting quasi-2D disk radius (``r0·sqrt(0.2757·n_max)``) is larger, times a
+    spread-safety margin for traction-driven over-wetting. Used to park the void pool and size
+    the box so a spreading spheroid never leaves it. Numerical policy (containment), not physics.
+
+    Args:
+        r0: cell rest separation / diameter (m).
+        n_max: pre-allocated pool size (total particles the box must ever hold as active cells).
+    """
+    if r0 <= 0.0 or n_max < 1:
+        raise ValueError("pool_cluster_radius: require r0 > 0 and n_max >= 1.")
+    r_3d = r0 * (n_max ** (1.0 / 3.0))
+    r_2d = r0 * (_POOL_2D_PACKING * n_max) ** 0.5
+    return _POOL_SPREAD_SAFETY * max(r_3d, r_2d)
+
 
 def make_blob_positions(
     n_cells: int,

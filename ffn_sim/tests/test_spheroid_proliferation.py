@@ -254,3 +254,52 @@ def test_pooled_no_growth_when_cycle_infinite(resolved):
     )
     assert res["n_cells"][-1] == 80
     assert res["growth_factor"] == pytest.approx(1.0)
+
+
+# --------------------------------------------------------------- B1: box sizing + eject guard
+
+def test_pool_cluster_radius_2d_dominates_for_large_n():
+    """The 2D-wetting radius (∝√N) must exceed the 3D-pack radius (∝N^⅓) for large pools, so
+    the box is sized for a substrate-confined (wetting) spheroid, not just a free 3D ball."""
+    from ffn_sim.spheroid.cbm import pool_cluster_radius
+
+    r0 = 15.0e-6
+    # monotone increasing in n_max
+    assert pool_cluster_radius(r0, 4000) > pool_cluster_radius(r0, 400) > pool_cluster_radius(r0, 40)
+    # for a large pool the 2D-wetting term wins (√N > N^⅓): radius ≫ the old 3D-only estimate
+    r_3d_only = r0 * (4000 ** (1.0 / 3.0)) * 1.3   # the pre-B1 sizing
+    assert pool_cluster_radius(r0, 4000) > r_3d_only
+    with pytest.raises(ValueError):
+        pool_cluster_radius(0.0, 100)
+    with pytest.raises(ValueError):
+        pool_cluster_radius(r0, 0)
+
+
+def test_pool_box_contains_worst_case_spread(resolved):
+    """The pre-allocated pool box half-width exceeds the worst-case cluster radius AND the
+    eject-guard radius — so a fully-wetting spheroid never reaches the periodic boundary (B1)."""
+    import hoomd
+
+    from ffn_sim.spheroid.cbm import pool_cluster_radius
+
+    dev = hoomd.device.CPU(notice_level=0)
+    n_max = 1500
+    sim, _active, _rc = build_pool_simulation(
+        resolved, n_active_init=120, n_max=n_max, device=dev, seed=1
+    )
+    half = 0.5 * float(sim.state.box.Lx)
+    r_cluster = pool_cluster_radius(resolved.morse_r0, n_max)
+    assert half > r_cluster                 # the wetting cluster fits inside the box...
+    assert 0.45 * float(sim.state.box.Lx) > r_cluster   # ...with margin below the eject guard
+    del sim
+
+
+def test_pooled_growth_reports_ejected_false_when_bounded(resolved):
+    """A normal bounded run sets ejected=False (the guard is present and does not false-trip)."""
+    p = _prolif(cycle_time=4.0e3, cv=0.0, r0=resolved.morse_r0)
+    res = run_growth_pooled(
+        resolved, p, n_cells_init=120, total_time=1.2e4, epoch_steps=400,
+        settle_steps=300, max_cells=600, seed=7,
+    )
+    assert "ejected" in res
+    assert res["ejected"] is False

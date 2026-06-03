@@ -200,6 +200,44 @@ level hit a numerical box/substrate-wall limit (a cell ejected past the box unde
 traction+growth+wall) — a known fix (size the pool box for the grown+spread footprint + soften
 the Morse wall repulsive branch), not a physics error.
 
+## B1 — box-sizing + ejection guard (numerics robustness, 2026-06-03)
+
+The L2.6 traction-axis run crashed at high traction with a HOOMD C++ `RuntimeError: Particle …
+is out of bounds`. Diagnosed (reproduced at f_traction=6–10 nN, Lam4 substrate, N₀=450, 2
+doublings) as **two compounding causes**:
+
+1. **Box too small for the wetting footprint (the real bug).** The pre-allocated pool box
+   (L2.4b) was sized ONCE from `r_cluster_max = r0·N_max^(1/3)·1.3` — a *free-3D-ball* radius.
+   But a substrate-confined spheroid (L2.6) **wets into a quasi-2D disk** whose in-plane radius
+   scales as `√N_max`, far larger than `N_max^(1/3)`. The cluster spread past the box edge and
+   a cell wrapped across the periodic boundary → out-of-bounds. **Fix:** `cbm.pool_cluster_radius`
+   sizes the box for `max(3D-pack, 2D-wetting disk) × spread-safety` (derived close-packing
+   geometry + a containment margin — numerical policy, never enters a force or a measurement),
+   used by both pool builders (`build_pool_simulation`, `build_cbm_catch`).
+2. **Genuine edge-cell detachment beyond regime (a model limit, now surfaced not hidden).**
+   Once box-sizing was fixed, f_traction ≳ cohesion (~6.5 nN) still ejects a *boundary* cell:
+   in the overdamped large-dt CBM a cell whose net outward traction exceeds its local cohesion
+   detaches and, at terminal velocity F/γ over the ~2000 s epoch dt, leaves instantly (the
+   adiabatic CBM cannot represent a slowly-peeling cell). The earlier 6 nN "success" was a
+   **PBC self-interaction artifact** of the too-small box (the wrapped image artificially
+   re-confined the cluster). **Fix:** a graceful **ejection guard** in `run_growth_pooled`
+   (`try/except` the HOOMD out-of-bounds + a post-epoch finiteness/0.45·L containment check)
+   stops cleanly on the last good state and returns `ejected=True` instead of crashing the
+   whole sweep; the sweep/ligand scripts surface `⚠EJECTED k/n_seeds` (no silent truncation).
+
+**Verified:** in-regime production (f_traction ≤ 3 nN, the REPORT's validated levels) runs clean
+(`ejected=False`, traction direction preserved: 0→3 nN gives A/A₀ 1.88→1.95 at Lam4); 6–10 nN
+no longer crashes (stops cleanly, flagged); the **G3 headline path is unchanged** (no substrate/
+traction: N₀=120→A/A₀ 2.63, N₀=400→1.86, consistent with the §HEADLINE table). +4 tests
+(`pool_cluster_radius` 2D-dominance/monotonicity/guards, box-contains-worst-case-spread,
+`ejected=False` on a bounded run) → layer-2 suite **88 green** (1 unrelated cupy skip).
+
+**Operating-regime conclusion (for A1).** Active edge-traction must stay **below the
+detachment threshold** (≤ ~3 nN at the measured 6.5 nN cohesion); the ligand→traction anchor
+(A1) should map the Bare/Pre/Lam4 conditions into that stable band. Higher traction is a genuine
+detachment regime the overdamped CBM cannot resolve (a GPU sub-stepped-bond option, roadmap D3),
+not a numerical bug to patch.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);

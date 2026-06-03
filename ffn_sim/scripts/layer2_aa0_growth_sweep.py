@@ -86,12 +86,15 @@ def main(argv: list[str] | None = None) -> int:
                   f"A/A0(core)={row['aac_m']:.2f}±{row['aac_e']:.2f}")
             continue
         r0r, aar, acr, rimr, grr = [], [], [], [], []
+        n_ejected = 0
         for s in range(n_seeds):
             res = run_growth_pooled(
                 resolved, prolif, n_cells_init=n, total_time=total_time,
                 epoch_steps=1200, settle_steps=1000, seed=1000 + s, max_cells=4000,
                 cohesion=cohesion, cad=cad,
             )
+            if res.get("ejected"):
+                n_ejected += 1  # surfaced below (no silent truncation): a runaway realisation
             r0r.append(effective_radius(res["a0"]))
             aar.append(float(res["area_over_a0"][-1]))
             acr.append(float(res["area_core_over_a0"][-1]))  # fragmentation-robust
@@ -105,11 +108,13 @@ def main(argv: list[str] | None = None) -> int:
             "rim": float(np.mean(rimr)) if rimr else float("nan"),
             "growth": float(np.mean(grr)),
             "sub": bool(np.mean(grr) < exp_ceiling),
+            "ejected": n_ejected,
         }
         ckpt[key] = row
         _save_ckpt(ckpt)  # checkpoint after EACH size so a kill resumes here
+        ej = f"  ⚠EJECTED {n_ejected}/{n_seeds}" if n_ejected else ""
         print(f"  N0={n:4d}  R0={row['R0']*1e6:6.1f} µm  A/A0(hull)={row['aa_m']:.2f}±{row['aa_e']:.2f}  "
-              f"A/A0(core)={row['aac_m']:.2f}±{row['aac_e']:.2f}  growth={row['growth']:.2f}  rim={row['rim']:.2f}")
+              f"A/A0(core)={row['aac_m']:.2f}±{row['aac_e']:.2f}  growth={row['growth']:.2f}  rim={row['rim']:.2f}{ej}")
 
     rows = [ckpt[str(n)] for n in n_list]
     R0s = [r["R0"] for r in rows]

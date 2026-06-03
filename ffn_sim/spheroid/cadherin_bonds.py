@@ -67,7 +67,7 @@ import numpy.typing as npt
 from hoomd import md
 
 from ffn_sim.integrator.baoab import make_baoab_updater
-from ffn_sim.spheroid.cbm import get_positions, make_blob_positions
+from ffn_sim.spheroid.cbm import get_positions, make_blob_positions, pool_cluster_radius
 from ffn_sim.spheroid.params import ResolvedL2
 from ffn_sim.validation.cadherin_sliding_rebinding import (
     RAKSHIT_W2A,
@@ -220,7 +220,9 @@ def build_cbm_catch(
         N = n_active if n_max is None else int(n_max)
         if N < n_active:
             raise ValueError("n_max must be >= number of active positions.")
-        r_cluster_max = r0 * (N ** (1.0 / 3.0)) * 1.3
+        # worst-case active-cluster radius (3D pack vs substrate-wetting 2D disk + spread
+        # safety); park voids beyond it so a spreading spheroid never leaves the box (B1 fix).
+        r_cluster_max = pool_cluster_radius(r0, N)
         n_void = N - n_active
         if n_void > 0:
             m = int(np.ceil(n_void ** (1.0 / 3.0)))
