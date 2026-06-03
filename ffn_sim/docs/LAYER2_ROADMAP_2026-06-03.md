@@ -112,12 +112,24 @@ B1 ✅ ─► A1 ✅ ─► A2 ✅ (SHAPE matches; 3 gaps) ─► A4 ✅ (unifor
 C (integration) and D (extensions) run in parallel / after.
 ```
 
-**Recommended next single step (A4 done — collective mechanism validated in direction):**
-- **A4′ — partial β1 uniformity (intermediate Lp sweep).** A4 showed full-uniform is the right
-  knob but overshoots (slope sign flip + variance). Sweep Lp between edge (11 µm) and uniform to
-  find the partial uniformity that lifts Lam4's magnitude / flattens the penalty *without*
-  reversing the sign — the physical Lam4. Overlay-only; needs more seeds (variance) → pairs with B2.
-- **Magnitude (quick) — raw-area + longer biological time** readout (close the §A2 ~4–5× gap).
-- **B2 → A3 — native-N GPU** for the PI R₀ range (87–419 µm) + robust per-condition a/b/c.
-Ask PI which to prioritise. (The platform now reproduces the law SHAPE (A2) and the collective
-ligand mechanism in direction (A4); the remaining gaps are scale/statistics = the GPU axis B2.)
+**Done since A4 (2026-06-03):**
+- ~~**A4′ — partial β1 uniformity (Lp sweep).**~~ ✅ DONE (REPORT §A4′; `scripts/layer2_a4prime_partial_uniformity.py`;
+  fig). The partial-uniformity regime EXISTS: **Lp≈40 µm** keeps the slope negative (corr −1.00 ≈
+  PI −0.91) while lifting magnitude +15% (1.92→2.22), low-variance — the physical Lam4 is a
+  MODERATE (not full) β1 uniformity. Full-uniform (A4) overshoots/destabilises; the mechanism is
+  a continuous Lp knob, PI-consistent window = partial.
+- ~~**Magnitude — decompose the ~4–5× gap.**~~ ✅ DONE (REPORT §Magnitude; `scripts/layer2_magnitude_gap.py`;
+  fig). Gap is NOT measurement (core≡raw ×1.00 — catch keeps it connected) and only ~20% time
+  (60→82 h ×1.18–1.22); the residual ~4–6× is genuine cohesion-locked under-spread → the
+  scale/statistics axis (B2). (Caveat: platform R₀ 67 µm vs PI median R₀ ~190 µm — order-of-mag,
+  not matched-R₀.)
+
+**Recommended next single step:** **B2 — native-N GPU port of `run_growth_pooled`.** Both
+remaining gaps (A2 magnitude ~4–6×, A2 R₀-range 87–419 µm, A3 robust per-condition a/b/c, and
+the A4′ magnitude lift at native R₀) collapse to ONE need: run at the experiment's native cell
+counts (10³–10⁵), which needs GPU. Port the BAOAB + binding updaters off per-step
+`cpu_local_snapshot` to `gpu_local_snapshot`/cupy (build on `docs/v2_audit/GPU_MAIN_PORT_*`);
+device-agnostic (CPU fallback kept). ⚠️ Needs the gbook RTX A5000 (no local CUDA) — co-use to be
+coordinated with the Lead session (GPU-share prompt drafted). (The platform now reproduces the
+law SHAPE (A2), the collective ligand mechanism in direction (A4), and the physical partial-
+uniformity operating point (A4′); the remaining gaps are all the GPU/scale axis = B2.)

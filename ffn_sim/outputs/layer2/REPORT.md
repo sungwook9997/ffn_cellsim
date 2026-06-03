@@ -401,6 +401,54 @@ refinement, alongside native-N/GPU (B2) for the magnitude and R₀-range gaps (�
 (β1-distribution → Lp mapping; uniform override leaves magnitude unchanged) → layer-2 suite
 **98 green**. Figure `fig_layer2_a4_uniform_beta1.png`.
 
+## A4′ — partial β1 uniformity: the physical Lam4 (2026-06-03)
+
+A4 showed full-uniform β1 is the right knob but OVERSHOOTS (flips the size-dependence sign vs
+the PI Lam4's still-decreasing law; + large variance). A4′ sweeps the traction localization Lp
+between edge (11 µm, A1) and uniform (1000 µm) for Lam4 (magnitude held at 1.53 nN; 3 R₀, 3
+seeds) to locate the PARTIAL uniformity that lifts the magnitude *without* reversing the slope —
+the physical Lam4. (`scripts/layer2_a4prime_partial_uniformity.py`.)
+
+| Lp (µm) | corr(R₀,A/A₀) | med A/A₀ | regime |
+|---|---|---|---|
+| 11 (edge, A1) | −0.99 | 1.92 | 1/R, small-size penalty present |
+| **40 (partial)** | **−1.00** | **2.22** | **slope still <0 (like PI −0.91) AND magnitude lifted +15%, low variance** ✅ |
+| 120 | +0.73 | 3.34 | overshoot begins (slope flips, variance ↑) |
+| 1000 (~uniform, A4) | +0.42 | 1.98 | slope reversed + destabilised (sd ±0.5–1.3) |
+
+**Finding: the partial-uniformity regime EXISTS and is identified — Lp ≈ 40 µm** (≈3.6× the edge
+length). There a MODEST β1 uniformity keeps the emergent size-dependence NEGATIVE (corr −1.00,
+matching the PI Lam4's decreasing law, corr −0.91) while lifting the magnitude (med 1.92 → 2.22,
++15%) and staying low-variance — and it nudges Lam4 to/above Pre (the PI collective direction)
+*without* the full-uniform sign-flip and instability. So the physical Lam4 is a **moderate, not
+full, β1 uniformity**: the mechanism is a continuous Lp knob and the PI-consistent window
+(decreasing + elevated) is the partial regime. The magnitude lift is still modest at CPU R₀
+(the full magnitude gap is scale/statistics → B2); A4′ pins the *mechanism's operating point*,
+not the absolute magnitude. Overlay-only (the PI shape is a qualitative target, never fit).
+Figure `fig_layer2_a4prime_partial_uniformity.png`.
+
+## Magnitude gap — decomposed honestly (A2 follow-up, 2026-06-03)
+
+A2's ~4–5× platform↔PI A/A₀ under-spread, split into its known recoverable parts (re-ran the
+three conditions to ≈82 h at R₀≈67 µm, recording raw-hull AND connected-core A/A₀;
+`scripts/layer2_magnitude_gap.py`). Both contributors are SMALL:
+
+| | core→raw | 60 h→82 h | platform raw 82 h | PI raw 82 h | residual |
+|---|---|---|---|---|---|
+| Bare | ×1.00 | ×1.18 | 2.24 | 9.3 | ×4.1 |
+| Pre | ×1.00 | ×1.19 | 2.29 | 10.0 | ×4.4 |
+| Lam4 | ×1.00 | ×1.22 | 2.35 | 13.5 | ×5.7 |
+
+**The gap is NOT a measurement artifact (core ≡ raw, ×1.00) — the catch-bond keeps the spheroid
+connected so the hull equals the core (no fragmentation to inflate the raw area; confirms the
+L2.5 hull≡core claim). Time (60→82 h) recovers only ~20%.** The residual ~4–6× is a genuine
+under-spread: the cohesion-locked, contact-inhibited CBM grows a compact cap (A/A₀ ≈ 2.3) while
+the PI MCF7 spread 9–14×. ⚠️ Caveat: the platform point is R₀≈67 µm vs the PI *median* at
+R₀≈170–210 µm — and since A/A₀ decreases with R₀, the PI value AT R₀=67 µm would be even higher,
+so this is an order-of-magnitude (not matched-R₀) comparison. Honest read: the magnitude gap is
+real and is the **scale/statistics axis** (native-N at the PI R₀ range + more seeds/mechanism =
+B2, the GPU port) — not a measurement or time bookkeeping fix. Figure `fig_layer2_magnitude_gap.png`.
+
 ## D2 — single-cell cortical tension → spheroid surface-tension BRIDGE (2026-06-03)
 
 The PI thesis (2026-06-03): **single-cell cortical tension γ is the root of the spheroid's
@@ -534,6 +582,15 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   (annotated) with ±0.10 scatter, catch 0/5 with ±0.05. **Right**: why — the effective cohesion
   force law F_coh(ext) strengthens to a peak at per-cadherin f₀≈29 pN (overlaid: measured 6.5 nN
   de-adhesion) then slip-ruptures. The force-strengthening is the fragmentation fix.
+- `figs/fig_layer2_a4prime_partial_uniformity.png` — **A4′ partial β1 uniformity.** **Left**:
+  emergent corr(R₀,A/A₀) vs Lp (log x) — stays ≈−1 (near the PI Lam4 −0.91 dashed line) through
+  Lp≈40 µm, then flips positive (overshoot) at Lp≥120 µm. **Right**: median A/A₀ vs Lp — lifted
+  above the edge value (dotted) in the partial regime. Together they pin the partial-uniformity
+  window (slope still <0 AND magnitude lifted) at Lp≈40 µm. SI units, log-x noted.
+- `figs/fig_layer2_magnitude_gap.png` — **magnitude gap decomposed.** Platform A/A₀ at R₀≈67 µm:
+  core 60 h / raw 60 h / raw 82 h bars (core≡raw, ×1.00) per condition vs the PI raw-82 h
+  diamonds (overlay-only, 9.3/10/13.5) — the ~4–6× residual is genuine under-spread (not
+  measurement or time). A/A₀ axis from 0, no truncation, SI units.
 - `figs/fig_layer2_a4_uniform_beta1.png` — **A4 collective-Lam4 (uniform β1).** **Left**: the
   three emergent curves with Bare/Pre edge-β1 (A1) + Lam4 UNIFORM-β1 (solid green) and the Lam4
   EDGE-β1 A/B reference (dashed green); uniform β1 flips Lam4's slope (decreasing→increasing),
