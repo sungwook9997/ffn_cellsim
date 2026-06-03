@@ -171,7 +171,17 @@ Overnight (iters 1–12), everything that landed is on Notion + Obsidian + TAG, 
   fragment (unlike L2.4a's under-sampled 0.987). Catch-bond is genuinely necessary.
 - **16 new SourceEvidence rows** registered (catch-bond anchors Manibog2016/Lou2007 + actomyosin
   cluster + MCF7-nucleus AFM); PDF↔SE links 94→110; all rendered as Obsidian nodes.
-- **2 PI action items:** (1) delete the `ZZ-OFFTOPIC Balog2007` SE row in Notion (MCP can't
-  archive); (2) optional — wire the documented SE→KnowledgeClaim suggestions (catch-bond 3 →
-  KB-4.2, etc.) if you want those graph edges (left for human curation per pipeline design).
+- **PI action items:** (1) delete the `ZZ-OFFTOPIC Balog2007` SE row in Notion (MCP can't
+  archive); (2) ~~wire SE→KnowledgeClaim suggestions~~ **DONE with PI on return (iter-13).**
+
+### iter 13 — 2026-06-03 (PI returned) — SE→KnowledgeClaim relation wiring (PI-approved)
+- **15 SE→claim relations wired** (the documented backlog, PI-approved on return):
+  - **KB-4.2 E-cadherin catch-bond** ← Manibog2016 (Direct), Lou2007 (Model-derived). [Rakshit2012
+    + Manibog2014 were already linked → KB-4.2 now anchored by all 4 catch-bond papers.]
+  - **KB-3.5 Cortical tension** ← Chugh2017 (Direct).
+  - **KB-3.4 Active stress from actomyosin** ← Murrell2012, Linsmeier2016, Stam2017, Ennomani2016
+    (Direct); Lenz2012, Banerjee2017 (Model-derived); Tam2021, Popov2016/MEDYAN, Belmonte2017,
+    Freedman2017, McFadden2017 (Simulation method).
+  - **KB-3.B2.1 Nuclear elastic modulus** ← JuelPrtner2025 (Direct, MCF7 nucleus AFM).
+- Source Type set on each. TAG edges 808→838, Obsidian edges 1324→1354 (+30 = 15×DUAL). Verified.
 - Lead session idle since `dfc6cac` (03:13) — L2.5/L2.6 completed the core spreading-law story.
