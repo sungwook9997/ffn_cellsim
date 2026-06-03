@@ -154,3 +154,24 @@ last processed HEAD → still `7dcca72` (no new session commits during iter-1).
 ### iter 11 — 2026-06-03 ~11:15 KST — QUIET (8th no-op; Lead idle ~8 h)
 - No new commits, SE 0 new, 172 PDFs, stores synced through `dfc6cac`. Minimal poll.
 - **iter-11 COMPLETE (no-op).**
+
+### iter 12 — 2026-06-03 ~12:15 KST — QUIET (9th no-op; PI 10h window nearly up)
+- No new commits, SE 0 new, 172 PDFs, stores synced through `dfc6cac`. Minimal poll.
+- PI ~9 h into the 10 h sleep → waking soon. Loop (cron `652871ef`) will keep firing hourly
+  until PI runs `CronDelete 652871ef` or the session closes. Clean handoff state maintained.
+- **iter-12 COMPLETE (no-op).**
+
+---
+## ☀️ PI WAKE-UP SUMMARY (read this first)
+Overnight (iters 1–12), everything that landed is on Notion + Obsidian + TAG, verified:
+- **Posted Dev-Logs:** L2.4a/b core-area+pooled, KB-benchmark v3, γ-production crash,
+  **⭐ L2.5 G3-PASS (independently verified)**, L2.6 ligand=active-traction.
+- **L2.5 verification (the key overnight value):** the Lead's "law EMERGES r²=0.98" headline is
+  REAL — re-fit reproduced r²=0.980, AND a fresh-seed run confirmed catch 0/5 vs morse 1/5
+  fragment (unlike L2.4a's under-sampled 0.987). Catch-bond is genuinely necessary.
+- **16 new SourceEvidence rows** registered (catch-bond anchors Manibog2016/Lou2007 + actomyosin
+  cluster + MCF7-nucleus AFM); PDF↔SE links 94→110; all rendered as Obsidian nodes.
+- **2 PI action items:** (1) delete the `ZZ-OFFTOPIC Balog2007` SE row in Notion (MCP can't
+  archive); (2) optional — wire the documented SE→KnowledgeClaim suggestions (catch-bond 3 →
+  KB-4.2, etc.) if you want those graph edges (left for human curation per pipeline design).
+- Lead session idle since `dfc6cac` (03:13) — L2.5/L2.6 completed the core spreading-law story.
