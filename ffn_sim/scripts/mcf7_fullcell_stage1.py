@@ -33,7 +33,7 @@ import yaml
 import hoomd
 
 from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.cortex.myosin import resolve_cortex_myosin, cortex_myosin_attach_bin_names
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cell.cell import build_cortex_full_simulation
 from ffn_sim.cell.nucleus import resolve_nucleus
@@ -93,6 +93,45 @@ def _cortex_angle_theta(sim) -> np.ndarray:
     v1 /= np.linalg.norm(v1, axis=1, keepdims=True).clip(min=1e-30)
     v2 /= np.linalg.norm(v2, axis=1, keepdims=True).clip(min=1e-30)
     return np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", v1, v2), -1.0, 1.0)))
+
+
+def _myosin_head_tension(sim, myo_action, p_myo):
+    """Diagnose grip-walk force delivery: head-actin attach-bond tension F=k·r vs
+    F_stall, and the commanded walk accumulator s_grip vs ℓ₀.
+
+    The STAGE-1 grip_walk kernel computes a series stall load F_series=k·min(s,r)
+    but DELIVERS F=k·r with the attach-bond r0≈0 (CH1). If the bond relaxes r→0
+    while s_grip walks to ℓ₀, the motor transports but applies ~no force — the
+    suspected force-generation floor. This measures both directly.
+    """
+    snap = sim.state.get_snapshot()
+    if snap.communicator.rank != 0:
+        return None
+    btypes = list(snap.bonds.types)
+    attach = set(cortex_myosin_attach_bin_names(p_myo.n_bins))
+    bt = np.asarray(snap.bonds.typeid)
+    bg = np.asarray(snap.bonds.group, dtype=np.int64)
+    aids = [i for i, nm in enumerate(btypes) if nm in attach]
+    mask = np.isin(bt, aids)
+    n_attach = int(mask.sum())
+    out = {"n_attach": n_attach, "F_stall": float(p_myo.F_stall_per_head),
+           "k_head_actin": float(p_myo.k_head_actin)}
+    if n_attach:
+        pos = np.asarray(snap.particles.position, dtype=np.float64)
+        ab = bg[mask]
+        r = np.linalg.norm(pos[ab[:, 0]] - pos[ab[:, 1]], axis=1)
+        F = p_myo.k_head_actin * r                      # r0≈0 for grip_walk
+        out["F_mean"] = float(F.mean()); out["F_max"] = float(F.max())
+        out["F_over_stall_mean"] = float(F.mean() / p_myo.F_stall_per_head)
+    sg = getattr(myo_action, "_head_grip_s", None)
+    if sg is not None:
+        sg = np.asarray(sg)
+        ell0 = getattr(myo_action, "_ell0_cortex", None)
+        out["s_grip_mean"] = float(sg.mean()); out["s_grip_max"] = float(sg.max())
+        if ell0:
+            out["ell0"] = float(ell0)
+            out["s_over_ell0_mean"] = float(sg.mean() / ell0)
+    return out
 
 
 def _resolve_compartments(p_cortex):
@@ -235,6 +274,7 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
     sim = hc["sim"]
     act = hc["baoab_action"]
     turn_act = hc.get("turnover_action")
+    myo_act = hc.get("myosin_action")
     if turn_act is not None:
         print(f"  [turnover ON] tau_half={turnover_tau}s k_sev={turn_act.p.k_sev:.3e} "
               f"k_anneal={turn_act.p.k_anneal:.3e} f_ss={turn_act.p.f_ss:.3f} "
@@ -272,6 +312,14 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
         print(f"  [{stepping_mode}] s={k+1}/{n} r/r0={rmean/r0:.5f} "
               f"g_soft={g_soft*1e3:.3e} g_rigid={g_rigid*1e3:.3e} "
               f"g_tot={(g_soft+g_rigid)*1e3:.3e} mN/m{turn_str}{buck_str}", flush=True)
+        if myo_act is not None and n_motors > 0:
+            ht = _myosin_head_tension(sim, myo_act, p_myo_lit)
+            if ht and ht.get("n_attach"):
+                print(f"      head: n_attach={ht['n_attach']} F_mean={ht.get('F_mean',0):.2e}N "
+                      f"F_max={ht.get('F_max',0):.2e}N F_stall={ht['F_stall']:.2e}N "
+                      f"F/F_stall={ht.get('F_over_stall_mean',0):.3f} | "
+                      f"s_grip/ℓ₀={ht.get('s_over_ell0_mean',0):.3f} "
+                      f"(ℓ₀={ht.get('ell0',0)*1e9:.0f}nm)", flush=True)
     return samples
 
 
