@@ -43,6 +43,38 @@ narrowed wall, not the older "coherence/cancellation" framing. The c3fafed force
 cancellation was a real earlier finding **but STAGE-2 empirically retired it as the residual
 cause** of the active floor.
 
+### 0.1 VERIFICATION RESULT (2026-06-03) — the binding-fraction hypothesis is REFUTED
+
+The Track-1 diagnosis proposed the floor was a **batch_dt rate-throttle artifact**: bound
+fraction sits at ~3 % because binding is slow per tick, and would reach ~0.38 at equilibrium,
+lifting g_soft. PI approved the fix **pending a verification run**. The run
+(`scripts/track1_gsoft_verify.py`, batch_steps 100→**7600**, CFL product 9.9e-4 < 1e-3 ✓, to
+**~3 τ**; `outputs/h3/track1_gsoft_verify_VERDICT.json`, `figs/fig_track1_gsoft_verify.png`)
+**REFUTES it:**
+
+- Bound fraction climbed **0.02 → 0.165 (8.2×)** over 0.1→3.0 τ, yet **g_soft stayed flat**
+  (mean 7.3e-5 mN/m, **corr(bound_frac, g_soft) = −0.10**, second-half *lower* than first).
+- Binding *did* lift g_soft **~3000× over the pre-binding baseline** (2.4e-8 → ~5e-5 mN/m) **but
+  SATURATED at the very onset (bf = 0.02)** and never rose further — g_soft is **decoupled** from
+  how many heads are bound. Heads are bound and loaded (F/F_stall ≈ 0.21, steady) the whole time.
+- g_soft remains **~4800× under the band floor.**
+
+**The real wall (now empirically isolated): FORCE AGGREGATION, not binding count/rate/timescale.**
+A small fixed set of bound, loaded heads (≈0.21 F_stall each) yields a small fixed g_soft; adding
+more bound heads does not increase it. The per-head force **does not aggregate into sustained
+network tension** — exactly the second floor STAGE-2's head-tension note suspected, and the
+predicted failure mode of the §1/KU35_FLOOR_ROOT_CAUSE "relabel-not-transport" mechanism: heads
+load momentarily but the load is not sustained/summed into shell-wide stress (grip-walk re-stretch
+too slow per tick, and/or no bipolar antiparallel organization → per-head forces don't sum into
+net contraction). **The batch_steps fix is therefore NOT adopted.** (Secondary finding: binding
+itself plateaus at bf ≈ 0.16, below the naive two-state 0.38 — a separate, smaller issue.)
+
+**Next single-cell γ step (redirected):** target force *aggregation/sustenance*, not binding —
+(a) confirm the grip-walk actually re-stretches the head spring against load each tick (s_grip per
+tick vs ℓ₀; the KU35_FLOOR_ROOT_CAUSE §3.1 transport step), and (b) enforce bipolar sidedness so
++/− head sets grip antiparallel filaments (§3.3) → a net contractile dipole. Both are PI-gated core
+myosin physics.
+
 ---
 
 ## 1. Magnitude anchors — the KU-3.5 band is physically CORRECT (Chugh 2017)
