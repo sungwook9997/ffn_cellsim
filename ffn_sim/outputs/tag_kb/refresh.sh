@@ -6,11 +6,22 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "[1/2] materializing Notion 8-DB Contract-Graph -> kb.duckdb ..."
+echo "[1/3] materializing Notion 8-DB Contract-Graph -> kb.duckdb ..."
 python notion_to_duckdb.py
 
-echo "[2/2] ingesting references/ PDFs -> paper_refs + paper_chunks + FTS ..."
+echo "[2/3] ingesting references/ PDFs -> paper_refs + paper_chunks + FTS ..."
 python references_ingest.py
+
+echo "[3/3] supersession / authoritative-chain layer (docs front-matter) ..."
+python supersession.py
+
+echo
+echo "[sanity] TAG backend summary"
+python references_ingest.py --check
+
+echo
+echo "[sanity] supersession / authoritative-chain (KU-3.5 test case)"
+python supersession.py --check
 
 echo
 echo "TAG backend ready. Ask a question:"

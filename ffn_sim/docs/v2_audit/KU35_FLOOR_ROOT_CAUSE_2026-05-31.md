@@ -1,3 +1,20 @@
+---
+kb_record:
+  topic: KU-3.5-cortical-tension
+  claim: KB-3.5
+  status: superseded
+  authoritative_as_of: 2026-05-31
+  superseded_by: CORTICAL_TENSION_RECORD_2026-06-04
+  aliases: [KU-3.5, KU3.5, cortical tension, binned-r0 ratchet, grip-walk]
+  conclusion: >-
+    Diagnosed the floor as the binned-r0 Hill ratchet (a lumped proxy that
+    relabels a rest length instead of transporting actin material, so it cannot
+    sustain contractile force). The force-generation root cause is CONFIRMED by
+    the 2026-06-04 authoritative record, but the single-fix-closure framing
+    (grip-walk alone resolves KU-3.5) was SUPERSEDED: grip-walk + --v0-accel do
+    not reach the band; the wall is force aggregation per the 6/4 record.
+---
+
 # KU-3.5 cortical-tension floor — ROOT CAUSE (2026-05-31, autonomous session)
 
 > **The months-long KU-3.5 γ floor (~3–4×10⁻⁴ mN/m, ~1000× under the [0.35, 0.65] band)

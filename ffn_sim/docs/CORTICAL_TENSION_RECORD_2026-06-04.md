@@ -1,3 +1,30 @@
+---
+kb_record:
+  topic: KU-3.5-cortical-tension
+  claim: KB-3.5
+  gate: VG-H3-KU35-cortex-tension
+  status: authoritative
+  primary: true
+  authoritative_as_of: 2026-06-04
+  aliases: [KU-3.5, KU3.5, cortical tension, cortical-tension floor, g_soft, gamma-floor]
+  supersedes:
+    - KU35_FLOOR_ROOT_CAUSE_2026-05-31
+    - CORTICAL_TENSION_TRIAGE_2026-06-03
+    - STAGE2-v0accel-RESOLVED@18ab034
+  conclusion: >-
+    The KU-3.5 active cortical-tension (g_soft) floor is a force GENERATION /
+    AGGREGATION problem: per-head myosin force does not aggregate into a sustained
+    shell tension (r/r0=1.0, confirmed by the 2026-06-04 compliant-backbone and
+    FA-anchored ON/OFF controls). The dead --v0-accel flag WAS a real bug but does
+    NOT close KU-3.5 — best case 0.030 mN/m (~11.6x under the 0.35 band) and only
+    by over-driving per-head force to 2.7x stall (non-Hill, unphysical). KU-3.5
+    splits into ACTIVE (g_soft, still OPEN) vs PASSIVE/composite (g_rigid native
+    0.57 mN/m, in-band but myosin-INDEPENDENT) vs Layer-2 BRIDGE anchor. Cortical
+    tension is measurement-protocol / timescale / adhesion-context dependent, not
+    a single number. The earlier "--v0-accel resolved / KU-3.5 resolved" closure
+    (commit 18ab034) is formally SUPERSEDED.
+---
+
 # Cortical-tension (KU-3.5) authoritative record + measurement reframe — 2026-06-04
 
 > PI-ratified actions from the 2026-06-04 ultracode review (decisions 1A / 2C / 3A) +

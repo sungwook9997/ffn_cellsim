@@ -17,14 +17,32 @@ fi
 source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null || true
 conda activate ffn_sim 2>/dev/null || true
 
-echo "[1/3] Notion -> vault (claims, papers, params, gates, contracts, relations)"
+echo "[1/4] Notion -> vault (claims, papers, params, gates, contracts, relations)"
 python notion_to_obsidian.py
 
-echo "[2/3] repo -> code/test/doc nodes linked to KB claims"
+echo "[2/4] repo -> code/test/doc nodes linked to KB claims"
 python add_code_nodes.py
 
-echo "[3/3] Notion Dev Logs board -> day-log nodes cross-linked into the graph"
+echo "[3/4] Notion Dev Logs board -> day-log nodes cross-linked into the graph"
 python devlogs_to_obsidian.py
+
+echo "[4/4] supersession / authoritative-chain edges (docs front-matter)"
+python supersession_to_obsidian.py
+
+echo
+echo "[sanity] Obsidian mirror summary"
+python - <<'PY'
+from pathlib import Path
+
+vault = Path("vault")
+notes = list(vault.glob("*.md"))
+devlogs = list(vault.glob("DL_*.md"))
+index = vault / "00_INDEX.md"
+
+print(f"  vault notes: {len(notes)}")
+print(f"  dev-log notes: {len(devlogs)}")
+print(f"  index present: {'yes' if index.exists() else 'no'}")
+PY
 
 echo "done. vault = $(pwd)/vault"
 if [ "${1:-}" = "--open" ]; then

@@ -1,3 +1,20 @@
+---
+kb_record:
+  topic: KU-3.5-cortical-tension
+  claim: KB-3.5
+  status: superseded
+  authoritative_as_of: 2026-06-03
+  superseded_by: CORTICAL_TENSION_RECORD_2026-06-04
+  aliases: [KU-3.5, KU3.5, cortical tension, STAGE-2, Track-1, batch_dt]
+  conclusion: >-
+    6/3 triage + STAGE-2 four-lever elimination (percolation/turnover/channel/
+    coherence) + Track-1 batch_dt rate-throttle verification. The
+    "--v0-accel resolved / KU-3.5 resolved" single-bug-closure reading from this
+    5/31-6/3 period is SUPERSEDED by the 2026-06-04 authoritative record: the
+    blocker is force generation/aggregation, and fixing --v0-accel alone does not
+    close KU-3.5-active.
+---
+
 # Cortical / membrane / tissue-tension literature triage — γ-floor diagnosis + single-cell→spheroid bridge (2026-06-03)
 
 > **STATUS: TRIAGE scaffold — NOT a contract, NOT ratified bands.** Classifies the

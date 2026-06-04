@@ -23,6 +23,7 @@ USAGE:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import pathlib
 import re
@@ -31,6 +32,12 @@ import sys
 import textwrap
 
 import duckdb
+
+# supersession / authoritative-chain helpers (request: latest authoritative wins)
+try:
+    from supersession import match_topic, resolve_authoritative
+except Exception:                                            # pragma: no cover
+    match_topic = resolve_authoritative = None
 
 HERE = pathlib.Path(__file__).parent
 DB_PATH = HERE / "kb.duckdb"
@@ -107,7 +114,85 @@ def schema_text(con) -> str:
         out.append(f"  ({s}) -[{rel}]-> ({d})")
     out.append("\nNote: each node's relation column also stores a JSON array of "
                "target ids; prefer the edges table for joins.")
+
+    # supersession / authoritative-chain layer (supersession.py) — only if built
+    has_sup = con.execute(
+        "SELECT count(*) FROM information_schema.tables "
+        "WHERE table_name='kb_record'").fetchone()[0]
+    if has_sup:
+        out.append(
+            "\nAUTHORITATIVE-CHAIN LAYER (conclusions that were overturned over "
+            "time). A 'topic' may have several records; older ones were SUPERSEDED "
+            "and MUST NOT be reported as the current answer.\n"
+            "  kb_record(topic, record_id, claim, gate, status, is_primary, "
+            "authoritative_as_of, conclusion, aliases, source_path, source_kind)\n"
+            "      status ∈ {authoritative, superseded, open}\n"
+            "  supersession(topic, newer_id, older_id, source_record, source_kind) "
+            "— newer_id supersedes older_id\n"
+            "  authoritative_record(topic, record_id, claim, gate, status, "
+            "authoritative_as_of, conclusion, source_path) — VIEW: the SINGLE "
+            "current authoritative record per topic.\n"
+            "  RULE: for any 'current / latest / authoritative status' question, "
+            "SELECT FROM authoritative_record (or filter kb_record to "
+            "status='authoritative' and MAX(authoritative_as_of)); treat "
+            "status='superseded' rows as historical only.")
     return "\n".join(out)
+
+
+# --------------------------------------------------------------------------- #
+# authoritative-chain context — guarantees the newest authoritative conclusion
+# is in front of `gen`, regardless of what SQL `syn` happened to write.
+# --------------------------------------------------------------------------- #
+def _load_kb_records(con) -> list[dict]:
+    have = con.execute("SELECT count(*) FROM information_schema.tables "
+                       "WHERE table_name='kb_record'").fetchone()[0]
+    if not have:
+        return []
+    rows = con.execute(
+        "SELECT topic, record_id, claim, status, is_primary, "
+        "authoritative_as_of, conclusion, aliases FROM kb_record").fetchall()
+    recs = []
+    for topic, rid, claim, status, isprim, asof, concl, aliases in rows:
+        try:
+            al = json.loads(aliases) if aliases else []
+        except Exception:
+            al = []
+        recs.append({"topic": topic, "record_id": rid, "claim": claim,
+                     "status": status, "is_primary": (isprim == "true"),
+                     "authoritative_as_of": asof, "conclusion": concl,
+                     "aliases": al, "supersedes": [], "superseded_by": []})
+    return recs
+
+
+def authoritative_context(con, question: str) -> str:
+    """If the question targets a topic with a supersession chain, return a block
+    naming the current authoritative record + the superseded ones, so `gen`
+    cannot answer with an overturned conclusion. Empty string when N/A."""
+    if match_topic is None or resolve_authoritative is None:
+        return ""
+    recs = _load_kb_records(con)
+    if not recs:
+        return ""
+    topic = match_topic(recs, question)
+    if not topic:
+        return ""
+    auth = resolve_authoritative(recs, topic)
+    if not auth or auth["status"] != "authoritative":
+        return ""
+    superseded = [r for r in recs
+                  if r["topic"] == topic and r["status"] == "superseded"]
+    lines = [
+        f"AUTHORITATIVE RECORD for topic '{topic}' "
+        f"(as_of {auth['authoritative_as_of']}): {auth['record_id']}",
+        f"  Current conclusion: {auth['conclusion']}",
+    ]
+    if superseded:
+        lines.append("  SUPERSEDED (historical — do NOT report as current): "
+                     + ", ".join(sorted(r["record_id"] for r in superseded)))
+    lines.append("  When answering about current/authoritative status, use the "
+                 "AUTHORITATIVE RECORD above; mention superseded findings only as "
+                 "history and say they were superseded.")
+    return "\n".join(lines)
 
 
 SYN_SYS = (
@@ -132,6 +217,13 @@ FEWSHOT = textwrap.dedent("""\
     JOIN edges e ON e.src_id = vg.id AND e.dst_type = 'model_contract'
     JOIN model_contract mc ON mc.id = e.dst_id
     WHERE lower(vg.status) = 'failing';
+    ```
+
+    Q: What is the current authoritative status / conclusion for KU-3.5 cortical tension?
+    ```sql
+    SELECT record_id, status, authoritative_as_of, conclusion
+    FROM authoritative_record
+    WHERE lower(topic) LIKE '%cortical%' OR lower(topic) LIKE '%3.5%';
     ```
     """)
 
@@ -211,13 +303,22 @@ GEN_SYS = (
     "question. Be concise and precise. Cite the specific identifiers present "
     "(citation_key / KB-x / MC-* / VG-* / DOI) and, for excerpt-based claims, "
     "the [citation_key pN] tag. If the rows are empty and no excerpt applies, "
-    "say no matching records were found. Do not invent data."
+    "say no matching records were found. Do not invent data.\n"
+    "AUTHORITATIVE-CHAIN RULE: when an 'AUTHORITATIVE RECORD' block is provided, "
+    "it is the current, latest conclusion for that topic and OVERRIDES any older "
+    "or superseded-looking statement in the SQL rows or PDF excerpts. Report it "
+    "as the current answer; reference superseded records ONLY as history and say "
+    "explicitly that they were superseded. Never present a superseded conclusion "
+    "as the current status."
 )
 
 
-def gen(question: str, sql: str, cols, rows, excerpts, model: str | None) -> str:
+def gen(question: str, sql: str, cols, rows, excerpts, model: str | None,
+        auth_context: str = "") -> str:
     table = rows_to_text(cols, rows)
-    prompt = (f"Question: {question}\n\nSQL used:\n{sql}\n\n"
+    auth_block = (f"AUTHORITATIVE-CHAIN CONTEXT (overrides older statements):\n"
+                  f"{auth_context}\n\n") if auth_context else ""
+    prompt = (f"Question: {question}\n\n{auth_block}SQL used:\n{sql}\n\n"
               f"Result rows ({len(rows)}):\n{table}\n\n"
               f"PDF evidence excerpts (use only if relevant):\n"
               f"{excerpts_to_text(excerpts)}\n\nAnswer:")
@@ -253,12 +354,16 @@ def main():
     print(f"\033[36m── exec ({len(rows)} rows) ──\033[0m\n{rows_to_text(cols, rows, cap=20)}\n")
     if args.no_gen:
         return
+    auth_context = authoritative_context(con, args.question)
+    if auth_context:
+        print(f"\033[35m── authoritative chain (latest wins) ──\033[0m\n"
+              f"{auth_context}\n")
     excerpts = content_search(args.question)
     if excerpts:
         print(f"\033[36m── content (BM25 over paper_chunks) ──\033[0m\n"
               f"{excerpts_to_text(excerpts)}\n")
     print(f"\033[36m── gen (answer) ──\033[0m\n"
-          f"{gen(args.question, sql, cols, rows, excerpts, args.model)}")
+          f"{gen(args.question, sql, cols, rows, excerpts, args.model, auth_context)}")
 
 
 if __name__ == "__main__":
