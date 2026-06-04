@@ -254,6 +254,36 @@ model cortex" = 우리가 시뮬레이션하는 바로 그 시스템의 in-vitro
 binarize해 pore/corral 분포를 뽑으면 super-res 데이터와 직접 비교 가능(관측 프로토콜로 등록 가치).
 한계: A549(MCF7 아님), 막-corral 정의 ≠ 역학 mesh.
 
+## 8. Li, Gao & Xu 2022, Biophys J 121:4091 — "Network dynamics of the nonlinear power-law relaxation of cell cortex" (`1-s2.0-S0006349522007858-main.pdf`)
+
+**What it is:** network-dynamics THEORY explaining the universal power-law rheology of the cortex
+(stress stiffening, power-law relaxation, variable scaling exponent) from molecular structure.
+
+### Key findings
+- Power-law relaxation **originates from an EXPONENTIAL form of cortical DISORDER** (distribution of
+  filament orientations/lengths); scaling exponent (≈1/2 …) DECREASES with strain or crosslinker density.
+- **Stress stiffening (t=0) from chain reorientation**; relaxation (t>0) from disorder; under strain
+  the network solidifies toward a 1D limit (realignment / in-series → in-parallel).
+- **Crosslinker REBINDING is crucial** for moderating relaxation under small strains (dynamic
+  unbinding↔rebinding equilibrium). Shorter filaments load crosslinkers more → faster unbinding.
+
+### → WHAT GOES INTO OUR MODEL
+1. **The cortex must be DISORDERED (exponential disorder), NOT a regular lattice.** (Our prior CBM
+   aggregate kept a cubic lattice — unphysical; the cortex construction must seed disordered/isotropic
+   filament orientations + the exponential length disorder, consistent w/ Fritzsche §2.) Disorder is
+   not a nuisance — it's the origin of the correct (power-law) rheology.
+2. **Dynamic crosslinker REBINDING matters for rheology** → keep the dynamic xlink turnover (already
+   present); rebinding timescale sets relaxation. (Cross-read with the chem-vs-mech timescale point, §5.)
+3. **Power-law rheology + stress stiffening** = continuum acceptance behaviors a faithful connected
+   mesh should reproduce (the fragmented mesh won't).
+
+**감상평 (Lead):** 이론 논문이지만 우리 construction에 직접 두 교훈. (1) **DISORDER가 본질** — cortex는
+무질서 등방망이어야 하고(지수 길이·방향 분포), 정규 격자면 rheology가 틀림. 우리가 과거 cubic-lattice
+aggregate를 본 게 바로 그 함정. (2) **crosslinker rebinding이 rheology 결정** → 동적 turnover 유지 필수.
+Fritzsche(지수 길이)+ §5(chem-mech timescale)와 일관. 한계: 연속체/통계 이론(분자 파라미터 아님) →
+framing/acceptance. 하지만 "disorder + rebinding"은 construction 규칙으로 직접 반영(등방 무질서 시드 +
+동적 가교).
+
 ---
 
 **감상평 (Flormann, §1):** 우리에게 결정적으로 유용. 두 가지가 큼. (1) **"cortex 아키텍처는 단일 상수가
