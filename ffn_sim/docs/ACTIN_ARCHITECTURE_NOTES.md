@@ -199,6 +199,61 @@ cortex with Rho waves; not molecular architecture.)
 가속할 때 chem/mech timescale 비를 왜곡하면 emergent 거동이 바뀐다는 경고와 정확히 같은 물리. Murrell
 그룹(§6 Sakamoto-Murrell와 같은 lab) active-cortex 라인. 우선순위 낮음, framing/acceptance로 등록.
 
+## 6. Sakamoto & Murrell 2024, Cell Rep Phys Sci — "Substrate geometry and topography induce F-actin reorganization and chiral alignment in an adherent model cortex" (`1-s2.0-S2666386424006520-main.pdf`)
+
+**What it is:** RECONSTITUTED "model cortex" inside model cells (the in-vitro analog of what WE
+simulate). Tests how a branched vs linear F-actin network responds to membrane shape/topography.
+
+### Key findings (functional roles of the two nucleator subpopulations)
+- **Branched (Arp2/3) network is INSENSITIVE to membrane shape** → stays disordered/ISOTROPIC,
+  robust. = the isotropic mesh backbone.
+- **Linear (formin) network ALIGNS with geometry/topography** (chiral alignment) → geometry-
+  responsive, orientable, spanning.
+- ⇒ the two subpopulations (Fritzsche §2) have DISTINCT architectural ROLES, not just lengths.
+
+### → WHAT GOES INTO OUR MODEL
+- The **bimodal architecture is functionally meaningful**: Arp2/3-branched short filaments =
+  isotropic disordered connectivity (robust mesh); formin-linear long filaments = the spanning /
+  orientable / geometry-responsive subpopulation. Our construction's long-formin filaments should
+  carry orientation/spanning; the short branched give isotropic infill.
+- This is a **reconstituted model cortex** = the direct in-vitro analog of our sim → strong
+  architecture/acceptance source (build a disordered branched mesh + spanning linear filaments).
+
+**감상평 (Lead):** Fritzsche를 기능적으로 보강 — 두 subpopulation은 길이만 다른 게 아니라 ROLE이 다름:
+Arp2/3-branched = isotropic·robust mesh(형태 무관), formin-linear = 정렬·spanning(형태 반응). 우리
+cortex(isotropic)에선 branched가 등방 연결을, 긴 linear가 가로지름. 결정적으로 **이게 "reconstituted
+model cortex" = 우리가 시뮬레이션하는 바로 그 시스템의 in-vitro 판** (Murrell lab) → construction의
+직접 acceptance 소스. 한계: 재구성계(세포 아님, 정량 nm은 본문 figure). 통합 framework의 nucleator
+축(Arp2/3 등방 vs formin 정렬)에 등록.
+
+## 7. Garlick, Faulkner, Briddon, Thomas 2022, Sci Rep 12:2715 — "Simple methods for quantifying super-resolved cortical actin" (`s41598-022-06702-w.pdf`)
+
+**What it is:** super-resolution (SRRF / 3D-SIM / ExM) quantification of the cortical-actin MESH
+("corrals" = fenced regions of the picket-fence model). A549 cells. Methods/quantification paper.
+
+### Key quantitative
+- Cortical actin lies **<10–20 nm from the plasma membrane** (Fujiwara picket-fence).
+- **Mesh "corral" sizes (cell-specific): EM 40 nm (PtK2) / 230 nm (NRK) (Fujiwara); STED 100 nm–1.5 µm
+  (Stanly). A549 control mean corral AREA = 0.20 µm² (≈ 450 nm char. length), ~386 corrals/10 µm² ROI.**
+- **Actin disruption (cytochalasin D) → larger mesh** (corral area 0.20 → 0.50 µm²; count 386 → 162).
+- Single actin filament 7 nm; their ground-truth sim used 70° Arp2/3 daughter branching.
+
+### → WHAT GOES INTO OUR MODEL
+- **Mesh-size acceptance numbers** (cell-specific 40–230 nm EM; A549 ~450 nm corral) — bracket the
+  rebuilt mesh's pore size. ⚠️ "corral" = picket-fence MEMBRANE-corral (may exceed the pure
+  mechanical mesh; partly a membrane-organization quantity, not just the load-bearing mesh).
+- **mesh ↑ on depolymerization** — matches Flormann's latrunculin result (connectivity ↓ → bigger mesh):
+  a consistency cross-check for our model (lower crosslink/filament density → larger pore).
+- A mirror-able OBSERVABLE: binarize our cortex (GSD) → pore/corral area distribution, like their
+  watershed workflow — a way to compare our mesh to super-res data.
+
+**감상평 (Lead):** 정량-방법 논문이라 메커니즘보다 **mesh-size 수치·관측법**이 가치. control corral
+~0.2µm²(~450nm) + cell-specific 40-230nm(EM)이 workflow의 mesh 범위와 일치. 단 "corral"은 picket-fence
+막-corral이라 순수 역학 mesh보다 클 수 있음(주의). cytochalasin→mesh↑가 Flormann latrunculin과 일치 =
+좋은 cross-check. 그들의 ground-truth sim(70° Arp2/3 분기)은 우리 construction의 미니판. 우리 GSD를
+binarize해 pore/corral 분포를 뽑으면 super-res 데이터와 직접 비교 가능(관측 프로토콜로 등록 가치).
+한계: A549(MCF7 아님), 막-corral 정의 ≠ 역학 mesh.
+
 ---
 
 **감상평 (Flormann, §1):** 우리에게 결정적으로 유용. 두 가지가 큼. (1) **"cortex 아키텍처는 단일 상수가
