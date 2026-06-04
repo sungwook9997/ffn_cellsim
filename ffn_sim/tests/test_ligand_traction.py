@@ -118,3 +118,25 @@ def test_resolver_rejects_bad_inputs():
         resolve_ligand_traction("Pre", t_ref=0.0)
     with pytest.raises(ValueError):  # density 10× pushes col-I past the 3 nN ceiling
         resolve_ligand_traction("Pre", density_factors={"Pre": 10.0})
+
+
+def test_active_traction_bridge_anchors_and_ceiling():
+    """Lamellipodium→CBM bridge: protrusion (Bieling) vs whole-cell anchors + ceiling flag."""
+    import yaml
+    from pathlib import Path
+    from ffn_sim.spheroid.params import resolve_layer2
+    from ffn_sim.spheroid.ligand_traction import (
+        resolve_active_traction, STABLE_TRACTION_CEILING,
+    )
+    cfg = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
+    r = resolve_layer2(yaml.safe_load(cfg.read_text()))
+    a = resolve_active_traction(r)
+    # f = v0 * gamma_cell (overdamped); Bieling 31.3 nm/s * 0.30 N*s/m ≈ 9.4 nN
+    assert a.f_protrusion == pytest.approx(a.v0_protrusion * r.gamma_cell, rel=1e-9)
+    assert a.f_wholecell == pytest.approx(a.v0_wholecell * r.gamma_cell, rel=1e-9)
+    assert 8e-9 < a.f_protrusion < 11e-9          # ~9.4 nN
+    assert 1e-9 < a.f_wholecell < 2.5e-9          # ~1.6 nN
+    # the literature-first protrusion anchor exceeds the B1 overdamped ejection ceiling
+    assert a.protrusion_exceeds_ceiling is True
+    assert a.ceiling == STABLE_TRACTION_CEILING
+    assert a.f_protrusion / a.f_wholecell == pytest.approx(11.6 * 2.7e-9 / (0.32e-6 / 60.0), rel=1e-6)
