@@ -18,6 +18,7 @@
 | **L2.5** | **E-cadherin catch-bond cohesion** (faithful Rakshit-2012 sliding-rebinding) replaces the static Morse well | ✅ DONE; **resists proliferation fragmentation (catch 0/5 vs morse 1/5 seeds, variance halved) → G3 r² 0.74→0.98 PASS** (below) |
 | **L2.6** | **substrate confinement** (z=0 adhesive Morse wall, quasi-2D wetting) | ✅ DONE; cohesive MCF7 forms a 3D **cap** (not a monolayer) — the correct low-invasion phenotype; D_sub = the Bare/Pre/Lam4 ligand axis |
 | **D2** | **single-cell γ → spheroid surface-tension bridge** (Chugh/Roffay/Fastabend/Okuda oracle + virial-σ observable) | ✅ DONE (demonstration); σ_tissue=γ=0.57 mN/m in-band; Young-Laplace ΔP=2σ/R = the A/A₀ b/R term; Okuda 3D-cap confirms L2.6. Emergent-σ CBM measurement = next run. |
+| **B2** | **GPU-main port of the CBM growth path → native-N scale-up** (device-aware BAOAB, `integrator/baoab_device.py`) | ✅ DONE; closes the A2 **R₀-range gap** — native R₀ 53→**196 µm** (was 40–78, no overlap) now **overlaps the PI 87–419 µm range**; G3 law extracts **r²=0.999**; magnitude gap confirmed **genuine** at matched R₀ (~5–8× under PI, not a scale artifact). |
 
 ## ⭐ HEADLINE (L2.5) — the PI spreading law A/A₀ = a + b/R + c/R² EMERGES (G3 PASS, r²=0.98)
 
@@ -552,6 +553,79 @@ Artifacts: `scripts/layer2_emergent_sigma.py` (`--catch-bond`),
 question, not a CBM one; (3) ⚠️ PI-gate: is the affine-strain σ_eff(ε) probe the right operational
 definition of the catch-bond aggregate's surface tension (vs an energetic work-of-deadhesion route)?
 
+## B2 — GPU-main port → native-N scale-up: the law extends into the PI R₀ range (2026-06-04)
+
+A2 left three honest gaps; two of them (**magnitude ~4–6×** and **R₀ range no-overlap**) were
+diagnosed as the *scale/statistics* axis — the platform's CPU first pass reached only R₀=40–78 µm
+while the PI MCF7 spheroids span R₀=87–419 µm, so the law was only EXTRAPOLATED (dotted) into the
+experiment's sizes. The blocker was hardware: a native-N CBM pool (N~10³–10⁴ cells, ×4 under
+proliferation) is infeasible on the 16 GB CPU box. B2 is the GPU-main port that removes it.
+
+**The port (mechanism-faithful, additive, freeze-safe).** Mapping the CBM growth path showed the
+cohesion (`md.pair.Morse` / the L2.5 `md.pair.Table` catch bond) and the neighbour list are
+*already* HOOMD C++ — GPU-accelerated for free. The ONLY per-step Python is the simple overdamped
+BAOAB Action, whose `cpu_local_snapshot` forced a device→host sync every step and throttled the
+GPU. Because the L2.4b pool pre-allocates `max_cells` at t=0 (division flips `void`→`cell` in place
+via `set_snapshot`), the **tag space is FIXED** — the simplest possible port (no Path-A tag
+extension). `integrator/baoab_device.py` (NEW, additive) is a device-aware sibling: the **CPU path
+is bit-identical to the frozen `baoab.LeimkuhlerMatthewsBAOAB`** (same RNG stream / step /
+`_wrap_into_box`; `tests/test_baoab_device.py` asserts trajectory parity, 8 green) and the **GPU
+path uses `gpu_local_snapshot` + cupy** (reusing the constrained-port helpers
+`array_backend`/`_wrap_into_box_xp`). The frozen single-cell `baoab.py` is UNTOUCHED. The CBM
+builders (`cbm`, `cadherin_bonds`, `proliferation` pool) select frozen-numpy on CPU (byte-stable
+provenance) vs device-cupy on GPU via `make_baoab_updater_for_device`. Full layer-2 + baoab suite
+green on CPU, byte-unchanged.
+
+**GPU correctness = bit-identical (decisive, stronger than "within seed noise").** Same-seed
+GPU vs CPU agree to **16 digits** on A/A₀ (N₀=200: both 2.0137476175162488; N₀=1000: both
+1.544657757387059). Why: in this overdamped, cohesion-dominated regime the BAOAB thermal noise is
+negligible vs the Morse/catch forces, so the observable is set by the **proliferation RNG (numpy,
+device-independent)** + the deterministic forces — device-invariant by construction. The cupy
+per-step path therefore changes wall-time, not physics.
+
+**Native-N sweep — the G3 catch-bond law, extended (RTX A5000, GPU N₀≥4000 + CPU N₀≤2000, 3 seeds):**
+
+| N₀ | 200 | 1000 | 2000 | 4000 | 8000 |
+|---|---|---|---|---|---|
+| R₀ (µm) | 52.9 | 93.0 | 120.0 | 153.6 | **195.9** |
+| A/A₀ core (mean±sd) | 2.01 | 1.58±0.04 | 1.42±0.02 | 1.35±0.01 | **1.26±0.01** |
+| N final (cells) | 454 | 1767 | 3259 | 6196 | **11878** |
+| ejected | — | no | no | no | **no** |
+
+```
+A/A0 = 0.978 + (55.24 µm)/R + (−22.44 µm²)/R²       r² = 0.999   (R₀ 53–196 µm, G3 PASS)
+```
+
+1. **R₀-range gap CLOSED.** The platform now spans R₀ 53→**196 µm** (was 40–78), so R₀ 93–196 µm
+   **overlaps the PI 87–419 µm range** for the first time — the PI median (~170 µm) sits *inside*
+   the swept range. The novel law no longer needs extrapolation to meet the experiment's sizes.
+2. **G3 r²=0.999** across the native range (even tighter than the L2.5 CPU headline's 0.98 — more
+   points + tighter native stats). Signs all match the PI law: **b>0** (1/R curvature/traction),
+   **c<0** (small-size cohesion penalty). hull≡core at every size (catch holds — **0/15 runs
+   fragment** even at 11 878 cells), confirming the L2.5 fragmentation-resistance at native scale.
+3. **Magnitude gap is GENUINE, now proven at MATCHED R₀.** At R₀≈170–196 µm the platform gives
+   A/A₀≈1.26–1.3 vs the PI medians 7.2 (Bare) / 7.5 (Pre) / 10 (Lam4) — **~5–8× under-spread at the
+   *same* R₀**. A2 could only say "PI is higher at larger R₀"; B2 converts that to a same-size
+   comparison: the gap is **not** a scale artifact but the **cohesion-locked compact-cap physics**
+   (the strongly-cohesive MCF7 catch bond grows a dense cap; the PI raw segmented area includes
+   spread protrusions/scattering the cohesive model resists). This re-points the magnitude question
+   away from scale (B2, now done) toward the **cohesion/observable axis** (e.g. a raw-area readout, a
+   weaker-cohesion or active-protrusion mechanism) — a model-physics question, not a hardware one.
+
+**Honest performance note (the next bottleneck, flagged not hidden).** The per-step BAOAB host sync
+is gone, but device throughput still *falls* with N (925 st/s at N₀=1000 → 154 at N₀=8000) because
+at native N the **host-side proliferation epoch loop** (`scipy.cKDTree` + per-epoch
+`get/set_snapshot` gathers) becomes the dominant cost — exactly the "binding-updater cKDTree/snapshot
+is the next native-scale bottleneck" the GPU_MAIN_PORT plan predicted. GPU≈CPU at N₀=1000 (925 vs
+872 st/s); the win here is **feasibility** (native R₀ runs complete cleanly, 11 878-cell spheroid in
+~13 min) — not yet a large per-step speed-up. Porting the epoch loop (cupy KD-tree / device-resident
+division) is the indicated follow-on (roadmap D3), orthogonal to the B2 science result.
+
+**Artifacts:** `integrator/baoab_device.py`, `tests/test_baoab_device.py` (8 green),
+`scripts/layer2_gpu_scaleup.py` (device-selectable catch-bond growth + parity + fit),
+`scripts/layer2_b2_vis.py`, `outputs/layer2/b2_gpu/{cpu,gpu}_sweep.jsonl` + `combined.jsonl`,
+figure `fig_layer2_b2_native_law.png`. PI A/A₀ overlay-only throughout.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
@@ -562,6 +636,12 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   **B** Young-Laplace ΔP = 2σ/R over R₀=31.7→78.3 µm (the 1/R curvature behind the A/A₀ b/R
   term); **C** Roffay outer/interior ratio 1/(1−β/γ) with the [1.6,2.0] band reproduced at
   β/γ∈[0.375,0.5] and the anchored MCF7 β/γ (higher-adhesion regime) marked.
+- `figs/fig_layer2_b2_native_law.png` — **⭐ B2 native-N GPU A/A₀(R₀) law.** Platform catch-bond
+  points (per-realisation + ensemble mean±sd, R₀ 53→196 µm) with the a+b/R+c/R² fit (**r²=0.999**),
+  the prior CPU ceiling (78 µm, dotted) and the A/A₀=1 reference; the **PI R₀ range (87–419 µm) is
+  shaded** and the PI median A/A₀ markers (Bare 7.2 / Pre 7.5 / Lam4 10, overlay-only) sit far above
+  the platform curve — the law now overlaps the PI sizes while the matched-R₀ magnitude stays ~5–8×
+  under. No axis truncation; SI units; reference + PI overlay shown.
 - `emergent_sigma_catch.png` — **D2 emergent σ under the catch-bond** (3 panels): **A** settled
   catch-bond aggregate (N=200, R_edge≈54 µm); **B** restoring σ_eff(ε) vs imposed radial strain —
   ≈0 at rest (catch cohesion dormant), engaging positive and rising to ~0.016 mN/m at ε=10 % (KU-3.5
