@@ -163,7 +163,12 @@ def parity(n: int, seed: int) -> int:
 
 def fit_jsonl(path: str) -> dict:
     """Aggregate run lines by N0, mean over seeds, fit a+b/R+c/R^2 to CORE (G3)."""
-    rows = [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()]
+    # Robust to stray non-JSON lines (diagnostic prints that may share the redirected stdout):
+    # only parse lines that look like a record object.
+    rows = [
+        json.loads(l) for l in Path(path).read_text().splitlines()
+        if l.strip().startswith("{")
+    ]
     by_n: dict[int, list] = defaultdict(list)
     for r in rows:
         by_n[r["n"]].append(r)

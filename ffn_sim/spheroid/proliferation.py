@@ -42,6 +42,7 @@ Sanity Gate
 from __future__ import annotations
 
 import gc
+import sys
 from typing import Any
 
 import gsd.hoomd
@@ -570,7 +571,7 @@ def run_growth_pooled(
                       f"{f_cfl_overflow*1e9:.1f} nN (a step would move a cell > "
                       f"{_CFL_DISPLACEMENT_FRACTION:g}·r0); possible over-traction/"
                       f"over-compression. Overdamped — flagged, not halted; "
-                      f"suppressing further per-epoch CFL warnings.")
+                      f"suppressing further per-epoch CFL warnings.", file=sys.stderr)
         try:
             sim.run(epoch_steps)
         except RuntimeError as exc:
@@ -578,7 +579,7 @@ def run_growth_pooled(
             # cohesion). Stop gracefully on the last good state instead of crashing the run.
             ejected = True
             print(f"[run_growth_pooled] ejection at t={t/3600:.1f} h (HOOMD: {exc}); "
-                  f"stopping cleanly (ejected=True).")
+                  f"stopping cleanly (ejected=True).", file=sys.stderr)
             break
         dt_epoch = epoch_steps * dt
         t += dt_epoch
@@ -593,7 +594,8 @@ def run_growth_pooled(
         ):
             ejected = True
             print(f"[run_growth_pooled] ejection at t={t/3600:.1f} h "
-                  f"(cell beyond {eject_radius*1e6:.0f} µm box-guard); stopping cleanly.")
+                  f"(cell beyond {eject_radius*1e6:.0f} µm box-guard); stopping cleanly.",
+                  file=sys.stderr)
             break
         act_idx = np.where(active)[0]
         if act_idx.size == 0:
@@ -627,7 +629,8 @@ def run_growth_pooled(
                 capped = True
                 print(f"[run_growth_pooled] POOL DEPLETED at t={t/3600:.1f} h: "
                       f"active={int(active.sum())} reached max_cells={max_cells}; "
-                      f"stopping (capped_at_max_cells=True). Raise max_cells to grow further.")
+                      f"stopping (capped_at_max_cells=True). Raise max_cells to grow further.",
+                      file=sys.stderr)
                 break
             nbr = np.array(
                 [j for j in tree.query_ball_point(pos_act[li], search_r) if j != li],
@@ -668,7 +671,8 @@ def run_growth_pooled(
 
     if cfl_warn_epochs:
         print(f"[run_growth_pooled] CFL summary: net force exceeded the per-step CFL budget "
-              f"in {cfl_warn_epochs} epoch(s) (diagnostic only; run not halted).")
+              f"in {cfl_warn_epochs} epoch(s) (diagnostic only; run not halted).",
+              file=sys.stderr)
     areas = np.asarray(areas); areas_core = np.asarray(areas_core)
     areas_raw = np.asarray(areas_raw)
     try:

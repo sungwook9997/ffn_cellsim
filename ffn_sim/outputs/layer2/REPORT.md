@@ -666,14 +666,59 @@ DOE:
 - **Magnitude-gap diagnostic (PI "add raw-area first"):** every run now records the **raw
   union-of-disks footprint** A/A₀ (`raw_footprint_area`, image-segmentation analog) ALONGSIDE the
   connected-core, so the matched-R₀ gap can be decomposed into observable-definition vs genuine
-  physics at production scale (at the compact-cap CPU scale raw/core ≈ 1.07 — i.e. the gap is so
-  far genuine, not a measure artifact; the native-N sweep tests whether that holds).
+  physics at production scale.
+
+### ✅ Production result (35/35 runs, real A5000, 2026-06-04)
+
+```
+A/A0 = 1.000 + (47.39 µm)/R + (97.46 µm²)/R²      r² = 0.998   (R₀ 104–394 µm, FULL PI range)
+```
+
+| R₀ (µm) | 104 | 154 | 200 | 251 | 296 | 343 | 394 |
+|---|---|---|---|---|---|---|---|
+| A/A₀ core (mean±sd) | 1.47±.02 | 1.31±.03 | 1.25±.02 | 1.19±.01 | 1.15±.00 | 1.14±.01 | 1.13±.00 |
+| A/A₀ raw | 1.43 | 1.28 | 1.22 | 1.17 | 1.13 | 1.12 | 1.11 |
+
+1. **Law FORM reproduced across the entire PI experimental R₀ range** (104–394 µm, no
+   extrapolation), r²=0.998, from the fully mechanistic model with **zero calibration** — the
+   asymptote a=1.000 is the cohesion-locked no-spread limit. Tight stats (sd 0.00–0.03, 5 seeds),
+   0 ejections / 0 caps.
+2. **Magnitude gap is GENUINE — the raw-area diagnostic settles it.** `raw/core = 0.97–0.99` at
+   *every* R₀ (raw is, if anything, slightly *smaller* than the convex core). So the experiment's
+   own area definition (raw segmented footprint) does **not** close the ~5–9× gap to the PI medians
+   (7.2/7.5/10) — it is not an observable-definition artifact but the cohesion-locked compact-cap
+   physics. Figure `fig_layer2_prod_rlaw.png` (panel B).
+3. **Why the magnitude under-spreads — the literature places this precisely (KB sweep 2026-06-04).**
+   Across the spheroid-modeling corpus, *strict center-based (1 particle/cell) models cannot resolve
+   lamellipodial contact-line traction* — they reduce active spreading to a **self-propulsion v₀** or
+   an **adhesion-overlap** balance (Chen&Zou 2018 = our motility recipe; Audoin 2022 OU walk;
+   Odenthal 2013 passive). Active-wetting / contact-line traction are intrinsically **shape-resolved
+   or subcellular** (Fastabend/Warmt active wetting; Fang 2016, Xiong 2007 explicit actin). And —
+   decisively — *almost every reference that MATCHES experimental spreading magnitude **calibrates**
+   v₀/adhesion/J_CS to the data*; ffn_cellsim deliberately does not (overlay-only / literature-first).
+   So our under-spread is the expected consequence of (a) the center-based proxy limit and (b) the
+   no-calibration discipline. The principled close is the **single-cell H.5 lamellipodium → CBM
+   self-propulsion scale-bridge** (anchor v₀ mechanistically, the way cohesion was anchored to Iturri
+   de-adhesion) — exactly the `spreading.py` "scale-bridge traction pending" flag. Filopodium (H.6,
+   deferred) is correctly irrelevant for cohesive-MCF7 sheet spreading (Mattila & Lappalainen 2008).
+4. **Next production axes (deferred, tracked):** turn on substrate + the lamellipodium-anchored
+   active traction (the 3 ligand conditions) and re-test whether the magnitude closes — the decisive
+   experiment separating "missing active mechanism" from "over-strong cohesion."
+
+Artifacts: `scripts/layer2_prod_rlaw.sh` (resumable launcher), `scripts/layer2_prod_vis.py`,
+`outputs/layer2/prod_rlaw/rlaw_sweep.clean.jsonl`, figure `fig_layer2_prod_rlaw.png`.
 
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_prod_rlaw.png` — **⭐ Production R₀-law (full PI range)** (2 panels): **A**
+  A/A₀(R₀) connected-core + raw-footprint ensemble (104–394 µm, 5 seeds) with the a+b/R+c/R² fit
+  (**r²=0.998**) and the PI median markers (7.2/7.5/10, overlay-only) far above — the law's FORM
+  reproduced across the whole experimental range, magnitude ~5–9× under; **B** the raw/core
+  diagnostic (0.97–0.99 at every R₀) proving the gap is GENUINE physics, not an observable-definition
+  artifact. No truncation, SI units, A/A₀=1 reference, per-realisation + mean, PI overlay-only.
 - `figs/fig_layer2_surface_tension_bridge.png` — **D2 bridge** (3 panels): **A** aggregate
   surface tension σ_tissue = γ = 0.57 mN/m inside the KU-3.5 band (tissue proxy 21 mN/m above);
   **B** Young-Laplace ΔP = 2σ/R over R₀=31.7→78.3 µm (the 1/R curvature behind the A/A₀ b/R

@@ -364,10 +364,13 @@ def make_baoab_updater_for_device(
     the provenance unambiguous). On a GPU device it returns the device-resident Action so the
     per-step host sync is removed — the B2 native-N unlock. Returns ``(action, updater)``.
     """
+    import sys
     from ffn_sim.integrator.baoab import make_baoab_updater  # frozen CPU Action
+    # Provenance: one line so a production log unambiguously records the path. MUST go to
+    # stderr — a data driver (layer2_gpu_scaleup) emits its JSON record on stdout, and a
+    # stdout print here pollutes the redirected JSONL (broke the production auto-fit, 2026-06-04).
     if isinstance(device, hoomd.device.GPU):
-        # Provenance: one line so a production log unambiguously records the path.
-        print("[baoab_device] BAOAB path: device-aware GPU cupy path")
+        print("[baoab_device] BAOAB path: device-aware GPU cupy path", file=sys.stderr)
         return make_baoab_updater_device(kT=kT, gamma=gamma, dt=dt, seed=seed)
-    print("[baoab_device] BAOAB path: frozen CPU numpy path")
+    print("[baoab_device] BAOAB path: frozen CPU numpy path", file=sys.stderr)
     return make_baoab_updater(kT=kT, gamma=gamma, dt=dt, seed=seed)

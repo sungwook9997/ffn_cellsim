@@ -88,3 +88,10 @@ ffn_sim/references/*.zip
 # experimental data is not committed; lives in ~/ActiveCellSim/data/experimental). Used by
 # the A2 overlay at comparison time; figures (the sanctioned overlay) ARE committed.
 ffn_sim/references/260313_*.csv
+
+# Layer-2 production run artifacts (Syncthing/outputs, provenance-stamped)
+ffn_sim/outputs/layer2/prod_rlaw/*.jsonl
+ffn_sim/outputs/layer2/prod_rlaw/*.log
+ffn_sim/outputs/layer2/prod_rlaw/*.err
+ffn_sim/outputs/layer2/prod_rlaw/*.progress
+ffn_sim/outputs/layer2/prod_rlaw/*.out
