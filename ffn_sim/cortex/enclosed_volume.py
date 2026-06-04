@@ -18,8 +18,21 @@ response::
 
     ΔP = −K_vol · (V − V0) / V0
 
-with ``K_vol`` a cytoplasm bulk-response coefficient (Pa). Distribute the
-pressure as a normal force over the shell beads::
+with ``K_vol`` a cytoplasm bulk-response coefficient (Pa).
+
+**Baseline osmotic turgor (PI-ratified 2026-06-04).** A real rounded cell is an
+osmotically-PRESSURISED drop: it carries a resting intracellular hydrostatic
+pressure ``Π₀`` (Stewart 2011: ~40 Pa interphase → ~400 Pa metaphase) that
+pre-tensions the cortex via Young-Laplace ``γ ≈ Π₀·R/2`` BEFORE any myosin.
+The full pressure is therefore::
+
+    ΔP = Π₀ − K_vol · (V − V0) / V0
+
+so at the construction volume (V = V0) ``ΔP = Π₀ > 0`` — the cortex bonds carry
+a hoop tension that balances the outward turgor (the physically-correct resting
+state). Myosin then MODULATES on top (Bohec 2026). ``turgor_dP0 = 0`` (default)
+recovers the prior force-free-at-construction behaviour (additive / opt-in).
+Distribute the pressure as a normal force over the shell beads::
 
     F_i = ΔP · A_i · n̂_i
 
@@ -203,6 +216,17 @@ class ResolvedEnclosedVolume:
     dP_ref: float = 40.0         # Pa   KU-3.1 interphase anchor (Stewart 2011)
     strain_ref: float = 0.01     # —    1 % radius compression (linear ref pt)
 
+    # Baseline osmotic TURGOR Π₀ [Pa] — the RESTING intracellular hydrostatic
+    # pressure (Stewart 2011: ~40 Pa interphase → ~400 Pa metaphase). With
+    # turgor_dP0 > 0 the shell is PRE-TENSIONED at construction (ΔP = Π₀ at
+    # V=V0), so the cortex carries a Young-Laplace hoop tension γ ≈ Π₀·R/2
+    # WITHOUT myosin — the physically-correct rounded-cell state (a real cell is
+    # an osmotically-pressurised drop; myosin MODULATES on top, Bohec 2026).
+    # Default 0.0 reproduces the prior force-free-at-construction behaviour
+    # (additive/opt-in per CLAUDE.md). Anchored to the SAME Stewart 2011 datum
+    # the K_vol block already cites — NOT a tuned value (PI-ratified 2026-06-04).
+    turgor_dP0: float = 0.0      # Pa   baseline osmotic turgor (resting ΔP)
+
     # Derived diagnostic
     dP_at_strain_ref: float = 0.0   # ΔP at strain_ref (≈ dP_ref by construction)
 
@@ -242,10 +266,14 @@ def resolve_enclosed_volume(
 
     dP_ref = float(cfg.get("dP_ref", 40.0))
     strain_ref = float(cfg.get("strain_ref", 0.01))
+    # Baseline osmotic turgor (opt-in; 0 = prior force-free-at-construction).
+    turgor_dP0 = float(cfg.get("turgor_dP0", 0.0))
 
     # §2 boundary checks on anchors.
     _require_finite_positive("R_cell", R_cell)
     _require_finite_positive("dP_ref", dP_ref)
+    if not (math.isfinite(turgor_dP0) and turgor_dP0 >= 0.0):
+        raise ValueError(f"turgor_dP0 must be finite and >= 0; got {turgor_dP0!r}")
     if not (math.isfinite(strain_ref) and 0.0 < strain_ref < 1.0):
         raise ValueError(
             f"strain_ref must be finite and in (0, 1); got {strain_ref}"
@@ -284,6 +312,7 @@ def resolve_enclosed_volume(
         R_cell=R_cell,
         dP_ref=dP_ref,
         strain_ref=strain_ref,
+        turgor_dP0=turgor_dP0,
     )
     # Diagnostic: ΔP at strain_ref must equal dP_ref by construction.
     p.dP_at_strain_ref = K_vol * (3.0 * strain_ref)
@@ -447,7 +476,12 @@ class EnclosedVolumePressure(md.force.Custom):
         if n_shell > 0:
             shell_pos = pos[mask]
             V, S, centroid, radii = self.estimate_volume(shell_pos)
-            dP = -self.p.K_vol * (V - self.p.V0) / self.p.V0
+            # Baseline osmotic turgor Π₀ (resting intracellular pressure) PLUS
+            # the elastic bulk response. At V=V0 the elastic term is 0 so
+            # ΔP = Π₀ > 0 → outward pre-tension (the cortex carries a
+            # Young-Laplace hoop tension γ ≈ Π₀·R/2 without myosin). Π₀=0
+            # recovers the prior force-free-at-construction behaviour.
+            dP = self.p.turgor_dP0 - self.p.K_vol * (V - self.p.V0) / self.p.V0
             # Per-bead outward normal about the centroid.
             dx = shell_pos - centroid
             r_safe = np.where(radii > 0.0, radii, 1.0)

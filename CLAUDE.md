@@ -126,6 +126,24 @@ disabled) to re-validate after KB changes.
 - **No empirical magic numbers**. Every tuning constant must satisfy the Magic-Number Block (derivable, grid-invariant, not chosen to make a gate pass). If it can't, halt and surface to PI.
 - **No gate-loosening**. Sanity gates are validation contracts written before the run. If a gate is wrong, surface to PI for a contract change rather than editing inline.
 - **No fitting to PI experimental data**. Literature-first; PI data is overlay-only when comparing later. (PI experimental CSVs live in `~/ActiveCellSim/data/experimental/`, not in this repo.)
+- **Initialize at the physiological operating point (PI 2026-06-04, HARD).** Every parameter
+  and initial/boundary condition must be set to its real *in-vivo* physiological value **from
+  the start of the run** — never a convenient null/default that happens to be easy (water
+  viscosity instead of the ~65 Pa·s MCF7 cytoplasm; zero baseline turgor / a relaxed
+  unpressurised shell instead of the resting ~40 Pa osmotic pressure; an un-anchored ECM, etc.).
+  It is **invalid production** to start from a non-physical baseline and then expect the model
+  to emergently align with reality and compare it to real measured data — the comparison is
+  meaningless because the *baseline state itself* is wrong. The realistic physiological state is
+  the BASELINE; perturbations and measurements happen FROM that baseline (e.g. measure cortical
+  tension on an already-turgor-pressurised cell at real cytoplasm viscosity, then add myosin as
+  a modulator). When a module is `additive/default-off` for backward-compat, the **production
+  config must still turn it ON at its physiological value** — default-off is a code-hygiene
+  convenience, not a license to run physics from an unphysical zero. Worked failures this rule
+  came from: cytoplasm viscosity left at water → wrong dynamics; enclosed-volume Π₀=0 (force-free
+  shell) → cortex never pre-tensioned, myosin asked to generate the whole tension from a floppy
+  bag and floored ~1000× under band (2026-06-04 saturation diagnosis). Before any production
+  run or data comparison, audit that EVERY compartment is at its physiological setpoint; if a
+  physiological value is unknown, surface to PI rather than defaulting to a null.
 - **Sanity Gate Protocol** mandatory before first execution of any physics/numerics module: dimensional analysis, boundary cases, conservation invariants, numerical sanity (CFL, precision), sign-sense check, measurement-protocol consistency. Record as docstring `Sanity Gate` section or sibling `*_sanity.md`.
 - **Visualize at unit / milestone closeout**. Every time a Phase 1 unit (H.X) reaches ✅ DONE, every time a production run lands, every time a sanity-gate sweep flags a non-trivial finding, generate or refresh the relevant PNG figures into `ffn_sim/outputs/h{X}/figs/` via `ffn_sim/scripts/h1_h2_vis.py` (extend the script as new units land — keep one entry-point that regenerates everything). REPORT.md must include a `## Figures` section listing each figure with a one-line caption. Rationale: PI 2026-05-21 — text-only `npz/json/log` artefacts hide the actual physics, and the visual check often surfaces issues (outliers, wrong-sign decay, sampling artefacts) that bands miss. Figures are persistent project state, not session-ephemeral; commit them alongside the data.
 - **Visualization integrity rules**: no axis truncation, no log/linear flip without note, always show the brief reference (or band) overlaid on the measurement, always annotate units (SI default). For ensemble plots, show per-realisation thin lines + ensemble mean overlay so the reader can judge stochastic spread.
