@@ -241,6 +241,20 @@ def run(
     peak_g_soft = float(np.max([r["g_soft_mN_per_m"] for r in rows]))
     peak_bound_frac = float(np.max([r["bound_frac"] for r in rows]))
 
+    # 2C (PI Decision, 2026-06-04): physical-velocity acceptance filter. A myosin head
+    # cannot deliver more than its stall force; any sample with mean_F_over_stall > 1 is
+    # OVER-DRIVEN (the grip-walk delivered force k_head_actin·r exceeds the per-head Hill
+    # stall — the documented "CH2 over-driving" leak that bought the prior v0x3000=0.030
+    # mN/m number). Report g_soft over ONLY the physically-valid (F/F_stall<=1) plateau
+    # samples so no g_soft can ever be claimed via super-stall force. For a literal-v0 run
+    # (F/F_stall~0.2) this is a no-op; it only bites over-driven (high-v0_accel) runs.
+    physical = [r for r in rows if r["mean_F_over_stall"] <= 1.0]
+    n_physical = len(physical)
+    phys_plateau = physical[max(0, n_physical * 2 // 3):]
+    phys_g_soft = (float(np.mean([r["g_soft_mN_per_m"] for r in phys_plateau]))
+                   if phys_plateau else float("nan"))
+    overdriven_fraction = (1.0 - n_physical / len(rows)) if rows else float("nan")
+
     factor_vs_floor = eq_g_soft / FLOOR_MN_PER_M if FLOOR_MN_PER_M > 0 else float("nan")
     in_band = BAND[0] <= eq_g_soft <= BAND[1]
     above_floor = eq_g_soft > 10.0 * FLOOR_MN_PER_M  # >>10x the floor = lifted
@@ -300,9 +314,27 @@ def run(
             eq_reached_band_floor=bool(toward_band),
             eq_lifted_above_floor=bool(above_floor),
         ),
+        physical_validity=dict(  # 2C: Hill-bounded (F/F_stall<=1) g_soft only
+            n_samples=len(rows),
+            n_physical_samples=int(n_physical),
+            overdriven_fraction=float(overdriven_fraction),
+            phys_g_soft_mN_per_m=float(phys_g_soft),
+            phys_in_band=bool(np.isfinite(phys_g_soft) and BAND[0] <= phys_g_soft <= BAND[1]),
+            note=("g_soft over ONLY physically-valid samples (per-head force <= stall). "
+                  "If overdriven_fraction>0 the unfiltered equilibrium g_soft was partly "
+                  "bought with super-stall (non-Hill) force and is NOT a physical tension."),
+        ),
         rows=rows,
     )
 
+    print(
+        f"[2C physical-validity] {n_physical}/{len(rows)} samples Hill-bounded "
+        f"(F/F_stall<=1); over-driven fraction={overdriven_fraction:.2f}; "
+        f"PHYSICAL g_soft={phys_g_soft:.4e} mN/m "
+        f"(unfiltered eq={eq_g_soft:.4e}) -> "
+        f"{'IN band' if (np.isfinite(phys_g_soft) and BAND[0]<=phys_g_soft<=BAND[1]) else 'under band'}",
+        flush=True,
+    )
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(result, indent=2))
     print("RESULT_FILE " + str(OUT_JSON), flush=True)
