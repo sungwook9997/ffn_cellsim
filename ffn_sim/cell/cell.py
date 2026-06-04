@@ -111,6 +111,7 @@ from ffn_sim.cortex.crosslinkers import (
     extend_cortex_state_with_xlinks,
     generate_xlink_layout,
     make_xlink_updater,
+    seed_connected_mesh_xlinks,
 )
 from ffn_sim.cortex.erm import (
     ERMHarmonic,
@@ -713,9 +714,25 @@ def build_cortex_full_simulation(
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
     equilibrate_softstart_steps: int = 100,
+    connected_mesh: bool = False,
+    cm_z_struct: float = 3.7,
+    cm_bundle_mult: int = 2,
+    cm_reach: float | None = None,
     rng: np.random.Generator | None = None,
 ):
     """End-to-end builder for cortex + (optional) xlinks + myosin + lamellipodium + FA.
+
+    CONNECTED-MESH (fast hybrid, 2026-06-04): when ``connected_mesh=True`` the
+    crosslinkers are built by :func:`seed_connected_mesh_xlinks` on the EXISTING
+    fixed-N cortex topology — BRIDGE-DIFFERENT-FILAMENT (0 same-filament staples)
+    + per-filament degree-cap z≈3-4 + bundling + SEEDED at construction (adhered
+    baseline) — instead of the random-anchor ``generate_xlink_layout`` that left
+    the prior mesh fragmented (z=1.3, giant 7 %, 56 % staples). Myosin is
+    UNCHANGED (fixed-N stepping kernel intact); the bimodal variable-N backbone
+    is deferred (``cortex/connected_mesh.py`` has the full faithful build). The
+    crosslinker count ``n_xl`` becomes an OUTPUT of the seeding. ``cm_reach``
+    defaults to the mesoscale spacing √(A_shell/n_fil). DEFAULT-OFF: when False
+    the build is bit-for-bit identical to the random-anchor path.
 
     Performs the full state composition (no ERM — attach separately via
     ``attach_erm_to_simulation``):
@@ -786,6 +803,8 @@ def build_cortex_full_simulation(
     # 2. Optional xlinks
     xlink_layout = None
     n_xlink_heads = 0
+    _cm_seed = None                  # ConnectedMeshSeed (connected_mesh path)
+    _cm_filament_idx = None          # per-actin-bead filament index (bridge rule)
     enable_xl = (
         p_xlinks is not None and p_xlinks.n_xl > 0
     )
@@ -795,13 +814,37 @@ def build_cortex_full_simulation(
             np.arange(p_cortex.n_filaments, dtype=np.int64),
             p_cortex.beads_per_filament,
         )
-        xlink_layout = generate_xlink_layout(
-            cortex_positions, cortex_filament_idx, p_xlinks,
-            n_cortex_beads=n_cortex_actin,
-            rng=np.random.default_rng(p_xlinks.seed),
-        )
-        snap = extend_cortex_state_with_xlinks(snap, xlink_layout, p_xlinks)
-        n_xlink_heads = 2 * p_xlinks.n_xl
+        if connected_mesh:
+            # FAST HYBRID: seed the CONNECTED percolated mesh on the fixed-N
+            # cortex (bridge-different-filament + bundling + adhered seed).
+            from dataclasses import replace as _replace
+            import math as _math
+            _reach = cm_reach if cm_reach is not None else _math.sqrt(
+                4.0 * _math.pi * p_cortex.R_cell ** 2 / p_cortex.n_filaments
+            )
+            p_xlinks = _replace(p_xlinks, max_bind_dist=_reach)
+            _cm_seed = seed_connected_mesh_xlinks(
+                cortex_positions, cortex_filament_idx, p_cortex.n_filaments,
+                p_xlinks, z_struct=cm_z_struct, bundle_mult=cm_bundle_mult,
+                reach=_reach, R_cell=p_cortex.R_cell,
+                n_cortex_beads=n_cortex_actin,
+                rng=np.random.default_rng(p_xlinks.seed),
+            )
+            xlink_layout = _cm_seed.layout
+            _cm_filament_idx = cortex_filament_idx
+            snap = extend_cortex_state_with_xlinks(
+                snap, xlink_layout, p_xlinks,
+                seeded_attach=_cm_seed.seeded_attach,
+            )
+            n_xlink_heads = 2 * _cm_seed.n_xl
+        else:
+            xlink_layout = generate_xlink_layout(
+                cortex_positions, cortex_filament_idx, p_xlinks,
+                n_cortex_beads=n_cortex_actin,
+                rng=np.random.default_rng(p_xlinks.seed),
+            )
+            snap = extend_cortex_state_with_xlinks(snap, xlink_layout, p_xlinks)
+            n_xlink_heads = 2 * p_xlinks.n_xl
 
     # 3. Optional myosin
     myosin_layout = None
@@ -1023,7 +1066,12 @@ def build_cortex_full_simulation(
     # not blow up. All inter-subsystem r_cut = 0 ⇒ NO LJ (HOOMD convention).
     _enable_pair("actin_cortex", "actin_cortex", repulsive=True)
     if enable_xl:
-        _enable_pair("xlink_head", "xlink_head", repulsive=True)
+        # CONNECTED-MESH: head↔head WCA OFF — bundling places many crosslinker
+        # heads near the same bridge anchors; a hard core would diverge at
+        # construction for coincident heads (their excluded volume is negligible
+        # for mechanics, the intra+attach bonds constrain them).
+        _enable_pair("xlink_head", "xlink_head",
+                     repulsive=not connected_mesh)
         _enable_pair("xlink_head", "actin_cortex", repulsive=False)
     if enable_myo:
         _enable_pair("cortex_myosin_backbone", "cortex_myosin_backbone", repulsive=True)
@@ -1284,6 +1332,11 @@ def build_cortex_full_simulation(
         xlink_action, xlink_updater = make_xlink_updater(
             p=p_xlinks, layout=xlink_layout, kT=p_cortex.kT,
             n_cortex_actin=n_cortex_actin,
+            # CONNECTED-MESH: bridge-different-filament rule on rebind +
+            # seeded-bound initial state (adhered baseline).
+            actin_filament_idx=_cm_filament_idx,
+            head_to_actin0=(_cm_seed.head_to_actin0
+                            if _cm_seed is not None else None),
         )
         sim.operations.updaters.append(xlink_updater)
 
