@@ -420,6 +420,7 @@ def run_growth_pooled(
     substrate: "Any" = None,
     f_traction: float = 0.0,
     Lp: float = 11.0e-6,
+    crawl_mode: str = "edge",
 ) -> dict[str, Any]:
     """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
 
@@ -479,7 +480,17 @@ def run_growth_pooled(
         sim.operations.tuners.clear()
         edge_force = SettableForce(max_cells)
         sim.operations.integrator.forces.append(edge_force)
-        _edge_outward = edge_outward_forces  # local alias
+        _edge_outward = edge_outward_forces  # local alias (crawl_mode='edge')
+        if crawl_mode == "basal":
+            # D-axis: substrate-reacted collective IN-PLANE basal crawl (substrate_crawl.py).
+            # Needs the substrate plane height; basal_band = one cell radius (r0/2) above it.
+            from ffn_sim.spheroid.substrate_crawl import substrate_crawl_forces
+            if substrate is None:
+                raise ValueError("crawl_mode='basal' requires a substrate (z plane).")
+            _z_sub = float(substrate.r0_sub)
+            _basal_band = 1.0 * r0
+        elif crawl_mode != "edge":
+            raise ValueError(f"crawl_mode must be 'edge' or 'basal'; got {crawl_mode!r}.")
 
     sim.run(0)
     snap = sim.state.get_snapshot()
@@ -554,7 +565,12 @@ def run_growth_pooled(
             # Reuse the start-of-epoch positions (settled state on epoch 0, previous epoch's
             # post-division state thereafter) — identical to re-gathering, one fewer snapshot.
             ap = pos_all[active]
-            ef_active = _edge_outward(ap, f_traction=f_traction, Lp=Lp)
+            if crawl_mode == "basal":
+                ef_active = substrate_crawl_forces(
+                    ap, f_crawl=f_traction, z_substrate=_z_sub, basal_band=_basal_band
+                )
+            else:
+                ef_active = _edge_outward(ap, f_traction=f_traction, Lp=Lp)
             full = np.zeros((max_cells, 3), dtype=np.float64)
             full[np.where(active)[0]] = ef_active
             edge_force.set_vectors(full)
