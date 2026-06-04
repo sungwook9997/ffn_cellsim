@@ -71,14 +71,24 @@ def _tagpos(sim) -> np.ndarray:
         return pos[inv].copy()
 
 
-def _resolve_compartments(p_cortex):
-    """Resolve the 4 MCF7 compartments (all ON)."""
+def _resolve_compartments(p_cortex, *, turgor_pa=None):
+    """Resolve the 4 MCF7 compartments (all ON).
+
+    ``turgor_pa`` sets the BASELINE osmotic turgor Π₀ (``turgor_dP0``) — the
+    resting intracellular pressure that PRE-TENSIONS the cortex at construction
+    (ΔP = Π₀ at V = V0, cortex carries hoop tension γ = Π₀·R/2; physiological-
+    baseline, CLAUDE.md).  Default Π₀ = 0 leaves an UNPRESSURISED floppy shell
+    (the g_rigid floor: myosin must generate the whole tension from a floppy
+    bag).  Band [0.35,0.65] mN/m implies Π₀ ≈ 93-173 Pa at R = 7.5 µm (resting
+    interphase ≈ 40 Pa, Stewart 2011).
+    """
     R = p_cortex.R_cell
     p_nuc = resolve_nucleus(
         {"E_nuc": MCF7["E_nuc"], "ratio_lamin": MCF7["ratio_lamin"]},
         R_nuc=MCF7["R_nuc_frac"] * R, n_beads=MCF7["n_nuc_beads"],
     )
-    p_ev = resolve_enclosed_volume({}, R_cell=R)
+    ev_cfg = {} if turgor_pa is None else {"turgor_dP0": float(turgor_pa)}
+    p_ev = resolve_enclosed_volume(ev_cfg, R_cell=R)
     p_mem = resolve_membrane_surface({"gamma_mem": MCF7["gamma_mem"]}, R_cell=R)
     p_cyto = resolve_cytoplasm(cell_type=MCF7["eta_celltype"])
     return dict(p_nucleus=p_nuc, p_enclosed_volume=p_ev,
@@ -87,12 +97,23 @@ def _resolve_compartments(p_cortex):
 
 def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
            dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu", kon_scale=1.0,
-           bind_scale=1.0, connected_mesh=False, cm_z_struct=3.7, cm_bundle_mult=2):
+           bind_scale=1.0, connected_mesh=False, cm_z_struct=3.7, cm_bundle_mult=2,
+           v0_accel=1.0, motors_off=False):
     from dataclasses import replace as _replace
     p = resolve_h3_derived(cfg)
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
     dtc = dtc if dtc is not None else 0.001 * tau_bend
     p_myo = resolve_cortex_myosin(cfg, dt=dtc, R_cell=p.R_cell)
+    # FIX 2026-06-04: --v0-accel was a DEAD flag (threaded to run_arm but never
+    # applied to p_myo). Apply it now (scales the NMIIA head sliding velocity).
+    # NOTE per KU-3.5 gate structure: this is an accelerated-dynamics knob; the
+    # ACTIVE gate must be read at F/F_stall ≤ 1 (Hill-valid), so v0_accel=1 is
+    # the honest operating point and large v0_accel needs the F/F_stall check.
+    if v0_accel != 1.0:
+        p_myo = _replace(p_myo, v0_per_head=p_myo.v0_per_head * v0_accel)
+    # motors_off: passive-baseline build (KU-3.5-active ON−OFF delta).
+    if motors_off:
+        p_myo = _replace(p_myo, n_motors_per_cell=0)
     p_xl = resolve_crosslinkers(cfg, dt=dtc)
     if kon_scale != 1.0 and not connected_mesh:  # couple_accel: accelerate xlink
         p_xl = _replace(p_xl, k_on=p_xl.k_on * kon_scale)   # binding to PERCOLATE
@@ -139,16 +160,16 @@ def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm=70
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
             compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0,
-            bind_scale=1.0, connected_mesh=False):
+            bind_scale=1.0, connected_mesh=False, turgor_pa=None, motors_off=False):
     cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
     if compartments_on and only:
-        full = _resolve_compartments(p0)
+        full = _resolve_compartments(p0, turgor_pa=turgor_pa)
         comp = {only: full[only]}
         print(f"  [ONLY {only}] attribution run (other compartments OFF)", flush=True)
     elif compartments_on:
-        comp = _resolve_compartments(p0)
+        comp = _resolve_compartments(p0, turgor_pa=turgor_pa)
         print(f"  [compartments ON] nucleus k_chrom={comp['p_nucleus'].k_chrom:.2e} "
               f"E_nuc={MCF7['E_nuc']}Pa | enclosed dP_ref={comp['p_enclosed_volume'].dP_ref:.0f}Pa "
               f"| membrane gamma_mem={MCF7['gamma_mem']*1e3:.2f}mN/m "
@@ -163,7 +184,8 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                               force_scaling=force_scaling, constrained=False,
                               compartments=comp, equilibrate=True, n_warmup=n_warmup,
                               device=device, kon_scale=kon_scale, bind_scale=bind_scale,
-                              connected_mesh=connected_mesh)
+                              connected_mesh=connected_mesh,
+                              v0_accel=v0_accel, motors_off=motors_off)
     hw["sim"].run(0)
     pos_warm = _tagpos(hw["sim"])
     del hw
@@ -175,7 +197,8 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                                          constrained=True, compartments=comp, dtc=dtc,
                                          device=device, kon_scale=kon_scale,
                                          bind_scale=bind_scale,
-                                         connected_mesh=connected_mesh)
+                                         connected_mesh=connected_mesh,
+                              v0_accel=v0_accel, motors_off=motors_off)
     sim = hc["sim"]
     act = hc["baoab_action"]
     if hasattr(act, "record_lambda"):
@@ -212,7 +235,9 @@ def main() -> int:
     ap.add_argument("--n-motors", type=int, default=200)
     ap.add_argument("--n-xl", type=int, default=2000)
     ap.add_argument("--force-scaling", action="store_true", default=True)
-    ap.add_argument("--v0-accel", type=float, default=300.0)
+    ap.add_argument("--v0-accel", type=float, default=1.0,
+                    help="scale NMIIA head v0 (accelerated-dynamics knob; was DEAD pre-6/4). "
+                         "KU-3.5-active must be read at F/F_stall<=1, so 1.0=honest.")
     ap.add_argument("--couple-accel", action="store_true", default=True)
     ap.add_argument("--n-warmup", type=int, default=8000)
     ap.add_argument("--n-sample", type=int, default=6)
@@ -237,6 +262,12 @@ def main() -> int:
                          "bundling + adhered-baseline CONNECTED mesh on the fixed-N cortex "
                          "(z→3.3, giant→0.99, 0 staples; replaces kon/bind hacks). The "
                          "γ-floor payoff test (connectivity → force transmission, Kadzik-Munro).")
+    ap.add_argument("--motors-off", action="store_true",
+                    help="passive-baseline build (n_motors=0) for the KU-3.5-active ON-OFF delta")
+    ap.add_argument("--turgor-pa", type=float, default=None,
+                    help="override enclosed-volume intracellular pressure dP [Pa] "
+                         "(KU-3.1 default 40 interphase; band [0.35,0.65] implies ~93-173 "
+                         "metaphase). Dominant g_rigid lever (Young-Laplace γ=dP·R/2).")
     args = ap.parse_args()
 
     if args.smoke:
@@ -259,6 +290,7 @@ def main() -> int:
             device=args.device, compartments_on=not args.no_compartments,
             only=args.only, backbone_nm=args.backbone_nm, kon_scale=args.kon_scale,
             bind_scale=args.bind_scale, connected_mesh=args.connected_mesh,
+            turgor_pa=args.turgor_pa, motors_off=args.motors_off,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"
