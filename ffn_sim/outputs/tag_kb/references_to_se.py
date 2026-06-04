@@ -25,8 +25,10 @@ RUN:
   python references_to_se.py --commit --bundle   # also include cellpress bundle
 """
 from __future__ import annotations
-import json, re, sys, time, pathlib
+import datetime, json, re, sys, time, pathlib
 import requests
+
+TODAY = datetime.date.today().isoformat()   # provenance stamp for created rows
 
 # reuse the Obsidian exporter's token + API plumbing
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "obsidian_rag_full"))
@@ -114,7 +116,7 @@ def create_se_row(tok, key, doi, note):
     props = {
         "Citation Key": {"title": [{"text": {"content": key}}]},
         "Notes": {"rich_text": [{"text": {"content": note}}]},
-        "Anchor Status": {"rich_text": [{"text": {"content": "auto-ingest 2026-06-02 (references TAG corpus); Source Type + Claims unclassified"}}]},
+        "Anchor Status": {"rich_text": [{"text": {"content": f"auto-ingest {TODAY} (references TAG corpus); Source Type + Claims unclassified"}}]},
     }
     if doi:
         props["DOI"] = {"url": f"https://doi.org/{doi}"}
@@ -188,7 +190,7 @@ def main():
     created = {}
     for p in plan_new:
         note = (f"Paper: {p['title']} ({p['year']}). Ingested from references/ "
-                f"TAG corpus 2026-06-02 (spheroid / PI-exp validation track), "
+                f"TAG corpus {TODAY} (cortical/membrane-tension + spheroid track), "
                 f"file {p['src']}.")
         pid = create_se_row(tok, p["key"], p["doi"], note)
         created[p["doi"]] = (p["key"], pid)
