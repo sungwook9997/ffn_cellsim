@@ -284,6 +284,56 @@ Fritzsche(지수 길이)+ §5(chem-mech timescale)와 일관. 한계: 연속체/
 framing/acceptance. 하지만 "disorder + rebinding"은 construction 규칙으로 직접 반영(등방 무질서 시드 +
 동적 가교).
 
+## 9. Fritzsche, Li, … Betzig, Eggeling 2017, Nat Commun 8:14347 — "Self-organizing actin patterns shape membrane architecture but not cell mechanics" (`ncomms14347.pdf`)
+
+**What it is:** live-HeLa super-res (STED/lattice-light-sheet) of cortical actin SELF-ORGANIZATION
+during adhesion (vortices → stars → asters), + mechanics (AFM) + membrane fluidity.
+
+### Key architecture findings (reconfirm + add)
+- **Two subpopulations (HeLa):** formin (long F-actin) + **Arp2/3 (short, branched) = ~80 % of total
+  F-actin** (HeLa/melanoma/T cells); 20-fold differing turnover. Arp2/3 branches at **70°**.
+- Cortex is a **SELF-ORGANIZING (non-equilibrium)** system (vs self-assembly): patterns emerge from
+  **polarity sorting** (turnover + myosin motion + Arp2/3 nucleation). Pattern transitions are
+  **Arp2/3-driven, NOT myosin** (contrary to in-vitro predictions).
+- **Pattern/membrane-architecture changes are FUNCTIONALLY INDEPENDENT of macroscopic cortex
+  ELASTICITY** — bulk mechanics robust to the fine patterning.
+- Stars = large, multiple parallel-bundled arms; asters = individual filaments.
+
+### → WHAT GOES INTO OUR MODEL
+- Reconfirms the **two-subpopulation + 70° Arp2/3 branching + 80%-Arp2/3** architecture (consistent
+  Fritzsche2016 §2, cortex-workflow). Use for the bimodal construction + branch angle.
+- **Decoupling insight:** bulk cortex mechanics (our γ/stiffness target) is robust to the specific
+  self-organized pattern → for our MECHANICS target, the essential is the **connected mesh +
+  bundling/connectivity**, not reproducing vortices/asters. Lets us seed a disordered connected mesh
+  (static) without modeling pattern self-organization for the mechanics question.
+- Patterning is Arp2/3-driven, contractile tension is myosin-driven → distinct processes (don't
+  conflate; our tension lever is myosin, not the Arp2/3 patterning).
+
+**감상평 (Lead):** Fritzsche2016과 같은 그룹의 후속 — 두 subpopulation·70°·Arp2/3 80%를 재확인(좋은
+교차검증). 우리에게 가장 유용한 건 **"패턴/막 아키텍처는 bulk 역학과 독립"** — 즉 vortex/aster 같은
+self-organization을 재현 안 해도 **연결된 mesh + 번들링/connectivity만 맞으면 거시 역학(γ/stiffness)은
+잡힌다**는 허가. 정적 disordered 연결망 시드로 충분(패턴 동역학 불요). 또 patterning=Arp2/3,
+contractility=myosin 분리 = 우리 tension lever가 myosin인 것과 일관. 한계: HeLa, 패턴 동역학 논문(정적
+construction엔 architecture facts만 취함).
+
+## 10. Bächer, Khoromskaia, Salbreux, Gekle 2021, Front Phys 9:753230 — "A 3D Numerical Model of an Active Cell Cortex in the Viscous Limit" (`fphy-09-753230.pdf`)
+
+**What it is:** CONTINUUM 3D computational model — cortex as an active-gel VISCOUS THIN SHELL
+(force-balance for the velocity field on a discretized deforming surface; active gel + thin-shell
+theory). Validated on cytokinesis furrow; applied to folds + furrow under shear (axis reorientation).
+
+### → WHAT GOES INTO OUR MODEL (continuum acceptance, not architecture params)
+- This is the **coarse-grained active-gel limit** our fine-grained cortex should reproduce: active
+  myosin stress → cortical FLOWS → furrow constriction / shape change. A validation/acceptance
+  target (does our connected mesh produce the right emergent active-gel behavior?), not a
+  construction parameter source. Salbreux active-gel = the field-standard continuum cortex.
+- No molecular architecture numbers (continuum surface fields: tension, viscosity, active stress ζ).
+
+**감상평 (Lead):** 연속체 active-gel thin-shell 모델(Salbreux/Gekle) — JIISc(§4)와 같은 framing 계열,
+우리 fine-grained cortex가 coarse-grain하면 닿아야 할 거시 거동(active flow, furrow). construction
+파라미터는 없음 → acceptance/framing. 우리 cortex가 연결망으로 제대로 서면 "active-gel flow/furrow를
+내는가"를 이걸로 검증 가능. 우선순위 낮음(연속체). 등록은 cortex-active-gel KC에 framing으로.
+
 ---
 
 **감상평 (Flormann, §1):** 우리에게 결정적으로 유용. 두 가지가 큼. (1) **"cortex 아키텍처는 단일 상수가
