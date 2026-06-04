@@ -15,3 +15,6 @@ hard-rule) → `references_to_se.py` (Notion SourceEvidence) → `link_se_claims
 | 2 | Fritzsche2016_SciAdv | Actin kinetics shapes cortical network structure and mechanics | 10.1126/sciadv.1501337 | sciadv.1501337.pdf | cortex-architecture (bimodal exp filament length: Arp2/3 ~120nm + formin ~1200nm; long-formin = mechanical/percolation backbone) | no |
 
 (rows appended as each paper is read)
+| 3 | Kim2007_MIT_thesis | Simulation of Actin Cytoskeleton Structure and Rheology (MS thesis) | (thesis) | 181655768-MIT.pdf | actin-network-simulation-methodology; crosslinker perpendicular(network)/parallel(bundle); connectivity/percolation as crosslinker-density output | no |
+| 4 | Banerjee2021_JIISc | The Actomyosin Cortex of Cells: A Thin Film of Active Matter (review) | 10.1007/s41745-020-00220-2 | s41745-020-00220-2.pdf | cortex-active-gel-theory (continuum framing) | no |
+| 5 | Chen2024_NatPhys | Energy partitioning in the cell cortex | 10.1038/s41567-024-02626-6 | s41567-024-02626-6.pdf | cortex-nonequilibrium (chem-vs-mech timescale competition) | no |

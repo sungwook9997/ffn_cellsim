@@ -122,6 +122,83 @@ Arp2/3(120nm)만으로는 percolate가 약하고, 긴 formin 필라멘트가 여
 force 전달). 한계: HeLa/M2 (MCF7 아님), turnover-kinetics 논문이라 우리가 원하는 건 그 함의(정적
 길이분포). E~4kPa는 Flormann과 일치 = 좋은 cross-check.
 
+## 3. Taeyoon Kim 2007, MIT MS thesis — "Simulation of Actin Cytoskeleton Structure and Rheology" (`181655768-MIT.pdf`, 153 pp)
+
+**What it is:** 3D **Brownian-dynamics** model — actin monomers polymerize into filaments, cross-
+linked by **two ACP types: PERPENDICULAR (large/long, e.g. filamin → isotropic NETWORKS) vs
+PARALLEL (small/short → BUNDLES)**. Evaluates how parameters set network morphology. The
+methodological backbone for crosslinked-actin-network simulation (Kim's foundational work; cf.
+later Kim 2009 Biophys J, Kim 2014 — the mature "Kim model" / AFINES lineage).
+
+### Key findings (methodology + connectivity logic)
+- **ACP binding-site geometry decides bundle vs network**: parallel-binding ACPs → bundles
+  (fascin-like); long ACPs forming ~perpendicular cross-links (filamin) → isotropic networks.
+- Network morphology (pore size, isotropy, extent of cross-linking) is set by **crosslinker
+  concentration + type + actin concentration** (R = ACP:actin ratio, CA = actin conc, Da).
+- **CONNECTIVITY + PERCOLATION are explicit, tunable outputs**: distribution of per-filament
+  connectivity (counts of crosslinks/filament), "connectivity 2", and a network that "nearly
+  percolates the simulation box" at given (Da, CA, R). Pore size Lpore ∝ crosslink spacing;
+  Lm (mean segment between crosslinks) = alt pore-size measure.
+- F-actin 7–9 nm diameter (excluded volume).
+
+### → WHAT GOES INTO OUR MODEL
+1. **Construction logic = ours**: a crosslinked network's connectivity/percolation/pore-size are
+   controlled OUTPUTS of crosslinker concentration + type. Validates measuring z + giant-component
+   (our viz_cortex_network) and tuning crosslink density to the percolation set-point.
+2. **Perpendicular(network, filamin) vs parallel(bundle, fascin) ACP distinction** = the unified
+   crosslinker/bundler axis: cortex = perpendicular/isotropic network (filamin/α-actinin);
+   filopodia/microvilli = parallel bundles (fascin/espin). One model, ACP-type parameterized.
+3. Self-assembly produces percolation at the right (R, CA); our STATIC construction should SEED
+   directly at that percolated morphology (physiological baseline), then optionally turn dynamics on.
+
+**감상평 (Lead):** 방법론적으로 가장 가까운 동족. Taeyoon Kim은 actin-network BD 시뮬레이션의 표준을
+세운 사람이라(이후 Kim 2009/2014 = 성숙한 모델, AFINES 계보), 우리 접근이 정통임을 확인해 줌. 가장
+유용: **perpendicular(network) vs parallel(bundle) ACP 이분법** — 이게 통합 프레임워크의 crosslinker
+축 그 자체(cortex=filamin 수직망, filopodia=fascin 평행다발). 그리고 **connectivity/percolation이
+crosslinker 농도·종류의 tunable 출력**임을 직접 보여줘 우리 viz의 z·giant-component 측정·튜닝을
+정당화. 한계: 2007 MS 논문(방법론·in-silico, 세포-특이 수치 아님) → HOW-TO + acceptance-logic 소스.
+**후속 Kim 2009 Biophys J / Kim 2014를 추가로 끌어오면** 성숙한 파라미터(crosslink stiffness, prestrain,
+network self-assembly protocol)를 얻을 수 있음 — references에 없으면 gbook/web으로.
+
+## 4. (Banerjee et al.) 2021, J. Indian Inst. Sci. — "The Actomyosin Cortex of Cells: A Thin Film of Active Matter" (`s41745-020-00220-2.pdf`) — REVIEW (continuum active-gel theory)
+
+**What it is:** review of the **hydrodynamic active-gel theory** of the cortex (Kruse-Jülicher-
+Joanny-Prost lineage): ATP-driven myosin generates active stress → large-scale mechanical FLOWS +
+orientation/mechanochemical PATTERNS. Continuum, not molecular-architecture numbers.
+
+### → WHAT GOES INTO OUR MODEL (mostly framing / acceptance at the continuum limit)
+- The cortex is an **active contractile gel**: coarse-grained, our fine-grained network should
+  reproduce its active-gel behavior (active stress, cortical flows). This is the CONTINUUM target
+  our mechanistic model maps onto — an acceptance-level cross-check, not a parameter source.
+- Confirms force-generation = ATP-myosin coordinated → net active stress (ties to the contractility
+  question), and that crosslinkers + motors + filaments together set the active-gel parameters.
+
+**감상평 (Lead):** 연속체 active-gel 이론 리뷰 — 우리 fine-grained 모델이 coarse-grain하면 닿아야 할
+"정답 거시 거동"(active stress, cortical flow)을 줌. 단 **분자 아키텍처 수치(길이/메시/밀도)는 없음** →
+construction 파라미터 소스가 아니라 framing/acceptance 소스. 우선순위는 낮되, "cortex=active gel"
+프레임은 통합 framework의 motor/contractility 축 근거로 등록 가치 있음. (Marchetti 2013, Prost-Jülicher-
+Joanny 2015 active-gel 원전이 더 1차적.)
+
+## 5. Chen, Seara, … Bement, Murrell 2024, Nat Phys 20:1824 — "Energy partitioning in the cell cortex" (`s41567-024-02626-6.pdf`)
+
+**What it is:** non-equilibrium thermodynamics of the cortex — entropy-production rate of the
+CHEMICAL (Rho-GTPase/actin/myosin) vs MECHANICAL subsystems across pattern regimes (pulses →
+choppy waves → labyrinthine/spiral), tuned via Rho-GAP. Onsager reciprocity holds at low drive,
+breaks at high drive. **Key principle: energy partitioning + chemical↔mechanical coupling are set
+by the COMPETING TIMESCALES of chemical reaction vs mechanical relaxation.** (Xenopus/starfish-type
+cortex with Rho waves; not molecular architecture.)
+
+### → WHAT GOES INTO OUR MODEL
+- Framing/validation, not construction params. The **chemical-reaction-vs-mechanical-relaxation
+  timescale competition** is exactly the regime our binding/turnover-vs-BAOAB-relaxation
+  accelerated-dynamics probes live in — a principled caution that the chem/mech timescale ratio
+  governs the emergent behavior (don't distort it when accelerating). Active/non-equilibrium frame.
+
+**감상평 (Lead):** 멋진 물리지만 우리 construction엔 직접 파라미터 없음(패턴 열역학). 단 한 줄이 값짐:
+**"energy partitioning은 화학반응 vs 역학완화 timescale 경쟁이 결정"** — 우리가 binding/turnover를
+가속할 때 chem/mech timescale 비를 왜곡하면 emergent 거동이 바뀐다는 경고와 정확히 같은 물리. Murrell
+그룹(§6 Sakamoto-Murrell와 같은 lab) active-cortex 라인. 우선순위 낮음, framing/acceptance로 등록.
+
 ---
 
 **감상평 (Flormann, §1):** 우리에게 결정적으로 유용. 두 가지가 큼. (1) **"cortex 아키텍처는 단일 상수가
