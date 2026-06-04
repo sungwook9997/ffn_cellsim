@@ -923,11 +923,67 @@ mapped on all four CBM-hostable axes. PI A/A₀ overlay-only throughout. Artifac
 (+auto-viz `scripts/layer2_plithotaxis_vis.py`), `outputs/layer2/plithotaxis/*.jsonl`, figure
 `fig_layer2_plithotaxis.png`.
 
+## F — the wetting axis: passive AND active spreading both fall short → structural limit confirmed (2026-06-04)
+
+§E reframed the magnitude as a 3D→2D **wetting/flattening** question. §F tests it against the
+**aggregate-wetting framework** (deep-research `wf_d670c6b0-568`, 97 agents → SE candidates
+`outputs/tag_kb/SE_REGISTRATION_CANDIDATES_2026-06-04_aggregate-wetting.md`). The framework
+(Douezan & Brochard-Wyart 2011 PNAS; Beaune 2014; Gonzalez-Rodriguez 2012): a spheroid on an adhesive
+substrate wets per the spreading coefficient **S = W_cs − 2γ** (W_cs = cell-substrate adhesion energy,
+2γ = cell-cell cohesion). **S<0 → partial wetting (3D cap)**; **S>0 → complete wetting → a motility-driven
+precursor MONOLAYER film** (~1-cell-layer height, A/A₀ large). Crucially the spreading is **ACTIVE**:
+breast-carcinoma MCF7 spheroids increase footprint **3–4× in 24 h on collagen-I** and EpCAM-knockdown
+drives complete wetting to a flat coherent monolayer (Aslemarz/Gupta 2024 EMBO J) — a three-tension
+(γ_m free-edge / γ_c contact / γ_x matrix) balance whose dominant physiological lever is **reduced
+cell-contact contractility (γ)**; the film is pulled by motile edge cells (Beaune 2014; Pérez-González
+2019), not by passive surface energy. γ anchor: breast-epithelial **21–45 mN/m** (Nagle 2022). [Found
+during this: the §D2 surface-tension bridge γ≈0.57 mN/m is ~40–80× below Nagle — flagged for the
+σ-bridge owner.] **It was a placeholder in the model**: `resolve_substrate` set D_sub = adhesion_ratio·D_e
+with adhesion_ratio=1.0 (= cohesion), i.e. S≈−γ<0 by construction → 3D cap (the L2.6 finding).
+
+**Test (R₀≈92 µm, N₀=1000, catch/yield cohesion, GPU) — sweep the adhesion ratio D_sub/D_e to push S>0,
+PASSIVE (no motility) vs ACTIVE (plithotaxis 5 nN):**
+
+| D_sub/D_e | passive core / raw | active core / raw |
+|---|---|---|
+| 1 | 1.61 / 1.77 | 1.49 / 1.72 |
+| 4–8 | 1.54 / 1.74 | 1.52 / 1.85 |
+| 16 | 1.58 / 1.75 | 1.59 / **1.94** |
+
+1. **PASSIVE adhesion cannot flatten the cap.** Raising W_cs 16× leaves A/A₀ flat (~1.5–1.6) — the
+   cohesive cap is **kinetically trapped** (the short-range wall reaches only basal cells; cohesion
+   holds the pile) and, per the framework, passive energy balance sets the *equilibrium* but **motility
+   drives the kinetics** — exactly why passive alone does nothing (and consistent with L2.6).
+2. **ACTIVE motility + adhesion lifts the RAW footprint only modestly** (raw 1.72→1.94, +13%, as rim
+   cells crawl out and adhesion holds them = a *partial* precursor-film signal) while the **connected
+   core stays ~1.5** — the bulk does **not** unpile into a monolayer. Far short of the PI 7–10.
+3. **⇒ Structural limit CONFIRMED on every CBM-expressible axis:** scale ✗ · observable ✗ · cohesion ✗ ·
+   lateral coordination/plithotaxis ✗ · passive wetting ✗ · **active wetting ✗**. The center-based
+   point-cell CBM cannot host the **active complete-wetting precursor MONOLAYER** that produces the PI
+   magnitude — that transition (a 3D cohesive pile → a spread single layer, edge cells crawling thin
+   while the bulk feeds them) is intrinsically **shape-resolved / subcellular**.
+
+**Verdict (final for the Layer-2 magnitude).** The PI law FORM is reproduced with zero calibration
+(§HEADLINE, r²=0.998, full R₀ range) — a complete positive result. The MAGNITUDE (~5–9× under) is the
+**center-based 1-particle structural limit**, now bounded on six independent axes and explained by the
+aggregate-wetting framework: the PI A/A₀~7–10 is the *active complete-wetting precursor-monolayer*
+regime, which a point-cell model cannot represent. **The magnitude belongs to the fine-grained
+single-cell line** (shape-resolved lamellipodium + substrate traction) — route (a) of §E; the CBM
+"wetting extension" (route b) would require a lumped 3D→2D state-switch, which the fine-grained-
+mechanistic hard rule disfavours. PI A/A₀ overlay-only throughout. Artifacts: `scripts/layer2_wetting.py`
+(passive+active modes, `+layer2_wetting_vis.py`), `outputs/layer2/wetting/*.jsonl`, figure
+`fig_layer2_wetting.png`, SE candidates `SE_REGISTRATION_CANDIDATES_2026-06-04_aggregate-wetting.md`.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_wetting.png` — **⭐ F wetting axis** (R₀≈92 µm, N₀=1000): A/A₀ core+raw vs substrate
+  adhesion ratio D_sub/D_e (log x), PASSIVE (no motility) vs ACTIVE (plithotaxis 5 nN), PI band (7–10) +
+  A/A₀=1 overlaid. Passive flat (~1.5, kinetic trap); active raw creeps 1.72→1.94 (partial precursor-film)
+  but core stays ~1.5 ≪ PI — the aggregate-wetting test (Douezan S=W_cs−2γ) confirms the magnitude is the
+  center-based structural limit, not a wetting parameter. SI, overlay-only.
 - `figs/fig_layer2_plithotaxis.png` — **⭐ E SPP-plithotaxis bracket** (R₀≈151 µm, N₀=4000, 2 seeds):
   plithotaxis core+raw A/A₀ bars across f_active = {0, 1.6, 5.0 (MCF10A), 9.4} nN, with the §D radial-
   crawl core overlaid (red dashed, null) and the PI median band (7–10) far above. The persistent +

@@ -1,0 +1,3 @@
+{"axis": "wetting_active", "adhesion_ratio": 1.0, "f_active_nN": 5.0, "crawl_mode": "plithotaxis", "n": 1000, "seed": 0, "device": "gpu", "R0_um": 91.6, "aa0_core": 1.493, "aa0_raw": 1.723, "n_final": 1699, "ejected": false, "capped": false, "wall_s": 155.7}
+{"axis": "wetting_active", "adhesion_ratio": 8.0, "f_active_nN": 5.0, "crawl_mode": "plithotaxis", "n": 1000, "seed": 0, "device": "gpu", "R0_um": 91.6, "aa0_core": 1.518, "aa0_raw": 1.853, "n_final": 1700, "ejected": false, "capped": false, "wall_s": 151.0}
+{"axis": "wetting_active", "adhesion_ratio": 16.0, "f_active_nN": 5.0, "crawl_mode": "plithotaxis", "n": 1000, "seed": 0, "device": "gpu", "R0_um": 91.6, "aa0_core": 1.585, "aa0_raw": 1.939, "n_final": 1736, "ejected": false, "capped": false, "wall_s": 151.4}
