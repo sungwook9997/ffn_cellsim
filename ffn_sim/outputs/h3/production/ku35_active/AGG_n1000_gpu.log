@@ -1,0 +1,45 @@
+=== MCF7 FULL-CELL STAGE-1 (R_cell=7.5µm, all compartments ON, n_fil=1000, arm=grip_walk, smoke=False) ===
+HOOMD 7.0.1
+
+--- arm: grip_walk ---
+  [compartments ON] nucleus k_chrom=3.69e-05 E_nuc=4700.0Pa | enclosed dP_ref=40Pa | membrane gamma_mem=0.10mN/m | cytoplasm eta=65.9Pa·s (MCF7)
+  [grip_walk] s=1/6 r/r0=1.00000 g_soft=1.611e-04 g_rigid=6.604e-02 g_tot=6.620e-02 mN/m
+    [AGG] n_engaged=756 Σ|F_head|=1.47e+03pN (mean 1.95pN, max 3.31pN); Σ|F|/band=0.0894×
+          Hill[series] F/F_stall mean=0.00155 max=0.0028 valid(≤1)=100% super-stall=0%
+          g_soft: gate=1.611e-04 mop_total=1.418e-04 mop_attach=1.386e-04 ik_attach=1.789e-04 ceiling=2.151e-04 mN/m
+          η_agg=0.832 (tangential frac 0.79) η_medium=1.03 η_total=0.854 ceiling/band=0.000615×
+          → GENERATION-LIMITED: coherent ceiling 0.00061× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=2/6 r/r0=1.00000 g_soft=2.531e-04 g_rigid=7.602e-02 g_tot=7.627e-02 mN/m
+    [AGG] n_engaged=1035 Σ|F_head|=2.05e+03pN (mean 1.98pN, max 3.34pN); Σ|F|/band=0.124×
+          Hill[series] F/F_stall mean=0.00331 max=0.00563 valid(≤1)=100% super-stall=0%
+          g_soft: gate=2.531e-04 mop_total=1.919e-04 mop_attach=1.897e-04 ik_attach=2.532e-04 ceiling=3.040e-04 mN/m
+          η_agg=0.833 (tangential frac 0.79) η_medium=1.03 η_total=0.856 ceiling/band=0.000869×
+          → GENERATION-LIMITED: coherent ceiling 0.00087× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=3/6 r/r0=1.00001 g_soft=2.749e-04 g_rigid=8.384e-02 g_tot=8.411e-02 mN/m
+    [AGG] n_engaged=1170 Σ|F_head|=2.32e+03pN (mean 1.98pN, max 3.37pN); Σ|F|/band=0.141×
+          Hill[series] F/F_stall mean=0.00497 max=0.00848 valid(≤1)=100% super-stall=0%
+          g_soft: gate=2.749e-04 mop_total=2.190e-04 mop_attach=2.198e-04 ik_attach=2.872e-04 ceiling=3.434e-04 mN/m
+          η_agg=0.836 (tangential frac 0.796) η_medium=1.03 η_total=0.863 ceiling/band=0.000981×
+          → GENERATION-LIMITED: coherent ceiling 0.00098× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=4/6 r/r0=1.00000 g_soft=2.806e-04 g_rigid=6.600e-02 g_tot=6.628e-02 mN/m
+    [AGG] n_engaged=1223 Σ|F_head|=2.43e+03pN (mean 1.99pN, max 3.34pN); Σ|F|/band=0.147×
+          Hill[series] F/F_stall mean=0.0066 max=0.0114 valid(≤1)=100% super-stall=0%
+          g_soft: gate=2.806e-04 mop_total=2.423e-04 mop_attach=2.403e-04 ik_attach=3.020e-04 ceiling=3.605e-04 mN/m
+          η_agg=0.838 (tangential frac 0.797) η_medium=1.04 η_total=0.868 ceiling/band=0.00103×
+          → GENERATION-LIMITED: coherent ceiling 0.001× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=5/6 r/r0=1.00001 g_soft=2.899e-04 g_rigid=6.831e-02 g_tot=6.860e-02 mN/m
+    [AGG] n_engaged=1254 Σ|F_head|=2.48e+03pN (mean 1.98pN, max 3.38pN); Σ|F|/band=0.15×
+          Hill[series] F/F_stall mean=0.00818 max=0.0143 valid(≤1)=100% super-stall=0%
+          g_soft: gate=2.899e-04 mop_total=2.584e-04 mop_attach=2.545e-04 ik_attach=3.077e-04 ceiling=3.663e-04 mN/m
+          η_agg=0.84 (tangential frac 0.796) η_medium=1.04 η_total=0.874 ceiling/band=0.00105×
+          → GENERATION-LIMITED: coherent ceiling 0.001× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+  [grip_walk] s=6/6 r/r0=1.00001 g_soft=2.903e-04 g_rigid=8.002e-02 g_tot=8.031e-02 mN/m
+    [AGG] n_engaged=1242 Σ|F_head|=2.43e+03pN (mean 1.96pN, max 3.34pN); Σ|F|/band=0.147×
+          Hill[series] F/F_stall mean=0.00982 max=0.0172 valid(≤1)=100% super-stall=0%
+          g_soft: gate=2.903e-04 mop_total=2.557e-04 mop_attach=2.494e-04 ik_attach=3.007e-04 ceiling=3.562e-04 mN/m
+          η_agg=0.844 (tangential frac 0.801) η_medium=1.05 η_total=0.883 ceiling/band=0.00102×
+          → GENERATION-LIMITED: coherent ceiling 0.001× the band — per-head force × N too small even if perfectly aggregated (lever = recruitment / per-head force)
+    aggregation figure -> /home/sungwook/ffn_cellsim/ffn_sim/outputs/h3/figs/ku35_aggregation_motorsON.png
+
+=== DONE in 2632s. Full cell (cortex+membrane+nucleus+cytoplasm+enclosed-vol) ran stably with STAGE-1 grip_walk. ===
+  grip_walk: <r/r0>=1.00000 <g_soft>=2.583e-04 <g_rigid>=7.337e-02 <g_tot>=7.363e-02 mN/m  (band [0.35,0.65])

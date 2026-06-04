@@ -95,9 +95,21 @@ cancellation), built on the project's IK-virial 8πR² calibration (corrected MO
 ≈ IK; the estimator audit's convention). It emits one of three verdicts:
 GENERATION-LIMITED / AGGREGATION-LIMITED(RADIAL) / AGGREGATION-LIMITED(MEDIUM).
 
-**Verdict at n_fil=400, n_motors=200, connected mesh, all compartments ON
-(`outputs/h3/production/ku35_active/AGG_n400_cpu.log`,
-`figs/ku35_aggregation_motorsON.png`): GENERATION-LIMITED.**
+**Verdict: GENERATION-LIMITED — robust at dev (n_fil=400, CPU) AND production
+scale (n_fil=1000, n_motors=200, gbook GPU, all compartments ON;
+`outputs/h3/production/ku35_active/AGG_n{400_cpu,1000_gpu}.log`,
+`figs/ku35_aggregation_motorsON.png`).** n_fil=1000 plateau (sample 6):
+n_engaged 1242, Σ|F_head| 2.43 nN, η_agg 0.84, η_medium 1.05, η_total 0.88,
+ceiling/band 0.0010, gate g_soft 2.90e-4 ≈ mop_attach 2.49e-4 ≈ ik_attach
+3.01e-4 ≈ ceiling 3.56e-4 mN/m (all within ~1.4×). Identical verdict to
+n_fil=400 (ceiling/band 0.0012) → scale-invariant. **Motor count verified
+physiological + self-consistent**: native_n_motors = 2120.6 (Salbreux 3/µm² ×
+706.9 µm²); n_motors=200 × factor 10.60 = native (invariant); total stall
+capacity 21.21 nN is n_motors-invariant (≈0.45 mN/m over 2πR ⇒ the full native
+complement at stall IS band-capable — the floor is the sub-stall operating point
++ short lever, NOT motor undercount); the estimator reads scaled k/F_stall from
+the live run so the historical param-map mis-pin is impossible. **Connected mesh
+verified**: 0 same-filament staples, giant component 1.000, z 3.65 at n_fil=1000.
 
 - **Aggregation is NOT the wall.** η_agg ≈ 0.91, η_medium ≈ 1.02, η_total ≈ 0.94
   — the per-head forces aggregate ~94% efficiently. Cross-check: gate g_soft
@@ -126,9 +138,11 @@ GENERATION-LIMITED / AGGREGATION-LIMITED(RADIAL) / AGGREGATION-LIMITED(MEDIUM).
 - [x] KU-3.5-active diagnosis: force generation/aggregation (per-head → shell
       tension) — **aggregation estimator built + validated; verdict =
       GENERATION-LIMITED (aggregation ~94% efficient, generation ~840× under)**.
-- [ ] KU-3.5-active follow-up: production-scale (n_fil=1000) `--aggregation` on
-      gbook GPU to confirm the verdict at scale; then quantify per-head-force /
-      recruitment / soft-transmission levers.
+- [x] KU-3.5-active follow-up: production-scale (n_fil=1000) `--aggregation` on
+      gbook GPU — **DONE, verdict GENERATION-LIMITED confirmed scale-invariant**
+      (ceiling/band 0.0010 @ n1000 vs 0.0012 @ n400). NEXT: quantify the
+      per-head-force / recruitment / soft-transmission levers (PI-gated core
+      myosin per the 6/4 CORTICAL_TENSION_RECORD).
 - [ ] KU-3.5-passive: wire `turgor_dP0` = resting Π₀ as the production baseline.
 - [ ] KU-3.5-bridge: expose g_rigid/γ as the Layer-2 spheroid surface-tension
       anchor.

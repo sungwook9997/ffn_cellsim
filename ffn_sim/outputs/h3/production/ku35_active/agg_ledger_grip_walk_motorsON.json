@@ -1,86 +1,242 @@
 [
   {
     "generation": {
-      "n_engaged": 586
+      "n_engaged": 756,
+      "sumF_head_N": 1.4737373371806772e-09,
+      "mean_F_head_N": 1.949388012143753e-12,
+      "median_F_head_N": 2.005419408534151e-12,
+      "max_F_head_N": 3.3068963449585417e-12,
+      "p90_F_head_N": 2.829775089536525e-12,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.08935336458338744
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.0015517913282457592,
+      "median_F_over_Fstall": 0.0016639756146096805,
+      "max_F_over_Fstall": 0.0028037615540470787,
+      "p90_F_over_Fstall": 0.0026012390713120843,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 5.301437602932775e-12
     },
     "tension": {
-      "g_soft_gate_Npm": 2.32e-07,
-      "g_mop_total_Npm": 2.1240000000000002e-07,
-      "g_mop_attach_Npm": 2.061e-07,
-      "g_ik_attach_Npm": 2.157e-07,
-      "g_ik_total_Npm": 2.2001400000000003e-07,
-      "g_ceiling_attach_Npm": 2.368e-07,
-      "mean_tangential_fraction": 0.867
+      "g_soft_gate_Npm": 1.6112716582189187e-07,
+      "g_mop_total_Npm": 1.4179507217563138e-07,
+      "g_mop_attach_Npm": 1.38578502308668e-07,
+      "g_mop_myosin_Npm": 1.4122999107529548e-07,
+      "g_ik_total_Npm": 1.8374210846618923e-07,
+      "g_ik_attach_Npm": 1.789372572318897e-07,
+      "g_ceiling_attach_Npm": 2.1510350764536203e-07,
+      "mean_tangential_fraction": 0.7895678279236852
     },
     "efficiency": {
-      "eta_agg": 0.911,
-      "eta_medium": 1.02,
-      "eta_total": 0.929,
-      "ceiling_over_band": 0.000677
+      "eta_agg": 0.8318658267855907,
+      "eta_medium": 1.0268521564968036,
+      "eta_total": 0.8542032181507804,
+      "ceiling_over_band": 0.0006145814504153201,
+      "gate_over_ceiling": 0.7490680537276029
     },
-    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00068\u00d7 the band"
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00061\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
   },
   {
     "generation": {
-      "n_engaged": 832
+      "n_engaged": 1035,
+      "sumF_head_N": 2.0508832253615384e-09,
+      "mean_F_head_N": 1.9815296863396507e-12,
+      "median_F_head_N": 2.0208785082211515e-12,
+      "max_F_head_N": 3.33886907846979e-12,
+      "p90_F_head_N": 2.9187526589272605e-12,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.12434598210306223
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.0033066436460793954,
+      "median_F_over_Fstall": 0.0034545443973197335,
+      "max_F_over_Fstall": 0.005631054614202772,
+      "p90_F_over_Fstall": 0.005242690238104408,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 5.301437602932775e-12
     },
     "tension": {
-      "g_soft_gate_Npm": 3.2229999999999997e-07,
-      "g_mop_total_Npm": 3.319e-07,
-      "g_mop_attach_Npm": 3.2410000000000005e-07,
-      "g_ik_attach_Npm": 3.06e-07,
-      "g_ik_total_Npm": 3.1212000000000007e-07,
-      "g_ceiling_attach_Npm": 3.345e-07,
-      "mean_tangential_fraction": 0.873
+      "g_soft_gate_Npm": 2.531124172021078e-07,
+      "g_mop_total_Npm": 1.9193741971435057e-07,
+      "g_mop_attach_Npm": 1.896934240862354e-07,
+      "g_mop_myosin_Npm": 1.913481014880975e-07,
+      "g_ik_total_Npm": 2.6015238122139045e-07,
+      "g_ik_attach_Npm": 2.532488024438877e-07,
+      "g_ceiling_attach_Npm": 3.039990528147204e-07,
+      "mean_tangential_fraction": 0.7903154855071478
     },
     "efficiency": {
-      "eta_agg": 0.915,
-      "eta_medium": 1.02,
-      "eta_total": 0.933,
-      "ceiling_over_band": 0.000956
+      "eta_agg": 0.8330578667895926,
+      "eta_medium": 1.0272600648488057,
+      "eta_total": 0.8557670782610847,
+      "ceiling_over_band": 0.0008685687223277726,
+      "gate_over_ceiling": 0.832609229728006
     },
-    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00096\u00d7 the band"
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00087\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
   },
   {
     "generation": {
-      "n_engaged": 988
+      "n_engaged": 1170,
+      "sumF_head_N": 2.319192403260339e-09,
+      "mean_F_head_N": 1.982215729282341e-12,
+      "median_F_head_N": 2.0469857598308557e-12,
+      "max_F_head_N": 3.3702914597659445e-12,
+      "p90_F_head_N": 2.894851245951456e-12,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.14061368950859246
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.004968455475972482,
+      "median_F_over_Fstall": 0.005376112285843928,
+      "max_F_over_Fstall": 0.008482407818388764,
+      "p90_F_over_Fstall": 0.007910695385862974,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 5.301437602932775e-12
     },
     "tension": {
-      "g_soft_gate_Npm": 3.907e-07,
-      "g_mop_total_Npm": 3.969e-07,
-      "g_mop_attach_Npm": 3.902e-07,
-      "g_ik_attach_Npm": 3.618e-07,
-      "g_ik_total_Npm": 3.69036e-07,
-      "g_ceiling_attach_Npm": 3.953e-07,
-      "mean_tangential_fraction": 0.875
+      "g_soft_gate_Npm": 2.7486155100888837e-07,
+      "g_mop_total_Npm": 2.189863851922324e-07,
+      "g_mop_attach_Npm": 2.197982976341118e-07,
+      "g_mop_myosin_Npm": 2.1837711903481454e-07,
+      "g_ik_total_Npm": 2.9626060636526947e-07,
+      "g_ik_attach_Npm": 2.87195943753353e-07,
+      "g_ceiling_attach_Npm": 3.433748432344657e-07,
+      "mean_tangential_fraction": 0.7960208416767222
     },
     "efficiency": {
-      "eta_agg": 0.915,
-      "eta_medium": 1.02,
-      "eta_total": 0.934,
-      "ceiling_over_band": 0.00113
+      "eta_agg": 0.8363919180801715,
+      "eta_medium": 1.0315626414964318,
+      "eta_total": 0.862790656341049,
+      "ceiling_over_band": 0.000981070980669902,
+      "gate_over_ceiling": 0.8004708452715781
     },
-    "verdict": "GENERATION-LIMITED: coherent ceiling 0.0011\u00d7 the band"
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00098\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
   },
   {
     "generation": {
-      "n_engaged": 1038
+      "n_engaged": 1223,
+      "sumF_head_N": 2.4276557682619523e-09,
+      "mean_F_head_N": 1.9850006281782114e-12,
+      "median_F_head_N": 2.061454190552044e-12,
+      "max_F_head_N": 3.337742815666089e-12,
+      "p90_F_head_N": 2.8936140315767787e-12,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.14718987262645425
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.00659680254581418,
+      "median_F_over_Fstall": 0.007310476664057696,
+      "max_F_over_Fstall": 0.011358546074388663,
+      "p90_F_over_Fstall": 0.010567827311869301,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 5.301437602932775e-12
     },
     "tension": {
-      "g_soft_gate_Npm": 3.991e-07,
-      "g_mop_total_Npm": 3.916e-07,
-      "g_mop_attach_Npm": 3.862e-07,
-      "g_ik_attach_Npm": 3.811e-07,
-      "g_ik_total_Npm": 3.88722e-07,
-      "g_ceiling_attach_Npm": 4.164e-07,
-      "mean_tangential_fraction": 0.876
+      "g_soft_gate_Npm": 2.8057378508269513e-07,
+      "g_mop_total_Npm": 2.423365626174975e-07,
+      "g_mop_attach_Npm": 2.403098497856172e-07,
+      "g_mop_myosin_Npm": 2.417472586161206e-07,
+      "g_ik_total_Npm": 3.1270180045778214e-07,
+      "g_ik_attach_Npm": 3.019532037855691e-07,
+      "g_ceiling_attach_Npm": 3.6045855979286006e-07,
+      "mean_tangential_fraction": 0.796815139330167
     },
     "efficiency": {
-      "eta_agg": 0.915,
-      "eta_medium": 1.02,
-      "eta_total": 0.936,
-      "ceiling_over_band": 0.00119
+      "eta_agg": 0.8376918666020542,
+      "eta_medium": 1.035596895603221,
+      "eta_total": 0.8675110965251549,
+      "ceiling_over_band": 0.0010298815994081716,
+      "gate_over_ceiling": 0.7783801423495914
     },
-    "verdict": "GENERATION-LIMITED: coherent ceiling 0.0012\u00d7 the band"
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.001\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
+  },
+  {
+    "generation": {
+      "n_engaged": 1254,
+      "sumF_head_N": 2.4779267163780394e-09,
+      "mean_F_head_N": 1.9760181151340028e-12,
+      "median_F_head_N": 2.0475560966428212e-12,
+      "max_F_head_N": 3.3835057882267367e-12,
+      "p90_F_head_N": 2.8829242491587945e-12,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.15023782305944147
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.008184065166223671,
+      "median_F_over_Fstall": 0.009027672223823276,
+      "max_F_over_Fstall": 0.014259473458111745,
+      "p90_F_over_Fstall": 0.013293852581113798,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 5.301437602932775e-12
+    },
+    "tension": {
+      "g_soft_gate_Npm": 2.89897745011241e-07,
+      "g_mop_total_Npm": 2.5843786207408955e-07,
+      "g_mop_attach_Npm": 2.5445841756647715e-07,
+      "g_mop_myosin_Npm": 2.5784221563290797e-07,
+      "g_ik_total_Npm": 3.200701479780404e-07,
+      "g_ik_attach_Npm": 3.07727912182008e-07,
+      "g_ceiling_attach_Npm": 3.663072051528887e-07,
+      "mean_tangential_fraction": 0.7963833929675797
+    },
+    "efficiency": {
+      "eta_agg": 0.8400815158783707,
+      "eta_medium": 1.0401076252996266,
+      "eta_total": 0.8737751905383626,
+      "ceiling_over_band": 0.001046592014722539,
+      "gate_over_ceiling": 0.7914060682760635
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.001\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
+  },
+  {
+    "generation": {
+      "n_engaged": 1242,
+      "sumF_head_N": 2.428905397249542e-09,
+      "mean_F_head_N": 1.9556404164650097e-12,
+      "median_F_head_N": 2.023341159259787e-12,
+      "max_F_head_N": 3.3363377536078506e-12,
+      "p90_F_head_N": 2.8550529591573455e-12,
+      "F_band_required_N": 1.6493361431346417e-08,
+      "sumF_over_band": 0.14726563819994218
+    },
+    "hill": {
+      "load_source": "series",
+      "mean_F_over_Fstall": 0.00981529378819842,
+      "median_F_over_Fstall": 0.010474476280783997,
+      "max_F_over_Fstall": 0.017186133850034268,
+      "p90_F_over_Fstall": 0.016027175059941456,
+      "frac_hill_valid": 1.0,
+      "frac_super_stall": 0.0,
+      "F_stall_N": 5.301437602932775e-12
+    },
+    "tension": {
+      "g_soft_gate_Npm": 2.9026054748276704e-07,
+      "g_mop_total_Npm": 2.556568753740807e-07,
+      "g_mop_attach_Npm": 2.49428017054351e-07,
+      "g_mop_myosin_Npm": 2.550376568223921e-07,
+      "g_ik_total_Npm": 3.1447877843516387e-07,
+      "g_ik_attach_Npm": 3.006734723815073e-07,
+      "g_ceiling_attach_Npm": 3.562486281977025e-07,
+      "mean_tangential_fraction": 0.8010237670173855
+    },
+    "efficiency": {
+      "eta_agg": 0.843998961912203,
+      "eta_medium": 1.045914612766835,
+      "eta_total": 0.8827508474240127,
+      "ceiling_over_band": 0.0010178532234220072,
+      "gate_over_ceiling": 0.814769586485776
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.001\u00d7 the band \u2014 per-head force \u00d7 N too small even if perfectly aggregated (lever = recruitment / per-head force)"
   }
 ]
