@@ -31,3 +31,18 @@ hard-rule) → `references_to_se.py` (Notion SourceEvidence) → `link_se_claims
 
 ## ALL 15 READ (2026-06-04). Next: BATCH ingest (this turn: references_ingest=TAG/BM25;
 ## then verify_sources → references_to_se → link_se_claims → refresh.sh for Notion SE+Obsidian).
+
+## Layer-2 (spheroid/cohesion/tissue) CROSS-LINKS — link these SE rows to Layer-2 KnowledgeClaims too
+PI 2026-06-04: "layer2가 잘 쓸 수 있는 것들도 있다." When registering SE, attach to BOTH the
+single-cell-cortex KC AND the Layer-2 KC below so the spheroid line can query them.
+
+- Flormann2024_PNAS → +KC: layer2-cell-cortical-tension (cohesive/adhered γ feeds the σ bridge)
+- MerinoCasallo2022_CellAdhMigr → +KC: layer2-invasion / EMT-MAT cancer phenotype (L2.7 invasion D1)
+- KadzikMunro2026_bioRxiv → +KC: layer2-cortical-flow/cohesion (connectivity↔coherent flow at tissue scale)
+- Fritzsche2016 / Flormann → cortical-tension magnitude that the single-cell γ → spheroid σ bridge consumes.
+
+### NOTE — the σ-BRIDGE batch (earlier cortical-tension PDFs, the MOST Layer-2-relevant) also need
+### Layer-2 KC links when registered: Winklbauer (jcs174623), Roffay (DownloadCombined...), Okuda
+### (2026.03.17.712503), Fastabend (z152-x4l1), Chugh (emss-72183/ncb3525), Warmt, Nishitani,
+### electrodeformation. These ARE the single-cell-γ→spheroid-σ bridge (D2; Winklbauer script done) →
+### KC: layer2-surface-tension-bridge. Verify their SE status (some may already be linked by helper).
