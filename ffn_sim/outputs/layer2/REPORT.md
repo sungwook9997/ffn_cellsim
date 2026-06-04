@@ -708,11 +708,65 @@ A/A0 = 1.000 + (47.39 µm)/R + (97.46 µm²)/R²      r² = 0.998   (R₀ 104–
 Artifacts: `scripts/layer2_prod_rlaw.sh` (resumable launcher), `scripts/layer2_prod_vis.py`,
 `outputs/layer2/prod_rlaw/rlaw_sweep.clean.jsonl`, figure `fig_layer2_prod_rlaw.png`.
 
+## C — magnitude-gap resolution: the lamellipodium → CBM motility bridge (2026-06-04)
+
+The production run proved the magnitude gap is genuine (raw≈core) and the literature placed it on the
+**active** side (center-based models lump spreading into a self-propulsion v₀; magnitude is
+otherwise calibrated, which we refuse). C builds the principled **scale-bridge**: anchor the CBM
+per-cell active force from a measured single-cell speed via the overdamped map
+``f_active = v0·γ_cell`` (the EXISTING `ActiveMotility`/edge-traction knob — no new mechanism, no
+integrator change; γ_cell = the clutch-ensemble migration drag 0.30 N·s/m, KU-2.18, the same anchor
+the cohesion bridge used). `spheroid/motility_bridge.py` (`resolve_active_traction`, pure arithmetic,
+6 tests) reads the Bieling-2016 protrusion constants from the H.5 single-cell config (the SoT) and
+computes both candidate anchors. **This single no-sim step already discriminates the question:**
+
+```
+f_wholecell 1.6 nN  <  B1 ceiling 3.0 nN  <  cohesion F_detach 6.5 nN  <  f_protrusion 9.4 nN
+```
+
+- **The two single-cell anchors differ by ×5.9** — protrusion (Bieling barbed-end v₀ = k_elong⁰·δ =
+  1.88 µm/min → 9.4 nN) vs whole-cell (MCF7 19 µm/h, DeepBIT 2026 → 1.6 nN). That ×5.9 ≈ the observed
+  ~5–9× A/A₀ magnitude gap. **The gap is localised to the ACTIVE side** — cohesion is anchored TWO
+  independent ways (Iturri de-adhesion + D2 γ=0.57 mN/m in-band), so it is *not* the cause.
+- **⭐ The protrusion-anchored traction (9.4 nN) EXCEEDS the cohesion (6.5 nN).** In a center-based
+  1-particle model the active force is transmitted as **cell–cell** force, so driving cells at the
+  lamellipodial-protrusion scale **tears the aggregate apart (detachment) rather than spreading it** —
+  the overdamped CBM literally cannot host it (B1 detachment regime). This **quantitatively confirms
+  the center-based 1-particle structural limit**: real MCF7 spread by lamellipodial **crawling on the
+  substrate** (contact-line traction reacted by the SUBSTRATE, not by neighbours), which a point-cell
+  CBM cannot represent — exactly the limit the literature (Fang 2016, Mattila 2008) and the §B2/§C
+  analysis flagged. The whole-cell anchor (1.6 nN ≈ the A1 Bare 1.5 nN already run) stays compact and
+  does NOT close the gap, as the magnitude-gap decomposition already showed.
+
+**Verdict (honest):** the ~5–9× magnitude under-spread is **the Layer-2 center-based abstraction
+limit on the active side, not a parameter to tune and not over-strong cohesion.** Reproducing the
+experiment's spreading magnitude faithfully requires a mechanism a 1-particle CBM cannot host —
+either (a) the **fine-grained single-cell line** (explicit lamellipodium + substrate traction, H.5→),
+or (b) a **CBM extension with explicit in-plane SUBSTRATE traction** (force reacted by the substrate,
+decoupled from cell–cell cohesion) — a contact-line-traction add-on, the natural Layer-2 D-axis. The
+form (the PI law) is reproduced; the magnitude is a scope boundary, now precisely located. PI A/A₀
+overlay-only; the MCF7 19 µm/h speed is an overlay-validation anchor, never fitted. Figure
+`fig_layer2_motility_bridge.png`; artifacts `spheroid/motility_bridge.py`,
+`tests/test_motility_bridge.py`, `scripts/layer2_motility_bridge_vis.py`.
+
+**Open PI decisions (the bridge surfaces, does not pre-empt):** (1) **anchor choice** — protrusion
+(9.4 nN, the fine-grained mechanism) vs whole-cell (1.6 nN, MCF7-measured); they bracket the gap.
+(2) **the protrusion arm needs the detachment regime** (>cohesion) → a sub-stepped-bond / explicit
+substrate-traction CBM extension (roadmap D3) — this brushes the integrator freeze and is a PI call,
+not a silent tweak. (3) H.5 KU-5.2 force-velocity is still un-run on hardware (PI sign-off + Mac
+smoke), so the protrusion v₀ is parameterised from the H.5 config, not yet emergently confirmed.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_motility_bridge.png` — **⭐ C lamellipodium→CBM motility bridge** (2 panels):
+  **A** the active-traction force ladder (whole-cell 1.6 nN < ceiling 3 nN < cohesion 6.5 nN <
+  protrusion 9.4 nN) with the detachment regime marked — the protrusion anchor exceeds cohesion, so
+  the CBM tears rather than spreads (1-particle structural limit); **B** the ×5.9 protrusion/whole-cell
+  ratio = the observed magnitude gap, localised to the active side (cohesion 2-way-anchored, not the
+  cause). Pure-arithmetic, no sim. SI units.
 - `figs/fig_layer2_prod_rlaw.png` — **⭐ Production R₀-law (full PI range)** (2 panels): **A**
   A/A₀(R₀) connected-core + raw-footprint ensemble (104–394 µm, 5 seeds) with the a+b/R+c/R² fit
   (**r²=0.998**) and the PI median markers (7.2/7.5/10, overlay-only) far above — the law's FORM

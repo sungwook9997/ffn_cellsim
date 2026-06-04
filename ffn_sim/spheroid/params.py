@@ -76,7 +76,9 @@ class ResolvedL2:
     morse_r0: float             # m  = diameter
     morse_alpha: float          # 1/m = 1/contact_zone_width
     morse_k_spring: float       # N/m = 2·D_e·alpha²  (curvature at minimum)
-    gamma_cell: float           # N·s/m = 6π·η·R_cell
+    gamma_cell: float           # N·s/m  per-cell MIGRATION drag = clutch-ensemble friction
+                                #         n_eng·κ_clutch/k_off (KU-2.18 Bangasser 2013); the
+                                #         water-Stokes 6π·η·R is RETIRED (see Magic-Number Block)
     dt_cfl: float               # s  = safety·gamma/k_spring
 
 
