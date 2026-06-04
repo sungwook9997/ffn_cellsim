@@ -1,0 +1,102 @@
+{
+  "config": {
+    "n_fil": 300,
+    "n_xl": 450,
+    "motors": [
+      100
+    ],
+    "capture_scales": [
+      1.0
+    ],
+    "ref_motors": 100,
+    "n_samples": 1,
+    "interval": 2000,
+    "n_warmup": 2000,
+    "bind_scale": 6.0,
+    "kon_scale": 300.0,
+    "n_planes": 12,
+    "backbone_nm": 300
+  },
+  "motor_sweep": [
+    {
+      "n_engaged": 42.0,
+      "n_bound_heads": 42.0,
+      "mean_perhead_F_pN": 4.375538844422802,
+      "mean_F_over_stall": 0.41267474712917845,
+      "attach_n_bonds": 42.0,
+      "attach_mean_F_pN": 4.37551763867239,
+      "attach_N_crossing": 0.4166666666666667,
+      "attach_geo_frac": 0.009920634920634922,
+      "attach_ideal_budget_mN_m": 0.003899757460370736,
+      "attach_g_mN_m": 2.8984986214786464e-05,
+      "attach_obs_over_ideal": 0.007432509972564028,
+      "backbone_n_bonds": 1800.0,
+      "backbone_N_crossing": 39.5,
+      "backbone_geo_frac": 0.021944444444444444,
+      "backbone_g_mN_m": 0.0,
+      "n_motors": 100,
+      "capture_perp_scale": 1.0,
+      "samples": [
+        {
+          "sample": 1,
+          "n_engaged": 42,
+          "n_bound_heads": 42,
+          "mean_perhead_F_pN": 4.375538844422802,
+          "mean_F_over_stall": 0.41267474712917845,
+          "attach_n_bonds": 42,
+          "attach_mean_F_pN": 4.37551763867239,
+          "attach_N_crossing": 0.4166666666666667,
+          "attach_geo_frac": 0.009920634920634922,
+          "attach_ideal_budget_mN_m": 0.003899757460370736,
+          "attach_g_mN_m": 2.8984986214786464e-05,
+          "attach_obs_over_ideal": 0.007432509972564028,
+          "backbone_n_bonds": 1800,
+          "backbone_N_crossing": 39.5,
+          "backbone_geo_frac": 0.021944444444444444,
+          "backbone_g_mN_m": 0.0
+        }
+      ]
+    }
+  ],
+  "range_sweep": [
+    {
+      "n_engaged": 42.0,
+      "n_bound_heads": 42.0,
+      "mean_perhead_F_pN": 4.375538844422802,
+      "mean_F_over_stall": 0.41267474712917845,
+      "attach_n_bonds": 42.0,
+      "attach_mean_F_pN": 4.37551763867239,
+      "attach_N_crossing": 0.4166666666666667,
+      "attach_geo_frac": 0.009920634920634922,
+      "attach_ideal_budget_mN_m": 0.003899757460370736,
+      "attach_g_mN_m": 2.8984986214786464e-05,
+      "attach_obs_over_ideal": 0.007432509972564028,
+      "backbone_n_bonds": 1800.0,
+      "backbone_N_crossing": 39.5,
+      "backbone_geo_frac": 0.021944444444444444,
+      "backbone_g_mN_m": 0.0,
+      "n_motors": 100,
+      "capture_perp_scale": 1.0,
+      "samples": [
+        {
+          "sample": 1,
+          "n_engaged": 42,
+          "n_bound_heads": 42,
+          "mean_perhead_F_pN": 4.375538844422802,
+          "mean_F_over_stall": 0.41267474712917845,
+          "attach_n_bonds": 42,
+          "attach_mean_F_pN": 4.37551763867239,
+          "attach_N_crossing": 0.4166666666666667,
+          "attach_geo_frac": 0.009920634920634922,
+          "attach_ideal_budget_mN_m": 0.003899757460370736,
+          "attach_g_mN_m": 2.8984986214786464e-05,
+          "attach_obs_over_ideal": 0.007432509972564028,
+          "backbone_n_bonds": 1800,
+          "backbone_N_crossing": 39.5,
+          "backbone_geo_frac": 0.021944444444444444,
+          "backbone_g_mN_m": 0.0
+        }
+      ]
+    }
+  ]
+}

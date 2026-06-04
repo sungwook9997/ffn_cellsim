@@ -1,0 +1,35 @@
+[gsoft-aggregation diag] n_fil=300 n_xl=450 motors=[50, 100, 200, 400] capture_scales=[0.5, 1.0, 2.0] n_samples=4 interval=6000 n_planes=12 backbone_nm=300
+
+=== SWEEP 1: n_motors (count lever), capture_perp_scale=1.0 ===
+  [n_motors=50]
+    s=1/4 n_eng=  56 F/Fstall=0.365 attachN=  56 Ncross=0.75 geo=0.0134 g_attach=1.136e-04 ideal=9.202e-03 obs/ideal=1.234e-02 | bbN=1800 bbGeo=0.0219
+    s=2/4 n_eng= 114 F/Fstall=0.402 attachN= 114 Ncross=1.50 geo=0.0132 g_attach=2.219e-04 ideal=2.060e-02 obs/ideal=1.077e-02 | bbN=1800 bbGeo=0.0219
+    s=3/4 n_eng= 156 F/Fstall=0.399 attachN= 156 Ncross=2.08 geo=0.0134 g_attach=3.190e-04 ideal=2.800e-02 obs/ideal=1.139e-02 | bbN=1800 bbGeo=0.0219
+    s=4/4 n_eng= 174 F/Fstall=0.395 attachN= 174 Ncross=2.17 geo=0.0125 g_attach=3.214e-04 ideal=3.093e-02 obs/ideal=1.039e-02 | bbN=1800 bbGeo=0.0219
+  >> n_motors=50: n_eng=125 g_attach=2.440e-04 mN/m F/Fstall=0.390 geo_frac=0.0131
+
+  [n_motors=100]
+    s=1/4 n_eng= 131 F/Fstall=0.402 attachN= 131 Ncross=1.17 geo=0.0089 g_attach=7.620e-05 ideal=1.186e-02 obs/ideal=6.425e-03 | bbN=1800 bbGeo=0.0219
+    s=2/4 n_eng= 229 F/Fstall=0.408 attachN= 229 Ncross=2.50 geo=0.0109 g_attach=1.716e-04 ideal=2.100e-02 obs/ideal=8.169e-03 | bbN=1800 bbGeo=0.0219
+    s=3/4 n_eng= 289 F/Fstall=0.408 attachN= 289 Ncross=2.92 geo=0.0101 g_attach=2.051e-04 ideal=2.656e-02 obs/ideal=7.723e-03 | bbN=1800 bbGeo=0.0219
+    s=4/4 n_eng= 315 F/Fstall=0.411 attachN= 315 Ncross=3.08 geo=0.0098 g_attach=2.224e-04 ideal=2.911e-02 obs/ideal=7.642e-03 | bbN=1800 bbGeo=0.0219
+  >> n_motors=100: n_eng=241 g_attach=1.688e-04 mN/m F/Fstall=0.407 geo_frac=0.0099
+
+  [n_motors=200]
+    s=1/4 n_eng= 267 F/Fstall=0.407 attachN= 267 Ncross=3.42 geo=0.0128 g_attach=1.211e-04 ideal=1.223e-02 obs/ideal=9.907e-03 | bbN=1800 bbGeo=0.0219
+    s=2/4 n_eng= 432 F/Fstall=0.410 attachN= 432 Ncross=5.75 geo=0.0133 g_attach=2.147e-04 ideal=1.995e-02 obs/ideal=1.076e-02 | bbN=1800 bbGeo=0.0219
+    s=3/4 n_eng= 566 F/Fstall=0.418 attachN= 566 Ncross=7.33 geo=0.0130 g_attach=2.833e-04 ideal=2.664e-02 obs/ideal=1.064e-02 | bbN=1800 bbGeo=0.0219
+    s=4/4 n_eng= 627 F/Fstall=0.417 attachN= 627 Ncross=7.42 geo=0.0118 g_attach=2.848e-04 ideal=2.938e-02 obs/ideal=9.694e-03 | bbN=1800 bbGeo=0.0219
+  >> n_motors=200: n_eng=473 g_attach=2.260e-04 mN/m F/Fstall=0.413 geo_frac=0.0127
+
+  [n_motors=400]
+    s=1/4 n_eng= 539 F/Fstall=0.427 attachN= 539 Ncross=5.08 geo=0.0094 g_attach=8.853e-05 ideal=1.295e-02 obs/ideal=6.837e-03 | bbN=1800 bbGeo=0.0219
+    s=2/4 n_eng= 884 F/Fstall=0.427 attachN= 884 Ncross=8.08 geo=0.0091 g_attach=1.455e-04 ideal=2.124e-02 obs/ideal=6.850e-03 | bbN=1800 bbGeo=0.0219
+    s=3/4 n_eng=1121 F/Fstall=0.426 attachN=1121 Ncross=10.08 geo=0.0090 g_attach=1.865e-04 ideal=2.684e-02 obs/ideal=6.949e-03 | bbN=1800 bbGeo=0.0219
+    s=4/4 n_eng=1261 F/Fstall=0.427 attachN=1261 Ncross=11.50 geo=0.0091 g_attach=2.158e-04 ideal=3.027e-02 obs/ideal=7.127e-03 | bbN=1800 bbGeo=0.0219
+  >> n_motors=400: n_eng=951 g_attach=1.591e-04 mN/m F/Fstall=0.427 geo_frac=0.0092
+
+=== SWEEP 2: capture_perp range lever, n_motors=100 ===
+  [capture_perp_scale=0.5]
+    s=1/4 n_eng=  10 F/Fstall=0.207 attachN=  10 Ncross=0.08 geo=0.0083 g_attach=3.228e-06 ideal=4.667e-04 obs/ideal=6.917e-03 | bbN=1800 bbGeo=0.0219
+    s=2/4 n_eng=  20 F/Fstall=0.205 attachN=  20 Ncross=0.17 geo=0.0083 g_attach=4.455e-06 ideal=9.210e-04 obs/ideal=4.837e-03 | bbN=1800 bbGeo=0.0219

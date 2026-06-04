@@ -1,0 +1,36 @@
+[gsoft-aggregation diag] n_fil=300 n_xl=450 motors=[100] capture_scales=[0.5, 1.0, 2.0, 3.0] n_samples=3 interval=4000 n_planes=12 backbone_nm=300
+
+=== SWEEP 1: n_motors (count lever), capture_perp_scale=1.0 ===
+  [n_motors=100]
+    s=1/3 n_eng=  86 F/Fstall=0.416 attachN=  86 Ncross=0.75 geo=0.0087 g_attach=5.343e-05 ideal=8.057e-03 obs/ideal=6.632e-03 | bbN=1800 bbGeo=0.0219
+    s=2/3 n_eng= 167 F/Fstall=0.413 attachN= 167 Ncross=1.58 geo=0.0095 g_attach=1.140e-04 ideal=1.551e-02 obs/ideal=7.350e-03 | bbN=1800 bbGeo=0.0219
+    s=3/3 n_eng= 227 F/Fstall=0.409 attachN= 227 Ncross=2.25 geo=0.0099 g_attach=1.649e-04 ideal=2.088e-02 obs/ideal=7.898e-03 | bbN=1800 bbGeo=0.0219
+  >> n_motors=100: n_eng=160 g_attach=1.108e-04 mN/m F/Fstall=0.413 geo_frac=0.0094
+
+=== SWEEP 2: capture_perp range lever, n_motors=100 ===
+  [capture_perp_scale=0.5]
+    s=1/3 n_eng=   5 F/Fstall=0.212 attachN=   5 Ncross=0.08 geo=0.0167 g_attach=3.142e-06 ideal=2.390e-04 obs/ideal=1.314e-02 | bbN=1800 bbGeo=0.0219
+    s=2/3 n_eng=  13 F/Fstall=0.213 attachN=  13 Ncross=0.08 geo=0.0064 g_attach=3.149e-06 ideal=6.243e-04 obs/ideal=5.044e-03 | bbN=1800 bbGeo=0.0219
+    s=3/3 n_eng=  20 F/Fstall=0.205 attachN=  20 Ncross=0.17 geo=0.0083 g_attach=4.368e-06 ideal=9.207e-04 obs/ideal=4.744e-03 | bbN=1800 bbGeo=0.0219
+  >> capture_scale=0.5: n_eng=13 g_attach=3.553e-06 mN/m F/Fstall=0.210 geo_frac=0.0105
+
+  [capture_perp_scale=1.0]
+    s=1/3 n_eng=  86 F/Fstall=0.416 attachN=  86 Ncross=0.75 geo=0.0087 g_attach=5.343e-05 ideal=8.057e-03 obs/ideal=6.632e-03 | bbN=1800 bbGeo=0.0219
+    s=2/3 n_eng= 167 F/Fstall=0.413 attachN= 167 Ncross=1.58 geo=0.0095 g_attach=1.140e-04 ideal=1.551e-02 obs/ideal=7.350e-03 | bbN=1800 bbGeo=0.0219
+    s=3/3 n_eng= 227 F/Fstall=0.409 attachN= 227 Ncross=2.25 geo=0.0099 g_attach=1.649e-04 ideal=2.088e-02 obs/ideal=7.898e-03 | bbN=1800 bbGeo=0.0219
+  >> capture_scale=1.0: n_eng=160 g_attach=1.108e-04 mN/m F/Fstall=0.413 geo_frac=0.0094
+
+  [capture_perp_scale=2.0]
+    s=1/3 n_eng= 131 F/Fstall=0.438 attachN= 131 Ncross=1.33 geo=0.0102 g_attach=9.654e-05 ideal=1.292e-02 obs/ideal=7.469e-03 | bbN=1800 bbGeo=0.0219
+    s=2/3 n_eng= 239 F/Fstall=0.435 attachN= 239 Ncross=2.25 geo=0.0094 g_attach=1.646e-04 ideal=2.342e-02 obs/ideal=7.029e-03 | bbN=1800 bbGeo=0.0219
+    s=3/3 n_eng= 301 F/Fstall=0.431 attachN= 301 Ncross=3.33 geo=0.0111 g_attach=2.397e-04 ideal=2.922e-02 obs/ideal=8.204e-03 | bbN=1800 bbGeo=0.0219
+  >> capture_scale=2.0: n_eng=224 g_attach=1.669e-04 mN/m F/Fstall=0.435 geo_frac=0.0102
+
+  [capture_perp_scale=3.0]
+    s=1/3 n_eng= 131 F/Fstall=0.438 attachN= 131 Ncross=1.33 geo=0.0102 g_attach=9.654e-05 ideal=1.292e-02 obs/ideal=7.469e-03 | bbN=1800 bbGeo=0.0219
+    s=2/3 n_eng= 239 F/Fstall=0.435 attachN= 239 Ncross=2.25 geo=0.0094 g_attach=1.646e-04 ideal=2.342e-02 obs/ideal=7.029e-03 | bbN=1800 bbGeo=0.0219
+    s=3/3 n_eng= 301 F/Fstall=0.431 attachN= 301 Ncross=3.33 geo=0.0111 g_attach=2.397e-04 ideal=2.922e-02 obs/ideal=8.204e-03 | bbN=1800 bbGeo=0.0219
+  >> capture_scale=3.0: n_eng=224 g_attach=1.669e-04 mN/m F/Fstall=0.435 geo_frac=0.0102
+
+
+[json] /Users/sw1/ffn_aggdiag/ffn_sim/outputs/h3/production/diag_gsoft_capture_sweep.json
