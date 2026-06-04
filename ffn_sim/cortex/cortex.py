@@ -1053,6 +1053,21 @@ class VariableLengthCortexLayout:
     tangents: np.ndarray
     bond_groups: np.ndarray
     angle_groups: np.ndarray
+    # Bimodal-architecture diagnostic: per-filament nucleator class (formin =
+    # long backbone vs Arp2/3 = short infill).  Empty for the uniform layout.
+    is_formin: np.ndarray = field(
+        default_factory=lambda: np.empty(0, dtype=bool)
+    )
+
+    @property
+    def filament_idx(self) -> np.ndarray:
+        """Per-bead filament index (shape (n_total_beads,)), derived from the
+        per-filament bead counts.  Used by the crosslinker bridge-different-
+        filament rule and connectivity measurement."""
+        return np.repeat(
+            np.arange(self.n_beads_per_filament.shape[0], dtype=np.int64),
+            self.n_beads_per_filament,
+        )
 
 
 def generate_variable_length_cortex_layout(
@@ -1170,6 +1185,207 @@ def generate_variable_length_cortex_layout(
         tangents=tangents,
         bond_groups=bond_groups,
         angle_groups=angle_groups,
+    )
+
+
+# ===========================================================================
+# Bimodal-exponential cortex topology (CORTEX CONSTRUCTION REBUILD 2026-06-04)
+# ===========================================================================
+#
+# The prior cortex topology (uniform L = 3 μm, fixed 7 beads) is the root cause
+# of the fragmented mesh (z = 1.3, giant 7 %, outputs/h3/production/
+# cortex_network.json) that underlies the γ-floor: a uniform single-length field
+# has NO long connecting backbone, so the crosslinked network does not percolate
+# and force is not transmitted (Kadzik-Munro 2026: connectivity is the
+# prerequisite for force transmission).
+#
+# The architecture lit-study (docs/ACTIN_ARCHITECTURE_NOTES.md) converged on the
+# faithful cortical-filament length law:
+#   * BIMODAL-EXPONENTIAL length (Fritzsche 2016 Sci Adv; Fritzsche 2017 Nat
+#     Commun): a SHORT Arp2/3-branched subpopulation (native ~120 nm, ~80-90 %
+#     by COUNT) + a LONG formin-linear subpopulation (native ~1200 nm, ~10-20 %
+#     by count but ~10× longer).  The long formin filaments are the
+#     MECHANICAL + PERCOLATION BACKBONE — a single long filament spans many mesh
+#     holes and ties together many distinct crosslink partners.
+#   * DISORDERED ISOTROPIC orientation (Li-Gao-Xu 2022: power-law cortex
+#     rheology ORIGINATES from exponential disorder; a regular lattice gives the
+#     wrong rheology).  Uniform-azimuth tangent placement (S → 0).
+#   * 200 nm thick shell BAND (Clark 2013 / Flormann 2024; KU-3.17): every bead
+#     is projected onto the band so even the long formin backbone curves ALONG
+#     the membrane and the radial extent stays < 200 nm for ANY length.
+#
+# At the ×40 mesoscale the absolute native nm are inflated with the mesh (the
+# only sanctioned coarse-graining is the filament COUNT, CLAUDE.md); what is
+# preserved faithfully is the bimodal SHAPE and the long-backbone role.  The
+# default means (L_short = ℓ_0, L_long = 10·L_short) keep the native ~10× ratio.
+#
+# Sanity Gate (additive — inherits §1-5 from the module docstring; new senses):
+#   §3 Conservation: particle/bond/angle counts = Σ over variable N_i (as the
+#      uniform variable-length layout); is_formin mask sums to ~formin_fraction.
+#   §6 Measurement: per-subpopulation mean length recovers L_short / L_long;
+#      every bead radius within [R_cell − 200 nm, R_cell] (shell-band project);
+#      tangent field isotropic (nematic S → 0).
+
+
+def _project_to_shell_band(
+    positions: np.ndarray, R_cell: float, thickness: float,
+    rng: np.random.Generator,
+    *,
+    bead_depth: np.ndarray | None = None,
+) -> np.ndarray:
+    """Project bead positions onto the cortex shell BAND [R_cell − thickness,
+    R_cell] by radial renormalisation to a per-bead target radius.
+
+    The tangent-plane placement gives long filaments a chord that bulges
+    radially inward by ``(L/2)²/(2 R)`` — for the long formin backbone this can
+    exceed the 200 nm band.  Renormalising each bead's radius curves the
+    filament ALONG the shell (geodesic-like) so it stays within the KU-3.17
+    cortex thickness for ANY length, while the disordered isotropic tangent
+    field is preserved (only the radial coordinate is touched).
+
+    ``bead_depth`` (per-bead radial depth in [0, thickness]) is supplied by the
+    caller so that a whole filament shares ONE depth — projecting it to a single
+    sphere of radius ``R_cell − depth`` as a SMOOTH arc (no per-bead radial
+    zigzag, which would distort bonds and let crossing filaments coincide).
+    Different filaments draw different depths → they are radially separated
+    within the band, avoiding construction WCA overlaps.  Falls back to an
+    independent per-bead uniform draw when ``bead_depth`` is None.
+    """
+    r = np.linalg.norm(positions, axis=1, keepdims=True)
+    if bead_depth is None:
+        depth = rng.uniform(0.0, thickness, (positions.shape[0], 1))
+    else:
+        depth = np.asarray(bead_depth, dtype=np.float64).reshape(-1, 1)
+    r_target = R_cell - depth
+    return positions / np.maximum(r, 1.0e-30) * r_target
+
+
+def generate_bimodal_cortex_layout(
+    p: ResolvedH3,
+    *,
+    formin_fraction: float = 0.12,
+    L_short_mean: float | None = None,
+    L_long_mean: float | None = None,
+    n_filaments: int | None = None,
+    project_to_shell: bool = True,
+    rng: np.random.Generator | None = None,
+    n_beads_min: int = 2,
+    n_beads_max: int | None = None,
+) -> VariableLengthCortexLayout:
+    """Place ``n_filaments`` cortical filaments with a BIMODAL-EXPONENTIAL
+    length distribution (the cortex-construction-rebuild topology).
+
+    Per filament:
+      1. Nucleator class: formin (long backbone) with prob ``formin_fraction``,
+         else Arp2/3 (short).  Fritzsche 2016/2017: ~10-20 % formin by count.
+      2. Length ``L_i ~ Exponential(mean)`` with mean ``L_long_mean`` (formin)
+         or ``L_short_mean`` (Arp2/3), quantized to ℓ_0 multiples →
+         ``N_beads_i = round(L_i/ℓ_0) + 1`` clipped to [n_beads_min, n_beads_max].
+      3. Center uniform on the sphere (Marsaglia); tangent in the local plane at
+         a UNIFORM azimuth (disordered isotropic, S → 0).
+      4. Beads laid at ℓ_0 spacing about the CoM, then (if ``project_to_shell``)
+         projected onto the 200 nm shell band so the long backbone curves along
+         the membrane.
+
+    Defaults: ``L_short_mean = ℓ_0`` (short Arp2/3 ≈ one segment at the
+    mesoscale), ``L_long_mean = 10·L_short_mean`` (formin ~10× longer, Fritzsche).
+    """
+    if rng is None:
+        rng = np.random.default_rng(p.seed)
+    if not (0.0 <= formin_fraction <= 1.0):
+        raise ValueError(
+            f"formin_fraction must be in [0, 1]; got {formin_fraction}"
+        )
+
+    L0 = p.rest_length
+    if L_short_mean is None:
+        L_short_mean = L0
+    if L_long_mean is None:
+        L_long_mean = 10.0 * L_short_mean
+    if not (math.isfinite(L_short_mean) and L_short_mean > 0.0):
+        raise ValueError(f"L_short_mean must be finite > 0; got {L_short_mean}")
+    if not (math.isfinite(L_long_mean) and L_long_mean >= L_short_mean):
+        raise ValueError(
+            f"L_long_mean must be finite ≥ L_short_mean; got {L_long_mean}"
+        )
+
+    F = int(n_filaments) if n_filaments is not None else int(p.n_filaments)
+    if F <= 0:
+        raise ValueError(f"n_filaments must be > 0; got {F}")
+    if n_beads_min < 2:
+        raise ValueError(f"n_beads_min must be ≥ 2; got {n_beads_min}")
+    # Upper clamp: a tangent chord can be at most the cell diameter; with shell
+    # projection the geodesic arc is bounded by π·R_cell.  Cap conservatively so
+    # no filament wraps past the cell.
+    if n_beads_max is None:
+        L_cap = min(2.0 * p.R_cell, max(L_long_mean * 6.0, 12.0 * L0))
+        n_beads_max = max(n_beads_min, int(round(L_cap / L0)) + 1)
+
+    # ---- per-filament nucleator class + exponential length ----
+    is_formin = rng.random(F) < formin_fraction
+    means = np.where(is_formin, L_long_mean, L_short_mean)
+    L_samples = rng.exponential(means)
+    n_beads_per = np.clip(
+        np.round(L_samples / L0).astype(np.int64) + 1, n_beads_min, n_beads_max
+    )
+    L_realised = (n_beads_per - 1).astype(np.float64) * L0
+
+    # ---- disordered isotropic placement (uniform azimuth) ----
+    centers = _sample_sphere_surface(rng, F, p.R_cell)
+    normals = centers / p.R_cell
+    e1, e2 = _tangent_plane_basis(normals)
+    phi = rng.uniform(0.0, 2.0 * math.pi, F)
+    tangents = np.cos(phi)[:, None] * e1 + np.sin(phi)[:, None] * e2
+    tangents = tangents / np.linalg.norm(
+        tangents, axis=1, keepdims=True
+    ).clip(min=1e-30)
+
+    # ---- flat layout ----
+    n_total_beads = int(n_beads_per.sum())
+    filament_starts = np.zeros(F, dtype=np.int64)
+    filament_starts[1:] = np.cumsum(n_beads_per[:-1])
+    positions_flat = np.empty((n_total_beads, 3), dtype=np.float64)
+    bond_pairs: list[tuple[int, int]] = []
+    angle_triplets: list[tuple[int, int, int]] = []
+    for f in range(F):
+        N_f = int(n_beads_per[f])
+        start = int(filament_starts[f])
+        offsets = (np.arange(N_f, dtype=np.float64) - 0.5 * (N_f - 1)) * L0
+        positions_flat[start:start + N_f] = (
+            centers[f] + offsets[:, None] * tangents[f]
+        )
+        for j in range(N_f - 1):
+            bond_pairs.append((start + j, start + j + 1))
+        for j in range(N_f - 2):
+            angle_triplets.append((start + j, start + j + 1, start + j + 2))
+
+    if project_to_shell:
+        # One depth per FILAMENT (smooth arc on a sphere of radius R−depth);
+        # different filaments sit at different depths within the 200 nm band so
+        # crossing filaments are radially separated (no construction overlap).
+        filament_depth = rng.uniform(0.0, p.cortex_thickness, F)
+        bead_depth = np.repeat(filament_depth, n_beads_per)
+        positions_flat = _project_to_shell_band(
+            positions_flat, p.R_cell, p.cortex_thickness, rng,
+            bead_depth=bead_depth,
+        )
+
+    bond_groups = np.array(bond_pairs, dtype=np.int64).reshape(-1, 2)
+    angle_groups = (
+        np.array(angle_triplets, dtype=np.int64).reshape(-1, 3)
+        if angle_triplets else np.empty((0, 3), dtype=np.int64)
+    )
+
+    return VariableLengthCortexLayout(
+        positions_flat=positions_flat,
+        n_beads_per_filament=n_beads_per,
+        filament_starts=filament_starts,
+        L_per_filament=L_realised,
+        centers_of_mass=centers,
+        tangents=tangents,
+        bond_groups=bond_groups,
+        angle_groups=angle_groups,
+        is_formin=is_formin,
     )
 
 

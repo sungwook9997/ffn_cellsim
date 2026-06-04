@@ -1,0 +1,19 @@
+{
+  "n_fil": 1200,
+  "n_xl": 3986,
+  "particles": 11817,
+  "n_cortex_actin": 3845,
+  "reach_nm": 767.4950309598663,
+  "z_distinct": 3.3316666666666666,
+  "giant_fraction": 0.9883333333333333,
+  "L_over_lc": 6.6711297071129705,
+  "n_homeless": 5,
+  "same_filament_staples": 0,
+  "formin_fraction_realised": 0.10583333333333333,
+  "mean_L_um": 1.1020833333333333,
+  "max_L_um": 14.999999999999998,
+  "gate_z": true,
+  "gate_giant": true,
+  "gate_L_over_lc": true,
+  "verdict": "CONNECTED SPANNING MESH"
+}

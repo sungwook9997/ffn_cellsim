@@ -1132,3 +1132,81 @@ PI Sungwook ratified two decisions this Lead session:
   unblocked. If still under-report → diagnostic next step (likely a
   per-plane Luo decomposition or KU-3.21 deformation-specificity sweep).
 
+
+## 2026-06-04 — CORTEX CONSTRUCTION REBUILD: fragmented mesh → CONNECTED SPANNING MESH
+
+**Root cause (γ-floor capstone, Kadzik-Munro 2026 ⭐).** The prior cortex was a
+FRAGMENTED non-mesh (`outputs/h3/production/cortex_network.json`: z=1.3, giant
+component 7%, **56% same-filament STAPLES** of 445 both-bound crosslinkers).
+Connectivity is the prerequisite for force transmission — a disconnected cortex
+cannot aggregate per-head myosin force into shell tension, which IS the γ-floor.
+Two compounding defects: (a) crosslinker heads bound the SAME filament (staples
+contribute nothing); (b) the mesoscale filament field was ~20-60× below the
+physiological areal contour density (Flormann 0.06-0.10 nm⁻¹) and uniform L=3µm
+had no long connecting backbone.
+
+**Rebuild (PI directive 2026-06-04; lit anchor `docs/ACTIN_ARCHITECTURE_NOTES.md`).**
+Seven improvements, all literature-anchored / derived (no magic numbers):
+
+1. **bridge-different-filament rule** (`crosslinkers.py`, Kim 2007) — every
+   crosslinker bridges two DIFFERENT filaments; same-filament staples forbidden
+   at construction AND on dynamic rebind (`XlinkBondUpdater` partner-exclusion).
+   → staples 56% → **0%**.
+2. **bimodal-exponential length** (`cortex.generate_bimodal_cortex_layout`,
+   Fritzsche 2016/2017) — short Arp2/3 (~88%) + long formin backbone (~12%, the
+   spanning/percolation backbone). → homeless 56-70% → ~0.5%.
+3. **bundling** (Flormann 2024: stiffness from bundling) — ~2 parallel
+   crosslinks per connected pair → L/lc = z·bundle ≥ 5.9.
+4. **per-filament degree-capped seeding** at the literature coordination
+   z≈3-4 (Kim 2007; Kadzik-Munro) — every filament joins the mesh → giant→1.
+5. **mesoscale-consistent reach = √(A_shell/n_fil)** (derived; the inter-filament
+   spacing, geometric dual of the ×40 areal coarse-graining) — replaces the
+   prior ad-hoc bind_scale=6 hack. Bracketed by [60nm·√(coarse), √(A/n)].
+6. **adhered/cohesive baseline seeding** — bridges SEEDED at construction so the
+   mesh STARTS connected (physiological baseline), not an emergent warmup that
+   converges to the fragmented state.
+7. **200nm shell-band projection** + disordered isotropic (Li-Gao-Xu 2022) —
+   long formin backbone curves smoothly along the membrane (per-filament depth),
+   radial drift ≤ 200nm for any length, S≈0.01 isotropic.
+
+**PHYSIOLOGICAL-BASELINE fix (PI 2026-06-04).** The cortex actin is immersed in
+CYTOPLASM, not water: drag medium viscosity set to MCF7 65.9 Pa·s (Hu 2024;
+`ETA_CYTO_BY_CELLTYPE`), NOT water 6.9e-4. The ~9.5×10⁴× drag (a) makes γ_b/dt/CFL
+consistent at the baseline, (b) relaxes the CFL (dt 13ns → 1.24ms → efficient
+production), and (c) bounds per-step displacement so construction-overlap
+overshoots cannot occur (the velocity cap, made physical). Construction-overlap
+draining via the existing B2 capped-displacement soft-start.
+
+**Result (REAL HOOMD build, n_fil=1200, particles=11,817, MCF7 65.9 Pa·s):**
+
+| metric | BEFORE | AFTER | gate |
+|---|---|---|---|
+| z (distinct coordination) | 1.3 | **3.33** | [3.0,3.5] ✓ |
+| giant component | 7% | **98.8%** | ≥90% ✓ |
+| L/lc (crosslinks/filament) | — | **6.7** | ≥5.9 ✓ |
+| same-filament staples | 56% | **0%** | — |
+
+`run(3000)` STABLE, all 7972 seeded heads engaged (connectivity maintained).
+Full test suite **821 passed** + 11 new sanity-gate tests
+(`tests/test_connected_mesh.py`).
+
+**Code:** `cortex.generate_bimodal_cortex_layout` + `VariableLengthCortexLayout.is_formin/.filament_idx`;
+`crosslinkers.seed_connected_mesh_xlinks` + `ConnectedMeshSeed` + `XlinkBondUpdater`
+bridge-rule/seeded-state; `cortex/connected_mesh.py::build_connected_cortex`.
+Tuning harness: `scripts/cortex_percolation_prototype.py`. Verify/viz:
+`scripts/viz_connected_cortex.py`.
+
+### Figures
+- `figs/cortex_connected_mesh.png` — REAL HOOMD build, 3 panels: **A** filaments
+  by connectivity (99% giant, blue), **B** bimodal architecture (silver Arp2/3 +
+  crimson formin backbone), **C** crosslink bridges (1999 distinct pairs +
+  bundling → 3986 crosslinks). Verdict banner: CONNECTED SPANNING MESH.
+- `figs/cortex_connected_mesh_prototype.png` — pure-numpy prototype counterpart
+  (before/after stats), z=3.43 giant 99% L/lc 6.9.
+
+### Open / next
+- PRODUCTION: wire the connected mesh into `build_cortex_full_simulation`
+  (myosin variable-N compat) + re-run the KU-3.5 γ measurement on the connected
+  mesh — the payoff test (does connectivity lift the γ-floor?). On gbook GPU.
+- Optional standing per-step displacement clamp in BAOAB (integrator/ freeze
+  sign-off) — currently the physiological drag + soft-start suffice.

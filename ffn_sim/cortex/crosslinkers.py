@@ -483,6 +483,279 @@ def generate_xlink_layout(
 
 
 # ---------------------------------------------------------------------------
+# CONNECTED-MESH seeding (CORTEX CONSTRUCTION REBUILD 2026-06-04)
+# ---------------------------------------------------------------------------
+#
+# The prior xlink layout used RANDOM ANCHORS + nearest-actin binding, which let
+# both heads of a dimer bind the SAME filament — 56 % same-filament STAPLES that
+# contribute nothing to connectivity (outputs/h3/production/cortex_network.json:
+# z = 1.3, giant 7 %).  This builder replaces that with the converged
+# percolated-mesh construction (docs/ACTIN_ARCHITECTURE_NOTES.md):
+#
+#   * BRIDGE-DIFFERENT-FILAMENT (Kim 2007 perpendicular ACP → isotropic network):
+#     every crosslinker bridges two DIFFERENT filaments — same-filament staples
+#     are forbidden by construction.
+#   * PER-FILAMENT degree-capped seeding at the literature coordination
+#     z_struct ≈ 3-4 (Kim 2007; Kadzik-Munro 2026) so EVERY filament joins the
+#     network (giant → 1), not the random tail left isolated.
+#   * BUNDLING (Flormann 2024: cortex stiffness comes from bundling, not actin
+#     density): bundle_mult parallel crosslinks per connected pair → crosslinks-
+#     per-filament L/lc = z_struct·bundle_mult ≥ 5.9 (Head 2003).
+#   * SEEDED AT CONSTRUCTION (physiological / adhered baseline, CLAUDE.md): the
+#     mesh STARTS connected (initial attach bonds present at t = 0), it does not
+#     rely on an emergent warmup that converges to the fragmented state.
+#   * MESOSCALE-CONSISTENT reach = √(A_shell/n_fil), the mesoscale inter-filament
+#     spacing (the geometric dual of the ×40 areal coarse-graining; bracketed by
+#     [60 nm·√(N_native/N_eff), √(A/n_fil)]).  NOT a tuned bind_scale.
+#
+# Head placement keeps BOTH bonds ~force-free at construction: the two heads sit
+# at the midpoint of the anchor pair separated by the species intra length
+# (intra force-free), so each head→actin attach bond carries half the mesoscale
+# span, binned per-r0 (force-free).  k_intra = 0.1 pN/μm is so soft that any
+# residual intra mismatch is ≪ kT.
+
+
+@dataclass(slots=True)
+class ConnectedMeshSeed:
+    """Output of :func:`seed_connected_mesh_xlinks` — the seeded percolated mesh.
+
+    Attributes
+    ----------
+    layout : XlinkLayout
+        Head tag pairs / species / intra_r0 / head positions for the realised
+        crosslinkers (n_xl = number of seeded crosslinks, incl. bundling).
+    seeded_attach : ndarray, shape (n_seeded_bonds, 3) int64
+        Rows ``(head_tag, actin_bead_tag, bin_idx)`` — the INITIAL attach bonds
+        present at t = 0 (each dimer seeds two: head_a→bead_a, head_b→bead_b).
+    bridge_filaments : ndarray, shape (n_xl, 2) int64
+        ``(fil_a, fil_b)`` per crosslinker — different by construction; the
+        filament graph edge list (with multiplicity = bundling).
+    head_to_actin0 : ndarray, shape (2·n_xl,) int64
+        Initial per-head bound actin tag (−1 if unbound); feeds the Updater.
+    n_xl : int
+    z_struct_realised : float    # mean distinct-neighbour degree
+    L_over_lc : float            # mean crosslinks per (in-mesh) filament
+    giant_fraction : float
+    n_homeless : int             # isolated filaments (no partner in reach)
+    """
+
+    layout: XlinkLayout
+    seeded_attach: np.ndarray
+    bridge_filaments: np.ndarray
+    head_to_actin0: np.ndarray
+    n_xl: int
+    z_struct_realised: float
+    L_over_lc: float
+    giant_fraction: float
+    n_homeless: int
+
+
+def seed_connected_mesh_xlinks(
+    positions_flat: np.ndarray,
+    filament_idx: np.ndarray,
+    n_filaments: int,
+    p_xl: ResolvedCrosslinkers,
+    *,
+    z_struct: float = 3.7,
+    bundle_mult: int = 2,
+    reach: float | None = None,
+    R_cell: float,
+    n_cortex_beads: int,
+    max_bead_degree: int = 4,
+    rng: np.random.Generator | None = None,
+) -> ConnectedMeshSeed:
+    """Seed a CONNECTED PERCOLATED crosslink mesh on a cortex bead cloud.
+
+    Parameters
+    ----------
+    positions_flat : (n_cortex_beads, 3) float64
+        Cortex actin bead positions (e.g. ``layout.positions_flat`` from
+        :func:`ffn_sim.cortex.cortex.generate_bimodal_cortex_layout`).
+    filament_idx : (n_cortex_beads,) int64
+        Per-bead filament index (``layout.filament_idx``).
+    n_filaments : int
+    p_xl : ResolvedCrosslinkers
+        Crosslinker parameters (species fractions / lengths used for head
+        placement; n_bins for the attach binning).
+    z_struct : float
+        Target distinct-neighbour coordination (Kim 2007 / Kadzik-Munro z≈3-4).
+        Fractional — realised by randomising each filament's cap between
+        floor/ceil so the ENSEMBLE mean = z_struct.
+    bundle_mult : int
+        Parallel crosslinks per connected filament pair (Flormann bundling).
+    reach : float, optional
+        Mesoscale partner-search radius.  Default √(A_shell/n_fil).
+    R_cell : float
+        Shell radius (for the default reach).
+    n_cortex_beads : int
+        Tag offset where the first xlink_head will be inserted.
+    max_bead_degree : int
+        Cap on crosslinks anchored to any single cortex bead (keeps the per-bead
+        bonded degree under the HOOMD exclusion limit; backbone bonds add ≤ 2).
+    rng : np.random.Generator, optional
+    """
+    from scipy.spatial import cKDTree
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import connected_components
+
+    if rng is None:
+        rng = np.random.default_rng(p_xl.seed)
+    pos = np.asarray(positions_flat, dtype=np.float64)
+    fil = np.asarray(filament_idx, dtype=np.int64)
+    if pos.shape[0] != fil.shape[0]:
+        raise ValueError("positions_flat and filament_idx length mismatch")
+    if reach is None:
+        reach = math.sqrt(4.0 * math.pi * R_cell ** 2 / max(1, n_filaments))
+    if bundle_mult < 1:
+        raise ValueError(f"bundle_mult must be ≥ 1; got {bundle_mult}")
+
+    tree = cKDTree(pos)
+    beads_of = [np.flatnonzero(fil == f) for f in range(n_filaments)]
+    deg = np.zeros(n_filaments, dtype=np.int64)
+    bead_deg = np.zeros(pos.shape[0], dtype=np.int64)
+    lo = int(math.floor(z_struct))
+    cap = lo + (rng.random(n_filaments) < (z_struct - lo)).astype(np.int64)
+
+    # Stage 1 — structural percolation: each filament links to its nearest
+    # distinct different-filament partners until its coordination hits cap.
+    edges: dict[tuple[int, int], tuple[int, int]] = {}  # (f,fp) -> (bead_f, bead_fp)
+    order = rng.permutation(n_filaments)
+    for f in order:
+        if deg[f] >= cap[f]:
+            continue
+        my_beads = beads_of[f]
+        nbr_lists = tree.query_ball_point(pos[my_beads], r=reach)
+        # nearest bead on each candidate partner filament
+        best: dict[int, tuple[float, int, int]] = {}
+        for k, nbrs in enumerate(nbr_lists):
+            ba = int(my_beads[k])
+            for j in nbrs:
+                fj = int(fil[j])
+                if fj == f:
+                    continue
+                d = float(np.linalg.norm(pos[j] - pos[ba]))
+                if fj not in best or d < best[fj][0]:
+                    best[fj] = (d, ba, int(j))
+        for fp in sorted(best, key=lambda k: best[k][0]):
+            if deg[f] >= cap[f]:
+                break
+            if deg[fp] >= cap[fp]:
+                continue
+            key = (min(f, fp), max(f, fp))
+            if key in edges:
+                continue
+            _, ba, bb = best[fp]
+            edges[key] = (ba, bb) if f < fp else (bb, ba)
+            deg[f] += 1
+            deg[fp] += 1
+    n_homeless = int((deg == 0).sum())
+
+    # Stage 2 — bundling: per structural pair, add (bundle_mult-1) extra
+    # crosslinks at additional distinct nearest bead-pairs between the same two
+    # filaments (spreads per-bead degree; faithful parallel-bundle).
+    crosslinks: list[tuple[int, int]] = []          # (bead_a, bead_b)
+    bridge_fils: list[tuple[int, int]] = []          # (fil_a, fil_b)
+    for (fa, fb), (ba0, bb0) in edges.items():
+        beads_a = beads_of[fa]
+        beads_b = beads_of[fb]
+        # rank all cross bead-pairs by distance, take the bundle_mult nearest
+        # that respect the per-bead degree cap.
+        da = pos[beads_a][:, None, :] - pos[beads_b][None, :, :]
+        d2 = np.einsum("ijk,ijk->ij", da, da)
+        flat = np.argsort(d2, axis=None)
+        added = 0
+        for idx in flat:
+            if added >= bundle_mult:
+                break
+            ia, ib = divmod(int(idx), beads_b.shape[0])
+            ba, bb = int(beads_a[ia]), int(beads_b[ib])
+            if bead_deg[ba] >= max_bead_degree or bead_deg[bb] >= max_bead_degree:
+                continue
+            bead_deg[ba] += 1
+            bead_deg[bb] += 1
+            crosslinks.append((ba, bb))
+            bridge_fils.append((fa, fb))
+            added += 1
+
+    n_xl = len(crosslinks)
+    if n_xl == 0:
+        raise RuntimeError(
+            "seed_connected_mesh_xlinks produced 0 crosslinks — reach too small "
+            "or cortex too sparse."
+        )
+
+    # ---- build head positions + seeded attach bonds (force-free) ----
+    bin_r0 = xlink_attach_bin_rest_lengths(p_xl.n_bins, p_xl.max_bind_dist)
+    head_positions = np.empty((2 * n_xl, 3), dtype=np.float64)
+    head_tag_pairs = np.empty((n_xl, 2), dtype=np.int64)
+    species = np.empty((n_xl,), dtype="<U7")
+    intra_r0 = np.empty((n_xl,), dtype=np.float64)
+    seeded_attach: list[tuple[int, int, int]] = []
+    head_to_actin0 = np.full(2 * n_xl, -1, dtype=np.int64)
+
+    for i, (ba, bb) in enumerate(crosslinks):
+        sp = "alpha" if rng.random() < p_xl.alpha_fraction else "filamin"
+        species[i] = sp
+        s_len = p_xl.alpha_length if sp == "alpha" else p_xl.filamin_length
+        intra_r0[i] = s_len
+        ra, rb = pos[ba], pos[bb]
+        mid = 0.5 * (ra + rb)
+        d_ab = float(np.linalg.norm(rb - ra))
+        if d_ab > s_len and d_ab > 1e-12:
+            dir_hat = (rb - ra) / d_ab
+            h_a = mid - dir_hat * (0.5 * s_len)
+            h_b = mid + dir_hat * (0.5 * s_len)
+        else:                              # anchors closer than the xlink: heads at beads
+            h_a, h_b = ra.copy(), rb.copy()
+        head_positions[2 * i] = h_a
+        head_positions[2 * i + 1] = h_b
+        ta, tb = n_cortex_beads + 2 * i, n_cortex_beads + 2 * i + 1
+        head_tag_pairs[i] = (ta, tb)
+        # seeded attach bonds (force-free per-bin r0)
+        for (htag, abead, rvec) in ((ta, ba, h_a - ra), (tb, bb, h_b - rb)):
+            d = float(np.linalg.norm(rvec))
+            bin_idx = _bin_index_for_distance(d, p_xl.n_bins, p_xl.max_bind_dist)
+            seeded_attach.append((htag, abead, bin_idx))
+            head_to_actin0[htag - n_cortex_beads] = abead
+
+    layout = XlinkLayout(
+        head_tag_pairs=head_tag_pairs,
+        species=species,
+        intra_r0=intra_r0,
+        head_positions=head_positions,
+        actin_tag_seed=n_cortex_beads,
+    )
+
+    # ---- connectivity diagnostics (distinct-degree z, giant, L/lc) ----
+    bf = np.asarray(bridge_fils, dtype=np.int64)
+    rows = np.concatenate([bf[:, 0], bf[:, 1]])
+    cols = np.concatenate([bf[:, 1], bf[:, 0]])
+    g = csr_matrix((np.ones(rows.size), (rows, cols)),
+                   shape=(n_filaments, n_filaments))
+    g.data[:] = 1.0
+    g.sum_duplicates()
+    _, labels = connected_components(g, directed=False)
+    sizes = np.bincount(labels, minlength=n_filaments)
+    giant = int(sizes.max()) / n_filaments
+    z_struct_realised = float(np.asarray((g > 0).sum(axis=1)).ravel().mean())
+    ends = np.bincount(bf.reshape(-1), minlength=n_filaments)
+    in_mesh = ends > 0
+    L_over_lc = float(ends[in_mesh].mean()) if in_mesh.any() else 0.0
+
+    return ConnectedMeshSeed(
+        layout=layout,
+        seeded_attach=np.asarray(seeded_attach, dtype=np.int64).reshape(-1, 3),
+        bridge_filaments=bf,
+        head_to_actin0=head_to_actin0,
+        n_xl=n_xl,
+        z_struct_realised=z_struct_realised,
+        L_over_lc=L_over_lc,
+        giant_fraction=giant,
+        n_homeless=n_homeless,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Dynamic xlink_head ↔ actin_cortex Bell-Evans Updater
 # ---------------------------------------------------------------------------
 def _bell_evans_k_off(F_mag: np.ndarray, k_off0: float, x_beta: float, kT: float) -> np.ndarray:
@@ -567,6 +840,8 @@ class XlinkBondUpdater(hoomd.custom.Action):
         kT: float,
         n_cortex_actin: int,
         seed_offset: int = 2,
+        actin_filament_idx: np.ndarray | None = None,
+        head_to_actin0: np.ndarray | None = None,
     ) -> None:
         super().__init__()
         self.p = p
@@ -585,19 +860,43 @@ class XlinkBondUpdater(hoomd.custom.Action):
                 "Shrink batch_steps or pre-resolve via resolve_crosslinkers."
             )
 
+        # Realised crosslinker count = the LAYOUT's head pairs (the seeded
+        # connected-mesh count, which may differ from the config p.n_xl).
+        n_xl = int(layout.head_tag_pairs.shape[0])
+        n_heads = 2 * n_xl
+        self._n_xl = n_xl
         # Per-head state: bound or unbound, and (if bound) the actin tag.
-        n_heads = 2 * p.n_xl
-        self._head_bound_to_actin = np.full(n_heads, -1, dtype=np.int64)
+        # CONNECTED-MESH SEEDING (2026-06-04): when head_to_actin0 is provided
+        # the mesh STARTS connected (adhered/physiological baseline) — the heads
+        # are already bound to their seeded different-filament partners at t = 0.
+        if head_to_actin0 is not None:
+            self._head_bound_to_actin = np.asarray(
+                head_to_actin0, dtype=np.int64
+            ).copy()
+        else:
+            self._head_bound_to_actin = np.full(n_heads, -1, dtype=np.int64)
         # Per-head species (lookup-table for Bell-Evans rate selection).
         self._head_species = np.empty(n_heads, dtype="<U7")
-        for i in range(p.n_xl):
+        for i in range(n_xl):
             self._head_species[2 * i] = layout.species[i]
             self._head_species[2 * i + 1] = layout.species[i]
+        # BRIDGE-DIFFERENT-FILAMENT rule (2026-06-04): per-actin-bead filament
+        # index, so a rebinding head can EXCLUDE the filament its partner head is
+        # currently bound to — forbidding the 56 %-staple failure mode that
+        # fragmented the prior mesh.  Partner head local index: heads 2i / 2i+1.
+        self._actin_filament_idx = (
+            None if actin_filament_idx is None
+            else np.asarray(actin_filament_idx, dtype=np.int64)
+        )
+        self._head_partner = np.empty(n_heads, dtype=np.int64)
+        self._head_partner[0::2] = np.arange(1, n_heads, 2)
+        self._head_partner[1::2] = np.arange(0, n_heads, 2)
 
         self._sim_ref: hoomd.Simulation | None = None
         self._steps_run = 0
         self._n_break_total = 0
         self._n_bind_total = 0
+        self._n_staple_blocked = 0
 
     def attach(self, simulation: hoomd.Simulation) -> None:  # noqa: D401
         super().attach(simulation)
@@ -733,8 +1032,27 @@ class XlinkBondUpdater(hoomd.custom.Action):
                     continue
                 if u2[k] >= p_bind:
                     continue
-                # Bind to NEAREST candidate.
                 nbrs_arr = np.asarray(nbrs, dtype=np.int64)
+                # BRIDGE-DIFFERENT-FILAMENT rule: a head must not bind the
+                # filament its PARTNER head is currently bound to — this forbids
+                # the same-filament STAPLES that fragmented the prior mesh
+                # (56 %, z = 1.3).  Applied on every (re)bind, so the dynamic
+                # network can never re-staple.
+                if self._actin_filament_idx is not None:
+                    partner = self._head_partner[unbound_local[k]]
+                    partner_actin = self._head_bound_to_actin[partner]
+                    if partner_actin >= 0:
+                        forbidden_fil = self._actin_filament_idx[partner_actin]
+                        keep = (
+                            self._actin_filament_idx[nbrs_arr] != forbidden_fil
+                        )
+                        n_block = int((~keep).sum())
+                        if n_block:
+                            self._n_staple_blocked += n_block
+                        nbrs_arr = nbrs_arr[keep]
+                        if nbrs_arr.size == 0:
+                            continue
+                # Bind to NEAREST remaining (different-filament) candidate.
                 d_nbrs = np.linalg.norm(
                     r_actin_all[nbrs_arr] - r_heads[k], axis=1
                 )
@@ -839,6 +1157,11 @@ class XlinkBondUpdater(hoomd.custom.Action):
         return self._n_bind_total
 
     @property
+    def n_staple_blocked(self) -> int:
+        """Same-filament rebind attempts blocked by the bridge rule."""
+        return self._n_staple_blocked
+
+    @property
     def steps_run(self) -> int:
         return self._steps_run
 
@@ -850,11 +1173,19 @@ def make_xlink_updater(
     kT: float,
     n_cortex_actin: int,
     seed_offset: int = 2,
+    actin_filament_idx: np.ndarray | None = None,
+    head_to_actin0: np.ndarray | None = None,
 ) -> tuple[XlinkBondUpdater, hoomd.update.CustomUpdater]:
-    """Build the XlinkBondUpdater Action wrapped in a periodic CustomUpdater."""
+    """Build the XlinkBondUpdater Action wrapped in a periodic CustomUpdater.
+
+    ``actin_filament_idx`` + ``head_to_actin0`` enable the connected-mesh build:
+    the bridge-different-filament rule on rebind and the seeded-bound initial
+    state (adhered baseline).  Both default None → legacy unbound-start behaviour.
+    """
     action = XlinkBondUpdater(
         p=p, layout=layout, kT=kT,
         n_cortex_actin=n_cortex_actin, seed_offset=seed_offset,
+        actin_filament_idx=actin_filament_idx, head_to_actin0=head_to_actin0,
     )
     updater = hoomd.update.CustomUpdater(
         action=action, trigger=hoomd.trigger.Periodic(p.batch_steps)
@@ -869,31 +1200,42 @@ def extend_cortex_state_with_xlinks(
     cortex_snap,
     layout: XlinkLayout,
     p_xl: ResolvedCrosslinkers,
+    *,
+    seeded_attach: np.ndarray | None = None,
 ):
     """Append xlink_head particles + xlink_intra bonds + attach-bin bond types.
 
-    No initial attach bonds are placed; the dynamic XlinkBondUpdater will
-    bind on its first tick. Initial state has all heads unbound.
+    By default no initial attach bonds are placed (the dynamic XlinkBondUpdater
+    binds on its first tick; all heads start unbound).  When ``seeded_attach``
+    is given (CONNECTED-MESH build, 2026-06-04) the listed head→actin attach
+    bonds are present at t = 0 so the cortex STARTS as a connected percolated
+    mesh (physiological / adhered baseline).
 
     Parameters
     ----------
     cortex_snap : gsd.hoomd.Frame
-        The cortex frame from ``build_cortex_state``.
+        The cortex frame from ``build_cortex_state`` /
+        ``build_variable_length_cortex_state``.
     layout : XlinkLayout
-        Per-xlink tag pairs + species (from ``generate_xlink_layout``).
+        Per-xlink tag pairs + species (from ``generate_xlink_layout`` or
+        ``seed_connected_mesh_xlinks``).
     p_xl : ResolvedCrosslinkers
         For n_bins / max_bind_dist used to register attach-bin types.
+    seeded_attach : ndarray, shape (M, 3) int, optional
+        Rows ``(head_tag, actin_bead_tag, bin_idx)`` — initial attach bonds.
 
     Returns
     -------
     gsd.hoomd.Frame
-        New frame with xlink_head particles + intra bonds.
+        New frame with xlink_head particles + intra bonds (+ seeded attach).
     """
     import gsd.hoomd
 
     snap_old = cortex_snap
     n_actin = int(snap_old.particles.N)
-    n_xl = int(p_xl.n_xl)
+    # Realised crosslinker count = layout head pairs (seeded mesh may differ
+    # from the config p_xl.n_xl).
+    n_xl = int(layout.head_tag_pairs.shape[0])
     n_heads = 2 * n_xl
     n_part_new = n_actin + n_heads
 
@@ -940,6 +1282,17 @@ def extend_cortex_state_with_xlinks(
 
     new_bg = np.concatenate([old_bg, intra_groups], axis=0)
     new_bt = np.concatenate([old_bt, intra_typeids])
+
+    # Seeded initial attach bonds (CONNECTED-MESH adhered baseline): head→actin
+    # with per-bin attach typeids, present at t = 0.  Convention head_tag in
+    # column 0 (matches the XlinkBondUpdater's [head, actin] expectation).
+    if seeded_attach is not None and len(seeded_attach) > 0:
+        sa = np.asarray(seeded_attach, dtype=np.int64)
+        attach_groups = sa[:, :2].astype(np.uint32)
+        attach_typeids = (attach_typeid_start + sa[:, 2]).astype(np.uint32)
+        new_bg = np.concatenate([new_bg, attach_groups], axis=0)
+        new_bt = np.concatenate([new_bt, attach_typeids])
+
     snap.bonds.N = int(new_bg.shape[0])
     snap.bonds.types = bond_types_new
     snap.bonds.group = new_bg
