@@ -46,3 +46,30 @@ single-cell-cortex KC AND the Layer-2 KC below so the spheroid line can query th
 ### (2026.03.17.712503), Fastabend (z152-x4l1), Chugh (emss-72183/ncb3525), Warmt, Nishitani,
 ### electrodeformation. These ARE the single-cell-γ→spheroid-σ bridge (D2; Winklbauer script done) →
 ### KC: layer2-surface-tension-bridge. Verify their SE status (some may already be linked by helper).
+
+## ✅ STEP 2 DONE (2026-06-04): 17 SE rows CREATED in Notion (references_to_se --commit)
+14 clean (proper keys) + 3 imperfect (CrossRef DOI unresolved → metadata-fix needed):
+- j-indian-inst-sci... = Banerjee2021 JIISc review (DOI 10.1007/s41745-020-00220-2) → fix key
+- 2023-published-by-the-company... = Ray2024 Development → fix key
+- Kim2007 MIT thesis = NO DOI → not auto-created; needs manual SE (custom key Kim2007_MIT_thesis)
+tag_corpus linkage updated; bridge batch (SE276/296/307/311/313 etc.) safely SKIPPED (already SE).
+verify: new keys CrossRef-verified at creation; ⚠️ pre-existing Funk2021_eLife = DOI_DEAD (surface to PI; not this batch).
+
+## KC-LINK SPEC (ready-to-patch via link_se_claims pattern; incl Layer-2 per PI) — SE page-id → KU
+CORTEX (single-cell) — link to KB-3.23 (cortex fiber-network model) + KB-3.5 (cortical tension) [+KB-3.19 crosslinkers]:
+- Flormann2024  375120da-ec5d-81a4-9ade-d683d4d34bcb → KB-3.23, KB-3.5  (+Layer-2: KB-6.1.3 breast cortical tension, KB-5.13)
+- Fritzsche2016 375120da-ec5d-81c5-88ff-dabc08b19c55 → KB-3.23, KB-3.5
+- Fritzsche2017 375120da-ec5d-814d-9a8e-f6cf6a629f60 → KB-3.23
+- Sakamoto2024  375120da-ec5d-8189-9216-fe668126f214 → KB-3.23
+- Li2022        375120da-ec5d-819b-87e2-cdb5c9733312 → KB-3.23, KB-3.5
+- Bcher2021     375120da-ec5d-814a-8c0c-cb48c6f7b6e9 → KB-3.23, KB-3.5
+- Garlick2022   375120da-ec5d-81f7-9d52-e5dcedae8d7a → KB-3.23
+- Chen2024NatPh 375120da-ec5d-810a-ad24-fa9f4c347972 → KB-3.23
+- Banerjee2021  375120da-ec5d-8196-8f85-ea1e68f2d55c → KB-3.23, KB-3.5
+- Chandrasekaran 375120da-ec5d-8135-af65-c4b92a501aa1 → KB-3.19 (peripheral)
+- Serwas2021    375120da-ec5d-81b0-8d7a-e6f2fab9478d → KB-3.B1.4 (membrane anchoring; peripheral)
+LAYER-2 (PI: "layer2도 업데이트") — link to KB-5.13 (spheroid surface tension) / KB-5.16 / KB-PIV-9 / KB-4.18:
+- Kadzik2026    375120da-ec5d-81fa-bda5-c31ca118c17c → KB-3.23 + KB-4.18 (cortex-cortex collective) + KB-5.13
+- MerinoCasallo 375120da-ec5d-8130-b971-d64d3c568d1d → KB-5.16 (Unit-5 collective) + KB-PIV-9 (Layer-2 framework)
+- Ray2024       375120da-ec5d-8130-9d52-ec06dc547d61 → KB-3.5 (contractility)
+ALSO UPDATE bridge SE (already created) → ADD Layer-2 KC: Winklbauer SE311, Roffay, Okuda SE313, Fastabend SE296, Chugh SE276 → KB-5.13 (spheroid surface tension) + KB-PIV-9.

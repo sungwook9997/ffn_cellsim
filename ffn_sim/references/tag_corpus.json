@@ -1,5 +1,17 @@
 [
   {
+    "citation_key": "network-dynamics-of-the-nonlinear-power--90186b",
+    "title": "Network dynamics of the nonlinear power-law",
+    "doi": "10.1016/j.bpj.2022.09.035",
+    "path": "1-s2.0-S0006349522007858-main.pdf",
+    "n_pages": 8,
+    "source": "new",
+    "se_uid": "375120da-ec5d-819b-87e2-cdb5c9733312",
+    "se_citation_key": "Li2022_BiophysicalJournal",
+    "n_chunks": 26,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Betorz2023_JournalOfTheMechanicsAnd",
     "title": "A computational model for early cell spreading, migration, and competing taxis",
     "doi": "10.1016/j.jmps.2023.105390",
@@ -9,6 +21,30 @@
     "se_uid": "SE248",
     "se_citation_key": "Betorz2023_JournalOfTheMechanicsAnd",
     "n_chunks": 63,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "DeBelly2023_Cell",
+    "title": "Cell protrusions and contractions generate long-range membrane tension propagation",
+    "doi": "10.1016/j.cell.2023.05.014",
+    "path": "1-s2.0-S0092867423005330-main.pdf",
+    "n_pages": 29,
+    "source": "new",
+    "se_uid": "SE292",
+    "se_citation_key": "DeBelly2023_Cell",
+    "n_chunks": 79,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Keren2023_Cell",
+    "title": "Effective membrane tension: A long-range integrator of cellular dynamics",
+    "doi": "10.1016/j.cell.2023.05.033",
+    "path": "1-s2.0-S0092867423005858-main.pdf",
+    "n_pages": 3,
+    "source": "new",
+    "se_uid": "SE293",
+    "se_citation_key": "Keren2023_Cell",
+    "n_chunks": 8,
     "linked_to_source_evidence": true
   },
   {
@@ -45,6 +81,54 @@
     "se_uid": "SE246",
     "se_citation_key": "Feng2025_BiochemicalEngineeringJo",
     "n_chunks": 33,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Samarage2015_DevelopmentalCell",
+    "title": "Cortical Tension Allocates the First Inner Cells of the Mammalian Embryo",
+    "doi": "10.1016/j.devcel.2015.07.004",
+    "path": "1-s2.0-S1534580715004554-main.pdf",
+    "n_pages": 14,
+    "source": "new",
+    "se_uid": "SE303",
+    "se_citation_key": "Samarage2015_DevelopmentalCell",
+    "n_chunks": 43,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "substrate-geometry-and-topography-induce-bd755d",
+    "title": "Substrate geometry and topography induce F-actin",
+    "doi": "10.1016/j.xcrp.2024.102338",
+    "path": "1-s2.0-S2666386424006520-main (1).pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8189-9216-fe668126f214",
+    "se_citation_key": "Sakamoto2024_CellReportsPhysicalScien",
+    "n_chunks": 44,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "substrate-geometry-and-topography-induce-932b06",
+    "title": "Substrate geometry and topography induce F-actin",
+    "doi": "10.1016/j.xcrp.2024.102338",
+    "path": "1-s2.0-S2666386424006520-main (2).pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8189-9216-fe668126f214",
+    "se_citation_key": "Sakamoto2024_CellReportsPhysicalScien",
+    "n_chunks": 44,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "substrate-geometry-and-topography-induce-1498fe",
+    "title": "Substrate geometry and topography induce F-actin",
+    "doi": "10.1016/j.xcrp.2024.102338",
+    "path": "1-s2.0-S2666386424006520-main.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8189-9216-fe668126f214",
+    "se_citation_key": "Sakamoto2024_CellReportsPhysicalScien",
+    "n_chunks": 44,
     "linked_to_source_evidence": true
   },
   {
@@ -96,16 +180,28 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "ZZ-OFFTOPIC Balog2007_BiophysicalJournal",
+    "citation_key": "the-in-uence-of-interdomain-interactions-d32903",
     "title": "The Inﬂuence of Interdomain Interactions on the Intradomain Motions in",
     "doi": "10.1529/biophysj.106.093195",
     "path": "1709.pdf",
     "n_pages": 8,
     "source": "new",
-    "se_uid": "SE288",
-    "se_citation_key": "ZZ-OFFTOPIC Balog2007_BiophysicalJournal",
+    "se_uid": "375120da-ec5d-8103-8d4d-cc47945e1b57",
+    "se_citation_key": "Balog2007_BiophysicalJournal",
     "n_chunks": 25,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "simulation-of-actin-cytoskeleton-structu-1151e5",
+    "title": "Simulation of Actin Cytoskeleton Structure and Rheology",
+    "doi": "",
+    "path": "181655768-MIT.pdf",
+    "n_pages": 153,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 167,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Jin2020_Jour",
@@ -132,6 +228,78 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "actin-force-generation-in-vesicle-format-abf688",
+    "title": "Actin force generation in vesicle formation: mechanistic insights from cryo-",
+    "doi": "10.1101/2021.06.28.450262",
+    "path": "2021.06.28.450262v2.full.pdf",
+    "n_pages": 45,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81b0-8d7a-e6f2fab9478d",
+    "se_citation_key": "Serwas2021_Jour",
+    "n_chunks": 76,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Runser2023_bioRxiv",
+    "title": "3D Simulation of Tissue",
+    "doi": "10.3929/ethz-b-000653764",
+    "path": "2023.03.28.534574v1.full (1).pdf",
+    "n_pages": 11,
+    "source": "new",
+    "se_uid": "SE298",
+    "se_citation_key": "Runser2023_bioRxiv",
+    "n_chunks": 36,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Bohec2025_Jour",
+    "title": "Control of cellular cortical tension and shape by RhoGTPase signalling",
+    "doi": "10.64898/2025.12.15.694413",
+    "path": "2025.12.15.694413.full.pdf",
+    "n_pages": 32,
+    "source": "new",
+    "se_uid": "SE312",
+    "se_citation_key": "Bohec2025_Jour",
+    "n_chunks": 71,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Thiticharoentam2026_Jour",
+    "title": "Computational Design for Engineering Layered Tissue Architectures via Cell-Cell Interfacial Tension Modulation",
+    "doi": "10.64898/2026.03.17.712503",
+    "path": "2026.03.17.712503v1.full.pdf",
+    "n_pages": 32,
+    "source": "new",
+    "se_uid": "SE313",
+    "se_citation_key": "Thiticharoentam2026_Jour",
+    "n_chunks": 54,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "rapid-actin-filament-turnover-maintains--5819ee",
+    "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
+    "doi": "10.64898/2026.05.24.727551",
+    "path": "2026.05.24.727551.full.pdf",
+    "n_pages": 47,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81fa-bda5-c31ca118c17c",
+    "se_citation_key": "Kadzik2026_Jour",
+    "n_chunks": 99,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "rapid-actin-filament-turnover-maintains--56752d",
+    "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
+    "doi": "10.64898/2026.05.24.727551",
+    "path": "2026.05.24.727551v1.full.pdf",
+    "n_pages": 47,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81fa-bda5-c31ca118c17c",
+    "se_citation_key": "Kadzik2026_Jour",
+    "n_chunks": 99,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Banerjee2017_NatCommun",
     "title": "Actomyosin pulsation and ﬂows in an active",
     "doi": "10.1038/s41467-017-01130-1",
@@ -141,6 +309,42 @@
     "se_uid": "SE278",
     "se_citation_key": "Banerjee2017_NatCommun",
     "n_chunks": 44,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Tao2019_Jour",
+    "title": "Tuning cell motility via cell tension with a mechanochemical cell migration model (preprint)",
+    "doi": "10.1101/847046",
+    "path": "847046v1.full.pdf",
+    "n_pages": 21,
+    "source": "new",
+    "se_uid": "SE308",
+    "se_citation_key": "Tao2019_Jour",
+    "n_chunks": 41,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "2023-published-by-the-company-of-biologi-8c227c",
+    "title": "© 2023. Published by The Company of Biologists Ltd.",
+    "doi": "10.1242/dev.201099:",
+    "path": "Actin-capping_protein_regulates_actomyosin_contrac.pdf",
+    "n_pages": 54,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8130-9d52-ec06dc547d61",
+    "se_citation_key": "2023-published-by-the-company-of-biologi-8c227c",
+    "n_chunks": 81,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Arslan2024_CurrentBiology",
+    "title": "Adhesion-induced cortical flows pattern E-cadherin-mediated cell contacts",
+    "doi": "10.1016/j.cub.2023.11.067",
+    "path": "Adhesion-induced-cortical-flows-pattern-E-cadherin.pdf",
+    "n_pages": 21,
+    "source": "new",
+    "se_uid": "SE302",
+    "se_citation_key": "Arslan2024_CurrentBiology",
+    "n_chunks": 72,
     "linked_to_source_evidence": true
   },
   {
@@ -180,6 +384,30 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Roffay2021_Development",
+    "title": "Inferring cell junction tension and pressure from cell geometry",
+    "doi": "10.1242/dev.192773",
+    "path": "DownloadCombinedArticleAndSupplmentPdf.pdf",
+    "n_pages": 19,
+    "source": "new",
+    "se_uid": "SE297",
+    "se_citation_key": "Roffay2021_Development",
+    "n_chunks": 67,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "full-terms-conditions-of-access-and-use--f916d6",
+    "title": "Full Terms & Conditions of access and use can be found at",
+    "doi": "10.1080/19336918.2022.2055520",
+    "path": "Merino-Casalloetal.-2022-Unravellingcellmigrationdefiningmovementfromthecellsurface.pdf",
+    "n_pages": 41,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8130-b971-d64d3c568d1d",
+    "se_citation_key": "MerinoCasallo2022_CellAdhesionAmpMigration",
+    "n_chunks": 138,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Dessard2024_NanoscaleAdv",
     "title": "Cytoplasmic viscosity is a potential biomarker for",
     "doi": "10.1039/d4na00003j",
@@ -204,6 +432,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Wang2021_IEEESensorsJ",
+    "title": "Quantification of Single-Cell Cortical Tension Using Multiple Constriction Channels",
+    "doi": "10.1109/jsen.2020.3048591",
+    "path": "Quantification_of_Single-Cell_Cortical_Tension_Using_Multiple_Constriction_Channels.pdf",
+    "n_pages": 8,
+    "source": "new",
+    "se_uid": "SE310",
+    "se_citation_key": "Wang2021_IEEESensorsJ",
+    "n_chunks": 27,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "quantitative-analysis-of-cell-membrane-t-7a514c",
+    "title": "Quantitative Analysis of Cell Membrane Tension in Time-Series Imaging and A Minimal Lattice Model",
+    "doi": "",
+    "path": "Quantitative_Analysis_of_Cell_Membrane_Tension_in_.pdf",
+    "n_pages": 27,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 30,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "rapid-actin-filament-turnover-maintains--ce9ddc",
+    "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
+    "doi": "10.64898/2026.05.24.727551",
+    "path": "Rapid actin filament turnover maintains cortical connectivity while allowing for cell cortex deformation and flow _ bioRxiv.pdf",
+    "n_pages": 36,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81fa-bda5-c31ca118c17c",
+    "se_citation_key": "Kadzik2026_Jour",
+    "n_chunks": 80,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Boot2021_AdvancesInPhysicsX",
     "title": "Spheroid mechanics and implications for cell invasion",
     "doi": "10.1080/23746149.2021.1978316",
@@ -225,6 +489,54 @@
     "se_uid": "SE264",
     "se_citation_key": "Wang2016_PLoSONE",
     "n_chunks": 26,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Fu2019_ColloidsAndSurfacesBBioi",
+    "title": "Spontaneous formation of tumor spheroid on a hydrophilic filter paper for cancer stem cell enrichment",
+    "doi": "10.1016/j.colsurfb.2018.11.038",
+    "path": "Spontaneous-formation-of-tumor-spheroid-on-a-hydrop_2019_Colloids-and-Surfac.pdf",
+    "n_pages": 9,
+    "source": "new",
+    "se_uid": "SE301",
+    "se_citation_key": "Fu2019_ColloidsAndSurfacesBBioi",
+    "n_chunks": 28,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "unravelling-cell-migration-defining-move-90b998",
+    "title": "Unravelling cell migration: defining movement from the cell surface",
+    "doi": "10.1080/19336918.2022.2055520",
+    "path": "Unravelling_cell_migration_defining_movement_from_.pdf",
+    "n_pages": 40,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8130-b971-d64d3c568d1d",
+    "se_citation_key": "MerinoCasallo2022_CellAdhesionAmpMigration",
+    "n_chunks": 137,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Warmt2021_NewJPhys",
+    "title": "Differences in cortical contractile properties between healthy epithelial and cancerous mesenchymal breast cells",
+    "doi": "10.1088/1367-2630/ac254e",
+    "path": "Warmt_2021_New_J._Phys._23_103020.pdf",
+    "n_pages": 29,
+    "source": "new",
+    "se_uid": "SE307",
+    "se_citation_key": "Warmt2021_NewJPhys",
+    "n_chunks": 87,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "automatic-actin-filament-427bcf",
+    "title": "Automatic Actin Filament",
+    "doi": "10.3390/app11125689",
+    "path": "applsci-11-05689-with-cover.pdf",
+    "n_pages": 21,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8131-9816-c0d10b7c848f",
+    "se_citation_key": "Gruening2021_AppliedSciences",
+    "n_chunks": 53,
     "linked_to_source_evidence": true
   },
   {
@@ -276,6 +588,30 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "Dmitrieff2017_ProcNatlAcadSciUSA",
+    "title": "Balance of microtubule stiffness and cortical tension determines the size of blood cells with marginal band across species",
+    "doi": "10.1073/pnas.1618041114",
+    "path": "dmitrieff-et-al-2017-balance-of-microtubule-stiffness-and-cortical-tension-determines-the-size-of-blood-cells-with.pdf",
+    "n_pages": 6,
+    "source": "new",
+    "se_uid": "SE306",
+    "se_citation_key": "Dmitrieff2017_ProcNatlAcadSciUSA",
+    "n_chunks": 24,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Chugh2017_NatCellBiol",
+    "title": "Actin cortex architecture regulates cell surface tension",
+    "doi": "10.1038/ncb3525",
+    "path": "emss-72183.pdf",
+    "n_pages": 26,
+    "source": "new",
+    "se_uid": "SE276",
+    "se_citation_key": "Chugh2017_NatCellBiol",
+    "n_chunks": 52,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Botticelli2025_FrontBioengBiotechnol",
     "title": "A hybrid computational model of",
     "doi": "10.3389/fbioe.2025.1515962",
@@ -288,6 +624,42 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "pnas-2024-vol-121-no-31-e2320372121-3ed1cf",
+    "title": "PNAS  2024  Vol. 121  No. 31 e2320372121\b",
+    "doi": "10.1073/pnas.2320372121",
+    "path": "flormann-et-al-2024-the-structure-and-mechanics-of-the-cell-cortex-depend-on-the-location-and-adhesion-state.pdf",
+    "n_pages": 9,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81a4-9ade-d683d4d34bcb",
+    "se_citation_key": "Flormann2024_ProcNatlAcadSciUSA",
+    "n_chunks": 33,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "a-three-dimensional-numerical-1ab2e9",
+    "title": "A Three-Dimensional Numerical",
+    "doi": "10.3389/fphy.2021.753230",
+    "path": "fphy-09-753230.pdf",
+    "n_pages": 21,
+    "source": "new",
+    "se_uid": "375120da-ec5d-814a-8c0c-cb48c6f7b6e9",
+    "se_citation_key": "Bcher2021_FrontPhys",
+    "n_chunks": 55,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Winklbauer2015_JournalOfCellScience",
+    "title": "Cell adhesion strength from cortical tension - an integration of concepts",
+    "doi": "10.1242/jcs.174623",
+    "path": "jcs174623.pdf",
+    "n_pages": 7,
+    "source": "new",
+    "se_uid": "SE311",
+    "se_citation_key": "Winklbauer2015_JournalOfCellScience",
+    "n_chunks": 33,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Berens2015_JoVE",
     "title": "Journal of Visualized Experiments",
     "doi": "10.3791/53409",
@@ -297,6 +669,18 @@
     "se_uid": "SE272",
     "se_citation_key": "Berens2015_JoVE",
     "n_chunks": 19,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Tao2020_BiophysicalJournal",
+    "title": "Tuning Cell Motility via Cell Tension with a Mechanochemical Cell Migration Model",
+    "doi": "10.1016/j.bpj.2020.04.030",
+    "path": "main (1).pdf",
+    "n_pages": 11,
+    "source": "new",
+    "se_uid": "SE300",
+    "se_citation_key": "Tao2020_BiophysicalJournal",
+    "n_chunks": 37,
     "linked_to_source_evidence": true
   },
   {
@@ -321,6 +705,42 @@
     "se_uid": "SE280",
     "se_citation_key": "Manibog2016_ProcNatlAcadSciUSA",
     "n_chunks": 43,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "supplementary-materials-for-eaabf5",
+    "title": "Supplementary Materials for",
+    "doi": "",
+    "path": "media-1.pdf",
+    "n_pages": 11,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 10,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "DeVecchis2021_BiophysicalJournal",
+    "title": "Molecular dynamics simulations of Piezo1 channel opening by increases in membrane tension",
+    "doi": "10.1016/j.bpj.2021.02.006",
+    "path": "mmc4.pdf",
+    "n_pages": 23,
+    "source": "new",
+    "se_uid": "SE291",
+    "se_citation_key": "DeVecchis2021_BiophysicalJournal",
+    "n_chunks": 53,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "active-remodeling-of-cortical-629c08",
+    "title": "Active Remodeling of Cortical",
+    "doi": "10.1016/j.cell.2012.05.008",
+    "path": "mmc5 (1).pdf",
+    "n_pages": 33,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8155-8626-f0e912f1ef2f",
+    "se_citation_key": "Gowrishankar2012_Cell",
+    "n_chunks": 89,
     "linked_to_source_evidence": true
   },
   {
@@ -363,7 +783,7 @@
     "citation_key": "Chugh2017_NatCellBiol",
     "title": "Actin cortex architecture regulates cell surface tension",
     "doi": "10.1038/ncb3525",
-    "path": "ncb3525.pdf",
+    "path": "ncb3525 (1).pdf",
     "n_pages": 29,
     "source": "new",
     "se_uid": "SE276",
@@ -381,6 +801,30 @@
     "se_uid": "SE277",
     "se_citation_key": "Linsmeier2016_NatCommun",
     "n_chunks": 29,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "received-2-jun-2016-accepted-15-dec-2016-e11ae1",
+    "title": "Received 2 Jun 2016 | Accepted 15 Dec 2016 | Published 13 Feb 2017",
+    "doi": "10.1038/ncomms14347",
+    "path": "ncomms14347 (1).pdf",
+    "n_pages": 14,
+    "source": "new",
+    "se_uid": "375120da-ec5d-814d-9a8e-f6cf6a629f60",
+    "se_citation_key": "Fritzsche2017_NatCommun",
+    "n_chunks": 60,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Moazzeni2021_PhysRevE",
+    "title": "Single-cell mechanical analysis and tension quantification via electrodeformation relaxation",
+    "doi": "10.1103/physreve.103.032409",
+    "path": "nihms-1939023.pdf",
+    "n_pages": 33,
+    "source": "new",
+    "se_uid": "SE309",
+    "se_citation_key": "Moazzeni2021_PhysRevE",
+    "n_chunks": 53,
     "linked_to_source_evidence": true
   },
   {
@@ -552,6 +996,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "https-doi-org-10-1038-s41467-024-46726-6-e835aa",
+    "title": "https://doi.org/10.1038/s41467-024-46726-6",
+    "doi": "10.1038/s41467-024-46726-6",
+    "path": "s41467-024-46726-6.pdf",
+    "n_pages": 14,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8135-af65-c4b92a501aa1",
+    "se_citation_key": "Chandrasekaran2024_NatCommun",
+    "n_chunks": 54,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Arruda2026_NpjSystBiolAppl",
     "title": "Simulation-based inference of cell migration dynamics in complex spatial environments",
     "doi": "10.1038/s41540-026-00648-9",
@@ -561,6 +1017,54 @@
     "se_uid": "SE252",
     "se_citation_key": "Arruda2026_NpjSystBiolAppl",
     "n_chunks": 55,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Miroshnikova2018_NatCellBiol",
+    "title": "Adhesion forces and cortical tension couple cell proliferation and differentiation to drive epidermal stratification",
+    "doi": "10.1038/s41556-017-0005-z",
+    "path": "s41556-017-0005-z.pdf",
+    "n_pages": 17,
+    "source": "new",
+    "se_uid": "SE304",
+    "se_citation_key": "Miroshnikova2018_NatCellBiol",
+    "n_chunks": 59,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Cornell2025_NatCellBiol",
+    "title": "Target cell cortical tension regulates macrophage trogocytosis",
+    "doi": "10.1038/s41556-025-01807-6",
+    "path": "s41556-025-01807-6.pdf",
+    "n_pages": 26,
+    "source": "new",
+    "se_uid": "SE305",
+    "se_citation_key": "Cornell2025_NatCellBiol",
+    "n_chunks": 59,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "nature-physics-volume-20-november-2024-1-0ab92f",
+    "title": "Nature Physics | Volume 20 | November 2024 | 1824–1832",
+    "doi": "10.1038/s41567-024-02626-6",
+    "path": "s41567-024-02626-6.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "375120da-ec5d-810a-ad24-fa9f4c347972",
+    "se_citation_key": "Chen2024_NatPhys",
+    "n_chunks": 39,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Lchtefeld2024_NatMethods",
+    "title": "Dissecting cell membrane tension dynamics and its effect on Piezo1-mediated cellular mechanotransduction",
+    "doi": "10.1038/s41592-024-02277-8",
+    "path": "s41592-024-02277-8.pdf",
+    "n_pages": 17,
+    "source": "new",
+    "se_uid": "SE294",
+    "se_citation_key": "Lchtefeld2024_NatMethods",
+    "n_chunks": 51,
     "linked_to_source_evidence": true
   },
   {
@@ -588,6 +1092,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "vol-0123456789-3eb44e",
+    "title": "Vol.:(0123456789)",
+    "doi": "10.1038/s41598-022-06702-w",
+    "path": "s41598-022-06702-w.pdf",
+    "n_pages": 12,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81f7-9d52-e5dcedae8d7a",
+    "se_citation_key": "Garlick2022_SciRep",
+    "n_chunks": 31,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "Audoin2022_SciRep",
     "title": "Tumor spheroids accelerate persistently invading cancer cells",
     "doi": "10.1038/s41598-022-18950-x",
@@ -600,6 +1116,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "j-indian-inst-sci-vol-101-1-97-112-janua-639fda",
+    "title": "J. Indian Inst. Sci. | VOL 101:1 | 97–112 January 2021 | journal.iisc.ernet.in",
+    "doi": "10.1038/s4156",
+    "path": "s41745-020-00220-2.pdf",
+    "n_pages": 16,
+    "source": "new",
+    "se_uid": "375120da-ec5d-8196-8f85-ea1e68f2d55c",
+    "se_citation_key": "j-indian-inst-sci-vol-101-1-97-112-janua-639fda",
+    "n_chunks": 51,
+    "linked_to_source_evidence": true
+  },
+  {
     "citation_key": "De2018_CommunBiol",
     "title": "A general model of focal adhesion orientation dynamics in response to static and cyclic stretch",
     "doi": "10.1038/s42003-018-0084-9",
@@ -609,6 +1137,18 @@
     "se_uid": "SE256",
     "se_citation_key": "De2018_CommunBiol",
     "n_chunks": 25,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "c-e-l-l-b-i-o-l-o-g-y-1883a2",
+    "title": "C E L L B I O L O G Y",
+    "doi": "10.1126/sciadv.1501337",
+    "path": "sciadv.1501337.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "375120da-ec5d-81c5-88ff-dabc08b19c55",
+    "se_citation_key": "Fritzsche2016_SciAdv",
+    "n_chunks": 48,
     "linked_to_source_evidence": true
   },
   {
@@ -633,6 +1173,18 @@
     "se_uid": "SE221",
     "se_citation_key": "Stephens2017_MBoC",
     "n_chunks": 52,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Fastabend2026_PhysRevE",
+    "title": "Cortical tension links curvature to tissue growth in the cellular Potts model",
+    "doi": "10.1103/z152-x4l1",
+    "path": "z152-x4l1.pdf",
+    "n_pages": 13,
+    "source": "new",
+    "se_uid": "SE296",
+    "se_citation_key": "Fastabend2026_PhysRevE",
+    "n_chunks": 46,
     "linked_to_source_evidence": true
   },
   {
@@ -1797,138 +2349,6 @@
     "se_uid": "SE128",
     "se_citation_key": "Yonemura2010_NCB",
     "n_chunks": 50,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Chugh2017_NatureCellBiology",
-    "title": "Actin cortex architecture regulates cell surface tension",
-    "doi": "10.1038/ncb3525",
-    "path": "emss-72183.pdf",
-    "n_pages": 26,
-    "source": "new",
-    "se_uid": null,
-    "se_citation_key": "Chugh2017_NatCellBiol",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "DeBelly2023_Cell",
-    "title": "Cell protrusions and contractions generate long-range membrane tension propagation",
-    "doi": "10.1016/j.cell.2023.05.014",
-    "path": "1-s2.0-S0092867423005330-main.pdf",
-    "n_pages": 29,
-    "source": "new",
-    "se_uid": "374120da-ec5d-817f-8556-d6684a519f2e",
-    "se_citation_key": "DeBelly2023_Cell",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Keren2023_Cell",
-    "title": "Membrane tension goes the distance (preview)",
-    "doi": "10.1016/j.cell.2023.05.033",
-    "path": "1-s2.0-S0092867423005858-main.pdf",
-    "n_pages": 3,
-    "source": "new",
-    "se_uid": "374120da-ec5d-8190-b5bd-fa92a0db6369",
-    "se_citation_key": "Keren2023_Cell",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Luchtefeld2024_NatureMethods",
-    "title": "Dynamic monitoring of membrane tension changes by FLIM (membrane, not cortical)",
-    "doi": "10.1038/s41592-024-02277-8",
-    "path": "s41592-024-02277-8.pdf",
-    "n_pages": 17,
-    "source": "new",
-    "se_uid": "374120da-ec5d-810c-ade6-d63b158be015",
-    "se_citation_key": "Lchtefeld2024_NatMethods",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "NishitaniMiura2025_arXiv",
-    "title": "Quantitative analysis of cell membrane tension via the curvature-velocity law V=sigma*kappa",
-    "doi": "10.48550/arXiv.2504.14887",
-    "path": "Quantitative_Analysis_of_Cell_Membrane_Tension_in_.pdf",
-    "n_pages": 27,
-    "source": "new",
-    "se_uid": "374120da-ec5d-8140-8a61-f14fd74f80a0",
-    "se_citation_key": "NishitaniMiura2025_arXiv",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Fastabend2026_PhysicalReviewE",
-    "title": "Cortical tension links curvature to tissue growth in the cellular Potts model",
-    "doi": "10.1103/z152-x4l1",
-    "path": "z152-x4l1.pdf",
-    "n_pages": 13,
-    "source": "new",
-    "se_uid": "374120da-ec5d-81d7-9ca8-fbd58bba9293",
-    "se_citation_key": "Fastabend2026_PhysRevE",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Thiticharoentam2026_bioRxiv",
-    "title": "3D vertex model of interfacial-tension modulation (Gamma = cortical contractility - adhesion)",
-    "doi": "10.1101/2026.03.17.712503",
-    "path": "2026.03.17.712503v1.full.pdf",
-    "n_pages": 32,
-    "source": "new",
-    "se_uid": "374120da-ec5d-81ed-a230-c68f81c8b7e8",
-    "se_citation_key": "Thiticharoentam2026_bioRxiv",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Roffay2021_Development",
-    "title": "Inferring cell junction tension and pressure from cell geometry",
-    "doi": "10.1242/dev.192773",
-    "path": "DownloadCombinedArticleAndSupplmentPdf.pdf",
-    "n_pages": 19,
-    "source": "new",
-    "se_uid": "374120da-ec5d-81d6-847c-d0ae4c883dc6",
-    "se_citation_key": "Roffay2021_Development",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Runser2023_bioRxiv",
-    "title": "3D simulation of tissue mechanics with cell polarization",
-    "doi": "10.3929/ethz-b-000653764",
-    "path": "2023.03.28.534574v1.full.pdf",
-    "n_pages": 11,
-    "source": "new",
-    "se_uid": "374120da-ec5d-812e-99ee-f0a01f34c354",
-    "se_citation_key": "Runser2023_bioRxiv",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "Tao2020_BiophysicalJournal",
-    "title": "Tuning cell motility via cell tension with a mechanochemical cell migration model",
-    "doi": "10.1016/j.bpj.2020.07.030",
-    "path": "main (1).pdf",
-    "n_pages": 11,
-    "source": "new",
-    "se_uid": "374120da-ec5d-8116-a058-d69f2b320b52",
-    "se_citation_key": "Mykuliak2020_BiophysicalJournal",
-    "n_chunks": 0,
-    "linked_to_source_evidence": true
-  },
-  {
-    "citation_key": "DeVecchis2021_BiophysicalJournal_mmc4",
-    "title": "Molecular dynamics simulations of Piezo1 channel opening by increases in membrane tension (supplement mmc4)",
-    "doi": "10.1016/j.bpj.2021.02.006",
-    "path": "mmc4.pdf",
-    "n_pages": 23,
-    "source": "new",
-    "se_uid": "374120da-ec5d-815a-a2f3-f6362396491f",
-    "se_citation_key": "DeVecchis2021_BiophysicalJournal",
-    "n_chunks": 0,
     "linked_to_source_evidence": true
   }
 ]
