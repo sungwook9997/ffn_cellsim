@@ -73,3 +73,10 @@ LAYER-2 (PI: "layer2도 업데이트") — link to KB-5.13 (spheroid surface ten
 - MerinoCasallo 375120da-ec5d-8130-b971-d64d3c568d1d → KB-5.16 (Unit-5 collective) + KB-PIV-9 (Layer-2 framework)
 - Ray2024       375120da-ec5d-8130-9d52-ec06dc547d61 → KB-3.5 (contractility)
 ALSO UPDATE bridge SE (already created) → ADD Layer-2 KC: Winklbauer SE311, Roffay, Okuda SE313, Fastabend SE296, Chugh SE276 → KB-5.13 (spheroid surface tension) + KB-PIV-9.
+
+## ✅✅ KC EDGES WRITTEN (link_arch_se_claims.py --commit) — 14 architecture SE now graph-connected
+single-cell cortex (KB-3.23/3.5/3.19/3.B1.4) + Layer-2 (KB-5.13/5.16/PIV-9/4.18 for Flormann/Kadzik/Merino).
+NOT handed off — all connected. 3 strays (Balog2007/Gowrishankar2012/Gruening2021, created by
+references_to_se but not architecture papers) left KC-unlinked (TAG-searchable only, off-topic).
+TODO (append-not-replace, careful): add Layer-2 KC (KB-5.13/PIV-9) to already-linked bridge SE
+(Winklbauer SE311/Roffay/Okuda SE313/Fastabend SE296/Chugh SE276) — fetch-existing-then-append.
