@@ -84,11 +84,51 @@ bridge** anchor. Treating any single tension number as "KU-3.5 ✅" is invalid.
 - The `--v0-accel`-based "resolved" conclusion — **SUPERSEDED** (flag was dead;
   fixing it alone does not close KU-3.5-active).
 
+## Aggregation-estimator result (2026-06-04) — generation, NOT aggregation
+
+The force-AGGREGATION estimator is built + fixture-validated
+(`scripts/h3_ku35_aggregation.py`, `tests/test_ku35_aggregation.py`,
+`--aggregation` flag on `mcf7_fullcell_stage1`). It decomposes the chain
+*per-head generation → coherent ceiling → realized g_soft* into orthogonal
+efficiencies (η_agg = radial-projection loss; η_medium = xlink/spring
+cancellation), built on the project's IK-virial 8πR² calibration (corrected MOP
+≈ IK; the estimator audit's convention). It emits one of three verdicts:
+GENERATION-LIMITED / AGGREGATION-LIMITED(RADIAL) / AGGREGATION-LIMITED(MEDIUM).
+
+**Verdict at n_fil=400, n_motors=200, connected mesh, all compartments ON
+(`outputs/h3/production/ku35_active/AGG_n400_cpu.log`,
+`figs/ku35_aggregation_motorsON.png`): GENERATION-LIMITED.**
+
+- **Aggregation is NOT the wall.** η_agg ≈ 0.91, η_medium ≈ 1.02, η_total ≈ 0.94
+  — the per-head forces aggregate ~94% efficiently. Cross-check: gate g_soft
+  ≈ internal MOP ≈ IK ≈ coherent ceiling, all within ~10% (sample 4: gate
+  3.99e-4, mop 3.92e-4, ik_attach 3.81e-4, ceiling 4.16e-4 mN/m). The connected
+  mesh + Arp2/3 structure does its job; the realized g_soft ≈ what the attach
+  forces *can* produce. **No hidden leak/cancellation** — what is generated is
+  what is measured. (Refines the earlier "doesn't aggregate" wording: it DOES
+  aggregate, faithfully, into a correspondingly small tension.)
+- **The wall is GENERATION.** ceiling/band ≈ 0.0012 → the coherent ceiling of
+  the attach channel is itself ~840× below band. Two compounding deficits:
+  (i) raw force Σ|F_head|/band ≈ 0.15 (per-head 2.37 pN, deeply sub-stall —
+  series F/F_stall ≈ 0.005, 100% Hill-valid; ~1038/4000 ≈ 26% heads recruited);
+  (ii) short lever — the soft channel only sees the ~240 nm head→bead attach
+  bond on a 7.5 µm shell (the rest of the motor reaction is absorbed by the
+  rigid M-SHAKE backbone → the motor-insensitive g_rigid). Recruitment grew
+  586→1038 but is slowing; ~4× more heads ≈ ~4× ceiling = still ~200× under.
+- **Levers (active gate)**: per-head delivered force/lever + recruitment +
+  whether the active stress needs a soft long-range transmission path (the
+  rigid backbone shunts it locally). NOT aggregation geometry, NOT medium
+  cancellation (both ~1).
+
 ## Action items
 - [ ] Tag the above as `superseded` in RAG/TAG (RunResult/DecisionLedger/
       KnowledgeClaim) so 5/31–6/3 does not override the 6/4 record.
-- [ ] KU-3.5-active diagnosis: force generation/aggregation (per-head → shell
-      tension); start with the dead `--v0-accel` + the aggregation estimator.
+- [x] KU-3.5-active diagnosis: force generation/aggregation (per-head → shell
+      tension) — **aggregation estimator built + validated; verdict =
+      GENERATION-LIMITED (aggregation ~94% efficient, generation ~840× under)**.
+- [ ] KU-3.5-active follow-up: production-scale (n_fil=1000) `--aggregation` on
+      gbook GPU to confirm the verdict at scale; then quantify per-head-force /
+      recruitment / soft-transmission levers.
 - [ ] KU-3.5-passive: wire `turgor_dP0` = resting Π₀ as the production baseline.
 - [ ] KU-3.5-bridge: expose g_rigid/γ as the Layer-2 spheroid surface-tension
       anchor.

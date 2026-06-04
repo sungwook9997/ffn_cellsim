@@ -1,0 +1,86 @@
+[
+  {
+    "generation": {
+      "n_engaged": 586
+    },
+    "tension": {
+      "g_soft_gate_Npm": 2.32e-07,
+      "g_mop_total_Npm": 2.1240000000000002e-07,
+      "g_mop_attach_Npm": 2.061e-07,
+      "g_ik_attach_Npm": 2.157e-07,
+      "g_ik_total_Npm": 2.2001400000000003e-07,
+      "g_ceiling_attach_Npm": 2.368e-07,
+      "mean_tangential_fraction": 0.867
+    },
+    "efficiency": {
+      "eta_agg": 0.911,
+      "eta_medium": 1.02,
+      "eta_total": 0.929,
+      "ceiling_over_band": 0.000677
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00068\u00d7 the band"
+  },
+  {
+    "generation": {
+      "n_engaged": 832
+    },
+    "tension": {
+      "g_soft_gate_Npm": 3.2229999999999997e-07,
+      "g_mop_total_Npm": 3.319e-07,
+      "g_mop_attach_Npm": 3.2410000000000005e-07,
+      "g_ik_attach_Npm": 3.06e-07,
+      "g_ik_total_Npm": 3.1212000000000007e-07,
+      "g_ceiling_attach_Npm": 3.345e-07,
+      "mean_tangential_fraction": 0.873
+    },
+    "efficiency": {
+      "eta_agg": 0.915,
+      "eta_medium": 1.02,
+      "eta_total": 0.933,
+      "ceiling_over_band": 0.000956
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.00096\u00d7 the band"
+  },
+  {
+    "generation": {
+      "n_engaged": 988
+    },
+    "tension": {
+      "g_soft_gate_Npm": 3.907e-07,
+      "g_mop_total_Npm": 3.969e-07,
+      "g_mop_attach_Npm": 3.902e-07,
+      "g_ik_attach_Npm": 3.618e-07,
+      "g_ik_total_Npm": 3.69036e-07,
+      "g_ceiling_attach_Npm": 3.953e-07,
+      "mean_tangential_fraction": 0.875
+    },
+    "efficiency": {
+      "eta_agg": 0.915,
+      "eta_medium": 1.02,
+      "eta_total": 0.934,
+      "ceiling_over_band": 0.00113
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.0011\u00d7 the band"
+  },
+  {
+    "generation": {
+      "n_engaged": 1038
+    },
+    "tension": {
+      "g_soft_gate_Npm": 3.991e-07,
+      "g_mop_total_Npm": 3.916e-07,
+      "g_mop_attach_Npm": 3.862e-07,
+      "g_ik_attach_Npm": 3.811e-07,
+      "g_ik_total_Npm": 3.88722e-07,
+      "g_ceiling_attach_Npm": 4.164e-07,
+      "mean_tangential_fraction": 0.876
+    },
+    "efficiency": {
+      "eta_agg": 0.915,
+      "eta_medium": 1.02,
+      "eta_total": 0.936,
+      "ceiling_over_band": 0.00119
+    },
+    "verdict": "GENERATION-LIMITED: coherent ceiling 0.0012\u00d7 the band"
+  }
+]

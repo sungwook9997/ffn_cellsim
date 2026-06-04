@@ -44,6 +44,10 @@ from ffn_sim.scripts.h3_ku35_tension import (
     _tension_method_of_planes,
     _tension_method_of_planes_rigid,
 )
+from ffn_sim.scripts.h3_ku35_aggregation import (
+    aggregation_ledger,
+    format_ledger,
+)
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
@@ -160,7 +164,8 @@ def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm=70
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
             compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0,
-            bind_scale=1.0, connected_mesh=False, turgor_pa=None, motors_off=False):
+            bind_scale=1.0, connected_mesh=False, turgor_pa=None, motors_off=False,
+            aggregation=False):
     cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
@@ -201,6 +206,7 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                               v0_accel=v0_accel, motors_off=motors_off)
     sim = hc["sim"]
     act = hc["baoab_action"]
+    myo_act = hc.get("myosin_action")
     if hasattr(act, "record_lambda"):
         act.record_lambda = True
     # transfer warmed positions by tag
@@ -213,6 +219,7 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
     nca = p.n_filaments * p.beads_per_filament
     r0 = float(np.linalg.norm(_tagpos(sim)[:nca], axis=1).mean())
     samples = []
+    agg_ledgers = []
     n = 2 if smoke else n_sample
     iv = 2000 if smoke else interval
     for k in range(n):
@@ -225,6 +232,38 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
         print(f"  [{stepping_mode}] s={k+1}/{n} r/r0={rmean/r0:.5f} "
               f"g_soft={g_soft*1e3:.3e} g_rigid={g_rigid*1e3:.3e} "
               f"g_tot={(g_soft+g_rigid)*1e3:.3e} mN/m", flush=True)
+        # KU-3.5-active force-AGGREGATION ledger: localise why per-head myosin
+        # force does (not) become shell tension. Best-effort — a diagnostic
+        # failure must never abort a valid tension sample.
+        if aggregation:
+            try:
+                led = aggregation_ledger(
+                    sim, R_cell=p.R_cell, p_myo=p_myo_lit,
+                    myosin_action=myo_act, g_soft_gate=g_soft)
+                agg_ledgers.append(led)
+                print(format_ledger(led), flush=True)
+            except Exception as exc:  # noqa: BLE001
+                print(f"    [AGG] WARN ledger failed (sample still valid): {exc}",
+                      flush=True)
+
+    # Auto-viz the aggregation ledger (production-driver auto-viz rule). Best-
+    # effort; a viz/dump failure must not invalidate the tension samples.
+    if aggregation and agg_ledgers:
+        try:
+            import json
+            from ffn_sim.scripts.h3_ku35_aggregation import make_aggregation_figure
+            tag = "motorsOFF" if motors_off else "motorsON"
+            outdir = PKG / "outputs" / "h3" / "production" / "ku35_active"
+            outdir.mkdir(parents=True, exist_ok=True)
+            (outdir / f"agg_ledger_{stepping_mode}_{tag}.json").write_text(
+                json.dumps(agg_ledgers, indent=2))
+            make_aggregation_figure(
+                agg_ledgers,
+                PKG / "outputs" / "h3" / "figs" / f"ku35_aggregation_{tag}.png",
+                title=(f"KU-3.5-ACTIVE aggregation ledger ({tag}, n_fil={p.n_filaments}) "
+                       f"— {agg_ledgers[-1]['verdict'].split(':')[0]}"))
+        except Exception as exc:  # noqa: BLE001
+            print(f"    [AGG] WARN auto-viz failed: {exc}", flush=True)
     return samples
 
 
@@ -264,6 +303,10 @@ def main() -> int:
                          "γ-floor payoff test (connectivity → force transmission, Kadzik-Munro).")
     ap.add_argument("--motors-off", action="store_true",
                     help="passive-baseline build (n_motors=0) for the KU-3.5-active ON-OFF delta")
+    ap.add_argument("--aggregation", action="store_true",
+                    help="print the KU-3.5-active force-AGGREGATION ledger per sample "
+                         "(Σ|F_head|, F/F_stall, η_agg/η_medium, branch verdict) — "
+                         "diagnoses why per-head myosin force does not become shell tension")
     ap.add_argument("--turgor-pa", type=float, default=None,
                     help="override enclosed-volume intracellular pressure dP [Pa] "
                          "(KU-3.1 default 40 interphase; band [0.35,0.65] implies ~93-173 "
@@ -291,6 +334,7 @@ def main() -> int:
             only=args.only, backbone_nm=args.backbone_nm, kon_scale=args.kon_scale,
             bind_scale=args.bind_scale, connected_mesh=args.connected_mesh,
             turgor_pa=args.turgor_pa, motors_off=args.motors_off,
+            aggregation=args.aggregation,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"
