@@ -562,6 +562,7 @@ def seed_connected_mesh_xlinks(
     R_cell: float,
     n_cortex_beads: int,
     max_bead_degree: int = 4,
+    prior_bead_bonds: np.ndarray | None = None,
     rng: np.random.Generator | None = None,
 ) -> ConnectedMeshSeed:
     """Seed a CONNECTED PERCOLATED crosslink mesh on a cortex bead cloud.
@@ -616,8 +617,27 @@ def seed_connected_mesh_xlinks(
     lo = int(math.floor(z_struct))
     cap = lo + (rng.random(n_filaments) < (z_struct - lo)).astype(np.int64)
 
+    # PRIOR edges (e.g. Arp2/3 70° BRANCH bonds, bead pairs): these already
+    # connect filaments.  Crosslinks are seeded ON TOP as PURE ADDITIONS — the
+    # branches do NOT consume the crosslink-coordination budget (so the crosslink
+    # network still SPANS on its own and never fragments), but they DO occupy
+    # per-bead bonded degree (HOOMD exclusion safety) and DO join the TOTAL
+    # connectivity graph (so a branched daughter is never measured as isolated).
+    prior_edges: dict[tuple[int, int], None] = {}
+    if prior_bead_bonds is not None and len(prior_bead_bonds) > 0:
+        pbb = np.asarray(prior_bead_bonds, dtype=np.int64).reshape(-1, 2)
+        for ba, bb in pbb:
+            ba, bb = int(ba), int(bb)
+            bead_deg[ba] += 1
+            bead_deg[bb] += 1
+            fa, fb = int(fil[ba]), int(fil[bb])
+            if fa == fb:
+                continue
+            prior_edges[(min(fa, fb), max(fa, fb))] = None
+
     # Stage 1 — structural percolation: each filament links to its nearest
-    # distinct different-filament partners until its coordination hits cap.
+    # distinct different-filament partners until its CROSSLINK coordination
+    # hits cap (the [3.0,3.5] gate quantity; branches are separate, above).
     edges: dict[tuple[int, int], tuple[int, int]] = {}  # (f,fp) -> (bead_f, bead_fp)
     order = rng.permutation(n_filaments)
     for f in order:
@@ -656,6 +676,8 @@ def seed_connected_mesh_xlinks(
     crosslinks: list[tuple[int, int]] = []          # (bead_a, bead_b)
     bridge_fils: list[tuple[int, int]] = []          # (fil_a, fil_b)
     for (fa, fb), (ba0, bb0) in edges.items():
+        if ba0 < 0:                                 # prior (branch) edge — no xlink
+            continue
         beads_a = beads_of[fa]
         beads_b = beads_of[fb]
         # rank all cross bead-pairs by distance, take the bundle_mult nearest
@@ -726,21 +748,40 @@ def seed_connected_mesh_xlinks(
         actin_tag_seed=n_cortex_beads,
     )
 
-    # ---- connectivity diagnostics (distinct-degree z, giant, L/lc) ----
-    bf = np.asarray(bridge_fils, dtype=np.int64)
-    rows = np.concatenate([bf[:, 0], bf[:, 1]])
-    cols = np.concatenate([bf[:, 1], bf[:, 0]])
-    g = csr_matrix((np.ones(rows.size), (rows, cols)),
-                   shape=(n_filaments, n_filaments))
-    g.data[:] = 1.0
-    g.sum_duplicates()
-    _, labels = connected_components(g, directed=False)
-    sizes = np.bincount(labels, minlength=n_filaments)
-    giant = int(sizes.max()) / n_filaments
-    z_struct_realised = float(np.asarray((g > 0).sum(axis=1)).ravel().mean())
+    # ---- connectivity diagnostics ----
+    # z (the [3.0,3.5] gate) + L/lc (the Head crosslink-density gate) are the
+    # CROSSLINK-network quantities.  giant + homeless use the TOTAL graph
+    # (crosslinks + Arp2/3 branch edges), so branched daughters count connected.
+    bf = np.asarray(bridge_fils, dtype=np.int64).reshape(-1, 2)
+    prior_arr = (np.array(list(prior_edges.keys()), dtype=np.int64).reshape(-1, 2)
+                 if prior_edges else np.empty((0, 2), dtype=np.int64))
+
+    def _graph(edges_arr):
+        r = np.concatenate([edges_arr[:, 0], edges_arr[:, 1]])
+        c = np.concatenate([edges_arr[:, 1], edges_arr[:, 0]])
+        gg = csr_matrix((np.ones(r.size), (r, c)),
+                        shape=(n_filaments, n_filaments))
+        gg.data[:] = 1.0
+        gg.sum_duplicates()
+        return gg
+
+    # L/lc = crosslinks per (crosslinked) filament (Head 2003 density gate).
     ends = np.bincount(bf.reshape(-1), minlength=n_filaments)
     in_mesh = ends > 0
     L_over_lc = float(ends[in_mesh].mean()) if in_mesh.any() else 0.0
+
+    # z (the [3.0,3.5] coordination gate), giant, homeless = the TOTAL filament
+    # network (crosslink bridges + Arp2/3 branch junctions) — the physiological
+    # coordination a filament actually has.
+    all_edges = np.concatenate([bf, prior_arr], axis=0)
+    g_tot = (_graph(all_edges) if all_edges.shape[0]
+             else _graph(np.empty((0, 2), dtype=np.int64)))
+    _, labels = connected_components(g_tot, directed=False)
+    sizes = np.bincount(labels, minlength=n_filaments)
+    giant = int(sizes.max()) / n_filaments
+    deg_tot = np.asarray((g_tot > 0).sum(axis=1)).ravel()
+    z_struct_realised = float(deg_tot.mean())
+    n_homeless = int((deg_tot == 0).sum())
 
     return ConnectedMeshSeed(
         layout=layout,

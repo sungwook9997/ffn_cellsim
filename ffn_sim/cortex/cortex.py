@@ -1058,6 +1058,22 @@ class VariableLengthCortexLayout:
     is_formin: np.ndarray = field(
         default_factory=lambda: np.empty(0, dtype=bool)
     )
+    # Arp2/3 70° BRANCH topology (mother-daughter junctions).  branch_bonds are
+    # (mother_bead, daughter_base_bead) flat-index pairs — the Arp2/3 link that
+    # makes a branched daughter BORN attached to its mother (real connectivity,
+    # independent of crosslinkers).  branch_angles are (mother_neighbour,
+    # mother_bead, daughter_base) triplets constrained to the 70° branch angle.
+    # is_branched[f] = True for daughters nucleated off a mother.  Empty when
+    # arp_branch_fraction = 0.
+    branch_bonds: np.ndarray = field(
+        default_factory=lambda: np.empty((0, 2), dtype=np.int64)
+    )
+    branch_angles: np.ndarray = field(
+        default_factory=lambda: np.empty((0, 3), dtype=np.int64)
+    )
+    is_branched: np.ndarray = field(
+        default_factory=lambda: np.empty(0, dtype=bool)
+    )
 
     @property
     def filament_idx(self) -> np.ndarray:
@@ -1260,6 +1276,123 @@ def _project_to_shell_band(
     return positions / np.maximum(r, 1.0e-30) * r_target
 
 
+def _nucleate_arp_branches(
+    positions_flat: np.ndarray,
+    starts: np.ndarray,
+    nbeads: np.ndarray,
+    tangents: np.ndarray,
+    is_formin: np.ndarray,
+    *,
+    ell0: float,
+    R_cell: float,
+    thickness: float,
+    arp_branch_fraction: float,
+    branch_angle_deg: float,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Nucleate Arp2/3 daughters as BRANCHES off mother filaments at ~70°.
+
+    Faithful Arp2/3 topology (Fritzsche 2016/2017; Garlick 70° ground-truth):
+    a fraction ``arp_branch_fraction`` of the SHORT (Arp2/3) filaments are
+    daughters BORN attached to a mother — the daughter is rigidly re-placed so
+    its base bead sits one segment from a mother bead, growing at the branch
+    angle (≈70°) to the mother's local tangent in the shell tangent plane.
+
+    A branch contributes:
+      * a BRANCH BOND ``(mother_bead, daughter_base)`` — the Arp2/3 link (the
+        daughter is connected to the network independent of crosslinkers, so no
+        branched daughter is ever isolated), and
+      * a BRANCH ANGLE ``(mother_neighbour, mother_bead, daughter_base)`` held
+        at ``branch_angle_deg`` (the dendritic 70° geometry).
+
+    Mothers are restricted to NON-daughter filaments (one branch level), chosen
+    as the nearest such filament bead to the daughter's original location.
+
+    Returns (positions_flat, branch_bonds (B,2), branch_angles (B,3),
+    is_branched (F,)).
+    """
+    from scipy.spatial import cKDTree
+
+    F = nbeads.shape[0]
+    is_branched = np.zeros(F, dtype=bool)
+    short = np.flatnonzero(~is_formin)
+    if arp_branch_fraction <= 0.0 or short.size == 0:
+        return (positions_flat, np.empty((0, 2), dtype=np.int64),
+                np.empty((0, 3), dtype=np.int64), is_branched)
+    n_branch = int(round(arp_branch_fraction * short.size))
+    daughters = rng.choice(short, size=n_branch, replace=False)
+    is_branched[daughters] = True
+
+    # Mother pool = beads of NON-daughter filaments (formin + unbranched Arp2/3).
+    mother_fil = np.flatnonzero(~is_branched)
+    mother_beads = np.concatenate([
+        np.arange(int(starts[f]), int(starts[f]) + int(nbeads[f]))
+        for f in mother_fil
+    ])
+    tree = cKDTree(positions_flat[mother_beads])
+
+    cos_t = math.cos(math.radians(branch_angle_deg))
+    sin_t = math.sin(math.radians(branch_angle_deg))
+    branch_bonds: list[tuple[int, int]] = []
+    branch_angles: list[tuple[int, int, int]] = []
+    fil_of_bead = np.repeat(np.arange(F), nbeads)
+
+    for d in daughters:
+        s0, nd = int(starts[d]), int(nbeads[d])
+        com = positions_flat[s0:s0 + nd].mean(axis=0)
+        # nearest mother bead to the daughter's location (query a few, skip any
+        # accidentally on a daughter via the fil-of-bead check).
+        _, idxs = tree.query(com, k=min(8, mother_beads.size))
+        m_bead = None
+        for j in np.atleast_1d(idxs):
+            cand = int(mother_beads[int(j)])
+            if not is_branched[fil_of_bead[cand]]:
+                m_bead = cand
+                break
+        if m_bead is None:
+            is_branched[d] = False
+            continue
+        fm = int(fil_of_bead[m_bead])
+        P_m = positions_flat[m_bead]
+        n_hat = P_m / max(np.linalg.norm(P_m), 1e-30)        # shell normal
+        t_m = tangents[fm]
+        t_m = t_m - np.dot(t_m, n_hat) * n_hat               # in tangent plane
+        t_m /= max(np.linalg.norm(t_m), 1e-30)
+        w = np.cross(n_hat, t_m)                             # lateral in-plane
+        # Branch at the 70° angle from the mother axis, at a RANDOM azimuth ψ
+        # around that axis (the Arp2/3 dendritic cone) — so multiple daughters
+        # off the same mother point in DIFFERENT directions (no coincident
+        # bases).  The out-of-plane component is pulled back by the shell
+        # projection below, keeping the quasi-2D cortex.
+        psi = rng.uniform(0.0, 2.0 * math.pi)
+        branch_dir = cos_t * t_m + sin_t * (
+            math.cos(psi) * w + math.sin(psi) * n_hat)
+        branch_dir /= max(np.linalg.norm(branch_dir), 1e-30)
+        # rigidly re-place the daughter: base one segment from the mother bead,
+        # beads laid straight along branch_dir, then projected back onto the band.
+        base = P_m + ell0 * branch_dir
+        for k in range(nd):
+            positions_flat[s0 + k] = base + k * ell0 * branch_dir
+        # keep daughter in the band at the mother's depth (smooth, in-shell)
+        depth_m = R_cell - np.linalg.norm(P_m)
+        sub = positions_flat[s0:s0 + nd]
+        r = np.linalg.norm(sub, axis=1, keepdims=True)
+        positions_flat[s0:s0 + nd] = sub / np.maximum(r, 1e-30) * (R_cell - depth_m)
+        # branch bond + 70° branch angle
+        branch_bonds.append((m_bead, s0))
+        m_nbr = m_bead + 1 if (m_bead + 1) < (int(starts[fm]) + int(nbeads[fm])) \
+            else m_bead - 1
+        if m_nbr != m_bead:
+            branch_angles.append((m_nbr, m_bead, s0))
+
+    return (
+        positions_flat,
+        np.array(branch_bonds, dtype=np.int64).reshape(-1, 2),
+        np.array(branch_angles, dtype=np.int64).reshape(-1, 3),
+        is_branched,
+    )
+
+
 def generate_bimodal_cortex_layout(
     p: ResolvedH3,
     *,
@@ -1268,6 +1401,8 @@ def generate_bimodal_cortex_layout(
     L_long_mean: float | None = None,
     n_filaments: int | None = None,
     project_to_shell: bool = True,
+    arp_branch_fraction: float = 0.0,
+    branch_angle_deg: float = 70.0,
     rng: np.random.Generator | None = None,
     n_beads_min: int = 2,
     n_beads_max: int | None = None,
@@ -1370,6 +1505,17 @@ def generate_bimodal_cortex_layout(
             bead_depth=bead_depth,
         )
 
+    # Arp2/3 70° branching: re-place a fraction of short filaments as daughters
+    # born attached to a mother (real connectivity → no isolated short filament).
+    positions_flat, branch_bonds, branch_angles, is_branched = (
+        _nucleate_arp_branches(
+            positions_flat, filament_starts, n_beads_per, tangents, is_formin,
+            ell0=L0, R_cell=p.R_cell, thickness=p.cortex_thickness,
+            arp_branch_fraction=arp_branch_fraction,
+            branch_angle_deg=branch_angle_deg, rng=rng,
+        )
+    )
+
     bond_groups = np.array(bond_pairs, dtype=np.int64).reshape(-1, 2)
     angle_groups = (
         np.array(angle_triplets, dtype=np.int64).reshape(-1, 3)
@@ -1386,6 +1532,9 @@ def generate_bimodal_cortex_layout(
         bond_groups=bond_groups,
         angle_groups=angle_groups,
         is_formin=is_formin,
+        branch_bonds=branch_bonds,
+        branch_angles=branch_angles,
+        is_branched=is_branched,
     )
 
 
@@ -1418,17 +1567,35 @@ def build_variable_length_cortex_state(
 
     n_bonds = layout.bond_groups.shape[0]
     n_angles = layout.angle_groups.shape[0]
+    # Arp2/3 70° branch bonds (mother↔daughter) + branch angles, appended on top
+    # of the backbone bonds/angles as their own types.
+    n_branch_b = int(layout.branch_bonds.shape[0])
+    n_branch_a = int(layout.branch_angles.shape[0])
 
-    snap.bonds.N = n_bonds
-    snap.bonds.types = ["cortex-bond"]
-    snap.bonds.typeid = np.zeros(n_bonds, dtype=np.uint32)
-    snap.bonds.group = layout.bond_groups.astype(np.uint32)
+    snap.bonds.N = n_bonds + n_branch_b
+    snap.bonds.types = (["cortex-bond"] + (["arp_branch"] if n_branch_b else []))
+    bt = np.zeros(n_bonds + n_branch_b, dtype=np.uint32)
+    bg = layout.bond_groups.astype(np.uint32)
+    if n_branch_b:
+        bg = np.concatenate([bg, layout.branch_bonds.astype(np.uint32)], axis=0)
+        bt[n_bonds:] = 1                          # arp_branch typeid
+    snap.bonds.typeid = bt
+    snap.bonds.group = bg
 
-    if n_angles > 0:
-        snap.angles.N = n_angles
-        snap.angles.types = ["cortex-angle"]
-        snap.angles.typeid = np.zeros(n_angles, dtype=np.uint32)
-        snap.angles.group = layout.angle_groups.astype(np.uint32)
+    if n_angles + n_branch_a > 0:
+        snap.angles.N = n_angles + n_branch_a
+        snap.angles.types = (["cortex-angle"]
+                             + (["arp_branch_angle"] if n_branch_a else []))
+        at = np.zeros(n_angles + n_branch_a, dtype=np.uint32)
+        ag = layout.angle_groups.astype(np.uint32)
+        if n_branch_a:
+            ag = (layout.branch_angles.astype(np.uint32) if n_angles == 0
+                  else np.concatenate([ag, layout.branch_angles.astype(np.uint32)], axis=0))
+            at[n_angles:] = 1 if n_angles else 0  # arp_branch_angle typeid
+            if n_angles == 0:
+                snap.angles.types = ["arp_branch_angle"]
+        snap.angles.typeid = at
+        snap.angles.group = ag
 
     snap.configuration.box = [p.L_box, p.L_box, p.L_box, 0.0, 0.0, 0.0]
     return snap

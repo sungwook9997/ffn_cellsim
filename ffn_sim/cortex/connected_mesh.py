@@ -83,8 +83,10 @@ def build_connected_cortex(
     formin_fraction: float = 0.12,
     L_long_mean: float = 5.0e-6,
     L_short_mean: float | None = None,
-    z_struct: float = 3.7,
-    bundle_mult: int = 2,
+    z_struct: float = 2.8,
+    bundle_mult: int = 3,
+    arp_branch_fraction: float = 0.7,
+    branch_angle_deg: float = 70.0,
     reach: float | None = None,
     n_filaments: int | None = None,
     device: hoomd.device.Device | None = None,
@@ -113,20 +115,25 @@ def build_connected_cortex(
     # Mesoscale-consistent attach reach (bins + dynamic query span the mesh).
     p_xl = _replace(p_xl, max_bind_dist=reach)
 
-    # 1. Bimodal cortex topology.
+    # 1. Bimodal cortex topology + Arp2/3 70° branches (faithful nucleator).
     layout = generate_bimodal_cortex_layout(
         p_cortex, formin_fraction=formin_fraction,
         L_long_mean=L_long_mean, L_short_mean=L_short_mean,
+        arp_branch_fraction=arp_branch_fraction,
+        branch_angle_deg=branch_angle_deg,
         n_filaments=F, project_to_shell=True, rng=rng,
     )
     n_cortex_actin = int(layout.positions_flat.shape[0])
     filament_idx = layout.filament_idx
 
-    # 2. Seed the connected bridge mesh (bridge-different-filament + bundling).
+    # 2. Seed the connected bridge mesh (bridge-different-filament + bundling),
+    # counting the Arp2/3 branch bonds as prior connectivity so the TOTAL
+    # coordination (branches + crosslinks) lands at z_struct.
     seed = seed_connected_mesh_xlinks(
         layout.positions_flat, filament_idx, F, p_xl,
         z_struct=z_struct, bundle_mult=bundle_mult, reach=reach,
-        R_cell=p_cortex.R_cell, n_cortex_beads=n_cortex_actin, rng=rng,
+        R_cell=p_cortex.R_cell, n_cortex_beads=n_cortex_actin,
+        prior_bead_bonds=layout.branch_bonds, rng=rng,
     )
 
     # 3. Build HOOMD frame: bimodal cortex + seeded xlink heads + attach bonds.
@@ -154,6 +161,10 @@ def build_connected_cortex(
     # ---- Forces ----
     bond = md.bond.Harmonic()
     bond.params["cortex-bond"] = dict(k=p_cortex.bond_k, r0=p_cortex.rest_length)
+    if int(layout.branch_bonds.shape[0]) > 0:
+        # Arp2/3 branch link: same stiffness as the backbone bond, rest length
+        # = one segment (the daughter base sits one ℓ0 from the mother bead).
+        bond.params["arp_branch"] = dict(k=p_cortex.bond_k, r0=p_cortex.rest_length)
     avg_intra_r0 = float(
         p_xl.alpha_fraction * p_xl.alpha_length
         + (1.0 - p_xl.alpha_fraction) * p_xl.filamin_length
@@ -165,6 +176,11 @@ def build_connected_cortex(
 
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
+    if int(layout.branch_angles.shape[0]) > 0:
+        # Arp2/3 70° dendritic branch angle (Garlick ground-truth), same
+        # bending stiffness as the backbone angle.
+        angle.params["arp_branch_angle"] = dict(
+            k=p_cortex.angle_k, t0=math.radians(branch_angle_deg))
 
     nlist = md.nlist.Tree(buffer=0.5 * p_cortex.lj_sigma)
     lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
