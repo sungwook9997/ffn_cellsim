@@ -90,8 +90,9 @@ def main() -> int:
     ax.axhline(1.0, color="0.5", ls="--", lw=1.0, label="A/A0 = 1 (no spread)")
     ax.set_xlabel("initial spheroid radius  R0  (um)")
     ax.set_ylabel("spread ratio  A/A0  (connected-core)")
-    ax.set_title("B2 — native-N GPU catch-bond A/A0(R0): law extends into the PI R0 range\n"
-                 "(G3 r^2=0.999, R0 53-196 um); matched-R0 magnitude still ~5-8x under PI")
+    ax.set_title("B2 — native-N catch-bond A/A0(R0) (CPU pooled growth; GPU-validated ~4.6x):\n"
+                 "law extends into the PI R0 range (G3 r^2=0.999, R0 53-196 um); "
+                 "matched-R0 magnitude still ~5-8x under PI")
     ax.set_xlim(left=0)
     ax.set_ylim(bottom=0)
     ax.legend(fontsize=7.5, loc="upper right", framealpha=0.9)

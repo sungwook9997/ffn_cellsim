@@ -576,14 +576,27 @@ builders (`cbm`, `cadherin_bonds`, `proliferation` pool) select frozen-numpy on 
 provenance) vs device-cupy on GPU via `make_baoab_updater_for_device`. Full layer-2 + baoab suite
 green on CPU, byte-unchanged.
 
-**GPU correctness = bit-identical (decisive, stronger than "within seed noise").** Same-seed
-GPU vs CPU agree to **16 digits** on A/A₀ (N₀=200: both 2.0137476175162488; N₀=1000: both
-1.544657757387059). Why: in this overdamped, cohesion-dominated regime the BAOAB thermal noise is
-negligible vs the Morse/catch forces, so the observable is set by the **proliferation RNG (numpy,
-device-independent)** + the deterministic forces — device-invariant by construction. The cupy
-per-step path therefore changes wall-time, not physics.
+**⚠️ Correction (2026-06-04, caught by the pre-production audit).** The first pass of this
+section claimed the native-N sweep ran on the GPU with "16-digit GPU↔CPU parity." That was
+**wrong**: `layer2_gpu_scaleup.run_one` built a GPU device but never passed it to
+`run_growth_pooled`, so **every "GPU" sweep run actually executed on CPU** — and the "bit-identical"
+agreement was the *trivial* consequence of running the same CPU code with the same seed, not a GPU
+validation. The bug is fixed (the device is now passed; a requested-vs-actual device assert + a
+provenance stamp prevent recurrence). **The science is unaffected**: the native-N sweep below is a
+faithful **CPU pooled-growth** result — the L2.4b leak-free pool is what made native N feasible on
+CPU (just slower), and it reached R₀=196 µm / 11 878 cells / r²=0.999 honestly.
 
-**Native-N sweep — the G3 catch-bond law, extended (RTX A5000, GPU N₀≥4000 + CPU N₀≤2000, 3 seeds):**
+**GPU path — now validated on the REAL A5000 (device actually used).** Re-running with the fix:
+GPU↔CPU A/A₀ parity at N₀=1000 is **|ΔA/A₀| = 0.039** (statistical — the cupy RNG is a different
+stream from numpy, so agreement is within seed noise, *not* bit-exact; the earlier "16 digits" was
+the bug). The gbook-gated `layer2_gpu_baoab_smoke.py` independently confirms the device BAOAB GPU
+branch is finite and CPU-consistent (**|ΔA/A₀| = 0.001**, PASS). And the port **pays off**: real
+GPU throughput is **787 st/s at 6 175 cells → 703 st/s at 11 878 cells** (≈N-flat) — vs the CPU
+cliff — so N₀=8000 (R₀=196 µm) runs in **178 s on GPU vs ~810 s on CPU (~4.6×)**. The full PI-range
+production run is therefore **feasible on GPU** (~3–10 min/run); the epoch-loop port (D3) is an
+optimisation, not a pre-production blocker.
+
+**Native-N sweep — the G3 catch-bond law, extended (CPU pooled growth, 3 seeds; GPU re-validated):**
 
 | N₀ | 200 | 1000 | 2000 | 4000 | 8000 |
 |---|---|---|---|---|---|
@@ -612,19 +625,25 @@ A/A0 = 0.978 + (55.24 µm)/R + (−22.44 µm²)/R²       r² = 0.999   (R₀ 53
    away from scale (B2, now done) toward the **cohesion/observable axis** (e.g. a raw-area readout, a
    weaker-cohesion or active-protrusion mechanism) — a model-physics question, not a hardware one.
 
-**Honest performance note (the next bottleneck, flagged not hidden).** The per-step BAOAB host sync
-is gone, but device throughput still *falls* with N (925 st/s at N₀=1000 → 154 at N₀=8000) because
-at native N the **host-side proliferation epoch loop** (`scipy.cKDTree` + per-epoch
-`get/set_snapshot` gathers) becomes the dominant cost — exactly the "binding-updater cKDTree/snapshot
-is the next native-scale bottleneck" the GPU_MAIN_PORT plan predicted. GPU≈CPU at N₀=1000 (925 vs
-872 st/s); the win here is **feasibility** (native R₀ runs complete cleanly, 11 878-cell spheroid in
-~13 min) — not yet a large per-step speed-up. Porting the epoch loop (cupy KD-tree / device-resident
-division) is the indicated follow-on (roadmap D3), orthogonal to the B2 science result.
+**Performance — measured on the REAL GPU (corrected).** The first-pass "throughput collapses with N
+(925→154 st/s)" claim was the **CPU misattribution** (those were CPU numbers). On the real A5000 the
+per-step BAOAB host sync is gone and throughput is **≈N-flat: 787 st/s at 6 175 cells → 703 at
+11 878** (vs CPU's cliff), a **~4.6× wall-time win at N₀=8000** (178 s vs ~810 s). At small N the GPU
+is latency-bound (0.74× at N₀=1000) — CPU is the right device there. The host-side proliferation
+epoch loop (`scipy.cKDTree` + per-epoch `get/set_snapshot`) is *not* the dominant cost at this scale
+on GPU; it would only matter much deeper into native N — porting it (cupy KD-tree / device-resident
+division) is the **optional** D3 follow-on, not required for the PI-range production run. (The epoch
+loop was hardened defensively anyway: one cKDTree/epoch, single snapshot gather/epoch, pool-depletion
++ empty-set guards, a derived CFL force-overflow heads-up.)
 
-**Artifacts:** `integrator/baoab_device.py`, `tests/test_baoab_device.py` (8 green),
-`scripts/layer2_gpu_scaleup.py` (device-selectable catch-bond growth + parity + fit),
-`scripts/layer2_b2_vis.py`, `outputs/layer2/b2_gpu/{cpu,gpu}_sweep.jsonl` + `combined.jsonl`,
-figure `fig_layer2_b2_native_law.png`. PI A/A₀ overlay-only throughout.
+**Artifacts:** `integrator/baoab_device.py` (GPU VRAM/cupy-device guards + provenance print),
+`tests/test_baoab_device.py` (8 green), `scripts/layer2_gpu_scaleup.py` (device-passed +
+requested-vs-actual assert + commit/cfg-hash provenance), `scripts/layer2_gpu_baoab_smoke.py`
+(gbook-gated GPU↔CPU device-BAOAB smoke, PASS), `scripts/sync_to_gbook.sh` (one-command code sync —
+gbook is NOT Syncthing-synced), `scripts/layer2_b2_vis.py`,
+`outputs/layer2/b2_gpu/{cpu,gpu}_sweep.jsonl` (CPU sweep) + `real_{parity_N1000.log,gpu_native.jsonl}`
+(real-GPU validation), figure `fig_layer2_b2_native_law.png`. The b2_gpu `*.jsonl` are gitignored
+run-artifacts (Syncthing/outputs, provenance-stamped). PI A/A₀ overlay-only throughout.
 
 ## Figures
 
