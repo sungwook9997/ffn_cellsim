@@ -334,6 +334,139 @@ theory). Validated on cytokinesis furrow; applied to folds + furrow under shear 
 파라미터는 없음 → acceptance/framing. 우리 cortex가 연결망으로 제대로 서면 "active-gel flow/furrow를
 내는가"를 이걸로 검증 가능. 우선순위 낮음(연속체). 등록은 cortex-active-gel KC에 framing으로.
 
+## 11. Ray, Agarwal, Nitzan, Nédélec, Zaidel-Bar 2024, Development — "Actin capping protein regulates actomyosin contractility to maintain germline architecture in C. elegans" (`Actin-capping_protein_regulates_actomyosin_contrac.pdf`)
+
+**What it is:** in-vivo role of capping protein CAP-1 (CAPZ) in the C. elegans germline cortex/rachis;
++ Cytosim (Nédélec) actomyosin simulation.
+
+### Key findings (length-control mechanism)
+- **Capping protein caps the barbed end → blocks elongation → CONTROLS FILAMENT LENGTH + amount.**
+- **60% CAP-1 reduction → 2× F-actin + 2× NMII activity → increased contractility** (rachis, laser
+  incision). Cytosim: increased myosin is the main driver of the extra contractility.
+- CP organizes F-actin in muscle sarcomere Z-lines; architecture defects need actomyosin contractility.
+
+### → WHAT GOES INTO OUR MODEL
+- **Capping = the filament-LENGTH-control knob** behind the bimodal distribution: capping truncates
+  Arp2/3 filaments short; processive formins make the long ones (Fritzsche §2). For our STATIC
+  construction, capping is implicit in the SEEDED exponential length distribution; the
+  **capping↔length↔(F-actin amount)↔contractility coupling** is the mechanistic link to keep in mind
+  (more/longer F-actin ↔ more contractility).
+- **Cytosim (Nédélec)** = a fine-grained actomyosin simulation methodologically adjacent to ours —
+  worth cross-referencing for actomyosin-network construction/contractility validation.
+
+**감상평 (Lead):** C. elegans 생식선(cortex/MCF7 아님)이라 직접성은 낮지만 **일반 메커니즘이 유용**:
+capping protein이 barbed-end를 막아 필라멘트 길이·양을 정함 → less capping이면 F-actin↑·길이↑·수축↑.
+이게 Fritzsche의 bimodal 분포 뒤의 길이-제어 손잡이(capping이 Arp2/3를 짧게 자르고, formin은 길게
+신장). 우리 정적 construction에선 capping은 시드 길이분포에 함축되지만, capping↔length↔contractility
+결합은 기억할 메커니즘. Cytosim(Nédélec)은 우리와 인접한 fine-grained actomyosin 시뮬레이터 → 교차참조
+가치. 한계: 생식선/C. elegans, overlay/mechanism only.
+
+## 12. Chandrasekaran, Graham, Stachowiak, Rangamani 2024, Nat Commun 15 — "Kinetic trapping organizes actin filaments within liquid-like protein droplets" (`s41467-024-46726-6.pdf`)
+
+**What it is:** computational modeling of actin self-organization inside **VASP condensate droplets**
+(VASP = processive actin polymerase + bundler that phase-separates). Reconstituted/in-silico.
+
+### Key findings
+- Actin shapes inside droplets (shells / rings / mixtures) depend on the **KINETICS of VASP-actin
+  interactions = KINETIC TRAPPING** (not equilibrium): shorter VASP residence → less bundling → shells.
+- Droplet shape transitions (sphere→ellipsoid→rod) gated by filament LENGTH range.
+
+### → WHAT GOES INTO OUR MODEL (peripheral)
+- General principle: **emergent actin network SHAPE depends on ABP interaction KINETICS (residence
+  time), not just equilibrium** — reinforces that our crosslinker/bundler ON/OFF kinetics (residence)
+  shape the network (cross-read Li-Gao-Xu §8 rebinding). VASP = processive polymerase+bundler
+  (relevant to the FILOPODIUM tip-complex in the unified framework). NOT cortex architecture.
+
+**감상평 (Lead):** 접선적 — ABP 응축물(VASP droplet)이 actin을 shell/ring으로 조직하는 재구성·전산 연구.
+우리 cortex construction엔 직접 파라미터 없음. 유용한 일반 원리 하나: **network shape는 ABP 상호작용
+KINETICS(residence time)가 결정(kinetic trapping)** — 평형이 아니라 동역학 → 우리 crosslinker/bundler
+ON/OFF kinetics가 망 구조를 형성(Li-Gao-Xu rebinding과 일관). VASP는 processive polymerase+bundler =
+통합 framework의 filopodium tip에 관련. 우선순위 낮음, peripheral/method 소스로 등록.
+
+## 13. Merino-Casallo, Gómez-Benito, et al. 2022, Cell Adh Migr — "Unravelling cell migration: defining movement from the cell surface" (`Merino-Casallo...2022...pdf`)
+
+**What it is:** broad integrative cell-migration REVIEW (receptors, adhesions, cytoskeleton, nucleus,
+ECM). Its value for us = the migration-MODE ↔ actin-structure taxonomy.
+
+### Key (the structure↔mode map)
+- **Mesenchymal migration:** strong ECM adhesion via mature **stress-fiber-linked focal adhesions**;
+  high protease activity. **Amoeboid:** few adhesions, **contraction-based blebs / cortex-driven**,
+  actin protrusions glide. **Lobopodial:** tightly adherent, actomyosin contractility + hydrostatic
+  pressure + **nuclear pistoning** → bleb-like blunt lobopodia.
+- EMT / mesenchymal↔amoeboid transitions (MAT/CAT) in cancer; fiber alignment modulates protrusion.
+
+### → WHAT GOES INTO OUR MODEL (framing for the UNIFIED framework)
+- Directly serves [[project-unified-actin-architecture]]: the SAME actin machinery is deployed as
+  different structures per migration MODE — stress-fibers+FA (mesenchymal), cortex+blebs (amoeboid),
+  lobopodia (lobopodial). Confirms the "one category, different architectures/usages" vision + maps
+  each structure to function. MCF7 epithelial/cohesive → EMT relevance (overlay). Review/framing,
+  not construction parameters.
+
+**감상평 (Lead):** 통합 migration 리뷰 — 우리에겐 **migration-mode↔actin-structure 매핑**이 가치
+(mesenchymal=stress-fiber+FA / amoeboid=cortex+bleb / lobopodial=lobopodia+nuclear-pistoning).
+이게 통합 framework "하나의 기계, 모드별 다른 직조/사용"을 직접 뒷받침. EMT/MAT는 MCF7(상피)
+맥락에 관련(overlay). construction 파라미터는 없음 → 통합 KC의 review citation으로 등록. 우선순위 중하.
+
+## 14. Kadzik, Maxian, Thomas, Kovar, Munro 2026, bioRxiv 2026.05.24.727551 — "Rapid actin filament turnover maintains cortical CONNECTIVITY while allowing for cell cortex deformation and flow" (`2026.05.24.727551v1.full.pdf`) ⭐ DIRECT VALIDATION
+
+**What it is:** C. elegans zygote cortex — quantitative assembly/disassembly manipulation + live
+contractility/flow imaging + computational fiber-network model (Maxian). THE connectivity paper.
+
+### Key findings (the smoking-gun for our γ-floor)
+- **CONNECTIVITY is required for FORCE TRANSMISSION + coherent cortical flow.** A poorly-connected
+  cortex cannot transmit large-scale flows / contractile force; loss of connectivity → chaotic flow,
+  cortex collapse + tearing + blebbing.
+- **Filament LENGTH sets connectivity:** shortened filaments (cofilin/severing↑) → LESS connected →
+  faster/chaotic flow → collapse. Profilin knockdown (assembly↓) → connectivity loss → chaotic flow.
+- **Both assembly↓ and disassembly↓ → cortex COLLAPSE** (connectivity must be actively maintained by
+  balanced rapid turnover, which simultaneously allows deformation/flow).
+- They feed MEASURED assembly/disassembly rates into a computational actin-network model → reproduce
+  connectivity ↔ flow-transmission.
+
+### → WHAT GOES INTO OUR MODEL (capstone)
+1. **DIRECT validation of our whole diagnosis:** a connected cortex network is the PREREQUISITE for
+   force transmission/aggregation. Our **fragmented mesh (z=1.3, giant 7%) IS the disconnected
+   "can't-transmit-force" regime** → that is *why* per-head myosin force doesn't aggregate into shell
+   tension (the γ-floor). Fixing connectivity is fixing force transmission — not a side issue.
+2. **Filament LENGTH ↔ connectivity** (longer → more connected) — reconfirms Fritzsche §2 (long-formin
+   backbone) + cortex-workflow L/lc. Short filaments = disconnected = our failure mode.
+3. **Balanced rapid turnover MAINTAINS connectivity** while allowing flow → for our STATIC construction,
+   seed connected; for dynamics, turnover must be BALANCED (assembly≈disassembly) or the cortex
+   collapses. Our dynamic turnover module must keep connectivity, not just sever.
+4. Maxian's computational model + measured assembly/disassembly rates = a direct method + parameter
+   reference for our construction/dynamics.
+
+**감상평 (Lead):** **오늘 읽은 것 중 우리 진단을 가장 직접적으로 검증하는 논문.** "connectivity가 force
+전달·coherent flow에 필수, 끊기면 전달 불가·붕괴" — 이게 정확히 우리 γ-floor의 정체: **fragmented mesh
+(z=1.3)는 force를 전달 못 하는 disconnected regime이라 myosin 힘이 shell tension으로 합산 안 됨.** 즉
+연결성 수정 = force-aggregation 수정 그 자체(곁가지 아님). 필라멘트 길이↔connectivity(Fritzsche
+long-formin과 일치), 균형 turnover가 연결 유지(우리 동적 turnover는 sever만 하면 안 되고 연결 유지해야).
+Maxian의 전산 모델 + 측정 assembly/disassembly rate는 직접 방법·파라미터 참조. **이 논문이 connectivity
+→ force transmission → 우리 floor를 잇는 capstone.** 한계: C. elegans zygote(MCF7 아님), 2026 preprint
+(peer-review 전 — 인용 시 플래그). ⭐ 최우선 등록 + KnowledgeClaim "cortex-connectivity↔force-transmission".
+
+## 15. Serwas, Akamatsu, … Rangamani, Drubin 2021/2022, (Nat Commun) bioRxiv 2021.06.28.450262 — "Actin force generation in vesicle formation: mechanistic insights from cryo-electron tomography" (`2021.06.28.450262v2.full.pdf`; supplement `media-1.pdf`)
+
+**What it is:** cryo-ET of the branched actin network at clathrin-mediated ENDOCYTOSIS (CME) sites in
+human cells + actin-dynamics simulation (Akamatsu). Endocytic actin, not cortex.
+
+### Key findings
+- Cryo-ET: filament number/organization/orientation at CME; **force generation ROBUST despite
+  network-organization variance**. Assembly from **~4 "mother" filaments**; measured branch angle.
+- **Hip1R filament-MEMBRANE anchoring points along the invagination are KEY to pulling-force
+  generation + robustness** (anchorage → force transmission to the membrane).
+
+### → WHAT GOES INTO OUR MODEL (peripheral, one transferable principle)
+- **Filament-MEMBRANE ANCHORING is key to force transmission** — the cortex analog is ERM
+  (cortex↔membrane) + FA (cortex↔substrate). Reinforces that force transmission needs anchoring
+  (cross-read FA/H.4). Cryo-ET = direct in-cell architecture; Akamatsu actin-dynamics sim =
+  methodologically adjacent. NOT cortex architecture (endocytic branched network).
+
+**감상평 (Lead):** endocytic(CME) actin이라 cortex엔 접선적. 가져갈 일반 원리 하나: **필라멘트-막
+ANCHORING(Hip1R)이 pulling-force 전달의 핵심** → cortex에선 ERM(막)·FA(기판) 앵커가 그 역할(force
+transmission엔 anchoring 필요). cryo-ET=직접 in-cell 구조, Akamatsu sim=인접 방법론. 우선순위 낮음,
+peripheral 등록. media-1.pdf는 같은 논문 supplement(별도 SE 불요).
+
 ---
 
 **감상평 (Flormann, §1):** 우리에게 결정적으로 유용. 두 가지가 큼. (1) **"cortex 아키텍처는 단일 상수가
