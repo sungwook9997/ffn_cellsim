@@ -1,0 +1,25 @@
+[compliant-backbone] n_fil=1000 n_xl=1500 bind_scale=6.0 kon_scale=300.0 | samples=6×8000 after warmup=8000
+[control] measuring g_soft with motors ON (n=100) vs OFF (n=0) on the SAME compliant backbone; Δ_active = ON − OFF is the genuine active tension.
+
+  --- ARM A: motors OFF (structural-relabel baseline) ---
+    [compliant n_motors=0] s=1/6 r/r0=1.00000 g_soft=1.4576e-04 mN/m
+    [compliant n_motors=0] s=2/6 r/r0=1.00000 g_soft=1.4048e-04 mN/m
+    [compliant n_motors=0] s=3/6 r/r0=1.00000 g_soft=1.4406e-04 mN/m
+    [compliant n_motors=0] s=4/6 r/r0=1.00000 g_soft=1.5963e-04 mN/m
+    [compliant n_motors=0] s=5/6 r/r0=1.00000 g_soft=1.2661e-04 mN/m
+    [compliant n_motors=0] s=6/6 r/r0=1.00000 g_soft=1.1674e-04 mN/m
+  --- ARM B: motors ON (structural + active) ---
+    [compliant n_motors=100] s=1/6 r/r0=1.00000 g_soft=2.6538e-04 mN/m
+    [compliant n_motors=100] s=2/6 r/r0=1.00000 g_soft=2.6632e-04 mN/m
+    [compliant n_motors=100] s=3/6 r/r0=1.00000 g_soft=2.7509e-04 mN/m
+    [compliant n_motors=100] s=4/6 r/r0=1.00000 g_soft=2.7373e-04 mN/m
+    [compliant n_motors=100] s=5/6 r/r0=1.00000 g_soft=2.7589e-04 mN/m
+    [compliant n_motors=100] s=6/6 r/r0=1.00000 g_soft=3.3278e-04 mN/m
+
+=== RESULT (compliant backbone, motors ON/OFF control) ===
+  g_soft(OFF, structural) = 1.3888e-04 mN/m   (r/r0=1.00000)
+  g_soft(ON,  total)      = 2.8153e-04 mN/m   (r/r0=1.00000)
+  Δ_active = ON − OFF     = 1.4265e-04 mN/m   (band (0.35, 0.65))
+  → VERDICT: RELABEL artifact (Δ_active floored; any g_soft rise is structural, not active)
+
+[json] /Users/sw1/ffn_cellsim/ffn_sim/outputs/h3/production/stage2_compliant_backbone.json

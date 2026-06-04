@@ -1,0 +1,82 @@
+{
+  "config": {
+    "n_fil": 1000,
+    "n_motors_on": 100,
+    "n_xl": 1500,
+    "bind_scale": 6.0,
+    "kon_scale": 300.0,
+    "n_sample": 6,
+    "interval": 8000,
+    "n_warmup": 8000,
+    "backbone": "compliant (constrained=False, harmonic k=bond_k)"
+  },
+  "motors_off": {
+    "g_soft_mean_mN_m": 0.0001388810353535922,
+    "r_over_r0_mean": 1.00000017456731,
+    "samples": [
+      [
+        1.0000000043397008,
+        0.00014575918091245721
+      ],
+      [
+        1.0000002018421543,
+        0.00014048193978396205
+      ],
+      [
+        1.0000002680466358,
+        0.00014405930924912266
+      ],
+      [
+        1.0000001539342374,
+        0.00015962880864515917
+      ],
+      [
+        1.0000001788502937,
+        0.000126612269561304
+      ],
+      [
+        1.000000240390837,
+        0.0001167447039695481
+      ]
+    ],
+    "exploded": false
+  },
+  "motors_on": {
+    "g_soft_mean_mN_m": 0.00028153325608593554,
+    "r_over_r0_mean": 0.9999994485272081,
+    "samples": [
+      [
+        0.9999997122395324,
+        0.0002653824134785004
+      ],
+      [
+        0.9999996515521333,
+        0.00026632280304811205
+      ],
+      [
+        0.9999994502052943,
+        0.00027509345021539265
+      ],
+      [
+        0.9999993097173713,
+        0.0002737290130253085
+      ],
+      [
+        0.9999993069504771,
+        0.0002758942068647362
+      ],
+      [
+        0.99999926049844,
+        0.00033277764988356333
+      ]
+    ],
+    "exploded": false
+  },
+  "delta_active_mN_m": 0.00014265222073234335,
+  "ku35_band_mN_m": [
+    0.35,
+    0.65
+  ],
+  "verdict": "RELABEL artifact (\u0394_active floored; any g_soft rise is structural, not active)",
+  "interpretation": "g_soft(OFF)=structural hoop stress relabelled into the harmonic channel; g_soft(ON)=structural+active; \u0394_active=ON\u2212OFF is the genuine active cortical tension. Compliant backbone is a real fix ONLY if \u0394_active reaches band."
+}
