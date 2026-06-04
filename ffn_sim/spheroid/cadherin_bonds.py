@@ -66,7 +66,7 @@ import numpy as np
 import numpy.typing as npt
 from hoomd import md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.integrator.baoab_device import make_baoab_updater_for_device
 from ffn_sim.spheroid.cbm import get_positions, make_blob_positions, pool_cluster_radius
 from ffn_sim.spheroid.params import ResolvedL2
 from ffn_sim.validation.cadherin_sliding_rebinding import (
@@ -260,7 +260,10 @@ def build_cbm_catch(
     ig.forces.append(table)
     sim.operations.integrator = ig
 
-    _action, baoab = make_baoab_updater(
+    # Device-aware BAOAB: frozen numpy on CPU (byte-stable), device-resident cupy on GPU
+    # (the B2 native-N unlock — removes the per-step host sync). See integrator/baoab_device.py.
+    _action, baoab = make_baoab_updater_for_device(
+        device or sim.device,
         kT=resolved.kT, gamma={"cell": resolved.gamma_cell, "void": resolved.gamma_cell * 1e6},
         dt=resolved.dt_cfl, seed=seed,
     )

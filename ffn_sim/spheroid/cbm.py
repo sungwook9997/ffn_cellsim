@@ -41,7 +41,7 @@ import numpy as np
 import numpy.typing as npt
 from hoomd import md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.integrator.baoab_device import make_baoab_updater_for_device
 from ffn_sim.spheroid.observables import (
     detached_fraction,
     nearest_neighbor_stats,
@@ -197,7 +197,12 @@ def build_cbm_simulation(
     ig.forces.append(morse)
     sim.operations.integrator = ig
 
-    action, updater = make_baoab_updater(
+    # Device-aware: frozen numpy BAOAB on CPU (byte-stable), device-resident cupy BAOAB on a
+    # GPU device (removes the per-step host sync — the B2 native-N unlock). See
+    # integrator/baoab_device.py.
+    dev = device or sim.device
+    action, updater = make_baoab_updater_for_device(
+        dev,
         kT=resolved.kT,
         gamma={"cell": resolved.gamma_cell},
         dt=resolved.dt_cfl,

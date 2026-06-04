@@ -52,7 +52,7 @@ from hoomd import md
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.integrator.baoab_device import make_baoab_updater_for_device
 from ffn_sim.spheroid.cbm import (
     _CUTOFF_N_RANGES,
     build_cbm_simulation,
@@ -326,8 +326,10 @@ def build_pool_simulation(
     ig.forces.append(morse)
     sim.operations.integrator = ig
 
-    # void frozen via a large drag (1e6×) so thermal kicks don't move the parked ghosts
-    _action, updater = make_baoab_updater(
+    # void frozen via a large drag (1e6×) so thermal kicks don't move the parked ghosts.
+    # Device-aware BAOAB: frozen numpy on CPU, device-resident cupy on GPU (B2 native-N unlock).
+    _action, updater = make_baoab_updater_for_device(
+        device,
         kT=resolved.kT,
         gamma={"cell": resolved.gamma_cell, "void": resolved.gamma_cell * 1.0e6},
         dt=resolved.dt_cfl,
