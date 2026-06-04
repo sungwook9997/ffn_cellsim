@@ -99,6 +99,7 @@ class ResolvedCadherin:
     r_cut: float                 # m    cohesion cutoff (slip-ruptured beyond)
     wca_epsilon: float           # J    repulsive-core energy (excluded volume)
     wca_sigma: float             # m    WCA sigma (= r0/2^(1/6) → repulsion onset at r0)
+    yield_remodel: bool = False  # –    turnover-remodeled (viscoplastic) cohesion: see below
 
 
 def resolve_cadherin(
@@ -106,6 +107,7 @@ def resolve_cadherin(
     *,
     catch: CadherinCatchParams = RAKSHIT_W2A,
     r_cut_zones: float = 3.0,
+    yield_remodel: bool = False,
 ) -> ResolvedCadherin:
     """Derive the adiabatic catch-bond cohesion from measured anchors (no tuned constants).
 
@@ -113,6 +115,19 @@ def resolve_cadherin(
         resolved: resolved CBM params (F_detach, r0, contact_zone).
         catch: single-cadherin sliding-rebinding kinetics (Rakshit 2012 Table S1 default).
         r_cut_zones: cohesion cutoff in contact-zone widths beyond r0 (slip rupture tail).
+        yield_remodel: if True, the contact is a TURNOVER-REMODELED (viscoplastic) cohesion —
+            beyond the catch peak the ENSEMBLE holding force PLATEAUS (does not slip-rupture to
+            0) because cadherins continuously turn over (slip AND re-form) so the connected
+            contact REMODELS under load instead of snapping a single bond. This is the
+            literature-grounded fix (Kadzik & Munro 2026: balanced turnover maintains cortical
+            CONNECTIVITY and lets the network FLOW rather than fracture; Trepat 2009: collective
+            traction is borne by distributed intercellular stress, not one bond; Cavey 2008 /
+            Yap 2015: adherens junctions remodel under tension while maintaining adhesion). The
+            default (False) is the brittle adiabatic catch bond — a single contact ruptures once
+            its tension passes the catch peak (the per-cell fracture that ejects a crawling rim
+            cell in the D-axis decisive bracket). NO new magnitude constant: the plateau level is
+            the SAME anchored catch peak (≈ N_cad·f0 = the Iturri de-adhesion force); only the
+            slip-decay tail is replaced by the turnover-sustained plateau over the existing range.
     """
     n_cad = resolved.deadhesion_force_mature / catch.f0
     k_bond = n_cad * catch.f0 / resolved.contact_zone_width
@@ -124,6 +139,7 @@ def resolve_cadherin(
         r0=float(resolved.morse_r0),
         r_cut=float(resolved.morse_r0 + r_cut_zones * resolved.contact_zone_width),
         wca_epsilon=float(wca_eps), wca_sigma=float(sigma),
+        yield_remodel=bool(yield_remodel),
     )
 
 
@@ -148,6 +164,19 @@ def catch_cohesion_force(
     f_pc = F_el / cad.n_cad
     phi = occupancy(f_pc, cad)
     F = phi * F_el
+    if cad.yield_remodel and F.size:
+        # Turnover-remodeled (viscoplastic) cohesion: beyond the catch peak the ensemble does
+        # NOT slip-rupture to 0 — cadherins turn over (slip AND re-form), so the connected
+        # contact maintains its holding force and the cells SLIDE/FLOW instead of one bond
+        # snapping (Kadzik 2026 connectivity↔flow; Trepat 2009 distributed stress). The plateau
+        # level is the SAME anchored catch peak (no new magnitude constant); only the slip-decay
+        # tail (ext past the peak, still within r_cut) is replaced by that sustained plateau.
+        within = (ext > 0.0) & (d_arr < cad.r_cut)
+        if within.any():
+            F_peak = float(F[within].max())
+            ext_peak = float(ext[within][np.argmax(F[within])])
+            plateau = within & (ext > ext_peak)
+            F = np.where(plateau, F_peak, F)
     F[(ext <= 0.0) | (d_arr >= cad.r_cut)] = 0.0
     return F
 

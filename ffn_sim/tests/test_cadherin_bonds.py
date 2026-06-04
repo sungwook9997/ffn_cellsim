@@ -75,3 +75,29 @@ def test_g1_catch_is_stable_aggregate(resolved, cad):
     assert 0.90 <= res["nn_median_over_r0"] <= 1.20      # settled to contact
     assert res["detached_fraction"] <= 0.02              # cohesive, no gas
     assert res["rg_growth_factor"] <= 1.50               # not dispersing
+
+
+def test_yield_remodel_plateau_vs_brittle_rupture():
+    """Turnover-remodeled cohesion plateaus beyond the catch peak; brittle decays to 0."""
+    import yaml
+    import numpy as np
+    from pathlib import Path
+    from ffn_sim.spheroid.params import resolve_layer2
+    from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin, catch_cohesion_force
+    cfg = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
+    r = resolve_layer2(yaml.safe_load(cfg.read_text()))
+    cad_b = resolve_cadherin(r)                        # brittle (default)
+    cad_y = resolve_cadherin(r, yield_remodel=True)    # turnover-remodeled
+    assert cad_b.yield_remodel is False and cad_y.yield_remodel is True
+    rg = np.linspace(cad_b.r0, cad_b.r_cut, 200)
+    Fb = catch_cohesion_force(rg, cad_b)
+    Fy = catch_cohesion_force(rg, cad_y)
+    # SAME anchored peak (no new magnitude constant)
+    assert Fy.max() == pytest.approx(Fb.max(), rel=1e-9)
+    ipk = int(np.argmax(Fb))
+    # on the rising side they agree; in the slip tail the brittle DECAYS, the yield HOLDS at peak
+    assert np.allclose(Fb[:ipk + 1], Fy[:ipk + 1])
+    far = slice(int(0.75 * len(rg)), len(rg) - 2)      # far slip tail (exclude r_cut zeroing)
+    assert Fb[far].max() < 0.5 * Fb.max()              # brittle has slip-decayed in the far tail
+    assert np.allclose(Fy[far], Fy.max())              # yield holds the turnover plateau (no decay)
+    assert (Fy[far] > Fb[far] * 1.5).all()             # yield >> brittle where it matters

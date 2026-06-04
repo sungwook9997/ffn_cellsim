@@ -42,10 +42,11 @@ def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
     n, seed = int(args[0]), int(args[1])
     kind = args[2] if len(args) > 2 else "cpu"
+    cohesion_mode = args[3] if len(args) > 3 else "brittle"  # 'brittle' | 'yield'
     cfg = yaml.safe_load(_CFG.read_text())
     resolved = resolve_layer2(cfg)
     prolif = resolve_proliferation(cfg, resolved)
-    cad = resolve_cadherin(resolved)
+    cad = resolve_cadherin(resolved, yield_remodel=(cohesion_mode == "yield"))
     sub = resolve_substrate(resolved)
     at = resolve_active_traction(resolved)
     total_time = 2.0 * prolif.cycle_time_mean
@@ -60,7 +61,8 @@ def main(argv=None):
             max_cells=mc,
         )
         rec = {
-            "arm": label, "crawl": "basal", "n": n, "seed": seed, "device": kind,
+            "arm": label, "crawl": "basal", "cohesion": cohesion_mode,
+            "n": n, "seed": seed, "device": kind,
             "f_active_nN": round(f * 1e9, 2),
             "R0_um": round(float(effective_radius(res["a0"]) * 1e6), 1),
             "aa0_core": round(float(res["area_core_over_a0"][-1]), 3),
