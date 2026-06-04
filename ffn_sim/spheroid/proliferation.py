@@ -421,6 +421,7 @@ def run_growth_pooled(
     f_traction: float = 0.0,
     Lp: float = 11.0e-6,
     crawl_mode: str = "edge",
+    plith: "Any" = None,
 ) -> dict[str, Any]:
     """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
 
@@ -481,6 +482,7 @@ def run_growth_pooled(
         edge_force = SettableForce(max_cells)
         sim.operations.integrator.forces.append(edge_force)
         _edge_outward = edge_outward_forces  # local alias (crawl_mode='edge')
+        _pol = None
         if crawl_mode == "basal":
             # D-axis: substrate-reacted collective IN-PLANE basal crawl (substrate_crawl.py).
             # Needs the substrate plane height; basal_band = one cell radius (r0/2) above it.
@@ -489,8 +491,20 @@ def run_growth_pooled(
                 raise ValueError("crawl_mode='basal' requires a substrate (z plane).")
             _z_sub = float(substrate.r0_sub)
             _basal_band = 1.0 * r0
+        elif crawl_mode == "plithotaxis":
+            # §E: SPP plithotaxis (plithotaxis.py) — substrate-reacted collective crawl whose
+            # in-plane direction is a persistent, CIL-free-edge-polarised polarity (Smeets 2016).
+            from ffn_sim.spheroid.plithotaxis import PolarizationField, resolve_plithotaxis
+            if substrate is None:
+                raise ValueError("crawl_mode='plithotaxis' requires a substrate (z plane).")
+            _z_sub = float(substrate.r0_sub)
+            _basal_band = 1.0 * r0
+            _plith = plith if plith is not None else resolve_plithotaxis(resolved)
+            _pol = PolarizationField(max_cells, _plith, seed=seed)
         elif crawl_mode != "edge":
-            raise ValueError(f"crawl_mode must be 'edge' or 'basal'; got {crawl_mode!r}.")
+            raise ValueError(
+                f"crawl_mode must be 'edge', 'basal', or 'plithotaxis'; got {crawl_mode!r}."
+            )
 
     sim.run(0)
     snap = sim.state.get_snapshot()
@@ -568,6 +582,18 @@ def run_growth_pooled(
             if crawl_mode == "basal":
                 ef_active = substrate_crawl_forces(
                     ap, f_crawl=f_traction, z_substrate=_z_sub, basal_band=_basal_band
+                )
+            elif crawl_mode == "plithotaxis":
+                # evolve the polarity (CIL + persistence) over this epoch, then map θ → force.
+                # pos_all is full (max_cells,3); the field works on absolute slots and returns the
+                # force in active order so the scatter below is unchanged.
+                _pol.update(
+                    pos_all, active, epoch_steps * dt,
+                    z_substrate=_z_sub, basal_band=_basal_band,
+                )
+                ef_active = _pol.forces(
+                    pos_all, active, f_active=f_traction,
+                    z_substrate=_z_sub, basal_band=_basal_band,
                 )
             else:
                 ef_active = _edge_outward(ap, f_traction=f_traction, Lp=Lp)

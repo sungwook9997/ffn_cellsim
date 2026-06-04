@@ -848,11 +848,93 @@ Artifacts: `spheroid/substrate_crawl.py`, `spheroid/cadherin_bonds.py` (`yield_r
 `scripts/layer2_daxis{,_yield_vis}.py`, `outputs/layer2/{daxis,daxis_yield}/*.jsonl`,
 figure `fig_layer2_daxis_yield.png`.
 
+## E — coherent collective traction (SPP plithotaxis): the COORDINATION mechanism, tested (2026-06-04)
+
+§D localised the residual ~5–9× gap to **DRIVING/COORDINATION** (a radially-symmetric basal crawl
+does net ~0 — isotropic pressure ⇒ static equilibrium). §E builds and tests the literature-faithful
+coordination fix: an **SPP-plithotaxis polarity field** (`spheroid/plithotaxis.py`,
+`crawl_mode='plithotaxis'`). Each cell carries an in-plane polarity `p_i`, self-propelled along it and
+**substrate-reacted** (drag = clutch γ, the `substrate_crawl` lineage), evolving by the **Smeets-2016
+CIL-SPP rule** (`PNAS 113:14621`, the closest breast-epithelial-anchored model — MCF10A):
+persistent reorientation (rotational diffusion **D_r=0.05 min⁻¹ ⇒ τ=20 min**) + **free-edge CIL**
+repolarisation toward open space (**f_cil=0.1 min⁻¹**, gated by a geometric edge-ness weight) + the
+velocity correlations **emergent from the catch+turnover cohesion** (Garcia 2015 PNAS / Henkes 2020 Nat
+Commun: the ~200 µm coherence arises from persistence + elastic coupling with **no explicit Vicsek
+alignment** — so the Vicsek term is implemented but default-OFF; imposing it would be an unanchored
+tunable fit to ξ). ψ=f_cil/(2D_r)=1.0 reproduces Smeets' MCF10A estimate. **Every input is a measured
+value; ξ≈200 µm and intercellular stress >300 Pa are emergent overlay targets; nothing is fitted to PI
+A/A₀.** Anchors + citation-integrity flags: `outputs/tag_kb/SE_REGISTRATION_CANDIDATES_2026-06-04_
+collective-migration.md`; design: `outputs/layer2/DESIGN_plithotaxis.md`. (Anchors sourced by an
+adversarially-verified deep-research pass: 106 agents, 25 claims, 20 confirmed / 5 refuted. No MCF7-
+specific data exists for these observables — MCF10A/MDCK/HBEC are the proxies, flagged per-row.)
+
+**Result — the bracket (R₀≈153 µm, N₀=4000, substrate + catch/yield cohesion, GPU, 2 seeds):**
+
+| arm | f_active | A/A₀ core (2-seed mean) | A/A₀ raw | ejected |
+|---|---|---|---|---|
+| f0 (baseline) | 0 | 1.278 | 1.433 | no |
+| whole-cell | 1.6 nN | 1.316 | 1.456 | no |
+| **MCF10A v_m** | **5.0 nN** | **1.312** | **1.455** | no |
+| protrusion | 9.4 nN | 1.300 | 1.454 | **no** |
+
+*(N₀=4000, R₀≈151 µm, substrate + catch/yield cohesion, GPU, 2 seeds — seed-0/seed-1 agree to ≤0.01;
+core flat at 1.28–1.32 across the full 0→9.4 nN range, raw 1.43–1.46, zero ejections.)*
+
+1. **Plithotaxis does NOT close the magnitude gap at native N.** A/A₀ is **flat across the entire
+   anchored force range** (0→9.4 nN: core ~1.28–1.32, raw ~1.43–1.47) — indistinguishable from the §D
+   radial-crawl baseline and ~5–8× under the PI medians (7.2/7.5/10). The persistent + free-edge-CIL
+   coordination produces no net macroscopic spread beyond §D at native scale.
+2. **The steering "works" mechanically — flow not fracture — but does not spread.** Even the 9.4 nN
+   protrusion arm **does not eject** (vs the §C rim-only and §D brittle ejections): the substrate-reacted
+   + yield-cohesion + persistent-CIL machinery holds the sheet. So the mechanism is faithfully realised;
+   it simply does not raise A/A₀.
+3. **Why — the N-dependence is diagnostic.** A small-N smoke (N=60) DID rise (core 1.7) because nearly
+   every cell is a free-edge cell (w_edge>0) and the whole cluster is CIL-driven; at native N the dense
+   disk is mostly **bulk** (w_edge≈0), so CIL drives only the thin perimeter ring and the ductile
+   cohesion holds the bulk compact — the **rim-only / cohesion-balanced** regime again. This is exactly
+   the center-based 1-particle limit: a point cell cannot generate distributed substrate traction *while*
+   staying cohesively bound (the Trepat tug-of-war has traction many rows back, not just the edge); the
+   only CBM-expressible alternatives are an isotropic radial drive (§D: does nothing) or an edge-only
+   drive (§E: rim-limited) — neither spreads.
+4. **⇒ The suspect elimination is now COMPLETE.** scale (§B2) ✗ · observable-definition (raw≈core) ✗ ·
+   cohesion (catch/morse, brittle/yield — §D) ✗ · **driving/coordination (plithotaxis — §E) ✗**. The
+   residual ~5–9× is the **center-based 1-particle structural limit**, not any mechanism the CBM can host.
+5. **⭐ Reframing for the next axis — the gap is likely 3D→2D WETTING/FLATTENING, not lateral migration.**
+   A spheroid of radius R (volume ∝R³) that *flattens* onto the dish into a film of thickness h gives a
+   purely geometric **A/A₀ ≈ 4R/(3h)** — for R≈150 µm and h≈15–30 µm (1–2 cell layers) that is **≈7–13**,
+   matching the PI 7–10. So the PI magnitude is plausibly the spheroid **melting into a quasi-2D film**
+   (a cell-substrate-adhesion / active-wetting transition), which the present CBM does not undergo (it
+   keeps a ~3D cap, A/A₀~1.3). Tellingly, the PI ligand axis IS a wetting-strength axis — **Lam4 (laminin,
+   strongest adhesion) gives the highest A/A₀=10**. This points the next production axis at **cell-
+   substrate adhesion / wetting** (the deferred-but-tracked Bare/Pre/Lam4 conditions), distinct from the
+   lateral collective-traction mechanism §E just tested. *(Hypothesis grounded in the geometric estimate +
+   the ligand-A/A₀ trend; to be tested, not yet a claim.)*
+
+**Verdict (honest).** The literature-faithful coordination mechanism, with measured MCF10A anchors and
+zero calibration, **does not close the ~5–9× magnitude gap** — completing the suspect elimination and
+confirming the gap is the **center-based 1-particle structural limit** (§C/§B2). The two principled
+routes both stand: **(a)** the **fine-grained single-cell line** (shape-resolved lamellipodium +
+explicit substrate traction — a cell that grips new substrate at its front while its rear stays bound);
+**(b)** the **3D→2D wetting/flattening axis** (cell-substrate adhesion strength; the PI ligand
+conditions), which the geometric A/A₀≈4R/3h argument newly suggests is where the *magnitude* actually
+lives. The PI law FORM remains reproduced (§HEADLINE, r²=0.998); the magnitude is a scope boundary, now
+mapped on all four CBM-hostable axes. PI A/A₀ overlay-only throughout. Artifacts:
+`spheroid/plithotaxis.py`, `tests/test_plithotaxis.py` (12 green), `scripts/layer2_plithotaxis.py`
+(+auto-viz `scripts/layer2_plithotaxis_vis.py`), `outputs/layer2/plithotaxis/*.jsonl`, figure
+`fig_layer2_plithotaxis.png`.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_plithotaxis.png` — **⭐ E SPP-plithotaxis bracket** (R₀≈151 µm, N₀=4000, 2 seeds):
+  plithotaxis core+raw A/A₀ bars across f_active = {0, 1.6, 5.0 (MCF10A), 9.4} nN, with the §D radial-
+  crawl core overlaid (red dashed, null) and the PI median band (7–10) far above. The persistent +
+  free-edge-CIL coordination mechanism (Smeets-2016 MCF10A anchors; correlations emergent, no Vicsek) is
+  **flat at ~1.3 core / ~1.45 raw across the whole force range, zero ejections** — does NOT close the
+  ~5–9× gap at native N. Completes the suspect elimination (scale/measurement/cohesion/coordination all
+  ✗) → the gap is the center-based 1-particle structural limit. SI, A/A₀=1 + PI overlay-only.
 - `figs/fig_layer2_motility_bridge.png` — **⭐ C lamellipodium→CBM motility bridge** (2 panels):
   **A** the active-traction force ladder (whole-cell 1.6 nN < ceiling 3 nN < cohesion 6.5 nN <
   protrusion 9.4 nN) with the detachment regime marked — the protrusion anchor exceeds cohesion, so
