@@ -786,6 +786,68 @@ substrate-traction CBM extension (roadmap D3) — this brushes the integrator fr
 not a silent tweak. (3) H.5 KU-5.2 force-velocity is still un-run on hardware (PI sign-off + Mac
 smoke), so the protrusion v₀ is parameterised from the H.5 config, not yet emergently confirmed.
 
+## D — substrate-reacted crawl + turnover-remodeled cohesion: the gap is DRIVING, not cohesion (2026-06-04)
+
+PI ratified the **A: CBM substrate-reacted traction D-axis** (after the §C decisive bracket). Two
+mechanistic units landed, and together they **eliminate cohesion as the magnitude-gap suspect**:
+
+**D-1 — substrate-reacted collective basal crawl (`spheroid/substrate_crawl.py`).** The §C decisive
+bracket applied the protrusion force as the EXISTING edge-localized, 3D-radial, cell-cell-transmitted
+traction and a rim cell EJECTED (force-routing artifact). D-1 applies the SAME anchored force the
+faithful way — **substrate-reacted** (drag = clutch γ, not competing with cohesion), **in-plane**
+(z-force = 0, the cell migrates across the dish), **collective over all basal cells** (not rim-only),
+so the sheet expands coherently (Pérez-González 2019; Mattila 2008). `run_growth_pooled` gains
+`crawl_mode='edge'|'basal'`; +5 tests. **Result (N₀=4000, R₀≈153 µm, 2 seeds, brittle catch bond):**
+collective basal-crawl @9.4 nN STILL **ejects both seeds** (core 1.13/1.15) — so the ejection is NOT
+a force-routing artifact; it is force-limited (a 1-contact rim cell's catch peak ≈3.9 nN < the 9.4 nN
+pull, so it genuinely detaches regardless of how the force is applied).
+
+**D-2 — turnover-remodeled (viscoplastic) cohesion (`resolve_cadherin(yield_remodel=True)`).** The
+friend's 2026-06-04 architecture lit batch (now KC-joined into the Contract-Graph) supplied the fix:
+*Kadzik & Munro 2026* — **balanced actin turnover maintains cortical CONNECTIVITY and lets the network
+FLOW rather than fracture**; *Trepat 2009* — collective traction is borne by **distributed
+intercellular stress**, not one bond; *Cavey 2008 / Yap 2015* — adherens junctions **remodel under
+tension while holding**. Diagnosis: the L2.5 catch bond is **brittle** — past the catch peak the
+ensemble holding slip-decays (3.86 → 0.49 nN within r_cut), so a crawling rim cell loses cohesion and
+detaches. D-2 makes it **ductile**: beyond the catch peak the ensemble **PLATEAUS at the (same
+anchored) catch peak** (cadherins slip AND re-form — turnover remodels the contact), so cells
+SLIDE/FLOW instead of one bond snapping. **No new magnitude constant** (plateau = the existing anchored
+peak; only the slip-decay tail is replaced); default `False` = unchanged brittle bond (regression green).
+
+**⭐ Result — the steering WORKS mechanistically but isolates the real cause (N₀=4000, 2 seeds):**
+
+| basal-crawl f | brittle core / raw / eject | **YIELD core / raw / eject** |
+|---|---|---|
+| 0 | 1.33 / 1.28 / no | 1.32 / **1.45** / no |
+| 1.6 nN (whole-cell) | 1.35 / 1.29 / no | 1.32 / 1.45 / no |
+| **9.4 nN (protrusion)** | 1.14 / 1.16 / **EJECTS** | **1.31 / 1.46 / NO EJECT** |
+
+1. **The Kadzik-grounded fix WORKS:** turnover-remodeled cohesion **removes the protrusion-force
+   ejection in both seeds** — the spheroid now **flows, not fractures**, at the lamellipodial crawl
+   force. The literature insight transferred directly to a working mechanism (+13% raw footprint from
+   the ductile sliding, too).
+2. **But A/A₀ does NOT rise** — it stays **~1.3 core / ~1.45 raw**, still ~5–7× under the PI medians
+   (7–10). The cohesion that now holds the sheet together also resists its spreading: the tissue flows
+   *coherently but compactly*.
+3. **⇒ Cohesion is ELIMINATED as the magnitude-gap suspect.** The gap survives every cohesion fix
+   (catch vs morse, brittle vs turnover-ductile) and every observable (core ≈ raw). Combined with §B2
+   (not scale) and the raw-area diagnostic (not measurement), the residual ~5–9× is a **DRIVING /
+   COORDINATION** gap: the anchored net per-cell traction (whole-cell 1.6 nN) is too weak, and the raw
+   protrusion force (9.4 nN) — even with cohesion now holding — only flows the cap compactly. The next
+   mechanism is **coherent collective traction** (Trepat-style plithotaxis / a tissue-scale polarized
+   traction field where the whole front pulls together, building distributed stress), or the
+   fine-grained single-cell line — NOT a cohesion parameter.
+
+**Knowledge-base note (the friend's lit batch directly improved the model).** The 2026-06-04
+architecture SourceEvidence batch (Kadzik/Merino/Flormann/… ) is now BM25-ingested AND relationally
+joined to KnowledgeClaims (incl. Layer-2 KB-5.13/5.16/PIV-9/4.18); `tag_query` can join the new papers
+to Layer-2 claims. Kadzik & Munro 2026 supplied the turnover→flow mechanism that became D-2.
+*(Open KB item for the corpus owner: the σ-bridge SE rows — Winklbauer/Roffay/Okuda/Fastabend/Chugh —
+still lack the Layer-2 KB-5.13 link; and the Kadzik PDF is ingested 3× (v1/full/media) — dedup.)*
+Artifacts: `spheroid/substrate_crawl.py`, `spheroid/cadherin_bonds.py` (`yield_remodel`),
+`scripts/layer2_daxis{,_yield_vis}.py`, `outputs/layer2/{daxis,daxis_yield}/*.jsonl`,
+figure `fig_layer2_daxis_yield.png`.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
@@ -797,6 +859,12 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   the CBM tears rather than spreads (1-particle structural limit); **B** the ×5.9 protrusion/whole-cell
   ratio = the observed magnitude gap, localised to the active side (cohesion 2-way-anchored, not the
   cause). Pure-arithmetic, no sim. SI units.
+- `figs/fig_layer2_daxis_yield.png` — **⭐ D-2 steering: turnover-remodeled vs brittle cohesion** under
+  the substrate basal crawl (R₀≈153 µm, 2 seeds). Grouped brittle/YIELD core+raw bars vs f_active, with
+  the **brittle EJECTS** (red) and **YIELD holds — flows** (green) annotations on the 9.4 nN protrusion
+  arm and the PI median band (7–10) far above. Shows the Kadzik-grounded yield cohesion removes the
+  fracture (flow not fracture) yet A/A₀ stays ~1.3–1.5 — cohesion eliminated as the gap suspect. SI,
+  A/A₀=1 + PI overlay.
 - `figs/fig_layer2_decisive_traction.png` — **⭐ Decisive bracket (the analytic verdict RUN)**: grouped
   core/raw A/A₀ for the 3 arms (baseline / whole-cell 1.6 nN / protrusion 9.4 nN dt/5) at R₀≈153 µm,
   2 seeds, with the **EJECTED** annotation on the protrusion arm (9.4 nN > 6.5 nN single-contact

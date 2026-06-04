@@ -100,3 +100,7 @@ ffn_sim/outputs/layer2/decisive/*.jsonl
 ffn_sim/outputs/layer2/decisive/*.log
 ffn_sim/outputs/layer2/decisive/*.err
 ffn_sim/outputs/layer2/decisive/*.progress
+
+ffn_sim/outputs/layer2/daxis*/*.jsonl
+ffn_sim/outputs/layer2/daxis*/*.err
+ffn_sim/outputs/layer2/daxis*/*.progress
