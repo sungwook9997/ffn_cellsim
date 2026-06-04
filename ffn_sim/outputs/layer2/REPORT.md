@@ -645,6 +645,30 @@ gbook is NOT Syncthing-synced), `scripts/layer2_b2_vis.py`,
 (real-GPU validation), figure `fig_layer2_b2_native_law.png`. The b2_gpu `*.jsonl` are gitignored
 run-artifacts (Syncthing/outputs, provenance-stamped). PI A/A₀ overlay-only throughout.
 
+## Production run — PI-ratified DOE (2026-06-04)
+
+After the pre-production audit (51 findings; the device-bug blocker fixed, 4-file hardening,
+real-GPU validation) and the raw-area observable add (below), PI ratified the first production
+DOE:
+
+- **Axis = R₀-law only, Bare (catch cohesion, NO substrate, NO active traction)** — the §HEADLINE
+  G3 physics, swept across the full PI R₀ range. *Deferred but explicitly tracked (PI "don't
+  forget the rest"):* (1) the **3 ligand conditions** Bare/Pre/Lam4 via the A1 active-traction +
+  A4′ partial-uniformity (Lp≈40 µm) machinery; (2) **substrate confinement** (L2.6 quasi-2D). Both
+  are ready (A1/A4′/L2.6 landed) and are the next production axes after the R₀-law lands.
+- **R₀ grid:** 100–400 µm × 7 (N₀ ≈ {1250, 4000, 8500, 16000, 26000, 40000, 60000}) — matches the
+  PI experimental range (87–419 µm), no extrapolation.
+- **Replicates:** 5 seeds / R₀ (resolves the A1/A3 under-determination). **Biological time:** 60 h
+  (2 doublings). **Anchors:** the audit-flagged defaults adopted — D_e = Iturri-2020 6.5 nN
+  de-adhesion, cell diameter 15 µm (Wagner 2011), A4′ Lam4 Lp = 40 µm (ligand axis only).
+- **Device:** gbook RTX A5000 (real GPU; ~3–10 min/run, worst-case R₀=400 µm probed first). Each
+  result stamps git commit + cfg hash + actual device (provenance). PI A/A₀ overlay-only.
+- **Magnitude-gap diagnostic (PI "add raw-area first"):** every run now records the **raw
+  union-of-disks footprint** A/A₀ (`raw_footprint_area`, image-segmentation analog) ALONGSIDE the
+  connected-core, so the matched-R₀ gap can be decomposed into observable-definition vs genuine
+  physics at production scale (at the compact-cap CPU scale raw/core ≈ 1.07 — i.e. the gap is so
+  far genuine, not a measure artifact; the native-N sweep tests whether that holds).
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);

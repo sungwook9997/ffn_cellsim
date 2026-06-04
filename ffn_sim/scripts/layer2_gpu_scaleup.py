@@ -95,7 +95,13 @@ def run_one(n: int, seed: int, kind: str = "cpu") -> dict:
     prolif = resolve_proliferation(cfg, resolved)
     cad = resolve_cadherin(resolved)
     total_time = 2.0 * prolif.cycle_time_mean
-    max_cells = int(5 * n)  # x4 growth headroom + margin; the pool is pre-allocated once
+    # Pool size: the observed contact-inhibited growth factor over 2 doublings is ~1.4-1.8
+    # (it FALLS with N0 — large spheroids grow relatively less, the 1/R rim effect), so 2.5x
+    # covers the worst case (small N0 ~1.8) with margin while not over-allocating a huge void
+    # pool at large N0 (every pooled particle costs per-step nlist/integrator work). The
+    # run_growth_pooled pool-depletion guard WARNS if this is ever hit, so a too-tight bound
+    # surfaces loudly rather than silently truncating.
+    max_cells = int(2.5 * n) + 1000
     device = _make_device(kind)
     import hoomd
     device_actual = "gpu" if isinstance(device, hoomd.device.GPU) else "cpu"
