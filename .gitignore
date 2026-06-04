@@ -20,6 +20,11 @@ results/
 *.hdf5
 frames/
 
+# Layer-2 B2 native-N GPU sweep output (per-(N0,seed) JSON-lines run records). These are
+# run-artifact data synced via Syncthing/outputs, not source; provenance is stamped INSIDE
+# each line (commit + cfg hash), so the data belongs to outputs, not version control.
+ffn_sim/outputs/layer2/b2_gpu/*.jsonl
+
 # PI experimental imaging input (V2-1 contract input — symlinks to local
 # disk path, see docs/v2_layer_1_imaging_input_contract*.md). Bulk imaging
 # data (mask PNG, raw stacks, ND2/CZI/TIFF) MUST NOT enter version control.

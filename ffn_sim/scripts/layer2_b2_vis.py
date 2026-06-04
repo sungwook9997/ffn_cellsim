@@ -54,7 +54,9 @@ def main() -> int:
         ax.axvspan(min(pi_R0_all), max(pi_R0_all), color="tab:orange", alpha=0.07,
                    label=f"PI R0 range ({min(pi_R0_all):.0f}-{max(pi_R0_all):.0f} um, overlay)")
 
-    # old CPU ceiling marker
+    # old CPU ceiling marker. 78.3 um is a NARRATIVE annotation only (the A2 prior-CPU R0
+    # ceiling — where the CPU box ran out of memory/wall-time), not a physics constant; it
+    # marks on the axis how far the GPU run now extends past the old CPU reach.
     ax.axvline(78.3, color="0.6", ls=":", lw=1.2)
     ax.text(78.3, 0.35, " prior CPU\n ceiling 78 um", color="0.4", fontsize=8, va="bottom")
 
@@ -64,7 +66,9 @@ def main() -> int:
     ax.errorbar(R0, mean, yerr=sd, fmt="s-", color="tab:blue", ms=7, lw=1.8, capsize=4,
                 zorder=4, label="platform native A/A0 (catch, mean +/- sd)")
 
-    # a + b/R + c/R^2 fit (dense)
+    # a + b/R + c/R^2 fit (dense). The 0.95/1.02 are VISUALIZATION padding only (extend the
+    # plotted fit curve ~5% below the smallest R0 and ~2% above the largest R0/PI point so the
+    # line spans the data with a small visual margin) — a plotting-policy choice, not physics.
     rgrid = np.linspace(R0.min() * 0.95, max(R0.max(), max(pi_R0_all) if pi_R0_all else R0.max()) * 1.02, 300)
     yfit = fit["a"] + fit["b"] / (rgrid * 1e-6) + fit["c"] / (rgrid * 1e-6) ** 2
     ax.plot(rgrid, yfit, "-", color="tab:blue", lw=1.0, alpha=0.6,
@@ -76,6 +80,9 @@ def main() -> int:
     for cond, c in colors.items():
         if cond in pi:
             med = pi[cond]["pi_AA_med"]; r0s = pi[cond].get("pi_R0_um", [])
+            # 250.0 um is a VISUALIZATION fallback x-position for a PI condition that has no
+            # recorded R0 list (places its overlay marker mid-range so it is still visible) —
+            # a plotting-policy default, never used as a physics value.
             rr = np.mean(r0s) if r0s else 250.0
             ax.plot(rr, med, "D", color=c, ms=9, zorder=5,
                     label=f"PI {cond} median A/A0={med:.1f} (overlay)")

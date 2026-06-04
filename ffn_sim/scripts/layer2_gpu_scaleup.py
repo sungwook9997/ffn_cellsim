@@ -47,18 +47,48 @@ _CFG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 
 
 def _make_device(kind: str):
-    """Build a HOOMD device: 'gpu' → CUDA A5000 (native-N), else CPU (dev/parity)."""
+    """Build a HOOMD device: 'gpu' → CUDA A5000 (native-N), else CPU (dev/parity).
+
+    Asserts the constructed device matches the request — a `hoomd.device.GPU()` that silently
+    falls back to CPU (no CUDA build / no visible GPU) would otherwise mis-attribute a CPU run
+    as GPU. We raise instead, so a production sweep never records a wrong `device`.
+    """
     import hoomd
     if kind == "gpu":
-        return hoomd.device.GPU(notice_level=0)
+        dev = hoomd.device.GPU(notice_level=0)
+        if not isinstance(dev, hoomd.device.GPU):
+            raise RuntimeError(
+                f"requested GPU but constructed {type(dev).__name__}; no CUDA device available."
+            )
+        return dev
     return hoomd.device.CPU(notice_level=0)
+
+
+def _provenance() -> dict:
+    """Stamp git commit + config hash into each result so a JSONL traces to exact code/params.
+
+    Without this a stale-code gbook run (CLAUDE.md: code is NOT auto-synced) produces results
+    indistinguishable from a current-code run. `commit` is None outside a git checkout.
+    """
+    import hashlib
+    import subprocess
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=str(_CFG.parents[1]), stderr=subprocess.DEVNULL
+        ).decode().strip()
+    except Exception:
+        commit = None
+    cfg_sha = hashlib.sha256(_CFG.read_bytes()).hexdigest()[:12]
+    return {"commit": commit, "cfg_sha": cfg_sha}
 
 
 def run_one(n: int, seed: int, kind: str = "cpu") -> dict:
     """One catch-bond proliferation growth at N0=n on the chosen device → record dict.
 
     Mirrors ``layer2_aa0_growth_persize.run_one`` but (a) catch cohesion (the G3-PASS physics),
-    (b) device-selectable, (c) a pool sized for 2 doublings (x4) + margin, (d) wall-time logged.
+    (b) **device-selectable (the device IS passed to run_growth_pooled** — without this the run
+    silently falls to the CPU default), (c) a pool sized for 2 doublings (x4) + margin,
+    (d) wall-time + provenance (commit/cfg hash) logged for traceability.
     """
     cfg = yaml.safe_load(_CFG.read_text())
     resolved = resolve_layer2(cfg)
@@ -67,31 +97,42 @@ def run_one(n: int, seed: int, kind: str = "cpu") -> dict:
     total_time = 2.0 * prolif.cycle_time_mean
     max_cells = int(5 * n)  # x4 growth headroom + margin; the pool is pre-allocated once
     device = _make_device(kind)
+    import hoomd
+    device_actual = "gpu" if isinstance(device, hoomd.device.GPU) else "cpu"
+    if device_actual != kind:
+        raise RuntimeError(f"device mismatch: requested {kind!r}, got {device_actual!r}.")
 
     t0 = time.perf_counter()
     res = run_growth_pooled(
         resolved, prolif, n_cells_init=n, total_time=total_time, seed=seed,
-        cohesion="catch", cad=cad, max_cells=max_cells,
+        cohesion="catch", cad=cad, max_cells=max_cells, device=device,
     )
     wall = time.perf_counter() - t0
-    return {
+    capped = bool(res.get("capped_at_max_cells", res.get("capped", False)))
+    rec = {
         "n": n,
         "seed": seed,
-        "device": kind,
+        "device": device_actual,           # what actually ran, not just the request
         "R0_um": float(effective_radius(res["a0"]) * 1e6),
         "aa0_hull": float(res["area_over_a0"][-1]),
         "aa0_core": float(res["area_core_over_a0"][-1]),
         "growth": float(res["growth_factor"]),
         "n_final": int(res["n_cells"][-1]),
+        "max_cells": max_cells,
         "rim": (
             float(res["rim_fraction_mean"])
             if not np.isnan(res["rim_fraction_mean"]) else None
         ),
         "ejected": bool(res.get("ejected", False)),
-        "capped": bool(res.get("capped", False)),
+        "capped": capped,
         "wall_s": round(wall, 1),
         "steps_per_s": round((total_time / resolved.dt_cfl) / wall, 1),
+        **_provenance(),
     }
+    if capped:
+        print(f"  ⚠ CAPPED at max_cells={max_cells} (n_final={rec['n_final']}); "
+              f"raise max_cells for this N0.", flush=True)
+    return rec
 
 
 def parity(n: int, seed: int) -> int:

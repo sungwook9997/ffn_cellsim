@@ -88,15 +88,34 @@ __all__ = [
 # scale — enough to find a free face on a rim cell.
 _N_BUD_CANDIDATES = 12
 
+# CFL force-overflow diagnostic budget (read-only heads-up, never a halt). The meaningful
+# "overflow" scale for an OVERDAMPED step is not the cohesion well-depth but the CFL DISPLACEMENT
+# budget: one step moves a cell dr ≈ (F/γ)·dt, so a per-cell net force above
+#   F_cfl = f_cfl · r0 · γ / dt
+# would displace it more than f_cfl·r0 in a single step — the regime where the overdamped
+# discretisation starts to strain. ``f_cfl`` is the allowed per-step displacement as a fraction
+# of the rest separation; 0.5·r0 (half a cell radius per step) is a generous, documented
+# NUMERICAL-policy ceiling (well clear of the per-step displacements a settled/budding contact
+# produces, so a healthy run is quiet, while a true traction runaway trips it). It is DERIVED
+# from γ, dt, r0 — not tuned to make any gate pass — and gates no decision; it only prints.
+_CFL_DISPLACEMENT_FRACTION = 0.5
+
 
 def first_shell_counts(
-    positions: npt.NDArray[np.float64], shell_cutoff: float
+    positions: npt.NDArray[np.float64],
+    shell_cutoff: float,
+    *,
+    tree: cKDTree | None = None,
 ) -> npt.NDArray[np.int64]:
     """First-coordination-shell neighbour count per cell (excludes self).
 
     Args:
         positions: (N, 3) cell centers (m).
         shell_cutoff: first-shell radius (m); cells within this distance are "contacts".
+        tree: optional prebuilt ``cKDTree`` over ``positions`` (same point ordering). Lets a
+            caller that already built the tree for another query reuse it — the result is
+            IDENTICAL to building it here (same points, same metric), only cheaper. If ``None``
+            the tree is built internally (the original behaviour).
 
     Returns:
         (N,) integer neighbour counts (number of OTHER cells within ``shell_cutoff``).
@@ -106,7 +125,7 @@ def first_shell_counts(
     p = np.asarray(positions, dtype=np.float64)
     if p.shape[0] < 2:
         return np.zeros(p.shape[0], dtype=np.int64)
-    tree = cKDTree(p)
+    tree = cKDTree(p) if tree is None else tree
     # query_ball_point with count_only includes self → subtract 1.
     counts = tree.query_ball_point(p, shell_cutoff, return_length=True) - 1
     return counts.astype(np.int64)
@@ -344,6 +363,45 @@ def build_pool_simulation(
     return sim, active, r_cut
 
 
+def _max_active_net_force(
+    sim: hoomd.Simulation, active: npt.NDArray[np.bool_]
+) -> float:
+    """Largest per-cell net-force magnitude (N) over the active cells — a read-only diagnostic.
+
+    ``net_force`` is only exposed on the *local* snapshot (not the gathered global snapshot),
+    so this reads ``cpu_local_snapshot`` / ``gpu_local_snapshot`` (matching the integrator's
+    device-aware access). It does NOT mutate state and changes no physics; it exists purely for
+    the CFL over-traction heads-up. Returns 0.0 if there are no active cells (the empty-set case
+    is fail-louded separately at the observable points).
+
+    Args:
+        sim: the running pooled Simulation (post ``sim.run`` so net_force is populated).
+        active: (n_max,) boolean mask of currently-active (``cell``) particles.
+
+    Returns:
+        ``max_i |F_i|`` over active cells (N), or 0.0 if none are active.
+    """
+    on_gpu = isinstance(sim.device, hoomd.device.GPU)
+    snap_ctx = sim.state.gpu_local_snapshot if on_gpu else sim.state.cpu_local_snapshot
+    with snap_ctx as snap:
+        if on_gpu:
+            import cupy as xp  # noqa: PLC0415 — GPU-only import, kept local
+
+            tag = xp.asarray(snap.particles.tag)
+            f = xp.asarray(snap.particles.net_force)
+            act = xp.asarray(active)[tag]
+            if not bool(act.any()):
+                return 0.0
+            fmag = xp.linalg.norm(f[act], axis=1)
+            return float(xp.asnumpy(fmag.max()))
+        tag = np.asarray(snap.particles.tag)
+        f = np.asarray(snap.particles.net_force)
+        act = active[tag]
+        if not act.any():
+            return 0.0
+        return float(np.linalg.norm(f[act], axis=1).max())
+
+
 def run_growth_pooled(
     resolved: ResolvedL2,
     prolif: ResolvedProliferation,
@@ -435,16 +493,31 @@ def run_growth_pooled(
     targets[active] = sample_cycle_targets(n0, prolif, rng)
     ages[active] = rng.uniform(0.0, 1.0, n0) * targets[active]  # random cycle phase
 
-    def active_positions() -> npt.NDArray[np.float64]:
+    def gather_pos_all() -> npt.NDArray[np.float64]:
+        """Full (n_max, 3) position array from a single get_snapshot gather (active + void)."""
         s = sim.state.get_snapshot()
-        p = np.array(s.particles.position, dtype=np.float64, copy=True)
-        return p[active]
+        return np.array(s.particles.position, dtype=np.float64, copy=True)
 
-    a0 = projected_area(active_positions())
-    a0_core = core_projected_area(active_positions(), link_r)
+    def active_positions() -> npt.NDArray[np.float64]:
+        return gather_pos_all()[active]
+
+    # Initial a0: gather the settled snapshot ONCE and reuse for all three observables (each
+    # active_positions() call triggers a full get_snapshot gather, so we hoist it). pos_all is
+    # then carried across epochs (post-epoch snapshot updates it) so the per-epoch traction
+    # recompute and the observable recording share one gather instead of two.
+    pos_all = gather_pos_all()
+    ap0 = pos_all[active]
+    if ap0.shape[0] == 0:
+        # Fail loud: an empty active set at t=0 would feed NaN areas downstream silently.
+        raise RuntimeError(
+            "run_growth_pooled: active set is empty at t=0 (no 'cell' particles); "
+            "cannot define A0. Check n_cells_init and the pool build."
+        )
+    a0 = projected_area(ap0)
+    a0_core = core_projected_area(ap0, link_r)
 
     t = 0.0
-    ts, ns, areas, rgs, areas_core = [0.0], [n0], [a0], [radius_of_gyration(active_positions())], [a0_core]
+    ts, ns, areas, rgs, areas_core = [0.0], [n0], [a0], [radius_of_gyration(ap0)], [a0_core]
     rim_frac_mean = []
     capped = False
     ejected = False
@@ -458,14 +531,42 @@ def run_growth_pooled(
     # runaway (e.g. traction ≳ cohesion → genuine detachment, beyond the model's valid regime).
     eject_radius = 0.45 * float(sim.state.box.Lx)
 
+    # CFL force-overflow threshold (read-only diagnostic): the net force at which one overdamped
+    # step would displace a cell more than _CFL_DISPLACEMENT_FRACTION·r0. Derived from γ, dt, r0
+    # (see the constant's note) — not tuned. Warn at most ONCE per run (first crossing), with a
+    # closing tally, so it informs without spamming the log every epoch.
+    f_cfl_overflow = (
+        _CFL_DISPLACEMENT_FRACTION * r0 * resolved.gamma_cell / dt
+    )
+    cfl_warn_epochs = 0
+
+    # pos_all (the full settled snapshot) was gathered once in the a0 block and is carried across
+    # epochs: the post-epoch snapshot below refreshes it, so the start-of-epoch traction recompute
+    # and the post-epoch observable recording share a single get_snapshot gather per epoch.
     while t < total_time:
         if edge_force is not None:
-            # recompute edge-directed outward traction for active cells (cheap, per epoch)
-            ap = active_positions()
+            # recompute edge-directed outward traction for active cells (cheap, per epoch).
+            # Reuse the start-of-epoch positions (settled state on epoch 0, previous epoch's
+            # post-division state thereafter) — identical to re-gathering, one fewer snapshot.
+            ap = pos_all[active]
             ef_active = _edge_outward(ap, f_traction=f_traction, Lp=Lp)
             full = np.zeros((max_cells, 3), dtype=np.float64)
             full[np.where(active)[0]] = ef_active
             edge_force.set_vectors(full)
+        # CFL force-overflow heads-up (read-only): warn the FIRST time any active cell's net force
+        # exceeds the per-step CFL displacement budget. Reads the local snapshot (the only place
+        # net_force lives); never halts and changes no physics — purely a diagnostic flag for an
+        # over-traction / over-compression regime that may be straining the overdamped step.
+        f_max = _max_active_net_force(sim, active)
+        if f_max > f_cfl_overflow:
+            cfl_warn_epochs += 1
+            if cfl_warn_epochs == 1:
+                print(f"[run_growth_pooled] CFL WARNING t={t/3600:.1f} h: max |net_force|="
+                      f"{f_max*1e9:.1f} nN exceeds the per-step CFL budget "
+                      f"{f_cfl_overflow*1e9:.1f} nN (a step would move a cell > "
+                      f"{_CFL_DISPLACEMENT_FRACTION:g}·r0); possible over-traction/"
+                      f"over-compression. Overdamped — flagged, not halted; "
+                      f"suppressing further per-epoch CFL warnings.")
         try:
             sim.run(epoch_steps)
         except RuntimeError as exc:
@@ -491,12 +592,21 @@ def run_growth_pooled(
                   f"(cell beyond {eject_radius*1e6:.0f} µm box-guard); stopping cleanly.")
             break
         act_idx = np.where(active)[0]
+        if act_idx.size == 0:
+            # Fail loud: an empty active set would make COM/area/Rg NaN silently downstream.
+            raise RuntimeError(
+                f"run_growth_pooled: active set became empty at t={t/3600:.1f} h; "
+                "no 'cell' particles remain to record observables."
+            )
         pos_act = pos_all[act_idx]
         com = pos_act.mean(axis=0)
         radial = np.linalg.norm(pos_act - com, axis=1)
         median_radial = float(np.median(radial))
-        counts = first_shell_counts(pos_act, prolif.shell_cutoff)
+        # Build the KD-tree over pos_act ONCE and reuse it for both the first-shell coordination
+        # count AND the per-cell free-space neighbour query below (identical points/ordering →
+        # identical results, one tree build instead of two).
         tree = cKDTree(pos_act)
+        counts = first_shell_counts(pos_act, prolif.shell_cutoff, tree=tree)
 
         free_voids = list(np.where(~active)[0])
         due_local = np.where(
@@ -507,7 +617,13 @@ def run_growth_pooled(
         changed = False
         for li in due_local:
             if not free_voids:
+                # Pool exhausted: the pre-allocated void reservoir is empty so no further
+                # daughter can be activated. Surface it (was silent) before stopping the run —
+                # capped_at_max_cells is also returned in the result dict.
                 capped = True
+                print(f"[run_growth_pooled] POOL DEPLETED at t={t/3600:.1f} h: "
+                      f"active={int(active.sum())} reached max_cells={max_cells}; "
+                      f"stopping (capped_at_max_cells=True). Raise max_cells to grow further.")
                 break
             nbr = np.array(
                 [j for j in tree.query_ball_point(pos_act[li], search_r) if j != li],
@@ -535,13 +651,19 @@ def run_growth_pooled(
         if divided_radial:
             rim_frac_mean.append(float(np.mean(np.array(divided_radial) >= median_radial)))
 
-        ap = active_positions()
+        # Reuse pos_all for the observables: divisions wrote daughter sites into pos_all and (if
+        # changed) set_snapshot pushed exactly those values back, so pos_all[active] equals what
+        # a fresh get_snapshot gather would return — one fewer gather, identical positions.
+        ap = pos_all[active]
         ts.append(t); ns.append(int(active.sum()))
         areas.append(projected_area(ap)); rgs.append(radius_of_gyration(ap))
         areas_core.append(core_projected_area(ap, link_r))
         if capped:
             break
 
+    if cfl_warn_epochs:
+        print(f"[run_growth_pooled] CFL summary: net force exceeded the per-step CFL budget "
+              f"in {cfl_warn_epochs} epoch(s) (diagnostic only; run not halted).")
     areas = np.asarray(areas); areas_core = np.asarray(areas_core)
     try:
         pos_final = active_positions()

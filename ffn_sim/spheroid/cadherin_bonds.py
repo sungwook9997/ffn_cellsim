@@ -229,7 +229,17 @@ def build_cbm_catch(
             g = (np.arange(m) - (m - 1) / 2.0) * (2.0 * r0)
             xx, yy, zz = np.meshgrid(g, g, g, indexing="ij")
             grid = np.column_stack([xx.ravel(), yy.ravel(), zz.ravel()])[:n_void]
-            void = grid + np.array([r_cluster_max + 40.0 * r0, 0.0, 0.0])
+            # Numerical-policy (void containment), NOT physics: park the void block's centre
+            # one full worst-case cluster radius BEYOND the worst-case active edge — i.e. at
+            # 2·r_cluster_max from the active COM (was a fixed +40·r0, tiny vs a ~400 µm
+            # cluster at native N). The void block half-extent is (m−1)·r0 ≈ n_void^(1/3)·r0,
+            # and r_cluster_max ≥ 2·r0·N^(1/3) ≥ 2·r0·n_void^(1/3) > that half-extent, so the
+            # nearest void stays ≥ (r_cluster_max − block_halfwidth) > 0 beyond the worst-case
+            # active edge — always ≫ r_cut (r_cut < 2·r0, r_cluster_max grows with N). Voids
+            # have ×1e6 drag (frozen below) so this offset only guarantees they never enter
+            # r_cut of an active cell; it changes no force or measurement.
+            void_offset = 2.0 * r_cluster_max
+            void = grid + np.array([void_offset, 0.0, 0.0])
             pos = np.vstack([act, void])
         else:
             pos = act
@@ -240,8 +250,15 @@ def build_cbm_catch(
         N = n_cells
         typeid = np.zeros(N, dtype=np.uint32)
 
+    # Box L (HOOMD nlist/PBC only — never a force or a measurement): 2·extent covers every
+    # particle (active cells AND the parked void block, since extent is the max norm over all
+    # of pos), and the margin is the per-axis minimum-image gap. PBC safety needs that gap
+    # ≥ r_cut so no particle ever sees its own image inside the cohesion cutoff. We keep the
+    # historical 20·r0 floor (unchanged small-N behaviour) and additionally guarantee the gap
+    # spans r_cut even if r_cut_zones is raised — numerical-policy (containment), not physics.
     extent = float(np.linalg.norm(pos, axis=1).max())
-    L = 2.0 * extent + 20.0 * r0
+    pbc_margin = max(20.0 * r0, 2.0 * cad.r_cut)
+    L = 2.0 * extent + pbc_margin
 
     snap = gsd.hoomd.Frame()
     snap.particles.N = N

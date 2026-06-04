@@ -59,6 +59,32 @@ import hoomd.custom
 from ffn_sim.integrator.baoab import _wrap_into_box
 from ffn_sim.integrator.constrained_baoab import _wrap_into_box_xp, array_backend
 
+# --------------------------------------------------------------------------- #
+# GPU VRAM budget (derived memory estimate — NOT a physics constant).          #
+# --------------------------------------------------------------------------- #
+# Per-particle device-resident byte budget at native-N. This counts the arrays
+# that scale with N and live on the GPU during a step (the per-step transients
+# the snapshot exposes + this Action's persistent per-tag buffers); it is a
+# headroom estimate, not an exact allocator trace.
+#   HOOMD state (read/written through gpu_local_snapshot, float64 default build):
+#     position   3 × f64 = 24 B   net_force  3 × f64 = 24 B
+#     image      3 × i32 = 12 B   tag/typeid 2 × u32 =  8 B
+#   This Action's persistent per-tag buffers:
+#     gamma_by_tag        1 × f64 =  8 B   bd_prefactor_by_tag 1 × f64 =  8 B
+#     prv_rnds            3 × f64 = 24 B
+#   Per-step transients the kernels materialise (W_row, dr, new_pos, wrapped,
+#   img_delta, the (N,1) gather rows) — bounded above by ~8 × (3 × f64) = 192 B.
+# Sum ≈ 24+24+12+8+8+8+24+192 = 300 B; round UP to 512 B/particle so the guard
+# is conservative (covers cupy pool fragmentation + neighbour-list/Morse C++
+# arrays HOOMD also holds, which scale with N).
+_BYTES_PER_PARTICLE_GPU: int = 512
+# A5000 has 16 GiB; reserve ~2 GiB for the CUDA context, cupy pool slack, and
+# the HOOMD C++ pair/nlist working set we do not itemise above. Documented
+# numerical-policy margin, not a tuned constant.
+_GPU_VRAM_TOTAL_BYTES: int = 16 * 1024**3
+_GPU_VRAM_RESERVE_BYTES: int = 2 * 1024**3
+_GPU_VRAM_BUDGET_BYTES: int = _GPU_VRAM_TOTAL_BYTES - _GPU_VRAM_RESERVE_BYTES
+
 
 class OverdampedBAOABDevice(hoomd.custom.Action):
     """Device-aware simple overdamped L-M BAOAB step for a FIXED tag space (CBM).
@@ -164,7 +190,53 @@ class OverdampedBAOABDevice(hoomd.custom.Action):
         # device keeps the bit-identical numpy path.
         self._on_gpu = isinstance(simulation.device, hoomd.device.GPU)
         if self._on_gpu:
+            # --- GPU VRAM pre-check (graceful fail before any device alloc) ---
+            # Estimate the device-resident footprint at this N against the A5000
+            # budget and raise BEFORE allocating, so a too-large N is a clear
+            # diagnostic instead of a silent CUDA OOM mid-allocation. The byte
+            # budget is a derived memory estimate (see _BYTES_PER_PARTICLE_GPU);
+            # it is not a physics constant.
+            est_bytes = N * _BYTES_PER_PARTICLE_GPU
+            if est_bytes > _GPU_VRAM_BUDGET_BYTES:
+                raise ValueError(
+                    "OverdampedBAOABDevice GPU VRAM pre-check failed: estimated "
+                    f"device footprint {est_bytes / 1024**2:.0f} MB for N={N} "
+                    f"particles (@ {_BYTES_PER_PARTICLE_GPU} B/particle) exceeds "
+                    f"the {_GPU_VRAM_BUDGET_BYTES / 1024**2:.0f} MB budget "
+                    f"(16 GB device − {_GPU_VRAM_RESERVE_BYTES / 1024**2:.0f} MB "
+                    "reserve). Reduce N, raise the ×40 mesoscale coarse-graining, "
+                    "or run on a larger-VRAM device."
+                )
+
             xp = array_backend(True)
+
+            # --- cupy/HOOMD device-match check (multi-GPU safety) ---
+            # On a multi-GPU box cupy's current device must be the SAME CUDA
+            # device HOOMD runs on, else every gpu_local_snapshot↔cupy op is a
+            # silent cross-device copy (wrong results / huge slowdown). The
+            # introspection is best-effort: a single-GPU box (the common case)
+            # has device 0 == 0 and never trips, and any introspection failure
+            # is treated as "cannot disprove a match" so it never breaks the
+            # common path.
+            try:
+                hoomd_gpu_ids = list(simulation.device.gpu_ids)
+            except Exception:  # noqa: BLE001 — HOOMD API/version variance is non-fatal here
+                hoomd_gpu_ids = []
+            try:
+                cupy_dev_id = int(xp.cuda.runtime.getDevice())
+            except Exception:  # noqa: BLE001 — cupy/driver variance is non-fatal here
+                cupy_dev_id = None
+            if hoomd_gpu_ids and cupy_dev_id is not None:
+                if cupy_dev_id not in hoomd_gpu_ids:
+                    raise RuntimeError(
+                        "OverdampedBAOABDevice device mismatch: cupy current "
+                        f"CUDA device {cupy_dev_id} is not in HOOMD's device "
+                        f"set {hoomd_gpu_ids}. Pin cupy to HOOMD's GPU "
+                        "(e.g. cupy.cuda.Device(<id>).use()) before attach so "
+                        "device-resident positions/forces are not silently "
+                        "copied across GPUs."
+                    )
+
             self._xp = xp
             self._rng = xp.random.default_rng(self._seed)  # cupy stream (statistical parity)
             self._gamma_by_tag = xp.asarray(self._gamma_by_tag)
@@ -294,5 +366,8 @@ def make_baoab_updater_for_device(
     """
     from ffn_sim.integrator.baoab import make_baoab_updater  # frozen CPU Action
     if isinstance(device, hoomd.device.GPU):
+        # Provenance: one line so a production log unambiguously records the path.
+        print("[baoab_device] BAOAB path: device-aware GPU cupy path")
         return make_baoab_updater_device(kT=kT, gamma=gamma, dt=dt, seed=seed)
+    print("[baoab_device] BAOAB path: frozen CPU numpy path")
     return make_baoab_updater(kT=kT, gamma=gamma, dt=dt, seed=seed)
