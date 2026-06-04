@@ -514,11 +514,43 @@ findings refine the anchor-level claim above:
    `scripts/layer2_emergent_sigma.py`, `outputs/layer2/emergent_sigma.{json,png}` (settled
    aggregate, radial profile, sign control, σ vs γ band).
 
-**Next:** (1) re-measure under the **L2.5 catch-bond cohesion** (changes β directly) with larger N +
-time-averaged IK over many snapshots (the IK sum is a fluctuating quantity, under-sampled at one
-frame); (2) C1 cross-line consistency seam (single-cell γ ↔ Layer-2 σ share one MCF7 anchor);
-(3) the cortex is only emergent in the single-cell line, so an exact σ=γ match is a single-cell-line
-question, not a CBM one.
+**Emergent σ under the L2.5 CATCH-BOND cohesion (2026-06-04, the D2 next-step).**
+`scripts/layer2_emergent_sigma.py --catch-bond` re-measures the emergent IK σ with the faithful
+Rakshit-2012 sliding-rebinding catch-bond cohesion (the tabulated WCA + catch force the L2.5 run
+integrates) in place of the static Morse, time-averaged over snapshots. The result is a **decisive
+mechanistic refinement of the bridge:**
+
+1. **Static (rest) emergent σ ≈ 0** — robustly: **+0.0024 ± 0.0078 mN/m** (3 seeds × 3 sizes;
+   time-average per run std ≈ 0 — the settled aggregate is a static overdamped fixed point). The
+   cause is **mechanistic, not noise**: the catch-bond cohesion is **stretch-activated** (F_coh = 0
+   for d ≤ r₀), and the settled aggregate sits at **d/r₀ ≈ 0.998 for every contact** (0/470 pairs in
+   the cohesive band (r₀, r_cut)) → cohesion is **entirely dormant at rest**. The catch bond is a
+   **tension-latch, not a static surface pre-stress** — unlike the Morse well, whose finite-width
+   attraction straddles r₀ and pre-stresses the drop (the σ ≈ 0.012 mN/m above). (The rest
+   configuration even retains its seeded lattice order — no rearrangement drive, confirming inactivity.)
+2. **Under tensile strain σ engages and rises monotonically** — an affine radial-strain probe
+   (scale the drop about its COM by 1+ε, recompute the restoring IK σ) gives **σ_eff(ε): 0.0 →
+   +0.0011 → +0.0022 → +0.0042 → +0.0163 mN/m at ε = 0/1/2/5/10 %** (sense-validated: σ_eff
+   non-decreasing, positive, engaged above rest). At ε ≈ 10 % the per-contact force reaches the
+   ~29 pN/cadherin **catch peak** (n_cad ≈ 223, F ≈ 6.5 nN = the Iturri de-adhesion anchor), yet the
+   *surface* σ is still only ~γ/35 — because most of the stretched cohesive energy is in the
+   **isotropic interior** (the IK [1−3(ŝ·r̂)²] weighting keeps only the surface anisotropy).
+
+**Honest status (refined):** under the catch bond the emergent aggregate surface tension is
+**tension-state-dependent, not a fixed σ = γ** — ≈ 0 at the packed rest state (cohesion latent) and
+rising under stretch but staying ≪ γ (σ/γ ≈ 0.004 rest → 0.03 at 10 % strain). This is fully
+consistent with **L2.5** (the catch bond manifests as resistance-to-separation that prevents
+proliferation fragmentation — a *tension* response, not a rest pre-stress) and with the Morse
+finding's direction. The bridge holds **structurally and directionally** for both cohesion models;
+the anchor-level σ = γ identity remains a **single-cell-line** question (where the cortex is
+explicit), **not** a center-particle-CBM one — now confirmed for the faithful catch-bond too.
+Artifacts: `scripts/layer2_emergent_sigma.py` (`--catch-bond`),
+`outputs/layer2/emergent_sigma_catch.{json,png}`.
+
+**Next:** (1) C1 cross-line consistency seam (single-cell γ ↔ Layer-2 σ share one MCF7 anchor);
+(2) the cortex is only emergent in the single-cell line, so an exact σ=γ match is a single-cell-line
+question, not a CBM one; (3) ⚠️ PI-gate: is the affine-strain σ_eff(ε) probe the right operational
+definition of the catch-bond aggregate's surface tension (vs an energetic work-of-deadhesion route)?
 
 ## Figures
 
@@ -530,6 +562,11 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   **B** Young-Laplace ΔP = 2σ/R over R₀=31.7→78.3 µm (the 1/R curvature behind the A/A₀ b/R
   term); **C** Roffay outer/interior ratio 1/(1−β/γ) with the [1.6,2.0] band reproduced at
   β/γ∈[0.375,0.5] and the anchored MCF7 β/γ (higher-adhesion regime) marked.
+- `emergent_sigma_catch.png` — **D2 emergent σ under the catch-bond** (3 panels): **A** settled
+  catch-bond aggregate (N=200, R_edge≈54 µm); **B** restoring σ_eff(ε) vs imposed radial strain —
+  ≈0 at rest (catch cohesion dormant), engaging positive and rising to ~0.016 mN/m at ε=10 % (KU-3.5
+  γ band overlaid); **C** ensemble σ (+0.002±0.008 mN/m) vs single-cell γ=0.57 mN/m band (σ/γ≈0.004).
+  No axis truncation; SI units; γ band + zero line shown.
 - `figs/fig_layer2_g1_stable_aggregate.png` — G1 result. **Left**: initial loose blob
   (1.1·r₀ jittered cubic lattice). **Middle**: settled aggregate (lattice → disordered
   cohesive packing, slightly compacted). **Right**: nearest-neighbour-distance histogram
