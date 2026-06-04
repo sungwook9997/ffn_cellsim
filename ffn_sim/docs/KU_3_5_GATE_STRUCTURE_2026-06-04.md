@@ -1,3 +1,25 @@
+---
+kb_record:
+  topic: KU-3.5-cortical-tension
+  claim: KB-3.5
+  gate: VG-H3-KU35-cortex-tension
+  status: authoritative
+  authoritative_as_of: 2026-06-04
+  aliases: [KU-3.5, KU3.5, cortical tension, g_soft, g_rigid]
+  supersedes:
+    - KU35_FLOOR_ROOT_CAUSE_2026-05-31
+    - CORTICAL_TENSION_TRIAGE_2026-06-03
+    - STAGE2-v0accel-RESOLVED@18ab034
+  conclusion: >-
+    KU-3.5 is NOT a single resolved-bug gate. It splits into KU-3.5-ACTIVE
+    (g_soft; blocker = force generation/aggregation; still OPEN), KU-3.5-PASSIVE
+    (g_rigid in-band but myosin-INDEPENDENT structural tension, plus the turgor
+    Pi0 physiological baseline), and KU-3.5-BRIDGE (g_rigid/gamma as the Layer-2
+    spheroid surface-tension anchor). The 5/31-6/3 "KU-3.5 resolved" and
+    --v0-accel-based conclusions are SUPERSEDED; do not let them override the 6/4
+    record.
+---
+
 # KU-3.5 cortical tension — gate structure (2026-06-04 AUTHORITATIVE)
 
 **PI-ratified 2026-06-04.** KU-3.5 is NOT a single "resolved bug" gate. The
