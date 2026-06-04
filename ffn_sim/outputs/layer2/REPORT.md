@@ -974,11 +974,52 @@ mechanistic hard rule disfavours. PI A/A₀ overlay-only throughout. Artifacts: 
 (passive+active modes, `+layer2_wetting_vis.py`), `outputs/layer2/wetting/*.jsonl`, figure
 `fig_layer2_wetting.png`, SE candidates `SE_REGISTRATION_CANDIDATES_2026-06-04_aggregate-wetting.md`.
 
+## G — ligand-condition production (c): the FORM-level Bare/Pre/Lam4 separation + ordering (2026-06-05)
+
+The deferred-but-tracked production axis. With the magnitude established as the structural-limit scope
+boundary (§C–§F, overlay-only), §G delivers the FORM-level result the CBM CAN make: the three PI ligand
+conditions driven mechanistically — A1 active edge-traction from per-species integrin-clutch kinetics
+(col-I clutch Bare/Pre > laminin Lam4 0.61×; Bare<Pre = the flagged pV4D4 col-I density axis → Bare
+1.50 / Pre 2.50 / Lam4 1.53 nN) with the **A4′ Lam4 partial-β1-uniformity** (Lp≈40 µm vs the edge 11 µm),
+cohesion/substrate/proliferation held common. Native-N GPU sweep (N₀ {1250, 4000, 8500, 13000} → R₀
+102–231 µm, 2 seeds, 0/24 ejections):
+
+| R₀ (µm) | Bare core | Pre core | **Lam4 core** |
+|---|---|---|---|
+| 102 | 1.50 | 1.62 | **1.70** |
+| 151 | 1.34 | 1.36 | **1.47** |
+| 197 | 1.28 | 1.28 | **1.38** |
+| 231 | 1.19 | 1.21 | **1.28** |
+
+```
+emergent per-condition fits (A/A0 = a + b/R + c/R²):
+  Bare: a=0.86  b=91.3 µm  c=−2768 µm²   r²=0.980
+  Pre : a=1.01  b=37.7 µm  c=+2453 µm²   r²=0.996
+  Lam4: a=0.88  b=105.8 µm c=−2247 µm²   r²=0.994   (b>0 the 1/R term in every condition)
+```
+
+1. **Ordering reproduced: Lam4 > Pre ≳ Bare at every R₀** — matching the PI *collective* ordering
+   (medians Lam4 10.0 > Pre 7.5 > Bare 7.2). The A4′ Lam4 partial-uniformity (interior β1 engagement)
+   lifts Lam4 highest; Pre>Bare at small R₀ (stronger col-I traction 2.5 vs 1.5 nN), converging at large.
+2. **Each condition reproduces the law FORM** (A/A₀ decreasing with R₀, b>0). Separation Δ≈0.1–0.2 (the
+   active clutch mechanism separates the conditions, ~the A1 CPU magnitude). Magnitude overlay-only (all
+   ~1.2–1.7 vs the PI 7–10 — the known structural limit; PI medians overlaid, never fitted).
+3. ⇒ The CBM reproduces the PI ligand axis **at the FORM level it can express** (separation + correct
+   ordering), completing the deferred production axis. The absolute magnitude is the §C–§F structural
+   limit (the fine-grained line). Artifacts: `scripts/layer2_ligand_production{,_vis}.py`,
+   `outputs/layer2/ligand_prod/ligand_prod.jsonl`, figure `fig_layer2_ligand_production.png`. A paper-ready
+   synthesis of the whole Layer-2 line is exported to `outputs/layer2/Layer2_Report.docx`
+   (`scripts/layer2_report_docx.py`).
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_ligand_production.png` — **⭐ G ligand production (c)** (R₀ 102–231 µm, native-N GPU):
+  emergent A/A₀(R₀) for Bare/Pre/Lam4 from mechanistic clutch traction + A4′ Lam4 partial-uniformity, with
+  per-condition a+b/R+c/R² fits (r²≥0.98) and PI medians overlaid. Model ordering **Lam4 > Pre ≳ Bare** =
+  the PI collective ordering; magnitude overlay-only (structural limit). SI.
 - `figs/fig_layer2_wetting.png` — **⭐ F wetting axis** (R₀≈92 µm, N₀=1000): A/A₀ core+raw vs substrate
   adhesion ratio D_sub/D_e (log x), PASSIVE (no motility) vs ACTIVE (plithotaxis 5 nN), PI band (7–10) +
   A/A₀=1 overlaid. Passive flat (~1.5, kinetic trap); active raw creeps 1.72→1.94 (partial precursor-film)

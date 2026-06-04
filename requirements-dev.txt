@@ -7,3 +7,4 @@
 
 pytest>=8.0
 ruff>=0.5
+python-docx  # Layer-2 paper-ready report export (scripts/layer2_report_docx.py)
