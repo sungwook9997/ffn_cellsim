@@ -1,0 +1,10 @@
+=== MCF7 FULL-CELL STAGE-1 (R_cell=7.5µm, all compartments ON, n_fil=1000, arm=grip_walk, smoke=False) ===
+HOOMD 7.0.1
+
+--- arm: grip_walk ---
+  [compartments ON] nucleus k_chrom=3.69e-05 E_nuc=4700.0Pa | enclosed dP_ref=40Pa | membrane gamma_mem=0.10mN/m | cytoplasm eta=65.9Pa·s (MCF7)
+  [grip_walk] s=1/6 r/r0=1.00000 g_soft=7.186e-07 g_rigid=9.009e-02 g_tot=9.010e-02 mN/m
+  [grip_walk] s=2/6 r/r0=1.00000 g_soft=7.246e-07 g_rigid=8.354e-02 g_tot=8.354e-02 mN/m
+  [grip_walk] s=3/6 r/r0=1.00000 g_soft=7.115e-07 g_rigid=8.322e-02 g_tot=8.322e-02 mN/m
+  [grip_walk] s=4/6 r/r0=1.00000 g_soft=7.236e-07 g_rigid=7.202e-02 g_tot=7.202e-02 mN/m
+  [grip_walk] s=5/6 r/r0=1.00000 g_soft=7.452e-07 g_rigid=1.019e-01 g_tot=1.019e-01 mN/m
