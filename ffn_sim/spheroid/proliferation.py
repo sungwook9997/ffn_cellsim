@@ -64,6 +64,7 @@ from ffn_sim.spheroid.observables import (
     core_projected_area,
     projected_area,
     radius_of_gyration,
+    raw_footprint_area,
 )
 
 # Single-linkage cluster threshold for the fragmentation-robust core area, in units of r0:
@@ -515,9 +516,12 @@ def run_growth_pooled(
         )
     a0 = projected_area(ap0)
     a0_core = core_projected_area(ap0, link_r)
+    r_cell = 0.5 * r0  # per-cell disk radius (excluded-volume radius) for the raw footprint
+    a0_raw = raw_footprint_area(ap0, r_cell)
 
     t = 0.0
     ts, ns, areas, rgs, areas_core = [0.0], [n0], [a0], [radius_of_gyration(ap0)], [a0_core]
+    areas_raw = [a0_raw]  # union-of-disks footprint (image-segmentation analog; PI raw-area)
     rim_frac_mean = []
     capped = False
     ejected = False
@@ -658,6 +662,7 @@ def run_growth_pooled(
         ts.append(t); ns.append(int(active.sum()))
         areas.append(projected_area(ap)); rgs.append(radius_of_gyration(ap))
         areas_core.append(core_projected_area(ap, link_r))
+        areas_raw.append(raw_footprint_area(ap, r_cell))
         if capped:
             break
 
@@ -665,6 +670,7 @@ def run_growth_pooled(
         print(f"[run_growth_pooled] CFL summary: net force exceeded the per-step CFL budget "
               f"in {cfl_warn_epochs} epoch(s) (diagnostic only; run not halted).")
     areas = np.asarray(areas); areas_core = np.asarray(areas_core)
+    areas_raw = np.asarray(areas_raw)
     try:
         pos_final = active_positions()
         if not np.all(np.isfinite(pos_final)):
@@ -680,6 +686,8 @@ def run_growth_pooled(
         "area": areas, "area_over_a0": areas / a0 if a0 > 0 else areas,
         "area_core": areas_core,
         "area_core_over_a0": areas_core / a0_core if a0_core > 0 else areas_core,
+        "a0_raw": a0_raw, "area_raw": areas_raw,
+        "area_raw_over_a0": areas_raw / a0_raw if a0_raw > 0 else areas_raw,
         "rg": np.asarray(rgs),
         "rim_fraction_mean": float(np.mean(rim_frac_mean)) if rim_frac_mean else float("nan"),
         "n_division_epochs": len(rim_frac_mean),

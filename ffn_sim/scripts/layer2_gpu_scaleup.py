@@ -116,6 +116,7 @@ def run_one(n: int, seed: int, kind: str = "cpu") -> dict:
         "R0_um": float(effective_radius(res["a0"]) * 1e6),
         "aa0_hull": float(res["area_over_a0"][-1]),
         "aa0_core": float(res["area_core_over_a0"][-1]),
+        "aa0_raw": float(res["area_raw_over_a0"][-1]),  # PI raw-area (union-of-disks footprint)
         "growth": float(res["growth_factor"]),
         "n_final": int(res["n_cells"][-1]),
         "max_cells": max_cells,

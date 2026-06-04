@@ -41,6 +41,7 @@ __all__ = [
     "connected_components",
     "largest_connected_component",
     "core_projected_area",
+    "raw_footprint_area",
     "convex_hull_volume",
     "virial_pressure",
 ]
@@ -354,3 +355,61 @@ def core_projected_area(
     p = _as_positions(positions)
     mask = largest_connected_component(p, link_radius)
     return projected_area(p[mask], plane=plane)
+
+
+# Raster resolution for raw_footprint_area, in cell-disk radii: a pixel is r_cell/_FOOTPRINT_PX
+# across, fine enough to resolve a disk edge (so the union area is accurate to a few %) without
+# a memory blow-up. A NUMERICAL-policy choice (measurement discretisation), not a physics scale.
+_FOOTPRINT_PX = 3.0
+
+
+def raw_footprint_area(
+    positions: npt.ArrayLike,
+    r_cell: float,
+    plane: tuple[int, int] = (0, 1),
+) -> float:
+    """Occupied-footprint area of the union of per-cell disks (image-segmentation analog).
+
+    The faithful analog of the experiment's RAW segmented spread area: rasterise a disk of
+    radius ``r_cell`` around every cell centre (projected onto ``plane``) and sum the occupied
+    pixel area. Unlike ``projected_area`` (convex hull — FILLS concavities, over-counts a
+    non-convex spreading front) and ``core_projected_area`` (largest component only — DROPS
+    protrusions/scatter), this measures the actual area the cells cover, including concave
+    fronts and detached/protruding cells — exactly what 2D image segmentation of the spheroid
+    footprint reports. Recorded ALONGSIDE the core area so the magnitude gap can be decomposed
+    into observable-definition vs genuine physics (PI 2026-06-04: "add the raw-area readout
+    first"). It is a MEASUREMENT, never a gate target.
+
+    Args:
+        positions: (N, 3) cell centers (m).
+        r_cell: per-cell disk radius (m), typically r0/2 (the excluded-volume radius).
+        plane: the two axis indices to project onto (default x, y).
+
+    Returns:
+        Union-of-disks occupied area in m^2 (``0.0`` for an empty set; ``pi*r_cell^2`` for one
+        cell, up to raster discretisation).
+    """
+    from scipy.ndimage import binary_dilation
+
+    if r_cell <= 0.0:
+        raise ValueError("r_cell must be strictly positive [m].")
+    p = _as_positions(positions)
+    pts = p[:, list(plane)]
+    n = pts.shape[0]
+    if n == 0:
+        return 0.0
+    pixel = r_cell / _FOOTPRINT_PX
+    lo = pts.min(axis=0) - r_cell - pixel
+    hi = pts.max(axis=0) + r_cell + pixel
+    nx = int(np.ceil((hi[0] - lo[0]) / pixel)) + 1
+    ny = int(np.ceil((hi[1] - lo[1]) / pixel)) + 1
+    grid = np.zeros((nx, ny), dtype=bool)
+    ix = np.clip(((pts[:, 0] - lo[0]) / pixel).astype(np.int64), 0, nx - 1)
+    iy = np.clip(((pts[:, 1] - lo[1]) / pixel).astype(np.int64), 0, ny - 1)
+    grid[ix, iy] = True
+    # Dilate each marked centre pixel by a disk of radius r_cell (in pixels) → union of disks.
+    rad = int(round(r_cell / pixel))
+    yy, xx = np.ogrid[-rad:rad + 1, -rad:rad + 1]
+    disk = (xx * xx + yy * yy) <= rad * rad
+    occupied = binary_dilation(grid, structure=disk)
+    return float(occupied.sum()) * pixel * pixel

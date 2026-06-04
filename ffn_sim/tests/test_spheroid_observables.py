@@ -191,3 +191,28 @@ def test_connected_components_single_cluster_is_one_label():
 def test_connected_components_rejects_nonpositive_link():
     with pytest.raises(ValueError):
         obs.connected_components(_uniform_disk_xy(5, 1.0), link_radius=0.0)
+
+
+def test_raw_footprint_single_cell_is_disk_area():
+    """One cell → ~pi*r_cell^2 (up to raster discretisation, a few %)."""
+    rc = 7.5e-6
+    a = obs.raw_footprint_area(np.zeros((1, 3)), rc)
+    assert a == pytest.approx(np.pi * rc ** 2, rel=0.06)
+
+
+def test_raw_footprint_counts_both_fragments_unlike_core():
+    """Raw footprint counts a detached cluster (core drops it; hull spans the gap)."""
+    rc = 7.5e-6
+    g = np.array([[i * 15e-6, j * 15e-6, 0.0] for i in range(7) for j in range(7)])
+    two = np.vstack([g, g + np.array([300e-6, 0.0, 0.0])])
+    raw = obs.raw_footprint_area(two, rc)
+    core = obs.core_projected_area(two, 1.6 * 15e-6)
+    hull = obs.projected_area(two)
+    assert raw == pytest.approx(2.0 * core, rel=0.15)   # raw counts BOTH clusters
+    assert raw < 0.6 * hull                              # but does NOT fill the 300 um gap
+
+
+def test_raw_footprint_empty_and_guard():
+    assert obs.raw_footprint_area(np.zeros((0, 3)), 7.5e-6) == 0.0
+    with pytest.raises(ValueError):
+        obs.raw_footprint_area(np.zeros((3, 3)), 0.0)
