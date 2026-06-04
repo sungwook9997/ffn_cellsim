@@ -95,3 +95,8 @@ ffn_sim/outputs/layer2/prod_rlaw/*.log
 ffn_sim/outputs/layer2/prod_rlaw/*.err
 ffn_sim/outputs/layer2/prod_rlaw/*.progress
 ffn_sim/outputs/layer2/prod_rlaw/*.out
+
+ffn_sim/outputs/layer2/decisive/*.jsonl
+ffn_sim/outputs/layer2/decisive/*.log
+ffn_sim/outputs/layer2/decisive/*.err
+ffn_sim/outputs/layer2/decisive/*.progress

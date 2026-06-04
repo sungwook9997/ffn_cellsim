@@ -34,7 +34,7 @@ from pathlib import Path
 import yaml
 
 from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
-from ffn_sim.spheroid.ligand_traction import resolve_active_traction
+from ffn_sim.spheroid.motility_bridge import resolve_active_traction
 from ffn_sim.spheroid.observables import effective_radius
 from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
 from ffn_sim.spheroid.proliferation import run_growth_pooled

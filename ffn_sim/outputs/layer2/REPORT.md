@@ -749,6 +749,36 @@ overlay-only; the MCF7 19 µm/h speed is an overlay-validation anchor, never fit
 `fig_layer2_motility_bridge.png`; artifacts `spheroid/motility_bridge.py`,
 `tests/test_motility_bridge.py`, `scripts/layer2_motility_bridge_vis.py`.
 
+**⭐ Decisive experiment — RUN, the analytical verdict CONFIRMED at native N (2026-06-04).** The
+analytic argument above (9.4 nN > 6.5 nN cohesion ⇒ detachment) was put to the actual simulation:
+a 3-arm bracket on the substrate-confined catch-cohesion CBM at the PI-overlapping R₀≈153 µm
+(N₀=4000, 2 seeds), with the PI-ratified decisions applied (bracket BOTH anchors; the protrusion
+arm gets the PI-authorized **dt/5 sub-step** — implemented WITHOUT touching the frozen integrator:
+a `dataclasses.replace`d resolved with `dt_cfl/5` + `epoch_steps×5`, identical biological time, the
+single-cell BAOAB freeze intact). `scripts/layer2_decisive_traction.py`:
+
+| arm | f_active | A/A₀ core | A/A₀ raw | ejected |
+|---|---|---|---|---|
+| baseline (substrate, no traction) | 0 | 1.33 | 1.28 | no |
+| armA — whole-cell anchor | 1.6 nN | 1.36 | 1.31 | no |
+| **armB — protrusion anchor** | **9.4 nN (dt/5)** | 1.50 | 1.49 | **YES (both seeds)** |
+
+The result is unambiguous and matches the analytic prediction: the **whole-cell anchor barely moves
+A/A₀** (1.33→1.36; the ≤3 nN regime is cohesion-locked, as the magnitude decomposition already showed)
+and the **protrusion anchor EJECTS boundary cells in both seeds** — the PI-authorized finer dt did
+**not** prevent it, because the ejection is **force-limited, not a timestep artifact** (a low-coordination
+rim cell's single catch contact peaks at N_cad·f₀≈6.5 nN, below the 9.4 nN protrusion pull, so it
+genuinely detaches; smaller dt cannot change the overdamped terminal velocity). So at the platform's
+OWN literature-first protrusion force the overdamped 1-particle CBM **tears off rim cells rather than
+spreading the sheet** — it cannot represent *crawl-while-attached* (contact-line traction reacted by the
+SUBSTRATE). This **empirically closes the fork on the STRUCTURAL-LIMIT side**: the ~5–9× magnitude gap
+is the center-based 1-particle abstraction, not a missing parameter and not over-strong cohesion. The
+fix is structural (the fine-grained line, or an explicit-substrate-traction CBM D-axis), exactly the
+two routes the verdict names. Figure `fig_layer2_decisive_traction.png`; data
+`outputs/layer2/decisive/decisive.jsonl`. *(The PI "open decisions" below were ANSWERED for this run:
+bracket both anchors ✓; authorize dt/5 for the protrusion arm ✓; parameterise v₀ from the H.5 config,
+verify KU-5.2 emergent v₀ later ✓.)*
+
 **Open PI decisions (the bridge surfaces, does not pre-empt):** (1) **anchor choice** — protrusion
 (9.4 nN, the fine-grained mechanism) vs whole-cell (1.6 nN, MCF7-measured); they bracket the gap.
 (2) **the protrusion arm needs the detachment regime** (>cohesion) → a sub-stepped-bond / explicit
@@ -767,6 +797,12 @@ each driver also auto-generates its own figure at run end (production-driver-aut
   the CBM tears rather than spreads (1-particle structural limit); **B** the ×5.9 protrusion/whole-cell
   ratio = the observed magnitude gap, localised to the active side (cohesion 2-way-anchored, not the
   cause). Pure-arithmetic, no sim. SI units.
+- `figs/fig_layer2_decisive_traction.png` — **⭐ Decisive bracket (the analytic verdict RUN)**: grouped
+  core/raw A/A₀ for the 3 arms (baseline / whole-cell 1.6 nN / protrusion 9.4 nN dt/5) at R₀≈153 µm,
+  2 seeds, with the **EJECTED** annotation on the protrusion arm (9.4 nN > 6.5 nN single-contact
+  cohesion → boundary cells detach in both seeds, finer dt notwithstanding) and the PI-median band
+  (7–10) overlaid. Empirically closes the magnitude-gap fork on the STRUCTURAL-LIMIT side. SI units,
+  A/A₀=1 + PI overlay shown.
 - `figs/fig_layer2_prod_rlaw.png` — **⭐ Production R₀-law (full PI range)** (2 panels): **A**
   A/A₀(R₀) connected-core + raw-footprint ensemble (104–394 µm, 5 seeds) with the a+b/R+c/R² fit
   (**r²=0.998**) and the PI median markers (7.2/7.5/10, overlay-only) far above — the law's FORM

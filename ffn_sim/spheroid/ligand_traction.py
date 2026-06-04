@@ -68,16 +68,12 @@ Sanity Gate
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from ffn_sim.bridge.ligand_species import (
     DEFAULT_LIGAND_FOR_CONDITION,
     K_BT,
     LIGAND_REGISTRY,
 )
-
-if TYPE_CHECKING:
-    from ffn_sim.spheroid.params import ResolvedL2
 
 __all__ = [
     "ResolvedLigandTraction",
@@ -90,10 +86,6 @@ __all__ = [
     "BETA1_DISTRIBUTION",
     "clutch_strength",
     "resolve_ligand_traction",
-    "V0_PROTRUSION_BIELING",
-    "V0_WHOLECELL_MCF7",
-    "ResolvedActiveTraction",
-    "resolve_active_traction",
 ]
 
 # KU-2.4 generic integrin on-rate (motor-clutch base set); PI-exp validation map §Layer-1.
@@ -257,69 +249,4 @@ def resolve_ligand_traction(
         Lp=float(Lp),
         uniform_beta1=is_uniform,
         proxy=bool(lig.proxy),
-    )
-
-
-# ============================================================================================
-# Lamellipodium → CBM active-traction SCALE-BRIDGE (2026-06-04, PI direction)
-# ============================================================================================
-# The A1 `T_REF_DEFAULT` (2.5 nN) is an UNANCHORED heuristic placed inside the B1 stable band
-# so the RELATIVE ligand ordering is the science (the magnitude is admittedly a knob). This
-# bridge replaces that heuristic magnitude with one ANCHORED to the single-cell H.5
-# lamellipodium — the same move that anchored cohesion to the Iturri-2020 de-adhesion force.
-#
-# Overdamped map (the FROZEN integrator's own relation): a per-cell self-propulsion VELOCITY v0
-# is sustained by a force f_active = v0 · γ_cell (since the overdamped step is r += (F/γ)·dt, a
-# steady drift v0 needs F = v0·γ). γ_cell is the clutch-ensemble migration drag (KU-2.18
-# Bangasser 2013; resolve_layer2), NOT water-Stokes — so this is the crawling-relevant drag.
-#
-# Two anchor sources (the ~6× between them IS the magnitude question — overlay-only, never fit):
-#  (A) PROTRUSION anchor — the platform's OWN runtime mechanism (literature-first, in-tree):
-#      v0_prot = k_elong0 · δ_elong = 11.6 s⁻¹ · 2.7 nm = 31.3 nm/s = 1.88 µm/min  (Bieling 2016
-#      slip force-velocity, phase1_h5.yaml; the unloaded barbed-end translocation the KU-5.2
-#      oracle inverts). ⚠️ NOT k_elong0·rest_length (5.8 µm/s) — that is a network overgrowth
-#      rate, not a translocation, and is unphysical as a cell speed.
-#  (B) WHOLE-CELL anchor — an MCF7-specific single-cell speed used as a VALIDATION OVERLAY (not
-#      the platform's mechanism): v0_wc ≈ 0.32 µm/min (≈19 µm/h, breast-epithelial single-cell
-#      migration). FLAGGED as overlay/proxy: single-cell ≠ collective, and it is an MCF7 number
-#      we compare against, not a mechanism we run.
-V0_PROTRUSION_BIELING: float = 11.6 * 2.7e-9      # m/s  k_elong0·δ_elong (Bieling 2016, in-tree)
-V0_WHOLECELL_MCF7: float = 0.32e-6 / 60.0          # m/s  ≈0.32 µm/min (overlay proxy, FLAGGED)
-
-
-@dataclass(frozen=True)
-class ResolvedActiveTraction:
-    """Lamellipodium-anchored per-cell active traction f_active = v0·γ_cell (SI), both anchors."""
-
-    gamma_cell: float            # N·s/m  clutch-ensemble migration drag (KU-2.18)
-    v0_protrusion: float         # m/s    Bieling barbed-end translocation (platform mechanism)
-    v0_wholecell: float          # m/s    MCF7 single-cell speed (overlay proxy)
-    f_protrusion: float          # N      v0_protrusion·γ_cell (the literature-first anchor)
-    f_wholecell: float           # N      v0_wholecell·γ_cell (the overlay-anchored value)
-    ceiling: float               # N      B1 stable-band ejection ceiling (STABLE_TRACTION_CEILING)
-    protrusion_exceeds_ceiling: bool  # f_protrusion > ceiling → overdamped CBM ejects (D3/B1 gate)
-
-
-def resolve_active_traction(resolved: "ResolvedL2") -> ResolvedActiveTraction:
-    """Resolve the lamellipodium-anchored per-cell active traction (no sim — pure arithmetic).
-
-    Returns BOTH anchors (protrusion = the platform's Bieling mechanism; whole-cell = the MCF7
-    overlay proxy) so the magnitude question is explicit, and flags whether the protrusion
-    anchor exceeds the B1 ejection ceiling (the regime where the overdamped large-dt CBM cannot
-    hold an edge cell — the REPORT B1/D3 sub-stepping question, surfaced not silently capped).
-
-    Args:
-        resolved: resolved Layer-2 params (provides ``gamma_cell``, the clutch-ensemble drag).
-    """
-    g = float(resolved.gamma_cell)
-    f_prot = V0_PROTRUSION_BIELING * g
-    f_wc = V0_WHOLECELL_MCF7 * g
-    return ResolvedActiveTraction(
-        gamma_cell=g,
-        v0_protrusion=V0_PROTRUSION_BIELING,
-        v0_wholecell=V0_WHOLECELL_MCF7,
-        f_protrusion=float(f_prot),
-        f_wholecell=float(f_wc),
-        ceiling=STABLE_TRACTION_CEILING,
-        protrusion_exceeds_ceiling=bool(f_prot > STABLE_TRACTION_CEILING),
     )
