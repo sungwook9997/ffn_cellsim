@@ -1,5 +1,26 @@
 # Layer-2 multicellular spheroid line — REPORT (L2.0 + L2.1)
 
+> ## ✅ LINE CLOSED — 2026-06-05 (PI-ratified)
+> The center-based (CBM) Layer-2 line has delivered everything its 1-particle-per-cell abstraction
+> can meaningfully reach, and is **formally CLOSED**:
+> 1. **PI spreading-law FORM reproduced** — A/A₀ = a + b/R + c/R², r² = 0.998, **zero calibration**,
+>    across the full PI experimental R₀ range (104–394 µm). [§HEADLINE, §B2, production 35/35]
+> 2. **Collective ligand ordering reproduced** — Lam4 > Pre ≳ Bare (= the PI medians 10.0 > 7.5 > 7.2)
+>    from mechanistic integrin-clutch traction + A4′ Lam4 partial-β1-uniformity. [§G / (c)]
+> 3. **Magnitude rigorously BOUNDED** — the ~5–9× under-spread is the **center-based 1-particle
+>    STRUCTURAL LIMIT**, eliminated on six independent axes (scale, observable, cohesion, lateral
+>    coordination, passive wetting, active wetting) and explained by the aggregate-wetting framework
+>    (the PI magnitude is the active complete-wetting precursor-MONOLAYER regime — shape-resolved,
+>    a point-cell cannot host it). [§C, §D, §E, §F + morphology figure/animation]
+>
+> **Handoff:** the spreading MAGNITUDE belongs to the **fine-grained single-cell line (H.5)** — per-cell
+> shape/spread DOF + contact-line lamellipodial traction — coupled to Layer-2 by a **scale-bridge**
+> (the `motility_bridge` pattern), NOT a monolithic CBM upgrade (which would re-invent the fine-grained
+> mechanics at multicellular scale). Paper-ready synthesis: `Layer2_Report.docx`.
+> **Open (carried, non-blocking):** §D2 γ=0.57 vs Nagle breast-epi 21–45 mN/m reconcile (σ-bridge owner);
+> SE-row registration of the collective-migration + aggregate-wetting clusters (candidates written);
+> `ffn/foundation` push pending PI sign-off. Branch `layer2/spheroid-cbm`.
+
 > Status 2026-06-02. Parallel CBM (center-based, 1 particle/cell) spheroid line, isolated
 > from the single-cell main line, on the shared HOOMD + frozen-BAOAB stack. Brief:
 > `docs/LAYER2_MULTICELL_DESIGN.md`. Anchor provenance: `docs/LAYER2_ANCHORS_2026-06-02.md`.
