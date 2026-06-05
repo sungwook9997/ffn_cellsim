@@ -1,0 +1,69 @@
+# ============================================================================
+# MCF7 single-cell PHYSIOLOGICAL-BASELINE manifest  (A2, H.7 — 2026-06-05)
+# ============================================================================
+# SINGLE source of truth for "what a resting physiological MCF7 single cell IS".
+# Every compartment is declared here with its in-vivo setpoint and an explicit
+# ON/OFF flag — no null/default-off physics (physiological-baseline HARD rule,
+# CLAUDE.md PI 2026-06-04). Perturbations & measurements happen FROM this state.
+#
+# Loaded by ffn_sim/cell/manifest.py -> resolve_baseline() -> Cell.build (the
+# A1-unified assembler). Values were externalised from the PI-ratified MCF7 dict
+# in scripts/mcf7_fullcell_stage1.py (previously hardcoded in the driver).
+#
+# Citations are attached to each setpoint; none are tuning magic numbers.
+# ============================================================================
+
+cell_type: MCF7
+R_cell: 7.5e-6            # m   cell radius, 15 um diameter (Wagner 2011)
+
+# Detailed H.3 cortex/myosin/crosslinker physics come from this base config;
+# the manifest applies only MCF7 cell-type overrides + the R_cell above.
+base_cortex_config: phase1_h3.yaml
+cortex_overrides: {}     # scale (n_filaments / n_motors / n_xl) inherited from base
+
+# ----------------------------------------------------------------------------
+# Compartments — ON at their physiological setpoint (the baseline IS this state)
+# ----------------------------------------------------------------------------
+compartments:
+
+  cytoplasm:             # H.10 — effective-viscosity drag (Tier-1)
+    enabled: true
+    cell_type: MCF7      # -> eta_eff = 65.9 Pa.s (Hu 2024; NOT water 6.9e-4)
+
+  enclosed_volume:       # KU-3.1 — osmotic turgor pre-tensions the cortex
+    enabled: true
+    turgor_dP0: 40.0     # Pa   resting interphase Pi_0 (Stewart 2011).
+    # NOTE (B3 PI gate): band [0.35,0.65] mN/m at R=7.5um implies Pi_0 ~ 93-173 Pa.
+    # 40 Pa is the interphase anchor; the turgor setpoint is a Phase-B PI decision.
+
+  nucleus:               # H.9 / KU-3.B2.1 — confinement + lamin strain-stiffening
+    enabled: true
+    E_nuc: 4700.0        # Pa   4.7 kPa MCF7 indentation, in-situ band [1e3,1e4]
+    ratio_lamin: 1.4     # —    nucleus:cytoplasm stiffness, in-situ band min [1.4,5.0]
+    R_nuc_frac: 0.25     # —    nucleus:cell radius ratio
+    n_beads: 3000        # —    CFL-safe discretization at ratio_lamin=1.4 (k_hi ~ 1/n)
+
+  membrane_surface:      # H.8 / KU-3.B1 — Young-Laplace area-elastic shell
+    enabled: true
+    gamma_mem: 1.0e-4    # N/m  0.10 mN/m, KU-3.B1 mid-band
+
+# ----------------------------------------------------------------------------
+# Optional subsystems — coded but PI-GATED. Declared here for completeness so
+# the manifest is the one place that lists the whole cell. They stay OFF until
+# their gate clears (Phase B / GATE-B); enabling one via the loader currently
+# raises (surface to PI) rather than silently wiring un-ratified physics.
+# ----------------------------------------------------------------------------
+optional_subsystems:
+
+  fa:                    # H.4 focal-adhesion clutch to substrate ligands
+    enabled: false       # SCOPE PI gate (Phase B1): settled-spread vs active-spread
+  substrate:             # ECM compliant substrate plane (paired with FA)
+    enabled: false       # with fa
+  lamellipodium:         # H.5 Arp2/3 leading edge
+    enabled: false       # KU-5.x PI-blocked + SCOPE gate
+  turnover:              # cortex actin cofilin severing / re-annealing
+    enabled: false       # not yet ratified
+  erm:                   # KU-3.18 ezrin/radixin/moesin membrane-cortex tether
+    enabled: false       # declarable, Phase B2 wire-on
+  membrane_load:         # KU-5.2 leading-edge Brownian-ratchet brake on barbed ends
+    enabled: false       # KU-5.x PI-blocked (inert F=0 by design)
