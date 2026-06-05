@@ -152,6 +152,11 @@ def build() -> Path:
     doc.add_paragraph(
         "The platform under-spreads ~5–9× in magnitude relative to the PI medians (7.2/7.5/10.0). We "
         "eliminated every CBM-expressible cause on six independent axes:")
+    _fig(doc, "fig_layer2_morphology.png",
+         "Figure 2. The spreading process rendered (Lam4, R₀≈151 µm, t = 0 → 61 h): the actual spatial "
+         "reality behind A/A₀. TOP — the projected footprint grows only ~1.0→1.5×. BOTTOM — the aggregate "
+         "stays a 3D CAP on the dish; it does NOT melt into a flat monolayer. This is the structural limit, "
+         "made visible (an animated version is fig_layer2_morphology_anim.gif).")
     axes = [
         ("Scale (§B2)", "the native-N GPU sweep reaches the PI R₀ range; the gap persists at matched R₀ — "
                         "not a small-N/statistics artifact."),

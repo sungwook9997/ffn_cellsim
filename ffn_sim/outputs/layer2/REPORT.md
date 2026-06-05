@@ -1016,6 +1016,12 @@ emergent per-condition fits (A/A0 = a + b/R + c/R²):
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_morphology.png` (+ `fig_layer2_morphology_anim.gif`) — **⭐ MORPHOLOGY: the spreading
+  process rendered** (Lam4, R₀≈151 µm, t=0→61 h, native-N GPU): the actual cell configuration behind A/A₀.
+  TOP-DOWN footprint grows only ~1.0→1.5×; SIDE view shows the aggregate stays a 3D CAP on the dish (does
+  NOT melt to a flat monolayer) — the §C–§F structural limit made visible. Cells coloured by height above
+  the dish; the .gif animates the 60 h. Uses `run_growth_pooled(capture_every=…)` snapshot capture;
+  `scripts/layer2_morphology_{vis,anim}.py`. (npz frames gitignored — regenerable.)
 - `figs/fig_layer2_ligand_production.png` — **⭐ G ligand production (c)** (R₀ 102–231 µm, native-N GPU):
   emergent A/A₀(R₀) for Bare/Pre/Lam4 from mechanistic clutch traction + A4′ Lam4 partial-uniformity, with
   per-condition a+b/R+c/R² fits (r²≥0.98) and PI medians overlaid. Model ordering **Lam4 > Pre ≳ Bare** =

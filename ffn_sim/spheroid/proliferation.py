@@ -422,6 +422,7 @@ def run_growth_pooled(
     Lp: float = 11.0e-6,
     crawl_mode: str = "edge",
     plith: "Any" = None,
+    capture_every: int = 0,
 ) -> dict[str, Any]:
     """Leak-free contact-inhibited growth (L2.4b): ONE Simulation + pre-allocated pool.
 
@@ -546,6 +547,11 @@ def run_growth_pooled(
     a0_raw = raw_footprint_area(ap0, r_cell)
 
     t = 0.0
+    # optional spatial-morphology capture (additive, default off): list of (t, active-positions)
+    # snapshots every `capture_every` epochs, for rendering the spreading PROCESS. The t=0 frame
+    # is the settled initial aggregate.
+    pos_snapshots = [(0.0, ap0.copy())] if capture_every else []
+    epoch_i = 0
     ts, ns, areas, rgs, areas_core = [0.0], [n0], [a0], [radius_of_gyration(ap0)], [a0_core]
     areas_raw = [a0_raw]  # union-of-disks footprint (image-segmentation analog; PI raw-area)
     rim_frac_mean = []
@@ -708,6 +714,9 @@ def run_growth_pooled(
         areas.append(projected_area(ap)); rgs.append(radius_of_gyration(ap))
         areas_core.append(core_projected_area(ap, link_r))
         areas_raw.append(raw_footprint_area(ap, r_cell))
+        epoch_i += 1
+        if capture_every and (epoch_i % capture_every == 0):
+            pos_snapshots.append((t, ap.copy()))   # morphology time-series frame
         if capped:
             break
 
@@ -742,6 +751,7 @@ def run_growth_pooled(
         "ejected": ejected,
         "f_traction": 0.0,
         "pos_init": pos_init, "pos_final": pos_final,
+        "pos_snapshots": pos_snapshots,
     }
 
 

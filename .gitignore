@@ -107,3 +107,4 @@ ffn_sim/outputs/layer2/daxis*/*.progress
 
 # KU-3.5 driver checkpoints (run state, not artifacts)
 ffn_sim/outputs/h3/production/ku35_active/ckpt/
+ffn_sim/outputs/layer2/morphology_frames.npz
