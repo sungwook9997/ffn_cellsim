@@ -95,10 +95,6 @@ _ROOT = Path(__file__).resolve().parents[1]
 _RUNTIME_CFG = _ROOT / "configs" / "layer2_cbm.yaml"
 _OUT_DIR = _ROOT / "outputs" / "layer2"
 
-#: Single-cell cortical-tension anchor [N/m] (KU-3.5 g_rigid native; the bridge target).
-GAMMA_CORTICAL = br.G_RIGID_NATIVE_MN_M * 1e-3   # 0.57 mN/m -> N/m
-
-
 def morse_force_magnitude(
     r: npt.NDArray[np.float64], D0: float, alpha: float, r0: float
 ) -> npt.NDArray[np.float64]:
@@ -381,7 +377,8 @@ def measure_emergent_sigma(
     # the well to r_cut), the same scale params.py uses (D_e = 2 F_detach contact_zone).
     work_deadhesion = D0
     beta = br.adhesion_tension(work_deadhesion, contact_area)  # N/m
-    beta_over_gamma = beta / GAMMA_CORTICAL
+    gamma_cortical = resolved.cortical_tension
+    beta_over_gamma = beta / gamma_cortical
     roffay_lo, roffay_hi = br.ROFFAY_SURFACE_INTERIOR_RATIO
     bog_window = (1.0 - 1.0 / roffay_lo, 1.0 - 1.0 / roffay_hi)  # (0.375, 0.5)
 
@@ -407,8 +404,8 @@ def measure_emergent_sigma(
         "dP_diag_Pa": dP,
         # emergent surface tension (PRIMARY: Irving-Kirkwood spherical mechanical estimator)
         "sigma_emergent_mN_m": sigma * 1e3 if np.isfinite(sigma) else float("nan"),
-        "gamma_cortical_mN_m": GAMMA_CORTICAL * 1e3,
-        "sigma_over_gamma": (sigma / GAMMA_CORTICAL) if np.isfinite(sigma) else float("nan"),
+        "gamma_cortical_mN_m": gamma_cortical * 1e3,
+        "sigma_over_gamma": (sigma / gamma_cortical) if np.isfinite(sigma) else float("nan"),
         # MCF7 emergent beta/gamma
         "contact_radius_um": a_contact * 1e6,
         "contact_area_um2": contact_area * 1e12,
@@ -533,8 +530,8 @@ def measure_emergent_sigma_catch(
         "sigma_emergent_mN_m": sigma * 1e3 if np.isfinite(sigma) else float("nan"),
         "sigma_std_mN_m": sigma_std * 1e3 if np.isfinite(sigma_std) else float("nan"),
         "sigma_ctrl_repulsive_mN_m": sigma_ctrl * 1e3 if np.isfinite(sigma_ctrl) else float("nan"),
-        "gamma_cortical_mN_m": GAMMA_CORTICAL * 1e3,
-        "sigma_over_gamma": (sigma / GAMMA_CORTICAL) if np.isfinite(sigma) else float("nan"),
+        "gamma_cortical_mN_m": resolved.cortical_tension * 1e3,
+        "sigma_over_gamma": (sigma / resolved.cortical_tension) if np.isfinite(sigma) else float("nan"),
         # affine radial-strain probe: σ_eff(ε) engaging the catch cohesive band (mN/m)
         "strain_grid": list(strain_grid),
         "sigma_strain_mN_m": strain_mean,
@@ -761,7 +758,7 @@ def _main_catch_bond(resolved: ResolvedL2, args: argparse.Namespace) -> int:
             "runs": runs,
             "sigma_mean_mN_m": float(np.nanmean(sig_arr)),
             "sigma_std_mN_m": float(np.nanstd(sig_arr)),
-            "sigma_over_gamma_mean": float(np.nanmean(sig_arr) / (GAMMA_CORTICAL * 1e3)),
+            "sigma_over_gamma_mean": float(np.nanmean(sig_arr) / (resolved.cortical_tension * 1e3)),
         }
         print(f"  -> sigma = {ensemble['sigma_mean_mN_m']:+.4f} +/- "
               f"{ensemble['sigma_std_mN_m']:.4f} mN/m "
@@ -819,7 +816,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[resolve] r0={resolved.morse_r0*1e6:.2f} µm  D_e={resolved.D_e:.3e} J "
           f"({resolved.D_e/resolved.kT:.0f} kT)  alpha={resolved.morse_alpha:.3e} 1/m  "
           f"dt={resolved.dt_cfl:.3e} s  gamma_cell={resolved.gamma_cell:.3f} N·s/m")
-    print(f"[anchor] single-cell cortical tension gamma = {GAMMA_CORTICAL*1e3:.3f} mN/m\n")
+    print(
+        f"[anchor] single-cell cortical tension gamma = "
+        f"{resolved.cortical_tension*1e3:.3f} mN/m\n"
+    )
 
     if args.catch_bond:
         return _main_catch_bond(resolved, args)
@@ -901,7 +901,7 @@ def main(argv: list[str] | None = None) -> int:
             "runs": runs,
             "sigma_mean_mN_m": float(np.nanmean(sig_arr)),
             "sigma_std_mN_m": float(np.nanstd(sig_arr)),
-            "sigma_over_gamma_mean": float(np.nanmean(sig_arr) / (GAMMA_CORTICAL * 1e3)),
+            "sigma_over_gamma_mean": float(np.nanmean(sig_arr) / (resolved.cortical_tension * 1e3)),
             "beta_over_gamma_mean": float(np.nanmean(bog_arr)),
             "beta_over_gamma_min": float(np.nanmin(bog_arr)),
             "beta_over_gamma_max": float(np.nanmax(bog_arr)),
@@ -924,6 +924,8 @@ def main(argv: list[str] | None = None) -> int:
             "morse_r0_um": resolved.morse_r0 * 1e6,
             "D_e_J": resolved.D_e,
             "morse_alpha_1_per_m": resolved.morse_alpha,
+            "cortical_tension_N_per_m": resolved.cortical_tension,
+            "cortical_tension_band_N_per_m": list(resolved.cortical_tension_band),
             "gamma_cell_Ns_per_m": resolved.gamma_cell,
             "dt_cfl_s": resolved.dt_cfl,
         },

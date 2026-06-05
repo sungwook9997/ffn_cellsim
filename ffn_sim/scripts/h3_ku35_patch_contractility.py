@@ -63,6 +63,11 @@ from ffn_sim.cortex.myosin import resolve_cortex_myosin
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cell.cell import build_cortex_full_simulation
 from ffn_sim.cell.cytoplasm import resolve_cytoplasm
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
 from ffn_sim.scripts.h3_ku35_stresslet import stresslet_ledger
 
 PKG = Path(__file__).resolve().parents[1]
@@ -110,7 +115,8 @@ def build_patch(
     cm_bundle_mult: int = 2,
     v0_accel: float = DEFAULT_V0_ACCEL,
     seed: int = 1,
-    device: str = "cpu",
+    device: str = "gpu",
+    allow_cpu_dev: bool = False,
 ):
     """Build a FREE-actin MCF7 cortex+myosin patch (connected mesh, cytoplasm ON).
 
@@ -118,6 +124,10 @@ def build_patch(
     baseline (no myosin) for the ON−OFF delta.  ``constrained=False`` ⇒ the
     actin is FREE to move under the BAOAB integrator at the MCF7 cytoplasm η.
     """
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     cfg = _patch_cfg(
         n_fil=n_fil, n_motors=(0 if motors_off else n_motors), n_xl=n_xl
     )
@@ -325,8 +335,9 @@ def main() -> int:
     ap.add_argument("--n-xl", type=int, default=400)
     ap.add_argument("--n-steps", type=int, default=20000)
     ap.add_argument("--n-blocks", type=int, default=1)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
 
     print(f"=== KU-3.5 GATE 2 — FREE-actin PATCH contractility "
           f"(MCF7 η=65.9 Pa·s, n_fil={args.n_fil}, n_motors={args.n_motors}) ===",
@@ -337,6 +348,7 @@ def main() -> int:
         d = contraction_delta(
             n_steps=4000, n_blocks=1, n_fil=args.n_fil, n_motors=args.n_motors,
             n_xl=args.n_xl, cm_z=3.3, device=args.device,
+            allow_cpu_dev=args.allow_cpu_dev,
         )
         print(f"  [SMOKE] ΣP={d['sumP']:.3e} coh={d['coherence']} "
               f"complete={d['frac_complete']:.3f} "
@@ -350,7 +362,7 @@ def main() -> int:
     rows = connectivity_sweep(
         cm_z_values=cm_z_values, n_steps=args.n_steps, n_blocks=args.n_blocks,
         n_fil=args.n_fil, n_motors=args.n_motors, n_xl=args.n_xl,
-        device=args.device,
+        device=args.device, allow_cpu_dev=args.allow_cpu_dev,
     )
     print(f"\n=== sweep DONE in {time.time()-t0:.0f}s ===", flush=True)
 

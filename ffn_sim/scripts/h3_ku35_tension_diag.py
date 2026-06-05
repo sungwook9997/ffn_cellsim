@@ -41,6 +41,10 @@ from ffn_sim.cell import Cell, CellBuildOptions
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.cortex.myosin import resolve_cortex_myosin
 from ffn_sim.cortex.erm import resolve_erm
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
@@ -85,12 +89,13 @@ def _cortex_radial_stats(sim: hoomd.Simulation, n_cortex_actin: int) -> tuple[fl
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--scale", choices=SCALES, default="smoke")
-    ap.add_argument("--device", choices=["gpu", "cpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--max-steps", type=int, default=1_500_000)
     ap.add_argument("--burst", type=int, default=25_000)
     ap.add_argument("--with-erm", action="store_true", default=True)
     ap.add_argument("--no-erm", dest="with_erm", action="store_false")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
 
     with open(CFG) as f:
         cfg = yaml.safe_load(f)

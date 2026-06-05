@@ -49,6 +49,13 @@ from ffn_sim.scripts.h3_ku35_aggregation import (
     format_ledger,
 )
 from ffn_sim.common import checkpoint as _ckpt
+from ffn_sim.common.production_policy import (
+    DEFAULT_MCF7_TURGOR_PA,
+    add_production_device_args,
+    require_full_cell_physiological_baseline,
+    require_physiological_turgor,
+    require_production_device,
+)
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
@@ -66,6 +73,34 @@ MCF7 = dict(
     n_nuc_beads=3000,         # CFL-safe at ratio_lamin=1.4 (k_hi ∝ 1/n_beads)
 )
 
+DEFAULT_TURGOR_PA = DEFAULT_MCF7_TURGOR_PA
+
+
+def _require_production_device(device: str, *, allow_cpu_dev: bool) -> None:
+    """Backward-compatible wrapper for tests/importers."""
+    require_production_device(
+        device,
+        allow_cpu_dev=allow_cpu_dev,
+        hoomd_module=hoomd,
+    )
+
+
+def _require_physiological_pressure(
+    *,
+    compartments_on: bool,
+    only: str | None,
+    turgor_pa: float | None,
+    allow_unpressurized_dev: bool,
+) -> None:
+    """Backward-compatible wrapper for tests/importers."""
+    if not compartments_on or only is not None:
+        return
+    probe = type("_TurgorProbe", (), {"turgor_dP0": turgor_pa})()
+    require_physiological_turgor(
+        probe,
+        allow_unpressurized_dev=allow_unpressurized_dev,
+    )
+
 
 def _tagpos(sim) -> np.ndarray:
     with sim.state.cpu_local_snapshot as s:
@@ -76,16 +111,16 @@ def _tagpos(sim) -> np.ndarray:
         return pos[inv].copy()
 
 
-def _resolve_compartments(p_cortex, *, turgor_pa=None):
+def _resolve_compartments(p_cortex, *, turgor_pa=DEFAULT_TURGOR_PA):
     """Resolve the 4 MCF7 compartments (all ON).
 
     ``turgor_pa`` sets the BASELINE osmotic turgor Π₀ (``turgor_dP0``) — the
     resting intracellular pressure that PRE-TENSIONS the cortex at construction
     (ΔP = Π₀ at V = V0, cortex carries hoop tension γ = Π₀·R/2; physiological-
-    baseline, CLAUDE.md).  Default Π₀ = 0 leaves an UNPRESSURISED floppy shell
-    (the g_rigid floor: myosin must generate the whole tension from a floppy
-    bag).  Band [0.35,0.65] mN/m implies Π₀ ≈ 93-173 Pa at R = 7.5 µm (resting
-    interphase ≈ 40 Pa, Stewart 2011).
+    baseline, CLAUDE.md).  Default Π₀ = 40 Pa (Stewart 2011 interphase);
+    Π₀ = 0 / None leaves an UNPRESSURISED floppy shell and is a dev/attribution
+    condition, not a production baseline.  Band [0.35,0.65] mN/m implies Π₀
+    ≈ 93-173 Pa at R = 7.5 µm.
     """
     R = p_cortex.R_cell
     p_nuc = resolve_nucleus(
@@ -101,9 +136,13 @@ def _resolve_compartments(p_cortex, *, turgor_pa=None):
 
 
 def _build(cfg, *, stepping_mode, force_scaling, constrained, compartments,
-           dtc=None, seed=1, equilibrate=False, n_warmup=0, device="cpu", kon_scale=1.0,
+           dtc=None, seed=1, equilibrate=False, n_warmup=0, device="gpu", kon_scale=1.0,
            bind_scale=1.0, connected_mesh=False, cm_z_struct=3.7, cm_bundle_mult=2,
-           v0_accel=1.0, motors_off=False):
+           v0_accel=1.0, motors_off=False, allow_cpu_dev: bool = False):
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     from dataclasses import replace as _replace
     p = resolve_h3_derived(cfg)
     tau_bend = p.gamma_b * p.rest_length ** 3 / p.bending_modulus
@@ -188,10 +227,11 @@ def _run_fingerprint(*, stepping_mode, n_fil, n_motors, n_xl, force_scaling,
 
 
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
-            couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
+            couple_accel, n_warmup, n_sample, interval, smoke, device="gpu",
             compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0,
-            bind_scale=1.0, connected_mesh=False, turgor_pa=None, motors_off=False,
-            aggregation=False, resume=True):
+            bind_scale=1.0, connected_mesh=False, turgor_pa=DEFAULT_TURGOR_PA, motors_off=False,
+            aggregation=False, resume=True, allow_unpressurized_dev=False,
+            allow_cpu_dev: bool = False):
     cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
@@ -201,8 +241,13 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
         print(f"  [ONLY {only}] attribution run (other compartments OFF)", flush=True)
     elif compartments_on:
         comp = _resolve_compartments(p0, turgor_pa=turgor_pa)
+        require_full_cell_physiological_baseline(
+            comp,
+            allow_unpressurized_dev=allow_unpressurized_dev,
+        )
         print(f"  [compartments ON] nucleus k_chrom={comp['p_nucleus'].k_chrom:.2e} "
               f"E_nuc={MCF7['E_nuc']}Pa | enclosed dP_ref={comp['p_enclosed_volume'].dP_ref:.0f}Pa "
+              f"turgor={comp['p_enclosed_volume'].turgor_dP0:.0f}Pa "
               f"| membrane gamma_mem={MCF7['gamma_mem']*1e3:.2f}mN/m "
               f"| cytoplasm eta={comp['p_cytoplasm'].eta_eff:.1f}Pa·s (MCF7)", flush=True)
     else:
@@ -269,7 +314,8 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                                   compartments=comp, equilibrate=True, n_warmup=n_warmup,
                                   device=device, kon_scale=kon_scale, bind_scale=bind_scale,
                                   connected_mesh=connected_mesh, dtc=dtc,
-                                  v0_accel=v0_accel, motors_off=motors_off)
+                                  v0_accel=v0_accel, motors_off=motors_off,
+                                  allow_cpu_dev=allow_cpu_dev)
         hw["sim"].run(0)
         seed_positions = _tagpos(hw["sim"])
         del hw
@@ -289,7 +335,8 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                                          device=device, kon_scale=kon_scale,
                                          bind_scale=bind_scale,
                                          connected_mesh=connected_mesh,
-                                         v0_accel=v0_accel, motors_off=motors_off)
+                                         v0_accel=v0_accel, motors_off=motors_off,
+                                         allow_cpu_dev=allow_cpu_dev)
     sim = hc["sim"]
     act = hc["baoab_action"]
     myo_act = hc.get("myosin_action")
@@ -371,7 +418,7 @@ def main() -> int:
     ap.add_argument("--interval", type=int, default=20000)
     ap.add_argument("--arm", choices=["both", "binned_r0", "grip_walk"],
                     default="grip_walk")
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--no-compartments", action="store_true",
                     help="cortex-only baseline (attribution: isolate the compartment effect)")
     ap.add_argument("--only", choices=["p_enclosed_volume", "p_cytoplasm",
@@ -399,14 +446,27 @@ def main() -> int:
                     help="disable checkpoint/resume (default: ON — a re-run of the same "
                          "config skips the warm-up + all completed samples; checkpoints "
                          "live under outputs/h3/production/ku35_active/ckpt/)")
-    ap.add_argument("--turgor-pa", type=float, default=None,
+    ap.add_argument("--turgor-pa", type=float, default=DEFAULT_TURGOR_PA,
                     help="override enclosed-volume intracellular pressure dP [Pa] "
                          "(KU-3.1 default 40 interphase; band [0.35,0.65] implies ~93-173 "
                          "metaphase). Dominant g_rigid lever (Young-Laplace γ=dP·R/2).")
+    ap.add_argument("--allow-unpressurized-dev", action="store_true",
+                    help="explicitly allow --turgor-pa 0/None for attribution/debug runs")
     args = ap.parse_args()
 
     if args.smoke:
         args.n_fil, args.n_motors, args.n_xl, args.n_warmup = 200, 20, 200, 1500
+
+    try:
+        _require_production_device(args.device, allow_cpu_dev=args.allow_cpu_dev)
+        _require_physiological_pressure(
+            compartments_on=not args.no_compartments,
+            only=args.only,
+            turgor_pa=args.turgor_pa,
+            allow_unpressurized_dev=args.allow_unpressurized_dev,
+        )
+    except ValueError as exc:
+        ap.error(str(exc))
 
     print(f"=== MCF7 FULL-CELL STAGE-1 (R_cell=7.5µm, all compartments ON, "
           f"n_fil={args.n_fil}, arm={args.arm}, smoke={args.smoke}) ===", flush=True)
@@ -427,6 +487,8 @@ def main() -> int:
             bind_scale=args.bind_scale, connected_mesh=args.connected_mesh,
             turgor_pa=args.turgor_pa, motors_off=args.motors_off,
             aggregation=args.aggregation, resume=not args.no_resume,
+            allow_unpressurized_dev=args.allow_unpressurized_dev,
+            allow_cpu_dev=args.allow_cpu_dev,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"

@@ -31,6 +31,11 @@ from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.cortex.myosin import resolve_cortex_myosin
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
 from ffn_sim.scripts.h3_ku35_tension import _tagpos
 
 PKG = Path(__file__).resolve().parents[1]
@@ -52,7 +57,19 @@ def _make_device(device: str):
     return hoomd.device.CPU(notice_level=0)
 
 
-def _build(n_fil, n_motors, seed, dt_factor, with_myosin, device="cpu"):
+def _build(
+    n_fil,
+    n_motors,
+    seed,
+    dt_factor,
+    with_myosin,
+    device="gpu",
+    allow_cpu_dev: bool = False,
+):
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     cfg = yaml.safe_load(open(CFG))
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
@@ -110,10 +127,11 @@ def main():
     ap.add_argument("--dt-factor", type=float, default=0.001)
     ap.add_argument("--n-warmup", type=int, default=8000)
     ap.add_argument("--profile-steps", type=int, default=1500)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--no-cprofile", action="store_true",
                     help="skip the cProfile pass (steps/s timing only — for GPU smoke)")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
 
     print(f"=== constrained-BD profile: device={args.device} n_fil={args.n_fil} "
           f"n_motors={args.n_motors} profile_steps={args.profile_steps} "
@@ -123,7 +141,7 @@ def main():
     for with_myo in (True, False):
         p, p_myo, p_xl, dtc, nca, dev = _build(
             args.n_fil, args.n_motors, args.seed, args.dt_factor, with_myo,
-            device=args.device)
+            device=args.device, allow_cpu_dev=args.allow_cpu_dev)
         sim = _warm_and_constrain(p, p_myo, p_xl, dtc, dev, args.seed, args.n_warmup)
         _timed(sim, 100)  # warm the step path
         wall = _timed(sim, args.profile_steps)

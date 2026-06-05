@@ -51,6 +51,11 @@ from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.cortex.myosin import resolve_cortex_myosin
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
 from ffn_sim.scripts.h3_ku35_tension import (
     _tension_method_of_planes,
     _tension_method_of_planes_rigid,
@@ -72,11 +77,16 @@ def _mean_grip_s(ma) -> float:
 def _run_arm(
     *, stepping_mode: str, n_fil: int, n_motors: int, seed: int,
     dt_factor: float, v0_accel: float, n_warmup: int, n_sample: int,
-    interval: int, force_scaling: bool = False, device: str = "cpu",
+    interval: int, force_scaling: bool = False, device: str = "gpu",
+    allow_cpu_dev: bool = False,
     gsd_path: str | None = None, gsd_period: int = 0, couple_accel: bool = False,
     n_xl: int | None = None,
 ) -> dict:
     """Build + warm-up + short constrained run for one stepping mode."""
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     cfg = yaml.safe_load(open(CFG))
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
@@ -228,7 +238,7 @@ def main() -> None:
     ap.add_argument("--force-scaling", action="store_true",
                     help="Route B: derived mesoscale force scaling on the grip_walk arm")
     ap.add_argument("--out", type=str, default=None)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--arm", choices=["both", "binned_r0", "grip_walk"],
                     default="both",
                     help="run a single arm (skips the A/B verdict) for fast "
@@ -246,6 +256,7 @@ def main() -> None:
                          "accelerated walk (network percolates) — removes the "
                          "walk/bind desync that flattens γ. Coherence upper bound.")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
 
     def _gsd_path(mode: str) -> str | None:
         if args.gsd_period <= 0:
@@ -260,7 +271,8 @@ def main() -> None:
         n_fil=args.n_fil, n_motors=args.n_motors, seed=args.seed,
         dt_factor=args.dt_factor, v0_accel=args.v0_accel,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
-        device=args.device, gsd_period=args.gsd_period,
+        device=args.device, allow_cpu_dev=args.allow_cpu_dev,
+        gsd_period=args.gsd_period,
         couple_accel=args.couple_accel, n_xl=args.n_xl,
     )
     print(f"=== KU-3.5 grip-walk Tier-1 micro-diagnostic (v0_accel={args.v0_accel}×"

@@ -1,0 +1,43 @@
+{
+  "arm": "grip_walk",
+  "samples": [
+    {
+      "sample": 1,
+      "step": 5000,
+      "r_over_r0": 0.9999631788116708,
+      "gamma_soft_mN_per_m": 2.4572798011492413e-06,
+      "gamma_rigid_mN_per_m": 0.0033199645894351777,
+      "gamma_total_mN_per_m": 0.003322421869236327,
+      "mean_grip_s_nm": 4.527810445449782,
+      "n_engaged": 12,
+      "step_advances": 0,
+      "max_drift": 3.3881317890172014e-15,
+      "lj_cfl_warn": false
+    },
+    {
+      "sample": 2,
+      "step": 10000,
+      "r_over_r0": 0.9999407468719878,
+      "gamma_soft_mN_per_m": 4.643513337088982e-06,
+      "gamma_rigid_mN_per_m": 0.0038498614530656037,
+      "gamma_total_mN_per_m": 0.0038545049664026926,
+      "mean_grip_s_nm": 5.904631480186604,
+      "n_engaged": 32,
+      "step_advances": 0,
+      "max_drift": 3.1763735522036263e-15,
+      "lj_cfl_warn": false
+    }
+  ],
+  "params": {
+    "n_fil": 38000,
+    "n_motors": 100,
+    "seed": 1,
+    "dt_factor": 0.0001,
+    "v0_accel": 100.0,
+    "n_warmup": 15000,
+    "n_sample": 2,
+    "interval": 5000,
+    "device": "gpu",
+    "gsd_period": 5000
+  }
+}

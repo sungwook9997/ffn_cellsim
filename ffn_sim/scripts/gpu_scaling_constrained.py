@@ -27,6 +27,7 @@ import numpy as np
 import hoomd
 import hoomd.md as md
 
+from ffn_sim.common.production_policy import require_production_device
 from ffn_sim.integrator.constrained_baoab import make_constrained_baoab_updater
 
 
@@ -38,7 +39,11 @@ def _make_device(kind: str):
 
 def build(device_kind: str, *, n_fil: int, n_beads: int = 10, L0: float = 1.0,
           kT: float = 1.0, gamma: float = 1.0, kth: float = 2.0, dt: float = 1e-3,
-          seed: int = 7):
+          seed: int = 7, allow_cpu_dev: bool = False):
+    require_production_device(
+        device_kind, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     N = n_fil * n_beads
     # Lay filaments out on a cubic grid, well separated (no pair force anyway,
     # but keeps them visually disjoint and the box large vs each filament).
@@ -107,8 +112,21 @@ def main():
                     default=[50, 200, 1000, 5000])
     ap.add_argument("--n-beads", type=int, default=10)
     ap.add_argument("--steps", type=int, default=300)
-    ap.add_argument("--devices", nargs="+", default=["cpu", "gpu"])
+    ap.add_argument("--devices", nargs="+", choices=["cpu", "gpu"], default=["gpu"])
+    ap.add_argument(
+        "--allow-cpu-dev", action="store_true",
+        help="explicitly allow CPU benchmark rows for local/dev comparison",
+    )
     args = ap.parse_args()
+    for requested in args.devices:
+        try:
+            require_production_device(
+                requested, allow_cpu_dev=args.allow_cpu_dev, hoomd_module=hoomd
+            )
+            if requested == "gpu":
+                import cupy  # noqa: F401
+        except Exception as exc:  # noqa: BLE001
+            ap.error(str(exc))
 
     print(f"=== constrained-Action N-scaling (n_beads={args.n_beads}, "
           f"steps={args.steps}, hoomd_gpu_build={hoomd.version.gpu_enabled}) ===",
@@ -120,13 +138,12 @@ def main():
         row = {"cpu": (None, None), "gpu": (None, None)}
         npart = None
         for dev in args.devices:
-            if dev == "gpu":
-                try:
-                    import cupy  # noqa: F401
-                except Exception as exc:
-                    print(f"  [GPU skip] {exc}", flush=True)
-                    continue
-            sim, act, npart = build(dev, n_fil=nf, n_beads=args.n_beads)
+            sim, act, npart = build(
+                dev,
+                n_fil=nf,
+                n_beads=args.n_beads,
+                allow_cpu_dev=args.allow_cpu_dev,
+            )
             sps = timed(sim, args.steps)
             row[dev] = (sps, act.max_constraint_drift)
             del sim, act

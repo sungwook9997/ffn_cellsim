@@ -66,6 +66,11 @@ from ffn_sim.bridge.fa import resolve_h4
 from ffn_sim.cell.cell import build_cortex_full_simulation
 from ffn_sim.common import checkpoint as _ckpt
 from ffn_sim.common import integrity as _integrity
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
 
 # Reuse v3's measurement protocol verbatim — the γ method-of-planes (soft +
 # rigid Lagrange) is the ratified KU-3.5 readout and MUST be identical so v3
@@ -120,7 +125,8 @@ def run(
     interval: int = 5_000,
     equilibrate_steps: int = 20_000,
     fa_capture_radius: float | None = None,
-    device: str = "cpu",
+    device: str = "gpu",
+    allow_cpu_dev: bool = False,
     out: str | None = None,
     checkpoint_every: int = 10,
     skip_integrity: bool = False,
@@ -140,6 +146,7 @@ def run(
         fa_capture_radius: Optional additive override for the FA clutch capture
             radius [m]. None = use the physical ``capture_radius_R_FA``.
         device: ``"cpu"`` or ``"gpu"``.
+        allow_cpu_dev: Explicit CPU escape hatch for local smoke/dev runs.
         out: Output JSON path (``.npz`` frames derived alongside).
         checkpoint_every: Position-checkpoint cadence (requires ``out``).
         skip_integrity: Skip the pre-run module-integrity guard.
@@ -148,6 +155,12 @@ def run(
     Returns:
         Result dict (also written to ``out`` JSON).
     """
+    require_production_device(
+        device,
+        allow_cpu_dev=allow_cpu_dev,
+        hoomd_module=hoomd,
+    )
+
     # Pre-run module-integrity guard (best-effort; never aborts a valid run).
     if not skip_integrity:
         try:
@@ -563,7 +576,7 @@ def main() -> None:
              "None = physical capture_radius_R_FA (~1.5 µm). Pass e.g. 3e-6 if "
              "no clutch bonds form at the physical radius post-equilibration.",
     )
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--out", type=str, default=None)
     ap.add_argument(
         "--checkpoint-every", type=int, default=10,
@@ -586,6 +599,7 @@ def main() -> None:
              "trend off the floor; never a PASS (too short for steady state).",
     )
     args = ap.parse_args()
+    validate_production_device_args(ap, args, hoomd_module=hoomd)
 
     if args.smoke:
         # Smoke preset overrides (only if the user left the default).
@@ -606,6 +620,7 @@ def main() -> None:
         equilibrate_steps=args.equilibrate_steps,
         fa_capture_radius=args.fa_capture_radius,
         device=args.device, out=args.out,
+        allow_cpu_dev=args.allow_cpu_dev,
         checkpoint_every=args.checkpoint_every,
         skip_integrity=args.skip_integrity, resume=args.resume,
     )

@@ -38,6 +38,13 @@ from pathlib import Path
 
 import numpy as np
 
+import hoomd
+
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_full_cell_physiological_baseline,
+    validate_production_device_args,
+)
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.scripts.mcf7_fullcell_stage1 import (
     _build,
@@ -116,11 +123,12 @@ def signed_cortical_stress(sim, R_cell: float, n_planes: int = 12) -> dict:
 
 
 def _run_arm(n_fil, n_motors, n_xl, *, n_warmup, n_sample, interval, bind_scale,
-             kon_scale, device="cpu", seed=1):
+             kon_scale, device="gpu", seed=1):
     """Warm-up (unconstrained) → constrained production; sample SIGNED + magnitude stress."""
     cfg = _cfg_for(n_fil, n_motors, n_xl, "grip_walk", force_scaling=True, backbone_nm=300)
     p0 = resolve_h3_derived(cfg)
     comp = _resolve_compartments(p0)
+    require_full_cell_physiological_baseline(comp)
     # warm-up (unconstrained) to relax overlaps
     _, _, _, dtc, hw = _build(cfg, stepping_mode="grip_walk", force_scaling=True,
                               constrained=False, compartments=comp, equilibrate=True,
@@ -165,8 +173,9 @@ def main() -> int:
     ap.add_argument("--n-warmup", type=int, default=8000)
     ap.add_argument("--bind-scale", type=float, default=6.0)
     ap.add_argument("--kon-scale", type=float, default=300.0)
-    ap.add_argument("--device", default="cpu", choices=["cpu", "gpu"])
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args, hoomd_module=hoomd)
 
     if args.smoke:
         n_fil, n_motors, n_sample, interval, n_warmup = 300, 60, 3, 3000, 3000

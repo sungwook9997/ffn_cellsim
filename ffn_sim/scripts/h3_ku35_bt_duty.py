@@ -86,6 +86,12 @@ from pathlib import Path
 
 import numpy as np
 
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
+
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
 
@@ -173,7 +179,8 @@ def duty_table(verbose: bool = True) -> list[dict]:
 # (1) Live probe: build the connected-mesh cortex with lit-anchored overrides
 # --------------------------------------------------------------------------- #
 def _build_cortex(*, k_on: float, k_off0: float, n_fil: int, n_motors: int,
-                  seed: int, device: str = "cpu", n_ticks: int = 40,
+                  seed: int, device: str = "gpu",
+                  allow_cpu_dev: bool = False, n_ticks: int = 40,
                   run_steps: int = 0, batch_steps: int | str | None = None):
     """Build the production connected-mesh cortex+myosin with binding-kinetics
     overrides applied THROUGH THE CONFIG DICT (no core edit), then populate the
@@ -192,6 +199,10 @@ def _build_cortex(*, k_on: float, k_off0: float, n_fil: int, n_motors: int,
     """
     import yaml
     import hoomd
+
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
 
     from ffn_sim.cortex.cortex import resolve_h3_derived
     from ffn_sim.cortex.myosin import resolve_cortex_myosin
@@ -269,9 +280,9 @@ def _head_bound_fraction(myo_act) -> float:
 
 
 def probe(*, k_on: float, k_off0: float, n_fil: int, n_motors: int,
-          seed: int = 1, device: str = "cpu", n_ticks: int = 40,
-          run_steps: int = 4000, batch_steps: int | str | None = None,
-          verbose: bool = True) -> dict:
+          seed: int = 1, device: str = "gpu", allow_cpu_dev: bool = False,
+          n_ticks: int = 40, run_steps: int = 4000,
+          batch_steps: int | str | None = None, verbose: bool = True) -> dict:
     """One condition: build with the (k_on, k_off0) override, measure
     bound-fraction, frac_complete_pairs, and g_soft (mop over attach bonds)."""
     from ffn_sim.scripts.h3_ku35_stresslet import stresslet_ledger
@@ -280,7 +291,8 @@ def probe(*, k_on: float, k_off0: float, n_fil: int, n_motors: int,
     t0 = time.time()
     sim, p, p_myo, topology, myo_act, bdt = _build_cortex(
         k_on=k_on, k_off0=k_off0, n_fil=n_fil, n_motors=n_motors, seed=seed,
-        device=device, n_ticks=n_ticks, run_steps=run_steps,
+        device=device, allow_cpu_dev=allow_cpu_dev,
+        n_ticks=n_ticks, run_steps=run_steps,
         batch_steps=batch_steps)
 
     bf = _head_bound_fraction(myo_act)
@@ -320,7 +332,7 @@ def probe(*, k_on: float, k_off0: float, n_fil: int, n_motors: int,
 
 
 def run_probe(*, n_fil: int, n_motors: int, seed: int, device: str,
-              n_ticks: int, run_steps: int) -> list[dict]:
+              allow_cpu_dev: bool, n_ticks: int, run_steps: int) -> list[dict]:
     """MODEL baseline vs lit-anchored conditions, head-to-head.
 
     Conditions (batch_steps None = yaml default 100; "cfl_max" = fill the lit
@@ -341,7 +353,8 @@ def run_probe(*, n_fil: int, n_motors: int, seed: int, device: str,
         print(f"\n-- {name} --", flush=True)
         rows.append(probe(k_on=k_on, k_off0=k_off0, n_fil=n_fil,
                           n_motors=n_motors, seed=seed, device=device,
-                          n_ticks=n_ticks, run_steps=run_steps, batch_steps=bs))
+                          allow_cpu_dev=allow_cpu_dev, n_ticks=n_ticks,
+                          run_steps=run_steps, batch_steps=bs))
     return rows
 
 
@@ -439,7 +452,7 @@ def main() -> int:
     ap.add_argument("--n-ticks", type=int, default=40)
     ap.add_argument("--run-steps", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--fig", action="store_true")
     args = ap.parse_args()
 
@@ -449,13 +462,15 @@ def main() -> int:
         duty_table()
         return 0
     if args.probe:
+        validate_production_device_args(ap, args)
         duty_table()
         print()
         n_fil, n_motors = args.n_fil, args.n_motors
         if args.quick:
             n_fil, n_motors = 300, 60
         rows = run_probe(n_fil=n_fil, n_motors=n_motors, seed=args.seed,
-                         device=args.device, n_ticks=args.n_ticks,
+                         device=args.device, allow_cpu_dev=args.allow_cpu_dev,
+                         n_ticks=args.n_ticks,
                          run_steps=args.run_steps)
         print("\n=== TRACK 1 SUMMARY ===", flush=True)
         base = rows[0]

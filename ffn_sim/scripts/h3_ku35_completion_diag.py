@@ -46,6 +46,12 @@ from pathlib import Path
 
 import numpy as np
 
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
+
 PKG = Path(__file__).resolve().parents[1]
 
 
@@ -192,8 +198,8 @@ def _geometry_from_topology(topology, p_myo, *, reach_scale: float = 1.0):
     )
 
 
-def _build_cortex_for_sweep(*, n_fil, n_motors, reach_scale, seed, device="cpu",
-                            n_ticks=40):
+def _build_cortex_for_sweep(*, n_fil, n_motors, reach_scale, seed, device="gpu",
+                            n_ticks=40, allow_cpu_dev: bool = False):
     """Build the connected-mesh cortex + myosin and populate the bipolar
     bookkeeping by running a few myosin RECRUITMENT ticks (de-novo binding).
 
@@ -213,6 +219,10 @@ def _build_cortex_for_sweep(*, n_fil, n_motors, reach_scale, seed, device="cpu",
 
     import yaml
     import hoomd
+
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
 
     from ffn_sim.cortex.cortex import resolve_h3_derived
     from ffn_sim.cortex.myosin import resolve_cortex_myosin
@@ -262,7 +272,8 @@ def _build_cortex_for_sweep(*, n_fil, n_motors, reach_scale, seed, device="cpu",
 
 
 def sweep(*, knob: str, values, n_fil, n_motors, reach_scale, seed=1,
-          device="cpu", verbose=True, n_ticks=40):
+          device="gpu", allow_cpu_dev: bool = False, verbose=True,
+          n_ticks=40):
     """Sweep one recruitment knob; return per-value completion + availability.
 
     knob ∈ {"n_motors", "reach_scale", "n_fil"}. The other two are held at the
@@ -283,7 +294,7 @@ def sweep(*, knob: str, values, n_fil, n_motors, reach_scale, seed=1,
             raise ValueError(f"unknown knob {knob!r}")
         sim, p, p_myo, topology, myo_act = _build_cortex_for_sweep(
             n_fil=nf, n_motors=nm, reach_scale=rs, seed=seed, device=device,
-            n_ticks=n_ticks)
+            n_ticks=n_ticks, allow_cpu_dev=allow_cpu_dev)
         sled = stresslet_ledger(
             sim, p_myo=p_myo, myosin_action=myo_act,
             beads_per_filament=p.beads_per_filament)
@@ -462,7 +473,7 @@ def main() -> int:
     ap.add_argument("--quick", action="store_true",
                     help="fewer sweep points (2/knob) at production scale "
                          "(n_fil=1000, n_motors=100) for a fast pass")
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--fig", action="store_true", help="write the sweep figure")
     args = ap.parse_args()
 
@@ -470,6 +481,7 @@ def main() -> int:
         return 0 if self_test() else 1
 
     if args.sweep:
+        validate_production_device_args(ap, args)
         # 1000 fil / 100 motors = production scale; 40 recruitment ticks gives a
         # populated frac_complete (~24 %, the diagnosed floor). quick = fewer
         # sweep points (same scale) so a fast pass still measures the real floor.
@@ -488,16 +500,18 @@ def main() -> int:
         print("\n-- knob: n_motors (motor density) --", flush=True)
         rows_by_knob["n_motors"] = sweep(
             knob="n_motors", values=motor_vals, n_fil=n_fil0, n_motors=n_motors0,
-            reach_scale=1.0, device=args.device, n_ticks=n_ticks)
+            reach_scale=1.0, device=args.device,
+            allow_cpu_dev=args.allow_cpu_dev, n_ticks=n_ticks)
         print("\n-- knob: reach_scale (head-actin reach) --", flush=True)
         rows_by_knob["reach_scale"] = sweep(
             knob="reach_scale", values=reach_vals, n_fil=n_fil0,
             n_motors=n_motors0, reach_scale=1.0, device=args.device,
-            n_ticks=n_ticks)
+            allow_cpu_dev=args.allow_cpu_dev, n_ticks=n_ticks)
         print("\n-- knob: n_fil (filament density) --", flush=True)
         rows_by_knob["n_fil"] = sweep(
             knob="n_fil", values=fil_vals, n_fil=n_fil0, n_motors=n_motors0,
-            reach_scale=1.0, device=args.device, n_ticks=n_ticks)
+            reach_scale=1.0, device=args.device,
+            allow_cpu_dev=args.allow_cpu_dev, n_ticks=n_ticks)
         if args.fig:
             out = PKG / "outputs" / "h3" / "figs" / "ku35_completion_diag_sweep.png"
             make_figure(rows_by_knob, out,

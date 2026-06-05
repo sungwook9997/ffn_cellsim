@@ -46,15 +46,24 @@ import json
 from pathlib import Path
 
 import numpy as np
+import yaml
 
+from ffn_sim.spheroid.params import resolve_layer2
 # Oracle import is PREDICTION-only (published anchors); never a runtime cell-build path.
 from ffn_sim.validation.oracles.spheroid import surface_tension_bridge as br
 
 _ROOT = Path(__file__).resolve().parents[1]
+_RUNTIME_CFG = _ROOT / "configs" / "layer2_cbm.yaml"
 _OUT_DIR = _ROOT / "outputs" / "layer2"
 
-#: β = single-cell cortical tension at the free surface = in-band g_rigid (KU-3.5) [mN/m].
-BETA_MN_M: float = br.G_RIGID_NATIVE_MN_M  # 0.57
+def _load_beta_mn_m(path: Path = _RUNTIME_CFG) -> float:
+    """Layer-2 Track A γ input, read from config rather than cortex internals."""
+    resolved = resolve_layer2(yaml.safe_load(path.read_text()))
+    return resolved.cortical_tension * 1e3
+
+
+#: β = single-cell cortical tension at the free surface = Layer-2 config γ [mN/m].
+BETA_MN_M: float = _load_beta_mn_m()
 
 #: David 2014 typical residual-tension fraction β*/β (cited in Winklbauer 2015).
 DAVID_PHI: float = 0.25

@@ -48,6 +48,21 @@ def test_morse_rest_separation_is_diameter(resolved):
     assert resolved.morse_r0 == pytest.approx(2.0 * resolved.R_cell)
 
 
+def test_cortical_tension_is_config_input_not_cortex_import(resolved):
+    """Layer-2 consumes γ as a physiological config value; Track B produces it elsewhere."""
+    assert resolved.cortical_tension == pytest.approx(5.7e-4)
+    lo, hi = resolved.cortical_tension_band
+    assert lo <= resolved.cortical_tension <= hi
+
+    spheroid_dir = Path(__file__).resolve().parents[1] / "spheroid"
+    offenders = []
+    for path in spheroid_dir.glob("*.py"):
+        text = path.read_text()
+        if "ffn_sim.cortex" in text:
+            offenders.append(path.name)
+    assert offenders == []
+
+
 def test_morse_alpha_inverse_contact_zone(resolved):
     assert resolved.morse_alpha == pytest.approx(1.0 / resolved.contact_zone_width)
 
@@ -81,6 +96,10 @@ def test_resolve_rejects_nonpositive_primary():
         "spheroid": {
             "temperature": 310.0, "kT": 4.28e-21, "water_viscosity": 6.913e-4, "seed": 1,
             "cell": {"diameter": -1.0},  # invalid
+            "mechanics": {
+                "cortical_tension": 5.7e-4,
+                "cortical_tension_band": [3.5e-4, 6.5e-4],
+            },
             "adhesion": {
                 "deadhesion_force_mature": 6.5e-9, "deadhesion_force_nascent": 1.5e-9,
                 "contact_zone_width": 1.5e-6,

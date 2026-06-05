@@ -32,37 +32,45 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import yaml
 
+from ffn_sim.spheroid.params import ResolvedL2, resolve_layer2
 from ffn_sim.validation.oracles.spheroid import surface_tension_bridge as br
 
-# --- MCF7 anchors (provenance: docs/LAYER2_ANCHORS_2026-06-02.md, CORTICAL_TENSION_TRIAGE) ---
-GAMMA_CORTICAL = 0.57e-3      # N/m  single-cell cortical tension (g_rigid native, KU-3.5 in-band)
-F_DEADHESION = 6.5e-9         # N    MCF7-MCF7 mature de-adhesion (Iturri 2020)
-CONTACT_ZONE_W = 1.5e-6       # m    Morse adhesive range (= ~0.1 * diameter, layer2_cbm.yaml)
-DIAMETER = 15.0e-6           # m    MCF7 diameter (Wagner 2011)
 F0_CATCH = 29.2e-12          # N    Rakshit 2012 E-cadherin catch-bond peak force
 # L2.5 spheroid initial radii where G3 PASS (REPORT.md), metres:
 R0_L25 = np.array([31.7, 40.4, 53.1, 67.1, 78.3]) * 1e-6
 
+ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_CFG = ROOT / "configs" / "layer2_cbm.yaml"
 OUT_DIR = Path(__file__).resolve().parents[1] / "outputs" / "layer2"
 FIG_DIR = OUT_DIR / "figs"
 
 
-def compute_bridge() -> dict:
+def _load_resolved(path: Path = RUNTIME_CFG) -> ResolvedL2:
+    return resolve_layer2(yaml.safe_load(path.read_text()))
+
+
+def compute_bridge(resolved: ResolvedL2 | None = None) -> dict:
     """Evaluate the full bridge chain from the anchored constants."""
+    resolved = _load_resolved() if resolved is None else resolved
+    gamma_cortical = resolved.cortical_tension
+    f_deadhesion = resolved.deadhesion_force_mature
+    contact_zone_w = resolved.contact_zone_width
+
     # Adhesion energy density beta = work_of_deadhesion / contact_area, over a RANGE of
     # plausible cell-cell contact radii (the contact area is itself emergent — honest range).
     # Work scale: the Morse well depth D_e = 2 * F_detach * contact_zone_width (params.py).
-    work_deadhesion = 2.0 * F_DEADHESION * CONTACT_ZONE_W          # J  (~1.95e-14 J)
+    work_deadhesion = 2.0 * f_deadhesion * contact_zone_w          # J  (~1.95e-14 J)
     contact_radii = np.array([1.5, 2.5, 4.0]) * 1e-6              # m  plausible contact radii
     contact_areas = np.pi * contact_radii**2                       # m^2
     betas = np.array([br.adhesion_tension(work_deadhesion, A) for A in contact_areas])
-    beta_over_gamma = betas / GAMMA_CORTICAL
+    beta_over_gamma = betas / gamma_cortical
 
     # Interior cell-cell tension + aggregate surface tension (DITH; Roffay).
-    sigma_tissue = br.aggregate_surface_tension(GAMMA_CORTICAL)    # = gamma
-    gamma_cc = np.array([br.interfacial_tension(GAMMA_CORTICAL, b) for b in betas])
-    ratios = np.array([br.surface_interior_ratio(GAMMA_CORTICAL, b) for b in betas])
+    sigma_tissue = br.aggregate_surface_tension(gamma_cortical)    # = gamma
+    gamma_cc = np.array([br.interfacial_tension(gamma_cortical, b) for b in betas])
+    ratios = np.array([br.surface_interior_ratio(gamma_cortical, b) for b in betas])
 
     # Young-Laplace interior overpressure across the L2.5 spheroid radii (sphere: 2 sigma / R).
     dP_L25 = np.array([br.young_laplace_pressure(sigma_tissue, R) for R in R0_L25])  # Pa
@@ -72,16 +80,16 @@ def compute_bridge() -> dict:
     bog_window = (1.0 - 1.0 / r_lo, 1.0 - 1.0 / r_hi)             # (0.375, 0.5)
 
     # Okuda 3D-cap check using a representative interior tension (mid contact-area estimate).
-    gamma_cc_mid = float(gamma_cc[1]) if gamma_cc[1] > 0 else float(GAMMA_CORTICAL * 0.4)
+    gamma_cc_mid = float(gamma_cc[1]) if gamma_cc[1] > 0 else float(gamma_cortical * 0.4)
     is_cap = br.is_three_d_cap(sigma_tissue, gamma_cc_mid)
 
     return {
         "anchors": {
-            "gamma_cortical_mN_m": GAMMA_CORTICAL * 1e3,
-            "f_deadhesion_nN": F_DEADHESION * 1e9,
-            "contact_zone_width_um": CONTACT_ZONE_W * 1e6,
+            "gamma_cortical_mN_m": gamma_cortical * 1e3,
+            "f_deadhesion_nN": f_deadhesion * 1e9,
+            "contact_zone_width_um": contact_zone_w * 1e6,
             "work_deadhesion_fJ": work_deadhesion * 1e15,
-            "cortical_band_mN_m": list(br.CORTICAL_TENSION_BAND_MN_M),
+            "cortical_band_mN_m": [x * 1e3 for x in resolved.cortical_tension_band],
         },
         "sigma_tissue_mN_m": sigma_tissue * 1e3,
         "sigma_in_band": br.CORTICAL_TENSION_BAND_MN_M[0]

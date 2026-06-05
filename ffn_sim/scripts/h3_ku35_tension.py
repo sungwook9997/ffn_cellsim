@@ -43,6 +43,11 @@ from ffn_sim.cortex.erm import resolve_erm, attach_erm_to_simulation
 from ffn_sim.cell.cell import build_cortex_full_simulation
 from ffn_sim.common import checkpoint as _ckpt
 from ffn_sim.common import integrity as _integrity
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
@@ -273,9 +278,14 @@ def _tension_method_of_planes_rigid(
 def run(n_fil: int, seed: int, *, dt_factor: float = 0.001, with_xlinks: bool = True,
         with_erm: bool = True, k_erm_fast: float = 5.6e-5,
         n_warmup: int = 40_000, n_sample: int = 80, interval: int = 5_000,
-        device: str = "cpu", out: str | None = None,
+        device: str = "gpu", allow_cpu_dev: bool = False,
+        out: str | None = None,
         checkpoint_every: int = 10, skip_integrity: bool = False,
         resume: bool = True) -> dict:
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     # Pre-run module-integrity guard (best-effort): a cosmetic Syncthing issue
     # must never abort an otherwise valid run, so any failure is caught and
     # downgraded to a warning here. Skipped entirely with skip_integrity=True.
@@ -529,7 +539,7 @@ def main() -> None:
     ap.add_argument("--n-warmup", type=int, default=40_000)
     ap.add_argument("--n-sample", type=int, default=80)
     ap.add_argument("--interval", type=int, default=5_000)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--out", type=str, default=None)
     ap.add_argument(
         "--checkpoint-every", type=int, default=10,
@@ -546,10 +556,11 @@ def main() -> None:
              "(default: on; disable with --no-resume)",
     )
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
     run(args.n_fil, args.seed, dt_factor=args.dt_factor,
         with_xlinks=args.with_xlinks, with_erm=args.with_erm, k_erm_fast=args.k_erm,
         n_warmup=args.n_warmup, n_sample=args.n_sample, interval=args.interval,
-        device=args.device, out=args.out,
+        device=args.device, allow_cpu_dev=args.allow_cpu_dev, out=args.out,
         checkpoint_every=args.checkpoint_every, skip_integrity=args.skip_integrity,
         resume=args.resume)
 

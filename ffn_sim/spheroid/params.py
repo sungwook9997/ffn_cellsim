@@ -14,6 +14,9 @@ COMPUTED from primaries (never hand-set):
 - ``diameter`` 15 µm  -- MCF7 suspended single-cell, Wagner 2011 (Coulter, MEASURED,
   PMC3147247: 14.8 µm); 15 µm = low end of the measured 15-20 µm band (band-position is a
   documented modeling choice). See ``docs/LAYER2_ANCHORS_2026-06-02.md``.
+- ``cortical_tension`` 0.57 mN/m -- physiological single-cell cortical tension input for
+  Layer-2 (KU-3.5 g_rigid native, inside the 0.35-0.65 mN/m band). Track A consumes this
+  from config only; Track B owns the fine-grained myosin->actin producer.
 - ``D_e = 2 * F_detach * contact_zone_width`` -- cell-cell adhesion well depth, set so the
   Morse MAX attractive force (D_e*alpha/2) equals the MEASURED MCF7-MCF7 de-adhesion force.
   Source: Iturri 2020 *Cells* PMC7227807 (MCF7-MCF7 SCFS, MEASURED, open-access): detachment
@@ -65,6 +68,8 @@ class ResolvedL2:
     water_viscosity: float      # Pa·s
     seed: int
     diameter: float                 # m  (MCF7, Wagner 2011)
+    cortical_tension: float         # N/m  Layer-2 input γ (KU-3.5 g_rigid; config, not cortex import)
+    cortical_tension_band: tuple[float, float] # N/m  accepted physiological band for γ
     deadhesion_force_mature: float  # N  (measured MCF7-MCF7 120s, Iturri 2020)
     deadhesion_force_nascent: float # N  (measured MCF7-MCF7 5s; maturation range)
     contact_zone_width: float       # m  (geometric modeling choice; Morse range)
@@ -172,6 +177,7 @@ def resolve_layer2(cfg: dict) -> ResolvedL2:
     """
     s = cfg["spheroid"]
     cell = s["cell"]
+    mech = s["mechanics"]
     adh = s["adhesion"]
     dyn = s["dynamics"]
 
@@ -181,6 +187,23 @@ def resolve_layer2(cfg: dict) -> ResolvedL2:
     seed = int(s["seed"])
 
     diameter = _require_positive("cell.diameter", float(cell["diameter"]))
+    cortical_tension = _require_positive(
+        "mechanics.cortical_tension", float(mech["cortical_tension"])
+    )
+    gamma_band_raw = mech.get("cortical_tension_band", (0.0, float("inf")))
+    if len(gamma_band_raw) != 2:
+        raise ValueError("mechanics.cortical_tension_band must contain [lo, hi].")
+    gamma_band = (
+        _require_positive("mechanics.cortical_tension_band[0]", float(gamma_band_raw[0])),
+        _require_positive("mechanics.cortical_tension_band[1]", float(gamma_band_raw[1])),
+    )
+    if gamma_band[0] > gamma_band[1]:
+        raise ValueError("mechanics.cortical_tension_band must satisfy lo <= hi.")
+    if not (gamma_band[0] <= cortical_tension <= gamma_band[1]):
+        raise ValueError(
+            "mechanics.cortical_tension must be inside cortical_tension_band; "
+            f"got {cortical_tension!r} not in {gamma_band!r}."
+        )
     f_detach = _require_positive(
         "adhesion.deadhesion_force_mature", float(adh["deadhesion_force_mature"])
     )
@@ -220,7 +243,8 @@ def resolve_layer2(cfg: dict) -> ResolvedL2:
 
     return ResolvedL2(
         temperature=temperature, kT=kT, water_viscosity=eta, seed=seed,
-        diameter=diameter, deadhesion_force_mature=f_detach,
+        diameter=diameter, cortical_tension=cortical_tension,
+        cortical_tension_band=gamma_band, deadhesion_force_mature=f_detach,
         deadhesion_force_nascent=f_detach_nascent,
         contact_zone_width=contact_zone, cfl_safety_factor=safety,
         R_cell=R_cell, D_e=D_e, morse_r0=morse_r0, morse_alpha=morse_alpha,

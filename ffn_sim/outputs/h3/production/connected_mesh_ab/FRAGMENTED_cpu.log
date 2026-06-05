@@ -8,3 +8,7 @@ HOOMD 7.0.1
   [grip_walk] s=3/6 r/r0=1.00000 g_soft=2.452e-04 g_rigid=8.191e-02 g_tot=8.216e-02 mN/m
   [grip_walk] s=4/6 r/r0=1.00001 g_soft=2.813e-04 g_rigid=9.507e-02 g_tot=9.535e-02 mN/m
   [grip_walk] s=5/6 r/r0=1.00000 g_soft=2.610e-04 g_rigid=6.750e-02 g_tot=6.776e-02 mN/m
+  [grip_walk] s=6/6 r/r0=1.00001 g_soft=2.635e-04 g_rigid=7.515e-02 g_tot=7.542e-02 mN/m
+
+=== DONE in 2302s. Full cell (cortex+membrane+nucleus+cytoplasm+enclosed-vol) ran stably with STAGE-1 grip_walk. ===
+  grip_walk: <r/r0>=1.00000 <g_soft>=2.320e-04 <g_rigid>=7.639e-02 <g_tot>=7.662e-02 mN/m  (band [0.35,0.65])

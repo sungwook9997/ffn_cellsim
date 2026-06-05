@@ -52,6 +52,11 @@ import hoomd
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
 from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_production_device,
+    validate_production_device_args,
+)
 
 PKG = Path(__file__).resolve().parents[1]
 CFG_H3 = PKG / "configs" / "phase1_h3.yaml"
@@ -79,9 +84,14 @@ def run(
     n_warmup: int = 40_000,
     n_sample: int = 80,
     interval: int = 5_000,
-    device: str = "cpu",
+    device: str = "gpu",
+    allow_cpu_dev: bool = False,
     out: str | None = None,
 ) -> dict:
+    require_production_device(
+        device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
+    )
+
     cfg_h3 = yaml.safe_load(open(CFG_H3))
     cfg_h5 = yaml.safe_load(open(CFG_H5))
     cfg_h3["cortex"]["n_filaments"] = n_fil
@@ -200,9 +210,10 @@ def main() -> None:
     ap.add_argument("--n-warmup", type=int, default=40_000)
     ap.add_argument("--n-sample", type=int, default=80)
     ap.add_argument("--interval", type=int, default=5_000)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--out", type=str, default=None)
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
     run(
         n_fil=args.n_fil,
         seed=args.seed,
@@ -211,6 +222,7 @@ def main() -> None:
         n_sample=args.n_sample,
         interval=args.interval,
         device=args.device,
+        allow_cpu_dev=args.allow_cpu_dev,
         out=args.out,
     )
 

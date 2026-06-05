@@ -82,6 +82,11 @@ from pathlib import Path
 
 import numpy as np
 
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
+
 PKG = Path(__file__).resolve().parents[1]
 TRACK = "track2_window"   # track-unique output key
 
@@ -135,7 +140,8 @@ def equilibrium_from_params(p_myo) -> BindingEquilibrium:
 # --------------------------------------------------------------------------- #
 # Live window sweep on the connected-mesh build (reuses completion_diag builder)
 # --------------------------------------------------------------------------- #
-def _measure_window(*, n_fil, n_motors, seed, device, n_ticks):
+def _measure_window(*, n_fil, n_motors, seed, device, n_ticks,
+                    allow_cpu_dev: bool = False):
     """Build the connected-mesh cortex + run ``n_ticks`` recruitment ticks at the
     LITERATURE k_on, return (frac_complete, bound_frac, coherence, n_engaged).
 
@@ -148,7 +154,7 @@ def _measure_window(*, n_fil, n_motors, seed, device, n_ticks):
 
     sim, p, p_myo, _topology, myo_act = _build_cortex_for_sweep(
         n_fil=n_fil, n_motors=n_motors, reach_scale=1.0, seed=seed,
-        device=device, n_ticks=n_ticks,
+        device=device, n_ticks=n_ticks, allow_cpu_dev=allow_cpu_dev,
     )
     sled = stresslet_ledger(
         sim, p_myo=p_myo, myosin_action=myo_act,
@@ -174,8 +180,8 @@ def _measure_window(*, n_fil, n_motors, seed, device, n_ticks):
     return out
 
 
-def window_sweep(*, windows, n_fil, n_motors, n_seeds=2, device="cpu",
-                 verbose=True):
+def window_sweep(*, windows, n_fil, n_motors, n_seeds=2, device="gpu",
+                 allow_cpu_dev: bool = False, verbose=True):
     """Sweep the recruitment-tick window at the literature k_on; ensemble over
     seeds. Returns per-window aggregated rows (mean ± sd over seeds)."""
     rows = []
@@ -185,7 +191,7 @@ def window_sweep(*, windows, n_fil, n_motors, n_seeds=2, device="cpu",
         for s in range(n_seeds):
             per_seed.append(_measure_window(
                 n_fil=n_fil, n_motors=n_motors, seed=1 + s, device=device,
-                n_ticks=int(w)))
+                n_ticks=int(w), allow_cpu_dev=allow_cpu_dev))
         def agg(key):
             vals = np.array([r[key] for r in per_seed], dtype=np.float64)
             vals = vals[np.isfinite(vals)]
@@ -424,7 +430,7 @@ def main() -> int:
     ap.add_argument("--n-fil", type=int, default=None)
     ap.add_argument("--n-motors", type=int, default=None)
     ap.add_argument("--n-seeds", type=int, default=2)
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--fig", action="store_true")
     args = ap.parse_args()
 
@@ -432,6 +438,7 @@ def main() -> int:
         return 0 if self_test() else 1
 
     if args.run:
+        validate_production_device_args(ap, args)
         if args.quick:
             windows = [40, 200, 1000, 4000]
             n_fil = args.n_fil or 300
@@ -446,7 +453,8 @@ def main() -> int:
         from ffn_sim.scripts.h3_ku35_completion_diag import _build_cortex_for_sweep
         sim, p, p_myo, _t, _a = _build_cortex_for_sweep(
             n_fil=n_fil, n_motors=n_motors, reach_scale=1.0, seed=1,
-            device=args.device, n_ticks=0)
+            device=args.device, n_ticks=0,
+            allow_cpu_dev=args.allow_cpu_dev)
         eq = equilibrium_from_params(p_myo)
         del sim
         print(f"  k_on={eq.k_on:.0f}/s  k_off0={eq.k_off0:.0f}/s  "
@@ -457,7 +465,8 @@ def main() -> int:
 
         rows = window_sweep(
             windows=windows, n_fil=n_fil, n_motors=n_motors,
-            n_seeds=args.n_seeds, device=args.device)
+            n_seeds=args.n_seeds, device=args.device,
+            allow_cpu_dev=args.allow_cpu_dev)
         res = analyse_plateau(rows)
         print(f"\n  --- PLATEAU ANALYSIS ---")
         print(f"  40-tick frac_complete = {res['fc_40tick']*100:.1f}%")

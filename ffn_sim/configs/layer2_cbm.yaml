@@ -23,6 +23,14 @@ spheroid:
     # measured 15-20 µm band; band-position is a documented modeling choice (ANCHORS doc).
     diameter: 1.5e-5          # m   (Wagner 2011: 14.8 µm → 15 µm)
 
+  # ---- Upstream single-cell mechanics consumed by Layer-2 ----
+  # Track A boundary: Layer-2 consumes cortical tension as a PHYSIOLOGICAL config input.
+  # It does NOT import or interrogate ffn_sim.cortex internals. Track B remains responsible
+  # for producing this value emergently from myosin→actin mechanics.
+  mechanics:
+    cortical_tension: 5.7e-4              # N/m  = 0.57 mN/m, KU-3.5 g_rigid native in-band
+    cortical_tension_band: [3.5e-4, 6.5e-4] # N/m  Chugh/KU-3.5 acceptance band
+
   # ---- Cell–cell adhesion (Morse pair, MVP) ----
   # D_e is set so the Morse MAX attractive force (D_e·alpha/2) == the MEASURED MCF7-MCF7
   # de-adhesion FORCE. Anchor: Iturri 2020 Cells PMC7227807 (MCF7-MCF7 SCFS, MEASURED, OA):
@@ -99,6 +107,7 @@ spheroid:
   # ---- Derived (filled by resolve_layer2; do NOT edit by hand) ----
   derived:
     R_cell: null            # [m]    = diameter/2
+    cortical_tension: null  # [N/m]  = mechanics.cortical_tension (Layer-2 input, not cortex import)
     D_e: null               # [J]    = N_cad·⟨F⟩·Δx*   (PI-ratification pending)
     morse_r0: null          # [m]    = diameter
     morse_alpha: null       # [1/m]  = 1/contact_zone_width

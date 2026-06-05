@@ -1,0 +1,66 @@
+{
+  "n_fil": 120,
+  "seed": 1,
+  "dt_s": 6.980731076014148e-07,
+  "dt_factor": 0.001,
+  "dt_speedup_vs_cfl": 53.57142857142857,
+  "r0_um": 10.000055417925994,
+  "with_xlinks": false,
+  "with_erm": true,
+  "k_erm_fast": 5.6e-05,
+  "r_final_over_r0": 0.9999925547120406,
+  "myosin_engaged_final": 202,
+  "step_advances_final": 0,
+  "tension_plateau_mN_per_m": 4.867611219583997e-06,
+  "tension_final_mN_per_m": 4.286435072844136e-06,
+  "ku35_target_mN_per_m": 0.5,
+  "ku35_band_mN_per_m": [
+    0.35,
+    0.65
+  ],
+  "n_motors": 100,
+  "max_drift": 4.446922973085077e-15,
+  "note": "method-of-planes \u03b3 (soft bonds; rigid-constraint Lagrange shell-tension separate; PI ratification pending)",
+  "diag": [
+    {
+      "step": 2000,
+      "r_cortex_um": 10.000035945517707,
+      "r_over_r0": 0.9999980527699623,
+      "myosin_engaged": 54,
+      "bind_total": 54,
+      "step_advances": 0,
+      "tension_mN_per_m": 4.9732580848717395e-06,
+      "max_drift": 3.875175733688424e-14
+    },
+    {
+      "step": 4000,
+      "r_cortex_um": 10.000138768294468,
+      "r_over_r0": 1.0000083349906563,
+      "myosin_engaged": 114,
+      "bind_total": 114,
+      "step_advances": 0,
+      "tension_mN_per_m": 4.680493869338132e-06,
+      "max_drift": 3.8116482626443515e-15
+    },
+    {
+      "step": 6000,
+      "r_cortex_um": 9.99960314021206,
+      "r_over_r0": 0.9999547724792479,
+      "myosin_engaged": 161,
+      "bind_total": 162,
+      "step_advances": 0,
+      "tension_mN_per_m": 5.448787366323858e-06,
+      "max_drift": 8.893845946170154e-15
+    },
+    {
+      "step": 8000,
+      "r_cortex_um": 9.999980964633798,
+      "r_over_r0": 0.9999925547120406,
+      "myosin_engaged": 202,
+      "bind_total": 205,
+      "step_advances": 0,
+      "tension_mN_per_m": 4.286435072844136e-06,
+      "max_drift": 4.446922973085077e-15
+    }
+  ]
+}

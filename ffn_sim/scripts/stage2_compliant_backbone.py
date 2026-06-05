@@ -44,6 +44,13 @@ from pathlib import Path
 
 import numpy as np
 
+import hoomd
+
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_full_cell_physiological_baseline,
+    validate_production_device_args,
+)
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.scripts.h3_ku35_tension import _tension_method_of_planes
 from ffn_sim.scripts.mcf7_fullcell_stage1 import (
@@ -58,7 +65,7 @@ BAND = (0.35, 0.65)   # KU-3.5 mN/m
 
 
 def _run_compliant(n_fil, n_motors, n_xl, *, n_warmup, n_sample, interval,
-                   bind_scale, kon_scale, device="cpu", seed=1):
+                   bind_scale, kon_scale, device="gpu", seed=1):
     """Build + run a COMPLIANT-backbone (constrained=False) full cell; sample g_soft.
 
     Returns (samples list of (r/r0, g_soft_mN_m), exploded: bool).
@@ -66,6 +73,7 @@ def _run_compliant(n_fil, n_motors, n_xl, *, n_warmup, n_sample, interval,
     cfg = _cfg_for(n_fil, n_motors, n_xl, "grip_walk", force_scaling=True, backbone_nm=300)
     p0 = resolve_h3_derived(cfg)
     comp = _resolve_compartments(p0)
+    require_full_cell_physiological_baseline(comp)
     # constrained=False → cortex backbone bond k = p_cortex.bond_k (harmonic = COMPLIANT);
     # equilibrate softstarts the stiff harmonic stretch mode at the small unconstrained dt.
     p, _p_myo, _p_xl, dtc, hw = _build(
@@ -104,8 +112,9 @@ def main() -> int:
     ap.add_argument("--n-warmup", type=int, default=8000)
     ap.add_argument("--bind-scale", type=float, default=6.0, help="mesoscale-consistent reach")
     ap.add_argument("--kon-scale", type=float, default=300.0, help="couple_accel → percolate")
-    ap.add_argument("--device", default="cpu", choices=["cpu", "gpu"])
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args, hoomd_module=hoomd)
 
     if args.smoke:
         n_fil, n_motors, n_sample, interval, n_warmup = 300, 60, 3, 3000, 3000

@@ -1,0 +1,11 @@
+{
+  "mode": "fixman",
+  "seed": 1,
+  "n_step": 2000000,
+  "samples": 400,
+  "kth": 2.0,
+  "fixman_sign": -1.0,
+  "theta_mean": 2.35173713878696,
+  "E_bend": 0.7858295393306978,
+  "E_bend_sem": 0.03813844564666087
+}

@@ -43,3 +43,8 @@ dist
 
 // Notion export token (per-host secret)
 .notion_token
+
+// --- Syncthing conflict copies (per-host, never propagate) ---
+// Two hosts editing the same output figure/json create *.sync-conflict-* copies;
+// keep each host's locally, do not sync them around (they bred git-status noise).
+*.sync-conflict-*

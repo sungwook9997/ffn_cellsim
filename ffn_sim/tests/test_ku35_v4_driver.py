@@ -66,6 +66,8 @@ def test_cli_parses_smoke_and_override():
             "h3_ku35_v4_fa",
             "--smoke",
             "--fa-capture-radius", "3e-6",
+            "--device", "cpu",
+            "--allow-cpu-dev",
             "--out", "/tmp/_ku35_v4_test.json",
         ]
         drv.main()
@@ -150,6 +152,7 @@ def test_v4_smoke_runs():
     res = drv.run(
         60, 1, dt_factor=0.001, n_warmup=500, n_sample=2, interval=300,
         equilibrate_steps=300, fa_capture_radius=3e-6, device="cpu",
+        allow_cpu_dev=True,
         out=None, skip_integrity=True, resume=False,
     )
     assert res["n_fa_integrins"] > 0

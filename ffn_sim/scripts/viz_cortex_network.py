@@ -36,20 +36,35 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
 from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
 from ffn_sim.scripts.mcf7_fullcell_stage1 import _build, _cfg_for, _tagpos
 
 _FIG = Path(__file__).resolve().parents[1] / "outputs" / "h3" / "figs"
 
 
-def analyze(n_fil, n_xl, *, warmup, bind_scale, kon_scale, seed=1):
+def analyze(
+    n_fil,
+    n_xl,
+    *,
+    warmup,
+    bind_scale,
+    kon_scale,
+    seed=1,
+    device="gpu",
+    allow_cpu_dev: bool = False,
+):
     cfg = _cfg_for(n_fil, 0, n_xl, "grip_walk", force_scaling=True, backbone_nm=300)
     p = resolve_h3_derived(cfg)
     # cortex + dynamic xlinks only (compartments don't change the crosslink topology); let
     # the xlink updater bind during an unconstrained warmup at the percolation recipe.
     _, _, _, dtc, hc = _build(cfg, stepping_mode="grip_walk", force_scaling=True,
                               constrained=False, compartments={}, equilibrate=True,
-                              n_warmup=warmup, device="cpu", kon_scale=kon_scale,
-                              bind_scale=bind_scale, seed=seed)
+                              n_warmup=warmup, device=device, kon_scale=kon_scale,
+                              bind_scale=bind_scale, seed=seed,
+                              allow_cpu_dev=allow_cpu_dev)
     sim = hc["sim"]
     sim.run(0)
     xa = hc["xlink_action"]
@@ -166,13 +181,17 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=8000)
     ap.add_argument("--bind-scale", type=float, default=6.0)
     ap.add_argument("--kon-scale", type=float, default=300.0)
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
     n_xl = args.n_xl if args.n_xl is not None else int(1.5 * args.n_fil)
 
     print(f"[cortex-network] n_fil={args.n_fil} n_xl={n_xl} bind_scale={args.bind_scale} "
           f"kon_scale={args.kon_scale} warmup={args.warmup} — building + binding ...", flush=True)
     res, pos, labels, bridges, nca, bpf = analyze(
-        args.n_fil, n_xl, warmup=args.warmup, bind_scale=args.bind_scale, kon_scale=args.kon_scale)
+        args.n_fil, n_xl, warmup=args.warmup, bind_scale=args.bind_scale,
+        kon_scale=args.kon_scale, device=args.device,
+        allow_cpu_dev=args.allow_cpu_dev)
     print(f"  dimers={res['n_dimers']}  both-bound={res['n_both_bound']}  "
           f"BRIDGES(diff-fil)={res['n_bridges']}  same-fil={res['n_same_filament']}  "
           f"1-head={res['n_one_head_bound']}  unbound={res['n_unbound']}")

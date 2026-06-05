@@ -1,0 +1,285 @@
+{
+  "n_fil": 120,
+  "seed": 1,
+  "dt_s": 6.980731076014148e-07,
+  "dt_factor": 0.001,
+  "dt_speedup_vs_cfl": 53.57142857142857,
+  "r0_um": 10.049863729062483,
+  "r_final_over_r0": 1.0005835599256678,
+  "myosin_engaged_final": 631,
+  "n_motors": 100,
+  "max_drift": 6.225692162319107e-13,
+  "note": "contraction proxy + myosin engagement; ratified gamma pending PI protocol",
+  "diag": [
+    {
+      "step": 5000,
+      "r_cortex_um": 10.055452154108519,
+      "r_over_r0": 1.00055606973355,
+      "myosin_engaged": 126,
+      "bind_total": 126,
+      "step_advances": 0,
+      "max_drift": 4.870439446712227e-15
+    },
+    {
+      "step": 10000,
+      "r_cortex_um": 10.050206120029149,
+      "r_over_r0": 1.0000340692148566,
+      "myosin_engaged": 208,
+      "bind_total": 214,
+      "step_advances": 0,
+      "max_drift": 2.329340604949326e-15
+    },
+    {
+      "step": 15000,
+      "r_cortex_um": 10.054154569891434,
+      "r_over_r0": 1.0004269551254255,
+      "myosin_engaged": 269,
+      "bind_total": 283,
+      "step_advances": 0,
+      "max_drift": 2.752857078576476e-15
+    },
+    {
+      "step": 20000,
+      "r_cortex_um": 10.053913170319285,
+      "r_over_r0": 1.0004029349418033,
+      "myosin_engaged": 304,
+      "bind_total": 333,
+      "step_advances": 0,
+      "max_drift": 3.8116482626443515e-15
+    },
+    {
+      "step": 25000,
+      "r_cortex_um": 10.068644957746312,
+      "r_over_r0": 1.0018688043131885,
+      "myosin_engaged": 342,
+      "bind_total": 384,
+      "step_advances": 0,
+      "max_drift": 2.964615315390051e-15
+    },
+    {
+      "step": 30000,
+      "r_cortex_um": 10.066834722849915,
+      "r_over_r0": 1.0016886789955524,
+      "myosin_engaged": 381,
+      "bind_total": 443,
+      "step_advances": 0,
+      "max_drift": 8.046812998915853e-15
+    },
+    {
+      "step": 35000,
+      "r_cortex_um": 10.061077610052644,
+      "r_over_r0": 1.0011158241835392,
+      "myosin_engaged": 427,
+      "bind_total": 501,
+      "step_advances": 0,
+      "max_drift": 9.529120656610879e-15
+    },
+    {
+      "step": 40000,
+      "r_cortex_um": 10.0628318857798,
+      "r_over_r0": 1.0012903813491338,
+      "myosin_engaged": 457,
+      "bind_total": 545,
+      "step_advances": 0,
+      "max_drift": 5.082197683525802e-15
+    },
+    {
+      "step": 45000,
+      "r_cortex_um": 10.066961290387525,
+      "r_over_r0": 1.0017012729511543,
+      "myosin_engaged": 468,
+      "bind_total": 577,
+      "step_advances": 0,
+      "max_drift": 2.541098841762901e-15
+    },
+    {
+      "step": 50000,
+      "r_cortex_um": 10.076966799991482,
+      "r_over_r0": 1.0026968595455301,
+      "myosin_engaged": 489,
+      "bind_total": 614,
+      "step_advances": 0,
+      "max_drift": 1.291725244562808e-14
+    },
+    {
+      "step": 55000,
+      "r_cortex_um": 10.079855572997953,
+      "r_over_r0": 1.002984303543215,
+      "myosin_engaged": 507,
+      "bind_total": 647,
+      "step_advances": 0,
+      "max_drift": 5.505714157152952e-15
+    },
+    {
+      "step": 60000,
+      "r_cortex_um": 10.086321823844433,
+      "r_over_r0": 1.0036277203119202,
+      "myosin_engaged": 517,
+      "bind_total": 671,
+      "step_advances": 0,
+      "max_drift": 8.046812998915853e-15
+    },
+    {
+      "step": 65000,
+      "r_cortex_um": 10.091060279063349,
+      "r_over_r0": 1.0040992147865382,
+      "myosin_engaged": 519,
+      "bind_total": 696,
+      "step_advances": 0,
+      "max_drift": 1.9905274260476058e-14
+    },
+    {
+      "step": 70000,
+      "r_cortex_um": 10.080299870142307,
+      "r_over_r0": 1.0030285128137417,
+      "myosin_engaged": 539,
+      "bind_total": 732,
+      "step_advances": 0,
+      "max_drift": 5.293955920339377e-15
+    },
+    {
+      "step": 75000,
+      "r_cortex_um": 10.074882151503813,
+      "r_over_r0": 1.0024894290227022,
+      "myosin_engaged": 548,
+      "bind_total": 763,
+      "step_advances": 0,
+      "max_drift": 2.329340604949326e-15
+    },
+    {
+      "step": 80000,
+      "r_cortex_um": 10.086887014331433,
+      "r_over_r0": 1.0036839589338793,
+      "myosin_engaged": 552,
+      "bind_total": 789,
+      "step_advances": 0,
+      "max_drift": 1.3976043629695956e-14
+    },
+    {
+      "step": 85000,
+      "r_cortex_um": 10.079327113813505,
+      "r_over_r0": 1.0029317198267893,
+      "myosin_engaged": 565,
+      "bind_total": 823,
+      "step_advances": 0,
+      "max_drift": 5.082197683525802e-15
+    },
+    {
+      "step": 90000,
+      "r_cortex_um": 10.06729131496104,
+      "r_over_r0": 1.0017341116624456,
+      "myosin_engaged": 575,
+      "bind_total": 854,
+      "step_advances": 0,
+      "max_drift": 2.6469779601696886e-14
+    },
+    {
+      "step": 95000,
+      "r_cortex_um": 10.074373004404153,
+      "r_over_r0": 1.0024387669328085,
+      "myosin_engaged": 580,
+      "bind_total": 884,
+      "step_advances": 0,
+      "max_drift": 8.046812998915853e-15
+    },
+    {
+      "step": 100000,
+      "r_cortex_um": 10.076540859757547,
+      "r_over_r0": 1.0026544768580212,
+      "myosin_engaged": 596,
+      "bind_total": 917,
+      "step_advances": 0,
+      "max_drift": 5.293955920339377e-15
+    },
+    {
+      "step": 105000,
+      "r_cortex_um": 10.067426795711132,
+      "r_over_r0": 1.0017475925168875,
+      "myosin_engaged": 595,
+      "bind_total": 938,
+      "step_advances": 0,
+      "max_drift": 2.964615315390051e-15
+    },
+    {
+      "step": 110000,
+      "r_cortex_um": 10.06825828898221,
+      "r_over_r0": 1.0018303292876034,
+      "myosin_engaged": 594,
+      "bind_total": 971,
+      "step_advances": 0,
+      "max_drift": 2.329340604949326e-15
+    },
+    {
+      "step": 115000,
+      "r_cortex_um": 10.06756621441896,
+      "r_over_r0": 1.0017614652132332,
+      "myosin_engaged": 591,
+      "bind_total": 998,
+      "step_advances": 0,
+      "max_drift": 3.049318610115481e-14
+    },
+    {
+      "step": 120000,
+      "r_cortex_um": 10.071298729760217,
+      "r_over_r0": 1.0021328648104697,
+      "myosin_engaged": 596,
+      "bind_total": 1025,
+      "step_advances": 0,
+      "max_drift": 2.752857078576476e-15
+    },
+    {
+      "step": 125000,
+      "r_cortex_um": 10.066176048839266,
+      "r_over_r0": 1.001623138404316,
+      "myosin_engaged": 608,
+      "bind_total": 1058,
+      "step_advances": 0,
+      "max_drift": 7.623296525288703e-15
+    },
+    {
+      "step": 130000,
+      "r_cortex_um": 10.079638377194602,
+      "r_over_r0": 1.0029626917274526,
+      "myosin_engaged": 624,
+      "bind_total": 1093,
+      "step_advances": 0,
+      "max_drift": 1.5670109524204556e-14
+    },
+    {
+      "step": 135000,
+      "r_cortex_um": 10.083468294070796,
+      "r_over_r0": 1.0033437831511223,
+      "myosin_engaged": 633,
+      "bind_total": 1125,
+      "step_advances": 0,
+      "max_drift": 3.1763735522036263e-15
+    },
+    {
+      "step": 140000,
+      "r_cortex_um": 10.08337967064291,
+      "r_over_r0": 1.0033349647800205,
+      "myosin_engaged": 628,
+      "bind_total": 1142,
+      "step_advances": 0,
+      "max_drift": 2.752857078576476e-15
+    },
+    {
+      "step": 145000,
+      "r_cortex_um": 10.078226721479478,
+      "r_over_r0": 1.0028222265676074,
+      "myosin_engaged": 612,
+      "bind_total": 1161,
+      "step_advances": 0,
+      "max_drift": 2.541098841762901e-15
+    },
+    {
+      "step": 150000,
+      "r_cortex_um": 10.055728426793186,
+      "r_over_r0": 1.0005835599256678,
+      "myosin_engaged": 631,
+      "bind_total": 1200,
+      "step_advances": 0,
+      "max_drift": 6.225692162319107e-13
+    }
+  ]
+}

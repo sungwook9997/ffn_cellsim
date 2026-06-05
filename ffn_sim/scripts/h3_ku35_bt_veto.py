@@ -86,6 +86,11 @@ from pathlib import Path
 
 import numpy as np
 
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
+
 PKG = Path(__file__).resolve().parents[1]
 TRACKKEY = "veto"
 
@@ -204,8 +209,9 @@ def _assert_replica_matches_core(action) -> None:
 # --------------------------------------------------------------------------- #
 # (2) Build a real small connected-mesh cortex and run instrumented recruitment.
 # --------------------------------------------------------------------------- #
-def measure_veto(*, n_fil, n_motors, reach_scale=1.0, seed=1, device="cpu",
-                 n_ticks=40, relax_diff_fil=False, verbose=True):
+def measure_veto(*, n_fil, n_motors, reach_scale=1.0, seed=1, device="gpu",
+                 allow_cpu_dev: bool = False, n_ticks=40,
+                 relax_diff_fil=False, verbose=True):
     """Build a cortex, instrument ``_bipolar_accepts``, run recruitment ticks.
 
     Returns a dict with the clause counter, the eligible/accept/reject totals,
@@ -217,7 +223,8 @@ def measure_veto(*, n_fil, n_motors, reach_scale=1.0, seed=1, device="cpu",
 
     sim, p, p_myo, topology, myo_act = _build_cortex_for_sweep(
         n_fil=n_fil, n_motors=n_motors, reach_scale=reach_scale, seed=seed,
-        device=device, n_ticks=0)   # build only; we drive ticks ourselves below
+        device=device, n_ticks=0,
+        allow_cpu_dev=allow_cpu_dev)   # build only; we drive ticks ourselves below
     if getattr(myo_act, "_sim_ref", None) is None:
         myo_act._sim_ref = sim
 
@@ -468,7 +475,7 @@ def main() -> int:
                          "veto, and prototype the diff-fil relaxation")
     ap.add_argument("--quick", action="store_true",
                     help="smaller/faster cortex (n_fil=400, n_motors=60)")
-    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
+    add_production_device_args(ap, default="gpu")
     ap.add_argument("--fig", action="store_true")
     args = ap.parse_args()
 
@@ -476,6 +483,7 @@ def main() -> int:
         return 0 if self_test() else 1
 
     if args.measure:
+        validate_production_device_args(ap, args)
         if args.quick:
             n_fil, n_motors, n_ticks = 400, 60, 30
         else:
@@ -485,10 +493,12 @@ def main() -> int:
               f"device={args.device}) ===", flush=True)
         base = measure_veto(
             n_fil=n_fil, n_motors=n_motors, seed=1, device=args.device,
-            n_ticks=n_ticks, relax_diff_fil=False)
+            allow_cpu_dev=args.allow_cpu_dev, n_ticks=n_ticks,
+            relax_diff_fil=False)
         relaxed = measure_veto(
             n_fil=n_fil, n_motors=n_motors, seed=1, device=args.device,
-            n_ticks=n_ticks, relax_diff_fil=True)
+            allow_cpu_dev=args.allow_cpu_dev, n_ticks=n_ticks,
+            relax_diff_fil=True)
 
         # Verdict logic.
         helped = (np.isfinite(relaxed["frac_complete"])

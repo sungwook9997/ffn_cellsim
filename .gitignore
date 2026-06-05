@@ -55,6 +55,11 @@ Thumbs.db
 # Syncthing folder marker
 .stfolder/
 
+# Syncthing / editor conflict byproducts (never project state)
+*.sync-conflict-*
+.syncthing.*.tmp
+~$*
+
 # acs-collab MCP ledger — append-only mirror of the message queue, shared via
 # Syncthing (not git). Every send rewrites it, so tracking it would generate
 # noisy diffs without adding history beyond what the SQLite DB already stores.
@@ -83,6 +88,7 @@ ffn_sim/outputs/tag_kb/pass2_dossiers.json
 ffn_sim/references/*.pdf
 ffn_sim/references/**/*.pdf
 ffn_sim/references/*.zip
+ffn_sim/references/**/*.bak_*
 
 # PI experimental data (poster A/A0 exports) — overlay-only, kept LOCAL (hard rule: PI
 # experimental data is not committed; lives in ~/ActiveCellSim/data/experimental). Used by
@@ -108,3 +114,16 @@ ffn_sim/outputs/layer2/daxis*/*.progress
 # KU-3.5 driver checkpoints (run state, not artifacts)
 ffn_sim/outputs/h3/production/ku35_active/ckpt/
 ffn_sim/outputs/layer2/morphology_frames.npz
+
+# Production bulk trajectories / frame dumps. Curated REPORT.md, PNG figures,
+# and selected JSON/NPZ summaries remain visible for explicit commit decisions.
+ffn_sim/outputs/**/*.log
+ffn_sim/outputs/**/*.err
+ffn_sim/outputs/**/*.progress
+ffn_sim/outputs/**/*.out
+ffn_sim/outputs/**/*.bak_*
+ffn_sim/outputs/**/production/**/*.gsd
+# All production .npz are bulk trajectory/state dumps (14-15 MB each); curated
+# summaries live as .json/.md and stay visible. Keep ALL production .npz out of git.
+ffn_sim/outputs/**/production/*.npz
+ffn_sim/outputs/**/production/**/*.npz

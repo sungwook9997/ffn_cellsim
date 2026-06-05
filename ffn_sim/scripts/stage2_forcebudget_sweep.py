@@ -35,6 +35,13 @@ from pathlib import Path
 
 import numpy as np
 
+import hoomd
+
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    require_full_cell_physiological_baseline,
+    validate_production_device_args,
+)
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.scripts.mcf7_fullcell_stage1 import _build, _cfg_for, _resolve_compartments, _tagpos
 from ffn_sim.scripts.stage2_signed_contractility import signed_cortical_stress
@@ -60,10 +67,11 @@ def _bound_metrics(ma, sim):
 
 
 def _run_condition(n_fil, n_motors, n_xl, *, n_warmup, n_sample, interval,
-                   bind_scale, kon_scale, device="cpu", seed=1):
+                   bind_scale, kon_scale, device="gpu", seed=1):
     cfg = _cfg_for(n_fil, n_motors, n_xl, "grip_walk", force_scaling=True, backbone_nm=300)
     p0 = resolve_h3_derived(cfg)
     comp = _resolve_compartments(p0)
+    require_full_cell_physiological_baseline(comp)
     _, _, _, dtc, hw = _build(cfg, stepping_mode="grip_walk", force_scaling=True,
                               constrained=False, compartments=comp, equilibrate=True,
                               n_warmup=n_warmup, device=device, kon_scale=kon_scale,
@@ -107,8 +115,9 @@ def main() -> int:
     ap.add_argument("--n-warmup", type=int, default=6000)
     ap.add_argument("--bind-scale", type=float, default=6.0)
     ap.add_argument("--kon-scale", type=float, default=300.0)
-    ap.add_argument("--device", default="cpu", choices=["cpu", "gpu"])
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args, hoomd_module=hoomd)
     n_xl = int(1.5 * args.n_fil)
 
     print(f"[force-budget sweep] n_fil={args.n_fil} n_xl={n_xl} motors={args.motors} | "

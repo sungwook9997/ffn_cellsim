@@ -28,6 +28,10 @@ import yaml
 import hoomd
 
 from ffn_sim.cortex.cortex import build_cortex_simulation, resolve_h3_derived
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
 from ffn_sim.common.filament_math import fit_persistence_length
 
 PKG = Path(__file__).resolve().parents[1]          # ffn_sim/
@@ -44,8 +48,9 @@ SCALES = {
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--scale", choices=SCALES, default="medium")
-    ap.add_argument("--device", choices=["gpu", "cpu"], default="gpu")
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
     s = SCALES[args.scale]
 
     with open(CFG) as f:
