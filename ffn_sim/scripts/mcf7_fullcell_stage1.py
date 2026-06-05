@@ -48,6 +48,7 @@ from ffn_sim.scripts.h3_ku35_aggregation import (
     aggregation_ledger,
     format_ledger,
 )
+from ffn_sim.common import checkpoint as _ckpt
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"
@@ -161,11 +162,36 @@ def _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm=70
     return cfg
 
 
+def _run_fingerprint(*, stepping_mode, n_fil, n_motors, n_xl, force_scaling,
+                     v0_accel, n_warmup, n_sample_eff, interval_eff, backbone_nm,
+                     kon_scale, bind_scale, connected_mesh, turgor_pa, motors_off,
+                     compartments_on, only, aggregation, seed) -> str:
+    """Resume-gating fingerprint over every run-defining parameter.
+
+    Any change to physics or the sampling schedule invalidates an old
+    checkpoint (so a resume can never splice an incompatible run). Device is
+    deliberately excluded — CPU/GPU yield the same physics and the checkpoint
+    restores positions exactly, so a GPU run resumes on CPU and vice-versa.
+    """
+    return _ckpt.compute_fingerprint({
+        "driver": "mcf7_fullcell_stage1", "stepping_mode": stepping_mode,
+        "n_fil": int(n_fil), "n_motors": int(n_motors), "n_xl": int(n_xl),
+        "force_scaling": bool(force_scaling), "v0_accel": float(v0_accel),
+        "n_warmup": int(n_warmup), "n_sample": int(n_sample_eff),
+        "interval": int(interval_eff), "backbone_nm": float(backbone_nm),
+        "kon_scale": float(kon_scale), "bind_scale": float(bind_scale),
+        "connected_mesh": bool(connected_mesh),
+        "turgor_pa": None if turgor_pa is None else float(turgor_pa),
+        "motors_off": bool(motors_off), "compartments_on": bool(compartments_on),
+        "only": only, "aggregation": bool(aggregation), "seed": int(seed),
+    })
+
+
 def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             couple_accel, n_warmup, n_sample, interval, smoke, device="cpu",
             compartments_on=True, only=None, backbone_nm=700, kon_scale=1.0,
             bind_scale=1.0, connected_mesh=False, turgor_pa=None, motors_off=False,
-            aggregation=False):
+            aggregation=False, resume=True):
     cfg = _cfg_for(n_fil, n_motors, n_xl, stepping_mode, force_scaling, backbone_nm)
     # Resolve cortex once to get R_cell for the compartments.
     p0 = resolve_h3_derived(cfg)
@@ -184,45 +210,102 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
         print("  [compartments OFF] cortex-only at MCF7 R_cell=7.5µm (attribution baseline)",
               flush=True)
 
-    # --- Warm-up (unconstrained, literal v0) with all compartments ---
-    _, _, _, dtc, hw = _build(cfg, stepping_mode=stepping_mode,
-                              force_scaling=force_scaling, constrained=False,
-                              compartments=comp, equilibrate=True, n_warmup=n_warmup,
-                              device=device, kon_scale=kon_scale, bind_scale=bind_scale,
-                              connected_mesh=connected_mesh,
-                              v0_accel=v0_accel, motors_off=motors_off)
-    hw["sim"].run(0)
-    pos_warm = _tagpos(hw["sim"])
-    del hw
+    # --- dt + resume fingerprint --------------------------------------------
+    # checkpoint/resume: never redo the warm-up OR an already-completed sample
+    # for the SAME config. A re-run (crash recovery, sample extension, or just
+    # re-invoking an identical config) loads the last checkpoint, skips the
+    # warm-up, and continues from the last completed sample. dt is computed up
+    # front (not via the warm-up build) so the constrained build works on resume.
+    seed = 1
+    tau_bend = p0.gamma_b * p0.rest_length ** 3 / p0.bending_modulus
+    dtc = 0.001 * tau_bend
+    n = 2 if smoke else n_sample
+    iv = 2000 if smoke else interval
+    run_fp = _run_fingerprint(
+        stepping_mode=stepping_mode, n_fil=n_fil, n_motors=n_motors, n_xl=n_xl,
+        force_scaling=force_scaling, v0_accel=v0_accel, n_warmup=n_warmup,
+        n_sample_eff=n, interval_eff=iv, backbone_nm=backbone_nm,
+        kon_scale=kon_scale, bind_scale=bind_scale, connected_mesh=connected_mesh,
+        turgor_pa=turgor_pa, motors_off=motors_off, compartments_on=compartments_on,
+        only=only, aggregation=aggregation, seed=seed)
+    ckpt_base = (PKG / "outputs" / "h3" / "production" / "ku35_active" / "ckpt"
+                 / f"run_{run_fp[:16]}")
+    ckpt_state = _ckpt.load_checkpoint(ckpt_base, run_fp) if resume else None
+    tag = "motorsOFF" if motors_off else "motorsON"
 
-    # --- Constrained production (rigid backbone) with all compartments ---
-    # Accelerated v0/k_on like the gripwalk driver.
+    def _autoviz(ledgers):
+        """Auto-viz the aggregation ledger (production-driver auto-viz rule)."""
+        if not (aggregation and ledgers):
+            return
+        try:
+            import json
+            from ffn_sim.scripts.h3_ku35_aggregation import make_aggregation_figure
+            outdir = PKG / "outputs" / "h3" / "production" / "ku35_active"
+            outdir.mkdir(parents=True, exist_ok=True)
+            (outdir / f"agg_ledger_{stepping_mode}_{tag}.json").write_text(
+                json.dumps(ledgers, indent=2))
+            make_aggregation_figure(
+                ledgers,
+                PKG / "outputs" / "h3" / "figs" / f"ku35_aggregation_{tag}.png",
+                title=(f"KU-3.5-ACTIVE aggregation ledger ({tag}, n_fil={n_fil}) "
+                       f"— {ledgers[-1]['verdict'].split(':')[0]}"))
+        except Exception as exc:  # noqa: BLE001
+            print(f"    [AGG] WARN auto-viz failed: {exc}", flush=True)
+
+    # --- Restore from checkpoint, or warm up fresh --------------------------
+    if ckpt_state is not None:
+        seed_positions = ckpt_state["positions_by_tag"]
+        _r = ckpt_state["diag_list"][0] if ckpt_state["diag_list"] else {}
+        samples = [tuple(s) for s in _r.get("samples", [])]
+        agg_ledgers = list(_r.get("agg_ledgers", []))
+        r0 = _r.get("r0")
+        start_sample = int(ckpt_state["sample_index"])
+        print(f"  [RESUME] checkpoint hit (fp={run_fp[:12]}): skip warm-up, "
+              f"resume at sample {start_sample}/{n}", flush=True)
+    else:
+        # Warm-up (unconstrained, literal v0) with all compartments.
+        _, _, _, dtc, hw = _build(cfg, stepping_mode=stepping_mode,
+                                  force_scaling=force_scaling, constrained=False,
+                                  compartments=comp, equilibrate=True, n_warmup=n_warmup,
+                                  device=device, kon_scale=kon_scale, bind_scale=bind_scale,
+                                  connected_mesh=connected_mesh, dtc=dtc,
+                                  v0_accel=v0_accel, motors_off=motors_off)
+        hw["sim"].run(0)
+        seed_positions = _tagpos(hw["sim"])
+        del hw
+        samples, agg_ledgers, r0, start_sample = [], [], None, 0
+
+    # --- Fast path: every sample already done (re-run of a finished config) --
+    if start_sample >= n:
+        print(f"  [RESUME] all {n} samples already complete — returning cached "
+              f"result (no warm-up, no production rebuild)", flush=True)
+        _autoviz(agg_ledgers)
+        return samples
+
+    # --- Constrained production (rigid backbone) with all compartments ------
     p, p_myo_lit, p_xl, dtc, hc = _build(cfg, stepping_mode=stepping_mode,
                                          force_scaling=force_scaling,
                                          constrained=True, compartments=comp, dtc=dtc,
                                          device=device, kon_scale=kon_scale,
                                          bind_scale=bind_scale,
                                          connected_mesh=connected_mesh,
-                              v0_accel=v0_accel, motors_off=motors_off)
+                                         v0_accel=v0_accel, motors_off=motors_off)
     sim = hc["sim"]
     act = hc["baoab_action"]
     myo_act = hc.get("myosin_action")
     if hasattr(act, "record_lambda"):
         act.record_lambda = True
-    # transfer warmed positions by tag
+    # Seed positions (the checkpoint's last state on resume, else the warm-up).
     snap = sim.state.get_snapshot()
     if snap.communicator.rank == 0:
-        snap.particles.position[:] = pos_warm   # get_snapshot is tag-ordered
+        snap.particles.position[:] = seed_positions   # get_snapshot is tag-ordered
     sim.state.set_snapshot(snap)
     sim.run(0)
 
     nca = p.n_filaments * p.beads_per_filament
-    r0 = float(np.linalg.norm(_tagpos(sim)[:nca], axis=1).mean())
-    samples = []
-    agg_ledgers = []
-    n = 2 if smoke else n_sample
-    iv = 2000 if smoke else interval
-    for k in range(n):
+    if r0 is None:
+        r0 = float(np.linalg.norm(_tagpos(sim)[:nca], axis=1).mean())
+    for k in range(start_sample, n):
         sim.run(iv)
         r = _tagpos(sim)
         rmean = float(np.linalg.norm(r[:nca], axis=1).mean())
@@ -245,25 +328,21 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
             except Exception as exc:  # noqa: BLE001
                 print(f"    [AGG] WARN ledger failed (sample still valid): {exc}",
                       flush=True)
+        # Checkpoint after each completed sample (atomic). A re-run of this exact
+        # config skips the warm-up + every completed sample (no redo-every-time).
+        if resume:
+            try:
+                _ckpt.save_checkpoint(
+                    ckpt_base, sample_index=k + 1, positions_by_tag=r,
+                    diag_list=[{"samples": [list(s) for s in samples],
+                                "agg_ledgers": agg_ledgers, "r0": r0}],
+                    frames_so_far=np.empty((0,), dtype=np.float32),
+                    params_fingerprint=run_fp, rng_seed=seed)
+            except Exception as exc:  # noqa: BLE001
+                print(f"    [CKPT] WARN save failed (sample still valid): {exc}",
+                      flush=True)
 
-    # Auto-viz the aggregation ledger (production-driver auto-viz rule). Best-
-    # effort; a viz/dump failure must not invalidate the tension samples.
-    if aggregation and agg_ledgers:
-        try:
-            import json
-            from ffn_sim.scripts.h3_ku35_aggregation import make_aggregation_figure
-            tag = "motorsOFF" if motors_off else "motorsON"
-            outdir = PKG / "outputs" / "h3" / "production" / "ku35_active"
-            outdir.mkdir(parents=True, exist_ok=True)
-            (outdir / f"agg_ledger_{stepping_mode}_{tag}.json").write_text(
-                json.dumps(agg_ledgers, indent=2))
-            make_aggregation_figure(
-                agg_ledgers,
-                PKG / "outputs" / "h3" / "figs" / f"ku35_aggregation_{tag}.png",
-                title=(f"KU-3.5-ACTIVE aggregation ledger ({tag}, n_fil={p.n_filaments}) "
-                       f"— {agg_ledgers[-1]['verdict'].split(':')[0]}"))
-        except Exception as exc:  # noqa: BLE001
-            print(f"    [AGG] WARN auto-viz failed: {exc}", flush=True)
+    _autoviz(agg_ledgers)
     return samples
 
 
@@ -307,6 +386,10 @@ def main() -> int:
                     help="print the KU-3.5-active force-AGGREGATION ledger per sample "
                          "(Σ|F_head|, F/F_stall, η_agg/η_medium, branch verdict) — "
                          "diagnoses why per-head myosin force does not become shell tension")
+    ap.add_argument("--no-resume", action="store_true",
+                    help="disable checkpoint/resume (default: ON — a re-run of the same "
+                         "config skips the warm-up + all completed samples; checkpoints "
+                         "live under outputs/h3/production/ku35_active/ckpt/)")
     ap.add_argument("--turgor-pa", type=float, default=None,
                     help="override enclosed-volume intracellular pressure dP [Pa] "
                          "(KU-3.1 default 40 interphase; band [0.35,0.65] implies ~93-173 "
@@ -334,7 +417,7 @@ def main() -> int:
             only=args.only, backbone_nm=args.backbone_nm, kon_scale=args.kon_scale,
             bind_scale=args.bind_scale, connected_mesh=args.connected_mesh,
             turgor_pa=args.turgor_pa, motors_off=args.motors_off,
-            aggregation=args.aggregation,
+            aggregation=args.aggregation, resume=not args.no_resume,
         )
     dt = time.time() - t0
     print(f"\n=== DONE in {dt:.0f}s. Full cell (cortex+membrane+nucleus+cytoplasm"
