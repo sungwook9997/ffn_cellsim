@@ -481,3 +481,84 @@ overlay-only), 절대 mesh/두께 nm는 figure에 있어 SI 필요. semiflexible
 유래라 living-cell엔 정성적 일치까지가 정직한 수준 (저자도 "aspects fit").
 
 ---
+
+## 16. Miyazaki, Chiba, Eguchi, Ohki, Ishiwata 2015, Nat Cell Biol 17(4):480 — "Cell-sized spherical confinement induces the spontaneous formation of contractile actomyosin rings in vitro" (`Miyazaki2015_NatCellBiol_ContractileRing_confinement.pdf`, DOI 10.1038/ncb3142) ⭐ MECHANISM OF CONTRACTION
+
+**What it is:** MINIMAL in-vitro reconstitution — purified actin + bundling factor + myosin (HMM)
+inside cell-sized water-in-oil droplets. Bottom-up control of biochemistry AND the physical boundary.
+(PI 2026-06-05: fetched via gbook KAIST after the Lead wrongly dismissed the in-vitro line as
+"secondary"; this is the cleanest demonstration of the contraction mechanism.)
+
+### Key findings (the contraction-mechanism smoking-gun)
+- **Contraction is a THRESHOLD transition in effective myosin.** HMM 5 µM = weak/slow; 25 µM =
+  strong/fast → then disassembly. Rring/Rdroplet distribution is BIMODAL (contraction vs none). Below
+  the threshold: no contraction.
+- **Myosin must CO-LOCALIZE / OLIGOMERIZE on the actin to contract.** "Weak: HMM uniform, no
+  localization; Strong: HMM co-localization with actin." Discussion: "stepwise increase in myosin
+  DENSITY on actin filaments and myosin OLIGOMERIZATION … from self-assembly to contraction." → it is
+  the *effective density/oligomeric state ON the load-bearing bundle*, not the bulk amount, that
+  switches contraction on.
+- **Contraction = active REMODELLING / CONDENSATION (volume-conserving densification).** As the ring
+  radius shrinks, the bundle width grows (V = πRring·πd²/4 ≈ const) — the network physically condenses
+  as it contracts. NOT static force summation.
+- Contraction rate ∝ initial perimeter → constant contraction velocity per unit length = "contractile
+  units in series" (consistent with Lenz §below).
+- Confinement/boundary organizes a cortex-like shell (rigid-rod filaments localize at the boundary;
+  ring self-assembles at the EQUATOR to minimize bending elastic energy — pure physics, no signals).
+
+### → WHAT GOES INTO OUR MODEL (the root-cause link)
+- **Contraction requires the network to REMODEL/CONDENSE above a myosin-density threshold.** Our
+  constrained M-SHAKE backbone FORBIDS condensation (filaments can't be drawn together) →
+  **r/r0 = 1.000 (zero densification) → zero net contraction → g_soft floors.** Miyazaki proves, in the
+  minimal system, that "contraction = active condensation" — exactly the process our rigid backbone
+  removes.
+- Reframes "GENERATION-LIMITED": not merely too little force, but **below the myosin-density/oligomer
+  threshold AND the remodelling channel is structurally blocked.**
+
+**감상평 (Lead, 2026-06-05):** PI가 옳았고 내가 in-vitro를 안일하게 "부차적"으로 넘긴 게 실수였다. 이
+최소 재구성계가 우리 floor의 정체를 가장 깨끗하게 보여준다: **수축은 (1) 필라멘트 위 유효 myosin
+밀도/oligomer 임계 위에서, (2) 네트워크의 능동 응축(condensation)으로** 일어난다 — 정적 force 합산이
+아니다. 우리 rigid M-SHAKE backbone은 (2)를 구조적으로 금지(r/r0=1.000) → 그래서 모터·crosslink 수를
+아무리 sweep해도 g_soft가 안 오른 것. 한계: HMM(전장 myosin 아님)·droplet(세포 아님)·contractile RING
+(cytokinesis) 맥락 — 그러나 "수축=임계+응축"의 *메커니즘*은 cortex에 직접 이전된다. ⭐ 등록 +
+KnowledgeClaim "actomyosin-contraction-mechanism (threshold + condensation/remodelling)".
+
+---
+
+## ★ MECHANISM SYNTHESIS — the buckling/remodelling root-cause of the KU-3.5 γ-floor (2026-06-05)
+
+Five in-vitro/theory papers (Miyazaki §16; Lenz 2012 PRL; Murrell & Gardel 2012 PNAS; Stam 2017 PNAS;
+Ennomani 2016 Curr Biol — all reconstituted-actomyosin / Gardel·Dinner·Blanchoin·Murrell) CONVERGE on
+one principle and it pinpoints our floor:
+
+**Disordered / confined actomyosin (= the cortex) contracts ONLY by — above a myosin-density threshold
+— breaking the tension/compression symmetry via filament BUCKLING, and then actively REMODELLING /
+CONDENSING the network. It is NOT static force summation.**
+
+| Required ingredient | Source | Our model | Status |
+|---|---|---|---|
+| Active remodelling / condensation (densification) | Miyazaki2015 | rigid M-SHAKE → no condensation, **r/r0=1.000** | ✗ |
+| Filament BUCKLING (asymmetric: yield-compress/resist-extend) breaks symmetry | Lenz2012, Murrell2012, Stam2017 | per-filament load ~2pN < Euler F_B≈6.9pN (7-bead/3µm); rigid filaments SLIDE not bend (Stam) | ✗ |
+| Myosin effective-density / oligomer THRESHOLD | Miyazaki2015, Lenz2012, Ennomani2016 | recruitment ~31%, lumped (factor 10.6) — likely sub-threshold | ✗/? |
+| Dispersion of motor unloaded velocities | Lenz2012 | v0 = 0.2 µm/s single value | ✗ |
+| Intermittent motor detachment (stress relaxation) | Lenz2012, Miyazaki2015 | Bell-Evans unbinding | ✓ |
+| Intermediate connectivity window (mid=buckling, high=sarcomeric, too-high kills it) | Ennomani2016 | z=3.65 (window-position unverified) | ? |
+
+**Why every prior sweep was null (generation/measurement/percolation/turnover/coherence/motor-count/
+crosslink-count):** none of them is a symmetry-breaker. The missing ingredients are buckling +
+remodelling + the density threshold — and the constrained M-SHAKE backbone (chosen for numerical
+stability) structurally forbids buckling/condensation. Estimator signature: η_agg≈0.94 (instantaneous
+bond geometry fine) BUT r/r0=1.000 + ceiling≈realized (the network cannot ratchet into a condensed,
+tensed state). "Compliant backbone REFUTED" is consistent — compliance (axial stretch) ≠ buckling
+(transverse, load>F_B) ≠ condensation.
+
+**Levers (PI-gated, constrained-freeze):** (1) allow remodelling/buckling — relax M-SHAKE or run
+unconstrained with the cytoplasm-η stabilizer; (2) cross the buckling threshold — lower F_B=π²κ/L²
+(longer/softer sections) + raise per-section load; (3) myosin density/oligomer threshold + v0
+dispersion. CONFIRM with the aggregation estimator: success ⇔ r/r0 < 1 (densification) AND ceiling↑.
+
+(Reference PDF now in `references/` — staged for SE registration in
+`SE_REGISTRATION_CANDIDATES_2026-06-05_contraction-mechanism.md`; BM25 ingest + Notion SE row at next
+KB batch.)
+
+---
