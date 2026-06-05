@@ -351,8 +351,24 @@ cortex:
     v0_per_head: 0.2e-6                # m/s 0.2 µm/s NMIIA (Kovács 2003 JBC, single-molecule)
     F_stall_per_head: 0.5e-12          # N   0.5 pN
     a_over_F_stall: 0.5                # Kovács 2003
-    # D2 Bell-Evans head-actin (NMII; Veigel 2002 anchor)
-    head_actin_k_off0: 10.0            # 1/s unloaded off-rate (NMII duty cycle)
+    # D2 Bell-Evans head-actin off-rate. Magic-Number Block (2026-06-05 re-anchor,
+    # PI-authorized): RE-ANCHORED 10.0 → 0.35 /s.
+    #   Value: NMIIA actin-detachment reference off-rate k_off(0) = 0.35 s⁻¹.
+    #   Primary citation: Stam, Alberts, Gardel, Munro 2015 Biophys J 108:1997
+    #     (Stam-Hocky isoform model), citing Wang 2003 JBC 278:27439 + Kovács 2003
+    #     JBC 278:38132; reproduced verbatim in Tam 2021 bioRxiv 2021.02.23.432588
+    #     p37: "the reference off-rate k_off(0) for non-muscle myosin is 0.35 s⁻¹
+    #     (IIA) and 1.71 s⁻¹ (IIB) … we adopt the value for myosin-IIA".
+    #   Why re-anchor (not keep): the previous 10.0 was labelled "NMII duty cycle /
+    #     Veigel 2002" but 10/s is ~29× FASTER than the NMIIA strong-binding
+    #     detachment rate — the same class of mis-anchor the 2026-05-30 audit fixed
+    #     for v0_per_head (1.0→0.2, Kovács) and α-actinin k_off0 (0.4→0.066, Ferrer).
+    #   Grid-invariance: intensive per-bond rate [1/s], N-independent.
+    #   ⚠️ FIDELITY ONLY — NOT a KU-3.5 floor fix: g_soft stays far under band with
+    #     this change (the active floor is force-TRANSMISSION/lever, not binding
+    #     kinetics; binding-throughput workflow 2026-06-05, commit 68dc1f9). It also
+    #     relaxes the D2-batch CFL cap (batch_dt·k_off0 ≤ 1e-3) ~29×.
+    head_actin_k_off0: 0.35            # 1/s NMIIA reference off-rate (Stam-Hocky 2015 / Tam 2021)
     head_actin_x_beta: 0.6e-9          # m   Bell strength length (Veigel 2002)
     head_actin_k_on: 50.0              # 1/s per-head bind rate when acceptor present
     # KU-3.5 fix 2026-05-29 (PI Option C, segment-projection binding):
