@@ -1680,6 +1680,18 @@ class Cell:
     lamellipodium: Any | None = None
     fa: Any | None = None
 
+    # A1 full-cell compartment configs (2026-06-05). None when not wired; set
+    # when Cell.build forwards them to build_cortex_full_simulation. The raw
+    # builder handles dict (incl. compartment force objects) is in
+    # ``extras["handles"]`` for downstream measurement (e.g. gamma estimators).
+    p_enclosed_volume: Any | None = None
+    p_membrane_surface: Any | None = None
+    p_nucleus: Any | None = None
+    p_cytoplasm: Any | None = None
+    p_substrate: Any | None = None
+    p_turnover: Any | None = None
+    p_membrane: Any | None = None
+
     extras: dict[str, Any] = field(default_factory=dict)
 
     # ---------------------------------------------------------------
@@ -1697,6 +1709,32 @@ class Cell:
         p_fa: "ResolvedH4 | None" = None,
         fa_clutch_capture_radius: float | None = None,
         fa_clutch_k: float | None = None,
+        # --- A1 full-cell unification (2026-06-05) ---
+        # Compartment + advanced run-mode params forwarded verbatim to
+        # build_cortex_full_simulation so the physiological baseline (A2
+        # manifest) is reachable through this single public entry point.
+        # All default-None / default-off: when none are passed, routing and
+        # numerics are bit-for-bit identical to the pre-A1 Cell.build.
+        p_enclosed_volume: "ResolvedEnclosedVolume | None" = None,
+        p_membrane_surface: "ResolvedMembraneSurface | None" = None,
+        p_nucleus: "ResolvedNucleus | None" = None,
+        nucleus_centroid: "np.ndarray | tuple[float, float, float] | None" = None,
+        nucleus_gamma: float | None = None,
+        p_cytoplasm: "CytoplasmTier1 | None" = None,
+        p_substrate: "ResolvedSubstrate | None" = None,
+        p_turnover: "ResolvedTurnover | None" = None,
+        p_membrane: "ResolvedMembrane | None" = None,
+        membrane_with_reaction_force: bool = False,
+        constrained: bool = False,
+        constrained_dt: float | None = None,
+        reconcile_dt: bool = False,
+        equilibrate: bool = False,
+        equilibrate_steps: int = 0,
+        equilibrate_softstart_steps: int = 100,
+        connected_mesh: bool = False,
+        cm_z_struct: float = 3.7,
+        cm_bundle_mult: int = 2,
+        cm_reach: float | None = None,
         options: CellBuildOptions | None = None,
         device: hoomd.device.Device | None = None,
         rng: np.random.Generator | None = None,
@@ -1785,7 +1823,23 @@ class Cell:
         # p_fa is None the FA path is fully inert (additive + default-off).
         enable_fa = opts.with_fa and p_fa is not None
         fa_integration = None
-        if opts.with_myosin or opts.with_lamellipodium or enable_fa:
+        full_handles: dict[str, Any] | None = None
+        # A1 (2026-06-05): the simple cortex / cortex+xlink builders cannot wire
+        # compartments or advanced run-modes, so route through the unified
+        # build_cortex_full_simulation whenever ANY of those is requested (in
+        # addition to the original myosin/lamellipodium/FA triggers). When none
+        # are set, the legacy dispatch below is preserved bit-for-bit — the
+        # simpler builders register fewer particle TYPES, so collapsing them
+        # unconditionally would change snapshots and break determinism.
+        needs_full = (
+            opts.with_myosin or opts.with_lamellipodium or enable_fa
+            or any(p is not None for p in (
+                p_enclosed_volume, p_membrane_surface, p_nucleus,
+                p_cytoplasm, p_substrate, p_turnover, p_membrane,
+            ))
+            or constrained or reconcile_dt or equilibrate or connected_mesh
+        )
+        if needs_full:
             handles = build_cortex_full_simulation(
                 p_cortex,
                 p_xlinks=p_xlinks if opts.with_crosslinkers else None,
@@ -1794,8 +1848,27 @@ class Cell:
                 p_fa=p_fa if enable_fa else None,
                 fa_clutch_capture_radius=fa_clutch_capture_radius,
                 fa_clutch_k=fa_clutch_k,
-                device=device, with_baoab=opts.with_baoab, rng=rng,
+                p_enclosed_volume=p_enclosed_volume,
+                p_membrane_surface=p_membrane_surface,
+                p_nucleus=p_nucleus,
+                nucleus_centroid=nucleus_centroid,
+                nucleus_gamma=nucleus_gamma,
+                p_cytoplasm=p_cytoplasm,
+                p_substrate=p_substrate,
+                p_turnover=p_turnover,
+                p_membrane=p_membrane,
+                membrane_with_reaction_force=membrane_with_reaction_force,
+                p_erm=p_erm,
+                device=device, with_baoab=opts.with_baoab,
+                constrained=constrained, constrained_dt=constrained_dt,
+                reconcile_dt=reconcile_dt,
+                equilibrate=equilibrate, equilibrate_steps=equilibrate_steps,
+                equilibrate_softstart_steps=equilibrate_softstart_steps,
+                connected_mesh=connected_mesh, cm_z_struct=cm_z_struct,
+                cm_bundle_mult=cm_bundle_mult, cm_reach=cm_reach,
+                rng=rng,
             )
+            full_handles = handles
             sim = handles["sim"]
             topology = handles["topology"]
             xl_layout = handles["xlink_layout"]
@@ -1899,6 +1972,14 @@ class Cell:
             n_wave_particles=n_wave_particles,
             n_lamellipodium_actin=n_lamellipodium_actin,
             fa=fa_integration,
+            p_enclosed_volume=p_enclosed_volume,
+            p_membrane_surface=p_membrane_surface,
+            p_nucleus=p_nucleus,
+            p_cytoplasm=p_cytoplasm,
+            p_substrate=p_substrate,
+            p_turnover=p_turnover,
+            p_membrane=p_membrane,
+            extras={"handles": full_handles} if full_handles is not None else {},
         )
 
     # ---------------------------------------------------------------
