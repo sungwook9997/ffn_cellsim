@@ -325,6 +325,15 @@ def run_arm(stepping_mode, *, n_fil, n_motors, n_xl, force_scaling, v0_accel,
                     myosin_action=myo_act, g_soft_gate=g_soft)
                 agg_ledgers.append(led)
                 print(format_ledger(led), flush=True)
+                # Per-minifilament bipolar-stresslet readout (does local
+                # head-walking become a COHERENT cortex-scale contractile
+                # stresslet? — frac_complete_pairs + coherence).
+                from ffn_sim.scripts.h3_ku35_stresslet import (
+                    stresslet_ledger, format_stresslet)
+                sled = stresslet_ledger(
+                    sim, p_myo=p_myo_lit, myosin_action=myo_act,
+                    beads_per_filament=p.beads_per_filament)
+                print(format_stresslet(sled), flush=True)
             except Exception as exc:  # noqa: BLE001
                 print(f"    [AGG] WARN ledger failed (sample still valid): {exc}",
                       flush=True)
