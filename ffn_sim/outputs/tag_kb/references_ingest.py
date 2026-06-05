@@ -17,6 +17,7 @@ RUN (after notion_to_duckdb.py):
   conda activate ffn_sim
   python references_ingest.py
   python references_ingest.py --stats
+  python references_ingest.py --check
 """
 from __future__ import annotations
 
@@ -85,7 +86,100 @@ def page_chunks(text: str) -> list[str]:
     return [text[i:i + CHUNK_CHARS] for i in range(0, len(text), CHUNK_CHARS)]
 
 
-def ingest():
+def existing_corpus_link_count() -> int | None:
+    if not CORPUS_JSON.exists():
+        return None
+    try:
+        rows = json.loads(CORPUS_JSON.read_text())
+    except Exception:
+        return None
+    if not isinstance(rows, list):
+        return None
+    return sum(1 for row in rows if row.get("linked_to_source_evidence"))
+
+
+def assert_no_link_regression(corpus: list[dict], *, allow_link_drop: bool) -> None:
+    previous = existing_corpus_link_count()
+    if previous is None:
+        return
+    current = sum(1 for row in corpus if row.get("linked_to_source_evidence"))
+    if current >= previous or allow_link_drop:
+        return
+    raise SystemExit(
+        "Refusing to overwrite tag_corpus.json because linked_to_source_evidence "
+        f"would decrease ({previous} -> {current}). Re-run with --allow-link-drop "
+        "only if this source-link drop is intentional."
+    )
+
+
+def table_exists(con, name: str) -> bool:
+    return bool(
+        con.execute(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name = ?",
+            [name],
+        ).fetchone()[0]
+    )
+
+
+def count_rows(con, table: str, where: str | None = None) -> int:
+    if not table_exists(con, table):
+        return 0
+    sql = f"SELECT count(*) FROM {table}"
+    if where:
+        sql += f" WHERE {where}"
+    return int(con.execute(sql).fetchone()[0])
+
+
+def sanity_summary() -> None:
+    if not DB_PATH.exists():
+        sys.exit(f"{DB_PATH} not found — run notion_to_duckdb.py first.")
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    se_rows = count_rows(con, "source_evidence")
+    kc_rows = count_rows(con, "knowledge_claim")
+    ref_rows = count_rows(con, "paper_refs")
+    chunk_rows = count_rows(con, "paper_chunks")
+    linked_refs = count_rows(con, "paper_refs", "se_uid IS NOT NULL")
+    orphan_refs = count_rows(con, "paper_refs", "se_uid IS NULL")
+    if table_exists(con, "source_evidence") and table_exists(con, "paper_refs"):
+        orphan_sources = int(
+            con.execute(
+                """
+                SELECT count(*)
+                FROM source_evidence se
+                LEFT JOIN (
+                  SELECT DISTINCT se_uid FROM paper_refs WHERE se_uid IS NOT NULL
+                ) pr ON pr.se_uid = se.uid
+                WHERE pr.se_uid IS NULL
+                """
+            ).fetchone()[0]
+        )
+    else:
+        orphan_sources = 0
+    con.close()
+
+    corpus_total = corpus_linked = None
+    if CORPUS_JSON.exists():
+        try:
+            corpus = json.loads(CORPUS_JSON.read_text())
+            if isinstance(corpus, list):
+                corpus_total = len(corpus)
+                corpus_linked = sum(1 for row in corpus if row.get("linked_to_source_evidence"))
+        except Exception:
+            pass
+
+    print("TAG sanity summary")
+    print(f"  SourceEvidence rows: {se_rows}")
+    print(f"  KnowledgeClaim rows: {kc_rows}")
+    print(f"  paper_refs rows: {ref_rows}")
+    print(f"  paper_chunks rows: {chunk_rows}")
+    print(f"  linked paper_refs: {linked_refs}")
+    print(f"  unlinked/orphan paper_refs: {orphan_refs}")
+    print(f"  SourceEvidence rows without linked PDF: {orphan_sources}")
+    if corpus_total is not None:
+        print(f"  tag_corpus.json linked entries: {corpus_linked}/{corpus_total}")
+
+
+def ingest(*, allow_link_drop: bool = False):
     if not DB_PATH.exists():
         sys.exit(f"{DB_PATH} not found — run notion_to_duckdb.py first.")
     con = duckdb.connect(str(DB_PATH))
@@ -99,16 +193,6 @@ def ingest():
             se_by_doi[nd] = (uid, ck)
 
     titles = load_titles()
-    con.execute("DROP TABLE IF EXISTS paper_chunks")
-    con.execute("DROP TABLE IF EXISTS paper_refs")
-    con.execute(
-        "CREATE TABLE paper_refs (citation_key TEXT, title TEXT, doi TEXT, "
-        "path TEXT, n_pages INTEGER, sha1 TEXT, source TEXT, se_uid TEXT, "
-        "se_citation_key TEXT, n_chunks INTEGER)")
-    con.execute(
-        "CREATE TABLE paper_chunks (chunk_id TEXT, citation_key TEXT, "
-        "se_uid TEXT, page INTEGER, text TEXT)")
-
     seen_sha: dict[str, str] = {}
     ref_rows, chunk_rows, corpus = [], [], []
     skipped_dups = []
@@ -155,6 +239,22 @@ def ingest():
                        "se_uid": se_uid, "se_citation_key": se_ck, "n_chunks": nc,
                        "linked_to_source_evidence": bool(se_uid)})
 
+    try:
+        assert_no_link_regression(corpus, allow_link_drop=allow_link_drop)
+    except SystemExit:
+        con.close()
+        raise
+
+    con.execute("DROP TABLE IF EXISTS paper_chunks")
+    con.execute("DROP TABLE IF EXISTS paper_refs")
+    con.execute(
+        "CREATE TABLE paper_refs (citation_key TEXT, title TEXT, doi TEXT, "
+        "path TEXT, n_pages INTEGER, sha1 TEXT, source TEXT, se_uid TEXT, "
+        "se_citation_key TEXT, n_chunks INTEGER)")
+    con.execute(
+        "CREATE TABLE paper_chunks (chunk_id TEXT, citation_key TEXT, "
+        "se_uid TEXT, page INTEGER, text TEXT)")
+
     con.executemany("INSERT INTO paper_refs VALUES (?,?,?,?,?,?,?,?,?,?)", ref_rows)
     con.executemany("INSERT INTO paper_chunks VALUES (?,?,?,?,?)", chunk_rows)
     # BM25 full-text index for the semantic content step
@@ -193,9 +293,13 @@ def stats():
 
 
 if __name__ == "__main__":
-    if "--stats" in sys.argv:
+    if "--check" in sys.argv:
+        sanity_summary()
+    elif "--stats" in sys.argv:
         stats()
     else:
-        ingest()
+        ingest(allow_link_drop="--allow-link-drop" in sys.argv)
+        print()
+        sanity_summary()
         print()
         stats()

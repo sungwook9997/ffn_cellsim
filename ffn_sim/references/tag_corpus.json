@@ -1,12 +1,12 @@
 [
   {
-    "citation_key": "network-dynamics-of-the-nonlinear-power--90186b",
+    "citation_key": "Li2022_BiophysicalJournal",
     "title": "Network dynamics of the nonlinear power-law",
     "doi": "10.1016/j.bpj.2022.09.035",
     "path": "1-s2.0-S0006349522007858-main.pdf",
     "n_pages": 8,
     "source": "new",
-    "se_uid": "375120da-ec5d-819b-87e2-cdb5c9733312",
+    "se_uid": "SE314",
     "se_citation_key": "Li2022_BiophysicalJournal",
     "n_chunks": 26,
     "linked_to_source_evidence": true
@@ -96,37 +96,37 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "substrate-geometry-and-topography-induce-bd755d",
+    "citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "title": "Substrate geometry and topography induce F-actin",
     "doi": "10.1016/j.xcrp.2024.102338",
     "path": "1-s2.0-S2666386424006520-main (1).pdf",
     "n_pages": 13,
     "source": "new",
-    "se_uid": "375120da-ec5d-8189-9216-fe668126f214",
+    "se_uid": "SE316",
     "se_citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "n_chunks": 44,
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "substrate-geometry-and-topography-induce-932b06",
+    "citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "title": "Substrate geometry and topography induce F-actin",
     "doi": "10.1016/j.xcrp.2024.102338",
     "path": "1-s2.0-S2666386424006520-main (2).pdf",
     "n_pages": 13,
     "source": "new",
-    "se_uid": "375120da-ec5d-8189-9216-fe668126f214",
+    "se_uid": "SE316",
     "se_citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "n_chunks": 44,
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "substrate-geometry-and-topography-induce-1498fe",
+    "citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "title": "Substrate geometry and topography induce F-actin",
     "doi": "10.1016/j.xcrp.2024.102338",
     "path": "1-s2.0-S2666386424006520-main.pdf",
     "n_pages": 13,
     "source": "new",
-    "se_uid": "375120da-ec5d-8189-9216-fe668126f214",
+    "se_uid": "SE316",
     "se_citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "n_chunks": 44,
     "linked_to_source_evidence": true
@@ -180,13 +180,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "the-in-uence-of-interdomain-interactions-d32903",
+    "citation_key": "Balog2007_BiophysicalJournal",
     "title": "The Inﬂuence of Interdomain Interactions on the Intradomain Motions in",
     "doi": "10.1529/biophysj.106.093195",
     "path": "1709.pdf",
     "n_pages": 8,
     "source": "new",
-    "se_uid": "375120da-ec5d-8103-8d4d-cc47945e1b57",
+    "se_uid": "SE327",
     "se_citation_key": "Balog2007_BiophysicalJournal",
     "n_chunks": 25,
     "linked_to_source_evidence": true
@@ -228,13 +228,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "actin-force-generation-in-vesicle-format-abf688",
+    "citation_key": "Serwas2021_Jour",
     "title": "Actin force generation in vesicle formation: mechanistic insights from cryo-",
     "doi": "10.1101/2021.06.28.450262",
     "path": "2021.06.28.450262v2.full.pdf",
     "n_pages": 45,
     "source": "new",
-    "se_uid": "375120da-ec5d-81b0-8d7a-e6f2fab9478d",
+    "se_uid": "SE324",
     "se_citation_key": "Serwas2021_Jour",
     "n_chunks": 76,
     "linked_to_source_evidence": true
@@ -276,25 +276,25 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "rapid-actin-filament-turnover-maintains--5819ee",
+    "citation_key": "Kadzik2026_Jour",
     "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
     "doi": "10.64898/2026.05.24.727551",
     "path": "2026.05.24.727551.full.pdf",
     "n_pages": 47,
     "source": "new",
-    "se_uid": "375120da-ec5d-81fa-bda5-c31ca118c17c",
+    "se_uid": "SE330",
     "se_citation_key": "Kadzik2026_Jour",
     "n_chunks": 99,
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "rapid-actin-filament-turnover-maintains--56752d",
+    "citation_key": "Kadzik2026_Jour",
     "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
     "doi": "10.64898/2026.05.24.727551",
     "path": "2026.05.24.727551v1.full.pdf",
     "n_pages": 47,
     "source": "new",
-    "se_uid": "375120da-ec5d-81fa-bda5-c31ca118c17c",
+    "se_uid": "SE330",
     "se_citation_key": "Kadzik2026_Jour",
     "n_chunks": 99,
     "linked_to_source_evidence": true
@@ -330,7 +330,7 @@
     "path": "Actin-capping_protein_regulates_actomyosin_contrac.pdf",
     "n_pages": 54,
     "source": "new",
-    "se_uid": "375120da-ec5d-8130-9d52-ec06dc547d61",
+    "se_uid": "SE326",
     "se_citation_key": "2023-published-by-the-company-of-biologi-8c227c",
     "n_chunks": 81,
     "linked_to_source_evidence": true
@@ -396,16 +396,28 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "full-terms-conditions-of-access-and-use--f916d6",
+    "citation_key": "MerinoCasallo2022_CellAdhesionAmpMigration",
     "title": "Full Terms & Conditions of access and use can be found at",
     "doi": "10.1080/19336918.2022.2055520",
     "path": "Merino-Casalloetal.-2022-Unravellingcellmigrationdefiningmovementfromthecellsurface.pdf",
     "n_pages": 41,
     "source": "new",
-    "se_uid": "375120da-ec5d-8130-b971-d64d3c568d1d",
+    "se_uid": "SE323",
     "se_citation_key": "MerinoCasallo2022_CellAdhesionAmpMigration",
     "n_chunks": 138,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "cell-sized-spherical-con-nement-induces--151952",
+    "title": "Cell-sized spherical conﬁnement induces the",
+    "doi": "10.1038/ncb3142",
+    "path": "Miyazaki2015_NatCellBiol_ContractileRing_confinement.pdf",
+    "n_pages": 22,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 66,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Dessard2024_NanoscaleAdv",
@@ -456,13 +468,13 @@
     "linked_to_source_evidence": false
   },
   {
-    "citation_key": "rapid-actin-filament-turnover-maintains--ce9ddc",
+    "citation_key": "Kadzik2026_Jour",
     "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
     "doi": "10.64898/2026.05.24.727551",
     "path": "Rapid actin filament turnover maintains cortical connectivity while allowing for cell cortex deformation and flow _ bioRxiv.pdf",
     "n_pages": 36,
     "source": "new",
-    "se_uid": "375120da-ec5d-81fa-bda5-c31ca118c17c",
+    "se_uid": "SE330",
     "se_citation_key": "Kadzik2026_Jour",
     "n_chunks": 80,
     "linked_to_source_evidence": true
@@ -504,13 +516,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "unravelling-cell-migration-defining-move-90b998",
+    "citation_key": "MerinoCasallo2022_CellAdhesionAmpMigration",
     "title": "Unravelling cell migration: defining movement from the cell surface",
     "doi": "10.1080/19336918.2022.2055520",
     "path": "Unravelling_cell_migration_defining_movement_from_.pdf",
     "n_pages": 40,
     "source": "new",
-    "se_uid": "375120da-ec5d-8130-b971-d64d3c568d1d",
+    "se_uid": "SE323",
     "se_citation_key": "MerinoCasallo2022_CellAdhesionAmpMigration",
     "n_chunks": 137,
     "linked_to_source_evidence": true
@@ -528,13 +540,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "automatic-actin-filament-427bcf",
+    "citation_key": "Gruening2021_AppliedSciences",
     "title": "Automatic Actin Filament",
     "doi": "10.3390/app11125689",
     "path": "applsci-11-05689-with-cover.pdf",
     "n_pages": 21,
     "source": "new",
-    "se_uid": "375120da-ec5d-8131-9816-c0d10b7c848f",
+    "se_uid": "SE329",
     "se_citation_key": "Gruening2021_AppliedSciences",
     "n_chunks": 53,
     "linked_to_source_evidence": true
@@ -624,25 +636,25 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "pnas-2024-vol-121-no-31-e2320372121-3ed1cf",
+    "citation_key": "Flormann2024_ProcNatlAcadSciUSA",
     "title": "PNAS  2024  Vol. 121  No. 31 e2320372121\b",
     "doi": "10.1073/pnas.2320372121",
     "path": "flormann-et-al-2024-the-structure-and-mechanics-of-the-cell-cortex-depend-on-the-location-and-adhesion-state.pdf",
     "n_pages": 9,
     "source": "new",
-    "se_uid": "375120da-ec5d-81a4-9ade-d683d4d34bcb",
+    "se_uid": "SE322",
     "se_citation_key": "Flormann2024_ProcNatlAcadSciUSA",
     "n_chunks": 33,
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "a-three-dimensional-numerical-1ab2e9",
+    "citation_key": "Bcher2021_FrontPhys",
     "title": "A Three-Dimensional Numerical",
     "doi": "10.3389/fphy.2021.753230",
     "path": "fphy-09-753230.pdf",
     "n_pages": 21,
     "source": "new",
-    "se_uid": "375120da-ec5d-814a-8c0c-cb48c6f7b6e9",
+    "se_uid": "SE328",
     "se_citation_key": "Bcher2021_FrontPhys",
     "n_chunks": 55,
     "linked_to_source_evidence": true
@@ -732,13 +744,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "active-remodeling-of-cortical-629c08",
+    "citation_key": "Gowrishankar2012_Cell",
     "title": "Active Remodeling of Cortical",
     "doi": "10.1016/j.cell.2012.05.008",
     "path": "mmc5 (1).pdf",
     "n_pages": 33,
     "source": "new",
-    "se_uid": "375120da-ec5d-8155-8626-f0e912f1ef2f",
+    "se_uid": "SE315",
     "se_citation_key": "Gowrishankar2012_Cell",
     "n_chunks": 89,
     "linked_to_source_evidence": true
@@ -804,13 +816,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "received-2-jun-2016-accepted-15-dec-2016-e11ae1",
+    "citation_key": "Fritzsche2017_NatCommun",
     "title": "Received 2 Jun 2016 | Accepted 15 Dec 2016 | Published 13 Feb 2017",
     "doi": "10.1038/ncomms14347",
     "path": "ncomms14347 (1).pdf",
     "n_pages": 14,
     "source": "new",
-    "se_uid": "375120da-ec5d-814d-9a8e-f6cf6a629f60",
+    "se_uid": "SE317",
     "se_citation_key": "Fritzsche2017_NatCommun",
     "n_chunks": 60,
     "linked_to_source_evidence": true
@@ -996,13 +1008,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "https-doi-org-10-1038-s41467-024-46726-6-e835aa",
+    "citation_key": "Chandrasekaran2024_NatCommun",
     "title": "https://doi.org/10.1038/s41467-024-46726-6",
     "doi": "10.1038/s41467-024-46726-6",
     "path": "s41467-024-46726-6.pdf",
     "n_pages": 14,
     "source": "new",
-    "se_uid": "375120da-ec5d-8135-af65-c4b92a501aa1",
+    "se_uid": "SE318",
     "se_citation_key": "Chandrasekaran2024_NatCommun",
     "n_chunks": 54,
     "linked_to_source_evidence": true
@@ -1044,13 +1056,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "nature-physics-volume-20-november-2024-1-0ab92f",
+    "citation_key": "Chen2024_NatPhys",
     "title": "Nature Physics | Volume 20 | November 2024 | 1824–1832",
     "doi": "10.1038/s41567-024-02626-6",
     "path": "s41567-024-02626-6.pdf",
     "n_pages": 13,
     "source": "new",
-    "se_uid": "375120da-ec5d-810a-ad24-fa9f4c347972",
+    "se_uid": "SE320",
     "se_citation_key": "Chen2024_NatPhys",
     "n_chunks": 39,
     "linked_to_source_evidence": true
@@ -1092,13 +1104,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "vol-0123456789-3eb44e",
+    "citation_key": "Garlick2022_SciRep",
     "title": "Vol.:(0123456789)",
     "doi": "10.1038/s41598-022-06702-w",
     "path": "s41598-022-06702-w.pdf",
     "n_pages": 12,
     "source": "new",
-    "se_uid": "375120da-ec5d-81f7-9d52-e5dcedae8d7a",
+    "se_uid": "SE321",
     "se_citation_key": "Garlick2022_SciRep",
     "n_chunks": 31,
     "linked_to_source_evidence": true
@@ -1122,7 +1134,7 @@
     "path": "s41745-020-00220-2.pdf",
     "n_pages": 16,
     "source": "new",
-    "se_uid": "375120da-ec5d-8196-8f85-ea1e68f2d55c",
+    "se_uid": "SE319",
     "se_citation_key": "j-indian-inst-sci-vol-101-1-97-112-janua-639fda",
     "n_chunks": 51,
     "linked_to_source_evidence": true
@@ -1140,13 +1152,13 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "c-e-l-l-b-i-o-l-o-g-y-1883a2",
+    "citation_key": "Fritzsche2016_SciAdv",
     "title": "C E L L B I O L O G Y",
     "doi": "10.1126/sciadv.1501337",
     "path": "sciadv.1501337.pdf",
     "n_pages": 13,
     "source": "new",
-    "se_uid": "375120da-ec5d-81c5-88ff-dabc08b19c55",
+    "se_uid": "SE325",
     "se_citation_key": "Fritzsche2016_SciAdv",
     "n_chunks": 48,
     "linked_to_source_evidence": true

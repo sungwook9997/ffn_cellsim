@@ -26,6 +26,9 @@ RUN:
   conda activate ffn_sim
   python verify_sources.py              # audits all rows
   python verify_sources.py --limit 20   # quick sample
+
+Limited runs write source_audit_report_limit<N>.md and source_audit_sample,
+leaving the canonical source_audit_report.md/source_audit table untouched.
 """
 from __future__ import annotations
 
@@ -165,12 +168,16 @@ def main():
     limit = None
     if "--limit" in sys.argv:
         limit = int(sys.argv[sys.argv.index("--limit") + 1])
+    partial = limit is not None
+    report_path = REPORT if not partial else HERE / f"source_audit_report_limit{limit}.md"
+    table_name = "source_audit" if not partial else "source_audit_sample"
+
     con = duckdb.connect(str(DB_PATH))
     rows = con.execute(
         "SELECT uid, citation_key, doi, short_source, notes FROM source_evidence "
         "ORDER BY TRY_CAST(regexp_replace(uid, '[^0-9]', '', 'g') AS INTEGER) "
         "NULLS LAST, citation_key").fetchall()
-    if limit:
+    if limit is not None:
         rows = rows[:limit]
 
     results = []
@@ -181,10 +188,10 @@ def main():
         print(f"[{i:3d}/{len(rows)}] {verdict:14s} {ck[:38]:38s}{flag}", flush=True)
         time.sleep(0.12)  # polite to CrossRef
 
-    con.execute("DROP TABLE IF EXISTS source_audit")
-    con.execute("CREATE TABLE source_audit (uid TEXT, citation_key TEXT, "
+    con.execute(f"DROP TABLE IF EXISTS {table_name}")
+    con.execute(f"CREATE TABLE {table_name} (uid TEXT, citation_key TEXT, "
                 "doi TEXT, verdict TEXT, suggested_doi TEXT, note TEXT)")
-    con.executemany("INSERT INTO source_audit VALUES (?,?,?,?,?,?)", results)
+    con.executemany(f"INSERT INTO {table_name} VALUES (?,?,?,?,?,?)", results)
 
     # report
     from collections import Counter
@@ -193,6 +200,12 @@ def main():
     lines = ["# SourceEvidence hallucination audit (CrossRef)\n",
              f"Audited **{len(results)}** SourceEvidence rows.\n", "## Summary\n",
              "| verdict | n | meaning |", "|---|---|---|"]
+    if partial:
+        lines.insert(
+            2,
+            f"> Sample run from `--limit {limit}`. Canonical source_audit_report.md "
+            "and source_audit were not overwritten.\n",
+        )
     meaning = {"DOI_DEAD": "DOI does not resolve — likely fabricated/wrong",
                "DOI_MISMATCH": "DOI resolves to a DIFFERENT paper (author+year both off)",
                "NO_DOI_NOMATCH": "no DOI and no confident match — unverifiable",
@@ -208,13 +221,14 @@ def main():
               "|---|---|---|---|---|"]
     for uid, ck, doi, verdict, suggest, note in results:
         lines.append(f"| {verdict} | {ck} | {doi[:40]} | {suggest} | {note.replace('|','/')} |")
-    REPORT.write_text("\n".join(lines))
+    report_path.write_text("\n".join(lines))
     con.close()
 
     print("\n=== verdict counts ===")
     for v in sorted(counts, key=lambda v: SUSPICION.get(v, 9)):
         print(f"  {v:14s} {counts[v]}")
-    print(f"\nhigh-suspicion: {len(susp)}  ->  report: {REPORT}")
+    print(f"\nhigh-suspicion: {len(susp)}  ->  report: {report_path}")
+    print(f"duckdb table: {table_name}")
 
 
 if __name__ == "__main__":
