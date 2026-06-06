@@ -89,6 +89,24 @@ PLUS myosin under-binding (not connectivity), measured against an incomplete (me
 estimator and re-anchored to MCF7 γ≈0.27. The multiscale active-gel seam remains the path, and its
 σ_a input must use connected_mesh + a myosin-engagement check.
 
+## Active-gel seam M1 diagnostic (2026-06-07) — the floor is GENERATION-LIMITED, not timescale
+The PI-directed M1 diagnostic (cortex/active_gel_seam.py + scripts/h7_active_gel_seam.py;
+fig h7_active_gel_seam_M1.png) relaxes the FG active-stress drive over the seconds timescale the
+MD can't reach (active-Maxwell, τ=14.4 s) and computes the steady tension three ways:
+- γ_ss realized (FG soft) ≈ 0.0000 | capacity (190 engaged heads) ≈ 0.0001 | **CEILING (ALL 2000
+  heads at the 0.5 pN stall × 700 nm dipole) ≈ 0.0010 mN/m** — **353× BELOW band**.
+- **VERDICT: GENERATION-LIMITED.** Even the absolute ceiling (every head at stall) is 353× short,
+  so the seam (which only adds TIME) CANNOT close the floor. This supersedes the overnight
+  "timescale gap" framing: the dominant cause is that the myosin force-dipole DENSITY is far too
+  small, not that the MD ran out of time.
+- **Root cause surfaced: myosin density = 0.141/µm² vs the Salbreux 3/µm² target (21× low)**, plus
+  a low per-head stall (0.5 pN vs NMII ~1-4 pN). Fixing both (×21 density, ×~8 force) lifts the
+  ceiling to ~0.17 mN/m — approaching the Hosseini MCF7 datum 0.27 — so the generation deficit is
+  largely a PARAMETERIZATION shortfall, fixable, OR re-target the observable to traction.
+⇒ Per the PI contingency: M1 is low because of GENERATION (not time) → M2 (1-D shell/flow, also a
+relaxer) would NOT help; the actionable forks are (i) fix the myosin generation params to literature
+(density 0.14→3/µm², stall 0.5→~3 pN) and re-run, or (ii) re-target the gate to traction/spreading.
+
 ## What IS solid (deliverables)
 - 3-channel γ estimator with the turgor-separation discipline (cortical_tension.py).
 - The full physiological cell assembles + runs at full ×40 scale (cortex+xlink+myosin+nucleus+
