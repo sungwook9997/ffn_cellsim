@@ -200,6 +200,16 @@ def resolve_baseline(manifest: dict) -> ResolvedBaseline:
     lam_b = opt.get("lamellipodium")
     if _enabled(lam_b):
         lam_cfg = _opt_cfg(lam_b)
+        # The lamellipodium inherits the CELL's box, so Y_max / wave_area must
+        # derive from this cell's L_box (resolve_h5 defaults Y_max=0.45*L_box,
+        # wave_area=L_box^2). phase1_h5.yaml's literal values were authored for a
+        # 30 um reconstitution box and would violate Y_max < L_box/2 on the
+        # 7.5 um MCF7 cell; strip them so they auto-derive. (The H.7 single-cell
+        # geometries place WAVEs from R_cell + the FA cap, not Y_max, anyway.)
+        lam_sub = lam_cfg.get("lamellipodium", lam_cfg)
+        if isinstance(lam_sub, dict):
+            lam_sub.pop("Y_max", None)
+            lam_sub.pop("wave_area", None)
         p_lamellipodium = resolve_h5_lamellipodium(
             lam_cfg, L_box=p_cortex.L_box, dt=dtc, kT=p_cortex.kT
         )
@@ -278,6 +288,13 @@ def build_baseline_cell(
     require_full_cell_physiological_baseline(
         rb.compartments(), allow_unpressurized_dev=allow_unpressurized_dev
     )
+    # Lamellipodium leading-edge geometry (H.7 single-cell): the manifest's
+    # lamellipodium block may declare geometry (flat_plane | basal_ring |
+    # polarized_patch) + an optional polarization for the patch.
+    lam_block = manifest.get("optional_subsystems", {}).get("lamellipodium", {})
+    lam_geometry = lam_block.get("geometry", "flat_plane") if isinstance(lam_block, dict) else "flat_plane"
+    lam_polarization = lam_block.get("polarization") if isinstance(lam_block, dict) else None
+
     opts = CellBuildOptions(
         with_crosslinkers=True,
         with_myosin=True,
@@ -297,6 +314,8 @@ def build_baseline_cell(
         p_fa=rb.p_fa,
         p_substrate=rb.p_substrate,
         p_lamellipodium=rb.p_lamellipodium,
+        lamellipodium_geometry=lam_geometry,
+        lamellipodium_polarization=lam_polarization,
         p_turnover=rb.p_turnover,
         p_erm=rb.p_erm,
         p_membrane=rb.p_membrane,

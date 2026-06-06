@@ -692,6 +692,8 @@ def build_cortex_full_simulation(
     p_xlinks: ResolvedCrosslinkers | None = None,
     p_myosin: ResolvedCortexMyosin | None = None,
     p_lamellipodium: ResolvedH5 | None = None,
+    lamellipodium_geometry: str = "flat_plane",
+    lamellipodium_polarization: "np.ndarray | tuple[float, float, float] | None" = None,
     p_fa: "ResolvedH4 | None" = None,
     fa_clutch_capture_radius: float | None = None,
     fa_clutch_k: float | None = None,
@@ -886,6 +888,9 @@ def build_cortex_full_simulation(
                 snap, p_lamellipodium,
                 wave_tag_start=int(snap.particles.N),
                 rng=np.random.default_rng(p_lamellipodium.seed),
+                geometry=lamellipodium_geometry,
+                R_cell=(p_cortex.R_cell if lamellipodium_geometry != "flat_plane" else None),
+                polarization=lamellipodium_polarization,
             )
         )
         n_wave_particles = int(p_lamellipodium.n_WAVE)
@@ -1706,6 +1711,8 @@ class Cell:
         p_erm: ResolvedERM | None = None,
         p_myosin: ResolvedCortexMyosin | None = None,
         p_lamellipodium: ResolvedH5 | None = None,
+        lamellipodium_geometry: str = "flat_plane",
+        lamellipodium_polarization: "np.ndarray | tuple[float, float, float] | None" = None,
         p_fa: "ResolvedH4 | None" = None,
         fa_clutch_capture_radius: float | None = None,
         fa_clutch_k: float | None = None,
@@ -1845,6 +1852,8 @@ class Cell:
                 p_xlinks=p_xlinks if opts.with_crosslinkers else None,
                 p_myosin=p_myosin if opts.with_myosin else None,
                 p_lamellipodium=p_lamellipodium if opts.with_lamellipodium else None,
+                lamellipodium_geometry=lamellipodium_geometry,
+                lamellipodium_polarization=lamellipodium_polarization,
                 p_fa=p_fa if enable_fa else None,
                 fa_clutch_capture_radius=fa_clutch_capture_radius,
                 fa_clutch_k=fa_clutch_k,
