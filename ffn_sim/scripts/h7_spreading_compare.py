@@ -97,11 +97,14 @@ def run_geometry(geom, *, n_filaments, warmup, chunks, chunk_steps, device, seed
     xy0 = _basal_actin_xy(cell)
     a0 = _footprint_area(xy0)
     series = [(0, a0, 1.0)]
+    frames = [xy0]                       # per-chunk basal-actin xy for the animation
     for c in range(1, chunks + 1):
         cell.simulation.run(chunk_steps)
-        a = _footprint_area(_basal_actin_xy(cell))
+        xy = _basal_actin_xy(cell)
+        a = _footprint_area(xy)
         series.append((c * chunk_steps, a, (a / a0 if a0 > 0 else float("nan"))))
-    xy_final = _basal_actin_xy(cell)
+        frames.append(xy)
+    xy_final = frames[-1]
     return {
         "geom": geom,
         "n_wave": int(cell.extras["handles"].get("n_wave_particles") or 0),
@@ -110,6 +113,7 @@ def run_geometry(geom, *, n_filaments, warmup, chunks, chunk_steps, device, seed
         "A0_um2": a0,
         "series": series,        # [(step, A_um2, A/A0)]
         "xy0": xy0, "xy_final": xy_final,
+        "frames": frames,        # list of (n,2) basal xy per chunk (cell-movement anim)
     }
 
 
@@ -155,6 +159,8 @@ def main() -> int:
         default=str(Path(__file__).resolve().parents[1]
                     / "outputs" / "h7" / "figs" / "h7_spreading_compare.png"),
     )
+    ap.add_argument("--frames-out", default=None,
+                    help="npz path to save per-chunk basal-xy frames (for the cell-movement animation)")
     add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
     validate_production_device_args(ap, args)
@@ -177,6 +183,20 @@ def main() -> int:
 
     _figure(results, Path(args.out))
     print(f"[h7-spread] wrote {args.out}", flush=True)
+
+    if args.frames_out:
+        blob = {"geoms": np.array([r["geom"] for r in results]),
+                "n_frames": np.array([len(r["frames"]) for r in results], dtype=int),
+                "chunk_steps": np.array([args.chunk_steps]),
+                "R_cell_um": np.array([results[0].get("R_cell_um", 7.5)])}
+        for r in results:
+            for i, fr in enumerate(r["frames"]):
+                blob[f"{r['geom']}__{i}"] = np.asarray(fr, dtype=np.float64)
+        Path(args.frames_out).parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(args.frames_out, **blob)
+        print(f"[h7-spread] wrote frames {args.frames_out} "
+              f"(render with scripts/h7_spreading_anim.py)", flush=True)
+
     print("PROVISIONAL smoke — authoritative A/A0 vs PI experimental data needs the "
           "full production scale on gbook GPU over a long spreading run.", flush=True)
     return 0
