@@ -214,6 +214,14 @@ and asserts the force-balance/ratchet relation; it does NOT fabricate a
 construction-time density-emergence pass. See ``test_membrane.py``
 docstring + the KU-5.1 production driver for the emergence check.
 
+KU-5.x STATUS — PI-RATIFIED 2026-06-06: the membrane-load gate is APPROVED.
+The load may now be wired in production (pass a resolved ``ResolvedMembrane``;
+the manifest path is ``ffn_sim/cell/manifest.py`` optional_subsystems.
+membrane_load, which requires lamellipodium since the load acts on the
+lamellipodial barbed ends). Approval LIFTS the gate; it does not by itself
+prove the KU-5.1 density emergence — that still needs the (now-unblocked)
+production sweep run.
+
 References
 ----------
 - Mechanism audit: ``ffn_sim/docs/v2_audit/MECHANISM_AUDIT_2026-05-30.md``

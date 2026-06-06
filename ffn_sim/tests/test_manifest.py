@@ -67,11 +67,47 @@ def test_disabled_required_compartment_raises(manifest):
         resolve_baseline(bad2)
 
 
-def test_pi_gated_optional_enable_raises(manifest):
-    """Enabling a PI-gated optional through the loader is refused (surface to PI)."""
+def test_fa_adhesion_enabled_resolves(manifest):
+    """Enabling FA-adhesion resolves to a ResolvedH4 through the loader (the
+    KU-3.5 settled operating point; PI 2026-06-06 — FA does NOT need the
+    lamellipodium). OFF in the resting reference (needs equilibration), so the
+    test enables it explicitly."""
+    on = deepcopy(manifest)
+    on["optional_subsystems"]["fa"]["enabled"] = True
+    rb = resolve_baseline(on)
+    assert rb.p_fa is not None
+
+
+def test_fa_adhesion_build_forms_clutches(manifest):
+    """FA-adhesion wires end-to-end: enabling it builds a cell whose south-cap
+    auto-seeding forms clutch bonds at CONSTRUCTION (cell adhered to substrate),
+    not zero. Construction-only (no free run — the adhered cell needs an
+    equilibration prelude to settle before free integration; that is the GATE-B
+    operating-point build)."""
+    on = deepcopy(manifest)
+    on["optional_subsystems"]["fa"]["enabled"] = True
+    on["cortex_overrides"] = {"cortex": {"n_filaments": 120, "demo_mode": True}}
+    on["compartments"]["nucleus"]["n_beads"] = 300
+    cell = build_baseline_cell(manifest=on, device=None, seed=1)
+    assert cell.fa is not None
+    assert cell.extras["handles"]["n_fa_clutch_bonds"] > 0
+
+
+def test_membrane_load_requires_lamellipodium(manifest):
+    """KU-5.x membrane-load loads the lamellipodial barbed ends, so enabling it
+    without lamellipodium is refused (not a silent no-op)."""
     bad = deepcopy(manifest)
-    bad["optional_subsystems"]["fa"]["enabled"] = True
-    with pytest.raises(NotImplementedError, match="fa"):
+    bad["optional_subsystems"]["membrane_load"]["enabled"] = True
+    bad["optional_subsystems"]["lamellipodium"]["enabled"] = False
+    with pytest.raises(ValueError, match="lamellipodium"):
+        resolve_baseline(bad)
+
+
+def test_substrate_requires_k_sub(manifest):
+    """Compliant substrate needs an explicit k_sub (no magic default; ECM stiffness)."""
+    bad = deepcopy(manifest)
+    bad["optional_subsystems"]["substrate"]["enabled"] = True
+    with pytest.raises(ValueError, match="k_sub"):
         resolve_baseline(bad)
 
 

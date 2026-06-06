@@ -23,7 +23,10 @@ import numpy as np
 import yaml
 
 from ffn_sim.cell.cell import Cell, CellBuildOptions
+from ffn_sim.bridge.fa import resolve_h4
 from ffn_sim.cell.cytoplasm import resolve_cytoplasm
+from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
+from ffn_sim.cell.membrane import resolve_membrane
 from ffn_sim.cell.membrane_surface import resolve_membrane_surface
 from ffn_sim.cell.nucleus import resolve_nucleus
 from ffn_sim.common.production_policy import (
@@ -32,14 +35,12 @@ from ffn_sim.common.production_policy import (
 from ffn_sim.cortex.cortex import resolve_h3_derived
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume
+from ffn_sim.cortex.erm import resolve_erm
 from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.cortex.turnover import resolve_turnover
+from ffn_sim.ecm.substrate import resolve_substrate
 
 _CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
-
-# Optional subsystems declared in the manifest but PI-gated; enabling one via the
-# loader is not yet ratified (Phase B / SCOPE / KU-5.x) -> raise, do not silently
-# wire un-ratified physics.
-_PI_GATED_OPTIONALS = ("fa", "substrate", "lamellipodium", "turnover", "erm", "membrane_load")
 
 
 def _deep_merge(base: dict, override: dict | None) -> dict:
@@ -167,15 +168,64 @@ def resolve_baseline(manifest: dict) -> ResolvedBaseline:
         {"gamma_mem": float(mem_b["gamma_mem"])}, R_cell=R_cell
     )
 
-    # --- PI-gated optional subsystems: declared-but-off; enabling is unratified ---
+    # --- Optional subsystems (resolve those the manifest enables) ---
+    # KU-5.x membrane-load / lamellipodium PI-APPROVED 2026-06-06. FA-substrate
+    # adhesion is the KU-3.5 settled operating point (does NOT require the
+    # lamellipodium — cortical tension is a cortex property; lamellipodium is a
+    # parallel active-spreading enhancement, PI 2026-06-06). Each optional
+    # resolves from its referenced base_config (+ inline overrides); disabled
+    # subsystems stay None and the build is unchanged.
     opt = manifest.get("optional_subsystems", {})
-    for name in _PI_GATED_OPTIONALS:
-        if _enabled(opt.get(name)):
-            raise NotImplementedError(
-                f"optional subsystem '{name}' is PI-gated (Phase B / SCOPE / "
-                "KU-5.x) and not yet wired through the manifest loader. Surface "
-                "to PI before enabling — do not silently run un-ratified physics."
+
+    def _opt_cfg(block: dict) -> dict:
+        base = load_manifest(block["base_config"]) if block.get("base_config") else {}
+        inline = {k: v for k, v in block.items() if k not in ("enabled", "base_config")}
+        return _deep_merge(base, inline) if inline else base
+
+    p_fa = p_substrate = p_lamellipodium = p_turnover = p_erm = p_membrane = None
+    lam_cfg: dict = {}
+
+    fa_b = opt.get("fa")
+    if _enabled(fa_b):
+        # FA auto-seeds the south-cap contact footprint (_extend_snapshot_with_fa)
+        # so clutch bonds form; the SubstrateLigandPin is the rigid-dish adhesion.
+        p_fa = resolve_h4(_opt_cfg(fa_b))
+
+    sub_b = opt.get("substrate")
+    if _enabled(sub_b):
+        # k_sub REQUIRED (no magic default; ECM-condition stiffness). FA already
+        # pins ligands rigidly — the compliant spring is an explicit ECM variant.
+        p_substrate = resolve_substrate(_opt_cfg(sub_b), kT=p_cortex.kT)
+
+    lam_b = opt.get("lamellipodium")
+    if _enabled(lam_b):
+        lam_cfg = _opt_cfg(lam_b)
+        p_lamellipodium = resolve_h5_lamellipodium(
+            lam_cfg, L_box=p_cortex.L_box, dt=dtc, kT=p_cortex.kT
+        )
+
+    mem_b = opt.get("membrane_load")
+    if _enabled(mem_b):
+        if p_lamellipodium is None:
+            raise ValueError(
+                "membrane_load requires lamellipodium enabled (KU-5.x load acts "
+                "on the lamellipodial barbed ends; y_plane=Y_max, A_mem=wave_area)."
             )
+        mem_cfg = _opt_cfg(mem_b) or lam_cfg
+        p_membrane = resolve_membrane(
+            mem_cfg, y_plane=p_lamellipodium.Y_max,
+            A_mem=p_lamellipodium.wave_area, kT=p_cortex.kT,
+        )
+
+    erm_b = opt.get("erm")
+    if _enabled(erm_b):
+        p_erm = resolve_erm(_opt_cfg(erm_b), kT=p_cortex.kT, R_cell=p_cortex.R_cell)
+
+    tov_b = opt.get("turnover")
+    if _enabled(tov_b):
+        p_turnover = resolve_turnover(
+            _opt_cfg(tov_b), dt=dtc, rest_length=p_cortex.rest_length
+        )
 
     return ResolvedBaseline(
         cell_type=cell_type,
@@ -188,6 +238,12 @@ def resolve_baseline(manifest: dict) -> ResolvedBaseline:
         p_enclosed_volume=p_enclosed_volume,
         p_nucleus=p_nucleus,
         p_membrane_surface=p_membrane_surface,
+        p_fa=p_fa,
+        p_substrate=p_substrate,
+        p_lamellipodium=p_lamellipodium,
+        p_turnover=p_turnover,
+        p_erm=p_erm,
+        p_membrane=p_membrane,
         manifest=manifest,
     )
 
@@ -213,7 +269,12 @@ def build_baseline_cell(
         rb.compartments(), allow_unpressurized_dev=allow_unpressurized_dev
     )
     opts = CellBuildOptions(
-        with_crosslinkers=True, with_myosin=True, with_baoab=with_baoab
+        with_crosslinkers=True,
+        with_myosin=True,
+        with_baoab=with_baoab,
+        with_lamellipodium=rb.p_lamellipodium is not None,
+        with_fa=rb.p_fa is not None,
+        with_erm=rb.p_erm is not None,
     )
     return Cell.build(
         rb.p_cortex,
@@ -223,6 +284,12 @@ def build_baseline_cell(
         p_membrane_surface=rb.p_membrane_surface,
         p_nucleus=rb.p_nucleus,
         p_cytoplasm=rb.p_cytoplasm,
+        p_fa=rb.p_fa,
+        p_substrate=rb.p_substrate,
+        p_lamellipodium=rb.p_lamellipodium,
+        p_turnover=rb.p_turnover,
+        p_erm=rb.p_erm,
+        p_membrane=rb.p_membrane,
         options=opts,
         device=device,
         rng=np.random.default_rng(seed),

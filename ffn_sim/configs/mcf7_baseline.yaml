@@ -70,16 +70,28 @@ compartments:
 optional_subsystems:
 
   fa:                    # H.4 focal-adhesion clutch to substrate ligands
-    enabled: false       # B1-ESSENTIAL under active-spreading scope; OFF pending
-                         # contact-footprint (south-cap) seeding so clutches != 0
-  substrate:             # ECM compliant substrate plane (the surface spread upon)
-    enabled: false       # B1-ESSENTIAL under active-spreading scope; pairs with fa
-  lamellipodium:         # H.5 Arp2/3 leading edge — the active spreading machine
-    enabled: false       # B1-ESSENTIAL under active-spreading scope; OFF pending
-                         # KU-5.x membrane-load unblock (else barbed rates inert F=0)
-  turnover:              # cortex actin cofilin severing / re-annealing
-    enabled: false       # not yet ratified
+    enabled: false       # WIREABLE + clutches auto-form (south-cap seeding, 52/52);
+    base_config: phase1_h4.yaml  # SubstrateLigandPin = rigid-dish adhesion (no k_sub).
+                         # OFF in the RESTING reference: the FA-adhered build needs an
+                         # EQUILIBRATION prelude to settle onto the substrate before
+                         # free integration (a raw run blows up the BAOAB guard — the
+                         # cell isn't born relaxed-on-substrate). The KU-3.5 SETTLED
+                         # operating point = this FA-adhered cell AFTER equilibration
+                         # (the GATE-B operating-point build). PI 2026-06-06: KU-3.5
+                         # needs adhesion, NOT the lamellipodium (cortex tension is a
+                         # cortex property; lamellipodium is a parallel enhancement).
+  substrate:             # ECM compliant substrate spring (paired with FA)
+    enabled: false       # OFF: needs k_sub (ECM-condition stiffness, NO magic default;
+                         # MCF7-on-pV4D4/col-I value, surface to PI). FA's rigid ligand
+                         # pin already provides the (b)-dish adhesion endpoint.
+  lamellipodium:         # H.5 Arp2/3 leading edge — the active-spreading machine
+    enabled: false       # OFF: NOT a KU-3.5 blocker (PI 2026-06-06). Active-spreading
+    base_config: phase1_h5.yaml  # enhancement; needs the spherical-cortex geometry
+                         # design (flat WAVE-patch ↔ closed sphere) — parallel track.
+  membrane_load:         # KU-5.2 leading-edge Brownian-ratchet brake on barbed ends
+    enabled: false       # KU-5.x PI-APPROVED 2026-06-06; wires when lamellipodium is on
+                         # (loads its barbed ends; y_plane=Y_max, A_mem=wave_area).
   erm:                   # KU-3.18 ezrin/radixin/moesin membrane-cortex tether
     enabled: false       # declarable, Phase B2 wire-on
-  membrane_load:         # KU-5.2 leading-edge Brownian-ratchet brake on barbed ends
-    enabled: false       # KU-5.x PI-blocked (inert F=0 by design)
+  turnover:              # cortex actin cofilin severing / re-annealing
+    enabled: false       # Phase B; k_sev = ln2/tau_half (Chugh 2017 anchor)
