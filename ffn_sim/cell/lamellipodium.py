@@ -891,7 +891,15 @@ class CappingUpdater(_BatchedLamelUpdater):
             tangent = self.state.tangent_of.get(be)
             if tangent is None:
                 continue
-            cos_theta = float(tangent[1])  # tangent · ŷ
+            # STEP-2 TODO (H.7 single-cell geometries): the membrane normal is
+            # hard-coded +ŷ here. For basal_ring / polarized_patch the leading-edge
+            # normal is per-WAVE radial/forward, so this cos_theta is wrong for
+            # those geometries. It is DORMANT while membrane-load is OFF (F_per=0
+            # zeroes bell_exponent -> k_cap=k_cap_0, geometry-independent), so the
+            # membrane-OFF step-1 A/A0 comparison is unaffected; it MUST be fixed
+            # (pass the per-WAVE membrane normal) before membrane-load is wired on
+            # for the curved geometries. (direction-review 2026-06-07.)
+            cos_theta = float(tangent[1])  # tangent · ŷ  (flat-plane normal)
             sin_theta = math.sqrt(max(0.0, 1.0 - cos_theta * cos_theta))
             bell_exponent = -F_per * self.p.delta_cap * sin_theta / self.p.kT
             k_cap = self.p.k_cap_0 * math.exp(bell_exponent)

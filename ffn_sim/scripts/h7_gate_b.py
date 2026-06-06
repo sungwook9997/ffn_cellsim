@@ -143,9 +143,23 @@ def _report(g: dict) -> None:
             print("  ⚠ gamma_soft still > 5× band after filtering — investigate the", flush=True)
             print("    cortical bonds (NOT an adhesion-bleed artefact anymore).", flush=True)
         print("-" * 66, flush=True)
-    print("  PROVISIONAL. No KU-3.5 conclusion here. Authoritative gamma needs", flush=True)
-    print("  the FULL production scale on GPU (gbook); a smoke verifies the", flush=True)
-    print("  pipeline only. active vs passive(turgor) kept distinct by contract.", flush=True)
+    # Honesty caveats (direction-review 2026-06-07): the passive channel is an
+    # IDENTITY with the B3 turgor setpoint, and the active channel needs the
+    # myosin timescale, not the warmup CFL window.
+    print("  CAVEATS (read before interpreting):", flush=True)
+    print("   - gamma_passive = turgor_dP0*R/2 is fixed BY the B3 band-implied", flush=True)
+    print("     turgor setpoint (133 Pa = 2*0.50 mN/m / R) -> a SETPOINT IDENTITY,", flush=True)
+    print("     NOT an independent measurement. The EMERGENT cortical tension is", flush=True)
+    print("     the active + rigid channels.", flush=True)
+    if g["gamma_soft"] < lo:
+        print("   - gamma_soft (active) is below band: myosin contraction has not", flush=True)
+        print("     developed at the warmup timescale (us-scale CFL steps << the", flush=True)
+        print("     seconds-scale myosin/turnover timescale). This is the active-", flush=True)
+        print("     GENERATION floor (KU-3.5), not a settled tension. Report PHYSICAL", flush=True)
+        print("     time; turnover OFF here. gamma_rigid may carry turgor pre-tension", flush=True)
+        print("     + an M-SHAKE shunt (cross-check vs an unconstrained soft run).", flush=True)
+    print("  PROVISIONAL. No KU-3.5 conclusion here. Band [0.35,0.65] mN/m is a", flush=True)
+    print("  rounded/de-adhered non-MCF7 proxy (gate-contract review pending PI).", flush=True)
     print("=" * 66, flush=True)
 
 
