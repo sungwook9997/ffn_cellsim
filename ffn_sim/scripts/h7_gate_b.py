@@ -87,12 +87,18 @@ def run_gate_b(
     if sample > 0:
         sim.run(sample)
 
+    # Soft (active) channel filters by bond TYPE: it counts cortical /
+    # actomyosin bonds and EXCLUDES the focal-adhesion load path
+    # (integrin_ligand, fa_actin_clutch[_b{i}]) so the adhesion force is not
+    # mis-read as cortical tension. cortical_bond_types=None selects the robust
+    # adhesion-denylist default (B4 refinement; cortex/cortical_tension.py).
     gamma = measure_cortical_tension(
         sim,
         R_cell=R_cell,
         p_enclosed_volume=cell.p_enclosed_volume,
         lambda_accumulator=act,
         dt=dt_used,
+        cortical_bond_types=None,
     )
     gamma["_meta"] = {
         "n_filaments": int(cell.p_cortex.n_filaments),
@@ -114,8 +120,12 @@ def _report(g: dict) -> None:
     print(f"  operating point: FA-adhered ({m['n_clutch_bonds']} clutches), "
           f"turgor Pi_0={m['turgor_dP0_Pa']:.0f} Pa", flush=True)
     print("-" * 66, flush=True)
+    soft_ch = g["channels"]["soft"]
+    n_excl = int(soft_ch.get("n_bonds_excluded", 0))
+    n_cort = int(soft_ch.get("n_bonds", 0))
     print("  CHANNELS (reported SEPARATELY — turgor NOT folded into a total):", flush=True)
-    print(f"    gamma_soft     (active MOP)        = {g['gamma_soft']*_MN_PER_M:+.4f} mN/m", flush=True)
+    print(f"    gamma_soft     (active MOP)        = {g['gamma_soft']*_MN_PER_M:+.4f} mN/m"
+          f"  [cortical bonds={n_cort}, adhesion excluded={n_excl}]", flush=True)
     print(f"    gamma_rigid    (Lagrange M-SHAKE)  = {g['gamma_rigid']*_MN_PER_M:+.4f} mN/m"
           f"  (available={g['channels']['rigid']['available']})", flush=True)
     print(f"    gamma_passive  (turgor Young-Lap.) = {g['gamma_passive']*_MN_PER_M:+.4f} mN/m", flush=True)
@@ -123,12 +133,15 @@ def _report(g: dict) -> None:
     print(f"  band overlay (Salbreux/Charras/Paluch): "
           f"[{lo*_MN_PER_M:.2f}, {hi*_MN_PER_M:.2f}] mN/m", flush=True)
     print("-" * 66, flush=True)
-    if m["n_clutch_bonds"] > 0 and g["gamma_soft"] > hi * 5:
-        print("  ⚠ gamma_soft is INFLATED: with FA on, the soft method-of-planes", flush=True)
-        print("    currently counts the fa_actin_clutch bonds (the adhesion load", flush=True)
-        print("    path) as cortical tension. The active channel needs cortical-", flush=True)
-        print("    bond-type filtering (exclude clutch/substrate) before the", flush=True)
-        print("    FA-adhered active gamma is meaningful — B4 estimator refinement.", flush=True)
+    if m["n_clutch_bonds"] > 0:
+        print(f"  active channel: cortical-bond-TYPE filter ON — {n_excl} adhesion/", flush=True)
+        print("    substrate bonds (integrin_ligand, fa_actin_clutch[_b*]) excluded", flush=True)
+        print("    from the soft method-of-planes so the FA load path is NOT counted", flush=True)
+        print("    as cortical tension (B4 refinement). gamma_soft is the cortical-", flush=True)
+        print("    only active tension.", flush=True)
+        if g["gamma_soft"] > hi * 5:
+            print("  ⚠ gamma_soft still > 5× band after filtering — investigate the", flush=True)
+            print("    cortical bonds (NOT an adhesion-bleed artefact anymore).", flush=True)
         print("-" * 66, flush=True)
     print("  PROVISIONAL. No KU-3.5 conclusion here. Authoritative gamma needs", flush=True)
     print("  the FULL production scale on GPU (gbook); a smoke verifies the", flush=True)

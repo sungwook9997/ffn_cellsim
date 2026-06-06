@@ -55,6 +55,48 @@ sign relative to a cut plane, so without ``|·|`` the per-plane sum cancels as
 √N instead of N, fabricating a ~97× suppressed "isotropy" floor (estimator
 audit 2026-06-02; corrected == Irving-Kirkwood to <0.5% on a synthetic shell).
 The scalar tension ``T`` keeps its own sign (+ tension / − compression).
+
+Cortical vs adhesion bonds — the soft channel filters by bond TYPE (B4 refine)
+------------------------------------------------------------------------------
+On an **FA-adhered** cell the bond topology contains two physically distinct
+load paths that the soft method-of-planes must NOT conflate:
+
+* **cortical / actomyosin** bonds — the actin backbone (``cortex-bond``), the
+  crosslinker intra + attach bonds (``xlink_intra``, ``xlink_attach_b{i}``),
+  the myosin minifilament internal + head-actin attach bonds
+  (``cortex_myosin_backbone``, ``cortex_myosin_head_backbone``,
+  ``cortex_myosin_attach_b{i}``), and any further actin structure (e.g. the
+  lamellipodium ``lamel_*`` bonds). These ARE the cortical tension.
+* **adhesion / substrate** bonds — the focal-adhesion load path that anchors
+  the cell to the substrate: the integrin↔ligand catch bond
+  (``integrin_ligand``) and the actin↔integrin clutch bonds
+  (``fa_actin_clutch`` and its per-r₀ bins ``fa_actin_clutch_b{i}``). These
+  carry the *adhesion* force, NOT cortical tension; counting them inflated the
+  GATE-B smoke soft channel ~100× (≈49 mN/m on an FA-adhered cell — the 462
+  stretched clutch bonds crossing the cut-planes).
+
+The fix is a physical bond-type selection (NOT a fudge factor):
+:func:`_gamma_soft` excludes the adhesion/substrate bond types via the explicit
+**denylist** :data:`ADHESION_BOND_TYPES` / its prefix families
+:data:`ADHESION_BOND_TYPE_PREFIXES`. A **denylist** (not an allowlist) is the
+robust choice here: the adhesion load path is a *small, closed, stable* set
+pinned to two module constants in :mod:`ffn_sim.cell.cell`
+(``FA_BOND_INTEGRIN_LIGAND`` = ``integrin_ligand``, ``FA_BOND_ACTIN_CLUTCH`` =
+``fa_actin_clutch``), whereas the cortical/actin set is *open and growing* (new
+actin structures — lamellipodium etc. — keep adding bond types). With a denylist
+a new actin bond type is correctly counted as mechanical tension by default,
+and only the well-defined adhesion path is removed; an allowlist would silently
+drop the tension of any actin structure it had not yet been taught about. ERM
+is deliberately ABSENT from both lists: it is not a HOOMD bond at all
+(``ffn_sim.cortex.erm.ERMHarmonic`` is an external ``md.force.Custom`` radial
+spring), so it never appears in ``bonds.types`` and the method-of-planes bond
+sum never sees it. The :func:`measure_cortical_tension` ``cortical_bond_types``
+argument lets a caller override the denylist default with an explicit allowlist
+(only the named types are summed); ``None`` keeps the robust denylist default.
+
+Backward compatibility (no-FA baseline): on a cell with no FA bonds the denylist
+removes nothing, so the soft-MOP value is bit-for-bit identical to the
+pre-filter estimator.
 """
 
 from __future__ import annotations
@@ -62,6 +104,80 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+
+# --- Adhesion/substrate bond-type DENYLIST (the focal-adhesion load path) -----
+# These bond types carry the cell↔substrate ADHESION force, NOT cortical
+# tension, and are excluded from the soft method-of-planes (B4 refinement).
+# Source of truth for the names: ``ffn_sim/cell/cell.py`` module constants
+# ``FA_BOND_INTEGRIN_LIGAND`` (cell.py:195) and ``FA_BOND_ACTIN_CLUTCH``
+# (cell.py:196), and the per-r₀ clutch-bin family ``fa_actin_clutch_b{i}``
+# created in ``_extend_snapshot_with_fa`` (cell.py:509-517). Verified
+# empirically against a built FA-adhered cell's ``sim.state.bond_types``.
+ADHESION_BOND_TYPES: frozenset[str] = frozenset(
+    {
+        "integrin_ligand",  # S1 integrin↔ligand Pereverzev catch bond
+        "fa_actin_clutch",  # S2 actin↔integrin clutch (bin 0 / canonical name)
+    }
+)
+
+# Prefix families: the clutch is split into one HOOMD bond type per realised
+# construction separation (per-r₀ bin), named ``fa_actin_clutch_b1``,
+# ``fa_actin_clutch_b2``, … (cell.py:512). Any bond type whose name STARTS WITH
+# one of these prefixes is part of the adhesion load path and is excluded too.
+ADHESION_BOND_TYPE_PREFIXES: tuple[str, ...] = ("fa_actin_clutch",)
+
+
+def _is_adhesion_bond_type(name: str) -> bool:
+    """Return ``True`` if ``name`` is an adhesion/substrate (non-cortical) bond.
+
+    A bond type is on the adhesion load path (and therefore excluded from the
+    cortical soft method-of-planes) if it is in :data:`ADHESION_BOND_TYPES` or
+    starts with one of :data:`ADHESION_BOND_TYPE_PREFIXES` (the per-r₀ clutch
+    bins ``fa_actin_clutch_b{i}``).
+
+    Args:
+        name: A HOOMD bond-type name string.
+
+    Returns:
+        ``True`` for an adhesion/substrate bond type, ``False`` for a cortical
+        / actomyosin (or any other non-adhesion) bond type.
+    """
+    if name in ADHESION_BOND_TYPES:
+        return True
+    return any(name.startswith(pfx) for pfx in ADHESION_BOND_TYPE_PREFIXES)
+
+
+def cortical_bond_typeid_mask(
+    bond_types: list[str],
+    cortical_bond_types: set[str] | frozenset[str] | None,
+) -> np.ndarray:
+    """Per-bond-type boolean mask selecting CORTICAL bond types.
+
+    Translates the cortical/adhesion bond-type policy into a boolean array
+    indexed by HOOMD type id (``bond_types[i]`` ↔ ``mask[i]``):
+
+    * ``cortical_bond_types is None`` (default) → **denylist** mode: every type
+      is cortical EXCEPT the adhesion/substrate load path
+      (:func:`_is_adhesion_bond_type`). Robust to newly added actin bond types.
+    * ``cortical_bond_types`` given → **allowlist** mode: only the named types
+      are cortical (a caller override; e.g. to isolate a single structure).
+
+    Args:
+        bond_types: The simulation's bond-type name list (type-id order).
+        cortical_bond_types: Explicit cortical allowlist, or ``None`` for the
+            denylist default.
+
+    Returns:
+        ``(len(bond_types),)`` boolean array; ``True`` where the type is
+        cortical (counted in the soft channel), ``False`` where it is excluded.
+    """
+    if cortical_bond_types is None:
+        return np.array(
+            [not _is_adhesion_bond_type(name) for name in bond_types],
+            dtype=bool,
+        )
+    allow = set(cortical_bond_types)
+    return np.array([name in allow for name in bond_types], dtype=bool)
 
 # Literature cortical-tension band [N/m] (Salbreux, Charras & Paluch 2012,
 # Trends Cell Biol 22(10):536-545). Documentation constant ONLY — the estimator
@@ -170,23 +286,39 @@ def _read_tag_ordered_positions_and_bonds(
     return pos_by_tag, bond_group, bond_typeid, bond_types
 
 
-def _gamma_soft(sim: Any, R_cell: float, n_planes: int) -> dict[str, float]:
-    """Soft (harmonic-bond) method-of-planes cortical tension γ [N/m].
+def _gamma_soft(
+    sim: Any,
+    R_cell: float,
+    n_planes: int,
+    cortical_bond_types: set[str] | frozenset[str] | None,
+) -> dict[str, Any]:
+    """Soft (harmonic-bond) method-of-planes CORTICAL tension γ [N/m].
 
     Reuses the formula from
     ``scripts/h3_ku35_tension.py:_tension_method_of_planes``: every harmonic
     bond present in the integrator carries ``T = k·(|r| − r₀)``; these are
     projected onto isotropic cut planes (see :func:`_method_of_planes_gamma`).
 
+    Only **cortical** bond types contribute: the adhesion/substrate load-path
+    bonds (``integrin_ligand``, ``fa_actin_clutch[_b{i}]``) are filtered OUT by
+    :func:`cortical_bond_typeid_mask` so the focal-adhesion load is not
+    mis-read as cortical tension (B4 refinement; see module docstring). On a
+    no-FA cell the denylist removes nothing → identical to the unfiltered value.
+
     Args:
         sim: Built HOOMD ``Simulation`` with an integrator carrying a harmonic
             bond force.
         R_cell: Cell radius [m].
         n_planes: Number of cut-plane orientations.
+        cortical_bond_types: Cortical bond-type allowlist override, or ``None``
+            for the robust adhesion-denylist default
+            (:func:`cortical_bond_typeid_mask`).
 
     Returns:
-        Dict with ``gamma`` [N/m] and ``n_bonds`` (int). ``gamma`` is ``nan``
-        if no harmonic bond force is found on the integrator.
+        Dict with ``gamma`` [N/m], ``n_bonds`` (cortical bonds counted),
+        ``n_bonds_total`` (all bonds present) and ``n_bonds_excluded``
+        (adhesion/substrate bonds filtered out). ``gamma`` is ``nan`` if no
+        harmonic bond force is found on the integrator.
     """
     pos_by_tag, bg, bt, bond_types = _read_tag_ordered_positions_and_bonds(sim)
 
@@ -201,29 +333,50 @@ def _gamma_soft(sim: Any, R_cell: float, n_planes: int) -> dict[str, float]:
                 bond_force = f
                 break
     if bond_force is None or bg.shape[0] == 0:
-        return {"gamma": float("nan"), "n_bonds": int(bg.shape[0])}
+        return {
+            "gamma": float("nan"),
+            "n_bonds": int(bg.shape[0]),
+            "n_bonds_total": int(bg.shape[0]),
+            "n_bonds_excluded": 0,
+        }
 
-    # Per-bond k, r0 (tag-ordered frame).
-    k_arr = np.zeros(bg.shape[0], dtype=np.float64)
-    r0_arr = np.zeros(bg.shape[0], dtype=np.float64)
+    # Cortical bond-type selection (denylist default / allowlist override),
+    # expanded per-bond from the type-id mask. Bonds on the adhesion/substrate
+    # load path are dropped BEFORE the method-of-planes sum.
+    type_is_cortical = cortical_bond_typeid_mask(bond_types, cortical_bond_types)
+    cortical_mask = type_is_cortical[bt]
+    n_total = int(bg.shape[0])
+    n_cortical = int(np.count_nonzero(cortical_mask))
+
+    bg_c = bg[cortical_mask]
+    bt_c = bt[cortical_mask]
+
+    # Per-bond k, r0 (tag-ordered frame), cortical bonds only.
+    k_arr = np.zeros(bg_c.shape[0], dtype=np.float64)
+    r0_arr = np.zeros(bg_c.shape[0], dtype=np.float64)
     for i, tname in enumerate(bond_types):
         try:
             kp = bond_force.params[tname]
-            mask = bt == i
+            mask = bt_c == i
             k_arr[mask] = float(kp["k"])
             r0_arr[mask] = float(kp["r0"])
         except Exception:  # noqa: BLE001  (a type with no harmonic params → 0)
             pass
 
-    rA = pos_by_tag[bg[:, 0]]
-    rB = pos_by_tag[bg[:, 1]]
+    rA = pos_by_tag[bg_c[:, 0]]
+    rB = pos_by_tag[bg_c[:, 1]]
     d = rB - rA
     L = np.linalg.norm(d, axis=1)
     L_safe = np.where(L > 0.0, L, 1.0)
     u = d / L_safe[:, None]
     T = k_arr * (L - r0_arr)  # signed scalar tension [N]
     gamma = _method_of_planes_gamma(rA, rB, u, T, R_cell, n_planes)
-    return {"gamma": float(gamma), "n_bonds": int(bg.shape[0])}
+    return {
+        "gamma": float(gamma),
+        "n_bonds": n_cortical,
+        "n_bonds_total": n_total,
+        "n_bonds_excluded": n_total - n_cortical,
+    }
 
 
 def _gamma_rigid(
@@ -330,6 +483,7 @@ def measure_cortical_tension(
     lambda_accumulator: Any | None = None,
     dt: float | None = None,
     n_planes: int = _N_PLANES_DEFAULT,
+    cortical_bond_types: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Measure cortical tension γ through three separate channels.
 
@@ -357,6 +511,13 @@ def measure_cortical_tension(
         dt: Constrained integrator timestep [s], needed to convert λ → tension.
             Required for a non-zero rigid channel.
         n_planes: Number of method-of-planes cut-plane orientations.
+        cortical_bond_types: Which bond types the soft (active) channel counts
+            as cortical tension. ``None`` (default) → robust denylist: count
+            every bond EXCEPT the adhesion/substrate load path
+            (``integrin_ligand``, ``fa_actin_clutch[_b{i}]``) so the focal-
+            adhesion load is not mis-read as cortical tension (B4 refinement).
+            Provide an explicit set to switch to allowlist mode (only those
+            types are summed). The rigid and passive channels are unaffected.
 
     Returns:
         A dict with the channel summary and detail::
@@ -371,13 +532,16 @@ def measure_cortical_tension(
               "R_cell": float,            # [m]
               "band_N_per_m": (lo, hi),   # literature band overlay (NOT a fit)
               "channels": {
-                  "soft":    {"gamma": float, "n_bonds": int},
+                  "soft":    {"gamma": float,    # cortical-only soft MOP [N/m]
+                              "n_bonds": int,     # cortical bonds counted
+                              "n_bonds_total": int,     # all bonds present
+                              "n_bonds_excluded": int}, # adhesion bonds dropped
                   "rigid":   {"gamma": float, "available": bool},
                   "passive": {"gamma": float, "dP": float},  # dP in Pa
               },
             }
     """
-    soft = _gamma_soft(sim, R_cell, n_planes)
+    soft = _gamma_soft(sim, R_cell, n_planes, cortical_bond_types)
     rigid = _gamma_rigid(sim, lambda_accumulator, R_cell, dt, n_planes)
     passive = _gamma_passive(p_enclosed_volume, R_cell)
 

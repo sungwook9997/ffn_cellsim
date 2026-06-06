@@ -25,7 +25,9 @@ import pytest
 
 from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
 from ffn_sim.cortex.cortical_tension import (
+    ADHESION_BOND_TYPES,
     CORTICAL_TENSION_BAND_N_PER_M,
+    cortical_bond_typeid_mask,
     measure_cortical_tension,
 )
 
@@ -114,3 +116,141 @@ def test_rigid_channel_zero_when_unconstrained(small_cell):
     # has no λ buffer: it must report 0.0 / unavailable, not crash or NaN.
     assert res["channels"]["rigid"]["available"] is False
     assert res["gamma_rigid"] == 0.0
+
+
+# --- Cortical bond-type filter (B4 refinement: exclude the adhesion load path) -
+
+
+def test_cortical_bond_typeid_mask_denylist_vs_allowlist():
+    """The bond-type mask: denylist drops only adhesion types; allowlist keeps
+    only the named ones. Pure unit test (no cell build)."""
+    bond_types = [
+        "cortex-bond",
+        "xlink_intra",
+        "cortex_myosin_attach_b3",
+        "integrin_ligand",
+        "fa_actin_clutch",
+        "fa_actin_clutch_b7",
+        "lamel_actin_bond",  # a future actin structure (must NOT be excluded)
+    ]
+    # Denylist default: every type cortical EXCEPT the 3 adhesion ones.
+    mask = cortical_bond_typeid_mask(bond_types, None)
+    assert mask.tolist() == [True, True, True, False, False, False, True]
+    # Allowlist override: only the explicitly named types are cortical.
+    allow = {"cortex-bond", "xlink_intra"}
+    mask2 = cortical_bond_typeid_mask(bond_types, allow)
+    assert mask2.tolist() == [True, True, False, False, False, False, False]
+    # Both canonical adhesion constants are recognised.
+    assert "integrin_ligand" in ADHESION_BOND_TYPES
+    assert "fa_actin_clutch" in ADHESION_BOND_TYPES
+
+
+@pytest.fixture(scope="module")
+def fa_cell():
+    """A small FA-adhered MCF7 cell, settled onto the substrate.
+
+    FA enabled, small cortex (n_filaments=120, demo_mode), nucleus n_beads at
+    the manifest default 3000 (CFL), built constrained + equilibrated exactly
+    like the GATE-B smoke so the focal-adhesion clutch bonds are present and
+    loaded.
+    """
+    m = deepcopy(load_manifest("mcf7_baseline.yaml"))
+    m["optional_subsystems"]["fa"]["enabled"] = True
+    m["cortex_overrides"] = {"cortex": {"n_filaments": 120, "demo_mode": True}}
+    # Nucleus n_beads kept at manifest default (3000) for CFL — do NOT shrink.
+    return build_baseline_cell(
+        manifest=m,
+        device=None,
+        seed=1,
+        constrained=True,
+        equilibrate=True,
+        equilibrate_steps=120,
+        equilibrate_softstart_steps=100,
+    )
+
+
+def test_fa_clutch_bonds_present(fa_cell):
+    """Sanity: the FA build actually created adhesion (clutch) bonds, so the
+    filter has something to exclude (otherwise the test is vacuous)."""
+    bond_types = list(fa_cell.simulation.state.bond_types)
+    assert "integrin_ligand" in bond_types
+    assert any(t.startswith("fa_actin_clutch") for t in bond_types)
+
+
+def test_fa_soft_channel_excludes_clutch_bonds(fa_cell):
+    """gamma_soft is NOT inflated by the focal-adhesion clutch bonds.
+
+    With the cortical bond-type filter (denylist default) the soft channel
+    counts cortical/actomyosin bonds only and drops the adhesion load path
+    (integrin_ligand, fa_actin_clutch[_b*]). The filtered active tension must be
+    a finite, physical value far below the clutch-inflated ~49 mN/m the
+    unfiltered sum produced on this FA-adhered cell (GATE-B smoke).
+    """
+    R = float(fa_cell.p_cortex.R_cell)
+    handles = fa_cell.extras["handles"]
+    act = handles.get("baoab_action")
+    dt = fa_cell.simulation.operations.integrator.dt
+
+    res = measure_cortical_tension(
+        fa_cell.simulation, R_cell=R,
+        p_enclosed_volume=fa_cell.p_enclosed_volume,
+        lambda_accumulator=act, dt=dt,
+        cortical_bond_types=None,  # robust adhesion-denylist default
+    )
+    soft = res["channels"]["soft"]
+    # Adhesion bonds were demonstrably excluded.
+    assert soft["n_bonds_excluded"] > 0, soft
+    assert soft["n_bonds"] == soft["n_bonds_total"] - soft["n_bonds_excluded"]
+    # The filtered active tension is finite and far below the ~49 mN/m
+    # clutch-inflated GATE-B smoke number (use a generous 10 mN/m ceiling —
+    # this is an exclusion check, NOT a band gate; the band stays an overlay).
+    assert math.isfinite(res["gamma_soft"])
+    assert res["gamma_soft"] >= 0.0
+    assert res["gamma_soft"] < 10.0e-3, res["gamma_soft"]
+
+
+def test_fa_unfiltered_soft_far_exceeds_filtered(fa_cell):
+    """The clutch bonds are the inflators: counting them (allowlist that
+    INCLUDES the adhesion types) gives a soft channel >> the cortical-only one.
+
+    This isolates the adhesion contribution directly: build an allowlist of
+    (all cortical types + the adhesion types) vs (the same set minus the
+    adhesion types) and show the former is much larger.
+    """
+    R = float(fa_cell.p_cortex.R_cell)
+    handles = fa_cell.extras["handles"]
+    act = handles.get("baoab_action")
+    dt = fa_cell.simulation.operations.integrator.dt
+    all_types = set(fa_cell.simulation.state.bond_types)
+    adhesion = {t for t in all_types
+                if t in ADHESION_BOND_TYPES or t.startswith("fa_actin_clutch")}
+    assert adhesion, "expected adhesion bond types on an FA-adhered cell"
+    cortical_only = all_types - adhesion
+
+    res_with = measure_cortical_tension(
+        fa_cell.simulation, R_cell=R,
+        p_enclosed_volume=fa_cell.p_enclosed_volume,
+        lambda_accumulator=act, dt=dt,
+        cortical_bond_types=all_types,  # INCLUDE adhesion (the bug behaviour)
+    )
+    res_without = measure_cortical_tension(
+        fa_cell.simulation, R_cell=R,
+        p_enclosed_volume=fa_cell.p_enclosed_volume,
+        lambda_accumulator=act, dt=dt,
+        cortical_bond_types=cortical_only,  # EXCLUDE adhesion (the fix)
+    )
+    g_with = res_with["gamma_soft"]
+    g_without = res_without["gamma_soft"]
+    # Adhesion-included soft channel is much larger (clutch bonds dominate the
+    # FA load path); the cortical-only value is far smaller. >5× is the same
+    # threshold the GATE-B inflation guard used.
+    assert g_with > 5.0 * max(g_without, 1e-12), (g_with, g_without)
+    # And the denylist default matches the explicit cortical-only allowlist
+    # (both exclude exactly the adhesion load path).
+    res_default = measure_cortical_tension(
+        fa_cell.simulation, R_cell=R,
+        p_enclosed_volume=fa_cell.p_enclosed_volume,
+        lambda_accumulator=act, dt=dt,
+        cortical_bond_types=None,
+    )
+    assert res_default["gamma_soft"] == pytest.approx(g_without, rel=1e-9)
