@@ -127,3 +127,8 @@ ffn_sim/outputs/**/production/**/*.gsd
 # summaries live as .json/.md and stay visible. Keep ALL production .npz out of git.
 ffn_sim/outputs/**/production/*.npz
 ffn_sim/outputs/**/production/**/*.npz
+
+# Production run-state markers + local session config (not project deliverables;
+# curated summaries/figures are committed explicitly).
+ffn_sim/outputs/**/*.status
+.claude/
