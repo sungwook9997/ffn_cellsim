@@ -51,6 +51,8 @@ def run_gate_b(
     softstart: int | None = None,
     constrained: bool = True,
     dt_safety: float = 1.0,
+    turnover: bool = False,
+    with_fa: bool = True,
 ) -> dict:
     """Build the FA-adhered cell, settle it, run constrained + record lambda,
     measure the 3 gamma channels. Returns the channel dict + metadata.
@@ -61,7 +63,13 @@ def run_gate_b(
     a longer softstart lets stiff FA-clutch/turgor overlaps relax before full-
     force dynamics, stabilizing more seeds."""
     manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
-    manifest["optional_subsystems"]["fa"]["enabled"] = True  # adhered operating point
+    manifest["optional_subsystems"]["fa"]["enabled"] = bool(with_fa)  # adhered operating point
+    if turnover:
+        # Chugh-2017 cortical-actin turnover (tau_half from phase1_h3.yaml cortex.turnover):
+        # the one reviewed mechanism that could un-floor the active channel.
+        manifest["optional_subsystems"]["turnover"] = {
+            "enabled": True, "base_config": "phase1_h3.yaml",
+        }
     if n_filaments is not None:
         manifest["cortex_overrides"] = {
             "cortex": {"n_filaments": int(n_filaments), "demo_mode": True}
@@ -191,6 +199,12 @@ def main() -> int:
                     help="unconstrained soft-backbone GATE-B (stable across seeds; the "
                          "M-SHAKE-shunt cross-check — gives gamma_soft, not gamma_rigid)")
     ap.set_defaults(constrained=True)
+    ap.add_argument("--turnover", action="store_true",
+                    help="enable Chugh-2017 actin turnover (does it un-floor the active channel?)")
+    ap.add_argument("--no-fa", dest="with_fa", action="store_false",
+                    help="free pressurized cortex (no FA adhesion) — clean gamma_rigid without "
+                         "the rigid-backbone integrin overload")
+    ap.set_defaults(with_fa=True)
     add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
     validate_production_device_args(ap, args)
@@ -202,6 +216,7 @@ def main() -> int:
         n_filaments=args.n_filaments, n_nuc_beads=args.n_nuc_beads,
         warmup=args.warmup, sample=args.sample, device=dev, seed=args.seed,
         softstart=args.softstart, constrained=args.constrained, dt_safety=args.dt_safety,
+        turnover=args.turnover, with_fa=args.with_fa,
     )
     _report(g)
     return 0

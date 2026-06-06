@@ -233,8 +233,19 @@ def resolve_baseline(manifest: dict) -> ResolvedBaseline:
 
     tov_b = opt.get("turnover")
     if _enabled(tov_b):
+        tov_cfg = _opt_cfg(tov_b)
+        # _opt_cfg strips the control `enabled`, so a turnover resolved from a
+        # base_config (e.g. phase1_h3.yaml, enabled:false) would inherit
+        # enabled=false and no-op. The manifest gate already said yes -> force
+        # enabled True on the turnover sub-dict (mirror resolve_turnover's unwrap).
+        _t = tov_cfg
+        if isinstance(_t.get("cortex"), dict):
+            _t = _t["cortex"]
+        if isinstance(_t.get("turnover"), dict):
+            _t = _t["turnover"]
+        _t["enabled"] = True
         p_turnover = resolve_turnover(
-            _opt_cfg(tov_b), dt=dtc, rest_length=p_cortex.rest_length
+            tov_cfg, dt=dtc, rest_length=p_cortex.rest_length
         )
 
     return ResolvedBaseline(
