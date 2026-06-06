@@ -82,9 +82,12 @@ References
 - Pereverzev YV, Prezhdo OV, Forero M, Sokurenko EV, Thomas WE 2005,
   "The two-pathway model for the catch-slip transition in biological
   adhesion", *Biophys J* 89(3):1446-54. The k_s·exp(F/F_s) + k_c·exp(−F/F_c) form.
-- Bangasser BL, Rosenfeld SS, Odde DJ 2013, "Determinism and stochasticity
-  during maturation of the zyxin focal adhesion", *Biophys J* 105(3):581-92.
-  KU-2.18 illustrative parameter set used here.
+- Bangasser BL, Rosenfeld SS, Odde DJ 2013, "Determinants of maximal force
+  transmission in a motor-clutch model of cell traction in a compliant
+  microenvironment", *Biophys J* 105(3):581-92 (PMID 23931306). KU-2.18
+  illustrative parameter set used here. [title corrected 2026-06-07: was the
+  unrelated "Determinism and stochasticity during maturation of the zyxin focal
+  adhesion" — metadata drift, cf. the 2026-06-02 SourceEvidence audit.]
 - PHASE_0_3_DECISIONS.md §D2 "Bell-Evans / catch-slip" (2026-05-19,
   PI-ratified).
 - ``ffn_sim/docs/briefs/H4_fa_motor_clutch.md`` §Integrin off-rate.
