@@ -49,6 +49,8 @@ def run_gate_b(
     device,
     seed: int,
     softstart: int | None = None,
+    constrained: bool = True,
+    dt_safety: float = 1.0,
 ) -> dict:
     """Build the FA-adhered cell, settle it, run constrained + record lambda,
     measure the 3 gamma channels. Returns the channel dict + metadata.
@@ -74,7 +76,8 @@ def run_gate_b(
         manifest=manifest,
         device=device,
         seed=seed,
-        constrained=True,
+        constrained=constrained,
+        constrained_dt_safety=dt_safety,
         equilibrate=True,
         equilibrate_steps=warmup,
         equilibrate_softstart_steps=(softstart if softstart is not None
@@ -180,8 +183,14 @@ def main() -> int:
     ap.add_argument("--sample", type=int, default=200, help="sample steps at operating point")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--softstart", type=int, default=None,
-                    help="force-ramped softstart steps (default warmup//4); raise to "
-                         "stabilize the seed-sensitive constrained FA-adhered build")
+                    help="force-ramped softstart steps (default warmup//4)")
+    ap.add_argument("--dt-safety", type=float, default=1.0,
+                    help="scale the constrained dt (<1 stabilizes: smaller steps keep the "
+                         "FA integrin catch-bond force in the Pereverzev pN range)")
+    ap.add_argument("--no-constrained", dest="constrained", action="store_false",
+                    help="unconstrained soft-backbone GATE-B (stable across seeds; the "
+                         "M-SHAKE-shunt cross-check — gives gamma_soft, not gamma_rigid)")
+    ap.set_defaults(constrained=True)
     add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
     validate_production_device_args(ap, args)
@@ -192,7 +201,7 @@ def main() -> int:
     g = run_gate_b(
         n_filaments=args.n_filaments, n_nuc_beads=args.n_nuc_beads,
         warmup=args.warmup, sample=args.sample, device=dev, seed=args.seed,
-        softstart=args.softstart,
+        softstart=args.softstart, constrained=args.constrained, dt_safety=args.dt_safety,
     )
     _report(g)
     return 0

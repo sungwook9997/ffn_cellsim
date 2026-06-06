@@ -267,6 +267,7 @@ def build_baseline_cell(
     with_baoab: bool = True,
     allow_unpressurized_dev: bool = False,
     constrained: bool = False,
+    constrained_dt_safety: float = 1.0,
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
     equilibrate_softstart_steps: int = 100,
@@ -320,7 +321,11 @@ def build_baseline_cell(
         p_erm=rb.p_erm,
         p_membrane=rb.p_membrane,
         constrained=constrained,
-        constrained_dt=rb.dtc if constrained else None,
+        # constrained_dt_safety < 1 shrinks the constrained step: the rigid
+        # backbone removes the BACKBONE CFL but the FA integrin catch-bond /
+        # LJ / turgor forces keep their own; at the bare-cortex dtc those forces
+        # spike (Pereverzev |F|/F_s > 700 overflow guard) and most seeds blow up.
+        constrained_dt=(rb.dtc * float(constrained_dt_safety)) if constrained else None,
         equilibrate=equilibrate,
         equilibrate_steps=equilibrate_steps,
         equilibrate_softstart_steps=equilibrate_softstart_steps,
