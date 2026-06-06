@@ -48,9 +48,16 @@ def run_gate_b(
     sample: int,
     device,
     seed: int,
+    softstart: int | None = None,
 ) -> dict:
     """Build the FA-adhered cell, settle it, run constrained + record lambda,
-    measure the 3 gamma channels. Returns the channel dict + metadata."""
+    measure the 3 gamma channels. Returns the channel dict + metadata.
+
+    ``softstart`` = number of force-ramped softstart steps in the equilibration
+    prelude (default warmup//4). The constrained (M-SHAKE) FA-adhered build is
+    seed-sensitive at full scale (round-2: 4/5 seeds blew the BAOAB int32 guard);
+    a longer softstart lets stiff FA-clutch/turgor overlaps relax before full-
+    force dynamics, stabilizing more seeds."""
     manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
     manifest["optional_subsystems"]["fa"]["enabled"] = True  # adhered operating point
     if n_filaments is not None:
@@ -70,7 +77,8 @@ def run_gate_b(
         constrained=True,
         equilibrate=True,
         equilibrate_steps=warmup,
-        equilibrate_softstart_steps=max(100, warmup // 4),
+        equilibrate_softstart_steps=(softstart if softstart is not None
+                                     else max(100, warmup // 4)),
     )
     handles = cell.extras["handles"]
     sim = cell.simulation
@@ -171,6 +179,9 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=300, help="equilibration baoab steps")
     ap.add_argument("--sample", type=int, default=200, help="sample steps at operating point")
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--softstart", type=int, default=None,
+                    help="force-ramped softstart steps (default warmup//4); raise to "
+                         "stabilize the seed-sensitive constrained FA-adhered build")
     add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
     validate_production_device_args(ap, args)
@@ -181,6 +192,7 @@ def main() -> int:
     g = run_gate_b(
         n_filaments=args.n_filaments, n_nuc_beads=args.n_nuc_beads,
         warmup=args.warmup, sample=args.sample, device=dev, seed=args.seed,
+        softstart=args.softstart,
     )
     _report(g)
     return 0
