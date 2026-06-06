@@ -64,6 +64,31 @@ On the STABLE paths, across the sanctioned ×40 mesoscopic range:
 - **γ_soft**: nf 500 → 0.0000, nf 2000 → 0.0001 mN/m ⇒ the active floor is **scale-independent**.
 Both channels are mesh-converged: the floor finding holds across resolution, not just at one scale.
 
+## Verification corrections (2026-06-07, after PI component-check) — IMPORTANT
+A PI-requested verification of the membrane / crosslinker / measurement found the overnight
+"timescale gap" framing was incomplete and three things had to be CONTROLLED:
+- **Cortex connectivity (controlled → RULED OUT as the cause).** The GATE-B baseline had used the
+  random-anchor crosslinker mesh (fragmented: z~1.3, giant~7%), NOT the percolated connected_mesh
+  (z~3.3, giant~99%). Re-test with connected_mesh: γ_rigid 0.04, γ_soft 0.0000 — the floor HOLDS.
+  So fragmentation is NOT the floor cause (control clears the confound). connected_mesh is now a
+  GATE-B lever (`--connected-mesh`); full-scale confirmation in round-7.
+- **Myosin barely engages (a real contributor).** Only ~12 of ~2000 myosin heads bind the cortex
+  after 200 steps → almost no active force is applied (binding-throughput limited, a known KU-3.5
+  issue). This + the timescale gap (not cortex connectivity) are the operative active-floor causes.
+- **The membrane tension is UNMEASURED.** membrane_surface (H.8 Young-Laplace shell, γ_mem=0.10
+  mN/m) IS wired (a FORCE, not particles → invisible in the particle viz) but is NOT in the 3 γ
+  channels (which are bond-MOP + turgor). So the reported "cortical tension" omits a real ~0.10
+  mN/m membrane component. Flagged; to be added to the report as a 4th component.
+- **Band re-anchored to a REAL MCF7 datum.** Hosseini 2020 (Adv Sci, AFM/FF lineage): MCF-7
+  interphase γ ≈ 0.27 mN/m (IQR 0.18-0.40). The emergent ~0.06 is ~4-5× below this real MCF7
+  number (tighter than the rounded-proxy 6-10×). No spread-adherent MCF7 γ exists → the adherent
+  operating point's observable may be traction. (docs/v2_audit/H7_MCF7_CORTICAL_TENSION_DATUM.)
+
+Net: the floor is REAL and robust to the cortex-percolation control, but it is the timescale gap
+PLUS myosin under-binding (not connectivity), measured against an incomplete (membrane-omitting)
+estimator and re-anchored to MCF7 γ≈0.27. The multiscale active-gel seam remains the path, and its
+σ_a input must use connected_mesh + a myosin-engagement check.
+
 ## What IS solid (deliverables)
 - 3-channel γ estimator with the turgor-separation discipline (cortical_tension.py).
 - The full physiological cell assembles + runs at full ×40 scale (cortex+xlink+myosin+nucleus+

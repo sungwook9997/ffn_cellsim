@@ -94,8 +94,11 @@ optional_subsystems:
                          # (Chan & Odde 2008; Elosegui-Artola 2016; glass-GPa: Sigma/PMC.)
   lamellipodium:         # H.5 Arp2/3 leading edge — the active-spreading machine
     enabled: false       # OFF: NOT a KU-3.5 blocker (PI 2026-06-06). Active-spreading
-    base_config: phase1_h5.yaml  # enhancement; needs the spherical-cortex geometry
-                         # design (flat WAVE-patch ↔ closed sphere) — parallel track.
+    base_config: phase1_h5.yaml  # enhancement; spherical-cortex geometry below.
+    geometry: basal_ring # DEFAULT (PI 2026-06-07): single-cell isotropic spreading rim.
+                         # polarized_patch is a SEPARATE migration condition (use only when
+                         # the PI assay is directed migration); set geometry: polarized_patch
+                         # (+ polarization) for that condition.
   membrane_load:         # KU-5.2 leading-edge Brownian-ratchet brake on barbed ends
     enabled: false       # KU-5.x PI-APPROVED 2026-06-06; wires when lamellipodium is on
                          # (loads its barbed ends; y_plane=Y_max, A_mem=wave_area).
