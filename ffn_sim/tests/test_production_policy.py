@@ -13,6 +13,7 @@ from ffn_sim.common.production_policy import (
     require_physiological_turgor,
     require_production_device,
 )
+from ffn_sim.scripts.run_production import _inject_standard_args
 
 
 def _hoomd_stub(*, gpu_enabled: bool):
@@ -79,3 +80,21 @@ def test_full_cell_policy_requires_both_cytoplasm_and_turgor():
         require_full_cell_physiological_baseline(
             {"p_cytoplasm": _cyto(), "p_enclosed_volume": _ev(turgor=0.0)}
         )
+
+
+def test_production_launcher_injects_standard_args_once():
+    args = _inject_standard_args(
+        ["--smoke"],
+        device="gpu",
+        allow_cpu_dev=False,
+        turgor_pa=DEFAULT_MCF7_TURGOR_PA,
+    )
+    assert args == ["--smoke", "--device", "gpu", "--turgor-pa", "40.0"]
+
+    explicit = _inject_standard_args(
+        ["--device", "cpu", "--allow-cpu-dev", "--turgor-pa", "100"],
+        device="gpu",
+        allow_cpu_dev=True,
+        turgor_pa=DEFAULT_MCF7_TURGOR_PA,
+    )
+    assert explicit == ["--device", "cpu", "--allow-cpu-dev", "--turgor-pa", "100"]
