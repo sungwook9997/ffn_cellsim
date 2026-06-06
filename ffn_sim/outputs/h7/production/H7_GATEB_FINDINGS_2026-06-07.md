@@ -56,6 +56,14 @@ is NOT yet a result at accessible fine-grained timescales.
    MCF7 is traction/stress-fibre dominated — the right observable may be traction, not cortical γ.
 4. **De-circularize γ_passive** (independent osmotic datum) or keep labeling it a setpoint.
 
+## ×40 coarse-graining convergence (round-6 — novelty-defending grid study)
+On the STABLE paths, across the sanctioned ×40 mesoscopic range:
+- free-cortex **γ_rigid**: nf 500 → 0.0593, nf 1000 → 0.0546, nf 2000 → 0.0858 mN/m — grid-stable
+  at ~0.06-0.09 (within the n=3 seed spread 0.063±0.016), no divergence ⇒ **scale-robust, well
+  below band**. The structural floor is NOT a coarse-graining artifact.
+- **γ_soft**: nf 500 → 0.0000, nf 2000 → 0.0001 mN/m ⇒ the active floor is **scale-independent**.
+Both channels are mesh-converged: the floor finding holds across resolution, not just at one scale.
+
 ## What IS solid (deliverables)
 - 3-channel γ estimator with the turgor-separation discipline (cortical_tension.py).
 - The full physiological cell assembles + runs at full ×40 scale (cortex+xlink+myosin+nucleus+
