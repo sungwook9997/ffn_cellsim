@@ -81,9 +81,17 @@ optional_subsystems:
                          # needs adhesion, NOT the lamellipodium (cortex tension is a
                          # cortex property; lamellipodium is a parallel enhancement).
   substrate:             # ECM compliant substrate spring (paired with FA)
-    enabled: false       # OFF: needs k_sub (ECM-condition stiffness, NO magic default;
-                         # MCF7-on-pV4D4/col-I value, surface to PI). FA's rigid ligand
-                         # pin already provides the (b)-dish adhesion endpoint.
+    enabled: false       # OFF — and for the PI's experimental prep it stays OFF by
+                         # PHYSICS, not by missing data. Prep = col-I 167 µl : 5 ml PBS,
+                         # 1 h on a glass-bottom confocal dish = a thin 2D LIGAND coating
+                         # (dilute in PBS, NOT a gelled 3D collagen). Glass E ~ 64-70 GPa
+                         # (orders of mag > ECM); a thin col-I coating's mechanical effect
+                         # is negligible vs the bulk -> cells perceive RIGID. In the
+                         # Chan-Odde clutch (k_sub ~ 1 pN/nm per kPa) glass -> k_sub
+                         # ~1e6 pN/nm = rigid limit. => use FA's rigid SubstrateLigandPin
+                         # (the (b)-dish endpoint, k_sub->inf); a FINITE compliant k_sub is
+                         # only for defined soft gels (kPa PAA), a SEPARATE ECM variant.
+                         # (Chan & Odde 2008; Elosegui-Artola 2016; glass-GPa: Sigma/PMC.)
   lamellipodium:         # H.5 Arp2/3 leading edge — the active-spreading machine
     enabled: false       # OFF: NOT a KU-3.5 blocker (PI 2026-06-06). Active-spreading
     base_config: phase1_h5.yaml  # enhancement; needs the spherical-cortex geometry
