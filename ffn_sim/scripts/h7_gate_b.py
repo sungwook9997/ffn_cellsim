@@ -53,6 +53,7 @@ def run_gate_b(
     dt_safety: float = 1.0,
     turnover: bool = False,
     with_fa: bool = True,
+    connected_mesh: bool = False,
 ) -> dict:
     """Build the FA-adhered cell, settle it, run constrained + record lambda,
     measure the 3 gamma channels. Returns the channel dict + metadata.
@@ -86,6 +87,7 @@ def run_gate_b(
         seed=seed,
         constrained=constrained,
         constrained_dt_safety=dt_safety,
+        connected_mesh=connected_mesh,
         equilibrate=True,
         equilibrate_steps=warmup,
         equilibrate_softstart_steps=(softstart if softstart is not None
@@ -201,6 +203,10 @@ def main() -> int:
     ap.set_defaults(constrained=True)
     ap.add_argument("--turnover", action="store_true",
                     help="enable Chugh-2017 actin turnover (does it un-floor the active channel?)")
+    ap.add_argument("--connected-mesh", action="store_true",
+                    help="seed a PERCOLATED bridge-different-filament crosslinker mesh (z~3.3, "
+                         "giant~99%) instead of the fragmented random-anchor mesh (z~1.3) — "
+                         "required for cortical tension to transmit across the shell")
     ap.add_argument("--no-fa", dest="with_fa", action="store_false",
                     help="free pressurized cortex (no FA adhesion) — clean gamma_rigid without "
                          "the rigid-backbone integrin overload")
@@ -217,6 +223,7 @@ def main() -> int:
         warmup=args.warmup, sample=args.sample, device=dev, seed=args.seed,
         softstart=args.softstart, constrained=args.constrained, dt_safety=args.dt_safety,
         turnover=args.turnover, with_fa=args.with_fa,
+        connected_mesh=args.connected_mesh,
     )
     _report(g)
     return 0

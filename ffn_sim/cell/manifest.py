@@ -282,6 +282,9 @@ def build_baseline_cell(
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
     equilibrate_softstart_steps: int = 100,
+    connected_mesh: bool = False,
+    cm_z_struct: float = 3.7,
+    cm_bundle_mult: int = 2,
 ) -> Cell:
     """Resolve a manifest and assemble the full cell via the unified Cell.build.
 
@@ -337,6 +340,12 @@ def build_baseline_cell(
         # LJ / turgor forces keep their own; at the bare-cortex dtc those forces
         # spike (Pereverzev |F|/F_s > 700 overflow guard) and most seeds blow up.
         constrained_dt=(rb.dtc * float(constrained_dt_safety)) if constrained else None,
+        # connected_mesh seeds a PERCOLATED bridge-different-filament crosslinker
+        # network (z~3.3, giant~99%) instead of the random-anchor mesh (z~1.3,
+        # giant~7%, fragmented) — required for cortical tension to transmit.
+        connected_mesh=connected_mesh,
+        cm_z_struct=cm_z_struct,
+        cm_bundle_mult=cm_bundle_mult,
         equilibrate=equilibrate,
         equilibrate_steps=equilibrate_steps,
         equilibrate_softstart_steps=equilibrate_softstart_steps,
