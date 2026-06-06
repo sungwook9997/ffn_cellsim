@@ -47,13 +47,17 @@ _STYLE = {
 }
 
 
-def _build(n_filaments: int, n_nuc_beads: int, device, seed: int, allow_cpu_dev: bool):
-    manifest = load_manifest("mcf7_baseline.yaml")
-    manifest = deepcopy(manifest)
-    manifest["cortex_overrides"] = {
-        "cortex": {"n_filaments": int(n_filaments), "demo_mode": True}
-    }
-    manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
+def _build(n_filaments, n_nuc_beads, device, seed: int, allow_cpu_dev: bool):
+    """Build the baseline cell. With no overrides, uses the manifest verbatim =
+    the FULL production ×40 mesoscopic scale (n_filaments=1000, demo_mode=false,
+    nucleus 3000 beads). Pass n_filaments/n_nuc_beads only for a quick demo."""
+    manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
+    if n_filaments is not None:
+        manifest["cortex_overrides"] = {
+            "cortex": {"n_filaments": int(n_filaments), "demo_mode": True}
+        }
+    if n_nuc_beads is not None:
+        manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
     return build_baseline_cell(
         manifest=manifest, device=device, seed=seed,
         allow_unpressurized_dev=False,
@@ -89,11 +93,18 @@ def render(cell, manifest, out_path: Path):
     comp_cfg = manifest["compartments"]
     R_nuc = comp_cfg["nucleus"]["R_nuc_frac"] * R
 
+    n_fil = cell.p_cortex.n_filaments
+    bpf = cell.p_cortex.beads_per_filament
+    demo = getattr(cell.p_cortex, "demo_mode", False)
+    scale = (f"×40 mesoscopic production scale: {n_fil} effective filaments "
+             f"(= ~{n_fil*40:,} native), {bpf} beads/fil"
+             if not demo else
+             f"DEMO scale: {n_fil} filaments, {bpf} beads/fil (not production)")
     fig = plt.figure(figsize=(15.5, 11.6), constrained_layout=True)
     fig.suptitle(
         "H.7 physiological-baseline MCF7 single cell — components "
-        "(from configs/mcf7_baseline.yaml via Cell.build)",
-        fontsize=13, fontweight="bold",
+        "(configs/mcf7_baseline.yaml → Cell.build)\n" + scale,
+        fontsize=12.5, fontweight="bold",
     )
     # Top row: 3D overview + equatorial cross-section. Bottom row: per-component
     # isolated panels so every component is legible even where the full field
@@ -182,8 +193,11 @@ def render(cell, manifest, out_path: Path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--n-filaments", type=int, default=240)
-    ap.add_argument("--n-nuc-beads", type=int, default=700)
+    # Defaults = None => use the manifest verbatim (FULL production x40 scale:
+    # n_filaments=1000, demo_mode=false, nucleus 3000 beads). Set either to
+    # force a smaller/faster demo render.
+    ap.add_argument("--n-filaments", type=int, default=None)
+    ap.add_argument("--n-nuc-beads", type=int, default=None)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu")
     ap.add_argument("--allow-cpu-dev", action="store_true")
