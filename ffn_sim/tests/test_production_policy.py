@@ -89,7 +89,7 @@ def test_production_launcher_injects_standard_args_once():
         allow_cpu_dev=False,
         turgor_pa=DEFAULT_MCF7_TURGOR_PA,
     )
-    assert args == ["--smoke", "--device", "gpu", "--turgor-pa", "40.0"]
+    assert args == ["--smoke", "--device", "gpu", "--turgor-pa", "133.0"]
 
     explicit = _inject_standard_args(
         ["--device", "cpu", "--allow-cpu-dev", "--turgor-pa", "100"],

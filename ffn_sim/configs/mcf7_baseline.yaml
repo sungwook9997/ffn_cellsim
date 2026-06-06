@@ -16,6 +16,13 @@
 cell_type: MCF7
 R_cell: 7.5e-6            # m   cell radius, 15 um diameter (Wagner 2011)
 
+# SCOPE (PI-RATIFIED 2026-06-06): model the cell as ACTIVE-SPREADING (primary),
+# NOT a passive settled droplet. The emergent operating point arises from Arp2/3
+# lamellipodial spreading + FA adhesion to the substrate. => lamellipodium + FA +
+# substrate are B1-ESSENTIAL (see optional_subsystems), pending the KU-5.x
+# membrane-load unblock (today lamellipodium barbed-end rates are inert at F=0).
+scope: active_spreading
+
 # Detailed H.3 cortex/myosin/crosslinker physics come from this base config;
 # the manifest applies only MCF7 cell-type overrides + the R_cell above.
 base_cortex_config: phase1_h3.yaml
@@ -32,9 +39,16 @@ compartments:
 
   enclosed_volume:       # KU-3.1 — osmotic turgor pre-tensions the cortex
     enabled: true
-    turgor_dP0: 40.0     # Pa   resting interphase Pi_0 (Stewart 2011).
-    # NOTE (B3 PI gate): band [0.35,0.65] mN/m at R=7.5um implies Pi_0 ~ 93-173 Pa.
-    # 40 Pa is the interphase anchor; the turgor setpoint is a Phase-B PI decision.
+    turgor_dP0: 133.0    # Pa   B3 PI-RATIFIED 2026-06-06: band-implied turgor.
+    # Derivation (not a fudge, grid-invariant): Young-Laplace Pi_0 = 2*gamma/R
+    # with band-centre gamma = 0.50 mN/m at R = 7.5 um -> 133 Pa. The cortical-
+    # tension band [0.35,0.65] mN/m implies Pi_0 in [93,173] Pa.
+    # The cell is pressurised to THIS resting baseline; active myosin is then a
+    # MODULATOR on top (physiological-baseline rule: measure tension on an
+    # already-turgor-pressurised cell, then add myosin). GATE-B MUST report the
+    # active vs passive(turgor) gamma DECOMPOSITION so an in-band total is not
+    # mistaken for active-cortex closure. (Stewart 2011 interphase 40 Pa is the
+    # lower alternative, superseded for the MCF7 baseline by this PI call.)
 
   nucleus:               # H.9 / KU-3.B2.1 — confinement + lamin strain-stiffening
     enabled: true
@@ -56,11 +70,13 @@ compartments:
 optional_subsystems:
 
   fa:                    # H.4 focal-adhesion clutch to substrate ligands
-    enabled: false       # SCOPE PI gate (Phase B1): settled-spread vs active-spread
-  substrate:             # ECM compliant substrate plane (paired with FA)
-    enabled: false       # with fa
-  lamellipodium:         # H.5 Arp2/3 leading edge
-    enabled: false       # KU-5.x PI-blocked + SCOPE gate
+    enabled: false       # B1-ESSENTIAL under active-spreading scope; OFF pending
+                         # contact-footprint (south-cap) seeding so clutches != 0
+  substrate:             # ECM compliant substrate plane (the surface spread upon)
+    enabled: false       # B1-ESSENTIAL under active-spreading scope; pairs with fa
+  lamellipodium:         # H.5 Arp2/3 leading edge — the active spreading machine
+    enabled: false       # B1-ESSENTIAL under active-spreading scope; OFF pending
+                         # KU-5.x membrane-load unblock (else barbed rates inert F=0)
   turnover:              # cortex actin cofilin severing / re-annealing
     enabled: false       # not yet ratified
   erm:                   # KU-3.18 ezrin/radixin/moesin membrane-cortex tether

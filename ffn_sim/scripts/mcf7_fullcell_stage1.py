@@ -117,10 +117,11 @@ def _resolve_compartments(p_cortex, *, turgor_pa=DEFAULT_TURGOR_PA):
     ``turgor_pa`` sets the BASELINE osmotic turgor Π₀ (``turgor_dP0``) — the
     resting intracellular pressure that PRE-TENSIONS the cortex at construction
     (ΔP = Π₀ at V = V0, cortex carries hoop tension γ = Π₀·R/2; physiological-
-    baseline, CLAUDE.md).  Default Π₀ = 40 Pa (Stewart 2011 interphase);
-    Π₀ = 0 / None leaves an UNPRESSURISED floppy shell and is a dev/attribution
-    condition, not a production baseline.  Band [0.35,0.65] mN/m implies Π₀
-    ≈ 93-173 Pa at R = 7.5 µm.
+    baseline, CLAUDE.md).  Default Π₀ = 133 Pa (B3 PI-ratified 2026-06-06:
+    band-implied, γ_band-centre 0.50 mN/m → Π₀ = 2γ/R at R = 7.5 µm; band
+    [0.35,0.65] mN/m ⇒ Π₀ ≈ 93-173 Pa).  Stewart 2011 interphase 40 Pa is the
+    lower alternative, superseded for the MCF7 baseline.  Π₀ = 0 / None leaves an
+    UNPRESSURISED floppy shell and is a dev/attribution condition, not production.
     """
     R = p_cortex.R_cell
     p_nuc = resolve_nucleus(

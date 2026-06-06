@@ -13,7 +13,13 @@ import math
 from typing import Any
 
 
-DEFAULT_MCF7_TURGOR_PA: float = 40.0
+# MCF7 baseline osmotic turgor Pi_0.
+# B3 PI-RATIFIED 2026-06-06: band-implied. Young-Laplace Pi_0 = 2*gamma/R with
+# band-centre gamma = 0.50 mN/m at R = 7.5 um -> 133 Pa (band [0.35,0.65] mN/m
+# => [93,173] Pa). This is the production default everywhere (script + preflight
+# + launcher). Stewart 2011 interphase 40 Pa is the lower alternative, superseded
+# for the MCF7 baseline. See configs/mcf7_baseline.yaml.
+DEFAULT_MCF7_TURGOR_PA: float = 133.0
 
 
 def hoomd_has_gpu_build(hoomd_module: Any) -> bool:

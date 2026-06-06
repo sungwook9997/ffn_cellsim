@@ -34,8 +34,9 @@ def test_manifest_resolves_ratified_setpoints(manifest):
     # cytoplasm 65.9 Pa.s (Hu 2024), NOT water
     assert rb.p_cytoplasm.eta_eff == pytest.approx(65.9)
     assert rb.p_cytoplasm.eta_eff != rb.p_cytoplasm.eta_water
-    # turgor 40 Pa (Stewart 2011 interphase)
-    assert rb.p_enclosed_volume.turgor_dP0 == pytest.approx(40.0)
+    # turgor band-implied (B3 PI-ratified 2026-06-06): Pi_0 = 2*gamma/R in
+    # [93,173] Pa for gamma band [0.35,0.65] mN/m at R=7.5 um (133 Pa = centre).
+    assert 93.0 <= rb.p_enclosed_volume.turgor_dP0 <= 173.0
     # nucleus E_nuc 4.7 kPa in band [1e3, 1e4]
     assert 1.0e3 <= rb.p_nucleus.E_nuc <= 1.0e4
     # membrane surface tension wired (0.10 mN/m)
