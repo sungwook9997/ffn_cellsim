@@ -324,6 +324,11 @@ class LamellipodiumLayout:
     mother_seed_positions: np.ndarray
     mother_tag_start: int
     wave_to_mother_bond_pairs: np.ndarray
+    # Per-WAVE initial mother-actin barbed-end unit tangent (n_WAVE, 3). None for
+    # the flat_plane geometry (seed loops then default to the legacy -ŷ). The
+    # basal_ring / polarized_patch geometries set it to outward-radial / forward
+    # directions so the seed loops grow the dendritic network in-geometry.
+    mother_tangents: np.ndarray | None = None
 
 
 def generate_lamellipodium_layout(
@@ -331,9 +336,67 @@ def generate_lamellipodium_layout(
     *,
     wave_tag_start: int,
     rng: np.random.Generator | None = None,
+    geometry: str = "flat_plane",
+    R_cell: float | None = None,
+    cap_depth: float | None = None,
+    contact_radius_frac: float | None = None,
+    basal_z_offset: float | None = None,
+    polarization: "np.ndarray | tuple[float, float, float] | None" = None,
+    half_angle_azimuth: float = math.pi / 6.0,
+    half_angle_linear: float | None = None,
+    fan_spread: float | None = None,
 ) -> LamellipodiumLayout:
-    """Place WAVE particles uniformly on the ``y = Y_max`` plane + one
-    mother actin seed per WAVE."""
+    """Place WAVE particles + one mother-actin seed per WAVE.
+
+    ``geometry`` selects the leading-edge placement (H.7 active-spreading):
+
+    * ``"flat_plane"`` (default) — the original in-vitro reconstitution geometry:
+      WAVE uniform on the ``y = Y_max`` plane, mothers one ℓ₀ below, growing −ŷ.
+      Bit-for-bit unchanged from the pre-H.7 builder.
+    * ``"basal_ring"`` — single-cell ISOTROPIC spreading: WAVE on the basal
+      contact ring, mothers growing outward-radially in the basal plane
+      (:func:`ffn_sim.cell.lamellipodium_basal_ring.generate_basal_ring_lamellipodium_layout`).
+    * ``"polarized_patch"`` — single-cell MIGRATING: a localized leading-edge
+      patch about a polarization ``p̂``, mothers growing forward
+      (:func:`ffn_sim.cell.lamellipodium_polarized_patch.generate_polarized_patch_layout`).
+
+    The two single-cell geometries require ``R_cell`` (the cortex shell radius)
+    and return a drop-in :class:`LamellipodiumLayout` with ``mother_tangents``
+    populated. The Bieling/Funk dendritic mechanism is unchanged — only the
+    leading-edge geometry differs (membrane load is OFF for step-1).
+    """
+    if geometry != "flat_plane":
+        if R_cell is None:
+            raise ValueError(
+                f"geometry={geometry!r} requires R_cell (the cortex shell radius)."
+            )
+        if geometry == "basal_ring":
+            from ffn_sim.cell.lamellipodium_basal_ring import (
+                generate_basal_ring_lamellipodium_layout,
+            )
+            wrapped = generate_basal_ring_lamellipodium_layout(
+                p, wave_tag_start=wave_tag_start, R_cell=R_cell,
+                cap_depth=cap_depth, contact_radius_frac=contact_radius_frac,
+                basal_z_offset=basal_z_offset, rng=rng,
+            )
+        elif geometry == "polarized_patch":
+            from ffn_sim.cell.lamellipodium_polarized_patch import (
+                generate_polarized_patch_layout,
+            )
+            wrapped = generate_polarized_patch_layout(
+                p, wave_tag_start=wave_tag_start, R_cell=R_cell,
+                polarization=polarization, half_angle_azimuth=half_angle_azimuth,
+                half_angle_linear=half_angle_linear, fan_spread=fan_spread, rng=rng,
+            )
+        else:
+            raise ValueError(
+                f"unknown geometry={geometry!r}; expected one of "
+                "'flat_plane', 'basal_ring', 'polarized_patch'."
+            )
+        layout = wrapped.layout
+        layout.mother_tangents = wrapped.mother_tangents
+        return layout
+
     if rng is None:
         rng = np.random.default_rng(p.seed)
 
@@ -1013,12 +1076,14 @@ def build_lamellipodium_simulation(
     # State setup.
     state = LamellipodiumState()
     # Mothers start as barbed ends, tangent = -ŷ (away from membrane).
-    mother_tangent = np.array([0.0, -1.0, 0.0], dtype=np.float64)
+    default_tangent = np.array([0.0, -1.0, 0.0], dtype=np.float64)
+    tangents = layout.mother_tangents  # per-WAVE for non-flat geometries, else None
     n_seed = p.n_WAVE
     for i in range(n_seed):
         mother_tag = layout.mother_tag_start + i
         state.barbed_end_tags.append(mother_tag)
-        state.tangent_of[mother_tag] = mother_tangent.copy()
+        t = default_tangent if tangents is None else np.asarray(tangents[i], dtype=np.float64)
+        state.tangent_of[mother_tag] = t.copy()
     state.actin_next_tag = layout.mother_tag_start + n_seed
 
     # Build snapshot: wave particles + mother seeds + initial WAVE-mother anchor bonds.
@@ -1144,6 +1209,15 @@ def extend_cortex_snapshot_with_lamellipodium(
     *,
     wave_tag_start: int,
     rng: np.random.Generator | None = None,
+    geometry: str = "flat_plane",
+    R_cell: float | None = None,
+    cap_depth: float | None = None,
+    contact_radius_frac: float | None = None,
+    basal_z_offset: float | None = None,
+    polarization: "np.ndarray | tuple[float, float, float] | None" = None,
+    half_angle_azimuth: float = math.pi / 6.0,
+    half_angle_linear: float | None = None,
+    fan_spread: float | None = None,
 ) -> tuple["LamellipodiumLayout", "LamellipodiumState", Any]:
     """Extend an existing cortex (+ optional xlinks / myosin) snapshot.
 
@@ -1196,6 +1270,10 @@ def extend_cortex_snapshot_with_lamellipodium(
 
     layout = generate_lamellipodium_layout(
         p, wave_tag_start=wave_tag_start, rng=rng,
+        geometry=geometry, R_cell=R_cell, cap_depth=cap_depth,
+        contact_radius_frac=contact_radius_frac, basal_z_offset=basal_z_offset,
+        polarization=polarization, half_angle_azimuth=half_angle_azimuth,
+        half_angle_linear=half_angle_linear, fan_spread=fan_spread,
     )
 
     snap_old = base_snap
@@ -1294,11 +1372,13 @@ def extend_cortex_snapshot_with_lamellipodium(
     # ---- Initialise the runtime state: each mother is a barbed end with
     #      tangent -ŷ (away from membrane). ----
     state = LamellipodiumState()
-    mother_tangent = np.array([0.0, -1.0, 0.0], dtype=np.float64)
+    default_tangent = np.array([0.0, -1.0, 0.0], dtype=np.float64)
+    tangents = layout.mother_tangents  # per-WAVE for non-flat geometries, else None
     for i in range(n_WAVE):
         mother_tag = layout.mother_tag_start + i
         state.barbed_end_tags.append(mother_tag)
-        state.tangent_of[mother_tag] = mother_tangent.copy()
+        t = default_tangent if tangents is None else np.asarray(tangents[i], dtype=np.float64)
+        state.tangent_of[mother_tag] = t.copy()
     state.actin_next_tag = layout.mother_tag_start + n_WAVE
 
     return snap, layout, state
