@@ -256,11 +256,21 @@ def build_baseline_cell(
     seed: int = 1,
     with_baoab: bool = True,
     allow_unpressurized_dev: bool = False,
+    constrained: bool = False,
+    equilibrate: bool = False,
+    equilibrate_steps: int = 0,
+    equilibrate_softstart_steps: int = 100,
 ) -> Cell:
     """Resolve a manifest and assemble the full cell via the unified Cell.build.
 
     Enforces the ``production_policy`` physiological-baseline gate (non-water
     cytoplasm + positive turgor) before any HOOMD state is created.
+
+    For the GATE-B operating-point build (FA-adhered cell settled onto the
+    substrate), pass ``equilibrate=True`` with a softstart/baoab budget so the
+    forces ramp gently (a raw FA-adhered free run trips the BAOAB guard), and
+    ``constrained=True`` to run the rigid M-SHAKE backbone (required for the
+    rigid Lagrange gamma channel).
     """
     if manifest is None:
         manifest = load_manifest(path_or_name)
@@ -290,6 +300,11 @@ def build_baseline_cell(
         p_turnover=rb.p_turnover,
         p_erm=rb.p_erm,
         p_membrane=rb.p_membrane,
+        constrained=constrained,
+        constrained_dt=rb.dtc if constrained else None,
+        equilibrate=equilibrate,
+        equilibrate_steps=equilibrate_steps,
+        equilibrate_softstart_steps=equilibrate_softstart_steps,
         options=opts,
         device=device,
         rng=np.random.default_rng(seed),

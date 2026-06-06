@@ -1,0 +1,163 @@
+"""H.7 GATE-B — emergent cortical tension (gamma) at the settled operating point.
+
+Assembles the FULL physiological MCF7 cell from configs/mcf7_baseline.yaml (with
+FA-adhesion ENABLED) via the manifest loader -> A1 Cell.build, settles it onto
+the substrate with an equilibration prelude (a raw FA-adhered free run trips the
+BAOAB guard), runs the rigid M-SHAKE backbone with Lagrange-lambda recording,
+then measures the THREE cortical-tension channels SEPARATELY via the B4 unified
+estimator (ffn_sim/cortex/cortical_tension.py).
+
+GATE-B CONTRACT (HARD, CLAUDE.md + PI 2026-06-05/06):
+  * gamma is reported as DISTINCT channels — active (soft-MOP), rigid (Lagrange),
+    passive (turgor Young-Laplace). The turgor channel is NEVER folded into a
+    single "total": an in-band total must NOT be read as active-cortex closure.
+  * This is the EMERGENT operating-point measurement, not a dial. No KU-3.5
+    conclusion is drawn here; the band [0.35,0.65] mN/m is an overlay only.
+  * AUTHORITATIVE gamma requires the FULL production scale on GPU (gbook). A
+    small --n-filaments run is a PIPELINE SMOKE, explicitly labelled as such.
+
+Usage (smoke):
+    python -m ffn_sim.scripts.h7_gate_b --n-filaments 160 --n-nuc-beads 400 \
+        --device cpu --allow-cpu-dev --warmup 300 --sample 200
+Usage (full production scale, gbook GPU):
+    python -m ffn_sim.scripts.h7_gate_b --device gpu   # manifest defaults (1000 fil)
+"""
+
+from __future__ import annotations
+
+import argparse
+from copy import deepcopy
+
+import numpy as np
+
+from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
+from ffn_sim.cortex.cortical_tension import measure_cortical_tension
+
+_MN_PER_M = 1.0e3  # N/m -> mN/m
+
+
+def run_gate_b(
+    *,
+    n_filaments: int | None,
+    n_nuc_beads: int | None,
+    warmup: int,
+    sample: int,
+    device,
+    seed: int,
+) -> dict:
+    """Build the FA-adhered cell, settle it, run constrained + record lambda,
+    measure the 3 gamma channels. Returns the channel dict + metadata."""
+    manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
+    manifest["optional_subsystems"]["fa"]["enabled"] = True  # adhered operating point
+    if n_filaments is not None:
+        manifest["cortex_overrides"] = {
+            "cortex": {"n_filaments": int(n_filaments), "demo_mode": True}
+        }
+    if n_nuc_beads is not None:
+        manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
+
+    # Equilibration prelude settles the cell onto the substrate (softstart ramps
+    # forces so the FA-adhered construction state does not explode); constrained
+    # runs the rigid backbone for the Lagrange channel.
+    cell = build_baseline_cell(
+        manifest=manifest,
+        device=device,
+        seed=seed,
+        constrained=True,
+        equilibrate=True,
+        equilibrate_steps=warmup,
+        equilibrate_softstart_steps=max(100, warmup // 4),
+    )
+    handles = cell.extras["handles"]
+    sim = cell.simulation
+    R_cell = cell.p_cortex.R_cell
+    dt_used = float(handles.get("dt_used") or cell.p_cortex.dt_cfl)
+
+    # Capture the M-SHAKE Lagrange multipliers on the constrained action so the
+    # rigid channel can be measured (zero overhead otherwise).
+    act = handles.get("baoab_action")
+    if act is not None and hasattr(act, "record_lambda"):
+        act.record_lambda = True
+
+    # Sample run at the settled operating point.
+    if sample > 0:
+        sim.run(sample)
+
+    gamma = measure_cortical_tension(
+        sim,
+        R_cell=R_cell,
+        p_enclosed_volume=cell.p_enclosed_volume,
+        lambda_accumulator=act,
+        dt=dt_used,
+    )
+    gamma["_meta"] = {
+        "n_filaments": int(cell.p_cortex.n_filaments),
+        "n_clutch_bonds": int(handles.get("n_fa_clutch_bonds") or 0),
+        "turgor_dP0_Pa": float(cell.p_enclosed_volume.turgor_dP0),
+        "dt_used": dt_used,
+        "is_full_scale": n_filaments is None,
+    }
+    return gamma
+
+
+def _report(g: dict) -> None:
+    m = g["_meta"]
+    lo, hi = g["band_N_per_m"]
+    scale = ("FULL production x40 scale" if m["is_full_scale"]
+             else f"SMOKE scale (n_filaments={m['n_filaments']})")
+    print("=" * 66, flush=True)
+    print(f"H.7 GATE-B — emergent cortical tension  [{scale}]", flush=True)
+    print(f"  operating point: FA-adhered ({m['n_clutch_bonds']} clutches), "
+          f"turgor Pi_0={m['turgor_dP0_Pa']:.0f} Pa", flush=True)
+    print("-" * 66, flush=True)
+    print("  CHANNELS (reported SEPARATELY — turgor NOT folded into a total):", flush=True)
+    print(f"    gamma_soft     (active MOP)        = {g['gamma_soft']*_MN_PER_M:+.4f} mN/m", flush=True)
+    print(f"    gamma_rigid    (Lagrange M-SHAKE)  = {g['gamma_rigid']*_MN_PER_M:+.4f} mN/m"
+          f"  (available={g['channels']['rigid']['available']})", flush=True)
+    print(f"    gamma_passive  (turgor Young-Lap.) = {g['gamma_passive']*_MN_PER_M:+.4f} mN/m", flush=True)
+    print(f"    gamma_structural (soft+rigid)      = {g['gamma_structural']*_MN_PER_M:+.4f} mN/m", flush=True)
+    print(f"  band overlay (Salbreux/Charras/Paluch): "
+          f"[{lo*_MN_PER_M:.2f}, {hi*_MN_PER_M:.2f}] mN/m", flush=True)
+    print("-" * 66, flush=True)
+    if m["n_clutch_bonds"] > 0 and g["gamma_soft"] > hi * 5:
+        print("  ⚠ gamma_soft is INFLATED: with FA on, the soft method-of-planes", flush=True)
+        print("    currently counts the fa_actin_clutch bonds (the adhesion load", flush=True)
+        print("    path) as cortical tension. The active channel needs cortical-", flush=True)
+        print("    bond-type filtering (exclude clutch/substrate) before the", flush=True)
+        print("    FA-adhered active gamma is meaningful — B4 estimator refinement.", flush=True)
+        print("-" * 66, flush=True)
+    print("  PROVISIONAL. No KU-3.5 conclusion here. Authoritative gamma needs", flush=True)
+    print("  the FULL production scale on GPU (gbook); a smoke verifies the", flush=True)
+    print("  pipeline only. active vs passive(turgor) kept distinct by contract.", flush=True)
+    print("=" * 66, flush=True)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--n-filaments", type=int, default=None,
+                    help="override for a smoke; omit for full production x40 scale")
+    ap.add_argument("--n-nuc-beads", type=int, default=None)
+    ap.add_argument("--warmup", type=int, default=300, help="equilibration baoab steps")
+    ap.add_argument("--sample", type=int, default=200, help="sample steps at operating point")
+    ap.add_argument("--seed", type=int, default=1)
+    add_production_device_args(ap, default="gpu")
+    args = ap.parse_args()
+    validate_production_device_args(ap, args)
+
+    import hoomd
+    dev = (hoomd.device.GPU(notice_level=0) if args.device == "gpu"
+           else hoomd.device.CPU(notice_level=0))
+    g = run_gate_b(
+        n_filaments=args.n_filaments, n_nuc_beads=args.n_nuc_beads,
+        warmup=args.warmup, sample=args.sample, device=dev, seed=args.seed,
+    )
+    _report(g)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
