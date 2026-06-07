@@ -42,8 +42,23 @@ cortex_overrides:
       # authoritative PARAM-F_stall_motor = 2 pN (KU-2.4/2.18; Chugh 2017 NatCellBiol "individual
       # myosin II motors produce 2-5 pN"). The prior 0.5 pN was "per brief", under-anchored. NMII
       # bears load on one head at a time, so per-motor ≈ per-engaged-head here. (Force-scaling then
-      # ×factor for the ×40 lumping; native per-head stays 2 pN.) M1 ceiling 0.021→0.084 mN/m.
+      # ×factor for the ×40 lumping; native per-head stays 2 pN. Stall comment refined: the 2 pN
+      # is Chugh 2017's IN-ENSEMBLE figure (40 pN minifilament / ~heads); single-molecule corrob
+      # NMIIB 2.2 pN (Norstrom 2010, PMID 20511646), skeletal 3-4 pN (Finer 1994). Do NOT raise to
+      # single-molecule values (would double-count Chugh's ensemble derating).
       F_stall_per_head: 2.0e-12
+      # --- EM-anchored geometry re-anchors (PI-signed-off 2026-06-07; generation-gap audit) ---
+      # heads/minifilament 20→56: 28 molecules/filament (Niederman & Pollard 1975, PMID 240861;
+      # Billington 2013 PMID 24072716) × 2 motor heads, 28/side. The prior 10/side (20 total) was
+      # an un-anchored "Hocky convention" magic number.
+      n_heads_per_side: 28
+      # bipolar minifilament length / dipole lever 700→301 nm: Billington 2013 EM contour 301±24 nm
+      # (NMIIA). The prior 700 nm had NO EM referent (>2× the whole filament).
+      backbone_length: 301.0e-9
+      # Density kept 3.0/µm² PENDING the foci-vs-minifilament ruling (the "Salbreux 2012, 3/µm²"
+      # attribution is a CONFIRMED misattribution — see H7_GENERATION_GAP_AUDIT_2026-06-07.md; the
+      # closest real datum is Nie/Vavylonis 2015 ~0.6/µm², HeLa, LOW confidence). Net with these two
+      # re-anchors (density held): M1 ceiling 0.084→~0.10 mN/m (~3× below the MCF7 datum 0.27).
 
 # ----------------------------------------------------------------------------
 # Compartments — ON at their physiological setpoint (the baseline IS this state)

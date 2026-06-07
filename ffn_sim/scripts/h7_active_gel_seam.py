@@ -71,6 +71,7 @@ def run(n_filaments, warmup, sample, device, seed):
         n_eng=n_eng, n_total_heads=n_total, f_stall_per_head=pm.F_stall_per_head,
         ell_dipole=pm.backbone_length, area=pc.cortex_surface_area,
         thickness=pc.cortex_thickness, tau=tau,
+        heads_per_minifilament=pm.n_heads_per_side * 2,
     )
     return cell, g, dg
 

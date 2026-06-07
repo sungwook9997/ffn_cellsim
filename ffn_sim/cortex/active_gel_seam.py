@@ -91,7 +91,7 @@ class SeamDiagnosis:
 def diagnose_seam(
     *, gamma_soft: float, gamma_rigid: float, n_eng: int, n_total_heads: int,
     f_stall_per_head: float, ell_dipole: float, area: float, thickness: float,
-    tau: float,
+    tau: float, heads_per_minifilament: int = 56,
 ) -> SeamDiagnosis:
     """Run the M1 diagnostic: realized / capacity / ceiling steady tension + verdict."""
     # γ = σ_a · h = n·f·ℓ/area for the capacity/ceiling; realized = the FG soft tension.
@@ -99,7 +99,9 @@ def diagnose_seam(
     g_capacity = n_eng * f_stall_per_head * ell_dipole / area
     g_realized = gamma_soft  # σ_a_realized·h = (γ_soft/h)·h
     lo, hi = BAND_N_PER_M
-    motor_density = (n_total_heads / 20.0) / (area * 1e12)  # heads→minifilaments (20/mf) per µm²
+    # heads→minifilaments per µm² (heads_per_minifilament = 2·n_heads_per_side; 56 per the
+    # Niederman-1975 / Billington-2013 EM re-anchor, 2026-06-07).
+    motor_density = (n_total_heads / float(heads_per_minifilament)) / (area * 1e12)
 
     if g_ceiling < lo:
         verdict = (
