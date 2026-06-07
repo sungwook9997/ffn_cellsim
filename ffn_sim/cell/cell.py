@@ -178,6 +178,7 @@ from ffn_sim.cell.membrane import (
     attach_membrane_to_simulation,
 )
 from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.integrator.baoab_device import make_baoab_updater_device
 
 # H.4 FA integration (α restart — S0/S1/S2 vertical slice, additive +
 # default-off). The p_fa=None path never touches any FA code, so the
@@ -1463,7 +1464,21 @@ def build_cortex_full_simulation(
                 shake_tol=1.0e-9, shake_max_iter=200,
             )
         else:
-            baoab_action, baoab_updater = make_baoab_updater(
+            # GPU-main port (2026-06-07): device-resident BAOAB on GPU
+            # (gpu_local_snapshot + cupy — removes the per-step device→host sync that
+            # capped throughput on the unconstrained GPU path). OPT-IN (default OFF →
+            # frozen cpu BAOAB, GPU path UNCHANGED = zero regression while the device
+            # path is validated on the full cortex+myosin system). Enable with
+            # FFN_GPU_DEVICE_BAOAB=1. The device factory is signature-identical +
+            # Phase-1-validated for the solver (diffusion/equipartition/drift ~1e-13);
+            # full-system GPU validation pending. The constrained path already auto-adapts.
+            import os as _os
+            _use_device = (
+                isinstance(sim.device, hoomd.device.GPU)
+                and _os.environ.get("FFN_GPU_DEVICE_BAOAB") == "1"
+            )
+            _baoab_factory = make_baoab_updater_device if _use_device else make_baoab_updater
+            baoab_action, baoab_updater = _baoab_factory(
                 kT=p_cortex.kT, gamma=gamma_map,
                 dt=dt_used, seed=p_cortex.seed,
             )
