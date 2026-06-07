@@ -290,6 +290,68 @@ class SurfaceManifold:
         self.verts = verts
         self._recompute_geometry()
 
+    def fit_to_cloud(
+        self,
+        points: np.ndarray,
+        *,
+        k_dirs: int = 8,
+        center: np.ndarray | None = None,
+    ) -> "SurfaceManifold":
+        """Advect (re-fit) the manifold vertices to a bead cloud — the
+        slaved-to-beads deformable-shell update (design: the manifold tracks the
+        deforming cell surface, owning no elastic DOF).
+
+        Connectivity (``tris``, ``tri_adj``) is unchanged; each vertex is moved
+        along its direction-from-centre to the LOCAL surface radius of the cloud
+        in that direction, so a non-spherical (ellipsoidal / spread / deformed)
+        cloud is tracked — not just a uniform rescale. The per-direction radius is
+        the inverse-angular-distance-weighted mean of the ``k_dirs`` nearest cloud
+        directions on the unit sphere (chord-distance kNN, adequate for the
+        smooth cortex shell). GEOMETRY ONLY — no mechanics, no force.
+
+        Args:
+            points: Bead-cloud positions, shape ``(n, 3)`` [m] (e.g. the cortex
+                actin shell from a snapshot).
+            k_dirs: Number of nearest cloud directions averaged per vertex
+                (``≥ 1``); larger = smoother fit.
+            center: Optional explicit shell centre [m]; defaults to the cloud
+                centroid.
+
+        Returns:
+            ``self`` (fitted in place via :meth:`set_verts`).
+
+        Raises:
+            ValueError: if ``points`` is empty / not ``(n, 3)`` or ``k_dirs < 1``.
+        """
+        pts = np.asarray(points, dtype=np.float64)
+        if pts.ndim != 2 or pts.shape[1] != 3 or pts.shape[0] == 0:
+            raise ValueError(f"points must be a non-empty (n, 3); got {pts.shape}")
+        if k_dirs < 1:
+            raise ValueError(f"k_dirs must be ≥ 1; got {k_dirs}")
+        c0 = pts.mean(axis=0) if center is None else np.asarray(center, dtype=np.float64)
+        rel = pts - c0
+        r = np.linalg.norm(rel, axis=1)
+        good = r > 0.0
+        if not np.any(good):
+            raise ValueError("all cloud points coincide with the centre.")
+        dirs = rel[good] / r[good, None]      # cloud directions on the unit sphere
+        rad = r[good]                         # cloud radii
+        tree = cKDTree(dirs)
+
+        vdir = self.verts - c0
+        vr = np.linalg.norm(vdir, axis=1)
+        vdir_u = vdir / np.maximum(vr, 1.0e-300)[:, None]
+        k = int(min(k_dirs, dirs.shape[0]))
+        dist, idx = tree.query(vdir_u, k=k)
+        if k == 1:
+            dist = dist[:, None]
+            idx = idx[:, None]
+        w = 1.0 / np.maximum(dist, 1.0e-6)
+        new_r = (rad[idx] * w).sum(axis=1) / w.sum(axis=1)
+        new_verts = c0 + vdir_u * new_r[:, None]
+        self.set_verts(new_verts)
+        return self
+
     def _recompute_geometry(self) -> None:
         """(Re)compute centroids, outward frames, areas, edge length, KD-tree."""
         v0 = self.verts[self.tris[:, 0]]
