@@ -824,6 +824,8 @@ class MyosinStepUpdater(hoomd.custom.Action):
         cortex_bond_groups: np.ndarray | None = None,
         ell0_cortex: float | None = None,
         cortex_beads_per_filament: int | None = None,
+        cortex_filament_starts: np.ndarray | None = None,
+        cortex_n_beads_per_filament: np.ndarray | None = None,
         seed_offset: int = 3,
     ) -> None:
         super().__init__()
@@ -843,12 +845,28 @@ class MyosinStepUpdater(hoomd.custom.Action):
             int(cortex_beads_per_filament)
             if cortex_beads_per_filament is not None else None
         )
+        # Variable-length bead-tag map (faithful bimodal cortex). When provided,
+        # the tag ↔ (filament, pos) map uses ``filament_starts`` (searchsorted)
+        # instead of the fixed-N //,% map; ``n_beads_per_filament`` gives the
+        # per-filament bead count for the minus-end-extrapolation guard. (2026-06-07.)
+        self._cortex_filament_starts = (
+            np.asarray(cortex_filament_starts, dtype=np.int64)
+            if cortex_filament_starts is not None else None
+        )
+        self._cortex_n_beads_per_filament = (
+            np.asarray(cortex_n_beads_per_filament, dtype=np.int64)
+            if cortex_n_beads_per_filament is not None else None
+        )
         if self.stepping_mode == "grip_walk":
-            if self._ell0_cortex is None or self._cortex_beads_per_filament is None:
+            _have_tag_map = (
+                self._cortex_beads_per_filament is not None
+                or self._cortex_filament_starts is not None
+            )
+            if self._ell0_cortex is None or not _have_tag_map:
                 raise ValueError(
-                    "grip_walk stepping_mode requires ell0_cortex + "
-                    "cortex_beads_per_filament (the fixed-N bead-tag ↔ "
-                    "(filament, pos) map); got None."
+                    "grip_walk stepping_mode requires ell0_cortex + a bead-tag ↔ "
+                    "(filament, pos) map: cortex_beads_per_filament (uniform fixed-N) "
+                    "OR cortex_filament_starts (variable-length bimodal); got None."
                 )
         # Segment-projection binding precompute (KU-3.5 Option C). When
         # cortex_bond_groups provided: for each actin bead, list the segment
@@ -929,15 +947,28 @@ class MyosinStepUpdater(hoomd.custom.Action):
     def _tag_to_fil_pos(self, bead_tag: int) -> tuple[int, int]:
         """Decompose a cortex actin bead tag → (filament, pos-in-filament).
 
-        Fixed-N contiguous block ``[0, n_cortex_actin)``:
-        ``filament = tag // N``, ``pos = tag % N`` (exact O(1)).
+        Uniform fixed-N contiguous block: ``filament = tag // N``, ``pos = tag % N``.
+        Variable-length (bimodal cortex): ``filament_starts`` give each filament's
+        flat start; ``filament = searchsorted(starts, tag, 'right') − 1``,
+        ``pos = tag − starts[filament]`` (still O(log F)).
         """
+        if self._cortex_filament_starts is not None:
+            fil = int(np.searchsorted(self._cortex_filament_starts, bead_tag, side="right") - 1)
+            return fil, int(bead_tag - self._cortex_filament_starts[fil])
         nb = self._cortex_beads_per_filament
         return bead_tag // nb, bead_tag % nb
 
     def _bead_tag(self, fil: int, pos: int) -> int:
-        """Inverse of :meth:`_tag_to_fil_pos` (fixed-N)."""
+        """Inverse of :meth:`_tag_to_fil_pos` (uniform fixed-N or variable-length)."""
+        if self._cortex_filament_starts is not None:
+            return int(self._cortex_filament_starts[fil]) + int(pos)
         return fil * self._cortex_beads_per_filament + pos
+
+    def _n_beads_of(self, fil: int) -> int:
+        """Per-filament bead count (variable-length-aware; uniform N otherwise)."""
+        if self._cortex_n_beads_per_filament is not None:
+            return int(self._cortex_n_beads_per_filament[fil])
+        return self._cortex_beads_per_filament
 
     def _walk_toward_minus(self, pos_j: int, n: int) -> int:
         """Advance a grip position ``n`` beads toward the minus end.
@@ -960,7 +991,6 @@ class MyosinStepUpdater(hoomd.custom.Action):
         different-filament clause that removes the zero-dipole degeneracy).
         """
         H = self.p.n_heads_per_side
-        nb = self._cortex_beads_per_filament
         motor_idx = head_local // (2 * H)
         head_within = head_local % (2 * H)
         side_plus = head_within < H
@@ -968,7 +998,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
         # Minus-end-ward tangent m̂ from bead positions (Option A: minus=bead 0).
         if pos_j > 0:
             m_vec = pos[self._bead_tag(fil, pos_j - 1)] - pos[bead_tag]
-        elif nb > 1:
+        elif self._n_beads_of(fil) > 1:
             # At the minus end: extrapolate the minus direction from j=1→j=0.
             m_vec = pos[bead_tag] - pos[self._bead_tag(fil, 1)]
         else:
@@ -1331,7 +1361,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     if pos_j > 0:
                         t_vec = (pos[self._bead_tag(fil, pos_j - 1)]
                                  - pos[self._bead_tag(fil, pos_j)])
-                    elif self._cortex_beads_per_filament > 1:
+                    elif self._n_beads_of(fil) > 1:
                         t_vec = (pos[self._bead_tag(fil, 0)]
                                  - pos[self._bead_tag(fil, 1)])
                     else:
@@ -1477,6 +1507,8 @@ def make_cortex_myosin_updater(
     cortex_bond_groups: np.ndarray | None = None,
     ell0_cortex: float | None = None,
     cortex_beads_per_filament: int | None = None,
+    cortex_filament_starts: np.ndarray | None = None,
+    cortex_n_beads_per_filament: np.ndarray | None = None,
     seed_offset: int = 3,
 ) -> tuple[MyosinStepUpdater, hoomd.update.CustomUpdater]:
     action = MyosinStepUpdater(
@@ -1485,6 +1517,8 @@ def make_cortex_myosin_updater(
         cortex_bond_groups=cortex_bond_groups,
         ell0_cortex=ell0_cortex,
         cortex_beads_per_filament=cortex_beads_per_filament,
+        cortex_filament_starts=cortex_filament_starts,
+        cortex_n_beads_per_filament=cortex_n_beads_per_filament,
         seed_offset=seed_offset,
     )
     updater = hoomd.update.CustomUpdater(

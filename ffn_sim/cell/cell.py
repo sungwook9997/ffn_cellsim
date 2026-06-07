@@ -934,14 +934,9 @@ def build_cortex_full_simulation(
         # variable-length bimodal cortex (unequal per-filament bead counts). The
         # default ``binned_r0`` stepping mode does NOT use that map (its
         # actin-aware seeding fallback already consumes the per-bead
-        # cortex_filament_idx), so it works on the bimodal base.
-        if faithful_connected_mesh and str(p_myosin.stepping_mode) == "grip_walk":
-            raise NotImplementedError(
-                "faithful_connected_mesh + grip_walk myosin not yet supported "
-                "(grip-walk walking assumes a fixed-N bead-tag↔(fil,pos) map "
-                "that mis-maps the variable-length bimodal cortex); use the "
-                "binned_r0 stepping_mode with faithful_connected_mesh."
-            )
+        # cortex_filament_idx), so it works on the bimodal base. grip_walk on the
+        # variable-length bimodal cortex is now supported: the bead-tag↔(fil,pos)
+        # map below is built from topology.filament_starts (2026-06-07 port).
         motor_tag_start = int(snap.particles.N)
         # Per-bead → filament index for the myosin actin-aware seeding. VARIABLE-
         # LENGTH-aware: a bimodal cortex (VariableLengthCortexLayout) has unequal
@@ -1506,10 +1501,21 @@ def build_cortex_full_simulation(
             n_cortex_actin=n_cortex_actin,
             cortex_bond_groups=topology.bond_groups,
             # Grip-walk geometry (used iff p_myosin.stepping_mode=="grip_walk";
-            # harmless otherwise). Fixed-N bead-tag ↔ (filament, pos) map + the
-            # bead spacing ℓ₀ one walked sub-bead step is measured in.
+            # harmless otherwise). The bead-tag ↔ (filament, pos) map + the bead
+            # spacing ℓ₀ one walked sub-bead step is measured in. UNIFORM cortex
+            # uses the fixed-N map (beads_per_filament); the VARIABLE-LENGTH bimodal
+            # faithful cortex passes filament_starts + n_beads_per_filament so the
+            # walk maps tags correctly (2026-06-07 port).
             ell0_cortex=p_cortex.rest_length,
             cortex_beads_per_filament=p_cortex.beads_per_filament,
+            cortex_filament_starts=(
+                topology.filament_starts
+                if hasattr(topology, "filament_starts") else None
+            ),
+            cortex_n_beads_per_filament=(
+                topology.n_beads_per_filament
+                if hasattr(topology, "n_beads_per_filament") else None
+            ),
         )
         sim.operations.updaters.append(myosin_updater)
 
