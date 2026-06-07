@@ -1,0 +1,21 @@
+{
+  "R_cell_m": 7.5e-06,
+  "subdivisions": 2,
+  "n_tri": 320,
+  "contact_gap_m": 2.9569435556380997e-06,
+  "n_ligands": 43,
+  "n_ligands_in_contact": 43,
+  "n_contact_patches": 39,
+  "contact_area_m2": 8.517738042590192e-11,
+  "contact_area_fraction": 0.12281290635557092,
+  "mean_contact_gap_m": 7.373744454989805e-07,
+  "partition_passed": true,
+  "n_fa_patches": 0,
+  "n_integrin_bonds": 0,
+  "cross_consistency_gate": {
+    "passed": true,
+    "n_fa_outside_contact": 0,
+    "fa_outside_ids": []
+  },
+  "figure": "/Users/sw1/ffn_cellsim/ffn_sim/outputs/h7/figs/h7_ecm_contact.png"
+}
