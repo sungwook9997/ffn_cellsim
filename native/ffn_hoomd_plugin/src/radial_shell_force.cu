@@ -5,13 +5,11 @@
 namespace ffn_native
     {
 
-__global__ void rsf_zero(hoomd::Scalar* acc)
-    {
-    if (threadIdx.x < 5)
-        acc[threadIdx.x] = 0.0;
-    }
+#define FFN_RSF_BLK 256u
 
-// Pass 1: shell centroid sum + count.
+// Pass 1: shell centroid sum + count via shared-memory block reduction (one
+// atomicAdd per block per accumulator, not one per thread — removes the global
+// atomic contention that dominated the naive version).
 __global__ void rsf_reduce_centroid(const hoomd::Scalar4* __restrict__ pos,
                                     const unsigned int* __restrict__ tag,
                                     hoomd::Scalar* __restrict__ acc,
@@ -19,20 +17,40 @@ __global__ void rsf_reduce_centroid(const hoomd::Scalar4* __restrict__ pos,
                                     unsigned int t0,
                                     unsigned int t1)
     {
-    const unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= N)
-        return;
-    const unsigned int t = tag[i];
-    if (t < t0 || t >= t1)
-        return;
-    const hoomd::Scalar4 p = pos[i];
-    atomicAdd(&acc[0], (hoomd::Scalar)p.x);
-    atomicAdd(&acc[1], (hoomd::Scalar)p.y);
-    atomicAdd(&acc[2], (hoomd::Scalar)p.z);
-    atomicAdd(&acc[3], (hoomd::Scalar)1.0);
+    __shared__ double sm[FFN_RSF_BLK * 4];
+    const unsigned int tid = threadIdx.x;
+    const unsigned int i = blockIdx.x * blockDim.x + tid;
+    double sx = 0.0, sy = 0.0, sz = 0.0, sc = 0.0;
+    if (i < N)
+        {
+        const unsigned int t = tag[i];
+        if (t >= t0 && t < t1)
+            {
+            const hoomd::Scalar4 p = pos[i];
+            sx = (double)p.x;
+            sy = (double)p.y;
+            sz = (double)p.z;
+            sc = 1.0;
+            }
+        }
+    sm[tid * 4 + 0] = sx;
+    sm[tid * 4 + 1] = sy;
+    sm[tid * 4 + 2] = sz;
+    sm[tid * 4 + 3] = sc;
+    __syncthreads();
+    for (unsigned int s = blockDim.x >> 1; s > 0; s >>= 1)
+        {
+        if (tid < s)
+            for (int k = 0; k < 4; ++k)
+                sm[tid * 4 + k] += sm[(tid + s) * 4 + k];
+        __syncthreads();
+        }
+    if (tid == 0)
+        for (int k = 0; k < 4; ++k)
+            atomicAdd(&acc[k], (hoomd::Scalar)sm[k]);
     }
 
-// Pass 2: shell mean-radius sum (needs the centroid from pass 1).
+// Pass 2: shell mean-radius sum (needs the centroid from pass 1), block-reduced.
 __global__ void rsf_reduce_radius(const hoomd::Scalar4* __restrict__ pos,
                                   const unsigned int* __restrict__ tag,
                                   hoomd::Scalar* __restrict__ acc,
@@ -40,17 +58,32 @@ __global__ void rsf_reduce_radius(const hoomd::Scalar4* __restrict__ pos,
                                   unsigned int t0,
                                   unsigned int t1)
     {
-    const unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= N)
-        return;
-    const unsigned int t = tag[i];
-    if (t < t0 || t >= t1)
-        return;
+    __shared__ double sm[FFN_RSF_BLK];
+    const unsigned int tid = threadIdx.x;
+    const unsigned int i = blockIdx.x * blockDim.x + tid;
     const double cnt = acc[3] > 0.0 ? acc[3] : 1.0;
     const double cx = acc[0] / cnt, cy = acc[1] / cnt, cz = acc[2] / cnt;
-    const hoomd::Scalar4 p = pos[i];
-    const double dx = (double)p.x - cx, dy = (double)p.y - cy, dz = (double)p.z - cz;
-    atomicAdd(&acc[4], (hoomd::Scalar)sqrt(dx * dx + dy * dy + dz * dz));
+    double sr = 0.0;
+    if (i < N)
+        {
+        const unsigned int t = tag[i];
+        if (t >= t0 && t < t1)
+            {
+            const hoomd::Scalar4 p = pos[i];
+            const double dx = (double)p.x - cx, dy = (double)p.y - cy, dz = (double)p.z - cz;
+            sr = sqrt(dx * dx + dy * dy + dz * dz);
+            }
+        }
+    sm[tid] = sr;
+    __syncthreads();
+    for (unsigned int s = blockDim.x >> 1; s > 0; s >>= 1)
+        {
+        if (tid < s)
+            sm[tid] += sm[tid + s];
+        __syncthreads();
+        }
+    if (tid == 0)
+        atomicAdd(&acc[4], (hoomd::Scalar)sm[0]);
     }
 
 // Pass 3: per-bead radial force + per-bead potential (stored in force.w).
@@ -158,14 +191,18 @@ hipError_t gpu_radial_shell_force(const hoomd::Scalar4* d_pos,
     {
     if (N == 0)
         return hipSuccess;
-    const unsigned int grid = (N + block_size - 1) / block_size;
-    hipLaunchKernelGGL(rsf_zero, dim3(1), dim3(32), 0, 0, d_acc);
-    hipLaunchKernelGGL(rsf_reduce_centroid, dim3(grid), dim3(block_size), 0, 0, d_pos, d_tag,
-                       d_acc, N, tag_start, tag_end);
-    hipLaunchKernelGGL(rsf_reduce_radius, dim3(grid), dim3(block_size), 0, 0, d_pos, d_tag, d_acc,
-                       N, tag_start, tag_end);
-    hipLaunchKernelGGL(rsf_apply, dim3(grid), dim3(block_size), 0, 0, d_pos, d_tag, d_force, d_acc,
-                       N, tag_start, tag_end, law, R0, pa, pb, pc, pd);
+    (void)block_size;
+    const unsigned int blk = FFN_RSF_BLK; // block-reduce assumes power-of-2 = 256
+    const unsigned int grid = (N + blk - 1) / blk;
+    const hipError_t z = hipMemsetAsync(d_acc, 0, 5 * sizeof(hoomd::Scalar), 0);
+    if (z != hipSuccess)
+        return z;
+    hipLaunchKernelGGL(rsf_reduce_centroid, dim3(grid), dim3(blk), 0, 0, d_pos, d_tag, d_acc, N,
+                       tag_start, tag_end);
+    hipLaunchKernelGGL(rsf_reduce_radius, dim3(grid), dim3(blk), 0, 0, d_pos, d_tag, d_acc, N,
+                       tag_start, tag_end);
+    hipLaunchKernelGGL(rsf_apply, dim3(grid), dim3(blk), 0, 0, d_pos, d_tag, d_force, d_acc, N,
+                       tag_start, tag_end, law, R0, pa, pb, pc, pd);
     return hipPeekAtLastError();
     }
 
