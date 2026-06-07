@@ -1406,21 +1406,48 @@ def build_cortex_full_simulation(
             _integ.forces.remove(cpu_f)
             _integ.forces.append(gpu_f)
 
-        if enclosed_volume_force is not None:
+        # Prefer the native C++ FFNRadialShellForce ForceCompute (one compute for
+        # all 3 laws via ArrayHandle + shared-mem block-reduce: ~173 µs total vs
+        # ~1860 µs cupy / ~3700 µs cpu). The cupy *_gpu twins remove the
+        # cpu_local_snapshot host-sync but stay launch-bound at the
+        # gpu_local_snapshot floor (~233 µs/force → only ~3.8× full-cell); the
+        # native ForceCompute reaches ~8.3×. Fall back to the cupy twins when the
+        # native plugin is not built / not on PYTHONPATH (still removes the
+        # host-sync). Both are γ-bit-exact vs the cpu forces.
+        try:
+            from ffn_hoomd_plugin import NativeRadialShellForce as _NRSF
+        except Exception:
+            _NRSF = None
+
+        if _NRSF is not None:
+            if enclosed_volume_force is not None:
+                _swap_force(enclosed_volume_force, _NRSF.from_turgor(
+                    enclosed_volume_force.p,
+                    (enclosed_volume_force.tag_start, enclosed_volume_force.tag_end)))
+            if membrane_surface_force is not None:
+                _swap_force(membrane_surface_force, _NRSF.from_membrane(
+                    membrane_surface_force.p,
+                    (membrane_surface_force.tag_start, membrane_surface_force.tag_end)))
+            if nucleus_force is not None:
+                _swap_force(nucleus_force, _NRSF.from_nucleus(
+                    nucleus_force.p,
+                    (nucleus_force.tag_start, nucleus_force.tag_end)))
+        else:
             from ffn_sim.cortex.enclosed_volume_gpu import EnclosedVolumePressureGPU
-            _swap_force(enclosed_volume_force, EnclosedVolumePressureGPU(
-                enclosed_volume_force.p,
-                (enclosed_volume_force.tag_start, enclosed_volume_force.tag_end)))
-        if membrane_surface_force is not None:
             from ffn_sim.cell.membrane_surface_gpu import MembraneSurfaceTensionGPU
-            _swap_force(membrane_surface_force, MembraneSurfaceTensionGPU(
-                membrane_surface_force.p,
-                (membrane_surface_force.tag_start, membrane_surface_force.tag_end)))
-        if nucleus_force is not None:
             from ffn_sim.cell.nucleus_confinement_gpu import NucleusConfinementGPU
-            _swap_force(nucleus_force, NucleusConfinementGPU(
-                nucleus_force.p,
-                (nucleus_force.tag_start, nucleus_force.tag_end)))
+            if enclosed_volume_force is not None:
+                _swap_force(enclosed_volume_force, EnclosedVolumePressureGPU(
+                    enclosed_volume_force.p,
+                    (enclosed_volume_force.tag_start, enclosed_volume_force.tag_end)))
+            if membrane_surface_force is not None:
+                _swap_force(membrane_surface_force, MembraneSurfaceTensionGPU(
+                    membrane_surface_force.p,
+                    (membrane_surface_force.tag_start, membrane_surface_force.tag_end)))
+            if nucleus_force is not None:
+                _swap_force(nucleus_force, NucleusConfinementGPU(
+                    nucleus_force.p,
+                    (nucleus_force.tag_start, nucleus_force.tag_end)))
 
     baoab_updater = None
     baoab_action = None
