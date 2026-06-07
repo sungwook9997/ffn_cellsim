@@ -62,3 +62,32 @@ native constrained integrator is **correct + stable end-to-end**.
 Artifacts: `outputs/h7/production/h7_native_fullcell_go.json` (gbook, Syncthing).
 Driver committed; no core modules modified (runtime swap). Gate-B still needs the
 separate relaxed-M-SHAKE mode (the rigid native updater cannot relax constraints).
+
+---
+
+## Compartment-force GPU port — MEASURED (corrects the attribution above)
+
+Wired the existing device-resident compartment twins (`enclosed_volume_gpu` /
+`membrane_surface_gpu` / `nucleus_confinement_gpu`) into the build opt-in
+(`FFN_GPU_DEVICE_COMPARTMENTS=1`, post-attach swap in `cell.py`, default-off zero
+regression) and measured the full-cell throughput+γ matrix
+(`scripts/h7_compartment_gpu_port.py`, gbook, n_fil=1000):
+
+| arm | steps/s | ×base | γ_soft (mN/m) | γ_rigid | nonconv |
+|---|---|---|---|---|---|
+| cupy + CPU-comp (baseline) | 84.0 | 1.00× | 2.957e-7 | 8.353e-2 | — |
+| cupy + GPU-comp | 89.8 | **1.07×** | 2.957e-7 (EXACT) | 8.353e-2 (EXACT) | — |
+| native + GPU-comp (full GPU-main) | 243.0 | **2.89×** | 2.879e-7 | 8.311e-2 | 0 |
+
+**The compartment GPU port is CORRECT but MODEST (1.07× alone).** γ is bit-exact
+vs the CPU forces → physics validated. **It corrects this doc's earlier ≈72%
+attribution**: that was an inference from comparing to the sub-session's
+no-compartment build (which differs in particle count + binder config, not just
+the 3 Custom forces). The DIRECT measurement (same cell, CPU-comp vs GPU-comp)
+shows the compartment Custom-force host-sync is only ~17% of the step (~860 µs).
+The **native integrator is the dominant lever (2.7×)**; combined the full GPU-main
+stack is **2.89× / 243 steps/s / ~9.5 days per 2×10⁸**.
+
+⇒ The remaining wall is **binder host-sync (myosin/xlink/integrin) + LJ**, not the
+compartment forces. Next ~2× lever = the **binder GPU-main port** (the GPU-main
+binder lane). Gate-A/B is ~9.5 days/run on the full GPU-main stack today.
