@@ -48,7 +48,10 @@ def _engaged_heads(cell) -> int:
 def run(n_filaments, warmup, sample, device, seed):
     manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
     if n_filaments is not None:
-        manifest["cortex_overrides"] = {"cortex": {"n_filaments": int(n_filaments), "demo_mode": True}}
+        # MERGE (preserve the production myosin config from mcf7_baseline.yaml).
+        co = manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+        co["n_filaments"] = int(n_filaments)
+        co["demo_mode"] = True
     cell = build_baseline_cell(manifest=manifest, device=device, seed=seed,
                                connected_mesh=True, equilibrate=True,
                                equilibrate_steps=warmup,

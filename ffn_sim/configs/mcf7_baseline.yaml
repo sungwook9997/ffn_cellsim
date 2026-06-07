@@ -26,7 +26,18 @@ scope: active_spreading
 # Detailed H.3 cortex/myosin/crosslinker physics come from this base config;
 # the manifest applies only MCF7 cell-type overrides + the R_cell above.
 base_cortex_config: phase1_h3.yaml
-cortex_overrides: {}     # scale (n_filaments / n_motors / n_xl) inherited from base
+# Production myosin = Route B (PI-ratified 2026-05-31; bug-fix confirmed 2026-06-07):
+# grip_walk stepping + mesoscale_force_scaling ON. The ×40 mesoscopic coarse-graining
+# reduces the MOTOR COUNT ~21× (native 3/µm²·4πR² → n_motors); without force-scaling the
+# aggregate active stress is undercounted by that factor (the M1 diagnostic showed the
+# active-γ ceiling jump 0.001→0.021 mN/m once ON, with N_eff·F_eff = N_native·F_native
+# conserved exactly). binned_r0 (no scaling) stays the legacy-test default; physiological
+# PRODUCTION must run Route B. (Scale n_filaments/n_xl still inherited; drivers MERGE.)
+cortex_overrides:
+  cortex:
+    myosin:
+      stepping_mode: grip_walk
+      mesoscale_force_scaling: true     # areal_density_per_um2 defaults to 3.0 (Salbreux 2012)
 
 # ----------------------------------------------------------------------------
 # Compartments — ON at their physiological setpoint (the baseline IS this state)

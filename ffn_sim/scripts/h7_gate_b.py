@@ -72,9 +72,11 @@ def run_gate_b(
             "enabled": True, "base_config": "phase1_h3.yaml",
         }
     if n_filaments is not None:
-        manifest["cortex_overrides"] = {
-            "cortex": {"n_filaments": int(n_filaments), "demo_mode": True}
-        }
+        # MERGE into the manifest's cortex_overrides (preserve the production myosin
+        # config — grip_walk + mesoscale_force_scaling — declared in mcf7_baseline.yaml).
+        co = manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+        co["n_filaments"] = int(n_filaments)
+        co["demo_mode"] = True
     if n_nuc_beads is not None:
         manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
 
