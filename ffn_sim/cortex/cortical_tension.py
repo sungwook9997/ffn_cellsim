@@ -371,8 +371,22 @@ def _gamma_soft(
     u = d / L_safe[:, None]
     T = k_arr * (L - r0_arr)  # signed scalar tension [N]
     gamma = _method_of_planes_gamma(rA, rB, u, T, R_cell, n_planes)
+    # Irving-Kirkwood whole-shell hoop tension: a lower-variance CROSS-CHECK of
+    # the MOP gamma. Every cortical bond contributes by its TANGENTIAL projection
+    # over the WHOLE shell (not only the bonds crossing one cut-plane), so it has
+    # ~12× lower sampling variance; validated <0.5% vs the corrected MOP on a
+    # synthetic shell (h3_ku35_estimator_audit.py). It is the SAME realized
+    # bond-tension state as the MOP — NOT a different physics — so it cannot fix
+    # an undercount the MOP doesn't have; it just de-noises it (Codex/PI 2026-06-07).
+    #   g_ik = Σ T·L·(1 − (r̂·û)²) / (8π R²)
+    rmid = 0.5 * (rA + rB)
+    rn = np.linalg.norm(rmid, axis=1)
+    rhat = rmid / np.where(rn > 0.0, rn, 1.0)[:, None]
+    cos2 = np.sum(rhat * u, axis=1) ** 2
+    gamma_ik = float(np.sum(T * L * (1.0 - cos2)) / (8.0 * np.pi * R_cell ** 2))
     return {
         "gamma": float(gamma),
+        "gamma_ik": gamma_ik,
         "n_bonds": n_cortical,
         "n_bonds_total": n_total,
         "n_bonds_excluded": n_total - n_cortical,
@@ -557,6 +571,7 @@ def measure_cortical_tension(
 
     return {
         "gamma_soft": float(g_soft),
+        "gamma_soft_ik": float(soft.get("gamma_ik", float("nan"))),  # IK whole-shell cross-check
         "gamma_rigid": float(g_rigid),
         "gamma_passive": float(g_passive),
         "gamma_structural": g_struct,
