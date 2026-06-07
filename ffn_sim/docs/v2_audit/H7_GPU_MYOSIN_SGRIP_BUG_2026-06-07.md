@@ -1,7 +1,34 @@
-# H.7 — GPU-device myosin grip_walk s_grip bug (BLOCKS Gate-A); precise repro + elimination
+# H.7 — myosin grip_walk s_grip = 0 on gbook (Gate-A) — RESOLVED: STALE CONFIG, not a GPU bug
 
-**Date:** 2026-06-07 (night, autonomous) · **Status:** OPEN, blocks Gate-A · **Severity:** high
+**Date:** 2026-06-07 (night, autonomous) · **Status:** ✅ RESOLVED · **Severity:** was high
 **Found by:** Lead, while launching the Gate-A production run on the GPU-main stack.
+
+## ✅ RESOLUTION (root cause — NOT a GPU bug)
+The s_grip = 0 was **NOT** a GPU-device bug. **gbook's `ffn_sim/configs/mcf7_baseline.yaml`
+was STALE** (Syncthing lag) — it was missing the `stepping_mode: grip_walk` line, so
+`resolve_cortex_myosin` fell back to the default `binned_r0` (`myosin.py:244`). The
+`binned_r0` legacy proxy advances `bond_bins`, NOT `_head_grip_s`, so s_grip stays 0 by
+design. My CPU runs used the up-to-date local config (`grip_walk`) → s_grip grew; the gbook
+GPU runs used the stale config (`binned_r0`) → s_grip = 0. The apparent "device" contrast was
+entirely the local-vs-gbook config difference. **The GPU-main stack (native integrator +
+native compartment ForceCompute) is correct** — after `scp`-ing the current configs to gbook,
+the GPU diag shows `stepping=grip_walk` and s_grip accumulates **identically to CPU**
+(1.26e-10 → 1.96e-10 → 2.65e-10 → 3.35e-10 over bursts). Gate-A is valid again.
+
+**Fixes applied:** (1) synced `configs/mcf7_baseline.yaml` + `phase1_h3.yaml` to gbook;
+(2) `scripts/h7_gate_a_native.py` now ASSERTS `stepping_mode == "grip_walk"` at launch (a
+stale config fails loudly instead of silently wasting a 5-day binned_r0 run).
+**Lesson:** gbook syncs via Syncthing (not git); file-by-file `scp` + Syncthing lag leave the
+gbook tree partially stale. Before a long gbook production run, assert the critical config
+values at launch (done) and/or sync the whole config dir.
+
+> Everything below is the original (pre-resolution) diagnostic chain — kept because the
+> elimination methodology is sound and reusable; the *conclusion* ("GPU-device bug") was
+> superseded by the stale-config root cause above.
+
+---
+
+## (superseded) Original framing: GPU-device myosin grip_walk s_grip bug
 
 ## TL;DR
 On a **GPU** device the cortex-myosin `grip_walk` grip-stretch accumulator

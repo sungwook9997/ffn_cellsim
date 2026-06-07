@@ -146,6 +146,9 @@ def main() -> int:
     ap.add_argument("--device", choices=["cpu", "gpu"], default="gpu")
     ap.add_argument("--allow-cpu-dev", action="store_true")
     ap.add_argument("--tag", type=str, default="gateA_native")
+    ap.add_argument("--no-native", action="store_true",
+                    help="diagnostic: keep the cupy constrained integrator (skip the "
+                         "native swap) to isolate native-vs-cupy effects on s_grip")
     args = ap.parse_args()
 
     import hoomd
@@ -182,8 +185,25 @@ def main() -> int:
         ckpt_myo_s = ckpt_myo_bound = None
 
     # ---- constrained production on the GPU-main stack ----
-    cell, nat, adapter, dtc, r0 = _build_native_constrained(
-        manifest, device=dev, seed=args.seed, warm_pos=warm_pos)
+    if args.no_native:
+        cell = build_baseline_cell(
+            manifest=deepcopy(manifest), device=dev, seed=args.seed,
+            constrained=True, equilibrate=False)
+        if hasattr(cell.baoab_action, "record_lambda"):
+            cell.baoab_action.record_lambda = True
+        snap = cell.simulation.state.get_snapshot()
+        if snap.communicator.rank == 0:
+            snap.particles.position[:] = warm_pos
+        cell.simulation.state.set_snapshot(snap)
+        cell.simulation.run(0)
+        nat = None
+        adapter = cell.baoab_action
+        dtc = float(cell.baoab_action.dt)
+        r0 = float(cell.baoab_action._chain_rest_length)
+        print("[diag] --no-native: cupy constrained integrator (no swap)", flush=True)
+    else:
+        cell, nat, adapter, dtc, r0 = _build_native_constrained(
+            manifest, device=dev, seed=args.seed, warm_pos=warm_pos)
     sim = cell.simulation
     R_cell = float(cell.p_cortex.R_cell)
     ell0 = float(r0)
@@ -195,6 +215,20 @@ def main() -> int:
             print("[RESUME] myosin grip state restored", flush=True)
         except Exception as exc:  # noqa: BLE001
             print(f"[RESUME] WARN myosin restore failed: {exc}", flush=True)
+
+    # GUARD: Gate-A is meaningless unless the myosin actually WALKS (grip_walk).
+    # A stale config (e.g. gbook Syncthing lag dropping the
+    # `stepping_mode: grip_walk` line in mcf7_baseline.yaml) silently defaults to
+    # `binned_r0`, which never accumulates s_grip → s_grip stays 0 → the whole
+    # 5-day run is wasted. Fail LOUDLY at launch instead.
+    sm = getattr(cell.myosin_action, "stepping_mode", None)
+    if sm != "grip_walk":
+        raise RuntimeError(
+            f"Gate-A requires grip_walk myosin (got stepping_mode={sm!r}). The "
+            "config is likely STALE — sync ffn_sim/configs/mcf7_baseline.yaml "
+            "(it must contain 'stepping_mode: grip_walk'). binned_r0 never "
+            "accumulates s_grip, so Gate-A would be meaningless."
+        )
 
     nca = cell.p_cortex.n_filaments * cell.p_cortex.beads_per_filament
     r0_mean = float(np.linalg.norm(_tagpos(sim)[:nca], axis=1).mean())
@@ -213,7 +247,7 @@ def main() -> int:
             row = dict(tick=k + 1, g_soft_mN_m=g_soft * 1e3, g_rigid_mN_m=g_rigid * 1e3,
                        s_grip_m=s_abs, s_grip_over_l0=s_rel,
                        backbone_r_over_r0=r_over_r0,
-                       nonconv=int(nat.nonconverged_count))
+                       nonconv=(int(nat.nonconverged_count) if nat is not None else -1))
             rows.append(row)
             sps = ((k + 1 - start_tick) * args.interval) / max(time.perf_counter() - t0, 1e-9)
             print(f"  [gateA] tick {k+1}/{args.ticks} γ_soft={row['g_soft_mN_m']:.4e} "
