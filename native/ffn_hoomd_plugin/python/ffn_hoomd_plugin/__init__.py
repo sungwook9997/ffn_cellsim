@@ -51,6 +51,39 @@ class NativeRadialShellForce(Force):
             self._R0, self._pa, self._pb, self._pc, self._pd)
 
 
+class NativeAttachmentSpringForce(Force):
+    """Fixed-pool binder enabler: K head<->actin springs read from device arrays.
+
+    The binder updater calls ``set_attachments`` on its firing (~1% of steps) to
+    toggle the pool (head_tag/actin_tag = bound pair, k=0 = inactive); the force
+    sums the springs every step on-device. Replaces the per-firing global
+    set_snapshot bond mutation (51.9 ms — h7_native_gate_a_profile). GPU-only.
+    """
+
+    def __init__(self, *, pool_size):
+        super().__init__()
+        self._K = int(pool_size)
+        self._pending = None
+
+    def set_attachments(self, head_tag, actin_tag, k, r0):
+        import numpy as np
+        a = (np.ascontiguousarray(head_tag, np.int32),
+             np.ascontiguousarray(actin_tag, np.int32),
+             np.ascontiguousarray(k, np.float64),
+             np.ascontiguousarray(r0, np.float64))
+        if getattr(self, "_cpp_obj", None) is None:
+            self._pending = a
+        else:
+            self._cpp_obj.set_attachments(*a)
+
+    def _attach_hook(self) -> None:
+        self._cpp_obj = _ffn_native.FFNAttachmentSpringForce(
+            self._simulation.state._cpp_sys_def, self._K)
+        if self._pending is not None:
+            self._cpp_obj.set_attachments(*self._pending)
+            self._pending = None
+
+
 class NativeNoOpUpdater(Updater):
     """Minimal compiled updater used to verify HOOMD native-operation wiring."""
 

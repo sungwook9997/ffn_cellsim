@@ -2,6 +2,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "attachment_spring.cuh"
 #include "baoab_kernel.cuh"
 #include "constrained_kernel.cuh"
 #include "fixman_kernel.cuh"
@@ -559,6 +560,107 @@ class FFNRadialShellForce : public hoomd::ForceCompute
     hoomd::GPUArray<hoomd::Scalar> m_acc;
     };
 
+// Native attachment-spring force (fixed-pool binder enabler). The binder updater
+// calls set_attachments(...) on its (~every-100-step) firing to toggle the K-slot
+// pool; computeForces reads it every step on-device — NO global set_snapshot.
+class FFNAttachmentSpringForce : public hoomd::ForceCompute
+    {
+    public:
+    FFNAttachmentSpringForce(std::shared_ptr<hoomd::SystemDefinition> sysdef, unsigned int K)
+        : hoomd::ForceCompute(sysdef), m_K(K),
+          m_head_tag(K > 0 ? K : 1, m_exec_conf), m_actin_tag(K > 0 ? K : 1, m_exec_conf),
+          m_k(K > 0 ? K : 1, m_exec_conf), m_r0(K > 0 ? K : 1, m_exec_conf),
+          m_row_of_tag(m_pdata->getNGlobal() > 0 ? m_pdata->getNGlobal() : 1, m_exec_conf)
+        {
+        hoomd::ArrayHandle<int> h_h(m_head_tag, hoomd::access_location::host,
+                                    hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<int> h_a(m_actin_tag, hoomd::access_location::host,
+                                    hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<double> h_k(m_k, hoomd::access_location::host,
+                                       hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<double> h_r(m_r0, hoomd::access_location::host,
+                                       hoomd::access_mode::overwrite);
+        for (unsigned int s = 0; s < m_K; ++s)
+            {
+            h_h.data[s] = -1;
+            h_a.data[s] = -1;
+            h_k.data[s] = 0.0;
+            h_r.data[s] = 0.0;
+            }
+        }
+
+    // Off-hot-path: called by the binder updater each firing (~1% of steps).
+    void set_attachments(py::array_t<int, py::array::c_style | py::array::forcecast> head,
+                         py::array_t<int, py::array::c_style | py::array::forcecast> actin,
+                         py::array_t<double, py::array::c_style | py::array::forcecast> k,
+                         py::array_t<double, py::array::c_style | py::array::forcecast> r0)
+        {
+        const auto hb = head.request();
+        if ((unsigned int)hb.shape[0] != m_K)
+            throw std::runtime_error("set_attachments: length must equal pool size K");
+        hoomd::ArrayHandle<int> h_h(m_head_tag, hoomd::access_location::host,
+                                    hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<int> h_a(m_actin_tag, hoomd::access_location::host,
+                                    hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<double> h_k(m_k, hoomd::access_location::host,
+                                       hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<double> h_r(m_r0, hoomd::access_location::host,
+                                       hoomd::access_mode::overwrite);
+        std::memcpy(h_h.data, head.data(), (size_t)m_K * sizeof(int));
+        std::memcpy(h_a.data, actin.data(), (size_t)m_K * sizeof(int));
+        std::memcpy(h_k.data, k.data(), (size_t)m_K * sizeof(double));
+        std::memcpy(h_r.data, r0.data(), (size_t)m_K * sizeof(double));
+        }
+
+    protected:
+    void computeForces(uint64_t timestep) override
+        {
+        if (!m_exec_conf->isCUDAEnabled())
+            throw std::runtime_error("FFNAttachmentSpringForce requires a GPU device.");
+        const hoomd::BoxDim& box = m_pdata->getGlobalBox();
+        const hoomd::Scalar3 L = box.getL();
+#ifdef ENABLE_HIP
+        const unsigned int N = m_pdata->getN();
+        hoomd::ArrayHandle<hoomd::Scalar4> h_pos(m_pdata->getPositions(),
+            hoomd::access_location::device, hoomd::access_mode::read);
+        hoomd::ArrayHandle<unsigned int> h_tag(m_pdata->getTags(),
+            hoomd::access_location::device, hoomd::access_mode::read);
+        hoomd::ArrayHandle<hoomd::Scalar4> h_force(m_force,
+            hoomd::access_location::device, hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<int> h_rot(m_row_of_tag, hoomd::access_location::device,
+            hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<int> h_h(m_head_tag, hoomd::access_location::device,
+            hoomd::access_mode::read);
+        hoomd::ArrayHandle<int> h_a(m_actin_tag, hoomd::access_location::device,
+            hoomd::access_mode::read);
+        hoomd::ArrayHandle<double> h_k(m_k, hoomd::access_location::device,
+            hoomd::access_mode::read);
+        hoomd::ArrayHandle<double> h_r(m_r0, hoomd::access_location::device,
+            hoomd::access_mode::read);
+        hoomd::ArrayHandle<hoomd::Scalar> h_virial(m_virial,
+            hoomd::access_location::device, hoomd::access_mode::overwrite);
+        const hipError_t mset = hipMemsetAsync(
+            h_virial.data, 0, m_virial.getNumElements() * sizeof(hoomd::Scalar), 0);
+        (void)mset;
+        const hipError_t st = ffn_native::gpu_attachment_spring(
+            h_pos.data, h_tag.data, h_force.data, h_rot.data, h_h.data, h_a.data, h_k.data,
+            h_r.data, N, m_K, L.x, L.y, L.z, 256);
+        if (st != hipSuccess)
+            throw std::runtime_error(std::string("FFNAttachmentSpringForce kernel: ")
+                                     + hipGetErrorString(st));
+        if (m_exec_conf->isCUDAErrorCheckingEnabled())
+            {
+            CHECK_CUDA_ERROR();
+            }
+#endif
+        }
+
+    private:
+    unsigned int m_K;
+    hoomd::GPUArray<int> m_head_tag, m_actin_tag, m_row_of_tag;
+    hoomd::GPUArray<double> m_k, m_r0;
+    };
+
 std::string build_info()
     {
     return "ffn_hoomd_plugin compile/load probe: native hot-loop scaffold";
@@ -624,4 +726,9 @@ PYBIND11_MODULE(_ffn_native, m)
                       double,
                       double,
                       double>());
+    py::class_<FFNAttachmentSpringForce, hoomd::ForceCompute,
+               std::shared_ptr<FFNAttachmentSpringForce>>(m, "FFNAttachmentSpringForce")
+        .def(py::init<std::shared_ptr<hoomd::SystemDefinition>, unsigned int>())
+        .def("set_attachments", &FFNAttachmentSpringForce::set_attachments,
+             py::arg("head_tag"), py::arg("actin_tag"), py::arg("k"), py::arg("r0"));
     }
