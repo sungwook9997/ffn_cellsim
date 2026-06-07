@@ -101,6 +101,8 @@ from ffn_sim.cortex.cortex import (
     ResolvedH3,
     build_cortex_simulation,
     build_cortex_state,
+    build_variable_length_cortex_state,
+    generate_bimodal_cortex_layout,
     generate_cortex_topology,
 )
 from ffn_sim.cortex.crosslinkers import (
@@ -717,9 +719,15 @@ def build_cortex_full_simulation(
     equilibrate_steps: int = 0,
     equilibrate_softstart_steps: int = 100,
     connected_mesh: bool = False,
+    faithful_connected_mesh: bool = False,
     cm_z_struct: float = 3.7,
     cm_bundle_mult: int = 2,
     cm_reach: float | None = None,
+    cm_formin_fraction: float = 0.12,
+    cm_L_long_mean: float = 5.0e-6,
+    cm_L_short_mean: float | None = None,
+    cm_arp_branch_fraction: float = 0.7,
+    cm_branch_angle_deg: float = 70.0,
     rng: np.random.Generator | None = None,
 ):
     """End-to-end builder for cortex + (optional) xlinks + myosin + lamellipodium + FA.
@@ -735,6 +743,23 @@ def build_cortex_full_simulation(
     crosslinker count ``n_xl`` becomes an OUTPUT of the seeding. ``cm_reach``
     defaults to the mesoscale spacing √(A_shell/n_fil). DEFAULT-OFF: when False
     the build is bit-for-bit identical to the random-anchor path.
+
+    FAITHFUL-CONNECTED-MESH (2026-06-07): when ``faithful_connected_mesh=True``
+    the cortex BASE is the bimodal variable-length layout
+    (:func:`generate_bimodal_cortex_layout` — short Arp2/3 infill + long formin
+    backbone + Arp2/3 70° branches, projected onto the 200 nm shell band) built
+    via :func:`build_variable_length_cortex_state`, INSTEAD of the uniform
+    fixed-N :func:`build_cortex_state`. This mirrors
+    ``cortex/connected_mesh.py::build_connected_cortex`` (the canonical faithful
+    reference) but wired into the full-cell composition. It IMPLIES the connected
+    seed (treated as ``connected_mesh``-ON): the bridge mesh is seeded on the
+    bimodal beads with the Arp2/3 ``branch_bonds`` counted as prior connectivity
+    (``prior_bead_bonds``). The bimodal-layout params ``cm_formin_fraction`` /
+    ``cm_L_long_mean`` / ``cm_L_short_mean`` / ``cm_arp_branch_fraction`` /
+    ``cm_branch_angle_deg`` carry ``build_connected_cortex``'s defaults. The
+    ``cm_z_struct`` / ``cm_bundle_mult`` / ``cm_reach`` seed knobs are reused.
+    DEFAULT-OFF: when False the cortex base is the uniform path, bit-for-bit
+    identical to today.
 
     Performs the full state composition (no ERM — attach separately via
     ``attach_erm_to_simulation``):
@@ -794,13 +819,45 @@ def build_cortex_full_simulation(
     ``p_fa.k_int_bare``) — used to bridge the construction substrate↔cortex
     gap without touching the governed resolve_h4 defaults.
     """
-    # 1. Cortex base — use the topology returned by build_cortex_state so the
-    # myosin/xlink layouts see the SAME actin positions the snapshot has.
-    cortex_snap, topology, _ = build_cortex_state(
-        p_cortex, with_crosslinkers=False, rng=rng,
+    # 1. Cortex base.
+    # FAITHFUL path: bimodal variable-length layout (Arp2/3 short infill + formin
+    # long backbone + 70° branches), mirroring connected_mesh.build_connected_cortex.
+    # The faithful base IMPLIES the connected seed (treat connected_mesh as ON).
+    if faithful_connected_mesh:
+        if rng is None:
+            rng = np.random.default_rng(p_cortex.seed)
+        topology = generate_bimodal_cortex_layout(
+            p_cortex,
+            formin_fraction=cm_formin_fraction,
+            L_long_mean=cm_L_long_mean,
+            L_short_mean=cm_L_short_mean,
+            arp_branch_fraction=cm_arp_branch_fraction,
+            branch_angle_deg=cm_branch_angle_deg,
+            n_filaments=p_cortex.n_filaments,
+            project_to_shell=True,
+            rng=rng,
+        )
+        n_cortex_actin = int(topology.positions_flat.shape[0])
+        cortex_snap = build_variable_length_cortex_state(p_cortex, topology)
+        snap = cortex_snap
+        connected_mesh = True  # faithful base requires the connected seed
+    else:
+        # UNIFORM path — use the topology returned by build_cortex_state so the
+        # myosin/xlink layouts see the SAME actin positions the snapshot has.
+        cortex_snap, topology, _ = build_cortex_state(
+            p_cortex, with_crosslinkers=False, rng=rng,
+        )
+        n_cortex_actin = p_cortex.n_filaments * p_cortex.beads_per_filament
+        snap = cortex_snap
+
+    # Unified cortex bead-position view (variable-length layout exposes
+    # ``positions_flat``; the fixed-N CortexTopology exposes ``positions`` which
+    # reshapes to the same (n_cortex_actin, 3) for the uniform path → bit-identical).
+    cortex_xyz = (
+        topology.positions_flat
+        if hasattr(topology, "positions_flat")
+        else topology.positions.reshape(-1, 3)
     )
-    n_cortex_actin = p_cortex.n_filaments * p_cortex.beads_per_filament
-    snap = cortex_snap
 
     # 2. Optional xlinks
     xlink_layout = None
@@ -811,25 +868,40 @@ def build_cortex_full_simulation(
         p_xlinks is not None and p_xlinks.n_xl > 0
     )
     if enable_xl:
-        cortex_positions = topology.positions.reshape(n_cortex_actin, 3)
-        cortex_filament_idx = np.repeat(
-            np.arange(p_cortex.n_filaments, dtype=np.int64),
-            p_cortex.beads_per_filament,
-        )
+        cortex_positions = cortex_xyz
+        # Per-bead filament index for the bridge-different-filament rule. The
+        # bimodal (faithful) layout has unequal per-filament bead counts, so use
+        # its own ``filament_idx``; the uniform path uses the contiguous repeat.
+        if faithful_connected_mesh:
+            cortex_filament_idx = topology.filament_idx
+        else:
+            cortex_filament_idx = np.repeat(
+                np.arange(p_cortex.n_filaments, dtype=np.int64),
+                p_cortex.beads_per_filament,
+            )
         if connected_mesh:
-            # FAST HYBRID: seed the CONNECTED percolated mesh on the fixed-N
-            # cortex (bridge-different-filament + bundling + adhered seed).
+            # Seed the CONNECTED percolated mesh on the cortex beads
+            # (bridge-different-filament + bundling + adhered seed). On the
+            # faithful base the Arp2/3 70° branch bonds count as PRIOR
+            # connectivity (prior_bead_bonds) so the total coordination
+            # (branches + crosslinks) lands at z_struct — mirroring
+            # connected_mesh.build_connected_cortex. On the uniform fast-hybrid
+            # base there are no branch bonds, so prior_bead_bonds is None.
             from dataclasses import replace as _replace
             import math as _math
             _reach = cm_reach if cm_reach is not None else _math.sqrt(
                 4.0 * _math.pi * p_cortex.R_cell ** 2 / p_cortex.n_filaments
             )
             p_xlinks = _replace(p_xlinks, max_bind_dist=_reach)
+            _prior_bonds = (
+                topology.branch_bonds if faithful_connected_mesh else None
+            )
             _cm_seed = seed_connected_mesh_xlinks(
                 cortex_positions, cortex_filament_idx, p_cortex.n_filaments,
                 p_xlinks, z_struct=cm_z_struct, bundle_mult=cm_bundle_mult,
                 reach=_reach, R_cell=p_cortex.R_cell,
                 n_cortex_beads=n_cortex_actin,
+                prior_bead_bonds=_prior_bonds,
                 rng=np.random.default_rng(p_xlinks.seed),
             )
             xlink_layout = _cm_seed.layout
@@ -855,6 +927,20 @@ def build_cortex_full_simulation(
         p_myosin is not None and p_myosin.n_motors_per_cell > 0
     )
     if enable_myo:
+        # FAITHFUL + grip-walk is not yet supported: the grip-walk WALKING
+        # geometry (myosin._tag_to_fil_pos / _bead_tag) hard-assumes the fixed-N
+        # ``fil·beads_per_filament + pos`` bead-tag map, which mis-maps the
+        # variable-length bimodal cortex (unequal per-filament bead counts). The
+        # default ``binned_r0`` stepping mode does NOT use that map (its
+        # actin-aware seeding fallback already consumes the per-bead
+        # cortex_filament_idx), so it works on the bimodal base.
+        if faithful_connected_mesh and str(p_myosin.stepping_mode) == "grip_walk":
+            raise NotImplementedError(
+                "faithful_connected_mesh + grip_walk myosin not yet supported "
+                "(grip-walk walking assumes a fixed-N bead-tag↔(fil,pos) map "
+                "that mis-maps the variable-length bimodal cortex); use the "
+                "binned_r0 stepping_mode with faithful_connected_mesh."
+            )
         motor_tag_start = int(snap.particles.N)
         # Per-bead → filament index for the myosin actin-aware seeding. VARIABLE-
         # LENGTH-aware: a bimodal cortex (VariableLengthCortexLayout) has unequal
@@ -874,7 +960,7 @@ def build_cortex_full_simulation(
             p_myosin, p_cortex.R_cell,
             motor_tag_start=motor_tag_start,
             rng=np.random.default_rng(p_myosin.seed),
-            cortex_positions=topology.positions.reshape(-1, 3),
+            cortex_positions=cortex_xyz,
             cortex_tangents=topology.tangents,
             beads_per_filament=p_cortex.beads_per_filament,
             cortex_filament_idx=_myo_fil_idx,
@@ -952,7 +1038,7 @@ def build_cortex_full_simulation(
         # Dynamic load-and-fail clutch kinetics is S5 (TODO).
         snap, fa_integration = _extend_snapshot_with_fa(
             snap, p_fa,
-            cortex_positions=topology.positions,
+            cortex_positions=cortex_xyz,
             n_cortex_actin=n_cortex_actin,
             clutch_k=(
                 fa_clutch_k if fa_clutch_k is not None else p_fa.k_int_bare
@@ -979,7 +1065,6 @@ def build_cortex_full_simulation(
     enable_nucleus = p_nucleus is not None
     if enable_nucleus:
         if nucleus_centroid is None:
-            cortex_xyz = topology.positions.reshape(n_cortex_actin, 3)
             nuc_centroid = cortex_xyz.mean(axis=0)
         else:
             nuc_centroid = np.asarray(
@@ -1005,6 +1090,16 @@ def build_cortex_full_simulation(
     # constraint length. Myosin/xlink bonds stay harmonic.
     bond.params["cortex-bond"] = dict(
         k=(0.0 if constrained else p_cortex.bond_k), r0=p_cortex.rest_length)
+    # FAITHFUL path: Arp2/3 70° branch link (mother↔daughter), emitted as the
+    # ``arp_branch`` bond type by build_variable_length_cortex_state when the
+    # bimodal layout has branches. Same stiffness/rest-length as the backbone
+    # bond (mirrors connected_mesh.build_connected_cortex). It is NOT an M-SHAKE
+    # constraint pair (only cortex-bond backbone bonds are), so it stays harmonic
+    # at full bond_k even in constrained mode. Register only when present in the
+    # snapshot, else md.bond.Harmonic would demand params for an absent type.
+    if faithful_connected_mesh and int(topology.branch_bonds.shape[0]) > 0:
+        bond.params["arp_branch"] = dict(
+            k=p_cortex.bond_k, r0=p_cortex.rest_length)
     if enable_xl:
         from ffn_sim.cortex.crosslinkers import (
             xlink_attach_bin_names, xlink_attach_bin_rest_lengths,
@@ -1054,6 +1149,15 @@ def build_cortex_full_simulation(
 
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
+    # FAITHFUL path: Arp2/3 dendritic 70° branch angle, emitted as the
+    # ``arp_branch_angle`` angle type by build_variable_length_cortex_state when
+    # the bimodal layout has branch angles. Same bending stiffness as the
+    # backbone angle, held at branch_angle_deg (mirrors connected_mesh.
+    # build_connected_cortex). Register only when present in the snapshot.
+    if faithful_connected_mesh and int(topology.branch_angles.shape[0]) > 0:
+        angle.params["arp_branch_angle"] = dict(
+            k=p_cortex.angle_k, t0=math.radians(cm_branch_angle_deg),
+        )
     if enable_lamel:
         angle.params["lamel_branch_angle"] = dict(
             k=p_lamellipodium.angle_branch_k, t0=p_lamellipodium.angle_branch_t0,
@@ -1324,13 +1428,32 @@ def build_cortex_full_simulation(
         gamma_map = apply_cytoplasm_drag(gamma_map, p_cytoplasm)
         if constrained:
             # Rigid actin backbone (M-SHAKE + Fixman); cortex filaments are
-            # contiguous N-bead blocks [f·N, (f+1)·N).
+            # contiguous bead blocks. UNIFORM: each filament is N beads at
+            # [f·N, (f+1)·N). VARIABLE-LENGTH (faithful): per-filament bead
+            # counts differ, so derive each chain from filament_starts +
+            # n_beads_per_filament. The constraint pairs are the backbone bonds
+            # only (bond_groups, NOT the Arp2/3 branch bonds); ℓ0 spacing is
+            # uniform so constraint_lengths stays rest_length in both paths.
             from ffn_sim.integrator.constrained_baoab import (
                 make_constrained_baoab_updater,
             )
-            N = p_cortex.beads_per_filament
-            Ffil = p_cortex.n_filaments
-            chains = [np.arange(f * N, (f + 1) * N, dtype=np.int64) for f in range(Ffil)]
+            if hasattr(topology, "filament_starts"):
+                chains = [
+                    np.arange(
+                        int(topology.filament_starts[f]),
+                        int(topology.filament_starts[f])
+                        + int(topology.n_beads_per_filament[f]),
+                        dtype=np.int64,
+                    )
+                    for f in range(len(topology.n_beads_per_filament))
+                ]
+            else:
+                N = p_cortex.beads_per_filament
+                Ffil = p_cortex.n_filaments
+                chains = [
+                    np.arange(f * N, (f + 1) * N, dtype=np.int64)
+                    for f in range(Ffil)
+                ]
             cpairs = np.asarray(topology.bond_groups, dtype=np.int64)
             baoab_action, baoab_updater = make_constrained_baoab_updater(
                 kT=p_cortex.kT, gamma=gamma_map, dt=dt_used,
