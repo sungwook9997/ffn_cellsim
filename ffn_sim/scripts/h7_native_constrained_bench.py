@@ -45,10 +45,17 @@ def _warm_and_state(p, n_fil, seed, warm_steps):
     N = p.beads_per_filament
     F = p.n_filaments
     n_part = F * N
-    simw, *_ = build_cortex_simulation(
-        p, device=hoomd.device.GPU(notice_level=0), with_baoab=True,
+    # Warm on CPU: soft-start (clipped Brownian relaxes severe construction
+    # overlaps that the raw BAOAB cannot) + BAOAB settle. Phase 2 runs GPU.
+    from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+    simw, updater, action, topology, _ = build_cortex_simulation(
+        p, device=hoomd.device.CPU(notice_level=0), with_baoab=True,
         with_crosslinkers=False, rng=np.random.default_rng(seed))
-    simw.run(warm_steps)
+    equilibrate_no_shear(
+        simw, action, updater, n_softstart=500, n_baoab=4000,
+        rest_length=p.rest_length, gamma_b=p.gamma_b)
+    if warm_steps > 0:
+        simw.run(warm_steps)
     pos_warm = _tag_pos(simw, n_part)
     del simw
     snap, topology, _ = build_cortex_state(p, with_crosslinkers=False,
