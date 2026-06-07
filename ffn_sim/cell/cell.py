@@ -1387,6 +1387,41 @@ def build_cortex_full_simulation(
             cfl_strict=True,
         )
 
+    # GPU-main port — compartment Custom forces (2026-06-07 option-b). The three
+    # compartment md.force.Custom (turgor / membrane-tension / nucleus-confinement)
+    # each read positions via cpu_local_snapshot every step — a GPU→host sync that
+    # DOMINATES the full-cell step at the real operating point (≈72% of the
+    # native-integrator step; H7_NATIVE_FULLCELL_GO_2026-06-07.md). Swap them for
+    # their device-resident twins (gpu_local_snapshot + cupy, NO host-sync; same
+    # physics — the twins inherit the cpu set_forces as their CPU-device fallback).
+    # OPT-IN: FFN_GPU_DEVICE_COMPARTMENTS=1 on a GPU device; default OFF leaves the
+    # cpu forces untouched (bit-for-bit zero regression). Full-cell parity asserted
+    # in tests/test_compartment_force_gpu_parity.py.
+    import os as _os_cf
+    if (isinstance(sim.device, hoomd.device.GPU)
+            and _os_cf.environ.get("FFN_GPU_DEVICE_COMPARTMENTS") == "1"):
+        _integ = sim.operations.integrator
+
+        def _swap_force(cpu_f, gpu_f):
+            _integ.forces.remove(cpu_f)
+            _integ.forces.append(gpu_f)
+
+        if enclosed_volume_force is not None:
+            from ffn_sim.cortex.enclosed_volume_gpu import EnclosedVolumePressureGPU
+            _swap_force(enclosed_volume_force, EnclosedVolumePressureGPU(
+                enclosed_volume_force.p,
+                (enclosed_volume_force.tag_start, enclosed_volume_force.tag_end)))
+        if membrane_surface_force is not None:
+            from ffn_sim.cell.membrane_surface_gpu import MembraneSurfaceTensionGPU
+            _swap_force(membrane_surface_force, MembraneSurfaceTensionGPU(
+                membrane_surface_force.p,
+                (membrane_surface_force.tag_start, membrane_surface_force.tag_end)))
+        if nucleus_force is not None:
+            from ffn_sim.cell.nucleus_confinement_gpu import NucleusConfinementGPU
+            _swap_force(nucleus_force, NucleusConfinementGPU(
+                nucleus_force.p,
+                (nucleus_force.tag_start, nucleus_force.tag_end)))
+
     baoab_updater = None
     baoab_action = None
     if with_baoab:
