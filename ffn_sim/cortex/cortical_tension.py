@@ -182,7 +182,15 @@ def cortical_bond_typeid_mask(
 # Literature cortical-tension band [N/m] (Salbreux, Charras & Paluch 2012,
 # Trends Cell Biol 22(10):536-545). Documentation constant ONLY — the estimator
 # is NOT tuned to it; callers may overlay it.
-CORTICAL_TENSION_BAND_N_PER_M: tuple[float, float] = (0.35e-3, 0.65e-3)
+#
+# BAND RE-TARGET (PI 2026-06-07): the [0.35,0.65] band is a ROUNDED/de-adhered NON-MCF7
+# proxy (HeLa/L929 lineage) and is too high for MCF7 — DEMOTED to a labeled rounded-cell
+# envelope overlay. The MCF7-SPECIFIC reference is now MCF7_INTERPHASE_GAMMA_N_PER_M (Hosseini
+# 2020 Adv Sci, AFM parallel-plate, interphase; DOI 10.1002/advs.202001276). Both are overlays
+# (NOT fits / NOT pass-fail gates here); reports should compare to the MCF7 datum first.
+CORTICAL_TENSION_BAND_N_PER_M: tuple[float, float] = (0.35e-3, 0.65e-3)  # rounded-cell envelope (non-MCF7 proxy)
+# MCF7 interphase cortical tension [N/m] — the primary MCF7 reference (Hosseini 2020; IQR 0.18-0.40).
+MCF7_INTERPHASE_GAMMA_N_PER_M: float = 0.27e-3
 
 # Number of isotropic diametral cut-planes for the method-of-planes average.
 # Fixed by the estimator design (Fibonacci sphere sampling), not a tuned knob.
@@ -576,7 +584,8 @@ def measure_cortical_tension(
         "gamma_passive": float(g_passive),
         "gamma_structural": g_struct,
         "R_cell": float(R_cell),
-        "band_N_per_m": CORTICAL_TENSION_BAND_N_PER_M,
+        "band_N_per_m": CORTICAL_TENSION_BAND_N_PER_M,   # rounded-cell envelope (non-MCF7 proxy)
+        "mcf7_ref_N_per_m": MCF7_INTERPHASE_GAMMA_N_PER_M,  # primary MCF7 reference (Hosseini 2020)
         "channels": {
             "soft": soft,
             "rigid": rigid,
