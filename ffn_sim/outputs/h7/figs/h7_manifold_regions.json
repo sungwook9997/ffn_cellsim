@@ -1,0 +1,36 @@
+{
+  "R_cell_m": 7.5e-06,
+  "subdivisions": 3,
+  "n_tri": 1280,
+  "basal_ring": {
+    "n_patches": 200,
+    "area_fraction": 0.155243938669839,
+    "theta_c_rad": 0.3672080205578371,
+    "collar_half_angle_rad": 0.4521891155846464,
+    "wave_coregistration_pass": true
+  },
+  "polarized_patch": {
+    "n_patches": 125,
+    "area_fraction": 0.09694232760202826,
+    "cap_radius_rad": 0.6300251316243757,
+    "wave_coregistration_pass": true
+  },
+  "resolution_sweep": {
+    "subdivisions": [
+      2,
+      3,
+      4
+    ],
+    "basal_ring": [
+      0.08787402557204606,
+      0.08921770266028643,
+      0.08933736751707325
+    ],
+    "polarized_patch": [
+      0.09261729061195256,
+      0.09694232760202826,
+      0.09669025085313777
+    ]
+  },
+  "figure": "/Users/sw1/ffn_cellsim/ffn_sim/outputs/h7/figs/h7_manifold_regions.png"
+}
