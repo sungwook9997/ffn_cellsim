@@ -38,6 +38,12 @@ cortex_overrides:
     myosin:
       stepping_mode: grip_walk
       mesoscale_force_scaling: true     # areal_density_per_um2 defaults to 3.0 (Salbreux 2012)
+      # Per-head stall re-anchored 0.5→2.0 pN (PI 2026-06-07 "NMII-realistic"): the KB-
+      # authoritative PARAM-F_stall_motor = 2 pN (KU-2.4/2.18; Chugh 2017 NatCellBiol "individual
+      # myosin II motors produce 2-5 pN"). The prior 0.5 pN was "per brief", under-anchored. NMII
+      # bears load on one head at a time, so per-motor ≈ per-engaged-head here. (Force-scaling then
+      # ×factor for the ×40 lumping; native per-head stays 2 pN.) M1 ceiling 0.021→0.084 mN/m.
+      F_stall_per_head: 2.0e-12
 
 # ----------------------------------------------------------------------------
 # Compartments — ON at their physiological setpoint (the baseline IS this state)

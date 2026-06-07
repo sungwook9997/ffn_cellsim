@@ -107,6 +107,25 @@ MD can't reach (active-Maxwell, τ=14.4 s) and computes the steady tension three
 relaxer) would NOT help; the actionable forks are (i) fix the myosin generation params to literature
 (density 0.14→3/µm², stall 0.5→~3 pN) and re-run, or (ii) re-target the gate to traction/spreading.
 
+### UPDATE (2026-06-07, PI fork (i) — two generation bugs FIXED, ceiling ×84)
+PI chose fix-generation + flagged `mesoscale_force_scaling`=OFF as a platform-wide bug.
+- **Bug 1 — mesoscale force-scaling OFF** (the ×40 coarse-graining cut the motor count ~21× but
+  did NOT scale per-motor force → active stress undercounted ×21). FIXED: production manifest now
+  runs Route B (grip_walk + mesoscale_force_scaling); conservation N_eff·F_eff = N_native·F_native
+  verified (test_mesoscale_force_conservation.py, 5 tests). Ceiling 0.0010 → 0.0210.
+- **Bug 2 — per-head stall under-anchored** (0.5 pN "per brief" vs the KB-authoritative
+  PARAM-F_stall_motor = 2 pN, KU-2.4/2.18; Chugh 2017 "2-5 pN"). FIXED: 0.5 → 2.0 pN. Ceiling
+  0.0210 → **0.0840 mN/m**.
+- **Net: ceiling 0.0010 → 0.0840 mN/m (×84).** Now ~3× below the real MCF7 datum 0.27 (and the
+  Chugh 2-5 pN range spans up to ~0.21 ≈ the datum), vs 353× before. ⇒ the "350× floor" was TWO
+  GENERATION BUGS, not a fundamental wall. The corrected model generates cortical tension of the
+  RIGHT ORDER, approaching the real MCF7 cortical tension; the [0.35,0.65] proxy band is simply too
+  high for MCF7. The realized MD-instant γ is still ~0 (only ~90/2000 heads engage + the ms-run
+  timescale) — so NOW the seam (realized→ceiling relaxation) has a meaningful role, since the
+  ceiling is non-trivial. Remaining ~2-3× gap = within myosin-parameter uncertainty (Chugh range) +
+  head-engagement + dipole geometry. PI call: accept as a defensible order-right emergent result,
+  push the remaining gap (engagement / Chugh-max stall / dipole), or re-target to traction.
+
 ## What IS solid (deliverables)
 - 3-channel γ estimator with the turgor-separation discipline (cortical_tension.py).
 - The full physiological cell assembles + runs at full ×40 scale (cortex+xlink+myosin+nucleus+
