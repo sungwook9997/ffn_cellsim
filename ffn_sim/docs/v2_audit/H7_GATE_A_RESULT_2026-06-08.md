@@ -76,3 +76,24 @@ once heads step — but γ_soft **plateaus at ~5.6e-4 mN/m = 1/627 of the band (
 realized shell tension is ~600× short of band → the wall is transmission/lever
 (Gate-B), not generation. The ~3× step-onset rise quantifies how little of the stepping
 work reaches spanning hoop tension on the rigid (r/r0=1.0000, non-condensing) backbone.
+
+## CORRECTION (ticks 430–500): γ_soft did NOT plateau at 627× — it kept rising to ~220× below band
+Two earlier statements in this doc were PREMATURE calls from partial data and are
+corrected here (lesson: wait for the trajectory to level before claiming a plateau):
+1. "γ_soft dead flat" — true only for **ticks 10–310** (the s_grip-LOADING phase,
+   before any bead-stepping): γ_soft ≈ 1.9e-4 (1/1800 band) while s_grip rose 0.024→0.58.
+2. "plateaus at ~627× below band" — WRONG. After bead-stepping onset (~tick 310, where
+   s_grip peaks 0.58 then turns over), γ_soft rose **~9×**: 1.9e-4 → 5.6e-4 (tick 370)
+   → 1.55e-3 (tick 430) → ~1.6–1.7e-3 (ticks 490–500). Now **~1/220 of band**, and
+   only *appears* to be leveling over ticks 430–500 (1.55e-3, 1.73e-3, 1.59e-3 — flat
+   within noise).
+
+**Accurate picture:** grip_walk produces a REAL, sustained contraction once heads
+bead-step — γ_soft climbs ~9× above the loading-phase floor (a signal the binned_r0
+proxy entirely misses). It is now ~220× below band and *appears* to be leveling, but
+**the verdict is PENDING** confirmation of the plateau level (a few hundred more ticks).
+Current lean: still REFUTE (active γ caps ≳100× below band even with real stepping
+contraction → transmission/lever wall, Gate-B), but NOT the flat-floor REFUTE first
+reported — grip_walk's contraction is real and measurable, just far short of band.
+This sharpens (does not overturn) the transmission-limited diagnosis: the loss is in
+TRANSMISSION of a real contraction into spanning hoop tension, not in generation.
