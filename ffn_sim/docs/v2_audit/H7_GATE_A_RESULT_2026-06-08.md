@@ -58,3 +58,21 @@ generation (refuted here), NOT binding throughput, NOT aggregation geometry.
   trajectory; the verdict (γ_soft flat through s_grip ≥ 0.5) is already decisive
   and will not change (γ_soft has been flat across a 22× s_grip increase).
 - nonconv = 0 throughout (native M-SHAKE converges every step).
+
+## UPDATE (ticks 350–380): bead-stepping onset — γ_soft rises ~3×, still ~627× below band
+At ~tick 360 the bound heads first reach the s_grip overflow cap (s_grip ≥ ℓ₀) and
+**actually STEP to the next minus-ward bead** (s_grip −= ℓ₀ per step → `n_step_advances`
+> 0). Two changes follow:
+- **mean s_grip plateaus + cycles** (peak 0.581 @ tick ~350, then 0.48→0.41) — it does
+  NOT march monotonically to ℓ₀, because each bead-step subtracts ℓ₀ from the head's
+  grip; the population oscillates around the step cap. ("s_grip developed" is satisfied:
+  it exceeded 0.5.)
+- **γ_soft jumps ~3×** (1.73e-4 → 5.58e-4 mN/m at tick 360, s_grip=0.443) — the FIRST
+  real contraction signal from genuine material stepping (not just static loading).
+
+So the result is sharper than "dead flat": grip_walk DOES produce a small contraction
+once heads step — but γ_soft **plateaus at ~5.6e-4 mN/m = 1/627 of the band (0.35)**.
+**REFUTE stands:** even with s_grip developed AND real bead-stepping contraction, the
+realized shell tension is ~600× short of band → the wall is transmission/lever
+(Gate-B), not generation. The ~3× step-onset rise quantifies how little of the stepping
+work reaches spanning hoop tension on the rigid (r/r0=1.0000, non-condensing) backbone.
