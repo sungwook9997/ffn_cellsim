@@ -91,3 +91,28 @@ stack is **2.89× / 243 steps/s / ~9.5 days per 2×10⁸**.
 ⇒ The remaining wall is **binder host-sync (myosin/xlink/integrin) + LJ**, not the
 compartment forces. Next ~2× lever = the **binder GPU-main port** (the GPU-main
 binder lane). Gate-A/B is ~9.5 days/run on the full GPU-main stack today.
+
+### Native ForceCompute upgrade (NativeRadialShellForce) — full GPU-main stack
+
+Replaced the cupy compartment twins with the sub-session's native C++
+`FFNRadialShellForce` (b659674/2a18203; `NativeRadialShellForce.from_{turgor,
+membrane,nucleus}`, one ForceCompute + shared-mem block-reduce). gbook n_fil=1000:
+
+| arm | steps/s | ×base | 2e8 ETA | γ_soft (mN/m) |
+|---|---|---|---|---|
+| cupy-int + CPU-comp (baseline) | 83.7 | 1.00× | 664h | 2.957e-7 |
+| cupy-int + native-comp | 111.8 | 1.34× | 497h | 2.957e-7 (EXACT) |
+| native-int + native-comp (full GPU-main) | **490.7** | **5.86×** | **113h ≈ 4.7 d** | 2.879e-7 |
+
+Going cupy→native on the compartment forces lifted the native arm 243→491 steps/s
+(**2×** — confirms the cupy gpu_local_snapshot launch-bound floor). γ bit-exact.
+**Full GPU-main stack (native integrator + native compartment ForceCompute) =
+5.86× / 491 steps/s / ~4.7 days per 2×10⁸** at the real production operating point
+(all binders + compartments ON). The sub-session's 8.3×/3.3d is a lighter-binder
+config; the residual gap to it is the **binder host-sync** (myosin/xlink/integrin
+`cpu_local_snapshot`) — the next ~2× lever (the GPU-main binder lane), which would
+bring Gate-A/B toward ~2.7 d. Below that, LJ is HOOMD-optimal (Tree nlist tested);
+sub-µs would need mesh-restricted excluded-volume (manifold lane, research).
+
+**Gate-A/B feasibility TODAY: ~4.7 days/run on the full GPU-main stack** (vs ~28 d
+cupy baseline). Gate-B still needs the separate relaxed-M-SHAKE mode.
