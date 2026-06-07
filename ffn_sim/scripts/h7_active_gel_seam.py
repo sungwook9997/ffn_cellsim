@@ -120,7 +120,7 @@ def main() -> int:
     _figure(dg, Path(args.out))
     print("=" * 70, flush=True)
     print("H.7 ACTIVE-GEL SEAM M1 — DIAGNOSTIC (not a solution)", flush=True)
-    print(f"  motor density = {dg.motor_density_per_um2:.3f} /µm² (Salbreux target 3/µm²); "
+    print(f"  motor density(built) = {dg.motor_density_per_um2:.3f} /µm² (native anchor 0.6, Nie 2015); "
           f"engaged heads {dg.n_eng}/{dg.n_total_heads}; F_stall {dg.f_stall_per_head*1e12:.2f} pN/head; "
           f"ℓ_dipole {dg.ell_dipole*1e9:.0f} nm", flush=True)
     print(f"  steady γ:  realized {dg.gamma_ss_realized*_MN:.4f} | capacity {dg.gamma_ss_capacity*_MN:.4f} "

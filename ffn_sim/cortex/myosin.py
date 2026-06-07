@@ -306,7 +306,12 @@ def resolve_cortex_myosin(
                 "mesoscale_force_scaling requires a finite R_cell > 0 (to derive "
                 "the native minifilament count from areal density × surface area)."
             )
-        density_per_um2 = float(cfg.get("areal_density_per_um2", 3.0))  # Salbreux 2012
+        # Minifilament areal density [1/µm²]. Default 0.6 = Nie et al. 2015 Cytoskeleton
+        # (PMID 25641802, HeLa interphase medial cortex; the only real proxy — NO MCF7 datum
+        # exists; LOW-MEDIUM confidence). The former 3.0 "Salbreux 2012" was a CONFIRMED
+        # misattribution (no Salbreux paper gives a per-area minifilament density) — removed
+        # 2026-06-07. See H7_CORTICAL_MYOSIN_DENSITY_DATUM_2026-06-07.md.
+        density_per_um2 = float(cfg.get("areal_density_per_um2", 0.6))
         native_n_motors = density_per_um2 * 1.0e12 * 4.0 * math.pi * R_cell ** 2
         factor = native_n_motors / max(p.n_motors_per_cell, 1)
         p.k_head_spring *= factor

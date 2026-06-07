@@ -43,8 +43,9 @@ def test_force_scaling_conserves_active_stress():
     assert scaled.extras["mesoscale_force_scaling"] is True
     factor = scaled.extras["mesoscale_force_factor"]
     native_n = scaled.extras["native_n_motors"]
-    # native density 3/µm² · 4πR² minifilaments.
-    assert native_n == pytest.approx(3.0e12 * 4 * math.pi * R_CELL ** 2, rel=1e-9)
+    # native density 0.6/µm² · 4πR² minifilaments (Nie 2015; re-anchored from the misattributed
+    # 3.0 "Salbreux 2012" per PI 2026-06-07 — see H7_CORTICAL_MYOSIN_DENSITY_DATUM_2026-06-07.md).
+    assert native_n == pytest.approx(0.6e12 * 4 * math.pi * R_CELL ** 2, rel=1e-9)
     assert factor == pytest.approx(native_n / 100.0, rel=1e-9)
     # CONSERVATION: effective (n_motors · F_scaled) == native (native_n · F_native).
     n_eff, n_native = base.n_motors_per_cell, native_n

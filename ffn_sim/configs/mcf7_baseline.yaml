@@ -37,7 +37,7 @@ cortex_overrides:
   cortex:
     myosin:
       stepping_mode: grip_walk
-      mesoscale_force_scaling: true     # areal_density_per_um2 defaults to 3.0 (Salbreux 2012)
+      mesoscale_force_scaling: true
       # Per-head stall re-anchored 0.5→2.0 pN (PI 2026-06-07 "NMII-realistic"): the KB-
       # authoritative PARAM-F_stall_motor = 2 pN (KU-2.4/2.18; Chugh 2017 NatCellBiol "individual
       # myosin II motors produce 2-5 pN"). The prior 0.5 pN was "per brief", under-anchored. NMII
@@ -55,10 +55,17 @@ cortex_overrides:
       # bipolar minifilament length / dipole lever 700→301 nm: Billington 2013 EM contour 301±24 nm
       # (NMIIA). The prior 700 nm had NO EM referent (>2× the whole filament).
       backbone_length: 301.0e-9
-      # Density kept 3.0/µm² PENDING the foci-vs-minifilament ruling (the "Salbreux 2012, 3/µm²"
-      # attribution is a CONFIRMED misattribution — see H7_GENERATION_GAP_AUDIT_2026-06-07.md; the
-      # closest real datum is Nie/Vavylonis 2015 ~0.6/µm², HeLa, LOW confidence). Net with these two
-      # re-anchors (density held): M1 ceiling 0.084→~0.10 mN/m (~3× below the MCF7 datum 0.27).
+      # Minifilament areal density RE-ANCHORED 3.0→0.6/µm² (PI-signed-off 2026-06-07). The prior
+      # 3.0 "Salbreux 2012" was a CONFIRMED MISATTRIBUTION (no Salbreux paper states a per-area
+      # minifilament density; Chugh-Salbreux 2017 uses only a 2D line-concentration N_m/W) — see
+      # H7_CORTICAL_MYOSIN_DENSITY_DATUM_2026-06-07.md. The only real proxy is Nie et al. 2015
+      # Cytoskeleton (PMID 25641802, HeLa interphase adhered medial cortex, 40±20 MRLC foci/8×8µm
+      # = 0.625/µm², author-intensity-calibrated as MINIFILAMENTS so NO foci→mf conversion);
+      # LOW-MEDIUM confidence; NO MCF7/breast cortical-myosin density exists in the literature.
+      # HONEST CONSEQUENCE (not gate-chasing): ceiling ∝ density, so the M1 active-γ ceiling drops
+      # 0.10→~0.02 mN/m — WIDENING the gap to the MCF7 datum, which CONFIRMS the floor is
+      # generation-limited (per-head force / engagement / buckling), NOT a density deficit.
+      areal_density_per_um2: 0.6
 
 # ----------------------------------------------------------------------------
 # Compartments — ON at their physiological setpoint (the baseline IS this state)
