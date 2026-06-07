@@ -4,8 +4,51 @@ from __future__ import annotations
 
 import hoomd
 from hoomd.operation import Updater
+from hoomd.md.force import Force
 
 import _ffn_native
+
+
+class NativeRadialShellForce(Force):
+    """Native device-resident radial-shell compartment force (Stage 2 native).
+
+    One ForceCompute for all 3 production compartment forces (the cupy
+    ``*_gpu.py`` twins removed the cpu_local_snapshot host-sync but stayed
+    launch-bound at a ~233 us/force gpu_local_snapshot floor; this avoids the
+    floor entirely with ArrayHandle). law: 0=nucleus, 1=membrane, 2=turgor.
+    Use the ``from_*`` constructors. CPU device is unsupported (GPU-only).
+    """
+
+    def __init__(self, *, law, tag_start, tag_end, R0=0.0, pa, pb, pc, pd=0.0):
+        super().__init__()
+        self._law = int(law)
+        self._t0 = int(tag_start)
+        self._t1 = int(tag_end)
+        self._R0 = float(R0)
+        self._pa = float(pa)
+        self._pb = float(pb)
+        self._pc = float(pc)
+        self._pd = float(pd)
+
+    @classmethod
+    def from_nucleus(cls, p, tag_range):
+        return cls(law=0, tag_start=tag_range[0], tag_end=tag_range[1], R0=p.R_nuc,
+                   pa=p.k_chrom, pb=p.k_lamin, pc=p.d_knee, pd=p.F_knee)
+
+    @classmethod
+    def from_membrane(cls, p, tag_range):
+        return cls(law=1, tag_start=tag_range[0], tag_end=tag_range[1],
+                   pa=p.gamma_mem, pb=p.K_A, pc=p.A0)
+
+    @classmethod
+    def from_turgor(cls, p, tag_range):
+        return cls(law=2, tag_start=tag_range[0], tag_end=tag_range[1],
+                   pa=p.turgor_dP0, pb=p.K_vol, pc=p.V0)
+
+    def _attach_hook(self) -> None:
+        self._cpp_obj = _ffn_native.FFNRadialShellForce(
+            self._simulation.state._cpp_sys_def, self._law, self._t0, self._t1,
+            self._R0, self._pa, self._pb, self._pc, self._pd)
 
 
 class NativeNoOpUpdater(Updater):

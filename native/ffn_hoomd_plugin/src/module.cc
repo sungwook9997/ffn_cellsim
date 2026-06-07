@@ -6,10 +6,12 @@
 #include "constrained_kernel.cuh"
 #include "fixman_kernel.cuh"
 #include "position_kick_kernel.cuh"
+#include "radial_shell_force.cuh"
 #include "shake_kernel.cuh"
 
 #include <hoomd/BoxDim.h>
 #include <hoomd/ExecutionConfiguration.h>
+#include <hoomd/ForceCompute.h>
 #include <hoomd/GPUArray.h>
 #include <hoomd/ParticleData.h>
 #include <hoomd/SystemDefinition.h>
@@ -495,6 +497,68 @@ class FFNConstrainedBaoabUpdater : public hoomd::Updater
     hoomd::GPUArray<int> m_nonconv, m_bad_sign;
     };
 
+// Native radial-shell compartment force (turgor/membrane/nucleus). Device-resident
+// ForceCompute via ArrayHandle — NO gpu_local_snapshot, so it avoids the ~233 us/force
+// HOOMD-API floor the cupy port hit. IDENTICAL physics to the Python md.force.Custom
+// twins (see radial_shell_force.cuh for the law selector). force.w carries the per-bead
+// potential so .energies match.
+class FFNRadialShellForce : public hoomd::ForceCompute
+    {
+    public:
+    FFNRadialShellForce(std::shared_ptr<hoomd::SystemDefinition> sysdef,
+                        int law,
+                        unsigned int tag_start,
+                        unsigned int tag_end,
+                        double R0,
+                        double pa,
+                        double pb,
+                        double pc,
+                        double pd)
+        : hoomd::ForceCompute(sysdef), m_law(law), m_t0(tag_start), m_t1(tag_end), m_R0(R0),
+          m_pa(pa), m_pb(pb), m_pc(pc), m_pd(pd), m_acc(5, m_exec_conf)
+        {
+        }
+
+    protected:
+    void computeForces(uint64_t timestep) override
+        {
+        if (!m_exec_conf->isCUDAEnabled())
+            throw std::runtime_error("FFNRadialShellForce requires a GPU device.");
+#ifdef ENABLE_HIP
+        const unsigned int N = m_pdata->getN();
+        hoomd::ArrayHandle<hoomd::Scalar4> h_pos(m_pdata->getPositions(),
+            hoomd::access_location::device, hoomd::access_mode::read);
+        hoomd::ArrayHandle<unsigned int> h_tag(m_pdata->getTags(),
+            hoomd::access_location::device, hoomd::access_mode::read);
+        hoomd::ArrayHandle<hoomd::Scalar4> h_force(m_force,
+            hoomd::access_location::device, hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<hoomd::Scalar> h_acc(m_acc,
+            hoomd::access_location::device, hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<hoomd::Scalar> h_virial(m_virial,
+            hoomd::access_location::device, hoomd::access_mode::overwrite);
+        const hipError_t mset = hipMemsetAsync(
+            h_virial.data, 0, m_virial.getNumElements() * sizeof(hoomd::Scalar), 0);
+        (void)mset;
+        const hipError_t st = ffn_native::gpu_radial_shell_force(
+            h_pos.data, h_tag.data, h_force.data, h_acc.data, N, m_t0, m_t1, m_law, m_R0, m_pa,
+            m_pb, m_pc, m_pd, 256);
+        if (st != hipSuccess)
+            throw std::runtime_error(std::string("FFNRadialShellForce kernel: ")
+                                     + hipGetErrorString(st));
+        if (m_exec_conf->isCUDAErrorCheckingEnabled())
+            {
+            CHECK_CUDA_ERROR();
+            }
+#endif
+        }
+
+    private:
+    int m_law;
+    unsigned int m_t0, m_t1;
+    double m_R0, m_pa, m_pb, m_pc, m_pd;
+    hoomd::GPUArray<hoomd::Scalar> m_acc;
+    };
+
 std::string build_info()
     {
     return "ffn_hoomd_plugin compile/load probe: native hot-loop scaffold";
@@ -549,4 +613,15 @@ PYBIND11_MODULE(_ffn_native, m)
                       unsigned int>())
         .def("get_lambda", &FFNConstrainedBaoabUpdater::get_lambda)
         .def("nonconverged_count", &FFNConstrainedBaoabUpdater::nonconverged_count);
+    py::class_<FFNRadialShellForce, hoomd::ForceCompute, std::shared_ptr<FFNRadialShellForce>>(
+        m, "FFNRadialShellForce")
+        .def(py::init<std::shared_ptr<hoomd::SystemDefinition>,
+                      int,
+                      unsigned int,
+                      unsigned int,
+                      double,
+                      double,
+                      double,
+                      double,
+                      double>());
     }
