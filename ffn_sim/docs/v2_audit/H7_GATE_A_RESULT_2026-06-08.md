@@ -97,3 +97,34 @@ contraction → transmission/lever wall, Gate-B), but NOT the flat-floor REFUTE 
 reported — grip_walk's contraction is real and measurable, just far short of band.
 This sharpens (does not overturn) the transmission-limited diagnosis: the loss is in
 TRANSMISSION of a real contraction into spanning hoop tension, not in generation.
+
+## FINAL (firm) — REFUTE with a real, capped contraction (35-sample plateau)
+With the trajectory now stable over ~340 ticks (35 plateau samples), the Gate-A
+verdict is firm and replaces the two premature calls above:
+
+| phase | ticks | s_grip/ℓ₀ | γ_soft (mN/m) | vs band (0.35) |
+|---|---|---|---|---|
+| **loading** | ≤330 | 0.02→0.58 (rising) | **1.89e-4** (flat) | 1/1856 |
+| **contraction plateau** | ≥560 | ~0.48 (cycling) | **3.06e-3 ± 0.39e-3** | **1/114** |
+
+**Rise factor = 16.2×.** Once myosin heads pass the grip cap and bead-step
+(material transport, ~tick 310 onset), γ_soft rises 16× from the loading floor to a
+stable plateau of 3.06e-3 mN/m — a REAL sustained contraction the legacy `binned_r0`
+proxy entirely missed. But it plateaus ~114× below band.
+
+**Verdict: REFUTE (refined).** s_grip develops AND grip_walk produces a genuine,
+sustained, measurable contraction (16× floor) — yet the realized cortical tension
+caps ~114× below band. So the active-γ wall is NOT generation (refuted: heads bind,
+load, walk, step, and contract) and NOT s_grip delivery (refuted: γ_soft DOES
+respond, 16×). It is **transmission / lever**: on the rigid M-SHAKE backbone
+(`r/r0 = 1.0000` throughout — no buckling/condensation) the real contraction is
+shunted locally and only ~1% reaches spanning hoop tension. This sharpens the
+authoritative transmission-limited diagnosis with a quantified number: **the
+GPU-main long grip_walk run lifts active γ to 3.06e-3 mN/m (16× the floor), and the
+remaining ~114× gap to band is the Gate-B (buckling/condensation) + soft-long-range-
+transmission lever** — exactly what the rigid constraint forbids.
+
+**Next:** Gate-B (relax M-SHAKE → allow filament buckling/condensation; PI
+pre-authorized) — now strongly motivated: the contraction is real and 16× the floor,
+so freeing condensation is the direct test of whether that contraction can be
+transmitted into band-level hoop tension. Needs the relaxed-constraint native mode.
