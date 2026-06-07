@@ -99,7 +99,7 @@ import hoomd
 import hoomd.custom
 import hoomd.md as md
 
-from ffn_sim.validation.pereverzev import pereverzev_k_off
+from ffn_sim.validation.pereverzev import EXP_ARG_GUARD, pereverzev_k_off
 
 if TYPE_CHECKING:
     from ffn_sim.bridge.fa import FALayout, ResolvedH4
@@ -199,6 +199,10 @@ class IntegrinBondUpdater(hoomd.custom.Action):
         self._steps_run: int = 0
         self._n_break_total: int = 0
         self._n_bind_total: int = 0
+        # Bonds force-broken because they exceeded the Pereverzev slip range
+        # (would have overflowed pereverzev_k_off) — a diagnostic of integrin
+        # overload (see the break-before-overflow hardening in act()).
+        self._n_forced_break: int = 0
 
         # k_int contract: must match what the bond.Harmonic was wired with.
         try:
@@ -269,8 +273,32 @@ class IntegrinBondUpdater(hoomd.custom.Action):
             dr = r_int - r_lig
             r = np.linalg.norm(dr, axis=1)
             F_mag = self.p.k_int_bare * np.clip(r - self.p.integrin_r0, 0.0, None)
-            k_off = pereverzev_k_off(F_mag, self.p.pereverzev)
-            p_break = 1.0 - np.exp(-k_off * self._batch_dt)
+            # --- break-before-overflow hardening (H7_FA_INTEGRIN_OVERLOAD_FIX
+            # §3 secondary hardening). A bond stretched past the Pereverzev slip
+            # range is physically ALREADY BROKEN; pereverzev_k_off's EXP_ARG_GUARD
+            # is a *unit-bug* guard (it raises FloatingPointError), NOT a handler
+            # for a legitimate high load. Converting an over-range bond into a
+            # forced unbind (p_break = 1) is the physically-correct outcome and is
+            # NOT gate-loosening — the KU-2.5 catch-peak oracle operates at O(pN),
+            # orders of magnitude below F_overflow = EXP_ARG_GUARD·min(F_s,F_c)
+            # = 700·7 pN = 4.9 nN, so its measurement is untouched. Below the
+            # ceiling, k_off is computed exactly as before. This makes the rigid
+            # (constrained) FA build robust to the integrin-overload drag the
+            # diagnosis found (|F|/F_c ≈ 940 → previous crash) without masking it:
+            # the over-stretched bond breaks instead of raising. NOTE: this is the
+            # defence-in-depth half; the PRIMARY force-free-at-binding r0 fix
+            # (per-bond r0 bins) is deferred to PI sign-off (it re-types bonds +
+            # touches the FA measurement protocol — see the spec doc).
+            F_overflow = EXP_ARG_GUARD * min(
+                self.p.pereverzev.F_s, self.p.pereverzev.F_c
+            )
+            safe = F_mag < F_overflow
+            p_break = np.ones(int(F_mag.shape[0]), dtype=np.float64)  # default 1
+            if safe.any():
+                k_off = pereverzev_k_off(F_mag[safe], self.p.pereverzev)
+                p_break[safe] = 1.0 - np.exp(-k_off * self._batch_dt)
+            n_over = int(np.count_nonzero(~safe))
+            self._n_forced_break += n_over
             u = self._rng.uniform(0.0, 1.0, size=int_bonds.shape[0])
             broke = u < p_break
             n_broke = int(broke.sum())
@@ -385,6 +413,11 @@ class IntegrinBondUpdater(hoomd.custom.Action):
     @property
     def n_break_total(self) -> int:
         return self._n_break_total
+
+    @property
+    def n_forced_break(self) -> int:
+        """Bonds force-broken for exceeding the Pereverzev slip range (overload)."""
+        return self._n_forced_break
 
     @property
     def n_bind_total(self) -> int:
