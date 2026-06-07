@@ -1898,6 +1898,7 @@ class Cell:
         equilibrate_steps: int = 0,
         equilibrate_softstart_steps: int = 100,
         connected_mesh: bool = False,
+        faithful_connected_mesh: bool = False,
         cm_z_struct: float = 3.7,
         cm_bundle_mult: int = 2,
         cm_reach: float | None = None,
@@ -2032,7 +2033,9 @@ class Cell:
                 reconcile_dt=reconcile_dt,
                 equilibrate=equilibrate, equilibrate_steps=equilibrate_steps,
                 equilibrate_softstart_steps=equilibrate_softstart_steps,
-                connected_mesh=connected_mesh, cm_z_struct=cm_z_struct,
+                connected_mesh=connected_mesh,
+                faithful_connected_mesh=faithful_connected_mesh,
+                cm_z_struct=cm_z_struct,
                 cm_bundle_mult=cm_bundle_mult, cm_reach=cm_reach,
                 rng=rng,
             )

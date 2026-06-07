@@ -283,6 +283,7 @@ def build_baseline_cell(
     equilibrate_steps: int = 0,
     equilibrate_softstart_steps: int = 100,
     connected_mesh: bool = False,
+    faithful_connected_mesh: bool = False,
     cm_z_struct: float = 3.7,
     cm_bundle_mult: int = 2,
 ) -> Cell:
@@ -344,6 +345,9 @@ def build_baseline_cell(
         # network (z~3.3, giant~99%) instead of the random-anchor mesh (z~1.3,
         # giant~7%, fragmented) — required for cortical tension to transmit.
         connected_mesh=connected_mesh,
+        # faithful_connected_mesh=True uses the variable-length bimodal cortex (Arp2/3
+        # branches + Chugh-regulated lengths) instead of the uniform fast-hybrid.
+        faithful_connected_mesh=faithful_connected_mesh,
         cm_z_struct=cm_z_struct,
         cm_bundle_mult=cm_bundle_mult,
         equilibrate=equilibrate,
