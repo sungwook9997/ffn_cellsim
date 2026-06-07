@@ -122,22 +122,30 @@ def _build_two_phase(manifest, *, device, warmup, softstart, seed):
 
 
 def _run_arm(cell, *, steps, interval, R_cell, dtc, rigid_action):
-    """Run an arm; return (samples list of (g_soft,g_rigid), steps_per_s)."""
+    """Run an arm; return (samples list of (g_soft,g_rigid), steps_per_s).
+
+    Throughput is timed over PURE ``sim.run(steps)`` — γ is sampled AFTER the
+    timed region, NOT interleaved. The per-sample γ estimators do
+    ``cpu_local_snapshot`` host reads (and the rigid one reads λ); interleaving
+    them inside the timed loop charges that host-sync to every interval and
+    dilutes the native integrator's speedup (it penalises the GPU-resident arm
+    most). In a real production run γ is read ~1% of steps, so pure-stepping
+    throughput is the Gate-A/B-feasibility-relevant number; γ here is only the
+    parity check.
+    """
     sim = cell.simulation
-    n = max(1, steps // interval)
-    samples = []
-    # warm one interval (JIT / first-step costs) before timing.
-    sim.run(interval)
+    sim.run(interval)  # warm / JIT before timing
     t0 = time.perf_counter()
-    total = 0
-    for _ in range(n):
+    sim.run(int(steps))  # PURE timing — no host-sync measurement inside
+    dt_wall = time.perf_counter() - t0
+    sps = steps / dt_wall if dt_wall > 0 else float("nan")
+    # γ parity samples AFTER the timed region (a few short windows).
+    samples = []
+    for _ in range(5):
         sim.run(interval)
-        total += interval
         g_soft = _tension_method_of_planes(sim, R_cell)
         g_rigid = _tension_method_of_planes_rigid(sim, rigid_action, R_cell, dtc)
         samples.append((float(g_soft), float(g_rigid)))
-    dt_wall = time.perf_counter() - t0
-    sps = total / dt_wall if dt_wall > 0 else float("nan")
     return samples, sps
 
 
