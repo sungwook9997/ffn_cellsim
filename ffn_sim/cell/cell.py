@@ -856,6 +856,20 @@ def build_cortex_full_simulation(
     )
     if enable_myo:
         motor_tag_start = int(snap.particles.N)
+        # Per-bead → filament index for the myosin actin-aware seeding. VARIABLE-
+        # LENGTH-aware: a bimodal cortex (VariableLengthCortexLayout) has unequal
+        # per-filament bead counts, so the uniform // beads_per_filament map is
+        # wrong; build the index from n_beads_per_filament when present.
+        if hasattr(topology, "n_beads_per_filament"):
+            _myo_fil_idx = np.repeat(
+                np.arange(len(topology.n_beads_per_filament), dtype=np.int64),
+                topology.n_beads_per_filament,
+            )
+        else:
+            _myo_fil_idx = np.repeat(
+                np.arange(p_cortex.n_filaments, dtype=np.int64),
+                p_cortex.beads_per_filament,
+            )
         myosin_layout = generate_cortex_myosin_layout(
             p_myosin, p_cortex.R_cell,
             motor_tag_start=motor_tag_start,
@@ -863,6 +877,7 @@ def build_cortex_full_simulation(
             cortex_positions=topology.positions.reshape(-1, 3),
             cortex_tangents=topology.tangents,
             beads_per_filament=p_cortex.beads_per_filament,
+            cortex_filament_idx=_myo_fil_idx,
         )
         snap = extend_state_with_cortex_myosin(snap, myosin_layout, p_myosin)
         n_myosin_particles = (

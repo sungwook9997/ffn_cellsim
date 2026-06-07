@@ -455,6 +455,7 @@ def generate_cortex_myosin_layout(
     cortex_positions: np.ndarray | None = None,
     cortex_tangents: np.ndarray | None = None,
     beads_per_filament: int | None = None,
+    cortex_filament_idx: np.ndarray | None = None,
 ) -> CortexMyosinLayout:
     """Place ``n_motors_per_cell`` minifilaments on the cortex shell.
 
@@ -540,8 +541,15 @@ def generate_cortex_myosin_layout(
                 "Reduce n_motors_per_cell or relax spacing.")
         bead_choice = np.asarray(picked, dtype=np.int64)
         centers = cortex_positions[bead_choice].copy()
-        # Filament index for each chosen bead (contiguous bead blocks).
-        fil_idx = bead_choice // beads_per_filament
+        # Filament index for each chosen bead. Prefer the EXPLICIT per-bead map
+        # (correct for the VARIABLE-LENGTH bimodal cortex, where filaments have
+        # unequal bead counts); fall back to // beads_per_filament only for the
+        # uniform layout. The // form silently mis-maps centers to the wrong
+        # filament's tangent on any variable-length build (latent bug fix 2026-06-07).
+        if cortex_filament_idx is not None:
+            fil_idx = np.asarray(cortex_filament_idx, dtype=np.int64)[bead_choice]
+        else:
+            fil_idx = bead_choice // beads_per_filament
         axes = cortex_tangents[fil_idx].copy()
         axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
         normals = centers / np.linalg.norm(centers, axis=1, keepdims=True).clip(min=1e-30)
