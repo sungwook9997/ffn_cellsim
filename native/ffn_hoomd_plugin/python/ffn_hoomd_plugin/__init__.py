@@ -6,6 +6,12 @@ import hoomd
 from hoomd.operation import Updater
 from hoomd.md.force import Force
 
+# The pure-Python host-side fixed-pool (Stage 2 binder) has NO native dependency
+# and must import on CPU-only dev boxes for parity testing. Re-export it first,
+# before the GPU-only compiled module, so it is available even where
+# ``_ffn_native`` is not built.
+from .myosin_pool import MyosinAttachmentPool  # noqa: F401
+
 import _ffn_native
 
 
