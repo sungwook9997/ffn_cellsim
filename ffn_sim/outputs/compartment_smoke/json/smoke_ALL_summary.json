@@ -1,8 +1,8 @@
 {
   "suite": "compartment_enabled_path_smoke",
   "physics_claim": false,
-  "n_total": 10,
-  "n_ok": 10,
+  "n_total": 11,
+  "n_ok": 11,
   "results": {
     "microtubules": {
       "verdict": "PLUMBING_OK",
@@ -43,6 +43,10 @@
     "coexistence": {
       "verdict": "COEXIST_OK",
       "headline": "MT+IF: 18 types on 1 shared Harmonic"
+    },
+    "stack_confined_migration": {
+      "verdict": "STACK_OK",
+      "headline": "nucleus+MT+IF+LINC: 4/4 families, 30 LINC"
     }
   },
   "note": "PLUMBING smoke suite \u2014 all verdicts are crash/finite/assembly checks with SMOKE-ONLY candidate constants; NO band pass/fail, NO physics claim. See PLATFORM_PI_QUEUE.md for activation blockers."

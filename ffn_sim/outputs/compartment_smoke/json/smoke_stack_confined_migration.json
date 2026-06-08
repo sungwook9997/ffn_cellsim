@@ -1,0 +1,31 @@
+{
+  "compartment": "stack_confined_migration(nucleus+MT+IF+LINC)",
+  "verdict": "STACK_OK",
+  "physics_claim": false,
+  "n_steps": 2500,
+  "dt_s": 1.9288598373127396e-06,
+  "topology": {
+    "n_linc_bridges": 30,
+    "n_bond_types_total": 19,
+    "bond_families_present": {
+      "linc_nesprin": true,
+      "mt_backbone": true,
+      "if_backbone": true,
+      "if_crosslink": true
+    },
+    "n_bond_force_computes": 1,
+    "particle_types": [
+      "cortex_actin",
+      "if_bead",
+      "mt_bead",
+      "mtoc",
+      "nucleus_bead"
+    ]
+  },
+  "observables": {
+    "all_four_families_on_one_shared_force": true,
+    "max_particle_disp_m": 9.603727149569616e-09,
+    "all_finite": true
+  },
+  "note": "PLUMBING capstone: the confined_migration internal stack (nucleus envelope + MT aster + IF cage + LINC bridges) on ONE shared md.bond.Harmonic (4 bond families) + ONE angle force + ONE gamma_map, stepped together. Validates the recipe-declared internal-compartment integration. NOT the confined-migration physics gate."
+}

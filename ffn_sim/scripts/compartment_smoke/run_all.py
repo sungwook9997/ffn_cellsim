@@ -37,9 +37,10 @@ HARNESSES = [
     ("junctional_actin", lambda r: f"SCALAR; HOOMD build BLOCKED; F*={r['scalar_laws']['F_star_numeric_pN']:.1f} pN"),
     ("surface_manifold", lambda r: f"GEOMETRY-only; k-ring master gate {r['checks']['kring_reach_coverage_master_gate']}"),
     ("coexistence", lambda r: f"MT+IF: {r['topology']['n_bond_types_on_shared_force']} types on 1 shared Harmonic"),
+    ("stack_confined_migration", lambda r: f"nucleus+MT+IF+LINC: {sum(r['topology']['bond_families_present'].values())}/4 families, {r['topology']['n_linc_bridges']} LINC"),
 ]
 
-_OK_VERDICTS = {"PLUMBING_OK", "SCALAR_OK", "GEOMETRY_OK", "COEXIST_OK"}
+_OK_VERDICTS = {"PLUMBING_OK", "SCALAR_OK", "GEOMETRY_OK", "COEXIST_OK", "STACK_OK"}
 
 
 def main() -> int:
