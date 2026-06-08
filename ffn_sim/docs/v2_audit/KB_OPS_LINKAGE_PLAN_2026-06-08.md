@@ -177,6 +177,43 @@ run → gate → contract → parameter → source_evidence 까지 한 경로로
 **다음(P1, PI 체크포인트 후):** LLM result_snapshot + Notion upsert(`--apply`,
 idempotent run_id/path 키) + H.7 게이트 등록 결정 반영.
 
+## 10. P1 RESULT — 2026-06-08 (DONE, PI-approved)
+
+PI 결정(AskUserQuestion): **신규 VG-H7-gate-a/b 2행 등록** (KU-3.5에 묶지 않음).
+
+- **게이트 등록** (PI 승인 gate-contract 변경): `VG-H7-gate-a` (Validation,
+  status=failing/REFUTE) + `VG-H7-gate-b` (Validation, status=blocked), 둘 다
+  Band=[0.35,0.65] mN/m, Tests Contract→`MC-H3-composite-tension`. H.7 결과에 충실히
+  Notes 작성 (Gate-A: s_grip 22×↑/γ_soft 16.2×→3.06e-3=1/114 band, transmission-limited;
+  Gate-B: relaxed-M-SHAKE 레버, 3채널 분리, γ_active=0). Notion pages
+  379120daec5d814a94a7c80f05482933 / 379120daec5d81bb91a1df65d3b3e12a.
+- **P1 코드** (`harvest_ops.py` 확장): `--llm`(opt-in result_snapshot, 공유 LLM 백엔드)
+  + `--apply`(멱등 RunResult upsert, RUN ID 키). Outcome은 PASS/FAIL/smoke로 매핑,
+  verdict 불명이면 생략(가짜 PASS/FAIL 금지). Gate-A/B는 VG-H7-* 등록 후 자동 링크.
+- **적재** (bulk Notion write): h7 16건 검증 후 full. **45 created + 16 updated = 61**
+  (h7 재실행분 16건 중복 없이 UPDATE → 멱등성 검증). 스냅샷은 결정적(원시 메트릭/verdict,
+  할루시네이션 0); LLM은 비용·anti-hallucination 이유로 생략.
+- **refresh + 검증:** duckdb + Obsidian(766→840 노드) 재생성.
+  - `run_result` 행 **1 → 62** (목표 ~30+ 초과달성)
+  - `run→gate` edges **21** (목표 ≥15 초과). VG-H7-gate-a←6런, VG-H7-gate-b←5런.
+  - `tag_query`: 예전 답 불가하던 다중-홉 ("Gate-A에 연결된 RunResult+commit+outcome")을
+    디스크 아티팩트 인용과 함께 정확 반환 — **PI 약속한 가치 실증.**
+
+## 11. 권고 #2/#3 — DONE (2026-06-08)
+
+- **#2:** 일회용/날짜박이 스크립트 6개 → `tag_kb/_migrations/` (refresh.sh 무영향, README 추가).
+  live 파이프라인 = notion_to_duckdb·references_ingest·supersession·tag_query·harvest_ops.
+- **#3:** `verify_sources.py --check` (비파괴 citation-integrity 읽기) → `refresh.sh` 배선.
+  즉시 발견: source_audit **12/329 부분/stale** + suspect 2건(Funk2021_eLife DOI_DEAD,
+  Lindstrom2010 CHECK) → full `verify_sources.py` 재감사 필요(별도).
+
+## 12. 남은 일 (P2/추가)
+
+- **P2 — CodeMapping harvest:** 모듈 docstring → `code_mapping` 적재(`code→contract` edge).
+  현재 code_mapping=2 그대로(P1은 RunResult에 집중). 다음 세션.
+- syn(NL→SQL) + BM25 retrieval 안정화 (TAG "불안정"의 본질 — gate coverage와 별개).
+- source_audit full 재감사 (#3가 stale로 surfacing).
+
 ## 8. 비-목표 (scope out)
 
 - ValidationGate/ModelContract/Parameter 행 신규 생성·수정 (read-only; contract는 사람이).
