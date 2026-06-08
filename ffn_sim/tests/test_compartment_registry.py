@@ -252,11 +252,12 @@ def test_forcing_experimental_into_enable_raises():
 
 def test_forcing_experimental_non_strict_defers():
     base = load_manifest("mcf7_baseline.yaml")
-    # intermediate_filaments is still EXPERIMENTAL (microtubules graduated LIVE
-    # 2026-06-09, so it is no longer deferred — it is togglable).
-    recipe = {"name": "bad", "enable": list(load_recipe("suspended_round")["enable"]) + ["intermediate_filaments"]}
+    # linc is still EXPERIMENTAL (osmotic_regulation / microtubules /
+    # intermediate_filaments graduated LIVE 2026-06-09). It requires nucleus,
+    # which suspended_round enables, so it defers cleanly (no dependency error).
+    recipe = {"name": "bad", "enable": list(load_recipe("suspended_round")["enable"]) + ["linc"]}
     manifest, deferred = REGISTRY.compose_manifest(recipe, base_manifest=base, strict=False)
-    assert "intermediate_filaments" in deferred
+    assert "linc" in deferred
 
 
 def test_dropping_baseline_compartment_raises():

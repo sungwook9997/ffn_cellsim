@@ -764,22 +764,41 @@ def extend_snapshot_with_if_cage(
     if_typeid = types.index(IF_BEAD_TYPE)
     write_snap.particles.types = types
 
-    old_typeid = np.asarray(read_snap.particles.typeid)
+    # A build-time gsd.hoomd.Frame returns None for unset per-particle fields
+    # (typeid/velocity/mass/image); HOOMD fills them on load. Mirror those
+    # auto-population defaults so the in-build path (snapshot extended BEFORE
+    # create_state_from_snapshot) does not crash on np.asarray(None) (0-d). The
+    # standalone HOOMD-snapshot path already has these populated. (Mirrors the
+    # microtubules / cadherin extenders' None-guards.)
+    def _pf(arr, default: np.ndarray) -> np.ndarray:
+        return default if arr is None else np.asarray(arr)
+
+    old_typeid = _pf(
+        read_snap.particles.typeid, np.zeros(n_old, dtype=np.uint32)
+    ).reshape(-1)
     new_typeid = np.full(n_new, if_typeid, dtype=np.uint32)
     write_snap.particles.typeid[:] = np.concatenate([old_typeid, new_typeid])
 
-    old_pos = np.asarray(read_snap.particles.position)
+    old_pos = _pf(
+        read_snap.particles.position, np.zeros((n_old, 3), dtype=np.float64)
+    ).reshape(-1, 3)
     write_snap.particles.position[:] = np.concatenate([old_pos, new_pos], axis=0)
 
-    old_vel = np.asarray(read_snap.particles.velocity)
+    old_vel = _pf(
+        read_snap.particles.velocity, np.zeros((n_old, 3), dtype=np.float64)
+    ).reshape(-1, 3)
     write_snap.particles.velocity[:] = np.concatenate(
         [old_vel, np.zeros((n_new, 3), dtype=np.float64)], axis=0
     )
-    old_mass = np.asarray(read_snap.particles.mass)
+    old_mass = _pf(
+        read_snap.particles.mass, np.ones(n_old, dtype=np.float64)
+    ).reshape(-1)
     write_snap.particles.mass[:] = np.concatenate(
         [old_mass, np.ones(n_new, dtype=np.float64)]
     )
-    old_image = np.asarray(read_snap.particles.image)
+    old_image = _pf(
+        read_snap.particles.image, np.zeros((n_old, 3), dtype=np.int32)
+    ).reshape(-1, 3)
     write_snap.particles.image[:] = np.concatenate(
         [old_image, np.zeros((n_new, 3), dtype=np.int32)], axis=0
     )
@@ -824,18 +843,22 @@ def extend_snapshot_with_if_cage(
         write_snap.bonds.group[:] = merged_bg
         write_snap.bonds.typeid[:] = merged_bt
 
-    # Pass-through angles / dihedrals / impropers untouched.
+    # Pass-through angles / dihedrals / impropers untouched. A build-time gsd
+    # Frame returns None for N / types of an empty group → guard both (the
+    # standalone HOOMD-snapshot path has them as 0 / []).
     for grp_name in ("angles", "dihedrals", "impropers"):
         src = getattr(read_snap, grp_name)
         dst = getattr(write_snap, grp_name)
-        if int(src.N) > 0:
-            dst.N = int(src.N)
-            dst.types = list(src.types)
+        src_n = int(src.N) if getattr(src, "N", None) else 0
+        src_types = list(src.types) if getattr(src, "types", None) else []
+        if src_n > 0:
+            dst.N = src_n
+            dst.types = src_types
             dst.group[:] = np.asarray(src.group)
             dst.typeid[:] = np.asarray(src.typeid)
-        elif list(src.types):
+        elif src_types:
             dst.N = 0
-            dst.types = list(src.types)
+            dst.types = src_types
 
     return write_snap
 

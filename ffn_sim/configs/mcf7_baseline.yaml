@@ -167,3 +167,11 @@ optional_subsystems:
     L_mt: 5.0e-6         # m contour length ~R_cell-R_nuc (PI-ratified; ORDER)
     Y_stretch: 2.3e-7    # N axial E·A (Kis 2002 / Pampaloni 2006; PI-ratified; ORDER)
                          # EI/L_p use the module Gittes-1993 defaults (SOLID, not pending).
+  intermediate_filaments:  # H.IF keratin/vimentin perinuclear cage — LIVE 2026-06-09
+    enabled: false       # default-OFF; if_ bonds γ-denylisted (registry-driven).
+    n_filaments: 60      # cage filament count (layout; grid-free)
+    beads_per_fil: 8     # beads per IF chain
+                         # E_if=6e6 (ORDER Kreplak/Guo), Lp=0.5e-6 (keratin Lichtenstern),
+                         # d_if=10e-9, max_stretch_ratio=3.0 (Kreplak) use module defaults.
+                         # The nonlinear strain-stiffening Table law is PI-pending
+                         # (NotImplementedError); the LIVE path is the linear small-strain cage.

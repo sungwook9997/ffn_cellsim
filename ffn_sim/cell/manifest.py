@@ -27,6 +27,7 @@ from ffn_sim.bridge.fa import resolve_h4
 from ffn_sim.cell.cytoplasm import resolve_cytoplasm
 from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
 from ffn_sim.cell.membrane import resolve_membrane
+from ffn_sim.cell.intermediate_filaments import resolve_intermediate_filaments
 from ffn_sim.cell.membrane_surface import resolve_membrane_surface
 from ffn_sim.cell.microtubules import resolve_microtubules
 from ffn_sim.cell.nucleus import resolve_nucleus
@@ -86,6 +87,7 @@ class ResolvedBaseline:
     p_membrane: Any | None = None
     p_osmotic_regulation: Any | None = None   # H.11 dynamic volume regulation (LIVE)
     p_microtubules: Any | None = None         # H.MT centrosomal aster (LIVE)
+    p_intermediate_filaments: Any | None = None  # H.IF perinuclear cage (LIVE)
     manifest: dict = field(default_factory=dict)
 
     def compartments(self) -> dict[str, Any]:
@@ -206,6 +208,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
     p_fa = p_substrate = p_lamellipodium = p_turnover = p_erm = p_membrane = None
     p_osmotic_regulation = None
     p_microtubules = None
+    p_intermediate_filaments = None
     lam_cfg: dict = {}
 
     fa_b = opt.get("fa")
@@ -313,6 +316,23 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
             mt_cfg, gamma_b=_gamma_b_mt, mtoc_center=(0.0, 0.0, 0.0),
         )
 
+    # H.IF intermediate-filament perinuclear cage (LIVE, default-OFF). Linear
+    # small-strain backbone + per-r0-bin crosslinks; if_ bonds γ-denylisted.
+    # The cage seeds just outside the nucleus (R_nuc from p_nucleus).
+    if_b = opt.get("intermediate_filaments")
+    if _enabled(if_b):
+        if_cfg = _opt_cfg(if_b)
+        _i = if_cfg
+        if isinstance(_i.get("cell"), dict):
+            _i = _i["cell"]
+        if isinstance(_i.get("intermediate_filaments"), dict):
+            _i = _i["intermediate_filaments"]
+        _i["enabled"] = True
+        _R_nuc_if = getattr(p_nucleus, "R_nuc", None) if p_nucleus is not None else None
+        p_intermediate_filaments = resolve_intermediate_filaments(
+            if_cfg, kT=p_cortex.kT, R_cell=p_cortex.R_cell, R_nuc=_R_nuc_if,
+        )
+
     return ResolvedBaseline(
         cell_type=cell_type,
         R_cell=R_cell,
@@ -332,6 +352,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         p_membrane=p_membrane,
         p_osmotic_regulation=p_osmotic_regulation,
         p_microtubules=p_microtubules,
+        p_intermediate_filaments=p_intermediate_filaments,
         manifest=manifest,
     )
 
@@ -419,6 +440,7 @@ def build_baseline_cell(
         with_fa=rb.p_fa is not None,
         with_erm=rb.p_erm is not None,
         with_microtubules=rb.p_microtubules is not None,
+        with_intermediate_filaments=rb.p_intermediate_filaments is not None,
     )
     cell = Cell.build(
         rb.p_cortex,
@@ -436,6 +458,7 @@ def build_baseline_cell(
         p_turnover=rb.p_turnover,
         p_erm=rb.p_erm,
         p_microtubules=rb.p_microtubules,
+        p_intermediate_filaments=rb.p_intermediate_filaments,
         p_membrane=rb.p_membrane,
         constrained=constrained,
         # constrained_dt_safety < 1 shrinks the constrained step: the rigid

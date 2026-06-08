@@ -1,0 +1,53 @@
+{
+  "gate": "H.IF intermediate_filaments activation",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "n_filaments": 60,
+    "beads_per_fil": 8,
+    "E_if_Pa": 6000000.0,
+    "Lp_m": 5e-07,
+    "d_if_m": 1e-08,
+    "k_bb_Npm": 0.0009424777960769379,
+    "l_seg_m": 5e-07,
+    "R_cage_inner_m": 1.875e-06,
+    "R_cage_outer_m": 4.125e-06
+  },
+  "controls": {
+    "cage_assembled": true,
+    "n_particle_delta": 480,
+    "expect_particles": 480,
+    "n_bond_delta": 585,
+    "if_bond_types": [
+      "if_backbone",
+      "if_crosslink_b0",
+      "if_crosslink_b1",
+      "if_crosslink_b2",
+      "if_crosslink_b3",
+      "if_crosslink_b4",
+      "if_crosslink_b5",
+      "if_crosslink_b6",
+      "if_crosslink_b7",
+      "if_crosslink_b8",
+      "if_crosslink_b9",
+      "if_crosslink_b10",
+      "if_crosslink_b11",
+      "if_crosslink_b12",
+      "if_crosslink_b13",
+      "if_crosslink_b14",
+      "if_crosslink_b15"
+    ],
+    "no_contamination": {
+      "mask_excludes_all_if": true,
+      "gamma_soft_off_N_per_m": 5.141050220221626e-10,
+      "gamma_soft_on_N_per_m": 5.141050220221626e-10,
+      "gamma_identical": true
+    },
+    "off_identity": true
+  },
+  "deferred": {
+    "nonlinear_strain_stiffening_Table_law": "PI-pending (NotImplementedError)",
+    "secondary_stiffening_gate": "deferred until the nonlinear law is ratified"
+  },
+  "note": "REAL activation gate on the full physiological baseline. KEY control is no-contamination: cortical \u03b3_soft identical OFF vs ON (if_ registry-denylisted). LINEAR small-strain cage only; nonlinear law PI-pending. Fixed the IF extender's gsd-None velocity/angles guards."
+}

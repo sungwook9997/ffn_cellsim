@@ -783,10 +783,10 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="intermediate_filaments",
         category="internal",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); linear cage on shared bond, if_ γ-denylisted (nonlinear law still PI-pending)
         enabled_default=False,
         summary="Keratin/vimentin IF network: extensible, strain-stiffening cage around the nucleus.",
-        manifest_path=None,
+        manifest_path=("optional_subsystems", "intermediate_filaments"),
         resolve_ref="ffn_sim.cell.intermediate_filaments.resolve_intermediate_filaments",
         performance_contract=_live(
             particle_types_added=("if_bead",),

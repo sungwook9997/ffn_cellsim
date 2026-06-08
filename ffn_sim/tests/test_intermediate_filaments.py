@@ -450,3 +450,50 @@ def test_attach_standalone_refuses_foreign_bond_types():
     sim.operations.integrator = md.Integrator(dt=1e-9, forces=[cortex])
     with pytest.raises(RuntimeError):
         attach_if_bonds_to_simulation(sim, p, gamma_if=GAMMA_IF, cfl_strict=False)
+
+
+# ---------------------------------------------------------------------------
+# LIVE activation wiring (2026-06-09; PI 소유권 허용): manifest + Cell.build
+# snapshot-extension (if_backbone + per-r0-bin if_crosslink on the shared bond) +
+# gamma_map + registry LIVE. Linear path only (nonlinear Table law PI-pending).
+# ---------------------------------------------------------------------------
+class TestIntermediateFilamentsActivationWiring:
+    def test_off_build_is_bit_identity(self):
+        from ffn_sim.cell.manifest import (
+            build_baseline_cell, load_manifest, resolve_baseline,
+        )
+        rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
+        assert rb.p_intermediate_filaments is None
+        cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        assert cell.p_intermediate_filaments is None
+        assert cell.simulation.state.N_particles > 0
+
+    def test_on_cage_assembles_without_contamination(self):
+        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.cortex.cortical_tension import (
+            _is_adhesion_bond_type, measure_cortical_tension,
+        )
+
+        base = load_manifest("mcf7_baseline.yaml")
+        manifest, deferred = REGISTRY.compose_manifest(
+            load_recipe("if_cage"), base_manifest=base, strict=True
+        )
+        assert deferred == []
+        off = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        on = build_baseline_cell("mcf7_baseline.yaml", manifest=manifest, seed=1)
+        p = on.p_intermediate_filaments
+        assert p is not None and p.enabled
+
+        so, sn = off.simulation.state.get_snapshot(), on.simulation.state.get_snapshot()
+        assert sn.particles.N - so.particles.N == p.n_filaments * p.beads_per_fil
+        assert "if_backbone" in sn.bonds.types and "if_bead" in sn.particles.types
+        assert all(_is_adhesion_bond_type(t) for t in sn.bonds.types if t.startswith("if_"))
+        # NO contamination: cortical γ_soft identical OFF vs ON (if_ denylisted).
+        off.simulation.run(0); on.simulation.run(0)
+        go = measure_cortical_tension(off.simulation, R_cell=off.p_cortex.R_cell,
+                                      p_enclosed_volume=off.p_enclosed_volume)
+        gn = measure_cortical_tension(on.simulation, R_cell=on.p_cortex.R_cell,
+                                      p_enclosed_volume=on.p_enclosed_volume)
+        k = "gamma_soft_N_per_m" if "gamma_soft_N_per_m" in go else "gamma_soft"
+        assert abs(gn[k] - go[k]) <= 1e-12 * max(1.0, abs(go[k]))

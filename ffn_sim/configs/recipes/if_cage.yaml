@@ -1,0 +1,32 @@
+# ============================================================================
+# RECIPE: if_cage  (H.7 platform — H.IF intermediate filaments LIVE, 2026-06-09)
+# ============================================================================
+# The suspended/rounded MCF7 cell with the keratin/vimentin INTERMEDIATE-FILAMENT
+# perinuclear cage turned ON: extensible if_backbone chains + per-r0-bin
+# (force-free) if_crosslink bridges, seeded just outside the nucleus. Internal
+# load-bearing-at-large-strain network; if_ bonds are γ-denylisted (registry-
+# driven) so the cage does NOT contaminate the cortical-tension estimator.
+#
+# Extends suspended_round (the resting baseline) and adds intermediate_filaments.
+# ============================================================================
+
+name: if_cage
+description: Suspended MCF7 cell with the keratin/vimentin intermediate-filament perinuclear cage.
+scope: suspended
+extends: suspended_round
+
+observables: [cortical_tension, if_cage_stiffness]
+
+enable:
+  - intermediate_filaments   # H.IF perinuclear cage on the shared bond force
+
+disable: []
+declare_pending: []
+
+notes: >
+  LINEAR small-strain path (E_if=6e6 Pa ORDER Kreplak/Guo; Lp=0.5 µm keratin
+  Lichtenstern; d_if=10 nm). The faithful nonlinear strain-stiffening Table law
+  (Kreplak 2005 / Block 2018) is PI-pending and stays NotImplementedError, so the
+  SECONDARY stiffening gate is deferred; the PRIMARY no-contamination control
+  (cortical γ_soft unchanged ON vs OFF, if_ denylisted) is the LIVE gate. γ_b at
+  cytoplasm viscosity (6π·η_eff·5 nm). Cage seeds at [R_nuc, R_nuc+thickness].

@@ -6,6 +6,11 @@
 - **microtubules → LIVE** (gate PASS: aster assembled, CFL passed at cytoplasm drag,
   γ_soft IDENTICAL OFF/ON = no contamination, L_p in band). Full snapshot-extension
   wiring in cell.py + manifest.py. **n_mt CAPPED at 7** (see new blocker below).
+- **intermediate_filaments → LIVE** (gate PASS: cage assembled +480 part, γ_soft
+  IDENTICAL OFF/ON, if_ denylisted). LINEAR small-strain path; the nonlinear
+  strain-stiffening Table law stays PI-pending (NotImplementedError) → SECONDARY
+  stiffening gate deferred. Fixed 2 crash-on-enable bugs (gsd-None velocity/angles
+  guards in the IF extender — masked by the smoke, caught by the real build).
 - **cortical_tension γ-denylist → registry-driven** (`NONCORTICAL_COMPARTMENT_PREFIXES`
   = `REGISTRY.gamma_denylist()` minus `cortex_*`). Unblocks the no-contamination control
   for every γ-contaminating compartment. ⚠️ sibling Gate-B owns this file → merge-coordinate.

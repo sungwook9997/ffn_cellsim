@@ -163,6 +163,11 @@ from ffn_sim.cell.microtubules import (  # H.MT (additive, default-off): aster
     ResolvedMicrotubules,
     extend_snapshot_with_microtubules,
 )
+from ffn_sim.cell.intermediate_filaments import (  # H.IF (additive, default-off)
+    ResolvedIntermediateFilaments,
+    extend_snapshot_with_if_cage,
+    register_if_bond_params,
+)
 from ffn_sim.cell.lamellipodium import (
     ResolvedH5,
     WaveMembranePin,
@@ -720,6 +725,7 @@ def build_cortex_full_simulation(
     constrained_dt: float | None = None,
     p_erm: "ResolvedERM | None" = None,
     p_microtubules: "ResolvedMicrotubules | None" = None,  # H.MT aster (default-off)
+    p_intermediate_filaments: "ResolvedIntermediateFilaments | None" = None,  # H.IF cage
     reconcile_dt: bool = False,
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
@@ -1104,6 +1110,24 @@ def build_cortex_full_simulation(
     if enable_microtubules:
         snap = extend_snapshot_with_microtubules(snap, p_microtubules)
 
+    # H.IF intermediate-filament perinuclear cage (additive, default-off). Appends
+    # if_bead particles + if_backbone + per-r0-bin if_crosslink bonds. MUST run
+    # BEFORE create_state_from_snapshot. No-op / bit-identical when None.
+    enable_if = (
+        p_intermediate_filaments is not None
+        and getattr(p_intermediate_filaments, "enabled", False)
+    )
+    if enable_if:
+        _eta_if = (
+            float(getattr(p_cytoplasm, "eta_eff", 1.0e-3))
+            if p_cytoplasm is not None else 1.0e-3
+        )
+        _gamma_if = 6.0 * math.pi * _eta_if * (0.5 * float(p_intermediate_filaments.d_if))
+        snap = extend_snapshot_with_if_cage(
+            snap, p_intermediate_filaments, centroid=(0.0, 0.0, 0.0),
+            gamma_if=_gamma_if, seed=int(p_cortex.seed),
+        )
+
     # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p_cortex.seed
@@ -1181,6 +1205,10 @@ def build_cortex_full_simulation(
         bond.params[p_microtubules.backbone_bond_type] = dict(
             k=p_microtubules.k_backbone, r0=p_microtubules.l0,
         )
+    # H.IF if_backbone + per-r0-bin if_crosslink on the SHARED bond force (linear
+    # small-strain path; the nonlinear Table law stays NotImplementedError).
+    if enable_if:
+        register_if_bond_params(bond, p_intermediate_filaments, nonlinear=False)
 
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
@@ -1339,6 +1367,29 @@ def build_cortex_full_simulation(
                 _enable_pair(a, FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
             if enable_nucleus:
                 _enable_pair(a, "nucleus_bead", repulsive=False)
+
+    if enable_if:
+        # H.IF: the cage is INTERNAL (held by if_backbone/if_crosslink), not a
+        # steric body — all if_bead pairs r_cut=0 (mirrors nucleus/MT). Every
+        # present type-pair MUST be registered (md.pair.LJ demands full coverage).
+        _enable_pair("if_bead", "if_bead", repulsive=False)
+        _enable_pair("if_bead", "actin_cortex", repulsive=False)
+        if enable_xl:
+            _enable_pair("if_bead", "xlink_head", repulsive=False)
+        if enable_myo:
+            _enable_pair("if_bead", "cortex_myosin_backbone", repulsive=False)
+            _enable_pair("if_bead", "cortex_myosin_head", repulsive=False)
+        if enable_lamel:
+            _enable_pair("if_bead", "actin_lamel", repulsive=False)
+            _enable_pair("if_bead", "wave_particle", repulsive=False)
+        if enable_fa:
+            _enable_pair("if_bead", FA_TYPE_INTEGRIN, repulsive=False)
+            _enable_pair("if_bead", FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
+        if enable_nucleus:
+            _enable_pair("if_bead", "nucleus_bead", repulsive=False)
+        if enable_microtubules:
+            _enable_pair("if_bead", "mt_bead", repulsive=False)
+            _enable_pair("if_bead", "mtoc", repulsive=False)
 
     lj.mode = "shift"
 
@@ -1566,6 +1617,17 @@ def build_cortex_full_simulation(
             # set, so apply_cytoplasm_drag leaves them untouched — already cytoplasm).
             gamma_map[p_microtubules.bead_type] = p_microtubules.gamma_b
             gamma_map[p_microtubules.mtoc_type] = p_microtubules.gamma_b
+        if enable_if:
+            # H.IF if_bead Stokes drag at CYTOPLASM viscosity (6π·η_eff·R_if; NOT
+            # water). Set directly (if_bead not in the immersed-type set, so
+            # apply_cytoplasm_drag leaves it — already the cytoplasm value).
+            _eta_ifg = (
+                float(getattr(p_cytoplasm, "eta_eff", 1.0e-3))
+                if p_cytoplasm is not None else 1.0e-3
+            )
+            gamma_map["if_bead"] = (
+                6.0 * math.pi * _eta_ifg * (0.5 * float(p_intermediate_filaments.d_if))
+            )
         # H.10 cytoplasm Tier-1 (per-type effective-viscosity drag): scale the
         # immersed types' Stokes drag by eta_eff/eta_water once gamma_map is fully
         # assembled. p_cytoplasm is None => bit-for-bit identical (water). FDT-safe:
@@ -1940,6 +2002,7 @@ class CellBuildOptions:
     with_lamellipodium: bool = False
     with_fa: bool = False
     with_microtubules: bool = False   # H.MT aster (default-off)
+    with_intermediate_filaments: bool = False   # H.IF cage (default-off)
 
 
 @dataclass(slots=True)
@@ -2007,6 +2070,7 @@ class Cell:
     p_turnover: Any | None = None
     p_membrane: Any | None = None
     p_microtubules: Any | None = None   # H.MT aster (default-off)
+    p_intermediate_filaments: Any | None = None   # H.IF cage (default-off)
 
     extras: dict[str, Any] = field(default_factory=dict)
 
@@ -2044,6 +2108,7 @@ class Cell:
         p_membrane: "ResolvedMembrane | None" = None,
         membrane_with_reaction_force: bool = False,
         p_microtubules: "ResolvedMicrotubules | None" = None,  # H.MT aster (default-off)
+        p_intermediate_filaments: "ResolvedIntermediateFilaments | None" = None,  # H.IF
         constrained: bool = False,
         constrained_dt: float | None = None,
         reconcile_dt: bool = False,
@@ -2156,7 +2221,7 @@ class Cell:
             or any(p is not None for p in (
                 p_enclosed_volume, p_membrane_surface, p_nucleus,
                 p_cytoplasm, p_substrate, p_turnover, p_membrane,
-                p_microtubules,
+                p_microtubules, p_intermediate_filaments,
             ))
             or constrained or reconcile_dt or equilibrate or connected_mesh
         )
@@ -2183,6 +2248,7 @@ class Cell:
                 membrane_with_reaction_force=membrane_with_reaction_force,
                 p_erm=p_erm,
                 p_microtubules=p_microtubules,
+                p_intermediate_filaments=p_intermediate_filaments,
                 device=device, with_baoab=opts.with_baoab,
                 constrained=constrained, constrained_dt=constrained_dt,
                 reconcile_dt=reconcile_dt,
@@ -2270,6 +2336,7 @@ class Cell:
             p_xlinks=p_xlinks,
             p_erm=p_erm,
             p_microtubules=p_microtubules,
+            p_intermediate_filaments=p_intermediate_filaments,
             p_myosin=p_myosin,
             p_lamellipodium=p_lamellipodium,
             options=opts,
