@@ -93,4 +93,17 @@ activation that needs NO cortical_tension edit.
 | 08:00 | MT ACTIVATION GATE (full baseline OFF vs ON): aster assembled (+176 part/+175 bonds at n_mt=7), CFL passed at cytoplasm drag (1.55e-5, NOT water), ⭐NO-CONTAMINATION γ_soft IDENTICAL OFF=ON=5.14e-10 (mt_ registry-denylisted), L_p=5.2mm in band. +2 build tests (40 MT pass). ⚠️BLOCKER: single-hub MTOC degree caps n_mt≤7 (nlist exclusion cap); LJ-less smokes missed it; dense aster needs multi-bead MTOC core (PI_QUEUE). 2 registry tests updated for the LIVE flip | 44ea125 | GATE PASS |
 | 08:40 | ⭐**intermediate_filaments EXPERIMENTAL→LIVE** (3rd graduation). Same snapshot-extension wiring (cell.py: extend_if_cage + register_if_bond_params on shared bond + if_bead LJ r_cut=0 + gamma_map cytoplasm + threading; manifest.py: resolve w/ R_nuc from nucleus) + config + if_cage recipe + registry LIVE. LINEAR path (nonlinear Table law stays PI-pending/NotImplementedError) | (this commit) | LIVE |
 | 08:40 | ⭐2 MORE crash-on-enable BUGS FIXED in intermediate_filaments.extend_snapshot_with_if_cage: (1) np.asarray(velocity) 0-d crash on a build-time gsd Frame (velocity/mass/image None) → added _pf None-guards; (2) list(angles.types) on None → guarded N/types. Both masked by the smoke's to_hoomd_snapshot; caught by the real full-cell build. IF GATE PASS: cage +480 part/+585 bonds, NO-contamination γ_soft IDENTICAL=5.14e-10, if_ denylisted. +2 build tests (49 pass) | 70f8238 | GATE PASS |
-| 09:00 | ⭐INTEGRATION CAPSTONE: internal_live recipe (osmotic + microtubules + IF together on the full baseline). All 3 compose in ONE cell (+656 internal particles, osmotic updater +1), INTEGRATED no-contamination γ_soft IDENTICAL OFF=ON=5.14e-10 (no mutual contamination). +1 integration CI test (32 registry pass). The real physiological cell with internal organelles, all LIVE | (this commit) | PASS |
+| 09:00 | ⭐INTEGRATION CAPSTONE: internal_live recipe (osmotic + microtubules + IF together on the full baseline). All 3 compose in ONE cell (+656 internal particles, osmotic updater +1), INTEGRATED no-contamination γ_soft IDENTICAL OFF=ON=5.14e-10 (no mutual contamination). +1 integration CI test (32 registry pass). The real physiological cell with internal organelles, all LIVE | 003d195 | PASS |
+| 09:10 | comprehensive regression: full compartment + cell + cortex suites = 308 passed, 1 skipped (6.1s). All deep activation wiring (cell.py/manifest.py/cortical_tension.py) verified non-regressing | — | PASS |
+| 09:20 | COMPARTMENT_ACTIVATION_REMAINING_DECISIONS doc: each remaining compartment (LINC/SF/cadherin/membrane/junctional) reduced to a crisp PI physics-design decision + my recommendation. Phase-2 activation summary below | (this commit) | DOC |
+
+### Phase-2 ACTIVATION summary (PI 소유권 허용)
+**3 compartments EXPERIMENTAL→LIVE** with passing activation gates: osmotic_regulation
+(τ_RVD in band, RVD sign, no-contam), microtubules (aster, CFL, no-contam γ identical;
+n_mt≤7 cap blocker found+documented), intermediate_filaments (cage, no-contam; linear
+path, nonlinear PI-pending). **+ registry-driven γ-denylist** (unblocks no-contamination
+for all). **+ internal_live integration capstone** (all 3 in one cell, no contamination).
+**6 crash-on-enable bugs fixed total** this session: cadherin image; IF velocity; IF angles
+(+ the earlier-session find). **308 compartment/cell/cortex tests pass.** Remaining 5
+need PI physics-design decisions (see REMAINING_DECISIONS doc) — recommendations given;
+proceeding with recommended choices unless PI redirects.
