@@ -1,0 +1,42 @@
+{
+  "compartment": "microtubules",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 3000,
+  "dt_s": 7.032301490202698e-07,
+  "params": {
+    "n_mt": 20,
+    "beads_per_mt": 25,
+    "l0_m": 2.0833333333333336e-07,
+    "EI_Nm2": 2.2e-23,
+    "L_p_m": 0.0052,
+    "Y_stretch_N": 2.3e-07,
+    "k_backbone_Npm": 1.1039999999999999,
+    "k_angle_Nm": 1.0559999999999998e-16,
+    "gamma_b_Nspm": 1.5527321690367553e-05,
+    "dt_cfl_stretch_s": 1.4064602980405396e-06,
+    "dt_cfl_bend_s": 0.0006381902394044432
+  },
+  "topology": {
+    "n_host_stub": 12,
+    "n_mt_particles": 501,
+    "n_mt_backbone_bonds": 500
+  },
+  "observables": {
+    "backbone_len_mean_m": 2.0833244833670237e-07,
+    "backbone_len_min_m": 2.081825444275427e-07,
+    "backbone_len_max_m": 2.0855350347705287e-07,
+    "backbone_rel_dev_rms": 0.00030164919685843675,
+    "frac_bonds_within_20pct_l0": 1.0,
+    "max_bead_dist_from_mtoc_m": 5.208704585144091e-06,
+    "L_mt_m": 5e-06,
+    "max_particle_disp_m": 2.760373692337823e-09,
+    "all_finite": true
+  },
+  "constants_smoke_only": [
+    "n_mt=20 (ORDER_ESTIMATE)",
+    "L_mt=5e-6 (ORDER_ESTIMATE)",
+    "Y_stretch=2.3e-7 (ORDER_ESTIMATE)"
+  ],
+  "note": "PLUMBING smoke: confirms the microtubules enabled path assembles+steps without crashing and stays rod-like. NOT the PRIMARY L_p-recovery activation gate."
+}
