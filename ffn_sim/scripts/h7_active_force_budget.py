@@ -61,17 +61,25 @@ _UM = 1.0e6    # m -> µm
 _HOSSEINI_BAND = (0.18e-3, 0.40e-3)  # N/m, MCF7 interphase IQR (contract §7)
 
 
-def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed):
+def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed,
+                        areal_density=None):
     """Suspended/rounded MCF7 (FA OFF, turgor ON), connected mesh, grip_walk myosin.
 
     Mirrors h7_gate_b_probe._build_settled_cell exactly so this audit measures the
-    SAME operating point the gate measures."""
+    SAME operating point the gate measures. ``areal_density`` overrides the myosin
+    minifilament areal density [1/µm²] for the SENSITIVITY sweep ONLY — it is NOT a
+    production config change; the production datum stays at the literature 0.6/µm²
+    pending the PI datum decision (this is a mechanism-confirmation, not gate-chasing)."""
     manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
     manifest["optional_subsystems"]["fa"]["enabled"] = False
     if n_filaments is not None:
         co = manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
         co["n_filaments"] = int(n_filaments)
         co["demo_mode"] = True
+    if areal_density is not None:
+        myo = (manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+               .setdefault("myosin", {}))
+        myo["areal_density_per_um2"] = float(areal_density)
     if n_nuc_beads is not None:
         manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
     cell = build_baseline_cell(
@@ -414,6 +422,12 @@ def main() -> int:
     ap.add_argument("--contract-steps", type=int, default=20000)
     ap.add_argument("--sample-every", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--areal-density", type=float, default=None,
+                    help="override myosin minifilament areal density [1/µm²] "
+                         "(sensitivity ONLY — not a production config change)")
+    ap.add_argument("--sweep-densities", type=str, default=None,
+                    help="comma-list of densities [1/µm²] to sweep (mechanism confirm: γ∝ρ); "
+                         "writes a γ-vs-density curve instead of a single audit")
     ap.add_argument("--out-json", type=str,
                     default="ffn_sim/outputs/h7/production/h7_active_force_budget.json")
     ap.add_argument("--out-png", type=str,
@@ -427,9 +441,13 @@ def main() -> int:
            else hoomd.device.CPU(notice_level=0))
     n_fil = None if (args.n_filaments is None or args.n_filaments <= 0) else args.n_filaments
 
+    if args.sweep_densities:
+        return _run_density_sweep(args, dev, n_fil)
+
     cell = _build_settled_cell(
         n_filaments=n_fil, n_nuc_beads=args.n_nuc_beads,
         warmup=args.warmup, softstart=args.softstart, device=dev, seed=args.seed,
+        areal_density=args.areal_density,
     )
     s = audit(cell=cell, n_contract_steps=args.contract_steps,
               sample_every=args.sample_every)
@@ -439,6 +457,71 @@ def main() -> int:
     print(f"  json → {args.out_json}", flush=True)
     Path(args.out_png).parent.mkdir(parents=True, exist_ok=True)
     _figure(s, args.out_png)
+    return 0
+
+
+def _run_density_sweep(args, dev, n_fil):
+    """Mechanism-confirmation: γ_active vs myosin areal density (expect ~linear).
+
+    Quantifies the density at which the active envelope/measure reaches the active
+    target — turns the '~10-20× gap' into a concrete curve for the PI datum decision.
+    NOT a production change: production density stays at the literature 0.6/µm²."""
+    densities = [float(x) for x in args.sweep_densities.split(",")]
+    band_lo = _HOSSEINI_BAND[0] * _MNM
+    active_target = 0.135  # ~50% of 0.27 datum (blebb ~halving, Tinevez 2009/Chugh 2017)
+    pts = []
+    for rho in densities:
+        print(f"\n######## areal_density = {rho:.2f} /µm² ########", flush=True)
+        cell = _build_settled_cell(
+            n_filaments=n_fil, n_nuc_beads=args.n_nuc_beads,
+            warmup=args.warmup, softstart=args.softstart, device=dev, seed=args.seed,
+            areal_density=rho,
+        )
+        s = audit(cell=cell, n_contract_steps=args.contract_steps,
+                  sample_every=args.sample_every)
+        p = s["plateau"]; a = s["analytic"]
+        pts.append({
+            "areal_density_per_um2": rho,
+            "mesoscale_force_factor": s["scale"]["mesoscale_force_factor"],
+            "g_soft_mN_m": p["g_soft_mN_m"],
+            "g_analytic_envelope_mN_m": a["g_active_analytic_mN_m"],
+            "engaged_frac": p["engaged_frac"],
+            "mean_T_pN": p["mean_T_pN"],
+        })
+        print(f"  → ρ={rho:.2f}: g_soft={p['g_soft_mN_m']:.3e}  "
+              f"envelope={a['g_active_analytic_mN_m']:.3e} mN/m", flush=True)
+    out = {
+        "note": "myosin density sensitivity (mechanism confirm γ∝ρ); production stays 0.6/µm²",
+        "band_lo_mN_m": band_lo,
+        "active_target_mN_m": active_target,
+        "active_target_basis": "~50% of 0.27 datum (blebbistatin ~halving, Tinevez2009/Chugh2017)",
+        "phase": "loading (s_grip≈0)" if args.contract_steps < 100000 else "contraction",
+        "points": pts,
+    }
+    Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out_json).write_text(json.dumps(out, indent=2))
+    print(f"\n  sweep json → {args.out_json}", flush=True)
+    # figure
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    rhos = [p["areal_density_per_um2"] for p in pts]
+    fig, ax = plt.subplots(figsize=(8, 6), constrained_layout=True)
+    ax.plot(rhos, [p["g_analytic_envelope_mN_m"] for p in pts], "s--", color="#8e44ad",
+            label="analytic envelope (full engage+stall)")
+    ax.plot(rhos, [p["g_soft_mN_m"] for p in pts], "o-", color="#c0392b",
+            label=f"γ_soft measured ({out['phase']})")
+    ax.axhline(band_lo, color="green", ls="-", lw=1.5, label="Hosseini band_lo 0.18")
+    ax.axhline(active_target, color="darkgreen", ls=":", lw=1.5,
+               label="active target ~0.135 (blebb ½)")
+    ax.axvline(0.6, color="grey", ls="--", lw=1, label="literature 0.6/µm² (HeLa proxy)")
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlabel("myosin minifilament areal density (1/µm²)")
+    ax.set_ylabel("active cortical tension γ (mN/m)")
+    ax.set_title("H.7 active-γ vs myosin density — generation lever (mechanism confirm)")
+    ax.legend(fontsize=8)
+    fig.savefig(args.out_png, dpi=130)
+    print(f"  sweep figure → {args.out_png}", flush=True)
     return 0
 
 

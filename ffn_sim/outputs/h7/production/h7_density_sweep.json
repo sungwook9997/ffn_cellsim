@@ -1,0 +1,41 @@
+{
+  "note": "myosin density sensitivity (mechanism confirm \u03b3\u221d\u03c1); production stays 0.6/\u00b5m\u00b2",
+  "band_lo_mN_m": 0.18000000000000002,
+  "active_target_mN_m": 0.135,
+  "active_target_basis": "~50% of 0.27 datum (blebbistatin ~halving, Tinevez2009/Chugh2017)",
+  "phase": "loading (s_grip\u22480)",
+  "points": [
+    {
+      "areal_density_per_um2": 0.6,
+      "mesoscale_force_factor": 4.241150082346221,
+      "g_soft_mN_m": 0.0001243605635499427,
+      "g_analytic_envelope_mN_m": 0.010113600000000002,
+      "engaged_frac": 0.04392857142857143,
+      "mean_T_pN": 0.8718081683448573
+    },
+    {
+      "areal_density_per_um2": 2.0,
+      "mesoscale_force_factor": 14.137166941154069,
+      "g_soft_mN_m": 0.0004497450776413525,
+      "g_analytic_envelope_mN_m": 0.033712,
+      "engaged_frac": 0.04839285714285714,
+      "mean_T_pN": 2.9447527036710377
+    },
+    {
+      "areal_density_per_um2": 6.0,
+      "mesoscale_force_factor": 42.411500823462205,
+      "g_soft_mN_m": 0.0012390194635538742,
+      "g_analytic_envelope_mN_m": 0.10113599999999999,
+      "engaged_frac": 0.04732142857142857,
+      "mean_T_pN": 8.902684186892872
+    },
+    {
+      "areal_density_per_um2": 18.0,
+      "mesoscale_force_factor": 127.23450247038662,
+      "g_soft_mN_m": 0.002413663165276438,
+      "g_analytic_envelope_mN_m": 0.303408,
+      "engaged_frac": 0.047857142857142855,
+      "mean_T_pN": 25.921999846278396
+    }
+  ]
+}

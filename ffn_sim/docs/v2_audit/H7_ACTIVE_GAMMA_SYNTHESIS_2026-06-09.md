@@ -52,14 +52,36 @@ active channel "~10× under-floored, open force-generation problem").
 | (2) turgor too high | NO. Turgor is physiological (Π₀=133 Pa); reported separately (B3/B4); orthogonal to the active channel. |
 | (3) local→spanning conversion failing | SECONDARY. Network amplification is small (~1.3×, crosslink-bound), so even perfect transmission cannot close a 10–20× generation gap. |
 
+## Density sensitivity (mechanism confirmation, loop 5) — the concrete gap
+
+`h7_active_force_budget.py --sweep-densities` (loading phase, smoke). The analytic envelope
+scales **exactly linearly** with myosin areal density (confirms γ_active ∝ ρ_M, KB-3.5):
+
+| ρ (1/µm²) | envelope (mN/m) | measured loading γ_soft (mN/m) |
+|---|---|---|
+| 0.6 (literature, HeLa) | 0.0101 | 1.24e-4 |
+| 2.0 | 0.0337 | 4.50e-4 |
+| 6.0 | 0.101 | 1.24e-3 |
+| 18.0 | 0.303 | 2.41e-3 |
+
+- The envelope crosses the **active target 0.135** (≈50% of 0.27, blebbistatin ~halving,
+  Tinevez 2009/Chugh 2017) at **ρ ≈ 8/µm²**, and **band_lo 0.18** at **ρ ≈ 10.7/µm²** —
+  i.e. the model needs **~13–18× the literature 0.6/µm²** to reach band-level active tension.
+- The *measured* loading γ_soft scales **sub-linearly** at high ρ (per-bead degree caps
+  MAX_HEADS_PER_BEAD=3 / MAX_DEGREE=6 throttle engagement) — a secondary *structural* ceiling
+  that would also need addressing to realise the envelope. Figure: `figs/h7_density_sweep.png`.
+
+This is mechanism confirmation, NOT a production change — density stays at 0.6/µm² pending PI.
+
 ## PI decision items (do NOT act without sign-off — band LOCKED, magic-number rule)
 
 1. **MCF7 cortical myosin density datum.** The model uses a HeLa proxy (0.6/µm²) with no MCF7
-   anchor. Band needs ~6–12 minifilaments/µm² (derived from γ = ½·n2D·f·ℓ at f≈56–112 pN,
-   ℓ≈0.3–0.5 µm). **Is there a defensible MCF7/breast-epithelial cortical NMII density?** If a
+   anchor. The sweep pins the requirement: band needs **ρ ≈ 8–11 minifilaments/µm² (~13–18×
+   the proxy)**. **Is there a defensible MCF7/breast-epithelial cortical NMII density?** If a
    real higher value exists, this is a *datum correction* (PI-gated), not tuning. If not, the
    honest statement is: this fine-grained model, at the best available (HeLa) density, predicts
-   sub-band active cortical tension.
+   sub-band active cortical tension. (NB: even at high ρ the per-bead degree caps throttle the
+   *realised* tension below the envelope — a structural ceiling that would also need lifting.)
 2. **Is the gate's active target right?** Hosseini 0.27 is the TOTAL apparent tension. The
    blebbistatin-sensitive (active) fraction sets the true γ_active target. If a large part of
    0.27 is passive (cortex elasticity + membrane + turgor), the *active* target is < band and
