@@ -1,8 +1,8 @@
 {
   "note": "myosin density sensitivity (mechanism confirm \u03b3\u221d\u03c1); production stays 0.6/\u00b5m\u00b2",
   "band_lo_mN_m": 0.18000000000000002,
-  "active_target_mN_m": 0.135,
-  "active_target_basis": "~50% of 0.27 datum (blebbistatin ~halving, Tinevez2009/Chugh2017)",
+  "active_target_mN_m": 0.4,
+  "active_target_basis": "MCF7 \u03b3_act interphase, Hosseini/Fischer-Friedrich 2021 BiophysJ PMID 34022239",
   "phase": "loading (s_grip\u22480)",
   "points": [
     {
@@ -36,6 +36,14 @@
       "g_analytic_envelope_mN_m": 0.303408,
       "engaged_frac": 0.047857142857142855,
       "mean_T_pN": 25.921999846278396
+    },
+    {
+      "areal_density_per_um2": 40.0,
+      "mesoscale_force_factor": 282.74333882308133,
+      "g_soft_mN_m": 0.004000401532501344,
+      "g_analytic_envelope_mN_m": 0.67424,
+      "engaged_frac": 0.04767857142857143,
+      "mean_T_pN": 56.93823253118786
     }
   ]
 }

@@ -57,3 +57,25 @@ removing only ONE of two compensating factor-2s. CORRECTED code to no-½ σ·h-a
 (~13-36× the HeLa proxy).** Qualitative conclusion (generation/density-bound, ~order-of-mag under
 band, no MCF7 datum) ROBUST to the factor-2. Sweep refreshed (0.6→0.0101, band_lo at ρ≈10.7/µm²).
 Final doc reconciliation pending the deep-research literature density.
+
+## LOOP 8 (PI-authorized continue): myosin-density literature deep-research → PI items RESOLVED
+PI: "do anything, never stop, go with your recommendation." Ran a verified deep-research sweep
+(101 agents, 19 primary sources, 25 claims 3-vote-verified) on the myosin density datum (the
+dominant wall). RESULTS (H7_MYOSIN_DENSITY_LITERATURE_2026-06-09.md):
+- **#1 density: NO higher cortical datum exists.** Nie 2015 ~0.63/µm² (HeLa) is the ONLY measured
+  cortical minifilament density = exactly the model's; super-res studies (Fenix/Beach) are
+  leading-edge not medial cortex. Likely a confocal undercount but no corrected number. ⇒ nothing
+  defensible to change the production density to (don't change it).
+- **#2 active target UPDATED:** MCF7-specific γ_act = 0.39-0.41 mN/m interphase (Hosseini/Fischer-
+  Friedrich 2021 BiophysJ PMID 34022239, AFM confinement, active component directly) — supersedes
+  the 0.27 suspended-total. Active is ~½ of total (blebb >50%, Tinevez2009). Gap WIDENS to ~40-80×.
+- **factor-2 RESOLVED as literature convention spread:** Tinevez2009 γ=ζΔμh/2 (½) vs FF2014 σ=γ/h
+  (no ½) → envelope honestly 0.005-0.010 mN/m (both my loop-6 and the re-correction are published forms).
+- **#3 mechanism: gap is ARCHITECTURE/OVERLAP, not count** (Chugh2017 + TruongQuang2021, both 3-0):
+  cortical tension set by actin-filament-length / actin-myosin OVERLAP independently of myosin
+  number (interphase→mitosis +3× despite LOWER myosin). ⇒ raising density misattributes; vindicates
+  the transmission/lever framing + buckling/condensation lit-study. f_minifil 56pN + ℓ 301nm
+  well-anchored (Billington2013), NOT the gap.
+**NET: active-γ floor is real (~40-80× under MCF7 γ_act 0.4), NOT a density-datum error, ARCHITECTURE/
+overlap/transmission-rooted = model-fidelity/scope conclusion (not tunable).** SE-cands: Hosseini2021_BiophysJ
+(+Chugh2017, TruongQuang2021, Tinevez2009). Updated synthesis + code (active_target→0.40 MCF7). Sweep extended to 40/µm².

@@ -84,7 +84,28 @@ scales **exactly linearly** with myosin areal density (confirms γ_active ∝ ρ
 
 This is mechanism confirmation, NOT a production change — density stays at 0.6/µm² pending PI.
 
-## PI decision items (do NOT act without sign-off — band LOCKED, magic-number rule)
+## ⮕ PI items RESOLVED via verified literature deep-research (2026-06-09)
+
+See `H7_MYOSIN_DENSITY_LITERATURE_2026-06-09.md` (101-agent, 3-vote-verified sweep). Summary:
+- **#1 density datum — no fix exists.** The model's 0.6/µm² (Nie 2015 HeLa) is the ONLY measured
+  cortical minifilament density (super-res studies are leading-edge, not medial cortex); it's a
+  likely-undercount confocal estimate. Nothing defensible to change it to — do NOT alter it.
+- **#2 active target — updated.** MCF7-specific **γ_act ≈ 0.39–0.41 mN/m interphase** (Hosseini/
+  Fischer-Friedrich **2021**, Biophys J, PMID 34022239) — the active component directly (AFM, same
+  observable), replacing the suspended-total 0.27. So the model gap *widens* to **~40–80×** and
+  reaching it needs n_2D ≈ 24–47/µm² (~40–80× the proxy). The ½ factor is the canonical Tinevez
+  2009 form (γ=ζΔμh/2); FF2014 uses no ½ — so the envelope is honestly **0.005–0.010 mN/m**.
+- **#3 mechanism/scope — the gap is ARCHITECTURE/OVERLAP, not count.** Chugh 2017 + Truong Quang
+  2021 (both 3-0): cortical tension is set substantially by actin-filament-length / actin-myosin
+  OVERLAP, *independently of myosin number* (interphase→mitosis tension rises >3× despite LOWER
+  myosin). ⇒ raising density is the WRONG lever; it would misattribute architecture tension to
+  count. Vindicates the transmission/lever framing (Gate-A) + the buckling/condensation lit-study.
+
+**Net:** the active-γ floor is real and large (~40–80× under the MCF7 active target), NOT a
+density-datum error, and architecture/overlap/transmission-rooted — a model-fidelity/scope
+conclusion, not a parameter to tune. Original PI items (now answered) below for the record.
+
+## PI decision items — original framing (now resolved above)
 
 1. **MCF7 cortical myosin density datum.** The model uses a HeLa proxy (0.6/µm²) with no MCF7
    anchor. The sweep pins the requirement: band needs **ρ ≈ 16–21 minifilaments/µm² (~27–36×

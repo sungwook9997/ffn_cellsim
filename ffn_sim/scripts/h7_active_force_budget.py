@@ -479,7 +479,11 @@ def _run_density_sweep(args, dev, n_fil):
     NOT a production change: production density stays at the literature 0.6/µm²."""
     densities = [float(x) for x in args.sweep_densities.split(",")]
     band_lo = _HOSSEINI_BAND[0] * _MNM
-    active_target = 0.135  # ~50% of 0.27 datum (blebb ~halving, Tinevez 2009/Chugh 2017)
+    # MCF7-specific ACTIVE cortical tension (Hosseini/Fischer-Friedrich 2021, Biophys J
+    # 120(16):3516, PMID 34022239): γ_act = 0.39-0.41 mN/m interphase (AFM confinement, the
+    # active component directly). This is the MCF7 active anchor — supersedes the 0.135 estimate
+    # (≈50% of the 0.27 suspended-total). See H7_MYOSIN_DENSITY_LITERATURE_2026-06-09.md.
+    active_target = 0.40
     pts = []
     for rho in densities:
         print(f"\n######## areal_density = {rho:.2f} /µm² ########", flush=True)
@@ -505,7 +509,7 @@ def _run_density_sweep(args, dev, n_fil):
         "note": "myosin density sensitivity (mechanism confirm γ∝ρ); production stays 0.6/µm²",
         "band_lo_mN_m": band_lo,
         "active_target_mN_m": active_target,
-        "active_target_basis": "~50% of 0.27 datum (blebbistatin ~halving, Tinevez2009/Chugh2017)",
+        "active_target_basis": "MCF7 γ_act interphase, Hosseini/Fischer-Friedrich 2021 BiophysJ PMID 34022239",
         "phase": "loading (s_grip≈0)" if args.contract_steps < 100000 else "contraction",
         "points": pts,
     }
@@ -524,7 +528,7 @@ def _run_density_sweep(args, dev, n_fil):
             label=f"γ_soft measured ({out['phase']})")
     ax.axhline(band_lo, color="green", ls="-", lw=1.5, label="Hosseini band_lo 0.18")
     ax.axhline(active_target, color="darkgreen", ls=":", lw=1.5,
-               label="active target ~0.135 (blebb ½)")
+               label="MCF7 γ_act ~0.40 (Hosseini/FF 2021)")
     ax.axvline(0.6, color="grey", ls="--", lw=1, label="literature 0.6/µm² (HeLa proxy)")
     ax.set_xscale("log"); ax.set_yscale("log")
     ax.set_xlabel("myosin minifilament areal density (1/µm²)")
