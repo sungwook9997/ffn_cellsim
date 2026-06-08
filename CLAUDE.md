@@ -111,6 +111,35 @@ C3 +Obsidian → C4 +TAG, scored with RAGAS/FActScore/TAG-Bench-style metrics);
 see `outputs/tag_kb/BENCHMARK_REPORT.md`. Run it (controlled pure-LLM, tools
 disabled) to re-validate after KB changes.
 
+**Ops-Linkage — operational state → the graph (read before touching the KB).**
+The Contract-Graph's *contract side* is populated from disk operational reality by
+`outputs/tag_kb/harvest_ops.py` (design: `docs/v2_audit/KB_OPS_LINKAGE_PLAN_2026-06-08.md`).
+It harvests `outputs/**/production/*.{json,md}` runs, per-unit `REPORT.md` closeouts,
+and package-module docstrings into Notion **RunResult / CodeMapping** (Notion stays
+the only edit point; never write duckdb/vault). As of 2026-06-08: run_result 1→**62**,
+code_mapping 2→**46**, model_contract 6→**11**, with gate→contract (27, 0 orphans) +
+code→contract (19) edges so `run → gate → contract → parameter → source` traverses.
+What you must know when working the main loop:
+- **Nothing is required in the hot loop.** The harvest is out-of-band and degrades
+  gracefully — skip it and the graph just goes stale; your run is unaffected.
+- **Sync is manual + PI-gated.** New runs/modules do NOT auto-enter the graph. To
+  sync: `python harvest_ops.py` (dry-run → `OPS_HARVEST_CANDIDATES_<date>.md` manifest,
+  review), then `python harvest_ops.py --apply` (idempotent upsert on RUN ID / Path).
+  `bash outputs/tag_kb/refresh.sh` runs three non-destructive checks and tells you the
+  drift: `verify_sources.py --check` (citation audit), `harvest_ops.py --check` (N disk
+  artifacts un-harvested) — so you don't have to remember.
+- **Docstring convention (auto-links code→contract):** put the relevant `KU-x.y` in a
+  module's docstring head and the next harvest links it to the ModelContract that carries
+  that KU (compound `KU-3.5/3.1` notation supported). No KU → no auto-link.
+- **New gates/contracts are PI-authored, never auto-created.** `harvest_ops` only FLAGS
+  unmatched `Gate-*`/`VG-*` references in the manifest; creating ValidationGate /
+  ModelContract rows is a gate-contract change → PI sign-off (see Roles), then refresh.
+- **TAG is deterministic now:** `tag_query.py` runs the LLM at temperature 0 and gates
+  the BM25 content layer at a relevance floor (6.0) — relational queries no longer pull
+  incidental PDF noise. Prefer exact-id SQL (`vg_id='…'`) over broad `LIKE '%…%'`.
+- One-off migration scripts live in `outputs/tag_kb/_migrations/`; the live pipeline is
+  `notion_to_duckdb · references_ingest · supersession · tag_query · harvest_ops`.
+
 > ⚠️ TAG = **Table-Augmented Generation** (Biswal et al. 2024), *not* "태그/label".
 
 ## Code conventions
