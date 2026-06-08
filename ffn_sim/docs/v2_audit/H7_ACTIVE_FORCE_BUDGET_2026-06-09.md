@@ -66,11 +66,20 @@ the **dominant, irreducible gap is the 18× parameter envelope** — Gate-A/Gate
 levers (s_grip generation, buckling, mesh connectivity) that all live *below* a ceiling that
 is itself far under band.
 
-## Interpretation — TWO stacked walls (loop-2 refinement, corrects loop-1)
+## ⮕ FINAL synthesis is `H7_ACTIVE_GAMMA_SYNTHESIS_2026-06-09.md`
 
-⚠️ **Loop-1 overclaimed "generation-bound, 18× irreducible."** The bond-type-resolved γ
-split (loop 2) shows the picture is two stacked walls, and the *bigger fixable lever is
-transmission*, exactly as Gate-A concluded — now mechanistically located:
+The interpretation evolved across three loops (recorded below for the trail). **Net result:
+the active-γ floor is dominated by GENERATION (myosin force-budget / density datum ~10–20×
+too low); network amplification is small (~1.3×, crosslink-bound) and cannot rescue it.**
+Loop-2's "amplification could be 10–100×" was over-speculative and is corrected by the data
+(g_actin/g_myo ≈ 28%). See the synthesis doc for the PI-facing version.
+
+## Interpretation — loops 2–3 trail (superseded by the synthesis above)
+
+⚠️ **Loop-1 said "generation-bound, 18× irreducible." Loop-2 over-corrected toward
+"transmission-dominant via 10–100× amplification." Loop-3 + the crosslink-spacing bound show
+the truth is in between and closer to loop-1: generation/density is dominant, amplification is
+small.** The bond-type-resolved γ split:
 
 **Bond-resolved active γ (loading phase, smoke):**
 
