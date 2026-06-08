@@ -1,0 +1,423 @@
+"""H.7 active-myosin force-budget audit — split the active-γ floor into its causes.
+
+Gate-A (REFUTE) + Gate-B (REFUTE, connected mesh) leave one frontier
+(H7_GATE_B_RESULT_2026-06-09.md §5 PRIMARY): the active-myosin cortical tension is
+~100-400× below the turgor-driven structural tension and the Hosseini MCF7 band
+[0.18,0.40] mN/m. WHY does myosin contribute ~0 spanning tension even though
+grip_walk genuinely walks (Gate-A: s_grip→0.5, real 16× contraction)?
+
+This audit decomposes the floor into the THREE §5 candidates with ONE built-cell
+measurement (no re-implementation of the binder — it reads the live updater state and
+the snapshot the integrator actually sees, so γ_soft here == the gate's γ_soft):
+
+  (1) ENGAGEMENT      — n_engaged / n_heads_total. The kinetic equilibrium bound
+                        fraction is k_on/(k_on+k_off0) ≈ 0.99 (k_on=50, k_off0=0.35),
+                        so any large shortfall is a GEOMETRIC/availability limit
+                        (heads cannot reach actin), not kinetics.
+  (2) PER-HEAD FORCE  — mean |T| per engaged attach bond, T = k_head_actin·(r−r0),
+                        r0≈0 in grip_walk so T = k·r delivered straight from geometry
+                        (myosin.py:1428 CH1). vs F_stall_per_head (the ceiling).
+  (3) TRANSMISSION    — generated force Σ|T| over all engaged attach bonds vs the
+                        force that MOP actually reads as spanning tension
+                        (γ_soft·2πR). The ratio is the geometric/cancellation
+                        efficiency: how much local contraction becomes hoop tension.
+
+It also reports the COHERENT CEILING — γ if every engaged bond's in-tangent-plane
+tension counted with no cancellation — and the BAND-CLOSURE budget: the engaged count
+× per-head force needed to reach γ=0.27 mN/m, so the dominant lever is named with a
+number, not a guess.
+
+NO tuning: every constant is config-resolved (mcf7_baseline.yaml / phase1_h3.yaml).
+The build is the Gate-B operating point (suspended/rounded, FA OFF, turgor ON,
+connected mesh) — identical harness to h7_gate_b_probe._build_settled_cell.
+
+Usage (smoke, fast):
+    python -m ffn_sim.scripts.h7_active_force_budget --n-filaments 160 \
+        --warmup 1500 --contract-steps 20000 --device cpu --allow-cpu-dev
+Usage (full ×40, gbook GPU, contraction plateau):
+    python -m ffn_sim.scripts.h7_active_force_budget --device gpu \
+        --warmup 4000 --contract-steps 2000000
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from copy import deepcopy
+from pathlib import Path
+
+import numpy as np
+
+from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
+from ffn_sim.cortex.cortical_tension import measure_cortical_tension
+
+_PN = 1.0e12   # N -> pN
+_MNM = 1.0e3   # N/m -> mN/m
+_UM = 1.0e6    # m -> µm
+_HOSSEINI_BAND = (0.18e-3, 0.40e-3)  # N/m, MCF7 interphase IQR (contract §7)
+
+
+def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed):
+    """Suspended/rounded MCF7 (FA OFF, turgor ON), connected mesh, grip_walk myosin.
+
+    Mirrors h7_gate_b_probe._build_settled_cell exactly so this audit measures the
+    SAME operating point the gate measures."""
+    manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
+    manifest["optional_subsystems"]["fa"]["enabled"] = False
+    if n_filaments is not None:
+        co = manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+        co["n_filaments"] = int(n_filaments)
+        co["demo_mode"] = True
+    if n_nuc_beads is not None:
+        manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
+    cell = build_baseline_cell(
+        manifest=manifest, device=device, seed=seed,
+        constrained=False, with_baoab=True,
+        equilibrate=True, equilibrate_steps=warmup,
+        equilibrate_softstart_steps=softstart,
+        connected_mesh=True,
+    )
+    return cell
+
+
+def _engaged_attach_bonds(snap, n_cortex_actin):
+    """Return (head_tags, actin_tags, bin_names) for every live myosin attach bond.
+
+    Attach bonds are the dynamic head→cortex-actin bonds (types
+    'cortex_myosin_attach_b{i}'); they exist only when a head is engaged."""
+    types = list(snap.bonds.types)
+    tids = np.asarray(snap.bonds.typeid)
+    group = np.asarray(snap.bonds.group)
+    is_attach = np.array(
+        [types[i].startswith("cortex_myosin_attach_b") for i in range(len(types))]
+    )
+    if len(tids) == 0:
+        return np.zeros((0, 2), dtype=np.int64), np.zeros(0, dtype=np.int64)
+    mask = is_attach[tids]
+    g = group[mask].astype(np.int64)
+    # Orient each bond as (head, actin): the cortex-actin end is the bead < n_cortex_actin.
+    head = np.where(g[:, 0] < n_cortex_actin, g[:, 1], g[:, 0])
+    actin = np.where(g[:, 0] < n_cortex_actin, g[:, 0], g[:, 1])
+    return np.stack([head, actin], axis=1), tids[mask]
+
+
+def audit(*, cell, n_contract_steps, sample_every):
+    """Run the contraction phase, sampling the force-budget decomposition."""
+    sim = cell.simulation
+    R = float(cell.p_cortex.R_cell)
+    k_ha = float(cell.p_myosin.k_head_actin)         # SCALED (mesoscale) if enabled
+    F_stall = float(cell.p_myosin.F_stall_per_head)  # SCALED
+    n_heads_total = int(2 * cell.p_myosin.n_heads_per_side * cell.p_myosin.n_motors_per_cell)
+    n_cortex_actin = int(cell.n_cortex_actin)
+    meso = getattr(cell.p_myosin, "extras", None) or {}
+    factor = float(meso.get("mesoscale_force_factor", 1.0))
+
+    def _sample(tick):
+        snap = sim.state.get_snapshot()
+        if snap.communicator.rank != 0:
+            return None
+        pos = np.asarray(snap.particles.position, dtype=np.float64)
+        bonds, _ = _engaged_attach_bonds(snap, n_cortex_actin)
+        n_eng = int(bonds.shape[0])
+        # Per-bond geometry + delivered tension T = k·(r − r0), r0≈0 (grip_walk).
+        # A = 4πR² is the cortex surface area (the correct 2D-stress normalisation).
+        A_surf = 4.0 * np.pi * R * R
+        if n_eng:
+            d = pos[bonds[:, 0]] - pos[bonds[:, 1]]      # head − actin
+            r = np.linalg.norm(d, axis=1)
+            T = k_ha * r                                  # delivered force [N]
+            uhat = d / r[:, None].clip(min=1e-30)
+            # radial direction at the actin-bead end (outward normal):
+            normals = pos[bonds[:, 1]] / np.linalg.norm(
+                pos[bonds[:, 1]], axis=1, keepdims=True).clip(min=1e-30)
+            radial_comp = np.sum(uhat * normals, axis=1)           # û·n̂
+            inplane2 = np.clip(1.0 - radial_comp**2, 0.0, 1.0)     # 1−(û·n̂)²
+            gen_force = float(np.sum(np.abs(T)))                    # Σ|T| generated [N]
+            mean_T = float(np.mean(np.abs(T)))
+            mean_r = float(np.mean(r))
+            # Irving-Kirkwood 2D surface-stress estimate over the engaged attach
+            # bonds (same form cortical_tension.py uses for its cross-check:
+            # γ_IK = Σ T·L·(1−(r̂·û)²)/(8πR²) = Σ T·L·inplane² / (2·A)). This is the
+            # PHYSICAL isotropic-network surface tension these bonds carry — the
+            # legitimate cross-check on the MOP γ_soft (no hidden "ceiling" above it).
+            g_ik = float(np.sum(np.abs(T) * r * inplane2)) / (2.0 * A_surf)
+        else:
+            gen_force = mean_T = mean_r = g_ik = 0.0
+        # The gate's own γ measurement (same entry point Gate-B uses).
+        ct = measure_cortical_tension(
+            sim, R_cell=R, p_enclosed_volume=cell.p_enclosed_volume,
+        )
+        g_soft = float(ct["gamma_soft"])               # N/m
+        transmitted_force = g_soft * 2.0 * np.pi * R   # Σ F_cut implied by γ_soft [N]
+        return {
+            "tick": int(tick),
+            "n_engaged": n_eng,
+            "n_heads_total": n_heads_total,
+            "engaged_frac": n_eng / n_heads_total if n_heads_total else 0.0,
+            "s_grip_over_l0": float(
+                cell.myosin_action._head_grip_s.mean() / float(cell.p_cortex.rest_length)
+            ) if cell.myosin_action is not None else 0.0,
+            "mean_T_pN": mean_T * _PN,
+            "mean_attach_r_nm": mean_r * 1e9,
+            "F_stall_pN": F_stall * _PN,
+            "gen_force_nN": gen_force * 1e9,
+            "transmitted_force_nN": transmitted_force * 1e9,
+            "g_soft_mN_m": g_soft * _MNM,
+            "g_ik_estimate_mN_m": g_ik * _MNM,
+            "g_rigid_mN_m": float(ct["gamma_rigid"]) * _MNM,
+            "g_passive_mN_m": float(ct["gamma_passive"]) * _MNM,
+        }
+
+    rows = []
+    # initial sample (loading phase, s_grip≈0)
+    s0 = _sample(0)
+    if s0:
+        rows.append(s0)
+        print(f"  [tick 0] n_eng={s0['n_engaged']}/{s0['n_heads_total']} "
+              f"({s0['engaged_frac']*100:.2f}%)  g_soft={s0['g_soft_mN_m']:.3e} mN/m",
+              flush=True)
+    done = 0
+    while done < n_contract_steps:
+        chunk = min(sample_every, n_contract_steps - done)
+        sim.run(chunk)
+        done += chunk
+        s = _sample(done)
+        if s:
+            rows.append(s)
+            print(f"  [tick {done}] n_eng={s['n_engaged']} "
+                  f"({s['engaged_frac']*100:.2f}%)  s_grip/l0={s['s_grip_over_l0']:.3f}  "
+                  f"g_soft={s['g_soft_mN_m']:.3e}  g_ik={s['g_ik_estimate_mN_m']:.3e}  "
+                  f"meanT={s['mean_T_pN']:.2f}pN  gen={s['gen_force_nN']:.3f}nN", flush=True)
+
+    # Summary: take the last quartile as the plateau.
+    tail = rows[max(1, 3 * len(rows) // 4):] or rows[-1:]
+
+    def _avg(key):
+        return float(np.mean([r[key] for r in tail]))
+
+    g_soft_plateau = _avg("g_soft_mN_m")
+    band_lo, band_hi = _HOSSEINI_BAND[0] * _MNM, _HOSSEINI_BAND[1] * _MNM
+
+    # --- Analytical parameter-implied active tension (the "what do these params
+    # predict" number, independent of the sim measurement). Active-gel surface
+    # tension of an isotropic minifilament population on a thin shell:
+    #   γ_active ≈ (1/2)·n_2D·f_minifil·ℓ_minifil
+    # with n_2D = native areal density [1/m²], f_minifil = (heads/minifilament)·
+    # F_stall_per_head (per-NATIVE, the un-scaled stall), ℓ_minifil = backbone span.
+    # This is the dipole 2D-stress an isotropic active gel of these motors carries
+    # at FULL engagement + full stall — the upper envelope of what the params allow.
+    n2d = float((meso.get("native_n_motors", cell.p_myosin.n_motors_per_cell))
+                / (4.0 * np.pi * float(cell.p_cortex.R_cell) ** 2))  # 1/m²
+    f_stall_native = F_stall / max(factor, 1.0)                       # un-scaled per-head
+    f_minifil = 2.0 * cell.p_myosin.n_heads_per_side * f_stall_native
+    ell_minifil = float(cell.p_myosin.backbone_length)
+    g_analytic = 0.5 * n2d * f_minifil * ell_minifil                  # N/m
+
+    # Band-closure budget at the MEASURED per-head T (independent of the analytic).
+    mean_T_N = _avg("mean_T_pN") * 1e-12  # pN→N
+    # γ_soft scales ~linearly with engaged-head count at fixed geometry, so the
+    # head count that would lift the measured plateau into band_lo:
+    need_engaged_for_band = (
+        _avg("n_engaged") * band_lo / g_soft_plateau if g_soft_plateau > 0 else None)
+
+    summary = {
+        "operating_point": "suspended/rounded, FA OFF, turgor ON, connected mesh, grip_walk",
+        "scale": {
+            "n_filaments": int(cell.p_cortex.n_filaments),
+            "n_cortex_actin": int(cell.n_cortex_actin),
+            "n_motors": int(cell.p_myosin.n_motors_per_cell),
+            "n_heads_per_side": int(cell.p_myosin.n_heads_per_side),
+            "n_heads_total": int(2 * cell.p_myosin.n_heads_per_side
+                                 * cell.p_myosin.n_motors_per_cell),
+            "mesoscale_force_factor": factor,
+            "native_n_motors": float(meso.get("native_n_motors", cell.p_myosin.n_motors_per_cell)),
+            "native_areal_density_per_um2": n2d / 1e12,
+        },
+        "band_mN_m": [band_lo, band_hi],
+        "plateau": {
+            "g_soft_mN_m": g_soft_plateau,
+            "g_ik_estimate_mN_m": _avg("g_ik_estimate_mN_m"),
+            "g_rigid_mN_m": _avg("g_rigid_mN_m"),
+            "g_passive_mN_m": _avg("g_passive_mN_m"),
+            "engaged_frac": _avg("engaged_frac"),
+            "n_engaged": _avg("n_engaged"),
+            "mean_T_pN": _avg("mean_T_pN"),
+            "F_stall_pN": rows[-1]["F_stall_pN"],
+            "mean_attach_r_nm": _avg("mean_attach_r_nm"),
+            "gen_force_nN": _avg("gen_force_nN"),
+            "transmitted_force_nN": _avg("transmitted_force_nN"),
+        },
+        "analytic": {
+            "g_active_analytic_mN_m": g_analytic * _MNM,
+            "native_areal_density_per_um2": n2d / 1e12,
+            "f_minifilament_pN": f_minifil * _PN,
+            "ell_minifilament_nm": ell_minifil * 1e9,
+            "gap_factor_analytic_to_band_lo": band_lo / (g_analytic * _MNM)
+            if g_analytic > 0 else None,
+            "note": "γ≈½·n2D·f_minifil·ℓ at FULL engagement+stall — param upper envelope",
+        },
+        "band_closure_budget": {
+            "need_engaged_heads_for_band_lo": need_engaged_for_band,
+            "have_engaged_heads": _avg("n_engaged"),
+            "have_heads_total": int(2 * cell.p_myosin.n_heads_per_side
+                                    * cell.p_myosin.n_motors_per_cell),
+            "gap_factor_g_soft_to_band_lo": band_lo / g_soft_plateau if g_soft_plateau > 0 else None,
+        },
+        "rows": rows,
+    }
+    return summary
+
+
+def _verdict(s):
+    p = s["plateau"]; b = s["band_closure_budget"]; a = s["analytic"]
+    print("=" * 76, flush=True)
+    print("H.7 ACTIVE-MYOSIN FORCE-BUDGET AUDIT — plateau decomposition", flush=True)
+    print("-" * 76, flush=True)
+    print(f"  scale: n_filaments={s['scale']['n_filaments']}, "
+          f"{s['scale']['n_cortex_actin']} cortex beads, "
+          f"{s['scale']['n_heads_total']} myosin heads, "
+          f"meso×{s['scale']['mesoscale_force_factor']:.2f} "
+          f"(native {s['scale']['native_n_motors']:.0f} motors @ "
+          f"{s['scale']['native_areal_density_per_um2']:.2f}/µm²)", flush=True)
+    print(f"  band (Hosseini IQR) = [{s['band_mN_m'][0]:.3f}, {s['band_mN_m'][1]:.3f}] mN/m",
+          flush=True)
+    print("-" * 76, flush=True)
+    print(f"  (1) ENGAGEMENT   : {p['n_engaged']:.0f}/{s['scale']['n_heads_total']} "
+          f"= {p['engaged_frac']*100:.2f}%  (kinetic equil ≈99% → shortfall is geometric)",
+          flush=True)
+    print(f"  (2) PER-HEAD T   : {p['mean_T_pN']:.3f} pN  (F_stall={p['F_stall_pN']:.2f} pN, "
+          f"mean attach r={p['mean_attach_r_nm']:.0f} nm)", flush=True)
+    print(f"  (3) GENERATED Σ|T| = {p['gen_force_nN']:.3f} nN", flush=True)
+    print("-" * 76, flush=True)
+    print(f"  γ_soft (active, MOP) = {p['g_soft_mN_m']:.4e} mN/m   "
+          f"[{b['gap_factor_g_soft_to_band_lo']:.0f}× under band_lo]", flush=True)
+    print(f"  γ_IK  (active, virial cross-check) = {p['g_ik_estimate_mN_m']:.4e} mN/m", flush=True)
+    print(f"  γ_rigid (turgor) = {p['g_rigid_mN_m']:.4e} mN/m   "
+          f"γ_passive(YL) = {p['g_passive_mN_m']:.4e} mN/m", flush=True)
+    print("-" * 76, flush=True)
+    print(f"  ANALYTIC param-implied γ_active (½·n2D·f_minifil·ℓ, FULL engage+stall):",
+          flush=True)
+    print(f"    = {a['g_active_analytic_mN_m']:.4e} mN/m   "
+          f"[{(a['gap_factor_analytic_to_band_lo'] or 0):.1f}× under band_lo]", flush=True)
+    print(f"    (n2D={a['native_areal_density_per_um2']:.2f}/µm², "
+          f"f_minifil={a['f_minifilament_pN']:.0f} pN, ℓ={a['ell_minifilament_nm']:.0f} nm)",
+          flush=True)
+    print("-" * 76, flush=True)
+    print("  BAND-CLOSURE BUDGET (γ_soft ~∝ engaged count at fixed geometry):", flush=True)
+    if b["need_engaged_heads_for_band_lo"] is not None:
+        print(f"    need engaged heads ≈ {b['need_engaged_heads_for_band_lo']:.0f} "
+              f"(have {b['have_engaged_heads']:.0f} engaged, "
+              f"{b['have_heads_total']} total)", flush=True)
+    print("=" * 76, flush=True)
+    print("  READING:", flush=True)
+    an_gap = a["gap_factor_analytic_to_band_lo"] or 0
+    need = b["need_engaged_heads_for_band_lo"]
+    have_total = b["have_heads_total"]
+    if an_gap > 1.5:
+        print(f"   → GENERATION-BOUND (parameter): even at FULL engagement + FULL stall the", flush=True)
+        print(f"     analytic active-gel tension is {an_gap:.1f}× under band_lo. The Nie-2015", flush=True)
+        print(f"     density (0.6/µm², HeLa, the only proxy — no MCF7 datum) and/or per-head", flush=True)
+        print(f"     stall under-predict band-level tension. This is a PARAMETER/datum question", flush=True)
+        print(f"     (surface to PI; do NOT tune to pass — magic-number rule).", flush=True)
+    elif need is not None and need <= have_total:
+        print(f"   → ENGAGEMENT-BOUND: params CAN reach band at full engagement; the floor is", flush=True)
+        print(f"     too few engaged heads ({need:.0f} needed ≤ {have_total} available).", flush=True)
+        print(f"     Lever: binding availability (capture geometry / bipolar gate / s_grip).", flush=True)
+    else:
+        print(f"   → MIXED: need {need} engaged > {have_total} available → engagement helps but", flush=True)
+        print(f"     cannot alone close it; per-head force (contraction/stall) also short.", flush=True)
+    print("=" * 76, flush=True)
+
+
+def _figure(s, out_png):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    rows = s["rows"]
+    ticks = [r["tick"] for r in rows]
+    fig, axes = plt.subplots(2, 2, figsize=(13, 9), constrained_layout=True)
+    band_lo, band_hi = s["band_mN_m"]
+
+    ax = axes[0, 0]
+    ax.plot(ticks, [r["g_soft_mN_m"] for r in rows], "o-", color="#c0392b",
+            label="γ_soft (active, MOP)")
+    ax.plot(ticks, [r["g_ik_estimate_mN_m"] for r in rows], "s--", color="#e67e22",
+            label="γ_IK (virial cross-check)")
+    ax.axhline(s["analytic"]["g_active_analytic_mN_m"], color="#8e44ad", ls=":", lw=1.6,
+               label="analytic γ (full engage+stall)")
+    ax.axhspan(band_lo, band_hi, color="green", alpha=0.15, label="Hosseini band")
+    ax.set_yscale("log"); ax.set_xlabel("contraction step"); ax.set_ylabel("γ (mN/m)")
+    ax.set_title("active γ: MOP vs virial vs analytic vs band")
+    ax.legend(fontsize=8)
+
+    ax = axes[0, 1]
+    ax.plot(ticks, [r["engaged_frac"] * 100 for r in rows], "o-", color="#2e86c1")
+    ax.set_xlabel("contraction step"); ax.set_ylabel("engaged heads (%)")
+    ax.axhline(99, color="grey", ls="--", lw=1, label="kinetic equil ≈99%")
+    ax.set_title("(1) engagement fraction"); ax.legend(fontsize=8)
+
+    ax = axes[1, 0]
+    ax.plot(ticks, [r["mean_T_pN"] for r in rows], "o-", color="#8e44ad")
+    ax.axhline(s["plateau"]["F_stall_pN"], color="grey", ls="--", lw=1,
+               label=f"F_stall={s['plateau']['F_stall_pN']:.1f} pN")
+    ax.set_xlabel("contraction step"); ax.set_ylabel("mean |T| per engaged head (pN)")
+    ax.set_title("(2) per-head delivered force"); ax.legend(fontsize=8)
+
+    ax = axes[1, 1]
+    ax.plot(ticks, [r["gen_force_nN"] for r in rows], "o-", color="#16a085",
+            label="generated Σ|T| (engaged bonds)")
+    ax.set_xlabel("contraction step"); ax.set_ylabel("generated force (nN)")
+    ax.set_title("(3) total generated active force"); ax.legend(fontsize=8)
+
+    fig.suptitle("H.7 active-myosin force-budget audit "
+                 f"({'smoke' if s['scale']['n_filaments'] < 900 else 'full ×40'})",
+                 fontweight="bold")
+    fig.savefig(out_png, dpi=130)
+    print(f"  figure → {out_png}", flush=True)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--n-filaments", type=int, default=160,
+                    help="smoke scale; omit/0 for full ×40 production scale")
+    ap.add_argument("--n-nuc-beads", type=int, default=400)
+    ap.add_argument("--warmup", type=int, default=1500)
+    ap.add_argument("--softstart", type=int, default=200)
+    ap.add_argument("--contract-steps", type=int, default=20000)
+    ap.add_argument("--sample-every", type=int, default=4000)
+    ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--out-json", type=str,
+                    default="ffn_sim/outputs/h7/production/h7_active_force_budget.json")
+    ap.add_argument("--out-png", type=str,
+                    default="ffn_sim/outputs/h7/figs/h7_active_force_budget.png")
+    add_production_device_args(ap, default="gpu")
+    args = ap.parse_args()
+    validate_production_device_args(ap, args)
+
+    import hoomd
+    dev = (hoomd.device.GPU(notice_level=0) if args.device == "gpu"
+           else hoomd.device.CPU(notice_level=0))
+    n_fil = None if (args.n_filaments is None or args.n_filaments <= 0) else args.n_filaments
+
+    cell = _build_settled_cell(
+        n_filaments=n_fil, n_nuc_beads=args.n_nuc_beads,
+        warmup=args.warmup, softstart=args.softstart, device=dev, seed=args.seed,
+    )
+    s = audit(cell=cell, n_contract_steps=args.contract_steps,
+              sample_every=args.sample_every)
+    _verdict(s)
+    Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out_json).write_text(json.dumps(s, indent=2))
+    print(f"  json → {args.out_json}", flush=True)
+    Path(args.out_png).parent.mkdir(parents=True, exist_ok=True)
+    _figure(s, args.out_png)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
