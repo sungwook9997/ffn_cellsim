@@ -85,16 +85,20 @@ def _make_manifest(*, n_fil, myo_on, no_nucleus=False):
     return m
 
 
-def _build_native(manifest, *, device, seed, warm_pos, relaxed, no_nucleus=False, dt_safety=1.0):
+def _build_native(manifest, *, device, seed, warm_pos, relaxed, no_nucleus=False, dt_safety=1.0,
+                  connected_mesh=True):
     """Constrained full cell + native integrator swap; relaxed adds the unilateral
     M-SHAKE + τ_bend-EMA Euler gate (F_crit, τ_bend DERIVED from κ_B, ℓ₀).
-    ``no_nucleus`` + ``dt_safety`` enable the optimized cortical-tension build."""
+    ``connected_mesh`` (default TRUE) builds the percolated spanning cortex (the
+    2026-06-04 rebuild: bridge-different-filament crosslinks, giant ≥0.9) — REQUIRED
+    for a transmission measurement; False is the fragmented mesh (giant ~7%, the
+    γ-floor artifact). ``no_nucleus`` + ``dt_safety`` are the optional optimizations."""
     import hoomd
     from ffn_hoomd_plugin import NativeConstrainedBaoabUpdater
 
     cell = build_baseline_cell(
         manifest=deepcopy(manifest), device=device, seed=seed,
-        constrained=True, equilibrate=False,
+        constrained=True, equilibrate=False, connected_mesh=connected_mesh,
         allow_no_nucleus=no_nucleus, constrained_dt_safety=dt_safety)
     if hasattr(cell.baoab_action, "record_lambda"):
         cell.baoab_action.record_lambda = True
@@ -132,6 +136,7 @@ def _build_native(manifest, *, device, seed, warm_pos, relaxed, no_nucleus=False
     info = {"F_crit_pN": F_crit * 1e12, "tau_bend_us": tau_bend * 1e6,
             "ell0_nm": r0 * 1e9, "n_cortex_actin": int(F * npc),
             "no_nucleus": bool(no_nucleus), "dt_safety": float(dt_safety),
+            "connected_mesh": bool(connected_mesh),
             "dt_s": float(dtc), "n_part": int(cell.simulation.state.N_particles)}
     return cell, nat, adapter, dtc, r0, info
 
@@ -182,14 +187,16 @@ def _run_condition(args, dev):
         cell_w = build_baseline_cell(
             manifest=deepcopy(manifest), device=dev, seed=args.seed,
             constrained=False, equilibrate=True, equilibrate_steps=args.warmup,
-            equilibrate_softstart_steps=softstart, allow_no_nucleus=args.no_nucleus)
+            equilibrate_softstart_steps=softstart, allow_no_nucleus=args.no_nucleus,
+            connected_mesh=(not args.no_connected_mesh))
         cell_w.simulation.run(0)
         warm_pos = _tagpos(cell_w.simulation)
         del cell_w
 
     cell, nat, adapter, dtc, ell0, info = _build_native(
         manifest, device=dev, seed=args.seed, warm_pos=warm_pos, relaxed=relaxed,
-        no_nucleus=args.no_nucleus, dt_safety=args.dt_safety)
+        no_nucleus=args.no_nucleus, dt_safety=args.dt_safety,
+        connected_mesh=(not args.no_connected_mesh))
     sim = cell.simulation
     R_cell = float(cell.p_cortex.R_cell)
     if ckpt_myo_s is not None and cell.myosin_action is not None:
@@ -307,6 +314,10 @@ def main() -> int:
     ap.add_argument("--ckpt-every", type=int, default=5)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--device", choices=["cpu", "gpu"], default="gpu")
+    ap.add_argument("--no-connected-mesh", action="store_true",
+                    help="DIAGNOSTIC ONLY — use the fragmented mesh (giant ~7%). Default is "
+                         "the connected spanning mesh (2026-06-04 rebuild), REQUIRED for a "
+                         "transmission measurement. Gate-A/old runs wrongly used fragmented.")
     ap.add_argument("--no-nucleus", action="store_true",
                     help="drop the nucleus (sanctioned cortical-tension exception, PI "
                          "2026-06-08) — removes its stiff-lamin CFL so dt rises to the "
