@@ -843,10 +843,10 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="osmotic_regulation",
         category="volume",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); manifest+post-build attach
         enabled_default=False,
         summary="Dynamic volume regulation: time-dependent osmolarity / ion-pump+aquaporin flux on enclosed volume.",
-        manifest_path=None,
+        manifest_path=("optional_subsystems", "osmotic_regulation"),
         resolve_ref="ffn_sim.cortex.osmotic_regulation.resolve_osmotic_regulation",
         performance_contract=_live(
             particle_types_added=(),

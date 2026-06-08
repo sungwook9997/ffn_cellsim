@@ -380,3 +380,48 @@ class TestUpdaterAct:
 def test_attach_to_built_simulation_relaxes_setpoint():
     """Smoke: over many ticks V0(t) relaxes toward the target volume."""
     raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------
+# LIVE activation wiring (2026-06-09; PI 소유권 허용): manifest + post-build
+# attach + registry LIVE. Full-build tests (~0.5 s each).
+# ---------------------------------------------------------------------------
+def test_osmotic_off_build_is_bit_identity():
+    """Baseline (osmotic absent) => p_osmotic_regulation None; build unchanged."""
+    from ffn_sim.cell.manifest import (
+        build_baseline_cell, load_manifest, resolve_baseline,
+    )
+    rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
+    assert rb.p_osmotic_regulation is None
+    cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+    assert cell.simulation.state.N_particles > 0
+
+
+def test_osmotic_on_attaches_updater_without_contamination():
+    """osmotic_rvd => +1 updater, tau_RVD in band, IDENTICAL bond inventory."""
+    from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
+    from ffn_sim.cell.manifest import (
+        build_baseline_cell, load_manifest, resolve_baseline,
+    )
+    base = load_manifest("mcf7_baseline.yaml")
+    manifest, deferred = REGISTRY.compose_manifest(
+        load_recipe("osmotic_rvd"), base_manifest=base, strict=True
+    )
+    assert deferred == []
+    rb = resolve_baseline(manifest)
+    assert rb.p_osmotic_regulation is not None and rb.p_osmotic_regulation.enabled
+    # PRIMARY gate (analytic): tau_RVD in the Hoffmann 2009 seconds-minutes band.
+    assert 3.0 <= rb.p_osmotic_regulation.tau_RVD <= 600.0
+
+    cell_off = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+    cell_on = build_baseline_cell("mcf7_baseline.yaml", manifest=manifest, seed=1)
+    n_off = len(cell_off.simulation.operations.updaters)
+    n_on = len(cell_on.simulation.operations.updaters)
+    assert n_on == n_off + 1, (n_off, n_on)   # exactly the osmotic updater added
+
+    s_off = cell_off.simulation.state.get_snapshot()
+    s_on = cell_on.simulation.state.get_snapshot()
+    # NO gamma contamination: osmotic adds ZERO bonds => identical bond inventory.
+    assert int(s_on.bonds.N) == int(s_off.bonds.N)
+    assert sorted(s_on.bonds.types) == sorted(s_off.bonds.types)
+    assert int(s_on.particles.N) == int(s_off.particles.N)

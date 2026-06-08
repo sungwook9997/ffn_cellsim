@@ -74,3 +74,17 @@ or gate-contract changes outside this session's ownership, so all were SKIPPED a
 
 **STATE: in-scope backlog + deeper hardening exhausted; awaiting PI direction or a
 shared-file/parameter authorization.**
+
+---
+
+## Phase 2 — ACTIVATION (PI granted 소유권 허용 + "모든 것 달려, 절대 멈추지 마")
+
+Ownership unblocked → graduating compartments EXPERIMENTAL→LIVE via the real 5-step
+activation procedure, keeping the disabled path bit-identical. Conflict-aware: the
+sibling Gate-B session is rewriting `cortex/cortical_tension.py`, so I start with the
+activation that needs NO cortical_tension edit.
+
+| time | item | commit | result |
+|---|---|---|---|
+| 06:50 | ⭐**osmotic_regulation EXPERIMENTAL→LIVE** (1st graduation). Wired POST-build in manifest.py (ResolvedBaseline field + resolve stanza + build_baseline_cell attach via the live ev_force handle — ZERO cell.py edit), + mcf7_baseline stanza (Lp=1e-12 Jung2011 MCF7/AQP5 PI-ratified) + osmotic_rvd recipe + registry LIVE. NO cortical_tension touched (sibling-safe) | (this commit) | LIVE |
+| 06:50 | osmotic ACTIVATION GATE (full physiological baseline, real build OFF vs ON): PRIMARY τ_RVD=3.2s ∈[3,600]s ✓; RVD sign V0↓ ✓; updater attached (+1) ✓; NO-contamination (bond inventory identical ON/OFF — osmotic adds 0 bonds) ✓; OFF bit-identity ✓. +2 CI tests (64 passed). Raw full-cell run trips BAOAB guard (needs equilibration prelude — known full-cell issue, not osmotic) → V0(t) via exact updater law | (this commit) | GATE PASS |

@@ -37,6 +37,10 @@ from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume
 from ffn_sim.cortex.erm import resolve_erm
 from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.cortex.osmotic_regulation import (
+    attach_osmotic_regulation_to_simulation,
+    resolve_osmotic_regulation,
+)
 from ffn_sim.cortex.turnover import resolve_turnover
 from ffn_sim.ecm.substrate import resolve_substrate
 
@@ -79,6 +83,7 @@ class ResolvedBaseline:
     p_turnover: Any | None = None
     p_erm: Any | None = None
     p_membrane: Any | None = None
+    p_osmotic_regulation: Any | None = None   # H.11 dynamic volume regulation (LIVE)
     manifest: dict = field(default_factory=dict)
 
     def compartments(self) -> dict[str, Any]:
@@ -197,6 +202,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         return _deep_merge(base, inline) if inline else base
 
     p_fa = p_substrate = p_lamellipodium = p_turnover = p_erm = p_membrane = None
+    p_osmotic_regulation = None
     lam_cfg: dict = {}
 
     fa_b = opt.get("fa")
@@ -262,6 +268,25 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
             tov_cfg, dt=dtc, rest_length=p_cortex.rest_length
         )
 
+    # H.11 dynamic osmotic / volume regulation (LIVE, default-OFF). Modulates the
+    # enclosed_volume turgor setpoint over time (water-flux RVD/RVI); resolve
+    # AFTER p_enclosed_volume (its K_vol/V0 anchor the timescales + slow-mode CFL).
+    osmo_b = opt.get("osmotic_regulation")
+    if _enabled(osmo_b):
+        osmo_cfg = _opt_cfg(osmo_b)
+        # _opt_cfg strips `enabled`; force it True on the unwrapped sub-dict so a
+        # base_config (enabled:false) does not silently no-op (mirror turnover).
+        _o = osmo_cfg
+        if isinstance(_o.get("cortex"), dict):
+            _o = _o["cortex"]
+        if isinstance(_o.get("osmotic_regulation"), dict):
+            _o = _o["osmotic_regulation"]
+        _o["enabled"] = True
+        p_osmotic_regulation = resolve_osmotic_regulation(
+            osmo_cfg, R_cell=p_cortex.R_cell, dt=dtc,
+            p_enclosed_volume=p_enclosed_volume,
+        )
+
     return ResolvedBaseline(
         cell_type=cell_type,
         R_cell=R_cell,
@@ -279,6 +304,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         p_turnover=p_turnover,
         p_erm=p_erm,
         p_membrane=p_membrane,
+        p_osmotic_regulation=p_osmotic_regulation,
         manifest=manifest,
     )
 
@@ -366,7 +392,7 @@ def build_baseline_cell(
         with_fa=rb.p_fa is not None,
         with_erm=rb.p_erm is not None,
     )
-    return Cell.build(
+    cell = Cell.build(
         rb.p_cortex,
         p_xlinks=rb.p_xlinks,
         p_myosin=rb.p_myosin,
@@ -404,3 +430,20 @@ def build_baseline_cell(
         device=device,
         rng=np.random.default_rng(seed),
     )
+    # H.11 osmotic regulation: POST-build attach. The OsmoticRegulationUpdater
+    # modulates the LIVE EnclosedVolumePressure setpoint, so it needs the force
+    # object exposed on the built cell's handles (not a snapshot extension).
+    # DEFAULT-OFF / bit-identity: when rb.p_osmotic_regulation is None this is
+    # skipped entirely and the returned cell is unchanged.
+    if rb.p_osmotic_regulation is not None:
+        ev_force = cell.extras.get("handles", {}).get("enclosed_volume_force")
+        if ev_force is None:
+            raise RuntimeError(
+                "osmotic_regulation enabled but the built cell exposes no "
+                "enclosed_volume_force handle — enclosed_volume is baseline-"
+                "required and must be ON for the setpoint modulation."
+            )
+        attach_osmotic_regulation_to_simulation(
+            cell.simulation, rb.p_osmotic_regulation, ev_force
+        )
+    return cell

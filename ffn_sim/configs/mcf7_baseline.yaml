@@ -145,3 +145,12 @@ optional_subsystems:
     enabled: false       # declarable, Phase B2 wire-on
   turnover:              # cortex actin cofilin severing / re-annealing
     enabled: false       # Phase B; k_sev = ln2/tau_half (Chugh 2017 anchor)
+  osmotic_regulation:    # H.11 dynamic volume regulation (RVD/RVI) — LIVE 2026-06-09
+    enabled: false       # default-OFF: a perturbation study, NOT the resting baseline.
+                         # Modulates the enclosed_volume turgor setpoint over time
+                         # (water-flux Kedem-Katchalsky / van't Hoff).
+    Lp: 1.0e-12          # m/(s.Pa) MCF7 AQP5 water permeability (Jung 2011 PLoS ONE
+                         # 6:e28492; PI-ratified 2026-06-09). Olbrich band [1.8e-13,1.1e-12].
+    batch_steps: 1000    # setpoint-update stride (slow-mode CFL-gated vs tau_Kvol).
+                         # delta_c (osmolar shock, mol/m3) is a per-RUN knob set in the
+                         # osmotic_rvd recipe / driver, NOT a baseline setpoint.
