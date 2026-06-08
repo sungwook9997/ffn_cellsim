@@ -112,9 +112,14 @@ def match_gates(text: str, vocab: dict) -> tuple[list[dict], list[str]]:
         for h in (g for g in vocab["gates"] if ku in g["ku"]):
             matched[h["page_id"]] = h
 
-    # H.7 Gate-A/Gate-B et al. — no ValidationGate row exists; always a finding
+    # H.7 Gate-A/Gate-B — resolve against VG-H7-gate-{a,b} if registered, else flag
     for letter in GATE_AB_RE.findall(text):
-        unmatched.add(f"Gate-{letter.upper()}")
+        vgid = f"vg-h7-gate-{letter.lower()}"
+        hit = next((g for g in vocab["gates"] if g["vg_lower"] == vgid), None)
+        if hit:
+            matched[hit["page_id"]] = hit
+        else:
+            unmatched.add(f"Gate-{letter.upper()}")
 
     return list(matched.values()), sorted(unmatched)
 
@@ -292,7 +297,9 @@ def harvest_reports(vocab: dict, scope):
                 "commit": commit,
                 "date": date,
                 "snapshot": md_snapshot(raw),
+                "outcome": "",
                 "gates": [g["vg_id"] for g in gates],
+                "gate_pids": [g["page_id"] for g in gates],
                 "contracts": [c["mc_id"] for c in contracts],
                 "unmatched": unmatched,
             }
@@ -364,10 +371,119 @@ def write_manifest(runs, reports, today: str) -> Path:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# P1 — LLM result_snapshot (opt-in) + idempotent Notion upsert (--apply)
+# --------------------------------------------------------------------------- #
+# my deterministic outcome -> the RunResult.Outcome select vocabulary.
+# Only confident verdicts are mapped; ambiguous ones stay None (Outcome omitted)
+# so we never fabricate a PASS/FAIL the artifact did not state.
+OUTCOME_TO_NOTION = {
+    "refute": "FAIL",
+    "confirm": "PASS",
+    "feasibility": "smoke",
+    "smoke": "smoke",
+    "diagnosis": None,
+    "production": None,
+}
+
+
+def llm_snapshot(text: str, run_id: str):
+    """1-2 sentence result snapshot via the shared dual LLM backend (opt-in)."""
+    try:
+        from tag_query import llm  # same-dir; anthropic SDK or `claude -p` fallback
+    except Exception:
+        return None
+    prompt = (
+        "You are summarising a simulation run artifact for a database field. "
+        "In ONE or TWO sentences, state the concrete result/verdict and the key "
+        "number(s) only. No preamble, no markdown. Artifact "
+        f"`{run_id}`:\n\n{text[:6000]}"
+    )
+    try:
+        out = llm(prompt).strip()
+        return out[:1800] or None
+    except Exception:
+        return None
+
+
+def _notion():
+    """(token, api_base, db_ids) reusing the existing read pipeline's auth."""
+    import sys as _sys
+    obs = OUTPUTS / "obsidian_rag_full"
+    _sys.path.insert(0, str(obs))
+    from notion_to_obsidian import (  # noqa: E402
+        API, DATA_SOURCES, get_token, headers, query_all,
+    )
+    return get_token(), API, DATA_SOURCES, headers, query_all
+
+
+def _rt(value: str):
+    return {"rich_text": [{"text": {"content": (value or "")[:1900]}}]}
+
+
+def upsert_runs(runs, reports, apply: bool, use_llm: bool):
+    """Idempotent create/update of RunResult rows keyed on RUN ID."""
+    import requests
+    tok, API, DS, headers, query_all = _notion()
+    db_id = DS["RunResult"]
+
+    existing = {}
+    for row in query_all(db_id, tok):
+        props = row.get("properties", {})
+        rid = props.get("RUN ID", {})
+        key = "".join(x["plain_text"] for x in rid.get("rich_text", [])) if rid else ""
+        if key:
+            existing[key] = row["id"]
+
+    n_create = n_update = 0
+    allrows = runs + reports
+    for r in allrows:
+        snap = r.get("snapshot") or ""
+        if use_llm:
+            try:
+                raw = (REPO_ROOT / r["artifact_path"]).read_text(errors="replace")
+                snap = llm_snapshot(raw, r["run_id"]) or snap
+            except Exception:
+                pass
+        props = {
+            "Run": {"title": [{"text": {"content": r["title"][:1900]}}]},
+            "RUN ID": _rt(r["run_id"]),
+            "Result Snapshot": _rt(snap),
+            "Notes": _rt(f"machine-harvested {datetime.now(tz=timezone.utc).date()} "
+                         f"by harvest_ops.py (P1); artifact is SSOT"),
+            "Commit": _rt(r.get("commit", "")),
+            "Artifact Path": _rt(r["artifact_path"]),
+        }
+        if r.get("date"):
+            props["Date"] = {"date": {"start": r["date"]}}
+        outc = OUTCOME_TO_NOTION.get(r.get("outcome", ""))
+        if outc:
+            props["Outcome"] = {"select": {"name": outc}}
+        if r.get("gate_pids"):
+            props["Gate"] = {"relation": [{"id": p} for p in r["gate_pids"]]}
+
+        if not apply:
+            continue
+        if r["run_id"] in existing:
+            requests.patch(f"{API}/pages/{existing[r['run_id']]}",
+                           headers=headers(tok), json={"properties": props},
+                           timeout=30).raise_for_status()
+            n_update += 1
+        else:
+            requests.post(f"{API}/pages", headers=headers(tok),
+                          json={"parent": {"database_id": db_id}, "properties": props},
+                          timeout=30).raise_for_status()
+            n_create += 1
+    return n_create, n_update
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scope", default="", help="comma unit filter e.g. h7,layer2")
     ap.add_argument("--date", default="", help="manifest date stamp (YYYY-MM-DD)")
+    ap.add_argument("--llm", action="store_true", help="LLM-enrich result_snapshot")
+    ap.add_argument("--apply", action="store_true",
+                    help="WRITE to Notion RunResult (idempotent upsert on RUN ID)")
     args = ap.parse_args()
     scope = {s.strip() for s in args.scope.split(",") if s.strip()} or None
     today = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
@@ -377,11 +493,22 @@ def main():
     runs = harvest_runs(vocab, scope)
     reports = harvest_reports(vocab, scope)
     con.close()
+    # closeout report rows reuse the run upsert path; ensure gate_pids present
+    for rep in reports:
+        rep.setdefault("gate_pids", [])
+        rep.setdefault("outcome", "")
 
     out = write_manifest(runs, reports, today)
     n_gate = sum(1 for r in runs if r["gates"])
     print(f"[harvest_ops] {len(runs)} run candidates, {len(reports)} report "
           f"closeouts, {n_gate} gate-linked -> {out}")
+
+    if args.apply:
+        nc, nu = upsert_runs(runs, reports, apply=True, use_llm=args.llm)
+        print(f"[harvest_ops] Notion RunResult upsert: {nc} created, {nu} updated"
+              f"{' (LLM snapshots)' if args.llm else ''}")
+    else:
+        print("[harvest_ops] dry-run (no --apply); manifest only")
 
 
 if __name__ == "__main__":

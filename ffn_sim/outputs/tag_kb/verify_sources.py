@@ -164,7 +164,45 @@ def audit_row(uid, ck, doi, short, notes):
     return ("CHECK", "", cand, "author-only match (year differs); " + note)
 
 
+def check() -> int:
+    """Non-destructive audit-status read for refresh.sh — NO web calls, NO writes.
+
+    Reports the materialised `source_audit` verdict distribution, lists suspect
+    rows, and warns if the audit is partial/stale vs the current source_evidence
+    count (so a citation-integrity check rides every refresh; the slow CrossRef
+    re-verification stays an explicit `verify_sources.py` run). Always exits 0.
+    """
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    has = con.execute("SELECT count(*) FROM information_schema.tables "
+                      "WHERE table_name='source_audit'").fetchone()[0]
+    n_se = con.execute("SELECT count(*) FROM source_evidence").fetchone()[0]
+    if not has:
+        print("  [audit] source_audit table MISSING — run `python verify_sources.py` "
+              f"to audit all {n_se} SourceEvidence rows.")
+        return 0
+    rows = con.execute("SELECT verdict, count(*) FROM source_audit "
+                       "GROUP BY 1 ORDER BY 2 DESC").fetchall()
+    n_aud = con.execute("SELECT count(*) FROM source_audit").fetchone()[0]
+    print(f"  [audit] source_audit: {n_aud}/{n_se} SourceEvidence rows audited")
+    for verdict, n in rows:
+        flag = "  <-- SUSPECT" if SUSPICION.get(verdict, 9) <= 3 else ""
+        print(f"           {verdict:16s} {n}{flag}")
+    suspects = con.execute(
+        "SELECT citation_key, verdict FROM source_audit "
+        "WHERE verdict IN ('DOI_DEAD','DOI_MISMATCH','NO_DOI_NOMATCH','CHECK') "
+        "ORDER BY citation_key").fetchall()
+    for ck, v in suspects:
+        print(f"           ⚠️  {v}: {ck}")
+    if n_aud < n_se:
+        print(f"  [audit] ⚠️ PARTIAL/STALE — {n_se - n_aud} rows unaudited "
+              "(likely a --limit sample). Run full `python verify_sources.py`.")
+    con.close()
+    return 0
+
+
 def main():
+    if "--check" in sys.argv:
+        sys.exit(check())
     limit = None
     if "--limit" in sys.argv:
         limit = int(sys.argv[sys.argv.index("--limit") + 1])

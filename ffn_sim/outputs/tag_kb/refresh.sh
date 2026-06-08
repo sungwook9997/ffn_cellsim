@@ -24,5 +24,9 @@ echo "[sanity] supersession / authoritative-chain (KU-3.5 test case)"
 python supersession.py --check
 
 echo
+echo "[sanity] citation integrity (non-destructive; full re-verify = verify_sources.py)"
+python verify_sources.py --check
+
+echo
 echo "TAG backend ready. Ask a question:"
 echo "  python tag_query.py \"Which Parameters feed a failing ValidationGate?\""
