@@ -75,6 +75,12 @@ scales **exactly linearly** with myosin areal density (confirms γ_active ∝ ρ
 - The *measured* loading γ_soft scales **sub-linearly** at high ρ (per-bead degree caps
   MAX_HEADS_PER_BEAD=3 / MAX_DEGREE=6 throttle engagement) — a secondary *structural* ceiling
   that would also need addressing to realise the envelope. Figure: `figs/h7_density_sweep.png`.
+- **Engagement saturates at ~11%** (steady-state run, 200 fil, 120k steps: 3.3%→11.4%, plateaued;
+  `h7_engagement_saturation.json`). At production density this is geometric/availability-limited
+  (not the kinetic 99%, not the per-bead cap), so the model realises only ~1/9 of its own
+  full-engagement envelope — a ~9× throttle *below* the 0.005 envelope, on top of the 36× envelope
+  gap to band. (The actin-network/myosin-dipole γ ratio rises with engagement, 28%→59%, so network
+  amplification is ~1.3–1.6× — still small, confirming it cannot rescue the gap.)
 
 This is mechanism confirmation, NOT a production change — density stays at 0.6/µm² pending PI.
 
