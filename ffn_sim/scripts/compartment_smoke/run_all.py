@@ -35,9 +35,10 @@ HARNESSES = [
     ("stress_fibers", lambda r: f"{r['params']['n_SF']} bundles, 4/4 sf bond types"),
     ("membrane_reservoir", lambda r: f"{r['topology']['n_tethers']} cross-layer tethers"),
     ("junctional_actin", lambda r: f"SCALAR; HOOMD build BLOCKED; F*={r['scalar_laws']['F_star_numeric_pN']:.1f} pN"),
+    ("surface_manifold", lambda r: f"GEOMETRY-only; k-ring master gate {r['checks']['kring_reach_coverage_master_gate']}"),
 ]
 
-_OK_VERDICTS = {"PLUMBING_OK", "SCALAR_OK"}
+_OK_VERDICTS = {"PLUMBING_OK", "SCALAR_OK", "GEOMETRY_OK"}
 
 
 def main() -> int:

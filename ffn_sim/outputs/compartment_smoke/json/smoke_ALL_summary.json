@@ -1,8 +1,8 @@
 {
   "suite": "compartment_enabled_path_smoke",
   "physics_claim": false,
-  "n_total": 8,
-  "n_ok": 8,
+  "n_total": 9,
+  "n_ok": 9,
   "results": {
     "microtubules": {
       "verdict": "PLUMBING_OK",
@@ -35,6 +35,10 @@
     "junctional_actin": {
       "verdict": "SCALAR_OK",
       "headline": "SCALAR; HOOMD build BLOCKED; F*=6.0 pN"
+    },
+    "surface_manifold": {
+      "verdict": "GEOMETRY_OK",
+      "headline": "GEOMETRY-only; k-ring master gate True"
     }
   },
   "note": "PLUMBING smoke suite \u2014 all verdicts are crash/finite/assembly checks with SMOKE-ONLY candidate constants; NO band pass/fail, NO physics claim. See PLATFORM_PI_QUEUE.md for activation blockers."

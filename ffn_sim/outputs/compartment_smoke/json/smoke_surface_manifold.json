@@ -1,0 +1,71 @@
+{
+  "compartment": "surface_manifold",
+  "verdict": "GEOMETRY_OK",
+  "physics_claim": false,
+  "params": {
+    "R_cell_m": 7.5e-06,
+    "reach_m": 1e-06,
+    "sphere_area_m2": 7.068583470577034e-10,
+    "subdivisions": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "per_resolution": [
+    {
+      "subdivisions": 0,
+      "n_tri": 20,
+      "n_vert": 12,
+      "area_rel_err": 0.23808220550701956,
+      "normal_align_err_deg": 17.518804870391566,
+      "kring_k": 4,
+      "kring_coverage": 1.0
+    },
+    {
+      "subdivisions": 1,
+      "n_tri": 80,
+      "n_vert": 42,
+      "area_rel_err": 0.0716546766185579,
+      "normal_align_err_deg": 9.070606825278078,
+      "kring_k": 4,
+      "kring_coverage": 1.0
+    },
+    {
+      "subdivisions": 2,
+      "n_tri": 320,
+      "n_vert": 162,
+      "area_rel_err": 0.018821824246870292,
+      "normal_align_err_deg": 4.730538153435526,
+      "kring_k": 5,
+      "kring_coverage": 1.0
+    },
+    {
+      "subdivisions": 3,
+      "n_tri": 1280,
+      "n_vert": 642,
+      "area_rel_err": 0.00476493032290671,
+      "normal_align_err_deg": 2.334403342441068,
+      "kring_k": 6,
+      "kring_coverage": 1.0
+    },
+    {
+      "subdivisions": 4,
+      "n_tri": 5120,
+      "n_vert": 2562,
+      "area_rel_err": 0.001194993743531685,
+      "normal_align_err_deg": 1.1529304594204488,
+      "kring_k": 8,
+      "kring_coverage": 1.0
+    }
+  ],
+  "checks": {
+    "area_converges_to_4piR2": true,
+    "broad_phase_frame_converges": true,
+    "kring_reach_coverage_master_gate": true,
+    "geometry_only_invariant": true
+  },
+  "note": "GEOMETRY-ONLY grid-invariance harness \u2014 NO force/bond/particle added (cross-checked vs registry geometry_only). The k-ring reach-coverage master gate (coverage==1.0 at every resolution) is the grid-invariance the registry requires before any manifold force could be sanctioned (that force itself stays PI-gated / out of scope)."
+}
