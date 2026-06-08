@@ -15,3 +15,32 @@ local-contraction→spanning-tension conversion failing. Contract: H7_GATE_B_CON
 - loop5 (density sweep — mechanism confirm + concrete gap): added --sweep-densities; ran [0.6,2,6,18]/µm². **Envelope scales EXACTLY linearly with density (γ_active∝ρ_M confirmed): 0.0101→0.0337→0.101→0.303 mN/m.** Crosses active target 0.135 (≈50% of 0.27, blebb ~halving Tinevez2009/Chugh2017) at ρ≈8/µm², band_lo 0.18 at ρ≈10.7/µm² → model needs **~13-18× the literature 0.6/µm² HeLa proxy**. Measured loading γ_soft scales SUB-linearly at high ρ (per-bead degree caps MAX_HEADS_PER_BEAD=3/MAX_DEGREE=6 throttle engagement = secondary STRUCTURAL ceiling). NOT a production change (density stays 0.6 pending PI). Synthesis doc updated w/ concrete curve. fig h7_density_sweep.png. Active-γ frontier diagnosis COMPLETE + quantified.
 - loop6 (independent review + envelope CORRECTION): spawned adversarial review subagent on h7_active_force_budget.py. Found 1 real bug: analytic envelope double-counted the bipolar dipole force (used 2·28·F_stall=112pN; a minifilament is a DIPOLE → one-sided 28·F_stall=56pN). **Envelope corrected 0.0101→0.00506 mN/m → gap 18×→~36× under band_lo (DEEPENS generation-bound finding).** Density needed 16-21/µm² (~27-36× the 0.6 HeLa proxy). Dropped the "0.030 over-driven ×2.7 cross-check" (density-ambiguous — best-ever was at 3.0/µm²). Review confirmed all other math sound (units, IK formula, un-scaling, bond orientation, allowlist semantics). Fixed code (one-sided f_minifil) + added s_grip/phase to plateau summary (review item A). Re-ran sweep, corrected both docs. Active-γ frontier: COMPLETE, reviewed, quantified. 6 loops; diagnosis robust across analytic + sim + KB + sweep + review.
 - loop7 (engagement saturation): 200 fil, 120k steps. **Engagement SATURATES at ~11.3%** (3.3→9.1→10.3→10.9→11.2→11.3→11.4%, plateaued) — geometric/availability-limited at production density (NOT kinetic 99%, NOT per-bead cap). So the model realises only ~1/9 of its own full-engagement envelope → a ~9× throttle BELOW the 0.005 envelope, on top of the 36× envelope-to-band gap. Propagation ratio g_actin/g_myo rose with engagement (28%→59%) → amplification ~1.3-1.6×, still small (confirms can't rescue). Net: the model can't even reach its own (sub-band) envelope. Synthesis updated. h7_engagement_saturation.{json,png}.
+
+## FINAL SUMMARY (halt-and-surface-to-PI, 2026-06-09)
+Stopped at a magic-number/parameter trigger per the boot contract (NOT at 12h) — progressing
+requires a PI datum/scope decision, and the band is LOCKED (no tuning to pass).
+
+**The active-myosin cortical-γ floor is GENERATION/DENSITY-bound** (closes the Gate-A/Gate-B saga):
+```
+band_lo (Hosseini MCF7)            0.18    mN/m   target
+  ↑ ~36×  ← GENERATION envelope (parameter ceiling, irreducible without a density/force datum)
+full-engage+stall envelope         0.0051  mN/m   ½·n2D·f·ℓ @ HeLa 0.6/µm², 56pN dipole, 301nm
+  ↑ ~9×   ← ENGAGEMENT throttle (saturates ~11%, geometric/availability-limited)
+  + ~1.3-1.6× network amplification (crosslink-bound, small) ; isotropy ruled out ; buckling refuted
+Gate-A contraction plateau         0.0031  mN/m   realised (matches the stack)
+```
+Band needs myosin density ρ≈16-21/µm² (~27-36× the only proxy; NO MCF7 density datum exists).
+
+**Ruled out as the lever:** transmission-amplification (small), buckling (Gate-B REFUTE), isotropic
+cancellation (meridional no-effect), engagement-throughput/aggregation (prior-refuted + envelope caps).
+
+**3 PI decision items** (H7_ACTIVE_GAMMA_SYNTHESIS_2026-06-09.md):
+1. Defensible MCF7/breast-epithelial cortical NMII density vs the HeLa proxy? (datum, PI-gated)
+2. Band active/passive split — blebbistatin ~halving → true active target ~0.135 (gap still ~27×).
+3. Scope — is the active-γ band the right gate for the fine-grained tool, or should it SUPPLY
+   ζΔμ∝ρ_M to the coarser layers (band validated elsewhere)?
+
+**Deliverables:** scripts/h7_active_force_budget.py (reusable: --sweep-densities, --areal-density,
+bond-resolved γ, engagement, IK cross-check); H7_ACTIVE_GAMMA_SYNTHESIS + H7_ACTIVE_FORCE_BUDGET docs;
+7 figures. Commits 07a75b8→7a81778. Open confirm (contraction-developed unconstrained bond-split)
+blocked on stale gbook Syncthing (ops) — conclusion independent of it (Gate-B γ_rigid already shows it).
