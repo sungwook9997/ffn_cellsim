@@ -67,26 +67,35 @@ def _mean_s_grip(ma, ell0):
     return s, s / ell0
 
 
-def _make_manifest(*, n_fil, myo_on):
-    """Suspended/rounded MCF7 (FA off, turgor on; §6), myosin per condition."""
+def _make_manifest(*, n_fil, myo_on, no_nucleus=False):
+    """Suspended/rounded MCF7 (FA off, turgor on; §6), myosin per condition.
+
+    ``no_nucleus`` (PI 2026-06-08): drop the nucleus for the cortical-tension run —
+    it is decoupled from cortical γ (0% across the band; removal Δγ within seed
+    noise) and its stiff-lamin CFL is the dt bottleneck. Removing it lets dt rise to
+    the membrane CFL (~5×). MUST NOT be used for whole-cell/confinement observables."""
     m = deepcopy(load_manifest("mcf7_baseline.yaml"))
     m["optional_subsystems"]["fa"]["enabled"] = False
     co = m.setdefault("cortex_overrides", {}).setdefault("cortex", {})
     co["n_filaments"] = int(n_fil)
     if not myo_on:
         co.setdefault("myosin", {})["n_motors_per_cell"] = 0  # §5.4 baseline
+    if no_nucleus:
+        m["compartments"]["nucleus"]["enabled"] = False
     return m
 
 
-def _build_native(manifest, *, device, seed, warm_pos, relaxed):
+def _build_native(manifest, *, device, seed, warm_pos, relaxed, no_nucleus=False, dt_safety=1.0):
     """Constrained full cell + native integrator swap; relaxed adds the unilateral
-    M-SHAKE + τ_bend-EMA Euler gate (F_crit, τ_bend DERIVED from κ_B, ℓ₀)."""
+    M-SHAKE + τ_bend-EMA Euler gate (F_crit, τ_bend DERIVED from κ_B, ℓ₀).
+    ``no_nucleus`` + ``dt_safety`` enable the optimized cortical-tension build."""
     import hoomd
     from ffn_hoomd_plugin import NativeConstrainedBaoabUpdater
 
     cell = build_baseline_cell(
         manifest=deepcopy(manifest), device=device, seed=seed,
-        constrained=True, equilibrate=False)
+        constrained=True, equilibrate=False,
+        allow_no_nucleus=no_nucleus, constrained_dt_safety=dt_safety)
     if hasattr(cell.baoab_action, "record_lambda"):
         cell.baoab_action.record_lambda = True
     sim = cell.simulation
@@ -121,7 +130,9 @@ def _build_native(manifest, *, device, seed, warm_pos, relaxed):
     sim.run(0)
     adapter = _NativeLambdaAdapter(nat, chains_stacked, r0)
     info = {"F_crit_pN": F_crit * 1e12, "tau_bend_us": tau_bend * 1e6,
-            "ell0_nm": r0 * 1e9, "n_cortex_actin": int(F * npc)}
+            "ell0_nm": r0 * 1e9, "n_cortex_actin": int(F * npc),
+            "no_nucleus": bool(no_nucleus), "dt_safety": float(dt_safety),
+            "dt_s": float(dtc), "n_part": int(cell.simulation.state.N_particles)}
     return cell, nat, adapter, dtc, r0, info
 
 
@@ -152,7 +163,7 @@ def _run_condition(args, dev):
     myo_on = (args.myo == "on")
     name = _cond_name(mode, myo_on)
     relaxed = (mode == "relaxed")
-    manifest = _make_manifest(n_fil=args.n_fil, myo_on=myo_on)
+    manifest = _make_manifest(n_fil=args.n_fil, myo_on=myo_on, no_nucleus=args.no_nucleus)
     softstart = max(300, args.warmup // 8)
     ckpt = _OUT_DIR / f"h7_{args.tag}_{name}.ckpt.npz"
     cond_json = _OUT_DIR / f"h7_{args.tag}_{name}.cond.json"
@@ -171,13 +182,14 @@ def _run_condition(args, dev):
         cell_w = build_baseline_cell(
             manifest=deepcopy(manifest), device=dev, seed=args.seed,
             constrained=False, equilibrate=True, equilibrate_steps=args.warmup,
-            equilibrate_softstart_steps=softstart)
+            equilibrate_softstart_steps=softstart, allow_no_nucleus=args.no_nucleus)
         cell_w.simulation.run(0)
         warm_pos = _tagpos(cell_w.simulation)
         del cell_w
 
     cell, nat, adapter, dtc, ell0, info = _build_native(
-        manifest, device=dev, seed=args.seed, warm_pos=warm_pos, relaxed=relaxed)
+        manifest, device=dev, seed=args.seed, warm_pos=warm_pos, relaxed=relaxed,
+        no_nucleus=args.no_nucleus, dt_safety=args.dt_safety)
     sim = cell.simulation
     R_cell = float(cell.p_cortex.R_cell)
     if ckpt_myo_s is not None and cell.myosin_action is not None:
@@ -295,6 +307,13 @@ def main() -> int:
     ap.add_argument("--ckpt-every", type=int, default=5)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--device", choices=["cpu", "gpu"], default="gpu")
+    ap.add_argument("--no-nucleus", action="store_true",
+                    help="drop the nucleus (sanctioned cortical-tension exception, PI "
+                         "2026-06-08) — removes its stiff-lamin CFL so dt rises to the "
+                         "membrane CFL; pair with --dt-safety ~5")
+    ap.add_argument("--dt-safety", type=float, default=1.0,
+                    help="constrained_dt_safety multiple (no-nucleus allows ~5×, the "
+                         "membrane CFL limit; every remaining compartment stays in-guard)")
     ap.add_argument("--tag", type=str, default="gateB")
     ap.add_argument("--plateau-last", type=int, default=20, help="ticks averaged for the plateau")
     ap.add_argument("--aggregate", action="store_true")

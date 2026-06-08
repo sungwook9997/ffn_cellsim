@@ -100,8 +100,18 @@ def load_manifest(path_or_name: str | Path) -> dict:
         return yaml.safe_load(handle)
 
 
-def resolve_baseline(manifest: dict) -> ResolvedBaseline:
+def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> ResolvedBaseline:
     """Resolve every enabled subsystem in ``manifest`` into its dataclass.
+
+    ``allow_no_nucleus`` (PI 2026-06-08, measurement-specific sanctioned exception):
+    permit a nucleus-disabled baseline → ``p_nucleus=None`` (the build skips all
+    nucleus blocks). Justified ONLY for the cortical-tension observable at the
+    suspended/rounded operating point, where the nucleus is decoupled from cortical
+    γ (h7_nucleus_contribution_check: 0.0% across the KU-3.B2.1 band; removal Δγ
+    within the ~19% seed-noise floor; turgor uses the cortex-shell V0, not
+    nucleus-subtracted). It removes the nucleus's stiff-lamin CFL bottleneck so dt
+    rises to the membrane CFL (~5×). The nucleus MUST return for any whole-cell /
+    confinement / volume observable — this is NOT a general baseline relaxation.
 
     Raises
     ------
@@ -148,15 +158,19 @@ def resolve_baseline(manifest: dict) -> ResolvedBaseline:
 
     nuc_b = comp.get("nucleus")
     if not _enabled(nuc_b):
-        raise ValueError(
-            "Physiological baseline requires nucleus enabled. "
-            "Set compartments.nucleus.enabled: true."
+        if not allow_no_nucleus:
+            raise ValueError(
+                "Physiological baseline requires nucleus enabled. "
+                "Set compartments.nucleus.enabled: true (or pass "
+                "allow_no_nucleus=True for the sanctioned cortical-tension exception)."
+            )
+        p_nucleus = None  # sanctioned no-nucleus cortical-tension build (see docstring)
+    else:
+        p_nucleus = resolve_nucleus(
+            {"E_nuc": float(nuc_b["E_nuc"]), "ratio_lamin": float(nuc_b["ratio_lamin"])},
+            R_nuc=float(nuc_b["R_nuc_frac"]) * R_cell,
+            n_beads=int(nuc_b["n_beads"]),
         )
-    p_nucleus = resolve_nucleus(
-        {"E_nuc": float(nuc_b["E_nuc"]), "ratio_lamin": float(nuc_b["ratio_lamin"])},
-        R_nuc=float(nuc_b["R_nuc_frac"]) * R_cell,
-        n_beads=int(nuc_b["n_beads"]),
-    )
 
     mem_b = comp.get("membrane_surface")
     if not _enabled(mem_b):
@@ -277,6 +291,7 @@ def build_baseline_cell(
     seed: int = 1,
     with_baoab: bool = True,
     allow_unpressurized_dev: bool = False,
+    allow_no_nucleus: bool = False,
     constrained: bool = False,
     constrained_dt_safety: float = 1.0,
     equilibrate: bool = False,
@@ -300,7 +315,7 @@ def build_baseline_cell(
     """
     if manifest is None:
         manifest = load_manifest(path_or_name)
-    rb = resolve_baseline(manifest)
+    rb = resolve_baseline(manifest, allow_no_nucleus=allow_no_nucleus)
     require_full_cell_physiological_baseline(
         rb.compartments(), allow_unpressurized_dev=allow_unpressurized_dev
     )
