@@ -112,6 +112,20 @@ def make_sim(snap, *, seed: int = 1) -> hoomd.Simulation:
     return sim
 
 
+def to_hoomd_snapshot(frame):
+    """Round-trip a (possibly bare gsd) Frame → a proper ``hoomd.Snapshot``.
+
+    A fresh ``gsd.hoomd.Frame`` returns ``None`` for unset groups (bonds.group,
+    bonds.typeid, ...); some compartment extenders call ``np.asarray(...)``
+    on those directly (only a few are gsd-None-hardened). Loading into a throwaway
+    Simulation and reading the state snapshot back guarantees every group is a
+    well-formed ``(0, width)`` array, so any extender accepts it.
+    """
+    tmp = hoomd.Simulation(device=hoomd.device.CPU(), seed=0)
+    tmp.create_state_from_snapshot(frame)
+    return tmp.state.get_snapshot()
+
+
 def set_integrator(sim: hoomd.Simulation, dt: float) -> md.Integrator:
     """Attach an empty-methods Integrator (BAOAB Action does the position step)."""
     ig = md.Integrator(dt=dt, methods=[])
