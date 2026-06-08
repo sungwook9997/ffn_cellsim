@@ -157,6 +157,26 @@ run → gate → contract → parameter → source_evidence 까지 한 경로로
 
 ---
 
+## 9. P0 RESULT — 2026-06-08 (DONE)
+
+`tag_kb/harvest_ops.py` 구현·실행 완료 (결정적+regex, LLM/Notion 미사용).
+산출: `tag_kb/OPS_HARVEST_CANDIDATES_2026-06-08.md` (dry-run manifest).
+
+- **RunResult 후보 53** (production 아티팩트) + **closeout 후보 8** (REPORT.md).
+  현 그래프 run_result=1 → 적재 시 ~50×.
+- gate-linked 6/53 (KU-3.5 게이트 보유 아티팩트). closeout 중 h3/h5/layer2 →
+  `VG-H3-KU35-cortex-tension` + `MC-H3-composite-tension` 매핑.
+- **⭐ 핵심 발견 (PI 결정 필요): H.7 Gate-A(6건)/Gate-B(5건)가 ValidationGate에
+  미등록.** 최근 작업 대부분이 *contract-graph에 존재하지 않는 게이트*를 참조 중.
+  harvester는 자동생성하지 않고 manifest에 플래그(철칙 §2 준수). → PI가
+  H.7 Gate-A/B를 정식 ValidationGate 행으로 등록할지 결정해야 적재 시 edge가 연결됨.
+- 버그 2건 잡음(개발 중): (a) bare KU-x.y(=KnowledgeClaim)를 "누락 게이트"로
+  오플래그 → KU는 positive 매칭에만 사용. (b) `gate_a_native`의 `_`가 word-char라
+  `\b` 미작동 → lookaround `(?<![a-z])gate[-_ ]?([ab])(?![a-z])`로 교체.
+
+**다음(P1, PI 체크포인트 후):** LLM result_snapshot + Notion upsert(`--apply`,
+idempotent run_id/path 키) + H.7 게이트 등록 결정 반영.
+
 ## 8. 비-목표 (scope out)
 
 - ValidationGate/ModelContract/Parameter 행 신규 생성·수정 (read-only; contract는 사람이).
