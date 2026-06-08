@@ -1,0 +1,49 @@
+{
+  "compartment": "ventral_stress_fibers",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 3000,
+  "dt_s": 1.2560017545292257e-06,
+  "params": {
+    "n_SF": 6,
+    "n_beads_per_SF": 24,
+    "N_filaments": 20,
+    "mu_SF_N": 8.6e-07,
+    "EA_single_N": 4.3e-08,
+    "ell0_mean_m": 3.478260869565217e-07,
+    "k_actin_Npm": 2.4725,
+    "span_m": 8e-06,
+    "gamma_sf_Nspm": 6.210928676147021e-05,
+    "sf_tension_band_N": [
+      1e-08,
+      3e-08
+    ]
+  },
+  "topology": {
+    "n_fa_anchors": 12,
+    "n_sf_actin_beads": 144,
+    "n_backbone_bonds": 138,
+    "sf_bond_types_present": [
+      "sf_actin_bond",
+      "sf_anchor",
+      "sf_xlink_attach",
+      "sf_xlink_intra"
+    ]
+  },
+  "observables": {
+    "backbone_rel_dev_rms": 0.00013102603706951132,
+    "construction_bond_energy_kT": 23.212223733724375,
+    "sf_tension_mean_nN": 0.047357744706579774,
+    "sf_tension_max_nN": 0.3485830790717067,
+    "sf_tension_in_kumar_band": false,
+    "r0_is_live": 0.0,
+    "max_particle_disp_m": 2.849379301440284e-09,
+    "all_finite": true
+  },
+  "constants_smoke_only": [
+    "N_filaments=20 \u2192 \u03bc_SF (ORDER_ESTIMATE)",
+    "n_SF=6 layout",
+    "k_actin=\u03bc_SF/ell0 DERIVED"
+  ],
+  "note": "PLUMBING smoke: PASSIVE backbone, NMII NOT attached (BLOCKER #2: SF NMII reuses cortex_myosin_* \u2192 would contaminate cortical \u03b3; needs a distinct sf_myosin_* prefix). Tension ~0 is EXPECTED (no active motor); NOT compared to the Kumar 10-30 nN band (the activation gate)."
+}
