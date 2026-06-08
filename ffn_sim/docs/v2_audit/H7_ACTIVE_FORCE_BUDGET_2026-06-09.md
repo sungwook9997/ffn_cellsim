@@ -25,14 +25,14 @@ parameters can produce, independent of the sim. With the live config values (no 
 | quantity | value | provenance |
 |---|---|---|
 | n_2D (native areal density) | 0.60 /µm² | Nie 2015 Cytoskeleton, **HeLa interphase** (the only proxy; NO MCF7 datum; LOW-MED confidence) |
-| f_minifil (2·28·F_stall) | 112 pN | Billington 2013 (56 heads) × Chugh 2017 (2 pN/head) |
+| f_minifil (one-sided dipole, 28·F_stall) | 56 pN | Billington 2013 (28 heads/side) × Chugh 2017 (2 pN/head) |
 | ℓ_minifil (backbone) | 301 nm | Billington 2013 EM contour |
-| **γ_active envelope** | **0.0101 mN/m** | = ½·n2D·f·ℓ |
+| **γ_active envelope** | **0.00506 mN/m** | = ½·n2D·f·ℓ (f = one-sided dipole) |
 | Hosseini band_lo | 0.18 mN/m | contract §7 (MCF7 interphase IQR) |
-| **gap** | **17.8× UNDER band_lo** | |
+| **gap** | **~36× UNDER band_lo** | |
 
 **Even at the theoretical maximum (every native minifilament engaged, every head at full
-stall, perfectly isotropic), the configured parameters predict γ_active ≈ 0.01 mN/m — ~18×
+stall, perfectly isotropic), the configured parameters predict γ_active ≈ 0.005 mN/m — ~36×
 below the band floor.** No engagement-throughput, transmission, buckling, or mesh fix can
 cross this ceiling; it is set by the force budget alone.
 
@@ -55,22 +55,23 @@ developed): the picture is fully coherent —
 
 ```
 band_lo                       0.18    mN/m   (target)
-analytic envelope             0.010   mN/m   (18× under)  ← PARAMETER ceiling, irreducible
-Gate-A contraction plateau    0.0031  mN/m   (60× under)  ← engagement+transmission losses
+analytic envelope             0.005   mN/m   (36× under)  ← PARAMETER ceiling
+Gate-A contraction plateau    0.0031  mN/m   (58× under)  ← near the envelope already
 loading phase (this smoke)    0.00017 mN/m  (1000× under) ← no contraction yet
 ```
 
 The contraction (grip_walk stepping) lifts the loading floor ~16× toward the envelope; the
 remaining gap below the envelope is engagement (~8%, climbing) + geometric transmission. But
-the **dominant, irreducible gap is the 18× parameter envelope** — Gate-A/Gate-B were probing
+the **dominant gap is the ~36× parameter envelope** — Gate-A/Gate-B were probing
 levers (s_grip generation, buckling, mesh connectivity) that all live *below* a ceiling that
 is itself far under band.
 
 ## ⮕ FINAL synthesis is `H7_ACTIVE_GAMMA_SYNTHESIS_2026-06-09.md`
 
 The interpretation evolved across three loops (recorded below for the trail). **Net result:
-the active-γ floor is dominated by GENERATION (myosin force-budget / density datum ~10–20×
-too low); network amplification is small (~1.3×, crosslink-bound) and cannot rescue it.**
+the active-γ floor is dominated by GENERATION (myosin force-budget / density datum ~27–36×
+too low — envelope 0.005 mN/m corrected from the loop-1 0.010 after review); network
+amplification is small (~1.3×, crosslink-bound) and cannot rescue it.**
 Loop-2's "amplification could be 10–100×" was over-speculative and is corrected by the data
 (g_actin/g_myo ≈ 28%). See the synthesis doc for the PI-facing version.
 
@@ -108,7 +109,7 @@ The two walls:
   the M-SHAKE-rigid actin not deforming to build prestress; weak myosin→actin geometric
   coupling.
 - **WALL B — direct-dipole generation is itself sub-band (parameter).** Even the full-engage
-  +full-stall direct-dipole envelope (½·n2D·f·ℓ, ℓ=minifilament) = 0.01 mN/m, 18× under band.
+  +full-stall direct-dipole envelope (½·n2D·f·ℓ, ℓ=minifilament) = 0.005 mN/m, ~36× under band.
   So even if WALL A were removed at the *local* scale, the *direct* generation is short; band
   needs the longer-ℓ network path (WALL A) AND/OR a higher force budget (density/stall datum).
 
@@ -137,7 +138,7 @@ s_grip→0.5, WALL A is confirmed as the dominant, mechanistically-located trans
 ## Open / next (PI-surface candidates)
 
 1. **MCF7 cortical myosin density.** The model uses a HeLa proxy (0.6/µm², explicitly LOW-MED
-   confidence, no MCF7 datum). The band needs ~18×; is MCF7 NMII density/stall actually
+   confidence, no MCF7 datum). The band needs ~27-36×; is MCF7 NMII density/stall actually
    higher? → literature search (next loop) for an MCF7-anchored density or a direct
    active-stress measurement. If a real higher MCF7 value exists, that is a datum correction
    (PI-gated), not tuning.

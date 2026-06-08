@@ -229,14 +229,18 @@ def audit(*, cell, n_contract_steps, sample_every):
     # predict" number, independent of the sim measurement). Active-gel surface
     # tension of an isotropic minifilament population on a thin shell:
     #   γ_active ≈ (1/2)·n_2D·f_minifil·ℓ_minifil
-    # with n_2D = native areal density [1/m²], f_minifil = (heads/minifilament)·
-    # F_stall_per_head (per-NATIVE, the un-scaled stall), ℓ_minifil = backbone span.
-    # This is the dipole 2D-stress an isotropic active gel of these motors carries
-    # at FULL engagement + full stall — the upper envelope of what the params allow.
+    # with n_2D = native areal density [1/m²], ℓ_minifil = backbone (dipole arm),
+    # and f_minifil = the DIPOLE force = the ONE-SIDED head force. A bipolar
+    # minifilament is a force dipole: the n_heads_per_side heads on each bare zone
+    # pull the two antiparallel actin filaments together. The dipole tension that
+    # enters the virial stress σ ≈ n·f·ℓ is the magnitude of ONE of the equal-and-
+    # opposite forces = n_heads_per_side·F_stall (NOT both sides summed — the two
+    # 28-head sets are the +/− of the same dipole, not additive). f uses the
+    # per-NATIVE un-scaled stall. This is the upper envelope at FULL engage+stall.
     n2d = float((meso.get("native_n_motors", cell.p_myosin.n_motors_per_cell))
                 / (4.0 * np.pi * float(cell.p_cortex.R_cell) ** 2))  # 1/m²
     f_stall_native = F_stall / max(factor, 1.0)                       # un-scaled per-head
-    f_minifil = 2.0 * cell.p_myosin.n_heads_per_side * f_stall_native
+    f_minifil = cell.p_myosin.n_heads_per_side * f_stall_native       # one-sided dipole force
     ell_minifil = float(cell.p_myosin.backbone_length)
     g_analytic = 0.5 * n2d * f_minifil * ell_minifil                  # N/m
 
@@ -261,7 +265,10 @@ def audit(*, cell, n_contract_steps, sample_every):
             "native_areal_density_per_um2": n2d / 1e12,
         },
         "band_mN_m": [band_lo, band_hi],
+        "phase": ("loading (s_grip≈0)" if _avg("s_grip_over_l0") < 0.02
+                  else "contraction (s_grip developed)"),
         "plateau": {
+            "s_grip_over_l0": _avg("s_grip_over_l0"),
             "g_soft_mN_m": g_soft_plateau,
             "g_soft_myosin_bonds_mN_m": _avg("g_soft_myosin_bonds_mN_m"),
             "g_soft_actin_bonds_mN_m": _avg("g_soft_actin_bonds_mN_m"),
