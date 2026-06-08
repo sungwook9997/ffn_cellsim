@@ -1,0 +1,83 @@
+{
+ "name": "relaxed_myoOFF",
+ "mode": "relaxed",
+ "myo_on": false,
+ "info": {
+  "F_crit_pN": 2.76348923230502,
+  "tau_bend_us": 698.0731076014148,
+  "ell0_nm": 500.0,
+  "n_cortex_actin": 7000,
+  "no_nucleus": true,
+  "dt_safety": 10.0,
+  "dt_s": 6.9807310760141476e-06,
+  "n_part": 9000
+ },
+ "rows": [
+  {
+   "tick": 2,
+   "g_soft_mN_m": 1.7832003395207103e-07,
+   "g_rigid_mN_m": 0.004596727273956351,
+   "g_struct_mN_m": 0.004596905593990303,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9965524999543502,
+   "frac_bonds_compressed": 0.9826666666666667,
+   "mean_e2e_over_contour": 0.99639074229916
+  },
+  {
+   "tick": 4,
+   "g_soft_mN_m": 1.4260995386705945e-07,
+   "g_rigid_mN_m": 0.003191015491642718,
+   "g_struct_mN_m": 0.0031911581015965852,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9951434561848178,
+   "frac_bonds_compressed": 0.9853333333333333,
+   "mean_e2e_over_contour": 0.9948639322188653
+  },
+  {
+   "tick": 6,
+   "g_soft_mN_m": 1.6775781687062152e-07,
+   "g_rigid_mN_m": 0.0034259157269124724,
+   "g_struct_mN_m": 0.003426083484729343,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9940676284779348,
+   "frac_bonds_compressed": 0.9891666666666666,
+   "mean_e2e_over_contour": 0.9936758107596209
+  },
+  {
+   "tick": 8,
+   "g_soft_mN_m": 1.6661858783478594e-07,
+   "g_rigid_mN_m": 0.002860442059926175,
+   "g_struct_mN_m": 0.00286060867851401,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9932179646972255,
+   "frac_bonds_compressed": 0.992,
+   "mean_e2e_over_contour": 0.9927112822826368
+  },
+  {
+   "tick": 10,
+   "g_soft_mN_m": 1.47181040040016e-07,
+   "g_rigid_mN_m": 0.0022942223707786806,
+   "g_struct_mN_m": 0.0022943695518187206,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.992339076408534,
+   "frac_bonds_compressed": 0.9901666666666666,
+   "mean_e2e_over_contour": 0.9917311353761101
+  },
+  {
+   "tick": 12,
+   "g_soft_mN_m": 1.5186982406048055e-07,
+   "g_rigid_mN_m": 0.0032513053731825993,
+   "g_struct_mN_m": 0.0032514572430066596,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9916065270838589,
+   "frac_bonds_compressed": 0.9901666666666666,
+   "mean_e2e_over_contour": 0.9908961841561554
+  }
+ ]
+}

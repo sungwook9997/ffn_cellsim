@@ -1,0 +1,172 @@
+{
+ "name": "relaxed_myoOFF",
+ "mode": "relaxed",
+ "myo_on": false,
+ "info": {
+  "F_crit_pN": 2.76348923230502,
+  "tau_bend_us": 698.0731076014148,
+  "ell0_nm": 500.0,
+  "n_cortex_actin": 7000,
+  "no_nucleus": true,
+  "dt_safety": 10.0,
+  "connected_mesh": true,
+  "dt_s": 6.9807310760141476e-06,
+  "n_part": 14296
+ },
+ "rows": [
+  {
+   "tick": 5,
+   "g_soft_mN_m": 6.835297421508032e-07,
+   "g_rigid_mN_m": 0.0029526521695817597,
+   "g_struct_mN_m": 0.0029533356993239105,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9945593091237042,
+   "frac_bonds_compressed": 0.9891666666666666,
+   "mean_e2e_over_contour": 0.9942189274506762
+  },
+  {
+   "tick": 10,
+   "g_soft_mN_m": 7.090297592508937e-07,
+   "g_rigid_mN_m": 0.0022945908542529856,
+   "g_struct_mN_m": 0.0022952998840122365,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9923385968694258,
+   "frac_bonds_compressed": 0.9905,
+   "mean_e2e_over_contour": 0.9917308790476702
+  },
+  {
+   "tick": 15,
+   "g_soft_mN_m": 8.783698531331237e-07,
+   "g_rigid_mN_m": 0.001495231166210981,
+   "g_struct_mN_m": 0.0014961095360641141,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9907063466466985,
+   "frac_bonds_compressed": 0.9908333333333333,
+   "mean_e2e_over_contour": 0.9898534319766289
+  },
+  {
+   "tick": 20,
+   "g_soft_mN_m": 8.586815653315051e-07,
+   "g_rigid_mN_m": 0.0015076010687662714,
+   "g_struct_mN_m": 0.001508459750331603,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.989296495565469,
+   "frac_bonds_compressed": 0.9923333333333333,
+   "mean_e2e_over_contour": 0.9882313645144761
+  },
+  {
+   "tick": 25,
+   "g_soft_mN_m": 1.0213409792956678e-06,
+   "g_rigid_mN_m": 0.0019611147921625594,
+   "g_struct_mN_m": 0.0019621361331418554,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9880838652870507,
+   "frac_bonds_compressed": 0.9951666666666666,
+   "mean_e2e_over_contour": 0.9868132297393026
+  },
+  {
+   "tick": 30,
+   "g_soft_mN_m": 1.0122623629334785e-06,
+   "g_rigid_mN_m": 0.0017190755130403396,
+   "g_struct_mN_m": 0.0017200877754032732,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9871088420963758,
+   "frac_bonds_compressed": 0.996,
+   "mean_e2e_over_contour": 0.9855998583338988
+  },
+  {
+   "tick": 35,
+   "g_soft_mN_m": 1.1755905872396162e-06,
+   "g_rigid_mN_m": 0.001668728641600747,
+   "g_struct_mN_m": 0.0016699042321879868,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9860353190462159,
+   "frac_bonds_compressed": 0.9951666666666666,
+   "mean_e2e_over_contour": 0.9843013838985311
+  },
+  {
+   "tick": 40,
+   "g_soft_mN_m": 1.2510043276759383e-06,
+   "g_rigid_mN_m": 0.0007103939645419454,
+   "g_struct_mN_m": 0.0007116449688696212,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9852610561476111,
+   "frac_bonds_compressed": 0.9961666666666666,
+   "mean_e2e_over_contour": 0.9833192233145611
+  },
+  {
+   "tick": 45,
+   "g_soft_mN_m": 1.2513390028796878e-06,
+   "g_rigid_mN_m": 0.0003787026033851225,
+   "g_struct_mN_m": 0.00037995394238800215,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9842629835043171,
+   "frac_bonds_compressed": 0.9966666666666667,
+   "mean_e2e_over_contour": 0.9821514128613913
+  },
+  {
+   "tick": 50,
+   "g_soft_mN_m": 1.309834419844408e-06,
+   "g_rigid_mN_m": 0.0012189361771752076,
+   "g_struct_mN_m": 0.001220246011595052,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9834454153061856,
+   "frac_bonds_compressed": 0.9948333333333333,
+   "mean_e2e_over_contour": 0.9811917728796322
+  },
+  {
+   "tick": 55,
+   "g_soft_mN_m": 1.411128102015781e-06,
+   "g_rigid_mN_m": 0.0014644741243255942,
+   "g_struct_mN_m": 0.0014658852524276102,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9826064353041296,
+   "frac_bonds_compressed": 0.9958333333333333,
+   "mean_e2e_over_contour": 0.9802042940605173
+  },
+  {
+   "tick": 60,
+   "g_soft_mN_m": 1.547586198252166e-06,
+   "g_rigid_mN_m": 0.00014260605373066617,
+   "g_struct_mN_m": 0.00014415363992891831,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9817476645885465,
+   "frac_bonds_compressed": 0.9966666666666667,
+   "mean_e2e_over_contour": 0.9791757130034994
+  },
+  {
+   "tick": 65,
+   "g_soft_mN_m": 1.605897228858805e-06,
+   "g_rigid_mN_m": 0.0004394005694314416,
+   "g_struct_mN_m": 0.0004410064666603004,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9810534726437353,
+   "frac_bonds_compressed": 0.9968333333333333,
+   "mean_e2e_over_contour": 0.9783361756305097
+  },
+  {
+   "tick": 70,
+   "g_soft_mN_m": 1.6298303400125354e-06,
+   "g_rigid_mN_m": 0.0016459449919481687,
+   "g_struct_mN_m": 0.0016475748222881813,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 0.9803561238708687,
+   "frac_bonds_compressed": 0.997,
+   "mean_e2e_over_contour": 0.9775317718245636
+  }
+ ]
+}

@@ -1,0 +1,83 @@
+{
+ "name": "rigid_myoOFF",
+ "mode": "rigid",
+ "myo_on": false,
+ "info": {
+  "F_crit_pN": 2.76348923230502,
+  "tau_bend_us": 698.0731076014148,
+  "ell0_nm": 500.0,
+  "n_cortex_actin": 7000,
+  "no_nucleus": true,
+  "dt_safety": 10.0,
+  "dt_s": 6.9807310760141476e-06,
+  "n_part": 9000
+ },
+ "rows": [
+  {
+   "tick": 2,
+   "g_soft_mN_m": 1.7831970226073125e-07,
+   "g_rigid_mN_m": 0.02086184565453007,
+   "g_struct_mN_m": 0.02086202397423233,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 1.0000000000003917,
+   "frac_bonds_compressed": 0.3755,
+   "mean_e2e_over_contour": 0.9998317877712486
+  },
+  {
+   "tick": 4,
+   "g_soft_mN_m": 1.4255083939795698e-07,
+   "g_rigid_mN_m": 0.03080125384928399,
+   "g_struct_mN_m": 0.03080139640012339,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 1.0000000000007383,
+   "frac_bonds_compressed": 0.3606666666666667,
+   "mean_e2e_over_contour": 0.999707482056758
+  },
+  {
+   "tick": 6,
+   "g_soft_mN_m": 1.6825353467225193e-07,
+   "g_rigid_mN_m": 0.017201709644294152,
+   "g_struct_mN_m": 0.017201877897828826,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 1.0000000000000657,
+   "frac_bonds_compressed": 0.36966666666666664,
+   "mean_e2e_over_contour": 0.9995881049130407
+  },
+  {
+   "tick": 8,
+   "g_soft_mN_m": 1.6711351839915636e-07,
+   "g_rigid_mN_m": 0.034714535606222674,
+   "g_struct_mN_m": 0.03471470271974107,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 1.0,
+   "frac_bonds_compressed": 0.36666666666666664,
+   "mean_e2e_over_contour": 0.9994652192501204
+  },
+  {
+   "tick": 10,
+   "g_soft_mN_m": 1.4919822249488537e-07,
+   "g_rigid_mN_m": 0.03083899652613744,
+   "g_struct_mN_m": 0.030839145724359935,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 1.0000000000007632,
+   "frac_bonds_compressed": 0.3566666666666667,
+   "mean_e2e_over_contour": 0.9993533968064887
+  },
+  {
+   "tick": 12,
+   "g_soft_mN_m": 1.5342521964854442e-07,
+   "g_rigid_mN_m": 0.01849883204066326,
+   "g_struct_mN_m": 0.018498985465882908,
+   "s_grip_over_l0": 0.0,
+   "nonconv": 0,
+   "mean_bond_over_l0": 1.0000000000001161,
+   "frac_bonds_compressed": 0.363,
+   "mean_e2e_over_contour": 0.9992416611675611
+  }
+ ]
+}

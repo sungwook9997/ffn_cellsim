@@ -1,0 +1,121 @@
+{
+  "scale": {
+    "n_filaments": 100,
+    "is_smoke": true,
+    "connected_mesh": true
+  },
+  "contract": "H7_GATE_B_CONTRACT_2026-06-08.md",
+  "confirm_band_mN_m": [
+    0.18,
+    0.4
+  ],
+  "partial_floor_mN_m": 0.03,
+  "results": [
+    {
+      "mesoscale_force_scaling": true,
+      "conditions": {
+        "rigid_myoON": {
+          "label": "meso_on/rigid_myoON",
+          "compression_release": false,
+          "gamma_soft_mN_m": 0.00014564380087270007,
+          "gamma_rigid_mN_m": 0.03539098260614973,
+          "gamma_passive_mN_m": 0.4987500000000001,
+          "gamma_structural_mN_m": 0.03553662640702243,
+          "s_grip_over_l0": 0.0014995459294063263,
+          "condensation": {
+            "available": true,
+            "mean_bond_over_l0": 1.0,
+            "frac_bonds_compressed": 0.4116666666666667,
+            "mean_e2e_over_contour": 0.999986585227442,
+            "released_fraction_last_step": 0.0,
+            "max_constraint_drift": 1.6940658945086007e-15
+          },
+          "n_samples": 2,
+          "steps_per_s": 138.18131371952848,
+          "R_cell_um": 7.5,
+          "ell0_nm": 500.0,
+          "F_crit_pN": null,
+          "tau_bend_us": null,
+          "n_cortex_actin": 700
+        },
+        "rigid_myoOFF": {
+          "label": "meso_on/rigid_myoOFF",
+          "compression_release": false,
+          "gamma_soft_mN_m": 5.738012295034751e-07,
+          "gamma_rigid_mN_m": 0.026201276828812556,
+          "gamma_passive_mN_m": 0.4987500000000001,
+          "gamma_structural_mN_m": 0.026201850630042055,
+          "s_grip_over_l0": 0.0,
+          "condensation": {
+            "available": true,
+            "mean_bond_over_l0": 1.0000000000000002,
+            "frac_bonds_compressed": 0.37666666666666665,
+            "mean_e2e_over_contour": 0.9999871160617726,
+            "released_fraction_last_step": 0.0,
+            "max_constraint_drift": 2.117582368135751e-15
+          },
+          "n_samples": 2,
+          "steps_per_s": 397.7480407389349,
+          "R_cell_um": 7.5,
+          "ell0_nm": 500.0,
+          "F_crit_pN": null,
+          "tau_bend_us": null,
+          "n_cortex_actin": 700
+        },
+        "relaxed_myoON": {
+          "label": "meso_on/relaxed_myoON",
+          "compression_release": true,
+          "gamma_soft_mN_m": 0.00014557714030505485,
+          "gamma_rigid_mN_m": 0.0006081119070896633,
+          "gamma_passive_mN_m": 0.4987500000000001,
+          "gamma_structural_mN_m": 0.0007536890473947182,
+          "s_grip_over_l0": 0.0014995456964979753,
+          "condensation": {
+            "available": true,
+            "mean_bond_over_l0": 0.9986197657272177,
+            "frac_bonds_compressed": 0.9816666666666667,
+            "mean_e2e_over_contour": 0.9986064451794008,
+            "released_fraction_last_step": 0.9833333333333333,
+            "max_constraint_drift": 8.618560238312506e-14
+          },
+          "n_samples": 2,
+          "steps_per_s": 133.97963523947226,
+          "R_cell_um": 7.5,
+          "ell0_nm": 500.0,
+          "F_crit_pN": 2.76348923230502,
+          "tau_bend_us": 698.0731076014148,
+          "n_cortex_actin": 700
+        },
+        "relaxed_myoOFF": {
+          "label": "meso_on/relaxed_myoOFF",
+          "compression_release": true,
+          "gamma_soft_mN_m": 5.79888788103396e-07,
+          "gamma_rigid_mN_m": 0.0008856163687200026,
+          "gamma_passive_mN_m": 0.4987500000000001,
+          "gamma_structural_mN_m": 0.0008861962575081061,
+          "s_grip_over_l0": 0.0,
+          "condensation": {
+            "available": true,
+            "mean_bond_over_l0": 0.9986105769837584,
+            "frac_bonds_compressed": 0.99,
+            "mean_e2e_over_contour": 0.9985977592797733,
+            "released_fraction_last_step": 0.99,
+            "max_constraint_drift": 4.907249381017531e-10
+          },
+          "n_samples": 2,
+          "steps_per_s": 360.68151258288196,
+          "R_cell_um": 7.5,
+          "ell0_nm": 500.0,
+          "F_crit_pN": 2.76348923230502,
+          "tau_bend_us": 698.0731076014148,
+          "n_cortex_actin": 700
+        }
+      },
+      "gamma_active_rigid_mN_m": 0.009334775776980376,
+      "gamma_active_relaxed_mN_m": -0.00013250721011338787,
+      "control_parity_off_delta_mN_m": 0.025315654372533948,
+      "gate_a_plateau_mN_m": 0.00306,
+      "verdict": "REFUTE: \u03b3_active=-0.0001 mN/m < 0.03 (< 10\u00d7 Gate-A plateau) \u2014 buckling is NOT the lever; wall is soft long-range transmission or generation density."
+    }
+  ]
+}
