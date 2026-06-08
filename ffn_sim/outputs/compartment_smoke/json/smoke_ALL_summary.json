@@ -1,0 +1,41 @@
+{
+  "suite": "compartment_enabled_path_smoke",
+  "physics_claim": false,
+  "n_total": 8,
+  "n_ok": 8,
+  "results": {
+    "microtubules": {
+      "verdict": "PLUMBING_OK",
+      "headline": "backbone rms dev 0.03%"
+    },
+    "intermediate_filaments": {
+      "verdict": "PLUMBING_OK",
+      "headline": "construction 54 kT"
+    },
+    "linc": {
+      "verdict": "PLUMBING_OK",
+      "headline": "80 bridges, force-free"
+    },
+    "osmotic_regulation": {
+      "verdict": "PLUMBING_OK",
+      "headline": "60 ticks, RVD sign True"
+    },
+    "cadherin_junction": {
+      "verdict": "PLUMBING_OK",
+      "headline": "10 trans (0 intra=True)"
+    },
+    "stress_fibers": {
+      "verdict": "PLUMBING_OK",
+      "headline": "6 bundles, 4/4 sf bond types"
+    },
+    "membrane_reservoir": {
+      "verdict": "PLUMBING_OK",
+      "headline": "120 cross-layer tethers"
+    },
+    "junctional_actin": {
+      "verdict": "SCALAR_OK",
+      "headline": "SCALAR; HOOMD build BLOCKED; F*=6.0 pN"
+    }
+  },
+  "note": "PLUMBING smoke suite \u2014 all verdicts are crash/finite/assembly checks with SMOKE-ONLY candidate constants; NO band pass/fail, NO physics claim. See PLATFORM_PI_QUEUE.md for activation blockers."
+}
