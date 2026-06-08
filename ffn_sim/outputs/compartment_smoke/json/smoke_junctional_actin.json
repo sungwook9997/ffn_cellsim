@@ -1,0 +1,39 @@
+{
+  "compartment": "junctional_actin",
+  "verdict": "SCALAR_OK",
+  "physics_claim": false,
+  "hoomd_build": "BLOCKED (NotImplementedError, STUB reserved path)",
+  "params": {
+    "k_couple": 1e-06,
+    "k_anchor": 1e-05,
+    "anchor_r0": 5e-09,
+    "max_couple_dist": 6e-08,
+    "k_catch0": 1.0,
+    "x_catch": 4e-09,
+    "k_slip0": 0.02,
+    "x_slip": 4e-10,
+    "k_on": 10.0,
+    "n_cadherin": 50,
+    "kT_J": 4.28e-21
+  },
+  "scalar_laws": {
+    "is_anchored": true,
+    "coupling_tensile_only": true,
+    "catch_biphasic": true,
+    "F_star_numeric_pN": 6.015037593984962,
+    "F_star_analytic_pN": 6.04511878664704,
+    "F_star_match": true,
+    "koff_at_0_per_s": 1.02,
+    "koff_min_per_s": 0.03870801477037425,
+    "engaged_fraction_at_F0": 0.9074410163339384
+  },
+  "build_path": {
+    "blocked": true,
+    "message": "junctional_actin enabled+anchored explicit build path is reserved for the PI-sanctioned anchored release; not implemented in the STUB"
+  },
+  "constants_smoke_only": [
+    "k_catch0=1.0, k_slip0=0.02 (ORDER_ESTIMATE)",
+    "k_couple/k_anchor/k_on/max_couple_dist (DERIVED H.3 transfers)"
+  ],
+  "note": "SCALAR smoke ONLY \u2014 junctional_actin is a STUB: the HOOMD build path raises NotImplementedError even when anchored, so no assembly/step smoke exists. This exercises the runnable scalar laws + asserts the build barrier. PI queue: build-path implementation + catch-set ratification (depends on cadherin_junction GATE-J first)."
+}
