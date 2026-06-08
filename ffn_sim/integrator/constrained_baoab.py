@@ -332,9 +332,57 @@ def shake_project_chains(
     tol: float = 1.0e-10,
     max_iter: int = 100,
     return_lambdas: bool = False,
+    compression_release: bool = False,
+    release_load_crit: float | None = None,
+    dt: float | None = None,
+    eligible_mask=None,
     xp=np,
 ):
     """Matrix-SHAKE (tridiagonal Newton) for linear-chain bond constraints.
+
+    Gate-B relaxed mode (``compression_release=True``, 2026-06-08): the rigid
+    equality bond constraint ``|s_a| = ℓ₀`` becomes the **unilateral** (one-sided)
+    constraint ``|s_a| ≤ ℓ₀`` — the projection onto the closed ball. A bond is
+    enforced only while it is in **tension** (stretched, ``g_a = |s|²−ℓ² ≥ 0``,
+    pulled back to ℓ₀ — the physiological inextensible actin axis, k_axial≈154
+    pN/nm); a bond in **compression** (``g_a < 0``) is **released** (λ_a = 0, free
+    to shorten), permitting the filament to buckle / the network to condense
+    (the symmetry-breaking a fixed-length rod suppresses). This is the H.7 Gate-B
+    transmission lever (contract §3): tension side inextensible, compression side
+    yields. ``compression_release=False`` (default) is the exact rigid M-SHAKE —
+    bit-identical to the pre-Gate-B path (control §5.1 superset parity).
+
+    Active-set numerics: a released bond becomes an identity row of the
+    tridiagonal Jacobian (λ_a = 0) AND its off-diagonal couplings to active
+    neighbours are zeroed, so the chain cleanly decomposes into independent
+    constrained runs at each released joint (a tridiagonal solve cannot otherwise
+    drop a mid-chain bond — the shared-bead coupling would leak through). The
+    active set is re-evaluated each Newton iteration from the current ``g``;
+    convergence is ``max_a max(g_a, 0)/ℓ² ≤ tol`` (released bonds, g<0, are
+    already feasible and excluded from the violation norm).
+
+    Euler-thresholded release (``release_load_crit`` set, the physiological
+    Gate-B mode, contract §8): a compressed bond is released ONLY if its
+    *compressive constraint force* exceeds the critical buckling load
+    ``F_crit`` — NOT at every sub-ℓ₀ thermal fluctuation. A first rigid pass
+    yields the per-bond Lagrange multiplier ``λ_rigid`` (bond tension
+    ``T = λ·r₀/Δt``; λ>0 tension, λ<0 compression); a bond is *buckle-eligible*
+    iff ``λ_rigid < −F_crit·Δt/r₀`` (compressive load past the Euler threshold).
+    The unilateral solve then releases a bond iff it is BOTH compressed (g<0)
+    AND eligible — sub-threshold compression stays rigid (the rod holds), and
+    the tension side is always enforced. This restores the passive control
+    (few unloaded bonds exceed F_crit ⇒ relaxed-OFF ≈ rigid-OFF) and isolates
+    myosin-loaded buckling. ``release_load_crit=None`` ⇒ the pure geometric
+    unilateral release (every g<0 bond; used by the unit tests), a zero-
+    threshold limit that over-condenses and is NOT the production mode.
+
+    Eligibility timescale (PI 2026-06-08): the per-step rigid λ is thermal-noise
+    dominated (~6–45 pN, ≫ F_crit even passively), so the INTERNAL
+    ``release_load_crit`` path (instantaneous λ) over-releases and is for unit
+    tests only. The PRODUCTION gate passes a precomputed ``eligible_mask`` (F,m
+    bool) built by the Action from a τ_bend-windowed EMA of the per-bond
+    *sustained* compressive load. When ``eligible_mask`` is given it overrides
+    the internal computation.
 
     Same convention as :func:`shake_project` (mobility-weighted corrections
     along the reference-configuration bond gradient ``d0``), but for each
@@ -397,6 +445,22 @@ def shake_project_chains(
         M = inv_mass[P]                                          # (F, m+1)
         d0 = _min_image_orthorhombic(
             ref_pos[P[:, :-1]] - ref_pos[P[:, 1:]], box, xp=xp)
+        # Euler-thresholded eligibility (contract §8): a first RIGID pass gives
+        # λ_rigid; a bond may buckle only if its compressive constraint load
+        # exceeds F_crit (λ_rigid < −F_crit·Δt/r₀). None ⇒ geometric (all
+        # bonds eligible — the zero-threshold test/limit mode).
+        eligible = None
+        if compression_release and eligible_mask is not None:
+            eligible = eligible_mask                             # (F, m) precomputed
+        elif compression_release and release_load_crit is not None:
+            if dt is None or dt <= 0.0:
+                raise ValueError("release_load_crit requires dt > 0 (T=λ·r₀/Δt).")
+            _, lam_rigid = shake_project_chains(
+                pred_pos, ref_pos, P, rest_length, inv_mass, box,
+                tol=tol, max_iter=max_iter, return_lambdas=True,
+                compression_release=False, xp=xp)
+            lam_crit = release_load_crit * dt / rest_length
+            eligible = lam_rigid < -lam_crit                     # (F, m) bool
         # Accumulated per-bond Lagrange multiplier across Newton iterations.
         # Allocated only when the caller actually needs it so the default
         # path stays zero-allocation extra.
@@ -405,7 +469,17 @@ def shake_project_chains(
             s = _min_image_orthorhombic(
                 pos[P[:, :-1]] - pos[P[:, 1:]], box, xp=xp)
             g = xp.einsum("fab,fab->fa", s, s) - L2             # (F, m)
-            if xp.max(xp.abs(g)) / L2 <= tol:                   # 0-d sync (1 scalar)
+            if compression_release:
+                # Released set: compressed (g<0) AND buckle-eligible (Euler gate;
+                # all g<0 in geometric mode). Enforced = everything else (tension
+                # OR sub-threshold compression) and must reach g=0 → only those
+                # count toward convergence.
+                rel = g < 0.0                                   # (F, m) bool
+                if eligible is not None:
+                    rel = rel & eligible
+                if xp.max(xp.where(rel, 0.0, xp.abs(g))) / L2 <= tol:
+                    break
+            elif xp.max(xp.abs(g)) / L2 <= tol:                 # 0-d sync (1 scalar)
                 break
             sd = xp.einsum("fab,fab->fa", s, d0)
             diag = -2.0 * (M[:, :-1] + M[:, 1:]) * sd           # (F, m)
@@ -415,7 +489,25 @@ def shake_project_chains(
                     "fab,fab->fa", s[:, 1:], d0[:, :-1])
                 sup[:, :-1] = 2.0 * M[:, 1:-1] * xp.einsum(
                     "fab,fab->fa", s[:, :-1], d0[:, 1:])
-            lam = _thomas_batched(sub, diag, sup, -g, xp=xp)     # (F, m)
+            rhs = -g
+            if compression_release:
+                # Released bonds → identity row (λ=0); decouple active neighbours
+                # from the released joint so the tridiagonal solve splits into
+                # independent active runs (see docstring).
+                diag = xp.where(rel, 1.0, diag)
+                sub = xp.where(rel, 0.0, sub)
+                sup = xp.where(rel, 0.0, sup)
+                rhs = xp.where(rel, 0.0, rhs)
+                if m > 1:
+                    rel_next = xp.zeros((F, m), dtype=bool)
+                    rel_prev = xp.zeros((F, m), dtype=bool)
+                    rel_next[:, :-1] = rel[:, 1:]   # bond a's a+1 neighbour released
+                    rel_prev[:, 1:] = rel[:, :-1]   # bond a's a-1 neighbour released
+                    sup = xp.where(rel_next, 0.0, sup)
+                    sub = xp.where(rel_prev, 0.0, sub)
+            lam = _thomas_batched(sub, diag, sup, rhs, xp=xp)    # (F, m)
+            if compression_release:
+                lam = xp.where(rel, 0.0, lam)                   # released λ ≡ 0
             if lambda_total is not None:
                 lambda_total += lam
             disp = xp.zeros((F, m + 1, 3))
@@ -423,7 +515,8 @@ def shake_project_chains(
             disp[:, 1:] += (M[:, 1:] * lam)[:, :, None] * d0
             pos[P] += disp                                       # chains disjoint
         else:
-            drift = float(xp.max(xp.abs(g)) / L2)
+            _gd = xp.where(rel, 0.0, xp.abs(g)) if compression_release else xp.abs(g)
+            drift = float(xp.max(_gd) / L2)
             raise RuntimeError(
                 f"M-SHAKE (vectorised, {F} chains len {m + 1}) failed in "
                 f"{max_iter} iters; max relative drift = {drift:.3e} > tol={tol}.")
@@ -432,6 +525,13 @@ def shake_project_chains(
         return pos
 
     # ---- Ragged fallback: per-chain (mixed lengths) ----
+    if compression_release and release_load_crit is not None:
+        raise NotImplementedError(
+            "Euler-thresholded release (release_load_crit) is implemented only on "
+            "the uniform stacked fast path; the ragged mixed-length fallback "
+            "supports geometric release (release_load_crit=None) only. The cortex "
+            "backbone chains are uniform (7 beads), so production takes the fast path."
+        )
     # Per-chain lambda accumulators (list of (m,) arrays) when requested.
     lambda_per_chain = [] if return_lambdas else None
     for chain in chains:
@@ -448,7 +548,11 @@ def shake_project_chains(
         for _ in range(max_iter):
             s = _min_image_orthorhombic(pos[p[:-1]] - pos[p[1:]], box)       # (m,3)
             g = np.einsum("ab,ab->a", s, s) - L2
-            if np.max(np.abs(g)) / L2 <= tol:
+            if compression_release:
+                if np.max(np.where(g > 0.0, g, 0.0)) / L2 <= tol:
+                    ok = True
+                    break
+            elif np.max(np.abs(g)) / L2 <= tol:
                 ok = True
                 break
             sd_diag = np.einsum("ab,ab->a", s, d0)                          # s_a·d0_a
@@ -460,7 +564,23 @@ def shake_project_chains(
                 sub[1:] = 2.0 * M[1:-1] * sd_lower
                 sd_upper = np.einsum("ab,ab->a", s[:-1], d0[1:])           # s_a·d0_{a+1}
                 sup[:-1] = 2.0 * M[1:-1] * sd_upper
-            lam = _thomas(sub, diag, sup, -g)
+            rhs = -g
+            if compression_release:
+                # Unilateral: release compressed bonds (λ=0) + decouple their
+                # active neighbours (identity-row chain decomposition).
+                rel = g < 0.0
+                diag = np.where(rel, 1.0, diag)
+                sub = np.where(rel, 0.0, sub)
+                sup = np.where(rel, 0.0, sup)
+                rhs = np.where(rel, 0.0, rhs)
+                if m > 1:
+                    rel_next = np.zeros(m, dtype=bool); rel_next[:-1] = rel[1:]
+                    rel_prev = np.zeros(m, dtype=bool); rel_prev[1:] = rel[:-1]
+                    sup = np.where(rel_next, 0.0, sup)
+                    sub = np.where(rel_prev, 0.0, sub)
+            lam = _thomas(sub, diag, sup, rhs)
+            if compression_release:
+                lam = np.where(g < 0.0, 0.0, lam)
             if lambda_total is not None:
                 lambda_total += lam
             # apply Δr[p_k] = M_k (λ_{k-1} d0_{k-1} − λ_k d0_k)
@@ -470,7 +590,9 @@ def shake_project_chains(
             pos[p] += disp
         if not ok:
             s = _min_image_orthorhombic(pos[p[:-1]] - pos[p[1:]], box)
-            drift = float(np.max(np.abs(np.einsum("ab,ab->a", s, s) - L2)) / L2)
+            _g = np.einsum("ab,ab->a", s, s) - L2
+            _gd = np.where(_g > 0.0, _g, 0.0) if compression_release else np.abs(_g)
+            drift = float(np.max(_gd) / L2)
             raise RuntimeError(
                 f"M-SHAKE chain (len {m + 1}) failed in {max_iter} iters; "
                 f"max relative drift = {drift:.3e} > tol={tol}."
@@ -654,6 +776,9 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         shake_tol: float = 1.0e-10,
         shake_max_iter: int = 500,
         record_lambda: bool = False,
+        compression_release: bool = False,
+        release_load_crit: float | None = None,
+        load_tau: float | None = None,
     ) -> None:
         super().__init__()
         if not (np.isfinite(kT) and kT >= 0.0):
@@ -725,6 +850,40 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         # accumulator isn't allocated inside ``shake_project_chains``).
         self.record_lambda = bool(record_lambda)
         self._lambda_buf = None  # most-recent step's λ; shape depends on chains
+
+        # H.7 Gate-B relaxed-constraint mode (2026-06-08). When True the rigid
+        # equality bond constraint becomes unilateral |s|≤ℓ₀ (compression side
+        # released → buckling/condensation permitted; tension side inextensible).
+        # False = exact rigid M-SHAKE (control §5.1 superset parity). The
+        # generic Gauss-Seidel ``shake_project`` (pairs path) does NOT support
+        # it — chains are required (attach() / act() enforce this).
+        self.compression_release = bool(compression_release)
+        # Euler buckling load F_crit [N] — a compressed backbone bond is released
+        # only if its compressive constraint force exceeds this (contract §8;
+        # derived π²κ/L², NOT a free knob). None ⇒ geometric zero-threshold
+        # release (test/limit mode, over-condenses — not production).
+        self.release_load_crit = (
+            float(release_load_crit) if release_load_crit is not None else None
+        )
+        # τ_bend EMA window for the SUSTAINED compressive load (PI 2026-06-08):
+        # the per-step rigid λ is thermal-noise dominated, so eligibility is gated
+        # on an EMA of the per-bond load over τ_bend = γ_b·ℓ₀³/κ_B (the segment
+        # bending-relaxation time — the timescale a segment actually buckles on).
+        # When set with compression_release + release_load_crit, the Action runs a
+        # rigid pre-pass each step, EMAs the load, and passes the eligible_mask.
+        self.load_tau = float(load_tau) if load_tau is not None else None
+        self._load_ema = None   # (F, m) sustained per-bond constraint force [N]
+        # Most-recent step's released (compression) bond fraction — the
+        # condensation-engagement monitor (contract §5.3). 0.0 in rigid mode.
+        self._last_released_frac: float = 0.0
+        if self.compression_release and (
+            not self._chains_tag or self._chain_rest_length is None
+        ):
+            raise ValueError(
+                "compression_release=True requires uniform-rest-length chain "
+                "constraints (the unilateral M-SHAKE lives in the chain path); "
+                "the generic Gauss-Seidel pairs fallback does not support it."
+            )
 
     # ------------------------------------------------------------------
     def attach(self, simulation: hoomd.Simulation) -> None:  # noqa: D401
@@ -901,19 +1060,57 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                         chains_row_arg = row_of_tag[self._chains_tag_stacked]
                     else:
                         chains_row_arg = [row_of_tag[c] for c in self._chains_tag]
+                    # τ_bend-windowed buckle eligibility (PI 2026-06-08): a rigid
+                    # pre-pass gives the per-bond constraint force; an EMA over
+                    # τ_bend isolates the SUSTAINED compressive load from the
+                    # thermal per-step impulse. A bond is buckle-eligible iff its
+                    # sustained load is compressive past F_crit. Only on the
+                    # stacked fast path (production cortex); requires F_crit+τ.
+                    eligible_mask = None
+                    if (self.compression_release
+                            and self.release_load_crit is not None
+                            and self.load_tau is not None
+                            and self._chains_tag_stacked is not None):
+                        _, lam_rigid = shake_project_chains(
+                            pred, pos, chains_row_arg,
+                            self._chain_rest_length, inv_g, box_L,
+                            tol=self.shake_tol, max_iter=self.shake_max_iter,
+                            return_lambdas=True, compression_release=False, xp=xp,
+                        )
+                        T_rigid = lam_rigid * (self._chain_rest_length / self.dt)
+                        if self._load_ema is None:
+                            self._load_ema = xp.zeros_like(T_rigid)
+                        a_ema = self.dt / self.load_tau
+                        self._load_ema = self._load_ema + a_ema * (T_rigid - self._load_ema)
+                        eligible_mask = self._load_ema < -self.release_load_crit
                     if self.record_lambda:
                         projected, self._lambda_buf = shake_project_chains(
                             pred, pos, chains_row_arg,
                             self._chain_rest_length, inv_g, box_L,
                             tol=self.shake_tol, max_iter=self.shake_max_iter,
-                            return_lambdas=True, xp=xp,
+                            return_lambdas=True,
+                            compression_release=self.compression_release,
+                            release_load_crit=self.release_load_crit, dt=self.dt,
+                            eligible_mask=eligible_mask, xp=xp,
                         )
                     else:
                         projected = shake_project_chains(
                             pred, pos, chains_row_arg,
                             self._chain_rest_length, inv_g, box_L,
                             tol=self.shake_tol, max_iter=self.shake_max_iter,
-                            xp=xp,
+                            compression_release=self.compression_release,
+                            release_load_crit=self.release_load_crit, dt=self.dt,
+                            eligible_mask=eligible_mask, xp=xp,
+                        )
+                    if self.compression_release and self._chains_tag_stacked is not None:
+                        # Condensation monitor (§5.3): fraction of backbone bonds
+                        # left in compression (|s|<ℓ₀) after the unilateral solve.
+                        cs = _min_image_orthorhombic(
+                            projected[chains_row_arg[:, :-1]]
+                            - projected[chains_row_arg[:, 1:]], box_L, xp=xp)
+                        clen = xp.sqrt(xp.einsum("fab,fab->fa", cs, cs))
+                        self._last_released_frac = float(
+                            xp.mean((clen < self._chain_rest_length).astype(np.float64))
                         )
                 else:
                     # Generic Gauss-Seidel fallback (CPU-only; attach() forbids
@@ -923,14 +1120,18 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                         inv_g, box_L,
                         tol=self.shake_tol, max_iter=self.shake_max_iter,
                     )
-                # §4 drift guard.
+                # §4 drift guard. In relaxed mode the constraint is unilateral
+                # (|s|≤ℓ₀): released compression bonds legitimately sit below ℓ₀,
+                # so the drift metric is the TENSION-side overshoot only
+                # (max(‖s‖−ℓ₀, 0)/ℓ₀) — a compressed bond is feasible, not drift.
                 s = _min_image_orthorhombic(
                     projected[pairs_row[:, 0]] - projected[pairs_row[:, 1]],
                     box_L, xp=xp,
                 )
-                drift = xp.abs(
-                    xp.linalg.norm(s, axis=1) - self._constraint_lengths
-                ) / self._constraint_lengths
+                _excess = xp.linalg.norm(s, axis=1) - self._constraint_lengths
+                if self.compression_release:
+                    _excess = xp.where(_excess > 0.0, _excess, 0.0)
+                drift = xp.abs(_excess) / self._constraint_lengths
                 self._max_drift = float(drift.max())
             else:
                 projected = pred
@@ -977,8 +1178,19 @@ class ConstrainedLeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
 
     @property
     def max_constraint_drift(self) -> float:
-        """Largest relative bond-length drift after the last SHAKE."""
+        """Largest relative bond-length drift after the last SHAKE.
+
+        Rigid mode: |‖s‖−ℓ₀|/ℓ₀ over all bonds. Relaxed mode
+        (``compression_release``): the tension-side overshoot only — released
+        compression bonds (‖s‖<ℓ₀) are feasible, not drift."""
         return self._max_drift
+
+    @property
+    def released_fraction(self) -> float:
+        """Fraction of backbone bonds left in compression (‖s‖<ℓ₀) after the
+        last unilateral M-SHAKE — the condensation-engagement monitor
+        (contract §5.3). 0.0 in rigid mode (``compression_release=False``)."""
+        return self._last_released_frac
 
     @property
     def lambda_buf(self):
@@ -1031,13 +1243,17 @@ def make_constrained_baoab_updater(
     shake_tol: float = 1.0e-10,
     shake_max_iter: int = 500,
     record_lambda: bool = False,
+    compression_release: bool = False,
+    release_load_crit: float | None = None,
+    load_tau: float | None = None,
 ) -> tuple[ConstrainedLeimkuhlerMatthewsBAOAB, hoomd.update.CustomUpdater]:
     """Build the constrained L-M Action wrapped in a per-step CustomUpdater."""
     action = ConstrainedLeimkuhlerMatthewsBAOAB(
         kT=kT, gamma=gamma, dt=dt,
         constraint_pairs=constraint_pairs, constraint_lengths=constraint_lengths,
         chains=chains, seed=seed, shake_tol=shake_tol, shake_max_iter=shake_max_iter,
-        record_lambda=record_lambda,
+        record_lambda=record_lambda, compression_release=compression_release,
+        release_load_crit=release_load_crit, load_tau=load_tau,
     )
     updater = hoomd.update.CustomUpdater(
         action=action, trigger=hoomd.trigger.Periodic(1)
