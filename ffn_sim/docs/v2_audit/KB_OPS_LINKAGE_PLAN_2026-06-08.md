@@ -230,12 +230,65 @@ MC-H3-composite-tension 하나**. FA(bridge/)·ECM·integrator·lamellipodium �
 공백 — ModelContract도 PI-authored 행 보강이 필요(코드/런은 이제 적재됐으므로 contract만
 채우면 전체 traverse가 열림).
 
-## 12. 남은 일 (추가)
+## 14. TAG 안정화 + P3 — DONE (2026-06-08, commit `aaa3f41`)
 
-- ModelContract 레이어 보강 (PI-authored; FA/ECM/integrator/lamellipodium contract 행).
-- syn(NL→SQL) + BM25 retrieval 안정화 (TAG "불안정"의 본질 — gate coverage와 별개).
-- source_audit full 재감사 (#3가 stale 12/329로 surfacing).
-- P3: `refresh.sh --check` 드리프트 감지 (신규 아티팩트 N개 since last harvest).
+TAG "불안정"의 본질을 코드에서 짚어 수정 (gate coverage와 별개 문제):
+
+- **syn 비결정성 (주범):** `llm()` temperature **1.0 → 0.0**. 사실형 KB QA인데 SDK 기본
+  1.0 샘플링이라 같은 질문에 매번 다른 SQL이 나오던 것 → 결정적으로. gen도 0.0.
+- **BM25 content noise:** `content_search`에 **BM25 floor 6.0** 추가. 측정(2026-06-08):
+  관계형 질의 top ~4.3–5.5(우연한 단어겹침), 콘텐츠 질의 ~6.0–10.5. floor가 관계형
+  noise를 차단(예: "Gate-A 연결 런" 질의에 뜨던 무관한 RHOA/Arslan excerpt 제거)하면서
+  진짜 콘텐츠는 유지. 절대 BM25는 질의길이 의존이라 pragmatic separator(보장 아님).
+  검증: 관계형→excerpt 0, 콘텐츠("persistence length")→Freedman2017 정상 회수.
+- **self-repair 1 → 2회** (syn 실패 복원력).
+
+- **P3 — 드리프트 감지:** `harvest_ops.py --check` (read-only: 디스크 run/module vs
+  그래프 비교 → un-harvested 개수) → `refresh.sh`에 배선. 매 refresh가 harvest 드리프트를
+  보고(현재 0 un-harvested = 동기 상태).
+
+## 15. ModelContract 보강 + TAG syn 정밀도 — DONE (PI-directed, 2026-06-08, commit `3218da8`)
+
+**source_audit full 재감사** (commit 앞): 329행 — OK 177 / CHECK 93 / NO_DOI_FOUND 46 /
+DOI_MISMATCH 7 / DOI_DEAD 6. 고-의심 13건은 대부분 preprint DOI + 유니코드 author-key
+false-positive(Bcher=Bücher 등), fabrication 아님. stale 12/329 해소.
+
+**(A) ModelContract 보강** (faithful: 이미 ratify된 orphan 게이트에 grounded):
+- 20개 orphan 게이트(U1 ECM 5 / U2 FA 3 / U3 Cell 6 / U4 Junction 3 / U5 Collective 3)가
+  contract 없이 떠 있던 것을 unit-level MC 5개로 묶음:
+  `MC-U1-ecm-network`(impl), `MC-U2-fa-motor-clutch`(impl), `MC-U3-cell-integration`(impl),
+  `MC-U4-junction-cadherin`(draft), `MC-U5-collective`(draft). 각 Gates 관계로 게이트 연결,
+  KU-bearing 타이틀로 code 링크 유도(U1/U2/U3), interpretation/caveat는 아키텍처 원칙·KB 반영.
+- `upsert_code` 개선: 기계-생성 행은 PATCH(신규 contract 링크 반영), 큐레이션 2행은 marker로 보호.
+- 결과: `model_contract` **6 → 11**, `gate→contract` edges **27 (orphan 0)**,
+  `code→contract` edges **8 → 19** (FA 5모듈→MC-U2 등), 총 edges **1042 → 1110**.
+
+**(B) TAG syn 정밀도:** SYN_SYS에 "exact-id 우선(vg_id=/mc_id=), broad LIKE 금지(%h7%가
+Gate-A/B 둘 다 잡음)" 규칙 + 정확-traversal few-shot 2개(run→gate, code→contract). 검증:
+Gate-A 질의가 `g.vg_id = 'VG-H7-gate-a'` 정확 작성(과넓은 LIKE 제거); "FA motor-clutch 구현
+모듈" 질의가 5모듈 정확 반환(예전 답 불가).
+
+## 16. Ops-Linkage 최종 누적 (계획 §0 "빈 contract측" 해소 완료)
+
+| | before | after |
+|---|---|---|
+| run_result | 1 | **62** |
+| code_mapping | 2 | **46** |
+| model_contract | 6 | **11** |
+| run→gate edges | ~0 | **21** |
+| gate→contract edges | ~7 | **27** (orphan 0) |
+| code→contract edges | ~2 | **19** |
+| 총 edges | 986 | **1110** |
+
+전체 traverse 가능: `run → gate → contract → (parameter) → source_evidence`.
+
+## 12. 남은 일 (차기)
+
+- ModelContract Adopts(KnowledgeClaim)/Parameters 관계 보강 (현재 Gates만 연결).
+- 비-KU 메커니즘 모듈(lamellipodium/membrane/integrator 일부) contract 매핑 — KU 토큰 없어
+  자동 매칭 안 됨; 수동 또는 MC 타이틀 KU 확장 필요.
+- citation 정리 (DOI_MISMATCH 유니코드 author-key 정규화).
+- TAG syn 추가 정밀도 (집계/multi-hop few-shot).
 
 ## 8. 비-목표 (scope out)
 
