@@ -1,0 +1,40 @@
+{
+  "compartment": "osmotic_regulation",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 3000,
+  "dt_s": 6.98e-07,
+  "params": {
+    "Lp_mspa": 1e-12,
+    "A_mem_m2": 7.068583470577034e-10,
+    "turgor_dP0_Pa": 133.0,
+    "delta_c_molm3": -100.0,
+    "dP_target_Pa": -257740.05809727,
+    "K_vol_Pa": 1333.3333333333335,
+    "Pi_osm_Pa": 773619.17429181,
+    "batch_steps": 50,
+    "batch_dt_s": 3.49e-05
+  },
+  "timescales": {
+    "tau_RVD_s": 3.2315641637095687,
+    "tau_Kvol_s": 1875.0,
+    "run_wallclock_s": 0.002094,
+    "note": "run time << tau_RVD: smoke shows the initial slope/sign, not full relaxation"
+  },
+  "observables": {
+    "n_ticks": 60,
+    "V0_ref_m3": 1.7671458676442587e-15,
+    "V0_initial_m3": 1.7671458676442587e-15,
+    "V0_final_m3": 1.766764177147294e-15,
+    "V0_frac_change": -0.00021599263759338206,
+    "RVD_sign_correct": true,
+    "last_pressure_initial_Pa": 133.00017368463446,
+    "last_pressure_final_Pa": 128.55795524303744,
+    "V0_above_floor": true,
+    "all_finite": "True"
+  },
+  "constants_smoke_only": [
+    "Lp=1e-12 m/(s\u00b7Pa) (MCF7/AQP5 candidate)"
+  ],
+  "note": "PLUMBING smoke: confirms the updater reads the LIVE ev_force.last_pressure and mutates ev_force.p.V0 each batch via object identity, V0 moves with the RVD sign, no crash. NOT the tau_RVD Hoffmann-band activation gate."
+}
