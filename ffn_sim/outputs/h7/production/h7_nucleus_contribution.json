@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "gamma_soft": 3.225824687943626e-07,
+      "gamma_rigid": 0.06019971081640927,
+      "gamma_structural": 0.060200033398878056,
+      "gamma_passive": 0.4987500000000001,
+      "E_nuc_kPa": 1.0,
+      "tau_nuc_us": NaN
+    },
+    {
+      "gamma_soft": 3.2234655311798927e-07,
+      "gamma_rigid": 0.060199807083802216,
+      "gamma_structural": 0.06020012943035533,
+      "gamma_passive": 0.4987500000000001,
+      "E_nuc_kPa": 4.7,
+      "tau_nuc_us": NaN
+    },
+    {
+      "gamma_soft": 3.226348128143258e-07,
+      "gamma_rigid": 0.06020047601799877,
+      "gamma_structural": 0.06020079865281158,
+      "gamma_passive": 0.4987500000000001,
+      "E_nuc_kPa": 10.0,
+      "tau_nuc_us": NaN
+    }
+  ],
+  "gamma_struct_spread_frac": 1.2711791685608342e-05
+}

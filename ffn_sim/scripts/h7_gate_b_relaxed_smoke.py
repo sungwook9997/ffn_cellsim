@@ -259,25 +259,59 @@ def _verdict(gamma_active_relaxed_mN_m: float) -> str:
             "generation density.")
 
 
-def _run_mesoscale(*, mesoscale, args, device):
-    """Run the 4 conditions (rigid/relaxed × myo ON/OFF) at one mesoscale setting."""
-    tag = "meso_on" if mesoscale else "meso_off"
-    print(f"\n=== MESOSCALE-FORCE {'ON (areal-scaled ~8.48 pN/head)' if mesoscale else 'OFF (per-native 2.0 pN/head)'} ===",
-          flush=True)
-    conds = {}
+_ALL_CONDS = ("rigid_myoON", "rigid_myoOFF", "relaxed_myoON", "relaxed_myoOFF")
+
+
+def _cond_path(tag, mesoscale, name):
+    mt = "mesoON" if mesoscale else "mesoOFF"
+    return _OUT_DIR / f"h7_{tag}_{mt}_{name}.cond.json"
+
+
+def _run_mesoscale(*, mesoscale, args, device, which=None, aggregate_only=False):
+    """Run the requested conditions (subset of rigid/relaxed × myo ON/OFF) at one
+    mesoscale setting, writing each to a per-condition file so the 4 can run as
+    concurrent single-core processes (CPU-jobs-on-gbook convention). The summary
+    (γ_active + verdict) is computed once all 4 per-condition files exist (this
+    process's just-run + any already on disk), else deferred to ``--aggregate-only``."""
+    tag = args.tag
+    mtag = "ON (areal-scaled ~8.48 pN/head)" if mesoscale else "OFF (per-native 2.0 pN/head)"
+    print(f"\n=== MESOSCALE-FORCE {mtag} ===", flush=True)
+    which = set(which) if which else set(_ALL_CONDS)
     n_fil = None if (args.n_filaments is None or args.n_filaments <= 0) else args.n_filaments
-    for cr in (False, True):
-        for myo_on in (True, False):
-            name = f"{'relaxed' if cr else 'rigid'}_myo{'ON' if myo_on else 'OFF'}"
-            manifest = _make_manifest(
-                n_filaments=n_fil, n_nuc_beads=args.n_nuc_beads,
-                myosin_on=myo_on, mesoscale=mesoscale)
-            conds[name] = _run_condition(
-                manifest=manifest, device=device, seed=args.seed,
-                warmup=args.warmup, softstart=args.softstart,
-                compression_release=cr, ticks=args.ticks, interval=args.interval,
-                measure_last=args.measure_last, connected_mesh=not args.no_connected_mesh,
-                label=f"{tag}/{name}")
+    conds = {}
+    if not aggregate_only:
+        for cr in (False, True):
+            for myo_on in (True, False):
+                name = f"{'relaxed' if cr else 'rigid'}_myo{'ON' if myo_on else 'OFF'}"
+                if name not in which:
+                    continue
+                manifest = _make_manifest(
+                    n_filaments=n_fil, n_nuc_beads=args.n_nuc_beads,
+                    myosin_on=myo_on, mesoscale=mesoscale)
+                res = _run_condition(
+                    manifest=manifest, device=device, seed=args.seed,
+                    warmup=args.warmup, softstart=args.softstart,
+                    compression_release=cr, ticks=args.ticks, interval=args.interval,
+                    measure_last=args.measure_last,
+                    connected_mesh=not args.no_connected_mesh,
+                    label=f"meso{'ON' if mesoscale else 'OFF'}/{name}")
+                conds[name] = res
+                p = _cond_path(tag, mesoscale, name)
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json.dumps(res, indent=2))
+                print(f"    cond → {p}", flush=True)
+    # Load any conditions present on disk (siblings from concurrent processes).
+    for name in _ALL_CONDS:
+        if name not in conds:
+            p = _cond_path(tag, mesoscale, name)
+            if p.exists():
+                conds[name] = json.loads(p.read_text())
+    missing = [n for n in _ALL_CONDS if n not in conds]
+    if missing:
+        print(f"  [mesoscale {'ON' if mesoscale else 'OFF'}] {len(conds)}/4 conditions present; "
+              f"missing {missing} — summary deferred (run the rest, then --aggregate-only).",
+              flush=True)
+        return None
 
     def _struct(name):
         return conds[name]["gamma_structural_mN_m"]
