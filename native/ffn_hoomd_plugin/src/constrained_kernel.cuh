@@ -50,5 +50,9 @@ hipError_t gpu_constrained_step(hoomd::Scalar4* d_pos,
                                 double yz,
                                 double tol,
                                 unsigned int max_iter,
-                                unsigned int block_size);
+                                unsigned int block_size,
+                                int compression_release,
+                                double Fcrit,
+                                double load_alpha,
+                                double* d_load_ema);
     } // namespace ffn_native

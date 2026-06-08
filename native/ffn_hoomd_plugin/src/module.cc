@@ -337,10 +337,15 @@ class FFNConstrainedBaoabUpdater : public hoomd::Updater
                                unsigned int m,
                                double rest_length,
                                double tol,
-                               unsigned int max_iter)
+                               unsigned int max_iter,
+                               int compression_release = 0,
+                               double release_load_crit = 0.0,
+                               double load_tau = 0.0)
         : hoomd::Updater(sysdef, trigger), m_dt(dt), m_half_kT(0.5 * (double)kT), m_seed(seed),
           m_rest_length(rest_length), m_tol(tol), m_max_iter(max_iter), m_block(128), m_F(F), m_m(m),
           m_N(m_pdata->getN()),
+          m_compression_release(compression_release), m_Fcrit(release_load_crit),
+          m_load_alpha(load_tau > 0.0 ? (double)dt / load_tau : 0.0),
           m_inv_gamma_by_tag(inv_gamma_by_tag.size(), m_exec_conf),
           m_bd_pref_by_tag(inv_gamma_by_tag.size(), m_exec_conf), m_prv(3 * m_N, m_exec_conf),
           m_chains_tag(F * (m + 1) > 0 ? F * (m + 1) : 1, m_exec_conf),
@@ -349,12 +354,23 @@ class FFNConstrainedBaoabUpdater : public hoomd::Updater
           m_inv_gamma_row(m_N, m_exec_conf), m_row_of_tag(m_N, m_exec_conf),
           m_chains_row(F * (m + 1) > 0 ? F * (m + 1) : 1, m_exec_conf),
           m_lambda(F * m > 0 ? F * m : 1, m_exec_conf), m_logdet(F > 0 ? F : 1, m_exec_conf),
-          m_nonconv(F > 0 ? F : 1, m_exec_conf), m_bad_sign(F > 0 ? F : 1, m_exec_conf)
+          m_nonconv(F > 0 ? F : 1, m_exec_conf), m_bad_sign(F > 0 ? F : 1, m_exec_conf),
+          m_load_ema(F * m > 0 ? F * m : 1, m_exec_conf)
         {
         if (inv_gamma_by_tag.size() < m_N)
             throw std::runtime_error("FFNConstrainedBaoabUpdater: inv_gamma_by_tag shorter than N");
         if (!(dt > 0))
             throw std::runtime_error("FFNConstrainedBaoabUpdater: dt must be > 0");
+        if (m_compression_release && !(load_tau > 0.0 && release_load_crit > 0.0))
+            throw std::runtime_error(
+                "FFNConstrainedBaoabUpdater: compression_release requires load_tau>0 and "
+                "release_load_crit>0 (the τ_bend-EMA Euler gate).");
+            {
+            hoomd::ArrayHandle<hoomd::Scalar> h_ema(m_load_ema, hoomd::access_location::host,
+                hoomd::access_mode::overwrite);
+            for (size_t k = 0; k < (size_t)(F * m > 0 ? F * m : 1); ++k)
+                h_ema.data[k] = 0.0; // EMA warm-starts at zero (no buckling until load builds)
+            }
         const double half_dt = 2.0 * (double)dt;
             {
             hoomd::ArrayHandle<hoomd::Scalar> h_ig(m_inv_gamma_by_tag,
@@ -436,11 +452,14 @@ class FFNConstrainedBaoabUpdater : public hoomd::Updater
             hoomd::access_mode::overwrite);
         hoomd::ArrayHandle<int> d_bs(m_bad_sign, hoomd::access_location::device,
             hoomd::access_mode::overwrite);
+        hoomd::ArrayHandle<hoomd::Scalar> d_ema(m_load_ema, hoomd::access_location::device,
+            hoomd::access_mode::readwrite);
         const hipError_t st = ffn_native::gpu_constrained_step(
             d_pos.data, d_force.data, d_image.data, d_tag.data, d_ig.data, d_bp.data, d_prv.data,
             d_ct.data, d_pd.data, d_rd.data, d_fd.data, d_prd.data, d_igr.data, d_rot.data,
             d_cr.data, d_lam.data, d_nc.data, d_bs.data, d_ld.data, N, m_F, m_m, m_seed, timestep,
-            m_dt, m_half_kT, m_rest_length, L.x, L.y, L.z, xy, xz, yz, m_tol, m_max_iter, m_block);
+            m_dt, m_half_kT, m_rest_length, L.x, L.y, L.z, xy, xz, yz, m_tol, m_max_iter, m_block,
+            m_compression_release, m_Fcrit, m_load_alpha, d_ema.data);
         if (st != hipSuccess)
             throw std::runtime_error(std::string("FFNConstrainedBaoabUpdater kernel: ")
                                      + hipGetErrorString(st));
@@ -490,12 +509,16 @@ class FFNConstrainedBaoabUpdater : public hoomd::Updater
     unsigned int m_F;
     unsigned int m_m;
     unsigned int m_N;
+    int m_compression_release;
+    double m_Fcrit;
+    double m_load_alpha;
     hoomd::GPUArray<hoomd::Scalar> m_inv_gamma_by_tag, m_bd_pref_by_tag, m_prv;
     hoomd::GPUArray<int> m_chains_tag;
     hoomd::GPUArray<hoomd::Scalar> m_pos_d, m_ref_d, m_ffix_d, m_pred_d, m_inv_gamma_row;
     hoomd::GPUArray<int> m_row_of_tag, m_chains_row;
     hoomd::GPUArray<hoomd::Scalar> m_lambda, m_logdet;
     hoomd::GPUArray<int> m_nonconv, m_bad_sign;
+    hoomd::GPUArray<hoomd::Scalar> m_load_ema; // (F*m) persistent τ_bend load EMA
     };
 
 // Native radial-shell compartment force (turgor/membrane/nucleus). Device-resident
@@ -712,7 +735,15 @@ PYBIND11_MODULE(_ffn_native, m)
                       unsigned int,
                       double,
                       double,
-                      unsigned int>())
+                      unsigned int,
+                      int,
+                      double,
+                      double>(),
+             py::arg("sysdef"), py::arg("trigger"), py::arg("dt"), py::arg("seed"), py::arg("kT"),
+             py::arg("inv_gamma_by_tag"), py::arg("chains_tag"), py::arg("F"), py::arg("m"),
+             py::arg("rest_length"), py::arg("tol"), py::arg("max_iter"),
+             py::arg("compression_release") = 0, py::arg("release_load_crit") = 0.0,
+             py::arg("load_tau") = 0.0)
         .def("get_lambda", &FFNConstrainedBaoabUpdater::get_lambda)
         .def("nonconverged_count", &FFNConstrainedBaoabUpdater::nonconverged_count);
     py::class_<FFNRadialShellForce, hoomd::ForceCompute, std::shared_ptr<FFNRadialShellForce>>(

@@ -175,6 +175,9 @@ class NativeConstrainedBaoabUpdater(Updater):
         tol: float = 1.0e-10,
         max_iter: int = 100,
         trigger: hoomd.trigger.trigger_like = 1,
+        compression_release: bool = False,
+        release_load_crit: float = 0.0,
+        load_tau: float = 0.0,
     ) -> None:
         super().__init__(trigger)
         self._dt = float(dt)
@@ -187,6 +190,14 @@ class NativeConstrainedBaoabUpdater(Updater):
         self._rest_length = float(rest_length)
         self._tol = float(tol)
         self._max_iter = int(max_iter)
+        # H.7 Gate-B relaxed (unilateral) M-SHAKE + τ_bend-EMA Euler gate.
+        # compression_release=True releases compression-side bonds above the
+        # SUSTAINED (τ_bend-averaged) Euler load F_crit=release_load_crit; the
+        # tension side stays inextensible. Both release_load_crit and load_tau
+        # must be > 0 when enabled (the native ctor enforces it).
+        self._compression_release = bool(compression_release)
+        self._release_load_crit = float(release_load_crit)
+        self._load_tau = float(load_tau)
 
     def _attach_hook(self) -> None:
         self._cpp_obj = _ffn_native.FFNConstrainedBaoabUpdater(
@@ -202,6 +213,9 @@ class NativeConstrainedBaoabUpdater(Updater):
             self._rest_length,
             self._tol,
             self._max_iter,
+            int(self._compression_release),
+            self._release_load_crit,
+            self._load_tau,
         )
 
     @property

@@ -40,6 +40,29 @@ hipError_t gpu_shake_launch(double* d_pos,
                             double tol,
                             unsigned int max_iter);
 
+// Relaxed (unilateral) M-SHAKE with the τ_bend-EMA Euler buckling gate — the H.7
+// Gate-B port (see shake_kernel.cu). ``d_load_ema`` is a persistent (F*m) device
+// array (the per-bond sustained-load EMA, zero-initialised once); ``alpha`` =
+// dt/τ_bend; ``Fcrit`` is the Euler buckling load π²κ/ℓ₀². All pointers device.
+hipError_t gpu_shake_relaxed_launch(double* d_pos,
+                                    const double* d_ref,
+                                    const double* d_inv_mass,
+                                    const int* d_chains,
+                                    double* d_lambda,
+                                    int* d_nonconv,
+                                    double* d_load_ema,
+                                    unsigned int F,
+                                    unsigned int m,
+                                    double rest_length,
+                                    double Lx,
+                                    double Ly,
+                                    double Lz,
+                                    double tol,
+                                    unsigned int max_iter,
+                                    double Fcrit,
+                                    double dt,
+                                    double alpha);
+
 hipError_t shake_project_host(double* pos,
                               const double* ref,
                               const double* inv_mass,

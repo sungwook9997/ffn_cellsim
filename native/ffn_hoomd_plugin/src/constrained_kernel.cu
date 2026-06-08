@@ -186,7 +186,11 @@ hipError_t gpu_constrained_step(hoomd::Scalar4* d_pos,
                                 double yz,
                                 double tol,
                                 unsigned int max_iter,
-                                unsigned int block_size)
+                                unsigned int block_size,
+                                int compression_release,
+                                double Fcrit,
+                                double load_alpha,
+                                double* d_load_ema)
     {
     if (N == 0)
         return hipSuccess;
@@ -215,8 +219,15 @@ hipError_t gpu_constrained_step(hoomd::Scalar4* d_pos,
                        dt, half_kT);
 
     if (F > 0)
-        gpu_shake_launch(d_pred_d, d_ref_d, d_inv_gamma_row, d_chains_row, d_lambda, d_nonconv, F,
-                         m, rest_length, Lx, Ly, Lz, tol, max_iter);
+        {
+        if (compression_release)
+            gpu_shake_relaxed_launch(d_pred_d, d_ref_d, d_inv_gamma_row, d_chains_row, d_lambda,
+                                     d_nonconv, d_load_ema, F, m, rest_length, Lx, Ly, Lz, tol,
+                                     max_iter, Fcrit, dt, load_alpha);
+        else
+            gpu_shake_launch(d_pred_d, d_ref_d, d_inv_gamma_row, d_chains_row, d_lambda, d_nonconv,
+                             F, m, rest_length, Lx, Ly, Lz, tol, max_iter);
+        }
 
     hipLaunchKernelGGL(ck_wrap, dim3(gN), dim3(block_size), 0, 0, d_pred_d, d_pos, d_image, N, Lx,
                        Ly, Lz, xy, xz, yz);
