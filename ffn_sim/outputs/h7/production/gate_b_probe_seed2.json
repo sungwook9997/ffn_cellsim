@@ -1,0 +1,42 @@
+{
+  "scale": {
+    "n_filaments": 160,
+    "n_cortex_actin": 1120,
+    "is_smoke": true
+  },
+  "physics": {
+    "ell0_nm": 500.0,
+    "kappa_B_Nm2": 7e-26,
+    "F_head_pN_scaled": 8.482300164692441,
+    "F_head_pN_unscaled": 2.0,
+    "mesoscale_force_factor": 4.241150082346221,
+    "F_crit_1seg_pN": 2.76348923230502,
+    "F_crit_2seg_pN": 0.690872308076255
+  },
+  "free_length": {
+    "n_spans": 516,
+    "seg_histogram": {
+      "1": 381,
+      "2": 54,
+      "3": 36,
+      "4": 30,
+      "5": 13,
+      "6": 2
+    },
+    "frac_1seg_rigid": 0.7383720930232558,
+    "frac_bucklable_geom": 0.2616279069767442,
+    "mean_n_seg": 1.5387596899224807,
+    "mean_L_um": 0.7693798449612403
+  },
+  "myosin_load": {
+    "total_engaged_heads": 37,
+    "heads_on_bucklable_spans": 12,
+    "spans_with_any_head": 9,
+    "max_heads_on_one_span": 3
+  },
+  "margin": {
+    "n_bucklable_spans": 135,
+    "n_over_threshold": 9,
+    "frac_over_threshold": 0.06666666666666667
+  }
+}
