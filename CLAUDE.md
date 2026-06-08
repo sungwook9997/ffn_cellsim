@@ -96,14 +96,19 @@ read layers are regeneratable; **never hand-edit the vault or the .duckdb — fi
 Notion and refresh.** TAG/Obsidian use the dual LLM backend (anthropic SDK if
 `ANTHROPIC_API_KEY`, else `claude -p` headless — no new secret needed).
 
-**Citation integrity (hard).** A 2026-06-02 audit of all 243 SourceEvidence rows
-found **3 confirmed hallucinated sources** (`Yao2011_NatCommun`→KB-3.18/3.19,
-`YapKovacs_JCS`→KB-4.1, `NanoConvergence2021_Glioma`→KB-6.2.3); verdicts live in
-the `source_audit` table (`web_verdict='HALLUCINATION'`) and
-`outputs/tag_kb/AUDIT_FINDINGS.md`. Before citing a KB source in any
-deliverable, check it isn't one of these (the α-actinin `k_off0` was re-anchored
-0.4→**0.066 s⁻¹**, Ferrer 2008, as a result). Dominant issue is metadata drift,
-not fabrication (~1.2% fabricated).
+**Citation integrity (hard).** The 2026-06-02 audit of the then-243 SourceEvidence
+rows found **3 hallucinated sources** (`Yao2011_NatCommun`→KB-3.18/3.19,
+`YapKovacs_JCS`→KB-4.1, `NanoConvergence2021_Glioma`→KB-6.2.3) — all three have
+since been **removed from the KB** (no longer in `source_evidence`; the α-actinin
+`k_off0` was re-anchored 0.4→**0.066 s⁻¹**, Ferrer 2008, as a result). A 2026-06-08
+**full re-audit covers all 329 rows**: OK 177 / CHECK 93 / NO_DOI_FOUND 46 /
+DOI_MISMATCH 7 / DOI_DEAD 6 — the 13 high-suspicion are mostly preprint DOIs +
+unicode author-key false positives (Bücher→`Bcher`), not fabrication. Verdicts live
+in the `source_audit` table (`verdict` column: OK / CHECK / DOI_DEAD / DOI_MISMATCH /
+NO_DOI_*; refresh full via `python verify_sources.py`, or non-destructively via
+`verify_sources.py --check` which rides `refresh.sh`) and the historical
+`outputs/tag_kb/AUDIT_FINDINGS.md`. Before citing a KB source in a deliverable,
+confirm its `verdict` is OK. Dominant issue is metadata drift, not fabrication (~1.2%).
 
 **Architecture benchmark.** `outputs/tag_kb/kb_benchmark.py` measures how much
 each KB layer reduces hallucination (4-condition ablation C1 no-KB → C2 RAG →
