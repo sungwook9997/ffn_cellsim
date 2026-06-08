@@ -1,0 +1,38 @@
+{
+  "compartment": "linc",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 3000,
+  "dt_s": 6.98e-07,
+  "params": {
+    "k_linc_Npm": 0.01,
+    "r0_m": 5e-08,
+    "capture_radius_m": 1.5e-07,
+    "f_rest_oracle_N": 8e-12,
+    "gamma_bead_Nspm": 0.00018632786028441065,
+    "cfl_dt_max_s": 0.0018632786028441066
+  },
+  "topology": {
+    "n_nucleus_beads": 80,
+    "n_acceptor_beads": 80,
+    "n_linc_bridges": 80
+  },
+  "observables": {
+    "bridge_len_mean_m": 4.9960862719896097e-08,
+    "bridge_len_min_m": 4.88546140877226e-08,
+    "bridge_len_max_m": 5.123535698188354e-08,
+    "construction_bond_energy_kT": 2.689744109859457e-24,
+    "mean_tension_pN": -0.39137280103901634,
+    "rms_tension_pN": 4.229298471736794,
+    "f_rest_oracle_pN": 8.0,
+    "max_particle_disp_m": 1.3534849958143202e-09,
+    "all_finite": true
+  },
+  "expected_warnings": [
+    "LINC capture_radius = 1.500e-07 m is below the nucleus\u2194cortex bead gap R_cell - R_nuc = 4.500e-06 m (ratio 30.0\u00d7). At this mesoscale bead geometry ZERO LINC bonds will form at construction if the only acceptor class is the cortex shell. Pass a capture_radius on the R_cell - R_nuc scale, or seed perinuclear/cap acceptors near the envelope (cf. fa_clutch_capture_radius; FA lesson cell.py:1040-1050)."
+  ],
+  "constants_smoke_only": [
+    "k_linc=1e-2 N/m (route-A candidate)"
+  ],
+  "note": "PLUMBING smoke: perinuclear-cap topology (acceptors at r0) avoids the zero-bonds trap and is force-free at construction; mean tension is near 0 (thermal), NOT the 8 pN resting-tension oracle (that needs actomyosin load \u2014 the ACTIVATION gate, out of scope). The capture<R_cell-R_nuc warning is EXPECTED for the cap topology."
+}
