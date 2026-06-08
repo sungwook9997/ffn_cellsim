@@ -190,3 +190,149 @@ def test_linc_enabled_path_forms_bridges_and_steps():
         gamma_map={"nucleus_bead": gb, "cortex_actin": gb}, attach=attach,
     )
     assert finite
+
+
+def _shell_frame(n, R, bead):
+    idx = np.arange(n) + 0.5
+    phi = math.pi * (3 - math.sqrt(5))
+    ct = np.clip(1 - 2 * idx / n, -1, 1)
+    st = np.sqrt(np.maximum(0, 1 - ct * ct))
+    az = phi * idx
+    pos = R * np.stack([st * np.cos(az), st * np.sin(az), ct], axis=1)
+    fr = gsd.hoomd.Frame()
+    fr.particles.N = n
+    fr.particles.types = [bead]
+    fr.particles.typeid = [0] * n
+    fr.particles.position = pos.tolist()
+    fr.particles.mass = [1.0] * n
+    fr.particles.velocity = [[0.0, 0.0, 0.0]] * n
+    fr.particles.image = [[0, 0, 0]] * n
+    fr.configuration.box = [6e-5, 6e-5, 6e-5, 0, 0, 0]
+    fr.bonds.N = 0
+    fr.bonds.types = []
+    fr.angles.N = 0
+    fr.angles.types = []
+    return fr, pos
+
+
+def test_osmotic_regulation_enabled_path_moves_setpoint_with_rvd_sign():
+    from ffn_sim.cortex.enclosed_volume import (
+        attach_enclosed_volume_to_simulation,
+        resolve_enclosed_volume,
+    )
+    from ffn_sim.cortex.osmotic_regulation import (
+        attach_osmotic_regulation_to_simulation,
+        resolve_osmotic_regulation,
+    )
+
+    R, n = 7.5e-6, 60
+    shell, _ = _shell_frame(n, R, "cortex_actin")
+    p_ev = resolve_enclosed_volume({"enclosed_volume": {"turgor_dP0": 133.0}}, R_cell=R)
+    cap = {}
+
+    def attach(sim, ig):
+        ev = attach_enclosed_volume_to_simulation(
+            sim, p_ev, shell_tag_range=(0, n), gamma_b=_drag(1e-7), cfl_strict=True
+        )
+        p_o = resolve_osmotic_regulation(
+            {"osmotic_regulation": {"enabled": True, "Lp": 1e-12,
+                                    "batch_steps": 50, "delta_c": -100.0}},
+            R_cell=R, dt=6.98e-7, p_enclosed_volume=p_ev,
+        )
+        action, _ = attach_osmotic_regulation_to_simulation(sim, p_o, ev)
+        cap.update(ev=ev, action=action, V0_0=float(ev.p.V0))
+
+    sim, finite = _step(shell, dt=6.98e-7,
+                        gamma_map={"cortex_actin": _drag(1e-7)}, attach=attach,
+                        n_steps=200)
+    assert finite
+    assert cap["action"].n_ticks > 0
+    assert float(cap["ev"].p.V0) < cap["V0_0"]   # hyperosmotic → RVD (V0 down)
+
+
+def test_stress_fibers_enabled_path_builds_and_steps_force_free():
+    from ffn_sim.cell.stress_fibers import (
+        extend_snapshot_with_stress_fibers,
+        register_stress_fiber_bond_params,
+        resolve_stress_fibers,
+    )
+
+    span, nb = 8.0e-6, 12
+    ell0 = span / (nb - 1)
+    k_actin = (20 * 4.3e-8) / ell0
+    p = resolve_stress_fibers(
+        {"stress_fibers": {"enabled": True, "n_SF": 1, "n_beads_per_SF": nb,
+                           "N_filaments": 20, "k_actin": k_actin, "seed": 47}},
+    )
+    # n_SF=1 → both FA anchors used regardless of permutation; place span apart.
+    fa_pos = np.array([[0.0, 0.0, 0.0], [0.0, span, 0.0]])
+    fr = gsd.hoomd.Frame()
+    fr.particles.N = 2
+    fr.particles.types = ["fa_actin_clutch"]
+    fr.particles.typeid = [0, 0]
+    fr.particles.position = fa_pos.tolist()
+    fr.particles.mass = [1.0, 1.0]
+    fr.configuration.box = [6e-5, 6e-5, 6e-5, 0, 0, 0]
+    fr.bonds.N = 0
+    fr.bonds.types = []
+    fr.angles.N = 0
+    fr.angles.types = []
+    snap = extend_snapshot_with_stress_fibers(fr, p, fa_pos, np.array([0, 1]))
+    layout = snap.stress_fiber_layout
+    types = set(snap.bonds.types)
+    assert {"sf_actin_bond", "sf_anchor", "sf_xlink_intra", "sf_xlink_attach"} <= types
+
+    def attach(sim, ig):
+        b = md.bond.Harmonic()
+        register_stress_fiber_bond_params(b, p, layout)
+        ig.forces.append(b)
+
+    gb = _drag(50e-9)
+    dt = 0.5 * 0.1 * gb / k_actin
+    sim, finite = _step(snap, dt=dt,
+                        gamma_map={"sf_actin": gb, "sf_xlink_head": gb,
+                                   "fa_actin_clutch": _drag(1e-6)}, attach=attach)
+    assert finite
+
+
+def test_membrane_reservoir_static_mesh_builds_cross_layer_and_steps():
+    from ffn_sim.cell.membrane_reservoir import (
+        attach_membrane_tether_force,
+        build_membrane_tethers,
+        resolve_membrane_reservoir,
+    )
+
+    R, n, off = 7.5e-6, 40, 100e-9
+    cortex, dirs = _shell_frame(n, R, "cortex_actin")
+    # add an own mem_node layer at R+off (same directions).
+    mem = (R + off) * (dirs / R)
+    pos = np.concatenate([np.asarray(cortex.particles.position), mem])
+    fr = gsd.hoomd.Frame()
+    fr.particles.N = 2 * n
+    fr.particles.types = ["cortex_actin", "mem_node"]
+    fr.particles.typeid = [0] * n + [1] * n
+    fr.particles.position = pos.tolist()
+    fr.particles.mass = [1.0] * (2 * n)
+    fr.configuration.box = [6e-5, 6e-5, 6e-5, 0, 0, 0]
+    fr.bonds.N = 0
+    fr.bonds.types = []
+    fr.angles.N = 0
+    fr.angles.types = []
+
+    p = resolve_membrane_reservoir({"membrane_reservoir": {"enabled": True}}, R_cell=R)
+    snap, layout = build_membrane_tethers(
+        fr, p, membrane_tag_range=(n, 2 * n), cortex_tag_range=(0, n)
+    )
+    assert layout.n_tether > 0
+    # every tether is cross-layer (one cortex end, one mem_node end).
+    for i, j in layout.tether_pairs:
+        assert (i < n) != (j < n)
+
+    gb = _drag(50e-9)
+
+    def attach(sim, ig):
+        attach_membrane_tether_force(sim, p, layout, gamma_b=gb, cfl_strict=True)
+
+    sim, finite = _step(snap, dt=6.98e-7,
+                        gamma_map={"cortex_actin": gb, "mem_node": gb}, attach=attach)
+    assert finite
