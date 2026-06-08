@@ -335,3 +335,29 @@ def test_cortical_tension_honours_registry_gamma_denylist():
     # The cortex's own bonds are never excluded.
     assert not _is_adhesion_bond_type("cortex_bond")
     assert not _is_adhesion_bond_type("cortex_myosin_head_backbone")
+
+
+def test_internal_live_recipe_composes_and_builds_without_contamination():
+    """The 3 LIVE internal compartments (osmotic + MT + IF) compose in ONE cell
+    with no mutual cortical-γ contamination (the activation integration capstone)."""
+    from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+    ct = pytest.importorskip("ffn_sim.cortex.cortical_tension")
+
+    base = load_manifest("mcf7_baseline.yaml")
+    manifest, deferred = REGISTRY.compose_manifest(
+        load_recipe("internal_live"), base_manifest=base, strict=True
+    )
+    assert deferred == []
+    off = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+    on = build_baseline_cell("mcf7_baseline.yaml", manifest=manifest, seed=1)
+    sn = on.simulation.state.get_snapshot()
+    assert {"mt_bead", "mtoc", "if_bead"} <= set(sn.particles.types)
+    # osmotic updater added (+1).
+    assert len(on.simulation.operations.updaters) == len(off.simulation.operations.updaters) + 1
+    off.simulation.run(0); on.simulation.run(0)
+    go = ct.measure_cortical_tension(off.simulation, R_cell=off.p_cortex.R_cell,
+                                     p_enclosed_volume=off.p_enclosed_volume)
+    gn = ct.measure_cortical_tension(on.simulation, R_cell=on.p_cortex.R_cell,
+                                     p_enclosed_volume=on.p_enclosed_volume)
+    k = "gamma_soft_N_per_m" if "gamma_soft_N_per_m" in go else "gamma_soft"
+    assert abs(gn[k] - go[k]) <= 1e-12 * max(1.0, abs(go[k]))

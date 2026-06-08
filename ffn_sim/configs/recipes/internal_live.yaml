@@ -1,0 +1,34 @@
+# ============================================================================
+# RECIPE: internal_live  (H.7 platform — all LIVE internal compartments, 2026-06-09)
+# ============================================================================
+# The suspended/rounded MCF7 cell with EVERY compartment graduated LIVE under the
+# PI ownership grant turned ON together: dynamic osmotic regulation + the
+# microtubule aster + the intermediate-filament perinuclear cage, on the full
+# physiological baseline. The integration capstone — proves the activated
+# compartments compose in ONE real cell without mutual γ-contamination.
+#
+# Extends suspended_round. (osmotic_regulation requires enclosed_volume, which
+# suspended_round enables; MT/IF have no hard deps.)
+# ============================================================================
+
+name: internal_live
+description: Suspended MCF7 cell with all LIVE internal compartments (osmotic + microtubules + IF cage).
+scope: suspended
+extends: suspended_round
+
+observables: [cortical_tension, cell_volume, mt_persistence_length, if_cage_stiffness]
+
+enable:
+  - osmotic_regulation     # H.11 setpoint updater (0 bonds)
+  - microtubules           # H.MT centrosomal aster (n_mt<=7)
+  - intermediate_filaments # H.IF perinuclear cage (linear path)
+
+disable: []
+declare_pending: []
+
+notes: >
+  All three were graduated EXPERIMENTAL->LIVE 2026-06-09 (PI 소유권 허용) with
+  passing per-compartment activation gates. This recipe composes them: each adds
+  its own γ-denylisted load path (mt_/if_; osmotic adds 0 bonds), so the cortical
+  γ_soft is unchanged vs the bare baseline. n_mt is capped at 7 (single-hub MTOC
+  vs the nlist exclusion cap; dense aster needs a multi-bead core — PI queue).
