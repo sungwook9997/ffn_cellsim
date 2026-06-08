@@ -282,6 +282,22 @@ Gate-A 질의가 `g.vg_id = 'VG-H7-gate-a'` 정확 작성(과넓은 LIKE 제거)
 
 전체 traverse 가능: `run → gate → contract → (parameter) → source_evidence`.
 
+## 17. 그래프 위생 — 고립 노드 정리 (DONE, 2026-06-08, commit `1bf6d82`)
+
+Obsidian 그래프에서 고립(0 in + 0 out) 노드 **75개** 발견(harvest가 노드는 만들었으나
+gate/contract 관계 없는 것들이 섬으로). 3분류로 정리:
+
+- **① 과포착 노이즈:** `iter_artifacts`가 layer2 `*.checkpoint.json`(결과 아닌 중간
+  체크포인트)을 RunResult로 수집 → `NON_RESULT` 패턴 제외 + Notion 8행 archive(prune).
+- **② 충실 fallback 링크:** RUN→gate `UNIT_GATE` 맵(과학 런이 명시 gate 없을 때 유닛 대표
+  게이트; infra/perf는 `INFRA_KEYS`로 leaf 유지) + CodeMapping→contract `DIR_CONTRACT`
+  맵(bridge→U2, ecm→U1, cell/cortex→U3). harvest_reports 클로즈아웃에도 동일 fallback.
+- **③ honest leaf 유지(이으면 fabrication):** common/ 유틸 + integrator(MC 없음),
+  GPU perf/feasibility 스모크(과학 게이트 미테스트), foundation 클로즈아웃, 미인용 논문.
+
+결과: `run→gate` **21→55**, `code→contract` **19→39**, 총 edges **1110→1212**,
+고립 노드 **75→22**(잔여 22는 전부 정당한 leaf — 강제 링크 시 없는 관계 날조).
+
 ## 12. 남은 일 (차기)
 
 - ModelContract Adopts(KnowledgeClaim)/Parameters 관계 보강 (현재 Gates만 연결).
