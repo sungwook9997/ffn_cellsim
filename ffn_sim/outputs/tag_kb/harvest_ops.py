@@ -28,6 +28,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -612,6 +613,50 @@ def upsert_code(code, apply: bool):
     return n_create, n_skip
 
 
+def _drift_check() -> int:
+    """Read-only: count disk run/code artifacts not yet in the Notion graph.
+
+    Rides refresh.sh so each TAG refresh reports harvest drift without writing.
+    Always exits 0 (informational).
+    """
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    vocab = load_vocab(con)
+    runs = harvest_runs(vocab, None)
+    reports = harvest_reports(vocab, None)
+    code = harvest_code(vocab)
+    con.close()
+    run_ids = {r["run_id"] for r in runs + reports}
+    code_paths = {c["path"] for c in code}
+    try:
+        tok, API, DS, headers, query_all = _notion()
+        have_runs = set()
+        for row in query_all(DS["RunResult"], tok):
+            rid = row.get("properties", {}).get("RUN ID", {})
+            k = "".join(x["plain_text"] for x in rid.get("rich_text", [])) if rid else ""
+            if k:
+                have_runs.add(k)
+        have_paths = set()
+        for row in query_all(DS["CodeMapping"], tok):
+            p = row.get("properties", {}).get("Path", {})
+            v = "".join(x["plain_text"] for x in p.get("rich_text", [])) if p else ""
+            if v:
+                have_paths.add(v.strip())
+    except Exception as e:
+        print(f"  [ops-drift] Notion unreachable ({str(e)[:60]}); skipped")
+        return 0
+    new_runs = run_ids - have_runs
+    new_code = {p for p in code_paths
+                if not any(p == hp or p in hp for hp in have_paths)}
+    print(f"  [ops-drift] RunResult: {len(run_ids)} disk / {len(have_runs)} in graph "
+          f"-> {len(new_runs)} un-harvested")
+    print(f"  [ops-drift] CodeMapping: {len(code_paths)} modules / {len(have_paths)} "
+          f"mapped -> {len(new_code)} un-harvested")
+    if new_runs or new_code:
+        print("  [ops-drift] ⚠️ run `python harvest_ops.py --apply` to sync "
+              "(PI-gated; dry-run first without --apply).")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scope", default="", help="comma unit filter e.g. h7,layer2")
@@ -619,7 +664,13 @@ def main():
     ap.add_argument("--llm", action="store_true", help="LLM-enrich result_snapshot")
     ap.add_argument("--apply", action="store_true",
                     help="WRITE to Notion RunResult (idempotent upsert on RUN ID)")
+    ap.add_argument("--check", action="store_true",
+                    help="drift report: how many disk artifacts are NOT yet "
+                         "harvested into Notion (read-only, no writes)")
     args = ap.parse_args()
+
+    if args.check:
+        sys.exit(_drift_check())
     scope = {s.strip() for s in args.scope.split(",") if s.strip()} or None
     today = args.date or datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 

@@ -52,8 +52,15 @@ WRITE_RE = re.compile(r"\b(insert|update|delete|drop|create|alter|attach|copy|"
 # LLM backend
 # --------------------------------------------------------------------------- #
 def llm(prompt: str, system: str = "", model: str | None = None,
-        max_tokens: int = 1500) -> str:
-    """One-shot completion. anthropic SDK if key present, else `claude -p`."""
+        max_tokens: int = 1500, temperature: float = 0.0) -> str:
+    """One-shot completion. anthropic SDK if key present, else `claude -p`.
+
+    temperature defaults to 0.0: this is a factual KB QA backend, so the NL->SQL
+    `syn` step and the `gen` step must be deterministic. Non-deterministic
+    sampling (the SDK default 1.0) was the dominant source of TAG flakiness —
+    the same question produced different SQL run-to-run. (The `claude -p`
+    fallback has no temperature knob; it stays as-is.)
+    """
     key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if key:
         import anthropic
@@ -61,6 +68,7 @@ def llm(prompt: str, system: str = "", model: str | None = None,
         msg = client.messages.create(
             model=model or "claude-opus-4-8",
             max_tokens=max_tokens,
+            temperature=temperature,
             system=system or None,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -262,9 +270,23 @@ def exec_sql(sql: str):
         con.close()
 
 
-def content_search(question: str, k: int = 4):
+# BM25 relevance floor for the content layer. Measured 2026-06-08 across several
+# probes: purely RELATIONAL questions (answerable from the SQL rows alone) top out
+# at ~4.3-5.5 on paper_chunks via incidental word overlap, while genuine CONTENT
+# questions score ~6.0 (natural phrasing) up to ~10.5 (keyword-dense). A floor of
+# 6.0 drops the incidental-overlap noise the `gen` step otherwise had to explain
+# away (e.g. unrelated RHOA/Arslan excerpts surfacing on a "which runs link to
+# Gate-A" query) while keeping real content hits. Absolute BM25 is query-length
+# dependent, so this is a pragmatic separator, not a hard guarantee.
+BM25_FLOOR = 6.0
+
+
+def content_search(question: str, k: int = 4, floor: float = BM25_FLOOR):
     """BM25 over paper_chunks (the PDF content layer) — the TAG semantic step.
-    Returns [] if the content layer hasn't been ingested yet."""
+
+    Only excerpts scoring >= `floor` are returned, so relational queries (whose
+    top BM25 hits are incidental-overlap noise) get NO excerpts instead of
+    polluting the answer. Returns [] if the content layer isn't ingested."""
     con = duckdb.connect(str(DB_PATH), read_only=True)
     try:
         have = con.execute("SELECT count(*) FROM information_schema.tables "
@@ -274,8 +296,8 @@ def content_search(question: str, k: int = 4):
         return con.execute(
             "SELECT citation_key, page, substr(text,1,400) AS snippet, "
             "fts_main_paper_chunks.match_bm25(chunk_id, ?) AS score "
-            "FROM paper_chunks WHERE score IS NOT NULL "
-            "ORDER BY score DESC LIMIT ?", [question, k]).fetchall()
+            "FROM paper_chunks WHERE score IS NOT NULL AND score >= ? "
+            "ORDER BY score DESC LIMIT ?", [question, floor, k]).fetchall()
     except Exception:
         return []
     finally:
@@ -343,12 +365,16 @@ def main():
     if args.sql_only:
         return
 
-    try:
-        cols, rows = exec_sql(sql)
-    except Exception as e:                                   # one self-repair pass
-        print(f"\033[33m── exec error, repairing ──\033[0m\n{e}\n")
-        sql = syn(con, args.question, args.model, error=str(e), prev=sql)
-        print(f"\033[36m── syn (repaired) ──\033[0m\n{sql}\n")
+    cols = rows = None
+    for attempt in range(2):                                 # up to 2 self-repairs
+        try:
+            cols, rows = exec_sql(sql)
+            break
+        except Exception as e:
+            print(f"\033[33m── exec error, repairing ({attempt + 1}/2) ──\033[0m\n{e}\n")
+            sql = syn(con, args.question, args.model, error=str(e), prev=sql)
+            print(f"\033[36m── syn (repaired) ──\033[0m\n{sql}\n")
+    if rows is None:                                         # final attempt, let it raise
         cols, rows = exec_sql(sql)
 
     print(f"\033[36m── exec ({len(rows)} rows) ──\033[0m\n{rows_to_text(cols, rows, cap=20)}\n")

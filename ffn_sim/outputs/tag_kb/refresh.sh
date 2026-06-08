@@ -28,5 +28,9 @@ echo "[sanity] citation integrity (non-destructive; full re-verify = verify_sour
 python verify_sources.py --check
 
 echo
+echo "[sanity] ops-linkage drift (disk runs/modules not yet in the graph)"
+python harvest_ops.py --check
+
+echo
 echo "TAG backend ready. Ask a question:"
 echo "  python tag_query.py \"Which Parameters feed a failing ValidationGate?\""
