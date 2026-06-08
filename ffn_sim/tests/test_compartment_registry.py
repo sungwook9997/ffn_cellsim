@@ -99,13 +99,13 @@ def test_live_contaminating_compartments_are_actually_denylisted():
     """LIVE/CORE compartments that contaminate gamma must already be excluded by
     the cortical-tension estimator's denylist (no silent contamination today)."""
     ct = pytest.importorskip("ffn_sim.cortex.cortical_tension")
-    deny_exact = set(ct.ADHESION_BOND_TYPES)
-    deny_prefix = tuple(ct.ADHESION_BOND_TYPE_PREFIXES)
 
     def covered(bt: str) -> bool:
-        return bt in deny_exact or any(
-            bt == p or bt.startswith(p) or p.startswith(bt) for p in deny_prefix
-        )
+        # Use the estimator's ACTUAL non-cortical filter — now registry-driven
+        # (ADHESION_BOND_TYPES + ADHESION_BOND_TYPE_PREFIXES +
+        # NONCORTICAL_COMPARTMENT_PREFIXES), so a LIVE compartment's declared
+        # prefix (e.g. 'mt_') is honored without a hardcoded estimator edit.
+        return ct._is_adhesion_bond_type(bt) or ct._is_adhesion_bond_type(bt + "x")
 
     for spec in REGISTRY.all():
         if not spec.gamma_contaminating:
@@ -252,9 +252,11 @@ def test_forcing_experimental_into_enable_raises():
 
 def test_forcing_experimental_non_strict_defers():
     base = load_manifest("mcf7_baseline.yaml")
-    recipe = {"name": "bad", "enable": list(load_recipe("suspended_round")["enable"]) + ["microtubules"]}
+    # intermediate_filaments is still EXPERIMENTAL (microtubules graduated LIVE
+    # 2026-06-09, so it is no longer deferred — it is togglable).
+    recipe = {"name": "bad", "enable": list(load_recipe("suspended_round")["enable"]) + ["intermediate_filaments"]}
     manifest, deferred = REGISTRY.compose_manifest(recipe, base_manifest=base, strict=False)
-    assert "microtubules" in deferred
+    assert "intermediate_filaments" in deferred
 
 
 def test_dropping_baseline_compartment_raises():

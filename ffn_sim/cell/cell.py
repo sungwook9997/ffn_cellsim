@@ -159,6 +159,10 @@ from ffn_sim.cortex.myosin import (
     make_cortex_myosin_updater,
     register_cortex_myosin_bond_params,
 )
+from ffn_sim.cell.microtubules import (  # H.MT (additive, default-off): aster
+    ResolvedMicrotubules,
+    extend_snapshot_with_microtubules,
+)
 from ffn_sim.cell.lamellipodium import (
     ResolvedH5,
     WaveMembranePin,
@@ -715,6 +719,7 @@ def build_cortex_full_simulation(
     constrained: bool = False,
     constrained_dt: float | None = None,
     p_erm: "ResolvedERM | None" = None,
+    p_microtubules: "ResolvedMicrotubules | None" = None,  # H.MT aster (default-off)
     reconcile_dt: bool = False,
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
@@ -1089,6 +1094,16 @@ def build_cortex_full_simulation(
             snap, p_nucleus, centroid=nuc_centroid, gamma_nuc=gamma_nuc,
         )
 
+    # H.MT microtubule aster (additive, default-off). Appends mtoc + mt_bead
+    # particles, mt_backbone bonds, mt_bending angles. MUST run BEFORE
+    # create_state_from_snapshot (new particle/bond/angle types). When
+    # p_microtubules is None this is a no-op and the build is bit-identical.
+    enable_microtubules = (
+        p_microtubules is not None and getattr(p_microtubules, "enabled", False)
+    )
+    if enable_microtubules:
+        snap = extend_snapshot_with_microtubules(snap, p_microtubules)
+
     # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p_cortex.seed
@@ -1159,6 +1174,14 @@ def build_cortex_full_simulation(
         ):
             bond.params[name] = dict(k=clutch_k, r0=float(r0))
 
+    # H.MT mt_backbone on the SHARED bond force (HOOMD demands params for every
+    # bond type present; mirrors the lamel/FA registration above). Registered
+    # only when the aster is in the snapshot.
+    if enable_microtubules:
+        bond.params[p_microtubules.backbone_bond_type] = dict(
+            k=p_microtubules.k_backbone, r0=p_microtubules.l0,
+        )
+
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
     # FAITHFUL path: Arp2/3 dendritic 70° branch angle, emitted as the
@@ -1173,6 +1196,11 @@ def build_cortex_full_simulation(
     if enable_lamel:
         angle.params["lamel_branch_angle"] = dict(
             k=p_lamellipodium.angle_branch_k, t0=p_lamellipodium.angle_branch_t0,
+        )
+    # H.MT mt_bending on the SHARED angle force (stiff flexural rigidity term).
+    if enable_microtubules and int(p_microtubules.n_bending_angles) > 0:
+        angle.params[p_microtubules.bending_angle_type] = dict(
+            k=p_microtubules.k_angle, t0=p_microtubules.angle_t0,
         )
 
     # Exclude bonded pairs (and angle-1-3 neighbors) from LJ.  Necessary
@@ -1288,6 +1316,30 @@ def build_cortex_full_simulation(
             _enable_pair("nucleus_bead", FA_TYPE_INTEGRIN, repulsive=False)
             _enable_pair("nucleus_bead", FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
 
+    if enable_microtubules:
+        # H.MT: the aster is INTERNAL (held by its stiff mt_backbone/mt_bending),
+        # not a steric body — ALL mt_bead/mtoc pairs are r_cut=0 (mirrors the
+        # nucleus convention). Every present type-pair MUST still be registered:
+        # md.pair.LJ demands params for EVERY type pair in the state.
+        _mt_types = ["mt_bead", "mtoc"]
+        for i, a in enumerate(_mt_types):
+            for b in _mt_types[i:]:
+                _enable_pair(a, b, repulsive=False)
+            _enable_pair(a, "actin_cortex", repulsive=False)
+            if enable_xl:
+                _enable_pair(a, "xlink_head", repulsive=False)
+            if enable_myo:
+                _enable_pair(a, "cortex_myosin_backbone", repulsive=False)
+                _enable_pair(a, "cortex_myosin_head", repulsive=False)
+            if enable_lamel:
+                _enable_pair(a, "actin_lamel", repulsive=False)
+                _enable_pair(a, "wave_particle", repulsive=False)
+            if enable_fa:
+                _enable_pair(a, FA_TYPE_INTEGRIN, repulsive=False)
+                _enable_pair(a, FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
+            if enable_nucleus:
+                _enable_pair(a, "nucleus_bead", repulsive=False)
+
     lj.mode = "shift"
 
     dt_used = constrained_dt if (constrained and constrained_dt) else p_cortex.dt_cfl
@@ -1328,6 +1380,19 @@ def build_cortex_full_simulation(
                 "global CFL bound %.4e s; unchanged.\n%s",
                 dt_used, cfl_result.dt_min, cfl_result.format_breakdown(),
             )
+
+    # H.MT CFL gate: the aster's mt_backbone (or mt_bending) sets a binding
+    # relaxation time; the integrator dt must respect it. (We register MT on the
+    # shared bond/angle forces, so the attach-helper's own CFL gate is bypassed —
+    # enforce it here.) At cytoplasm drag + production l0 the stretch CFL is
+    # benign (~us); a violation means too-fine l0 / water drag — surface to PI.
+    if enable_microtubules and dt_used > p_microtubules.dt_cfl:
+        raise RuntimeError(
+            f"microtubules CFL violated: integrator dt = {dt_used:.3e} s > MT "
+            f"binding dt_cfl = {p_microtubules.dt_cfl:.3e} s. Use a coarser "
+            f"beads_per_mt (larger l0), pass reconcile_dt=True, or have PI ratify "
+            f"the inextensible-segment constraint route (microtubules.PI_DECISIONS)."
+        )
 
     ig = md.Integrator(dt=dt_used)
     ig.forces.append(bond)
@@ -1494,6 +1559,13 @@ def build_cortex_full_simulation(
             # particle type has a gamma_map entry (γ > 0 finite) or HALTS,
             # and the appended nucleus_bead cloud is now a present type.
             gamma_map["nucleus_bead"] = nucleus_integration.gamma_nuc
+        if enable_microtubules:
+            # H.MT mt_bead/mtoc Stokes drag at CYTOPLASM viscosity (the gamma_b
+            # passed to resolve_microtubules; NOT water — physiological-baseline
+            # rule). Set DIRECTLY (mt types are not in the cytoplasm immersed-type
+            # set, so apply_cytoplasm_drag leaves them untouched — already cytoplasm).
+            gamma_map[p_microtubules.bead_type] = p_microtubules.gamma_b
+            gamma_map[p_microtubules.mtoc_type] = p_microtubules.gamma_b
         # H.10 cytoplasm Tier-1 (per-type effective-viscosity drag): scale the
         # immersed types' Stokes drag by eta_eff/eta_water once gamma_map is fully
         # assembled. p_cytoplasm is None => bit-for-bit identical (water). FDT-safe:
@@ -1867,6 +1939,7 @@ class CellBuildOptions:
     with_myosin: bool = False
     with_lamellipodium: bool = False
     with_fa: bool = False
+    with_microtubules: bool = False   # H.MT aster (default-off)
 
 
 @dataclass(slots=True)
@@ -1933,6 +2006,7 @@ class Cell:
     p_substrate: Any | None = None
     p_turnover: Any | None = None
     p_membrane: Any | None = None
+    p_microtubules: Any | None = None   # H.MT aster (default-off)
 
     extras: dict[str, Any] = field(default_factory=dict)
 
@@ -1969,6 +2043,7 @@ class Cell:
         p_turnover: "ResolvedTurnover | None" = None,
         p_membrane: "ResolvedMembrane | None" = None,
         membrane_with_reaction_force: bool = False,
+        p_microtubules: "ResolvedMicrotubules | None" = None,  # H.MT aster (default-off)
         constrained: bool = False,
         constrained_dt: float | None = None,
         reconcile_dt: bool = False,
@@ -2081,6 +2156,7 @@ class Cell:
             or any(p is not None for p in (
                 p_enclosed_volume, p_membrane_surface, p_nucleus,
                 p_cytoplasm, p_substrate, p_turnover, p_membrane,
+                p_microtubules,
             ))
             or constrained or reconcile_dt or equilibrate or connected_mesh
         )
@@ -2106,6 +2182,7 @@ class Cell:
                 p_membrane=p_membrane,
                 membrane_with_reaction_force=membrane_with_reaction_force,
                 p_erm=p_erm,
+                p_microtubules=p_microtubules,
                 device=device, with_baoab=opts.with_baoab,
                 constrained=constrained, constrained_dt=constrained_dt,
                 reconcile_dt=reconcile_dt,
@@ -2192,6 +2269,7 @@ class Cell:
             p_cortex=p_cortex,
             p_xlinks=p_xlinks,
             p_erm=p_erm,
+            p_microtubules=p_microtubules,
             p_myosin=p_myosin,
             p_lamellipodium=p_lamellipodium,
             options=opts,

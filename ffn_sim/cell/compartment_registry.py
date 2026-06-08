@@ -813,10 +813,10 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="microtubules",
         category="internal",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); aster on shared forces, mt_ γ-denylisted
         enabled_default=False,
         summary="Stiff MTs radiating from the MTOC (Lp~5 mm), dynamic instability + compressive load-bearing.",
-        manifest_path=None,
+        manifest_path=("optional_subsystems", "microtubules"),
         resolve_ref="ffn_sim.cell.microtubules.resolve_microtubules",
         performance_contract=_live(
             particle_types_added=("mt_bead", "mtoc"),

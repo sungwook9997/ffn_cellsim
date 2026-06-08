@@ -1,5 +1,27 @@
 # Platform PI Queue — 2026-06-09
 
+## ✅ ACTIVATED under the PI ownership grant (2026-06-09 "소유권 허용 / 모든 것 달려")
+- **osmotic_regulation → LIVE** (gate PASS: τ_RVD=3.2s in band, RVD sign, no-contamination,
+  off-identity). Post-build attach in manifest.py (no cell.py surgery).
+- **microtubules → LIVE** (gate PASS: aster assembled, CFL passed at cytoplasm drag,
+  γ_soft IDENTICAL OFF/ON = no contamination, L_p in band). Full snapshot-extension
+  wiring in cell.py + manifest.py. **n_mt CAPPED at 7** (see new blocker below).
+- **cortical_tension γ-denylist → registry-driven** (`NONCORTICAL_COMPARTMENT_PREFIXES`
+  = `REGISTRY.gamma_denylist()` minus `cortex_*`). Unblocks the no-contamination control
+  for every γ-contaminating compartment. ⚠️ sibling Gate-B owns this file → merge-coordinate.
+
+## ⚠️ NEW BLOCKER found during activation
+- **MTOC single-hub degree vs HOOMD nlist exclusion cap (7).** The aster's single MTOC
+  carries n_mt backbone bonds; with the full-cell LJ nlist on (`exclusions=("bond","1-3")`),
+  n_mt>7 overflows the compile-time per-particle exclusion cap → `Too many bonds to process
+  exclusions`. So a single-hub MTOC supports only n_mt≤7 (a sparse aster, now LIVE). A DENSER
+  interphase aster (PI candidate 20, up to ~250) needs a **multi-bead MTOC core** in
+  `cell/microtubules.py build_mt_topology` (distribute arms across ceil(n_mt/5) core beads) —
+  a topology change that churns the 35 MT tests + 3 smokes. Filed for a focused follow-up.
+
+---
+# Original queue — 2026-06-09
+
 Items the autonomous compartment-platform session (branch `h7/compartment-platform`)
 could NOT do because they require **PI parameter ratification**, **shared-file edits**
 (`cell/cell.py`, `cell/manifest.py`, `cortex/cortical_tension.py`, existing `cortex/*`

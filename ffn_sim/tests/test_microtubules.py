@@ -538,3 +538,54 @@ class TestModuleHygiene:
         assert isinstance(PI_DECISIONS, list)
         assert len(PI_DECISIONS) >= 1
         assert any("Y_stretch" in s for s in PI_DECISIONS)
+
+
+# ---------------------------------------------------------------------------
+# LIVE activation wiring (2026-06-09; PI 소유권 허용): manifest + Cell.build
+# snapshot-extension + shared bond/angle + gamma_map + CFL gate + registry LIVE.
+# Full-build tests (~0.5 s each). n_mt capped at 7 by the nlist exclusion limit
+# for the single-hub MTOC (denser asters need a multi-bead core — PI queue).
+# ---------------------------------------------------------------------------
+class TestMicrotubulesActivationWiring:
+    def test_off_build_is_bit_identity(self):
+        from ffn_sim.cell.manifest import (
+            build_baseline_cell, load_manifest, resolve_baseline,
+        )
+        rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
+        assert rb.p_microtubules is None
+        cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        assert cell.p_microtubules is None
+        assert cell.simulation.state.N_particles > 0
+
+    def test_on_aster_assembles_without_contamination(self):
+        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.cortex.cortical_tension import (
+            _is_adhesion_bond_type, measure_cortical_tension,
+        )
+
+        base = load_manifest("mcf7_baseline.yaml")
+        manifest, deferred = REGISTRY.compose_manifest(
+            load_recipe("aster_microtubules"), base_manifest=base, strict=True
+        )
+        assert deferred == []
+        off = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        on = build_baseline_cell("mcf7_baseline.yaml", manifest=manifest, seed=1)
+        p = on.p_microtubules
+        assert p is not None and p.enabled and p.n_mt <= 7   # nlist-cap aster
+
+        so, sn = off.simulation.state.get_snapshot(), on.simulation.state.get_snapshot()
+        # aster assembled: +1 MTOC + n_mt*beads particles, +n_mt*beads bonds.
+        assert sn.particles.N - so.particles.N == 1 + p.n_mt * p.beads_per_mt
+        assert sn.bonds.N - so.bonds.N == p.n_mt * p.beads_per_mt
+        assert "mt_backbone" in sn.bonds.types and "mt_bending" in sn.angles.types
+        # every mt_ bond type is excluded from cortical γ (registry denylist).
+        assert all(_is_adhesion_bond_type(t) for t in sn.bonds.types if t.startswith("mt_"))
+        # NO contamination: cortical γ_soft identical OFF vs ON.
+        off.simulation.run(0); on.simulation.run(0)
+        g_off = measure_cortical_tension(off.simulation, R_cell=off.p_cortex.R_cell,
+                                         p_enclosed_volume=off.p_enclosed_volume)
+        g_on = measure_cortical_tension(on.simulation, R_cell=on.p_cortex.R_cell,
+                                        p_enclosed_volume=on.p_enclosed_volume)
+        k = "gamma_soft_N_per_m" if "gamma_soft_N_per_m" in g_off else "gamma_soft"
+        assert abs(g_on[k] - g_off[k]) <= 1e-12 * max(1.0, abs(g_off[k]))

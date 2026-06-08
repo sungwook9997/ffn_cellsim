@@ -1,0 +1,32 @@
+# ============================================================================
+# RECIPE: aster_microtubules  (H.7 platform — H.MT microtubules LIVE, 2026-06-09)
+# ============================================================================
+# The suspended/rounded MCF7 cell with a centrosomal MICROTUBULE ASTER turned ON:
+# stiff mt_backbone chains radiating from a single MTOC, with the mt_bending
+# flexural-rigidity term (Gittes 1993 EI). Internal compression-load-bearing
+# radial array; mt_ bonds are γ-denylisted (registry-driven) so the aster does
+# NOT contaminate the cortical-tension estimator.
+#
+# Extends suspended_round (the resting baseline) and adds microtubules.
+# ============================================================================
+
+name: aster_microtubules
+description: Suspended MCF7 cell with a centrosomal microtubule aster (stiff radial array).
+scope: suspended
+extends: suspended_round
+
+observables: [cortical_tension, mt_persistence_length]
+
+enable:
+  - microtubules        # H.MT centrosomal aster on the shared cell forces
+
+disable: []
+declare_pending: []
+
+notes: >
+  EI=2.2e-23 N·m² / L_p=5.2 mm (Gittes 1993, SOLID); Y_stretch=2.3e-7 N and
+  L_mt=5 µm, n_mt=20 are PI-ratified ORDER candidates (2026-06-09). γ_b is the
+  CYTOPLASM drag (6π·65.9·12.5 nm = 1.55e-5 N·s/m, NOT water) so the stretch CFL
+  is benign (~µs >> production dt). mt_ bonds are γ-denylisted (registry-driven),
+  so the aster does not move cortical γ. dt is CFL-gated against the MT stretch
+  time in Cell.build.

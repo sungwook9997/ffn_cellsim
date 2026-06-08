@@ -28,6 +28,7 @@ from ffn_sim.cell.cytoplasm import resolve_cytoplasm
 from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
 from ffn_sim.cell.membrane import resolve_membrane
 from ffn_sim.cell.membrane_surface import resolve_membrane_surface
+from ffn_sim.cell.microtubules import resolve_microtubules
 from ffn_sim.cell.nucleus import resolve_nucleus
 from ffn_sim.common.production_policy import (
     require_full_cell_physiological_baseline,
@@ -84,6 +85,7 @@ class ResolvedBaseline:
     p_erm: Any | None = None
     p_membrane: Any | None = None
     p_osmotic_regulation: Any | None = None   # H.11 dynamic volume regulation (LIVE)
+    p_microtubules: Any | None = None         # H.MT centrosomal aster (LIVE)
     manifest: dict = field(default_factory=dict)
 
     def compartments(self) -> dict[str, Any]:
@@ -203,6 +205,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
 
     p_fa = p_substrate = p_lamellipodium = p_turnover = p_erm = p_membrane = None
     p_osmotic_regulation = None
+    p_microtubules = None
     lam_cfg: dict = {}
 
     fa_b = opt.get("fa")
@@ -287,6 +290,29 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
             p_enclosed_volume=p_enclosed_volume,
         )
 
+    # H.MT centrosomal microtubule aster (LIVE, default-OFF). Stiff mt_backbone +
+    # mt_bending on the shared cell forces; γ_b at the CYTOPLASM viscosity (NOT
+    # water — physiological-baseline rule) = 6π·η_eff·R_mtbead (R_mtbead=12.5 nm,
+    # Gittes/Howard MT tube radius). mtoc at the cell centroid (origin).
+    mt_b = opt.get("microtubules")
+    if _enabled(mt_b):
+        mt_cfg = _opt_cfg(mt_b)
+        _m = mt_cfg
+        if isinstance(_m.get("cell"), dict):
+            _m = _m["cell"]
+        if isinstance(_m.get("microtubules"), dict):
+            _m = _m["microtubules"]
+        _m["enabled"] = True
+        _eta = (
+            float(getattr(p_cytoplasm, "eta_eff", 1.0e-3))
+            if p_cytoplasm is not None else 1.0e-3
+        )
+        _R_mtbead = 12.5e-9
+        _gamma_b_mt = 6.0 * np.pi * _eta * _R_mtbead
+        p_microtubules = resolve_microtubules(
+            mt_cfg, gamma_b=_gamma_b_mt, mtoc_center=(0.0, 0.0, 0.0),
+        )
+
     return ResolvedBaseline(
         cell_type=cell_type,
         R_cell=R_cell,
@@ -305,6 +331,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         p_erm=p_erm,
         p_membrane=p_membrane,
         p_osmotic_regulation=p_osmotic_regulation,
+        p_microtubules=p_microtubules,
         manifest=manifest,
     )
 
@@ -391,6 +418,7 @@ def build_baseline_cell(
         with_lamellipodium=rb.p_lamellipodium is not None,
         with_fa=rb.p_fa is not None,
         with_erm=rb.p_erm is not None,
+        with_microtubules=rb.p_microtubules is not None,
     )
     cell = Cell.build(
         rb.p_cortex,
@@ -407,6 +435,7 @@ def build_baseline_cell(
         lamellipodium_polarization=lam_polarization,
         p_turnover=rb.p_turnover,
         p_erm=rb.p_erm,
+        p_microtubules=rb.p_microtubules,
         p_membrane=rb.p_membrane,
         constrained=constrained,
         # constrained_dt_safety < 1 shrinks the constrained step: the rigid

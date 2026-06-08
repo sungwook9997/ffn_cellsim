@@ -154,3 +154,16 @@ optional_subsystems:
     batch_steps: 1000    # setpoint-update stride (slow-mode CFL-gated vs tau_Kvol).
                          # delta_c (osmolar shock, mol/m3) is a per-RUN knob set in the
                          # osmotic_rvd recipe / driver, NOT a baseline setpoint.
+  microtubules:          # H.MT centrosomal aster (stiff radial array) — LIVE 2026-06-09
+    enabled: false       # default-OFF: NOT part of the resting cortical-γ baseline
+                         # (MTs are internal compression-bearing, γ-denylisted via mt_).
+    n_mt: 7              # aster arms. CAPPED at 7 by the HOOMD nlist per-particle
+                         # exclusion limit: the single-hub MTOC carries n_mt backbone
+                         # bonds, and n_mt>7 overflows the compile-time exclusion cap
+                         # once the full-cell LJ nlist is on. A DENSER interphase aster
+                         # (PI candidate 20, up to ~250) needs a multi-bead MTOC core —
+                         # microtubules.py topology change, see PLATFORM_PI_QUEUE.
+    beads_per_mt: 25     # ℓ0≈L_mt/24 (Dmitrieff 2017 125 nm Cytosim segmentation)
+    L_mt: 5.0e-6         # m contour length ~R_cell-R_nuc (PI-ratified; ORDER)
+    Y_stretch: 2.3e-7    # N axial E·A (Kis 2002 / Pampaloni 2006; PI-ratified; ORDER)
+                         # EI/L_p use the module Gittes-1993 defaults (SOLID, not pending).
