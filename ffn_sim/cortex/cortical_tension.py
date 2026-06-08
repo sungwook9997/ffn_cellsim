@@ -126,25 +126,47 @@ ADHESION_BOND_TYPES: frozenset[str] = frozenset(
 # one of these prefixes is part of the adhesion load path and is excluded too.
 ADHESION_BOND_TYPE_PREFIXES: tuple[str, ...] = ("fa_actin_clutch",)
 
+# Non-cortical COMPARTMENT bond prefixes (mt_, if_, linc_, mem_, cadherin_,
+# junc_actin, sf_, …) sourced from the compartment registry's γ-denylist so that
+# activating a new γ-contaminating compartment automatically excludes its load
+# path from the cortical method-of-planes — no per-compartment edit here.
+# CRITICAL: any ``cortex_`` prefix is EXCLUDED from the union — ``cortex_myosin_*``
+# IS the active-γ signal and must NEVER be denylisted (the SF-motor reuse is
+# handled by the distinct ``sf_myosin_*`` prefix, registry BLOCKER #2). This makes
+# the denylist registry-driven (the documented design); PI 소유권 허용 2026-06-09.
+try:  # registry imports only stdlib+yaml → no HOOMD, no circular import
+    from ffn_sim.cell.compartment_registry import REGISTRY as _REGISTRY
+
+    NONCORTICAL_COMPARTMENT_PREFIXES: tuple[str, ...] = tuple(
+        sorted(p for p in _REGISTRY.gamma_denylist() if not p.startswith("cortex_"))
+    )
+except Exception:  # pragma: no cover - registry optional at import time
+    NONCORTICAL_COMPARTMENT_PREFIXES = ()
+
 
 def _is_adhesion_bond_type(name: str) -> bool:
-    """Return ``True`` if ``name`` is an adhesion/substrate (non-cortical) bond.
+    """Return ``True`` if ``name`` is a NON-CORTICAL bond (excluded from γ).
 
-    A bond type is on the adhesion load path (and therefore excluded from the
-    cortical soft method-of-planes) if it is in :data:`ADHESION_BOND_TYPES` or
-    starts with one of :data:`ADHESION_BOND_TYPE_PREFIXES` (the per-r₀ clutch
-    bins ``fa_actin_clutch_b{i}``).
+    A bond type is off the cortical hoop-tension load path (and therefore excluded
+    from the cortical soft method-of-planes) if it is in :data:`ADHESION_BOND_TYPES`,
+    starts with an FA clutch prefix (:data:`ADHESION_BOND_TYPE_PREFIXES`), OR starts
+    with a registry-declared non-cortical compartment prefix
+    (:data:`NONCORTICAL_COMPARTMENT_PREFIXES`: mt_/if_/linc_/mem_/cadherin_/
+    junc_actin/sf_). ``cortex_*`` bonds (incl. the active-γ ``cortex_myosin_*``
+    signal) are NEVER excluded.
 
     Args:
         name: A HOOMD bond-type name string.
 
     Returns:
-        ``True`` for an adhesion/substrate bond type, ``False`` for a cortical
-        / actomyosin (or any other non-adhesion) bond type.
+        ``True`` for an adhesion / non-cortical-compartment bond type, ``False``
+        for a cortical / actomyosin bond type.
     """
     if name in ADHESION_BOND_TYPES:
         return True
-    return any(name.startswith(pfx) for pfx in ADHESION_BOND_TYPE_PREFIXES)
+    if any(name.startswith(pfx) for pfx in ADHESION_BOND_TYPE_PREFIXES):
+        return True
+    return any(name.startswith(pfx) for pfx in NONCORTICAL_COMPARTMENT_PREFIXES)
 
 
 def cortical_bond_typeid_mask(

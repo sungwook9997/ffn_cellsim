@@ -306,3 +306,29 @@ def test_composed_adherent_manifest_resolves_with_fa():
     rb = resolve_baseline(manifest)
     assert rb.p_fa is not None          # FA resolved
     assert rb.p_substrate is None       # compliant substrate OFF (rigid pin default)
+
+
+# ---------------------------------------------------------------------------
+# Registry <-> cortical_tension γ-denylist cross-check (registry-driven, 2026-06-09)
+# ---------------------------------------------------------------------------
+def test_cortical_tension_honours_registry_gamma_denylist():
+    """cortical_tension excludes every registry γ-denylist prefix EXCEPT cortex_*.
+
+    The estimator is now registry-driven: activating a new γ-contaminating
+    compartment auto-excludes its load path. The single exception is any
+    ``cortex_`` prefix — ``cortex_myosin_*`` IS the active-γ signal and must stay
+    COUNTED (the SF-motor reuse is handled by the distinct ``sf_myosin_*`` prefix).
+    """
+    from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
+
+    deny = REGISTRY.gamma_denylist()
+    assert deny  # non-empty
+    for pfx in deny:
+        if pfx.startswith("cortex_"):
+            # cortex_myosin_ MUST remain counted (the active-γ signal).
+            assert not _is_adhesion_bond_type(pfx + "backbone"), pfx
+        else:
+            assert _is_adhesion_bond_type(pfx + "x"), pfx
+    # The cortex's own bonds are never excluded.
+    assert not _is_adhesion_bond_type("cortex_bond")
+    assert not _is_adhesion_bond_type("cortex_myosin_head_backbone")
