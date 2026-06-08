@@ -34,4 +34,43 @@ candidate values, labelled SMOKE-ONLY. Shared/PI-gated work → PLATFORM_PI_QUEU
 | 05:35 | deeper hardening: tests/test_surface_manifold_grid_invariance.py — CI guard for the registry's named master gate (area→4πR², k-ring reach-coverage=1.0 per resolution, frame convergence, geometry-only). 6 passed 0.46s | 414c8a1 | PASS |
 | 05:45 | full verification: all compartment suites + 3 new test files (canary 6 + safety 8 + manifold-grid 6) = 286 passed, 1 skipped (1.55s) | — | PASS |
 | 06:00 | backlog#6 lit: COMPARTMENT_SMOKE_CONSTANTS_PROVENANCE_2026-06-09.md — per-constant provenance/confidence/PI-pending checklist (SOLID/DERIVED/ORDER/LAYOUT/NONE) for every SMOKE-ONLY value used. PI ratification checklist | 03634da | DONE |
-| 06:20 | capstone: stack_confined_migration.py — the confined_migration recipe internal stack (nucleus envelope + MT aster + IF cage + 30 LINC bridges) on ONE shared md.bond.Harmonic (4 bond families / 19 types) + ONE angle + ONE gamma_map, stepped together. Validates recipe-declared internal-compartment integration. run_all 11/11 | (this commit) | STACK_OK |
+| 06:20 | capstone: stack_confined_migration.py — the confined_migration recipe internal stack (nucleus envelope + MT aster + IF cage + 30 LINC bridges) on ONE shared md.bond.Harmonic (4 bond families / 19 types) + ONE angle + ONE gamma_map, stepped together. Validates recipe-declared internal-compartment integration. run_all 11/11 | 88c0820 | STACK_OK |
+
+---
+
+## Session summary (backlog + deeper hardening EXHAUSTED)
+
+**Delivered (all on `h7/compartment-platform`, ~19 commits, sibling branch untouched):**
+
+1. **8 compartment ENABLED-PATH smoke harnesses** — the first actual executions of
+   every default-OFF compartment's enabled build/attach/step path. 6 full HOOMD
+   BAOAB-stepped (microtubules, intermediate_filaments, linc, osmotic_regulation,
+   cadherin_junction, ventral_stress_fibers), 1 static-mesh (membrane_reservoir,
+   rupture updater PI-blocked), 1 scalar (junctional_actin STUB, HOOMD build blocked).
+2. **surface_manifold GEOMETRY-only grid-invariance harness** — area→4πR², broad-phase
+   frame convergence, and the k-ring reach-coverage **master gate** (coverage=1.0 at
+   every resolution). No force added.
+3. **2 multi-compartment coexistence harnesses** — MT+IF (18 bond types, 1 shared
+   Harmonic) and the confined_migration internal stack (nucleus+MT+IF+LINC, 4 bond
+   families / 19 types, 1 shared Harmonic). Validates the real integration pattern.
+4. **1 crash-on-enable bug found + fixed** — `cadherin.extend_snapshot_with_cadherins`
+   dropped the per-particle `image` array → state-creation crash; fixed + regression test.
+5. **20 new CI tests** — 6 enabled-path canaries, 8 safety-contract (un-ratified paths
+   MUST raise), 6 surface-manifold grid-invariance. Full compartment suite: **286 passed,
+   1 skipped**.
+6. **run_all aggregator (11/11 green) + README + 11 SMOKE-watermarked figures.**
+7. **4 docs:** PLATFORM_PI_QUEUE (activation blockers), COMPARTMENT_SMOKE_REPORT
+   (closeout), COMPARTMENT_SMOKE_CONSTANTS_PROVENANCE (PI ratification checklist), this log.
+
+**Found-out / confirmed:** every enabled path assembles + steps (or is honestly
+blocked); the cadherin image bug was the only crash; the manifold master gate holds;
+multi-compartment shared-force integration works.
+
+**Everything beyond this is PI-gated** (see PLATFORM_PI_QUEUE.md): γ-denylist extension
+in `cortex/cortical_tension.py`, the SF `sf_myosin_*` prefix split in `cortex/myosin.py`,
+the 5-point loader wiring (`cell.py`/`manifest.py`), None-gated parameter ratifications,
+the junctional_actin build path, and the two-cell doublet builder — all require shared-file
+or gate-contract changes outside this session's ownership, so all were SKIPPED and recorded.
+
+**STATE: in-scope backlog + deeper hardening exhausted; awaiting PI direction or a
+shared-file/parameter authorization.**
