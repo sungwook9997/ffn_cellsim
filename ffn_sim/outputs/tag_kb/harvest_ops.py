@@ -570,47 +570,75 @@ def upsert_runs(runs, reports, apply: bool, use_llm: bool):
 
 
 def upsert_code(code, apply: bool):
-    """CREATE CodeMapping rows for modules not yet mapped (keyed on Path).
+    """Upsert CodeMapping rows keyed on Path.
 
-    Non-destructive: existing rows (matched by Path) are SKIPPED so manually
-    curated CodeMapping entries are never clobbered.
+    Non-destructive on CURATED rows: an existing row whose Notes do NOT carry the
+    'machine-harvested ... harvest_ops.py' marker is left untouched (so manually
+    curated entries are never clobbered). Machine-harvested rows are PATCHed so
+    newly-resolved Implements-Contract links (e.g. after new ModelContracts land)
+    propagate. Genuinely new paths are created.
     """
     import requests
+    marker = "harvest_ops.py"
     tok, API, DS, headers, query_all = _notion()
     db_id = DS["CodeMapping"]
 
-    existing_paths = set()
+    # path -> (page_id, is_machine) for exact rows; curated_substr = combo paths
+    existing = {}
+    curated_substr = []
     for row in query_all(db_id, tok):
-        p = row.get("properties", {}).get("Path", {})
+        props = row.get("properties", {})
+        p = props.get("Path", {})
         val = "".join(x["plain_text"] for x in p.get("rich_text", [])) if p else ""
-        if val:
-            existing_paths.add(val.strip())
+        nt = props.get("Notes", {})
+        notes = "".join(x["plain_text"] for x in nt.get("rich_text", [])) if nt else ""
+        if not val:
+            continue
+        val = val.strip()
+        is_machine = marker in notes
+        existing[val] = (row["id"], is_machine)
+        if not is_machine:
+            curated_substr.append(val)  # curated combo paths (e.g. "a + b + c")
 
-    n_create = n_skip = 0
+    def _props(c, full: bool):
+        d = {"Status": {"select": {"name": c["status"]}}}
+        if c.get("contract_pids"):
+            d["Implements Contract"] = {"relation": [{"id": p} for p in c["contract_pids"]]}
+        if full:
+            d["Code Ref"] = {"title": [{"text": {"content": c["title"][:1900]}}]}
+            d["CM ID"] = _rt(c["cm_id"])
+            d["Path"] = _rt(c["path"])
+            d["Notes"] = _rt(f"machine-harvested {datetime.now(tz=timezone.utc).date()} "
+                             "by harvest_ops.py (P2); git is SSOT")
+        return d
+
+    n_create = n_update = n_skip = 0
     for c in code:
-        # skip if this exact path (or a curated combo row containing it) exists
-        if any(c["path"] == ep or c["path"] in ep for ep in existing_paths):
+        path = c["path"]
+        # curated combo row that merely *contains* this path -> never touch
+        if any(path != cs and path in cs for cs in curated_substr):
+            n_skip += 1
+            continue
+        hit = existing.get(path)
+        if hit and not hit[1]:          # exact curated row -> protect
             n_skip += 1
             continue
         if not apply:
-            n_create += 1
+            n_create += 1 if not hit else 0
+            n_update += 1 if hit else 0
             continue
-        props = {
-            "Code Ref": {"title": [{"text": {"content": c["title"][:1900]}}]},
-            "CM ID": _rt(c["cm_id"]),
-            "Path": _rt(c["path"]),
-            "Status": {"select": {"name": c["status"]}},
-            "Notes": _rt(f"machine-harvested {datetime.now(tz=timezone.utc).date()} "
-                         "by harvest_ops.py (P2); git is SSOT"),
-        }
-        if c.get("contract_pids"):
-            props["Implements Contract"] = {
-                "relation": [{"id": p} for p in c["contract_pids"]]}
-        requests.post(f"{API}/pages", headers=headers(tok),
-                      json={"parent": {"database_id": db_id}, "properties": props},
-                      timeout=30).raise_for_status()
-        n_create += 1
-    return n_create, n_skip
+        if hit:                          # machine row -> PATCH (refresh contract links)
+            requests.patch(f"{API}/pages/{hit[0]}", headers=headers(tok),
+                           json={"properties": _props(c, full=False)},
+                           timeout=30).raise_for_status()
+            n_update += 1
+        else:
+            requests.post(f"{API}/pages", headers=headers(tok),
+                          json={"parent": {"database_id": db_id},
+                                "properties": _props(c, full=True)},
+                          timeout=30).raise_for_status()
+            n_create += 1
+    return n_create, n_update, n_skip
 
 
 def _drift_check() -> int:
@@ -697,9 +725,9 @@ def main():
         print(f"[harvest_ops] Notion RunResult upsert: {nc} created, {nu} updated"
               f"{' (LLM snapshots)' if args.llm else ''}")
         if code:
-            cc, cs = upsert_code(code, apply=True)
+            cc, cu, cs = upsert_code(code, apply=True)
             print(f"[harvest_ops] Notion CodeMapping upsert: {cc} created, "
-                  f"{cs} skipped (already mapped)")
+                  f"{cu} updated, {cs} skipped (curated)")
     else:
         print("[harvest_ops] dry-run (no --apply); manifest only")
 

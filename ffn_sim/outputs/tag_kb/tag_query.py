@@ -208,8 +208,12 @@ SYN_SYS = (
     "Table-Augmented-Generation (TAG) backend. Given the schema, write ONE "
     "DuckDB SELECT query that answers the user's question. Rules: SELECT/WITH "
     "only (never write). All node columns are TEXT — CAST(... AS DOUBLE) for "
-    "numeric comparisons. Traverse relations via the edges table. Return ONLY a "
-    "single ```sql fenced code block, no prose."
+    "numeric comparisons. Traverse relations via the edges table. Prefer EXACT id "
+    "equality (vg_id = 'VG-...', mc_id = 'MC-...', run_id = 'RUN-...') over broad "
+    "LIKE '%...%' matching — a fuzzy LIKE on an id often over-matches a whole "
+    "family (e.g. '%h7%' catches both Gate-A and Gate-B). Use LIKE only when the "
+    "user explicitly asks for a family/prefix. Return ONLY a single ```sql fenced "
+    "code block, no prose."
 )
 
 FEWSHOT = textwrap.dedent("""\
@@ -232,6 +236,24 @@ FEWSHOT = textwrap.dedent("""\
     SELECT record_id, status, authoritative_as_of, conclusion
     FROM authoritative_record
     WHERE lower(topic) LIKE '%cortical%' OR lower(topic) LIKE '%3.5%';
+    ```
+
+    Q: Which RunResults are linked to the H.7 Gate-A gate, with commit and outcome?
+    ```sql
+    SELECT r.run_id, r.commit, r.outcome
+    FROM run_result r
+    JOIN edges e ON e.src_id = r.id AND e.dst_type = 'validation_gate'
+    JOIN validation_gate g ON g.id = e.dst_id
+    WHERE g.vg_id = 'VG-H7-gate-a';
+    ```
+
+    Q: Which code modules implement the focal-adhesion motor-clutch contract?
+    ```sql
+    SELECT cm.path, cm.status
+    FROM code_mapping cm
+    JOIN edges e ON e.src_id = cm.id AND e.dst_type = 'model_contract'
+    JOIN model_contract mc ON mc.id = e.dst_id
+    WHERE mc.mc_id = 'MC-U2-fa-motor-clutch';
     ```
     """)
 
