@@ -49,9 +49,25 @@ GATE_AB_RE = re.compile(r"(?<![a-z])gate[-_ ]?([ab])(?![a-z])", re.I)
 MC_RE = re.compile(r"MC-[A-Za-z0-9][\w-]+")
 
 
+KU_COMPOUND_RE = re.compile(r"KU-?(\d+)\.(\d+)((?:/\d+(?:\.\d+)?)+)?")
+
+
 def _ku_tokens(text: str) -> set[str]:
-    """All KU references normalised to 'ku<major><minor>' (KU-3.5 -> ku35)."""
-    return {f"ku{a}{b}" for a, b in KU_RE.findall(text)}
+    """KU references -> {'ku<major><minor>'}, incl. compound 'KU-3.5/3.1' notation.
+
+    A trailing '/3.1' carries its own major.minor; a bare '/1' inherits the major
+    of the leading KU (so 'KU-3.5/1' -> {ku35, ku31}).
+    """
+    out: set[str] = set()
+    for major, minor, rest in KU_COMPOUND_RE.findall(text):
+        out.add(f"ku{major}{minor}")
+        for part in re.findall(r"/(\d+(?:\.\d+)?)", rest or ""):
+            if "." in part:
+                a, b = part.split(".")
+                out.add(f"ku{a}{b}")
+            else:
+                out.add(f"ku{major}{part}")  # bare continuation inherits major
+    return out
 
 
 def load_vocab(con) -> dict:
@@ -308,9 +324,72 @@ def harvest_reports(vocab: dict, scope):
 
 
 # --------------------------------------------------------------------------- #
+# CodeMapping harvest — mechanism modules -> code_mapping (P2)
+# --------------------------------------------------------------------------- #
+FFN = REPO_ROOT / "ffn_sim"
+PKG_DIRS = ["cortex", "cell", "ecm", "bridge", "junction",
+            "integrator", "native", "common"]
+
+
+def iter_modules():
+    for d in PKG_DIRS:
+        base = FFN / d
+        if not base.exists():
+            continue
+        for p in sorted(base.rglob("*.py")):
+            if (p.name == "__init__.py" or "__pycache__" in p.parts
+                    or "test" in p.name):
+                continue
+            yield p
+
+
+def _tests_blob() -> str:
+    """Filenames + import lines of the test suite (status heuristic source)."""
+    blob = []
+    tdir = FFN / "tests"
+    if tdir.exists():
+        for t in sorted(tdir.glob("test_*.py")):
+            blob.append(t.name)
+            try:
+                blob.append("\n".join(t.read_text(errors="replace").splitlines()[:40]))
+            except Exception:
+                pass
+    return "\n".join(blob)
+
+
+def harvest_code(vocab):
+    """One CodeMapping candidate per mechanism module (deterministic + regex)."""
+    tests = _tests_blob()
+    rows = []
+    for p in iter_modules():
+        try:
+            head = "\n".join(p.read_text(errors="replace").splitlines()[:45])
+        except Exception:
+            continue
+        stem = p.stem
+        contracts = match_contracts(head, vocab)
+        # implemented if the suite references this module (import or filename)
+        implemented = (f"import {stem}" in tests or f"/{stem}" in tests
+                       or f"test_{stem}" in tests or f" {stem}" in tests)
+        rel = str(p.relative_to(REPO_ROOT))
+        rows.append(
+            {
+                "cm_id": "CM-" + str(p.relative_to(FFN)).replace("/", "-")[:-3],
+                "path": rel,
+                "title": str(p.relative_to(FFN)),
+                "status": "implemented" if implemented else "draft",
+                "contracts": [c["mc_id"] for c in contracts],
+                "contract_pids": [c["page_id"] for c in contracts],
+            }
+        )
+    return rows
+
+
+# --------------------------------------------------------------------------- #
 # manifest
 # --------------------------------------------------------------------------- #
-def write_manifest(runs, reports, today: str) -> Path:
+def write_manifest(runs, reports, today: str, code=None) -> Path:
+    code = code or []
     out = HERE / f"OPS_HARVEST_CANDIDATES_{today}.md"
     n_gate = sum(1 for r in runs if r["gates"])
     all_unmatched: dict[str, int] = {}
@@ -353,6 +432,18 @@ def write_manifest(runs, reports, today: str) -> Path:
     for r in sorted(reports, key=lambda x: x["unit"]):
         L.append(f"| `{r['run_id']}` | {r['commit'] or '—'} | {r['date']} "
                  f"| {', '.join(r['gates']) or '—'} | {', '.join(r['contracts']) or '—'} |")
+    L.append("")
+
+    n_cmlinked = sum(1 for c in code if c["contracts"])
+    L.append("## CodeMapping candidates — mechanism modules\n")
+    L.append(f"{len(code)} modules (current graph: 2). {n_cmlinked} link to a "
+             "ModelContract via docstring KU/MC tokens. Existing curated rows "
+             "(matched by Path) are left untouched on --apply.\n")
+    L.append("| cm_id | status | implements_contract |")
+    L.append("|---|---|---|")
+    for c in sorted(code, key=lambda x: x["path"]):
+        L.append(f"| `{c['cm_id']}` | {c['status']} "
+                 f"| {', '.join(c['contracts']) or '—'} |")
     L.append("")
 
     L.append("## Full snapshots (audit)\n")
@@ -477,6 +568,50 @@ def upsert_runs(runs, reports, apply: bool, use_llm: bool):
     return n_create, n_update
 
 
+def upsert_code(code, apply: bool):
+    """CREATE CodeMapping rows for modules not yet mapped (keyed on Path).
+
+    Non-destructive: existing rows (matched by Path) are SKIPPED so manually
+    curated CodeMapping entries are never clobbered.
+    """
+    import requests
+    tok, API, DS, headers, query_all = _notion()
+    db_id = DS["CodeMapping"]
+
+    existing_paths = set()
+    for row in query_all(db_id, tok):
+        p = row.get("properties", {}).get("Path", {})
+        val = "".join(x["plain_text"] for x in p.get("rich_text", [])) if p else ""
+        if val:
+            existing_paths.add(val.strip())
+
+    n_create = n_skip = 0
+    for c in code:
+        # skip if this exact path (or a curated combo row containing it) exists
+        if any(c["path"] == ep or c["path"] in ep for ep in existing_paths):
+            n_skip += 1
+            continue
+        if not apply:
+            n_create += 1
+            continue
+        props = {
+            "Code Ref": {"title": [{"text": {"content": c["title"][:1900]}}]},
+            "CM ID": _rt(c["cm_id"]),
+            "Path": _rt(c["path"]),
+            "Status": {"select": {"name": c["status"]}},
+            "Notes": _rt(f"machine-harvested {datetime.now(tz=timezone.utc).date()} "
+                         "by harvest_ops.py (P2); git is SSOT"),
+        }
+        if c.get("contract_pids"):
+            props["Implements Contract"] = {
+                "relation": [{"id": p} for p in c["contract_pids"]]}
+        requests.post(f"{API}/pages", headers=headers(tok),
+                      json={"parent": {"database_id": db_id}, "properties": props},
+                      timeout=30).raise_for_status()
+        n_create += 1
+    return n_create, n_skip
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scope", default="", help="comma unit filter e.g. h7,layer2")
@@ -492,21 +627,28 @@ def main():
     vocab = load_vocab(con)
     runs = harvest_runs(vocab, scope)
     reports = harvest_reports(vocab, scope)
+    code = harvest_code(vocab) if not scope else []  # code harvest is repo-wide
     con.close()
     # closeout report rows reuse the run upsert path; ensure gate_pids present
     for rep in reports:
         rep.setdefault("gate_pids", [])
         rep.setdefault("outcome", "")
 
-    out = write_manifest(runs, reports, today)
+    out = write_manifest(runs, reports, today, code)
     n_gate = sum(1 for r in runs if r["gates"])
+    n_cm = sum(1 for c in code if c["contracts"])
     print(f"[harvest_ops] {len(runs)} run candidates, {len(reports)} report "
-          f"closeouts, {n_gate} gate-linked -> {out}")
+          f"closeouts, {n_gate} gate-linked; {len(code)} code modules "
+          f"({n_cm} contract-linked) -> {out}")
 
     if args.apply:
         nc, nu = upsert_runs(runs, reports, apply=True, use_llm=args.llm)
         print(f"[harvest_ops] Notion RunResult upsert: {nc} created, {nu} updated"
               f"{' (LLM snapshots)' if args.llm else ''}")
+        if code:
+            cc, cs = upsert_code(code, apply=True)
+            print(f"[harvest_ops] Notion CodeMapping upsert: {cc} created, "
+                  f"{cs} skipped (already mapped)")
     else:
         print("[harvest_ops] dry-run (no --apply); manifest only")
 

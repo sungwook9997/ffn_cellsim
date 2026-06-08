@@ -207,12 +207,35 @@ PI 결정(AskUserQuestion): **신규 VG-H7-gate-a/b 2행 등록** (KU-3.5에 묶
   즉시 발견: source_audit **12/329 부분/stale** + suspect 2건(Funk2021_eLife DOI_DEAD,
   Lindstrom2010 CHECK) → full `verify_sources.py` 재감사 필요(별도).
 
-## 12. 남은 일 (P2/추가)
+## 13. P2 RESULT — CodeMapping harvest (DONE, 2026-06-08)
 
-- **P2 — CodeMapping harvest:** 모듈 docstring → `code_mapping` 적재(`code→contract` edge).
-  현재 code_mapping=2 그대로(P1은 RunResult에 집중). 다음 세션.
+`harvest_ops.py`에 `harvest_code`/`upsert_code` 추가: 메커니즘 모듈 docstring →
+`code_mapping`. 결정적 추출 + docstring KU/MC regex → ModelContract 매칭.
+**비파괴**: 기존 큐레이션 CM 행은 Path로 skip(클로버 방지).
+
+- 대상 = 패키지 메커니즘 모듈 (cortex/cell/ecm/bridge/junction/integrator/native/common,
+  `__init__`/test 제외) **46개**.
+- status 휴리스틱: 테스트 스위트가 모듈을 참조하면 implemented, 아니면 draft.
+- 적재: **44 created + 2 skipped** (myosin.py + cortex combo 큐레이션 행 보호).
+- refresh 후: `code_mapping` **2 → 46**, `code→contract` edges **8** (총 edges 986→1042).
+  MC-H3-composite-tension 구현 모듈 6개 정확 연결 (membrane_surface, nucleus, checkpoint,
+  active_gel_seam, enclosed_volume, turnover).
+- 매처 개선(정당한 correctness fix): 복합 KU 표기 `KU-3.5/3.1`의 "/3.1"을 파싱하도록
+  `_ku_tokens` 보강 (nucleus/enclosed_volume의 KU-3.1 누락 해결, 4→6 link).
+
+### ⭐ 발견 (Gate-A/B와 동형, PI 항목): ModelContract 레이어가 희소
+`code→contract`가 8에 그치는 이유 = **ModelContract 행이 6개뿐이고 KU 토큰을 가진 건
+MC-H3-composite-tension 하나**. FA(bridge/)·ECM·integrator·lamellipodium 등 대부분
+메커니즘에 **contract 행 자체가 없음**. ValidationGate에 H.7 게이트가 없던 것과 같은 구조적
+공백 — ModelContract도 PI-authored 행 보강이 필요(코드/런은 이제 적재됐으므로 contract만
+채우면 전체 traverse가 열림).
+
+## 12. 남은 일 (추가)
+
+- ModelContract 레이어 보강 (PI-authored; FA/ECM/integrator/lamellipodium contract 행).
 - syn(NL→SQL) + BM25 retrieval 안정화 (TAG "불안정"의 본질 — gate coverage와 별개).
-- source_audit full 재감사 (#3가 stale로 surfacing).
+- source_audit full 재감사 (#3가 stale 12/329로 surfacing).
+- P3: `refresh.sh --check` 드리프트 감지 (신규 아티팩트 N개 since last harvest).
 
 ## 8. 비-목표 (scope out)
 
