@@ -4,6 +4,21 @@ Scope: the per-step myosin binder force, the most performance-critical binder in
 the H.7 hot loop. References: `ffn_sim/docs/v2_audit/NATIVE_HOT_LOOP_MIGRATION_2026-06-07.md`
 (Stage 2), `ffn_sim/cortex/myosin.py` (production ground truth).
 
+## GPU VALIDATION 2026-06-08 — PASS (gbook RTX A5000)
+
+`# GBOOK-VALIDATE:` steps run and green:
+- `test_attachment_spring.py`: native K=3000 springs vs `md.bond.Harmonic` rel **3.4e-16**;
+  `set_attachments` toggle **15.1 µs** with NO `set_snapshot` (was 51,900 µs); per-step
+  force 24.5 µs/step. PASS.
+- `test_myosin_pool_gpu_parity.py`: native-vs-production rel **2.25e-16**, native-vs-host-ref
+  rel **0.0** (80 engaged heads). PASS.
+
+⇒ the native fixed-pool myosin binder mirrors the production grip_walk per-step force
+on-device at machine precision, WITHOUT the per-step `cpu_local_snapshot`. The exact
+Python path remains the default source of truth; the native path stays opt-in.
+Remaining Stage-2 work (not done): wire the pool into `cell.py`/the H.7 driver behind an
+opt-in env var; make the ~1% batch-tick binder firing (Bell-Evans/KDTree/Hill) snapshot-free.
+
 ## What the per-step production myosin force actually is
 
 The cortical-myosin runtime (`ffn_sim/cortex/myosin.py`) is two-timescale:
