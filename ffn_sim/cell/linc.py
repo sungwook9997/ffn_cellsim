@@ -15,8 +15,11 @@ particle tag and one cytoskeletal particle tag (cortex actin / stress-fiber /
 MT bead). There is NO lumped coupling force and NO mesh-as-physics — a LINC
 bridge is one bond carrying one molecular spring's load, exactly as a real
 nesprin-2 giant spectrin-repeat tail is a molecular spring (Autore 2013 PLoS
-ONE; Arsenovic 2016 Biophys J measured ~2 pN resting tension per nesprin by
-FRET). The topology is built geometrically: each nucleus bead bonds to its
+ONE; Arsenovic 2016 Biophys J showed nesprin-2G bears myosin-dependent tension
+by FRET — TSMod sensor, calibrated range ~1-5 pN — but reports relative FRET,
+not an absolute pN value; the resting-tension magnitude ~8 pN comes from the
+separate mini-nesprin-2G/CB construct of Déjardin 2020 JCB). The topology is
+built geometrically: each nucleus bead bonds to its
 nearest eligible cytoskeletal bead within a capture radius, producing
 ``n_bridges`` radial nesprin springs distributed over the envelope.
 
@@ -46,9 +49,13 @@ the published single-molecule numbers (Autore 2013 mechanics; AFM repeat
 unfolding ~25–35 pN plateaus) do not pin a linear ``N/m``. Therefore
 ``k_linc`` defaults to ``None`` and the enabled topology-build path RAISES
 ``NotImplementedError`` until the PI supplies a literature-anchored value. The
-resting tension ``f_rest`` (~2 pN, Arsenovic 2016) IS known and is exposed as a
-provenance field / diagnostic, but a tension is not a stiffness and is not used
-to invent one.
+resting tension ``f_rest`` (~8 pN, Déjardin 2020 JCB) IS known and is exposed
+as a provenance field / diagnostic, but a tension is not a stiffness and is not
+used to invent one. (Note: Arsenovic 2016 showed nesprin-2G bears
+myosin-dependent tension by FRET but reported only relative ratiometric FRET
+with a TSMod sensor of calibrated range ~1-5 pN — it did NOT report an absolute
+pN value; the ~8 pN resting magnitude is Déjardin 2020's CB/mini-nesprin-2G
+result, not Arsenovic's.)
 
 Sanity Gate
 -----------
@@ -105,11 +112,14 @@ Sanity Gate
      (nesprin tails buckle under compression, carrying ~no compressive load).
 
 6. **Measurement-protocol consistency**
-   - The resting per-nesprin tension ``f_rest`` (~2 pN, Arsenovic 2016) is the
-     validation oracle: at equilibrium the mean LINC bond tension should sit
+   - The resting per-nesprin tension ``f_rest`` (~8 pN, Déjardin 2020 JCB) is
+     the validation oracle: at equilibrium the mean LINC bond tension should sit
      near ``f_rest`` once ``k_linc`` and the pre-strain are set by the host. We
      expose ``f_rest`` and the per-bond tension formula but do NOT claim any
-     gate PASSes here (that is a Lead integration / production concern).
+     gate PASSes here (that is a Lead integration / production concern). NOTE:
+     Arsenovic 2016 measured myosin-dependent FRET on nesprin-2G (TSMod sensor,
+     calibrated range ~1-5 pN) but reported relative FRET, not an absolute pN
+     value — the ~8 pN magnitude is Déjardin 2020's CB/mini-nesprin-2G result.
 
 Compartment Performance Contract
 --------------------------------
@@ -119,11 +129,15 @@ Compartment Performance Contract
 * **Particle count** at n_fil=1000 / native ~38000: +0 particles at both
   scales. LINC is topology-only.
 * **Bond/angle count**: +``n_bridges`` bonds (one ``linc_nesprin`` bond per
-  formed bridge), ``n_bridges = min(n_nucleus_beads, n_bridges_max)`` capped.
-  No angles. Biology: thousands of LINC per nucleus (Lombardi 2011); at the
-  ×40 mesoscale ``n_bridges`` is O(n_nucleus_beads), i.e. tens–hundreds, with
-  ``n_bridges_max`` capping it. Zero per-bond runtime cost beyond the builtin
-  harmonic evaluation.
+  formed bridge). No angles. The GEOMETRIC ceiling on ``n_bridges`` is the
+  nucleus bead count ``n_nuc`` (one LINC per envelope bead via the k=1
+  nearest-acceptor pairing); ``n_bridges_max`` is a SAFETY/no-cap sentinel that
+  by default (1e6) never binds — it is present only so a host CAN cap explicitly,
+  so in practice ``n_bridges = min(n_nuc, n_bridges_max) = n_nuc``. Biology:
+  thousands of LINC per nucleus (Lombardi 2011); at the ×40 mesoscale this maps
+  to O(n_nuc) (tens–hundreds) — set by the nucleus bead resolution, NOT by the
+  1e6 sentinel. Zero per-bond runtime cost beyond the builtin harmonic
+  evaluation.
 * **Per-step force**: YES, but via the BUILTIN ``md.bond.Harmonic`` only — no
   Python ``md.force.Custom`` is attached. No per-step Python.
 * **Per-batch updater**: NO. LINC bonds are STATIC topology in this minimal
@@ -153,8 +167,15 @@ References
 - Autore F. et al. (2013) *PLoS ONE* 8:e63633 — nesprin-2 spectrin-repeat
   structure / mechanics (spectrin-repeat molecular spring; sequential
   repeat-unfolding nonlinearity → no single Hookean stiffness).
-- Arsenovic P.T. et al. (2016) *Biophys. J.* 110:34 — FRET tension sensor:
-  nesprin-2G bears ~2 pN of resting tension per molecule in living cells.
+- Arsenovic P.T. et al. (2016) *Biophys. J.* 110:34 (DOI 10.1016/j.bpj.2015.11.014)
+  — TSMod FRET tension sensor showing nesprin-2G bears myosin-dependent tension
+  in living cells; reports RELATIVE ratiometric FRET (sensor calibrated range
+  ~1-5 pN), NOT an absolute resting pN value.
+- Déjardin T. et al. (2020) *J. Cell Biol.* 219(10):e201908036
+  (DOI 10.1083/jcb.201908036) — mini-nesprin-2G / CB TSMod tension biosensor;
+  nesprin-2G (CB construct) is held under ~8 pN of resting tension generated by
+  the actomyosin + microtubule cytoskeletons, balanced by cell–cell adhesion.
+  This is the source of the ``f_rest`` ~8 pN magnitude (not Arsenovic 2016).
 - Crisp M. et al. (2006) *J. Cell Biol.* 172:41 — coining of LINC; SUN-KASH
   bridge across the nuclear envelope (LINC density: thousands per nucleus).
 - ``ffn_sim/cell/nucleus.py`` — nucleus_bead cloud this module bonds to.
@@ -194,7 +215,9 @@ PI_DECISIONS: list[str] = [
     "Nesprin-2 giant is a ~56-repeat spectrin spring whose force-extension is "
     "nonlinear (sequential repeat unfolding ~25-35 pN plateaus; Autore 2013), "
     "so there is no single Hookean N/m in the literature. Resting tension is "
-    "known (~2 pN, Arsenovic 2016) but a tension is not a stiffness and is not "
+    "known (~8 pN, Déjardin 2020 JCB mini-nesprin-2G/CB sensor; Arsenovic 2016 "
+    "showed myosin-dependent FRET but reported only relative ratiometric FRET, "
+    "not an absolute pN value) but a tension is not a stiffness and is not "
     "divided by an unknown extension scale to fabricate one. Default None; the "
     "enabled topology builder raises NotImplementedError until the PI supplies "
     "a literature-anchored k_linc.",
@@ -220,11 +243,17 @@ class ResolvedLINC:
             tuned force constant.
         capture_radius: Geometric pairing radius [m]: a nucleus bead bonds to
             the nearest cytoskeleton bead within this radius. No pair beyond it.
-        n_bridges_max: Hard cap on the number of LINC bonds formed (one per
-            nucleus bead at most; biology has thousands per nucleus —
-            Lombardi 2011 — capped here at the ×40 mesoscale).
-        f_rest: Resting per-nesprin tension [N] (~2 pN, Arsenovic 2016).
-            PROVENANCE / diagnostic only — NOT used to derive ``k_linc``.
+        n_bridges_max: SAFETY/no-cap sentinel on the number of LINC bonds
+            formed, NOT the binding ceiling. The true geometric ceiling is the
+            nucleus bead count ``n_nuc`` (one LINC per envelope bead, k=1
+            nearest-acceptor pairing); ``n_bridges_max`` defaults to 1e6, which
+            never binds — it exists only so a host CAN cap explicitly. Biology
+            has thousands of LINC per nucleus (Lombardi 2011); the mesoscale
+            count is set by ``n_nuc``, not by this sentinel.
+        f_rest: Resting per-nesprin tension [N] (~8 pN, Déjardin 2020 JCB
+            mini-nesprin-2G/CB sensor). PROVENANCE / diagnostic only — NOT used
+            to derive ``k_linc``. (Arsenovic 2016 reported relative FRET, not an
+            absolute pN value, so the magnitude is Déjardin 2020's, not his.)
         bond_type_name: Bond type name (always starts with ``linc_``).
     """
 
@@ -245,9 +274,18 @@ class ResolvedLINC:
 #: GEOMETRIC default rest length (a length, derivable, not a tuned force knob).
 _PERINUCLEAR_GAP_M: float = 50.0e-9          # m   (50 nm, Crisp 2006)
 
-#: Resting per-nesprin tension measured by FRET in living cells
-#: (Arsenovic 2016 Biophys J — ~2 pN on nesprin-2G). Provenance only.
-_NESPRIN_REST_TENSION_N: float = 2.0e-12     # N   (2 pN, Arsenovic 2016)
+#: Resting per-nesprin tension on the mini-nesprin-2G / CB TSMod tension sensor
+#: (Déjardin 2020 JCB, DOI 10.1083/jcb.201908036 — nesprin-2G/CB is held under
+#: ~8 pN of resting tension generated by the actomyosin + microtubule
+#: cytoskeletons, balanced by cell-cell adhesion). Provenance only.
+#: NOTE: Arsenovic 2016 (DOI 10.1016/j.bpj.2015.11.014) measured myosin-dependent
+#: FRET on nesprin-2G (TSMod, calibrated range ~1-5 pN) but reported only
+#: RELATIVE ratiometric FRET, not an absolute pN value — the ~8 pN magnitude is
+#: Déjardin 2020's, not Arsenovic's. ⚠️ This is an ORACLE-TARGET value: the
+#: 2 pN → 8 pN re-anchor + re-attribution must be PI-signed-off (no-magic-number /
+#: no-gate-loosening) and the KB SourceEvidence row refreshed before the LINC
+#: gate is treated as live.
+_NESPRIN_REST_TENSION_N: float = 8.0e-12     # N   (8 pN, Déjardin 2020 JCB)
 
 
 def _require_finite_positive(name: str, x: float) -> None:
@@ -268,11 +306,25 @@ def resolve_linc(
     ``.enabled = False`` (strict DEFAULT-OFF — the builder then no-ops).
 
     The rest length ``r0`` defaults to the perinuclear-gap geometric length
-    (~50 nm, Crisp 2006); the capture radius defaults to a small multiple of
-    that gap (the nucleus↔cortex separation at the envelope is short, since
-    LINC physically spans the membrane). ``k_linc`` is UNKNOWN by default
-    (``None``) — resolving is allowed, but BUILDING the load-bearing bonds with
-    ``k_linc is None`` raises ``NotImplementedError`` (no invented number).
+    (~50 nm, Crisp 2006). The default ``capture_radius`` (3× that gap = 150 nm)
+    is the ANATOMICALLY correct nesprin span across the perinuclear space, but
+    it is NOT the bead-to-bead pairing scale in this mesoscale geometry: at the
+    platform's bead representation the nucleus is a filled cloud out to
+    R_nuc ≈ 0.25·R_cell and the cortex/SF acceptors sit near r ≈ R_cell, so the
+    nearest nucleus↔cortex bead separation is R_cell − R_nuc ≈ 5.6 µm (≈37× the
+    150 nm default) — ZERO LINC bonds form at construction with the default
+    (the identical zero-bonds-at-real-geometry lesson the FA path already
+    learned, cell.py:1040-1050). The literal load path therefore needs EITHER
+    (a) a perinuclear/cap acceptor population seeded near the envelope, OR (b) a
+    caller-supplied ``capture_radius`` on the R_cell − R_nuc scale (just as FA
+    exposes ``fa_clutch_capture_radius``); when LINC is wired into
+    ``build_baseline_cell`` the production ``capture_radius`` must come from
+    cell geometry (or perinuclear acceptors), per the physiological-baseline
+    rule, NOT this 3×-gap default. Keep both numbers and label which is which:
+    150 nm = real nesprin span; R_cell − R_nuc = bead-pairing scale.
+    ``k_linc`` is UNKNOWN by default (``None``) — resolving is allowed, but
+    BUILDING the load-bearing bonds with ``k_linc is None`` raises
+    ``NotImplementedError`` (no invented number).
 
     Args:
         cfg: Config mapping (root, ``cell``, or ``linc`` sub-dict).
@@ -315,10 +367,19 @@ def resolve_linc(
     k_linc: float | None = None if k_raw is None else float(k_raw)
 
     r0 = float(cfg.get("r0", _PERINUCLEAR_GAP_M))
-    # Capture radius default: 3× the perinuclear gap (the nucleus-bead ↔
-    # cortex/SF-bead separation at the envelope is short; LINC spans the
-    # membrane). A GEOMETRIC choice, grid-invariant (multiple of a length).
+    # Capture radius default: 3× the perinuclear gap = 150 nm. This is the
+    # anatomically correct real nesprin span across the perinuclear space, NOT
+    # the bead-to-bead pairing scale in this mesoscale geometry: at the platform
+    # bead representation the nucleus↔cortex bead separation is R_cell - R_nuc
+    # ≈ 5.6 µm (≈37× this default), so ZERO LINC bonds form at construction with
+    # the default — see the resolve_linc docstring + the R_cell-vs-R_nuc guard
+    # below + the FA lesson at cell.py:1040-1050. A caller wiring LINC at the
+    # real op-point MUST pass a capture_radius on the R_cell - R_nuc scale (or
+    # seed perinuclear acceptors). GEOMETRIC, grid-invariant (multiple of a length).
     capture_radius = float(cfg.get("capture_radius", 3.0 * _PERINUCLEAR_GAP_M))
+    # Sentinel: effectively no cap. The true ceiling on n_bridges is n_nuc (one
+    # LINC per envelope bead, k=1 nearest-acceptor pairing); this 1e6 default
+    # never binds — it is here only so a host CAN cap the bridge COUNT explicitly.
     n_bridges_max = int(cfg.get("n_bridges_max", 1_000_000))
     f_rest = float(cfg.get("f_rest", _NESPRIN_REST_TENSION_N))
 
@@ -338,6 +399,33 @@ def resolve_linc(
                 f"radius R_cell = {R_cell:.3e} m — LINC bridges the nuclear "
                 "envelope (a short span), this pairing scale is wrong."
             )
+        # Symmetric lower-bound geometry check: at this platform's bead
+        # representation the nucleus is a filled cloud out to R_nuc and the
+        # cortex/SF acceptors sit near R_cell, so the nearest nucleus↔cortex
+        # bead separation is ~ (R_cell - R_nuc). If the capture radius is below
+        # that gap AND the only acceptors are the cortex shell, ZERO bonds form
+        # at construction (the latent geometry trap; mirrors the FA lesson at
+        # cell.py:1040-1050). Warn loudly rather than silently no-op. We warn
+        # (not raise) because a caller MAY seed perinuclear/cap acceptors near
+        # the envelope that close the gap — the resolver cannot see the acceptor
+        # classes (those come from the build-time tag sets), so a hard raise
+        # would be wrong for that legitimate path.
+        if R_nuc is not None:
+            _require_finite_positive("R_nuc", R_nuc)
+            nuc_cortex_gap = R_cell - R_nuc
+            if nuc_cortex_gap > 0.0 and capture_radius < nuc_cortex_gap:
+                warnings.warn(
+                    f"LINC capture_radius = {capture_radius:.3e} m is below the "
+                    f"nucleus↔cortex bead gap R_cell - R_nuc = "
+                    f"{nuc_cortex_gap:.3e} m (ratio "
+                    f"{nuc_cortex_gap / capture_radius:.1f}×). At this mesoscale "
+                    "bead geometry ZERO LINC bonds will form at construction if "
+                    "the only acceptor class is the cortex shell. Pass a "
+                    "capture_radius on the R_cell - R_nuc scale, or seed "
+                    "perinuclear/cap acceptors near the envelope (cf. "
+                    "fa_clutch_capture_radius; FA lesson cell.py:1040-1050).",
+                    stacklevel=2,
+                )
 
     return ResolvedLINC(
         enabled=True,
@@ -495,12 +583,19 @@ def extend_snapshot_with_linc(
 ) -> "object":
     """Add ``linc_nesprin`` harmonic bonds between nucleus and cytoskeleton.
 
-    Mirrors the ``cell/cell.py`` bond-type-extension pattern: carries existing
-    bonds across, registers the ``linc_nesprin`` bond type (if absent), pairs
+    Mirrors the ``cell/cell.py`` bond-type-extension pattern (``_extend_snapshot_
+    with_fa`` / ``_extend_snapshot_with_nucleus``): carries existing bonds
+    across, registers the ``linc_nesprin`` bond type (if absent), pairs
     nucleus↔cytoskeleton beads geometrically, and appends one bond per formed
     bridge. The function is callable IN ISOLATION on a ``gsd.hoomd.Frame`` (or
-    any snapshot exposing ``.particles.position/.tag`` and ``.bonds.*``) and is
-    a STRICT NO-OP — returning the input snapshot unchanged — when:
+    any snapshot exposing ``.particles.position/.N`` and ``.bonds.*``). The
+    snapshot is consumed TAG-ORDERED — a build-time HOOMD/gsd snapshot has
+    global tag == row index (cell.py:313, 383-384), so the supplied
+    ``nucleus_tags`` / ``cytoskeleton_tags`` ARE row indices directly. We do NOT
+    read ``snap.particles.tag``: a build-time ``gsd.hoomd.Frame`` does not expose
+    it (only a runtime ``cpu_local_snapshot`` LocalSnapshot carries ``.tag``),
+    so reading it would AttributeError on a real Frame. This is a STRICT NO-OP —
+    returning the input snapshot unchanged — when:
 
     * ``p.enabled`` is False (DEFAULT-OFF), or
     * no nucleus / cytoskeleton tags are supplied, or
@@ -510,12 +605,15 @@ def extend_snapshot_with_linc(
     single-writer gsd-Frame convention in cell.py) and returns it.
 
     Args:
-        snap: A ``gsd.hoomd.Frame`` (or HOOMD snapshot) with positions, tags,
-            and ``bonds`` arrays.
+        snap: A ``gsd.hoomd.Frame`` (or HOOMD snapshot) with
+            ``.particles.position/.N`` and ``.bonds.*`` arrays. Consumed
+            tag-ordered (row index == global tag), matching the cell.py
+            extenders — no ``.particles.tag`` field is read or required.
         p: Resolved LINC parameters. ``.enabled = False`` ⇒ no-op.
-        nucleus_tags: Particle tags of the ``nucleus_bead`` cloud.
+        nucleus_tags: Particle tags of the ``nucleus_bead`` cloud (== row
+            indices on a tag-ordered build snapshot).
         cytoskeleton_tags: Particle tags of the cytoskeletal acceptor beads
-            (cortex actin / stress fiber / MT) LINC may bond to.
+            (cortex actin / stress fiber / MT) LINC may bond to (== row indices).
 
     Returns:
         The (possibly extended) snapshot.
@@ -536,7 +634,8 @@ def extend_snapshot_with_linc(
             "spring stiffness, N/m), which is UNKNOWN — see "
             "ffn_sim.cell.linc.PI_DECISIONS. Nesprin-2 giant has no single "
             "Hookean stiffness in the literature (nonlinear repeat unfolding); "
-            "the ~2 pN resting tension (Arsenovic 2016) is a force, not a "
+            "the ~8 pN resting tension (Déjardin 2020 JCB; Arsenovic 2016 "
+            "reported relative FRET, not an absolute pN value) is a force, not a "
             "stiffness. Surface to PI for a literature-anchored k_linc before "
             "enabling LINC. (Resolving the config is allowed; building the "
             "bonds is not, until k_linc is set.)"
@@ -548,18 +647,12 @@ def extend_snapshot_with_linc(
         return snap  # nothing to bond → no-op
 
     pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(-1, 3)
-    tags = np.asarray(snap.particles.tag, dtype=np.int64).reshape(-1)
-    # Map global tag → row index.
-    tag_to_row = {int(t): i for i, t in enumerate(tags)}
-
-    nuc_rows = np.array(
-        [tag_to_row[int(t)] for t in nuc_tags if int(t) in tag_to_row],
-        dtype=np.int64,
-    )
-    cyto_rows = np.array(
-        [tag_to_row[int(t)] for t in cyto_tags if int(t) in tag_to_row],
-        dtype=np.int64,
-    )
+    # Build-time snapshot is TAG-ORDERED: global tag == row index (cell.py:313,
+    # 383-384), so the supplied tags ARE row indices — no .particles.tag read
+    # (a gsd.hoomd.Frame does not expose it). Bounds-check against N.
+    n_part = int(snap.particles.N)
+    nuc_rows = nuc_tags[(nuc_tags >= 0) & (nuc_tags < n_part)]
+    cyto_rows = cyto_tags[(cyto_tags >= 0) & (cyto_tags < n_part)]
     if nuc_rows.size == 0 or cyto_rows.size == 0:
         return snap
 
@@ -572,9 +665,10 @@ def extend_snapshot_with_linc(
     if pairs_local.shape[0] == 0:
         return snap  # no acceptor in range → no-op
 
-    # Local-index pairs → global tags (HOOMD bond groups are tags).
-    nuc_bond_tags = tags[nuc_rows[pairs_local[:, 0]]]
-    cyto_bond_tags = tags[cyto_rows[pairs_local[:, 1]]]
+    # Local-index pairs → global tags. Rows ARE the global tags (tag-ordered),
+    # so nuc_rows[pairs] / cyto_rows[pairs] are the bond-group tags directly.
+    nuc_bond_tags = nuc_rows[pairs_local[:, 0]]
+    cyto_bond_tags = cyto_rows[pairs_local[:, 1]]
     new_pairs = np.stack([nuc_bond_tags, cyto_bond_tags], axis=1).astype(
         np.uint32
     )

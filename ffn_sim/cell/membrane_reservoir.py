@@ -41,9 +41,19 @@ Explicit mechanism — what particles / bonds (per CLAUDE.md fine-grained rule)
   avoid an un-anchored geometry.)
 * Bonds added: ``mem_tether`` — one explicit breakable harmonic bond per anchored
   membrane bead → nearest cortex bead. Every bond type starts with the
-  :data:`GAMMA_DENYLIST_PREFIX` ``'mem_'`` so the cortical-tension estimator
-  (:func:`ffn_sim.cortex.cortical_tension`) DENYLISTS it — the tether is a
-  non-cortical, radial detachment load path and must NOT contaminate γ_soft.
+  :data:`GAMMA_DENYLIST_PREFIX` ``'mem_'`` and the registry CompartmentSpec
+  declares ``denylist_bond_types=('mem_',)`` so that, ONCE the cortical-tension
+  estimator (:func:`ffn_sim.cortex.cortical_tension`) consumes the registry
+  denylist, it drops ``mem_tether`` — the tether is a non-cortical, radial
+  detachment load path that must NOT contaminate γ_soft.
+  ⚠️ WIRING GAP (PI-tracked, blocks enablement): as of 2026-06-08 the estimator's
+  denylist is still HARDCODED to the FA-clutch prefixes only
+  (``cortical_tension.ADHESION_BOND_TYPE_PREFIXES``); it does NOT yet read
+  ``denylist_bond_types``/``'mem_'`` from the registry. So a LIVE ``mem_tether``
+  bond would currently be summed into γ_soft. This module is therefore kept
+  DEFAULT-OFF / ``declare_pending`` (never ``enable``) until the estimator is
+  wired to honour the registry denylist (a non-owned file — surfaced to PI/Lead).
+  The denylist-prefix match is a NECESSARY precondition, not yet a guarantee.
 * Updater: a per-batch **Bell-Evans rupture** Action (:class:`MembraneTetherUpdater`)
   removes ``mem_tether`` bonds whose detachment load exceeds the adhesion. Rupture
   = bleb nucleation. (Re-attachment / bleb retraction by ERM re-binding is a
@@ -55,13 +65,15 @@ for MCF7 (see PI_DECISIONS): both are set to ``None`` by default and the code
 paths that need them raise :class:`NotImplementedError` (the rupture updater and
 the reservoir release are kept DISABLED until a PI-anchored value is supplied).
 The breakable-tether TOPOLOGY itself is provided with the cited membrane–cortex
-adhesion energy where a literature value exists (the MCA band, Dai & Sheetz 1999;
-Diz-Muñoz et al. 2010), so the static, force-free tether mesh is buildable now.
+adhesion energy where a literature value exists (the MCA band; KU-3.B1.4 evidence
+set Hochmuth 1996; Derényi 2002; Brochard-Wyart 2006; Diz-Muñoz et al. 2013), so
+the static, force-free tether mesh is buildable now.
 
 Adhesion energy → rupture force bridge (no invented number)
 -----------------------------------------------------------
 The membrane–cortex adhesion is an energy per unit area ``W_MCA`` [J/m²]
-(KU-3.B1.3 band 1e-6 .. 1e-4 J/m²; Dai & Sheetz 1999; Diz-Muñoz 2010). Each
+(KU-3.B1.4 band 1e-6 .. 1e-4 J/m²; γ_MCA=W; Hochmuth 1996; Derényi 2002;
+Brochard-Wyart 2006; Diz-Muñoz 2013). Each
 membrane bead carries an area share ``A_bead = 4π R_cell² / n_anchored``; its
 tether holds an adhesion energy ``E_tether = W_MCA · A_bead`` [J]. The tether is
 a harmonic bond of stiffness ``k_tether`` and rest length ``r0`` (the
@@ -117,8 +129,16 @@ Sanity Gate
      law) → it injects ZERO net momentum on the membrane+cortex system. STATIC
      reasoning; a tether between bead pairs is force-symmetric by construction.
    - The tether load path is RADIAL detachment (membrane vs cortex), NOT in-plane
-     cortical tension; named ``mem_*`` so the cortical-tension denylist drops it
-     (no γ contamination). STATIC test asserts the prefix + denylist match.
+     cortical tension; named ``mem_*`` and declared in the registry's
+     ``denylist_bond_types`` so that — once the cortical-tension estimator
+     consumes that denylist — it drops ``mem_tether`` (no γ contamination). The
+     STATIC test asserts the prefix match (the necessary precondition). The γ
+     EXCLUSION is NOT yet guaranteed by code: the estimator's denylist is still
+     hardcoded to the FA-clutch prefixes and does not yet read the registry
+     ``'mem_'`` denylist (WIRING GAP, see the module header). The compartment is
+     held DEFAULT-OFF / ``declare_pending`` until that wiring lands, so no live
+     ``mem_tether`` bond ever reaches γ_soft. Do NOT promote this module to
+     ``enable`` before the estimator honours the registry denylist.
    - Particle count is INVARIANT (default build reuses existing beads); only the
      ``mem_tether`` bond family is appended. STATIC test asserts ΔN_particles = 0.
 4. **Numerical sanity (CFL)**
@@ -173,17 +193,40 @@ References
 - Charras, G. & Paluch, E. (2008) "Blebs lead the way: how to migrate without
   lamellipodia." Nat. Rev. Mol. Cell Biol. 9:730–736. doi:10.1038/nrm2453
   (bleb nucleation when hydrostatic pressure exceeds membrane–cortex adhesion;
-  membrane reservoir of folds/microvilli).
+  membrane reservoir of folds/microvilli) — conceptual review (anchors no number).
+- Charras, G.T. et al. (2008) "Life and times of a cellular bleb." Biophys. J.
+  94:1836–1853. doi:10.1529/biophysj.107.113605 — KB-registered (SE116,
+  Charras2008_BJ; ERM-tether direct measurement, k_ERM ~ 0.1 N/m; anchors
+  KB-3.1 / KB-3.18). The cross-checkable KB source for the ERM membrane–cortex
+  tether physics this module relies on (distinct from the NRMCB review above).
 - Tinevez, J.-Y. et al. (2009) "Role of cortical tension in bleb growth."
   Proc. Natl. Acad. Sci. USA 106:18581–18586. doi:10.1073/pnas.0903353106
   (a CRITICAL cortical tension below which blebs cannot expand — the σ_crit
   threshold; value cell-line specific, MCF7 uncertain → PI decision).
+- KU-3.B1.4 evidence set (the registered KB anchors for the membrane–cortex
+  adhesion energy band γ_MCA = W ~ 1e-6..1e-4 J/m², "Membrane tether force +
+  membrane-cortex adhesion (H.8 coupling SSOT)"):
+  · Hochmuth, R.M. et al. (1996) "Deformation and flow of membrane into tethers
+    extracted from neuronal growth cones." Biophys. J. 70:358–369.
+  · Derényi, I., Jülicher, F. & Prost, J. (2002) "Formation and interaction of
+    membrane tubes." Phys. Rev. Lett. 88:238101. doi:10.1103/PhysRevLett.88.238101
+  · Brochard-Wyart, F. et al. (2006) "Hydrodynamic narrowing of tubes extruded
+    from cells." Proc. Natl. Acad. Sci. USA 103:7660–7663.
+    doi:10.1073/pnas.0602012103
+  · Diz-Muñoz, A., Fletcher, D.A. & Weiner, O.D. (2013) "Use the force: membrane
+    tension as an organizer of cell shape and motility." Trends Cell Biol.
+    23:47–53. doi:10.1016/j.tcb.2012.09.006
+  · Serwas, D. et al. (2021) (membrane–cortex attachment, H.8 coupling SSOT row).
 - Dai, J. & Sheetz, M.P. (1999) "Membrane tether formation from blebbing cells."
-  Biophys. J. 77:3363–3370. doi:10.1016/S0006-3495(99)77168-7 (membrane–cortex
-  adhesion energy from tether pulling; W_MCA in the 1e-6..1e-4 J/m² band).
+  Biophys. J. 77:3363–3370. doi:10.1016/S0006-3495(99)77168-7 — SUPPORTING /
+  background: laser-tweezer tether-FORCE (pN) measurements that include the
+  membrane–cortex adhesion as a contributing term. NOT the J/m² energy-density
+  anchor (that is KU-3.B1.4 above; this paper reports tether forces, not W).
 - Diz-Muñoz, A. et al. (2010) "Control of directed cell migration in vivo by
   membrane-to-cortex attachment." PLoS Biol. 8:e1000544.
-  doi:10.1371/journal.pbio.1000544 (membrane-to-cortex attachment / MCA energy).
+  doi:10.1371/journal.pbio.1000544 — SUPPORTING / background: AFM membrane-to-
+  cortex attachment (MCA) measurements. NOT the KB anchor for the W_MCA band
+  (the registered MCA-energy row is Diz-Muñoz 2013, KU-3.B1.4).
 - Raucher, D. & Sheetz, M.P. (1999) "Characteristics of a membrane reservoir
   buffering membrane tension." Biophys. J. 77:1992–2002.
   doi:10.1016/S0006-3495(99)77040-2 (the membrane area reservoir that buffers
@@ -192,8 +235,11 @@ References
   unfolding the plasma membrane to fuel cell shape change." Bioarchitecture
   4:39–46. doi:10.4161/bioa.29069 (excess-area reservoir, a few % to tens of %;
   MCF7 value uncertain → PI decision).
-- KU-3.B1.3 membrane–cortex adhesion energy band 1e-6 .. 1e-4 J/m² (see
-  ``cell/membrane_surface.py`` GAMMA_MCA_BAND; same anchor).
+- KU-3.B1.4 membrane–cortex adhesion energy band γ_MCA = W ~ 1e-6 .. 1e-4 J/m²
+  ("Membrane tether force + membrane-cortex adhesion (H.8 coupling SSOT)"; see
+  ``cell/membrane_surface.py`` GAMMA_MCA_BAND; same anchor). NB: KU-3.B1.3 is the
+  DISTINCT area-expansion modulus K_A (~0.24 N/m, Rawicz 2000), not this energy
+  density — do not conflate the two.
 - Structural analogs (in-tree templates): ``cortex/erm.py`` (radial membrane–
   cortex pinning + Sanity Gate + CFL attach gate), ``cortex/crosslinkers.py``
   (breakable Bell-Evans dynamic-bond family + per-batch Action + bond binning),
@@ -235,11 +281,13 @@ PI_DECISIONS: list[str] = [
     "stays disabled until PI anchors the MCF7 excess-area fraction.",
 ]
 
-#: Membrane–cortex adhesion energy band, KU-3.B1.3 (Dai & Sheetz 1999; Diz-Muñoz
-#: 2010). Same anchor as ``membrane_surface.py`` GAMMA_MCA_BAND. [J/m²]
+#: Membrane–cortex adhesion energy band, KU-3.B1.4 (γ_MCA = W; "Membrane tether
+#: force + membrane-cortex adhesion (H.8 coupling SSOT)"; Hochmuth 1996; Derényi
+#: 2002; Brochard-Wyart 2006; Diz-Muñoz 2013). Same anchor as
+#: ``membrane_surface.py`` GAMMA_MCA_BAND. [J/m²]
 W_MCA_BAND: tuple[float, float] = (1.0e-6, 1.0e-4)
 #: Default membrane–cortex adhesion energy: mid-band 1e-5 J/m² (cited, in-band).
-DEFAULT_W_MCA: float = 1.0e-5  # J/m²  KU-3.B1.3 (Dai & Sheetz 1999)
+DEFAULT_W_MCA: float = 1.0e-5  # J/m²  KU-3.B1.4 (γ_MCA; Hochmuth 1996 / Derényi 2002)
 
 #: Canonical breakable tether bond-type family name (starts with the denylist
 #: prefix so it is excluded from γ_soft).
@@ -262,9 +310,9 @@ class ResolvedMembraneReservoir:
     Attributes:
         enabled: Master switch. When False this module is a no-op: the topology
             builder early-returns the input snapshot unchanged.
-        W_MCA: Membrane–cortex adhesion energy density [J/m²]. KU-3.B1.3 band
-            1e-6..1e-4 (Dai & Sheetz 1999; Diz-Muñoz 2010). Sets the tether
-            adhesion energy / rupture force (eq. R).
+        W_MCA: Membrane–cortex adhesion energy density [J/m²]. KU-3.B1.4 band
+            1e-6..1e-4 (γ_MCA; Hochmuth 1996; Derényi 2002; Brochard-Wyart 2006;
+            Diz-Muñoz 2013). Sets the tether adhesion energy / rupture force (eq. R).
         k_tether: Membrane–cortex tether harmonic stiffness [N/m]. The same
             order as the ERM radial pinning ``k_ERM`` (KU-3.18, 0.1 N/m); the
             tether is the per-bead bond form of that membrane–cortex link.
@@ -287,7 +335,7 @@ class ResolvedMembraneReservoir:
 
     enabled: bool
     # Adhesion / tether mechanics.
-    W_MCA: float                 # J/m²  membrane–cortex adhesion (KU-3.B1.3)
+    W_MCA: float                 # J/m²  membrane–cortex adhesion (KU-3.B1.4)
     k_tether: float              # N/m   tether harmonic stiffness
     R_cell: float                # m     shell radius (per-bead area share)
     max_tether_dist: float       # m     acceptor search radius
@@ -434,14 +482,14 @@ def resolve_membrane_reservoir(
     if not (math.isfinite(dt) and dt >= 0.0):
         raise ValueError(f"dt must be finite and ≥ 0; got {dt!r}")
 
-    # KU-3.B1.3 adhesion-energy band guard (no magic number / tuned override).
+    # KU-3.B1.4 adhesion-energy band guard (no magic number / tuned override).
     lo, hi = W_MCA_BAND
     if not (lo <= W_MCA <= hi):
         raise ValueError(
-            f"W_MCA = {W_MCA:.3e} J/m² outside the KU-3.B1.3 membrane–cortex "
-            f"adhesion band [{lo:.1e}, {hi:.1e}] J/m² (Dai & Sheetz 1999; "
-            "Diz-Muñoz 2010). Per CLAUDE.md no-magic-number: keep within band "
-            "or surface to PI."
+            f"W_MCA = {W_MCA:.3e} J/m² outside the KU-3.B1.4 membrane–cortex "
+            f"adhesion band [{lo:.1e}, {hi:.1e}] J/m² (γ_MCA; Hochmuth 1996; "
+            "Derényi 2002; Brochard-Wyart 2006; Diz-Muñoz 2013). Per CLAUDE.md "
+            "no-magic-number: keep within band or surface to PI."
         )
     # Optional anchored constants must be physical when supplied.
     if sigma_crit_bleb is not None:
@@ -676,6 +724,19 @@ def attach_membrane_tether_force(
     separation; stiffness ``k = p.k_tether``. The bond CFL ``dt ≤ α·γ_b/k_tether``
     is gated like ``erm.py`` / ``crosslinkers.py``.
 
+    SHARED-FORCE convention (REQUIRED for an integrated cell): HOOMD's
+    ``md.bond.Harmonic`` requires params for EVERY bond type present in the
+    state. An integrated cell already owns ONE shared ``md.bond.Harmonic`` (the
+    cortex/xlink/myosin/FA/lamel force in ``cell.py``) that registers all those
+    types; appending a SECOND ``md.bond.Harmonic`` that registers only
+    ``mem_tether`` leaves both forces with un-set types → HOOMD raises
+    ``IncompleteSpecificationError`` at ``sim.run``. So if an existing
+    ``md.bond.Harmonic`` is already on the integrator, we REGISTER ``mem_tether``
+    on THAT shared force (mirroring ``crosslinkers.py`` /
+    ``register_cortex_myosin_bond_params``). Only on the standalone/isolated path
+    (no pre-existing harmonic bond force, e.g. a bare mem_tether-only test shell)
+    do we create and append a fresh one.
+
     No-op when ``p.enabled`` is False OR ``layout.n_tether == 0``: returns None
     without touching the integrator.
 
@@ -689,7 +750,9 @@ def attach_membrane_tether_force(
         cfl_strict: Raise on CFL violation if True.
 
     Returns:
-        The attached ``md.bond.Harmonic`` force, or None on the no-op path.
+        The ``md.bond.Harmonic`` force carrying ``mem_tether`` (the pre-existing
+        shared force if one was found, else the newly-appended standalone force),
+        or None on the no-op path.
 
     Raises:
         RuntimeError: if no Integrator is set, or the CFL gate is violated.
@@ -717,12 +780,22 @@ def attach_membrane_tether_force(
                 "k_tether (PI sign-off). Pass cfl_strict=False to skip."
             )
 
-    bond = md.bond.Harmonic()
     # Construction-separation rest length; force-free at t=0. All seeded tethers
     # share the canonical MEM_TETHER_BOND type — use the median r0 as the single
     # type rest length (the per-bond construction spread is sub-nm; the tether is
     # a soft adhesion link, residual mismatch ≪ kT, same convention as erm.py).
     r0 = float(np.median(layout.tether_r0)) if layout.n_tether else 0.0
+
+    # Register mem_tether on the EXISTING shared md.bond.Harmonic if present (the
+    # integrated-cell path); only fall back to a fresh force on the isolated path.
+    existing = next(
+        (f for f in ig.forces if isinstance(f, md.bond.Harmonic)), None
+    )
+    if existing is not None:
+        existing.params[MEM_TETHER_BOND] = dict(k=p.k_tether, r0=r0)
+        return existing
+
+    bond = md.bond.Harmonic()
     bond.params[MEM_TETHER_BOND] = dict(k=p.k_tether, r0=r0)
     ig.forces.append(bond)
     return bond
@@ -739,10 +812,19 @@ class MembraneTetherUpdater(hoomd.custom.Action):
     lumped switch). The off-rate is Bell-Evans against the rupture force
     ``F_c`` (eq. R) referenced to the Tinevez (2009) critical tension.
 
-    DISABLED in this version: the MCF7 critical tension ``sigma_crit_bleb`` is
-    uncertain (PI decision), so ``__init__`` raises :class:`NotImplementedError`
-    when ``p.sigma_crit_bleb is None`` — the bleb path NEVER runs from an invented
-    threshold. Supply a PI-anchored ``sigma_crit_bleb`` to enable it.
+    DISABLED in this version on TWO independent grounds:
+    1. The MCF7 critical tension ``sigma_crit_bleb`` is uncertain (PI decision), so
+       ``__init__`` raises :class:`NotImplementedError` when
+       ``p.sigma_crit_bleb is None`` — the bleb path NEVER runs from an invented
+       threshold.
+    2. The Bell-Evans rupture loop in :meth:`act` is itself an UNIMPLEMENTED TODO
+       (the rupture physics has not been written). So ``__init__`` ALSO refuses
+       construction UNCONDITIONALLY (even WITH a PI-anchored ``sigma_crit_bleb``)
+       until that loop lands — and :meth:`act`, were it ever reached, likewise
+       raises. ``__init__`` and :meth:`act` therefore agree: supplying
+       ``sigma_crit_bleb`` alone does NOT make this updater functional. Do NOT
+       enable the bleb-nucleation path until the rupture loop in :meth:`act` is
+       implemented (then remove the unconditional ``__init__`` guard).
 
     Args:
         p: Resolved membrane-reservoir parameters.
@@ -752,7 +834,11 @@ class MembraneTetherUpdater(hoomd.custom.Action):
             collision with the BAOAB/xlink/integrin updaters at 0/1/2).
 
     Raises:
-        NotImplementedError: when ``p.sigma_crit_bleb`` is None (MCF7 unknown).
+        NotImplementedError: ALWAYS — on two independent grounds: when
+            ``p.sigma_crit_bleb`` is None (MCF7 unknown, PI decision), AND because
+            the Bell-Evans rupture loop in :meth:`act` is itself unimplemented.
+            Construction is refused unconditionally so a non-functional updater is
+            never instantiated; ``__init__`` and :meth:`act` therefore agree.
     """
 
     def __init__(
@@ -772,7 +858,18 @@ class MembraneTetherUpdater(hoomd.custom.Action):
                 "PI_DECISIONS). Surface to PI to anchor the MCF7 critical tension "
                 "before enabling the bleb-nucleation path — do not invent it."
             )
-        self.p = p
+        # Even WITH a PI-anchored sigma_crit_bleb, the rupture loop in act() is an
+        # unimplemented TODO. Refuse construction unconditionally so __init__ and
+        # act() agree and no non-functional updater is built (finding: docstring/
+        # gate honesty). Remove this guard only when the act() loop is written.
+        raise NotImplementedError(
+            "MembraneTetherUpdater is not yet functional: the Bell-Evans "
+            "mem_tether rupture loop in act() is unimplemented (documented TODO). "
+            "Construction is refused even when sigma_crit_bleb is PI-anchored, so "
+            "the bleb-nucleation path cannot be silently enabled. Implement the "
+            "act() rupture loop before enabling this updater."
+        )
+        self.p = p  # unreachable until the act() loop lands (kept for the impl)
         self.layout = layout
         self.kT = float(kT)
         self._rng = np.random.default_rng(p.seed + seed_offset)
@@ -783,10 +880,17 @@ class MembraneTetherUpdater(hoomd.custom.Action):
         self._sim_ref = simulation
 
     def act(self, timestep: int) -> None:  # noqa: D401
-        # Unreachable while disabled (__init__ raises). The rupture loop mirrors
-        # the D2 crosslinker break path: read bonds, compute mem_tether load,
-        # sample Bell-Evans p_break against F_c, drop ruptured tethers. Left as a
-        # documented TODO contingent on the PI-anchored σ_crit.
+        # The rupture loop is NOT implemented. When written it will mirror the D2
+        # crosslinker break path: read bonds, compute mem_tether load, sample
+        # Bell-Evans p_break against F_c, drop ruptured tethers. Today this is a
+        # documented TODO. Note: with sigma_crit_bleb None, __init__ already raises
+        # so act() is unreachable; but if a PI-anchored sigma_crit_bleb lets
+        # __init__ succeed, act() STILL raises here because the loop is unwritten —
+        # the error message must state that true reason (not blame a missing
+        # sigma_crit_bleb that was in fact supplied).
         raise NotImplementedError(
-            "MembraneTetherUpdater.act requires a PI-anchored sigma_crit_bleb."
+            "MembraneTetherUpdater.act: the Bell-Evans mem_tether rupture loop is "
+            "not yet implemented (documented TODO; contingent on a PI-anchored "
+            "sigma_crit_bleb AND the rupture loop being written). Do not enable "
+            "the bleb-nucleation path until this method is implemented."
         )

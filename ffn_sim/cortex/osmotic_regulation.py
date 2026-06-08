@@ -46,14 +46,22 @@ mode)::
 
     V0(t+Δt) = V0(t) − Lp · A_mem · (ΔP_mech − ΔP_target) · Δt_batch
 
-The relaxation is a first-order exponential toward the target volume. The
-restoring stiffness of the WATER mode is the **osmotic modulus** ``Π_osm =
-R_gas·T·c_phys`` (for van't Hoff ``Π = R·T·N/V``, ``|V·dΠ/dV| = Π``) — NOT the
-cortex mechanical bulk modulus ``K_vol``. The time constant is therefore
-``τ_RVD = V0 / (Lp · A_mem · Π_osm)`` (derived in the Sanity Gate), which lands
-in the literature seconds-to-minutes RVD/RVI band (Hoffmann 2009) for the
-Olbrich ``Lp`` and physiological intracellular osmolarity ``c_phys ≈ 300
-mOsm/L`` — a falsifiable consistency check, not a fit.
+The relaxation is a first-order exponential toward the target volume. **Which
+modulus sets the time constant depends on what the updater actually integrates.**
+The implemented law drives ``V0`` with the host force's *mechanical* pressure
+``ΔP_mech = Π₀ − K_vol·(V−V0)/V0`` against a CONSTANT ``ΔP_target``; the only
+V0-dependent restoring stiffness is the cortex bulk modulus ``K_vol``, so the
+integrated mode's eigen-timescale is ``τ_Kvol = V0/(Lp·A_mem·K_vol)`` (the slow-
+mode CFL / stability anchor). The osmotic modulus ``Π_osm = R_gas·T·c_phys``
+(for van't Hoff ``Π = R·T·N/V``, ``|V·dΠ/dV| = Π``) sets a SEPARATE reference
+timescale ``τ_RVD = V0/(Lp·A_mem·Π_osm)`` — the relaxation of a TRUE free
+osmotic (passive-osmometer) mode, which this constant-target law does NOT
+instantiate. ``τ_RVD`` lands in the literature seconds-to-minutes RVD/RVI band
+(Hoffmann 2009) for the Olbrich ``Lp`` and ``c_phys ≈ 300 mOsm/L`` and is kept
+as a labelled reference overlay; ``τ_Kvol`` (~580× larger here) is the timescale
+the code's own ``V0(t)`` trajectory exhibits. To make ``Π_osm`` the genuine
+trajectory stiffness one would need a V0-dependent osmotic target
+``ΔP_target(V0) = R_gas·T·N/V0`` (Option A, surfaced to PI) — NOT done here.
 
 This module exposes the OSMOTIC TARGET ``ΔP_target`` (or equivalently a target
 volume ``V_target``) and the transport coefficients; the Updater integrates
@@ -74,6 +82,9 @@ Sanity Gate
    - ``Δt_batch = batch_steps·dt`` [s]; ``dV/dt · Δt`` = [m³].✓
    - ``Π_osm = R_gas·T·c_phys`` = [J/(mol·K)]·[K]·[mol/m³] = [Pa].✓
    - ``τ_RVD = V0/(Lp·A·Π_osm)`` = [m³] / ([m/(s·Pa)]·[m²]·[Pa]) = [s].✓
+     (reference osmotic-osmometer timescale; not the integrated mode)
+   - ``τ_Kvol = V0/(Lp·A·K_vol)`` = [m³] / ([m/(s·Pa)]·[m²]·[Pa]) = [s].✓
+     (integrated V0-mode eigen-timescale; the slow-mode CFL anchor)
 
 2. **Boundary cases**
    - ``Lp ≤ 0``, ``A_mem ≤ 0``, ``R_cell ≤ 0``, ``temperature_K ≤ 0``:
@@ -88,7 +99,11 @@ Sanity Gate
      resolved on the enclosed-volume force (no spurious perturbation).
    - A floor ``V0_min > 0`` clamps the volume so the shell can never be driven
      to/through zero (avoids the ``R_mean→0`` singular branch in the
-     enclosed-volume estimator).
+     enclosed-volume estimator). Default ``V0_min = 0.01·V0_ref`` is a pure
+     numerical singular-guard: it sits ~50× below the deepest physiological RVD
+     shrink (Hoffmann 2009 ~30–50% loss → V/V0 ≈ 0.5–0.7), so it is unreachable
+     under any physiological RVD/RVI trajectory and engages only on the
+     pathological singular limit.
 
 3. **Conservation / no-net-force**
    - This Updater injects NO force and moves NO particle. It only rewrites a
@@ -99,16 +114,27 @@ Sanity Gate
      ``snap.particles.position`` untouched.
 
 4. **Numerical sanity (CFL / stiff note)**
-   - The water mode is a SLOW relaxation: ``τ_RVD`` is seconds-to-minutes
-     (Hoffmann 2009), i.e. ~10⁸–10¹⁰ × the BAOAB ``dt`` (~10⁻⁸ s). The
-     explicit-Euler stability bound on the setpoint mode is
-     ``Δt_batch ≤ 2·τ_RVD``; with any sane batch interval this is satisfied
-     by ~9 orders of magnitude, so the setpoint integration is
-     unconditionally stable here and does NOT tighten the mechanical CFL.
-     The Updater asserts ``Δt_batch < τ_RVD`` (well inside the bound) at
-     construction and raises otherwise.
+   - The integrated V0-mode is a SLOW relaxation. Its explicit-Euler STABILITY
+     bound is set by the modulus that actually restores it — the mechanical
+     ``K_vol`` (since the updater integrates ``ΔP_mech = Π₀ − K_vol·(V−V0)/V0``
+     against a constant target): ``Δt_batch < 2·τ_Kvol`` with
+     ``τ_Kvol = V0/(Lp·A·K_vol)`` (~1.9e4 s = 5.2 h at the MCF7 default params).
+     The slow-mode CFL gate enforces the (tighter) resolution bound
+     ``Δt_batch < τ_Kvol`` against that same integrated-mode timescale (NOT the
+     osmotic ``τ_RVD``). With any sane batch interval this is satisfied by many
+     orders of magnitude, so the setpoint integration is unconditionally stable
+     here and does NOT tighten the mechanical CFL.
+   - ``τ_RVD = V0/(Lp·A·Π_osm)`` (~32 s) is the REFERENCE osmotic-osmometer
+     timescale (Hoffmann band overlay), ~580× SHORTER than ``τ_Kvol`` because
+     ``Π_osm ≈ 580·K_vol``; it is reported but is NOT the integrated-mode
+     stability bound and is NOT used by the gate.
+   - The gate is asserted by the RESOLVER (``resolve_osmotic_regulation``) at
+     config resolution; the Updater re-asserts it at construction
+     (``OsmoticRegulationUpdater.__init__``) so a hand-built / post-mutated
+     resolved dataclass that bypasses the resolver still cannot run an
+     under-resolved slow mode. Either path raises ``ValueError`` otherwise.
    - Forward Euler on V0 is first-order accurate; the slow timescale makes
-     the per-batch step error negligible (``Δt_batch/τ_RVD ≪ 1``).
+     the per-batch step error negligible (``Δt_batch/τ_Kvol ≪ 1``).
 
 5. **Sign / sense**
    - Cortex pushes harder than osmotic target (``ΔP_mech > ΔP_target``):
@@ -120,11 +146,15 @@ Sanity Gate
    - ``ΔP_mech == ΔP_target``: ``dV/dt = 0`` (fixed point). STATIC.
 
 6. **Measurement-protocol consistency**
-   - The relaxation half-time read from a ``V0(t)`` trajectory must equal
-     ``τ_RVD·ln2`` for the chosen ``Lp`` — and ``τ_RVD`` must fall in the
-     cited seconds-to-minutes RVD/RVI window. ANALYTICAL test (no long sim):
-     one explicit-Euler step on the resolver's transport law reproduces the
-     closed-form ``ΔV`` to float precision.
+   - The relaxation half-time read from a ``V0(t)`` trajectory of the
+     IMPLEMENTED (constant-target, K_vol-driven) law must equal ``τ_Kvol·ln2``
+     for the chosen ``Lp`` — because ``τ_Kvol`` is the eigen-timescale of the
+     mode actually integrated. The osmotic ``τ_RVD`` is the half-time of the
+     SEPARATE passive-osmometer mode (V0-dependent osmotic target) the code does
+     NOT instantiate; it is a labelled reference that must fall in the cited
+     seconds-to-minutes RVD/RVI window. ANALYTICAL test (no long sim): one
+     explicit-Euler step on the resolver's transport law reproduces the closed-
+     form ``ΔV`` to float precision.
 
 Compartment Performance Contract
 --------------------------------
@@ -156,10 +186,21 @@ References
 - van't Hoff osmotic law ``Π = R_gas·T·Δc``: van't Hoff 1887; standard
   physical chemistry. ``R_gas = 8.314 462 618 J/(mol·K)`` (CODATA 2018).
 - Membrane water permeability ``Lp ~ 1e-12 – 1e-13 m/(s·Pa)``: Olbrich,
-  Rawicz, Needham & Evans 2000 (Biophys. J. 79:321, "Water permeability and
-  mechanical strength of polyunsaturated lipid bilayers") report bilayer
-  ``Pf`` → ``Lp`` of order 1e-12 m/(s·Pa); cells with aquaporins fall in the
-  1e-12–1e-13 m/(s·Pa) range (Dvorak; Verkman aquaporin reviews).
+  Rawicz, Needham & Evans 2000 (Biophys. J. 79:321-327, doi
+  10.1016/S0006-3495(00)76294-1, "Water permeability and mechanical strength of
+  polyunsaturated lipid bilayers"). Olbrich 2000 reports the OSMOTIC water
+  permeability ``Pf ≈ 25–150 µm/s`` (di-C18:x bilayers, micropipette
+  aspiration), NOT the hydraulic/filtration coefficient ``Lp`` the transport
+  law needs. Converted via ``Lp = Pf·Vw/(R_gas·T)`` with the partial molar
+  volume of water ``Vw = 18e-6 m³/mol`` and ``R_gas·T`` (298 K) — giving
+  ``Lp ∈ [1.8e-13, 1.1e-12] m/(s·Pa)`` (at 310 K: [1.75e-13, 1.05e-12]). The
+  module default ``Lp = 1e-13`` sits at the low end of that converted band.
+  Cells with aquaporins fall in the 1e-12–1e-13 m/(s·Pa) range (Dvorak;
+  Verkman aquaporin reviews). (NOTE: the look-alike Rawicz 2000 row in the KB,
+  Biophys J 79:328, doi 10.1016/S0006-3495(00)76295-3, is a DIFFERENT
+  elasticity paper one page over — do NOT borrow it as the Lp provenance; a
+  dedicated ``Olbrich2000_BiophysJ`` SourceEvidence row carries this Pf datum +
+  the Pf→Lp conversion as a derived claim. Lead handles the registry.)
 - RVD / RVI timescales (seconds-to-minutes): Hoffmann, Lambert & Pedersen
   2009 (Physiol. Rev. 89:193, "Physiology of Cell Volume Regulation in
   Vertebrates") — regulatory volume decrease/increase relax over
@@ -200,13 +241,14 @@ R_GAS: float = 8.314462618  # J/(mol·K)
 
 # Open PI decisions for this module (empty = none outstanding).
 PI_DECISIONS: list[str] = [
-    # Lp is given a literature default band [1e-13, 1e-12] m/(s·Pa) (Olbrich "
-    # 2000; aquaporin reviews) but is NOT cell-type-specific for MCF7. If a "
-    # measured MCF7 plasma-membrane Lp is required for production, surface to "
-    # PI rather than picking a value inside the band.
-    "Lp default = 1e-13 m/(s·Pa) (Olbrich 2000 band low end, aquaporin-poor "
-    "membrane); no MCF7-specific Lp datum found — PI to confirm or supply a "
-    "measured value before production RVD/RVI runs.",
+    # Lp is given a literature default band, derived from Olbrich 2000's
+    # OSMOTIC permeability Pf~25-150 um/s via Lp = Pf*Vw/(R_gas*T) (Vw=18e-6
+    # m3/mol) -> Lp in [1.8e-13, 1.1e-12] m/(s.Pa); see References block. It is
+    # NOT cell-type-specific for MCF7. If a measured MCF7 plasma-membrane Lp is
+    # required for production, surface to PI rather than picking a value in-band.
+    "Lp default = 1e-13 m/(s·Pa) (Olbrich 2000 Pf→Lp converted-band low end, "
+    "aquaporin-poor membrane); no MCF7-specific Lp datum found — PI to confirm "
+    "or supply a measured value before production RVD/RVI runs.",
 ]
 
 
@@ -241,9 +283,17 @@ class ResolvedOsmoticRegulation:
 
     # Derived diagnostics.
     K_vol: float = 0.0                  # Pa   cortex bulk modulus copied from the EV force
-    Pi_osm: float = 0.0                 # Pa   osmotic modulus = R_gas·T·c_phys (restoring stiffness)
+    Pi_osm: float = 0.0                 # Pa   REFERENCE osmotic modulus = R_gas·T·c_phys (NOT the integrated-mode stiffness)
     V0_ref: float = 0.0                 # m³   initial reference volume (relax start)
-    tau_RVD: float = 0.0                # s    relaxation time V0/(Lp·A·Pi_osm)
+    # tau_Kvol = V0/(Lp·A·K_vol): eigen-timescale of the mode the updater ACTUALLY
+    # integrates (dP_mech = Π₀ − K_vol·(V−V0)/V0 is the only V0-dependent driver),
+    # in the stiff-cortex limit. This is the slow-mode CFL / stability anchor.
+    tau_Kvol: float = 0.0               # s    integrated V0-mode relaxation V0/(Lp·A·K_vol)
+    # tau_RVD = V0/(Lp·A·Pi_osm): the reference timescale of a TRUE free osmotic
+    # (passive-osmometer) water relaxation. It is a documented reference value
+    # only — the implemented constant-dP_target law does NOT integrate this mode
+    # (see resolver docstring); kept for the Hoffmann seconds-to-minutes overlay.
+    tau_RVD: float = 0.0                # s    reference osmotic relaxation V0/(Lp·A·Pi_osm)
 
     # Physiological intracellular osmolarity (van't Hoff modulus anchor).
     c_phys: float = 0.0                 # mol/m³  total intracellular osmolyte conc.
@@ -288,15 +338,30 @@ def resolve_osmotic_regulation(
     resolved object with zeroed transport coefficients (the builder then
     attaches nothing and the enclosed-volume setpoint never moves).
 
-    The transport law and timescale ``τ_RVD = V0/(Lp·A_mem·Π_osm)`` use the
-    OSMOTIC modulus ``Π_osm = R_gas·T·c_phys`` (the restoring stiffness of the
-    WATER mode) — NOT the cortex mechanical bulk modulus ``K_vol`` (the latter
-    is copied from the host force only as a diagnostic). The host
-    enclosed-volume force's ``V0`` (passed via ``p_enclosed_volume``) sets the
-    relaxation start so the regulation is consistent with the compartment it
-    modulates. With no ``p_enclosed_volume`` the timescale is left at 0
-    (diagnostic-only) and the membrane area defaults to the cell's sphere area
-    ``4π R_cell²``.
+    Two timescales are reported, and they describe DIFFERENT modes:
+
+    * ``τ_Kvol = V0/(Lp·A_mem·K_vol)`` is the eigen-timescale of the mode the
+      updater ACTUALLY integrates. The water law integrates the setpoint via
+      ``dV0/dt = -Lp·A·(dP_mech − dP_target)`` with
+      ``dP_mech = Π₀ − K_vol·(V−V0)/V0`` (the host enclosed-volume force), so
+      the ONLY V0-dependent restoring stiffness is the mechanical bulk modulus
+      ``K_vol``. ``τ_Kvol`` is therefore the explicit-Euler STABILITY / slow-
+      mode-CFL anchor and the gate (below) is enforced against it.
+    * ``τ_RVD = V0/(Lp·A_mem·Π_osm)`` (``Π_osm = R_gas·T·c_phys``) is a
+      REFERENCE value only — the timescale of a TRUE free osmotic (passive-
+      osmometer) relaxation, which the constant-``dP_target`` law does NOT
+      instantiate. It is retained for the Hoffmann 2009 seconds-to-minutes
+      overlay, not as the integrated-mode stiffness.
+
+    The host enclosed-volume force's ``V0`` (passed via ``p_enclosed_volume``)
+    sets the relaxation start so the regulation is consistent with the
+    compartment it modulates. With no ``p_enclosed_volume`` the host-force
+    diagnostics ``K_vol`` and the resting-turgor target ``dP_target`` default to
+    0 (so ``τ_Kvol = 0`` and the slow-mode CFL gate is inert — there is no
+    integrated restoring stiffness to destabilise), while the reference volume
+    ``V0_ref`` falls back to the cell sphere volume ``(4/3)π R_cell³`` and the
+    membrane area ``A_mem`` to the sphere area ``4π R_cell²`` — so ``τ_RVD``
+    remains a non-zero, physically-meaningful reference timescale.
 
     Args:
         cfg: YAML root, the ``cortex:`` sub-dict, or the
@@ -350,6 +415,7 @@ def resolve_osmotic_regulation(
             K_vol=K_vol,
             Pi_osm=0.0,
             V0_ref=V0_ref,
+            tau_Kvol=0.0,
             tau_RVD=0.0,
             c_phys=0.0,
             delta_c=None,
@@ -362,9 +428,11 @@ def resolve_osmotic_regulation(
     temperature_K = float(cfg.get("temperature_K", temperature_K))
     _require_finite_positive("temperature_K", temperature_K)
 
-    # Membrane hydraulic permeability. Literature band [1e-13, 1e-12]
-    # m/(s·Pa) (Olbrich 2000; aquaporin reviews). Default = low end (PI_DECISIONS).
-    Lp = float(cfg.get("Lp", 1.0e-13))  # m/(s·Pa)  Olbrich 2000 band low end
+    # Membrane hydraulic permeability. Olbrich 2000 reports osmotic Pf~25-150
+    # um/s; converted to hydraulic Lp via Lp = Pf*Vw/(R_gas*T) (Vw=18e-6 m3/mol)
+    # -> Lp in [1.8e-13, 1.1e-12] m/(s.Pa). Default = converted-band low end
+    # (PI_DECISIONS); aquaporin reviews put cell Lp in the same range.
+    Lp = float(cfg.get("Lp", 1.0e-13))  # m/(s·Pa)  Olbrich 2000 Pf→Lp band low end
     _require_finite_positive("Lp", Lp)
 
     # Membrane / water-exchange area; defaults to the cell sphere area.
@@ -391,8 +459,13 @@ def resolve_osmotic_regulation(
     if not math.isfinite(dP_target):
         raise ValueError(f"dP_target must be finite; got {dP_target!r}")
 
-    # Volume floor (singular-guard for the R_mean→0 estimator branch). Default
-    # to a small fraction of the reference volume (grid-invariant; not tuned).
+    # Volume floor = pure numerical singular-guard for the R_mean→0 estimator
+    # branch (R ∝ V^(1/3), so V→0 makes ΔP→±∞). Default 0.01·V0_ref sits ~50×
+    # below the deepest physiological RVD shrink (Hoffmann 2009: ~30–50% volume
+    # loss → V/V0 ≈ 0.5–0.7; 0.01·V0 → R floor = 0.01^(1/3)·R ≈ 0.215·R), so it
+    # guards the singular limit WITHOUT ever engaging during valid regulation.
+    # V0_ref is an intensive volume → the 0.01 fraction is grid-invariant and
+    # tuned to no observable. Override via cfg['V0_min'] for a tighter clamp.
     V0_min = float(cfg.get("V0_min", 0.01 * V0_ref))
     _require_finite_positive("V0_min", V0_min)
     if V0_min >= V0_ref:
@@ -409,20 +482,39 @@ def resolve_osmotic_regulation(
     # invariant intensive concentration, not a fit.
     c_phys = float(cfg.get("c_phys", 300.0))  # mol/m³  intracellular osmolarity
     _require_finite_positive("c_phys", c_phys)
-    Pi_osm = vant_hoff_pressure(c_phys, temperature_K)  # Pa  osmotic modulus
+    Pi_osm = vant_hoff_pressure(c_phys, temperature_K)  # Pa  REFERENCE osmotic modulus
 
-    # Relaxation timescale τ_RVD = V0 / (Lp·A_mem·Π_osm). The osmotic modulus
-    # Π_osm (~7.7e5 Pa at 300 mOsm, 310 K) is the restoring stiffness of the
-    # water mode, giving the Hoffmann 2009 seconds-to-minutes RVD/RVI window.
+    # REFERENCE osmotic relaxation timescale (passive-osmometer water mode):
+    # τ_RVD = V0/(Lp·A_mem·Π_osm). Π_osm (~7.7e5 Pa at 300 mOsm, 310 K) is the
+    # restoring stiffness of a TRUE free osmotic relaxation, landing in the
+    # Hoffmann 2009 seconds-to-minutes RVD/RVI window. NOTE: the implemented
+    # constant-dP_target updater does NOT integrate this osmometer mode — it
+    # integrates the mechanical (K_vol) pressure-mismatch mode below. τ_RVD is
+    # kept ONLY as a labelled reference value / Hoffmann-band overlay.
     tau_RVD = V0_ref / (Lp * A_mem * Pi_osm)
-    # Slow-mode explicit-Euler stability: Δt_batch ≤ 2·τ_RVD (we demand the
-    # stronger Δt_batch < τ_RVD so the regulation is well-resolved).
-    if batch_dt >= tau_RVD:
+
+    # INTEGRATED-MODE eigen-timescale (the one the updater actually produces).
+    # The water law integrates dV0/dt = -Lp·A·(dP_mech - dP_target) with
+    # dP_mech = Π₀ - K_vol·(V - V0)/V0 (enclosed_volume.py): the ONLY
+    # V0-dependent driver is the mechanical bulk term, so linearising about
+    # V≈V0 gives eigenvalue |λ| = Lp·A·K_vol/V0 and τ_Kvol = V0/(Lp·A·K_vol)
+    # (stiff-cortex limit; a compliant cortex makes V track V0 and slows it
+    # further, never faster). The osmotic Π_osm does NOT enter the integrated
+    # trajectory. τ_Kvol is therefore the correct slow-mode stability anchor.
+    tau_Kvol = V0_ref / (Lp * A_mem * K_vol) if K_vol > 0.0 else 0.0
+
+    # Slow-mode explicit-Euler STABILITY: the integrated V0-mode is K_vol-
+    # governed, so the explicit-Euler stability bound is Δt_batch < 2·τ_Kvol.
+    # We gate against the (tighter) τ_Kvol itself so the mode stays well-
+    # resolved. When there is no host force (K_vol=0 → τ_Kvol=0) there is no
+    # integrated restoring stiffness to destabilise, so the gate is inert.
+    if tau_Kvol > 0.0 and batch_dt >= tau_Kvol:
         raise ValueError(
             f"osmotic_regulation slow-mode CFL violated: batch_dt = "
-            f"{batch_dt:.3e} s ≥ τ_RVD = {tau_RVD:.3e} s "
-            f"(τ_RVD = V0/(Lp·A·Π_osm), Lp={Lp:.2e} m/(s·Pa), "
-            f"A_mem={A_mem:.3e} m², Π_osm={Pi_osm:.3e} Pa). "
+            f"{batch_dt:.3e} s ≥ τ_Kvol = {tau_Kvol:.3e} s "
+            f"(integrated-mode stability anchor τ_Kvol = V0/(Lp·A·K_vol), "
+            f"Lp={Lp:.2e} m/(s·Pa), A_mem={A_mem:.3e} m², K_vol={K_vol:.3e} Pa; "
+            f"reference osmotic τ_RVD = {tau_RVD:.3e} s, Π_osm={Pi_osm:.3e} Pa). "
             "Reduce batch_steps (resolve the slow water mode more finely) "
             "or revisit Lp/A_mem against the literature band."
         )
@@ -440,6 +532,7 @@ def resolve_osmotic_regulation(
         K_vol=K_vol,
         Pi_osm=Pi_osm,
         V0_ref=V0_ref,
+        tau_Kvol=tau_Kvol,
         tau_RVD=tau_RVD,
         c_phys=c_phys,
         delta_c=delta_c,
@@ -521,6 +614,17 @@ class OsmoticRegulationUpdater(hoomd.custom.Action):
             raise ValueError(
                 "OsmoticRegulationUpdater constructed with a disabled config; "
                 "the builder must early-return for enabled=False."
+            )
+        # Re-assert the slow-mode CFL at construction so a hand-built /
+        # post-mutated ResolvedOsmoticRegulation (which bypasses the resolver's
+        # gate at resolve time) still cannot run an under-resolved slow mode.
+        # τ_Kvol is the integrated-mode stability anchor; when there is no host
+        # restoring stiffness (K_vol=0 → τ_Kvol=0) the gate is inert.
+        if p.tau_Kvol > 0.0 and p.batch_dt >= p.tau_Kvol:
+            raise ValueError(
+                f"OsmoticRegulationUpdater: slow-mode CFL violated "
+                f"batch_dt={p.batch_dt:.3e} s ≥ τ_Kvol={p.tau_Kvol:.3e} s "
+                f"(integrated-mode stability anchor V0/(Lp·A·K_vol))."
             )
         self.p = p
         self.ev_force = ev_force

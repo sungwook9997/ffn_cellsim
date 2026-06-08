@@ -117,28 +117,54 @@ class TestResolverSanity:
         assert math.isclose(Pi, R_GAS * 310.15 * 1.0, rel_tol=1e-12)
         assert 2500.0 < Pi < 2650.0
 
-    def test_tau_rvd_derivation_and_units(self):
-        """τ_RVD = V0/(Lp·A·Π_osm) with Π_osm the OSMOTIC modulus, not K_vol."""
+    def test_tau_rvd_is_reference_osmotic_timescale(self):
+        """τ_RVD = V0/(Lp·A·Π_osm) is the REFERENCE osmotic-osmometer timescale.
+
+        Π_osm is NOT the stiffness of the integrated trajectory (that is K_vol —
+        see test_tau_kvol_is_integrated_mode). τ_RVD is retained only as a
+        labelled reference / Hoffmann-band overlay.
+        """
         ev = _ev()
         p = resolve_osmotic_regulation(
             {"enabled": True, "Lp": 1e-13, "batch_steps": 1000},
             R_cell=R_CELL, dt=DT, p_enclosed_volume=ev,
         )
-        # The restoring stiffness of the water mode is Π_osm = R·T·c_phys,
-        # NOT the cortex bulk modulus K_vol.
         assert math.isclose(p.Pi_osm, vant_hoff_pressure(p.c_phys, p.temperature_K),
                             rel_tol=1e-12)
         expected = ev.V0 / (p.Lp * p.A_mem * p.Pi_osm)
         assert math.isclose(p.tau_RVD, expected, rel_tol=1e-12)
         assert p.tau_RVD > 0.0
-        # Π_osm (~7.7e5 Pa) must be far stiffer than K_vol (~1.3e3 Pa).
+        # Π_osm (~7.7e5 Pa) is far larger than K_vol (~1.3e3 Pa); the two
+        # timescales therefore differ by that ratio (~580×).
         assert p.Pi_osm > 100.0 * ev.K_vol
+
+    def test_tau_kvol_is_integrated_mode_and_gates_cfl(self):
+        """τ_Kvol = V0/(Lp·A·K_vol) is the mode the updater actually integrates.
+
+        The water law drives dV0/dt = -Lp·A·(dP_mech - dP_target) with
+        dP_mech = Π₀ - K_vol·(V-V0)/V0, so the only V0-dependent restoring
+        stiffness is the mechanical K_vol. τ_Kvol must equal V0/(Lp·A·K_vol)
+        and must be the (much larger) integrated-mode timescale, ~580× the
+        reference τ_RVD here.
+        """
+        ev = _ev()
+        p = resolve_osmotic_regulation(
+            {"enabled": True, "Lp": 1e-13, "batch_steps": 1000},
+            R_cell=R_CELL, dt=DT, p_enclosed_volume=ev,
+        )
+        expected = ev.V0 / (p.Lp * p.A_mem * p.K_vol)
+        assert math.isclose(p.tau_Kvol, expected, rel_tol=1e-12)
+        assert p.tau_Kvol > 0.0
+        # Integrated-mode timescale is K_vol-governed, ~580× the osmotic ref.
+        assert math.isclose(p.tau_Kvol / p.tau_RVD, p.Pi_osm / p.K_vol,
+                            rel_tol=1e-9)
 
     def test_tau_rvd_in_seconds_to_minutes_band(self):
         """Hoffmann 2009 RVD/RVI relaxation is seconds-to-minutes.
 
-        With Lp in the Olbrich band and the MCF7 geometry, τ_RVD must land in
-        that physiological window (consistency check, not a fit).
+        With Lp in the Olbrich band and the MCF7 geometry, the REFERENCE
+        osmotic τ_RVD must land in that physiological window (Hoffmann-band
+        overlay consistency check, not a fit).
         """
         ev = _ev()
         p = resolve_osmotic_regulation(
@@ -194,14 +220,31 @@ class TestResolverSanity:
             )
 
     def test_slow_mode_cfl_raises_when_batch_too_coarse(self):
-        """batch_dt ≥ τ_RVD must raise (slow-mode explicit-Euler resolution)."""
+        """batch_dt ≥ τ_Kvol must raise (integrated-mode explicit-Euler bound)."""
         ev = _ev()
-        # Force τ_RVD tiny by a huge Lp so any sane batch overshoots it.
-        with pytest.raises(ValueError, match="slow-mode CFL"):
+        # Force τ_Kvol tiny by a huge Lp so any sane batch overshoots it. The
+        # gate now anchors on the integrated (K_vol) mode, not the osmotic ref.
+        with pytest.raises(ValueError, match="slow-mode CFL.*τ_Kvol"):
             resolve_osmotic_regulation(
                 {"enabled": True, "Lp": 1.0, "batch_steps": 10**9},
                 R_cell=R_CELL, dt=DT, p_enclosed_volume=ev,
             )
+
+    def test_slow_mode_cfl_inert_without_host_force(self):
+        """No enclosed-volume host => K_vol=0 => τ_Kvol=0 => CFL gate inert.
+
+        Without a restoring stiffness there is no integrated mode to
+        destabilise, so even an absurd batch must NOT raise (finding #7: the
+        gate is the integrated-mode anchor, not the osmotic τ_RVD)."""
+        p = resolve_osmotic_regulation(
+            {"enabled": True, "Lp": 1.0, "batch_steps": 10**9},
+            R_cell=R_CELL, dt=DT, p_enclosed_volume=None,
+        )
+        assert p.K_vol == 0.0
+        assert p.tau_Kvol == 0.0
+        # τ_RVD is still a non-zero, finite reference timescale.
+        assert p.tau_RVD > 0.0
+        assert math.isfinite(p.tau_RVD)
 
 
 # ---------------------------------------------------------------------------
@@ -305,6 +348,29 @@ class TestUpdaterAct:
         )
         with pytest.raises(ValueError, match="disabled"):
             OsmoticRegulationUpdater(p_off, ev_force)
+
+    def test_updater_reasserts_cfl_on_hand_built_dataclass(self):
+        """Finding #3: a hand-built / post-mutated enabled resolved dataclass
+        that bypasses the resolver's gate (batch_dt ≥ τ_Kvol) must still be
+        rejected at Updater construction."""
+        ev_cfg = _ev()
+        ev_force = EnclosedVolumePressure(ev_cfg, (0, 100))
+        # Hand-build an enabled config with a finite τ_Kvol but batch_dt above
+        # it (the resolver never saw this — it is constructed directly).
+        # batch_steps chosen so batch_dt = steps·dt genuinely exceeds τ_Kvol
+        # (τ_Kvol = V0/(Lp·A·K_vol) ≈ 1.9e4 s here; dt = 1e-8 s ⇒ need
+        # steps ≳ 1.9e12). 3e12 ⇒ batch_dt = 3e4 s > τ_Kvol.
+        bad_steps = 3 * 10**12
+        p_bad = ResolvedOsmoticRegulation(
+            enabled=True, Lp=1e-13, A_mem=4.0 * math.pi * R_CELL**2,
+            batch_steps=bad_steps, dt=DT, batch_dt=bad_steps * DT,
+            dP_target=40.0, temperature_K=310.15, V0_min=0.01 * ev_cfg.V0,
+            K_vol=ev_cfg.K_vol, V0_ref=ev_cfg.V0,
+            tau_Kvol=ev_cfg.V0 / (1e-13 * 4.0 * math.pi * R_CELL**2 * ev_cfg.K_vol),
+        )
+        assert p_bad.batch_dt >= p_bad.tau_Kvol
+        with pytest.raises(ValueError, match="slow-mode CFL.*τ_Kvol"):
+            OsmoticRegulationUpdater(p_bad, ev_force)
 
 
 # ---------------------------------------------------------------------------

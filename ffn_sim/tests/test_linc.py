@@ -19,6 +19,7 @@ Import-light: resolver level + a tiny hand-built gsd Frame. No full Cell.
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 import pytest
@@ -61,7 +62,10 @@ def _tiny_snapshot() -> gsd.hoomd.Frame:
     f.particles.types = ["nucleus_bead", "actin_cortex"]
     f.particles.typeid = np.array([0, 0, 0, 1, 1, 1], dtype=np.uint32)
     f.particles.position = pos.astype(np.float64)
-    f.particles.tag = np.arange(n, dtype=np.uint32)
+    # NOTE: deliberately NO f.particles.tag — a real build-time gsd.hoomd.Frame
+    # does not expose .particles.tag (only a runtime cpu_local_snapshot does).
+    # The extender consumes the snapshot tag-ordered (row index == global tag),
+    # exactly like the cell.py extenders, so it must not read .particles.tag.
     # One pre-existing unrelated bond (cortex-cortex) to test carry-across.
     f.bonds.N = 1
     f.bonds.types = ["cortex_backbone"]
@@ -127,8 +131,12 @@ class TestDimensionalAndParams:
         assert p.r0 == pytest.approx(50e-9, rel=1e-12)
         # Capture radius = 3× the gap (geometric multiple).
         assert p.capture_radius == pytest.approx(150e-9, rel=1e-12)
-        # Resting tension provenance (Arsenovic 2016 ~2 pN).
-        assert p.f_rest == pytest.approx(2e-12, rel=1e-12)
+        # Resting tension provenance is PI-PENDING (absolute magnitude +
+        # attribution unresolved: Arsenovic 2016 reported relative FRET only;
+        # Déjardin 2020 JCB ~8 pN — see PI_DECISIONS). f_rest feeds NO force
+        # (provenance only), so assert only that it is a physiological per-nesprin
+        # tension (~1-10 pN), NOT a single contested value.
+        assert 1.0e-12 <= p.f_rest <= 1.0e-11
         # Stiffness genuinely unknown by default.
         assert p.k_linc is None
 
@@ -232,6 +240,139 @@ class TestBoundary:
             nuc, cyto, capture_radius=1e-6, n_bridges_max=2
         )
         assert pairs.shape[0] == 2
+
+    def test_default_sentinel_cap_does_not_bind(self) -> None:
+        # The default n_bridges_max (1e6) is a no-cap sentinel: the binding
+        # ceiling is n_nuc (one LINC per envelope bead), not the 1e6 number.
+        n_nuc = 5
+        nuc = np.zeros((n_nuc, 3), dtype=np.float64)
+        cyto = np.array([[1e-9, 0, 0]], dtype=np.float64)
+        p = resolve_linc(_enabled_cfg(k_linc=1e-3))
+        assert p.n_bridges_max == 1_000_000  # the inert sentinel
+        pairs = pair_linc_bridges(
+            nuc, cyto,
+            capture_radius=p.capture_radius,
+            n_bridges_max=p.n_bridges_max,
+        )
+        # min(n_nuc, 1e6) == n_nuc — the sentinel never binds.
+        assert pairs.shape[0] == n_nuc
+
+
+# ---------------------------------------------------------------------------
+# Build-time-snapshot contract: the extender must NOT read .particles.tag
+# (a real gsd.hoomd.Frame does not expose it). Consumed tag-ordered.
+# ---------------------------------------------------------------------------
+class TestNoTagAttributeContract:
+    def test_frame_has_no_tag_attribute(self) -> None:
+        # Sanity: a vanilla build-time Frame genuinely lacks .particles.tag.
+        snap = _tiny_snapshot()
+        assert not hasattr(snap.particles, "tag")
+
+    def test_build_succeeds_without_tag_attribute(self) -> None:
+        # Regression for the .tag-read bug: an enabled build on a real Frame
+        # (NO .particles.tag) must form a LINC bond, not AttributeError.
+        snap = _tiny_snapshot()
+        n_before = int(snap.bonds.N)
+        p = resolve_linc(_enabled_cfg(k_linc=1e-3))  # 150 nm covers the gaps
+        out = extend_snapshot_with_linc(
+            snap, p, nucleus_tags=[0, 1, 2], cytoskeleton_tags=[3, 4, 5]
+        )
+        assert int(out.bonds.N) > n_before, "expected ≥1 LINC bond to form"
+        assert LINC_BOND_NESPRIN in out.bonds.types
+        # Bond groups are tag-ordered rows: nucleus tag (0-2) ↔ cyto tag (3-5).
+        linc_typeid = list(out.bonds.types).index(LINC_BOND_NESPRIN)
+        groups = np.asarray(out.bonds.group).reshape(-1, 2)
+        typeids = np.asarray(out.bonds.typeid)
+        for a, b in groups[typeids == linc_typeid]:
+            assert (a in (0, 1, 2)) and (b in (3, 4, 5))
+
+    def test_out_of_range_tags_are_bounds_filtered(self) -> None:
+        # Tags ≥ N (no such row) are dropped, not indexed out of bounds.
+        snap = _tiny_snapshot()  # N == 6
+        p = resolve_linc(_enabled_cfg(k_linc=1e-3))
+        out = extend_snapshot_with_linc(
+            snap, p, nucleus_tags=[0, 1, 2, 99], cytoskeleton_tags=[3, 4, 5, 100]
+        )
+        assert LINC_BOND_NESPRIN in out.bonds.types
+
+
+# ---------------------------------------------------------------------------
+# Real-geometry trap: at the production nucleus-cloud / cortex-shell bead
+# representation the default 150 nm capture radius forms ZERO bonds. Document
+# the trap + the corrected capture_radius that does form bonds.
+# ---------------------------------------------------------------------------
+class TestRealGeometryCaptureTrap:
+    # MCF7 production geometry: R_cell = 7.5 µm, R_nuc = 0.25·R_cell = 1.875 µm.
+    R_CELL = 7.5e-6
+    R_NUC = 1.875e-6
+
+    def _nuc_cloud_and_cortex_shell(
+        self, n_nuc: int = 40, n_cortex: int = 200, seed: int = 0
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Filled nucleus cloud out to R_nuc + a cortex shell near R_cell."""
+        rng = np.random.default_rng(seed)
+        # Nucleus: filled ball out to R_nuc (uniform-in-volume radii).
+        u = rng.random(n_nuc)
+        r_nuc = self.R_NUC * np.cbrt(u)
+        dirs_n = rng.normal(size=(n_nuc, 3))
+        dirs_n /= np.linalg.norm(dirs_n, axis=1, keepdims=True)
+        nuc = (dirs_n * r_nuc[:, None]).astype(np.float64)
+        # Cortex: thin shell near R_cell.
+        dirs_c = rng.normal(size=(n_cortex, 3))
+        dirs_c /= np.linalg.norm(dirs_c, axis=1, keepdims=True)
+        cyto = (dirs_c * self.R_CELL).astype(np.float64)
+        return nuc, cyto
+
+    def test_default_capture_radius_forms_zero_bonds(self) -> None:
+        # The latent trap: nearest nucleus↔cortex bead gap is R_cell - R_nuc
+        # ≈ 5.6 µm ≫ the 150 nm default → ZERO bridges at construction.
+        nuc, cyto = self._nuc_cloud_and_cortex_shell()
+        p = resolve_linc(_enabled_cfg(k_linc=1e-3))  # default 150 nm radius
+        assert p.capture_radius == pytest.approx(150e-9, rel=1e-12)
+        pairs = pair_linc_bridges(
+            nuc, cyto,
+            capture_radius=p.capture_radius,
+            n_bridges_max=p.n_bridges_max,
+        )
+        assert pairs.shape[0] == 0, (
+            "default 150 nm capture radius must form ZERO bonds at the real "
+            "nucleus-cloud / cortex-shell geometry (the documented trap)"
+        )
+
+    def test_corrected_capture_radius_forms_bonds(self) -> None:
+        # A capture_radius on the R_cell - R_nuc scale DOES form bridges.
+        nuc, cyto = self._nuc_cloud_and_cortex_shell()
+        # Slightly above the gap so the nearest acceptors are in range.
+        cr = 1.1 * (self.R_CELL - self.R_NUC)
+        p = resolve_linc(_enabled_cfg(k_linc=1e-3, capture_radius=cr))
+        pairs = pair_linc_bridges(
+            nuc, cyto,
+            capture_radius=p.capture_radius,
+            n_bridges_max=p.n_bridges_max,
+        )
+        assert pairs.shape[0] > 0, (
+            "an R_cell - R_nuc-scale capture radius must form ≥1 bridge"
+        )
+
+    def test_resolve_warns_when_capture_below_nuc_cortex_gap(self) -> None:
+        # The fail-loud guard: default radius + real R_cell/R_nuc → warning.
+        with pytest.warns(UserWarning, match="ZERO LINC bonds"):
+            resolve_linc(
+                _enabled_cfg(),  # default 150 nm capture radius
+                R_cell=self.R_CELL,
+                R_nuc=self.R_NUC,
+            )
+
+    def test_resolve_no_warn_when_capture_covers_gap(self) -> None:
+        # A capture radius covering the gap must NOT warn.
+        cr = 1.1 * (self.R_CELL - self.R_NUC)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # any warning → test failure
+            resolve_linc(
+                _enabled_cfg(capture_radius=cr),
+                R_cell=self.R_CELL,
+                R_nuc=self.R_NUC,
+            )
 
 
 # ---------------------------------------------------------------------------

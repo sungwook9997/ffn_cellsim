@@ -198,18 +198,43 @@ def test_reservoir_release_works_when_f_excess_supplied():
     assert math.isclose(p.released_area(A0), 0.1 * A0, rel_tol=1e-12)
 
 
-def test_bleb_updater_disabled_when_sigma_crit_none():
-    """MembraneTetherUpdater raises NotImplementedError without σ_crit (MCF7)."""
-    p = resolve_membrane_reservoir({"enabled": True}, R_cell=R_CELL)
-    assert p.sigma_crit_bleb is None
-    empty = MembraneTetherLayout(
+def _empty_layout() -> MembraneTetherLayout:
+    return MembraneTetherLayout(
         tether_pairs=np.empty((0, 2), dtype=np.int64),
         tether_r0=np.empty((0,), dtype=np.float64),
         n_tether=0,
         rupture_force=0.0,
     )
+
+
+def test_bleb_updater_disabled_when_sigma_crit_none():
+    """MembraneTetherUpdater raises NotImplementedError without σ_crit (MCF7)."""
+    p = resolve_membrane_reservoir({"enabled": True}, R_cell=R_CELL)
+    assert p.sigma_crit_bleb is None
     with pytest.raises(NotImplementedError):
-        MembraneTetherUpdater(p, empty, kT=KT_300)
+        MembraneTetherUpdater(p, _empty_layout(), kT=KT_300)
+
+
+def test_bleb_updater_refuses_construction_even_with_sigma_anchored():
+    """Construction is refused even WITH a PI-anchored σ_crit (rupture loop unwritten).
+
+    Finding (doc/gate honesty): the class docstring used to promise "supply a
+    PI-anchored sigma_crit_bleb to enable it", but the Bell-Evans rupture loop in
+    act() is an unimplemented TODO. __init__ now refuses construction
+    UNCONDITIONALLY so __init__ and act() agree and no non-functional updater is
+    instantiated. The error message must NOT blame a missing sigma (it was
+    supplied) — it must state the rupture loop is unimplemented.
+    """
+    p = resolve_membrane_reservoir(
+        {"enabled": True, "sigma_crit_bleb": 4.0e-4}, R_cell=R_CELL
+    )
+    assert p.sigma_crit_bleb == 4.0e-4  # σ IS anchored
+    with pytest.raises(NotImplementedError) as exc:
+        MembraneTetherUpdater(p, _empty_layout(), kT=KT_300)
+    msg = str(exc.value).lower()
+    # the reason is the unimplemented rupture loop, not a missing sigma
+    assert "rupture loop" in msg or "not yet functional" in msg
+    assert "act()" in msg or "act" in msg
 
 
 # ---------------------------------------------------------------------------

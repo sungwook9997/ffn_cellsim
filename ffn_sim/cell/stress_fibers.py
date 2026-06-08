@@ -64,7 +64,9 @@ Sanity Gate
 ``ffn_sim/tests/test_stress_fibers.py``.*
 
 1. **Dimensional analysis**
-   - ``k_actin`` [N/m] · ``Δℓ`` [m] → axial tension [N]. ✓
+   - ``μ_SF`` [N] (grid-invariant bundle axial modulus = ``N_filaments ·
+     EA_single``); per-bond ``k_bond = μ_SF / ℓ0_actin`` [N/m]; ``k_bond ·
+     Δℓ`` [m] → axial tension [N]. ✓
    - ``sarcomere_spacing`` [m]; ``n_sarcomeres = round(L_bundle / spacing)``
      dimensionless. ✓
    - ``ℓ0_actin = L_bundle / (n_beads − 1)`` [m]. ✓
@@ -95,14 +97,22 @@ Sanity Gate
      the test (see :meth:`StressFiberLayout` docstring for the breakdown).
 
 4. **Numerical sanity (CFL)**
-   - The actin backbone stiffness ``k_actin`` sets ``τ_actin = γ_b / k_actin``.
-     With ``k_actin = 1e-2 N/m`` (see Magic-Number Block) and the cortex
-     per-bead drag ``γ_b ≈ 3.9e-10 N·s/m``, ``τ_actin ≈ 3.9e-8 s = 39 ns`` —
-     comparable to the cortex ``dt_CFL ≈ 13 ns``, so the SF backbone is the
-     stiffest element and SETS the step. :func:`stress_fiber_dt_cfl` returns
-     ``cfl_safety · γ_b / k_stiffest`` so the Lead can gate ``dt`` against it
-     (the anchor ``k_anchor`` is comparable; ``k_xl`` is far softer). A
-     ``cfl_strict`` gate is provided in the attach helper, mirroring ERM.
+   - The actin backbone stiffness is the GRID-INVARIANT bundle axial modulus
+     ``μ_SF`` [N] = ``N_filaments · EA_single`` (see the Magic-Number Block and
+     :func:`resolve_stress_fibers`), turned into a per-bond spring at
+     registration as ``k_bond = μ_SF / ℓ0_actin`` (cortex.py:440 convention).
+     For a thick vSF (``N_filaments ≈ 10-30``, ``EA_single = 4.3e-8 N``) on a
+     ~12 µm / 24-bead bundle this is ``k_bond ≈ 0.8-2.5 N/m`` — ~2-3 ORDERS
+     STIFFER than the retired ``1e-2 N/m`` placeholder. With the cortex per-bead
+     drag ``γ_b ≈ 3.9e-10 N·s/m`` the backbone ``τ_actin = γ_b / k_bond ≈
+     1.5e-10 s`` at ``k_bond ≈ 2.5 N/m`` — ~250× STRICTER than the old 39 ns and
+     well below the cortex ``dt_CFL ≈ 13 ns``, so the SF backbone GENUINELY SETS
+     the step and ``dt`` MUST be gated against it before any live SF build.
+     :func:`stress_fiber_dt_cfl` returns ``cfl_safety · γ_b / k_stiffest`` (the
+     anchor ``k_anchor`` is comparable; ``k_xl`` is far softer);
+     :func:`attach_stress_fibers_to_simulation` ENFORCES the gate with a
+     ``cfl_strict`` flag, byte-for-byte mirroring ``erm.py`` /
+     ``enclosed_volume.py`` (pass ``cfl_strict=False`` to skip for diagnostics).
    - All positions / forces float64.
 
 5. **Sign / sense**
@@ -115,10 +125,19 @@ Sanity Gate
 
 6. **Measurement-protocol consistency**
    - :func:`measure_sf_tension` reports the mean axial chain-bond tension
-     ``T = k_actin · max(0, |Δr| − ℓ0_actin)`` over the ``sf_actin_bond``
-     family of one bundle — the SAME quantity the single-SF force band probes
-     (Kumar 2006 ablation tension ~10-30 nN). It is a BASAL observable, summed
-     over the ``sf_`` load path, and is explicitly DENYLISTED from γ.
+     ``T = k_bond · max(0, |Δr| − ℓ0_actin)`` over the ``sf_actin_bond``
+     family of one bundle, where ``k_bond = μ_SF / ℓ0_actin`` is the registered
+     grid-invariant per-bond stiffness — the SAME quantity the single-SF force
+     band probes (Kumar 2006 ablation tension ~10-30 nN). Because ``k_bond`` is
+     ``μ_SF / ℓ0`` and a uniformly strained bundle has per-bond elongation
+     ``ε · ℓ0``, the reported tension is ``T = μ_SF · ε`` — INDEPENDENT of the
+     bead count (grid-invariance, asserted in the test across
+     ``n_beads ∈ {12,24,48,96}``). ``sf_tension_band_N`` (Kumar 2006) is a
+     pure VALIDATION TARGET: ``μ_SF`` is an INDEPENDENT input derived from the
+     bundle EA (``N_filaments · EA_single``), so ``in_band`` can PASS or FAIL on
+     its own merits — it is NOT back-solved to land in the band. It is a BASAL
+     observable, summed over the ``sf_`` load path, and explicitly DENYLISTED
+     from γ.
 
 Compartment Performance Contract
 --------------------------------
@@ -164,9 +183,21 @@ References
   ("Actin stress fibers — assembly, dynamics and biological roles");
   Hotulainen & Lappalainen 2006, J Cell Biol 173:383-394 (vSF arise from
   dorsal SF + transverse arcs; periodic α-actinin/myosin banding).
-- Single ventral stress fiber contractile tension ~10-30 nN: Kumar, Maxwell,
-  Heisterkamp, Polte, Lele, Salanga, Mazur & Ingber 2006, Biophys J
-  90:3762-3773 (single-living-SF laser ablation, Kelvin-Voigt retraction).
+- Single ventral stress fiber contractile TENSION OBSERVABLE ~10-30 nN: Kumar,
+  Maxwell, Heisterkamp, Polte, Lele, Salanga, Mazur & Ingber 2006, Biophys J
+  90:3762-3773 (single-living-SF laser ablation, Kelvin-Voigt retraction). This
+  paper supplies a TENSION BAND only (``sf_tension_band_N``, a validation
+  target); it does NOT report a bundle stiffness, so it is NOT the provenance of
+  ``μ_SF`` / ``k_actin`` (see below).
+- SF backbone STIFFNESS provenance (``μ_SF`` = ``N_filaments · EA_single``):
+  the single-filament F-actin axial rigidity ``EA_single ≈ 4.3e-8 N`` composed
+  from the F-actin Young's modulus ``E ≈ 1.3-2.6 GPa`` × cross-section
+  ``A ≈ 3.2e-17 m²`` (Gittes 1993 J Cell Biol 120:923; Kojima, Ishijima &
+  Yanagida 1994 PNAS 91:12962 — F-actin tensile/flexural rigidity). The bundle
+  filament count ``N_filaments ≈ 10-30`` is the vSF cross-sectional bundling
+  (Cramer, Siebert & Mitchison 1997 J Cell Biol 136:1287). ``μ_SF`` is thus an
+  INDEPENDENT EA-derived INPUT — decoupled from the Kumar tension band, which it
+  is then validated against (it may pass or fail).
 - Traction stress ~5.5 nN/µm² at FA: Balaban et al. 2001, Nat Cell Biol
   3:466-472 (force on substrate at focal adhesions).
 - NMII bipolar minifilament (D5) + Hill F-V (D6): Stam et al. 2017 PNAS;
@@ -201,15 +232,34 @@ GAMMA_DENYLIST_PREFIX: str = "sf_"
 #: Open decisions surfaced to PI (CLAUDE.md "No empirical magic numbers": when a
 #: constant is genuinely unknown, flag here + leave the field None + raise).
 PI_DECISIONS: list[str] = [
-    "k_actin (SF backbone bundle stiffness, N/m): no single-molecule "
-    "literature value for a MESOSCALE ventral-SF actin-bundle segment at the "
-    "×40 coarse scale. Default 1.0e-2 N/m is the ORDER implied by Kumar 2006 "
-    "single-SF tension (~10-30 nN) over a ~µm sarcomeric strain, NOT a tuned "
-    "fit; range-checked, flagged for PI ratification against a fine-grained "
-    "bundle-of-N-filaments derivation.",
-    "k_anchor (SF→FA anchor bond stiffness, N/m): set equal to k_actin "
-    "(the anchor is as stiff as the bundle it terminates) pending a "
-    "talin/vinculin clutch-stiffness anchor from the fa compartment — flagged.",
+    "mu_SF (SF backbone GRID-INVARIANT bundle axial modulus, N): the SF "
+    "backbone stiffness is now DERIVED from a fine-grained bundle EA, NOT "
+    "back-solved from a tension band. mu_SF = N_filaments · EA_single with "
+    "EA_single = 4.3e-8 N (F-actin single-filament axial rigidity: E≈1.3-2.6 "
+    "GPa × A≈3.2e-17 m²; Gittes 1993 / Kojima 1994) and N_filaments the vSF "
+    "cross-section count (~10-30; Cramer 1997). The per-bond spring is k_bond = "
+    "mu_SF / ell0_actin (cortex.py:440 grid-invariant convention), giving "
+    "k_bond≈0.8-2.5 N/m on a ~12µm/24-bead bundle — ~2-3 ORDERS above the "
+    "RETIRED 1e-2 N/m placeholder, and reaching the Kumar 2006 10-30 nN band at "
+    "a PHYSICAL ~few-% strain (mu_SF·eps) rather than the 380-1180% strain the "
+    "1e-2 placeholder needed. N_filaments has no SINGLE literature default for "
+    "the ×40 mesoscale bundle, so mu_SF defaults to None (PI to ratify "
+    "N_filaments); the enabled path then HALTS (NotImplementedError) rather "
+    "than silently inheriting a non-physical value. Set stress_fibers.mu_SF "
+    "(or N_filaments) explicitly to opt in. Kumar 2006 supplies the VALIDATION "
+    "band (sf_tension_band_N) ONLY — it carries no stiffness; measure_sf_tension "
+    "in_band can therefore independently PASS or FAIL.",
+    "k_anchor (SF→FA anchor bond stiffness, N/m): mirrors the derived backbone "
+    "per-bond stiffness (the anchor is as stiff as the bundle it terminates), "
+    "i.e. k_anchor = k_actin = mu_SF/ell0, pending a talin/vinculin "
+    "clutch-stiffness anchor from the fa compartment — flagged.",
+    "SF CFL enforcement: attach_stress_fibers_to_simulation() ENFORCES the "
+    "SF-stiffest-element CFL gate (dt ≤ cfl_safety · γ_b / k_stiffest) with a "
+    "cfl_strict flag, mirroring erm.py / enclosed_volume.py. At the EA-derived "
+    "k_bond≈2.5 N/m the SF τ≈0.16 ns is ~80× below an ungated cortex dt≈13 ns, "
+    "so this gate MUST be honoured before any live SF build — it is no longer "
+    "an aspirational docstring claim. (stress_fiber_dt_cfl computes the number; "
+    "the attach helper gates dt against it.)",
     "sf_myosin bond-type variant: NMII on SFs currently reuses the cortex "
     "'cortex_myosin_*' bond types (shared D5/D6 builder). A distinct 'sf_myosin_*' "
     "prefix is a TODO so SF motors are γ-denylisted SEPARATELY from cortical "
@@ -237,8 +287,16 @@ class ResolvedStressFibers:
     n_beads_per_SF: int             # explicit sf_actin beads along each bundle
     sarcomere_spacing: float        # m   α-actinin banding period (0.5-1 µm)
 
+    # GRID-INVARIANT bundle axial modulus (the physical INPUT; cortex.py:440
+    # convention). μ_SF [N] = N_filaments · EA_single; the per-bond spring is
+    # k_bond = μ_SF / ℓ0_actin, set at registration. μ_SF is None when neither
+    # μ_SF nor N_filaments is supplied (PI-pending) → the enabled path HALTS.
+    mu_SF: float | None             # N    bundle axial modulus (PI; grid-invariant)
+    N_filaments: int | None         # —    vSF cross-section filament count (PI)
+    EA_single: float                # N    F-actin single-filament axial rigidity
+
     # Stiffnesses (SI: N/m)
-    k_actin: float | None           # N/m  sf_actin backbone bond stiffness (PI)
+    k_actin: float | None           # N/m  EXPLICIT per-bond override (else μ_SF/ℓ0)
     k_anchor: float | None          # N/m  sf_anchor SF→FA bond stiffness (PI)
     k_xl: float                     # N/m  α-actinin intra/attach stiffness
     alpha_length: float             # m    α-actinin head-to-head rest length
@@ -299,6 +357,9 @@ def resolve_stress_fibers(
             n_SF=0,
             n_beads_per_SF=0,
             sarcomere_spacing=0.0,
+            mu_SF=None,
+            N_filaments=None,
+            EA_single=4.3e-8,
             k_actin=None,
             k_anchor=None,
             k_xl=0.0,
@@ -314,18 +375,48 @@ def resolve_stress_fibers(
     # tighter banding seen in non-muscle ventral SFs).
     sarcomere_spacing = float(cfg.get("sarcomere_spacing", 0.5e-6))
 
-    # k_actin / k_anchor: PI-flagged (no fine-grained mesoscale anchor yet).
-    # Read from cfg if the PI has set them; otherwise carry the documented
-    # default ORDER (Kumar 2006 ~10-30 nN over a ~µm strain → ~1e-2 N/m).
-    k_actin = cfg.get("k_actin", 1.0e-2)
+    # ---- SF backbone stiffness: GRID-INVARIANT bundle axial modulus μ_SF ----
+    # μ_SF [N] = N_filaments · EA_single (a fine-grained bundle-EA derivation,
+    # cortex.py:440 convention) — DECOUPLED from the Kumar 2006 tension band,
+    # which it is later validated against. The per-bond spring k_bond = μ_SF/ℓ0
+    # is formed at registration (register_stress_fiber_bond_params), so that a
+    # uniformly strained fiber reports T = μ_SF·ε independent of bead count.
+    #
+    # EA_single: F-actin single-filament axial rigidity ≈ 4.3e-8 N (E≈1.3-2.6
+    # GPa × A≈3.2e-17 m²; Gittes 1993 / Kojima 1994). N_filaments: vSF cross-
+    # section count (~10-30; Cramer 1997) — NO single mesoscale default, so it
+    # is PI-pending: when neither μ_SF nor N_filaments is given, μ_SF stays None
+    # and the enabled build HALTS (no silent non-physical placeholder).
+    EA_single = float(cfg.get("EA_single", 4.3e-8))
+    _require_finite_positive("EA_single", EA_single)
+    N_filaments = cfg.get("N_filaments", None)
+    N_filaments = None if N_filaments is None else int(N_filaments)
+    mu_SF = cfg.get("mu_SF", None)
+    if mu_SF is None and N_filaments is not None:
+        mu_SF = N_filaments * EA_single        # EA-derived (grid-invariant)
+    mu_SF = None if mu_SF is None else float(mu_SF)
+
+    # k_actin: OPTIONAL explicit per-bond override (PI-set). Prefer μ_SF; only
+    # when the PI has not supplied μ_SF/N_filaments AND not given an explicit
+    # k_actin does this stay None → enabled path raises NotImplementedError
+    # (NO silent 1e-2 placeholder — the retired back-solved magic number).
+    k_actin = cfg.get("k_actin", None)
     k_actin = None if k_actin is None else float(k_actin)
+    # k_anchor defaults to the backbone per-bond stiffness; when the backbone is
+    # μ_SF-driven the registered k_anchor = μ_SF/ℓ0 (set at registration). Here
+    # carry an explicit override only.
     k_anchor = cfg.get("k_anchor", k_actin)
     k_anchor = None if k_anchor is None else float(k_anchor)
 
-    # α-actinin crosslinker (reuse KU-3.19 vocabulary):
+    # α-actinin crosslinker (reuse cortex crosslinker vocabulary):
     #   k_xl   = 0.1 pN/µm = 1e-7 N/m  (Furuike 2001 / Ferrer 2008; same as
-    #            cortex/crosslinkers.py k_intra default).
-    #   alpha_length = 35 nm  (α-actinin head-to-head, KU-3.19).
+    #            cortex/crosslinkers.py k_intra default; kinetics live in KU-3.19).
+    #   alpha_length = 35 nm  (α-actinin head-to-head 35 nm — GEOMETRIC length
+    #            per KU-3.18 cortex composition; the 30:70 fraction + Bell-Evans
+    #            kinetics are KU-3.19). NB: the sibling cortex/crosslinkers.py
+    #            (lines 17-18) still mis-attributes this 35 nm / 150 nm GEOMETRIC
+    #            rest length to KU-3.19 — that is the root and is owned by the
+    #            cortex module (out of this file's edit scope; flagged to PI).
     k_xl = float(cfg.get("k_xl", 1.0e-7))
     alpha_length = float(cfg.get("alpha_length", 35.0e-9))
 
@@ -351,7 +442,11 @@ def resolve_stress_fibers(
             f"sf_tension_band_N must be a positive ordered (lo, hi); "
             f"got {sf_tension_band_N}"
         )
-    # k_actin / k_anchor may be None (PI-flagged disabled), else finite-positive.
+    if N_filaments is not None and N_filaments < 1:
+        raise ValueError(f"N_filaments must be ≥ 1; got {N_filaments}")
+    # μ_SF / k_actin / k_anchor may be None (PI-flagged), else finite-positive.
+    if mu_SF is not None:
+        _require_finite_positive("mu_SF", mu_SF)
     if k_actin is not None:
         _require_finite_positive("k_actin", k_actin)
     if k_anchor is not None:
@@ -366,6 +461,9 @@ def resolve_stress_fibers(
         n_SF=n_SF,
         n_beads_per_SF=n_beads_per_SF,
         sarcomere_spacing=sarcomere_spacing,
+        mu_SF=mu_SF,
+        N_filaments=N_filaments,
+        EA_single=EA_single,
         k_actin=k_actin,
         k_anchor=k_anchor,
         k_xl=k_xl,
@@ -381,25 +479,83 @@ def resolve_stress_fibers(
     )
 
 
+def resolve_backbone_k_bond(
+    p: ResolvedStressFibers, ell0: float
+) -> float:
+    """Resolve the GRID-INVARIANT per-bond backbone stiffness ``k_bond`` [N/m].
+
+    The SF backbone follows the platform ``μ / ℓ0`` convention (cortex.py:440):
+    the physical input is the bundle axial modulus ``μ_SF`` [N], and the
+    per-bond Harmonic stiffness is ``k_bond = μ_SF / ℓ0``. A uniformly strained
+    fiber then reports per-bond tension ``T = k_bond · (ε · ℓ0) = μ_SF · ε`` —
+    INDEPENDENT of the bead count (grid-invariance).
+
+    An EXPLICIT ``k_actin`` (PI-set per-bond override) takes precedence over
+    ``μ_SF`` when present, for back-compat. If NEITHER ``μ_SF`` nor an explicit
+    ``k_actin`` is set, the build HALTS (no silent placeholder).
+
+    Args:
+        p: resolved SF parameters.
+        ell0: backbone bead rest length [m] (``mean(layout.ell0_actin)``).
+
+    Returns:
+        ``k_bond`` [N/m].
+
+    Raises:
+        NotImplementedError: if both ``μ_SF`` and ``k_actin`` are PI-flagged None.
+        ValueError: if ``μ_SF`` is set but ``ell0 ≤ 0``.
+    """
+    if p.k_actin is not None:
+        return float(p.k_actin)
+    if p.mu_SF is not None:
+        if not (math.isfinite(ell0) and ell0 > 0.0):
+            raise ValueError(
+                f"backbone ℓ0 must be finite and > 0 to form k_bond = μ_SF/ℓ0; "
+                f"got ℓ0 = {ell0!r}"
+            )
+        return float(p.mu_SF) / float(ell0)
+    raise NotImplementedError(
+        "SF backbone stiffness is PI-flagged None: set stress_fibers.mu_SF "
+        "(or N_filaments → μ_SF = N_filaments·EA_single, the grid-invariant "
+        "bundle-EA derivation) or an explicit k_actin override. The retired "
+        "1e-2 N/m placeholder is no longer supplied silently (see PI_DECISIONS)."
+    )
+
+
 def stress_fiber_dt_cfl(
-    p: ResolvedStressFibers, *, gamma_b: float, cfl_safety_factor: float = 0.1
+    p: ResolvedStressFibers,
+    *,
+    gamma_b: float,
+    cfl_safety_factor: float = 0.1,
+    ell0: float | None = None,
 ) -> float:
     """Return the SF-stiffest-element CFL timestep ``cfl_safety · γ_b / k``.
 
-    The stiffest SF element sets the step: ``k = max(k_actin, k_anchor)``.
-    Mirrors the ERM CFL convention (D3 BAOAB).
+    The stiffest SF element sets the step: ``k = max(k_bond, k_anchor)`` where
+    ``k_bond = μ_SF / ℓ0`` is the grid-invariant backbone stiffness (or an
+    explicit ``k_actin`` override). Mirrors the ERM CFL convention (D3 BAOAB).
+
+    Args:
+        p: resolved SF parameters.
+        gamma_b: per-bead Stokes drag [N·s/m].
+        cfl_safety_factor: safety factor (D3 BAOAB convention).
+        ell0: backbone bead rest length [m]; REQUIRED when the backbone is
+            μ_SF-driven (``k_bond = μ_SF/ℓ0``). Ignored when an explicit
+            per-bond ``k_actin`` is set.
 
     Raises:
-        NotImplementedError: if ``k_actin`` is PI-flagged (None) — the CFL
-            cannot be computed without the (PI-pending) backbone stiffness.
+        NotImplementedError: if the backbone stiffness is PI-flagged (None) —
+            the CFL cannot be computed without it.
+        ValueError: if ``μ_SF`` is set but ``ell0`` is not supplied.
     """
-    if p.k_actin is None:
-        raise NotImplementedError(
-            "stress_fiber_dt_cfl needs k_actin, which is PI-flagged None "
-            "(see PI_DECISIONS). Set stress_fibers.k_actin to a ratified value."
+    if p.k_actin is None and p.mu_SF is not None and ell0 is None:
+        raise ValueError(
+            "stress_fiber_dt_cfl needs ell0 to form k_bond = μ_SF/ℓ0 when the "
+            "backbone is μ_SF-driven (pass ell0 = mean(layout.ell0_actin))."
         )
-    k_anchor = p.k_anchor if p.k_anchor is not None else p.k_actin
-    k_stiffest = max(p.k_actin, k_anchor)
+    k_bond = resolve_backbone_k_bond(p, ell0 if ell0 is not None else 0.0)
+    k_anchor = p.k_anchor if p.k_anchor is not None else k_bond
+    k_stiffest = max(k_bond, k_anchor)
     return cfl_safety_factor * gamma_b / k_stiffest
 
 
@@ -628,6 +784,14 @@ def extend_snapshot_with_stress_fibers(
 
     Returns:
         The same ``base_snap`` (disabled) or a new extended ``gsd.hoomd.Frame``.
+        On the ENABLED path the realised :class:`StressFiberLayout` is attached
+        to the returned frame as the in-memory attribute
+        ``snap.stress_fiber_layout`` (the downstream
+        :func:`register_stress_fiber_bond_params` /
+        :func:`measure_sf_tension` need ``layout.ell0_actin`` etc.; the Lead
+        reads it from there instead of re-running placement with a replayed
+        seed). NOTE: this attribute is an IN-MEMORY hand-off only — it does NOT
+        survive a GSD round-trip to disk.
 
     Raises:
         ValueError: if enabled with ``n_SF > 0`` but FA endpoints are not given.
@@ -785,9 +949,28 @@ def extend_snapshot_with_stress_fibers(
         snap.angles.typeid = np.asarray(snap_old.angles.typeid)
         snap.angles.group = np.asarray(snap_old.angles.group)
 
+    # ---- pass through dihedrals / impropers if present ----
+    # (platform-standard topology pass-through, mirroring lamellipodium.py /
+    # microtubules.py / the 8 sibling snapshot-extenders; a no-op today since no
+    # compartment populates these upstream of SF, but it prevents a silent drop
+    # should an angle/dihedral-rich build — e.g. microtubules or intermediate
+    # filaments — feed the SF builder later.)
+    for grp_name in ("dihedrals", "impropers"):
+        src = getattr(snap_old, grp_name)
+        dst = getattr(snap, grp_name)
+        if int(src.N) > 0:
+            dst.N = int(src.N)
+            dst.types = list(src.types)
+            dst.group = np.asarray(src.group)
+            dst.typeid = np.asarray(src.typeid)
+
     snap.configuration.box = list(snap_old.configuration.box)
 
-    # Stash the layout for the Lead (wiring myosin / measuring tension).
+    # Stash the realised layout on the returned frame so downstream
+    # register_stress_fiber_bond_params / measure_sf_tension can read
+    # layout.ell0_actin (etc.) directly — eliminates the brittle seed-replay
+    # re-derivation. In-memory attribute only (does NOT survive a GSD save).
+    snap.stress_fiber_layout = layout
     return snap
 
 
@@ -805,24 +988,29 @@ def register_stress_fiber_bond_params(
     production build with widely varying bundle lengths the Lead should use a
     per-r0 binned family (TODO), mirroring the cortex attach binning.
 
+    The backbone per-bond stiffness is the GRID-INVARIANT ``k_bond = μ_SF / ℓ0``
+    (cortex.py:440 convention; :func:`resolve_backbone_k_bond`) so a uniformly
+    strained fiber reports ``T = μ_SF · ε`` independent of the bead count. An
+    explicit ``k_actin`` (PI per-bond override) is honoured when set.
+
     Raises:
-        NotImplementedError: if ``k_actin`` / ``k_anchor`` are PI-flagged None.
+        NotImplementedError: if the backbone stiffness is PI-flagged None
+            (neither ``μ_SF`` nor an explicit ``k_actin``).
     """
-    if p.k_actin is None or p.k_anchor is None:
-        raise NotImplementedError(
-            "register_stress_fiber_bond_params needs k_actin and k_anchor, "
-            "which are PI-flagged None (see PI_DECISIONS). Set ratified values "
-            "in the stress_fibers config before building the SF force law."
-        )
     ell0 = (
         float(np.mean(layout.ell0_actin))
         if layout.ell0_actin.size > 0
         else 0.0
     )
-    bond.params[BOND_TYPE_SF_ACTIN] = dict(k=p.k_actin, r0=ell0)
+    # Grid-invariant backbone per-bond stiffness k_bond = μ_SF/ℓ0 (or explicit
+    # k_actin override). Raises NotImplementedError when PI-flagged None.
+    k_bond = resolve_backbone_k_bond(p, ell0)
+    # Anchor: as stiff as the backbone it terminates unless explicitly overridden.
+    k_anchor = float(p.k_anchor) if p.k_anchor is not None else k_bond
+    bond.params[BOND_TYPE_SF_ACTIN] = dict(k=k_bond, r0=ell0)
     # Anchor rest length ≈ 0: the SF end bead is placed AT the FA endpoint so
     # the anchor is force-free at construction (physiological-baseline rule).
-    bond.params[BOND_TYPE_SF_ANCHOR] = dict(k=p.k_anchor, r0=0.0)
+    bond.params[BOND_TYPE_SF_ANCHOR] = dict(k=k_anchor, r0=0.0)
     bond.params[BOND_TYPE_SF_XLINK_INTRA] = dict(k=p.k_xl, r0=p.alpha_length)
     # Attach r0 = 0: head placed at the band centre, bonded to the nearest
     # bead; small residual stretch is force-negligible at k_xl = 1e-7 N/m.

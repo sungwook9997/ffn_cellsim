@@ -6,7 +6,8 @@ Covers ``ffn_sim/cell/microtubules.py`` Sanity Gate §1–6 cheaply:
 - §1 Dimensional analysis   (TestDimensional — EI/ℓ_0 + Y/ℓ_0 + τ_bend bridges)
 - §2 Boundary cases         (TestBoundary — negative/zero/out-of-band raise)
 - §3 No-net-force / γ       (TestGammaDenylist + TestForceFreeConstruction)
-- §4 Numerical CFL          (TestCFL — stiff bending dt computed + gate raises)
+- §4 Numerical CFL          (TestCFL — axial-stretch dt is the binding one,
+                             computed + gate raises; bend binds only sub-r_g)
 - §5 Sign / sense           (TestSignSense — stretched backbone pulls inward;
                              bent chain straightens) — uses a TINY HOOMD sim.
 
@@ -193,7 +194,7 @@ class TestBoundary:
             _resolved(L_mt=-1.0)
 
     def test_out_of_band_Lp_raises(self):
-        # L_p far outside the Gittes 1–6 mm band ⇒ rejected.
+        # L_p far outside the Gittes/Howard 1–8 mm band ⇒ rejected.
         with pytest.raises(ValueError):
             _resolved(L_p=1.0e-6)            # 1 µm (actin scale, not MT)
 
@@ -276,17 +277,116 @@ class TestForceFreeConstruction:
             )
             assert cos == pytest.approx(-1.0, abs=1e-9)   # θ = π
 
+    def test_mtoc_is_angle_endpoint_never_vertex(self):
+        # Topology invariant (Sanity-Gate boundary bullet): the MTOC (local
+        # index 0) is the ENDPOINT of each arm's first bending triple
+        # (MTOC, b0, b1) — it participates in n_mt angles but is NEVER the
+        # vertex (middle column), so no restoring torque acts at the hub.
+        p = _resolved(n_mt=6, beads_per_mt=5)
+        topo = build_mt_topology(p)
+        mtoc = topo.mtoc_local_index
+        assert mtoc == 0
+        angles = topo.bending_angles
+        # (a) MTOC never appears in the VERTEX column (index 1).
+        assert not np.any(angles[:, 1] == mtoc)
+        # (b) MTOC appears exactly n_mt times overall (one per arm's first
+        #     triple), all as an endpoint (column 0 or 2).
+        assert int(np.count_nonzero(angles == mtoc)) == p.n_mt
+        assert int(np.count_nonzero(angles[:, [0, 2]] == mtoc)) == p.n_mt
+        # (c) arms bend independently: every angle VERTEX is a distinct
+        #     particle (no two arms share a vertex ⇒ no inter-arm coupling).
+        vertices = angles[:, 1]
+        assert len(set(vertices.tolist())) == len(vertices)
+
 
 # ---------------------------------------------------------------------------
-# §4 Numerical CFL — the stiff bending dt is computed & the gate raises
+# In-isolation gsd-Frame robustness — the builder must not crash on a
+# minimally-populated gsd Frame (docstring promises in-ISOLATION callability).
+# ---------------------------------------------------------------------------
+class TestMinimalGsdFrameExtension:
+    def _minimal_frame(self, n: int = 2):
+        """A truly minimal gsd Frame: ONLY N + types + position + box set.
+
+        typeid / mass / velocity / image and bonds.types / angles.types are
+        LEFT UNSET — a fresh gsd.hoomd.Frame returns None for them. This is
+        exactly the case the None-guards must survive (HOOMD would fill these
+        defaults on load, but the in-isolation builder runs before that).
+        """
+        import gsd.hoomd
+
+        fr = gsd.hoomd.Frame()
+        fr.particles.N = n
+        fr.particles.types = ["actin"]
+        fr.particles.position = [[0.0, 0.0, float(i) * 1e-7] for i in range(n)]
+        L = 50.0e-6
+        fr.configuration.box = [L, L, L, 0.0, 0.0, 0.0]
+        return fr
+
+    def test_extend_on_minimal_frame_does_not_crash(self):
+        # Regression for the gsd-None TypeError: particle fields (typeid/mass/
+        # velocity/image) and bonds/angles type lists are None on a bare Frame.
+        fr = self._minimal_frame(n=2)
+        p = _resolved(n_mt=6, beads_per_mt=5)
+        out = extend_snapshot_with_microtubules(fr, p)
+        # Extended snapshot: 2 host + (1 MTOC + n_mt·beads_per_mt) MT particles.
+        assert int(out.particles.N) == 2 + p.n_beads_total
+        assert int(out.bonds.N) == p.n_backbone_bonds
+        assert int(out.angles.N) == p.n_bending_angles
+        # Host particles keep the HOOMD default typeid=0 (they were unset/None).
+        host_typeid = np.asarray(out.particles.typeid)[:2]
+        assert np.all(host_typeid == 0)
+        # MT bond/angle types are registered + γ-denylist-prefixed.
+        assert p.backbone_bond_type in list(out.bonds.types)
+        assert p.bending_angle_type in list(out.angles.types)
+
+
+# ---------------------------------------------------------------------------
+# §4 Numerical CFL — the stiff stretch dt is computed & the gate raises
 # ---------------------------------------------------------------------------
 class TestCFL:
-    def test_bend_cfl_tighter_than_stretch(self):
-        # With the stiff-rod Y_stretch default, the bending dt is the binding
-        # one and the dataclass min() picks it.
+    def test_stretch_cfl_tighter_at_mesoscale(self):
+        # At every production ℓ_0 (> the ~10 nm crossover r_g = √(EI/Y_stretch))
+        # the AXIAL STRETCH term is the tighter/binding one, NOT bending — and
+        # the dataclass min() must pick stretch. This pins the correct binding
+        # mode so a future inversion of the prose/labels is caught.
         p = _resolved()
         assert p.dt_cfl == min(p.dt_cfl_bend, p.dt_cfl_stretch)
         assert p.dt_cfl > 0.0 and math.isfinite(p.dt_cfl)
+        # Stretch is the binding term: dt_cfl_stretch < dt_cfl_bend, and the
+        # gate picks it.
+        assert p.dt_cfl_stretch < p.dt_cfl_bend
+        assert p.dt_cfl == p.dt_cfl_stretch
+        # The ratio is purely geometric: τ_bend/τ_stretch = (ℓ_0/r_g)² where
+        # r_g = √(EI/Y_stretch). Verify the closed form exactly.
+        r_g = math.sqrt(p.EI / p.Y_stretch)
+        assert p.tau_bend / p.tau_stretch == pytest.approx(
+            (p.l0 / r_g) ** 2, rel=1e-9
+        )
+        # Sanity: production ℓ_0 is far above the ~10 nm crossover r_g, so the
+        # ratio is large (stretch tighter by a big factor).
+        assert p.l0 > r_g
+        assert p.tau_bend / p.tau_stretch > 1.0
+
+    def test_sub_rg_l0_flips_binding_term_to_bending(self):
+        # CROSSOVER GUARD: for a sub-r_g segment (ℓ_0 < √(EI/Y_stretch) ~10 nm)
+        # bending becomes the tighter term. The model never uses such a tiny
+        # ℓ_0, but this test pins the crossover so the "stretch binds" claim is
+        # tied to ℓ_0 > r_g (a future change can't silently flip it unnoticed).
+        # Construct a sub-r_g ℓ_0 directly on the dataclass (resolver-equivalent
+        # arithmetic) so the test is independent of any L_mt band.
+        p_ref = _resolved()
+        EI = p_ref.EI
+        Y = p_ref.Y_stretch
+        gamma_b = p_ref.gamma_b
+        r_g = math.sqrt(EI / Y)
+        l0_small = 0.5 * r_g                       # below crossover ⇒ bend binds
+        tau_bend = gamma_b * l0_small**3 / EI
+        tau_stretch = gamma_b * l0_small / Y
+        assert tau_bend < tau_stretch              # bending now the tighter one
+        assert tau_bend / tau_stretch == pytest.approx(
+            (l0_small / r_g) ** 2, rel=1e-9
+        )
+        assert (l0_small / r_g) ** 2 < 1.0
 
     def test_disabled_cfl_is_inf(self):
         p = _resolved(enabled=False)

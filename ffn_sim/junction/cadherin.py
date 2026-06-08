@@ -163,9 +163,19 @@ References
   ``validation/cadherin_sliding_rebinding.py``.
 - Lou J, Zhu C (2007) Biophys J 92(5):1471-1485, DOI
   10.1529/biophysj.106.097048. (sliding-rebinding model.)
-- Iturri J, et al. (2020) — MCF7–MCF7 single-cell de-adhesion force ≈ 6.5 nN
-  (the ``N_cad = F_detach/f0`` scale bridge; reused from
-  ``spheroid/cadherin_bonds.py``).
+- Iturri J, Toca-Herrera JL, et al. (2020) "Single-Cell Probe Force Studies to
+  Identify Sox2 Overexpression-Promoted Cell Adhesion in MCF7 Breast Cancer
+  Cells." Cells 9(4):935. DOI 10.3390/cells9040935 (PMC7227807). — MCF7–MCF7
+  SCFS de-adhesion ~6–7 nN @120 s (6.5 nN midpoint); value is a Fig. 5 read-off,
+  not a prose figure; E-cadherin not separately characterised in their cells;
+  corroborated Omidvar 2014/2016. The ``N_cad = F_detach/f0 ≈ 223`` scale bridge
+  (reused from ``spheroid/cadherin_bonds.py``).
+  Provenance note: this anchor sets only a particle COUNT (n_cad ≈ 223) and the
+  ensemble-force REPORT — both grid-invariant and overridable via
+  ``cfg['n_cad_per_cell']``/``cfg['k_trans']``; the per-dimer mechanics run off
+  the fully-registered Rakshit f0/catch-bond. SourceEvidence registration in the
+  Notion SoT is a Lead/PI registry action (see PI_DECISIONS); confirm its
+  verdict is OK before citing this anchor in a deliverable (CLAUDE.md).
 - KU-4.2 (E-cadherin full catch-bond, Phase-1 contract).
 - Reused repo modules (cited above): ``validation/cadherin_sliding_rebinding.py``,
   ``spheroid/cadherin_bonds.py``, ``cortex/crosslinkers.py``,
@@ -212,6 +222,16 @@ CADHERIN_TRANS_BOND: str = "cadherin_trans"
 # The cadherin particle type added by this compartment.
 CADHERIN_PARTICLE_TYPE: str = "cadherin"
 
+# Per-batch rupture-rate accuracy budget [–]: the maximum k_off·Δt for a single
+# first-order Poisson break draw (mirrors the D2 xlink Bell-Evans batch CFL).
+# Used by BOTH the resolver (to size batch_steps for the low-force regime) and
+# the runtime binder (to sub-step the break Bernoulli when a STRETCHED dimer's
+# k_off·Δt_batch exceeds it, so the per-batch rupture probability stays a valid
+# first-order rate at any reached force). Not a physical magic number — it is a
+# numerical integration-accuracy tolerance (a discretisation budget), grid-/
+# parameter-invariant, identical to the dynamic-bond CFL convention in cortex/.
+_BATCH_CFL_BUDGET: float = 1.0e-3
+
 # Open decisions surfaced to PI (empty list ⇒ none).
 PI_DECISIONS: list[str] = [
     # k_trans (trans-dimer ectodomain elastic stiffness): no single clean
@@ -234,6 +254,21 @@ PI_DECISIONS: list[str] = [
     "r_bind: defaults to contact_zone_width (engagement length reused from the "
     "spheroid scale bridge); override via cfg['r_bind'] [m] if a measured EC1 "
     "capture radius is available.",
+    # SourceEvidence registration gap (Lead/PI registry action, NOT a code/number
+    # change). The Iturri-2020 de-adhesion anchor (Cells 9(4):935, DOI
+    # 10.3390/cells9040935, PMC7227807; MCF7–MCF7 ~6.5 nN, a Fig.5 read-off,
+    # Omidvar 2014/2016-corroborated) is cited in this module/tests/configs and in
+    # the paper-ready Layer2_Report.docx, but has NO SourceEvidence row in the
+    # Notion SoT and so no anchor_status/verdict. Per CLAUDE.md ("confirm verdict
+    # is OK before citing in a deliverable") this must be registered: author an
+    # SE_REGISTRATION_CANDIDATES_<date>.md entry, PI-review, add the SourceEvidence
+    # row in Notion (SoT), then `bash outputs/tag_kb/refresh.sh` + verify_sources.py
+    # so it gets a verdict. Real source, correct number — registration hygiene, not
+    # a fabrication. This module owns no registry file, so the action is the Lead's.
+    "Iturri-2020 de-adhesion anchor (Cells 9(4):935, DOI 10.3390/cells9040935) "
+    "is UNREGISTERED in the Notion SoT (no SourceEvidence row / no verdict) yet "
+    "cited in deliverables: Lead/PI must stage SE_REGISTRATION_CANDIDATES + add "
+    "the SourceEvidence row + refresh so the CLAUDE.md verdict-OK gate passes.",
 ]
 
 
@@ -405,22 +440,33 @@ def resolve_cadherin_junction(
         raise ValueError(f"k_on must be finite and > 0; got {k_on}")
 
     # ---- batch CFL gate (mirror the D2 xlink Bell-Evans batch CFL) ----
-    # batch_steps · dt · k_off_max ≤ 1e-3. k_off_max over the credible force
-    # range is the SLIP tail: evaluate at the max credible per-dimer force, the
-    # extension that reaches r_bind beyond r0 (envelope). Shrink batch_steps to
-    # satisfy the bound (never grow it past the requested value).
+    # batch_steps · dt · k_off_max ≤ 1e-3 sizes batch_steps for the *low-force*
+    # regime the bond DWELLS in. It does NOT (and cannot) bound the slip tail,
+    # because a bound trans-dimer is stretched by the dynamics with NO ceiling at
+    # r_bind (r_bind only governs binding CAPTURE, never the bound-state stretch),
+    # so the per-dimer force the runtime samples is unbounded above. The previous
+    # `f_envelope = k_trans·(r_bind − r0_trans)` was the WRONG bound on two counts:
+    # (1) it is identically 0 at the default r_bind == r0_trans, collapsing the
+    # envelope to k_off(0); (2) even when r_bind > r0_trans it bounds the capture
+    # force, not the runtime stretch. The slip tail is instead handled at RUNTIME
+    # by the binder's adaptive sub-stepping (see CadherinTransJunctionUpdater.act:
+    # any dimer whose k_off(F)·Δt_batch exceeds the budget has its break Bernoulli
+    # sub-stepped into first-order draws), which keeps the per-batch rupture
+    # probability a valid first-order rate at ANY reached force WITHOUT an invented
+    # max-force magic number. Here we therefore size batch_steps on the largest
+    # k_off the bond's LIFETIME landscape exposes at low force — the rest rate
+    # k_off(0) and the catch peak f0 — and let the runtime sub-stepper cover the
+    # tail. (k_off(0) > k_off(f0) because this is a CATCH bond: lifetime is LONGER
+    # at f0, so the rest rate is the relevant low-force bound.) Shrink batch_steps
+    # to satisfy the bound (never grow it past the requested value).
     requested_batch = int(cfg.get("batch_steps", 100))
     if requested_batch <= 0:
         raise ValueError(f"batch_steps must be > 0; got {requested_batch}")
-    f_envelope = k_trans * max(0.0, r_bind - r0_trans)
-    # k_off rises monotonically in the slip tail; bound it at the envelope force
-    # (and at least at f0 where the catch peak is, to be conservative).
     k_off_max = max(
-        effective_k_off(f_envelope, catch),
-        effective_k_off(float(catch.f0), catch),
         effective_k_off(0.0, catch),
+        effective_k_off(float(catch.f0), catch),
     )
-    cfl_budget = 1.0e-3
+    cfl_budget = _BATCH_CFL_BUDGET
     max_batch = int(cfl_budget / (dt * k_off_max))
     if max_batch < 1:
         # Even a single-step batch (the minimum) overshoots the rate-accuracy
@@ -648,6 +694,20 @@ class CadherinTransJunctionUpdater(hoomd.custom.Action):
             bound.add(int(row[1]))
 
         # ---- Step 1: break engaged trans-dimers via faithful k_off(F) ----
+        # ADAPTIVE batch-CFL (slip-tail-correct): a bound trans-dimer is stretched
+        # by the dynamics with NO ceiling at r_bind, so F_mag — hence k_off(F) —
+        # can exceed the value the resolver sized batch_steps for. If we drew a
+        # single per-batch Bernoulli p = 1 − exp(−k_off·Δt_batch) at a slip-tail
+        # k_off, that draw would violate the rate-accuracy budget the CFL is meant
+        # to enforce (k_off·Δt_batch ≫ _BATCH_CFL_BUDGET). We therefore sub-step
+        # the break decision PER DIMER: split Δt_batch into n_sub equal slices so
+        # each slice's k_off·Δt_sub ≤ _BATCH_CFL_BUDGET, and rupture if ANY slice
+        # fires. This keeps every Bernoulli a valid first-order rate at any reached
+        # force, with no invented max-force constant (the bound is derived from the
+        # actual current force each tick). The composite survival over n_sub equal
+        # constant-rate slices equals the single exact-survival 1 − exp(−k·Δt) (the
+        # rate is constant within a batch because positions are frozen during act),
+        # so sub-stepping changes only the per-draw accuracy, not the expected rate.
         kept_rows = []
         if trans_bonds.shape[0] > 0:
             ta = trans_bonds[:, 0]
@@ -660,11 +720,18 @@ class CadherinTransJunctionUpdater(hoomd.custom.Action):
                 [effective_k_off(float(f), self.p.catch) for f in F_mag],
                 dtype=np.float64,
             )
-            p_break = 1.0 - np.exp(-k_off * self.batch_dt)
-            u = self._rng.uniform(0.0, 1.0, size=trans_bonds.shape[0])
-            broke = u < p_break
+            # Per-dimer sub-step count so each slice obeys k_off·Δt_sub ≤ budget.
+            kdt = k_off * self.batch_dt
+            n_sub = np.maximum(
+                1, np.ceil(kdt / _BATCH_CFL_BUDGET).astype(np.int64)
+            )
             for i, row in enumerate(trans_bonds):
-                if broke[i]:
+                ns = int(n_sub[i])
+                # First-order per-slice rupture probability; rupture if any slice
+                # fires. n_sub draws keep each slice's k·Δt_sub within budget.
+                p_slice = 1.0 - math.exp(-k_off[i] * self.batch_dt / ns)
+                u = self._rng.uniform(0.0, 1.0, size=ns)
+                if np.any(u < p_slice):
                     self.n_break_total += 1
                     bound.discard(int(row[0]))
                     bound.discard(int(row[1]))
@@ -784,7 +851,14 @@ def attach_cadherin_junction(
 
     The caller is responsible for having appended ``cadherin_trans`` to the
     snapshot's ``bonds.types`` at build time (so HOOMD knows the type); this
-    helper sets that bond type's harmonic params.
+    helper sets that bond type's harmonic params. Because a HOOMD 7.0.1
+    ``md.bond.Harmonic`` demands params for EVERY bond type registered in the
+    state (not only the one it logically owns — an absent type raises
+    ``IncompleteSpecificationError`` at ``sim.run``), this helper zero-stiffness
+    fills (``k=0, r0=0``) every OTHER registered bond type on its standalone
+    Harmonic before setting the real ``cadherin_trans`` stiffness, so it is safe
+    to append to an integrator that already carries cortex / xlink / FA / etc.
+    bonds.
 
     Args:
         sim: a built simulation with an Integrator and cadherin particles.
@@ -831,9 +905,23 @@ def attach_cadherin_junction(
             )
 
     # Harmonic force for the dynamic trans-dimer bond. The bond type must
-    # already exist in the state; we set its params here. Other bond types are
-    # left to their own force computes (this one only owns cadherin_trans).
+    # already exist in the state; we set its params here. CRITICAL HOOMD 7.0.1
+    # contract: an md.bond.Harmonic ForceCompute demands params for EVERY bond
+    # type registered in sim.state — NOT just the ones it "owns" — or sim.run()
+    # raises IncompleteSpecificationError. A real cell build carries many bond
+    # types (cortex-bond, arp_branch, xlink_intra/_attach, FA integrin/ligand,
+    # lamellipodium, …), so this standalone Harmonic must zero-stiffness EVERY
+    # other registered type (k=0, r0=0 → no force, no rest length) and then set
+    # the real cadherin_trans stiffness. (Mirrors cell.py:1099-1160 and
+    # connected_mesh.py:162-175, which register every present bond type on one
+    # Harmonic; cell.py:1111 carries the same "else md.bond.Harmonic would demand
+    # params for an absent type" note.) The cleanest long-run wiring is for the
+    # host cell build to register cadherin_trans on its SINGLE Harmonic; this
+    # zero-fill path keeps the standalone helper safe when that has not happened.
     harmonic = md.bond.Harmonic()
+    for bt in sim.state.bond_types:
+        if bt != CADHERIN_TRANS_BOND:
+            harmonic.params[bt] = dict(k=0.0, r0=0.0)
     harmonic.params[CADHERIN_TRANS_BOND] = dict(k=p.k_trans, r0=p.r0_trans)
     ig.forces.append(harmonic)
 

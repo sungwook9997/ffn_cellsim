@@ -730,15 +730,21 @@ _SPECS: tuple[CompartmentSpec, ...] = (
         gamma_contaminating=True,
         denylist_bond_types=("sf_", "cortex_myosin_"),
         requires=("fa",),
-        citations=("Kumar 2006 single-SF ~10-30 nN", "Tojkander 2012 / Hotulainen-Lappalainen 2006 sarcomeric periodicity"),
+        citations=(
+            "Kojima/Gittes 1993 / Kojima 1994 (F-actin EA_single~4.3e-8 N)",
+            "Cramer 1997 (vSF bundling N_filaments~10-30)",
+            "Kumar 2006 single-SF ~10-30 nN (VALIDATION band only)",
+            "Tojkander 2012 / Hotulainen-Lappalainen 2006 (sarcomeric periodicity)",
+        ),
         pi_decisions=(
             "ACTIVATION BLOCKER: SF NMII currently reuses the cortex 'cortex_myosin_*' bond "
             "types (shared D5/D6 builder); those ARE the active-gamma signal and are NOT "
             "sf_-denylisted — a LIVE SF build would contaminate cortical gamma. A distinct "
             "'sf_myosin_*' prefix is required before wiring (or denylist cortex_myosin_* on SF builds).",
-            "k_actin (bundle stiffness) = order from Kumar 2006, NOT a fine-grained bundle-of-N "
-            "derivation — PI to ratify.",
-            "k_anchor (SF->FA) set = k_actin pending a talin/vinculin clutch-stiffness anchor.",
+            "mu_SF = N_filaments*EA_single (DERIVED from F-actin EA, not back-solved from the "
+            "Kumar tension band) but defaults to None: N_filaments has no single x40-mesoscale "
+            "default, so the enabled build HALTS (NotImplementedError) until PI ratifies N_filaments. "
+            "(2026-06-09 audit fix: retired the non-physical 1e-2 N/m placeholder.)",
             "Bundle bending rigidity (angle/buckling EI) not modelled — straight FA->FA chord only.",
         ),
         sanity_gate_ref="ffn_sim/cell/stress_fibers.py",

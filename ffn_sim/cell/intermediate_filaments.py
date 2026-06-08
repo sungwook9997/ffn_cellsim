@@ -33,9 +33,12 @@ Explicit mechanism (what particles / bonds)
   filament. Small-strain LINEAR spring (this version). Stiffness DERIVED from
   the IF axial Young's modulus and the filament cross-section,
   ``k_bb = E_if · A_if / l_seg`` (grid-invariant rod-segment axial spring).
-* ``if_crosslink`` — permanent harmonic bond bridging beads on DIFFERENT
+* ``if_crosslink`` — permanent harmonic cross-bridge between beads on DIFFERENT
   filaments within ``crosslink_reach`` (plectin / filaggrin-type IF
-  cross-bridges). Soft relative to the backbone (cross-bridge compliance).
+  cross-bridges). Soft relative to the backbone (cross-bridge compliance), and
+  born at its as-built cross-filament spacing (per-r0 bin, ``if_crosslink_b{i}``)
+  so it is FORCE-FREE at the resting geometry — a true separation-resisting
+  tether, NOT a contractile r0=0 spring (see Sanity Gate item 4).
 
 There is NO per-step custom force and NO per-batch updater in this version:
 all IF bonds are PERMANENT HOOMD bonds (``md.bond.Harmonic``), evaluated by the
@@ -83,12 +86,23 @@ Sanity Gate
      ``N_old_bonds + n_backbone + n_crosslink``.
    - IF forces act ONLY through ``if_`` bonds among ``if_bead`` particles; no
      other particle type is touched (no custom force, no mask needed).
-4. **Sign / sense**
+4. **Sign / sense + force-free construction**
    - A STRETCHED backbone bond (``r > l_seg``) produces a RESTORING force that
      pulls the two beads back TOGETHER (inward along the bond) — standard
      harmonic ``F = −k_bb (r − l_seg) r̂``. Sign test asserts a stretched IF
      pair is pulled toward each other (the explicit two-bead force, computed
      analytically and via a tiny HOOMD bonded eval).
+   - CROSSLINK FORCE-FREE: each ``if_crosslink`` bridges beads on DIFFERENT
+     filaments at a FINITE as-built separation. A degenerate ``r0 = 0`` on such
+     a bond is a CONTRACTILE spring (``F = +k_xl r`` for all ``r > 0``, energy
+     minimum at coincidence) — it would inject ~1e6 kT of spurious pre-tension
+     and self-contract the cage at t=0, violating the physiological-baseline
+     rule. Instead each crosslink is binned (``if_crosslink_b{i}``, N_XL_BINS
+     bins over ``(0, crosslink_reach]``) to a rest length ≈ its born separation,
+     so the cage construction strain energy is ~O(kT)·n_xl (thermal), NOT
+     ~1e6 kT — a true separation-resisting tether. Sign/energy test asserts
+     mean ``|r − r0| ≈ 0`` at build (force-free) and a stretched crosslink
+     restores inward.
 5. **CFL note (stiff)**
    - The stiffest IF spring is the backbone ``k_bb``. Overdamped relax time
      ``τ = γ_if / k_bb`` must satisfy ``dt ≤ cfl_safety_factor · τ`` (same D3
@@ -98,6 +112,15 @@ Sanity Gate
      filament → k_bb ~ 1e-3 N/m, ~100× softer than the 0.1 N/m ERM pin), so
      the IF CFL is not the binding step constraint — but the gate is still
      enforced.
+6. **Shared bond force (no second Harmonic)**
+   - HOOMD 7.0.1 ``md.bond.Harmonic`` demands params for EVERY system bond
+     type. Two coexisting Harmonics each crash on the other's types. So for the
+     integrated cell the IF bond params are REGISTERED onto the cell's single
+     shared ``md.bond.Harmonic`` via ``register_if_bond_params`` (mirroring
+     ``stress_fibers`` / ``linc``), NOT a standalone force.
+     ``attach_if_bonds_to_simulation`` builds a standalone force and is
+     RESTRICTED to IF-only systems — it refuses to attach if the state already
+     carries any non-``if_`` bond type.
 
 Compartment Performance Contract
 --------------------------------
@@ -111,8 +134,10 @@ Compartment Performance Contract
   not a hard count.
 * Bond/angle count: backbone ``n_filaments · (beads_per_fil − 1)`` (≈ 1800 at
   default), crosslink ``≤ n_filaments · beads_per_fil`` (cKDTree, one nearest
-  cross-filament acceptor per bead). NO angles in this linear version (flexible
-  chain limit; bending/strain-stiffening is the TODO angle/table term).
+  cross-filament acceptor per bead), split across ``N_XL_BINS`` per-r0 bin
+  subtypes (``if_crosslink_b{i}``) so each is force-free at its born separation.
+  NO angles in this linear version (flexible chain limit; bending/strain-
+  stiffening is the TODO angle/table term).
 * Per-step force: NO custom per-step force — all IF load is via PERMANENT
   ``md.bond.Harmonic`` bonds (builtin bonded kernel).
 * Per-batch updater: NO (permanent bonds; no dynamic turnover this version).
@@ -146,8 +171,9 @@ References
   ~2–3.5× rest length before rupture; strain-stiffening (the nonlinearity this
   module FLAGS, does not fake).
 - Block, J. et al. (2018) "Viscoelastic properties of vimentin originate from
-  nonequilibrium conformational changes." Sci. Adv. / Block 2018 PRL on
-  strain-stiffening of vimentin networks — nonlinear stiffening under strain.
+  nonequilibrium conformational changes." Sci. Adv. 4(6):eaat1161,
+  DOI 10.1126/sciadv.aat1161 — single-vimentin tensile memory / nonequilibrium
+  α-helix unfolding (the strain-stiffening nonlinearity this module FLAGS).
 - Guo, M. et al. (2013) "The role of vimentin intermediate filaments in
   cortical and cytoplasmic mechanics." Biophys. J. 105(7):1562–1568 — VIFs
   contribute little to CORTICAL stiffness, dominate INTRACELLULAR mechanics
@@ -168,6 +194,11 @@ import numpy as np
 
 import hoomd
 import hoomd.md as md
+
+from ffn_sim.cortex.crosslinkers import (
+    xlink_attach_bin_names,
+    xlink_attach_bin_rest_lengths,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +276,11 @@ class ResolvedIntermediateFilaments:
         A_if: Filament cross-sectional area ``π (d_if/2)²`` [m²] (derived).
         E_if: IF axial small-strain Young's modulus [Pa] (provenance).
         Lp: IF persistence length [m] (provenance; flexible-chain anchor).
-        kappa_bend: Bending stiffness ``Lp · kT`` [J·m] (derived provenance).
+        kappa_bend: Bending stiffness ``Lp · kT`` [J·m] (derived PROVENANCE
+            ONLY — consumed by NO force in this linear version, which carries no
+            angle term; it is the input the documented WLC bending-angle TODO
+            would wire as ``k_angle = kappa_bend / l_seg`` into an
+            ``md.angle.Harmonic`` (θ0 = π)).
         k_bb: Backbone harmonic stiffness ``E_if A_if / l_seg`` [N/m] (derived).
         ratio_xl: Crosslink stiffness as a fraction of the backbone [—].
         k_xl: Crosslink harmonic stiffness ``ratio_xl · k_bb`` [N/m] (derived).
@@ -371,9 +406,15 @@ def resolve_intermediate_filaments(
     Lp = float(cfg.get("Lp", 0.5e-6))         # m   Mucke 2004 / Lichtenstern 2012
     d_if = float(cfg.get("d_if", 10.0e-9))    # m   canonical ~10 nm assembled IF
     # Backbone rest length / bead spacing. Default = one persistence length so
-    # the chain is flexible (≈ 1 Kuhn segment per bond → the WLC bending is
-    # captured by chain freedom, no explicit angle term needed in this linear
-    # flexible-chain limit). Grid-derivable, not tuned.
+    # the chain is flexible. NOTE: the Kuhn length is b = 2·Lp, so l_seg = Lp is
+    # HALF a Kuhn segment, not one. This LINEAR version carries NO explicit
+    # bending angle term (flexible-chain / FJC limit), so the cage is
+    # INTENTIONALLY floppier than a stiffness-matched WLC (an angle-free chain
+    # with sub-Kuhn bonds under-reports ⟨R²⟩ by up to ~2×). The bending
+    # angle / strain-stiffening term is the documented TODO (see the module
+    # docstring "NONLINEAR strain-stiffening" + PI_DECISIONS). Set
+    # ``l_seg = 2·Lp`` if WLC large-scale stats must be matched by an angle-free
+    # FJC. Grid-derivable, not tuned.
     l_seg = float(cfg.get("l_seg", Lp))
     ratio_xl = float(cfg.get("ratio_xl", 0.1))
     max_stretch_ratio = float(cfg.get("max_stretch_ratio", 3.0))
@@ -412,7 +453,7 @@ def resolve_intermediate_filaments(
     A_if = math.pi * (0.5 * d_if) ** 2               # m²  cross-section
     k_bb = E_if * A_if / l_seg                        # N/m rod-segment axial spring
     k_xl = ratio_xl * k_bb                            # N/m crosslink (softer)
-    kappa_bend = Lp * kT                              # J·m bending stiffness (provenance)
+    kappa_bend = Lp * kT                              # J·m bending stiffness (PROVENANCE ONLY; no force consumes it — future angle-term input)
 
     # --- Cage shell geometry ---
     default_thickness = float(cfg.get("cage_thickness", 0.3 * R_cell))
@@ -460,8 +501,26 @@ BACKBONE_BOND_TYPE: str = "if_backbone"
 CROSSLINK_BOND_TYPE: str = "if_crosslink"
 IF_BEAD_TYPE: str = "if_bead"
 
+# Crosslink rest-length binning. Each cross-bridge is force-free at its as-built
+# cross-filament separation: instead of a single degenerate r0=0 (which would be
+# a CONTRACTILE spring across already-separated beads, injecting spurious
+# construction pre-stress — see Sanity Gate item 4 below), the crosslink bond is
+# split into N_XL_BINS per-r0 subtypes over (0, crosslink_reach], and each
+# crosslink is assigned the bin whose centre ≈ its born separation. This mirrors
+# the platform convention in cortex/crosslinkers.py:xlink_attach_bin_rest_lengths
+# (and cortex/connected_mesh.py / cortex/cortex.py), so the IF cage is force-free
+# (energy ~ O(kT)·n_xl, thermal) at t=0 rather than ~1e6 kT pre-tensioned.
+N_XL_BINS: int = 16
+
+
+def if_crosslink_bin_names(n_bins: int = N_XL_BINS) -> list[str]:
+    """HOOMD bond-type names for the per-r0 IF crosslink bins (γ-denylisted)."""
+    return [f"if_crosslink_b{i}" for i in range(int(n_bins))]
+
+
 assert BACKBONE_BOND_TYPE.startswith(GAMMA_DENYLIST_PREFIX)
 assert CROSSLINK_BOND_TYPE.startswith(GAMMA_DENYLIST_PREFIX)
+assert all(n.startswith(GAMMA_DENYLIST_PREFIX) for n in if_crosslink_bin_names())
 
 
 # ---------------------------------------------------------------------------
@@ -502,6 +561,14 @@ def build_if_cage_layout(
           * ``"gamma"``: ndarray ``(n_beads_total,)`` float64 [N·s/m].
           * ``"backbone_bonds"``: ndarray ``(n_bb, 2)`` int64 LOCAL indices.
           * ``"crosslink_bonds"``: ndarray ``(n_xl, 2)`` int64 LOCAL indices.
+          * ``"crosslink_dists"``: ndarray ``(n_xl,)`` float64 — each crosslink's
+            as-built cross-filament separation [m] (its force-free rest length).
+          * ``"crosslink_bins"``: ndarray ``(n_xl,)`` int64 — per-crosslink
+            per-r0 bin index (assigned so the bond is force-free at its born
+            separation; see ``N_XL_BINS``).
+          * ``"crosslink_bin_rest_lengths"``: ndarray ``(N_XL_BINS,)`` float64 —
+            the bin-centre rest lengths [m].
+          * ``"crosslink_bin_types"``: list[str] — the per-bin bond-type names.
           * ``"backbone_bond_type"`` / ``"crosslink_bond_type"``: str.
 
     Raises:
@@ -564,7 +631,11 @@ def build_if_cage_layout(
         _ = first  # (chain start index; kept for clarity)
 
     # --- Crosslinks: one-shot cKDTree, nearest cross-filament bead in reach ---
+    # Each crosslink is recorded with its as-built cross-filament separation
+    # ``d_in`` so the builder can place it FORCE-FREE at construction (per-r0
+    # bin), not as a contractile r0=0 spring (Sanity Gate item 4).
     crosslink_bonds: list[tuple[int, int]] = []
+    crosslink_dists: list[float] = []
     if p.crosslink_reach > 0.0 and positions.shape[0] > 1:
         try:
             from scipy.spatial import cKDTree  # build-time only, not hot loop
@@ -588,9 +659,31 @@ def build_if_cage_layout(
                         continue
                     seen.add(key)
                     crosslink_bonds.append(key)
+                    crosslink_dists.append(float(d_in))
                     break  # one crosslink per bead (nearest cross-filament)
         except Exception:  # scipy unavailable / degenerate → cage is still
             crosslink_bonds = []  # backbone-connected; crosslinks optional.
+            crosslink_dists = []
+
+    xl_arr = (
+        np.array(crosslink_bonds, dtype=np.int64).reshape(-1, 2)
+        if crosslink_bonds else np.empty((0, 2), dtype=np.int64)
+    )
+    xl_dist = (
+        np.array(crosslink_dists, dtype=np.float64)
+        if crosslink_dists else np.empty((0,), dtype=np.float64)
+    )
+    # Assign each crosslink the per-r0 bin whose centre is nearest its born
+    # separation → the bond is (near-)force-free at construction. Bin edges span
+    # (0, crosslink_reach]; clamp any tiny float overshoot into the last bin.
+    bin_centres = xlink_attach_bin_rest_lengths(N_XL_BINS, float(p.crosslink_reach))
+    if xl_dist.shape[0] > 0:
+        bin_width = float(p.crosslink_reach) / float(N_XL_BINS)
+        xl_bin = np.clip(
+            (xl_dist / bin_width).astype(np.int64), 0, N_XL_BINS - 1
+        )
+    else:
+        xl_bin = np.empty((0,), dtype=np.int64)
 
     return {
         "positions": positions,
@@ -600,12 +693,13 @@ def build_if_cage_layout(
             np.array(backbone_bonds, dtype=np.int64).reshape(-1, 2)
             if backbone_bonds else np.empty((0, 2), dtype=np.int64)
         ),
-        "crosslink_bonds": (
-            np.array(crosslink_bonds, dtype=np.int64).reshape(-1, 2)
-            if crosslink_bonds else np.empty((0, 2), dtype=np.int64)
-        ),
+        "crosslink_bonds": xl_arr,
+        "crosslink_dists": xl_dist,         # born cross-filament separation [m]
+        "crosslink_bins": xl_bin,           # per-r0 bin index per crosslink
+        "crosslink_bin_rest_lengths": bin_centres,  # bin-centre r0 [m]
         "backbone_bond_type": BACKBONE_BOND_TYPE,
         "crosslink_bond_type": CROSSLINK_BOND_TYPE,
+        "crosslink_bin_types": if_crosslink_bin_names(N_XL_BINS),
     }
 
 
@@ -628,7 +722,8 @@ def extend_snapshot_with_if_cage(
     When enabled it builds a FRESH ``hoomd.Snapshot`` that appends:
       * ``n_beads_total`` ``if_bead`` particles (perinuclear cage),
       * ``if_backbone`` harmonic bonds (chain backbone),
-      * ``if_crosslink`` harmonic bonds (cross-filament bridges),
+      * per-r0-bin ``if_crosslink_b{i}`` harmonic bonds (cross-filament
+        bridges, each force-free at its as-built separation),
     leaving every pre-existing particle / bond / angle untouched (mirrors the
     ``cell/lamellipodium.py`` ``_extend_snapshot_with_new_actins`` pattern).
 
@@ -653,6 +748,7 @@ def extend_snapshot_with_if_cage(
     new_pos = np.asarray(layout["positions"], dtype=np.float64).reshape(-1, 3)
     bb = np.asarray(layout["backbone_bonds"], dtype=np.int64).reshape(-1, 2)
     xl = np.asarray(layout["crosslink_bonds"], dtype=np.int64).reshape(-1, 2)
+    xl_bin = np.asarray(layout["crosslink_bins"], dtype=np.int64).reshape(-1)
 
     n_old = int(read_snap.particles.N)
     n_new = new_pos.shape[0]
@@ -689,24 +785,36 @@ def extend_snapshot_with_if_cage(
     )
     write_snap.configuration.box = list(read_snap.configuration.box)
 
-    # Bonds: existing + if_backbone + if_crosslink (offset local→global).
+    # Bonds: existing + if_backbone + per-r0-bin if_crosslink (offset
+    # local→global). Crosslinks use one bond subtype per r0 bin so each is
+    # FORCE-FREE at its born cross-filament separation (Sanity Gate item 4), not
+    # a single contractile r0=0 type.
     bond_types = list(read_snap.bonds.types)
     if BACKBONE_BOND_TYPE not in bond_types:
         bond_types.append(BACKBONE_BOND_TYPE)
-    if CROSSLINK_BOND_TYPE not in bond_types:
-        bond_types.append(CROSSLINK_BOND_TYPE)
+    xl_bin_types = if_crosslink_bin_names(N_XL_BINS)
+    for name in xl_bin_types:
+        if name not in bond_types:
+            bond_types.append(name)
     bb_typeid = bond_types.index(BACKBONE_BOND_TYPE)
-    xl_typeid = bond_types.index(CROSSLINK_BOND_TYPE)
+    xl_bin_typeids = np.array(
+        [bond_types.index(name) for name in xl_bin_types], dtype=np.uint32
+    )
 
     old_bg = np.asarray(read_snap.bonds.group, dtype=np.int64).reshape(-1, 2)
     old_bt = np.asarray(read_snap.bonds.typeid, dtype=np.uint32).reshape(-1)
     bb_global = bb + n_old if bb.shape[0] else bb
     xl_global = xl + n_old if xl.shape[0] else xl
+    # Map each crosslink's bin index → its per-bin bond typeid.
+    xl_typeids = (
+        xl_bin_typeids[xl_bin] if xl_global.shape[0] else
+        np.empty((0,), dtype=np.uint32)
+    )
     bg_pieces = [old_bg, bb_global, xl_global]
     bt_pieces = [
         old_bt,
         np.full(bb_global.shape[0], bb_typeid, dtype=np.uint32),
-        np.full(xl_global.shape[0], xl_typeid, dtype=np.uint32),
+        xl_typeids,
     ]
     merged_bg = np.concatenate(bg_pieces, axis=0).astype(np.uint32)
     merged_bt = np.concatenate(bt_pieces).astype(np.uint32)
@@ -735,18 +843,90 @@ def extend_snapshot_with_if_cage(
 # ---------------------------------------------------------------------------
 # Force attach: register the IF harmonic bonds on an existing simulation
 # ---------------------------------------------------------------------------
+def _raise_if_nonlinear(nonlinear: bool) -> None:
+    """Guard: the faithful nonlinear IF law is never silently faked."""
+    if nonlinear:
+        raise NotImplementedError(
+            "Nonlinear IF strain-stiffening / finite-extensibility (Kreplak "
+            "2005 2-3.5×; Block 2018) is NOT implemented. The faithful law "
+            "needs an md.bond.Table tabulated potential or a custom FENE+"
+            "stiffening bond built from force-extension data — it is NOT "
+            "approximated with a tuned harmonic. See PI_DECISIONS."
+        )
+
+
+def register_if_bond_params(
+    bond: "md.bond.Harmonic",
+    p: ResolvedIntermediateFilaments,
+    *,
+    nonlinear: bool = False,
+) -> "md.bond.Harmonic":
+    """Register the IF bond params ON the cell's SHARED ``md.bond.Harmonic``.
+
+    Platform shared-force pattern (mirrors
+    ``stress_fibers.register_stress_fiber_bond_params`` /
+    ``linc.configure_linc_bond_potential``): the Lead owns the single
+    ``md.bond.Harmonic`` instance for the cell, and each compartment writes its
+    own bond-type params onto it — it does NOT construct a SECOND competing
+    ``md.bond.Harmonic`` (HOOMD 7.0.1 demands params for EVERY system bond type
+    on every Harmonic ForceCompute, so two coexisting Harmonics each crash on
+    the other's types — Sanity Gate item 6).
+
+    Writes:
+      * ``if_backbone``      → ``dict(k=k_bb, r0=l_seg)`` (force-free at the
+        as-built bead spacing).
+      * ``if_crosslink_b{i}`` (i in ``range(N_XL_BINS)``) → ``dict(k=k_xl,
+        r0=bin_centre_i)`` — a harmonic cross-bridge at its as-built rest length
+        (per-r0 bin), force-free at the resting cross-filament spacing (NOT a
+        contractile r0=0 spring; Sanity Gate item 4).
+
+    No-op (returns ``bond`` unchanged) when ``p`` is disabled.
+
+    Args:
+        bond: The cell's shared ``md.bond.Harmonic`` to write onto.
+        p: Resolved IF parameters.
+        nonlinear: If True, raises NotImplementedError (see PI_DECISIONS).
+
+    Returns:
+        The same ``bond`` object (params populated when enabled).
+
+    Raises:
+        NotImplementedError: when ``nonlinear=True`` (documented PI/TODO item).
+    """
+    _raise_if_nonlinear(nonlinear)
+    if not p.enabled:
+        return bond
+    # if_backbone: rest length = bead spacing l_seg, stiffness k_bb (force-free
+    # at the as-built spacing).
+    bond.params[BACKBONE_BOND_TYPE] = dict(k=p.k_bb, r0=p.l_seg)
+    # if_crosslink_b{i}: per-r0 cross-bridge. Each crosslink rides the bin whose
+    # centre ≈ its born cross-filament separation, so the bond is force-free at
+    # the resting spacing (a true separation-resisting tether, NOT r0=0).
+    bin_r0 = xlink_attach_bin_rest_lengths(N_XL_BINS, float(p.crosslink_reach))
+    for i, name in enumerate(if_crosslink_bin_names(N_XL_BINS)):
+        bond.params[name] = dict(k=p.k_xl, r0=float(bin_r0[i]))
+    return bond
+
+
 def build_intermediate_filament_bonds(
     p: ResolvedIntermediateFilaments,
     *,
     nonlinear: bool = False,
 ) -> "md.bond.Harmonic | None":
-    """Build the builtin ``md.bond.Harmonic`` force for the IF bonds.
+    """Build a STANDALONE ``md.bond.Harmonic`` for an IF-ONLY system.
 
-    Small-strain LINEAR backbone + crosslink springs (this version). Returns a
-    configured ``md.bond.Harmonic`` whose params are set for ``if_backbone``
-    (``k_bb``, rest length ``l_seg``) and ``if_crosslink`` (``k_xl``, rest
-    length 0 — a soft tether that resists separation only). The caller appends
-    the returned force to ``sim.operations.integrator.forces``.
+    For the integrated cell, prefer :func:`register_if_bond_params`, which writes
+    onto the cell's single shared ``md.bond.Harmonic`` (a second standalone
+    Harmonic would crash any system that carries other bond types — HOOMD 7.0.1
+    demands params for every bond type on every Harmonic; Sanity Gate item 6).
+    This standalone constructor is for diagnostic / unit IF-only snapshots whose
+    only bond types are ``if_backbone`` + ``if_crosslink_b{i}``.
+
+    Small-strain LINEAR backbone + per-r0-bin crosslink springs (this version).
+    Returns a configured ``md.bond.Harmonic`` with params set for ``if_backbone``
+    (``k_bb``, rest length ``l_seg``) and each ``if_crosslink_b{i}`` (``k_xl``,
+    rest length = the bin-centre cross-filament spacing — force-free at its
+    as-built separation, NOT a contractile r0=0 tether).
 
     Args:
         p: Resolved IF parameters.
@@ -761,22 +941,11 @@ def build_intermediate_filament_bonds(
     Raises:
         NotImplementedError: when ``nonlinear=True`` (documented PI/TODO item).
     """
+    _raise_if_nonlinear(nonlinear)
     if not p.enabled:
         return None
-    if nonlinear:
-        raise NotImplementedError(
-            "Nonlinear IF strain-stiffening / finite-extensibility (Kreplak "
-            "2005 2-3.5×; Block 2018) is NOT implemented. The faithful law "
-            "needs an md.bond.Table tabulated potential or a custom FENE+"
-            "stiffening bond built from force-extension data — it is NOT "
-            "approximated with a tuned harmonic. See PI_DECISIONS."
-        )
     harmonic = md.bond.Harmonic()
-    # if_backbone: rest length = bead spacing l_seg, stiffness k_bb.
-    harmonic.params[BACKBONE_BOND_TYPE] = dict(k=p.k_bb, r0=p.l_seg)
-    # if_crosslink: r0 = 0 cross-bridge tether (resists separation; soft k_xl).
-    harmonic.params[CROSSLINK_BOND_TYPE] = dict(k=p.k_xl, r0=0.0)
-    return harmonic
+    return register_if_bond_params(harmonic, p, nonlinear=False)
 
 
 def attach_if_bonds_to_simulation(
@@ -787,10 +956,18 @@ def attach_if_bonds_to_simulation(
     cfl_safety_factor: float = 0.1,
     cfl_strict: bool = True,
 ) -> "md.bond.Harmonic | None":
-    """Append the IF harmonic-bond force to an existing Integrator (no-op off).
+    """CFL-gate + append a STANDALONE IF harmonic-bond force (no-op off).
 
     DEFAULT-OFF: returns ``None`` and touches nothing when ``p.enabled`` is
     False.
+
+    ⚠️ For the INTEGRATED cell, register the IF params onto the cell's single
+    shared ``md.bond.Harmonic`` via :func:`register_if_bond_params` instead —
+    this helper appends a SECOND standalone Harmonic, which is valid ONLY for an
+    IF-ONLY system (no other bond types). HOOMD 7.0.1 demands params for every
+    system bond type on every Harmonic, so a standalone IF force coexisting with
+    e.g. a cortex bond crashes (Sanity Gate item 6). It refuses to attach if the
+    sim already carries non-IF bond types.
 
     CFL gate (mirrors ``cortex/erm.py`` / ``cell/nucleus.py``): the stiffest IF
     spring is the backbone ``k_bb``; ``τ = γ_if / k_bb`` and ``dt`` must satisfy
@@ -817,6 +994,27 @@ def attach_if_bonds_to_simulation(
     if ig is None:
         raise RuntimeError(
             "sim.operations.integrator must be set before attaching IF bonds."
+        )
+    # Coexistence guard (Sanity Gate item 6): a standalone IF Harmonic is only
+    # safe in an IF-ONLY system. If the state already carries non-IF bond types,
+    # a second Harmonic would crash (HOOMD demands params for every type on every
+    # Harmonic) — route through register_if_bond_params on the shared force.
+    try:
+        sys_bond_types = list(sim.state.bond_types)
+    except Exception:
+        sys_bond_types = []
+    foreign = [
+        t for t in sys_bond_types
+        if not str(t).startswith(GAMMA_DENYLIST_PREFIX)
+    ]
+    if foreign:
+        raise RuntimeError(
+            "attach_if_bonds_to_simulation builds a STANDALONE md.bond.Harmonic, "
+            f"but the system already carries non-IF bond types {foreign!r}. Two "
+            "coexisting Harmonics each demand params for the other's bond types "
+            "and crash (HOOMD 7.0.1). For the integrated cell, register IF params "
+            "onto the cell's shared md.bond.Harmonic via register_if_bond_params "
+            "instead of attaching a second force."
         )
     if gamma_if is not None and p.k_bb > 0.0:
         _require_finite_positive("gamma_if", gamma_if)

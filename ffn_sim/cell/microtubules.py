@@ -58,24 +58,40 @@ angle but the continuum bending response ``EI`` it reproduces is fixed —
 The backbone stretch stiffness is likewise ``k_backbone = Y_stretch / ℓ_0``
 from the 1-D stretch modulus ``Y_stretch`` [N] (axial rigidity ``E·A``).
 
-Bending CFL — TIGHT; may dominate the cell dt (FLAGGED, P-prominent)
--------------------------------------------------------------------
-The angle term sets a bending relaxation time (H.2 derivation, transverse
-deflection ``δ`` of an interior bead gives ``δθ ≈ δ/ℓ_0``,
-``U = ½ k_angle (δ/ℓ_0)²`` so the effective position-stiffness is
-``k_angle/ℓ_0²``)::
+CFL — the AXIAL STRETCH term binds, not bending (FLAGGED, P-prominent)
+---------------------------------------------------------------------
+Two overdamped relaxation times are computed; the BINDING (tighter) one
+sets the dt. The bending angle term gives a bending relaxation time (H.2
+derivation, transverse deflection ``δ`` of an interior bead gives
+``δθ ≈ δ/ℓ_0``, ``U = ½ k_angle (δ/ℓ_0)²`` so the effective
+position-stiffness is ``k_angle/ℓ_0²``); the backbone stretch term gives an
+axial relaxation time from the position-stiffness ``k_backbone = Y_stretch/ℓ_0``::
 
-    τ_bend = γ_b · ℓ_0² / k_angle = γ_b · ℓ_0³ / EI            [s]
-    dt_cfl_bend = cfl_safety_factor · τ_bend                   [s]
+    τ_bend    = γ_b · ℓ_0² / k_angle = γ_b · ℓ_0³ / EI         [s]
+    τ_stretch = γ_b / k_backbone     = γ_b · ℓ_0 / Y_stretch   [s]
+    dt_cfl    = cfl_safety_factor · min(τ_bend, τ_stretch)     [s]
 
-Because microtubule ``EI ≈ 2.2·10⁻²³ N·m²`` is ~300× that of an actin
-filament (``EI_actin ≈ 7·10⁻²⁶``), ``τ_bend`` is ~300× SMALLER at the same
-``ℓ_0`` / drag, so ``dt_cfl_bend`` can be FAR tighter than every other
-compartment's CFL. The attach helper COMPUTES ``dt_cfl_bend`` and RAISES if
-the host ``dt`` exceeds it (``cfl_strict=True``), and the resolver stores it
-on the dataclass so a driver can read it BEFORE building. **This stiff
-bending CFL is the dominant numerical risk of this compartment — surface to
-PI before lowering the global dt to accommodate it.**
+**The AXIAL STRETCH term is the tighter (binding) one at every production
+``ℓ_0``, NOT bending.** The ratio is purely geometric::
+
+    τ_bend / τ_stretch = ℓ_0² · Y_stretch / EI = (ℓ_0 / r_g)²
+
+where ``r_g = √(EI/Y_stretch) = √(I/A)`` is the MT cross-section radius of
+gyration ≈ 10 nm (the stretch↔bend crossover ``ℓ_0``). For ANY ``ℓ_0 > r_g``
+the stretch DOF is stiffer (``k_backbone = Y/ℓ_0 ≫ EI/ℓ_0³``) so it sets the
+tighter dt. Production ``ℓ_0`` is ~0.1–1 µm — far ABOVE the ~10 nm crossover
+— so stretch binds by a large factor (e.g. ℓ_0 = 1.25 µm ⇒ ratio ≈ 1.6·10⁴,
+stretch ~16,000× tighter). The EI ≈ 2.2·10⁻²³ N·m² ≈ 300× actin's
+``EI_actin ≈ 7.3·10⁻²⁶ N·m²`` is a CROSS-COMPARTMENT statement (MT bend
+vs actin bend) — it explains why MT bending is tighter than *other
+compartments'* BEND CFLs, but bending is NOT the intra-module binding term.
+The attach helper COMPUTES both, gates on ``min(τ_bend, τ_stretch)``, and
+RAISES if the host ``dt`` exceeds it (``cfl_strict=True``); the resolver
+stores both on the dataclass so a driver can read them BEFORE building.
+**The dominant numerical risk is the STRETCH CFL, driven by the
+``Y_stretch`` placeholder (PI_DECISIONS) — the correct PI action is to
+ratify a ``Y_stretch`` KU (the dt lever), NOT an EI/bending-driven global
+dt cut. Surface to PI before lowering the global dt to accommodate it.**
 
 Dynamic instability (OPTIONAL batch updater — Mitchison-Kirschner 1984)
 -----------------------------------------------------------------------
@@ -109,8 +125,12 @@ Sanity Gate
      builder adds backbone bonds but ZERO angles (documented; ≥3 needed for
      the flexural term). Resolver requires ≥3 when bending is on.
    - ``n_mt < 1``, ``L_mt ≤ 0``, ``L_p ≤ 0``, ``Y_stretch ≤ 0`` → ValueError.
-   - ``r=0`` MTOC at origin: chains radiate outward; the MTOC carries no
-     bending angle (it is a chain endpoint), only backbone bonds.
+   - ``r=0`` MTOC at origin: chains radiate outward; the MTOC is the chain
+     ENDPOINT of each arm's first bending triple ``(MTOC, b0, b1)`` — so it
+     participates in ``n_mt`` bending angles as an ENDPOINT but is never the
+     VERTEX, hence no restoring torque acts at the hub. Because every arm's
+     vertices are distinct particles, the arms bend INDEPENDENTLY (the MTOC
+     injects no spurious inter-arm coupling). It also carries backbone bonds.
 3. **Conservation / no-net-force**
    - ``md.bond.Harmonic`` / ``md.angle.Harmonic`` are Newton-3rd-law pair /
      triple potentials: each bond/angle injects ZERO net momentum. The aster
@@ -119,11 +139,16 @@ Sanity Gate
      straight rest configuration ⇒ every bond at ℓ_0, every angle at π ⇒ all
      internal forces are identically 0 (force-free construction).
    - The compartment adds NO external field (unlike ERM's lab-frame anchor).
-4. **Numerical sanity (CFL — stiff, FLAGGED)**
-   - positions float64. ``dt_cfl_bend = cfl_safety_factor·γ_b·ℓ_0³/EI`` is
-     COMPUTED and exposed; the attach helper raises if ``dt`` exceeds it.
-   - the stretch CFL ``dt_cfl_stretch = cfl_safety_factor·γ_b·ℓ_0/Y_stretch``
-     is also computed; the binding gate uses ``min(bend, stretch)``.
+4. **Numerical sanity (CFL — the AXIAL STRETCH term binds, FLAGGED)**
+   - positions float64. BOTH timescales are COMPUTED and exposed:
+     ``dt_cfl_bend = cfl_safety_factor·γ_b·ℓ_0³/EI`` and the (TIGHTER)
+     ``dt_cfl_stretch = cfl_safety_factor·γ_b·ℓ_0/Y_stretch``; the binding
+     gate uses ``min(bend, stretch)`` and the attach helper raises if ``dt``
+     exceeds it.
+   - At every production ``ℓ_0`` (> the ~10 nm crossover ``r_g = √(EI/Y_stretch)``)
+     the STRETCH term is the tighter/binding one (``τ_bend/τ_stretch =
+     (ℓ_0/r_g)² ≫ 1``); bending is NOT the intra-module bottleneck. The dt
+     lever is therefore the ``Y_stretch`` placeholder (PI_DECISIONS), not EI.
 5. **Sign / sense**
    - a STRETCHED backbone bond (``|Δr| > ℓ_0``) pulls the two beads TOWARD
      each other (restoring, ``F ∝ −(|Δr|−ℓ_0) r̂``). STATIC via HOOMD on a
@@ -173,10 +198,14 @@ Compartment Performance Contract
 * native ForceCompute candidate: N/A for the elastic terms (already native
   built-ins). The DI updater could become a native plugin if ever hot
   (unlikely — out of loop).
-* bottleneck risk: **the bending CFL, not the force cost.** The stiff MT
-  ``EI`` sets ``dt_cfl_bend`` potentially far below the cell dt; the risk is
-  that turning this compartment ON forces a global dt reduction
-  (multiplicative slowdown). FLAGGED prominently; PI-gated.
+* bottleneck risk: **the axial STRETCH CFL, not the force cost.** The
+  binding timescale is ``dt_cfl_stretch = cfl_safety_factor·γ_b·ℓ_0/Y_stretch``
+  (tighter than ``dt_cfl_bend`` by ``(ℓ_0/r_g)² ≫ 1`` at production ℓ_0); the
+  risk is that turning this compartment ON forces a global dt reduction
+  (multiplicative slowdown), and the lever is the ``Y_stretch`` placeholder
+  (PI_DECISIONS), NOT the MT EI. (The MT ``EI`` ≈ 300× actin only makes MT
+  BENDING tighter than OTHER compartments' bend CFLs — a cross-compartment
+  note, not the intra-module bottleneck.) FLAGGED prominently; PI-gated.
 
 References
 ----------
@@ -260,7 +289,9 @@ _F_CAT_DEFAULT: float = 0.005          # 1/s    catastrophe frequency
 _F_RES_DEFAULT: float = 0.044          # 1/s    rescue frequency
 
 # Literature bands (range-check guards — reject silent tuned overrides).
-_LP_MT_BAND_M = (1.0e-3, 8.0e-3)       # Gittes/Howard MT L_p ≈ 1–6 mm (+margin)
+_LP_MT_BAND_M = (1.0e-3, 8.0e-3)       # Gittes/Howard MT L_p ≈ 1–8 mm band
+#                                        (Gittes 5.2 mm default; Pampaloni 2006
+#                                        length-dependent up to ~6–8 mm)
 
 
 # ---------------------------------------------------------------------------
@@ -298,12 +329,13 @@ class ResolvedMicrotubules:
     k_backbone: float                  # N/m       = Y_stretch/ℓ_0 (stretch)
     angle_t0: float                    # rad       rest bending angle (= π)
 
-    # Derived CFL timescales (γ_b supplied at resolve; bend is the tight one)
+    # Derived CFL timescales (γ_b supplied at resolve; STRETCH is the tight one
+    # at production ℓ_0 — τ_bend/τ_stretch = (ℓ_0/r_g)² ≫ 1, r_g≈10 nm crossover)
     gamma_b: float                     # N·s/m  per-bead Stokes drag
-    tau_bend: float                    # s      γ_b·ℓ_0³/EI       (STIFF — flagged)
-    tau_stretch: float                 # s      γ_b·ℓ_0/Y_stretch
-    dt_cfl_bend: float                 # s      cfl_safety·τ_bend (dominant risk)
-    dt_cfl_stretch: float              # s      cfl_safety·τ_stretch
+    tau_bend: float                    # s      γ_b·ℓ_0³/EI
+    tau_stretch: float                 # s      γ_b·ℓ_0/Y_stretch (STIFF — flagged)
+    dt_cfl_bend: float                 # s      cfl_safety·τ_bend
+    dt_cfl_stretch: float              # s      cfl_safety·τ_stretch (dominant risk)
     cfl_safety_factor: float           # —
 
     # Optional dynamic instability (Mitchison-Kirschner 1984 / Walker 1988)
@@ -486,9 +518,9 @@ def resolve_microtubules(
     if not (lo <= L_p <= hi):
         raise ValueError(
             f"L_p = {L_p:.3e} m outside the Gittes/Howard microtubule "
-            f"persistence-length band [{lo:.1e}, {hi:.1e}] m (1–6 mm + "
-            "margin). Per CLAUDE.md no-magic-number: keep within band or "
-            "surface to PI."
+            f"persistence-length band [{lo:.1e}, {hi:.1e}] m "
+            f"({lo * 1e3:.0f}–{hi * 1e3:.0f} mm). Per CLAUDE.md "
+            "no-magic-number: keep within band or surface to PI."
         )
     # EI ↔ L_p ↔ kT consistency: EI should equal kT·L_p to ~10 % (both are
     # measured independently; flag a gross mismatch — a tuned EI would break it).
@@ -508,7 +540,9 @@ def resolve_microtubules(
     k_angle = EI / l0                  # N·m/rad²  (== bending_modulus/rest_length)
     k_backbone = Y_stretch / l0        # N/m
 
-    # CFL timescales (H.2 derivation). Bending is the STIFF / dominant one.
+    # CFL timescales (H.2 derivation). At production ℓ_0 (> the ~10 nm
+    # crossover r_g = √(EI/Y_stretch)) the axial STRETCH term is the tighter /
+    # binding one: τ_bend/τ_stretch = (ℓ_0/r_g)² ≫ 1. The gate uses min(...).
     tau_bend = float(gamma_b) * l0**3 / EI
     tau_stretch = float(gamma_b) * l0 / Y_stretch
     dt_cfl_bend = cfl_safety_factor * tau_bend
@@ -726,6 +760,13 @@ def extend_snapshot_with_microtubules(
     n_new = int(topo.positions.shape[0])
     n_total = n_old + n_new
 
+    def _pf(arr, default: np.ndarray) -> np.ndarray:
+        # A minimally-populated gsd.hoomd.Frame returns None for unset particle
+        # fields (typeid / velocity / mass / image); HOOMD fills them on load.
+        # Mirror those auto-population defaults here so the in-isolation gsd
+        # path (docstring promise) does not crash on np.asarray(None).
+        return default if arr is None else np.asarray(arr)
+
     write = hoomd.Snapshot()
     write.particles.N = n_total
 
@@ -737,27 +778,38 @@ def extend_snapshot_with_microtubules(
     write.particles.types = types
     type_index = {tn: i for i, tn in enumerate(types)}
 
-    old_typeid = np.asarray(snap.particles.typeid, dtype=np.uint32)
+    old_typeid = _pf(
+        snap.particles.typeid, np.zeros(n_old, dtype=np.uint32)
+    ).astype(np.uint32).reshape(-1)
     new_typeid = np.array(
         [type_index[tn] for tn in topo.type_names], dtype=np.uint32
     )
     write.particles.typeid[:] = np.concatenate([old_typeid, new_typeid])
 
-    old_pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(-1, 3)
+    old_pos = _pf(
+        snap.particles.position, np.zeros((n_old, 3), dtype=np.float64)
+    ).astype(np.float64).reshape(-1, 3)
     write.particles.position[:] = np.concatenate(
         [old_pos, topo.positions], axis=0
     )
 
-    # velocity / mass / image — append zeros / ones (mirror lamellipodium).
-    old_vel = np.asarray(snap.particles.velocity, dtype=np.float64).reshape(-1, 3)
+    # velocity / mass / image — append zeros / ones (mirror lamellipodium);
+    # HOOMD auto-population defaults are typeid=0, mass=1, velocity/image=0.
+    old_vel = _pf(
+        snap.particles.velocity, np.zeros((n_old, 3), dtype=np.float64)
+    ).astype(np.float64).reshape(-1, 3)
     write.particles.velocity[:] = np.concatenate(
         [old_vel, np.zeros((n_new, 3), dtype=np.float64)], axis=0
     )
-    old_mass = np.asarray(snap.particles.mass, dtype=np.float64).reshape(-1)
+    old_mass = _pf(
+        snap.particles.mass, np.ones(n_old, dtype=np.float64)
+    ).astype(np.float64).reshape(-1)
     write.particles.mass[:] = np.concatenate(
         [old_mass, np.ones(n_new, dtype=np.float64)]
     )
-    old_image = np.asarray(snap.particles.image, dtype=np.int32).reshape(-1, 3)
+    old_image = _pf(
+        snap.particles.image, np.zeros((n_old, 3), dtype=np.int32)
+    ).astype(np.int32).reshape(-1, 3)
     write.particles.image[:] = np.concatenate(
         [old_image, np.zeros((n_new, 3), dtype=np.int32)], axis=0
     )
@@ -765,7 +817,8 @@ def extend_snapshot_with_microtubules(
     write.configuration.box = list(snap.configuration.box)
 
     # --- bonds: existing + mt_backbone (offset local indices by n_old). ---
-    bond_types = list(snap.bonds.types)
+    # snap.bonds.types is None on a bare gsd Frame ⇒ normalise to [].
+    bond_types = list(snap.bonds.types or [])
     if topo.backbone_bond_type not in bond_types:
         bond_types.append(topo.backbone_bond_type)
     bb_typeid = bond_types.index(topo.backbone_bond_type)
@@ -783,7 +836,8 @@ def extend_snapshot_with_microtubules(
         write.bonds.typeid[:] = merged_bt
 
     # --- angles: existing + mt_bending. ---
-    angle_types = list(snap.angles.types)
+    # snap.angles.types is None on a bare gsd Frame ⇒ normalise to [].
+    angle_types = list(snap.angles.types or [])
     old_ag = _grp(snap.angles.group, 3)
     old_at = _tid(snap.angles.typeid)
     if topo.bending_angles.shape[0] > 0:
@@ -842,13 +896,15 @@ def attach_microtubule_forces(
     ``mt_bending`` (rest angle ``π``, ``k = k_angle``), appends them to the
     Integrator's force list, and ENFORCES the stiff bending CFL.
 
-    **CFL — the dominant risk.** The bending CFL is
-    ``dt_cfl_bend = cfl_safety_factor·γ_b·ℓ_0³/EI``; because microtubule EI is
-    ~300× actin's, ``dt_cfl_bend`` can be far below the global cell dt. The gate
-    uses ``min(dt_cfl_bend, dt_cfl_stretch)`` and RAISES (``cfl_strict``) if
+    **CFL — the dominant risk is the axial STRETCH term.** Both timescales are
+    computed; at production ``ℓ_0`` (> the ~10 nm crossover ``r_g``) the
+    binding one is ``dt_cfl_stretch = cfl_safety_factor·γ_b·ℓ_0/Y_stretch``
+    (tighter than ``dt_cfl_bend`` by ``(ℓ_0/r_g)² ≫ 1``). The gate uses
+    ``min(dt_cfl_bend, dt_cfl_stretch)`` and RAISES (``cfl_strict``) if
     ``dt`` exceeds it — DO NOT silently lower the global dt to accommodate this;
     surface to PI (a global dt cut is a multiplicative slowdown of every other
-    compartment).
+    compartment), and the lever is the ``Y_stretch`` placeholder
+    (``PI_DECISIONS``), NOT the MT EI.
 
     Args:
         sim: Already-built simulation (must have an Integrator with ``dt``, and
@@ -875,20 +931,32 @@ def attach_microtubule_forces(
             "microtubule forces."
         )
 
-    # --- STIFF bending CFL gate (the flagged risk). ---
+    # --- CFL gate (the flagged risk). The BINDING term is whichever of
+    #     τ_bend / τ_stretch is smaller; at production ℓ_0 it is STRETCH. ---
     dt = float(ig.dt)
     dt_cfl = p.dt_cfl                                  # min(bend, stretch)
     if dt > dt_cfl and cfl_strict:
+        stretch_binds = p.tau_stretch <= p.tau_bend
+        binding = "AXIAL STRETCH" if stretch_binds else "BENDING"
+        # r_g = √(EI/Y_stretch) is the stretch↔bend crossover ℓ_0 (≈ MT
+        # radius of gyration ~10 nm); ratio = (ℓ_0/r_g)² = τ_bend/τ_stretch.
+        r_g = math.sqrt(p.EI / p.Y_stretch)
+        ratio = p.tau_bend / p.tau_stretch
         raise RuntimeError(
-            f"Microtubule bending CFL violated: dt = {dt:.3e} s > "
-            f"{p.cfl_safety_factor:.2f} · τ_min = {dt_cfl:.3e} s "
-            f"(τ_bend = γ_b·ℓ_0³/EI = {p.tau_bend:.3e} s is the STIFF one; "
-            f"τ_stretch = {p.tau_stretch:.3e} s). Microtubule EI = "
-            f"{p.EI:.3e} N·m² (~300× actin) sets a very tight bending dt. "
+            f"Microtubule CFL violated: dt = {dt:.3e} s > "
+            f"{p.cfl_safety_factor:.2f} · τ_min = {dt_cfl:.3e} s, where "
+            f"τ_min = min(τ_bend = γ_b·ℓ_0³/EI = {p.tau_bend:.3e} s, "
+            f"τ_stretch = γ_b·ℓ_0/Y_stretch = {p.tau_stretch:.3e} s). "
+            f"The {binding} term is the BINDING one here. For any ℓ_0 > the MT "
+            f"radius of gyration r_g = √(EI/Y_stretch) ≈ {r_g:.2e} m (~10 nm) "
+            f"the AXIAL STRETCH term (k_backbone = Y_stretch/ℓ_0 = "
+            f"{p.k_backbone:.3e} N/m) is tighter, by a factor "
+            f"τ_bend/τ_stretch = (ℓ_0/r_g)² = {ratio:.0f}× at this ℓ_0. "
             f"Need dt ≤ {dt_cfl:.3e} s — {dt / dt_cfl:.1f}× smaller than the "
             "current global dt. DO NOT silently cut the global dt (it slows "
-            "EVERY compartment multiplicatively) — surface to PI. Pass "
-            "cfl_strict=False for a diagnostic run only."
+            "EVERY compartment multiplicatively) — surface to PI; the dt lever "
+            "is the Y_stretch placeholder (see microtubules.PI_DECISIONS), NOT "
+            "the MT EI / bending. Pass cfl_strict=False for a diagnostic run only."
         )
 
     backbone = md.bond.Harmonic()

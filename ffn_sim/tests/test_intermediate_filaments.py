@@ -19,12 +19,15 @@ from ffn_sim.cell.intermediate_filaments import (
     CROSSLINK_BOND_TYPE,
     GAMMA_DENYLIST_PREFIX,
     IF_BEAD_TYPE,
+    N_XL_BINS,
     PI_DECISIONS,
     ResolvedIntermediateFilaments,
     attach_if_bonds_to_simulation,
     build_if_cage_layout,
     build_intermediate_filament_bonds,
     extend_snapshot_with_if_cage,
+    if_crosslink_bin_names,
+    register_if_bond_params,
     resolve_intermediate_filaments,
 )
 
@@ -207,11 +210,98 @@ def test_backbone_sign_sense_analytic():
     assert np.allclose(F_on_0 + F_on_1, 0.0)
 
 
+def test_crosslink_force_free_construction_and_sign_sense():
+    """Crosslinks are born ~force-free (per-r0 bin), not contractile r0=0.
+
+    A degenerate r0=0 on a finite-separation cross-bridge would be a contractile
+    spring storing ~1e6 kT at construction and self-contracting the cage. The
+    per-r0 binning makes each crosslink force-free at its born separation: the
+    total construction strain energy must be ~O(kT)·n_xl (thermal), NOT ~1e6 kT,
+    and the mean |r − r0| ≈ 0. A crosslink stretched BEYOND its rest length still
+    restores inward (separation-resisting tether).
+    """
+    p = resolve_intermediate_filaments(
+        _enabled_cfg(n_filaments=60, beads_per_fil=10), kT=kT, R_cell=R_CELL,
+        R_nuc=R_NUC,
+    )
+    layout = build_if_cage_layout(p, (0.0, 0.0, 0.0), gamma_if=GAMMA_IF, seed=3)
+    d = np.asarray(layout["crosslink_dists"])
+    bins = np.asarray(layout["crosslink_bins"])
+    r0 = np.asarray(layout["crosslink_bin_rest_lengths"])
+    n_xl = d.shape[0]
+    assert n_xl > 0                         # the cage actually has crosslinks
+
+    # Per-crosslink assigned rest length, born offset, and construction energy.
+    assigned_r0 = r0[bins]
+    offset = np.abs(d - assigned_r0)
+    # Force-free: each crosslink sits within ~half a bin of its rest length.
+    bin_width = p.crosslink_reach / N_XL_BINS
+    assert np.all(offset <= 0.5 * bin_width + 1e-15)
+    # Mean born offset is a small fraction of a segment (not ~l_seg).
+    assert np.mean(offset) < 0.1 * p.l_seg
+
+    # Construction strain energy is thermal-scale, NOT the ~1e6 kT r0=0 case.
+    U_binned = 0.5 * p.k_xl * (d - assigned_r0) ** 2
+    U_zero = 0.5 * p.k_xl * d ** 2          # what a degenerate r0=0 would store
+    assert U_binned.sum() / kT < 5.0 * n_xl         # ~O(kT)·n_xl thermal
+    # And it is orders of magnitude below the contractile r0=0 alternative.
+    assert U_binned.sum() < 1e-3 * U_zero.sum()
+
+    # Sign-sense: a crosslink STRETCHED past its rest length restores inward.
+    k = p.k_xl
+    l0 = float(assigned_r0[0])
+    rA = np.array([0.0, 0.0, 0.0])
+    rB = np.array([1.5 * l0, 0.0, 0.0])
+    dr = rB - rA
+    r = np.linalg.norm(dr)
+    rhat = dr / r
+    F_on_B = -k * (r - l0) * rhat
+    assert r > l0
+    assert F_on_B[0] < 0.0                   # pulled back toward partner (inward)
+    assert F_on_B[0] == pytest.approx(-k * (0.5 * l0), rel=1e-12)
+
+
+def test_register_if_bond_params_shared_force():
+    """IF params register onto a SHARED Harmonic without a second force.
+
+    Mirrors the stress_fibers / linc shared-force pattern: a single
+    md.bond.Harmonic carrying a foreign (cortex) bond type gets the IF params
+    written onto it (backbone + every per-r0 bin), so no second competing
+    Harmonic is constructed. Disabled params are a no-op.
+    """
+    import hoomd.md as md
+
+    bond = md.bond.Harmonic()
+    bond.params["cortex_bond"] = dict(k=1.0, r0=1.0e-7)
+
+    p = resolve_intermediate_filaments(_enabled_cfg(), kT=kT, R_cell=R_CELL)
+    out = register_if_bond_params(bond, p)
+    assert out is bond                        # writes onto the shared force
+    # Foreign type preserved; IF types added with force-free rest lengths.
+    _ = bond.params["cortex_bond"]
+    assert bond.params[BACKBONE_BOND_TYPE]["r0"] == pytest.approx(p.l_seg)
+    assert bond.params[BACKBONE_BOND_TYPE]["k"] == pytest.approx(p.k_bb)
+    for name in if_crosslink_bin_names():
+        prm = bond.params[name]
+        assert prm["k"] == pytest.approx(p.k_xl)
+        assert prm["r0"] > 0.0                # no degenerate r0=0 crosslink
+
+    # Disabled → no-op (does not add any IF type).
+    bond2 = md.bond.Harmonic()
+    bond2.params["cortex_bond"] = dict(k=1.0, r0=1.0e-7)
+    p_off = resolve_intermediate_filaments({}, kT=kT, R_cell=R_CELL)
+    assert register_if_bond_params(bond2, p_off) is bond2
+
+
 def test_nonlinear_not_faked_raises():
     """Requesting the nonlinear law raises (never silently approximated)."""
     p = resolve_intermediate_filaments(_enabled_cfg(), kT=kT, R_cell=R_CELL)
     with pytest.raises(NotImplementedError):
         build_intermediate_filament_bonds(p, nonlinear=True)
+    # The shared-force register path also refuses to fake the nonlinear law.
+    import hoomd.md as md
+    with pytest.raises(NotImplementedError):
+        register_if_bond_params(md.bond.Harmonic(), p, nonlinear=True)
 
 
 # ---------------------------------------------------------------------------
@@ -224,12 +314,16 @@ def test_gamma_denylist_prefix():
     assert BACKBONE_BOND_TYPE.startswith(GAMMA_DENYLIST_PREFIX)
     assert CROSSLINK_BOND_TYPE.startswith(GAMMA_DENYLIST_PREFIX)
     assert IF_BEAD_TYPE.startswith(GAMMA_DENYLIST_PREFIX)
+    # Every per-r0 crosslink bin type also carries the denylist prefix.
+    assert len(if_crosslink_bin_names()) == N_XL_BINS
+    for name in if_crosslink_bin_names():
+        assert name.startswith(GAMMA_DENYLIST_PREFIX)
 
     # The bond types actually attached to a force also carry the prefix.
     p = resolve_intermediate_filaments(_enabled_cfg(), kT=kT, R_cell=R_CELL)
     harmonic = build_intermediate_filament_bonds(p)
-    # md.bond.Harmonic.params is keyed by bond type name.
-    for type_name in (BACKBONE_BOND_TYPE, CROSSLINK_BOND_TYPE):
+    # md.bond.Harmonic.params is keyed by bond type name: backbone + per-bin xl.
+    for type_name in (BACKBONE_BOND_TYPE, *if_crosslink_bin_names()):
         assert type_name.startswith(GAMMA_DENYLIST_PREFIX)
         # params accessible (does not require a sim).
         _ = harmonic.params[type_name]
@@ -270,10 +364,11 @@ def test_extend_snapshot_adds_beads_and_if_bonds():
     # New if_bead type registered, old type preserved.
     assert "actin_cortex" in out.particles.types
     assert IF_BEAD_TYPE in out.particles.types
-    # Old bond preserved + if_ bond types registered.
+    # Old bond preserved + if_ bond types registered (backbone + per-r0 bins).
     assert "cortex_backbone" in out.bonds.types
     assert BACKBONE_BOND_TYPE in out.bonds.types
-    assert CROSSLINK_BOND_TYPE in out.bonds.types
+    for name in if_crosslink_bin_names():
+        assert name in out.bonds.types
     # Bond count grew by at least the backbone bonds.
     assert out.bonds.N >= 1 + p.n_backbone_bonds
     # Old particle positions unchanged (first 4 rows).
@@ -283,24 +378,75 @@ def test_extend_snapshot_adds_beads_and_if_bonds():
     )
 
 
-@pytest.mark.skip(reason="heavy: full HOOMD bonded-force eval; core gates cover sign-sense analytically")
-def test_hoomd_bonded_force_eval():  # pragma: no cover
-    """Optional: stretched if_backbone in a real HOOMD sim gives a restoring force."""
+def test_hoomd_bonded_force_eval_coexistence():
+    """Stretched if_backbone coexisting with a foreign bond type gives a restoring
+    force on ONE shared md.bond.Harmonic — the regression that a second standalone
+    Harmonic would crash (HOOMD demands params for every system bond type).
+
+    A two-particle stub carries BOTH a cortex_bond type (with one inert at-rest
+    bond) and a stretched if_backbone bond, all on the SINGLE shared Harmonic via
+    register_if_bond_params. sim.run(0) must NOT raise, and the stretched IF
+    backbone bead must be pulled back toward its partner.
+    """
+    import hoomd.md as md
+
+    p = resolve_intermediate_filaments(_enabled_cfg(), kT=kT, R_cell=R_CELL)
+    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=1)
+    snap = hoomd.Snapshot()
+    # 4 particles: 0-1 a foreign cortex pair (at rest), 2-3 an IF backbone pair
+    # stretched to 1.5·l_seg → restoring force expected on particle 3.
+    snap.particles.N = 4
+    snap.particles.types = ["cortex_bead", IF_BEAD_TYPE]
+    snap.particles.position[:] = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0e-7, 0.0, 0.0],
+            [0.0, 2.0e-6, 0.0],
+            [1.5 * p.l_seg, 2.0e-6, 0.0],
+        ]
+    )
+    snap.particles.typeid[:] = np.array([0, 0, 1, 1], dtype=np.uint32)
+    snap.bonds.N = 2
+    snap.bonds.types = ["cortex_bond", BACKBONE_BOND_TYPE]
+    snap.bonds.group[:] = np.array([[0, 1], [2, 3]])
+    snap.bonds.typeid[:] = np.array([0, 1], dtype=np.uint32)
+    L = 20 * p.l_seg
+    snap.configuration.box = [L, L, L, 0, 0, 0]
+    sim.create_state_from_snapshot(snap)
+
+    # ONE shared Harmonic carries BOTH the foreign cortex bond and the IF bonds.
+    bond = md.bond.Harmonic()
+    bond.params["cortex_bond"] = dict(k=1.0e-3, r0=1.0e-7)  # at-rest, inert
+    register_if_bond_params(bond, p)                        # writes IF types
+    integrator = md.Integrator(dt=1e-9, forces=[bond])
+    sim.operations.integrator = integrator
+    sim.run(0)                                              # must NOT raise
+
+    f = np.asarray(bond.forces)
+    # Particle 3 (stretched IF backbone, +x past rest) pulled back toward
+    # particle 2 (−x restoring).
+    assert f[3][0] < 0.0
+
+
+def test_attach_standalone_refuses_foreign_bond_types():
+    """attach_if_bonds_to_simulation refuses to add a 2nd Harmonic when the state
+    carries non-IF bond types (would crash; route through register_if_bond_params).
+    """
+    import hoomd.md as md
+
     p = resolve_intermediate_filaments(_enabled_cfg(), kT=kT, R_cell=R_CELL)
     sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=1)
     snap = hoomd.Snapshot()
     snap.particles.N = 2
-    snap.particles.types = [IF_BEAD_TYPE]
-    snap.particles.position[:] = np.array([[0, 0, 0], [1.5 * p.l_seg, 0, 0]])
+    snap.particles.types = ["cortex_bead"]
+    snap.particles.position[:] = np.array([[0.0, 0.0, 0.0], [1.0e-7, 0.0, 0.0]])
     snap.bonds.N = 1
-    snap.bonds.types = [BACKBONE_BOND_TYPE]
+    snap.bonds.types = ["cortex_bond"]
     snap.bonds.group[:] = np.array([[0, 1]])
-    L = 10 * p.l_seg
-    snap.configuration.box = [L, L, L, 0, 0, 0]
+    snap.configuration.box = [1.0e-5, 1.0e-5, 1.0e-5, 0, 0, 0]
     sim.create_state_from_snapshot(snap)
-    harmonic = build_intermediate_filament_bonds(p)
-    integrator = hoomd.md.Integrator(dt=1e-9, forces=[harmonic])
-    sim.operations.integrator = integrator
-    sim.run(0)
-    f = harmonic.forces
-    assert f[1][0] < 0.0     # bead 1 pulled back toward bead 0
+    cortex = md.bond.Harmonic()
+    cortex.params["cortex_bond"] = dict(k=1.0e-3, r0=1.0e-7)
+    sim.operations.integrator = md.Integrator(dt=1e-9, forces=[cortex])
+    with pytest.raises(RuntimeError):
+        attach_if_bonds_to_simulation(sim, p, gamma_if=GAMMA_IF, cfl_strict=False)

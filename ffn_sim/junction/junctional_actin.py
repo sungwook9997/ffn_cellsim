@@ -39,11 +39,15 @@ the catenin complex. Each coupling is an EXPLICIT dynamic harmonic bond:
   up to a peak, then slips), and (b) binds free ``junc_actin`` heads to a
   nearby same-cell cortex bead found by a cKDTree broad-phase query.
 
-The catch behaviour is the documented α-catenin/F-actin two-state catch bond
-(Buckley 2014 Science): under load the α-catenin–actin interface switches to
-a strongly-bound state, so the off-rate FALLS with force up to a peak force
-F* and rises beyond it (a two-pathway catch-slip, same functional family as
-the H.3 filamin / H.4 integrin Pereverzev law). Vinculin recruitment
+The catch behaviour is a two-pathway (parallel catch+slip Bell) Pereverzev-form
+surrogate that reproduces the biphasic lifetime-vs-force SHAPE measured for the
+α-catenin/F-actin catch bond (Buckley 2014 Science): under load the off-rate
+FALLS with force up to a peak force F* and rises beyond it (the same
+two-pathway functional family as the H.3 filamin / H.4 integrin Pereverzev
+law). Buckley's own fit is a two-state *sequential* weak↔strong model — a
+different functional family from this parallel sum — so this is a defensible
+phenomenological surrogate of Buckley's *shape*, not a re-implementation of
+his master-equation fit. Vinculin recruitment
 (Yonemura 2010; le Duc 2010) is the molecular cause: α-catenin's M-domain
 unfurls under tension, exposing the vinculin-binding site, and bound vinculin
 adds a second actin-anchoring arm that deepens the catch.
@@ -147,13 +151,21 @@ Compartment Performance Contract
 * **Particle types added**: ``junc_actin`` (α-catenin/vinculin coupling head,
   one per engaged cadherin particle at the interface).
 * **Particle count** — one coupling head per cadherin particle that engages
-  the cortex. At the mesoscale (n_fil = 1000) a cell-cell interface carries
-  ``~n_cad`` cadherin particles (KU-4.17 ``N_cad_per_contact ≈ 100`` per
-  mature contact); so ``~100`` ``junc_actin`` heads per interface (≪ the
-  ~1000-filament cortex). At native ~38000-filament scale the cadherin count
-  scales with interface area (×40 areal coarse-graining inverse) →
-  ``~100·√40 ≈ 630`` heads per interface — still a thin belt, NOT a per-bead
-  cost over the whole cortex.
+  the cortex, so the head count is fixed by the cadherin count, which the
+  sibling ``ffn_sim.junction.cadherin`` sets from the Iturri-2020 adhesion-
+  force scale bridge and which does NOT scale with ``n_fil`` (``N_cad ≈ 223``
+  per cell at BOTH the ×40 meso scale, n_fil=1000, and native ~38000 — it is
+  set by the measured adhesion force, not the actin discretisation). A mature
+  contact carries on the order of ``~100–223`` engaged ``junc_actin`` heads
+  per interface (KU-4.17 ``N_cad_per_contact ≈ 100`` for a mature contact, up
+  to the Iturri ~223 cap) — ≪ the ~1000-filament cortex either way, and
+  ``n_fil``-independent. (If instead one estimated the belt from the cortex
+  discretisation: the junctional belt is a 1-D perimeter, so its head count
+  grows by the LINEAR coarse-graining factor √40 — the inter-bead-spacing dual
+  of the ×40 *areal* reduction, see ``cortex/connected_mesh.mesoscale_reach``
+  √(A/n) — i.e. ``~100·√40 ≈ 630``, NOT the ×40 areal ``~4000``; both stay a
+  thin belt, NOT a per-bead cost over the whole cortex. But the Iturri
+  fixed-count story above is authoritative, matching ``cadherin.py``.)
 * **Bond / angle count**: per engaged head, 1 permanent ``junc_actin_anchor``
   (head↔cadherin) + ≤ 1 dynamic ``junc_actin_couple_b{i}`` (head↔cortex);
   so ≤ ``2·n_head`` bonds (``~200`` per interface at mesoscale). 0 angles.
@@ -241,9 +253,17 @@ PI_DECISIONS: list[str] = [
     "stiffness for a coarse-grained junction bead. PI must anchor it.",
     "catch off-rate constants (k_catch0 [1/s], x_catch [m], k_slip0 [1/s], "
     "x_slip [m]) for the alpha-catenin/F-actin catch bond are qualitative in "
-    "Buckley 2014 / Yao 2014 (two-state, force-strengthened) but not given as "
-    "a calibrated two-pathway Pereverzev parameter set for THIS coupling. PI "
-    "must anchor them (or sanction a transfer from the H.3 filamin catch set).",
+    "Buckley 2014 / Yao 2014 (force-strengthened) but not given as a calibrated "
+    "two-pathway Pereverzev parameter set for THIS coupling. NOTE the "
+    "FORM/SOURCE distinction before anchoring: the implemented law is a "
+    "PARALLEL catch+slip Bell sum (two-pathway Pereverzev family), whereas "
+    "Buckley 2014's own fit is a two-STATE sequential weak<->strong model — a "
+    "different functional family. The implemented law is therefore a "
+    "shape-faithful surrogate of Buckley's biphasic shape, NOT his sequential "
+    "master-equation fit. A transfer from the H.3 filamin catch set inherits "
+    "this parallel surrogate form (shape-faithful, not Buckley's sequential "
+    "form). PI must anchor the constants (or sanction the H.3 filamin transfer) "
+    "with this form/source distinction explicit.",
     "k_on (coupling-head -> cortex single-head binding rate, 1/s) and "
     "max_couple_dist (acceptor search radius, m) for the junctional belt are "
     "not anchored. The vinculin-recruitment ON step (Yonemura 2010 / le Duc "
@@ -556,13 +576,21 @@ def catch_off_rate(p: ResolvedJunctionalActin, F: float) -> float:
     ``k_off(F) = k_catch0·exp(−F·x_catch/kT) + k_slip0·exp(+F·x_slip/kT)``.
 
     The catch pathway DECREASES the off-rate with force (force STABILISES the
-    α-catenin/actin link — Buckley 2014; the vinculin-reinforced strongly-
-    bound state), the slip pathway increases it. With ``k_catch0 > k_slip0``
-    and ``x_catch > x_slip`` the catch branch dominates at low force, giving
-    the catch-slip signature (off-rate falls to a minimum at the peak force
+    α-catenin/actin link — the vinculin-reinforced strongly-bound state), the
+    slip pathway increases it. With ``k_catch0 > k_slip0`` and
+    ``x_catch > x_slip`` the catch branch dominates at low force, giving the
+    catch-slip signature (off-rate falls to a minimum at the peak force
     ``F* = (kT/(x_catch+x_slip))·ln((k_catch0·x_catch)/(k_slip0·x_slip))`` then
     rises). Same two-pathway functional structure as the H.3 filamin / H.4
     integrin Pereverzev law.
+
+    This parallel sum is a Pereverzev-form surrogate that reproduces the
+    biphasic catch-bond SHAPE measured by Buckley 2014 for the α-catenin/F-actin
+    bond; Buckley's own fit is a two-state *sequential* weak↔strong model — a
+    different functional family — so this law is a defensible phenomenological
+    surrogate of that shape, NOT a re-implementation of Buckley's
+    master-equation fit. (The constants remain a SHAPE, not a calibrated
+    parameter set — see the ``NotImplementedError`` below.)
 
     Args:
         p: Resolved parameters.
