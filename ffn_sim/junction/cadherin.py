@@ -588,6 +588,16 @@ def extend_snapshot_with_cadherins(
         snap.particles.velocity = np.vstack(
             [np.asarray(vel, dtype=np.float64).reshape(-1, 3), np.zeros((n_new, 3))]
         )
+    # image flags (int32, (n,3)): extend too, or a host frame that carries an
+    # image array desyncs from N and crashes Snapshot.from_gsd_frame at state
+    # creation (broadcast (n_before,3) into (N,3)). Mirrors the velocity carry +
+    # the nucleus/MT/IF extenders which all carry image.
+    img = getattr(snap.particles, "image", None)
+    if img is not None and np.asarray(img).reshape(-1, 3).shape[0] == n_before:
+        snap.particles.image = np.vstack(
+            [np.asarray(img, dtype=np.int32).reshape(-1, 3),
+             np.zeros((n_new, 3), dtype=np.int32)]
+        )
 
     a_tags = np.arange(n_before, n_before + pts_a.shape[0], dtype=np.int64)
     b_tags = np.arange(

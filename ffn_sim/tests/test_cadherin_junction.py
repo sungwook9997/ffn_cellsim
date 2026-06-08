@@ -227,6 +227,47 @@ def test_snapshot_extender_appends_two_cells_worth():
     assert snap.particles.mass.shape[0] == 7
 
 
+def test_snapshot_extender_extends_velocity_and_image_arrays():
+    """Regression: per-particle velocity AND image arrays extend to the new N.
+
+    A real build-time frame carries an ``image`` array (cortex shells set it). If
+    the extender leaves ``image`` at the pre-extension length, the appended
+    cadherin particles desync it from N and ``Snapshot.from_gsd_frame`` crashes
+    at state creation (``could not broadcast (n_before,3) into (N,3)``). Caught by
+    the compartment ENABLED-PATH smoke harness (scripts/compartment_smoke/
+    cadherin_junction.py), 2026-06-09 — the image carry was missing while
+    mass/charge/diameter/velocity were handled.
+    """
+    p = cj.resolve_cadherin_junction(
+        {"enabled": True, "n_cad_per_cell": 3}, kT=_KT, dt=_DT,
+        contact_zone_width=_CONTACT_ZONE,
+    )
+
+    class _P:
+        N = 2
+        types = ["actin_cortex"]
+        typeid = np.zeros(2, dtype=np.uint32)
+        position = np.zeros((2, 3), dtype=np.float64)
+        mass = np.ones(2, dtype=np.float64)
+        velocity = np.zeros((2, 3), dtype=np.float64)
+        image = np.zeros((2, 3), dtype=np.int32)
+
+    class _Snap:
+        particles = _P()
+
+    snap = _Snap()
+    a = np.array([[1.0, 0, 0], [2.0, 0, 0], [3.0, 0, 0]])
+    b = np.array([[1.0, 1, 0], [2.0, 1, 0], [3.0, 1, 0]])
+    cj.extend_snapshot_with_cadherins(
+        snap, p, cell_a_surface_points=a, cell_b_surface_points=b,
+    )
+    assert snap.particles.N == 8
+    # BOTH per-particle vector arrays must reach the new N (image was the bug).
+    assert np.asarray(snap.particles.velocity).shape[0] == 8
+    assert np.asarray(snap.particles.image).shape[0] == 8
+    assert np.asarray(snap.particles.image).dtype == np.int32
+
+
 # ===========================================================================
 # γ-no-contamination
 # ===========================================================================

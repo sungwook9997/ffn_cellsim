@@ -1,0 +1,37 @@
+{
+  "compartment": "cadherin_junction",
+  "verdict": "PLUMBING_OK",
+  "physics_claim": false,
+  "n_steps": 100000,
+  "dt_s": 6.98e-07,
+  "params": {
+    "n_cad_per_cell": 24,
+    "k_trans_Npm": 0.00292,
+    "r0_trans_m": 1e-08,
+    "r_bind_m": 1e-08,
+    "k_on_per_s": 27.9624810892587,
+    "batch_steps": 51,
+    "contact_zone_m": 1e-08,
+    "gamma_cad_Nspm": 0.0012421857352294043,
+    "f0_pN": 29.2
+  },
+  "topology": {
+    "n_cadherin_A": 24,
+    "n_cadherin_B": 24,
+    "n_trans_bonds_formed": 10,
+    "cross_cell_bonds": 10,
+    "intra_cell_bonds": 0,
+    "engaged_fraction": 0.4166666666666667
+  },
+  "observables": {
+    "trans_len_mean_m": 9.17889423128124e-09,
+    "per_dimer_tension_mean_pN": 0.11997903288256853,
+    "per_dimer_tension_max_pN": 1.1997903288256853,
+    "all_A_B_no_intra": true,
+    "all_finite": true
+  },
+  "constants_smoke_only": [
+    "n_cad_per_cell=40 (layout; not Iturri 223)"
+  ],
+  "note": "PLUMBING smoke: confirms the catch-bond binder forms cadherin_trans dimers ONLY between A and B (no intra-cell) and the elastic force evaluates finite. NOT the GATE-J 1-5 pN equilibrated-doublet gate."
+}
