@@ -1,0 +1,263 @@
+{
+  "results": [
+    {
+      "n_fil": 1000,
+      "subset_rows": [
+        {
+          "label": "none",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 0.5021319389343262,
+          "steps_per_s": 7966.033804758952,
+          "us_per_step": 125.53298473358154,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [],
+          "kept_force_classes": [],
+          "nlist": {
+            "pair_force": null
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "bond",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 0.7060182094573975,
+          "steps_per_s": 5665.576250609961,
+          "us_per_step": 176.50455236434937,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic"
+          ],
+          "kept_force_classes": [
+            "bond"
+          ],
+          "nlist": {
+            "pair_force": null
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "bond+angle",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 1.0414321422576904,
+          "steps_per_s": 3840.864745473014,
+          "us_per_step": 260.3580355644226,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle"
+          ],
+          "nlist": {
+            "pair_force": null
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.375434637069702,
+          "steps_per_s": 1683.9023636256882,
+          "us_per_step": 593.8586592674255,
+          "rbuff": null,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        }
+      ],
+      "breakdown": {
+        "us_per_step": {
+          "none": 125.53298473358154,
+          "bond": 176.50455236434937,
+          "bond+angle": 260.3580355644226,
+          "full": 593.8586592674255
+        },
+        "per_force_us": {
+          "baseline(run-loop)": 125.53298473358154,
+          "bond_harmonic": 50.97156763076782,
+          "angle_harmonic": 83.85348320007324,
+          "lj+nlist": 333.50062370300293
+        },
+        "per_force_pct_of_full": {
+          "baseline(run-loop)": 21.13852897058654,
+          "bond_harmonic": 8.583114321115655,
+          "angle_harmonic": 14.120107855885026,
+          "lj+nlist": 56.15824885241278
+        },
+        "full_steps_per_s": 1683.9023636256882
+      },
+      "rbuff_sweep": [
+        {
+          "label": "full@rbuff=0.0",
+          "n_fil": 1000,
+          "steps": 4000,
+          "wall_s": 2.3608479499816895,
+          "steps_per_s": 1694.306488493265,
+          "us_per_step": 590.2119874954224,
+          "rbuff": 0.0,
+          "topology": {
+            "particles": 17660,
+            "bonds": 20190,
+            "angles": 5000,
+            "particle_types": 4,
+            "bond_types": 24
+          },
+          "all_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "all_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "kept_force_types": [
+            "Harmonic",
+            "Harmonic",
+            "LJ"
+          ],
+          "kept_force_classes": [
+            "bond",
+            "angle",
+            "pair"
+          ],
+          "nlist": {
+            "pair_force": "LJ",
+            "nlist_type": "Tree",
+            "buffer": 3e-08,
+            "rebuild_check_delay": 1
+          },
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=0.1",
+          "n_fil": 1000,
+          "status": "failed",
+          "error_type": "RuntimeError",
+          "error": "nlist: Simulation box is too small, the neighbor list is searching beyond the  minimum image: rmax=0.1\nnearest_plane_distance.x=3e-05\nnearest_plane_distance.y=3e-05\nnearest_plane_distance.z=3e-05\n",
+          "rbuff": 0.1,
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=0.25",
+          "n_fil": 1000,
+          "status": "failed",
+          "error_type": "RuntimeError",
+          "error": "nlist: Simulation box is too small, the neighbor list is searching beyond the  minimum image: rmax=0.25\nnearest_plane_distance.x=3e-05\nnearest_plane_distance.y=3e-05\nnearest_plane_distance.z=3e-05\n",
+          "rbuff": 0.25,
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=0.5",
+          "n_fil": 1000,
+          "status": "failed",
+          "error_type": "RuntimeError",
+          "error": "nlist: Simulation box is too small, the neighbor list is searching beyond the  minimum image: rmax=0.5\nnearest_plane_distance.x=3e-05\nnearest_plane_distance.y=3e-05\nnearest_plane_distance.z=3e-05\n",
+          "rbuff": 0.5,
+          "device": "gpu"
+        },
+        {
+          "label": "full@rbuff=1.0",
+          "n_fil": 1000,
+          "status": "failed",
+          "error_type": "RuntimeError",
+          "error": "nlist: Simulation box is too small, the neighbor list is searching beyond the  minimum image: rmax=1\nnearest_plane_distance.x=3e-05\nnearest_plane_distance.y=3e-05\nnearest_plane_distance.z=3e-05\n",
+          "rbuff": 1.0,
+          "device": "gpu"
+        }
+      ]
+    }
+  ],
+  "steps": 4000,
+  "device": "gpu",
+  "seed": 1
+}

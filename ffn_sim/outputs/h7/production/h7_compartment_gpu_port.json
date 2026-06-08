@@ -1,0 +1,39 @@
+{
+  "config": {
+    "n_fil": 1000,
+    "n_part": 15400,
+    "R_cell_m": 7.5e-06,
+    "warmup": 2000,
+    "timed_steps": 1500,
+    "device": "gpu",
+    "gate_steps": 200000000.0
+  },
+  "arms": {
+    "cupy_cpucomp": {
+      "steps_per_s": 83.67689522204518,
+      "eta_hours_at_gate": 663.9294563706412,
+      "g_soft_mN_m": 2.956626791446703e-07,
+      "g_rigid_mN_m": 0.08352920541855416,
+      "nonconverged_count": null
+    },
+    "cupy_gpucomp": {
+      "steps_per_s": 111.77630785779726,
+      "eta_hours_at_gate": 497.02442870302883,
+      "g_soft_mN_m": 2.9566267914465535e-07,
+      "g_rigid_mN_m": 0.08352920541877405,
+      "nonconverged_count": null
+    },
+    "native_gpucomp": {
+      "steps_per_s": 490.67976344637674,
+      "eta_hours_at_gate": 113.22161559170733,
+      "g_soft_mN_m": 2.8794049425660293e-07,
+      "g_rigid_mN_m": 0.08310624363227098,
+      "nonconverged_count": 0
+    }
+  },
+  "speedups_vs_cupy_cpucomp": {
+    "cupy_cpucomp": 1.0,
+    "cupy_gpucomp": 1.3358084996006059,
+    "native_gpucomp": 5.863981474746499
+  }
+}

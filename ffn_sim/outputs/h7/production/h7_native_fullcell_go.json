@@ -1,0 +1,41 @@
+{
+  "config": {
+    "n_fil": 1000,
+    "n_part": 15400,
+    "F_chains": 1000,
+    "m_bonds": 6,
+    "warmup": 2000,
+    "timed_steps": 1500,
+    "interval": 200,
+    "device": "gpu",
+    "dtc_s": 6.980731076014148e-07,
+    "R_cell_m": 7.5e-06
+  },
+  "cupy": {
+    "steps_per_s": 82.8146800322494,
+    "eta_hours_at_gate": 670.8418789267954,
+    "g_soft_mN_m": 2.956626791446703e-07,
+    "g_soft_std_mN_m": 2.8599024625342546e-08,
+    "g_rigid_mN_m": 0.08352920541855416,
+    "g_rigid_std_mN_m": 0.015265322994126768
+  },
+  "native": {
+    "available": true,
+    "error": "",
+    "steps_per_s": 201.4480015723655,
+    "eta_hours_at_gate": 275.7811202986718,
+    "nonconverged_count": 0,
+    "g_soft_mN_m": 2.8794049425659245e-07,
+    "g_soft_std_mN_m": 2.672675100069359e-08,
+    "g_rigid_mN_m": 0.08310624363292698,
+    "g_rigid_std_mN_m": 0.017662796284653174
+  },
+  "end_to_end_speedup_native_over_cupy": 2.432515605855367,
+  "gate_steps": 200000000.0,
+  "GO_criteria": {
+    "native_available": true,
+    "nonconverged_zero": true,
+    "gamma_soft_parity": true,
+    "GO": true
+  }
+}

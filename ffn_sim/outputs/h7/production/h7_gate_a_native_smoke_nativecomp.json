@@ -1,0 +1,14 @@
+{
+ "verdict": "INCONCLUSIVE: s_grip did not develop enough (s_grip/\u21130=0.00) \u2014 extend --ticks.",
+ "rows": [
+  {
+   "tick": 2,
+   "g_soft_mN_m": 3.0371765437367174e-07,
+   "g_rigid_mN_m": 0.06094001080944088,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.0000003603504521,
+   "nonconv": 0
+  }
+ ]
+}

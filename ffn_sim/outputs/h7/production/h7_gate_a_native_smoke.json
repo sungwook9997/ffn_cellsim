@@ -1,0 +1,41 @@
+{
+ "verdict": "INCONCLUSIVE: s_grip did not develop enough (s_grip/\u21130=0.00) \u2014 extend --ticks.",
+ "rows": [
+  {
+   "tick": 1,
+   "g_soft_mN_m": 4.432985364443763e-07,
+   "g_rigid_mN_m": 0.037551131059642376,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.0000002688371241,
+   "nonconv": 0
+  },
+  {
+   "tick": 2,
+   "g_soft_mN_m": 4.3567508167804394e-07,
+   "g_rigid_mN_m": 0.05899102667414177,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.0000001655478707,
+   "nonconv": 0
+  },
+  {
+   "tick": 3,
+   "g_soft_mN_m": 4.4079071295729923e-07,
+   "g_rigid_mN_m": 0.06716984214817706,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.0000017897015272,
+   "nonconv": 0
+  },
+  {
+   "tick": 4,
+   "g_soft_mN_m": 4.478574325502238e-07,
+   "g_rigid_mN_m": 0.028578481314519632,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.000003044306073,
+   "nonconv": 0
+  }
+ ]
+}

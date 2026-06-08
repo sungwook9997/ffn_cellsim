@@ -1,0 +1,48 @@
+{
+ "rows": [
+  {
+   "tick": 0,
+   "phys_t_s": 0.0,
+   "bound_frac": 0.0,
+   "F_over_stall": 0.0,
+   "n_bound": 0,
+   "gamma_soft": 3.310814146574551e-06,
+   "gamma_soft_ik": 3.2564469745774425e-06,
+   "s_grip_m": 0.0,
+   "s_grip_over_l0": 0.0,
+   "backbone_r_over_r0": 1.0000000000000002
+  },
+  {
+   "tick": 1,
+   "phys_t_s": 1.3030698008559744e-05,
+   "bound_frac": 0.0005,
+   "F_over_stall": 0.023579522305951412,
+   "n_bound": 1,
+   "gamma_soft": 9.442608887860143e-05,
+   "gamma_soft_ik": 3.064393171457386e-05,
+   "s_grip_m": 2.6061396017119482e-12,
+   "s_grip_over_l0": 5.212279203423897e-06,
+   "backbone_r_over_r0": 0.9999620506647117
+  },
+  {
+   "tick": 2,
+   "phys_t_s": 2.6061396017119488e-05,
+   "bound_frac": 0.0005,
+   "F_over_stall": 0.04182027003884161,
+   "n_bound": 1,
+   "gamma_soft": 0.00010917091900048801,
+   "gamma_soft_ik": 5.99003654111197e-05,
+   "s_grip_m": 5.212295536421614e-12,
+   "s_grip_over_l0": 1.0424591072843228e-05,
+   "backbone_r_over_r0": 1.0003309703902736
+  }
+ ],
+ "wall_s": 10.303508758544922,
+ "verdict": "INCONCLUSIVE: s_grip did not develop enough in this run length \u2014 extend ticks (s_grip/\u2113\u2080=0.00).",
+ "n_fil": 50,
+ "batch_dt": 1.3030698008559744e-05,
+ "ell0": 5e-07,
+ "R_cell": 1e-05,
+ "F_stall_per_head": 1.8849555921538762e-11,
+ "connected_mesh": true
+}
