@@ -71,7 +71,9 @@ def _build_native_constrained(manifest, *, device, seed, warm_pos):
 
     cell = build_baseline_cell(
         manifest=deepcopy(manifest), device=device, seed=seed,
-        constrained=True, equilibrate=False,
+        constrained=True, connected_mesh=True, equilibrate=False,  # mesh-guard 2026-06-08:
+        # Gate-A originally ran on the FRAGMENTED mesh (connected_mesh omitted) → its
+        # γ-floor REFUTE is confounded; the correct mesh is the percolated one.
     )
     if hasattr(cell.baoab_action, "record_lambda"):
         cell.baoab_action.record_lambda = True
@@ -188,7 +190,7 @@ def main() -> int:
     if args.no_native:
         cell = build_baseline_cell(
             manifest=deepcopy(manifest), device=dev, seed=args.seed,
-            constrained=True, equilibrate=False)
+            constrained=True, connected_mesh=True, equilibrate=False)  # mesh-guard 2026-06-08
         if hasattr(cell.baoab_action, "record_lambda"):
             cell.baoab_action.record_lambda = True
         snap = cell.simulation.state.get_snapshot()

@@ -163,6 +163,7 @@ def fa_cell():
         device=None,
         seed=1,
         constrained=True,
+        connected_mesh=True,  # transmission measurement → percolated mesh (guard, 2026-06-08)
         equilibrate=True,
         equilibrate_steps=120,
         equilibrate_softstart_steps=100,

@@ -297,7 +297,8 @@ def build_baseline_cell(
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
     equilibrate_softstart_steps: int = 100,
-    connected_mesh: bool = False,
+    connected_mesh: bool | None = None,
+    allow_fragmented_dev: bool = False,
     faithful_connected_mesh: bool = False,
     cm_z_struct: float = 3.7,
     cm_bundle_mult: int = 2,
@@ -315,6 +316,37 @@ def build_baseline_cell(
     """
     if manifest is None:
         manifest = load_manifest(path_or_name)
+
+    # --- Mesh-connectivity guards (post-mortem 2026-06-08) ----------------------
+    # The fragmented mesh (connected_mesh=False: no inter-filament bridge crosslinks,
+    # giant-component ~7%) CANNOT transmit spanning cortical tension. Gate-A and the
+    # native Gate-B driver silently defaulted to it (connected_mesh omitted) and so
+    # measured γ on a disconnected cortex — confounding the γ-floor REFUTE. Two guards:
+    #  (1) REQUIRED EXPLICIT ARG: a constrained (cortical-γ / production) build must
+    #      state connected_mesh — no silent default.
+    #  (2) HARD STOP on fragmented-γ: a constrained build may NOT use the fragmented
+    #      mesh unless the caller explicitly opts in (allow_fragmented_dev) for a
+    #      diagnostic. Transmission measurements require the percolated mesh.
+    if constrained:
+        if connected_mesh is None:
+            raise ValueError(
+                "build_baseline_cell(constrained=True) must set connected_mesh "
+                "EXPLICITLY (True = percolated spanning mesh, REQUIRED for a "
+                "cortical-tension / transmission measurement; False = fragmented "
+                "mesh, diagnostic only). The silent default-False caused the "
+                "2026-06-08 Gate-A/B fragmented-mesh confound — no silent default."
+            )
+        if connected_mesh is False and not allow_fragmented_dev:
+            raise ValueError(
+                "Refusing a constrained (cortical-γ) build on the FRAGMENTED mesh "
+                "(connected_mesh=False): a disconnected cortex (giant ~7%, no "
+                "inter-filament bridges) cannot transmit spanning tension, so γ is "
+                "meaningless. Pass connected_mesh=True (production) or, for a "
+                "deliberate fragmented-mesh diagnostic, allow_fragmented_dev=True."
+            )
+    if connected_mesh is None:
+        connected_mesh = False  # legacy non-constrained default (backward-compat)
+
     rb = resolve_baseline(manifest, allow_no_nucleus=allow_no_nucleus)
     require_full_cell_physiological_baseline(
         rb.compartments(), allow_unpressurized_dev=allow_unpressurized_dev

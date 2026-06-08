@@ -907,6 +907,22 @@ def build_cortex_full_simulation(
             )
             xlink_layout = _cm_seed.layout
             _cm_filament_idx = cortex_filament_idx
+            # Connectivity verify (post-mortem 2026-06-08): surface the seeded
+            # percolation in every build log so a fragmented mesh can never pass a
+            # transmission measurement unnoticed. Rebuild gate: giant ≥ 0.9, z ∈ [3,3.5].
+            _LOG.info(
+                "connected_mesh seed: giant_component=%.1f%%  z_struct=%.2f  "
+                "n_xl=%d  homeless=%d  (rebuild gate: giant>=90%%, z in [3,3.5])",
+                _cm_seed.giant_fraction * 100.0, _cm_seed.z_struct_realised,
+                _cm_seed.n_xl, _cm_seed.n_homeless,
+            )
+            if _cm_seed.giant_fraction < 0.5:
+                _LOG.warning(
+                    "connected_mesh requested but the seeded cortex did NOT percolate "
+                    "(giant_component=%.1f%% < 50%%) - a transmission measurement on this "
+                    "build would be confounded; investigate the seeding.",
+                    _cm_seed.giant_fraction * 100.0,
+                )
             snap = extend_cortex_state_with_xlinks(
                 snap, xlink_layout, p_xlinks,
                 seeded_attach=_cm_seed.seeded_attach,
