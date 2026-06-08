@@ -82,7 +82,47 @@ def _mean_backbone_r_over_r0(snap, rest_length: float) -> float:
     return float(np.mean(L) / rest_length)
 
 
-def run(n_fil, batch_steps, ticks, measure_every, seed, device, connected_mesh):
+class SnapshotFreeMyosinGripClock(hoomd.custom.Action):
+    """Advance the host-side myosin grip clock without touching HOOMD snapshots.
+
+    This is a speed-diagnostic bridge, not a correctness replacement for
+    :class:`MyosinStepUpdater`: it lets long GPU runs proceed after an initial
+    warm-bind while keeping ``s_grip`` telemetry alive, but it does not retarget
+    head-actin bonds or perform Bell-Evans rebinding/unbinding.
+    """
+
+    def __init__(self, myosin_action, p_myo, ell0_cortex: float) -> None:
+        self.myosin_action = myosin_action
+        self.p_myo = p_myo
+        self.ell0_cortex = float(ell0_cortex)
+        self.steps_run = 0
+
+    def act(self, timestep: int) -> None:  # noqa: D401, ARG002
+        ma = self.myosin_action
+        bound = ma._head_bound_to_actin >= 0
+        if not np.any(bound):
+            self.steps_run += 1
+            return
+        s_cap = 2.0 * self.ell0_cortex * (1.0 - 1.0e-9)
+        ds = self.p_myo.v0_per_head * self.p_myo.batch_dt
+        ma._head_grip_s[bound] = np.minimum(s_cap, ma._head_grip_s[bound] + ds)
+        self.steps_run += 1
+
+
+def run(
+    n_fil,
+    batch_steps,
+    ticks,
+    measure_every,
+    seed,
+    device,
+    connected_mesh,
+    measure_mode,
+    freeze_xlinks,
+    snapshot_free_myosin,
+    myosin_warm_bind_ticks,
+    snapshot_free_grip_clock,
+):
     cfg = deepcopy(yaml.safe_load(open(CFG)))
     cfg["cortex"]["n_filaments"] = n_fil
     cfg["cortex"]["demo_mode"] = True
@@ -111,27 +151,68 @@ def run(n_fil, batch_steps, ticks, measure_every, seed, device, connected_mesh):
     ma = hw["myosin_action"]
     if ma is None:
         raise RuntimeError("no MyosinStepUpdater on the sim")
+    if freeze_xlinks:
+        xu = hw.get("xlink_updater")
+        if xu is not None:
+            sim.operations.updaters.remove(xu)
     sim.run(0)
 
     R = p_cortex.R_cell
     ell0 = p_cortex.rest_length
+    t0 = time.time()
+    warm_bind_wall_s = 0.0
+    grip_clock_action = None
+    if snapshot_free_myosin:
+        warm_ticks = int(myosin_warm_bind_ticks)
+        if warm_ticks < 0:
+            raise ValueError("myosin_warm_bind_ticks must be >= 0")
+        if warm_ticks > 0:
+            warm_t0 = time.time()
+            sim.run(warm_ticks * p_myo.batch_steps)
+            warm_bind_wall_s = time.time() - warm_t0
+
+        myosin_updater = hw.get("myosin_updater")
+        if myosin_updater is not None:
+            sim.operations.updaters.remove(myosin_updater)
+        if snapshot_free_grip_clock:
+            grip_clock_action = SnapshotFreeMyosinGripClock(
+                ma, p_myo, ell0_cortex=ell0
+            )
+            sim.operations.updaters.append(
+                hoomd.update.CustomUpdater(
+                    action=grip_clock_action,
+                    trigger=hoomd.trigger.Periodic(p_myo.batch_steps),
+                )
+            )
 
     def _gamma():
         g = measure_cortical_tension(sim, R_cell=R, p_enclosed_volume=None)
         return g["gamma_soft"] * MN, g["gamma_soft_ik"] * MN
 
     rows = []
-    t0 = time.time()
     n_meas = max(1, ticks // measure_every)
+    tick_offset = int(myosin_warm_bind_ticks) if snapshot_free_myosin else 0
     for m in range(n_meas + 1):
         if m > 0:
             sim.run(measure_every * p_myo.batch_steps)
-        snap = sim.state.get_snapshot()
-        bf, fos, nb = _bound_metrics(ma, snap)
-        gs, gik = _gamma()
+        tick = tick_offset + m * measure_every
+        full_measure = measure_mode == "full" or (
+            measure_mode == "final" and m == n_meas
+        )
+        if full_measure:
+            snap = sim.state.get_snapshot()
+            bf, fos, nb = _bound_metrics(ma, snap)
+            gs, gik = _gamma()
+            r_over_r0 = _mean_backbone_r_over_r0(snap, ell0)
+        else:
+            bound = ma._head_bound_to_actin >= 0
+            nb = int(np.count_nonzero(bound))
+            bf = float(nb / max(1, bound.size))
+            fos = float("nan")
+            gs = float("nan")
+            gik = float("nan")
+            r_over_r0 = float("nan")
         s_abs, s_rel = _mean_s_grip_over_l0(ma, ell0)
-        r_over_r0 = _mean_backbone_r_over_r0(snap, ell0)
-        tick = m * measure_every
         phys_t = tick * p_myo.batch_dt
         rows.append(dict(tick=tick, phys_t_s=phys_t, bound_frac=bf, F_over_stall=fos,
                          n_bound=nb, gamma_soft=gs, gamma_soft_ik=gik,
@@ -141,12 +222,21 @@ def run(n_fil, batch_steps, ticks, measure_every, seed, device, connected_mesh):
               flush=True)
 
     wall = time.time() - t0
+    simulated_ticks = tick_offset + n_meas * measure_every
+    simulated_baoab_steps = simulated_ticks * p_myo.batch_steps
+    steps_per_s = simulated_baoab_steps / wall if wall > 0.0 else float("nan")
     # ---- verdict ----
     last = rows[-1]
     reached_band = last["gamma_soft_ik"] >= BAND[0]
     s_grown = last["s_grip_over_l0"] >= 0.5
     hill_valid = last["F_over_stall"] <= 1.0 + 1e-9
-    if reached_band and hill_valid:
+    if snapshot_free_myosin:
+        verdict = (
+            "DIAGNOSTIC ONLY: snapshot-free myosin fast path completed after "
+            "warm-bind; long-run GPU speed is meaningful, but Gate-A physics "
+            "correctness is not because dynamic bind/unbind/walk topology is frozen."
+        )
+    elif reached_band and hill_valid:
         verdict = "CONFIRM: active γ reached band as contraction developed (Gate A was the wall)."
     elif s_grown and not reached_band:
         verdict = ("REFUTE: s_grip developed but γ floored below band → deeper wall (Gate B "
@@ -156,7 +246,29 @@ def run(n_fil, batch_steps, ticks, measure_every, seed, device, connected_mesh):
                    f"(s_grip/ℓ₀={last['s_grip_over_l0']:.2f}).")
     return dict(rows=rows, wall_s=wall, verdict=verdict, n_fil=n_fil,
                 batch_dt=p_myo.batch_dt, ell0=ell0, R_cell=R,
-                F_stall_per_head=p_myo.F_stall_per_head, connected_mesh=connected_mesh)
+                F_stall_per_head=p_myo.F_stall_per_head,
+                connected_mesh=connected_mesh,
+                measure_mode=measure_mode,
+                freeze_xlinks=freeze_xlinks,
+                snapshot_free_myosin=snapshot_free_myosin,
+                snapshot_free_grip_clock=snapshot_free_grip_clock,
+                myosin_warm_bind_ticks=int(myosin_warm_bind_ticks),
+                warm_bind_wall_s=warm_bind_wall_s,
+                grip_clock_steps_run=(
+                    int(grip_clock_action.steps_run)
+                    if grip_clock_action is not None else 0
+                ),
+                simulated_ticks=simulated_ticks,
+                simulated_baoab_steps=simulated_baoab_steps,
+                steps_per_s=steps_per_s,
+                physics_mode=(
+                    "snapshot_free_grip_clock_static_topology"
+                    if snapshot_free_myosin and snapshot_free_grip_clock
+                    else (
+                        "snapshot_free_static_topology"
+                        if snapshot_free_myosin else "dynamic_myosin_snapshot_topology"
+                    )
+                ))
 
 
 def _figure(res, out: Path):
@@ -193,9 +305,56 @@ def main() -> int:
     ap.add_argument("--batch-steps", type=int, default=4000)
     ap.add_argument("--ticks", type=int, default=4000)
     ap.add_argument("--measure-every", type=int, default=100)
+    ap.add_argument(
+        "--measure-mode",
+        choices=("full", "final"),
+        default="full",
+        help=(
+            "full: snapshot+tension every progress point; final: progress uses "
+            "myosin internal counters only and performs snapshot+tension once at the end."
+        ),
+    )
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--no-connected-mesh", dest="connected_mesh", action="store_false")
     ap.set_defaults(connected_mesh=True)
+    ap.add_argument(
+        "--freeze-xlinks",
+        action="store_true",
+        help=(
+            "Keep seeded connected-mesh crosslinks fixed by removing the dynamic "
+            "xlink updater. This eliminates the xlink get_snapshot/set_snapshot "
+            "path for Gate-A speed diagnostics; myosin kinetics remain active."
+        ),
+    )
+    ap.add_argument(
+        "--snapshot-free-myosin",
+        action="store_true",
+        help=(
+            "Run a speed-diagnostic path: warm-bind with the dynamic myosin "
+            "updater, then remove it so the long GPU segment has no myosin "
+            "get_snapshot/set_snapshot. This freezes dynamic topology and is "
+            "not a Gate-A correctness verdict."
+        ),
+    )
+    ap.add_argument(
+        "--myosin-warm-bind-ticks",
+        type=int,
+        default=1,
+        help=(
+            "Number of myosin batch ticks to run with the original dynamic "
+            "updater before --snapshot-free-myosin removes it."
+        ),
+    )
+    ap.add_argument(
+        "--no-snapshot-free-grip-clock",
+        dest="snapshot_free_grip_clock",
+        action="store_false",
+        help=(
+            "Disable the cheap host-side s_grip clock used by "
+            "--snapshot-free-myosin after topology is frozen."
+        ),
+    )
+    ap.set_defaults(snapshot_free_grip_clock=True)
     ap.add_argument("--out", default=str(PKG / "outputs" / "h7" / "figs" / "h7_gate_a.png"))
     ap.add_argument("--json", default=str(PKG / "outputs" / "h7" / "production" / "h7_gate_a.json"))
     add_production_device_args(ap, default="gpu")
@@ -204,13 +363,19 @@ def main() -> int:
     dev = (hoomd.device.GPU(notice_level=0) if args.device == "gpu"
            else hoomd.device.CPU(notice_level=0))
     res = run(args.n_fil, args.batch_steps, args.ticks, args.measure_every, args.seed,
-              dev, args.connected_mesh)
+              dev, args.connected_mesh, args.measure_mode, args.freeze_xlinks,
+              args.snapshot_free_myosin, args.myosin_warm_bind_ticks,
+              args.snapshot_free_grip_clock)
     _figure(res, Path(args.out))
     Path(args.json).parent.mkdir(parents=True, exist_ok=True)
     json.dump(res, open(args.json, "w"), indent=1)
     print("=" * 70, flush=True)
     print(f"VERDICT: {res['verdict']}", flush=True)
-    print(f"  wall={res['wall_s']:.0f}s  fig={args.out}", flush=True)
+    print(
+        f"  wall={res['wall_s']:.0f}s  steps/s={res['steps_per_s']:.0f}  "
+        f"mode={res['physics_mode']}  fig={args.out}",
+        flush=True,
+    )
     print("=" * 70, flush=True)
     return 0
 

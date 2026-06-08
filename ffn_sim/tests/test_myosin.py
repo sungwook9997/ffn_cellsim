@@ -376,7 +376,9 @@ class TestMesoscaleForceScaling:
         base = resolve_cortex_myosin(_demo_cfg(), dt=p_cortex.dt_cfl)  # unscaled
         scaled = resolve_cortex_myosin(
             cfg, dt=p_cortex.dt_cfl, R_cell=p_cortex.R_cell)
-        dens = float(cfg["cortex"]["myosin"].get("areal_density_per_um2", 3.0))
+        # Default is the PI-ratified Nie 2015 re-anchor (0.6/um^2);
+        # this must match resolve_cortex_myosin's default when the key is absent.
+        dens = float(cfg["cortex"]["myosin"].get("areal_density_per_um2", 0.6))
         native = dens * 1e12 * 4.0 * math.pi * p_cortex.R_cell ** 2
         factor = native / cfg["cortex"]["myosin"]["n_motors_per_cell"]
         assert scaled.extras["mesoscale_force_scaling"] is True

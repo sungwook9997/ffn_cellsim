@@ -84,6 +84,167 @@ _BYTES_PER_PARTICLE_GPU: int = 512
 _GPU_VRAM_TOTAL_BYTES: int = 16 * 1024**3
 _GPU_VRAM_RESERVE_BYTES: int = 2 * 1024**3
 _GPU_VRAM_BUDGET_BYTES: int = _GPU_VRAM_TOTAL_BYTES - _GPU_VRAM_RESERVE_BYTES
+_GPU_BAOAB_RAW_KERNEL = None
+
+
+def _gpu_baoab_raw_kernel(xp):
+    """Return the fused CUDA BAOAB step kernel, compiling once per process."""
+    global _GPU_BAOAB_RAW_KERNEL
+    if _GPU_BAOAB_RAW_KERNEL is not None:
+        return _GPU_BAOAB_RAW_KERNEL
+
+    code = r"""
+    __device__ unsigned long long splitmix64(unsigned long long x) {
+        x += 0x9E3779B97F4A7C15ULL;
+        x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ULL;
+        x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
+        return x ^ (x >> 31);
+    }
+
+    __device__ double uniform01(unsigned long long x) {
+        const unsigned long long r = splitmix64(x);
+        return ((double)(r >> 11) + 0.5) * 1.1102230246251565e-16;
+    }
+
+    __device__ void normal_pair(
+        unsigned long long base,
+        double* z0,
+        double* z1
+    ) {
+        double u1 = uniform01(base);
+        const double u2 = uniform01(base ^ 0xD1B54A32D192ED03ULL);
+        if (u1 < 1.0e-300) {
+            u1 = 1.0e-300;
+        }
+        const double r = sqrt(-2.0 * log(u1));
+        const double theta = 6.283185307179586476925286766559 * u2;
+        *z0 = r * cos(theta);
+        *z1 = r * sin(theta);
+    }
+
+    extern "C" __global__
+    void baoab_step(
+        double* __restrict__ pos,
+        const double* __restrict__ force,
+        int* __restrict__ image,
+        const unsigned int* __restrict__ tag,
+        const double* __restrict__ gamma_by_tag,
+        const double* __restrict__ bd_prefactor_by_tag,
+        double* __restrict__ prv,
+        const unsigned long long N,
+        const unsigned long long pos_stride,
+        const unsigned long long force_stride,
+        const unsigned long long image_stride,
+        const unsigned long long prv_stride,
+        const unsigned long long seed,
+        const unsigned long long timestep,
+        const double dt,
+        const double Lx,
+        const double Ly,
+        const double Lz,
+        const double xy,
+        const double xz,
+        const double yz
+    ) {
+        const unsigned long long i =
+            blockIdx.x * (unsigned long long)blockDim.x + threadIdx.x;
+        if (i >= N) {
+            return;
+        }
+
+        const unsigned int t = tag[i];
+        const unsigned long long ip = pos_stride * i;
+        const unsigned long long iF = force_stride * i;
+        const unsigned long long ii = image_stride * i;
+        const unsigned long long tp = prv_stride * (unsigned long long)t;
+
+        const double inv_gamma = 1.0 / gamma_by_tag[t];
+        const double pref = bd_prefactor_by_tag[t];
+        const unsigned long long rng_base =
+            seed
+            ^ (timestep * 0xD2B74407B1CE6E93ULL)
+            ^ (((unsigned long long)t + 1ULL) * 0xCA5A826395121157ULL);
+        double W0, W1, W2, W_unused;
+        normal_pair(rng_base, &W0, &W1);
+        normal_pair(rng_base ^ 0x9E3779B97F4A7C15ULL, &W2, &W_unused);
+
+        double x = pos[ip + 0]
+            + force[iF + 0] * inv_gamma * dt
+            + pref * (W0 + prv[tp + 0]) * dt;
+        double y = pos[ip + 1]
+            + force[iF + 1] * inv_gamma * dt
+            + pref * (W1 + prv[tp + 1]) * dt;
+        double z = pos[ip + 2]
+            + force[iF + 2] * inv_gamma * dt
+            + pref * (W2 + prv[tp + 2]) * dt;
+
+        double fz = z / Lz;
+        double fy = (y - yz * Lz * fz) / Ly;
+        double fx = (x - xy * Ly * fy - xz * Lz * fz) / Lx;
+
+        const double nx_d = floor(fx + 0.5);
+        const double ny_d = floor(fy + 0.5);
+        const double nz_d = floor(fz + 0.5);
+
+        fx -= nx_d;
+        fy -= ny_d;
+        fz -= nz_d;
+
+        pos[ip + 0] = Lx * fx + xy * Ly * fy + xz * Lz * fz;
+        pos[ip + 1] = Ly * fy + yz * Lz * fz;
+        pos[ip + 2] = Lz * fz;
+
+        image[ii + 0] += (int)nx_d;
+        image[ii + 1] += (int)ny_d;
+        image[ii + 2] += (int)nz_d;
+
+        prv[tp + 0] = W0;
+        prv[tp + 1] = W1;
+        prv[tp + 2] = W2;
+    }
+    """
+    _GPU_BAOAB_RAW_KERNEL = xp.RawKernel(code, "baoab_step")
+    return _GPU_BAOAB_RAW_KERNEL
+
+
+def _wrap_into_box_xp_unchecked(pos, box, xp):
+    """Device wrap without Python scalar reductions.
+
+    The guarded sibling in ``constrained_baoab`` mirrors the frozen CPU helper
+    and intentionally synchronizes on a 0-d device scalar to raise immediately
+    on image overflow. That sync is poison for the per-step production GPU
+    path. This helper keeps the same fractional-coordinate wrap math but leaves
+    catastrophic-state detection to milestone/measurement checks unless the
+    caller explicitly enables GPU sanity mode.
+    """
+    Lx, Ly, Lz = box.Lx, box.Ly, box.Lz
+    xy, xz, yz = box.xy, box.xz, box.yz
+
+    rx = pos[:, 0]
+    ry = pos[:, 1]
+    rz = pos[:, 2]
+    fz = rz / Lz
+    fy = (ry - yz * Lz * fz) / Ly
+    fx = (rx - xy * Ly * fy - xz * Lz * fz) / Lx
+
+    nx = xp.round(fx)
+    ny = xp.round(fy)
+    nz = xp.round(fz)
+
+    fx = fx - nx
+    fy = fy - ny
+    fz = fz - nz
+
+    out = xp.empty_like(pos)
+    out[:, 0] = Lx * fx + xy * Ly * fy + xz * Lz * fz
+    out[:, 1] = Ly * fy + yz * Lz * fz
+    out[:, 2] = Lz * fz
+
+    img_delta = xp.empty_like(pos, dtype=np.int32)
+    img_delta[:, 0] = nx.astype(np.int32)
+    img_delta[:, 1] = ny.astype(np.int32)
+    img_delta[:, 2] = nz.astype(np.int32)
+    return out, img_delta
 
 
 class OverdampedBAOABDevice(hoomd.custom.Action):
@@ -127,6 +288,8 @@ class OverdampedBAOABDevice(hoomd.custom.Action):
         self._prv_rnds: np.ndarray | None = None  # (N, 3)
         self._sim_ref: hoomd.Simulation | None = None
         self._on_gpu: bool = False
+        self._gpu_sanity_checks: bool = False
+        self._gpu_step_kernel = None
         self._xp = np
         self._rng = np.random.default_rng(seed)
         self._steps_run: int = 0
@@ -190,6 +353,11 @@ class OverdampedBAOABDevice(hoomd.custom.Action):
         # device keeps the bit-identical numpy path.
         self._on_gpu = isinstance(simulation.device, hoomd.device.GPU)
         if self._on_gpu:
+            import os as _os
+
+            self._gpu_sanity_checks = (
+                _os.environ.get("FFN_GPU_DEVICE_BAOAB_SANITY", "0") == "1"
+            )
             # --- GPU VRAM pre-check (graceful fail before any device alloc) ---
             # Estimate the device-resident footprint at this N against the A5000
             # budget and raise BEFORE allocating, so a too-large N is a clear
@@ -242,6 +410,8 @@ class OverdampedBAOABDevice(hoomd.custom.Action):
             self._gamma_by_tag = xp.asarray(self._gamma_by_tag)
             self._bd_prefactor_by_tag = xp.asarray(self._bd_prefactor_by_tag)
             self._prv_rnds = xp.asarray(self._prv_rnds)
+            if not self._gpu_sanity_checks:
+                self._gpu_step_kernel = _gpu_baoab_raw_kernel(xp)
 
     # ------------------------------------------------------------------
     def act(self, timestep: int) -> None:
@@ -271,13 +441,46 @@ class OverdampedBAOABDevice(hoomd.custom.Action):
                     "pre-allocated — division flips void->cell in place, never adds tags)."
                 )
 
-            if not bool(xp.all(xp.isfinite(F))):
-                bad = xp.argwhere(~xp.isfinite(F))[:5]
-                if self._on_gpu:
-                    bad = xp.asnumpy(bad)
-                raise FloatingPointError(
-                    f"Non-finite net_force at timestep={timestep}; first: {bad.tolist()}."
+            if self._on_gpu and not self._gpu_sanity_checks:
+                box = sim.state.box
+                threads = 256
+                blocks = (int(N) + threads - 1) // threads
+                assert self._gpu_step_kernel is not None
+                self._gpu_step_kernel(
+                    (blocks,), (threads,),
+                    (
+                        pos, F, image, tag,
+                        self._gamma_by_tag,
+                        self._bd_prefactor_by_tag,
+                        self._prv_rnds,
+                        np.uint64(N),
+                        np.uint64(pos.strides[0] // pos.dtype.itemsize),
+                        np.uint64(F.strides[0] // F.dtype.itemsize),
+                        np.uint64(image.strides[0] // image.dtype.itemsize),
+                        np.uint64(self._prv_rnds.strides[0] // self._prv_rnds.dtype.itemsize),
+                        np.uint64(self._seed),
+                        np.uint64(timestep),
+                        np.float64(self.dt),
+                        np.float64(box.Lx),
+                        np.float64(box.Ly),
+                        np.float64(box.Lz),
+                        np.float64(box.xy),
+                        np.float64(box.xz),
+                        np.float64(box.yz),
+                    ),
                 )
+                self._steps_run += 1
+                return
+
+            if (not self._on_gpu) or self._gpu_sanity_checks:
+                if not bool(xp.all(xp.isfinite(F))):
+                    bad = xp.argwhere(~xp.isfinite(F))[:5]
+                    if self._on_gpu:
+                        bad = xp.asnumpy(bad)
+                    raise FloatingPointError(
+                        f"Non-finite net_force at timestep={timestep}; "
+                        f"first: {bad.tolist()}."
+                    )
 
             inv_gamma_row = (1.0 / self._gamma_by_tag[tag]).reshape(-1, 1)
             bd_prefactor_row = self._bd_prefactor_by_tag[tag]
@@ -290,18 +493,22 @@ class OverdampedBAOABDevice(hoomd.custom.Action):
             )
             new_pos = pos + dr
 
-            if not bool(xp.all(xp.isfinite(new_pos))):
-                bad = xp.argwhere(~xp.isfinite(new_pos))[:5]
-                if self._on_gpu:
-                    bad = xp.asnumpy(bad)
-                raise FloatingPointError(
-                    f"Non-finite position after L-M step at timestep={timestep}; "
-                    f"first: {bad.tolist()}."
-                )
+            if (not self._on_gpu) or self._gpu_sanity_checks:
+                if not bool(xp.all(xp.isfinite(new_pos))):
+                    bad = xp.argwhere(~xp.isfinite(new_pos))[:5]
+                    if self._on_gpu:
+                        bad = xp.asnumpy(bad)
+                    raise FloatingPointError(
+                        f"Non-finite position after L-M step at timestep={timestep}; "
+                        f"first: {bad.tolist()}."
+                    )
 
             box = sim.state.box
             if self._on_gpu:
-                wrapped, img_delta = _wrap_into_box_xp(new_pos, box, xp)
+                if self._gpu_sanity_checks:
+                    wrapped, img_delta = _wrap_into_box_xp(new_pos, box, xp)
+                else:
+                    wrapped, img_delta = _wrap_into_box_xp_unchecked(new_pos, box, xp)
             else:
                 wrapped, img_delta = _wrap_into_box(new_pos, box)
             pos[:] = wrapped
