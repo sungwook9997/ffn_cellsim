@@ -1,0 +1,47 @@
+{
+  "compartment": "coexistence(microtubules+intermediate_filaments)",
+  "verdict": "COEXIST_OK",
+  "physics_claim": false,
+  "n_steps": 2500,
+  "dt_s": 1.5002243179099087e-06,
+  "topology": {
+    "n_host_stub": 8,
+    "n_bond_types_on_shared_force": 18,
+    "bond_types": [
+      "mt_backbone",
+      "if_backbone",
+      "if_crosslink_b0",
+      "if_crosslink_b1",
+      "if_crosslink_b2",
+      "if_crosslink_b3",
+      "if_crosslink_b4",
+      "if_crosslink_b5",
+      "if_crosslink_b6",
+      "if_crosslink_b7",
+      "if_crosslink_b8",
+      "if_crosslink_b9",
+      "if_crosslink_b10",
+      "if_crosslink_b11",
+      "if_crosslink_b12",
+      "if_crosslink_b13",
+      "if_crosslink_b14",
+      "if_crosslink_b15"
+    ],
+    "n_bond_force_computes": 1,
+    "particle_types": [
+      "cortex_actin",
+      "mtoc",
+      "mt_bead",
+      "if_bead"
+    ]
+  },
+  "observables": {
+    "mt_backbone_rel_dev_rms": 0.00019176523235601216,
+    "if_backbone_rel_dev_rms": 0.003481216747482245,
+    "both_compartments_present": true,
+    "single_shared_bond_force": true,
+    "max_particle_disp_m": 6.546456452909408e-09,
+    "all_finite": true
+  },
+  "note": "PLUMBING coexistence smoke: MT (mt_backbone + mt_bending) and IF (if_backbone + if_crosslink_b*) on ONE shared md.bond.Harmonic + ONE md.angle.Harmonic + ONE gamma_map, stepped together. Validates the single-shared-force integration pattern (NOT per-compartment standalone Harmonics, which would crash on each other's types)."
+}
