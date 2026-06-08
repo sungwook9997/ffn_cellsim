@@ -226,23 +226,27 @@ def audit(*, cell, n_contract_steps, sample_every):
     band_lo, band_hi = _HOSSEINI_BAND[0] * _MNM, _HOSSEINI_BAND[1] * _MNM
 
     # --- Analytical parameter-implied active tension (the "what do these params
-    # predict" number, independent of the sim measurement). Active-gel surface
-    # tension of an isotropic minifilament population on a thin shell:
-    #   γ_active ≈ (1/2)·n_2D·f_minifil·ℓ_minifil
-    # with n_2D = native areal density [1/m²], ℓ_minifil = backbone (dipole arm),
-    # and f_minifil = the DIPOLE force = the ONE-SIDED head force. A bipolar
-    # minifilament is a force dipole: the n_heads_per_side heads on each bare zone
-    # pull the two antiparallel actin filaments together. The dipole tension that
-    # enters the virial stress σ ≈ n·f·ℓ is the magnitude of ONE of the equal-and-
-    # opposite forces = n_heads_per_side·F_stall (NOT both sides summed — the two
-    # 28-head sets are the +/− of the same dipole, not additive). f uses the
-    # per-NATIVE un-scaled stall. This is the upper envelope at FULL engage+stall.
+    # predict" number, independent of the sim measurement). Anchored to the
+    # project-canonical active-gel relation γ_active = σ_active·h (KB-3.5), with the
+    # microscopic active stress of an isotropic force-dipole population
+    #   σ_active = n_3D · P,   P = f_dipole · ℓ   (dipole moment; NO 1/2 — the virial
+    #   sum over distinct dipoles counts each once),  n_3D = n_2D / h.
+    # Since γ = σ·h, the cortex thickness h CANCELS:
+    #   γ_active ≈ n_2D · f_dipole · ℓ_minifil
+    # f_dipole = the ONE-SIDED head force = n_heads_per_side·F_stall (a bipolar
+    # minifilament is a force dipole; the two 28-head sets are the +/− of the SAME
+    # dipole, not additive). ℓ = backbone (dipole arm). FULL engage+stall = upper
+    # envelope. CONVENTION NOTE: some active-gel papers carry an extra 1/2 (dipole
+    # defined as f·ℓ/2); that would HALVE this envelope and DOUBLE the density needed
+    # — i.e. the gap is 18× (this form) to 36× (½ form). The σ·h anchor (σ=1.35 kPa
+    # ↔ γ=0.27 mN/m, h=200 nm) is satisfied by THIS form at n_2D≈16/µm², so it is the
+    # primary; the ½ ambiguity is reported as a factor-2 band, not hidden.
     n2d = float((meso.get("native_n_motors", cell.p_myosin.n_motors_per_cell))
                 / (4.0 * np.pi * float(cell.p_cortex.R_cell) ** 2))  # 1/m²
     f_stall_native = F_stall / max(factor, 1.0)                       # un-scaled per-head
     f_minifil = cell.p_myosin.n_heads_per_side * f_stall_native       # one-sided dipole force
     ell_minifil = float(cell.p_myosin.backbone_length)
-    g_analytic = 0.5 * n2d * f_minifil * ell_minifil                  # N/m
+    g_analytic = n2d * f_minifil * ell_minifil                        # N/m (σ·h-anchored, no ½)
 
     # Band-closure budget at the MEASURED per-head T (independent of the analytic).
     mean_T_N = _avg("mean_T_pN") * 1e-12  # pN→N

@@ -44,3 +44,16 @@ cancellation (meridional no-effect), engagement-throughput/aggregation (prior-re
 bond-resolved γ, engagement, IK cross-check); H7_ACTIVE_GAMMA_SYNTHESIS + H7_ACTIVE_FORCE_BUDGET docs;
 7 figures. Commits 07a75b8→7a81778. Open confirm (contraction-developed unconstrained bond-split)
 blocked on stale gbook Syncthing (ops) — conclusion independent of it (Gate-B γ_rigid already shows it).
+
+## RE-CORRECTION (post-final, factor-2): loop-6 over-corrected
+PI authorized continuing ("do your recommendation, never stop"). Launched deep-research on the
+myosin DENSITY datum (the dominant wall). While it ran, re-deriving the envelope against the
+canonical σ·h anchor (σ=1.35 kPa ↔ γ=0.27 mN/m, h=200nm) revealed loop-6's ½ was SPURIOUS: the
+active-gel virial for distinct force dipoles is σ=n·f·ℓ with NO ½ (dipole moment P=f·ℓ). With
+one-sided f (56pN, correct) AND no ½: envelope = n2D·f·ℓ = **0.0101 mN/m at 0.6/µm² → 18× under
+band_lo** (σ·h anchor satisfied at n2D≈16/µm² for 0.27). Loop-6 kept ½ + fixed force→0.005/36×,
+removing only ONE of two compensating factor-2s. CORRECTED code to no-½ σ·h-anchored form.
+**Honest gap = 18× (no-½, σ·h-anchored, primary) to 36× (½-convention); density needed 8-21/µm²
+(~13-36× the HeLa proxy).** Qualitative conclusion (generation/density-bound, ~order-of-mag under
+band, no MCF7 datum) ROBUST to the factor-2. Sweep refreshed (0.6→0.0101, band_lo at ρ≈10.7/µm²).
+Final doc reconciliation pending the deep-research literature density.
