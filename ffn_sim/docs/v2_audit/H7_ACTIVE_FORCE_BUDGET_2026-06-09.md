@@ -66,21 +66,55 @@ the **dominant, irreducible gap is the 18× parameter envelope** — Gate-A/Gate
 levers (s_grip generation, buckling, mesh connectivity) that all live *below* a ceiling that
 is itself far under band.
 
-## Interpretation — this reframes the γ-floor saga
+## Interpretation — TWO stacked walls (loop-2 refinement, corrects loop-1)
 
-The active-γ wall is **GENERATION-bound at the literature parameters**, not a code
-transmission/lever bug. Gate-A's "transmission/lever" verdict and Gate-B's buckling test
-were both *necessary* (they ruled out s_grip-generation and buckling) but the floor they
-kept hitting has a parameter ceiling underneath it. Specifically the candidates resolve as:
+⚠️ **Loop-1 overclaimed "generation-bound, 18× irreducible."** The bond-type-resolved γ
+split (loop 2) shows the picture is two stacked walls, and the *bigger fixable lever is
+transmission*, exactly as Gate-A concluded — now mechanistically located:
 
-- **(1) force/density too low — YES, dominant.** The Nie-2015 HeLa density (0.6/µm²) and/or
-  the per-head stall under-predict band-level tension by ~18× even at the maximum.
+**Bond-resolved active γ (loading phase, smoke):**
+
+| channel | γ (mN/m) | trend as engagement grows 80→357 heads (4.5×) |
+|---|---|---|
+| total g_soft | 1.5e-4 | rises with engagement |
+| ├ **myosin bonds** (direct dipole, ℓ≈301 nm) | 1.6e-4 | **rises** 1.15e-4→1.62e-4 (tracks engagement) |
+| └ **actin-network bonds** (ℓ≈500 nm–3 µm) | 4.6e-5 | **FLAT** 3.8e-5→4.6e-5 (myosin-insensitive) |
+
+So the active tension lives almost entirely in the **direct myosin dipole bonds**; it does
+**NOT propagate into the actin network** (the actin-bond γ does not track myosin engagement).
+This is decisive because a real cortex reaches band via **network prestress amplification**:
+a local myosin contraction transmitted around a long actin/crosslink load path produces
+tension ≈ f·L_path, and L_path/ℓ_minifilament can be ~10–100×. The MOP/virial of a *loaded*
+actin network would far exceed the direct dipole. **That amplification is absent here** — the
+contraction is shunted into the local myosin springs (Gate-A: actin backbone r/r0=1.0000;
+γ_rigid also myosin-insensitive 0.078 vs 0.082).
+
+The two walls:
+
+- **WALL A — propagation/transmission (dominant, fixable lever).** Myosin tension does not
+  load the actin network into spanning hoop tension. With prestress amplification the direct
+  dipole (~0.01) could reach band; without it, γ stays at the direct-dipole scale. This is
+  Gate-A's "transmission/lever" verdict, now pinned to *the actin network not carrying
+  myosin-induced tension*. Candidate causes: isotropic local force-balance cancellation;
+  the M-SHAKE-rigid actin not deforming to build prestress; weak myosin→actin geometric
+  coupling.
+- **WALL B — direct-dipole generation is itself sub-band (parameter).** Even the full-engage
+  +full-stall direct-dipole envelope (½·n2D·f·ℓ, ℓ=minifilament) = 0.01 mN/m, 18× under band.
+  So even if WALL A were removed at the *local* scale, the *direct* generation is short; band
+  needs the longer-ℓ network path (WALL A) AND/OR a higher force budget (density/stall datum).
+
+Candidate resolution:
+
+- **(1) force/density too low — contributes (WALL B), but not the whole story.**
 - **(2) turgor too high — NO.** Turgor (γ_passive 0.5, γ_rigid carries it) is physiological
-  (Π₀=133 Pa, band-implied) and orthogonal: it is reported separately (B3/B4) and is not the
-  reason the *active* channel is low.
-- **(3) conversion failing — partial, secondary.** Engagement (~8%) + geometric transmission
-  cost another ~3–6× *below* the envelope, but cannot be the primary wall since the envelope
-  itself is sub-band.
+  (Π₀=133 Pa) and reported separately (B3/B4); orthogonal to the active channel.
+- **(3) local→spanning conversion failing — YES, dominant (WALL A).** The actin network does
+  not carry myosin-induced tension; this is the missing prestress amplification.
+
+**Caveat (must confirm):** the bond-resolved split above is the LOADING phase (s_grip=0). The
+definitive test is whether the actin-network γ *rises as s_grip develops* (active stepping) —
+a contraction-developed run is queued (gbook GPU). If actin-network γ stays flat through
+s_grip→0.5, WALL A is confirmed as the dominant, mechanistically-located transmission wall.
 
 ## What this is NOT (discipline)
 

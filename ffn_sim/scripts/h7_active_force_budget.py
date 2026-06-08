@@ -153,6 +153,19 @@ def audit(*, cell, n_contract_steps, sample_every):
         )
         g_soft = float(ct["gamma_soft"])               # N/m
         transmitted_force = g_soft * 2.0 * np.pi * R   # Σ F_cut implied by γ_soft [N]
+        # Bond-type-resolved soft γ: split the active channel into the MYOSIN bonds
+        # (the direct dipole) vs the cortex-ACTIN backbone bonds (the network the
+        # contraction must load to amplify beyond the direct dipole). If myosin
+        # tension reaches the actin network, g_soft_actin rises with myoON; if it is
+        # shunted locally (Gate-A r/r0=1), g_soft_actin is myosin-insensitive. This
+        # is the empirical generation-vs-propagation test (vs assuming ℓ).
+        all_types = set(sim.state.bond_types)
+        myo_types = {t for t in all_types if t.startswith("cortex_myosin")}
+        actin_types = {"cortex-bond"} & all_types
+        g_soft_myo = float(measure_cortical_tension(
+            sim, R_cell=R, cortical_bond_types=myo_types)["gamma_soft"]) if myo_types else 0.0
+        g_soft_actin = float(measure_cortical_tension(
+            sim, R_cell=R, cortical_bond_types=actin_types)["gamma_soft"]) if actin_types else 0.0
         return {
             "tick": int(tick),
             "n_engaged": n_eng,
@@ -167,6 +180,8 @@ def audit(*, cell, n_contract_steps, sample_every):
             "gen_force_nN": gen_force * 1e9,
             "transmitted_force_nN": transmitted_force * 1e9,
             "g_soft_mN_m": g_soft * _MNM,
+            "g_soft_myosin_bonds_mN_m": g_soft_myo * _MNM,
+            "g_soft_actin_bonds_mN_m": g_soft_actin * _MNM,
             "g_ik_estimate_mN_m": g_ik * _MNM,
             "g_rigid_mN_m": float(ct["gamma_rigid"]) * _MNM,
             "g_passive_mN_m": float(ct["gamma_passive"]) * _MNM,
@@ -240,6 +255,8 @@ def audit(*, cell, n_contract_steps, sample_every):
         "band_mN_m": [band_lo, band_hi],
         "plateau": {
             "g_soft_mN_m": g_soft_plateau,
+            "g_soft_myosin_bonds_mN_m": _avg("g_soft_myosin_bonds_mN_m"),
+            "g_soft_actin_bonds_mN_m": _avg("g_soft_actin_bonds_mN_m"),
             "g_ik_estimate_mN_m": _avg("g_ik_estimate_mN_m"),
             "g_rigid_mN_m": _avg("g_rigid_mN_m"),
             "g_passive_mN_m": _avg("g_passive_mN_m"),
@@ -295,6 +312,10 @@ def _verdict(s):
     print("-" * 76, flush=True)
     print(f"  γ_soft (active, MOP) = {p['g_soft_mN_m']:.4e} mN/m   "
           f"[{b['gap_factor_g_soft_to_band_lo']:.0f}× under band_lo]", flush=True)
+    print(f"    ├ myosin bonds (direct dipole) = {p['g_soft_myosin_bonds_mN_m']:.4e} mN/m",
+          flush=True)
+    print(f"    └ actin  bonds (network propag) = {p['g_soft_actin_bonds_mN_m']:.4e} mN/m",
+          flush=True)
     print(f"  γ_IK  (active, virial cross-check) = {p['g_ik_estimate_mN_m']:.4e} mN/m", flush=True)
     print(f"  γ_rigid (turgor) = {p['g_rigid_mN_m']:.4e} mN/m   "
           f"γ_passive(YL) = {p['g_passive_mN_m']:.4e} mN/m", flush=True)
@@ -313,23 +334,25 @@ def _verdict(s):
               f"(have {b['have_engaged_heads']:.0f} engaged, "
               f"{b['have_heads_total']} total)", flush=True)
     print("=" * 76, flush=True)
-    print("  READING:", flush=True)
+    print("  READING (two-wall decomposition):", flush=True)
     an_gap = a["gap_factor_analytic_to_band_lo"] or 0
-    need = b["need_engaged_heads_for_band_lo"]
-    have_total = b["have_heads_total"]
-    if an_gap > 1.5:
-        print(f"   → GENERATION-BOUND (parameter): even at FULL engagement + FULL stall the", flush=True)
-        print(f"     analytic active-gel tension is {an_gap:.1f}× under band_lo. The Nie-2015", flush=True)
-        print(f"     density (0.6/µm², HeLa, the only proxy — no MCF7 datum) and/or per-head", flush=True)
-        print(f"     stall under-predict band-level tension. This is a PARAMETER/datum question", flush=True)
-        print(f"     (surface to PI; do NOT tune to pass — magic-number rule).", flush=True)
-    elif need is not None and need <= have_total:
-        print(f"   → ENGAGEMENT-BOUND: params CAN reach band at full engagement; the floor is", flush=True)
-        print(f"     too few engaged heads ({need:.0f} needed ≤ {have_total} available).", flush=True)
-        print(f"     Lever: binding availability (capture geometry / bipolar gate / s_grip).", flush=True)
+    g_myo = p["g_soft_myosin_bonds_mN_m"]
+    g_actin = p["g_soft_actin_bonds_mN_m"]
+    propag = (g_actin / g_myo) if g_myo > 0 else 0.0
+    print(f"   WALL A (propagation): actin-network γ / myosin-dipole γ = {propag*100:.1f}%", flush=True)
+    if propag < 0.5:
+        print(f"     → myosin tension does NOT load the actin network (no prestress", flush=True)
+        print(f"       amplification). Band needs the long actin load-path (ℓ_path≫ℓ_minifil);", flush=True)
+        print(f"       it is absent → TRANSMISSION wall (Gate-A verdict, located).", flush=True)
     else:
-        print(f"   → MIXED: need {need} engaged > {have_total} available → engagement helps but", flush=True)
-        print(f"     cannot alone close it; per-head force (contraction/stall) also short.", flush=True)
+        print(f"     → actin network carries myosin tension; propagation present.", flush=True)
+    print(f"   WALL B (direct-dipole generation): full-engage+stall envelope "
+          f"{an_gap:.1f}× under band_lo", flush=True)
+    print(f"     → even the direct dipole (ℓ=minifilament) is sub-band; band needs WALL-A", flush=True)
+    print(f"       amplification AND/OR a higher force budget (density/stall datum, PI-gated).", flush=True)
+    print("   NOTE: if s_grip≈0 this is the LOADING phase — confirm with a contraction run", flush=True)
+    print("     (does actin-network γ rise as s_grip→0.5?). Do NOT tune params (band LOCKED).",
+          flush=True)
     print("=" * 76, flush=True)
 
 
