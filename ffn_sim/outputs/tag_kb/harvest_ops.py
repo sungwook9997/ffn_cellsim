@@ -243,6 +243,10 @@ def md_snapshot(text: str) -> str:
 # --------------------------------------------------------------------------- #
 # harvesters
 # --------------------------------------------------------------------------- #
+# non-result artifacts that the globs over-capture — intermediate state, not a run.
+NON_RESULT = (".checkpoint", "_ckpt", ".ckpt", "_manifest")
+
+
 def iter_artifacts(scope: set[str] | None):
     """Production JSON/MD across units (+ layer2 + h1 root json)."""
     seen = set()
@@ -252,11 +256,40 @@ def iter_artifacts(scope: set[str] | None):
             sorted(OUTPUTS.glob("h1/*_production.json")):
         if path in seen or "tag_kb" in path.parts or "obsidian_rag_full" in path.parts:
             continue
+        # skip intermediate checkpoints/manifests — they are not run RESULTS
+        if any(k in path.name for k in NON_RESULT):
+            continue
         seen.add(path)
         unit = path.relative_to(OUTPUTS).parts[0]
         if scope and unit not in scope:
             continue
         yield path, unit
+
+
+# Unit -> representative ValidationGate, for runs that exercise a unit's model but
+# carry no explicit gate reference in their text/filename (faithful "belongs-to-unit"
+# link, not a fabricated specific-test claim). Multi-gate units use the headline gate.
+UNIT_GATE = {
+    "h1": "VG-U1-G0-linear",            # H.1 = ECM unit (KU-1.x)
+    "h2": "VG-U1-wlc-hamiltonian",      # H.2 = polymer/WLC slab validation
+    "h3": "VG-H3-KU35-cortex-tension",  # H.3 = cortex tension
+    "h4": "VG-U2-biphasic-traction",    # H.4 = FA motor-clutch
+    "h5": "VG-H3-KU35-cortex-tension",  # H.5 = cortex tension (myosin var-N)
+    "layer2": "VG-U5-radial-expansion",  # collective spheroid A/A0 law
+}
+# run_id substrings that mark pure infra/perf/feasibility — NO science gate (honest leaf)
+INFRA_KEYS = ("profile", "hotloop", "gpu-pilot", "gpu-probe", "native38k",
+              "degcap", "fanin", "compartment-gpu", "native-fullcell-go",
+              "force-stack")
+
+
+def _rep_gate(unit: str, vocab: dict):
+    """Resolve the unit's representative gate page-id, or None."""
+    vgid = UNIT_GATE.get(unit)
+    if not vgid:
+        return None
+    hit = next((g for g in vocab["gates"] if g["vg_lower"] == vgid.lower()), None)
+    return hit["page_id"] if hit else None
 
 
 def harvest_runs(vocab: dict, scope):
@@ -277,9 +310,19 @@ def harvest_runs(vocab: dict, scope):
             snap = md_snapshot(raw)
         # scan content AND path — gate refs (gate_a) often live only in the filename
         gates, unmatched = match_gates(raw + "\n" + str(path.relative_to(OUTPUTS)), vocab)
+        rid = run_id_for(path)
+        gate_pids = [g["page_id"] for g in gates]
+        gate_ids = [g["vg_id"] for g in gates]
+        # fallback: science run with no explicit gate -> unit's representative gate.
+        # infra/perf/feasibility runs test no science gate -> left as honest leaves.
+        if not gate_pids and not any(k in rid for k in INFRA_KEYS):
+            rep = _rep_gate(unit, vocab)
+            if rep:
+                gate_pids = [rep]
+                gate_ids = [f"{UNIT_GATE[unit]} (unit-fallback)"]
         rows.append(
             {
-                "run_id": run_id_for(path),
+                "run_id": rid,
                 "unit": unit,
                 "title": path.stem.replace("_", " "),
                 "outcome": classify_outcome(path, raw),
@@ -287,8 +330,8 @@ def harvest_runs(vocab: dict, scope):
                 "commit": commit,
                 "date": date,
                 "snapshot": snap,
-                "gates": [g["vg_id"] for g in gates],
-                "gate_pids": [g["page_id"] for g in gates],
+                "gates": gate_ids,
+                "gate_pids": gate_pids,
                 "unmatched": unmatched,
             }
         )
@@ -305,6 +348,15 @@ def harvest_reports(vocab: dict, scope):
         commit, date = git_last_commit(path)
         gates, unmatched = match_gates(raw, vocab)
         contracts = match_contracts(raw, vocab)
+        gate_ids = [g["vg_id"] for g in gates]
+        gate_pids = [g["page_id"] for g in gates]
+        # unit-fallback (same as harvest_runs): a unit closeout belongs to its
+        # unit's gate. Foundation units (h_0_2, h1_baoab_freeze) aren't mapped -> leaf.
+        if not gate_pids:
+            rep = _rep_gate(unit, vocab)
+            if rep:
+                gate_pids = [rep]
+                gate_ids = [f"{UNIT_GATE[unit]} (unit-fallback)"]
         rows.append(
             {
                 "run_id": f"RUN-{unit}-closeout",
@@ -315,8 +367,8 @@ def harvest_reports(vocab: dict, scope):
                 "date": date,
                 "snapshot": md_snapshot(raw),
                 "outcome": "",
-                "gates": [g["vg_id"] for g in gates],
-                "gate_pids": [g["page_id"] for g in gates],
+                "gates": gate_ids,
+                "gate_pids": gate_pids,
                 "contracts": [c["mc_id"] for c in contracts],
                 "unmatched": unmatched,
             }
@@ -358,6 +410,22 @@ def _tests_blob() -> str:
     return "\n".join(blob)
 
 
+# package-dir -> ModelContract fallback for modules whose docstring carries no KU
+# that maps to a contract. Faithful: a module living in bridge/ implements the FA
+# motor-clutch contract, etc. common/ (utilities) and integrator/ (foundation, no
+# contract yet) are intentionally absent -> they stay honest leaves.
+DIR_CONTRACT = {
+    "bridge": "MC-U2-fa-motor-clutch",
+    "ecm": "MC-U1-ecm-network",
+    "cell": "MC-U3-cell-integration",
+    "cortex": "MC-U3-cell-integration",
+}
+
+
+def _contract_by_mcid(mc_id: str, vocab: dict):
+    return next((c for c in vocab["contracts"] if c["mc_lower"] == mc_id.lower()), None)
+
+
 def harvest_code(vocab):
     """One CodeMapping candidate per mechanism module (deterministic + regex)."""
     tests = _tests_blob()
@@ -369,6 +437,13 @@ def harvest_code(vocab):
             continue
         stem = p.stem
         contracts = match_contracts(head, vocab)
+        # fallback: no KU-matched contract -> link by package dir (faithful unit map)
+        if not contracts:
+            top = p.relative_to(FFN).parts[0]
+            mc = DIR_CONTRACT.get(top)
+            hit = _contract_by_mcid(mc, vocab) if mc else None
+            if hit:
+                contracts = [hit]
         # implemented if the suite references this module (import or filename)
         implemented = (f"import {stem}" in tests or f"/{stem}" in tests
                        or f"test_{stem}" in tests or f" {stem}" in tests)
@@ -527,6 +602,15 @@ def upsert_runs(runs, reports, apply: bool, use_llm: bool):
         if key:
             existing[key] = row["id"]
 
+    # prune spurious rows previously harvested from non-result files (checkpoints)
+    n_prune = 0
+    for key, pid in existing.items():
+        if any(k in key for k in NON_RESULT):
+            if apply:
+                requests.patch(f"{API}/pages/{pid}", headers=headers(tok),
+                               json={"archived": True}, timeout=30).raise_for_status()
+            n_prune += 1
+
     n_create = n_update = 0
     allrows = runs + reports
     for r in allrows:
@@ -566,7 +650,7 @@ def upsert_runs(runs, reports, apply: bool, use_llm: bool):
                           json={"parent": {"database_id": db_id}, "properties": props},
                           timeout=30).raise_for_status()
             n_create += 1
-    return n_create, n_update
+    return n_create, n_update, n_prune
 
 
 def upsert_code(code, apply: bool):
@@ -721,9 +805,9 @@ def main():
           f"({n_cm} contract-linked) -> {out}")
 
     if args.apply:
-        nc, nu = upsert_runs(runs, reports, apply=True, use_llm=args.llm)
-        print(f"[harvest_ops] Notion RunResult upsert: {nc} created, {nu} updated"
-              f"{' (LLM snapshots)' if args.llm else ''}")
+        nc, nu, npr = upsert_runs(runs, reports, apply=True, use_llm=args.llm)
+        print(f"[harvest_ops] Notion RunResult upsert: {nc} created, {nu} updated, "
+              f"{npr} pruned (checkpoints){' (LLM snapshots)' if args.llm else ''}")
         if code:
             cc, cu, cs = upsert_code(code, apply=True)
             print(f"[harvest_ops] Notion CodeMapping upsert: {cc} created, "
