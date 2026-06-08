@@ -1,0 +1,39 @@
+# ============================================================================
+# RECIPE: suspended_round  (H.7 compartment platform — 2026-06-08)
+# ============================================================================
+# The resting suspended/rounded interphase MCF7 cell — the Gate-A/Gate-B
+# cortical-tension operating point. Pure actomyosin cortex pre-tensioned by
+# osmotic turgor inside a Young-Laplace membrane shell, at physiological
+# cytoplasm viscosity, with the confined nucleus. NO adhesion, NO leading edge,
+# NO cell-cell junction.
+#
+# Composes (via compartment_registry.compose_manifest) onto configs/mcf7_baseline.yaml.
+# `enable` lists only LIVE/core/baseline compartments (composable today).
+# `declare_pending` lists compartments this recipe intends but cannot wire yet.
+# ============================================================================
+
+name: suspended_round
+description: Resting suspended/rounded MCF7 cell — cortical-tension (Gate-A/B) operating point.
+scope: suspended
+
+# Diagnostic this recipe targets. The cortical-gamma estimator is valid ONLY for
+# this observable set; adhesion/junction bonds (if ever present) stay denylisted.
+observables: [cortical_tension]
+
+enable:
+  - cortex            # core actin shell
+  - crosslinkers      # alpha-actinin + filamin
+  - myosin            # Stam-Hocky minifilaments (active gamma source)
+  - cytoplasm         # 65.9 Pa.s effective drag (NOT water)
+  - enclosed_volume   # static turgor Pi_0=133 Pa pre-tensions the cortex
+  - nucleus           # confinement + lamin (baseline-required)
+  - membrane_surface  # Young-Laplace shell, gamma_mem=0.10 mN/m
+
+declare_pending: []   # nothing else in the suspended baseline
+
+notes: >
+  Gate-B measures the SANCTIONED no-nucleus variant of THIS recipe via
+  build_baseline_cell(allow_no_nucleus=True) — a measurement-specific exception
+  (nucleus decoupled from cortical gamma in the suspended state), NOT a recipe
+  change. Active gamma = gamma(myosin ON) - gamma(myosin OFF); turgor reported as
+  a separate passive channel (never folded into the active number).

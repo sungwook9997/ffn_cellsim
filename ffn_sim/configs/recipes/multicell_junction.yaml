@@ -1,0 +1,40 @@
+# ============================================================================
+# RECIPE: multicell_junction  (H.7 compartment platform — 2026-06-08)
+# ============================================================================
+# Two (or more) cortex-baseline cells coupled by an EXPLICIT E-cadherin trans-
+# dimer catch-bond junction (Rakshit sliding-rebinding), with the junctional
+# actin belt coupling each junction to its cell's cortex. FA / lamellipodium are
+# optional (a suspended doublet needs neither). NO slip-only shortcut, NO lumped
+# line tension — the full KU-4.2 catch-bond, per the architectural rule.
+#
+# cadherin_junction + junctional_actin are EXPERIMENTAL/STUB: this recipe DECLARES
+# them (the junction is the whole point) but the loader defers wiring until the
+# junction pairwise gate clears. compose_manifest(strict=True) therefore yields a
+# cortex-baseline manifest with the junction in `deferred`.
+# ============================================================================
+
+name: multicell_junction
+description: Cortex-baseline cell doublet coupled by an explicit E-cadherin catch-bond junction.
+scope: multicell
+
+observables: [junction_tension, cortical_tension]
+
+enable:
+  - cortex
+  - crosslinkers
+  - myosin
+  - cytoplasm
+  - enclosed_volume
+  - nucleus
+  - membrane_surface
+
+# The defining compartments — intended, declared, deferred (junction gate pending):
+declare_pending:
+  - cadherin_junction   # explicit E-cadherin trans catch-bond (adapts spheroid CadherinBondUpdater)
+  - junctional_actin    # alpha-catenin/vinculin belt coupling junction <-> cortex
+
+notes: >
+  cadherin_* and junc_actin bonds are DENYLISTED from cortical gamma (junction
+  load path, not cortical hoop tension). Junction tension is the recipe's primary
+  observable. FA / lamellipodium can be layered on (extend this recipe) for an
+  adhered monolayer; a suspended doublet keeps both OFF.

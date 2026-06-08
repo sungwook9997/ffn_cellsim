@@ -1,0 +1,40 @@
+# ============================================================================
+# RECIPE: confined_migration  (H.7 compartment platform — 2026-06-08)
+# ============================================================================
+# The internal-mechanics-emphasized cell for confined / 3D migration: the nucleus
+# coupled to the cytoskeleton through the LINC complex, caged by an intermediate-
+# filament (keratin/vimentin) network, with microtubules radiating from the MTOC.
+# Pore / confinement boundary hooks are DEFAULT OFF (geometry only, opt-in).
+#
+# LINC / intermediate_filaments / microtubules are EXPERIMENTAL: declared here
+# (they are the point of this recipe) but the loader defers wiring until each
+# compartment's pairwise gate clears.
+# ============================================================================
+
+name: confined_migration
+description: Internal-mechanics cell for confined migration — nucleus + LINC + IF + microtubules.
+scope: confined
+
+observables: [nuclear_strain, cortical_tension]
+
+enable:
+  - cortex
+  - crosslinkers
+  - myosin
+  - cytoplasm
+  - enclosed_volume
+  - nucleus            # central to confined migration (deformation through pores)
+  - membrane_surface
+
+declare_pending:
+  - linc                    # nesprin-SUN nucleus <-> cytoskeleton coupling
+  - intermediate_filaments  # keratin/vimentin perinuclear cage (strain-stiffening)
+  - microtubules            # MTOC-radiating stiff network (compressive load-bearing)
+  # Pore / confinement boundary hooks: geometry-only, opt-in, default OFF.
+
+notes: >
+  linc_/if_/mt_ bonds are DENYLISTED from cortical gamma (internal mechanics, not
+  cortical hoop tension). Confinement boundary is supplied by the surface_manifold
+  / external geometry as a soft normal confinement ONLY (no hard projection) and
+  stays OFF by default. Microtubule bending stiffness is a CFL risk — gate dt
+  before enabling on the full cell.

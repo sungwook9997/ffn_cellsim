@@ -1,0 +1,31 @@
+# ============================================================================
+# RECIPE: adherent_active_spread  (H.7 compartment platform — 2026-06-08)
+# ============================================================================
+# The actively SPREADING adherent cell (the PI-ratified primary MCF7 scope): FA
+# adhesion + an Arp2/3 lamellipodial leading edge braked by the KU-5.2 membrane
+# load. Optionally reinforced by ventral stress fibers (contractile actomyosin
+# bundles spanning FA to FA) — declared pending its pairwise gate.
+# ============================================================================
+
+name: adherent_active_spread
+description: Actively spreading adherent MCF7 cell — FA + Arp2/3 lamellipodium + membrane load.
+scope: active_spreading
+extends: adherent_passive
+
+observables: [cortical_tension, traction, spread_area]
+
+enable:
+  - lamellipodium    # Arp2/3 branched leading edge (basal_ring geometry default)
+  - membrane_load    # KU-5.2 Brownian-ratchet brake on barbed ends (requires lamellipodium)
+
+disable: []
+
+# Optional, intended but NOT yet wired (pairwise gate pending): ventral stress fibers.
+declare_pending:
+  - ventral_stress_fibers
+
+notes: >
+  Lamellipodial bonds (lamel_*) are DENYLISTED from cortical gamma (leading-edge
+  protrusion, not cortical hoop tension). membrane_load requires lamellipodium.
+  ventral_stress_fibers anchor at FA clutches and contribute a basal-plane tension
+  observable, NOT cortical gamma — enabling them is a separate PI-gated step.
