@@ -132,3 +132,6 @@ ffn_sim/outputs/**/production/**/*.npz
 # curated summaries/figures are committed explicitly).
 ffn_sim/outputs/**/*.status
 .claude/
+
+# CuPy/CUDA on-disk compilation cache (build artifact, regenerated on demand).
+ffn_sim/outputs/cupy_cache/
