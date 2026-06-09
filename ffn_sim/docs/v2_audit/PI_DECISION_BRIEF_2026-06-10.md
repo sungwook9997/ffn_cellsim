@@ -41,6 +41,13 @@ contraction run으로 재측정**해야 한다. Lead가 이를 자율 진행 중
 | **총 γ_soft [mN/m]** | 1.374e-2 (~13× under) | 1.354e-2 (~13× under) |
 | per-head meanT / gen_force | 8.44 pN = **F_stall** / 3.43 nN | 8.47 pN = F_stall / 3.27 nN |
 
+> ⚠️ **"phase=loading" 라벨 주의:** JSON이 loading으로 찍는 건 s_grip<0.02 휴리스틱 때문이고,
+> 실제로는 stiff cross-bridge(k=1e-3)에서 head가 ~4nm(s_grip/l0≈0.001)에서 **즉시 F_stall에
+> 도달해 stall**(stalled motor는 안 걸음 = 물리적으로 정확)한 것이다. g_soft는 tick0→120000
+> 내내 **평탄한 진짜 steady state**(under-equilibration 아님 — A/B·density·앙상블 전 런에서
+> tick0≈plateau). 즉 continuous_stroke는 "walking contraction"이 아니라 **isometric stall**
+> 작동점이며, per-head는 F_stall로 maxed. 이 위에서 γ가 floored = density/coherence-bound.
+
 **해석.** ⭐ crosslink 재anchor는 network **전파를 2.6× 개선**(WALL-A 1.72→4.56%) — 즉
 1e-7이 정말 transmission 고리를 약화시켰고 1e-3 교정이 그 역할을 회복했다(재anchor 정당성
 재확인). **그러나 절대 γ는 +1.4%만 움직인다**: γ_soft의 지배항은 local myosin-dipole
