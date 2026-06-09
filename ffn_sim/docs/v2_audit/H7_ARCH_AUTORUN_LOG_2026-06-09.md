@@ -315,3 +315,19 @@ the correct adherent structure (sarcomeric ventral SF on FAs) produces the platf
 (traction). The same-seed coherent probe (±8 pN floor) resolved it at 16σ. figure
 h7_sf_2c_mixed_vs_sarcomeric.png. NEXT: scale to an SF array → aggregate traction stress (Pa) vs the
 PI platform; dynamic α-actinin (vs static Z-disc); cupy gpu_local myosin force port.
+
+## LOOP 24 (2026-06-10): SF-ARRAY scale-up → aggregate traction-stress [Pa] + PI-platform overlay
+Scaled the DECISIVE single sarcomeric SF (+131±8 pN, loop23) to a cell-scale ARRAY. Built
+generate_sf_array_layout (n_sf parallel sarcomeric SFs across the ventral contact patch, lit
+spacing, each an independent FA-anchored validated single-SF unit, WCA-coupled → near-additive;
+tracks per_sf_anchor_beads + contact_area). 6 geometry sanity gates PASS. Wired --array into
+h7_ventral_sf_traction: aggregate coherent traction → stress [Pa] = ΣFA-reaction / contact
+footprint; PI-platform overlay baked in (MCF-7 TFM 102 nN / 63 Pa / 1822 µm², Gil-Redondo 2023
+DOI 10.1002/jemt.24368 Table 1 control n=37). CPU smoke (n_sf=3, 900 steps) verified plumbing.
+LIT ANCHORS (HARD): FA 43/cell KU-2.4; SF ~20 ≈ FA/2 Hotulainen-Lappalainen 2006; sarcomere
+period ~1µm native→~2µm meso Peterson 2004; single active SF ~5-6 nN Kassianidou/Kumar 2017.
+Commit 9bb97be. GPU run launched (gbook RTX A5000, ~/ffn_cellsim_h7run): n_sf=4 (2304 beads,
+64 minifilaments) primary additivity+aggregate; + n_sf=1 CPU control (reproduce decisive +131
+via array path). ETA ~2-3h. KEY invariant: +2.67 pN/engaged-head rectified ≈ native F_stall;
+aggregate scales w/ total engaged heads → 102 nN needs ~38k engaged heads = per-SF minifilament
+DENSITY lever (= the cortical-γ density/overlap gap, now in the traction observable).
