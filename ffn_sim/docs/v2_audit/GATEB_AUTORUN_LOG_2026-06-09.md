@@ -152,3 +152,14 @@ bond/ℓ0=1.0000 (no condensation yet — onset far off), g_soft floor — consi
 host-sync as the next wall. DECISION POINT for PI: (a) overnight ~10h onset run, (b) GPU-main binder
 port (bigger, removes host-sync → enables the seconds-timescale contraction), (c) bank dt-unlock +
 the firm generation/architecture conclusion. The dt-unlock is genuine reusable infra regardless.
+
+## LOOP 13 (PI: "gbook 복구해서 gpu로 돌려"): DEPLOYED to gbook + running on GPU (~50× faster)
+PI corrected the CPU default. Root cause CPU: this Mac=no CUDA; gbook stale (Syncthing syncs outputs
+only, NOT code; gbook on old branch phase1/h3-cortex + uncommitted drift; can't git-fetch from Mac:
+SSH back-auth fail). FIX (PI-authorized "복구"): backed up gbook ffn_sim code (1.6MB tgz) → rsync'd my
+authoritative branch ffn_sim/ to gbook (excl outputs[Syncthing]/native[keep .so]/pycache). GPU verify:
+cupy 14.1.0, native plugin ABI OK, dt-scan stable on GPU. **Contraction LAUNCHED on gbook GPU**
+(unconstrained soft-actin + cytoplasm-η, 76000× dt=9.9e-4s, 400s phys, n_fil=300, 40 samples). RATE:
+~9ms/tick (vs 0.48s/tick Mac CPU = ~50×) → full 400s ≈ 30min (vs ~27h CPU). GPU util 8% (binder
+host-sync-bound, as expected — confirms binder is the GPU-main-port target). Early t=10,20s: loading
+(s_grip~0, bond/ℓ0=1.0000, onset~156s). DECISIVE condensation result in ~30min. json→outputs (Syncthing).
