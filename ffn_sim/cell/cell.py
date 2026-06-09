@@ -150,6 +150,7 @@ from ffn_sim.cortex.turnover import (
 )
 from ffn_sim.cortex.myosin import (
     CortexMyosinLayout,
+    MyosinHeadForce,
     MyosinStepUpdater,
     ResolvedCortexMyosin,
     cortex_myosin_attach_bin_names,
@@ -1596,6 +1597,17 @@ def build_cortex_full_simulation(
             ),
         )
         sim.operations.updaters.append(myosin_updater)
+        # KU-3.5 §9 continuous_stroke: the per-head contractile force is delivered
+        # by a continuous md.force.Custom (NOT the harmonic attach bond, which is
+        # k=0 in this mode). It reads the updater's per-head binding + s_grip state
+        # every step and applies F=min(k·s_grip, F_stall) head→bead. Appended to
+        # the live integrator (mirrors the compartment-force swap pattern below);
+        # only when continuous_stroke is selected, so default builds are unaffected.
+        if p_myosin.stepping_mode == "continuous_stroke":
+            myosin_head_force = MyosinHeadForce(
+                action=myosin_action, p_myo=p_myosin
+            )
+            sim.operations.integrator.forces.append(myosin_head_force)
 
     # Optional actin turnover (cofilin severing + pointed-end re-annealing).
     # ADDITIVE + DEFAULT-OFF: when p_turnover is None this block is skipped and

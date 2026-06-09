@@ -63,7 +63,7 @@ _HOSSEINI_BAND = (0.18e-3, 0.40e-3)  # N/m, MCF7 interphase IQR (contract §7)
 
 def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed,
                         areal_density=None, cm_z_struct=None, cm_bundle_mult=None,
-                        faithful=False):
+                        faithful=False, stepping_mode=None):
     """Suspended/rounded MCF7 (FA OFF, turgor ON), connected mesh, grip_walk myosin.
 
     Mirrors h7_gate_b_probe._build_settled_cell exactly so this audit measures the
@@ -86,6 +86,10 @@ def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, 
         myo = (manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
                .setdefault("myosin", {}))
         myo["areal_density_per_um2"] = float(areal_density)
+    if stepping_mode is not None:
+        myo = (manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+               .setdefault("myosin", {}))
+        myo["stepping_mode"] = str(stepping_mode)
     if n_nuc_beads is not None:
         manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
     cm_kw = {}
@@ -135,6 +139,14 @@ def audit(*, cell, n_contract_steps, sample_every):
     n_cortex_actin = int(cell.n_cortex_actin)
     meso = getattr(cell.p_myosin, "extras", None) or {}
     factor = float(meso.get("mesoscale_force_factor", 1.0))
+    # §9 continuous_stroke: the delivered per-head force is NOT the attach bond's
+    # k·r (the bond is k=0); it is F=min(k·s_grip, F_stall) read off the updater's
+    # s_grip. Use that as the per-head tension so the force budget reports the TRUE
+    # cross-bridge load, not the geometric k·r the harmonic-bond modes carried.
+    stepping_mode = str(getattr(cell.p_myosin, "stepping_mode", "binned_r0"))
+    _continuous = stepping_mode == "continuous_stroke"
+    if _continuous:
+        from ffn_sim.cortex.myosin import continuous_stroke_force
 
     def _sample(tick):
         snap = sim.state.get_snapshot()
@@ -149,7 +161,21 @@ def audit(*, cell, n_contract_steps, sample_every):
         if n_eng:
             d = pos[bonds[:, 0]] - pos[bonds[:, 1]]      # head − actin
             r = np.linalg.norm(d, axis=1)
-            T = k_ha * r                                  # delivered force [N]
+            if _continuous:
+                # Delivered force = min(k·s_grip, F_stall) (the MyosinHeadForce
+                # law) PER BOND, aligned with r/uhat so g_ik stays elementwise-
+                # correct. Map each bond's head tag → head local → s_grip.
+                act = cell.myosin_action
+                H = int(cell.p_myosin.n_heads_per_side)
+                N = int(cell.p_myosin.n_backbone)
+                per_motor = int(cell.p_myosin.n_particles_per_motor)
+                mt0 = int(cell.myosin_layout.motor_tag_start)
+                off = bonds[:, 0].astype(np.int64) - mt0          # head tags
+                head_locals = (off // per_motor) * (2 * H) + ((off % per_motor) - N)
+                T = continuous_stroke_force(
+                    act._head_grip_s[head_locals], k_ha, F_stall)
+            else:
+                T = k_ha * r                              # delivered force [N]
             uhat = d / r[:, None].clip(min=1e-30)
             # radial direction at the actin-bead end (outward normal):
             normals = pos[bonds[:, 1]] / np.linalg.norm(
@@ -454,6 +480,10 @@ def main() -> int:
     ap.add_argument("--cm-bundle-mult", type=int, default=None,
                     help="cortex construction bundle_mult (ARCH WALL-A sensitivity; "
                          "topology only, default prod 2)")
+    ap.add_argument("--stepping-mode", type=str, default=None,
+                    choices=["binned_r0", "grip_walk", "continuous_stroke"],
+                    help="override myosin stepping_mode (§9 continuous_stroke = the "
+                         "continuous per-head custom force; default = manifest grip_walk)")
     ap.add_argument("--faithful", action="store_true",
                     help="use the bimodal faithful cortex (Arp2/3 branches + bimodal "
                          "lengths) instead of the uniform production mesh (ARCH test)")
@@ -481,7 +511,7 @@ def main() -> int:
         warmup=args.warmup, softstart=args.softstart, device=dev, seed=args.seed,
         areal_density=args.areal_density,
         cm_z_struct=args.cm_z_struct, cm_bundle_mult=args.cm_bundle_mult,
-        faithful=args.faithful,
+        faithful=args.faithful, stepping_mode=args.stepping_mode,
     )
     s = audit(cell=cell, n_contract_steps=args.contract_steps,
               sample_every=args.sample_every)
