@@ -8,19 +8,31 @@ cables aligned to the long axis, short infill isotropic — plus boundary cases.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import numpy as np
 import pytest
+import yaml
 
 from ffn_sim.cell.basal_mesh import (
+    basal_connectivity_report,
     basal_mesh_build_report,
+    basal_mesh_reach,
+    connect_basal_mesh,
     generate_basal_mesh_layout,
 )
+from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 
 ELL0 = 0.5e-6
 FOOT_R = 5.0e-6
 Z_BASAL = -7.0e-6
 BAND = 200.0e-9
+
+_H3_CFG = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
+
+
+def _p_xl():
+    return resolve_crosslinkers(yaml.safe_load(open(_H3_CFG)), dt=1e-9)
 
 
 def _layout(n=400, seed=7, **kw):
@@ -120,6 +132,41 @@ def test_boundary_raises(kw):
     base.update(kw)
     with pytest.raises(ValueError):
         generate_basal_mesh_layout(**base)
+
+
+# --- B2 connectivity ---
+def test_basal_mesh_reach_disk_formula():
+    r = basal_mesh_reach(FOOT_R, 600)
+    assert math.isclose(r, FOOT_R * math.sqrt(math.pi / 600), rel_tol=1e-12)
+
+
+def test_connect_basal_mesh_percolates():
+    lay = _layout(n=600, seed=73)
+    seed = connect_basal_mesh(
+        lay, _p_xl(), footprint_radius=FOOT_R, z_struct=3.3, bundle_mult=2,
+        rng=np.random.default_rng(1),
+    )
+    rep = basal_connectivity_report(seed)
+    c = rep["controls"]
+    assert c["giant_fraction"]["ok"], c["giant_fraction"]
+    assert c["coordination_z"]["ok"], c["coordination_z"]
+    assert c["L_over_lc"]["ok"], c["L_over_lc"]
+    assert rep["verdict"] == "PASS"
+    # the seed actually produced crosslinks bridging DIFFERENT filaments.
+    assert seed.n_xl > 0
+    bf = np.asarray(seed.bridge_filaments)
+    assert np.all(bf[:, 0] != bf[:, 1])
+
+
+def test_connect_basal_mesh_z_in_band():
+    lay = _layout(n=600, seed=73)
+    seed = connect_basal_mesh(
+        lay, _p_xl(), footprint_radius=FOOT_R, z_struct=3.3,
+        rng=np.random.default_rng(2),
+    )
+    z = seed.z_struct_realised
+    assert 3.0 <= z <= 3.5, f"realised z={z} out of band"
+    assert seed.giant_fraction >= 0.9
 
 
 def test_jitter_spreads_cables():

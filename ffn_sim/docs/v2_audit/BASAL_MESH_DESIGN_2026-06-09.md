@@ -1,5 +1,34 @@
 # Connected Basal Contractile Mesh — design (PI directive (a), 2026-06-09)
 
+> **2026-06-09 REFRAME (PI clarification).** The intent is a **TWO-LAYER**
+> architecture, and it lands EXACTLY on the already-sanctioned manifold-guided
+> design (`H1_H5_H7_MANIFOLD_CONTACT_ARCHITECTURE_2026-06-07.md`) — NOT on the
+> force-bearing surface that `H7_CORTEX_AS_MESH_2026-06-07.md` (commit `7b19276`)
+> rejected:
+>
+> - **S-layer — 2D SURFACE MESH (SimuCell3D-style, `cortex/surface_manifold.py`).**
+>   Its job is to give the FA particles a real 2D surface to be POSITIONED on (FA is
+>   otherwise hard to attach — the spatial-disjoint integrin problem), plus SOME
+>   surface connectivity ("표면 연락 일부" — patch adjacency + an optional soft
+>   **normal-only** confinement `U_conf`). **The surface carries NO in-plane /
+>   edge force** — a force-bearing triangulation edge is the 2nd unsanctioned
+>   coarse-graining and over-constrains single-filament buckling (the Gate-B lever),
+>   rejected by `7b19276`. The surface is geometry / positioning / contact ONLY,
+>   invisible to the γ estimator (not a bond).
+> - **F-layer — explicit FILAMENT NETWORK ON the surface (the REAL mechanics).**
+>   The actual FA forces/traction come from a fine-grained actin filament network
+>   (this doc's B1/B2) anchored to the FA particles ON the surface, contracted by
+>   `sf_myosin_` NMII. "실제 FA 메카닉스는 그 표면 위에서 필라멘트 네트워크를
+>   구축해서 거기서 실제 힘을 본다" (PI). This is the sanctioned
+>   "explicit fibers woven on the manifold" option; the manifold consumes its
+>   normal/patch services unchanged.
+>
+> Bright line (from `7b19276`, restated): **a surface edge that PULLS two nodes is
+> physics (FORBIDDEN); a surface that POSITIONS particles, says "search this patch",
+> and softly keeps a bead in the band is geometry/broad-phase (ALLOWED).** The B1/B2
+> filament work below is the F-layer (reusable); what changes is it is placed ON the
+> S-layer surface and anchored to FA positioned on it.
+
 PI chose **(a)**: lay down ONE connected actin mesh on the basal plane, weave the
 ventral stress-fiber cables INTO it, anchor it to the substrate through FA, and let
 NMII contract the whole mesh to generate traction. This resolves the single-chain /
@@ -66,14 +95,28 @@ registry denylist; the basal contraction is reported as its own observable.
 
 ## Implementation increments (each its own commit + build-time gate)
 
-* **B1** basal-disk layout generator — bimodal in-plane filaments on the basal disk
-  (reuse `generate_bimodal_cortex_layout` math with a planar projection; long cables
-  along the long axis). Build-time: filaments assembled, in-plane, force-free.
-* **B2** connect the basal mesh — reuse `seed_connected_mesh_xlinks` on the basal
-  filaments. Gate: giant ≥ 0.9, z ∈ [3, 3.5].
-* **B3** FA anchoring — cable ends → FA integrin clutches (reuse `sf_anchor`).
-* **B4** `sf_myosin_` NMII placement on the basal mesh (①a/①b). Build-time: assembled,
-  force-free, no-contam.
+**F-layer (explicit filament network — the real mechanics):**
+* **B1 ✅ DONE** (`6f67b99`) — basal-disk filament layout (bimodal cables + infill;
+  `cell/basal_mesh.py:generate_basal_mesh_layout`). Gate PASS: planar, force-free,
+  cables |cos|=1.0, infill |cos|=0.639. (Currently a free disk; B3 places it ON the
+  S-layer surface.)
+* **B2 ✅ DONE** — connect the filament network (`connect_basal_mesh`, reuses
+  `seed_connected_mesh_xlinks` with the disk reach). Gate PASS: giant=0.998,
+  z=3.087∈[3,3.5], L/lc=6.18≥5.9, n_xl=1850.
+
+**S-layer (surface manifold — positioning + connectivity, NO force):**
+* **S1** surface manifold layer — use `cortex/surface_manifold.py` to (a) POSITION
+  FA particles on the basal surface region (solve FA-attachment), (b) provide patch
+  adjacency = the "표면 연락 일부", (c) optional soft **normal-only** `U_conf`
+  (default-off; ON at physiological value for surface coherence). Build-time gate:
+  FA particles ON the surface (≤ band), resolution-invariance (VG-1: observables
+  invariant to N_patch), NO in-plane force / not a bond → γ-invisible.
+
+**Integration + active:**
+* **B3** anchor the F-layer ON the S-layer — filament network beads sit on the
+  surface; cable ends → FA integrin clutches positioned on the surface (`sf_anchor`).
+* **B4** `sf_myosin_` NMII placement on the surface-borne filament network (①a/①b).
+  Build-time: assembled, force-free, no-contam (sf_ γ-denylisted).
 * **B5** equilibrated active gate — equilibration prelude → Kumar single-SF tension +
   Balaban traction. (Needs PI N_filaments/k_actin + likely gbook GPU run.)
 

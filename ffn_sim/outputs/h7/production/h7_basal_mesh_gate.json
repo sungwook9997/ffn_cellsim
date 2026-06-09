@@ -20,7 +20,7 @@
       "mean_abs_cos": 0.6388380752786099
     }
   },
-  "gate": "B1 basal_mesh geometry",
+  "gate": "B1+B2 basal_mesh geometry + connectivity",
   "params": {
     "n_filaments": 600,
     "ell0_m": 5e-07,
@@ -28,5 +28,30 @@
     "z_basal_m": -7e-06,
     "band_thickness_m": 2e-07
   },
-  "note": "GEOMETRY ONLY (increment B1). Connectivity (B2, giant>=0.9/z in [3,3.5]), FA anchoring (B3), sf_myosin_ NMII (B4) and the equilibrated Kumar/Balaban active gate (B5) are the following increments."
+  "b2_connectivity": {
+    "verdict": "PASS",
+    "controls": {
+      "n_xl": 1850,
+      "giant_fraction": {
+        "ok": true,
+        "value": 0.9983333333333333,
+        "floor": 0.9
+      },
+      "coordination_z": {
+        "ok": true,
+        "value": 3.0866666666666664,
+        "band": [
+          3.0,
+          3.5
+        ]
+      },
+      "L_over_lc": {
+        "ok": true,
+        "value": 6.176961602671119,
+        "floor": 5.9
+      },
+      "n_homeless": 1
+    }
+  },
+  "note": "2-LAYER (F-layer = explicit filament network). B1 geometry + B2 bridge-different-filament connectivity (giant>=0.9 / z in [3,3.5] / L/lc>=5.9). The S-layer (surface_manifold positions FA particles + patch connectivity + soft normal confinement; NO force-bearing edges per the 7b19276 cortex-as-mesh rejection) and B3 anchor-on-surface / B4 sf_myosin NMII / B5 equilibrated Kumar+Balaban gate are the following increments."
 }

@@ -65,11 +65,17 @@ References
 from __future__ import annotations
 
 import math
+from dataclasses import replace as _dc_replace
 from typing import Any
 
 import numpy as np
 
 from ffn_sim.cortex.cortex import VariableLengthCortexLayout
+from ffn_sim.cortex.crosslinkers import (
+    ConnectedMeshSeed,
+    ResolvedCrosslinkers,
+    seed_connected_mesh_xlinks,
+)
 
 
 def _require_finite_positive(name: str, x: float) -> None:
@@ -318,4 +324,117 @@ def basal_mesh_build_report(
         planar_ok and within_footprint and force_free
         and cables_aligned and infill_isotropic
     )
+    return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
+
+
+# ===========================================================================
+# B2 — connect the basal mesh (bridge-different-filament crosslinkers)
+# ===========================================================================
+def basal_mesh_reach(footprint_radius: float, n_filaments: int) -> float:
+    """Mesoscale crosslinker partner-search radius for the basal DISK.
+
+    The planar analogue of the cortex shell reach ``√(A_shell/n_fil)``: the
+    inter-filament spacing on a disk of area ``π·footprint_radius²`` shared by
+    ``n_filaments`` filaments is ``footprint_radius·√(π/n_filaments)`` (DERIVED,
+    grid-aware — the geometric dual of the ×40 areal coarse-graining on a disk,
+    not a tuned constant).
+    """
+    return float(footprint_radius) * math.sqrt(math.pi / max(1, int(n_filaments)))
+
+
+def connect_basal_mesh(
+    layout: VariableLengthCortexLayout,
+    p_xl: ResolvedCrosslinkers,
+    *,
+    footprint_radius: float,
+    z_struct: float = 3.3,
+    bundle_mult: int = 2,
+    max_bead_degree: int = 4,
+    reach: float | None = None,
+    rng: np.random.Generator | None = None,
+) -> ConnectedMeshSeed:
+    """Seed a CONNECTED bridge-different-filament crosslink mesh on the basal layout.
+
+    Reuses the cortex :func:`seed_connected_mesh_xlinks` verbatim (the basal mesh is
+    the same :class:`VariableLengthCortexLayout` topology, just planar), with the
+    DISK reach :func:`basal_mesh_reach`. The crosslinker ``max_bind_dist`` is set to
+    the reach (mirroring ``cortex/connected_mesh.py``) so the per-r0 attach bins
+    cover the mesoscale head-to-bead span. Geometry/topology only — no HOOMD state.
+
+    The basal mesh has no Arp2/3 branch bonds (``prior_bead_bonds=None``), so the
+    connectivity comes entirely from the seeded bridge crosslinks.
+
+    Args:
+        layout: the basal mesh layout (:func:`generate_basal_mesh_layout`).
+        p_xl: resolved crosslinker params (species fractions/lengths + n_bins).
+        footprint_radius: basal disk radius [m] (sets the default reach).
+        z_struct: target distinct-neighbour coordination (Kim 2007 / Kadzik-Munro
+            z≈3-4); default 3.3 = the literature-mid target (the gate checks the
+            REALISED z ∈ [3.0, 3.5], it is not back-solved).
+        bundle_mult: parallel crosslinks per connected pair (Flormann bundling).
+        max_bead_degree: per-bead crosslink cap (HOOMD exclusion safety).
+        reach: override the disk reach [m].
+        rng: RNG.
+
+    Returns:
+        The :class:`ConnectedMeshSeed` (z_struct_realised, giant_fraction, …).
+    """
+    F = int(layout.n_beads_per_filament.shape[0])
+    if reach is None:
+        reach = basal_mesh_reach(footprint_radius, F)
+    # bins must cover the mesoscale head-to-bead span (≈ ½·reach); set the
+    # crosslinker max_bind_dist to the reach (cortex/connected_mesh.py convention).
+    p_xl_eff = _dc_replace(p_xl, max_bind_dist=float(reach))
+    n_beads = int(layout.positions_flat.shape[0])
+    return seed_connected_mesh_xlinks(
+        layout.positions_flat,
+        layout.filament_idx,
+        F,
+        p_xl_eff,
+        z_struct=z_struct,
+        bundle_mult=bundle_mult,
+        reach=float(reach),
+        R_cell=float(footprint_radius),   # only used for the default reach (overridden)
+        n_cortex_beads=n_beads,
+        max_bead_degree=max_bead_degree,
+        prior_bead_bonds=None,            # no Arp2/3 branches on the basal mesh
+        rng=rng,
+    )
+
+
+def basal_connectivity_report(
+    seed: ConnectedMeshSeed,
+    *,
+    giant_floor: float = 0.9,
+    z_band: tuple[float, float] = (3.0, 3.5),
+    l_over_lc_floor: float = 5.9,
+) -> dict[str, Any]:
+    """B2 gate metrics — the cortex connected-mesh acceptance, on the basal mesh.
+
+    Verdict controls (literature — the SAME acceptance as the cortex connected-mesh
+    rebuild, ``cortex/connected_mesh.py``):
+      * giant-component fraction ≥ ``giant_floor`` (0.9) — the mesh percolates.
+      * realised coordination z ∈ ``z_band`` ([3.0, 3.5]) — Kadzik-Munro.
+      * L/lc ≥ ``l_over_lc_floor`` (5.9) — Head 2003 crosslink density.
+
+    ``n_homeless`` (isolated filaments with no partner in reach) is REPORTED as a
+    diagnostic but is NOT a verdict criterion — a handful is consistent with the
+    giant-fraction gate (giant ≈ 0.998 ⇒ ~0.2 % outside the giant), and the cortex
+    acceptance does not gate on it either.
+    """
+    z = float(seed.z_struct_realised)
+    giant = float(seed.giant_fraction)
+    llc = float(seed.L_over_lc)
+    homeless = int(seed.n_homeless)
+    giant_ok = giant >= giant_floor
+    z_ok = z_band[0] <= z <= z_band[1]
+    llc_ok = llc >= l_over_lc_floor
+    controls = {
+        "n_xl": int(seed.n_xl),
+        "giant_fraction": {"ok": giant_ok, "value": giant, "floor": giant_floor},
+        "coordination_z": {"ok": z_ok, "value": z, "band": list(z_band)},
+        "L_over_lc": {"ok": llc_ok, "value": llc, "floor": l_over_lc_floor},
+        "n_homeless": homeless,   # diagnostic only (not gated)
+    }
+    ok = giant_ok and z_ok and llc_ok
     return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}

@@ -25,10 +25,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import yaml
+
 from ffn_sim.cell.basal_mesh import (
+    basal_connectivity_report,
     basal_mesh_build_report,
+    connect_basal_mesh,
     generate_basal_mesh_layout,
 )
+from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 
 _OUT = _HERE.parents[1] / "outputs" / "h7"
 
@@ -50,15 +55,31 @@ def run() -> dict:
         lay, ell0=ELL0, footprint_radius=FOOT_R, z_basal=Z_BASAL,
         band_thickness=BAND, long_axis=LONG_AXIS,
     )
-    rep["gate"] = "B1 basal_mesh geometry"
+    rep["gate"] = "B1+B2 basal_mesh geometry + connectivity"
     rep["params"] = {
         "n_filaments": N_FIL, "ell0_m": ELL0, "footprint_radius_m": FOOT_R,
         "z_basal_m": Z_BASAL, "band_thickness_m": BAND,
     }
+
+    # ---- B2: connect the filament network (F-layer connectivity) ----
+    _h3 = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
+    p_xl = resolve_crosslinkers(yaml.safe_load(open(_h3)), dt=1e-9)
+    seed = connect_basal_mesh(
+        lay, p_xl, footprint_radius=FOOT_R, z_struct=3.3, bundle_mult=2,
+        rng=np.random.default_rng(1),
+    )
+    b2 = basal_connectivity_report(seed)
+    rep["b2_connectivity"] = b2
+    # combined verdict: B1 geometry AND B2 connectivity must pass.
+    rep["verdict"] = "PASS" if (rep["verdict"] == "PASS" and b2["verdict"] == "PASS") else "REVIEW"
+
     rep["note"] = (
-        "GEOMETRY ONLY (increment B1). Connectivity (B2, giant>=0.9/z in [3,3.5]), "
-        "FA anchoring (B3), sf_myosin_ NMII (B4) and the equilibrated Kumar/Balaban "
-        "active gate (B5) are the following increments."
+        "2-LAYER (F-layer = explicit filament network). B1 geometry + B2 "
+        "bridge-different-filament connectivity (giant>=0.9 / z in [3,3.5] / "
+        "L/lc>=5.9). The S-layer (surface_manifold positions FA particles + patch "
+        "connectivity + soft normal confinement; NO force-bearing edges per the "
+        "7b19276 cortex-as-mesh rejection) and B3 anchor-on-surface / B4 sf_myosin "
+        "NMII / B5 equilibrated Kumar+Balaban gate are the following increments."
     )
     _figure(lay, rep)
     return rep
@@ -123,6 +144,12 @@ def main() -> int:
           f"(|cos|={c['cables_aligned']['mean_abs_cos']:.3f}); "
           f"infill_isotropic={c['infill_isotropic']['ok']} "
           f"(|cos|={c['infill_isotropic']['mean_abs_cos']:.3f})")
+    b2 = rep.get("b2_connectivity", {}).get("controls", {})
+    if b2:
+        print(f"  [B2 connectivity] n_xl={b2['n_xl']} "
+              f"giant={b2['giant_fraction']['value']:.3f} (ok={b2['giant_fraction']['ok']}) "
+              f"z={b2['coordination_z']['value']:.3f} (ok={b2['coordination_z']['ok']}) "
+              f"L/lc={b2['L_over_lc']['value']:.2f} (ok={b2['L_over_lc']['ok']})")
     print(f"  json: {path}")
     return 0 if rep["verdict"] == "PASS" else 1
 
