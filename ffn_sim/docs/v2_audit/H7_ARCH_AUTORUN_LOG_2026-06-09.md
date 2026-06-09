@@ -295,3 +295,23 @@ overlapping at centre, periodic α-actinin) that rectifies bipolar myosin slidin
 contraction. The same-seed COHERENT method (±28pN floor, resolved a significant 61pN) is validated as
 the reusable traction probe. NEXT (PI-gateable, new construction): graded-polarity sarcomeric SF layout
 → re-measure (expect +contractile). docs design §11.
+
+## LOOP 22 (myosin backbone bending) + LOOP 23 (sarcomeric SF) + ⭐DECISIVE RESULT
+LOOP22: added opt-in myosin minifilament backbone angle term (rigid-rod fidelity; the brief used
+stretch-only = freely-jointed). L_p_myo=17µm derived from Billington 2013 EM-straight (σ_perp≤10% →
+L_p≳10µm). Default OFF byte-identical. Diagnostic: backbone doesn't fold either way in this regime
+(head-web + stretch + timescale) → faithful but NOT the SF-result cause. Commit 2b68880.
+LOOP23: built generate_sarcomeric_sf_layout — Z-bands(α-actinin barbed anchors)↔M-bands(myosin)
+periodic, graded polarity (+x left half / −x right half), antiparallel pointed-end overlap at M,
+α-actinin Z-disc crosslinks, outer Z = FA anchors. Geometry gates PASS. Commit fd484c4.
+⭐⭐DECISIVE GPU RESULT (same-seed coherent differential, 16 motors):
+  random mixed-polarity (68 heads): −61 ± 28 pN  (slackening, −0.9 pN/head)
+  SARCOMERIC          (49 heads): +131 ± 8 pN  (CONTRACTILE, +2.67 pN/head, 16σ)
+The SIGN FLIPPED negative→positive with FEWER heads. {§9-corrected motor} × {sarcomeric structure}
+= net contractile traction EMERGES. +2.67 pN/head ≈ the native F_stall (~2 pN) RECTIFIED into the
+contractile direction (mixed cancels it). ⇒ adherent-pivot hypothesis CONFIRMED: the active-γ "floor"
+on the suspended isotropic cortex was largely a STRUCTURE/observable artifact; the corrected motor on
+the correct adherent structure (sarcomeric ventral SF on FAs) produces the platform observable
+(traction). The same-seed coherent probe (±8 pN floor) resolved it at 16σ. figure
+h7_sf_2c_mixed_vs_sarcomeric.png. NEXT: scale to an SF array → aggregate traction stress (Pa) vs the
+PI platform; dynamic α-actinin (vs static Z-disc); cupy gpu_local myosin force port.

@@ -322,3 +322,29 @@ sarcomeric-SF re-measure.
 coherent differential — the prediction is a POSITIVE (contractile) traction, which would
 confirm that traction emerges from {corrected motor} × {sarcomeric structure}, the platform
 observable the adherent pivot targets.
+
+## 12. ⭐ DECISIVE: sarcomeric organization rectifies the corrected motor into traction (loop23)
+
+The §11 negative result (random mixed-polarity bundle → −61 pN slackening) predicted the missing
+ingredient was SARCOMERIC POLARITY ORGANIZATION. Built it (generate_sarcomeric_sf_layout: Z/M bands,
+graded polarity, α-actinin Z-disc crosslinks, FA-anchored outer Z) and re-ran the SAME-SEED COHERENT
+differential. Result:
+
+| structure | engaged heads | coherent ON−OFF | per-head | verdict |
+|---|---|---|---|---|
+| random mixed-polarity | 68 | −61 ± 28 pN | −0.9 pN/head | slackening |
+| **SARCOMERIC** | 49 | **+131 ± 8 pN** | **+2.67 pN/head** | **CONTRACTILE (16σ)** |
+
+The sign FLIPPED negative→positive with FEWER engaged heads. +2.67 pN/head ≈ the native per-head
+F_stall (~2 pN) RECTIFIED into the contractile direction — the mixed bundle cancels it, the sarcomere
+rectifies it. **{§9-corrected motor} × {sarcomeric structure} = net contractile traction at the FA
+anchors.** This CONFIRMS the adherent-pivot hypothesis (refined): the active-γ "floor" measured on the
+suspended ISOTROPIC cortex was largely a STRUCTURE + OBSERVABLE artifact (isotropic cancellation,
+suspended cortical-γ ≠ the platform observable). The corrected motor on the CORRECT adherent structure
+(sarcomeric ventral SF anchored at FAs) produces the platform observable — substrate TRACTION — that the
+suspended cortical-γ never matched. The same-seed coherent probe (±8 pN noise floor after thermal
+cancellation) resolved a +131 pN signal at 16σ. Figure: outputs/h7/figs/h7_sf_2c_mixed_vs_sarcomeric.png.
+
+NEXT: (1) scale to an SF array → aggregate substrate traction stress [Pa] vs the PI platform
+(A/A₀, integrin-β1 traction); (2) dynamic α-actinin catch/slip at the Z-discs (vs the static bond here);
+(3) cupy gpu_local port of MyosinHeadForce (per-step host-sync now).
