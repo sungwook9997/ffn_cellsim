@@ -117,3 +117,6 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
 - Lead 미수정(CFL contract=gate-loosening 금지). 문서 CROSSLINK_REANCHOR_CFL_REGRESSION_
   2026-06-10.md(수정안 3: A cap/B thermal-bound 추천/C fixture). PI 브리프에 ⚠️항목 추가.
 - ⇒ watch 중 실제 버그 1건 포착(회귀 테스트가 값을 함). 자율 fix 안 함=disciplined.
+- 테스트 건강: **test_myosin green**(continuous_stroke), **test_cortical_tension green**(11,
+  γ 측정) → 이번 세션 γ 결론은 tested 코드 기반. 유일 red = loop18 crosslinker CFL 회귀
+  (문서화, production-safe). 전체 그림 clean.
