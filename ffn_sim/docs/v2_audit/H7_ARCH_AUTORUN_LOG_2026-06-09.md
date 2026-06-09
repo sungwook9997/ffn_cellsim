@@ -159,3 +159,17 @@ TIME-AVERAGED, and/or place FA separation with slack. Myosin (actin-aware Stam-H
 yet added (2b-2). NEXT: 2b-2 add myosin+α-actinin on the bundle; 2c differential time-averaged traction vs
 myosin (+ soft-coupling-fix overlay). Lane clean (consumed nothing of FA/substrate internals; integrator/
 untouched; no other-session files).
+
+## LOOP 12 (PI: "단위 슬립 교정하고 나서 마이오신"): stiffness fix is COUPLED to grip_walk r0 conv.
+Applied the PI-authorized cross-bridge stiffness correction (k_head_spring/k_head_actin 1e-6→1e-3, anchored to
+canonical bridge/motor + Veigel/Kaya) to phase1_h3.yaml and ran h7_active_force_budget (n=1000, mesoscale).
+RESULT: per-head bond tension EXPLODED to ~322 pN (F_stall 8.48 pN, 38×), g_myo jumped 135×, γ_soft 114×→14×
+under band — but UNPHYSICAL. ROOT: grip_walk attach bond r0≈0 → a freshly-bound head at r~76nm carries k·r
+(huge at stiff k; tiny at soft k). A real cross-bridge binds force-free + generates ~F_stall via the nm-scale
+power stroke, NOT k·r. Transmission channel (g_actin) stayed floored → confirms PI's point that the CROSSLINK
+(k_intra=k_attach=1e-7) is the SEPARATE soft transmission link. ⇒ unit-slip fix CANNOT be config-only; correct
+fix is ATOMIC: (1) k=1e-3 + (2) grip_walk r0=bound-length (force=k·s_grip stroke, capped at F_stall, not k·r)
+= O2 + (3) CFL re-derive (τ_backbone~39ns) + (4) crosslink k re-anchor. Reverted config to 1e-6 (config-only
+1e-3 = over-tensioned broken state). Physical end-state: per-head→F_stall, γ→full-stall envelope (18-36× under
+= density/overlap gap), transmission gated by crosslink fix. doc H7_MYOSIN_OVERLAP_MECHANISM_DESIGN §8. HALT→PI:
+the unit-slip fix IS the myosin grip_walk surgery (they're coupled, not sequential) — proceed atomically?

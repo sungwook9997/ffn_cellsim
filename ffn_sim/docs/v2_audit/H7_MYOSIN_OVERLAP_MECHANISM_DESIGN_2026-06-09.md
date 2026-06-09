@@ -168,3 +168,33 @@ literal", phase1_h3.yaml:331). Per the hard rules, correcting it is a contract c
 This supersedes the framing that O1 is merely "a soft spring" — it is a concrete 1000×
 divergence from the project's own canonical motor module. HALT → PI for the contract
 sign-off (brief-literal change + CFL re-derivation).
+
+## 8. ⚠️ EMPIRICAL: the stiffness fix is COUPLED to the grip_walk r0 convention (2026-06-09)
+
+PI authorized the cross-bridge stiffness unit-slip correction (k_head_spring/k_head_actin
+1e-6→1e-3). Applying it to the config ALONE and running h7_active_force_budget (n=1000, mesoscale)
+revealed the coupling the design (§3 O1+O2) anticipated:
+
+- **Per-head bond tension EXPLODED to ~322 pN** (vs F_stall 8.48 pN, ~38×) and g_myo (myosin
+  dipole channel) jumped 135× (1.06e-4 → 1.43e-2), γ_soft 1.6e-3 → 1.3e-2 (114×→14× under band).
+- ROOT: the grip_walk attach bond uses **r0 ≈ 0**, so a freshly-bound head at binding distance
+  r (~76 nm, up to max_bind_dist 60 nm + offset) carries force = **k·(r−0) = k·r**. At soft k
+  that was small (~0.7 pN); at the physical stiff k it is k·r ≈ 322 pN — UNPHYSICAL (a real
+  cross-bridge binds force-free and generates ~F_stall via the nm-scale power stroke, not k·r
+  over the whole binding distance).
+- **The transmission channel stayed floored** (g_actin 1.68e-3, ~unchanged) even with the stiff
+  cross-bridge — confirming PI's point that the **crosslink (fiber↔fiber, k_intra=k_attach=1e-7)
+  is the SEPARATE soft transmission link**, downstream of generation.
+
+**⇒ The unit-slip fix CANNOT be a config-only change.** The correct fix is ATOMIC:
+1. **k_head_spring/k_head_actin = 1e-3** (the unit-slip correction, literature/canonical-anchored), AND
+2. **grip_walk r0 = BOUND length** (store r_bind at binding; r0_eff = r_bind − s_grip; force =
+   k·(r − r0_eff) = k·s_grip, the power-stroke force, capped at F_stall by the Hill stall) — so a
+   freshly-bound head is force-free and the force is the nm-scale stroke, NOT k·r. (This is O2.)
+3. **CFL re-derivation** (k_backbone=1e-2 → τ_backbone≈39 ns native; dt via cortex cfl_safety).
+4. **Crosslink k_intra/k_attach** re-anchor (the fiber↔fiber transmission link; verify α-actinin
+   literature — separate from the cross-bridge, but the SAME soft-coupling class).
+
+Config reverted to 1e-6 pending the atomic fix (a config-only 1e-3 leaves an over-tensioned broken
+state). The physical end-state: per-head → F_stall (not k·r), γ → the full-stall envelope
+(18–36× under band = the density/overlap gap), with transmission gated by the crosslink fix.
