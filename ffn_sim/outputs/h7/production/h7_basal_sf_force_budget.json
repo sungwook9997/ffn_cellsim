@@ -1,0 +1,22 @@
+{
+  "gate": "B5(i) SF tension force-budget (quasi-static, generation-limit probe)",
+  "verdict": "REFUTE",
+  "physics_claim": true,
+  "provisional": true,
+  "budget": {
+    "phi_engaged": 0.9930486593843098,
+    "n_heads_per_side": 10,
+    "F_stall_per_head_N": 5e-13,
+    "f_per_minifilament_N": 4.965243296921549e-12,
+    "T_cable_raw_N": 4.965243296921549e-12,
+    "kumar_band_N": [
+      1e-08,
+      3e-08
+    ],
+    "in_kumar_band_raw": false,
+    "gap_to_band_lo": 2014.0000000000002,
+    "mesoscale_force_factor_needed_to_band_centre": 4028.0000000000005,
+    "n_motors": 40
+  },
+  "note": "QUASI-STATIC FORCE BUDGET (no stiff-backbone dynamics, no frozen integrator). The single-SF tension is MOTOR-generation-limited and N_filaments-INDEPENDENT (N sets strain \u03b5=T/\u03bc_SF, not the tension). Raw mesoscale tension 4.97e-12 N vs Kumar 1e-08-3e-08 N \u2192 2014x under band: the SAME generation-limit as the cortical \u03b3-floor. Reaching Kumar needs either the mesoscale force-scale factor (~4028x, Route B native:effective parallel-bundle scaling) or a native/density fix \u2014 NOT a backbone-stiffness (N_filaments) change. ASSUMPTIONS: \u03c6 zero-load upper estimate; per-minifilament series tension; provisional pending the cross-simulator deep-research + B5-method decision."
+}
