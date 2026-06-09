@@ -65,6 +65,7 @@ References
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from dataclasses import replace as _dc_replace
 from typing import Any
 
@@ -402,6 +403,21 @@ def connect_basal_mesh(
     )
 
 
+def basal_connectivity_report_for_layout(
+    layout: VariableLengthCortexLayout,
+    p_xl: ResolvedCrosslinkers,
+    *,
+    footprint_radius: float,
+    z_struct: float = 3.3,
+    rng: np.random.Generator | None = None,
+) -> dict[str, Any]:
+    """Connect an arbitrary basal layout + report (helper for the combined mesh)."""
+    seed = connect_basal_mesh(
+        layout, p_xl, footprint_radius=footprint_radius, z_struct=z_struct, rng=rng,
+    )
+    return basal_connectivity_report(seed)
+
+
 def basal_connectivity_report(
     seed: ConnectedMeshSeed,
     *,
@@ -437,4 +453,247 @@ def basal_connectivity_report(
         "n_homeless": homeless,   # diagnostic only (not gated)
     }
     ok = giant_ok and z_ok and llc_ok
+    return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
+
+
+# ===========================================================================
+# B3 — F-layer ON the S-layer: cables span FA→FA, infill fills, anchored to FA
+# ===========================================================================
+@dataclass(slots=True)
+class BasalApparatus:
+    """The integrated basal apparatus: F-layer filament network ON the flat S-layer.
+
+    The LONG cables (ventral stress fibers) span FA→FA — their end beads sit AT the
+    FA-anchor positions (force-free ``sf_anchor``). The SHORT filaments are the
+    isotropic infill meshwork filling the disk. Both are explicit fine-grained
+    filaments; the surface carries no force (S-layer = positioning + connectivity).
+
+    Attributes:
+        layout: combined :class:`VariableLengthCortexLayout` (cables first, then
+            infill; ``is_formin`` marks the cables).
+        fa_positions: (n_fa, 3) FA-anchor positions on the surface (z = z_basal).
+        anchor_bonds: (n_anchor, 2) int64 — (cable_end_bead_flat_idx, fa_index).
+        anchor_r0: (n_anchor,) float64 — anchor rest lengths (≈ 0, force-free).
+        n_cables: number of FA→FA cable filaments.
+        footprint_radius, z_basal: geometry.
+    """
+
+    layout: VariableLengthCortexLayout
+    fa_positions: np.ndarray
+    anchor_bonds: np.ndarray
+    anchor_r0: np.ndarray
+    n_cables: int
+    footprint_radius: float
+    z_basal: float
+    band_thickness: float = 200.0e-9
+
+
+def build_basal_filament_network(
+    surf,
+    *,
+    ell0: float,
+    n_cables: int,
+    n_infill: int,
+    band_thickness: float = 200.0e-9,
+    formin_fraction_label: float = 0.12,
+    seed: int = 91,
+    rng: np.random.Generator | None = None,
+) -> BasalApparatus:
+    """Build the F-layer ON the flat S-layer surface, cables anchored FA→FA.
+
+    The LONG cables span aligned FA pairs (reusing the SF long-axis pairing) — each
+    cable is a bead chain laid from FA ``A`` to FA ``B`` at ``ell0`` spacing, so its
+    two END beads sit EXACTLY at the FA positions (anchor r0 = 0, force-free). The
+    SHORT infill filaments are isotropic disk-filling chains
+    (:func:`generate_basal_mesh_layout`, ``formin_fraction=0``). Both are appended
+    into ONE flat-indexed :class:`VariableLengthCortexLayout` (cables first), with
+    ``is_formin`` marking the cables.
+
+    Args:
+        surf: a :class:`ffn_sim.cell.basal_surface.FlatBasalSurface` (S-layer).
+        ell0: bead spacing [m].
+        n_cables: number of FA→FA cable filaments.
+        n_infill: number of short infill filaments.
+        formin_fraction_label: informational (cables ARE the formin set here).
+        seed / rng: RNG.
+
+    Returns:
+        A :class:`BasalApparatus`.
+    """
+    from ffn_sim.cell.stress_fibers import select_aligned_fa_pairs
+
+    if rng is None:
+        rng = np.random.default_rng(seed)
+    fa = np.asarray(surf.fa_positions, dtype=np.float64)
+    n_fa = int(fa.shape[0])
+    if n_cables < 1:
+        raise ValueError(f"n_cables must be ≥ 1; got {n_cables}")
+    if 2 * n_cables > n_fa:
+        raise ValueError(
+            f"need ≥ 2·n_cables = {2 * n_cables} FA anchors; got {n_fa}."
+        )
+
+    # ---- LONG cables: aligned FA pairs → bead chains A→B (ends AT FA) ----
+    pos_ord, idx_ord = select_aligned_fa_pairs(
+        fa, np.arange(n_fa, dtype=np.int64), n_SF=n_cables,
+        R_cell=float(surf.footprint_radius),
+    )
+    cable_pos: list[np.ndarray] = []
+    cable_nbeads: list[int] = []
+    anchor_bonds: list[tuple[int, int]] = []
+    anchor_r0: list[float] = []
+    cursor = 0  # flat bead cursor across the combined layout
+
+    for b in range(n_cables):
+        A = pos_ord[2 * b]
+        B = pos_ord[2 * b + 1]
+        fa_a = int(idx_ord[2 * b])
+        fa_b = int(idx_ord[2 * b + 1])
+        L = float(np.linalg.norm(B - A))
+        nb = max(2, int(round(L / ell0)) + 1)
+        beads = A[None, :] + np.linspace(0.0, 1.0, nb)[:, None] * (B - A)[None, :]
+        cable_pos.append(beads)
+        cable_nbeads.append(nb)
+        # end beads sit at FA positions → force-free anchors (r0 = 0).
+        anchor_bonds.append((cursor, fa_a))
+        anchor_r0.append(0.0)
+        anchor_bonds.append((cursor + nb - 1, fa_b))
+        anchor_r0.append(0.0)
+        cursor += nb
+
+    # ---- SHORT infill: isotropic disk-filling chains ----
+    # The F-layer is a thin actin SLAB of physical thickness `band_thickness`
+    # (KU-3.17 cortex thickness) sitting on the +z (cell-interior) side of the flat
+    # surface. generate_basal_mesh_layout puts z ∈ [z0−band, z0]; pass
+    # z0 = z_basal + band so the slab occupies [z_basal, z_basal+band] ABOVE the
+    # surface (cables sit at z_basal, the surface, at the slab's substrate face).
+    infill = generate_basal_mesh_layout(
+        n_filaments=n_infill, ell0=ell0, footprint_radius=surf.footprint_radius,
+        z_basal=surf.z_basal + band_thickness, band_thickness=band_thickness,
+        formin_fraction=0.0, seed=seed + 1, rng=rng,
+    )
+    infill_pos = infill.positions_flat
+    infill_nbeads = infill.n_beads_per_filament
+
+    # ---- combine: cables first, then infill, into one flat layout ----
+    all_nbeads = np.array(cable_nbeads + list(infill_nbeads), dtype=np.int64)
+    F = all_nbeads.shape[0]
+    starts = np.zeros(F, dtype=np.int64)
+    starts[1:] = np.cumsum(all_nbeads[:-1])
+    positions_flat = np.concatenate(cable_pos + [infill_pos], axis=0)
+    is_formin = np.zeros(F, dtype=bool)
+    is_formin[:n_cables] = True   # cables are the long (formin) set
+    tangents = np.zeros((F, 3), dtype=np.float64)
+    for f in range(F):
+        s, n = int(starts[f]), int(all_nbeads[f])
+        v = positions_flat[s + n - 1] - positions_flat[s]
+        nrm = float(np.linalg.norm(v))
+        tangents[f] = v / nrm if nrm > 0 else np.array([1.0, 0.0, 0.0])
+    # L_per = ACTUAL end-to-end contour (cables span |B−A| at L/(nb−1) spacing;
+    # infill at ell0) so each chain's registered r0 = L_per/(nb−1) is force-free.
+    L_per = np.array([
+        float(np.linalg.norm(positions_flat[int(starts[f]) + int(all_nbeads[f]) - 1]
+                             - positions_flat[int(starts[f])]))
+        for f in range(F)
+    ], dtype=np.float64)
+    com = np.array([positions_flat[int(starts[f]):int(starts[f]) + int(all_nbeads[f])].mean(axis=0)
+                    for f in range(F)])
+
+    bond_pairs: list[tuple[int, int]] = []
+    angle_triplets: list[tuple[int, int, int]] = []
+    for f in range(F):
+        s, n = int(starts[f]), int(all_nbeads[f])
+        for j in range(n - 1):
+            bond_pairs.append((s + j, s + j + 1))
+        for j in range(n - 2):
+            angle_triplets.append((s + j, s + j + 1, s + j + 2))
+    bond_groups = np.array(bond_pairs, dtype=np.int64).reshape(-1, 2)
+    angle_groups = (np.array(angle_triplets, dtype=np.int64).reshape(-1, 3)
+                    if angle_triplets else np.empty((0, 3), dtype=np.int64))
+
+    layout = VariableLengthCortexLayout(
+        positions_flat=positions_flat,
+        n_beads_per_filament=all_nbeads,
+        filament_starts=starts,
+        L_per_filament=L_per,
+        centers_of_mass=com,
+        tangents=tangents,
+        bond_groups=bond_groups,
+        angle_groups=angle_groups,
+        is_formin=is_formin,
+    )
+    return BasalApparatus(
+        layout=layout,
+        fa_positions=fa,
+        anchor_bonds=np.array(anchor_bonds, dtype=np.int64).reshape(-1, 2),
+        anchor_r0=np.array(anchor_r0, dtype=np.float64),
+        n_cables=n_cables,
+        footprint_radius=float(surf.footprint_radius),
+        z_basal=float(surf.z_basal),
+        band_thickness=float(band_thickness),
+    )
+
+
+def basal_apparatus_report(
+    app: BasalApparatus, *, ell0: float, planar_tol: float = 1e-12,
+) -> dict[str, Any]:
+    """B3 build-time gate: cables anchored FA→FA (force-free), planar, on surface.
+
+    Controls:
+      * cables_anchored — every cable has BOTH ends anchored to an FA (2·n_cables
+        anchor bonds).
+      * anchors_force_free — anchor rest lengths ≈ 0 AND cable-end↔FA separation ≈ 0
+        (the end bead sits AT the FA), max ≪ ell0.
+      * planar — every bead at z = z_basal.
+      * chains_force_free — every chain bond length == ell0.
+    """
+    lay = app.layout
+    pos = np.asarray(lay.positions_flat, dtype=np.float64)
+    fa = np.asarray(app.fa_positions, dtype=np.float64)
+    ab = np.asarray(app.anchor_bonds, dtype=np.int64).reshape(-1, 2)
+
+    cables_anchored = bool(ab.shape[0] == 2 * app.n_cables)
+    if ab.shape[0] > 0:
+        sep = np.linalg.norm(pos[ab[:, 0]] - fa[ab[:, 1]], axis=1)
+        max_anchor_sep = float(np.max(sep))
+    else:
+        max_anchor_sep = float("inf")
+    anchors_force_free = bool(max_anchor_sep < 1e-9 * ell0 + 1e-15)
+
+    # SLAB planarity: the F-layer is a thin actin slab on the +z side of the flat
+    # surface — every bead's z ∈ [z_basal, z_basal + band_thickness] (KU-3.17).
+    z = pos[:, 2]
+    in_slab = bool(np.all(z >= app.z_basal - planar_tol)
+                   and np.all(z <= app.z_basal + app.band_thickness + planar_tol))
+    z_dev = float(np.max(np.abs(z - app.z_basal)))
+
+    # PER-FILAMENT force-free: each chain born at ITS OWN spacing (cables span
+    # FA→FA at L/(nb−1); infill at ell0). Mirrors the SF per-bundle EXACT-r0
+    # convention — the downstream Harmonic uses each filament's registered r0.
+    starts = np.asarray(lay.filament_starts, dtype=np.int64)
+    nbeads = np.asarray(lay.n_beads_per_filament, dtype=np.int64)
+    worst = 0.0
+    for f in range(starts.shape[0]):
+        s, n = int(starts[f]), int(nbeads[f])
+        if n < 2:
+            continue
+        spacing = float(lay.L_per_filament[f]) / (n - 1)
+        if spacing <= 0:
+            continue
+        seg = pos[s:s + n - 1] - pos[s + 1:s + n]
+        ln = np.linalg.norm(seg, axis=1)
+        worst = max(worst, float(np.max(np.abs(ln - spacing) / spacing)))
+    chains_force_free = bool(worst < 1e-9)
+
+    controls = {
+        "n_cables": app.n_cables,
+        "n_infill": int(lay.n_beads_per_filament.shape[0]) - app.n_cables,
+        "n_beads_total": int(pos.shape[0]),
+        "n_anchor_bonds": int(ab.shape[0]),
+        "cables_anchored": cables_anchored,
+        "anchors_force_free": {"ok": anchors_force_free, "max_anchor_sep": max_anchor_sep},
+        "in_slab": {"ok": in_slab, "max_z_dev": z_dev, "band": app.band_thickness},
+        "chains_force_free": {"ok": chains_force_free, "max_per_filament_strain": worst},
+    }
+    ok = cables_anchored and anchors_force_free and in_slab and chains_force_free
     return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}

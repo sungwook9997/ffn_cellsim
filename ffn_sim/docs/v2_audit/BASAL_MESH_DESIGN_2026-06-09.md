@@ -119,8 +119,16 @@ registry denylist; the basal contraction is reported as its own observable.
   VG-1 check. (Optional soft normal-only `U_conf` deferred to integration.)
 
 **Integration + active:**
-* **B3** anchor the F-layer ON the S-layer — filament network beads sit on the
-  surface; cable ends → FA integrin clutches positioned on the surface (`sf_anchor`).
+* **B3 ✅ DONE** anchor the F-layer ON the S-layer (`build_basal_filament_network` +
+  `basal_apparatus_report`): the LONG cables span aligned FA→FA pairs (ends AT the FA
+  positions = force-free `sf_anchor`, r0=0), the SHORT infill fills the basal actin
+  SLAB ([z_basal, z_basal+band], KU-3.17 thickness on the +z cell-interior side of the
+  flat surface). Combined into ONE flat layout (cables = the formin set), per-filament
+  EXACT-r0 (each chain born force-free at its own spacing — cables L/(nb−1), infill
+  ell0). Gate PASS: 12 cables + 500 infill, cables anchored FA→FA, anchors force-free
+  (end↔FA sep <1e-15), in-slab, chains force-free (strain 1.9e-15), combined mesh
+  percolates (giant 0.963, z 3.078, L/lc 6.22). test_basal_mesh +5 B3 tests +
+  scripts/h7_basal_apparatus_gate.py auto-viz.
 * **B4** `sf_myosin_` NMII placement on the surface-borne filament network (①a/①b).
   Build-time: assembled, force-free, no-contam (sf_ γ-denylisted).
 * **B5** equilibrated active gate — equilibration prelude → Kumar single-SF tension +

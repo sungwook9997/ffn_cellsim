@@ -1,0 +1,58 @@
+{
+  "verdict": "PASS",
+  "controls": {
+    "n_cables": 12,
+    "n_infill": 500,
+    "n_beads_total": 1314,
+    "n_anchor_bonds": 24,
+    "cables_anchored": true,
+    "anchors_force_free": {
+      "ok": true,
+      "max_anchor_sep": 8.470329472543003e-22
+    },
+    "in_slab": {
+      "ok": true,
+      "max_z_dev": 1.991721706857098e-07,
+      "band": 2e-07
+    },
+    "chains_force_free": {
+      "ok": true,
+      "max_per_filament_strain": 1.9058241313221758e-15
+    }
+  },
+  "connectivity": {
+    "verdict": "PASS",
+    "controls": {
+      "n_xl": 1576,
+      "giant_fraction": {
+        "ok": true,
+        "value": 0.962890625,
+        "floor": 0.9
+      },
+      "coordination_z": {
+        "ok": true,
+        "value": 3.078125,
+        "band": [
+          3.0,
+          3.5
+        ]
+      },
+      "L_over_lc": {
+        "ok": true,
+        "value": 6.216962524654832,
+        "floor": 5.9
+      },
+      "n_homeless": 5
+    }
+  },
+  "gate": "B3 basal_apparatus (F-layer ON S-layer, cables FA\u2192FA)",
+  "params": {
+    "ell0_m": 5e-07,
+    "footprint_radius_m": 5e-06,
+    "z_basal_m": -7e-06,
+    "n_fa": 60,
+    "n_cables": 12,
+    "n_infill": 500
+  },
+  "note": "2-LAYER INTEGRATION. F-layer explicit filaments on the S-layer flat surface; cables span FA\u2192FA (force-free sf_anchor); infill fills the basal actin slab; combined mesh percolates. Surface = positioning + connectivity ONLY (no force, \u03b3-invisible). Next: B4 sf_myosin_ NMII on the apparatus + B5 equilibrated Kumar single-SF tension + Balaban traction."
+}

@@ -15,12 +15,15 @@ import pytest
 import yaml
 
 from ffn_sim.cell.basal_mesh import (
+    basal_apparatus_report,
     basal_connectivity_report,
     basal_mesh_build_report,
     basal_mesh_reach,
+    build_basal_filament_network,
     connect_basal_mesh,
     generate_basal_mesh_layout,
 )
+from ffn_sim.cell.basal_surface import build_flat_basal_surface
 from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
 
 ELL0 = 0.5e-6
@@ -167,6 +170,66 @@ def test_connect_basal_mesh_z_in_band():
     z = seed.z_struct_realised
     assert 3.0 <= z <= 3.5, f"realised z={z} out of band"
     assert seed.giant_fraction >= 0.9
+
+
+# --- B3 integration: F-layer ON the S-layer, cables anchored FA→FA ---
+def _apparatus(n_cables=10, n_infill=400, seed=2):
+    surf = build_flat_basal_surface(
+        footprint_radius=FOOT_R, z_basal=Z_BASAL, n_rings=10, n_fa=60,
+        rng=np.random.default_rng(1),
+    )
+    return build_basal_filament_network(
+        surf, ell0=ELL0, n_cables=n_cables, n_infill=n_infill,
+        rng=np.random.default_rng(seed),
+    )
+
+
+def test_apparatus_cables_anchored_force_free_planar():
+    app = _apparatus()
+    rep = basal_apparatus_report(app, ell0=ELL0)
+    c = rep["controls"]
+    assert c["cables_anchored"]                      # both ends of every cable
+    assert c["n_anchor_bonds"] == 2 * app.n_cables
+    assert c["anchors_force_free"]["ok"]             # cable end sits AT the FA
+    assert c["in_slab"]["ok"]                        # within the basal actin slab
+    assert c["chains_force_free"]["ok"]              # per-filament exact spacing
+    assert rep["verdict"] == "PASS"
+
+
+def test_apparatus_cables_are_the_formin_set():
+    app = _apparatus(n_cables=8)
+    lay = app.layout
+    # the first n_cables filaments are the cables (is_formin True).
+    assert lay.is_formin[:8].all()
+    assert not lay.is_formin[8:].any()
+
+
+def test_apparatus_anchor_ends_at_fa_positions():
+    app = _apparatus()
+    pos = app.layout.positions_flat
+    ab = app.anchor_bonds
+    sep = np.linalg.norm(pos[ab[:, 0]] - app.fa_positions[ab[:, 1]], axis=1)
+    assert float(np.max(sep)) < 1e-15   # end bead AT the FA
+
+
+def test_apparatus_combined_mesh_percolates():
+    app = _apparatus(n_cables=10, n_infill=500)
+    seed = connect_basal_mesh(
+        app.layout, _p_xl(), footprint_radius=FOOT_R, z_struct=3.3,
+        rng=np.random.default_rng(4),
+    )
+    rep = basal_connectivity_report(seed)
+    assert rep["controls"]["giant_fraction"]["ok"], rep["controls"]
+    assert rep["controls"]["coordination_z"]["ok"], rep["controls"]
+
+
+def test_apparatus_needs_enough_fa():
+    surf = build_flat_basal_surface(
+        footprint_radius=FOOT_R, z_basal=Z_BASAL, n_rings=10, n_fa=10,
+        rng=np.random.default_rng(1),
+    )
+    with pytest.raises(ValueError):
+        build_basal_filament_network(surf, ell0=ELL0, n_cables=20, n_infill=50)
 
 
 def test_jitter_spreads_cables():
