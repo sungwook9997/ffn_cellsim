@@ -106,3 +106,19 @@ non-gated Option 2 (construction overlap) likely WON'T close the gap (per-side o
 adequate); the real lever is TRANSMISSION (relax backbone, Option 1, integrator-gated).** Confirms +
 mechanistically locates the literature (Truong Quang overlap = transmitted-arm, not per-side) and my
 bond-resolved no-propagation finding. fig/json h7_actin_myosin_overlap.
+
+## LOOP 10 (PI authorized integrator/dt work): OVERDAMPED-dt UNLOCK — dt over-conservative ~95000×
+PI: "Authorization permit, 계속 해봐." Pursuing the transmission/condensation lever. SETUP FINDING
+(verified on built cell): BAOAB integrator runs cortex actin/myosin at PHYSIOLOGICAL cytoplasm
+friction γ=3.73e-5 N·s/m (apply_cytoplasm_drag REPLACES water in gamma_map; physiological baseline
+REQUIRES cytoplasm), but dt_cfl is computed from WATER viscosity (cortex.py:446) = 3.9e-10 →
+**95,328× mismatch**. Overdamped (Leimkuhler-Matthews) update dr=F/γ·dt+noise is stable for dt<2γ/k;
+at the real friction usable dt is ~10⁴-10⁵× the water-dt. ⇒ the active-γ "floor" is partly a
+TIMESCALE artifact: contraction/condensation is drag-limited (~seconds at η=65.9), needing ~10⁹ steps
+at the water-dt (impossible) but ~10⁴-10⁶ at the overdamped-correct dt. Built h7_dt_overdamped_unlock.py
+(scans dt via cfl_safety_factor, owned cortex config — NO integrator-code edit). SCAN (160 fil,
+matched phys-time): dt STABLE up to ≥3000× (dt 3.9e-5 s); binding-CFL caps ~2.9e-3. dt=1e-5 (770×)
+well-resolves all overdamped modes (τ 0.01-0.9s) + batch_dt capped 1e-3 (myosin kinetics dt-independent)
+→ accurate. **DECISIVE contraction run LAUNCHED at 770× (dt 1e-5, 2.5s=250k steps): does the soft
+network finally CONDENSE (bond<ℓ0, Miyazaki symmetry-break) + γ rise, given the physical contraction
+time previously unreachable?** (running, ~20-40min CPU smoke). If yes = the unlock for the whole floor.
