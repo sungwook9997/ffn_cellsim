@@ -79,3 +79,16 @@ dominant wall). RESULTS (H7_MYOSIN_DENSITY_LITERATURE_2026-06-09.md):
 **NET: active-γ floor is real (~40-80× under MCF7 γ_act 0.4), NOT a density-datum error, ARCHITECTURE/
 overlap/transmission-rooted = model-fidelity/scope conclusion (not tunable).** SE-cands: Hosseini2021_BiophysJ
 (+Chugh2017, TruongQuang2021, Tinevez2009). Updated synthesis + code (active_target→0.40 MCF7). Sweep extended to 40/µm².
+
+## OPS CLARIFICATION + report checkpoint (PI requested progress report → will decide fork)
+Corrected the earlier "gbook Syncthing stale" note: local Syncthing shares ONLY ffn_sim/outputs/
+(folder 'ffn-outputs', NOT paused — outputs DO sync bidirectionally; the 'ActiveCellSim' v1 folder
+is paused, irrelevant). gbook's CODE is on an old branch (phase1/h3-cortex @ d9249e5, Jun 8) because
+Syncthing does NOT sync code — code deploy to gbook is a SEPARATE manual step that didn't happen this
+session. ⇒ the contraction-developed levers (both forks) need a gbook CODE DEPLOY of h7/full-cell-
+integration first, then the GPU run; outputs return via Syncthing. Native constrained CPU path EXISTS
+(integrator/constrained_baoab.py array_backend numpy) but contraction at the constrained dt is ~30+h
+on CPU smoke → not local-feasible; GPU (gbook) genuinely required for contraction-developed runs.
+STATUS: active-γ frontier diagnosed + literature-resolved (8 loops); PI items answered; awaiting PI
+fork decision (relax-backbone[gated] / construction-overlap / scope-pivot-ζΔμ / other). All committed,
+tree clean. Ready to execute any fork on PI word; GPU forks gated on gbook code-deploy.
