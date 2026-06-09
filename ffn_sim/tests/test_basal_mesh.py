@@ -232,6 +232,64 @@ def test_apparatus_needs_enough_fa():
         build_basal_filament_network(surf, ell0=ELL0, n_cables=20, n_infill=50)
 
 
+# --- B4 sf_myosin_ NMII placement on the apparatus ---
+def _p_sf_myosin(n_motors=40):
+    import yaml
+    from copy import deepcopy
+    from ffn_sim.cortex.myosin import resolve_cortex_myosin
+    cfg = deepcopy(yaml.safe_load(open(_H3_CFG)))
+    cfg["cortex"]["myosin"]["prefix"] = "sf_myosin_"
+    cfg["cortex"]["myosin"]["n_motors_per_cell"] = n_motors
+    return resolve_cortex_myosin(cfg, dt=1e-9)
+
+
+def test_sf_myosin_placement_gate_pass():
+    from ffn_sim.cell.basal_mesh import (
+        place_sf_myosin_on_apparatus, sf_myosin_placement_report,
+    )
+    app = _apparatus(n_cables=12, n_infill=500)
+    p_sf = _p_sf_myosin(40)
+    myo = place_sf_myosin_on_apparatus(app, p_sf, rng=np.random.default_rng(5))
+    rep = sf_myosin_placement_report(app, p_sf, myo)
+    c = rep["controls"]
+    assert c["assembled"]
+    assert c["force_free"]["ok"]
+    assert c["heads_near_actin"]["ok"]                 # ≥80% heads binding-eligible
+    assert c["heads_near_actin"]["eligible_fraction"] >= 0.8
+    assert c["sf_denylisted"]                           # all sf_myosin_ types under sf_
+    assert c["distinct_from_cortex_myosin"]             # cortical active-γ untouched
+    assert rep["verdict"] == "PASS"
+
+
+def test_sf_myosin_requires_sf_prefix():
+    import yaml
+    from copy import deepcopy
+    from ffn_sim.cortex.myosin import resolve_cortex_myosin
+    from ffn_sim.cell.basal_mesh import place_sf_myosin_on_apparatus
+    app = _apparatus()
+    cfg = deepcopy(yaml.safe_load(open(_H3_CFG)))  # default prefix cortex_myosin_
+    cfg["cortex"]["myosin"]["n_motors_per_cell"] = 20
+    p_cortical = resolve_cortex_myosin(cfg, dt=1e-9)
+    with pytest.raises(ValueError):
+        place_sf_myosin_on_apparatus(app, p_cortical)   # cortex_ prefix → refused
+
+
+def test_sf_myosin_types_all_sf_prefixed():
+    from ffn_sim.cortex.myosin import (
+        myosin_attach_bin_names, myosin_backbone_bond_name,
+        myosin_head_backbone_bond_name, myosin_particle_type_names,
+    )
+    p_sf = _p_sf_myosin(10)
+    types = [
+        myosin_backbone_bond_name(p_sf.prefix),
+        myosin_head_backbone_bond_name(p_sf.prefix),
+        *myosin_particle_type_names(p_sf.prefix),
+        *myosin_attach_bin_names(p_sf.n_bins, p_sf.prefix),
+    ]
+    assert all(t.startswith("sf_myosin_") for t in types)
+    assert not any(t.startswith("cortex_myosin_") for t in types)
+
+
 def test_jitter_spreads_cables():
     lay0 = _layout(n=2000, long_axis_jitter_deg=0.0, seed=9)
     layj = _layout(n=2000, long_axis_jitter_deg=20.0, seed=9)

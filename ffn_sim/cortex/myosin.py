@@ -514,6 +514,7 @@ def generate_cortex_myosin_layout(
     cortex_tangents: np.ndarray | None = None,
     beads_per_filament: int | None = None,
     cortex_filament_idx: np.ndarray | None = None,
+    surface_normal: np.ndarray | None = None,
 ) -> CortexMyosinLayout:
     """Place ``n_motors_per_cell`` minifilaments on the cortex shell.
 
@@ -610,7 +611,18 @@ def generate_cortex_myosin_layout(
             fil_idx = bead_choice // beads_per_filament
         axes = cortex_tangents[fil_idx].copy()
         axes = axes / np.linalg.norm(axes, axis=1, keepdims=True).clip(min=1e-30)
-        normals = centers / np.linalg.norm(centers, axis=1, keepdims=True).clip(min=1e-30)
+        # Surface normal for the in-plane lateral head offset. DEFAULT = the shell
+        # radial direction centers/|centers| (sphere; byte-identical). A FLAT layer
+        # (e.g. the basal apparatus at z=z_basal) MUST pass an explicit
+        # ``surface_normal`` (+z) — its radial-from-origin direction points out of
+        # the basal plane, which would throw the heads off the actin (KU-3.5 basal
+        # mesh fix, PI 2026-06-09).
+        if surface_normal is not None:
+            sn = np.asarray(surface_normal, dtype=np.float64).reshape(-1)
+            sn = sn / max(float(np.linalg.norm(sn)), 1e-30)
+            normals = np.broadcast_to(sn, centers.shape).copy()
+        else:
+            normals = centers / np.linalg.norm(centers, axis=1, keepdims=True).clip(min=1e-30)
         # In-plane lateral direction perpendicular to backbone, in tangent plane.
         lateral = np.cross(normals, axes)
         lateral = lateral / np.linalg.norm(lateral, axis=1, keepdims=True).clip(min=1e-30)

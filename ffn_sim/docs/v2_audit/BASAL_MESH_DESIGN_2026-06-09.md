@@ -129,8 +129,17 @@ registry denylist; the basal contraction is reported as its own observable.
   (end↔FA sep <1e-15), in-slab, chains force-free (strain 1.9e-15), combined mesh
   percolates (giant 0.963, z 3.078, L/lc 6.22). test_basal_mesh +5 B3 tests +
   scripts/h7_basal_apparatus_gate.py auto-viz.
-* **B4** `sf_myosin_` NMII placement on the surface-borne filament network (①a/①b).
-  Build-time: assembled, force-free, no-contam (sf_ γ-denylisted).
+* **B4 ✅ DONE** `sf_myosin_` NMII placement on the apparatus
+  (`place_sf_myosin_on_apparatus` + `sf_myosin_placement_report`): reuses the cortex
+  Stam-Hocky/Hill builder via ①a prefix (`sf_myosin_`→`sf_` γ-denylist) + ①b
+  actin-pool (heads bind the apparatus beads). Found+fixed a sphere-assumption bug:
+  `generate_cortex_myosin_layout` computed the head-offset normal as `centers/|centers|`
+  (out-of-plane for a flat basal layer) → added a `surface_normal` override (+z;
+  byte-identical default None=sphere). Gate PASS: 40 minifilaments assembled,
+  force-free (backbone strain 1.4e-14), 96.4% of heads binding-eligible (median perp
+  103nm ≤ capture_perp 210nm — heads in sparse spots just stay unbound, not gated to
+  every head), sf_-denylisted, distinct from cortex_myosin_. test_basal_mesh +3 +
+  scripts/h7_basal_nmii_gate.py auto-viz. 91 myosin+basal tests green (byte-identity).
 * **B5** equilibrated active gate — equilibration prelude → Kumar single-SF tension +
   Balaban traction. (Needs PI N_filaments/k_actin + likely gbook GPU run.)
 

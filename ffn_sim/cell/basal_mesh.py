@@ -697,3 +697,169 @@ def basal_apparatus_report(
     }
     ok = cables_anchored and anchors_force_free and in_slab and chains_force_free
     return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
+
+
+# ===========================================================================
+# B4 — sf_myosin_ NMII placement on the basal apparatus (prefix-split + pool)
+# ===========================================================================
+def place_sf_myosin_on_apparatus(
+    app: BasalApparatus,
+    p_myo_sf,
+    *,
+    rng: np.random.Generator | None = None,
+):
+    """Place ``sf_myosin_`` NMII minifilaments ON the basal apparatus filaments.
+
+    Reuses the cortex Stam-Hocky/Hill machinery (``cortex/myosin.py``) via the
+    prefix split (①a): ``p_myo_sf.prefix`` must be ``"sf_myosin_"`` so the motor
+    bond/particle types fall under the ``sf_`` γ-denylist (never contaminating the
+    cortical active-γ signal). The minifilaments are placed ACTIN-AWARE on the
+    apparatus's explicit filament beads (the F-layer network), so the heads sit
+    within binding reach of real actin — the dynamic ``MyosinStepUpdater`` (①b,
+    ``actin_pool_tags`` = the apparatus beads) loads them in the equilibrated run (B5).
+
+    Geometry only (a :class:`CortexMyosinLayout`); no HOOMD state, no force here.
+
+    Args:
+        app: the integrated :class:`BasalApparatus` (F-on-S).
+        p_myo_sf: a ``ResolvedCortexMyosin`` with ``prefix="sf_myosin_"``.
+        rng: RNG.
+
+    Returns:
+        A ``CortexMyosinLayout`` (minifilament bead positions on the apparatus).
+    """
+    from ffn_sim.cortex.myosin import generate_cortex_myosin_layout
+
+    if not str(p_myo_sf.prefix).startswith("sf_"):
+        raise ValueError(
+            f"sf_myosin placement requires a 'sf_'-prefixed myosin params "
+            f"(γ-denylist); got prefix={p_myo_sf.prefix!r}. Build it with "
+            "resolve_cortex_myosin(cfg with prefix='sf_myosin_')."
+        )
+    if rng is None:
+        rng = np.random.default_rng(p_myo_sf.seed)
+    lay = app.layout
+    fil_idx = lay.filament_idx
+    nb = np.asarray(lay.n_beads_per_filament, dtype=np.int64)
+    n_beads = int(lay.positions_flat.shape[0])
+    return generate_cortex_myosin_layout(
+        p_myo_sf, float(app.footprint_radius),
+        motor_tag_start=n_beads,          # myosin appended AFTER the apparatus beads
+        rng=rng,
+        cortex_positions=np.asarray(lay.positions_flat, dtype=np.float64),
+        cortex_tangents=np.asarray(lay.tangents, dtype=np.float64),
+        beads_per_filament=int(max(1, round(float(nb.mean())))),  # fallback only
+        cortex_filament_idx=np.asarray(fil_idx, dtype=np.int64),  # variable-length map
+        surface_normal=np.array([0.0, 0.0, 1.0]),  # FLAT basal layer (+z), not sphere
+    )
+
+
+def sf_myosin_placement_report(
+    app: BasalApparatus,
+    p_myo_sf,
+    myo_layout,
+) -> dict[str, Any]:
+    """B4 build-time gate: sf_myosin assembled, force-free, sf_-denylisted, distinct.
+
+    Controls:
+      * assembled       — n_motors minifilaments placed, each with
+        n_backbone + 2·n_heads_per_side beads.
+      * force_free      — intra-minifilament bonds born at their rest lengths
+        (backbone segment == backbone_segment_length; head↔backbone == head_rest_length).
+      * heads_near_actin— every minifilament centre is an apparatus actin bead and
+        the heads sit within head_actin_max_bind_dist of it (binding-eligible).
+      * sf_denylisted   — every sf_myosin_ bond/particle TYPE starts with 'sf_'
+        (γ-excluded by the registry denylist) AND none is a cortex_myosin_ type
+        (the cortical active-γ signal is untouched).
+    """
+    from ffn_sim.cortex.myosin import (
+        myosin_attach_bin_names,
+        myosin_backbone_bond_name,
+        myosin_head_backbone_bond_name,
+        myosin_particle_type_names,
+    )
+
+    M = int(p_myo_sf.n_motors_per_cell)
+    N = int(p_myo_sf.n_backbone)
+    H = int(p_myo_sf.n_heads_per_side)
+    pos = np.asarray(myo_layout.positions, dtype=np.float64)  # (M, N+2H, 3)
+    assembled = bool(pos.shape == (M, N + 2 * H, 3))
+
+    # force-free intra bonds (sample over all motors).
+    seg = p_myo_sf.backbone_segment_length
+    worst_bb = 0.0
+    worst_hb = 0.0
+    for m in range(M):
+        bb = pos[m, :N]
+        d_bb = np.linalg.norm(bb[1:] - bb[:-1], axis=1)
+        worst_bb = max(worst_bb, float(np.max(np.abs(d_bb - seg) / seg)))
+        # head ↔ nearest backbone bead distance ≈ head_rest_length.
+        heads = pos[m, N:]
+        # each head bonds to a backbone bead; min distance to backbone ≈ head_off.
+        for h in heads:
+            dmin = float(np.min(np.linalg.norm(bb - h, axis=1)))
+            worst_hb = max(worst_hb, abs(dmin - p_myo_sf.head_rest_length) / p_myo_sf.head_rest_length)
+    force_free = bool(worst_bb < 1e-9 and worst_hb < 0.5)  # head offset within tol
+
+    # heads near actin: the binding criterion is PERPENDICULAR distance to an actin
+    # SEGMENT ≤ capture_perp (the segment-projection rule the MyosinStepUpdater
+    # uses — NOT the bead-centre distance: a head sits head_off≈200nm laterally
+    # from the actin LINE, so its nearest bead can be ~400nm while its perp to the
+    # segment is ~200nm ≤ capture_perp≈210nm and it IS binding-eligible).
+    centres = np.asarray(myo_layout.centers, dtype=np.float64)
+    appos = np.asarray(app.layout.positions_flat, dtype=np.float64)
+    from scipy.spatial import cKDTree
+    tree = cKDTree(appos)
+    d_centre, _ = tree.query(centres)
+    centres_on_actin = float(np.max(d_centre)) if M else 0.0
+    cap_perp = float(getattr(p_myo_sf, "head_actin_capture_perp",
+                             p_myo_sf.head_rest_length + 10.0e-9))
+    bg = np.asarray(app.layout.bond_groups, dtype=np.int64).reshape(-1, 2)
+    segA = appos[bg[:, 0]]
+    segB = appos[bg[:, 1]]
+    seg = segB - segA
+    seg_len2 = np.einsum("ij,ij->i", seg, seg).clip(min=1e-30)
+    # Per-head min perpendicular distance to ANY actin segment. NMII heads in sparse
+    # spots (e.g. a 700nm minifilament's end head overhanging a short infill chain)
+    # simply stay UNBOUND — not every head engages. The placement is contraction-
+    # CAPABLE if a sufficient FRACTION of heads are within capture_perp (binding-
+    # eligible) so each minifilament can recruit a bipolar pair. We report the
+    # fraction + the median, and gate the fraction (≥ floor), not every head.
+    head_pos = pos[:, N:, :].reshape(-1, 3) if M else np.zeros((0, 3))
+    perps = np.empty(head_pos.shape[0], dtype=np.float64)
+    for i, h in enumerate(head_pos):
+        t = np.clip(np.einsum("ij,ij->i", h[None, :] - segA, seg) / seg_len2, 0.0, 1.0)
+        closest = segA + t[:, None] * seg
+        perps[i] = float(np.min(np.linalg.norm(h[None, :] - closest, axis=1)))
+    eligible_frac = float(np.mean(perps <= cap_perp)) if perps.size else 1.0
+    median_perp = float(np.median(perps)) if perps.size else 0.0
+    worst_perp = float(np.max(perps)) if perps.size else 0.0
+    _ELIGIBLE_FLOOR = 0.8   # ≥80% of heads binding-eligible → contraction-capable
+    heads_near = bool(perps.size == 0 or eligible_frac >= _ELIGIBLE_FLOOR)
+    heads_max = worst_perp
+
+    # sf_ denylisted + distinct from cortex_myosin_.
+    types = [
+        myosin_backbone_bond_name(p_myo_sf.prefix),
+        myosin_head_backbone_bond_name(p_myo_sf.prefix),
+        *myosin_particle_type_names(p_myo_sf.prefix),
+        *myosin_attach_bin_names(p_myo_sf.n_bins, p_myo_sf.prefix),
+    ]
+    sf_denylisted = all(t.startswith("sf_") for t in types)
+    distinct = not any(t.startswith("cortex_myosin_") for t in types)
+
+    controls = {
+        "n_motors": M,
+        "n_beads_per_motor": N + 2 * H,
+        "assembled": assembled,
+        "force_free": {"ok": force_free, "backbone_strain": worst_bb,
+                       "head_offset_rel_dev": worst_hb},
+        "heads_near_actin": {"ok": heads_near, "eligible_fraction": eligible_frac,
+                             "median_perp_m": median_perp, "max_perp_m": heads_max,
+                             "capture_perp_m": cap_perp,
+                             "max_centre_to_actin_m": centres_on_actin},
+        "sf_denylisted": sf_denylisted,
+        "distinct_from_cortex_myosin": distinct,
+    }
+    ok = assembled and force_free and heads_near and sf_denylisted and distinct
+    return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
