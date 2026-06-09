@@ -753,32 +753,47 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="linc",
         category="internal",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); Option A nucleus↔IF-cage bridges, per-bond EXACT-r0, linc_ γ-denylisted
         enabled_default=False,
-        summary="LINC complex: nesprin-SUN bridges coupling nuclear lamina to cyto cytoskeleton (cortex/SF/MT).",
-        manifest_path=None,
+        summary="LINC complex: nesprin-SUN bridges coupling the nucleus to the perinuclear IF cage (Option A).",
+        manifest_path=("optional_subsystems", "linc"),
         resolve_ref="ffn_sim.cell.linc.resolve_linc",
         performance_contract=_live(
-            particle_types_added=("linc_anchor",),
-            n_particles_mesoscale="~n_LINC",
-            n_particles_native="(scaled)",
-            n_bonds="linc_nesprin (nucleus_bead <-> cytoskeleton)",
+            particle_types_added=(),         # bonds ONLY — reuses nucleus_bead + if_bead (no new particle cloud)
+            n_particles_mesoscale=0,
+            n_particles_native=0,
+            n_bonds="linc_nesprin / linc_nesprin_b{i} (per-bond EXACT-r0; nucleus_bead <-> if_bead)",
             n_angles=0,
             per_step_force=False,
-            per_batch_updater=False,         # static linker bonds; optional dynamic binding
+            per_batch_updater=False,         # static linker bonds; optional dynamic binding TODO
             uses_cpu_local_snapshot=False,
-            uses_broad_phase=False,
-            expected_on_recipes=("confined_migration",),
+            uses_broad_phase=True,           # ONCE at build time only (cKDTree nucleus↔if pairing)
+            expected_on_recipes=("linc_coupled", "confined_migration"),
             hot_path_priority=HotPathPriority.P2,
             gpu_path_now=GpuPath.HOOMD_BUILTIN,
             native_forcecompute_candidate=False,
-            bottleneck_risk="Static harmonic linker bonds — HOOMD-builtin; low cost.",
+            bottleneck_risk="Static harmonic linker bonds — HOOMD-builtin; low cost. Per-bond EXACT-r0 mints one bond type per bridge (~n_IF_filaments); many bond types degrade GPU shared memory (PI queue).",
         ),
         gpu_readiness=GpuReadiness(device_resident_now=True),
         gamma_contaminating=True,
         denylist_bond_types=("linc_",),
-        requires=("nucleus",),
-        sanity_gate_ref="ffn_sim/cell/linc.py",
+        requires=("nucleus", "intermediate_filaments"),
+        citations=(
+            "Crisp 2006 JCB 172:41 (SUN-KASH bridge, perinuclear gap ~50 nm)",
+            "Déjardin 2020 JCB 219:e201908036 (mini-nesprin-2G/CB ~8 pN resting tension oracle)",
+            "Rief 1999 JMB 286:553 (spectrin-repeat folded-rod secant ~1e-2 N/m, route A k_linc)",
+            "Lombardi 2011 JBC 286:26743 (thousands LINC/nucleus; mesoscale O(n_envelope))",
+        ),
+        pi_decisions=(
+            "k_linc UNKNOWN (nonlinear repeat unfolding → no single Hookean N/m). Module default None; "
+            "config carries the route-A candidate 1e-2 N/m (ORDER, conf MEDIUM) — PI ratification pending.",
+            "At the ×40 mesoscale the nucleus↔if_bead separation is ~0.5-1.5 µm (NOT the 50 nm real "
+            "nesprin span), so r0 is an EFFECTIVE mesoscale coupling length and the 8 pN f_rest oracle "
+            "is approximate. Option C (seed a dedicated R_nuc+50 nm perinuclear acceptor cap) is the "
+            "faithful-span alternative (new particle layer) — surfaced to PI.",
+        ),
+        sanity_gate_ref="ffn_sim/tests/test_linc.py",
+        notes="Option A: nucleus_bead → nearest if_bead (the LIVE perinuclear IF cage). Per-bond EXACT-r0 = force-free at construction; resting tension emerges from actomyosin. Anchors a nucleus↔cytoskeleton load path, NOT cortical hoop γ.",
     ),
     CompartmentSpec(
         name="intermediate_filaments",

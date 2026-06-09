@@ -28,6 +28,7 @@ from ffn_sim.cell.cytoplasm import resolve_cytoplasm
 from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
 from ffn_sim.cell.membrane import resolve_membrane
 from ffn_sim.cell.intermediate_filaments import resolve_intermediate_filaments
+from ffn_sim.cell.linc import resolve_linc
 from ffn_sim.cell.membrane_surface import resolve_membrane_surface
 from ffn_sim.cell.microtubules import resolve_microtubules
 from ffn_sim.cell.nucleus import resolve_nucleus
@@ -88,6 +89,7 @@ class ResolvedBaseline:
     p_osmotic_regulation: Any | None = None   # H.11 dynamic volume regulation (LIVE)
     p_microtubules: Any | None = None         # H.MT centrosomal aster (LIVE)
     p_intermediate_filaments: Any | None = None  # H.IF perinuclear cage (LIVE)
+    p_linc: Any | None = None                 # H.LINC nucleus↔IF-cage bridges (LIVE)
     manifest: dict = field(default_factory=dict)
 
     def compartments(self) -> dict[str, Any]:
@@ -209,6 +211,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
     p_osmotic_regulation = None
     p_microtubules = None
     p_intermediate_filaments = None
+    p_linc = None
     lam_cfg: dict = {}
 
     fa_b = opt.get("fa")
@@ -333,6 +336,49 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
             if_cfg, kT=p_cortex.kT, R_cell=p_cortex.R_cell, R_nuc=_R_nuc_if,
         )
 
+    # H.LINC nesprin-SUN bridges (LIVE, default-OFF). Option A: bond the nucleus
+    # to the perinuclear IF cage, so BOTH nucleus and intermediate_filaments must
+    # be ON (registry requires=('nucleus', 'intermediate_filaments')). k_linc is
+    # PI-pending (None) by default → the enabled build raises until ratified.
+    linc_b = opt.get("linc")
+    if _enabled(linc_b):
+        if p_nucleus is None:
+            raise ValueError(
+                "linc enabled but nucleus is OFF — LINC (Option A) couples the "
+                "nucleus to the perinuclear IF cage and requires the nucleus."
+            )
+        if p_intermediate_filaments is None or not getattr(
+            p_intermediate_filaments, "enabled", False
+        ):
+            raise ValueError(
+                "linc enabled but intermediate_filaments is OFF — LINC (Option A) "
+                "bonds nucleus_bead → if_bead, so the IF cage must be ON "
+                "(registry requires=('nucleus', 'intermediate_filaments'))."
+            )
+        linc_cfg = _opt_cfg(linc_b)
+        _l = linc_cfg
+        if isinstance(_l.get("cell"), dict):
+            _l = _l["cell"]
+        if isinstance(_l.get("linc"), dict):
+            _l = _l["linc"]
+        _l["enabled"] = True
+        _R_nuc_linc = getattr(p_nucleus, "R_nuc", None)
+        # Geometry-derived pairing scale (grid-invariant, NOT tuned to a count):
+        # a nucleus bead couples to the IF cage when an if_bead is within ONE IF
+        # backbone segment ``l_seg`` (the cage's intrinsic mesh length), and the
+        # bridge COUNT is capped at the cage filament count ``n_filaments`` (one
+        # LINC per perinuclear IF filament, keeping the shortest = tightest
+        # envelope-to-inner-cage couplings). Both track the LIVE IF cage geometry
+        # so a denser cage yields proportionally more LINC. Only injected when the
+        # config does not override them explicitly.
+        if "capture_radius" not in _l:
+            _l["capture_radius"] = float(p_intermediate_filaments.l_seg)
+        if "n_bridges_max" not in _l:
+            _l["n_bridges_max"] = int(p_intermediate_filaments.n_filaments)
+        p_linc = resolve_linc(
+            linc_cfg, R_cell=p_cortex.R_cell, R_nuc=_R_nuc_linc,
+        )
+
     return ResolvedBaseline(
         cell_type=cell_type,
         R_cell=R_cell,
@@ -353,6 +399,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         p_osmotic_regulation=p_osmotic_regulation,
         p_microtubules=p_microtubules,
         p_intermediate_filaments=p_intermediate_filaments,
+        p_linc=p_linc,
         manifest=manifest,
     )
 
@@ -441,6 +488,7 @@ def build_baseline_cell(
         with_erm=rb.p_erm is not None,
         with_microtubules=rb.p_microtubules is not None,
         with_intermediate_filaments=rb.p_intermediate_filaments is not None,
+        with_linc=rb.p_linc is not None,
     )
     cell = Cell.build(
         rb.p_cortex,
@@ -459,6 +507,7 @@ def build_baseline_cell(
         p_erm=rb.p_erm,
         p_microtubules=rb.p_microtubules,
         p_intermediate_filaments=rb.p_intermediate_filaments,
+        p_linc=rb.p_linc,
         p_membrane=rb.p_membrane,
         constrained=constrained,
         # constrained_dt_safety < 1 shrinks the constrained step: the rigid

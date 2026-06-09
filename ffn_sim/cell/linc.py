@@ -192,6 +192,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+import hoomd
+
 try:
     from scipy.spatial import cKDTree
 except Exception:  # pragma: no cover - scipy is a hard dep of the env
@@ -208,6 +210,30 @@ GAMMA_DENYLIST_PREFIX: str = "linc_"
 
 #: Canonical LINC bond type name (nesprin-SUN spectrin-repeat molecular spring).
 LINC_BOND_NESPRIN: str = "linc_nesprin"
+
+
+def linc_nesprin_exact_type_names(n: int) -> list[str]:
+    """Per-bond EXACT-r0 ``linc_nesprin`` bond-type names (γ-denylisted).
+
+    Mirrors the FA molecular-clutch convention (``fa_actin_clutch`` /
+    ``fa_actin_clutch_b{i}`` in :func:`cell.cell.build_cortex_full_simulation`):
+    one bond type PER formed LINC bridge, each carrying that bridge's EXACT
+    as-built nucleus↔cytoskeleton separation as its rest length, so every bond
+    is born FORCE-FREE at the resting geometry — even though the per-nesprin
+    stiffness ``k_linc`` (route-A folded-rod secant ~1e-2 N/m) is ~100× stiffer
+    than the soft IF crosslink, where a coarse per-r0 bin (cf.
+    ``intermediate_filaments.if_crosslink_b{i}``) would leave hundreds of kT of
+    spurious construction pre-stress. The first name is the canonical
+    ``linc_nesprin``; the rest are ``linc_nesprin_b1 ..`` (every name keeps the
+    ``linc_`` γ-denylist prefix). Used by :func:`compute_linc_layout` /
+    :func:`extend_snapshot_with_linc_layout` for the integrated cell (Option A:
+    nucleus → perinuclear IF cage), where the construction separations vary
+    (CV ~24%) so a single ``r0`` cannot be force-free.
+    """
+    return [
+        LINC_BOND_NESPRIN if i == 0 else f"{LINC_BOND_NESPRIN}_b{i}"
+        for i in range(int(n))
+    ]
 
 #: Open PI decisions (CLAUDE.md no-magic-number protocol). Empty when none.
 PI_DECISIONS: list[str] = [
@@ -515,6 +541,7 @@ def pair_linc_bridges(
     *,
     capture_radius: float,
     n_bridges_max: int,
+    unique_acceptor: bool = False,
 ) -> np.ndarray:
     """Geometrically pair nucleus beads to nearest cytoskeleton beads.
 
@@ -531,6 +558,15 @@ def pair_linc_bridges(
         cytoskeleton_positions: ``(n_cyto, 3)`` cytoskeleton-bead positions [m].
         capture_radius: Max pairing distance [m] (> 0).
         n_bridges_max: Cap on the number of bridges (≥ 0).
+        unique_acceptor: If True, each cytoskeleton acceptor bead is used by AT
+            MOST ONE bridge (greedy shortest-first matching) — "one nesprin per
+            IF anchor point". This BOUNDS the per-acceptor bond degree to +1,
+            which is REQUIRED on the integrated cell: without it many nucleus
+            surface beads share a single nearest ``if_bead`` and concentrate
+            LINC bonds on it, overflowing the HOOMD nlist per-particle exclusion
+            cap (the same class as the single-hub MTOC degree limit). Default
+            False preserves the one-LINC-per-nucleus-bead semantics for the
+            standalone smoke / unit tests.
 
     Returns:
         ``(n_bridges, 2)`` int array of LOCAL index pairs
@@ -566,13 +602,239 @@ def pair_linc_bridges(
     d_sel = dist[nuc_idx]
     # Keep the shortest (tightest) bridges first, then cap.
     order = np.argsort(d_sel, kind="stable")
-    nuc_idx = nuc_idx[order][:n_bridges_max]
-    cyto_idx = cyto_idx[order][:n_bridges_max]
-    return np.stack([nuc_idx, cyto_idx], axis=1).astype(np.int64)
+    nuc_ord = nuc_idx[order]
+    cyto_ord = cyto_idx[order]
+    if not unique_acceptor:
+        nuc_keep = nuc_ord[:n_bridges_max]
+        cyto_keep = cyto_ord[:n_bridges_max]
+        return np.stack([nuc_keep, cyto_keep], axis=1).astype(np.int64)
+
+    # Greedy 1:1 acceptor matching (shortest-first): each acceptor used once so
+    # the per-acceptor bond degree gains at most +1 (nlist exclusion-cap safe).
+    seen: set[int] = set()
+    keep_n: list[int] = []
+    keep_c: list[int] = []
+    for ni, ci in zip(nuc_ord.tolist(), cyto_ord.tolist()):
+        if ci in seen:
+            continue
+        seen.add(ci)
+        keep_n.append(ni)
+        keep_c.append(ci)
+        if len(keep_n) >= n_bridges_max:
+            break
+    if not keep_n:
+        return np.empty((0, 2), dtype=np.int64)
+    return np.stack(
+        [np.array(keep_n, dtype=np.int64), np.array(keep_c, dtype=np.int64)],
+        axis=1,
+    )
 
 
 # ---------------------------------------------------------------------------
-# Snapshot-extension builder (adds linc_nesprin bonds; no-op when disabled)
+# Per-bond exact-r0 LINC layout (Option A: nucleus → perinuclear IF cage)
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True, slots=True)
+class LINCLayout:
+    """Resolved per-bond LINC bridge topology (EXACT-r0, force-free at build).
+
+    Returned by :func:`compute_linc_layout` for the integrated cell. Each formed
+    LINC bridge gets its OWN bond type carrying its EXACT as-built separation as
+    the rest length, so the cage couples force-free at the resting geometry (the
+    ~8 pN resting tension is generated by actomyosin AFTER equilibration, not
+    injected as construction pre-stress — physiological-baseline rule).
+
+    Attributes:
+        pairs: ``(n_bridges, 2)`` uint32 GLOBAL particle tags
+            ``[nucleus_tag, cytoskeleton_tag]`` (tag == row index on a
+            tag-ordered build snapshot).
+        r0: ``(n_bridges,)`` float64 EXACT as-built separation per bridge [m]
+            (the bond's force-free rest length).
+        type_names: per-bridge bond-type names (one type per bridge; every name
+            keeps the ``linc_`` γ-denylist prefix).
+    """
+
+    pairs: np.ndarray
+    r0: np.ndarray
+    type_names: tuple[str, ...]
+
+    @property
+    def n_bridges(self) -> int:
+        return int(self.pairs.shape[0])
+
+
+def compute_linc_layout(
+    snap: "object",
+    p: ResolvedLINC,
+    *,
+    nucleus_tags: np.ndarray | list[int],
+    cytoskeleton_tags: np.ndarray | list[int],
+) -> "LINCLayout | None":
+    """Geometric per-bond EXACT-r0 LINC layout (pure; mutates nothing).
+
+    Pairs each nucleus bead to its nearest cytoskeletal acceptor (Option A: the
+    perinuclear ``if_bead`` cage) within ``p.capture_radius`` and records the
+    EXACT as-built separation as each bond's force-free rest length. Returns
+    ``None`` (a no-op signal) when LINC is disabled, no tags are supplied, or
+    the geometry forms zero bridges. Does NOT require ``k_linc`` (pairing is
+    pure geometry; the stiffness is consumed only at potential-configure time).
+
+    The snapshot is consumed TAG-ORDERED (global tag == row index, cell.py
+    extender convention); ``.particles.tag`` is never read (a build-time
+    ``gsd.hoomd.Frame`` does not expose it).
+
+    Args:
+        snap: A ``gsd.hoomd.Frame`` / ``hoomd.Snapshot`` with
+            ``.particles.position`` / ``.N``.
+        p: Resolved LINC parameters.
+        nucleus_tags: ``nucleus_bead`` tags (== row indices).
+        cytoskeleton_tags: acceptor (``if_bead`` / cortex / SF / MT) tags.
+
+    Returns:
+        A :class:`LINCLayout` or ``None`` (no bridges / disabled).
+    """
+    if not p.enabled:
+        return None
+    nuc_tags = np.asarray(nucleus_tags, dtype=np.int64).reshape(-1)
+    cyto_tags = np.asarray(cytoskeleton_tags, dtype=np.int64).reshape(-1)
+    if nuc_tags.size == 0 or cyto_tags.size == 0:
+        return None
+
+    pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(-1, 3)
+    n_part = int(snap.particles.N)
+    nuc_rows = nuc_tags[(nuc_tags >= 0) & (nuc_tags < n_part)]
+    cyto_rows = cyto_tags[(cyto_tags >= 0) & (cyto_tags < n_part)]
+    if nuc_rows.size == 0 or cyto_rows.size == 0:
+        return None
+
+    pairs_local = pair_linc_bridges(
+        pos[nuc_rows],
+        pos[cyto_rows],
+        capture_radius=p.capture_radius,
+        n_bridges_max=p.n_bridges_max,
+        # One nesprin per IF anchor: bound the per-acceptor bond degree to +1 so
+        # the integrated cell does not overflow the nlist exclusion cap (many
+        # nucleus surface beads otherwise share one nearest if_bead).
+        unique_acceptor=True,
+    )
+    if pairs_local.shape[0] == 0:
+        return None
+
+    # Local-index pairs → global tags (rows ARE the global tags, tag-ordered).
+    nuc_bond_tags = nuc_rows[pairs_local[:, 0]]
+    cyto_bond_tags = cyto_rows[pairs_local[:, 1]]
+    pairs = np.stack([nuc_bond_tags, cyto_bond_tags], axis=1).astype(np.uint32)
+    sep = np.linalg.norm(
+        pos[nuc_bond_tags] - pos[cyto_bond_tags], axis=1
+    ).astype(np.float64)
+    names = tuple(linc_nesprin_exact_type_names(int(pairs.shape[0])))
+    return LINCLayout(pairs=pairs, r0=sep, type_names=names)
+
+
+# ---------------------------------------------------------------------------
+# Fresh-snapshot bond-append helper (shared; handles gsd.Frame + hoomd.Snapshot)
+# ---------------------------------------------------------------------------
+def _rebuild_snapshot_appending_linc_bonds(
+    snap: "object",
+    new_pairs: np.ndarray,
+    per_bond_type_names: list[str],
+) -> "hoomd.Snapshot":
+    """Return a FRESH ``hoomd.Snapshot`` = ``snap`` + appended LINC bonds.
+
+    LINC adds NO particles (bonds-only), so every particle / angle / dihedral /
+    improper is copied UNCHANGED; only the supplied ``linc_`` bonds are appended.
+    Handles both a build-time ``gsd.hoomd.Frame`` (None-valued unset fields) and
+    a ``hoomd.Snapshot``, mirroring ``microtubules.extend_snapshot_with_micro
+    tubules`` — an in-place mutation of ``snap.bonds`` is NOT used because a
+    ``hoomd.Snapshot`` BondDataSnapshot has no whole-array setter.
+
+    Args:
+        new_pairs: ``(n_new, 2)`` GLOBAL bond tags.
+        per_bond_type_names: ``len == n_new`` bond-type name per appended bond
+            (all ``linc_``-prefixed). Distinct names are registered once.
+    """
+    def _grp(arr, width: int) -> np.ndarray:
+        if arr is None:
+            return np.empty((0, width), dtype=np.int64)
+        a = np.asarray(arr, dtype=np.int64)
+        return a.reshape(-1, width) if a.size else np.empty((0, width), np.int64)
+
+    def _tid(arr) -> np.ndarray:
+        if arr is None:
+            return np.empty((0,), dtype=np.uint32)
+        return np.asarray(arr, dtype=np.uint32).reshape(-1)
+
+    def _pf(arr, default: np.ndarray) -> np.ndarray:
+        return default if arr is None else np.asarray(arr)
+
+    n = int(snap.particles.N)
+    write = hoomd.Snapshot()
+    write.particles.N = n
+    write.particles.types = list(snap.particles.types)
+    write.particles.typeid[:] = _pf(
+        snap.particles.typeid, np.zeros(n, dtype=np.uint32)
+    ).astype(np.uint32).reshape(-1)
+    write.particles.position[:] = _pf(
+        snap.particles.position, np.zeros((n, 3), dtype=np.float64)
+    ).astype(np.float64).reshape(-1, 3)
+    write.particles.velocity[:] = _pf(
+        snap.particles.velocity, np.zeros((n, 3), dtype=np.float64)
+    ).astype(np.float64).reshape(-1, 3)
+    write.particles.mass[:] = _pf(
+        snap.particles.mass, np.ones(n, dtype=np.float64)
+    ).astype(np.float64).reshape(-1)
+    write.particles.image[:] = _pf(
+        snap.particles.image, np.zeros((n, 3), dtype=np.int32)
+    ).astype(np.int32).reshape(-1, 3)
+    # A minimal build-time gsd.hoomd.Frame may leave the box unset (None); a
+    # hoomd.Snapshot always carries one. Default to a unit box only when absent
+    # (the unit tests never create a state from the no-box frame).
+    _box = snap.configuration.box
+    write.configuration.box = (
+        list(_box) if _box is not None else [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
+    )
+
+    # Bonds: existing + appended LINC bonds. Register each distinct LINC type
+    # once, then resolve the per-bond typeid.
+    bond_types = list(snap.bonds.types or [])
+    for tn in per_bond_type_names:
+        if tn not in bond_types:
+            bond_types.append(tn)
+    old_bg = _grp(snap.bonds.group, 2)
+    old_bt = _tid(snap.bonds.typeid)
+    new_bg = np.asarray(new_pairs, dtype=np.int64).reshape(-1, 2)
+    new_bt = np.array(
+        [bond_types.index(tn) for tn in per_bond_type_names], dtype=np.uint32
+    )
+    merged_bg = np.concatenate([old_bg, new_bg], axis=0).astype(np.uint32)
+    merged_bt = np.concatenate([old_bt, new_bt]).astype(np.uint32)
+    write.bonds.types = bond_types
+    write.bonds.N = int(merged_bg.shape[0])
+    if merged_bg.shape[0] > 0:
+        write.bonds.group[:] = merged_bg
+        write.bonds.typeid[:] = merged_bt
+
+    # Pass through angles / dihedrals / impropers untouched (None-guarded).
+    for grp_name in ("angles", "dihedrals", "impropers"):
+        src = getattr(snap, grp_name, None)
+        if src is None:
+            continue
+        src_n = int(getattr(src, "N", 0) or 0)
+        src_types = list(getattr(src, "types", None) or [])
+        dst = getattr(write, grp_name)
+        if src_n > 0:
+            dst.N = src_n
+            dst.types = src_types
+            dst.group[:] = np.asarray(src.group)
+            dst.typeid[:] = np.asarray(src.typeid)
+        elif src_types:
+            dst.N = 0
+            dst.types = src_types
+
+    return write
+
+
+# ---------------------------------------------------------------------------
+# Snapshot-extension builders (add linc_nesprin bonds; no-op when disabled)
 # ---------------------------------------------------------------------------
 def extend_snapshot_with_linc(
     snap: "object",
@@ -581,53 +843,48 @@ def extend_snapshot_with_linc(
     nucleus_tags: np.ndarray | list[int],
     cytoskeleton_tags: np.ndarray | list[int],
 ) -> "object":
-    """Add ``linc_nesprin`` harmonic bonds between nucleus and cytoskeleton.
+    """Append SINGLE-r0 ``linc_nesprin`` harmonic bonds (nucleus↔cytoskeleton).
 
-    Mirrors the ``cell/cell.py`` bond-type-extension pattern (``_extend_snapshot_
-    with_fa`` / ``_extend_snapshot_with_nucleus``): carries existing bonds
-    across, registers the ``linc_nesprin`` bond type (if absent), pairs
-    nucleus↔cytoskeleton beads geometrically, and appends one bond per formed
-    bridge. The function is callable IN ISOLATION on a ``gsd.hoomd.Frame`` (or
-    any snapshot exposing ``.particles.position/.N`` and ``.bonds.*``). The
-    snapshot is consumed TAG-ORDERED — a build-time HOOMD/gsd snapshot has
-    global tag == row index (cell.py:313, 383-384), so the supplied
-    ``nucleus_tags`` / ``cytoskeleton_tags`` ARE row indices directly. We do NOT
-    read ``snap.particles.tag``: a build-time ``gsd.hoomd.Frame`` does not expose
-    it (only a runtime ``cpu_local_snapshot`` LocalSnapshot carries ``.tag``),
-    so reading it would AttributeError on a real Frame. This is a STRICT NO-OP —
-    returning the input snapshot unchanged — when:
+    The simple uniform-``r0`` path: every formed bridge gets the one canonical
+    ``linc_nesprin`` bond type at the resolved ``p.r0`` rest length. It is the
+    right path when the acceptors are SEEDED at ``r0`` (e.g. the perinuclear-cap
+    smoke topology) so every bond is born force-free. For the integrated cell's
+    Option A (nucleus → the pre-existing IF cage), where the as-built
+    separations vary (CV ~24%) and a single ``r0`` cannot be force-free, use
+    :func:`compute_linc_layout` + :func:`extend_snapshot_with_linc_layout`
+    (per-bond EXACT-r0) instead.
+
+    Returns a FRESH ``hoomd.Snapshot`` (LINC adds bonds only; all particles /
+    angles are copied unchanged). Works in isolation on a ``gsd.hoomd.Frame`` or
+    a ``hoomd.Snapshot``, consumed TAG-ORDERED (global tag == row index;
+    ``.particles.tag`` is never read). STRICT NO-OP — returns the input snapshot
+    UNCHANGED (same object) — when:
 
     * ``p.enabled`` is False (DEFAULT-OFF), or
     * no nucleus / cytoskeleton tags are supplied, or
     * the geometric pairing forms zero bridges.
 
-    It mutates the passed snapshot's ``bonds`` arrays in place (matching the
-    single-writer gsd-Frame convention in cell.py) and returns it.
-
     Args:
-        snap: A ``gsd.hoomd.Frame`` (or HOOMD snapshot) with
-            ``.particles.position/.N`` and ``.bonds.*`` arrays. Consumed
-            tag-ordered (row index == global tag), matching the cell.py
-            extenders — no ``.particles.tag`` field is read or required.
+        snap: A ``gsd.hoomd.Frame`` / ``hoomd.Snapshot`` (``.particles.position``
+            / ``.N`` / ``.bonds.*``).
         p: Resolved LINC parameters. ``.enabled = False`` ⇒ no-op.
-        nucleus_tags: Particle tags of the ``nucleus_bead`` cloud (== row
-            indices on a tag-ordered build snapshot).
-        cytoskeleton_tags: Particle tags of the cytoskeletal acceptor beads
-            (cortex actin / stress fiber / MT) LINC may bond to (== row indices).
+        nucleus_tags: ``nucleus_bead`` tags (== row indices).
+        cytoskeleton_tags: acceptor bead tags (== row indices).
 
     Returns:
-        The (possibly extended) snapshot.
+        A fresh extended ``hoomd.Snapshot`` (bonds added) or the input ``snap``
+        unchanged (no-op).
 
     Raises:
         NotImplementedError: if ``p.enabled`` and ``p.k_linc is None`` — the
             load-bearing stiffness is UNKNOWN (see module ``PI_DECISIONS``).
-            Honesty over completeness: no invented number.
     """
     # DEFAULT-OFF strict no-op.
     if not p.enabled:
         return snap
-
-    # Honest disabled-build: stiffness genuinely unknown.
+    # Honest disabled-build: stiffness genuinely unknown (raise BEFORE pairing,
+    # matching the historical contract — k_linc None always raises on an enabled
+    # build attempt).
     if p.k_linc is None:
         raise NotImplementedError(
             "LINC topology build requires k_linc (per-nesprin spectrin-repeat "
@@ -641,85 +898,71 @@ def extend_snapshot_with_linc(
             "bonds is not, until k_linc is set.)"
         )
 
-    nuc_tags = np.asarray(nucleus_tags, dtype=np.int64).reshape(-1)
-    cyto_tags = np.asarray(cytoskeleton_tags, dtype=np.int64).reshape(-1)
-    if nuc_tags.size == 0 or cyto_tags.size == 0:
-        return snap  # nothing to bond → no-op
+    layout = compute_linc_layout(
+        snap, p, nucleus_tags=nucleus_tags, cytoskeleton_tags=cytoskeleton_tags
+    )
+    if layout is None:
+        return snap  # no tags / no acceptor in range → no-op
 
-    pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(-1, 3)
-    # Build-time snapshot is TAG-ORDERED: global tag == row index (cell.py:313,
-    # 383-384), so the supplied tags ARE row indices — no .particles.tag read
-    # (a gsd.hoomd.Frame does not expose it). Bounds-check against N.
-    n_part = int(snap.particles.N)
-    nuc_rows = nuc_tags[(nuc_tags >= 0) & (nuc_tags < n_part)]
-    cyto_rows = cyto_tags[(cyto_tags >= 0) & (cyto_tags < n_part)]
-    if nuc_rows.size == 0 or cyto_rows.size == 0:
+    # SINGLE-r0: every bridge rides the one canonical linc_nesprin type.
+    names = [p.bond_type_name] * layout.n_bridges
+    return _rebuild_snapshot_appending_linc_bonds(snap, layout.pairs, names)
+
+
+def extend_snapshot_with_linc_layout(
+    snap: "object",
+    p: ResolvedLINC,
+    layout: "LINCLayout | None",
+) -> "object":
+    """Append per-bond EXACT-r0 ``linc_nesprin`` bonds from a precomputed layout.
+
+    The integrated-cell Option-A path: each LINC bridge gets its own bond type
+    (``linc_nesprin`` / ``linc_nesprin_b{i}``) so it is born force-free at its
+    EXACT as-built separation (the :func:`compute_linc_layout` ``r0`` per
+    bridge), configured by :func:`configure_linc_bond_potential`. Returns a
+    FRESH ``hoomd.Snapshot``; strict no-op (returns ``snap``) when LINC is
+    disabled or ``layout`` is ``None``.
+
+    Raises:
+        NotImplementedError: if ``p.enabled`` and ``p.k_linc is None`` (the
+            stiffness is UNKNOWN — see ``PI_DECISIONS``). Raised here too so the
+            build halts BEFORE appending bonds it cannot give a potential.
+    """
+    if not p.enabled or layout is None:
         return snap
-
-    pairs_local = pair_linc_bridges(
-        pos[nuc_rows],
-        pos[cyto_rows],
-        capture_radius=p.capture_radius,
-        n_bridges_max=p.n_bridges_max,
+    if p.k_linc is None:
+        raise NotImplementedError(
+            "LINC topology build requires k_linc (UNKNOWN) — see "
+            "ffn_sim.cell.linc.PI_DECISIONS. Surface to PI before enabling LINC."
+        )
+    return _rebuild_snapshot_appending_linc_bonds(
+        snap, layout.pairs, list(layout.type_names)
     )
-    if pairs_local.shape[0] == 0:
-        return snap  # no acceptor in range → no-op
-
-    # Local-index pairs → global tags. Rows ARE the global tags (tag-ordered),
-    # so nuc_rows[pairs] / cyto_rows[pairs] are the bond-group tags directly.
-    nuc_bond_tags = nuc_rows[pairs_local[:, 0]]
-    cyto_bond_tags = cyto_rows[pairs_local[:, 1]]
-    new_pairs = np.stack([nuc_bond_tags, cyto_bond_tags], axis=1).astype(
-        np.uint32
-    )
-    n_new = int(new_pairs.shape[0])
-
-    # Register the bond type (carry existing bond types/groups/typeids across).
-    old_types = list(snap.bonds.types) if snap.bonds.types is not None else []
-    old_N = int(snap.bonds.N)
-    old_group = (
-        np.asarray(snap.bonds.group, dtype=np.int64).reshape(old_N, 2)
-        if old_N > 0
-        else np.empty((0, 2), dtype=np.int64)
-    ).astype(np.uint32)
-    old_typeid = (
-        np.asarray(snap.bonds.typeid, dtype=np.uint32)
-        if old_N > 0
-        else np.empty((0,), dtype=np.uint32)
-    )
-
-    new_types = list(old_types)
-    if p.bond_type_name not in new_types:
-        new_types.append(p.bond_type_name)
-    linc_typeid = new_types.index(p.bond_type_name)
-
-    group_all = np.concatenate([old_group, new_pairs], axis=0)
-    typeid_all = np.concatenate(
-        [old_typeid, np.full(n_new, linc_typeid, dtype=np.uint32)]
-    )
-
-    snap.bonds.N = int(group_all.shape[0])
-    snap.bonds.types = new_types
-    snap.bonds.group = group_all.astype(np.uint32)
-    snap.bonds.typeid = typeid_all.astype(np.uint32)
-    return snap
 
 
 def configure_linc_bond_potential(
     harmonic: "object",
     p: ResolvedLINC,
+    *,
+    layout: "LINCLayout | None" = None,
 ) -> "object":
-    """Set the ``linc_nesprin`` parameters on a builtin ``md.bond.Harmonic``.
+    """Set the ``linc_nesprin`` parameters on the cell's shared ``md.bond.Harmonic``.
 
-    The Lead owns the single ``md.bond.Harmonic`` instance for the cell; this
-    helper writes the LINC bond-type params into it (``k`` = ``k_linc``,
-    ``r0`` = ``p.r0``) without constructing a competing potential. It is a
-    no-op when LINC is disabled.
+    The Lead owns the single shared ``md.bond.Harmonic``; this helper writes the
+    LINC bond-type params onto it (it does NOT construct a competing potential).
+    No-op when LINC is disabled.
+
+    * ``layout=None`` (SINGLE-r0): registers the one canonical ``linc_nesprin``
+      type at ``k=k_linc`` / ``r0=p.r0``.
+    * ``layout`` given (per-bond EXACT-r0): registers EACH ``layout.type_names``
+      at ``k=k_linc`` / ``r0=layout.r0[i]`` — every bond force-free at its
+      as-built separation (matches :func:`extend_snapshot_with_linc_layout`).
 
     Args:
-        harmonic: A ``hoomd.md.bond.Harmonic`` whose ``.params`` mapping accepts
-            the LINC bond type.
+        harmonic: The cell's shared ``hoomd.md.bond.Harmonic``.
         p: Resolved LINC parameters.
+        layout: Optional per-bond EXACT-r0 layout from
+            :func:`compute_linc_layout`.
 
     Returns:
         The same ``harmonic`` (for chaining / introspection).
@@ -735,5 +978,10 @@ def configure_linc_bond_potential(
             "Cannot configure the linc_nesprin bond potential: k_linc is "
             "UNKNOWN (see ffn_sim.cell.linc.PI_DECISIONS). Surface to PI."
         )
-    harmonic.params[p.bond_type_name] = dict(k=float(p.k_linc), r0=float(p.r0))
+    k = float(p.k_linc)
+    if layout is None:
+        harmonic.params[p.bond_type_name] = dict(k=k, r0=float(p.r0))
+        return harmonic
+    for name, r0 in zip(layout.type_names, np.asarray(layout.r0, dtype=float)):
+        harmonic.params[name] = dict(k=k, r0=float(r0))
     return harmonic

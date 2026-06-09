@@ -96,14 +96,20 @@ activation that needs NO cortical_tension edit.
 | 09:00 | ⭐INTEGRATION CAPSTONE: internal_live recipe (osmotic + microtubules + IF together on the full baseline). All 3 compose in ONE cell (+656 internal particles, osmotic updater +1), INTEGRATED no-contamination γ_soft IDENTICAL OFF=ON=5.14e-10 (no mutual contamination). +1 integration CI test (32 registry pass). The real physiological cell with internal organelles, all LIVE | 003d195 | PASS |
 | 09:10 | comprehensive regression: full compartment + cell + cortex suites = 308 passed, 1 skipped (6.1s). All deep activation wiring (cell.py/manifest.py/cortical_tension.py) verified non-regressing | — | PASS |
 | 09:20 | COMPARTMENT_ACTIVATION_REMAINING_DECISIONS doc: each remaining compartment (LINC/SF/cadherin/membrane/junctional) reduced to a crisp PI physics-design decision + my recommendation. Phase-2 activation summary below | (this commit) | DOC |
+| 10:40 | ⭐**linc EXPERIMENTAL→LIVE** (4th graduation; REMAINING_DECISIONS recommended-order ①, Option A). linc.py: per-bond EXACT-r0 layout (LINCLayout + compute_linc_layout + extend_snapshot_with_linc_layout + configure_linc_bond_potential(layout=)) mirroring the FA molecular-clutch exact-r0 convention (16-bin would leave ~100s kT at stiff k_linc); rewrote extend_snapshot_with_linc fresh-`hoomd.Snapshot` (the in-place gsd mutation crashes on a hoomd.Snapshot — BondDataSnapshot has no whole-array setter). cell.py 5-pt wiring (import+sig+extend AFTER IF using nucleus_bead+if_bead typeid rows+per-bond shared-bond register+CellBuildOptions+Cell dataclass/build threading+handles); manifest stanza (requires nucleus+IF, capture_radius=IF l_seg + n_bridges_max=IF n_filaments geometry-derived); mcf7_baseline linc stanza (k_linc=1e-2 route-A); linc_coupled recipe; registry LIVE + particle_types_added=() fix | (this commit) | LIVE |
+| 10:40 | LINC ACTIVATION GATE (full physiological baseline, IF cage ON, OFF vs ON): **PASS** all 5 controls — bridges formed n=40 (REFUTE-guard, +0 particles bonds-only, +40 bonds/40 types); FORCE-FREE construction max strain 0.0 (per-bond EXACT-r0); ⭐NO-CONTAMINATION cortical γ_soft IDENTICAL OFF=ON=5.1411e-10 (linc_ registry-denylisted, all linc types excluded from mask); OFF-identity (+0 particles); CFL headroom dt_prod 1.30e-8 ≤ dt_cfl 6.21e-5 (~4 orders). ⚠FOUND+FIXED: many nucleus surface beads share one nearest if_bead → that if_bead's bond degree overflows the nlist exclusion cap (same class as MTOC) → added unique_acceptor greedy 1:1 matching (one nesprin per IF anchor, degree +1). +3 build tests (test_linc.py 45 pass; 149 compartment-suite pass). [2,10]pN resting-tension oracle DEFERRED (needs equilibration; raw full-cell run trips BAOAB guard) | (this commit) | GATE PASS |
 
 ### Phase-2 ACTIVATION summary (PI 소유권 허용)
-**3 compartments EXPERIMENTAL→LIVE** with passing activation gates: osmotic_regulation
+**4 compartments EXPERIMENTAL→LIVE** with passing activation gates: osmotic_regulation
 (τ_RVD in band, RVD sign, no-contam), microtubules (aster, CFL, no-contam γ identical;
 n_mt≤7 cap blocker found+documented), intermediate_filaments (cage, no-contam; linear
-path, nonlinear PI-pending). **+ registry-driven γ-denylist** (unblocks no-contamination
-for all). **+ internal_live integration capstone** (all 3 in one cell, no contamination).
-**6 crash-on-enable bugs fixed total** this session: cadherin image; IF velocity; IF angles
-(+ the earlier-session find). **308 compartment/cell/cortex tests pass.** Remaining 5
-need PI physics-design decisions (see REMAINING_DECISIONS doc) — recommendations given;
-proceeding with recommended choices unless PI redirects.
+path, nonlinear PI-pending), **linc** (Option A nucleus↔IF-cage per-bond EXACT-r0 bridges;
+bridges-formed + force-free + no-contam γ identical + CFL ~4-order headroom; [2,10]pN
+oracle deferred; unique-acceptor degree fix). **+ registry-driven γ-denylist** (unblocks
+no-contamination for all). **+ internal_live integration capstone** (osmotic+MT+IF in one
+cell, no contamination). **6 crash-on-enable bugs fixed** + **1 nlist exclusion-cap fix**
+(LINC acceptor-degree). **149 compartment-suite tests pass** (LINC + registry + canary + IF
++ MT; full compartment/cell/cortex green modulo the pre-existing KU-3.5 motors-off baseline
+failure, unrelated to platform work). Remaining 4 (ventral_stress_fibers, membrane_reservoir,
+cadherin_junction, junctional_actin) need PI physics-design decisions (see REMAINING_DECISIONS)
+— recommendations given; proceeding with recommended choices unless PI redirects.

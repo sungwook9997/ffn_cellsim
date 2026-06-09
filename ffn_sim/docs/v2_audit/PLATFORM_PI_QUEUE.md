@@ -11,6 +11,34 @@
   strain-stiffening Table law stays PI-pending (NotImplementedError) → SECONDARY
   stiffening gate deferred. Fixed 2 crash-on-enable bugs (gsd-None velocity/angles
   guards in the IF extender — masked by the smoke, caught by the real build).
+- **linc → LIVE** (gate PASS: bridges formed n=40, FORCE-FREE per-bond EXACT-r0,
+  γ_soft IDENTICAL OFF/ON = no contamination, off-identity +0 particles, CFL ~4-order
+  headroom). Option A: bonds nucleus_bead → nearest perinuclear if_bead (the LIVE IF
+  cage); requires=('nucleus','intermediate_filaments'). Per-bond EXACT-r0 (FA-clutch
+  convention) so each bridge is force-free at its as-built separation. Added
+  `unique_acceptor` 1:1 matching (one nesprin per IF anchor) to bound per-if_bead bond
+  degree — WITHOUT it the nlist per-particle exclusion cap overflows (same class as MTOC).
+  **PI items to ratify (LINC is LIVE but these are pending):**
+  - **k_linc = 1e-2 N/m** (route-A folded-rod pre-unfolding secant, Rief 1999; ORDER, conf
+    MEDIUM). Module default stays None (un-configured enabled build raises); the config
+    carries the candidate. PI to ratify route A vs B (WLC entropic ~6e-6) vs C (md.bond.Table
+    nonlinear). Also the 2→8 pN f_rest re-anchor + Déjardin-vs-Arsenovic attribution + the 6
+    SourceEvidence rows (Rief99, Déjardin20, Arsenovic16, Autore13, Crisp06, Lombardi11) before
+    any deliverable cite.
+  - ⚠ **Mesoscale-r0 fidelity caveat (FOLLOW-UP).** At the ×40 mesoscale the nucleus↔if_bead
+    bead separation is ~0.5-1.5 µm (NOT the 50 nm real nesprin span), so r0 is an EFFECTIVE
+    mesoscale coupling length and the 8 pN f_rest oracle is approximate. **Option C** (seed a
+    dedicated R_nuc+50 nm perinuclear acceptor cap — a new particle layer) is the faithful-span
+    alternative; surfaced per the "fidelity-impact → PI queue" rule. The gate's no-contamination
+    + force-free + bridges-formed controls hold regardless; the [2,10] pN <T_linc> resting-tension
+    oracle is the deferred physics gate (needs an equilibrated actomyosin run; raw full-cell run
+    trips the BAOAB guard — equilibration prelude required, same as the other compartments).
+  - ⚠ **GPU many-bond-types perf (FOLLOW-UP).** Per-bond EXACT-r0 mints one bond type per bridge
+    (~n_IF_filaments); combined with IF's 16 crosslink bins HOOMD warns "many bond types perform
+    poorly / shared-memory errors on the GPU." Fine for the CPU build-time gate; flag for the GPU
+    production path (a coarser shared per-r0 bin needs ~hundreds of bins at k_linc=1e-2 to stay
+    thermal, so exact-r0 is actually the leaner choice — a native bond plugin or a stiffness-aware
+    binning is the real fix).
 - **cortical_tension γ-denylist → registry-driven** (`NONCORTICAL_COMPARTMENT_PREFIXES`
   = `REGISTRY.gamma_denylist()` minus `cortex_*`). Unblocks the no-contamination control
   for every γ-contaminating compartment. ⚠️ sibling Gate-B owns this file → merge-coordinate.

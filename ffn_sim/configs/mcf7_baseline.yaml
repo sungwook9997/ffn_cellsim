@@ -175,3 +175,17 @@ optional_subsystems:
                          # d_if=10e-9, max_stretch_ratio=3.0 (Kreplak) use module defaults.
                          # The nonlinear strain-stiffening Table law is PI-pending
                          # (NotImplementedError); the LIVE path is the linear small-strain cage.
+  linc:                  # H.LINC nesprin-SUN bridges (nucleus ↔ IF cage) — LIVE 2026-06-09
+    enabled: false       # default-OFF; linc_ bonds γ-denylisted (registry-driven).
+                         # Option A: bonds nucleus_bead → nearest perinuclear if_bead
+                         # (requires intermediate_filaments + nucleus ON), per-bond
+                         # EXACT-r0 (force-free at the as-built separation). capture_radius
+                         # (= IF l_seg) and n_bridges_max (= IF n_filaments) are
+                         # geometry-derived from the IF cage in manifest.resolve_baseline.
+    k_linc: 1.0e-2       # N/m per-nesprin stiffness. ROUTE A (Rief 1999 folded-rod
+                         # pre-unfolding secant); ORDER / conf MEDIUM — PI-pending
+                         # ratification (module default None; this candidate makes the
+                         # LIVE path runnable). ⚠ At the ×40 mesoscale the nucleus↔if_bead
+                         # separation is ~0.5-1.5 µm (NOT the 50 nm real nesprin span), so
+                         # r0 is an EFFECTIVE mesoscale coupling length and the 8 pN f_rest
+                         # oracle is approximate — see PLATFORM_PI_QUEUE.

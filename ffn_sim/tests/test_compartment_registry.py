@@ -252,12 +252,16 @@ def test_forcing_experimental_into_enable_raises():
 
 def test_forcing_experimental_non_strict_defers():
     base = load_manifest("mcf7_baseline.yaml")
-    # linc is still EXPERIMENTAL (osmotic_regulation / microtubules /
-    # intermediate_filaments graduated LIVE 2026-06-09). It requires nucleus,
-    # which suspended_round enables, so it defers cleanly (no dependency error).
-    recipe = {"name": "bad", "enable": list(load_recipe("suspended_round")["enable"]) + ["linc"]}
+    # membrane_reservoir is still EXPERIMENTAL (osmotic_regulation / microtubules /
+    # intermediate_filaments / linc graduated LIVE 2026-06-09). It requires
+    # membrane_surface, which is baseline-required (suspended_round enables it),
+    # so it defers cleanly (no dependency error).
+    recipe = {
+        "name": "bad",
+        "enable": list(load_recipe("suspended_round")["enable"]) + ["membrane_reservoir"],
+    }
     manifest, deferred = REGISTRY.compose_manifest(recipe, base_manifest=base, strict=False)
-    assert "linc" in deferred
+    assert "membrane_reservoir" in deferred
 
 
 def test_dropping_baseline_compartment_raises():
