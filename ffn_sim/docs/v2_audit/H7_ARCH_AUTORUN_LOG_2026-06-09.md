@@ -76,3 +76,20 @@ It's a brief-literal CONTRACT value → PI sign-off + literature anchor (NOT inl
 k_backbone=1e-2 → τ_backbone≈39ns≈3×dt — the "far above CFL" note breaks; re-derive (cortex
 cfl_safety_factor, not frozen integrator/) or use M-SHAKE rigid. HALT→PI for the contract sign-off.
 doc §7. No param changed.
+
+## LOOP 6 (PI: "2D 표면 메시 최적화 (a)(b) 적대적 검토"): 5-agent adversarial workflow
+PI asked whether the long-ago "2D surface mesh to optimize the cortex" directive was implemented (it was NOT —
+cortex network is pure-3D bead-spring; surface_manifold.py is geometry-only + unused in the cortex/γ path; the
+2026-06-07 H7_CORTEX_AS_MESH explicitly REJECTED mesh-as-cortex as coarse-graining). Ran workflow wf_c27dc37d
+(advocate-A ∥ advocate-B → cross-adversarial audit ∥ → synthesis). RESULT: (A) search/coord optimization
+SURVIVES (moderate) but ORTHOGONAL to γ + CPU search 7-30× SLOWER than scipy cKDTree at ×40 (win only GPU-
+resident); real value = deformable coordinate frame for spreading cell; NEW hole = stale bead_tri drops 21-56%
+binding pairs on deforming cortex (needs refresh-vs-drift gate). (B) 2D-network reorg DOES NOT SURVIVE (major):
+0× of the gap, its geodesic-vs-chord claim ILLUSORY (kring_for_reach is broad-phase over-selector → identical
+chord set per VG-6), 4-7d rebuild + fidelity-slip risk → A strictly dominates B; decide A-or-nothing not A-vs-B.
+⭐CRUX (both audits+synth): NEITHER fixes transmission; the actual lever is the SEPARATE stiffness unit-slip
+contract correction (k_head_actin 1e-6→1e-3 verified in-config phase1_h3.yaml:331,333 vs phase1_h4.yaml:98;
+crosslink k_intra=k_attach=1e-7 re-anchor; crosslinkers.py:514 documents the softness) + O2 myosin-overlap.
+3 independent PI decisions: (1) transmission stiffness fix = urgent/separate/do-regardless; (2) A-or-nothing;
+(3) if A: scope as spatiality not speed, GPU-resident, add staleness gate, defer k_conf. doc
+H7_2D_MESH_AB_DECISION_2026-06-09.md.
