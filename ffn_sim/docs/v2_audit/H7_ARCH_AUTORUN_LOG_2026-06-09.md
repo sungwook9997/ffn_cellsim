@@ -347,3 +347,14 @@ heads) is untested = the genuine joint test of rectification+magnitude. PI decis
 single high-density SF run (~200-300 minifil) — does per-SF differential converge sign-definite as
 N_heads grows? + cheap check that myosin placement enforces antiparallel-overlap engagement. Trail:
 outputs/h7/production/h7_sarc_cpu_s{1,2,3,5,6}.json, ensemble.sh. (gpu_s1 + cpu_s4 pending, confirm-only.)
+
+## LOOP 24c (2026-06-10): PI-directed high-density test — does per-SF sign converge as N_heads grows?
+PI chose the high-density SF test. Construction-physics insight while sizing it: the myosin 401nm
+pairwise-spacing cap means minifilaments pack along the FIBER LENGTH in a thin (400nm) bundle, and
+SERIES sarcomeres share tension (don't add force) — so neither lengthening nor thickening-at-fixed-
+radius adds parallel force. The force-adding axis is a WIDER bundle (more PARALLEL minifilaments per
+cross-section). Sweep: bundle_radius 800/1200/1600nm × n_cross 12/24/48 × n_motors 28/55/100 (P2/P3/P4)
+× seeds 1-4 → ~84/165/300 engaged heads (vs baseline ~50). Per level: across-seed mean±std of the
+coherent differential → does std/|mean| shrink + sign stabilize as parallel N_heads grows? gbook 12
+runs parallel, ETA ~2h. Also running a local placement-sanity check (does the sarcomeric construction
+enforce antiparallel-overlap engagement, or same-polarity = the sign-noise source).
