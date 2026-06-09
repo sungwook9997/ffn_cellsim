@@ -85,15 +85,17 @@ All under `ffn_sim/outputs/compartment_smoke/figs/` (SMOKE-watermarked):
 Single entry point `ffn_sim/scripts/compartment_vis.py` builds the FULL physiological
 MCF7 cell with EVERY LIVE compartment ON (cortex+myosin+xlink spine · baseline
 cytoplasm/turgor/nucleus/membrane-surface · osmotic · MT aster · IF cage · LINC
-bridges; 19,656 particles) and renders the ACTUAL constructed geometry. Under
-`ffn_sim/outputs/h7/figs/`:
-- `compartment_cell_overview.png` — 4 panels: 3D scatter of the whole cell;
-  equatorial (|z|<0.75 µm) cross-section with the explicit MT/IF/LINC bonds drawn;
-  meridional (|y|<0.75 µm) cross-section; and the per-compartment radial density
-  profile (each shell at its physiological radius: cortex at R_cell=7.5 µm, filled
-  nucleus core to R_nuc, IF cage just outside the nucleus, MT aster from the MTOC).
-- `compartment_cell_3d.png` — standalone larger 3D view (spherical cortex shell +
-  internal organelles).
+bridges · membrane reservoir; ~21.6k particles) and renders the ACTUAL constructed
+geometry **SimuCell3D-style** (smooth closed surfaces + cutaway, NOT a point cloud).
+3 panels: (1) the cell surface — faceted cortex shell + plasma membrane; (2) a
+CUTAWAY (near hemisphere opened) exposing the translucent nucleus + the explicit
+internal architecture (IF cage, MT aster radiating from the MTOC, LINC bridges) as
+bonds; (3) per-compartment radial density profile (each shell at its physiological
+radius — cortex at R_cell=7.5 µm, nucleus core to R_nuc, IF cage just outside).
+**VERSIONED (PI 2026-06-09): figures accumulate, never overwrite** — each run writes
+`ffn_sim/outputs/h7/figs/morphology/cell_vNN_<label>.png` so the cell's development
+across activations is preserved; `cell_latest.png` points at the newest. Run with
+`--label TEXT` to tag the milestone.
 - `h7_linc_activation_gate.png` — LINC gate: nucleus↔IF bridges, per-bond EXACT-r0
   histogram (force-free), cortical γ_soft identical OFF vs ON (no contamination).
 - `h7_membrane_reservoir_activation_gate.png` — membrane gate: own mem_node layer +
