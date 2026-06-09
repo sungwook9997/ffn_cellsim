@@ -93,3 +93,19 @@ crosslink k_intra=k_attach=1e-7 re-anchor; crosslinkers.py:514 documents the sof
 3 independent PI decisions: (1) transmission stiffness fix = urgent/separate/do-regardless; (2) A-or-nothing;
 (3) if A: scope as spatiality not speed, GPU-resident, add staleness gate, defer k_conf. doc
 H7_2D_MESH_AB_DECISION_2026-06-09.md.
+
+## LOOP 7 (PI chose A): ManifoldIndex Step-1 — built + VG-6 PASS + staleness gate HOLDS
+PI: "A" (manifold as search/coord accelerator, scoped: spatiality not speed, GPU-resident eventual, staleness
+gate, defer k_conf, NOT a γ fix). Built cortex/manifold_index.py (ManifoldIndex wrapper over surface_manifold;
+persistent bead→patch map + geodesic k-ring candidate gather + drift-staleness policy; ZERO mechanics/γ DOF).
+Validation h7_manifold_index_validate.py on the REAL connected-cortex cloud (3279 beads, reach 841nm):
+VG-6 candidate-set identity = **PASS** (index within-reach pairs byte-identical to global cKDTree, missed=0
+extra=0) at subdiv 3(1280 tri,k=6) AND subdiv 4(5120 tri,k=7). ⭐STALENESS GATE: the audit-predicted 21-56%
+miss DOES NOT materialize — geometry-derived conservative kring_for_reach(reach+2·circumradius+safety) absorbs
+~1-patch drift: miss ~0% even at 3× drift_threshold (worst 3 pairs=0.02% at subdiv4). So the SAME over-coverage
+that guarantees VG-6 ALSO gives drift-robustness → correctness SAFE to wire. Cost: that over-coverage = a large
+pool = CPU-slow (matches the audit's "slower than cKDTree" → speed needs GPU-residency). 5 unit tests PASS
+(VG-6, staleness-below-gate, derived-k, empty/boundary, no-mechanics fidelity guard). NEXT (pending): cupy
+GPU-resident gather + wire the 4 binder cKDTree sites (assert identical bind/break counts) OR the deformable
+coordinate-frame use (normals for enclosed_volume/membrane_surface). Transmission stiffness fix stays a
+SEPARATE PI-gated track (unchanged). doc H7_2D_MESH_AB_DECISION §A.

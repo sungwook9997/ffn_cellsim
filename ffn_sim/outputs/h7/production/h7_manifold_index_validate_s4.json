@@ -1,0 +1,87 @@
+{
+  "scale": {
+    "n_beads": 3279,
+    "n_filaments": 1000,
+    "R_um": 7.5,
+    "reach_nm": 840.7486824596892,
+    "n_tri": 5120,
+    "k_ring": 7,
+    "circumradius_nm": 357.6856673588044
+  },
+  "note": "Option-A ManifoldIndex validation; geometry only; NOT a \u03b3 test; no config change.",
+  "verdict": {
+    "vg6_pass": true,
+    "vg6_missed": 0,
+    "vg6_extra": 0,
+    "drift_threshold_nm": 178.8428336794022,
+    "max_miss_fraction_below_gate": 0.0,
+    "max_miss_fraction_overall": 0.0001615421894351408,
+    "gate_holds": true
+  },
+  "drift_sweep": [
+    {
+      "drift_max_nm": 0.0,
+      "actual_max_drift_nm": 0.0,
+      "n_truth_pairs": 20483,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 76.6469287197438,
+      "actual_max_drift_nm": 76.60187001555099,
+      "n_truth_pairs": 20459,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 153.2938574394876,
+      "actual_max_drift_nm": 153.29095879669572,
+      "n_truth_pairs": 20377,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 229.94078615923138,
+      "actual_max_drift_nm": 229.90364050863852,
+      "n_truth_pairs": 20228,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 306.5877148789752,
+      "actual_max_drift_nm": 306.4317748434445,
+      "n_truth_pairs": 19982,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 383.234643598719,
+      "actual_max_drift_nm": 383.0877371976594,
+      "n_truth_pairs": 19569,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 459.88157231846276,
+      "actual_max_drift_nm": 459.72646474696705,
+      "n_truth_pairs": 19068,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 536.5285010382066,
+      "actual_max_drift_nm": 536.2402696766404,
+      "n_truth_pairs": 18571,
+      "n_missed": 3,
+      "miss_fraction": 0.0001615421894351408,
+      "past_gate": true
+    }
+  ]
+}

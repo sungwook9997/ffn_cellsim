@@ -1,0 +1,103 @@
+{
+  "scale": {
+    "n_beads": 3279,
+    "n_filaments": 1000,
+    "R_um": 7.5,
+    "reach_nm": 840.7486824596892,
+    "n_tri": 1280,
+    "k_ring": 6,
+    "circumradius_nm": 712.943116381589
+  },
+  "note": "Option-A ManifoldIndex validation; geometry only; NOT a \u03b3 test; no config change.",
+  "verdict": {
+    "vg6_pass": true,
+    "vg6_missed": 0,
+    "vg6_extra": 0,
+    "drift_threshold_nm": 356.4715581907945,
+    "max_miss_fraction_below_gate": 0.0,
+    "max_miss_fraction_overall": 0.0,
+    "gate_holds": true
+  },
+  "drift_sweep": [
+    {
+      "drift_max_nm": 0.0,
+      "actual_max_drift_nm": 0.0,
+      "n_truth_pairs": 20483,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 118.82385273026483,
+      "actual_max_drift_nm": 118.75399932686484,
+      "n_truth_pairs": 20417,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 237.64770546052966,
+      "actual_max_drift_nm": 237.64321176573984,
+      "n_truth_pairs": 20186,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 356.4715581907945,
+      "actual_max_drift_nm": 356.4139722002096,
+      "n_truth_pairs": 19771,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": false
+    },
+    {
+      "drift_max_nm": 475.29541092105933,
+      "actual_max_drift_nm": 475.0536609106396,
+      "n_truth_pairs": 19046,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 594.1192636513242,
+      "actual_max_drift_nm": 593.8915182627455,
+      "n_truth_pairs": 18022,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 712.943116381589,
+      "actual_max_drift_nm": 712.7026569197349,
+      "n_truth_pairs": 16984,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 831.7669691118538,
+      "actual_max_drift_nm": 831.3201311050211,
+      "n_truth_pairs": 15933,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 950.5908218421187,
+      "actual_max_drift_nm": 950.5562847190691,
+      "n_truth_pairs": 14749,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    },
+    {
+      "drift_max_nm": 1069.4146745723835,
+      "actual_max_drift_nm": 1069.1428720308309,
+      "n_truth_pairs": 13831,
+      "n_missed": 0,
+      "miss_fraction": 0.0,
+      "past_gate": true
+    }
+  ]
+}
