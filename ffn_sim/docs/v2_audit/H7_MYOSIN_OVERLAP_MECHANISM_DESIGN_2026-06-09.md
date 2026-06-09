@@ -287,3 +287,38 @@ The cap is verified; the MAGNITUDE (s_grip→F_stall over ~1e7 steps → γ → 
 envelope, ~18× under band = the KNOWN density/overlap gap, band LOCKED) needs the long
 GPU contraction run (Mac→gbook rsync, PI-approved remote-overwrite). Best run AFTER the
 crosslink decision (the transmission lever co-determines the network γ).
+
+## 11. ventral SF 2c RESULT (2026-06-09 loop20-21): traction needs SARCOMERIC organization
+
+The §9-corrected continuous_stroke motor was placed on the ventral stress fiber (2b-2,
+loop19) and the traction measured by a SAME-SEED PAIRED differential (force_scale 1 vs 0;
+identical bundle/binding/thermostat → thermal noise cancels exactly; loop20) with a
+COHERENT signed-traction observable (the two FA ends pulled together, vs the Σ|T|
+fluctuation magnitude that first misled; loop21).
+
+GPU result (n_fil=24, 20 minifilaments, 68 engaged heads): coherent traction force-OFF
++3476±752 pN (passive EV/bundling pre-tension), force-ON +3414±891 pN, DIFFERENTIAL
+**−61.45 ± 27.74 pN** — significant (|−61| > 2σ) and NEGATIVE (slackening). The myosin
+exerts ~61 pN of net effect (68 heads × ~1 pN axial) but it is NOT rectified into end-ward
+contraction; it slightly relieves the pre-tension.
+
+**Interpretation.** The per-head generation fix is sound (F_stall reached, verified on the
+cortex). The deficit here is STRUCTURAL: a RANDOM MIXED-POLARITY end-anchored bundle does
+not convert bipolar myosin sliding into coherent end-ward traction. This REFINES the
+adherent-pivot hypothesis (§2 of H7_ADHERENT_VENTRAL_PIVOT, "aligned + end-anchored
+suffices"): the missing ingredient is **SARCOMERIC POLARITY ORGANIZATION** — Hotulainen &
+Lappalainen 2006 ventral SF have GRADED polarity (barbed/+ ends at the FAs, pointed/− ends
+overlapping at the centre) with PERIODIC α-actinin spacing, the sarcomere-like units that
+RECTIFY myosin sliding into directional contraction. Our bundle has random ± polarity
+without that organization, so the sliding does not rectify.
+
+**Methodology validated.** The same-seed paired + coherent-signed traction probe resolves
+a 61 pN signal at a ±28 pN floor (the absolute coherent traction fluctuates ±750 pN) —
+~25× better than the naive different-realization Σ|T| differential. Reusable for the
+sarcomeric-SF re-measure.
+
+**NEXT (new construction, PI-gateable).** Build a graded-polarity sarcomeric ventral SF
+(+ ends → FAs, − ends → centre overlap, periodic α-actinin) and re-run the same-seed
+coherent differential — the prediction is a POSITIVE (contractile) traction, which would
+confirm that traction emerges from {corrected motor} × {sarcomeric structure}, the platform
+observable the adherent pivot targets.

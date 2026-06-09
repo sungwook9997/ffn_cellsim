@@ -279,3 +279,19 @@ overlap+engagement gap (band LOCKED, NOT tuned). §9 GENERATION FIX VERIFIED: ol
 
 ## GPU RUN: SF same-seed differential launched (PID 344489, n_fil=24, 20 motors, 150k+150k ×2)
 Develops engagement for a significant positive traction signal. Pending (~50min).
+
+## LOOP 21 (SF 2c coherent observable) + GPU RESULT: alignment+anchoring is NOT sufficient
+Fixed the 2c observable: anchor_traction now returns the COHERENT signed contractile traction (two
+FA-ends pulled toward each other; thermal cancels) vs the old Σ|T| (fluctuation magnitude, which gave
+the misleading −701pN). Commit dd2ee1f. GPU same-seed coherent run (n_fil=24, 20 motors, 68 engaged
+heads): COHERENT force-OFF +3476±752 pN (passive EV/bundling pre-tension), force-ON +3414±891 pN,
+DIFFERENTIAL = −61.45 ± 27.74 pN — SIGNIFICANT (|−61|>2σ=55) and NEGATIVE (slackening). 68 heads ×
+~1pN ≈ 61pN, so the §9 myosin IS exerting force but it is NOT rectified into end-ward contraction.
+⭐ FINDING: the §9-corrected motor generates F_stall (verified on cortex), but on a RANDOM MIXED-POLARITY
+end-anchored bundle that force does NOT produce net contractile traction — it slightly slackens. The
+adherent-pivot §2 claim ("aligned + end-anchored suffices") is REFINED: the missing ingredient is
+SARCOMERIC POLARITY ORGANIZATION (Hotulainen-Lappalainen graded polarity: + ends at FAs, − ends
+overlapping at centre, periodic α-actinin) that rectifies bipolar myosin sliding into directional
+contraction. The same-seed COHERENT method (±28pN floor, resolved a significant 61pN) is validated as
+the reusable traction probe. NEXT (PI-gateable, new construction): graded-polarity sarcomeric SF layout
+→ re-measure (expect +contractile). docs design §11.
