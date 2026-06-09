@@ -127,3 +127,12 @@ ventral SF (build needed). Wrote design H7_ADHERENT_VENTRAL_PIVOT_2026-06-09.md 
 ventral-SF structure + measurement plan + sanity gates + lane: mine=cortex/SF/myosin on flat ventral, consume
 FA/substrate interface, don't touch other session). NEXT: Stage 1 consistent flat-ventral geometry (no S1/B1
 mismatch), then ventral SF build, then traction measurement. Soft-coupling fix = separate track.
+
+## LOOP 9: ADHERENT pivot Stage-1a — consistent flat-ventral geometry (S1=B1 flat, no mismatch)
+Added press_onto_substrate(manifold, z_basal) to cortex/manifold_index.py (set_verts only, no edit to shared
+surface_manifold; clamps verts below z_basal onto the substrate plane → flat ventral + rounded apical = the
+adherent shape PI specified). Proved CONSISTENCY: pressed flat-ventral S1 + a flat-ventral B1 actin cloud →
+ManifoldIndex VG-6 candidate identity HOLDS (test_adherent_flat_ventral_consistency) — the S1-curved/B1-flat
+mismatch (and its spurious "curvature option") is gone. 6 manifold_index tests pass. Geometry only, no
+mechanics/γ, in-lane (cortex/). NEXT: Stage 1b flat-ventral actin construction (cortex on the flat disk),
+Stage 2 ventral SF (aligned bundle + myosin + α-actinin + FA-anchored ends), Stage 3 traction measurement.

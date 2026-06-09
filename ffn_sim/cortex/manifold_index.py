@@ -165,6 +165,30 @@ class ManifoldIndex:
         return out
 
 
+def press_onto_substrate(manifold: SurfaceManifold, z_basal: float) -> SurfaceManifold:
+    """Deform a (suspended) sphere manifold into the ADHERENT cell shape: clamp every
+    vertex below ``z_basal`` up onto the substrate plane z = z_basal, leaving the upper
+    body rounded — a FLAT VENTRAL surface + rounded apical (PI 2026-06-09 adherent pivot).
+
+    Uses only :meth:`SurfaceManifold.set_verts` (no edit to the shared manifold class) so
+    the ventral region becomes a flat triangulated patch CONSISTENT with the flat ventral
+    filament placement (removes the S1-curved / B1-flat mismatch that produced the spurious
+    "curvature option"). GEOMETRY ONLY — no mechanics, no γ.
+
+    Args:
+        manifold: an icosphere (or any) surface manifold, modified in place.
+        z_basal: the substrate plane height [m] (verts below it are clamped onto it).
+
+    Returns:
+        ``manifold`` (pressed in place via ``set_verts``).
+    """
+    verts = manifold.verts.copy()
+    below = verts[:, 2] < z_basal
+    verts[below, 2] = z_basal
+    manifold.set_verts(verts)
+    return manifold
+
+
 def global_pairs_within_reach(
     pos: np.ndarray, reach: float, *, exclude_self: bool = True
 ) -> set[tuple[int, int]]:
