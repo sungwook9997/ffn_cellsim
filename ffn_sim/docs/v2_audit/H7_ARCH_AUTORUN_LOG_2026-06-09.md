@@ -136,3 +136,12 @@ ManifoldIndex VG-6 candidate identity HOLDS (test_adherent_flat_ventral_consiste
 mismatch (and its spurious "curvature option") is gone. 6 manifold_index tests pass. Geometry only, no
 mechanics/γ, in-lane (cortex/). NEXT: Stage 1b flat-ventral actin construction (cortex on the flat disk),
 Stage 2 ventral SF (aligned bundle + myosin + α-actinin + FA-anchored ends), Stage 3 traction measurement.
+
+## LOOP 10: ADHERENT pivot Stage-2a — ventral stress-fiber LAYOUT (aligned + FA-anchored ends)
+Built cortex/ventral_stress_fiber.py: generate_ventral_sf_layout — explicit bead-spring actin bundle on the
+flat ventral plane, ALIGNED along x̂, MIXED polarity (Hotulainen-Lappalainen 2006: ventral SF graded/mixed so
+bipolar myosin finds antiparallel overlap to contract), thin bundle cross-section, FA-ANCHOR beads = the two
+extreme-x ends of each filament (the substrate-pin / traction-reaction set). This is the aligned+end-anchored
+architecture the suspended isotropic sphere lacked (pivot §2/§6). Fine-grained (bead-spring, no lumped bundle).
+6 sanity-gate tests PASS (dims/topology, ventral-above-substrate, aligned-along-axis, mixed-polarity,
+anchors-are-ends, boundary). Geometry only; myosin/α-actinin = Stage 2b, traction (FA-anchor reaction) = 2c.
