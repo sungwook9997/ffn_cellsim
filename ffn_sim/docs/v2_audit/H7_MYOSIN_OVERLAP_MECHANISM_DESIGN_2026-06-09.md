@@ -231,3 +231,59 @@ edits reverted (no broken/under-resolved intermediate). Fix fully specified abov
 focused, sanity-gated effort (md.force.Custom = per-step host-sync, the GPU-main-port territory —
 so the cupy/native path is the production form). The CFL re-derivation (k_backbone=1e-2 →
 τ≈39 ns) and the crosslink k re-anchor remain part of the atomic set.
+
+## 10. ✅ EXECUTION (2026-06-09 loop14-17): continuous_stroke built + generation-fix verified
+
+The §9 fix is built as opt-in `stepping_mode="continuous_stroke"` and the GENERATION
+half (items 1-4) is verified; item 5 (crosslink) is surfaced to PI below.
+
+- **Item 1+3 (continuous custom force) — DONE, hermetic (loop14, commit 8dc2680).**
+  `MyosinHeadForce(md.force.Custom)`: per engaged head F=min(k·s_grip, F_stall) along
+  head→bead (reaction on head, Newton-3). Attach bond demoted to k=0 (Bell-Evans
+  off-rate + nlist exclusion only; Bell-Evans uses the delivered force). 13 sanity-gate
+  tests PASS (dimensional, boundary 0@s=0 + cap@F_stall, Newton-3, contractile sign,
+  delivered |F|=F_stall NOT k·r, legacy byte-identical). grip_walk/binned_r0 unchanged.
+- **Item 2 (k 1e-6→1e-3) — DONE, MODE-COUPLED (loop16, commit ab376de).**
+  `k_cross_bridge_continuous=1e-3` in phase1_h3.yaml (Magic-Number Block: canonical
+  bridge/motor + Veigel 2002/Kaya 2010/Finer 1994, 0.3-2 pN/nm). Applied ONLY in
+  continuous_stroke (the stiff k explodes the harmonic k·r in legacy modes = loop12).
+- **Item 4 (CFL) — DONE (loop16).** `reconcile_dt` folds myosin k_backbone (=1e-2,
+  τ_backbone=9.2ns meso) → integrator dt lowered 1.30e-8→9.22e-10 s (14.1×), NO edit
+  to the frozen integrator/. Smoke STABLE (3300 steps, all finite, NO blowup);
+  per-head delivered T=1.15pN tracking k·s_grip, capped << F_stall=8.48pN — NOT the
+  k·r=930pN explosion. The generation fix works end-to-end.
+- **Binding range 330nm — KEPT (not shrunk).** The §9 shrink rationale was bin-
+  resolution-specific (r0 quantization can't resolve the 4nm stroke over 330nm). With
+  the continuous custom force, r does NOT enter the force → no explosion → no shrink
+  needed; the head reach is already gated by capture_perp=210nm≈head_rest_length.
+
+### ⛔ Item 5 (crosslink k re-anchor) → PI DECISION (gate-contract / production-wide)
+
+KB verification (tag_query.py, 2026-06-09):
+- **KB-1.28** (verified, High): the shared crosslink bond Hamiltonian H=(k_xl/2)|r|²
+  with **k_xl ≈ 1e-4–1e-2 N/m, default 1e-3 N/m (1 pN/nm)**.
+- The cortex `dynamic_crosslinkers.k_intra = k_attach = 1.0e-7 N/m` is **~10⁴× below**
+  the KB-1.28 default and 10³× below its range floor (1e-4).
+- The config's anchor comment ("0.1 pN/µm, KU-3.19 (Furuike 2001)") does NOT match a
+  stiffness datum: KB-3.19 specifies crosslinker KINETICS (off-rates) only — NO k; and
+  Furuike 2001 is filamin UNFOLDING kinetics, not a 0.1 pN/µm spring constant. This
+  looks like the same mis-attribution class the 2026-06-02/06-08 audits found.
+
+⇒ The 1e-7 crosslink stiffness is very likely a soft-coupling slip (§8 named it the
+"SEPARATE soft transmission link"). Re-anchoring to KB-1.28 (→ 1e-3 N/m) is the
+literature-first call. BUT it is a **production-wide gate-contract change**: it affects
+EVERY cortex build (grip_walk production + the other session's compartment platform +
+the already-run Gate-A/B), and the molecular stiffness of a FLEXIBLE crosslinker vs the
+simulation harmonic-bond stiffness are distinct concepts (the KB range spans 100×). CFL
+is not tightened (τ_xl=391ns at 1e-3 ≫ the 9.2ns myosin dt). Per the mission rule
+("crosslink k는 문헌검증 후, 불확실시 PI surface" + gate-contract→PI sign-off), NOT
+changed inline. **PI: re-anchor k_intra/k_attach 1e-7→1e-3 (KB-1.28), or confirm the
+1e-7 with a correct single-molecule anchor?** Note: the generation fix needs no crosslink
+change to verify; crosslink stiffness is the downstream transmission lever (smoke WALL-A
+propagation already 66.8% in the connected mesh).
+
+### Remaining: M4 GPU magnitude validation (gbook)
+The cap is verified; the MAGNITUDE (s_grip→F_stall over ~1e7 steps → γ → the full-stall
+envelope, ~18× under band = the KNOWN density/overlap gap, band LOCKED) needs the long
+GPU contraction run (Mac→gbook rsync, PI-approved remote-overwrite). Best run AFTER the
+crosslink decision (the transmission lever co-determines the network γ).

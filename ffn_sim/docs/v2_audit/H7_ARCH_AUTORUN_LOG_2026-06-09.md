@@ -187,3 +187,54 @@ redesign than config+bins. ALL edits reverted (no under-resolved intermediate). 
 H7_MYOSIN_OVERLAP_MECHANISM_DESIGN §9. CFL (τ_backbone~39ns) + crosslink re-anchor remain in the atomic set.
 HALT→PI: the unit-slip fix = a custom-force myosin redesign (host-sync/GPU-main territory) — execute as focused
 sanity-gated effort? doc §9.
+
+## LOOP 14 (§9 execution, Increment 1): continuous per-head custom force — HERMETIC, PASS
+Built the §9 fix the bin scheme couldn't deliver (loop13): opt-in stepping_mode="continuous_stroke".
+MyosinHeadForce(md.force.Custom) delivers per engaged head F=min(k_head_actin·s_grip, F_stall) along
+the head→bead unit vector (reaction on head, Newton-3 pair) — REPLACES the harmonic attach bond as the
+force-bearing element, so the k·r explosion (~322pN at stiff k=1e-3, loop12) is capped at F_stall by
+construction. Attach bond demoted to k=0 (Bell-Evans off-rate + nlist exclusion ONLY, no double-count);
+Bell-Evans Step 1 uses the delivered force for this mode. Reuses grip_walk binding+s_grip-walk+bipolar
+gate verbatim; grip_walk/binned_r0 BYTE-IDENTICAL. 13 new sanity-gate tests PASS (dimensional, boundary
+0@s=0 + cap@F_stall, Newton-3 Σforce=0 + F[bead]=-F[head], contractile sign, delivered |F|=F_stall NOT
+k·r, legacy bond reg unchanged). NO config/CFL change yet (k stays 1e-6, existing gates green). Commit
+8dc2680. NEXT (Increment 2): cell.py wiring (append MyosinHeadForce to integrator when continuous_stroke)
++ config k 1e-6→1e-3 (Magic-Number Block, canonical bridge/motor + Veigel/Kaya anchor) + CFL re-derive
+(k_backbone=1e-2 → τ~9-39ns, shrink dt via cortex cfl_safety_factor; integrator/ untouched) + crosslink
+k re-anchor (lit-verify α-actinin OR PI surface) → h7_active_force_budget smoke: per-head delivered T
+caps at F_stall + γ rises to full-stall envelope. GPU cupy port = follow-up (host-sync now).
+
+## LOOP 15 (§9 Increment 2): wire continuous_stroke into cell.py + force-budget tool — VERIFIED
+cell.py appends MyosinHeadForce to the live integrator when continuous_stroke (mirrors compartment-force
+swap); tool gets --stepping-mode + reads delivered force = min(k·s_grip,F_stall) per-bond (not k·r).
+Smoke (n_fil=80, soft k): builds, custom force participates, 2000 steps NO crash, delivered T≈0 at
+s_grip≈0 = correct force-free-at-bind (§6.2). Commit 007b0b6.
+
+## LOOP 16 (§9 Increment 3): stiff cross-bridge k + CFL re-derivation — CFL STABLE, cap demonstrated
+MODE-COUPLED stiff k (the stiff k explodes harmonic k·r in legacy modes = loop12, so applied ONLY in
+continuous_stroke whose custom force caps): configs/phase1_h3.yaml new k_cross_bridge_continuous=1e-3
+(Magic-Number Block, canonical bridge/motor + Veigel/Kaya/Finer 0.3-2 pN/nm); resolver applies it only
+in continuous_stroke (grip_walk keeps 1e-6, byte-identical). CFL via reconcile_dt (forwarded
+build_baseline_cell→Cell.build; dt_reconcile folds myosin k_backbone → integrator dt scalar, NO
+integrator/ edit). binding-range 330nm KEPT (§9 shrink was bin-resolution-specific; r doesn't enter the
+custom force → no explosion → no shrink; reach gated by capture_perp 210nm). VERIFIED smoke (n_fil=80,
+stiff k, reconcile_dt): B1 lowered dt 1.30e-8→9.22e-10 s (14.1×, binding=myosin.k_backbone τ=9.22ns meso),
+integration STABLE (3300 steps, all finite, NO blowup), per-head delivered T=1.15pN tracking k·s_grip
+capped under F_stall=8.48pN — NOT the k·r=930pN explosion (loop12), demonstrated end-to-end. Magnitude
+(s_grip→F_stall, γ→envelope 17.8× under = KNOWN density/overlap gap) needs the GPU contraction run (M4,
+~1e7 steps). Commit ab376de. NEXT: crosslink k re-anchor (KB α-actinin lit-verify) → GPU run.
+
+## LOOP 17 (§9 Increment 4): crosslink k KB lit-verify → PI SURFACE (gate-contract)
+KB query (tag_query.py): KB-1.28 (verified, High) sets the crosslink bond stiffness k_xl≈1e-4–1e-2 N/m,
+DEFAULT 1e-3 (1 pN/nm). The cortex dynamic_crosslinkers k_intra=k_attach=1e-7 is ~10⁴× below that default
+(1000× below the range floor). The config anchor "0.1 pN/µm, KU-3.19 (Furuike 2001)" does NOT match a
+stiffness datum — KU-3.19 is kinetics-only (off-rates, no k) and Furuike 2001 is filamin unfolding
+kinetics; same mis-attribution class the prior audits caught. ⇒ 1e-7 is very likely the §8 "separate soft
+transmission link" slip; re-anchor to KB-1.28 (→1e-3) is literature-first BUT a PRODUCTION-WIDE
+gate-contract change (all cortex builds, the other session, already-run Gate-A/B) + flexible-crosslinker
+molecular-k vs sim-bond-k is genuinely ambiguous (KB range spans 100×). CFL not tightened (τ_xl=391ns≫
+9.2ns myosin dt). Per mission rule (crosslink k = lit-verify→PI-surface-if-uncertain + gate-contract→PI),
+NOT changed inline → SURFACED to PI (design doc §10). Generation fix needs NO crosslink change to verify;
+it is the downstream transmission lever (smoke WALL-A already 66.8% in connected mesh).
+STATUS: §9 generation half (items 1-4) DONE + verified (cap + CFL stable, end-to-end). Item 5 (crosslink)
++ M4 (GPU magnitude run) are PI-gated. HALT→PI for the crosslink contract decision before the GPU run.
