@@ -1,0 +1,32 @@
+{
+  "verdict": "PASS",
+  "controls": {
+    "n_filaments": 600,
+    "n_cables": 75,
+    "n_infill": 525,
+    "n_beads_total": 1879,
+    "planar_ok": true,
+    "within_footprint": true,
+    "force_free": {
+      "ok": true,
+      "max_strain": 4.023406499457927e-15
+    },
+    "cables_aligned": {
+      "ok": true,
+      "mean_abs_cos": 1.0
+    },
+    "infill_isotropic": {
+      "ok": true,
+      "mean_abs_cos": 0.6388380752786099
+    }
+  },
+  "gate": "B1 basal_mesh geometry",
+  "params": {
+    "n_filaments": 600,
+    "ell0_m": 5e-07,
+    "footprint_radius_m": 5e-06,
+    "z_basal_m": -7e-06,
+    "band_thickness_m": 2e-07
+  },
+  "note": "GEOMETRY ONLY (increment B1). Connectivity (B2, giant>=0.9/z in [3,3.5]), FA anchoring (B3), sf_myosin_ NMII (B4) and the equilibrated Kumar/Balaban active gate (B5) are the following increments."
+}
