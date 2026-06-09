@@ -62,6 +62,37 @@
   = `REGISTRY.gamma_denylist()` minus `cortex_*`). Unblocks the no-contamination control
   for every γ-contaminating compartment. ⚠️ sibling Gate-B owns this file → merge-coordinate.
 
+## ⚠️ ventral_stress_fibers (③) — FA-pair GEOMETRY design decision (surfaced 2026-06-09)
+Pushed ③ per the recommended order; the FA-adhered build + SF extender + integrin
+harvest all work mechanically (probe: `adherent_passive` seeds **2150 integrins**;
+the SF extender assembles 20 bundles on the real `hoomd.Snapshot`). But a genuine
+**physics-design decision** blocks a *physiologically-valid* LIVE flip — beyond the
+already-known N_filaments + sf_myosin-prefix blockers:
+- **FA-pair selection geometry.** `generate_stress_fiber_layout` pairs FA endpoints
+  by **random shuffle** (`rng.permutation(M)`). At the real footprint the 2150
+  integrins span z = −7.35 … 1.6 µm, so random pairing yields bundles of wildly
+  different lengths spanning the whole cell — NOT physiological basal ventral stress
+  fibers (which are basal-plane, aligned, ~10 µm in a 15 µm cell). A force-free
+  build-time gate (assembled + no-contam) would PASS regardless, but the bundle
+  GEOMETRY would be unphysical → marking SF LIVE on this would overstate fidelity.
+  **Decision needed:** the vSF FA-pairing rule. Options: (a) nearest-basal-neighbour
+  pairs at a physiological span (simplest defensible v1); (b) direction-aligned pairs
+  along the cell long axis / traction field (more faithful, needs a polarity input);
+  (c) keep random (rejected — unphysical). **Recommend (a)** as the v1 passive
+  activation, (b) filed as the faithful follow-on. Implementing (a) is a small
+  `stress_fibers.py` pairing-mode addition (no new physics).
+- **Per-bundle k_actin / ell0.** μ_SF = N_filaments·EA_single is set (N_filaments=20
+  candidate, Cramer 1997), but `k_actin` stays None and `ell0` varies per FA-pair
+  distance, so `measure_sf_tension` needs the per-bundle registered r0 (the layout's
+  `ell0_actin`), not a single k_actin — wire the measure to read `layout.ell0_actin`.
+- Still also pending (from before): **N_filaments** PI-ratification (candidate 20),
+  and the **sf_myosin_* prefix** split in `cortex/myosin.py` for the ACTIVE NMII
+  phase (passive backbone needs neither; the Kumar 10-30 nN tension band is the
+  active+equilibrated gate, deferred).
+**Status:** NOT flipped LIVE — held at EXPERIMENTAL pending the FA-pairing decision
+(a/b). The mechanical wiring is ready; only the pairing rule + measure-r0 wiring
+remain once PI picks (a) or (b).
+
 ## ⚠️ NEW BLOCKER found during activation
 - **MTOC single-hub degree vs HOOMD nlist exclusion cap (7).** The aster's single MTOC
   carries n_mt backbone bonds; with the full-cell LJ nlist on (`exclusions=("bond","1-3")`),
