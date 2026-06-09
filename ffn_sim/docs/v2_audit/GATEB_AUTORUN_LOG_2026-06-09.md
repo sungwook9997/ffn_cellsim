@@ -163,3 +163,20 @@ cupy 14.1.0, native plugin ABI OK, dt-scan stable on GPU. **Contraction LAUNCHED
 ~9ms/tick (vs 0.48s/tick Mac CPU = ~50×) → full 400s ≈ 30min (vs ~27h CPU). GPU util 8% (binder
 host-sync-bound, as expected — confirms binder is the GPU-main-port target). Early t=10,20s: loading
 (s_grip~0, bond/ℓ0=1.0000, onset~156s). DECISIVE condensation result in ~30min. json→outputs (Syncthing).
+
+## LOOP 14 (GPU, PI-directed): condensation REFUTED at 390s — contraction drag/network-STALLED
+gbook GPU contraction (unconstrained soft-actin, 76000× dt=9.9e-4s, n_fil=300) ran to t=390s physical
+(~30min, ~50× CPU) then a late LJ-overlap blowup (data intact; script now checkpoints+handles it).
+RESULT: **s_grip creeps 0.000→0.019 (drag-limited ~5e-5/s, ~8000× below v0), bond/ℓ0=1.0000 throughout,
+g_soft floored ~3e-4. NO condensation.** ⇒ even at the overdamped-correct dt, on GPU, with the
+soft/condensable backbone over 390s physical, the network does NOT condense and γ does NOT rise.
+MECHANISM: in the soft connected network the myosin loads to the elastic LOADING FLOOR (γ_soft~3e-4)
+and STALLS — s_grip creeps but never reaches the bead-step threshold (ℓ0), so no processive contraction,
+no material transport, no condensation. (Drag is ~correct: 1 head 8.48pN / γ 3.7e-5 = 0.23µm/s, physical;
+the wall is that the myosin doesn't SUSTAIN force / develop processivity in the network, not the drag.)
+⭐DEFINITIVE CLOSURE: NEITHER mode condenses — constrained (Gate-A: s_grip develops to 0.5 but RIGID →
+no condensation, γ_soft 3e-3) NOR unconstrained (here: condensable but s_grip STALLS at loading floor →
+no condensation, γ 3e-4). The dt-unlock EXCLUDED the timescale confound. Active-γ floor robustly
+confirmed = generation/transmission-bound (NOT timescale, NOT density-datum, NOT buckling, NOT isotropy)
+→ architecture/overlap physics (Chugh2017/TruongQuang2021) the model doesn't capture. dt-unlock = genuine
+reusable infra. Artifacts: h7_dt_overdamped_contract_gpu.log. NEXT: scope pivot (ζΔμ supplier) or PI call.

@@ -214,23 +214,37 @@ def run_contract(args, dev):
     print("-" * 76, flush=True)
     rows = []
     done = 0
+    crashed = None
+
+    def _flush_json():
+        out = {"mode": "contract", "dt_s": dt, "mult": args.contract_mult,
+               "ell0_nm": ell0_nm, "n_filaments": n_fil, "crashed": crashed, "rows": rows}
+        Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out_json).write_text(json.dumps(out, indent=2))
+
     while done < total_steps:
         c = min(chunk, total_steps - done)
-        sim.run(c); done += c
+        try:
+            sim.run(c); done += c
+        except FloatingPointError as e:
+            # Late large-dt LJ-overlap blowup: keep the trajectory collected so far,
+            # mark it, and stop cleanly (the science is in the pre-crash samples).
+            crashed = str(e).splitlines()[0][:160]
+            print(f"  !! BLOWUP at step ~{done+c} (t~{(done+c)*dt:.1f}s): {crashed}", flush=True)
+            _flush_json()
+            break
         m = _measure(cell)
         m["step"] = done; m["t_s"] = done * dt
         m["bond_over_l0"] = (m["mean_bond_nm"] / ell0_nm) if m["mean_bond_nm"] else None
         rows.append(m)
+        _flush_json()  # incremental checkpoint — survive a late crash
         print(f"  t={done*dt:7.3f}s step={done:>8d}  s_grip={m['s_grip_over_l0']:.3f}  "
               f"bond/ℓ0={m['bond_over_l0']:.5f}  g_soft={m['g_soft_mN_m']:.3e}  "
               f"g_rigid={m['g_rigid_mN_m']:.3e}  fin={m['finite']}", flush=True)
         if not m["finite"]:
             print("  !! NON-FINITE — dt too large for accuracy/stability; stop.", flush=True)
             break
-    out = {"mode": "contract", "dt_s": dt, "mult": args.contract_mult,
-           "ell0_nm": ell0_nm, "n_filaments": n_fil, "rows": rows}
-    Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out_json).write_text(json.dumps(out, indent=2))
+    _flush_json()
     print("-" * 76, flush=True)
     last = rows[-1] if rows else {}
     cond = last.get("bond_over_l0")
