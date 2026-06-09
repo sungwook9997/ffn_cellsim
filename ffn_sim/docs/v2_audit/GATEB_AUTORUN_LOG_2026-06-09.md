@@ -122,3 +122,19 @@ well-resolves all overdamped modes (τ 0.01-0.9s) + batch_dt capped 1e-3 (myosin
 → accurate. **DECISIVE contraction run LAUNCHED at 770× (dt 1e-5, 2.5s=250k steps): does the soft
 network finally CONDENSE (bond<ℓ0, Miyazaki symmetry-break) + γ rise, given the physical contraction
 time previously unreachable?** (running, ~20-40min CPU smoke). If yes = the unlock for the whole floor.
+
+## LOOP 11: dt-unlock VALIDATED but contraction is DRAG-LIMITED (s_grip 0.008/2.5s)
+Contraction run at 770× (dt=1.003e-5s, 249k steps, 2.5s physical): **STABLE throughout (finite, bond/ℓ0
+sane) — the dt-unlock works.** BUT s_grip only reached 0.008 (not ~0.5), NO condensation (bond/ℓ0=1.0000),
+g_soft floored ~2e-4. ROOT CAUSE = DRAG-LIMITED contraction: dragging actin at v0=0.2µm/s through the
+cytoplasm friction costs γ·v0 = 3.7e-5×2e-7 = 7.4pN ≈ 0.87×F_stall(8.48) → motor near-stalls moving the
+bead → s_grip develops ~60× slower than v0 → onset (~0.5) needs ~156s = ~1.5e7 steps. The dt-unlock makes
+that REACHABLE in principle (1.5e7 vs 1e10 at water-dt) but it's a long GPU run; at 2.5s contraction
+barely started. ⭐MODELING QUESTION (surface to PI, physiological-baseline nuance): cortical actin beads
+get the FULL bulk cytoplasm Stokes drag (6πη_cyto·R, η=65.9; immersed_types includes actin_cortex), but
+each coarse ×40 mesoscale bead is pulled by ~1 effective head — so a minifilament's collective ~30-head
+force (real: 60pN >> 7pN drag, NOT drag-limited) becomes ~1-head-vs-full-bead-drag → ARTIFICIALLY
+drag-limited. Is bulk η_cyto the right drag for membrane-associated cortical actin in a dense network
+(hydrodynamic screening / 2D membrane drag / network-effective drag)? If the effective cortical drag is
+lower, contraction develops faster + condensation may engage. NEXT: longer run to watch trend + the drag
+question. dt-unlock itself = genuine reusable infra (contraction timescale now reachable).
