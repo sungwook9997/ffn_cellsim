@@ -64,6 +64,13 @@ class VentralSFLayout:
     crosslink_bonds: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.int64))
     m_band_x: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
     polarity_mode: str = field(default="mixed")
+    # ARRAY mode only: number of stacked SFs and the substrate contact area [m²]
+    # used as the traction-stress denominator (= the literature spread footprint,
+    # not the SF bounding box). per_sf_anchor_beads groups anchor_beads by SF so
+    # the per-SF coherent traction can be read out independently.
+    n_sf: int = field(default=1)
+    contact_area_m2: float = field(default=0.0)
+    per_sf_anchor_beads: list = field(default_factory=list)
 
 
 def generate_ventral_sf_layout(
@@ -236,4 +243,104 @@ def generate_sarcomeric_sf_layout(
                          if xlinks else np.empty((0, 2), dtype=np.int64)),
         m_band_x=m_band_x,
         polarity_mode="sarcomeric",
+    )
+
+
+def generate_sf_array_layout(
+    *,
+    n_sf: int,
+    n_cross: int,
+    fiber_length: float,
+    ell0: float,
+    z_basal: float,
+    bundle_radius: float,
+    rng: np.random.Generator,
+    sarcomere_period: float,
+    sf_spacing: float,
+    contact_area: float,
+    overlap_frac: float = 0.3,
+) -> VentralSFLayout:
+    """An ARRAY of parallel SARCOMERIC ventral stress fibers on the flat ventral surface.
+
+    Scales the decisive single-SF result (``generate_sarcomeric_sf_layout``, which gives
+    +131 pN coherent contractile traction per fiber) to a cell-scale array so the AGGREGATE
+    substrate traction can be expressed as a stress [Pa] = Σ(per-SF FA reaction) / contact area
+    and compared to the PI platform (MCF-7 TFM: ~102 nN total contractility over ~1822 µm²,
+    Gil-Redondo 2023). Each SF is an independent sarcomeric bundle anchored at its OWN pair of
+    FAs (so the array is mechanically near-additive, coupled only by WCA at the literature SF
+    spacing); the per-SF anchor groups are tracked so the per-fiber traction is separable.
+
+    Args:
+        n_sf: number of stress fibers in the array (literature: ~FA_count/2, each ventral SF
+            spans two FAs; Hotulainen-Lappalainen 2006).
+        n_cross: filaments per cross-section of each SF (bundle thickness).
+        fiber_length: SF contour span [m] (all fibers along x̂).
+        ell0: bead spacing [m].
+        z_basal: ventral plane height [m].
+        bundle_radius: SF cross-section radius [m].
+        rng: RNG (each SF gets an independent child stream so cross-sections differ).
+        sarcomere_period: native α-actinin sarcomere period [m] (Peterson 2004 ~1 µm); the
+            per-SF sarcomere count is ``round(fiber_length / sarcomere_period)``.
+        sf_spacing: lateral spacing between adjacent SFs [m] (literature ~1-5 µm); the fibers
+            are stacked along ŷ at ``y = (i - (n_sf-1)/2)·sf_spacing``.
+        contact_area: substrate contact footprint [m²] for the traction-stress denominator
+            (the literature spread area, NOT the SF bounding box).
+        overlap_frac: antiparallel pointed-end overlap fraction at each M-band.
+
+    Returns:
+        A combined ``VentralSFLayout`` (all SFs concatenated, globally-unique filament indices
+        and bead tags) carrying ``n_sf``, ``contact_area_m2`` and ``per_sf_anchor_beads``.
+    """
+    if n_sf < 1:
+        raise ValueError(f"n_sf must be ≥ 1; got {n_sf}")
+    if not (sf_spacing > 0 and contact_area > 0 and sarcomere_period > 0):
+        raise ValueError("need sf_spacing, contact_area, sarcomere_period > 0")
+    n_sarcomeres = max(1, int(round(fiber_length / sarcomere_period)))
+
+    pos_list, fil_list, bb_list, xl_list, polarity = [], [], [], [], []
+    per_sf_anchor_beads: list[np.ndarray] = []
+    anchors_all: list[int] = []
+    bead0 = 0
+    fil0 = 0
+    n_beads_per_fil = 0
+    for i in range(n_sf):
+        sub = generate_sarcomeric_sf_layout(
+            n_cross=n_cross, fiber_length=fiber_length, ell0=ell0, z_basal=z_basal,
+            bundle_radius=bundle_radius, rng=np.random.default_rng(rng.integers(1 << 31)),
+            n_sarcomeres=n_sarcomeres, overlap_frac=overlap_frac,
+        )
+        n_beads_per_fil = sub.n_beads_per_fil
+        y_lane = (i - 0.5 * (n_sf - 1)) * sf_spacing
+        p = sub.positions.copy()
+        p[:, 1] += y_lane                                   # stack lanes along ŷ
+        pos_list.append(p)
+        fil_list.append(sub.filament_idx + fil0)
+        bb_list.append(sub.backbone_bonds + bead0)
+        if sub.crosslink_bonds.size:
+            xl_list.append(sub.crosslink_bonds + bead0)
+        polarity.append(sub.polarity)
+        sf_anchors = sub.anchor_beads + bead0
+        per_sf_anchor_beads.append(sf_anchors.astype(np.int64))
+        anchors_all.extend(int(a) for a in sf_anchors)
+        bead0 += p.shape[0]
+        fil0 += sub.n_fil
+
+    return VentralSFLayout(
+        positions=np.concatenate(pos_list, axis=0),
+        filament_idx=np.concatenate(fil_list, axis=0),
+        backbone_bonds=np.concatenate(bb_list, axis=0),
+        polarity=np.concatenate(polarity, axis=0),
+        anchor_beads=np.array(sorted(set(anchors_all)), dtype=np.int64),
+        axis=np.array([1.0, 0.0, 0.0]),
+        fiber_length=float(fiber_length),
+        z_basal=float(z_basal),
+        n_fil=int(fil0),
+        n_beads_per_fil=int(n_beads_per_fil),
+        crosslink_bonds=(np.concatenate(xl_list, axis=0) if xl_list
+                         else np.empty((0, 2), dtype=np.int64)),
+        m_band_x=np.empty(0, dtype=np.float64),
+        polarity_mode="sarcomeric_array",
+        n_sf=int(n_sf),
+        contact_area_m2=float(contact_area),
+        per_sf_anchor_beads=per_sf_anchor_beads,
     )

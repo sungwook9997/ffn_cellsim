@@ -49,7 +49,9 @@ def _angle_triplets(layout):
 def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
                  anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None,
                  myosin_force_scale=1.0, myosin_backbone_bending=True,
-                 sarcomeric=False, n_sarcomeres=3, overlap_frac=0.3):
+                 sarcomeric=False, n_sarcomeres=3, overlap_frac=0.3,
+                 array=False, n_sf=1, sf_spacing=2.0e-6,
+                 sarcomere_period=2.0e-6, contact_area=1822.0e-12):
     """Assemble the ventral SF HOOMD sim; optionally wire continuous_stroke myosin.
 
     Stage 2b-2: with_myosin=True places Stam-Hocky bipolar minifilaments (actin-aware,
@@ -72,7 +74,19 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     z_basal = -0.5 * R
 
     rng = np.random.default_rng(seed)
-    if sarcomeric:
+    if array:
+        # ARRAY of n_sf parallel sarcomeric SFs across the ventral contact patch.
+        # The aggregate FA reaction over the literature spread footprint → traction
+        # stress [Pa] for the PI-platform comparison.
+        from ffn_sim.cortex.ventral_stress_fiber import generate_sf_array_layout
+        lay = generate_sf_array_layout(
+            n_sf=n_sf, n_cross=n_fil, fiber_length=fiber_length, ell0=ell0,
+            z_basal=z_basal, bundle_radius=bundle_radius, rng=rng,
+            sarcomere_period=sarcomere_period, sf_spacing=sf_spacing,
+            contact_area=contact_area, overlap_frac=overlap_frac,
+        )
+        k_zdisc = float(cfg["cortex"]["dynamic_crosslinkers"]["k_attach"])
+    elif sarcomeric:
         # n_fil = filaments per cross-section (bundle thickness); total =
         # n_sarcomeres·2·n_fil half-filaments.
         from ffn_sim.cortex.ventral_stress_fiber import generate_sarcomeric_sf_layout
@@ -98,7 +112,9 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
         typeid[b] = 1
     angles = _angle_triplets(lay)
 
-    L_box = max(4.0 * fiber_length, 4.0 * R)
+    # box must contain the fiber span (x) AND the array lane span (y); pad both.
+    y_span = (n_sf - 1) * sf_spacing if array else 2.0 * bundle_radius
+    L_box = max(4.0 * fiber_length, 4.0 * R, 2.0 * y_span + 4.0 * fiber_length)
     snap = gsd.hoomd.Frame()
     snap.particles.N = n
     snap.particles.types = ["sf_actin", "fa_anchor"]
@@ -229,7 +245,9 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     anchor_tags = np.array(sorted(anchors), dtype=np.int64)
     return dict(sim=sim, bond=bond, layout=lay, anchors=anchor_tags,
                 p=p, ell0=ell0, R=R, z_basal=z_basal,
-                p_myo=p_myo, myosin_action=myosin_action, dt_used=dt_used)
+                p_myo=p_myo, myosin_action=myosin_action, dt_used=dt_used,
+                contact_area_m2=float(getattr(lay, "contact_area_m2", 0.0)),
+                n_sf=int(getattr(lay, "n_sf", 1)))
 
 
 def anchor_traction(handles):
@@ -298,6 +316,20 @@ def main() -> int:
                          "the random mixed-polarity bundle — rectifies myosin sliding into traction")
     ap.add_argument("--n-sarcomeres", type=int, default=3)
     ap.add_argument("--overlap-frac", type=float, default=0.3)
+    ap.add_argument("--array", action="store_true",
+                    help="ARRAY of --n-sf parallel sarcomeric SFs across the ventral contact "
+                         "patch → AGGREGATE substrate traction stress [Pa] vs the PI platform")
+    ap.add_argument("--n-sf", type=int, default=20,
+                    help="number of SFs in the array (lit: ~FA_count/2 ≈ 20, Hotulainen 2006)")
+    ap.add_argument("--sf-spacing-um", type=float, default=2.0,
+                    help="lateral SF spacing [µm] (lit ~1-5 µm)")
+    ap.add_argument("--sarcomere-period-um", type=float, default=2.0,
+                    help="effective mesoscale sarcomere period [µm] (native ~1 µm Peterson 2004)")
+    ap.add_argument("--contact-area-um2", type=float, default=1822.0,
+                    help="substrate contact footprint [µm²] (MCF-7 spread area, Gil-Redondo 2023)")
+    ap.add_argument("--n-motors-per-sf", type=int, default=None,
+                    help="minifilaments per SF in the array (total n_motors = this × n_sf); "
+                         "default uses --n-motors as the per-SF count")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--anchor-drag-factor", type=float, default=1.0e4,
                     help="FA-anchor drag multiple of gamma_b (overdamped rigid-substrate limit)")
@@ -312,13 +344,23 @@ def main() -> int:
         return (hoomd.device.GPU(notice_level=0) if args.device == "gpu"
                 else hoomd.device.CPU(notice_level=0))
 
+    # ARRAY: total minifilaments scale with n_sf (per-SF density held at --n-motors,
+    # or --n-motors-per-sf if given) so each SF carries the validated single-SF myosin load.
+    n_motors_total = args.n_motors
+    if args.array:
+        per_sf = args.n_motors_per_sf if args.n_motors_per_sf is not None else args.n_motors
+        n_motors_total = per_sf * args.n_sf
     common = dict(
         n_fil=args.n_filaments, fiber_length=args.fiber_length_um * 1e-6,
         bundle_radius=args.bundle_radius_nm * 1e-9, seed=args.seed,
         anchor_drag_factor=args.anchor_drag_factor,
-        with_myosin=True, n_motors=args.n_motors,
+        with_myosin=True, n_motors=n_motors_total,
         sarcomeric=args.sarcomeric, n_sarcomeres=args.n_sarcomeres,
         overlap_frac=args.overlap_frac,
+        array=args.array, n_sf=args.n_sf,
+        sf_spacing=args.sf_spacing_um * 1e-6,
+        sarcomere_period=args.sarcomere_period_um * 1e-6,
+        contact_area=args.contact_area_um2 * 1e-12,
     )
     # Stage 2c REDESIGN — SAME-SEED PAIRED differential. The first design differenced
     # two DIFFERENT random realizations (myosin-present vs myosin-absent), so the huge
@@ -365,6 +407,35 @@ def main() -> int:
     print(f"  ⇒ SAME-SEED COHERENT DIFFERENTIAL (ON − OFF) = {diff_mean:+.3f} ± {diff_sem:.3f} pN "
           f"[{verdict}]", flush=True)
 
+    # ---- AGGREGATE substrate traction stress [Pa] (array) + PI-platform overlay ----
+    # The coherent differential IS the aggregate contractile traction the whole array
+    # delivers to its FA anchors (the global left/right end split sums across parallel SFs).
+    # Stress = aggregate force / contact footprint (same as Gil-Redondo's contractility/area).
+    contact_area_m2 = h_on["contact_area_m2"]
+    n_sf = h_on["n_sf"]
+    agg_force_N = diff_mean * 1e-12          # pN → N
+    agg_force_sem_N = diff_sem * 1e-12
+    agg_stress_Pa = (agg_force_N / contact_area_m2) if contact_area_m2 > 0 else 0.0
+    agg_stress_sem_Pa = (agg_force_sem_N / contact_area_m2) if contact_area_m2 > 0 else 0.0
+    per_sf_force_pN = diff_mean / max(1, n_sf)
+    # PI platform (literature-first, overlay-only): MCF-7 single-cell TFM, Gil-Redondo 2023
+    # (Microsc Res Tech, DOI 10.1002/jemt.24368), Table 1, control n=37.
+    MCF7_CONTRACTILITY_nN = 102.0          # total coordinated traction force
+    MCF7_STRESS_Pa = 63.0                  # contractility / cell area
+    MCF7_AREA_um2 = 1822.0
+    if args.array:
+        print(f"  ── AGGREGATE (n_sf={n_sf}, contact_area={contact_area_m2*1e12:.0f} µm²) ──",
+              flush=True)
+        print(f"  aggregate contractile traction = {agg_force_N*1e9:+.4f} ± {agg_force_sem_N*1e9:.4f} nN"
+              f"  ({per_sf_force_pN:+.2f} pN/SF)", flush=True)
+        print(f"  aggregate traction STRESS       = {agg_stress_Pa:+.4f} ± {agg_stress_sem_Pa:.4f} Pa",
+              flush=True)
+        print(f"  PI platform (MCF-7 TFM, Gil-Redondo 2023): {MCF7_CONTRACTILITY_nN:.0f} nN / "
+              f"{MCF7_STRESS_Pa:.0f} Pa over {MCF7_AREA_um2:.0f} µm²", flush=True)
+        if agg_force_N > 0:
+            print(f"  → model is {MCF7_CONTRACTILITY_nN*1e-9/agg_force_N:.1f}× under platform force, "
+                  f"{MCF7_STRESS_Pa/agg_stress_Pa:.1f}× under platform stress", flush=True)
+
     out = {
         "stage": "2c REDESIGN: same-seed paired COHERENT-traction differential (force ON vs OFF)",
         "n_fil": h_on["layout"].n_fil, "n_beads": int(n), "n_anchors": int(h_on["anchors"].size),
@@ -379,6 +450,18 @@ def main() -> int:
         "coherent_differential_sem_pN": diff_sem,
         "per_sample_coherent_differential_pN": cdiffs.tolist(),
         "significant": bool(sig), "verdict": verdict,
+        "array": bool(args.array), "n_sf": int(n_sf),
+        "contact_area_um2": contact_area_m2 * 1e12,
+        "sf_spacing_um": args.sf_spacing_um, "sarcomere_period_um": args.sarcomere_period_um,
+        "aggregate_traction_nN": agg_force_N * 1e9,
+        "aggregate_traction_sem_nN": agg_force_sem_N * 1e9,
+        "per_sf_traction_pN": per_sf_force_pN,
+        "aggregate_stress_Pa": agg_stress_Pa,
+        "aggregate_stress_sem_Pa": agg_stress_sem_Pa,
+        "platform_mcf7_contractility_nN": MCF7_CONTRACTILITY_nN,
+        "platform_mcf7_stress_Pa": MCF7_STRESS_Pa,
+        "platform_mcf7_area_um2": MCF7_AREA_um2,
+        "platform_ref": "Gil-Redondo 2023 Microsc Res Tech, DOI 10.1002/jemt.24368, Table 1 MCF-7 control n=37",
         "note": "same-seed paired (force_scale 1 vs 0): identical bundle/binding/thermostat → "
                 "thermal noise cancels. COHERENT signed traction (two ends pulled together) is "
                 "the contractile observable (vs Σ|T| fluctuation magnitude). +ve = the §9 "
