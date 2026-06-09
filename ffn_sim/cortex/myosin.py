@@ -203,13 +203,28 @@ class ResolvedCortexMyosin:
     # Seed
     seed: int
 
+    # Backbone BENDING (minifilament rigid-rod fidelity, 2026-06-09). The brief
+    # approximates the minifilament as a "stiff-harmonic rigid rod" via stretch
+    # bonds ALONE — but stretch stiffness ≠ bending stiffness: with no angle term
+    # the N-bead backbone is a freely-jointed chain (L_p=0) that thermally FOLDS,
+    # collapsing the bipolar dipole arm ℓ (301 nm → ~√(N-1)·ℓ0 ≈ 83 nm) and
+    # weakening contraction — worst in sparse/low-engagement settings (the ventral
+    # SF). Opt-in angle.Harmonic on consecutive backbone beads keeps the rod
+    # straight (t0=π). Default OFF → no angle type, no angles added → legacy
+    # byte-identical. k_backbone_angle is DERIVED from a persistence length (see
+    # resolver Magic-Number Block).
+    backbone_bending: bool = False
+    backbone_persistence_length: float = 17.0e-6   # m  L_p_myo (Magic-Number Block, resolver)
+
     # Derived
     backbone_segment_length: float = 0.0       # backbone_length / (n_backbone-1)
     k_backbone: float = 0.0                    # k_head_spring · k_backbone_factor
+    k_backbone_angle: float = 0.0              # κ_B_myo / ℓ0_myo  [N·m/rad²] (if bending)
     batch_dt: float = 0.0                      # batch_steps · dt
     k_off_max_at_zero_load: float = 0.0
     n_particles_per_motor: int = 0             # n_backbone + 2·n_heads_per_side
     n_static_bonds_per_motor: int = 0          # (n_backbone-1) + 2·n_heads_per_side
+    n_backbone_angles_per_motor: int = 0       # (n_backbone-2) if bending else 0
     extras: dict[str, Any] = field(default_factory=dict)
 
 
@@ -219,12 +234,14 @@ def _require_finite_positive(name: str, x: float) -> None:
 
 
 def resolve_cortex_myosin(
-    cfg: dict, *, dt: float, R_cell: float | None = None
+    cfg: dict, *, dt: float, R_cell: float | None = None, kT: float | None = None
 ) -> ResolvedCortexMyosin:
     """Resolve cortical-myosin config block with D5 boundary + CFL gates.
 
     ``R_cell`` is required only when ``mesoscale_force_scaling`` is enabled
     (KU-3.5 Route B) — it sets the native minifilament count from areal density.
+    ``kT`` is required only when ``backbone_bending`` is enabled — it sets the
+    backbone bending stiffness from the persistence length (κ_B = L_p·kT).
     """
     if "cortex" in cfg:
         cfg = cfg["cortex"]
@@ -255,6 +272,10 @@ def resolve_cortex_myosin(
         n_bins=int(cfg.get("n_bins", 10)),
         stepping_mode=str(cfg.get("stepping_mode", "binned_r0")),
         seed=int(cfg.get("seed", 44)),
+        backbone_bending=bool(cfg.get("backbone_bending", False)),
+        backbone_persistence_length=float(
+            cfg.get("backbone_persistence_length", 17.0e-6)
+        ),
     )
 
     # §2 boundary checks
@@ -368,6 +389,40 @@ def resolve_cortex_myosin(
     p.n_particles_per_motor = p.n_backbone + 2 * p.n_heads_per_side
     p.n_static_bonds_per_motor = (p.n_backbone - 1) + 2 * p.n_heads_per_side
 
+    # Backbone bending stiffness (minifilament rigid-rod fidelity, 2026-06-09).
+    # k_backbone_angle Magic-Number Block (⛔ NEW constant → PI ratification):
+    #   Value: k_angle = κ_B_myo / ℓ0_myo, κ_B_myo = L_p_myo · kT (WLC bending
+    #     modulus), L_p_myo = 17 µm.
+    #   Derivation of L_p_myo: the NMII bipolar minifilament images as a STRAIGHT
+    #     ~301 nm rod in EM (Billington 2013, PMID 24072716 — the same source as
+    #     backbone_length). "Straight in EM" ⇒ the thermal end-fluctuation
+    #     σ_perp = √(L³/(3 L_p)) ≲ 10% of contour (30 nm) ⇒ L_p ≳ L³/(3σ²) =
+    #     (301nm)³/(3·(30nm)²) ≈ 10 µm. The minifilament is a BUNDLE of ~15-30
+    #     myosin-II coiled-coil rods, so it is at LEAST as rigid as a single
+    #     F-actin filament; we adopt the F-actin reference L_p = 17 µm (KU-1.1,
+    #     same convention as cortex.persistence_length) — consistent with the
+    #     ≥10 µm EM floor and grid-invariant (intensive, N-independent).
+    #   CFL: τ_bend_myo = γ_b·ℓ0_myo³/κ_B. At ℓ0_myo=23 nm, κ_B=7.3e-26 N·m²,
+    #     γ_b≈3.9e-10 → τ ≈ 1.1e-7 s ≫ the continuous_stroke myosin dt (9.2 ns) →
+    #     no CFL tightening. Folded into dt_reconcile via k_backbone (the angle adds
+    #     no stiffer timescale).
+    #   ⚠️ Opt-in (default OFF → no angle type/angles → byte-identical). The exact
+    #     L_p_myo is PI-gateable (new constant); the EM-straight derivation is the
+    #     anchor pending a direct minifilament-flexural-rigidity datum.
+    p.n_backbone_angles_per_motor = (p.n_backbone - 2) if p.backbone_bending else 0
+    if p.backbone_bending:
+        if kT is None or not (math.isfinite(kT) and kT > 0.0):
+            raise ValueError(
+                "backbone_bending=True requires a finite kT > 0 (κ_B = L_p·kT)."
+            )
+        kappa_B_myo = p.backbone_persistence_length * float(kT)
+        p.k_backbone_angle = kappa_B_myo / p.backbone_segment_length
+        p.extras.update(
+            backbone_bending=True,
+            kappa_B_myo=float(kappa_B_myo),
+            L_p_myo=float(p.backbone_persistence_length),
+        )
+
     # §2 D2 batch CFL: batch_dt · k_off_max ≤ 1e-3 (mirrors crosslinkers.py)
     cfl_product = p.batch_dt * p.k_off_max_at_zero_load
     if cfl_product > 1.0e-3:
@@ -389,6 +444,7 @@ def resolve_cortex_myosin(
 # ---------------------------------------------------------------------------
 BOND_TYPE_MYOSIN_BACKBONE = "cortex_myosin_backbone"
 BOND_TYPE_MYOSIN_HEAD_BACKBONE = "cortex_myosin_head_backbone"
+ANGLE_TYPE_MYOSIN_BACKBONE = "cortex_myosin_backbone_angle"
 
 
 def cortex_myosin_attach_bin_names(n_bins: int) -> list[str]:
@@ -790,10 +846,42 @@ def extend_state_with_cortex_myosin(
         snap.bonds.group = old_bg
         snap.bonds.typeid = old_bt
 
-    # Angles + others: pass through unchanged.
-    if int(snap_old.angles.N) > 0:
-        snap.angles.N = int(snap_old.angles.N)
-        snap.angles.types = list(snap_old.angles.types)
+    # Angles: pass existing through; ADD myosin backbone-straightness angles when
+    # backbone_bending (the rigid-rod fidelity fix). Per minifilament, triplets
+    # (base+i-1, base+i, base+i+1) for i=1..N-2 keep the backbone straight (t0=π),
+    # so the bipolar dipole arm ℓ does not thermally collapse (stretch bonds alone
+    # do not constrain angles). Default OFF → this block is a no-op pass-through.
+    old_ang_N = int(snap_old.angles.N)
+    old_ang_types = list(snap_old.angles.types)
+    add_myo_angles = bool(p_myo.backbone_bending) and M > 0 and p_myo.n_backbone >= 3
+    if add_myo_angles:
+        Nb = p_myo.n_backbone
+        new_ang_types = list(old_ang_types)
+        if ANGLE_TYPE_MYOSIN_BACKBONE not in new_ang_types:
+            new_ang_types.append(ANGLE_TYPE_MYOSIN_BACKBONE)
+        myo_ang_tid = new_ang_types.index(ANGLE_TYPE_MYOSIN_BACKBONE)
+        per_motor_angles = Nb - 2
+        myo_ang = np.empty((M * per_motor_angles, 3), dtype=np.uint32)
+        ptr = 0
+        for m in range(M):
+            base = n_part_old + m * n_part_per_motor
+            for i in range(1, Nb - 1):
+                myo_ang[ptr] = (base + i - 1, base + i, base + i + 1)
+                ptr += 1
+        myo_ang_tids = np.full(M * per_motor_angles, myo_ang_tid, dtype=np.uint32)
+        if old_ang_N > 0:
+            old_ang_g = np.asarray(snap_old.angles.group, dtype=np.uint32)
+            old_ang_t = np.asarray(snap_old.angles.typeid, dtype=np.uint32)
+            snap.angles.group = np.concatenate([old_ang_g, myo_ang], axis=0)
+            snap.angles.typeid = np.concatenate([old_ang_t, myo_ang_tids], axis=0)
+        else:
+            snap.angles.group = myo_ang
+            snap.angles.typeid = myo_ang_tids
+        snap.angles.N = int(old_ang_N + M * per_motor_angles)
+        snap.angles.types = new_ang_types
+    elif old_ang_N > 0:
+        snap.angles.N = old_ang_N
+        snap.angles.types = old_ang_types
         snap.angles.typeid = np.asarray(snap_old.angles.typeid)
         snap.angles.group = np.asarray(snap_old.angles.group)
 
@@ -824,6 +912,19 @@ def register_cortex_myosin_bond_params(
     attach_k = 0.0 if p_myo.stepping_mode == "continuous_stroke" else p_myo.k_head_actin
     for name, r0 in zip(cortex_myosin_attach_bin_names(p_myo.n_bins), bin_r0):
         bond.params[name] = dict(k=attach_k, r0=float(r0))
+
+
+def register_cortex_myosin_angle_params(angle, p_myo: ResolvedCortexMyosin) -> None:
+    """Wire the myosin backbone-straightness angle (only when backbone_bending).
+
+    ``angle`` is the simulation's ``md.angle.Harmonic``. Registers the
+    ``cortex_myosin_backbone_angle`` type at k=k_backbone_angle, t0=π (straight
+    rod). No-op when bending is disabled (no such angle type exists in the frame)."""
+    if not p_myo.backbone_bending:
+        return
+    angle.params[ANGLE_TYPE_MYOSIN_BACKBONE] = dict(
+        k=float(p_myo.k_backbone_angle), t0=math.pi
+    )
 
 
 # ---------------------------------------------------------------------------

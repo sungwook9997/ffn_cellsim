@@ -48,7 +48,7 @@ def _angle_triplets(layout):
 
 def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
                  anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None,
-                 myosin_force_scale=1.0):
+                 myosin_force_scale=1.0, myosin_backbone_bending=True):
     """Assemble the ventral SF HOOMD sim; optionally wire continuous_stroke myosin.
 
     Stage 2b-2: with_myosin=True places Stam-Hocky bipolar minifilaments (actin-aware,
@@ -113,9 +113,10 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
         m = myo_cfg.setdefault("cortex", {}).setdefault("myosin", {})
         m["stepping_mode"] = "continuous_stroke"   # §9 capped per-head custom force
         m["mesoscale_force_scaling"] = False        # SF bundle: native motors, no sphere-density scaling
+        m["backbone_bending"] = bool(myosin_backbone_bending)  # rigid-rod fidelity: keep the dipole arm straight
         if n_motors is not None:
             m["n_motors_per_cell"] = int(n_motors)
-        p_myo = resolve_cortex_myosin(myo_cfg, dt=p.dt_cfl, R_cell=R)
+        p_myo = resolve_cortex_myosin(myo_cfg, dt=p.dt_cfl, R_cell=R, kT=p.kT)
         # Per-filament tangent = polarity·x̂ (the SF filaments run along ±x̂).
         fil_tangents = (lay.polarity[:, None].astype(np.float64)
                         * np.array([1.0, 0.0, 0.0])[None, :])
@@ -136,6 +137,9 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     bond.params["sf-bond"] = dict(k=p.bond_k, r0=ell0)
     angle = md.angle.Harmonic()
     angle.params["sf-angle"] = dict(k=p.angle_k, t0=np.pi)  # straight aligned fiber
+    if with_myosin and p_myo is not None and p_myo.backbone_bending:
+        from ffn_sim.cortex.myosin import register_cortex_myosin_angle_params
+        register_cortex_myosin_angle_params(angle, p_myo)   # minifilament rigid-rod
     nlist = md.nlist.Tree(buffer=0.5 * p.lj_sigma)
     lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
     ptypes = list(sim.state.particle_types)   # includes myosin types when added
@@ -153,6 +157,11 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     if with_myosin and p_myo is not None and getattr(p_myo, "k_backbone", 0.0) > 0.0:
         tau_backbone = p.gamma_b / p_myo.k_backbone
         dt_used = min(dt_used, p.cfl_safety_factor * tau_backbone)
+        if getattr(p_myo, "backbone_bending", False) and p_myo.k_backbone_angle > 0.0:
+            # τ_bend = γ_b·ℓ0³/κ_B (κ_B = k_angle·ℓ0); usually slacker than stretch.
+            kappa_B = p_myo.k_backbone_angle * p_myo.backbone_segment_length
+            tau_bend = p.gamma_b * p_myo.backbone_segment_length ** 3 / kappa_B
+            dt_used = min(dt_used, p.cfl_safety_factor * tau_bend)
 
     ig = md.Integrator(dt=dt_used)
     ig.forces += [bond, angle, lj]
