@@ -109,3 +109,21 @@ pool = CPU-slow (matches the audit's "slower than cKDTree" → speed needs GPU-r
 GPU-resident gather + wire the 4 binder cKDTree sites (assert identical bind/break counts) OR the deformable
 coordinate-frame use (normals for enclosed_volume/membrane_surface). Transmission stiffness fix stays a
 SEPARATE PI-gated track (unchanged). doc H7_2D_MESH_AB_DECISION §A.
+
+## LOOP 8 (PI: "부유 세포 말고 부착 세포 기준 — 계속 이렇게 진행"): ADHERENT-VENTRAL pivot DESIGN
+PI reframe (from a cross-session talk, flagged important for me): stop modelling a SUSPENDED/floating cell;
+model the ADHERENT cell. PI's diagnosis: the two layers were geometrically inconsistent — S1(surface_manifold=
+curved icosphere=suspended geometry) vs B1(filaments=flat disk); the "curvature option" was a SPURIOUS artifact
+of that S1/B1 mismatch. Real physics: adherent cell's ventral surface is FLAT (FA+ventral SF+traction
+filaments live there), only apical rounded. Fix: S1→flat ventral, consistent with B1, curvature gone.
+⭐CONNECTION to my γ work: the pivot RESOLVES the load-path half (the suspended sphere FORCED an isotropic
+densely-crosslinked cortex → load-path ~1.3 seg; the adherent traction structure is ventral STRESS FIBERS =
+aligned + FA-end-anchored = the long load-path + axial coherence the sphere lacked — we measured the wrong
+structure at the wrong operating point) but NOT the soft-coupling half (k_head_actin/k_intra unit-slips are
+geometry-independent, same myosin/α-actinin in the SF → separate PI-gated track stays). Observable shifts:
+suspended spherical cortical-tension γ (Hosseini) → adherent substrate TRACTION (PI platform: A/A0, integrin
+β1). Current state: FA wired but seeds a south-cap contact on the SPHERE (still curved); substrate exists; NO
+ventral SF (build needed). Wrote design H7_ADHERENT_VENTRAL_PIVOT_2026-06-09.md (consistent flat geometry +
+ventral-SF structure + measurement plan + sanity gates + lane: mine=cortex/SF/myosin on flat ventral, consume
+FA/substrate interface, don't touch other session). NEXT: Stage 1 consistent flat-ventral geometry (no S1/B1
+mismatch), then ventral SF build, then traction measurement. Soft-coupling fix = separate track.
