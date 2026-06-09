@@ -2,58 +2,56 @@
 
 Two-layer basal contractile apparatus (``docs/v2_audit/BASAL_MESH_DESIGN_2026-06-09.md``):
 
-* **S-layer (THIS module)** — a 2D SURFACE MESH (the SimuCell3D-style triangulated
-  ``cortex/surface_manifold.SurfaceManifold``) used as a *positioning + connectivity*
-  substrate: it gives the focal-adhesion particles a real 2D surface to be PLACED on
-  (FA is otherwise hard to attach — the spatial-disjoint integrin problem), and it
-  carries SOME surface connectivity (the triangulation's patch adjacency, "표면 연락
-  일부"). It carries **NO in-plane / edge force** — a force-bearing surface edge is the
-  2nd unsanctioned coarse-graining and over-constrains single-filament buckling, the
-  Gate-B lever (REJECTED, ``H7_CORTEX_AS_MESH_2026-06-07.md`` / commit ``7b19276``).
-  The surface is geometry / positioning / contact ONLY (it is not a HOOMD bond → it is
-  invisible to the γ estimator).
+* **S-layer (THIS module)** — a **FLAT 2D triangulated SURFACE MESH** (SimuCell3D-style)
+  used as a *positioning + connectivity* substrate: it gives the focal-adhesion
+  particles a real 2D surface to be PLACED on (FA is otherwise hard to attach — the
+  spatial-disjoint integrin problem), and it carries SOME surface connectivity (the
+  triangulation's patch/vertex adjacency, "표면 연락 일부"). It carries **NO in-plane /
+  edge force** — a force-bearing surface edge is the 2nd unsanctioned coarse-graining
+  and over-constrains single-filament buckling, the Gate-B lever (REJECTED,
+  ``H7_CORTEX_AS_MESH_2026-06-07.md`` / commit ``7b19276``). Geometry / positioning /
+  contact ONLY (not a HOOMD bond → invisible to the γ estimator).
 * **F-layer (``cell/basal_mesh.py``)** — the explicit fine-grained filament network
   built ON this surface, anchored to the FA particles, where the REAL FA mechanics /
   traction are measured ("실제 FA 메카닉스는 그 표면 위 필라멘트 네트워크에서 본다").
 
-This module is the S-layer geometry: select the BASAL cap of the surface (the
-substrate-contact zone), place FA-anchor particles ON that cap, and expose the basal
-patch adjacency. It adds NO force and NO HOOMD state.
+Why FLAT (PI 2026-06-09)
+------------------------
+An ADHERENT / spread cell flattens its VENTRAL surface against the substrate — the
+basal contact zone where FA and ventral stress fibers live is approximately a FLAT
+disk (the cell body / apical surface stays rounded above). A curved sphere-cap is the
+SUSPENDED-cell geometry, wrong for the traction / SF scenario. A flat ventral surface
+also makes the lamellipodium (a flat basal protrusion) natural to add later. The
+filaments (``cell/basal_mesh.py``, also planar) thus live consistently ON this flat
+surface — there is no flat-vs-curved choice once the ventral surface is flattened.
 
-Why a polar cap (resolution-invariant)
---------------------------------------
-The basal contact zone is the south-pole spherical CAP of half-angle
-``θ_cap = arcsin(footprint_radius / R)`` (the in-plane contact-disk rim of radius
-``footprint_radius`` projects to that polar angle). Selecting triangles by centroid
-polar angle ≤ ``θ_cap`` covers a surface-area fraction ``(1 − cos θ_cap)/2`` that is
-INDEPENDENT of the triangulation resolution — the manifold master-gate invariant
-(VG-1): the covered footprint must not drift with ``N_patch``.
+The flat surface is a Delaunay triangulation of disk-sampled points (concentric rings
+for even coverage) embedded at ``z = z_basal`` with outward (cell-interior, +z) normal.
+Disk area ``π·footprint_radius²`` is resolution-invariant by construction (VG-1).
 
 Sanity Gate
 -----------
 *Per CLAUDE.md Hard Rule. Checks in ``ffn_sim/tests/test_basal_surface.py``.*
 
-1. **Dimensional** — ``footprint_radius`` [m]; positions [m]; angles dimensionless.
-2. **Boundary** — ``footprint_radius ≤ 0`` or ``> R`` → ValueError; ``n_fa ≤ 0`` →
-   ValueError; ``n_fa`` larger than the basal patch count → clamp + flag.
-3. **Conservation / topology** — the selected basal triangles form a SINGLE connected
-   adjacency component (the contact zone is one patch, not scattered islands).
+1. **Dimensional** — ``footprint_radius`` [m]; positions [m]; areas [m²].
+2. **Boundary** — ``footprint_radius ≤ 0`` → ValueError; ``n_fa ≤ 0`` → ValueError;
+   ``n_fa`` above the patch count → clamp.
+3. **Conservation / topology** — the triangulation is a SINGLE connected component
+   (a Delaunay disk is connected); area → ``π·footprint_radius²`` with resolution.
 4. **Numerical** — positions finite float64.
-5. **Sign / sense (ON the surface, in the basal cap)** — every FA position is ON the
-   surface (radial ≈ R within a tight tol) and inside the cap (polar ≤ θ_cap); the cap
-   is the SOUTH (−z, substrate-facing) pole.
-6. **Measurement-protocol (resolution-invariance, VG-1)** — the basal-cap area
-   fraction is invariant to the icosphere subdivision level (within the flat-triangle
-   area deficit), so the footprint a downstream FA/filament build sees does not depend
-   on ``N_patch``. NO force, not a bond → γ-invisible.
+5. **Sign / sense (FLAT, in the disk)** — every vertex/FA at ``z = z_basal`` exactly
+   (planar); every FA inside the footprint disk (radial ≤ footprint_radius); outward
+   normal is ``+z`` (cell-interior; substrate is below at lower z).
+6. **Measurement-protocol (resolution-invariance, VG-1)** — triangulated disk area is
+   invariant to ring resolution (→ ``π·footprint_radius²``); NO force, not a bond →
+   γ-invisible.
 
 References
 ----------
-- ``cortex/surface_manifold.py`` (the triangulated manifold this consumes).
-- ``docs/v2_audit/H1_H5_H7_MANIFOLD_CONTACT_ARCHITECTURE_2026-06-07.md`` (the
-  sanctioned manifold-as-geometry design) + ``H7_CORTEX_AS_MESH_2026-06-07.md``
-  (the force-bearing-surface rejection / bright line).
+- ``docs/v2_audit/H1_H5_H7_MANIFOLD_CONTACT_ARCHITECTURE_2026-06-07.md`` (manifold as
+  geometry) + ``H7_CORTEX_AS_MESH_2026-06-07.md`` (force-bearing-surface rejection).
 - ``docs/v2_audit/BASAL_MESH_DESIGN_2026-06-09.md`` (the 2-layer plan).
+- ``cell/basal_mesh.py`` (the F-layer filament network placed ON this surface).
 """
 
 from __future__ import annotations
@@ -64,219 +62,210 @@ from typing import Any
 
 import numpy as np
 
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
-
-
-def cap_half_angle(footprint_radius: float, R: float) -> float:
-    """Basal-cap half-angle ``θ_cap = arcsin(footprint_radius / R)`` [rad]."""
-    if not (math.isfinite(footprint_radius) and footprint_radius > 0.0):
-        raise ValueError(
-            f"footprint_radius must be finite > 0; got {footprint_radius!r}"
-        )
-    if not (math.isfinite(R) and R > 0.0):
-        raise ValueError(f"R must be finite > 0; got {R!r}")
-    if footprint_radius > R:
-        raise ValueError(
-            f"footprint_radius ({footprint_radius:.3e}) must be ≤ R ({R:.3e}) — "
-            "a contact disk cannot exceed the cell radius."
-        )
-    return float(math.asin(footprint_radius / R))
-
 
 @dataclass(slots=True)
-class BasalSurface:
-    """Selected basal cap of a surface manifold + FA placement (S-layer geometry).
+class FlatBasalSurface:
+    """A flat triangulated ventral surface + FA placement (S-layer geometry).
 
     Attributes:
-        manifold: the SurfaceManifold this cap belongs to.
-        basal_tris: (n_basal,) int64 — triangle indices in the south-pole cap.
-        theta_cap: cap half-angle [rad].
+        verts: (n_vert, 3) float64 — surface vertices at z = z_basal.
+        tris: (n_tri, 3) int64 — triangle vertex indices (Delaunay).
+        tri_adj: (n_tri, 3) int64 — edge-neighbour triangle indices (−1 = boundary).
+        tri_centroids: (n_tri, 3) float64 — triangle centroids (at z_basal).
+        normal: (3,) float64 — outward (cell-interior, +z) unit normal.
+        footprint_radius: disk radius [m].
+        z_basal: basal plane height [m].
+        area: triangulated disk area [m²] (→ π·footprint_radius²).
         fa_positions: (n_fa, 3) float64 — FA-anchor positions ON the surface.
-        fa_home_tri: (n_fa,) int64 — the basal triangle each FA sits on.
-        cap_area_fraction: covered surface-area fraction (Σ basal tri area / 4πR²).
+        fa_home_tri: (n_fa,) int64 — the triangle each FA sits on.
     """
 
-    manifold: SurfaceManifold
-    basal_tris: np.ndarray
-    theta_cap: float
+    verts: np.ndarray
+    tris: np.ndarray
+    tri_adj: np.ndarray
+    tri_centroids: np.ndarray
+    normal: np.ndarray
+    footprint_radius: float
+    z_basal: float
+    area: float
     fa_positions: np.ndarray
     fa_home_tri: np.ndarray
-    cap_area_fraction: float
+
+    @property
+    def n_tri(self) -> int:
+        return int(self.tris.shape[0])
+
+    @property
+    def n_vert(self) -> int:
+        return int(self.verts.shape[0])
 
 
-def _polar_angle_from_south(points: np.ndarray) -> np.ndarray:
-    """Polar angle from the SOUTH pole (−z), in [0, π]. 0 = at −z."""
-    p = np.asarray(points, dtype=np.float64).reshape(-1, 3)
-    r = np.linalg.norm(p, axis=1).clip(min=1e-30)
-    cos_from_south = -p[:, 2] / r          # −z direction
-    return np.arccos(np.clip(cos_from_south, -1.0, 1.0))
+def _disk_ring_points(footprint_radius: float, n_rings: int) -> np.ndarray:
+    """Concentric-ring point cloud on a disk (even coverage), shape (P, 2)."""
+    if n_rings < 1:
+        raise ValueError(f"n_rings must be ≥ 1; got {n_rings}")
+    pts = [np.array([[0.0, 0.0]])]
+    dr = footprint_radius / n_rings
+    for k in range(1, n_rings + 1):
+        rk = k * dr
+        # ~even arc spacing ≈ dr between ring points.
+        n_k = max(6, int(round(2.0 * math.pi * rk / dr)))
+        ang = np.linspace(0.0, 2.0 * math.pi, n_k, endpoint=False)
+        pts.append(np.stack([rk * np.cos(ang), rk * np.sin(ang)], axis=1))
+    return np.concatenate(pts, axis=0)
 
 
-def select_basal_cap(
-    manifold: SurfaceManifold, *, footprint_radius: float,
-) -> tuple[np.ndarray, float]:
-    """Select the south-pole basal cap triangles (resolution-invariant).
-
-    Returns ``(basal_tris, theta_cap)`` — triangle indices whose centroid lies
-    within the cap of half-angle ``θ_cap = arcsin(footprint_radius/R)``.
-    """
-    theta_cap = cap_half_angle(footprint_radius, manifold.R)
-    ang = _polar_angle_from_south(manifold.tri_centroids)
-    basal = np.flatnonzero(ang <= theta_cap).astype(np.int64)
-    return basal, theta_cap
+def _triangulate_disk(points2d: np.ndarray):
+    """Delaunay-triangulate 2D disk points → (tris, tri_neighbors)."""
+    from scipy.spatial import Delaunay
+    d = Delaunay(points2d)
+    return (
+        np.asarray(d.simplices, dtype=np.int64),
+        np.asarray(d.neighbors, dtype=np.int64),  # −1 for boundary edges
+    )
 
 
-def _basal_is_connected(manifold: SurfaceManifold, basal_tris: np.ndarray) -> bool:
-    """BFS over tri_adj restricted to the basal set → single component?"""
-    if basal_tris.size == 0:
-        return False
-    basal_set = set(int(t) for t in basal_tris)
-    seen = {int(basal_tris[0])}
-    stack = [int(basal_tris[0])]
-    while stack:
-        t = stack.pop()
-        for nb in manifold.tri_adj[t]:
-            nb = int(nb)
-            if nb in basal_set and nb not in seen:
-                seen.add(nb)
-                stack.append(nb)
-    return len(seen) == len(basal_set)
-
-
-def place_fa_on_surface(
-    manifold: SurfaceManifold,
-    basal_tris: np.ndarray,
+def build_flat_basal_surface(
     *,
-    n_fa: int,
-    rng: np.random.Generator | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Place ``n_fa`` FA-anchor particles ON the basal surface cap.
-
-    FA anchors are placed at basal triangle CENTROIDS (a subset chosen without
-    replacement when ``n_fa < n_basal``; with replacement-free sampling capped at
-    the patch count otherwise), projected EXACTLY onto the sphere surface (radial
-    = R) so each FA sits ON the 2D surface — the whole point of the S-layer.
-
-    Returns ``(fa_positions (m,3), fa_home_tri (m,))`` where ``m = min(n_fa,
-    n_basal)``.
-    """
-    if rng is None:
-        rng = np.random.default_rng(0)
-    if n_fa <= 0:
-        raise ValueError(f"n_fa must be > 0; got {n_fa}")
-    n_basal = int(basal_tris.shape[0])
-    if n_basal == 0:
-        raise ValueError("no basal triangles selected (footprint too small).")
-    m = min(int(n_fa), n_basal)
-    chosen = basal_tris[rng.permutation(n_basal)[:m]]
-    cent = np.asarray(manifold.tri_centroids, dtype=np.float64)[chosen]
-    # project centroids exactly onto the surface (radial = R).
-    r = np.linalg.norm(cent, axis=1, keepdims=True).clip(min=1e-30)
-    fa_pos = cent / r * manifold.R
-    return fa_pos, np.asarray(chosen, dtype=np.int64)
-
-
-def build_basal_surface(
-    *,
-    R: float,
     footprint_radius: float,
-    n_fa: int,
-    subdivisions: int = 3,
-    manifold: SurfaceManifold | None = None,
+    z_basal: float,
+    n_rings: int = 10,
+    n_fa: int = 60,
     rng: np.random.Generator | None = None,
-) -> BasalSurface:
-    """Build the S-layer: basal cap + FA particles placed ON the surface.
+) -> FlatBasalSurface:
+    """Build the FLAT ventral surface mesh + FA particles placed ON it.
 
     Args:
-        R: cell radius [m] (icosphere radius).
-        footprint_radius: basal contact-disk radius [m] (→ cap half-angle).
-        n_fa: number of FA-anchor particles to place on the cap.
-        subdivisions: icosphere subdivision level (resolution; default 3 = 1280
-            faces). Ignored when ``manifold`` is supplied.
-        manifold: an existing SurfaceManifold (else an icosphere is built at R).
+        footprint_radius: ventral contact-disk radius [m].
+        z_basal: basal plane height [m] (the substrate-contact z).
+        n_rings: concentric-ring resolution of the disk triangulation.
+        n_fa: number of FA-anchor particles to place on the surface.
         rng: RNG for FA placement.
 
     Returns:
-        A :class:`BasalSurface`.
+        A :class:`FlatBasalSurface`.
     """
-    if manifold is None:
-        manifold = SurfaceManifold.icosphere(subdivisions, R)
-    basal_tris, theta_cap = select_basal_cap(
-        manifold, footprint_radius=footprint_radius
+    if not (math.isfinite(footprint_radius) and footprint_radius > 0.0):
+        raise ValueError(f"footprint_radius must be finite > 0; got {footprint_radius!r}")
+    if not math.isfinite(z_basal):
+        raise ValueError(f"z_basal must be finite; got {z_basal!r}")
+    if n_fa <= 0:
+        raise ValueError(f"n_fa must be > 0; got {n_fa}")
+    if rng is None:
+        rng = np.random.default_rng(0)
+
+    pts2d = _disk_ring_points(footprint_radius, n_rings)
+    tris, tri_adj = _triangulate_disk(pts2d)
+    verts = np.column_stack([pts2d, np.full(pts2d.shape[0], z_basal)])
+
+    v0 = verts[tris[:, 0]]
+    v1 = verts[tris[:, 1]]
+    v2 = verts[tris[:, 2]]
+    tri_centroids = (v0 + v1 + v2) / 3.0
+    # flat-triangle areas (xy only since planar).
+    cross_z = (v1[:, 0] - v0[:, 0]) * (v2[:, 1] - v0[:, 1]) - \
+              (v1[:, 1] - v0[:, 1]) * (v2[:, 0] - v0[:, 0])
+    area = float(0.5 * np.abs(cross_z).sum())
+    normal = np.array([0.0, 0.0, 1.0])   # outward = into the cell (+z)
+
+    # FA placed at triangle centroids (subset, no replacement), ON the surface.
+    m = min(int(n_fa), tris.shape[0])
+    chosen = rng.permutation(tris.shape[0])[:m].astype(np.int64)
+    fa_positions = tri_centroids[chosen].copy()
+    fa_home_tri = chosen
+
+    return FlatBasalSurface(
+        verts=verts,
+        tris=tris,
+        tri_adj=tri_adj,
+        tri_centroids=tri_centroids,
+        normal=normal,
+        footprint_radius=float(footprint_radius),
+        z_basal=float(z_basal),
+        area=area,
+        fa_positions=fa_positions,
+        fa_home_tri=fa_home_tri,
     )
-    fa_pos, fa_home = place_fa_on_surface(
-        manifold, basal_tris, n_fa=n_fa, rng=rng
-    )
-    cap_area = float(np.asarray(manifold.tri_areas)[basal_tris].sum())
-    total_area = float(np.asarray(manifold.tri_areas).sum())
-    cap_frac = cap_area / max(total_area, 1e-30)
-    return BasalSurface(
-        manifold=manifold,
-        basal_tris=basal_tris,
-        theta_cap=theta_cap,
-        fa_positions=fa_pos,
-        fa_home_tri=fa_home,
-        cap_area_fraction=cap_frac,
-    )
+
+
+def _is_connected(tris: np.ndarray, tri_adj: np.ndarray) -> bool:
+    """BFS over edge-adjacency → single connected component?"""
+    n = tris.shape[0]
+    if n == 0:
+        return False
+    seen = {0}
+    stack = [0]
+    while stack:
+        t = stack.pop()
+        for nb in tri_adj[t]:
+            nb = int(nb)
+            if nb >= 0 and nb not in seen:
+                seen.add(nb)
+                stack.append(nb)
+    return len(seen) == n
 
 
 def basal_surface_report(
-    surf: BasalSurface, *, footprint_radius: float, radial_tol_frac: float = 1e-9,
+    surf: FlatBasalSurface, *, planar_tol: float = 1e-12,
 ) -> dict[str, Any]:
-    """S1 build-time gate metrics (ON the surface, in the cap, connected).
+    """S1 build-time gate metrics (FLAT, in the disk, connected).
 
     Controls:
-      * on_surface     — every FA radial = R (within ``radial_tol_frac·R``).
-      * in_basal_cap   — every FA polar angle from −z ≤ θ_cap (south-pole cap).
-      * basal_connected— the basal triangles form ONE adjacency component.
-      * n_fa_placed    — FA actually placed (≤ requested; clamped to patch count).
+      * planar          — every vertex/FA at z = z_basal (within ``planar_tol``).
+      * within_disk     — every FA radial (x,y) ≤ footprint_radius (+ε).
+      * connected       — the triangulation is one edge-connected component.
+      * area_matches     — triangulated area ≈ π·footprint_radius² (disk coverage).
     """
-    m = surf.manifold
+    z_dev = float(np.max(np.abs(surf.verts[:, 2] - surf.z_basal))) if surf.n_vert else 0.0
     fa = np.asarray(surf.fa_positions, dtype=np.float64)
-    R = float(m.R)
-    radial = np.linalg.norm(fa, axis=1)
-    on_surface = bool(np.all(np.abs(radial - R) <= radial_tol_frac * R)) if fa.size else False
-    ang = _polar_angle_from_south(fa)
-    in_cap = bool(np.all(ang <= surf.theta_cap + 1e-12)) if fa.size else False
-    connected = _basal_is_connected(m, surf.basal_tris)
+    planar = bool(z_dev <= planar_tol
+                  and (fa.size == 0 or np.all(np.abs(fa[:, 2] - surf.z_basal) <= planar_tol)))
+    radial = np.linalg.norm(fa[:, :2], axis=1) if fa.size else np.zeros(0)
+    within = bool(np.all(radial <= surf.footprint_radius + 1e-12)) if fa.size else False
+    connected = _is_connected(surf.tris, surf.tri_adj)
+    disk_area = math.pi * surf.footprint_radius ** 2
+    area_frac = surf.area / disk_area if disk_area > 0 else 0.0
+    area_ok = 0.9 <= area_frac <= 1.0 + 1e-9  # Delaunay hull underfills the circle a bit
     controls = {
-        "n_basal_tris": int(surf.basal_tris.shape[0]),
+        "n_vert": surf.n_vert,
+        "n_tri": surf.n_tri,
         "n_fa_placed": int(fa.shape[0]),
-        "theta_cap_deg": math.degrees(surf.theta_cap),
-        "cap_area_fraction": surf.cap_area_fraction,
-        "on_surface": on_surface,
-        "in_basal_cap": in_cap,
-        "basal_connected": connected,
+        "planar": planar,
+        "max_z_dev": z_dev,
+        "within_disk": within,
+        "connected": connected,
+        "area_m2": surf.area,
+        "area_fraction_of_disk": area_frac,
+        "area_matches": area_ok,
     }
-    ok = on_surface and in_cap and connected and fa.shape[0] > 0
+    ok = planar and within and connected and area_ok and fa.shape[0] > 0
     return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
 
 
-def cap_fraction_resolution_invariance(
-    *, R: float, footprint_radius: float, levels: tuple[int, ...] = (2, 3, 4),
+def disk_area_resolution_invariance(
+    *, footprint_radius: float, z_basal: float = 0.0,
+    ring_levels: tuple[int, ...] = (6, 10, 16),
 ) -> dict[str, Any]:
-    """VG-1 master gate: the basal-cap area fraction is invariant to resolution.
+    """VG-1 master gate: triangulated disk area is invariant to ring resolution.
 
-    Builds the cap at several icosphere subdivision levels and checks the covered
-    area fraction converges to the analytic cap fraction ``(1 − cos θ_cap)/2``
-    (the flat-triangle area deficit shrinks with resolution → the fraction is
-    resolution-invariant, not drifting monotonically with physics).
+    Builds the flat surface at several ring resolutions and checks the area
+    converges to the analytic disk area ``π·footprint_radius²`` (the Delaunay hull
+    underfills the circle by a deficit that SHRINKS with resolution → the area is
+    resolution-invariant, not drifting with physics).
     """
-    theta_cap = cap_half_angle(footprint_radius, R)
-    analytic = 0.5 * (1.0 - math.cos(theta_cap))
-    fracs = {}
-    for s in levels:
-        surf = build_basal_surface(
-            R=R, footprint_radius=footprint_radius, n_fa=1, subdivisions=s,
+    analytic = math.pi * footprint_radius ** 2
+    areas = {}
+    for n in ring_levels:
+        surf = build_flat_basal_surface(
+            footprint_radius=footprint_radius, z_basal=z_basal, n_rings=n, n_fa=1,
         )
-        fracs[s] = surf.cap_area_fraction
-    vals = np.array(list(fracs.values()))
-    # invariant ⇔ spread across resolutions is small relative to the value.
-    spread = float(vals.max() - vals.min())
-    rel_spread = spread / max(float(vals.mean()), 1e-30)
+        areas[n] = surf.area
+    fracs = np.array([a / analytic for a in areas.values()])
+    spread = float(fracs.max() - fracs.min())
     return {
-        "analytic_cap_fraction": analytic,
-        "fractions_by_level": {int(k): float(v) for k, v in fracs.items()},
-        "rel_spread": rel_spread,
-        "invariant": bool(rel_spread < 0.15),  # converges; flat-tri deficit only
+        "analytic_disk_area": analytic,
+        "area_by_rings": {int(k): float(v) for k, v in areas.items()},
+        "fraction_by_rings": {int(k): float(v / analytic) for k, v in areas.items()},
+        "rel_spread": spread,
+        "invariant": bool(spread < 0.10),  # converges to the disk; hull deficit only
     }

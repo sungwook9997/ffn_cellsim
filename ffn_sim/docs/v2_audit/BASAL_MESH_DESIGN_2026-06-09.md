@@ -105,14 +105,18 @@ registry denylist; the basal contraction is reported as its own observable.
   z=3.087∈[3,3.5], L/lc=6.18≥5.9, n_xl=1850.
 
 **S-layer (surface manifold — positioning + connectivity, NO force):**
-* **S1 ✅ DONE** — surface manifold layer (`cell/basal_surface.py`): selects the
-  south-pole basal cap (resolution-invariant polar cap θ=arcsin(footprint/R)),
-  POSITIONS FA particles ON the surface (radial=R) at basal-patch centroids, exposes
-  basal patch adjacency = the "표면 연락 일부". NO force, not a bond → γ-invisible.
-  Gate PASS: 60 FA on-surface + in-cap + basal patches connected; VG-1 master gate —
-  cap area fraction invariant to subdivision (rel spread 6.1%, → analytic 0.127).
-  `cap_fraction_resolution_invariance` is the VG-1 check. (Optional soft normal-only
-  `U_conf` deferred to integration; geometry positioning is the S1 deliverable.)
+* **S1 ✅ DONE (FLAT, PI 2026-06-09)** — flat ventral surface layer
+  (`cell/basal_surface.py`): an adherent cell FLATTENS its ventral surface against the
+  substrate, so the basal surface is a **FLAT 2D triangulated disk** (Delaunay over
+  concentric-ring disk points at z=z_basal, +z normal), NOT a curved sphere cap (=
+  suspended geometry, wrong here; also flat eases the lamellipodium). POSITIONS FA
+  particles ON the flat surface (z=z_basal) at triangle centroids + exposes triangle
+  adjacency = the "표면 연락 일부". NO force, not a bond → γ-invisible. Gate PASS: 629
+  tris, 60 FA planar + within-disk + connected, area 99.8% of disk; VG-1 master gate —
+  disk area invariant to ring resolution (rel spread 0.4%). This consistency-fixes the
+  earlier curved-cap S1 (the surface and the planar F-layer filaments now share one
+  flat geometry — no flat-vs-curved dichotomy). `disk_area_resolution_invariance` =
+  VG-1 check. (Optional soft normal-only `U_conf` deferred to integration.)
 
 **Integration + active:**
 * **B3** anchor the F-layer ON the S-layer — filament network beads sit on the
