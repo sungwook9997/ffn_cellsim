@@ -47,7 +47,15 @@ def _angle_triplets(layout):
 
 
 def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
-                 anchor_drag_factor=1.0e4):
+                 anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None):
+    """Assemble the ventral SF HOOMD sim; optionally wire continuous_stroke myosin.
+
+    Stage 2b-2: with_myosin=True places Stam-Hocky bipolar minifilaments (actin-aware,
+    along the SF filament tangents ±x̂) on the bundle and drives them with the §9
+    continuous per-head force (MyosinHeadForce; the cross-bridge stiffness fix). The
+    SF actin beads are the binding substrate (n_cortex_actin = n_sf). α-actinin is the
+    cortex dynamic crosslinker (separate, optional; not added here — the SF backbone
+    bonds already provide the axial load-path to the FA anchors, which is the 2c lever)."""
     import hoomd
     import hoomd.md as md
     import gsd.hoomd
@@ -92,6 +100,34 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     snap.angles.group = angles.astype(np.uint32)
     snap.configuration.box = [L_box, L_box, L_box, 0.0, 0.0, 0.0]
 
+    # ---- Stage 2b-2: continuous_stroke myosin on the SF bundle (actin-aware) ----
+    p_myo = myo_layout = None
+    n_sf = n
+    if with_myosin:
+        from ffn_sim.cortex.myosin import (
+            resolve_cortex_myosin, generate_cortex_myosin_layout,
+            extend_state_with_cortex_myosin,
+        )
+        myo_cfg = deepcopy(cfg)
+        m = myo_cfg.setdefault("cortex", {}).setdefault("myosin", {})
+        m["stepping_mode"] = "continuous_stroke"   # §9 capped per-head custom force
+        m["mesoscale_force_scaling"] = False        # SF bundle: native motors, no sphere-density scaling
+        if n_motors is not None:
+            m["n_motors_per_cell"] = int(n_motors)
+        p_myo = resolve_cortex_myosin(myo_cfg, dt=p.dt_cfl, R_cell=R)
+        # Per-filament tangent = polarity·x̂ (the SF filaments run along ±x̂).
+        fil_tangents = (lay.polarity[:, None].astype(np.float64)
+                        * np.array([1.0, 0.0, 0.0])[None, :])
+        myo_layout = generate_cortex_myosin_layout(
+            p_myo, R, motor_tag_start=n_sf,
+            rng=np.random.default_rng(p_myo.seed),
+            cortex_positions=lay.positions,
+            cortex_tangents=fil_tangents,
+            beads_per_filament=lay.n_beads_per_fil,
+            cortex_filament_idx=lay.filament_idx,
+        )
+        snap = extend_state_with_cortex_myosin(snap, myo_layout, p_myo)
+
     sim = hoomd.Simulation(device=device, seed=seed)
     sim.create_state_from_snapshot(snap)
 
@@ -101,13 +137,23 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     angle.params["sf-angle"] = dict(k=p.angle_k, t0=np.pi)  # straight aligned fiber
     nlist = md.nlist.Tree(buffer=0.5 * p.lj_sigma)
     lj = md.pair.LJ(nlist=nlist, default_r_cut=0.0)
-    for ta in ("sf_actin", "fa_anchor"):
-        for tb in ("sf_actin", "fa_anchor"):
+    ptypes = list(sim.state.particle_types)   # includes myosin types when added
+    for ta in ptypes:
+        for tb in ptypes:
             lj.params[(ta, tb)] = dict(epsilon=p.lj_epsilon, sigma=p.lj_sigma)
             lj.r_cut[(ta, tb)] = p.lj_r_cut if p.lj_enabled else 0.0
     lj.mode = "shift"
 
-    ig = md.Integrator(dt=p.dt_cfl)
+    # CFL: the §9 stiff cross-bridge gives myosin k_backbone≈1e-2 → τ_backbone≈9 ns
+    # < the bare-cortex dt_cfl 13 ns. Re-derive the SF integrator dt locally (same
+    # cfl_safety_factor; NO edit to the frozen integrator/) so the stiff backbone is
+    # CFL-safe. For the passive (no-myosin) build dt_used = p.dt_cfl unchanged.
+    dt_used = float(p.dt_cfl)
+    if with_myosin and p_myo is not None and getattr(p_myo, "k_backbone", 0.0) > 0.0:
+        tau_backbone = p.gamma_b / p_myo.k_backbone
+        dt_used = min(dt_used, p.cfl_safety_factor * tau_backbone)
+
+    ig = md.Integrator(dt=dt_used)
     ig.forces += [bond, angle, lj]
     sim.operations.integrator = ig
     # BAOAB integrates all beads. The FA anchors get a HIGH drag (overdamped rigid-substrate
@@ -115,15 +161,34 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     # WITHOUT a re-pin step (a hard re-pin after BAOAB is energetically inconsistent with the
     # L-M scheme — it pumps energy — and the integrator is PI-frozen, so no filter). The bond
     # tension delivered to these near-fixed anchors is the traction. integrator/ untouched.
+    gamma_map = {"sf_actin": p.gamma_b, "fa_anchor": anchor_drag_factor * p.gamma_b}
+    if with_myosin:
+        gamma_map["cortex_myosin_backbone"] = p.gamma_b
+        gamma_map["cortex_myosin_head"] = p.gamma_b
     baoab_action, baoab_updater = make_baoab_updater(
-        kT=p.kT,
-        gamma={"sf_actin": p.gamma_b, "fa_anchor": anchor_drag_factor * p.gamma_b},
-        dt=p.dt_cfl, seed=seed,
+        kT=p.kT, gamma=gamma_map, dt=dt_used, seed=seed,
     )
     sim.operations.updaters.append(baoab_updater)
+
+    myosin_action = None
+    if with_myosin:
+        from ffn_sim.cortex.myosin import (
+            register_cortex_myosin_bond_params, make_cortex_myosin_updater,
+            MyosinHeadForce,
+        )
+        register_cortex_myosin_bond_params(bond, p_myo)
+        myosin_action, myosin_updater = make_cortex_myosin_updater(
+            p_myo=p_myo, layout=myo_layout, kT=p.kT, n_cortex_actin=n_sf,
+            cortex_bond_groups=lay.backbone_bonds,
+            ell0_cortex=ell0, cortex_beads_per_filament=lay.n_beads_per_fil,
+        )
+        sim.operations.updaters.append(myosin_updater)
+        ig.forces.append(MyosinHeadForce(action=myosin_action, p_myo=p_myo))
+
     anchor_tags = np.array(sorted(anchors), dtype=np.int64)
     return dict(sim=sim, bond=bond, layout=lay, anchors=anchor_tags,
-                p=p, ell0=ell0, R=R, z_basal=z_basal)
+                p=p, ell0=ell0, R=R, z_basal=z_basal,
+                p_myo=p_myo, myosin_action=myosin_action, dt_used=dt_used)
 
 
 def anchor_traction(handles):
@@ -159,12 +224,36 @@ def anchor_traction(handles):
     return float(axial_sum), float(max_T)
 
 
+def _time_avg_traction(h, *, equilibrate, contract, n_samples):
+    """Equilibrate, then TIME-AVERAGE the axial anchor traction over n_samples chunks.
+
+    Returns (mean_pN, std_pN, n_engaged_mean). Time-averaging is the 2b-1-mandated fix
+    for the noisy single-snapshot |T|; the differential (active − passive) cancels the
+    intrinsic taut-WLC thermal tension so what remains is the myosin-generated traction."""
+    sim = h["sim"]
+    sim.run(equilibrate)
+    samples, engaged = [], []
+    chunk = max(1, contract // n_samples)
+    for _ in range(n_samples):
+        sim.run(chunk)
+        t, _ = anchor_traction(h)
+        samples.append(t * _PN)
+        act = h.get("myosin_action")
+        engaged.append(int(act.n_engaged) if act is not None else 0)
+    arr = np.array(samples)
+    return float(arr.mean()), float(arr.std()), float(np.mean(engaged))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--n-filaments", type=int, default=12)
     ap.add_argument("--fiber-length-um", type=float, default=5.0)
     ap.add_argument("--bundle-radius-nm", type=float, default=200.0)
     ap.add_argument("--equilibrate", type=int, default=2000)
+    ap.add_argument("--contract", type=int, default=20000,
+                    help="post-equilibration steps over which traction is time-averaged (2c)")
+    ap.add_argument("--n-samples", type=int, default=10)
+    ap.add_argument("--n-motors", type=int, default=20)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--anchor-drag-factor", type=float, default=1.0e4,
                     help="FA-anchor drag multiple of gamma_b (overdamped rigid-substrate limit)")
@@ -174,42 +263,53 @@ def main() -> int:
     args = ap.parse_args()
 
     import hoomd
-    dev = hoomd.device.GPU(notice_level=0) if args.device == "gpu" else hoomd.device.CPU(notice_level=0)
-    h = build_sf_sim(
+
+    def _dev():
+        return (hoomd.device.GPU(notice_level=0) if args.device == "gpu"
+                else hoomd.device.CPU(notice_level=0))
+
+    common = dict(
         n_fil=args.n_filaments, fiber_length=args.fiber_length_um * 1e-6,
-        bundle_radius=args.bundle_radius_nm * 1e-9, device=dev, seed=args.seed,
+        bundle_radius=args.bundle_radius_nm * 1e-9, seed=args.seed,
         anchor_drag_factor=args.anchor_drag_factor,
     )
-    n = h["layout"].positions.shape[0]
-    print(f"  SF: {h['layout'].n_fil} fil × {h['layout'].n_beads_per_fil} beads = {n} "
-          f"({h['anchors'].size} FA anchors), L={h['layout'].fiber_length*_UM:.2f}µm, "
-          f"z_basal={h['z_basal']*_UM:.2f}µm", flush=True)
-    h["sim"].run(1)
-    t0, fmax0 = anchor_traction(h)
-    print(f"  [t=1] passive anchor traction = {t0*_PN:.3f} pN  (max |F|={fmax0*_PN:.3f} pN)",
+    # Stage 2c: DIFFERENTIAL time-averaged traction (active − passive). The passive
+    # baseline carries the intrinsic taut-WLC thermal tension (2b-1 finding); the
+    # differential isolates the myosin-generated traction with the §9 corrected motor.
+    h_p = build_sf_sim(device=_dev(), with_myosin=False, **common)
+    n = h_p["layout"].positions.shape[0]
+    print(f"  SF: {h_p['layout'].n_fil} fil × {h_p['layout'].n_beads_per_fil} beads = {n} "
+          f"({h_p['anchors'].size} FA anchors), L={h_p['layout'].fiber_length*_UM:.2f}µm",
           flush=True)
-    h["sim"].run(args.equilibrate)
-    t1, fmax1 = anchor_traction(h)
-    print(f"  [equilibrated {args.equilibrate}] passive anchor traction = {t1*_PN:.3f} pN  "
-          f"(max |F|={fmax1*_PN:.3f} pN)", flush=True)
-    # NOTE (2b-1 finding): a fiber placed at FULL CONTOUR extension is TAUT, so it carries an
-    # intrinsic thermal/entropic tension at rest (a taut WLC has tension); the single-snapshot
-    # |T| also fluctuates widely. So "passive ≈ 0" is NOT expected — the SCIENCE measurement
-    # (Stage 2c) must be DIFFERENTIAL (myosin_ON − myosin_OFF) and TIME-AVERAGED, and/or place
-    # the FA separation with slack. This run validates only the BUILD + RUN + traction READOUT.
+    t_pass, sd_pass, _ = _time_avg_traction(
+        h_p, equilibrate=args.equilibrate, contract=args.contract, n_samples=args.n_samples)
+    print(f"  PASSIVE  traction = {t_pass:.3f} ± {sd_pass:.3f} pN (time-avg)", flush=True)
+
+    h_a = build_sf_sim(device=_dev(), with_myosin=True, n_motors=args.n_motors, **common)
+    print(f"  myosin: {h_a['p_myo'].n_motors_per_cell} minifilaments, "
+          f"continuous_stroke, dt={h_a['dt_used']:.3e}s (CFL-rederived)", flush=True)
+    t_act, sd_act, eng = _time_avg_traction(
+        h_a, equilibrate=args.equilibrate, contract=args.contract, n_samples=args.n_samples)
+    print(f"  ACTIVE   traction = {t_act:.3f} ± {sd_act:.3f} pN (time-avg, "
+          f"{eng:.0f} engaged heads)", flush=True)
+    diff = t_act - t_pass
+    print(f"  ⇒ DIFFERENTIAL (active − passive) = {diff:+.3f} pN  "
+          f"[{'CONTRACTILE +traction' if diff > 0 else 'no net active traction'}]", flush=True)
+
     out = {
-        "stage": "2b-1 SCAFFOLD: bundle build + FA anchor + traction readout (WIP)",
-        "n_fil": h["layout"].n_fil, "n_beads": int(n), "n_anchors": int(h["anchors"].size),
-        "fiber_length_um": h["layout"].fiber_length * _UM,
-        "passive_traction_pN_t0": t0 * _PN,
-        "passive_traction_pN_equilibrated": t1 * _PN,
-        "known_issues_for_2b2": [
-            "taut full-contour placement → intrinsic thermal tension (add slack or differential)",
-            "single-snapshot |T| is noisy → time-average over samples",
-            "overdamped high-drag anchor is a stand-in for the FA SubstrateLigandPin (consume it)",
-            "myosin + alpha-actinin not yet added (Stage 2b-2)",
-        ],
-        "note": "BUILD+RUN+READOUT validated; quantitative traction = Stage 2c (differential, time-avg)",
+        "stage": "2b-2 + 2c: continuous_stroke myosin on ventral SF + differential time-avg traction",
+        "n_fil": h_a["layout"].n_fil, "n_beads": int(n), "n_anchors": int(h_a["anchors"].size),
+        "fiber_length_um": h_a["layout"].fiber_length * _UM,
+        "n_motors": h_a["p_myo"].n_motors_per_cell,
+        "stepping_mode": "continuous_stroke",
+        "dt_used_s": h_a["dt_used"],
+        "equilibrate": args.equilibrate, "contract": args.contract, "n_samples": args.n_samples,
+        "passive_traction_pN": t_pass, "passive_traction_std_pN": sd_pass,
+        "active_traction_pN": t_act, "active_traction_std_pN": sd_act,
+        "engaged_heads_mean": eng,
+        "differential_traction_pN": diff,
+        "note": "differential cancels the intrinsic taut-WLC thermal tension → myosin-generated "
+                "traction with the §9 corrected (capped, stiff cross-bridge) motor.",
     }
     Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out_json).write_text(json.dumps(out, indent=2))
