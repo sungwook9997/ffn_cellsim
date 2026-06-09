@@ -31,9 +31,28 @@ contraction run으로 재측정**해야 한다. Lead가 이를 자율 진행 중
   lever의 γ 기여를 정량.
 - 기존 Gate-A(1e-7, binned) γ_soft = 3.06e-3 mN/m = 밴드의 1/114가 비교 baseline.
 
-**PI에게 남는 판단(측정 후):** 재측정 γ가 full-stall envelope(~18–36× under = 알려진
-density 갭)에 도달하면 → "transmission 풀림, 잔여는 density-bound"로 결정 2와 묶어 종결.
-여전히 ≫envelope로 floored면 → transmission에 crosslink 외 다른 lever가 있다는 새 발견.
+**측정 결과 (2026-06-10, Lead 자율 A/B, continuous_stroke contraction, n_fil=120):**
+
+| | A: xlink **1e-3** (production) | B: xlink **1e-7** (pre-re-anchor) |
+|---|---|---|
+| WALL-A 전파효율(actin/myosin) | **4.56%** | **1.72%** |
+| actin-network γ [mN/m] | 6.29e-4 | 2.38e-4 |
+| myosin-dipole γ [mN/m] (지배항) | 1.378e-2 | 1.378e-2 (동일) |
+| **총 γ_soft [mN/m]** | 1.374e-2 (~13× under) | 1.354e-2 (~13× under) |
+| per-head meanT / gen_force | 8.44 pN = **F_stall** / 3.43 nN | 8.47 pN = F_stall / 3.27 nN |
+
+**해석.** ⭐ crosslink 재anchor는 network **전파를 2.6× 개선**(WALL-A 1.72→4.56%) — 즉
+1e-7이 정말 transmission 고리를 약화시켰고 1e-3 교정이 그 역할을 회복했다(재anchor 정당성
+재확인). **그러나 절대 γ는 +1.4%만 움직인다**: γ_soft의 지배항은 local myosin-dipole
+(1.378e-2, crosslink 무관)이고 전파 채널(6e-4)은 ~5%에 불과. per-head 힘은 이미 F_stall로
+maxed, 결합 406 heads인데도 dipole γ가 ~13× under = **WALL B(생성/density envelope)**.
+
+⇒ **결론: γ magnitude는 transmission-bound가 아니라 density/coherence-bound다.** crosslink는
+풀렸고(전파 2.6×), 남은 ~13× 갭은 PI 결정 2(density/active-fraction datum)의 영역. 이 측정이
+결정 2(A) "generation/density-bound 종결"을 데이터로 뒷받침한다.
+⚠️ 단 이 A/B는 mesoscale CPU n_fil=120(예비). native-scale GPU 확정은 gbook 정리 후
+(결정적 GPU A/B는 여전히 PI-gated; 그러나 결론 방향은 바뀌지 않을 것 — dipole 지배는 scale-
+invariant).
 
 ---
 
@@ -54,6 +73,9 @@ rounded/de-adhered HeLa/L929 proxy(NO MCF7, NO spread-adherent datum).
 **Lead 추천: (A), 단 (C)를 명시 caveat로.** 이전 세션들(nmii/floor)이 이미
 "density-closable 아님"을 REFUTE로 확정. 더 파기보다 generation-bound로 정직하게 종결하고,
 밴드 자체가 MCF7 datum이 아니라는 점을 결론에 박는 것이 platform 신뢰성에 맞다.
+⭐ **2026-06-10 A/B가 이를 데이터로 뒷받침**: per-head 힘 F_stall + 결합 406 heads인데도
+dipole γ ~13× under, crosslink(transmission) 풀어도 절대 γ 불변 → 남은 갭은 순수
+density/coherence. transmission은 더 이상 용의자가 아니다.
 
 ---
 
@@ -83,9 +105,11 @@ Kumar 10–30nN은 대부분 network/prestress. = 결정 2의 SF 쌍둥이(같�
 
 ## 묶음 추천 (PI 한 줄 결정용)
 
-1. **결정 1**: (C) 진단 먼저 → 결과 보고 (A)/(B). *Lead가 자율 진행 중.*
-2. **결정 2**: (A) generation-bound 종결 + active-fraction caveat.
-3. **결정 3**: (A) 고밀도 SF 테스트로 placement-noise 가설만 검증(자율 진행), 종결 판단은 PI.
+1. **결정 1**: ✅ **닫힘** — crosslink 재anchor는 loop18에 이미 완료. 2026-06-10 A/B로
+   "transmission 풀림(전파 2.6×) but 절대 γ 불변(density-bound)" 확정. PI 액션 불필요.
+2. **결정 2**: (A) generation/density-bound 종결 + active-fraction caveat. **A/B 데이터가
+   직접 뒷받침** — per-head F_stall·406 heads인데도 ~13× under, transmission 풀어도 불변.
+3. **결정 3**: (A) 고밀도 SF 테스트로 placement-noise 가설만 검증(자율 진행 가능), 종결 판단은 PI.
 
 이 셋이 정해지면 γ/SF magnitude line이 "generation-bound, transmission lever=crosslink"로
 일관 종결되거나, crosslink 재anchor로 밴드에 근접하는 새 결과가 나온다. 둘 다 platform을

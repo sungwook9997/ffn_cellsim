@@ -56,3 +56,14 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
   per-step sync 제거, 최우선) > P2b(cKDTree query GPU화, topology변이 분리) > P2c(native
   벤치+gate, PI-gated). gbook dirty라 GPU 검증 불가 → 계획만, 포팅 커밋 안 함(verified-only).
 - NEXT: A/B 최종 JSON(WALL-A myosin/actin 분해+verdict) 캡처 → 브리프 §1에 수치 기록.
+
+## Iter 5 — ⭐ A/B 확정: crosslink는 전파 2.6× 개선하나 γ는 density-bound
+- 두 런 완료. **A(1e-3) vs B(1e-7):** WALL-A 전파효율 **4.56% vs 1.72% = 2.6× 개선**
+  (재anchor가 transmission 고리를 정말 회복). actin-network γ 6.29e-4 vs 2.38e-4.
+  **BUT 총 γ_soft 1.374e-2 vs 1.354e-2 = +1.4%만** — 지배항 myosin-dipole γ=1.378e-2
+  (crosslink 무관, 양쪽 동일). per-head meanT=F_stall(8.44pN), 결합 406 heads.
+- ⭐ **결론: γ magnitude는 transmission-bound 아님 = density/coherence-bound.** dipole이
+  ~13× under(WALL B) = 생성/density envelope 문제. PI 결정 2(A) 데이터 뒷받침. 브리프
+  §1/§2/묶음 + 결정1 "닫힘" 갱신.
+- figure: outputs/h7/figs/h7_xlink_ab_2026-06-10.png (채널 분해 + WALL-A 비교).
+- task#2 DONE. 남은 자율거리: SF 고밀도 테스트(결정3-A 가설검증, 자율가능) OR 워크트리 정리.
