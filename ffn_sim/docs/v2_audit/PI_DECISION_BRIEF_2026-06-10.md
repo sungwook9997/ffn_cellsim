@@ -63,12 +63,27 @@ invariant).
 ~27–36×. **MCF7 areal-density datum이 존재하지 않는다.** 밴드[0.35–0.65 mN/m] 자체도
 rounded/de-adhered HeLa/L929 proxy(NO MCF7, NO spread-adherent datum).
 
+**측정 결과 (2026-06-10, Lead 자율 γ-vs-density sweep, continuous_stroke):**
+
+| ρ [1/µm²] | γ_soft [mN/m] | ×under band_lo |
+|---|---|---|
+| 0.6 (lit proxy, HeLa) | 0.0137 | 13.1× |
+| 6.0 | 0.0742 | 2.4× |
+| 21.0 | 0.191 | 0.94× (밴드 도달) |
+
+power-law fit **γ ∝ ρ^0.74** → **band_lo(0.18) 도달에 ρ≈19.6/µm², band_hi(0.40)에 ρ≈58/µm²**
+= proxy 0.6의 **~33–96×**. fig `h7_gamma_vs_density_2026-06-10.png`.
+⚠️ **정직한 caveat:** mesoscale(×40)에서 density override는 head 수가 아니라 force_factor
+(4.24→148)를 키운다 — native density를 sanctioned ×40 coarse-graining으로 표현한 것(정당)이나,
+고밀도 점의 per-meso-head meanT(84·294pN)는 mesoscale-effective값이지 단일 cross-bridge force
+아님. γ∝ρ 스케일링 자체는 유효(native 모터 수 ∝ ρ).
+
 **선택지 + 비용.**
 | 선택 | 비용/영향 |
 |---|---|
-| (A) generation-bound로 종결 | γ active 채널은 lit-density에서 envelope까지 도달함을 보이고, 밴드까지의 잔여 갭은 "density/overlap datum 부재"로 명시 종결. 정직하나 magnitude 미완 |
-| (B) density datum 탐색 계속 | MCF7 minifilament areal density를 deep-research로 더 찾기(이전 104-agent 탐색은 parallel-per-cross-section datum REFUTED) |
-| (C) 밴드 active-fraction 재정의 | blebb ~halving → active-fraction ~0.135로 밴드 하한 재해석 → 갭 축소 |
+| (A) generation/density-bound로 종결 | γ가 lit-proxy density(0.6)에서 ~13× under, 밴드 도달엔 ρ≈20–58/µm² 필요(곡선 정량). 잔여 갭 = "MCF7 density datum 부재(proxy의 33–96×)"로 명시 종결. 정직, magnitude는 datum-bound로 종결 |
+| (B) density datum 탐색 계속 | MCF7 minifilament areal density deep-research(이전 104-agent 탐색은 parallel-per-cross-section datum REFUTED — 추가 탐색 회수 낮을 듯) |
+| (C) 밴드 active-fraction 재정의 | blebb ~halving → active-fraction ~0.135로 밴드 하한 재해석 → 갭 축소(여전히 density 필요) |
 
 **Lead 추천: (A), 단 (C)를 명시 caveat로.** 이전 세션들(nmii/floor)이 이미
 "density-closable 아님"을 REFUTE로 확정. 더 파기보다 generation-bound로 정직하게 종결하고,

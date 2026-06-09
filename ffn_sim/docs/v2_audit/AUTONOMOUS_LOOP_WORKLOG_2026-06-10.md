@@ -67,3 +67,14 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
   §1/§2/묶음 + 결정1 "닫힘" 갱신.
 - figure: outputs/h7/figs/h7_xlink_ab_2026-06-10.png (채널 분해 + WALL-A 비교).
 - task#2 DONE. 남은 자율거리: SF 고밀도 테스트(결정3-A 가설검증, 자율가능) OR 워크트리 정리.
+
+## Iter 6 — ⭐ γ-vs-density 곡선: 밴드 도달 ρ≈20/µm² (결정2 정량 확정)
+- 3점 완료. **γ_soft: ρ=0.6→0.0137, 6.0→0.0742, 21.0→0.191 mN/m.** power-law
+  **γ∝ρ^0.74** → band_lo(0.18) @ **ρ≈19.6/µm²**, band_hi(0.40) @ ρ≈58 = proxy 0.6의
+  **~33–96×**. ⇒ γ는 명확히 density-bound, 밴드엔 33–96× density 필요(MCF7 datum 없음).
+- ⚠️ mesoscale caveat: density override = force_factor(4.24→148) 스케일이지 head 수 아님
+  (native density의 sanctioned ×40 표현; meanT 294pN은 meso-effective). γ∝ρ는 유효.
+- PI 브리프 결정2에 곡선/fit/caveat 기록. fig h7_gamma_vs_density_2026-06-10.png. task#5 DONE.
+- 누적 결론(iter5+6): **γ magnitude floor = density-bound(NOT transmission, NOT generation
+  per-head: F_stall 도달). 밴드 도달엔 ρ~20/µm² 필요, lit proxy는 0.6(MCF7 datum 부재).**
+  PI 결정2(A) 데이터 완비. 남은 자율거리: 워크트리 정리 또는 SF 고밀도(결정3) — 다음 이터.
