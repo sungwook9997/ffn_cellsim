@@ -1,5 +1,51 @@
 # Platform PI Queue — 2026-06-09
 
+## 🔀 SESSION SPLIT (2026-06-09, PI) — SF generation-limit, two follow-on sessions
+The passive 2-layer basal contractile apparatus BUILD is COMPLETE (B1-B4 + S1 + bending,
+all build-time gates PASS; commits `6f67b99`→`644f770` on `h7/compartment-platform`). The
+ONLY remaining blocker to the live Kumar 10-30 nN gate is the **generation-limit** (the SF
+instance of the cortical γ-floor: force-budget ~2000× under band at lit density). The CFL
+wall is SOLVED (bending wired → bend-before-stretch ratio ~1.5e5 → AFINES soft-stretch →
+explicit BAOAB feasible, no frozen integrator). PI split the generation-limit decision into
+two follow-on sessions — **run each in its OWN git worktree** (1-session-1-worktree rule;
+both touch basal_mesh.py / the force budget). (i) is decisive; run it first or in parallel.
+
+### Session (i) — "CLOSE THE FLOOR": derive Route-B NMII force-scaling from a density datum
+- **Mandate**: find the native NMII content/density of a SINGLE ventral stress fiber
+  (minifilaments per cross-section / per µm; + per-minifilament stall force) — via
+  deep-research (cross-verified, like the N_filaments/EA audit), since the data is likely
+  old/sparse. DERIVE the Route-B mesoscale force-scale factor (`myosin.py`
+  `mesoscale_force_scaling`: factor = native_NMII/effective_NMII, grid-invariant → NOT a
+  magic number). Apply to `sf_myosin_`; test if the SF tension reaches Kumar 10-30 nN
+  (force-budget `scripts/h7_basal_sf_force_budget.py` first; then optionally the soft-stretch
+  explicit-BAOAB dynamic run on gbook). This ALSO fills the cortical γ-floor's missing density
+  datum from the SF side.
+- **Boot**: BASAL_MESH_DESIGN_2026-06-09.md, PLATFORM_AUTORUN_LOG_2026-06-09.md (Phase-3 table),
+  the γ-floor docs (H7_ACTIVE_GAMMA_SYNTHESIS_2026-06-09 in the main repo + the
+  `gamma-floor-layered-resolution` memory), `h7_basal_sf_force_budget.py`, `myosin.py`
+  `mesoscale_force_scaling`, `basal_bending_report` (bend-before-stretch headroom).
+- **Deliverable**: factor DERIVED + Kumar verdict (PASS/REFUTE with the density datum stated),
+  or HALT to PI if no usable native-NMII-per-SF datum exists.
+
+### Session (ii) — "ACCEPT THE FLOOR": generation-bound conclusion + γ-floor integration
+- **Mandate**: document the SF tension as GENERATION-limited (force-budget ~2000× under Kumar
+  at lit density), UNIFY with the cortical γ-floor conclusion (one generation-limit story —
+  same ½·n·f·ℓ budget, same MCF7-density-datum gap), report honestly with the bounds. Consider
+  the gate-reframe (active-fraction / band scope). Produce the SF-generation-limit synthesis
+  doc; cross-link to the cortical γ-floor synthesis. This is the honest fallback if (i) finds
+  no density datum that closes Kumar.
+- **Boot**: same docs as (i) + the cortical γ-floor synthesis.
+- **Deliverable**: SF generation-limit synthesis doc, integrated with the cortical γ-floor.
+
+### Reconciliation
+(i)'s outcome largely determines (ii): if a real native-NMII density closes Kumar via Route B,
+the SF line is unblocked (and the cortical γ-floor gets its density datum); if not, (ii)'s
+generation-bound conclusion stands (SF + cortical γ as one bounded generation-limit). Whichever
+session lands the result updates this queue + the Dev-Logs board.
+
+---
+
+
 ## ✅ ACTIVATED under the PI ownership grant (2026-06-09 "소유권 허용 / 모든 것 달려")
 - **osmotic_regulation → LIVE** (gate PASS: τ_RVD=3.2s in band, RVD sign, no-contamination,
   off-identity). Post-build attach in manifest.py (no cell.py surgery).
