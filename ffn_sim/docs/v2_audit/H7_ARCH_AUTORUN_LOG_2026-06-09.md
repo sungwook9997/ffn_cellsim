@@ -358,3 +358,18 @@ cross-section). Sweep: bundle_radius 800/1200/1600nm × n_cross 12/24/48 × n_mo
 coherent differential → does std/|mean| shrink + sign stabilize as parallel N_heads grows? gbook 12
 runs parallel, ETA ~2h. Also running a local placement-sanity check (does the sarcomeric construction
 enforce antiparallel-overlap engagement, or same-polarity = the sign-noise source).
+
+## LOOP 24c RESULT (2026-06-10): density hypothesis REFUTED + ROOT CAUSE → traction line HALTED
+Parallel-density sweep (wider bundle, 4 seeds/level): P1 ~53 heads mean −127±348 CV2.73 | P2 ~87
+−52±171 CV3.31 | P3 ~176 −468±554 CV1.18 | P4 ~339 −200±302 CV1.50. Over 6.4× engaged-head range
+the CV does NOT shrink, sign stays mixed, mean NEGATIVE at every level. ⇒ DENSITY HYPOTHESIS REFUTED
+(no convergence to sign-definite contractile). ⭐ROOT CAUSE (placement deep-dive @60k steps): minifilament
+axes ARE ±x̂-aligned + bipolar gate forbids same-polarity (0% same), BUT only ~11% of minifilaments
+achieve BALANCED double-sided antiparallel engagement; ~50% are SINGLE-SIDED = unbalanced random-sign
+pull → aggregate dominated by random unbalanced pulls, not balanced contractile dipoles → sign-noise,
+density adds more unbalanced pulls (no convergence), +131 was a fluke draw. ⇒ sarcomeric SF as built
+does NOT robustly rectify (binding leaves most minifilaments single-sided) → needs a binding-kinetics/
+overlap-geometry redesign to reliably engage antiparallel pairs on BOTH sides = PI-gated mechanism
+redesign, not a param change. TRACTION LINE HALTED. NOT refuted: per-head F_stall fix; active-traction
+now joins cortical-γ as generation/engagement-bound (model doesn't assemble balanced sarcomeric units =
+the actin-architecture physics it lacks). figs h7_density_convergence.png. doc §8.

@@ -38,8 +38,47 @@
 >
 > Trail: `outputs/h7/production/h7_sarc_cpu_s{1,2,3,5,6}.json`; ensemble launcher `ensemble.sh`.
 
-**Date** 2026-06-10 · **Branch** `h7/full-cell-integration` · **Status** ⛔ SCALE-UP HALTED — per-SF
-traction sign non-robust (see banner). Machinery/anchors below retained. Builds directly on the DECISIVE single-SF result (loop23,
+**Date** 2026-06-10 · **Branch** `h7/full-cell-integration` · **Status** ⛔ TRACTION LINE HALTED —
+density hypothesis REFUTED + root cause found (see §8). Machinery/anchors below retained.
+
+> ## ⛔⛔ §8 HIGH-DENSITY TEST (PI-directed) → density hypothesis REFUTED + ROOT CAUSE (2026-06-10)
+>
+> PI chose the high-density test (does the per-SF sign converge as parallel engaged heads grow?).
+> Swept the parallel-minifilament density via wider bundles (the force-adding axis: series sarcomeres
+> share tension, only parallel minifilaments add force), 4 seeds per level:
+>
+> | level | engaged heads | across-seed mean ± std (pN) | CV \|std/mean\| | sign |
+> |---|---|---|---|---|
+> | P1 (br400, 16mf) | ~53 | −127 ± 348 | 2.73 | 2+/3− |
+> | P2 (br800, 28mf) | ~87 | −52 ± 171 | 3.31 | 2+/2− |
+> | P3 (br1200, 55mf) | ~176 | −468 ± 554 | 1.18 | 1+/3− |
+> | P4 (br1600, 100mf) | ~339 | −200 ± 302 | 1.50 | 1+/3− |
+>
+> **REFUTED.** Over a 6.4× engaged-head range the CV stays ~1.2–3.3 (does NOT shrink toward 0), the
+> sign stays mixed, and the mean is NEGATIVE at every level (systematic expansile/slackening bias).
+> No convergence to a sign-definite contractile value. Figure `h7_density_convergence.png`.
+>
+> **⭐ ROOT CAUSE (placement deep-dive).** The minifilament axes ARE aligned to the SF axis (±x̂,
+> `generate_cortex_myosin_layout` line 650 `axes = cortex_tangents[fil]`) and the bipolar gate
+> (`_bipolar_accepts`) correctly forbids same-polarity engagement. BUT at full engagement only
+> **~11 % of minifilaments achieve the BALANCED double-sided antiparallel engagement** that sarcomeric
+> contraction requires; **~50 % are SINGLE-SIDED (one side bound, one unbound) — an UNBALANCED net pull
+> of ~random axial sign** (0 % same-polarity, ~40 % unbound). The aggregate net traction is dominated
+> by the random unbalanced single-sided pulls, NOT by the few balanced contractile dipoles. ⇒ the sign
+> is realization-noise; adding minifilaments adds more unbalanced pulls (no convergence); the loop23
+> +131 was a draw where the unbalanced pulls happened to net contractile.
+>
+> **⇒ The sarcomeric ventral SF, as constructed, does NOT robustly rectify myosin into contractile
+> traction** — not because the geometry/gate is wrong, but because the binding kinetics leave most
+> minifilaments single-sided/unbalanced. Making this work needs the binding to RELIABLY engage
+> antiparallel pairs on BOTH sides (a binding-kinetics / overlap-geometry redesign), OR a different
+> traction structure. This is a PI-gated mechanism redesign, not a parameter change. The traction line
+> is HALTED here. Trail: `h7_dens_P{2,3,4}_*.json`, `h7_density_convergence.py`, `h7_sarc_cpu_s*.json`.
+>
+> NOT refuted: the per-head F_stall generation fix (cortex-verified). The active-traction line now
+> joins the cortical-γ floor as GENERATION/ENGAGEMENT-bound: the mean-field model does not assemble
+> the balanced sarcomeric contractile units that real ventral SFs do (cf. the actin-architecture /
+> overlap physics the model doesn't capture; the SF twin of the missing motor-density datum). Builds directly on the DECISIVE single-SF result (loop23,
 `H7_MYOSIN_OVERLAP_MECHANISM_DESIGN` §12): a graded-polarity SARCOMERIC ventral SF rectifies the
 §9-corrected continuous-stroke myosin into **+131 ± 8 pN coherent contractile traction (16σ,
 +2.67 pN/engaged-head ≈ native F_stall)** at its FA anchors. This doc scales that single fiber to
