@@ -213,3 +213,20 @@ optional_subsystems:
     n_beads_per_SF: 24   # beads per bundle (grid-invariant; T=μ_SF·ε independent of count)
                          # ⚠ Kumar 2006 10-30 nN single-SF tension band is the ACTIVE+
                          # equilibrated gate (needs NMII) — DEFERRED. See PLATFORM_PI_QUEUE.
+  junctional_actin:      # H.junctional_actin α-catenin/vinculin cadherin↔cortex clutch — LIVE 2026-06-09
+    enabled: false       # default-OFF; junc_actin bonds γ-denylisted. Built on the
+                         # two-cell doublet (cell/doublet.py with_junctional_actin); couples
+                         # each cell's cadherins to its OWN cortex. Depends on cadherin_junction.
+                         # Catch-set CANDIDATES (module defaults None → enabled build raises):
+    x_catch: 4.0e-9      # m   α-catenin/F-actin catch arm (Buckley 2014; SOLID)
+    x_slip: 0.4e-9       # m   slip arm (Buckley 2014; SOLID)
+    k_catch0: 1.0        # 1/s catch zero-force rate (ORDER; matched to Buckley τ(0)~1s)
+    k_slip0: 0.02        # 1/s slip zero-force rate (ORDER; Pereverzev k_slip0≪k_catch0)
+    k_couple: 1.0e-6     # N/m head↔cortex clutch stiffness (DERIVED H.3 transfer; ORDER)
+    k_anchor: 1.0e-5     # N/m head↔cadherin anchor stiffness (DERIVED H.3 transfer)
+    k_on: 10.0           # 1/s single-head bind rate (DERIVED H.3 transfer)
+    max_couple_dist: 6.0e-8  # m  cortex-acceptor reach (DERIVED H.3 transfer)
+    anchor_r0: 5.0e-9    # m  head↔cadherin rest length (DERIVED)
+                         # ⚠ DYNAMIC catch-slip maintenance (JunctionalActinCouplingUpdater
+                         # as a live Action) is the deferred active gate; build-time = the
+                         # belt topology + force-free + no-contam. See PLATFORM_PI_QUEUE.

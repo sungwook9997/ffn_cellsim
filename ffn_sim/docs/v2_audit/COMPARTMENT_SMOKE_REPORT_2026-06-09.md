@@ -106,6 +106,8 @@ across activations is preserved; `cell_latest.png` points at the newest. Run wit
 - `h7_cadherin_junction_activation_gate.png` — GATE-J: two-cell doublet (cell A / cell B
   cortices + the cadherin interface), trans-dimer length histogram (force-free at r0_trans),
   A↔B-vs-intra bar (genuine two-cell junction, intra=0).
+- `h7_junctional_actin_activation_gate.png` — junctional belt: α-catenin coupling heads on
+  the doublet, same-cell-coupling/no-contam bars, biphasic α-catenin catch k_off(F) with F*.
 - morphology snapshots accumulate: `cell_v01_membrane.png` (suspended, 5 internal LIVE) →
   `cell_v02_stressfibers_adherent.png` (adherent, all 6 single-cell LIVE + FA + vSF). The
   cadherin junction is a TWO-cell construct (its own GATE-J doublet figure above).

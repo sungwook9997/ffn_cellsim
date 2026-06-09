@@ -282,3 +282,67 @@ def test_every_bond_type_carries_denylist_prefix():
 if __name__ == "__main__":  # pragma: no cover
     import sys
     sys.exit(pytest.main([__file__, "-q"]))
+
+
+# ---------------------------------------------------------------------------
+# LIVE activation (2026-06-09; PI 소유권 허용): the reserved build path is now
+# implemented and built on the two-cell doublet (cadherin↔cortex α-catenin clutch).
+# ---------------------------------------------------------------------------
+class TestJunctionalActinDoubletActivation:
+    def test_belt_builds_same_cell_force_free_no_contam(self):
+        import numpy as np
+        from ffn_sim.cell.doublet import build_cell_doublet
+        from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
+
+        d = build_cell_doublet(
+            "mcf7_baseline.yaml", n_cad_per_cell=40, seed=1,
+            with_junctional_actin=True, run_binder_batches=0,
+        )
+        s = d.simulation.state.get_snapshot()
+        types = list(s.particles.types)
+        tid = np.asarray(s.particles.typeid, dtype=np.int64)
+        pos = np.asarray(s.particles.position, dtype=np.float64)
+        bn = list(s.bonds.types)
+        bg = np.asarray(s.bonds.group, dtype=np.int64)
+        bt = np.asarray(s.bonds.typeid, dtype=np.int64)
+        p = d.p_junctional_actin
+
+        assert p is not None and p.is_anchored
+        # BELT ASSEMBLED.
+        n_head = int((tid == types.index("junc_actin")).sum())
+        assert n_head > 0
+        assert "junc_actin_anchor" in bn
+        assert any(b.startswith("junc_actin_couple") for b in bn)
+        # FORCE-FREE anchor (head↔cadherin at anchor_r0).
+        anc = bg[bt == bn.index("junc_actin_anchor")]
+        La = np.linalg.norm(pos[anc[:, 0]] - pos[anc[:, 1]], axis=1)
+        assert float(np.max(np.abs(La - p.anchor_r0) / p.anchor_r0)) < 1e-6
+        # SAME-CELL coupling: head's cortex acceptor in its parent cadherin's cell.
+        ja = d.extras["handles"]["junc_actin"]
+        a_set = set(d.cell_a_cadherin_tags.tolist())
+        n_a = d.n_cortex_per_cell
+        for cad_t, cor_t in zip(np.asarray(ja["coupled_cadherin"]),
+                                np.asarray(ja["cortex_global"])):
+            assert (int(cad_t) in a_set) == (int(cor_t) < n_a)
+        # NO-CONTAM: every junc_actin bond type denylisted from cortical γ.
+        junc_bonds = [b for b in bn if b.startswith("junc_actin")]
+        assert junc_bonds and all(_is_adhesion_bond_type(t) for t in junc_bonds)
+        d.simulation.run(0)
+
+    def test_catch_signature_biphasic(self):
+        # Anchored catch law: k_off(F) falls to a minimum (F*) then rises.
+        import numpy as np
+        from ffn_sim.junction.junctional_actin import (
+            catch_off_rate, resolve_junctional_actin,
+        )
+        cfg = {"junctional_actin": {
+            "enabled": True, "x_catch": 4.0e-9, "x_slip": 0.4e-9,
+            "k_catch0": 1.0, "k_slip0": 0.02, "k_couple": 1e-6, "k_anchor": 1e-5,
+            "k_on": 10.0, "max_couple_dist": 6e-8, "anchor_r0": 5e-9,
+        }}
+        p = resolve_junctional_actin(cfg, kT=4.0e-21, dt=1e-8, n_cadherin=10)
+        F = np.linspace(0.0, 60e-12, 200)
+        k = np.array([catch_off_rate(p, float(f)) for f in F])
+        imin = int(np.argmin(k))
+        assert 0 < imin < len(F) - 1
+        assert k[imin] < k[0] and k[-1] > k[imin]   # catch then slip

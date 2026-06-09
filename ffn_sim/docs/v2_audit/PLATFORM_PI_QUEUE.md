@@ -118,6 +118,28 @@ from cortical γ (denylisted), binder attached. Registry LIVE with `manifest_pat
   internal compartment stacks on a doublet (each cell with nucleus/MT/IF/membrane/SF)
   is a follow-on (run the single-cell extenders per cell of the doublet).
 
+## ✅ junctional_actin (⑤) → LIVE 2026-06-09 (LAST; reserved STUB build implemented)
+The reserved enabled+anchored build path is now IMPLEMENTED: built on the doublet
+(`build_cell_doublet(with_junctional_actin=True)`) — one `junc_actin` head per
+interface cadherin within the α-catenin reach of a SAME-cell cortex bead, a force-free
+`junc_actin_anchor` (head↔cadherin) + per-r0-bin `junc_actin_couple_b{i}` (head↔cortex).
+GATE PASS (belt assembled, same-cell coupling cross_cell=0, force-free, junc_actin_
+γ-excluded, biphasic catch F*=6 pN). Catch-set are PI-CANDIDATES in the config
+(Buckley x_catch/x_slip SOLID; k_catch0/k_slip0 ORDER; k_couple/k_anchor/k_on/
+max_couple_dist/anchor_r0 DERIVED H.3); module default None → un-anchored build raises.
+**DEFERRED to PI:** (1) ratify the catch-set / sanction the H.3 transfer + the
+parallel-Pereverzev-vs-Buckley-sequential form distinction; (2) the DYNAMIC catch-slip
+maintenance (JunctionalActinCouplingUpdater as a live Action); (3) ⚠ SPARSE-belt
+fidelity — the single-particle cadherin is the ectodomain tip at the interface
+(~0.5 µm from cortex), so only tips within the catch reach couple; a faithful DENSE
+belt needs a cadherin-tail particle near the cortex (follow-on).
+
+## 🏁 ACTIVATION BACKLOG COMPLETE (2026-06-09)
+ALL 8 default-OFF compartments are LIVE (osmotic · MT · IF · LINC · membrane_reservoir ·
+ventral_stress_fibers · cadherin_junction · junctional_actin). No EXPERIMENTAL/STUB
+remains. Everything below + the per-compartment DEFERRED notes are active/dynamic-phase
+work or PI parameter ratifications, NOT activations.
+
 ## ⚠️ NEW BLOCKER found during activation
 - **MTOC single-hub degree vs HOOMD nlist exclusion cap (7).** The aster's single MTOC
   carries n_mt backbone bonds; with the full-cell LJ nlist on (`exclusions=("bond","1-3")`),

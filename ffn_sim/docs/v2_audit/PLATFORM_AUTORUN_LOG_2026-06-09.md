@@ -114,11 +114,16 @@ activation that needs NO cortical_tension edit.
 | 17:30 | ⭐**cadherin_junction EXPERIMENTAL→LIVE** (7th graduation; FIRST multicell). NEW two-cell assembler cell/doublet.py::build_cell_doublet — two cortex shells (build_cortex_state ×2, offset +2R+gap), merged frame (bond/angle reindex), cadherins seeded on MATCHED facing caps (shared y,z, ±r0_trans/2 across interface → force-free trans-dimer), trans-dimers SEEDED pre-bound (engaged-junction baseline; bare junction needs ~1e3 binder batches), cadherin_anchor bonds hold cadherins on the surface, attach_cadherin_junction binder maintains. registry LIVE (manifest_path None — doublet build, NOT single-cell toggle; requires=()). ⚠defensive n_sub cap in cadherin binder (extreme-slip RNG-overflow guard). 2 registry tests switched to junctional_actin (still STUB) | (this commit) | LIVE |
 | 17:30 | GATE-J (two-cell doublet, build-time): **PASS** 5 controls — doublet assembled (2×7000 cortex + 120 cadherins + cadherin_trans/cadherin_anchor); TRANS ENGAGED n=60 dimers ALL A↔B (cross=60, intra=0 — genuine 2-cell junction); FORCE-FREE max strain 1.06e-15; ⭐NO-CONTAM cadherin_ excluded from cortical mask (γ_soft=1.23e-5 over cortex only); binder attached. +2 doublet tests (test_cadherin_junction.py 34 pass). DYNAMIC catch-slip maintenance + Iturri ~6.5nN de-adhesion DEFERRED (equilibrated run; BAOAB guard) | (this commit) | GATE PASS |
 
+| 18:30 | ⭐**junctional_actin STUB→LIVE** (8th & FINAL graduation). Implemented the RESERVED build path in junctional_actin.py: extend_snapshot_with_junctional_actin (enabled+anchored) appends one junc_actin head per interface cadherin within the α-catenin reach of a SAME-cell cortex bead — head placed anchor_r0 from the cadherin toward cortex (force-free anchor) + junc_actin_anchor (head↔cadherin) + per-r0-bin junc_actin_couple_b{i} (head↔cortex, force-free); + register_junctional_actin_bond_params. Built on the doublet via build_cell_doublet(with_junctional_actin=True) — couples each cell's cadherins to its OWN cortex. Config catch-set candidates (Buckley x_catch/x_slip SOLID; k_catch0/k_slip0 ORDER; k_couple/k_anchor/k_on/max_couple_dist/anchor_r0 DERIVED H.3); module default None → un-anchored build still raises (STUB contract preserved). registry STUB→LIVE. 2 registry tests → synthetic EXPERIMENTAL spec (no real EXPERIMENTAL/STUB left) | (this commit) | LIVE |
+| 18:30 | junctional_actin GATE (doublet build-time): **PASS** 5 controls — belt assembled (46 heads/couplings of 120 interface cadherins; only tips within the catch reach couple); SAME-CELL coupling (cross_cell=0); FORCE-FREE anchor strain 6.6e-14 + per-r0-bin coupling within ½-bin; NO-CONTAM junc_actin_ excluded from cortical mask; ⭐CATCH signature biphasic k_off(F) with F*=6.0 pN (Buckley). +2 build tests (test_junctional_actin.py 21 pass). DYNAMIC catch-slip maintenance + dense-belt fidelity (cadherin-tail particle) DEFERRED | (this commit) | GATE PASS |
+| 18:30 | ⭐⭐**ALL 8 default-OFF compartments now LIVE** — the EXPERIMENTAL/STUB activation backlog is COMPLETE. osmotic·MT·IF·LINC·membrane_reservoir·ventral_stress_fibers·cadherin_junction·junctional_actin all graduated with passing activation gates this session (PI 소유권 허용). Remaining are DEFERRED active/dynamic phases (NMII, catch-slip maintenance, nonlinear IF, bleb, dense belt) + PI parameter ratifications, not activations | — | DONE |
+
 ### Phase-2 ACTIVATION summary (PI 소유권 허용)
-**7 compartments EXPERIMENTAL→LIVE** (osmotic_regulation, microtubules,
+**8 (ALL) compartments EXPERIMENTAL/STUB→LIVE** (osmotic_regulation, microtubules,
 intermediate_filaments, linc, membrane_reservoir, ventral_stress_fibers,
-cadherin_junction) with passing activation gates; + SimuCell3D-style versioned
-morphology visualizer (compartment_vis.py). Detail below. osmotic_regulation
+cadherin_junction, junctional_actin) with passing activation gates — the activation
+backlog is COMPLETE; + SimuCell3D-style versioned morphology visualizer
+(compartment_vis.py). Detail below. osmotic_regulation
 (τ_RVD in band, RVD sign, no-contam), microtubules (aster, CFL, no-contam γ identical;
 n_mt≤7 cap blocker found+documented), intermediate_filaments (cage, no-contam; linear
 path, nonlinear PI-pending), **linc** (Option A nucleus↔IF-cage per-bond EXACT-r0 bridges;
@@ -130,12 +135,20 @@ fix), **ventral_stress_fibers** (PASSIVE backbone; PI-ratified long-axis-aligned
 FA pairs |cos|≈0.93, per-bundle EXACT-r0 force-free, no-contam γ identical; Kumar/NMII
 active gate deferred via sf_myosin_ prefix), **cadherin_junction** (FIRST multicell; new
 two-cell build_cell_doublet assembler — 60 trans-dimers all A↔B, force-free, cadherin_
-γ-excluded; dynamic catch-slip maintenance + Iturri de-adhesion deferred). **+ registry-
-driven γ-denylist** (unblocks no-contamination for all). **+ internal_live integration
-capstone** (osmotic+MT+IF in one cell, no contamination). **6 crash-on-enable bugs
-fixed** + **2 nlist exclusion-cap fixes** (LINC + membrane acceptor-degree) + **cadherin
-binder n_sub overflow guard**. **compartment-suite tests green** (LINC 45 + membrane 30 +
-SF 33 + cadherin 34 + registry + canary + IF + MT; full compartment/cell/cortex modulo
-the pre-existing KU-3.5 motors-off baseline failure, unrelated to platform work).
-Remaining 1 (junctional_actin — STUB build path, depends on cadherin_junction; the
-α-catenin catch-set + reserved HOOMD build are the last leg).
+γ-excluded; dynamic catch-slip maintenance + Iturri de-adhesion deferred),
+**junctional_actin** (LAST; reserved STUB build path IMPLEMENTED on the doublet —
+α-catenin/vinculin cadherin↔cortex catch clutch, same-cell coupling, force-free,
+junc_actin_ γ-excluded, biphasic catch F*=6 pN; dynamic maintenance + dense-belt
+fidelity deferred). **+ registry-driven γ-denylist** (unblocks no-contamination for
+all). **+ internal_live integration capstone** (osmotic+MT+IF in one cell, no
+contamination) **+ build_cell_doublet two-cell assembler** (cell/doublet.py) for the
+multicell pair. **6 crash-on-enable bugs fixed** + **2 nlist exclusion-cap fixes**
+(LINC + membrane acceptor-degree) + **cadherin binder n_sub overflow guard**.
+**compartment-suite tests green** (LINC 45 + membrane 30 + SF 33 + cadherin 34 +
+junctional 21 + registry + canary + IF + MT; full compartment/cell/cortex modulo the
+pre-existing KU-3.5 motors-off baseline failure, unrelated to platform work).
+**No EXPERIMENTAL/STUB compartment remains.** The open items are all DEFERRED active/
+dynamic phases (cortex+SF NMII via sf_myosin_ prefix, cadherin/junctional catch-slip
+maintenance, nonlinear IF Table law, membrane bleb, dense junctional belt) + PI
+parameter ratifications (k_linc, N_filaments, σ_crit_bleb, f_excess, Iturri SE) — see
+PLATFORM_PI_QUEUE — NOT activations.

@@ -75,6 +75,7 @@ class CellDoublet:
     cell_b_cadherin_tags: np.ndarray
     n_cortex_per_cell: int
     cadherin_binder: Any = None
+    p_junctional_actin: Any = None
     extras: dict[str, Any] = field(default_factory=dict)
 
 
@@ -202,6 +203,7 @@ def build_cell_doublet(
     device: Any | None = None,
     seed: int = 1,
     with_baoab: bool = True,
+    with_junctional_actin: bool = False,
     run_binder_batches: int = 0,
 ) -> CellDoublet:
     """Assemble a two-cortex-cell cadherin-junction doublet (GATE-J build).
@@ -321,6 +323,40 @@ def build_cell_doublet(
     _anchor_r0_mean = float(np.mean(anchor_r0)) if anchor_r0.size else 0.0
     _n_trans_seeded = int(trans_pairs.shape[0])
 
+    # ---- (optional) junctional-actin belt: couple each cell's cadherins to its
+    #      OWN cortex via the α-catenin/vinculin clutch (BEFORE create_state). ----
+    p_ja = None
+    if with_junctional_actin:
+        from ffn_sim.junction.junctional_actin import (
+            extend_snapshot_with_junctional_actin,
+            register_junctional_actin_bond_params,
+            resolve_junctional_actin,
+        )
+        ja_block = mani.get("optional_subsystems", {}).get("junctional_actin", {})
+        ja_cfg = dict(ja_block) if isinstance(ja_block, dict) else {}
+        ja_cfg["enabled"] = True
+        p_ja = resolve_junctional_actin(
+            {"junctional_actin": ja_cfg}, kT=p_cortex.kT, dt=dtc,
+            n_cadherin=int(p_cad.n_cad_per_cell),
+        )
+        if not p_ja.is_anchored:
+            raise RuntimeError(
+                "junctional_actin enabled but its catch-set constants are not "
+                "anchored — supply the PI-candidate set in the manifest "
+                "optional_subsystems.junctional_actin block (k_couple, k_anchor, "
+                "k_catch0, x_catch, k_slip0, x_slip, k_on, max_couple_dist, "
+                "anchor_r0). See junctional_actin.PI_DECISIONS."
+            )
+        # cell A cadherins → cell A cortex [0, n_a); cell B → [n_a, 2n_a).
+        snap = extend_snapshot_with_junctional_actin(
+            snap, p_ja, cadherin_tags=a_cad_tags,
+            cortex_positions=pos_a, cortex_tag_start=0,
+        )
+        snap = extend_snapshot_with_junctional_actin(
+            snap, p_ja, cadherin_tags=b_cad_tags,
+            cortex_positions=pos_b, cortex_tag_start=n_a,
+        )
+
     # ---- create the simulation + cortex forces ----
     sim = hoomd.Simulation(device=device or hoomd.device.CPU(), seed=seed)
     sim.create_state_from_snapshot(snap)
@@ -342,6 +378,10 @@ def build_cell_doublet(
             # safe default (α-actinin xlink bonds; GATE-J observable is the
             # junction, not xl tension).
             bond.params[bt] = dict(k=p_cortex.bond_k, r0=p_cortex.rest_length)
+    # H.junctional_actin: override the junc_actin_anchor + junc_actin_couple_b{i}
+    # params with their real (anchored-candidate) stiffness/rest-length.
+    if p_ja is not None:
+        register_junctional_actin_bond_params(bond, p_ja)
     angle = md.angle.Harmonic()
     for at in sim.state.angle_types:
         angle.params[at] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
@@ -357,6 +397,8 @@ def build_cell_doublet(
         if "cadherin" in sim.state.particle_types:
             # cadherin tips diffuse with the surface; cortex-bead drag order.
             gamma_map["cadherin"] = p_cortex.gamma_b
+        if "junc_actin" in sim.state.particle_types:
+            gamma_map["junc_actin"] = p_cortex.gamma_b
         _baoab_action, _baoab_updater = make_baoab_updater(
             kT=p_cortex.kT, gamma=gamma_map, dt=dtc, seed=seed + 7,
         )
@@ -382,7 +424,13 @@ def build_cell_doublet(
         cell_b_cadherin_tags=b_cad,
         n_cortex_per_cell=n_a,
         cadherin_binder=binder,
+        p_junctional_actin=p_ja,
         extras={"handles": {"bond_force": harmonic, "cadherin_updater": updater,
                             "cadherin_info": cad_info,
-                            "n_trans_seeded": _n_trans_seeded}},
+                            "n_trans_seeded": _n_trans_seeded,
+                            "junc_actin": getattr(snap, "_junc_actin", None),
+                            "n_junc_actin_heads": int(
+                                (np.asarray(sim.state.get_snapshot().particles.typeid)
+                                 == list(sim.state.particle_types).index("junc_actin")).sum()
+                            ) if "junc_actin" in sim.state.particle_types else 0}},
     )

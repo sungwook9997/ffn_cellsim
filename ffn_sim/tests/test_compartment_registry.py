@@ -242,34 +242,47 @@ def test_full_physiological_enables_only_baseline():
     assert deferred == []
 
 
+def _registry_with_synthetic_experimental() -> CompartmentRegistry:
+    """A registry = all real specs + ONE synthetic EXPERIMENTAL compartment.
+
+    As of 2026-06-09 ALL eight previously-EXPERIMENTAL/STUB compartments have
+    graduated LIVE, so no real compartment can exercise the
+    UnratifiedCompartmentError mechanism. This synthetic spec (a frozen-dataclass
+    clone of a real LIVE spec, flipped to EXPERIMENTAL with no deps / no manifest
+    slot) keeps that safety mechanism under test independent of which real
+    compartments are LIVE.
+    """
+    from dataclasses import replace
+    exp = replace(
+        REGISTRY.get("linc"),
+        name="_test_experimental",
+        status=CompartmentStatus.EXPERIMENTAL,
+        manifest_path=None,
+        requires=(),
+    )
+    return CompartmentRegistry(REGISTRY.all() + (exp,))
+
+
 def test_forcing_experimental_into_enable_raises():
     base = load_manifest("mcf7_baseline.yaml")
-    # junctional_actin is STUB (cadherin_junction graduated LIVE 2026-06-09); enable
-    # its dep cadherin_junction (LIVE) so the requires-check passes and the STUB
-    # status itself is what makes strict compose raise.
+    reg = _registry_with_synthetic_experimental()
     recipe = {
         "name": "bad",
-        "enable": list(load_recipe("suspended_round")["enable"])
-        + ["cadherin_junction", "junctional_actin"],
+        "enable": list(load_recipe("suspended_round")["enable"]) + ["_test_experimental"],
     }
     with pytest.raises(UnratifiedCompartmentError):
-        REGISTRY.compose_manifest(recipe, base_manifest=base, strict=True)
+        reg.compose_manifest(recipe, base_manifest=base, strict=True)
 
 
 def test_forcing_experimental_non_strict_defers():
     base = load_manifest("mcf7_baseline.yaml")
-    # junctional_actin is still STUB (osmotic_regulation / microtubules /
-    # intermediate_filaments / linc / membrane_reservoir / ventral_stress_fibers /
-    # cadherin_junction graduated LIVE 2026-06-09). It requires cadherin_junction
-    # (now LIVE), so enable both: cadherin_junction composes (LIVE, no manifest
-    # slot) and junctional_actin (STUB) defers cleanly in non-strict.
+    reg = _registry_with_synthetic_experimental()
     recipe = {
         "name": "bad",
-        "enable": list(load_recipe("suspended_round")["enable"])
-        + ["cadherin_junction", "junctional_actin"],
+        "enable": list(load_recipe("suspended_round")["enable"]) + ["_test_experimental"],
     }
-    manifest, deferred = REGISTRY.compose_manifest(recipe, base_manifest=base, strict=False)
-    assert "junctional_actin" in deferred
+    manifest, deferred = reg.compose_manifest(recipe, base_manifest=base, strict=False)
+    assert "_test_experimental" in deferred
 
 
 def test_dropping_baseline_compartment_raises():

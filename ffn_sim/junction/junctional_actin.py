@@ -680,20 +680,144 @@ def extend_snapshot_with_junctional_actin(
             "build pass; surface to PI."
         )
 
-    # --- enabled AND anchored: the real explicit build would go here. It is
-    #     deliberately unreachable until a PI sign-off supplies the constants
-    #     (is_anchored == True). The build would:
-    #       1. append one `junc_actin` head per cadherin tag at the cadherin
-    #          position (anchor_r0 force-free along the cadherin->cortex line);
-    #       2. register `junc_actin_anchor` + `junc_actin_couple_b{i}` bond
-    #          types (all GAMMA_DENYLIST_PREFIX-prefixed);
-    #       3. add the permanent head<->cadherin anchor bonds;
-    #       4. seed force-free head<->cortex coupling bonds (per-r0-binned),
-    #          for the JunctionalActinCouplingUpdater to maintain.
-    raise NotImplementedError(  # pragma: no cover - unreachable in the stub
-        "junctional_actin enabled+anchored explicit build path is reserved "
-        "for the PI-sanctioned anchored release; not implemented in the STUB."
+    # --- enabled AND anchored: build the explicit junctional-actin belt for ONE
+    #     cell (its cadherins coupled to its OWN cortex). Mirrors the cadherin /
+    #     LINC snapshot extenders: append junc_actin heads + register the bond
+    #     types + add the permanent head<->cadherin anchor + the force-free
+    #     per-r0-binned head<->cortex coupling clutch. Mutates the gsd frame in
+    #     place (single-writer convention) and returns it.
+    if cadherin_tags is None or cortex_positions is None or cortex_tag_start is None:
+        raise ValueError(
+            "extend_snapshot_with_junctional_actin (enabled+anchored) requires "
+            "cadherin_tags + cortex_positions + cortex_tag_start (the same-cell "
+            "cadherins to couple and that cell's cortex acceptor beads)."
+        )
+    cad_tags = np.asarray(cadherin_tags, dtype=np.int64).reshape(-1)
+    cortex_xyz = np.asarray(cortex_positions, dtype=np.float64).reshape(-1, 3)
+    if cad_tags.size == 0 or cortex_xyz.shape[0] == 0:
+        return snapshot  # nothing to couple → no-op
+
+    from scipy.spatial import cKDTree
+
+    pos = np.asarray(snapshot.particles.position, dtype=np.float64).reshape(-1, 3)
+    cad_pos = pos[cad_tags]
+    tree = cKDTree(cortex_xyz)
+    d, j = tree.query(cad_pos, k=1, distance_upper_bound=float(p.max_couple_dist))
+    in_range = np.isfinite(d) & (d <= float(p.max_couple_dist))
+    if not in_range.any():
+        return snapshot  # no cortex acceptor within reach → no-op
+
+    sel = np.flatnonzero(in_range)
+    n_head = int(sel.size)
+    n_before = int(snapshot.particles.N)
+    head_tags = np.arange(n_before, n_before + n_head, dtype=np.int64)
+    coupled_cad = cad_tags[sel]
+    cortex_local = np.asarray(j, dtype=np.int64)[sel]
+    cortex_global = int(cortex_tag_start) + cortex_local
+
+    # Head placement: anchor_r0 from the cadherin toward its nearest cortex bead,
+    # so the head<->cadherin anchor is FORCE-FREE (length == anchor_r0) and the
+    # head sits between the cadherin tail and the cortex.
+    cvec = cortex_xyz[cortex_local] - cad_pos[sel]
+    cdist = np.linalg.norm(cvec, axis=1)
+    chat = cvec / np.maximum(cdist[:, None], 1e-30)
+    head_pos = cad_pos[sel] + float(p.anchor_r0) * chat
+    # head<->cortex coupling separation (force-free per-r0 bin).
+    couple_len = np.maximum(cdist - float(p.anchor_r0), 0.0)
+    bin_r0 = junc_actin_couple_bin_rest_lengths(p.n_bins, float(p.max_couple_dist))
+    bin_w = float(p.max_couple_dist) / int(p.n_bins)
+    couple_bin = np.clip((couple_len / bin_w).astype(np.int64), 0, p.n_bins - 1)
+
+    # --- register particle type + append the junc_actin heads ---
+    types = list(snapshot.particles.types)
+    if "junc_actin" not in types:
+        types.append("junc_actin")
+    head_typeid = types.index("junc_actin")
+    snapshot.particles.types = types
+    old_typeid = np.asarray(snapshot.particles.typeid).reshape(-1)
+    snapshot.particles.N = n_before + n_head
+    snapshot.particles.position = np.vstack([pos, head_pos])
+    snapshot.particles.typeid = np.concatenate(
+        [old_typeid, np.full(n_head, head_typeid, dtype=old_typeid.dtype)]
     )
+    for attr, fill in (("mass", 1.0), ("charge", 0.0), ("diameter", 0.0)):
+        arr = getattr(snapshot.particles, attr, None)
+        if arr is not None and np.asarray(arr).shape[0] == n_before:
+            setattr(snapshot.particles, attr, np.concatenate(
+                [np.asarray(arr, dtype=np.float64), np.full(n_head, fill)]))
+    vel = getattr(snapshot.particles, "velocity", None)
+    if vel is not None and np.asarray(vel).reshape(-1, 3).shape[0] == n_before:
+        snapshot.particles.velocity = np.vstack(
+            [np.asarray(vel, dtype=np.float64).reshape(-1, 3), np.zeros((n_head, 3))])
+    img = getattr(snapshot.particles, "image", None)
+    if img is not None and np.asarray(img).reshape(-1, 3).shape[0] == n_before:
+        snapshot.particles.image = np.vstack(
+            [np.asarray(img, dtype=np.int32).reshape(-1, 3),
+             np.zeros((n_head, 3), dtype=np.int32)])
+
+    # --- register bond types (anchor + per-r0-bin coupling) ---
+    anchor_name = f"{GAMMA_DENYLIST_PREFIX}_anchor"
+    couple_names = junc_actin_couple_bin_names(p.n_bins)
+    bond_types = list(snapshot.bonds.types) if snapshot.bonds.types else []
+    for nm in (anchor_name, *couple_names):
+        if nm not in bond_types:
+            bond_types.append(nm)
+    anchor_tid = bond_types.index(anchor_name)
+    couple_tids = np.array([bond_types.index(nm) for nm in couple_names], dtype=np.uint32)
+
+    old_n = int(snapshot.bonds.N)
+    old_bg = (np.asarray(snapshot.bonds.group, dtype=np.int64).reshape(old_n, 2)
+              if old_n > 0 else np.empty((0, 2), dtype=np.int64))
+    old_bt = (np.asarray(snapshot.bonds.typeid, dtype=np.uint32)
+              if old_n > 0 else np.empty((0,), dtype=np.uint32))
+    anchor_pairs = np.column_stack([head_tags, coupled_cad])      # head<->cadherin
+    couple_pairs = np.column_stack([head_tags, cortex_global])    # head<->cortex
+    new_bg = np.vstack([old_bg, anchor_pairs, couple_pairs]).astype(np.uint32)
+    new_bt = np.concatenate([
+        old_bt,
+        np.full(n_head, anchor_tid, dtype=np.uint32),
+        couple_tids[couple_bin],
+    ])
+    snapshot.bonds.types = bond_types
+    snapshot.bonds.N = int(new_bg.shape[0])
+    snapshot.bonds.group = new_bg
+    snapshot.bonds.typeid = new_bt
+    snapshot._junc_actin = {
+        "head_tags": head_tags, "coupled_cadherin": coupled_cad,
+        "cortex_global": cortex_global, "couple_bin": couple_bin,
+        "couple_bin_r0": bin_r0, "anchor_r0": float(p.anchor_r0),
+    }
+    return snapshot
+
+
+def register_junctional_actin_bond_params(bond: Any, p: ResolvedJunctionalActin) -> Any:
+    """Set the junc_actin bond params on the cell's SHARED ``md.bond.Harmonic``.
+
+    Writes the permanent ``junc_actin_anchor`` (k=k_anchor, r0=anchor_r0) and the
+    per-r0-bin ``junc_actin_couple_b{i}`` (k=k_couple, r0=bin centre) — each
+    coupling bond force-free at its as-built separation. No-op when disabled;
+    raises ``NotImplementedError`` when enabled but un-anchored (STUB).
+
+    Args:
+        bond: the cell's shared ``hoomd.md.bond.Harmonic``.
+        p: resolved junctional-actin params.
+
+    Returns:
+        The same ``bond`` (params populated when enabled+anchored).
+    """
+    if not p.enabled:
+        return bond
+    if not p.is_anchored:
+        raise NotImplementedError(
+            "register_junctional_actin_bond_params: coupling/catch constants are "
+            "not anchored (STUB). See PI_DECISIONS; surface to PI."
+        )
+    bond.params[f"{GAMMA_DENYLIST_PREFIX}_anchor"] = dict(
+        k=float(p.k_anchor), r0=float(p.anchor_r0))
+    bin_r0 = junc_actin_couple_bin_rest_lengths(p.n_bins, float(p.max_couple_dist))
+    for i, nm in enumerate(junc_actin_couple_bin_names(p.n_bins)):
+        bond.params[nm] = dict(k=float(p.k_couple), r0=float(bin_r0[i]))
+    return bond
 
 
 # ---------------------------------------------------------------------------

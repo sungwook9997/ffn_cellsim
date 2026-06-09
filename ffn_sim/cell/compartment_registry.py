@@ -982,36 +982,48 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="junctional_actin",
         category="multicell",
-        status=CompartmentStatus.STUB,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); reserved build path implemented; built on the doublet via build_cell_doublet(with_junctional_actin=True). GATE PASS.
         enabled_default=False,
-        summary="Junctional actin belt coupling the cadherin junction to each cell's cortex (alpha-catenin/vinculin).",
-        manifest_path=None,
+        summary="Junctional actin belt coupling each cell's interface cadherins to its OWN cortex via the α-catenin/vinculin CATCH clutch (Buckley 2014).",
+        manifest_path=None,              # multicell: built on the two-cell doublet, NOT the single-cell loader
         resolve_ref="ffn_sim.junction.junctional_actin.resolve_junctional_actin",
         performance_contract=_live(
             particle_types_added=("junc_actin",),
-            n_particles_mesoscale="(belt beads; estimate at authoring)",
+            n_particles_mesoscale="≤ n_cad per interface (heads within the α-catenin reach)",
             n_particles_native="(scaled)",
-            n_bonds="cadherin <-> cortex actin coupling (alpha-catenin clutch)",
+            n_bonds="junc_actin_anchor (head↔cadherin) + junc_actin_couple_b{i} (head↔cortex, per-r0-bin)",
             n_angles=0,
-            per_step_force=False,
-            per_batch_updater=True,
+            per_step_force=False,            # builtin md.bond.Harmonic
+            per_batch_updater=True,          # JunctionalActinCouplingUpdater (catch-slip; DEFERRED active phase)
             uses_cpu_local_snapshot=True,
-            uses_broad_phase=True,
+            uses_broad_phase=True,           # ONCE at build (same-cell cortex acceptor cKDTree)
             expected_on_recipes=("multicell_junction",),
             hot_path_priority=HotPathPriority.P2,
-            gpu_path_now=GpuPath.CPU,
+            gpu_path_now=GpuPath.HOOMD_BUILTIN,
             native_forcecompute_candidate=False,
-            bottleneck_risk="Couples cadherin to cortex; reuses clutch pattern.",
+            bottleneck_risk="Static belt is a builtin bonded force (cheap). The catch-slip updater (deferred) is the host-sync cost when the active phase lands.",
         ),
-        gpu_readiness=GpuReadiness(device_resident_now=False, optimization_debt="coupling clutch host-sync"),
+        gpu_readiness=GpuReadiness(device_resident_now=True, optimization_debt="catch-slip coupling updater host-sync (active phase, deferred)"),
         gamma_contaminating=True,
         denylist_bond_types=("junc_actin",),
         requires=("cadherin_junction",),
-        pi_decisions=(
-            "alpha-catenin force-dependent vinculin recruitment (catch) constants need a literature anchor or PI call.",
+        citations=(
+            "Buckley 2014 Science 346:1254211 (α-catenin/F-actin CATCH bond shape; x_catch/x_slip SOLID)",
+            "Yonemura 2010 NCB / le Duc 2010 JCB / Yao 2014 NatCommun (force-dependent vinculin recruitment)",
         ),
-        sanity_gate_ref="ffn_sim/junction/junctional_actin.py",
-        notes="STUB: the cadherin<->cortex mechanical coupling constants are not yet anchored — keep disabled pending PI.",
+        pi_decisions=(
+            "Catch-set constants are PI-CANDIDATES (config): x_catch=4nm/x_slip=0.4nm (Buckley SOLID); "
+            "k_catch0=1.0/k_slip0=0.02 /s (ORDER); k_couple/k_anchor/k_on/max_couple_dist/anchor_r0 "
+            "(DERIVED H.3 transfers). Module default None → un-anchored build raises (guarded). The "
+            "implemented k_off is a PARALLEL catch+slip Pereverzev surrogate of Buckley's biphasic "
+            "SHAPE (not his two-state sequential fit) — PI to ratify the constants/form.",
+            "DYNAMIC catch-slip maintenance (JunctionalActinCouplingUpdater as a live Action) is DEFERRED "
+            "(equilibrated run). SPARSE-belt fidelity: single-particle cadherin = ectodomain tip at the "
+            "interface (~0.5 µm from cortex) → only tips within the α-catenin reach couple; a dense belt "
+            "needs a cadherin-tail particle near the cortex (follow-on).",
+        ),
+        sanity_gate_ref="ffn_sim/tests/test_junctional_actin.py",
+        notes="Built on the two-cell doublet (cell/doublet.py with_junctional_actin=True): one junc_actin head per interface cadherin within the catch reach of a SAME-cell cortex bead; junc_actin_anchor (head↔cadherin, force-free) + per-r0-bin junc_actin_couple (head↔cortex). junc_actin_ γ-denylisted. NOT the single-cell loader.",
     ),
 )
 
