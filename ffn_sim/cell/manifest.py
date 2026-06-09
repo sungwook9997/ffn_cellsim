@@ -302,6 +302,7 @@ def build_baseline_cell(
     faithful_connected_mesh: bool = False,
     cm_z_struct: float = 3.7,
     cm_bundle_mult: int = 2,
+    reconcile_dt: bool = False,
 ) -> Cell:
     """Resolve a manifest and assemble the full cell via the unified Cell.build.
 
@@ -400,6 +401,11 @@ def build_baseline_cell(
         equilibrate=equilibrate,
         equilibrate_steps=equilibrate_steps,
         equilibrate_softstart_steps=equilibrate_softstart_steps,
+        # continuous_stroke (KU-3.5 §9) uses the stiff cross-bridge k → myosin
+        # k_backbone≈1e-2 → τ_backbone≈9 ns < legacy cortex dt. reconcile_dt folds
+        # myosin k_backbone into the global CFL and lowers the integrator dt scalar
+        # (NO edit to the frozen integrator/). Additive: soft legacy modes unchanged.
+        reconcile_dt=reconcile_dt,
         options=opts,
         device=device,
         rng=np.random.default_rng(seed),

@@ -328,9 +328,35 @@ cortex:
     n_heads_per_side: 10               # brief literal
     backbone_length: 700.0e-9          # m   brief literal (700 nm rigid rod)
     head_rest_length: 200.0e-9         # m   brief literal (perpendicular head offset)
-    k_head_spring: 1.0e-6              # N/m brief literal (0.1 pN/μm)
+    k_head_spring: 1.0e-6              # N/m brief literal (0.1 pN/μm) — LEGACY soft
     k_backbone_factor: 10.0            # k_backbone = factor · k_head_spring (H.4 motor.py)
-    k_head_actin: 1.0e-6               # N/m head-actin attach bond (= k_head_spring)
+    k_head_actin: 1.0e-6               # N/m head-actin attach bond (= k_head_spring) — LEGACY soft
+    # ---- continuous_stroke cross-bridge stiffness (KU-3.5 §9, PI-approved 2026-06-09) ----
+    # k_cross_bridge_continuous Magic-Number Block:
+    #   Value: k = 1.0e-3 N/m = 1 pN/nm — the single-molecule myosin cross-bridge
+    #     stiffness. The brief-literal 1e-6 N/m (1 pN/µm) above is a pN/µm-vs-pN/nm
+    #     UNIT SLIP, 1000× softer than the load-bearing cross-bridge.
+    #   Primary anchors: bridge/motor.py head_spring_k = 1.0e-3 ("AFINES motor
+    #     stiffness", the project's OWN canonical motor); Veigel et al. 2002 Nat Cell
+    #     Biol 4:59 (~0.3–0.7 pN/nm single-head); Kaya & Higuchi 2010 Science 329:686
+    #     (0.3–2 pN/nm); Finer et al. 1994 Nature 368:113 (~0.3–0.7 pN/nm). 1 pN/nm
+    #     sits in this single-molecule band.
+    #   Grid-invariance: intensive per-bond stiffness [N/m], N-independent (the
+    #     mesoscale ×factor parallel scaling applies on top, s_grip_max=F_stall/k
+    #     invariant). Not gate-tuned: the band stays LOCKED, γ → the full-stall
+    #     envelope (~18× under = the residual density/overlap gap, §9 gate 7).
+    #   ⚠️ APPLIED ONLY in stepping_mode==continuous_stroke (resolver-gated). The
+    #     LEGACY harmonic-bond modes (binned_r0/grip_walk) carry force as k·(r−r0)
+    #     ≈ k·r, which EXPLODES to ~322 pN at this stiff k (loop12) — they MUST keep
+    #     the soft 1e-6 above. continuous_stroke delivers force via MyosinHeadForce
+    #     = min(k·s_grip, F_stall), capped at F_stall (NOT k·r), so the stiff k is
+    #     physical only here. See H7_MYOSIN_OVERLAP_MECHANISM_DESIGN §7–§9.
+    #   ⚠️ CFL: k_backbone = 10·k = 1e-2 N/m (×mesoscale) → τ_backbone ≈ 9 ns < the
+    #     legacy cortex dt 13 ns. continuous_stroke production MUST build with
+    #     reconcile_dt=True (cell/dt_reconcile already folds myosin k_backbone) so
+    #     the integrator dt is lowered to respect it — NO edit to the frozen
+    #     integrator/, only the dt scalar.
+    k_cross_bridge_continuous: 1.0e-3  # N/m (1 pN/nm); continuous_stroke ONLY
     # D6 Hill (NMII per Kovács 2003)
     # v0_per_head Magic-Number Block (C3 correction, mechanism audit
     # 2026-05-30 §C3, PI-ratified "전부 진행"): RE-ANCHORED 1.0 → 0.2 µm/s.

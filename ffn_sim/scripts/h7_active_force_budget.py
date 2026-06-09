@@ -97,12 +97,19 @@ def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, 
         cm_kw["cm_z_struct"] = float(cm_z_struct)
     if cm_bundle_mult is not None:
         cm_kw["cm_bundle_mult"] = int(cm_bundle_mult)
+    # continuous_stroke uses the stiff cross-bridge k (=1e-3) → k_backbone≈1e-2
+    # → τ_backbone≈9 ns < the legacy cortex dt 13 ns. reconcile_dt folds the myosin
+    # k_backbone into the global CFL and lowers the integrator dt accordingly (NO
+    # edit to the frozen integrator/ — only the dt scalar). Additive: for the soft
+    # legacy modes τ_backbone≫dt so dt is unchanged (bit-identical).
+    reconcile_dt = (stepping_mode == "continuous_stroke")
     cell = build_baseline_cell(
         manifest=manifest, device=device, seed=seed,
         constrained=False, with_baoab=True,
         equilibrate=True, equilibrate_steps=warmup,
         equilibrate_softstart_steps=softstart,
         connected_mesh=True, faithful_connected_mesh=bool(faithful),
+        reconcile_dt=reconcile_dt,
         **cm_kw,
     )
     return cell

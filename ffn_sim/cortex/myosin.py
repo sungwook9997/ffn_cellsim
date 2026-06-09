@@ -292,6 +292,28 @@ def resolve_cortex_myosin(
             f"'continuous_stroke'; got {p.stepping_mode!r}"
         )
 
+    # continuous_stroke cross-bridge stiffness correction (KU-3.5 §9, PI-approved
+    # 2026-06-09). The H.3 brief literal k_head_spring/k_head_actin = 1e-6 N/m
+    # (1 pN/µm) is a pN/µm-vs-pN/nm UNIT SLIP — 1000× softer than the canonical
+    # AFINES motor (bridge/motor.py head_spring_k = 1e-3 N/m = 1 pN/nm) and the
+    # single-molecule cross-bridge stiffness 0.3–2 pN/nm (Veigel 2002 NatCellBiol;
+    # Kaya & Higuchi 2010 Science; Finer 1994 Nature). At soft k the Hill stall
+    # is unreachable (needs s_grip ≈ 17 µm), so the head delivers only k·r ≈ 0.7 pN
+    # (D1, ~11× under F_stall). The correction is k = 1e-3 N/m.
+    #   ⚠️ MODE-COUPLED: at stiff k the LEGACY harmonic attach-bond force k·(r−r0)
+    #   ≈ k·r EXPLODES to ~322 pN (loop12) — so binned_r0/grip_walk MUST keep the
+    #   soft 1e-6 (they carry force through the harmonic bond). continuous_stroke
+    #   delivers force via MyosinHeadForce = min(k·s_grip, F_stall) (capped, NOT
+    #   k·r), so the stiff k is ONLY applied here. Magic-Number Block: derivable
+    #   (canonical motor + 3 single-molecule sources), grid-invariant (intensive
+    #   N/m), not gate-tuned (the band stays sub-envelope; §9 sanity gate 7).
+    if p.stepping_mode == "continuous_stroke":
+        k_xb = float(cfg.get("k_cross_bridge_continuous", 1.0e-3))
+        _require_finite_positive("k_cross_bridge_continuous", k_xb)
+        p.k_head_spring = k_xb
+        p.k_head_actin = k_xb
+        p.extras["k_cross_bridge_continuous"] = k_xb
+
     # Mesoscale myosin FORCE scaling (KU-3.5 Route B, PI-ratified 2026-05-31).
     # The ×40 mesoscopic coarse-graining reduces the MOTOR count (native
     # ~areal_density·4πR² minifilaments → n_motors_per_cell), so each EFFECTIVE
