@@ -62,14 +62,20 @@ _HOSSEINI_BAND = (0.18e-3, 0.40e-3)  # N/m, MCF7 interphase IQR (contract §7)
 
 
 def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed,
-                        areal_density=None):
+                        areal_density=None, cm_z_struct=None, cm_bundle_mult=None,
+                        faithful=False):
     """Suspended/rounded MCF7 (FA OFF, turgor ON), connected mesh, grip_walk myosin.
 
     Mirrors h7_gate_b_probe._build_settled_cell exactly so this audit measures the
     SAME operating point the gate measures. ``areal_density`` overrides the myosin
     minifilament areal density [1/µm²] for the SENSITIVITY sweep ONLY — it is NOT a
     production config change; the production datum stays at the literature 0.6/µm²
-    pending the PI datum decision (this is a mechanism-confirmation, not gate-chasing)."""
+    pending the PI datum decision (this is a mechanism-confirmation, not gate-chasing).
+
+    ``cm_z_struct`` / ``cm_bundle_mult`` / ``faithful`` vary the cortex CONSTRUCTION
+    load-path for the architecture-as-lever WALL-A sensitivity test (h7 ARCH thrust):
+    they change topology only, NOT a production datum, and do NOT touch any band/gate.
+    Defaults (None / False) → the production build (uniform mesh, z=3.7, bundle=2)."""
     manifest = deepcopy(load_manifest("mcf7_baseline.yaml"))
     manifest["optional_subsystems"]["fa"]["enabled"] = False
     if n_filaments is not None:
@@ -82,12 +88,18 @@ def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, 
         myo["areal_density_per_um2"] = float(areal_density)
     if n_nuc_beads is not None:
         manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
+    cm_kw = {}
+    if cm_z_struct is not None:
+        cm_kw["cm_z_struct"] = float(cm_z_struct)
+    if cm_bundle_mult is not None:
+        cm_kw["cm_bundle_mult"] = int(cm_bundle_mult)
     cell = build_baseline_cell(
         manifest=manifest, device=device, seed=seed,
         constrained=False, with_baoab=True,
         equilibrate=True, equilibrate_steps=warmup,
         equilibrate_softstart_steps=softstart,
-        connected_mesh=True,
+        connected_mesh=True, faithful_connected_mesh=bool(faithful),
+        **cm_kw,
     )
     return cell
 
@@ -436,6 +448,15 @@ def main() -> int:
     ap.add_argument("--areal-density", type=float, default=None,
                     help="override myosin minifilament areal density [1/µm²] "
                          "(sensitivity ONLY — not a production config change)")
+    ap.add_argument("--cm-z-struct", type=float, default=None,
+                    help="cortex construction anchor density z_struct (ARCH WALL-A "
+                         "sensitivity; topology only, default prod 3.7)")
+    ap.add_argument("--cm-bundle-mult", type=int, default=None,
+                    help="cortex construction bundle_mult (ARCH WALL-A sensitivity; "
+                         "topology only, default prod 2)")
+    ap.add_argument("--faithful", action="store_true",
+                    help="use the bimodal faithful cortex (Arp2/3 branches + bimodal "
+                         "lengths) instead of the uniform production mesh (ARCH test)")
     ap.add_argument("--sweep-densities", type=str, default=None,
                     help="comma-list of densities [1/µm²] to sweep (mechanism confirm: γ∝ρ); "
                          "writes a γ-vs-density curve instead of a single audit")
@@ -459,6 +480,8 @@ def main() -> int:
         n_filaments=n_fil, n_nuc_beads=args.n_nuc_beads,
         warmup=args.warmup, softstart=args.softstart, device=dev, seed=args.seed,
         areal_density=args.areal_density,
+        cm_z_struct=args.cm_z_struct, cm_bundle_mult=args.cm_bundle_mult,
+        faithful=args.faithful,
     )
     s = audit(cell=cell, n_contract_steps=args.contract_steps,
               sample_every=args.sample_every)

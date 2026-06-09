@@ -1,0 +1,86 @@
+{
+  "operating_point": "suspended/rounded, FA OFF, turgor ON, connected mesh, grip_walk",
+  "scale": {
+    "n_filaments": 1000,
+    "n_cortex_actin": 7000,
+    "n_motors": 100,
+    "n_heads_per_side": 28,
+    "n_heads_total": 5600,
+    "mesoscale_force_factor": 4.241150082346221,
+    "native_n_motors": 424.1150082346221,
+    "native_areal_density_per_um2": 0.6000000000000001
+  },
+  "band_mN_m": [
+    0.18000000000000002,
+    0.4
+  ],
+  "phase": "loading (s_grip\u22480)",
+  "plateau": {
+    "s_grip_over_l0": 1.4913804824727578e-05,
+    "g_soft_mN_m": 0.003324996236886354,
+    "g_soft_myosin_bonds_mN_m": 0.00011252659599736684,
+    "g_soft_actin_bonds_mN_m": 0.0033803629832379234,
+    "g_ik_estimate_mN_m": 1.4629418311294353e-05,
+    "g_rigid_mN_m": 0.0,
+    "g_passive_mN_m": 0.4987500000000001,
+    "engaged_frac": 0.029642857142857144,
+    "n_engaged": 166.0,
+    "mean_T_pN": 0.8132639400089245,
+    "F_stall_pN": 8.482300164692441,
+    "mean_attach_r_nm": 191.7555201345348,
+    "gen_force_nN": 0.13500181404148148,
+    "transmitted_force_nN": 0.15668675626523818
+  },
+  "analytic": {
+    "g_active_analytic_mN_m": 0.010113600000000002,
+    "native_areal_density_per_um2": 0.6000000000000001,
+    "f_minifilament_pN": 56.0,
+    "ell_minifilament_nm": 301.0,
+    "gap_factor_analytic_to_band_lo": 17.79781680113906,
+    "note": "\u03b3\u2248\u00bd\u00b7n2D\u00b7f_minifil\u00b7\u2113 at FULL engagement+stall \u2014 param upper envelope"
+  },
+  "band_closure_budget": {
+    "need_engaged_heads_for_band_lo": 8986.476335979469,
+    "have_engaged_heads": 166.0,
+    "have_heads_total": 5600,
+    "gap_factor_g_soft_to_band_lo": 54.13539961433415
+  },
+  "rows": [
+    {
+      "tick": 0,
+      "n_engaged": 21,
+      "n_heads_total": 5600,
+      "engaged_frac": 0.00375,
+      "s_grip_over_l0": 3.590090040627686e-07,
+      "mean_T_pN": 0.7905505561523403,
+      "mean_attach_r_nm": 186.40004263065475,
+      "F_stall_pN": 8.482300164692441,
+      "gen_force_nN": 0.016601561679199146,
+      "transmitted_force_nN": 0.1570477531500117,
+      "g_soft_mN_m": 0.0033326568287066856,
+      "g_soft_myosin_bonds_mN_m": 9.793311983996754e-05,
+      "g_soft_actin_bonds_mN_m": 0.003378067819127269,
+      "g_ik_estimate_mN_m": 1.9634560469896398e-06,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001
+    },
+    {
+      "tick": 3000,
+      "n_engaged": 166,
+      "n_heads_total": 5600,
+      "engaged_frac": 0.029642857142857144,
+      "s_grip_over_l0": 1.4913804824727578e-05,
+      "mean_T_pN": 0.8132639400089245,
+      "mean_attach_r_nm": 191.7555201345348,
+      "F_stall_pN": 8.482300164692441,
+      "gen_force_nN": 0.13500181404148148,
+      "transmitted_force_nN": 0.15668675626523818,
+      "g_soft_mN_m": 0.003324996236886354,
+      "g_soft_myosin_bonds_mN_m": 0.00011252659599736684,
+      "g_soft_actin_bonds_mN_m": 0.0033803629832379234,
+      "g_ik_estimate_mN_m": 1.4629418311294353e-05,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001
+    }
+  ]
+}

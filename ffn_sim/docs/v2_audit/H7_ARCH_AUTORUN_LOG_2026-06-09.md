@@ -18,3 +18,20 @@ length-scale (several-µm) overlap. PI's instinct SUPPORTED: real lever = connec
 rebuild (carry connectivity on extended parallel bundles/overlap, crosslink bundle ENDS), not a knob.
 Tool h7_loadpath_architecture_sweep.py; doc H7_ARCHITECTURE_LOADPATH_2026-06-09.md. NEXT: bound the
 transmission payoff — loading-phase WALL-A (g_actin/g_myo) at baseline vs long-load-path knobs.
+
+## LOOP 2: uniform-vs-faithful mesh + WALL-A loading sensitivity (cheap, n=1000 loading)
+Wiring the WALL-A test surfaced that production active-γ/Gate-A/B/force-budget ALL run the UNIFORM
+cortex (faithful_connected_mesh unset → 3µm uniform fil, no Arp2/3 branches); the bimodal "faithful"
+mesh (branches+bimodal lengths) exists in code but is UNUSED for γ. Step-1 sweep was the faithful path.
+RESULT: (5) Arp2/3 branching DECOUPLES connectivity from crosslink density — uniform FRAGMENTS at low
+z/bundle (giant 2.3% at z=1.8/b=1) so can't lengthen load-path at all; faithful stays connected at the
+same sparse knobs (branches carry connectivity) → the long load-path is ONLY available on the branched
+mesh. (6) LOADING phase is load-path-INSENSITIVE: faithful baseline vs faithful long-path give identical
+g_myo/g_IK/gen_force/g_soft — loading g_soft is dominated by PASSIVE prestress (seed+turgor), not myosin,
+so it can't isolate transmission. ⇒ WALL-A transmission test REQUIRES a contraction run (binder-bound GPU
+~30min/config). Plumbed --cm-z-struct/--cm-bundle-mult/--faithful into h7_active_force_budget (topology
+only, no gate/datum). NET: architecture lever is real+partly-coded (faithful mesh + sparse crosslinks)
+but achievable load-path ~2× ≪ 30-80× gap, and its payoff needs the GPU contraction run. Cheap levers
+exhausted → PI fork: (A) GPU contraction WALL-A test faithful base vs long-path (decisive, gbook deploy=
+PI remote-overwrite), (B) commit to faithful-mesh rebuild as physically-correct architecture, (C) accept
+architecture-bound conclusion. HALT→PI. doc H7_ARCHITECTURE_LOADPATH_2026-06-09.md §step2.

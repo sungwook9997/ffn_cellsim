@@ -89,6 +89,54 @@ only weakly:
   baseline vs the z=1.8/L=10/bundle=1 long-load-path knobs (cheap, CPU) bounds the payoff
   of load-path BEFORE committing to the bundle/overlap rebuild.
 
+## Step 2 — uniform vs faithful mesh + WALL-A loading sensitivity
+
+Reconciliation discovered while wiring the WALL-A test: **the production active-γ /
+Gate-A / Gate-B / force-budget all run the UNIFORM cortex** (`faithful_connected_mesh`
+unset → uniform 3 µm filaments, beads_per_filament=7, NO Arp2/3 branches). The
+bimodal "faithful" mesh (Arp2/3 dendritic branches + bimodal lengths) exists in code
+(`build_baseline_cell(faithful_connected_mesh=True)`) but is NOT used for the γ
+measurement. Step 1's sweep used `build_connected_cortex` = the FAITHFUL path.
+
+WALL-A loading runs (n=1000, h7_active_force_budget, s_grip≈0 loading):
+
+| build | knobs | giant | engaged | g_myo (dipole) | g_actin (network) | g_soft |
+|---|---|---|---|---|---|---|
+| uniform (prod) | z=3.7 b=2 | conn | 5.0 % | 1.06e-4 | 1.68e-3 | 1.57e-3 |
+| uniform | z=1.8 b=1 | **2.3 %** ✗ | 5.1 % | 1.12e-4 | 1.65e-3 | 1.54e-3 |
+| faithful | z=3.7 b=2 | conn | 3.0 % | 1.13e-4 | 3.38e-3 | 3.33e-3 |
+| faithful | z=1.8 b=1 | conn | 3.3 % | 1.13e-4 | 3.40e-3 | 3.34e-3 |
+
+Two findings:
+
+5. **Arp2/3 branching decouples connectivity from crosslink density.** The UNIFORM
+   mesh FRAGMENTS at low z/bundle (giant 2.3 % at z=1.8/b=1) — it cannot lengthen its
+   load-path at all without falling apart. The FAITHFUL mesh stays connected at the
+   same sparse knobs because the dendritic branches carry connectivity, freeing
+   crosslinks to be sparse → the longer load-path of step 1 is ONLY available on the
+   branched mesh. So the architecture substrate for any load-path change is the
+   faithful (branched) mesh, not the production uniform one.
+
+6. **The LOADING phase is load-path-INSENSITIVE — the WALL-A test needs CONTRACTION.**
+   Across faithful baseline vs faithful long-path, every myosin signal (g_myo, g_IK
+   1.46e-5→1.55e-5, gen_force 0.135→0.146 nN) and g_soft (3.33e-3→3.34e-3) is
+   unchanged. The loading g_soft is dominated by PASSIVE network prestress
+   (seeded-adhered mesh + turgor on the backbone bonds), not myosin — so it cannot
+   isolate myosin transmission. Whether a longer load-path raises the myosin-DRIVEN
+   network tension (WALL-A) can only be seen once s_grip develops (contraction), which
+   is the binder-host-sync-bound GPU run (~30 min/config on gbook).
+
+## Net (steps 1+2) → the PI fork
+
+The architecture lever is REAL and partly already in code: switch production from the
+uniform mesh to the faithful branched mesh, then exploit branch connectivity to seed
+SPARSE crosslinks (low z, no bundling) for a longer load-path. BUT: (i) the achievable
+load-path is ~2× (≤2.5 seg ≈1.25 µm), far short of Chugh/Truong-Quang filament-scale
+overlap and of the 30–80× generation/transmission gap; (ii) whether even that 2× raises
+myosin transmission can only be measured by a GPU contraction run (binder cost). The
+cheap, static + loading levers are exhausted; the next step is a genuine commitment
+(big build and/or GPU contraction), which is the PI decision.
+
 ## Artifacts
 
 - `outputs/h7/production/h7_loadpath_architecture_sweep.json` (z=2.8–4.5 connected band)
