@@ -208,8 +208,19 @@ def anchor_traction(handles):
     r0 = float(handles["ell0"])
     anchor_set = set(int(a) for a in handles["anchors"])
     bonds = handles["layout"].backbone_bonds
-    axial_sum = 0.0
+    # COHERENT contractile traction (the physical observable) vs Σ|T| (fluctuation
+    # magnitude). For each anchor bond, the SIGNED axial force the bond exerts ON the
+    # anchor: f_in = k(r−r0)·(d̂·axis) with d toward the fiber interior, so f_in>0 =
+    # pulled INWARD (contractile). Split anchors into the two ends about the fiber
+    # centre; the contractile tension pulls the two ends TOWARD each other. Summing the
+    # signed inward force per end makes thermal fluctuations cancel (random sign), so
+    # the differential isolates the myosin's COHERENT contraction — unlike Σ|axial T|,
+    # which sums absolute values and is dominated by the thermal fluctuation magnitude.
+    xc = float(np.mean(pos[np.asarray(sorted(anchor_set), dtype=np.int64), 0]))
+    axial_abs = 0.0
     max_T = 0.0
+    f_left = 0.0   # net inward (+axis) force on the LEFT-end anchors
+    f_right = 0.0  # net inward (−axis) force on the RIGHT-end anchors
     for a, b in bonds:
         a, b = int(a), int(b)
         anc = a if a in anchor_set else (b if b in anchor_set else None)
@@ -221,9 +232,16 @@ def anchor_traction(handles):
         if r <= 0:
             continue
         T = k * (r - r0)                   # backbone tension [N] (+ = stretched/pulling in)
-        axial_sum += abs(T * float((d / r) @ axis))
+        f_axial = T * float((d / r) @ axis)   # signed force on the anchor along +axis
+        axial_abs += abs(f_axial)
         max_T = max(max_T, abs(T))
-    return float(axial_sum), float(max_T)
+        if pos[anc, 0] < xc:               # left end: inward = +axis
+            f_left += f_axial
+        else:                              # right end: inward = −axis
+            f_right += -f_axial
+    # Coherent contractile traction = mean inward pull of the two ends (>0 = contractile).
+    coherent = 0.5 * (f_left + f_right)
+    return float(axial_abs), float(max_T), float(coherent)
 
 
 def main() -> int:
@@ -277,42 +295,48 @@ def main() -> int:
     h_off["sim"].run(args.equilibrate)
     h_on["sim"].run(args.equilibrate)
     chunk = max(1, args.contract // args.n_samples)
-    diffs, t_offs, t_ons, engs = [], [], [], []
+    # COHERENT contractile traction is the physical observable (signed; thermal cancels).
+    cdiffs, c_offs, c_ons, engs = [], [], [], []
     for _ in range(args.n_samples):
         h_off["sim"].run(chunk)
         h_on["sim"].run(chunk)
-        t_off, _ = anchor_traction(h_off)
-        t_on, _ = anchor_traction(h_on)
-        diffs.append((t_on - t_off) * _PN)
-        t_offs.append(t_off * _PN); t_ons.append(t_on * _PN)
+        _, _, c_off = anchor_traction(h_off)
+        _, _, c_on = anchor_traction(h_on)
+        cdiffs.append((c_on - c_off) * _PN)
+        c_offs.append(c_off * _PN); c_ons.append(c_on * _PN)
         engs.append(int(h_on["myosin_action"].n_engaged))
-    diffs = np.array(diffs)
-    diff_mean, diff_sem = float(diffs.mean()), float(diffs.std() / max(1, len(diffs) ** 0.5))
+    cdiffs = np.array(cdiffs)
+    diff_mean = float(cdiffs.mean())
+    diff_sem = float(cdiffs.std() / max(1, len(cdiffs) ** 0.5))
     eng = float(np.mean(engs))
-    print(f"  force-OFF traction = {np.mean(t_offs):.1f} ± {np.std(t_offs):.1f} pN", flush=True)
-    print(f"  force-ON  traction = {np.mean(t_ons):.1f} ± {np.std(t_ons):.1f} pN "
+    sig = abs(diff_mean) > 2 * diff_sem
+    verdict = ("CONTRACTILE (+traction)" if (sig and diff_mean > 0)
+               else "EXPANSILE/slackening (−)" if (sig and diff_mean < 0)
+               else "within noise")
+    print(f"  COHERENT force-OFF = {np.mean(c_offs):+.2f} ± {np.std(c_offs):.2f} pN", flush=True)
+    print(f"  COHERENT force-ON  = {np.mean(c_ons):+.2f} ± {np.std(c_ons):.2f} pN "
           f"({eng:.0f} engaged heads)", flush=True)
-    print(f"  ⇒ SAME-SEED DIFFERENTIAL (ON − OFF) = {diff_mean:+.3f} ± {diff_sem:.3f} pN "
-          f"[{'CONTRACTILE +traction' if diff_mean > 2 * diff_sem else 'within noise'}]",
-          flush=True)
+    print(f"  ⇒ SAME-SEED COHERENT DIFFERENTIAL (ON − OFF) = {diff_mean:+.3f} ± {diff_sem:.3f} pN "
+          f"[{verdict}]", flush=True)
 
     out = {
-        "stage": "2c REDESIGN: same-seed paired differential (force ON vs OFF) on ventral SF",
+        "stage": "2c REDESIGN: same-seed paired COHERENT-traction differential (force ON vs OFF)",
         "n_fil": h_on["layout"].n_fil, "n_beads": int(n), "n_anchors": int(h_on["anchors"].size),
         "fiber_length_um": h_on["layout"].fiber_length * _UM,
         "n_motors": h_on["p_myo"].n_motors_per_cell,
         "stepping_mode": "continuous_stroke", "dt_used_s": h_on["dt_used"],
         "equilibrate": args.equilibrate, "contract": args.contract, "n_samples": args.n_samples,
-        "force_off_traction_pN": float(np.mean(t_offs)),
-        "force_on_traction_pN": float(np.mean(t_ons)),
+        "coherent_off_traction_pN": float(np.mean(c_offs)),
+        "coherent_on_traction_pN": float(np.mean(c_ons)),
         "engaged_heads_mean": eng,
-        "differential_traction_pN": diff_mean,
-        "differential_sem_pN": diff_sem,
-        "per_sample_differential_pN": diffs.tolist(),
-        "significant": bool(diff_mean > 2 * diff_sem),
-        "note": "same-seed paired (force_scale 1 vs 0): identical bundle/binding/thermostat, "
-                "force the only difference → taut baseline + thermal noise cancel exactly; "
-                "the differential is the pure §9-corrected myosin traction.",
+        "coherent_differential_pN": diff_mean,
+        "coherent_differential_sem_pN": diff_sem,
+        "per_sample_coherent_differential_pN": cdiffs.tolist(),
+        "significant": bool(sig), "verdict": verdict,
+        "note": "same-seed paired (force_scale 1 vs 0): identical bundle/binding/thermostat → "
+                "thermal noise cancels. COHERENT signed traction (two ends pulled together) is "
+                "the contractile observable (vs Σ|T| fluctuation magnitude). +ve = the §9 "
+                "corrected myosin generates net contractile traction at the FA anchors.",
     }
     Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out_json).write_text(json.dumps(out, indent=2))
