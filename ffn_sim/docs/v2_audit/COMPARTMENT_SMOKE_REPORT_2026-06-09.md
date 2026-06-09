@@ -80,3 +80,19 @@ All under `ffn_sim/outputs/compartment_smoke/figs/` (SMOKE-watermarked):
 - `smoke_membrane_reservoir.png` — tether lengths + cortex/mem_node cross-layer mesh.
 - `smoke_junctional_actin.png` — tensile coupling law + catch-slip off-rate (F* marked).
 - `smoke_surface_manifold.png` — area convergence, frame convergence, master-gate coverage.
+
+### Full-cell MORPHOLOGY (PI 2026-06-09 "visualize the constructed cell shape")
+Single entry point `ffn_sim/scripts/compartment_vis.py` builds the FULL physiological
+MCF7 cell with EVERY LIVE compartment ON (cortex+myosin+xlink spine · baseline
+cytoplasm/turgor/nucleus/membrane-surface · osmotic · MT aster · IF cage · LINC
+bridges; 19,656 particles) and renders the ACTUAL constructed geometry. Under
+`ffn_sim/outputs/h7/figs/`:
+- `compartment_cell_overview.png` — 4 panels: 3D scatter of the whole cell;
+  equatorial (|z|<0.75 µm) cross-section with the explicit MT/IF/LINC bonds drawn;
+  meridional (|y|<0.75 µm) cross-section; and the per-compartment radial density
+  profile (each shell at its physiological radius: cortex at R_cell=7.5 µm, filled
+  nucleus core to R_nuc, IF cage just outside the nucleus, MT aster from the MTOC).
+- `compartment_cell_3d.png` — standalone larger 3D view (spherical cortex shell +
+  internal organelles).
+- `h7_linc_activation_gate.png` — LINC gate: nucleus↔IF bridges, per-bond EXACT-r0
+  histogram (force-free), cortical γ_soft identical OFF vs ON (no contamination).
