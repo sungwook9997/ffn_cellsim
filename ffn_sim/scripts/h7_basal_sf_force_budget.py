@@ -68,8 +68,12 @@ KUMAR_BAND_N = (10.0e-9, 30.0e-9)
 # per-head stall, the quantity in the cortical active-gel envelope γ=½·n2D·f·ℓ
 # (H7_ACTIVE_GAMMA_SYNTHESIS_2026-06-09). This is the cross-line consistency anchor:
 # the basal SF budget below uses the BRIEF-LITERAL minifilament (10 heads × 0.5 pN),
-# which is ~11× SMALLER than this literature minifilament — exactly the per-head /
-# stiffness fidelity the cortical line corrected in the §9 continuous_stroke redesign.
+# which is ~11× SMALLER than this literature minifilament. That ~11× factors cleanly as
+# (28/10 heads-per-side) × (2/0.5 pN per-head stall) = ~2.8× × ~4× — both are PARAMETER
+# choices, NOT a delivery/stiffness issue: the quasi-static budget already uses F_stall
+# directly (not the soft-k cap k·r), i.e. it already assumes the §9 continuous_stroke
+# delivery fix. So the ~11× is the brief-vs-literature minifilament PARAMETERISATION, of
+# the same magnitude/category as (but distinct mechanism from) the §9 per-head recovery.
 LIT_HEADS_PER_SIDE = 28           # Billington 2013 (NMII-IIA ~28-30 heads/side)
 LIT_F_PER_HEAD_N = 2.0e-12        # 2 pN/head one-sided dipole (Chugh 2017 × Billington 2013)
 LIT_F_MINIFILAMENT_N = LIT_HEADS_PER_SIDE * LIT_F_PER_HEAD_N   # ≈ 56 pN
@@ -133,9 +137,10 @@ def decompose_generation_gap(budget: dict) -> dict:
     Factors (all assumptions stated, none tuned to pass):
       * ``per_minifilament_fidelity`` — the brief-literal minifilament (10 heads ×
         0.5 pN ≈ 5 pN) vs the LITERATURE minifilament (28 heads × 2 pN ≈ 56 pN) the
-        cortical γ-floor uses. ~11×. This is the SAME per-head/stiffness correction the
-        cortical line executed in the §9 continuous_stroke redesign — i.e. ~11× of the
-        SF gap is a cross-line parameter-fidelity item already being closed elsewhere.
+        cortical γ-floor uses. ~11× = (28/10 heads) × (2/0.5 pN per-head) = ~2.8× × ~4×,
+        both PARAMETER choices (NOT delivery: the budget uses F_stall directly, already
+        assuming the §9 fix). Same magnitude/category as the cortical §9 per-head
+        recovery, distinct mechanism — a cross-line parameter-fidelity item.
       * ``cross_sectional_nmii_count`` — after the per-minifilament fix, the residual
         gap = how many LITERATURE minifilaments must act coherently across ONE SF
         cross-section to reach the Kumar band centre (Kumar/f_lit). This is the
@@ -257,9 +262,9 @@ def main() -> int:
           f"~{b['mesoscale_force_factor_needed_to_band_centre']:.0f}x (Route B)")
     d = rep["decomposition"]
     print("  --- gap decomposition (labeled, N-independent) ---")
-    print(f"    per-minifilament fidelity (brief 5pN → lit {d['lit_minifilament_N']*1e12:.0f}pN): "
+    print(f"    per-minifilament fidelity (brief 10×0.5pN → lit 28×2pN={d['lit_minifilament_N']*1e12:.0f}pN): "
           f"~{d['per_minifilament_fidelity_factor']:.0f}x "
-          f"(= the §9 cortical per-head fix)")
+          f"(=2.8× heads × 4× per-head stall; params, budget already assumes §9 delivery)")
     print(f"    cross-sectional NMII count to band centre: "
           f"~{d['cross_sectional_nmii_count_to_band_centre']:.0f} lit-minifilaments/SF "
           f"(= Route-B MCF7 density datum, session (i))")

@@ -58,7 +58,7 @@ def make_figure(rep: dict):
 
     # ---- LEFT: SF waterfall ----
     stages = ["raw budget\n(brief-literal\nminifilament)",
-              "× ~%.0f\nper-minifilament\nfidelity (→lit 56 pN\n= §9 per-head fix)" % fid,
+              "× ~%.0f\nper-minifilament\nfidelity (→lit 56 pN;\n2.8×heads × 4×stall,\nparams)" % fid,
               "× ~%.0f–%.0f\ncross-sectional\nNMII count / SF\n(Route-B density datum)" % (cnt_lo, cnt_hi)]
     xs = [0, 1, 2]
     vals_lo = [raw_pN, after_fid, after_cnt_lo]

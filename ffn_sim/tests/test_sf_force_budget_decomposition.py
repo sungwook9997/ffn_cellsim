@@ -73,11 +73,19 @@ def test_decomposition_product_recovers_raw_gap(fb):
     )
 
 
-def test_per_minifilament_fidelity_is_the_cortical_per_head_fix(fb):
-    """Brief 5 pN → lit 56 pN ≈ 11× — the same order as the §9 per-head correction."""
+def test_per_minifilament_fidelity_is_a_parameter_factor(fb):
+    """Brief 5 pN → lit 56 pN ≈ 11× = (28/10 heads) × (2/0.5 pN/head) = 2.8× × 4×.
+
+    Both are PARAMETER choices (the budget uses F_stall directly, already assuming the §9
+    delivery fix) — same order as, but a distinct mechanism from, the §9 per-head recovery.
+    """
     budget = _synthetic_budget(fb)
     d = fb.decompose_generation_gap(budget)
-    assert d["per_minifilament_fidelity_factor"] == pytest.approx(11.3, abs=0.5)
+    assert d["per_minifilament_fidelity_factor"] == pytest.approx(11.2, abs=0.3)
+    # the factor is exactly (lit heads × lit per-head) / (brief heads × brief per-head)
+    heads_ratio = fb.LIT_HEADS_PER_SIDE / budget["n_heads_per_side"]
+    perhead_ratio = fb.LIT_F_PER_HEAD_N / budget["F_stall_per_head_N"]
+    assert d["per_minifilament_fidelity_factor"] == pytest.approx(heads_ratio * perhead_ratio, rel=1e-9)
 
 
 def test_cross_sectional_count_is_order_hundreds(fb):

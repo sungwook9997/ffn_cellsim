@@ -60,7 +60,7 @@ multiplier is attributable, not opaque. **All factors are evaluated at the UPPER
 | factor | value | physical meaning / source | lever |
 |---|---|---|---|
 | raw single-SF tension | ≈ 5.0 pN | φ 0.99 × 10 heads × 0.5 pN (brief literal D5); NO mesoscale scaling, NO continuous_stroke | — |
-| **per-minifilament fidelity** | **~11×** | brief-literal minifilament (10 heads × 0.5 pN ≈ 5 pN) → **literature dipole 56 pN** (28 heads × 2 pN; Billington 2013 × Chugh 2017) = the SAME minifilament the cortical γ-floor uses | the §9 per-head / cross-bridge-stiffness fix (already executed on the cortical line) |
+| **per-minifilament fidelity** | **~11×** = ~2.8× × ~4× | brief-literal minifilament (10 heads × 0.5 pN ≈ 5 pN) → **literature dipole 56 pN** (28 heads × 2 pN; Billington 2013 × Chugh 2017). The 11× = (28/10 heads) × (2/0.5 pN per-head) — both **parameter** choices, NOT delivery (the budget uses F_stall directly, already assuming the §9 fix) | brief-vs-literature minifilament parameterisation (same category/magnitude as the §9 per-head recovery, distinct mechanism) |
 | **cross-sectional NMII count** | **~180× (floor) / ~360× (centre)** | after the per-minifilament fix, how many **literature minifilaments must act coherently across ONE SF cross-section** to reach Kumar = Route-B native:effective factor | the **missing MCF7 SF-NMII density datum** (session (i)) |
 | engagement realism | **~9× WORSE** | budget uses upper φ≈0.99; the fine-grained cortex realises only ~11% (geometric/availability limited, `h7_engagement_saturation.json`) | structural (availability), not a credit |
 
@@ -68,8 +68,10 @@ Consistency: per-minifilament fidelity × cross-sectional count == the raw facto
 (11.2 × 360 ≈ 4028 to centre; 11.2 × 180 ≈ 2014 to floor); locked by
 `test_sf_force_budget_decomposition.py`.
 
-**Reading.** Of the 2014×, only ~11× is a parameter-fidelity choice the project is already
-correcting elsewhere; the dominant ~180× is a *count/density* quantity with **no MCF7 datum**.
+**Reading.** Of the 2014×, only ~11× is a brief-vs-literature minifilament *parameter* choice
+(2.8× heads-per-minifilament + 4× per-head stall — the budget already assumes ideal §9-style
+F_stall delivery, so this is NOT the delivery/stiffness gap); the dominant ~180× is a
+*count/density* quantity with **no MCF7 datum**.
 A Kumar SF needs **~180–360 literature minifilaments coherent per cross-section** — an
 order-of-magnitude that session (i) must verify against native ventral-SF NMII content; it is
 plausibly high (a NMII stack is ~10–30 minifilaments; ~180–360 implies ~6–12 stacks bundled
