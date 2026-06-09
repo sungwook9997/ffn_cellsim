@@ -12,15 +12,18 @@ datum(**myosin areal density + active-vs-network 구분**)에 막혀 있다.
 
 ## ⚠️ 추가 항목 (결정 아님 — 잠복 회귀, PI fix 필요) — crosslink 재anchor가 CFL 테스트 2개 깸
 
-자율-루프 회귀 테스트 중 발견: **loop18 crosslink 재anchor(k 1e-7→1e-3)가 `test_crosslinkers.py`
-2개를 깨뜨렸다**(`test_batch_cfl_shrinks_when_violated`, `test_demo_xlink_sim_builds_and_runs_no_NaN`).
-근본: batch-CFL envelope `_F_env = k_attach·max_bind_dist`가 데모의 넓은 bind 반경(1µm)×stiff
-k=1e-3 = **1nN** → Bell-Evans off-rate `k_off_max=2.56e+39/s` 폭발. envelope이 soft-k 가정
-(주석 명시)인데 재anchor 때 갱신 안 됨. ✅ **Production(60nm 반경)은 안전**(k_off_max=18/s,
-batch=100) → **이번 세션 γ 결론 무관**. ❌ test suite RED. **Lead 미수정**(CFL contract=
-gate-loosening 금지). 상세+수정안 3개(A cap/B thermal-bound[추천]/C fixture) →
+자율-루프 전체 test suite 스캔 중 발견: **loop18 crosslink 재anchor(k 1e-7→1e-3)가 14개
+테스트를 깨뜨렸다**(전체 22 FAILED 중 14 = CFL 회귀, 나머지 8 = Mac에 GPU 없음=환경, 회귀 아님).
+**처음엔 2개로 봤으나 full suite 결과 cortex-build-with-crosslinker 표면 전체**(test_cell·
+test_cell_full·test_connected_mesh·test_crosslinkers·test_turnover)가 RED — loop18 이후
+미검출 잠복. 근본: batch-CFL envelope `_F_env=k·max_bind_dist`가 데모 bind 반경(1µm)×stiff
+k=1e-3 = **1nN** → Bell-Evans `k_off_max=2.56e+39/s` 폭발(13개); + production k_off_max이
+0.12→18/s(150×)로 올라 CFL 여유 급감, 큰 batch_dt 테스트 1개도 실패. envelope이 soft-k 가정
+(주석 명시)인데 재anchor 때 미갱신. ✅ **Production(60nm,batch=100)은 안전**(k_off_max=18/s)
+→ **이번 세션 γ 결론 무관**(γ 경로 test_cortical_tension green). ❌ 14 test RED. **Lead 미수정**
+(CFL contract=gate-loosening 금지). 상세+수정안 3개(A cap/B thermal-bound[추천]/C fixture) →
 `CROSSLINK_REANCHOR_CFL_REGRESSION_2026-06-10.md`. PI: 재anchor를 production-wide로 승인했으니
-이 CFL envelope도 stiff-k에 맞게 재유도 필요.
+이 CFL envelope도 stiff-k에 맞게 재유도 필요(우선순위 ↑ — 테스트 14개 RED).
 
 ---
 

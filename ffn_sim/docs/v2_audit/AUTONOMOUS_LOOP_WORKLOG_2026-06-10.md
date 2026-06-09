@@ -118,5 +118,13 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
   2026-06-10.md(수정안 3: A cap/B thermal-bound 추천/C fixture). PI 브리프에 ⚠️항목 추가.
 - ⇒ watch 중 실제 버그 1건 포착(회귀 테스트가 값을 함). 자율 fix 안 함=disciplined.
 - 테스트 건강: **test_myosin green**(continuous_stroke), **test_cortical_tension green**(11,
-  γ 측정) → 이번 세션 γ 결론은 tested 코드 기반. 유일 red = loop18 crosslinker CFL 회귀
-  (문서화, production-safe). 전체 그림 clean.
+  γ 측정) → 이번 세션 γ 결론은 tested 코드 기반.
+
+## Iter 14-15 — ⚠️ full suite 스캔: loop18 회귀 blast radius = 14 테스트 (2개 아님)
+- 전체 test suite 백그라운드 실행 → **22 FAILED**. 분류: **14 = loop18 CFL 회귀**(13 demo-
+  폭발 k_off_max=2.56e39 + 1 production k_off_max=18/s × 큰 batch_dt), **8 = Mac GPU 없음**
+  (환경, gbook선 통과, 회귀 아님). 회귀 14개 = cortex-build-with-crosslinker 표면 전체
+  (test_cell·test_cell_full·test_connected_mesh·test_crosslinkers·test_turnover) → loop18
+  이후 미검출 잠복. ✅production(batch=100,60nm) 안전→γ 결론 무관, CFL 여유는 150× 축소.
+- 회귀 문서를 full blast radius로 갱신 + 브리프 ⚠️항목 14개로 격상(우선순위↑). Lead 미수정.
+- ⇒ 회귀 진단의 진짜 가치: "2개"가 아니라 cortex 빌드 표면 전체가 RED였음을 PI에 정확히 전달.

@@ -3,12 +3,23 @@
 > Lead 자율-루프(2026-06-10 iter13) 회귀 테스트 중 발견. **수정 안 함 — CFL contract
 > 테스트라 gate-loosening 금지(하드룰), PI surface.** Production은 안전(γ 결론 무관).
 
-## 증상
-`python -m pytest ffn_sim/tests/test_crosslinkers.py` → **2 FAILED**:
-- `TestBoundary::test_batch_cfl_shrinks_when_violated` — `k_off_max=2.557e+39/s`라 어떤
-  batch_steps로도 CFL(batch_dt·k_off_max ≤ 1e-3) 충족 불가.
-- `TestKinetics::test_demo_xlink_sim_builds_and_runs_no_NaN` — `XlinkBondUpdater.__init__`가
-  `RuntimeError: violates D2 batch CFL: batch_dt·k_off_max = 1.3e-8·2.557e39 = 3.3e31 > 1e-3`.
+## 증상 — ⚠️ blast radius = 14 테스트 (처음 본 2개가 아님)
+`python -m pytest ffn_sim/tests/` 전체 → **22 FAILED**. root-cause 분류:
+
+| 원인 | 테스트 수 | 회귀? |
+|---|---|---|
+| **CFL k_off_max=2.557e+39 폭발** (demo 1µm bind × stiff k=1e-3) | **13** | ⚠️ loop18 실제 회귀 |
+| **production k_off_max=18/s × 큰 batch_dt > CFL** (재anchor가 CFL 여유 150× 축소) | **1** | ⚠️ loop18 실제 회귀 |
+| `--device gpu` but gpu_enabled=False (Mac=GPU 없음, gbook선 통과) | 8 | ❌ 환경, 회귀 아님 |
+
+**loop18 재anchor 실제 blast radius = 14 테스트** — cortex-build-with-crosslinker 표면 전체:
+`test_cell.py`(2), `test_cell_full.py`(8: three-way counts/BAOAB no-NaN/myosin dispatch),
+`test_connected_mesh.py`(1: build_runs_and_stable), `test_crosslinkers.py`(2),
+`test_turnover.py`(1: noncortex_bonds_preserved). 대부분 `XlinkBondUpdater.__init__`가
+`RuntimeError: violates D2 batch CFL: batch_dt·k_off_max = 1.3e-8·2.557e39 = 3.3e31 > 1e-3`로
+빌드 단계에서 죽는다. **loop18(236101e) 이후 미검출 잠복**(재anchor 후 full suite 미실행 추정).
+이번 세션 변경(h7_active_force_budget.py 스크립트)과 무관 — 어떤 실패 테스트도 그 스크립트를
+import하지 않음(확인).
 
 ## Root cause (정밀)
 batch-CFL은 envelope 힘 `_F_env = k_attach · max_bind_dist` (crosslinkers.py:277)로
@@ -29,12 +40,16 @@ Bell-Evans off-rate ceiling `k_off_max = k_off0·exp(x·F_env/kT)`을 잡는다.
   재anchor 때 갱신되지 않은 것.
 
 ## 영향 범위
-- ✅ **Production 안전**: 60nm 반경에서 k_off_max=18/s, batch_steps=100 유지. **이번 세션의
-  γ A/B·density·앙상블 결론은 영향 없음**(production 작동점에서 측정).
-- ❌ **Test suite RED**: 2개 contract 테스트 실패. 데모-scale(넓은 bind 반경) 빌드는 현재
-  재anchored k에서 빌드 불가.
-- ⚠️ 잠재: 향후 어떤 production-scale 빌드가 max_bind_dist를 넓히거나 큰 x_β crosslinker
-  파라미터를 쓰면 batch_steps→1 강제(100× perf 회귀) 또는 빌드 raise 가능.
+- ✅ **Production 안전**: 60nm 반경에서 k_off_max=18/s, batch_steps=100 유지(batch_dt=1.3e-6
+  ≪ CFL 한계 5.6e-5s). **이번 세션의 γ A/B·density·앙상블 결론은 영향 없음**(production
+  작동점에서 측정; γ 측정 경로 test_cortical_tension green).
+- ❌ **Test suite 14 RED**: cortex-build-with-crosslinker 표면 전체. 데모-scale(넓은 bind
+  반경) 빌드는 현재 재anchored k에서 빌드 불가.
+- ⚠️ **CFL 여유 150× 축소**: production k_off_max 0.12→18/s(재anchor 직접 결과). 안전
+  batch_steps 천장이 ~640000 → ~4300으로 급감. batch_steps=100은 여전히 안전하나 여유가
+  크게 줄었고, 큰 batch_dt를 쓰는 1개 테스트(test_turnover)는 이미 이 천장을 넘어 실패.
+- ⚠️ 잠재: 향후 production-scale 빌드가 max_bind_dist를 넓히거나 batch_steps를 키우면 빌드
+  raise 또는 batch_steps→1 강제(100× perf 회귀) 가능.
 
 ## PI 결정 필요 (수정안 — Lead는 진행 안 함)
 envelope 힘 모델 vs 테스트 fixture 중 무엇을 고칠지 = CFL-contract 판단:
