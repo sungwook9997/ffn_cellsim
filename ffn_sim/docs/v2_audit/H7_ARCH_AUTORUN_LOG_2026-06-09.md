@@ -49,3 +49,17 @@ mechanism (myosin transmitting along the bundle/antiparallel-actin contour, inde
 spacing) = a deeper myosin-model change than a mesh rebuild. HALT→PI: (i) adopt faithful for fidelity +
 GPU-contraction γ within gates, (ii) authorize gate-contract change (un-physiological per this result),
 (iii) reframe lever as myosin-overlap mechanism. doc §step3. No gate/param changed.
+
+## LOOP 4 (PI chose iii: myosin-overlap mechanism): DESIGN doc + per-head force diagnosis
+Read myosin.py grip_walk in full. DECISIVE force-budget diagnosis of the active-γ floor into 3 compounding
+deficits: (D1) per-head force capped at k·r≈0.74pN ≪ F_stall 8.48pN (~11× under) — grip_walk delivers
+F=k_head_actin·min(s_grip,r); once s_grip≥r it SATURATES at k·r; the Hill stall uses k_series=k/2 (the soft
+perpendicular offset spring k_head_spring=1pN/µm sits IN SERIES with the power stroke), so the head NEVER
+reaches F_stall (would need min(s,r)≈17µm) → walks to the 2ℓ0 cap delivering only k·r. Real cross-bridge
+stiffness ~0.3-2 pN/NM = 300-2000 pN/µm — the model's 1pN/µm CONFLATES the structural offset spring with
+the load-bearing cross-bridge. With stiff k the Hill stall binds (s_grip≈17nm → F_stall) → ~11× more force.
+(D2) no overlap accumulation — local shunting to nearest crosslink, heads don't sum along contour. (D3)
+engagement ~11% geometric. Net envelope(18-36×)×1/9×1/11→~260× under band. DESIGN doc written
+(H7_MYOSIN_OVERLAP_MECHANISM_DESIGN_2026-06-09.md): O2 overlap-accumulation (in-lane, opt-in) + O1
+cross-bridge stiffness (magic-number/PI trigger) + sanity gates + stages M1-M4. ⭐O1 = dominant fixable
+deficit AND a magic-number trigger → HALT→PI (stiffness datum sign-off) per hard rules.
