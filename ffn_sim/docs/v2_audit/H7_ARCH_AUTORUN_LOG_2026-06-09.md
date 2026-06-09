@@ -173,3 +173,17 @@ fix is ATOMIC: (1) k=1e-3 + (2) grip_walk r0=bound-length (force=k·s_grip strok
 1e-3 = over-tensioned broken state). Physical end-state: per-head→F_stall, γ→full-stall envelope (18-36× under
 = density/overlap gap), transmission gated by crosslink fix. doc H7_MYOSIN_OVERLAP_MECHANISM_DESIGN §8. HALT→PI:
 the unit-slip fix IS the myosin grip_walk surgery (they're coupled, not sequential) — proceed atomically?
+
+## LOOP 13 (atomic unit-slip fix attempt): bin scheme CANNOT deliver the stiff-cross-bridge stroke
+Implemented the atomic fix (k 1e-3 + grip_walk r0=max(r_bind−s_grip,0) re-binning, 5 edits) then hit a HARD
+resolution wall: the stiff-cross-bridge stroke is ~4nm (s_grip_stall=F_stall/k_series) but the myosin binding
+range is head_actin_max_bind_dist=330nm. The attach-bond r0 is bin-quantized over [0,330nm]; force granularity
+= k·bin_width, so resolving the 4nm stroke (granularity<F_stall) needs n_bins≳165 (impractical); at n_bins=60
+granularity=23pN=2.7×F_stall → one re-bin overshoots the stall. ⇒ the unit-slip fix needs a CONTINUOUS per-head
+force, not bins. THREE nested findings define the fix: (1) k 1e-6→1e-3; (2) r0=bound-length (force=k·stroke not
+k·r); (3) CONTINUOUS custom force F=min(k·s_grip,F_stall) per head (md.force.Custom; attach bond kept only for
+Bell-Evans off-rate) + likely shrink the 330nm binding range (unphysical for a stiff bridge). Deeper myosin
+redesign than config+bins. ALL edits reverted (no under-resolved intermediate). Fully specified in
+H7_MYOSIN_OVERLAP_MECHANISM_DESIGN §9. CFL (τ_backbone~39ns) + crosslink re-anchor remain in the atomic set.
+HALT→PI: the unit-slip fix = a custom-force myosin redesign (host-sync/GPU-main territory) — execute as focused
+sanity-gated effort? doc §9.

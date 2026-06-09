@@ -198,3 +198,36 @@ revealed the coupling the design (§3 O1+O2) anticipated:
 Config reverted to 1e-6 pending the atomic fix (a config-only 1e-3 leaves an over-tensioned broken
 state). The physical end-state: per-head → F_stall (not k·r), γ → the full-stall envelope
 (18–36× under band = the density/overlap gap), with transmission gated by the crosslink fix.
+
+## 9. ⛔ The bin-quantized attach bond CANNOT deliver the stiff-cross-bridge stroke (2026-06-09)
+
+Attempted the atomic fix (stiffness 1e-3 + grip_walk r0 = max(r_bind − s_grip, 0) via re-binning).
+Implemented all five edits, then found a HARD resolution wall in the bin architecture:
+
+- The stiff-cross-bridge stroke is tiny: s_grip_stall = F_stall/k_series ≈ **4 nm** (the head
+  walks only ~4 nm before the Hill stall caps it at F_stall).
+- But the myosin binding range is LARGE: `head_actin_max_bind_dist = 3.3e-7` = **330 nm** (the
+  head sits 200 nm off the backbone and binds actin up to ~330 nm away).
+- The attach-bond r0 is QUANTIZED into `n_bins` types over [0, 330 nm]. Force granularity per
+  bin = k·bin_width. To resolve the 4 nm stroke (granularity < F_stall = 8.48 pN) needs
+  bin_width ≲ 2 nm → **n_bins ≳ 165** (165+ HOOMD bond types — impractical). At n_bins=60,
+  bin_width=5.5 nm → granularity 23 pN ≈ **2.7× F_stall**: a single re-bin overshoots the stall
+  force. The bins are fundamentally too coarse to deliver a controlled F_stall.
+
+**⇒ The unit-slip fix needs a CONTINUOUS per-head force, not the bin scheme.** Three nested
+findings now define the correct fix:
+1. stiffness k_head 1e-6 → 1e-3 (the unit slip);
+2. r0 = bound-length (force = k·power-stroke, not k·r) — required, else k·r explodes;
+3. **continuous per-head force** — the bin quantization can't deliver the 4 nm stroke; replace
+   the harmonic attach-bond-as-force with a CUSTOM FORCE delivering, per engaged head,
+   F = min(k·s_grip, F_stall) along the head→bead unit vector (reaction on the head/backbone),
+   with the attach bond retained ONLY for the Bell-Evans off-rate bookkeeping. (Plus: the 330 nm
+   binding range is itself unphysical for a stiff cross-bridge — a stiff bridge binds at low
+   strain ~nm; head_actin_max_bind_dist likely needs shrinking too, a coupled binding-geometry
+   item.)
+
+This is a deeper myosin-contractility redesign (custom force) than a config + bin change. All
+edits reverted (no broken/under-resolved intermediate). Fix fully specified above; execute as a
+focused, sanity-gated effort (md.force.Custom = per-step host-sync, the GPU-main-port territory —
+so the cupy/native path is the production form). The CFL re-derivation (k_backbone=1e-2 →
+τ≈39 ns) and the crosslink k re-anchor remain part of the atomic set.
