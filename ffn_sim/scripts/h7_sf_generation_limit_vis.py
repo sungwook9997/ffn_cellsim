@@ -111,11 +111,13 @@ def make_figure(rep: dict):
         axR.text(0.70, y, s, fontsize=8.7, fontweight=weight, color=color, transform=axR.transAxes)
         y -= 0.092
     axR.text(0.01, 0.02,
-             "* after the ~11× per-minifilament fidelity fix.\n"
-             "Both floors: generation-bound, same missing MCF7\n"
-             "density datum, count is the WRONG lever — tension\n"
-             "is set by ORGANISATION that rectifies motor force.",
-             transform=axR.transAxes, fontsize=8, va="bottom",
+             "* session (i) REFUTE: the cross-section count datum is\n"
+             "MISSING + GEOMETRICALLY IMPOSSIBLE (band needs ~590–1760,\n"
+             "a 50–250 nm cross-section holds O(5–15)). Reframe (Kassianidou/\n"
+             "Kumar 2017): Kumar 10–30 nN is mostly network/prestress;\n"
+             "single-fiber ACTIVE ≈6 nN — still ~7× under. Both floors:\n"
+             "generation-bound, same missing motor-density datum.",
+             transform=axR.transAxes, fontsize=7.3, va="bottom",
              bbox=dict(boxstyle="round", fc="#eef5ff", ec="#1f3a93", alpha=0.9))
 
     fig.suptitle("H.SF (ii) — SF tension generation-limit, unified with the cortical γ-floor "

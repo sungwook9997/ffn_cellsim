@@ -63,8 +63,19 @@ session lands the result updates this queue + the Dev-Logs board.
   blebb-sensitive; SF-2c shows ~+3476 pN passive pre-tension), (2) tool-role scope (fine-grained
   tool SUPPLIES ζΔμ ∝ ρ_NMII vs owns the absolute band), (3) density-conditioned provisional band,
   (4) cross-line per-head reconciliation (0.5 / 2 / 8.48 pN across SF-brief / cortical-dipole / §9).
-- **Reconcile w/ (i):** if (i) lands a defensible MCF7 SF-NMII datum giving N_cross≈180–360, Route B
-  closes Kumar AND fills the cortical density gap → this conclusion updates toward (i). Else it stands.
+- **✅ RECONCILED w/ (i) 2026-06-09 (commit `f6b956c`, `h7/sf-nmii-forcescale`):** (i) REFUTE'd —
+  Kumar NOT density-closable. Both sessions now CONVERGE → the generation-bound conclusion is
+  **DECISIVE, jointly HALT→PI** (no longer provisional). (i) sharpens 3 ways: (1) molecular
+  correction is SMALL + reconciled (~3.4× at (i)'s 17 pN Stachowiak per-minifilament stall, vs my
+  ~11× dipole upper bound); (2) the cross-section count is **GEOMETRICALLY IMPOSSIBLE** (band needs
+  ~590–1760, a 50–250 nm cross-section holds O(5–15)) → gap **irreducible**, and the cortical
+  γ-floor canNOT get its density datum from the SF side either; (3) **decisive gate-reframe**
+  (Kassianidou/Kumar 2017 PNAS): Kumar 10–30 nN is mostly **network/prestress**, single-fiber
+  **active** myosin ≈5–6 nN — supplied in our platform by basal mesh + FA + turgor, not `sf_myosin_`;
+  active component ~7× under even the 6 nN target. **PI ask:** re-scope the SF active gate to the
+  ~6 nN single-fiber active target (NOT the 10–30 nN composite); the absolute band is owned by the
+  network/prestress layer. ⚠️ both branches extended `h7_basal_sf_force_budget.py` → Lead merge at
+  integration. Folded into `SF_GENERATION_LIMIT_SYNTHESIS_2026-06-09.md` §1/§6/§7.
 
 ---
 
