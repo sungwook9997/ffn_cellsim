@@ -105,12 +105,14 @@ registry denylist; the basal contraction is reported as its own observable.
   z=3.087∈[3,3.5], L/lc=6.18≥5.9, n_xl=1850.
 
 **S-layer (surface manifold — positioning + connectivity, NO force):**
-* **S1** surface manifold layer — use `cortex/surface_manifold.py` to (a) POSITION
-  FA particles on the basal surface region (solve FA-attachment), (b) provide patch
-  adjacency = the "표면 연락 일부", (c) optional soft **normal-only** `U_conf`
-  (default-off; ON at physiological value for surface coherence). Build-time gate:
-  FA particles ON the surface (≤ band), resolution-invariance (VG-1: observables
-  invariant to N_patch), NO in-plane force / not a bond → γ-invisible.
+* **S1 ✅ DONE** — surface manifold layer (`cell/basal_surface.py`): selects the
+  south-pole basal cap (resolution-invariant polar cap θ=arcsin(footprint/R)),
+  POSITIONS FA particles ON the surface (radial=R) at basal-patch centroids, exposes
+  basal patch adjacency = the "표면 연락 일부". NO force, not a bond → γ-invisible.
+  Gate PASS: 60 FA on-surface + in-cap + basal patches connected; VG-1 master gate —
+  cap area fraction invariant to subdivision (rel spread 6.1%, → analytic 0.127).
+  `cap_fraction_resolution_invariance` is the VG-1 check. (Optional soft normal-only
+  `U_conf` deferred to integration; geometry positioning is the S1 deliverable.)
 
 **Integration + active:**
 * **B3** anchor the F-layer ON the S-layer — filament network beads sit on the

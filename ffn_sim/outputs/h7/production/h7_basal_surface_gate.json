@@ -1,0 +1,30 @@
+{
+  "verdict": "PASS",
+  "controls": {
+    "n_basal_tris": 168,
+    "n_fa_placed": 60,
+    "theta_cap_deg": 41.8103148957786,
+    "cap_area_fraction": 0.130136112030992,
+    "on_surface": true,
+    "in_basal_cap": true,
+    "basal_connected": true
+  },
+  "resolution_invariance": {
+    "analytic_cap_fraction": 0.12732200375003505,
+    "fractions_by_level": {
+      "2": 0.1358089105985865,
+      "3": 0.130136112030992,
+      "4": 0.1278140608169213
+    },
+    "rel_spread": 0.06091173601650868,
+    "invariant": true
+  },
+  "gate": "S1 basal_surface (positioning + connectivity, NO force)",
+  "params": {
+    "R_m": 7.5e-06,
+    "footprint_radius_m": 5e-06,
+    "n_fa": 60,
+    "subdivisions": 3
+  },
+  "note": "S-layer = surface_manifold positions FA ON the 2D surface + patch connectivity; NO in-plane/edge force (\u03b3-invisible), per the 7b19276 cortex-as-mesh rejection bright line. Real forces are the F-layer explicit filament network (B1/B2) anchored to these FA \u2014 wired in B3."
+}
