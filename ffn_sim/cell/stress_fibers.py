@@ -189,15 +189,28 @@ References
   paper supplies a TENSION BAND only (``sf_tension_band_N``, a validation
   target); it does NOT report a bundle stiffness, so it is NOT the provenance of
   ``μ_SF`` / ``k_actin`` (see below).
-- SF backbone STIFFNESS provenance (``μ_SF`` = ``N_filaments · EA_single``):
-  the single-filament F-actin axial rigidity ``EA_single ≈ 4.3e-8 N`` composed
-  from the F-actin Young's modulus ``E ≈ 1.3-2.6 GPa`` × cross-section
-  ``A ≈ 3.2e-17 m²`` (Gittes 1993 J Cell Biol 120:923; Kojima, Ishijima &
-  Yanagida 1994 PNAS 91:12962 — F-actin tensile/flexural rigidity). The bundle
-  filament count ``N_filaments ≈ 10-30`` is the vSF cross-sectional bundling
-  (Cramer, Siebert & Mitchison 1997 J Cell Biol 136:1287). ``μ_SF`` is thus an
-  INDEPENDENT EA-derived INPUT — decoupled from the Kumar tension band, which it
-  is then validated against (it may pass or fail).
+- SF backbone STIFFNESS provenance (``μ_SF`` = ``N_filaments · EA_single``)
+  — citation corrected + literature audited 2026-06-09 (deep-research, 3-vote verified):
+  the single-filament F-actin AXIAL rigidity ``EA_single`` is the DIRECT-stretch
+  datum of **Kojima, Ishijima & Yanagida 1994 PNAS 91:12962** — microneedle
+  nanomanipulation gave 43.7 ± 4.6 pN/nm for a 1 µm BARE filament ⇒ ``EA = k·L =
+  4.37e-8 N``. Independently bracketed by **Liu & Pollack 2002 Biophys J 83:2705**
+  (microfabricated cantilever, 34.5 ± 3.5 pN/nm ⇒ 3.45e-8 N). Across methods/chem.
+  environment the axial stiffness spans **~11-44 pN/nm ⇒ EA ≈ 1.1-4.4e-8 N**
+  (the spread is the chemical environment — phalloidin/tropomyosin/ions — NOT
+  measurement error). The cross-section ``A ≈ 3.2e-17 m²`` ⇒ E = EA/A ≈ 1.4 GPa,
+  inside the cited 1.3-2.6 GPa actin range. ⚠️ **Gittes 1993 J Cell Biol 120:923 is
+  NOT the EA source** — it measures FLEXURAL rigidity (``EI = 7.3e-26 N·m²``,
+  persistence length ~17.7 µm) and its 1.2 GPa Young's modulus is for MICROTUBULES,
+  not actin axial stiffness. (The prior co-attribution of EA to Gittes was an error.)
+  The bundle filament count ``N_filaments`` has NO single measured value — it is a
+  CATEGORICAL ~10-30 (Tojkander 2012; Kassianidou & Kumar 2015, both tracing to the
+  Cramer, Siebert & Mitchison 1997 J Cell Biol 136:1287 EM without re-deriving a
+  count; a 2024 variant cites 7-20 under high tension); even modern cryo-ET
+  (2020-2023) has not published a direct per-cross-section count. ``μ_SF`` is
+  therefore SWEPT over the plausible ``N ∈ {7..30}`` × ``EA`` range and VALIDATED
+  against the Kumar tension band (the model conclusion must not depend on the weak
+  N datum — PI 2026-06-09).
 - Traction stress ~5.5 nN/µm² at FA: Balaban et al. 2001, Nat Cell Biol
   3:466-472 (force on substrate at focal adhesions).
 - NMII bipolar minifilament (D5) + Hill F-V (D6): Stam et al. 2017 PNAS;
@@ -235,9 +248,12 @@ PI_DECISIONS: list[str] = [
     "mu_SF (SF backbone GRID-INVARIANT bundle axial modulus, N): the SF "
     "backbone stiffness is now DERIVED from a fine-grained bundle EA, NOT "
     "back-solved from a tension band. mu_SF = N_filaments · EA_single with "
-    "EA_single = 4.3e-8 N (F-actin single-filament axial rigidity: E≈1.3-2.6 "
-    "GPa × A≈3.2e-17 m²; Gittes 1993 / Kojima 1994) and N_filaments the vSF "
-    "cross-section count (~10-30; Cramer 1997). The per-bond spring is k_bond = "
+    "EA_single = 4.37e-8 N (F-actin single-filament AXIAL rigidity, DIRECT "
+    "microneedle stretch 43.7 pN/nm·1µm; KOJIMA 1994 PNAS 91:12962 — NOT Gittes "
+    "1993, which is flexural EI/microtubule E; bracketed 1.1-4.4e-8 by Liu&Pollack "
+    "2002) and N_filaments the vSF cross-section count (CATEGORICAL ~7-30; Cramer "
+    "1997 / Tojkander 2012, no single measured value — swept + Kumar-validated). "
+    "The per-bond spring is k_bond = "
     "mu_SF / ell0_actin (cortex.py:440 grid-invariant convention), giving "
     "k_bond≈0.8-2.5 N/m on a ~12µm/24-bead bundle — ~2-3 ORDERS above the "
     "RETIRED 1e-2 N/m placeholder, and reaching the Kumar 2006 10-30 nN band at "
@@ -359,7 +375,7 @@ def resolve_stress_fibers(
             sarcomere_spacing=0.0,
             mu_SF=None,
             N_filaments=None,
-            EA_single=4.3e-8,
+            EA_single=4.37e-8,
             k_actin=None,
             k_anchor=None,
             k_xl=0.0,
@@ -382,12 +398,13 @@ def resolve_stress_fibers(
     # is formed at registration (register_stress_fiber_bond_params), so that a
     # uniformly strained fiber reports T = μ_SF·ε independent of bead count.
     #
-    # EA_single: F-actin single-filament axial rigidity ≈ 4.3e-8 N (E≈1.3-2.6
-    # GPa × A≈3.2e-17 m²; Gittes 1993 / Kojima 1994). N_filaments: vSF cross-
+    # EA_single: F-actin single-filament AXIAL rigidity ≈ 4.37e-8 N (Kojima 1994
+    # direct stretch 43.7 pN/nm·1µm; NOT Gittes 1993 = flexural/MT; 1.1-4.4e-8
+    # range, Liu&Pollack 2002). N_filaments: vSF cross-
     # section count (~10-30; Cramer 1997) — NO single mesoscale default, so it
     # is PI-pending: when neither μ_SF nor N_filaments is given, μ_SF stays None
     # and the enabled build HALTS (no silent non-physical placeholder).
-    EA_single = float(cfg.get("EA_single", 4.3e-8))
+    EA_single = float(cfg.get("EA_single", 4.37e-8))  # Kojima 1994 bare-actin axial
     _require_finite_positive("EA_single", EA_single)
     N_filaments = cfg.get("N_filaments", None)
     N_filaments = None if N_filaments is None else int(N_filaments)
