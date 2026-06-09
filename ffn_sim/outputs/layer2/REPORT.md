@@ -1032,11 +1032,62 @@ emergent per-condition fits (A/A0 = a + b/R + c/R²):
    synthesis of the whole Layer-2 line is exported to `outputs/layer2/Layer2_Report.docx`
    (`scripts/layer2_report_docx.py`).
 
+## H — H.7 mechanistic single-cell traction seam: the magnitude FORK resolved with a DERIVED anchor (2026-06-10)
+
+The closed-line handed the spreading MAGNITUDE to the fine-grained single-cell line, anchored on a
+HEURISTIC traction bracket (§C: whole-cell 1.6 nN / protrusion 9.4 nN). H.7 has now DERIVED that
+single-cell traction mechanistically — a graded-polarity SARCOMERIC ventral stress fiber (§9-corrected
+continuous-stroke myosin on FA anchors) rectifies the motor into **+131 ± 8 pN coherent contractile
+traction per SF** (16σ; +2.67 pN/engaged head ≈ native cross-bridge F_stall;
+`H7_MYOSIN_OVERLAP_MECHANISM_DESIGN` §12). This section consumes that value across the H.7→Layer-2
+**traction scale-bridge** and re-runs the decisive fork with the mechanistic anchor.
+
+**Scale-bridge (consumer side, `spheroid/h7_traction_seam.py`; design `docs/LAYER2_H7_TRACTION_SEAM.md`).**
+per-SF [pN] × N_SF (= FA_count/2 = 21.5, each ventral SF spans 2 FAs; KU-2.4 + Hotulainen-Lappalainen
+2006) → **f_cell_test = 2.82 nN** (raw mechanism at the validated test-fiber density). Physiological
+anchor (Gil-Redondo 2023 MCF-7 TFM, 102 nN / 1822 µm² / 63 Pa) → **f_cell_physio = 102 nN**;
+density-gap ×36 (≈ the sanctioned ×40 mesoscale, the honest fine-grained-prediction residual). Every
+factor derived/cited; nothing fitted to the PI A/A0. ⚠️ PROVISIONAL: H.7's SF-array GPU aggregate +
+`h7_traction_seam.json` are IN-PROGRESS on gbook — until they land the per-cell value uses single-SF ×
+N_SF (the consumer reads the seam record automatically when it appears). 10 seam tests green.
+
+**Decisive re-run (`scripts/layer2_h7_decisive.py`, N0=300, 2 seeds, matched R₀≈60 µm).** A/A0(f_active):
+
+| f_active | provenance | A/A0_core | ejected |
+|---|---|---|---|
+| 0 | baseline | 1.99 | no |
+| 1.6 nN | heuristic whole-cell | 2.07 | no |
+| **2.82 nN** | **H.7 mechanistic, TEST density** | **2.17 (peak)** | no |
+| 3.0 nN | B1 ceiling | 2.14 | no |
+| 6.0 nN | curve-fill | 1.71 | EJECT |
+| 9.4 nN | heuristic protrusion | 1.39 | EJECT |
+| **102 nN** | **H.7 mechanistic, PHYSIOLOGICAL (Gil-Redondo)** | **0.31 (fractured)** | EJECT |
+
+**⭐ FORK RESOLVED → CBM 1-particle ABSTRACTION LIMIT, now mechanistically anchored.** A/A0 PEAKS at
+~2.2 right at the H.7 test-density value, then declines and EJECTS; the physiological 102 nN value
+FRACTURES the spheroid (core → 0.3). **No f_active — including either H.7 mechanistic value — enters
+the PI band [7–10].** The center-based 1-particle CBM has a structural ceiling A/A0 ≈ 2.2: a point cell
+driven by edge traction either stays cohesion-locked (low f) or detaches (high f); it cannot
+crawl-while-attached or distribute contact-line traction to spread 7–10×. The H.7 mechanism supplies a
+CORRECT single-cell traction; the magnitude it should produce lives in the fine-grained representation
+(route a), exactly as the closed-line predicted — not a parameter the CBM was missing. The seam itself
+is VALIDATED (it cleanly converts +131 pN/SF → a dimensionally-grounded per-cell traction the CBM
+consumes); it is the CBM abstraction, not the seam or the traction value, that bounds A/A0. Artifacts:
+`spheroid/h7_traction_seam.py`, `scripts/layer2_h7_decisive{,_vis}.py`, `outputs/layer2/h7_decisive/`,
+`outputs/layer2/seam_inputs/` (vendored H.7 artifacts), figure `fig_layer2_h7_decisive.png`.
+
 ## Figures
 
 Regenerate all via `python -m ffn_sim.scripts.layer2_vis` (the one-entry-point convention);
 each driver also auto-generates its own figure at run end (production-driver-auto-viz rule).
 
+- `figs/fig_layer2_h7_decisive.png` — **⭐ H H.7 mechanistic-traction decisive fork** (N0=300, 2 seeds,
+  matched R₀≈60 µm): A/A0(f_active) connected-core curve (log x) with the H.7 mechanistic test-density
+  (2.8 nN) + physiological (102 nN, Gil-Redondo) markers, the B1 ceiling, and the PI band [7–10] overlaid.
+  A/A0 PEAKS ~2.2 at the H.7 test-density value then EJECTS (red ×) and FRACTURES at the physiological
+  scale (core→0.3) — no f_active enters the PI band → the magnitude gap is the CBM 1-particle structural
+  limit, now confirmed with a MECHANISTIC anchor (replacing §C's heuristic bracket). Per-seed thin lines +
+  ensemble mean. `scripts/layer2_h7_decisive_vis.py`. SI, overlay-only.
 - `figs/fig_layer2_morphology.png` (+ `fig_layer2_morphology_anim.gif`) — **⭐ MORPHOLOGY: the spreading
   process rendered** (Lam4, R₀≈151 µm, t=0→61 h, native-N GPU): the actual cell configuration behind A/A₀.
   TOP-DOWN footprint grows only ~1.0→1.5×; SIDE view shows the aggregate stays a 3D CAP on the dish (does
