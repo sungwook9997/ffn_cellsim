@@ -43,6 +43,29 @@ the SF line is unblocked (and the cortical γ-floor gets its density datum); if 
 generation-bound conclusion stands (SF + cortical γ as one bounded generation-limit). Whichever
 session lands the result updates this queue + the Dev-Logs board.
 
+### ✅ Session (ii) LANDED 2026-06-09 (branch `h7/sf-generation-floor`) — generation-bound ACCEPTED
+**Deliverable: `docs/v2_audit/SF_GENERATION_LIMIT_SYNTHESIS_2026-06-09.md`** (+
+`scripts/h7_basal_sf_force_budget.py::decompose_generation_gap` + 5 consistency tests).
+- **SF tension is GENERATION-limited, N_filaments-INDEPENDENT.** Raw budget ≈5 pN, ~2014×
+  under Kumar. **Decomposed (labeled):** ~11× per-minifilament fidelity (brief 5 pN → lit 56 pN
+  dipole = the SAME §9 cortical per-head/stiffness fix) × ~180×(floor)/~360×(centre)
+  **cross-sectional NMII count per SF** = the Route-B native:effective factor = the MISSING
+  MCF7 SF-NMII density datum (= session (i)'s target). Engagement realism ~9× WORSE.
+- **UNIFIED with the cortical active-γ floor:** same ½·n·f·ℓ aggregate-motor budget, same f≈56 pN
+  dipole, same missing-MCF7-density-datum gap (areal n₂D for cortex, cross-sectional N for SF),
+  same architecture caveat — raw count is the WRONG lever; tension is set by ORGANISATION
+  (cortex: actin overlap, Chugh/Truong Quang; SF: sarcomeric polarity, §11 SF-2c −61 pN
+  slackening, Hotulainen-Lappalainen).
+- **Bound honesty:** budget is an UPPER bound on a COHERENT bundle; the current random-polarity
+  construction realises ~0 net traction even with the per-head fix → the **sarcomeric-polarity
+  SF construction (§11 NEXT)** is the distinct organisation lever (separate from (i)'s count datum).
+- **PI items surfaced (no gate-loosening):** (1) active-fraction scope (Kumar total vs
+  blebb-sensitive; SF-2c shows ~+3476 pN passive pre-tension), (2) tool-role scope (fine-grained
+  tool SUPPLIES ζΔμ ∝ ρ_NMII vs owns the absolute band), (3) density-conditioned provisional band,
+  (4) cross-line per-head reconciliation (0.5 / 2 / 8.48 pN across SF-brief / cortical-dipole / §9).
+- **Reconcile w/ (i):** if (i) lands a defensible MCF7 SF-NMII datum giving N_cross≈180–360, Route B
+  closes Kumar AND fills the cortical density gap → this conclusion updates toward (i). Else it stands.
+
 ---
 
 

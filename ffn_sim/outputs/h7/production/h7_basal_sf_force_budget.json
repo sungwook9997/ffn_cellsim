@@ -18,5 +18,18 @@
     "mesoscale_force_factor_needed_to_band_centre": 4028.0000000000005,
     "n_motors": 40
   },
+  "decomposition": {
+    "per_minifilament_fidelity_factor": 11.200000000000001,
+    "lit_minifilament_N": 5.6e-11,
+    "lit_heads_per_side": 28,
+    "lit_f_per_head_N": 2e-12,
+    "cross_sectional_nmii_count_to_band_centre": 359.6428571428572,
+    "cross_sectional_nmii_count_to_band_lo": 179.8214285714286,
+    "engagement_realism_penalty_factor": 8.710953152493945,
+    "cortex_realised_engagement": 0.114,
+    "decomposition_check_product": 4028.0000000000014,
+    "unified_with_cortical_gamma_floor": "SAME \u00bd\u00b7n\u00b7f\u00b7\u2113 generation budget. Cortex: \u03b3_active=\u00bd\u00b7n2D\u00b7f\u00b7\u2113, ~36-80\u00d7 under the MCF7 active target \u2192 needs n2D\u224816-47/\u00b5m\u00b2 vs the HeLa-proxy 0.6/\u00b5m\u00b2 (NO MCF7 datum). SF: T=N_cross\u00b7f, ~180\u00d7 under Kumar after the per-minifilament fix \u2192 needs N_cross\u2248360 literature minifilaments across one SF cross-section (NO MCF7 SF-NMII datum). Same f\u224856 pN dipole, same density-datum gap (areal for cortex, cross-sectional for SF), same architecture caveat: count is the WRONG lever \u2014 cortex tension is overlap-set (Chugh 2017 / Truong Quang 2021), SF tension is sarcomeric-polarity-set (\u00a711 SF-2c: random polarity \u2192 \u221261 pN slackening; Hotulainen-Lappalainen 2006).",
+    "upper_bound_caveat": "All factors evaluated at the UPPER engagement \u03c6\u22480.99 AND assume coherent axial summation (cos=1). Both are optimistic: realised engagement ~11% (\u00d79 worse) and a random mixed-polarity bundle does NOT rectify (\u00a711). The budget is the CEILING a perfectly-organised sarcomeric SF could reach, not a prediction of the current random-polarity construction."
+  },
   "note": "QUASI-STATIC FORCE BUDGET (no stiff-backbone dynamics, no frozen integrator). The single-SF tension is MOTOR-generation-limited and N_filaments-INDEPENDENT (N sets strain \u03b5=T/\u03bc_SF, not the tension). Raw mesoscale tension 4.97e-12 N vs Kumar 1e-08-3e-08 N \u2192 2014x under band: the SAME generation-limit as the cortical \u03b3-floor. Reaching Kumar needs either the mesoscale force-scale factor (~4028x, Route B native:effective parallel-bundle scaling) or a native/density fix \u2014 NOT a backbone-stiffness (N_filaments) change. ASSUMPTIONS: \u03c6 zero-load upper estimate; per-minifilament series tension; provisional pending the cross-simulator deep-research + B5-method decision."
 }
