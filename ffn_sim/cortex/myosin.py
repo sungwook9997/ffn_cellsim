@@ -191,6 +191,14 @@ class ResolvedCortexMyosin:
     # Seed
     seed: int
 
+    # Bond/particle TYPE-NAME prefix (KU-3.5 SF NMII split, PI 2026-06-09).
+    # "cortex_myosin_" (default) is the CORTICAL placement — the active-γ signal
+    # the cortical-tension estimator SUMS. A ventral-stress-fiber NMII placement
+    # passes "sf_myosin_" so its motor bonds fall under the "sf_" γ-denylist and
+    # never contaminate cortical γ. Every name in the module derives from this
+    # prefix; the default value keeps the cortical path byte-identical.
+    prefix: str = "cortex_myosin_"
+
     # Derived
     backbone_segment_length: float = 0.0       # backbone_length / (n_backbone-1)
     k_backbone: float = 0.0                    # k_head_spring · k_backbone_factor
@@ -243,6 +251,12 @@ def resolve_cortex_myosin(
         n_bins=int(cfg.get("n_bins", 10)),
         stepping_mode=str(cfg.get("stepping_mode", "binned_r0")),
         seed=int(cfg.get("seed", 44)),
+        # None (or absent) → default cortical prefix; any other value is kept
+        # verbatim and validated below (an empty string is rejected there).
+        prefix=(
+            "cortex_myosin_" if cfg.get("prefix") is None
+            else str(cfg.get("prefix"))
+        ),
     )
 
     # §2 boundary checks
@@ -278,6 +292,14 @@ def resolve_cortex_myosin(
         raise ValueError(
             f"stepping_mode must be 'binned_r0' or 'grip_walk'; "
             f"got {p.stepping_mode!r}"
+        )
+    # The prefix names every myosin bond/particle TYPE; it must be a non-empty
+    # string ending in "_" (so "{prefix}attach_b{i}" parses and the
+    # startswith() filters in MyosinStepUpdater are unambiguous).
+    if not (isinstance(p.prefix, str) and p.prefix and p.prefix.endswith("_")):
+        raise ValueError(
+            f"myosin type-name prefix must be a non-empty str ending in '_'; "
+            f"got {p.prefix!r}"
         )
 
     # Mesoscale myosin FORCE scaling (KU-3.5 Route B, PI-ratified 2026-05-31).
@@ -349,15 +371,46 @@ def resolve_cortex_myosin(
 
 
 # ---------------------------------------------------------------------------
-# Bond type names + per-r0 binning
+# Bond / particle type names + per-r0 binning (prefix-parameterized)
 # ---------------------------------------------------------------------------
+# Every myosin bond/particle TYPE name is built from a placement prefix. The
+# cortical placement uses MYOSIN_DEFAULT_PREFIX ("cortex_myosin_"), which the
+# cortical-tension estimator SUMS as the active-γ signal. A ventral-stress-fiber
+# NMII placement passes "sf_myosin_" so its motor bonds fall under the "sf_"
+# γ-denylist (PI 2026-06-09). The module-level constants + the cortex_myosin_*
+# wrappers keep the default prefix so the cortical path is byte-identical.
+MYOSIN_DEFAULT_PREFIX: str = "cortex_myosin_"
 BOND_TYPE_MYOSIN_BACKBONE = "cortex_myosin_backbone"
 BOND_TYPE_MYOSIN_HEAD_BACKBONE = "cortex_myosin_head_backbone"
 
 
-def cortex_myosin_attach_bin_names(n_bins: int) -> list[str]:
+def myosin_particle_type_names(
+    prefix: str = MYOSIN_DEFAULT_PREFIX,
+) -> tuple[str, str]:
+    """(backbone, head) particle-type names for a myosin placement."""
+    return (f"{prefix}backbone", f"{prefix}head")
+
+
+def myosin_backbone_bond_name(prefix: str = MYOSIN_DEFAULT_PREFIX) -> str:
+    """Intra-minifilament backbone bond-type name."""
+    return f"{prefix}backbone"
+
+
+def myosin_head_backbone_bond_name(prefix: str = MYOSIN_DEFAULT_PREFIX) -> str:
+    """Head↔backbone spring bond-type name."""
+    return f"{prefix}head_backbone"
+
+
+def myosin_attach_bin_names(
+    n_bins: int, prefix: str = MYOSIN_DEFAULT_PREFIX,
+) -> list[str]:
     """Dynamic head-actin attach bond type names (per-r0 binned)."""
-    return [f"cortex_myosin_attach_b{i}" for i in range(n_bins)]
+    return [f"{prefix}attach_b{i}" for i in range(n_bins)]
+
+
+def cortex_myosin_attach_bin_names(n_bins: int) -> list[str]:
+    """Default-prefix wrapper (byte-identical; imported by cell.py)."""
+    return myosin_attach_bin_names(n_bins, MYOSIN_DEFAULT_PREFIX)
 
 
 # Near-zero rest length for the grip_walk attach bond TYPES (KU-3.5 STAGE-1,
@@ -650,10 +703,9 @@ def extend_state_with_cortex_myosin(
     snap = gsd.hoomd.Frame()
     snap.particles.N = n_part_old + n_new_particles
 
-    # Particle types: existing + (backbone, head)
+    # Particle types: existing + (backbone, head) under the placement prefix.
     old_types = list(snap_old.particles.types)
-    backbone_type = "cortex_myosin_backbone"
-    head_type = "cortex_myosin_head"
+    backbone_type, head_type = myosin_particle_type_names(p_myo.prefix)
     new_particle_types = list(old_types)
     if backbone_type not in new_particle_types:
         new_particle_types.append(backbone_type)
@@ -688,15 +740,17 @@ def extend_state_with_cortex_myosin(
     mass_new[n_part_old:] = 1.0
     snap.particles.mass = mass_new
 
-    # Bond types: existing + 3 new
+    # Bond types: existing + 3 new (all under the placement prefix).
+    bond_backbone_name = myosin_backbone_bond_name(p_myo.prefix)
+    bond_head_backbone_name = myosin_head_backbone_bond_name(p_myo.prefix)
     old_bond_types = list(snap_old.bonds.types)
     new_bond_types = list(old_bond_types)
-    for new_name in (BOND_TYPE_MYOSIN_BACKBONE, BOND_TYPE_MYOSIN_HEAD_BACKBONE):
+    for new_name in (bond_backbone_name, bond_head_backbone_name):
         if new_name not in new_bond_types:
             new_bond_types.append(new_name)
-    backbone_bond_tid = new_bond_types.index(BOND_TYPE_MYOSIN_BACKBONE)
-    head_backbone_bond_tid = new_bond_types.index(BOND_TYPE_MYOSIN_HEAD_BACKBONE)
-    for name in cortex_myosin_attach_bin_names(p_myo.n_bins):
+    backbone_bond_tid = new_bond_types.index(bond_backbone_name)
+    head_backbone_bond_tid = new_bond_types.index(bond_head_backbone_name)
+    for name in myosin_attach_bin_names(p_myo.n_bins, p_myo.prefix):
         if name not in new_bond_types:
             new_bond_types.append(name)
 
@@ -768,18 +822,20 @@ def extend_state_with_cortex_myosin(
 def register_cortex_myosin_bond_params(
     bond: md.bond.Harmonic, p_myo: ResolvedCortexMyosin
 ) -> None:
-    """Wire bond.Harmonic params for the three cortex-myosin bond types."""
-    bond.params[BOND_TYPE_MYOSIN_BACKBONE] = dict(
+    """Wire bond.Harmonic params for the three myosin bond types (prefixed)."""
+    bond.params[myosin_backbone_bond_name(p_myo.prefix)] = dict(
         k=p_myo.k_backbone, r0=p_myo.backbone_segment_length
     )
-    bond.params[BOND_TYPE_MYOSIN_HEAD_BACKBONE] = dict(
+    bond.params[myosin_head_backbone_bond_name(p_myo.prefix)] = dict(
         k=p_myo.k_head_spring, r0=p_myo.head_rest_length
     )
     bin_r0 = cortex_myosin_attach_bin_rest_lengths(
         p_myo.n_bins, p_myo.head_actin_max_bind_dist,
         stepping_mode=p_myo.stepping_mode,
     )
-    for name, r0 in zip(cortex_myosin_attach_bin_names(p_myo.n_bins), bin_r0):
+    for name, r0 in zip(
+        myosin_attach_bin_names(p_myo.n_bins, p_myo.prefix), bin_r0
+    ):
         bond.params[name] = dict(k=p_myo.k_head_actin, r0=float(r0))
 
 
@@ -1051,13 +1107,14 @@ class MyosinStepUpdater(hoomd.custom.Action):
         ).astype(np.int64)
         _MAX_CORTEX_BEAD_DEGREE = 6
 
+        attach_prefix = f"{self.p.prefix}attach_b"
         attach_bin_typeids = [
             i for i, name in enumerate(bond_type_names)
-            if name.startswith("cortex_myosin_attach_b")
+            if name.startswith(attach_prefix)
         ]
         if not attach_bin_typeids:
             raise RuntimeError(
-                "snap.bonds.types missing cortex_myosin_attach_b* types; "
+                f"snap.bonds.types missing {attach_prefix}* types; "
                 "did you forget extend_state_with_cortex_myosin + "
                 "register_cortex_myosin_bond_params?"
             )
