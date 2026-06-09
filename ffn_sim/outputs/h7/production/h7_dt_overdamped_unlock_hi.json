@@ -1,0 +1,80 @@
+{
+  "operating_point": "unconstrained soft backbone + cytoplasm-\u03b7, FA OFF, turgor ON, connected mesh",
+  "base_dt_s": 1.3030698008559743e-08,
+  "actin_baoab_gamma": 3.7265572056882126e-05,
+  "n_filaments": 160,
+  "phys_time_s": 0.0005,
+  "rows": [
+    {
+      "g_soft_mN_m": 0.00019848160571584787,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001,
+      "s_grip_over_l0": 2.019412436548473e-06,
+      "mean_bond_nm": 499.93438403338325,
+      "rest_length_nm": 500.0,
+      "finite": true,
+      "mult": 1000.0,
+      "cfl_safety": 100.0,
+      "dt_s": 1.3030698008559742e-05,
+      "steps": 38,
+      "phys_time_s": 0.0004951665243252702
+    },
+    {
+      "g_soft_mN_m": 0.0002148787766889762,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001,
+      "s_grip_over_l0": 2.0393552740351706e-06,
+      "mean_bond_nm": 500.03180005950634,
+      "rest_length_nm": 500.0,
+      "finite": true,
+      "mult": 3000.0,
+      "cfl_safety": 300.0,
+      "dt_s": 3.909209402567923e-05,
+      "steps": 13,
+      "phys_time_s": 0.00050819722233383
+    },
+    {
+      "g_soft_mN_m": 0.0002518654950258652,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001,
+      "s_grip_over_l0": 1.989499404906965e-06,
+      "mean_bond_nm": 500.0530624759126,
+      "rest_length_nm": 500.0,
+      "finite": true,
+      "mult": 10000.0,
+      "cfl_safety": 1000.0,
+      "dt_s": 0.00013030698008559743,
+      "steps": 4,
+      "phys_time_s": 0.0005212279203423897
+    },
+    {
+      "g_soft_mN_m": 0.0002708696440274936,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001,
+      "s_grip_over_l0": 2.064294363885031e-06,
+      "mean_bond_nm": 500.05650865126506,
+      "rest_length_nm": 500.0,
+      "finite": true,
+      "mult": 30000.0,
+      "cfl_safety": 3000.0,
+      "dt_s": 0.0003909209402567923,
+      "steps": 1,
+      "phys_time_s": 0.0003909209402567923
+    },
+    {
+      "g_soft_mN_m": 0.0002656338729639698,
+      "g_rigid_mN_m": 0.0,
+      "g_passive_mN_m": 0.4987500000000001,
+      "s_grip_over_l0": 2.213873795665036e-06,
+      "mean_bond_nm": 500.0726270948214,
+      "rest_length_nm": 500.0,
+      "finite": true,
+      "mult": 76000.0,
+      "cfl_safety": 7600.0,
+      "dt_s": 0.0009903330486505406,
+      "steps": 1,
+      "phys_time_s": 0.0009903330486505406
+    }
+  ],
+  "largest_stable_mult": 76000.0
+}
