@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "ell0_nm": 500.0,
+    "n_filaments": 1000,
+    "R_cell_um": 7.5
+  },
+  "note": "STATIC mesh-topology sweep (seed only); no production config change; mechanism scoping for architecture-as-lever (band LOCKED).",
+  "rows": [
+    {
+      "z_struct": 2.4,
+      "L_long_um": 5.0,
+      "bundle_mult": 2,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.984,
+      "z_struct_realised": 3.026,
+      "L_over_lc": 4.379876796714579,
+      "n_xl": 2133,
+      "n_homeless": 3,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1179,
+        "mean_seg": 1.2502120441051738,
+        "frac_1seg": 0.9245122985581001,
+        "frac_2plus": 0.07548770144189991,
+        "mean_path_um": 0.6251060220525868
+      },
+      "spans_all_anchors": {
+        "n_spans": 1436,
+        "mean_seg": 1.3224233983286908,
+        "frac_1seg": 0.8711699164345403,
+        "frac_2plus": 0.1288300835654596,
+        "mean_path_um": 0.6612116991643453
+      }
+    },
+    {
+      "z_struct": 2.4,
+      "L_long_um": 5.0,
+      "bundle_mult": 3,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.983,
+      "z_struct_realised": 3.01,
+      "L_over_lc": 5.907407407407407,
+      "n_xl": 2871,
+      "n_homeless": 4,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1345,
+        "mean_seg": 1.1739776951672862,
+        "frac_1seg": 0.9539033457249071,
+        "frac_2plus": 0.046096654275092935,
+        "mean_path_um": 0.5869888475836431
+      },
+      "spans_all_anchors": {
+        "n_spans": 1557,
+        "mean_seg": 1.2607578676942839,
+        "frac_1seg": 0.9004495825305073,
+        "frac_2plus": 0.09955041746949261,
+        "mean_path_um": 0.6303789338471419
+      }
+    },
+    {
+      "z_struct": 2.4,
+      "L_long_um": 5.0,
+      "bundle_mult": 4,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.972,
+      "z_struct_realised": 2.842,
+      "L_over_lc": 6.693581780538302,
+      "n_xl": 3233,
+      "n_homeless": 4,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1393,
+        "mean_seg": 1.15218951902369,
+        "frac_1seg": 0.964824120603015,
+        "frac_2plus": 0.035175879396984924,
+        "mean_path_um": 0.576094759511845
+      },
+      "spans_all_anchors": {
+        "n_spans": 1587,
+        "mean_seg": 1.2419659735349717,
+        "frac_1seg": 0.9105229993698802,
+        "frac_2plus": 0.08947700063011972,
+        "mean_path_um": 0.6209829867674859
+      }
+    },
+    {
+      "z_struct": 2.6,
+      "L_long_um": 5.0,
+      "bundle_mult": 2,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.978,
+      "z_struct_realised": 3.182,
+      "L_over_lc": 4.69672131147541,
+      "n_xl": 2292,
+      "n_homeless": 3,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1231,
+        "mean_seg": 1.272136474411048,
+        "frac_1seg": 0.9236393176279447,
+        "frac_2plus": 0.07636068237205523,
+        "mean_path_um": 0.636068237205524
+      },
+      "spans_all_anchors": {
+        "n_spans": 1477,
+        "mean_seg": 1.3134732566012186,
+        "frac_1seg": 0.8761002031144212,
+        "frac_2plus": 0.12389979688557888,
+        "mean_path_um": 0.6567366283006092
+      }
+    },
+    {
+      "z_struct": 2.6,
+      "L_long_um": 5.0,
+      "bundle_mult": 3,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.978,
+      "z_struct_realised": 3.158,
+      "L_over_lc": 6.112704918032787,
+      "n_xl": 2983,
+      "n_homeless": 3,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1381,
+        "mean_seg": 1.2034757422157856,
+        "frac_1seg": 0.946415640839971,
+        "frac_2plus": 0.05358435916002897,
+        "mean_path_um": 0.6017378711078928
+      },
+      "spans_all_anchors": {
+        "n_spans": 1588,
+        "mean_seg": 1.2613350125944585,
+        "frac_1seg": 0.8998740554156172,
+        "frac_2plus": 0.10012594458438287,
+        "mean_path_um": 0.6306675062972292
+      }
+    },
+    {
+      "z_struct": 2.6,
+      "L_long_um": 5.0,
+      "bundle_mult": 4,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.969,
+      "z_struct_realised": 2.902,
+      "L_over_lc": 6.766528925619835,
+      "n_xl": 3275,
+      "n_homeless": 3,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1423,
+        "mean_seg": 1.1721714687280393,
+        "frac_1seg": 0.960646521433591,
+        "frac_2plus": 0.03935347856640899,
+        "mean_path_um": 0.5860857343640197
+      },
+      "spans_all_anchors": {
+        "n_spans": 1610,
+        "mean_seg": 1.2472049689440994,
+        "frac_1seg": 0.9099378881987578,
+        "frac_2plus": 0.09006211180124224,
+        "mean_path_um": 0.6236024844720496
+      }
+    },
+    {
+      "z_struct": 2.8,
+      "L_long_um": 5.0,
+      "bundle_mult": 2,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.989,
+      "z_struct_realised": 3.326,
+      "L_over_lc": 5.05295315682281,
+      "n_xl": 2481,
+      "n_homeless": 3,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1283,
+        "mean_seg": 1.289166017147311,
+        "frac_1seg": 0.9181605611847233,
+        "frac_2plus": 0.0818394388152767,
+        "mean_path_um": 0.6445830085736555
+      },
+      "spans_all_anchors": {
+        "n_spans": 1511,
+        "mean_seg": 1.3057577763070813,
+        "frac_1seg": 0.8749172733289212,
+        "frac_2plus": 0.12508272667107875,
+        "mean_path_um": 0.6528788881535406
+      }
+    },
+    {
+      "z_struct": 2.8,
+      "L_long_um": 5.0,
+      "bundle_mult": 3,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.981,
+      "z_struct_realised": 3.304,
+      "L_over_lc": 6.317718940936864,
+      "n_xl": 3102,
+      "n_homeless": 3,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1417,
+        "mean_seg": 1.2208892025405786,
+        "frac_1seg": 0.9407198306280875,
+        "frac_2plus": 0.059280169371912494,
+        "mean_path_um": 0.6104446012702893
+      },
+      "spans_all_anchors": {
+        "n_spans": 1613,
+        "mean_seg": 1.2554246745195288,
+        "frac_1seg": 0.8989460632362059,
+        "frac_2plus": 0.10105393676379418,
+        "mean_path_um": 0.6277123372597644
+      }
+    },
+    {
+      "z_struct": 2.8,
+      "L_long_um": 5.0,
+      "bundle_mult": 4,
+      "formin_fraction": 0.12,
+      "giant_fraction": 0.976,
+      "z_struct_realised": 2.952,
+      "L_over_lc": 6.799180327868853,
+      "n_xl": 3318,
+      "n_homeless": 5,
+      "n_cortex_actin": 3279,
+      "spans_crosslink_only": {
+        "n_spans": 1446,
+        "mean_seg": 1.181881051175657,
+        "frac_1seg": 0.9557399723374828,
+        "frac_2plus": 0.04426002766251729,
+        "mean_path_um": 0.5909405255878284
+      },
+      "spans_all_anchors": {
+        "n_spans": 1630,
+        "mean_seg": 1.2453987730061349,
+        "frac_1seg": 0.9079754601226994,
+        "frac_2plus": 0.09202453987730061,
+        "mean_path_um": 0.6226993865030674
+      }
+    }
+  ]
+}

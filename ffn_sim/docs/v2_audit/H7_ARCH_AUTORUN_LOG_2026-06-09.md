@@ -35,3 +35,17 @@ but achievable load-path ~2× ≪ 30-80× gap, and its payoff needs the GPU cont
 exhausted → PI fork: (A) GPU contraction WALL-A test faithful base vs long-path (decisive, gbook deploy=
 PI remote-overwrite), (B) commit to faithful-mesh rebuild as physically-correct architecture, (C) accept
 architecture-bound conclusion. HALT→PI. doc H7_ARCHITECTURE_LOADPATH_2026-06-09.md §step2.
+
+## LOOP 3 (PI chose B: faithful-mesh rebuild): execution hits a gate-contract wall
+Executing (B) within the hard rules: the cortex-rebuild gates are z∈[3.0,3.5] (Kadzik-Munro), giant≥0.9,
+L/lc≥5.9 (Flormann). At physiological L_long=5µm the faithful configs passing ALL THREE (z=2.8/bundle=3 →
+z_real 3.30, giant 98%, L/lc 6.3) give mean span **1.26 seg — NO longer (shorter) than uniform ~1.5**:
+bundle=3 (needed for L/lc≥5.9) clusters anchors. The long load-path (2.1 seg) needs z_real 2.67 (<3.0) AND
+L/lc 1.7 (<5.9) = a gate-contract change on TWO physiological gates → PI sign-off (no inline loosening).
+⭐DECISIVE: the short transmission load-path is a CONSEQUENCE of physiological cortical connectivity (real
+cortex IS densely crosslinked z~3-4, L/lc~6) — a faithful rebuild REPRODUCES it, doesn't remove it. So
+Chugh/TruongQuang overlap tension can't come from longer inter-crosslink spans; it needs a MYOSIN-OVERLAP
+mechanism (myosin transmitting along the bundle/antiparallel-actin contour, independent of crosslink
+spacing) = a deeper myosin-model change than a mesh rebuild. HALT→PI: (i) adopt faithful for fidelity +
+GPU-contraction γ within gates, (ii) authorize gate-contract change (un-physiological per this result),
+(iii) reframe lever as myosin-overlap mechanism. doc §step3. No gate/param changed.

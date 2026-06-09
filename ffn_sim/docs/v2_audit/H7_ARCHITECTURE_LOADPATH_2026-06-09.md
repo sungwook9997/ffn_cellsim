@@ -143,3 +143,57 @@ cheap, static + loading levers are exhausted; the next step is a genuine commitm
 - `outputs/h7/production/h7_loadpath_lowz_sweep.json` (z=1.0–2.8 frontier, bundle 1/2)
 - `outputs/h7/figs/h7_loadpath_lowz_sweep.png`
 - No production config changed; no gate touched.
+
+## Step 3 — (B) execution hits a gate-contract wall (PI-decided: faithful rebuild)
+
+PI chose (B): commence the faithful-mesh rebuild. Executing it WITHIN the hard rules
+(physiological params, no gate-loosening) reveals a wall. The cortex-rebuild acceptance
+gates are z ∈ [3.0,3.5] (Kadzik-Munro coordination), giant ≥ 0.9, **L/lc ≥ 5.9**
+(Flormann bundling). The faithful-mesh configs that pass ALL THREE at the physiological
+L_long = 5 µm:
+
+| z_struct | bundle | z_real | giant | L/lc | mean span (seg) |
+|---|---|---|---|---|---|
+| 2.4 | 3 | 3.01 | 98.3 % | 5.9 | **1.26** |
+| 2.6 | 3 | 3.16 | 97.8 % | 6.1 | 1.26 |
+| **2.8** | **3** | **3.30** | **98.1 %** | **6.3** | **1.26** |
+
+**Within physiological params + all gates, the faithful load-path is 1.26 seg — NO longer
+(actually shorter) than the uniform production mesh (~1.5).** bundle=3 (required to hit
+L/lc ≥ 5.9) clusters anchors → shorter spans, cancelling the branch-connectivity benefit.
+Bumping L_long to 20 µm only reaches ~1.64 seg and is itself a non-physiological
+parameter chase (the rebuild's bimodal L_long = 5 µm is the Fritzsche-anchored value).
+
+The long load-path (2.1 seg, step 1) needs z_real ≈ 2.67 (< the Kadzik-Munro 3.0 floor)
+AND L/lc ≈ 1.7 (< the Flormann 5.9 floor) — i.e. a **gate-contract change on TWO
+physiological gates**. Per the hard rules (no gate-loosening) this is a PI sign-off item,
+not an inline edit.
+
+### What this means for (B)
+
+1. **The transmission load-path limit is a CONSEQUENCE of physiological cortical
+   connectivity, not a construction artifact.** Real cortex IS densely crosslinked
+   (z ≈ 3–4, L/lc ≈ 6) → inter-anchor spans are inherently ~1 segment. A faithful rebuild,
+   done faithfully, REPRODUCES the short load-path rather than removing it. This is itself
+   a meaningful result: the short load-path is physiological.
+2. Therefore the Chugh/Truong-Quang "overlap" tension cannot come from longer inter-crosslink
+   spans — it must come from a DIFFERENT mechanism: myosin transmitting force ALONG the
+   actin-myosin overlap within a bundle (walking antiparallel actin), independent of the
+   crosslink spacing. The current bead-spring cortex + local-attach myosin does not
+   represent bundle-contour myosin transmission — that is a MYOSIN-MODEL change, deeper than
+   a mesh rebuild.
+3. The faithful branched mesh remains the more physically-correct cortex architecture
+   (real cortex IS Arp2/3-dendritic) and is worth adopting for fidelity — but its active-γ
+   payoff vs the uniform mesh can only be settled by a CONTRACTION run (branched/bundled
+   tensegrity transmission is not visible in the linear span or the loading phase).
+
+### Open PI items (gate-contract / scope — surfaced, not actioned)
+
+- (i) Adopt the faithful branched mesh as production for fidelity + measure active-γ on it
+  via a GPU contraction run (regardless of the linear-span result) — within all gates.
+- (ii) Authorize a gate-contract change (lower the Kadzik-Munro z and/or Flormann L/lc
+  floor) to actually lengthen the load-path — but step 3 shows this contradicts physiological
+  cortical connectivity, so it would be un-physiological.
+- (iii) Reframe the lever as a MYOSIN-OVERLAP mechanism (bundle-contour transmission), which
+  is the physically-honest route to Chugh/Truong-Quang overlap tension — a deeper model
+  change than the mesh.
