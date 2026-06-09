@@ -29,3 +29,30 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
 - 단 CPU smoke = loading phase(s_grip≈0). 결정적 transmission A/B(1e-3 vs 1e-7,
   full contraction, s_grip→0.5)는 gbook GPU ~30min/config 필요 → 다음 이터에서 배포·실행.
 - NEXT: gbook 코드 동기화 방식 확인 → A/B 2-config 런 launch. 병행 task#3 GPU 포팅 스코핑.
+
+## Iter 3 — ⚠️ gbook 안전판단 + 로컬 CPU A/B launch
+- ⚠️ **gbook은 오래된 다른 브랜치(phase1/h3-cortex, d9249e5)에 미커밋 변경(fa.py,
+  cell.py, phase1_h3.yaml 등) dirty.** rsync/checkout 덮으면 gbook 미커밋 작업 파괴 →
+  되돌리기 어려운 remote-overwrite, **PI 승인 없이 자율 안 함.** 결정적 GPU A/B는 PI-gated.
+- 대안: **로컬 CPU 단일빌드 A/B 2-config 병렬 launch**(leak-safe, sweep 아님):
+  continuous_stroke, n_fil=120, warmup 2000, contract 150000(≈1500 ticks ≫ Gate-A
+  contraction onset 560), sample 15000. A=xlink 1e-3(prod, PID 21409), B=xlink
+  1e-7(pre-re-anchor, PID 21573). outputs/h7/production/ab_xlink/. ETA 각 ~25-40min.
+- tick0: A g_soft=1.379e-2, B=1.354e-2 mN/m (수축 전 거의 동일 — 예상대로 loading은
+  passive prestress 지배). 관전 포인트 = 수축 진행(s_grip↑) 시 actin-network γ(WALL-A)가
+  A에서 B보다 오르는가 = crosslink 재anchor의 transmission 기여.
+- NEXT: heartbeat로 A/B 폴링 → 완료 시 WALL-A A/B 비교를 브리프/worklog에 기록. 병행 task#3.
+
+## Iter 4 — A/B 예비결과(⭐ crosslink ≠ transmission lever) + GPU 포팅 계획 doc
+- ⭐ **A/B contraction 예비결과(plateau, tick 120000/150000):** per-head **meanT가
+  F_stall(8.42pN) 도달**(생성 fix 작동 확인), gen force ~3.4nN, 결합 406 heads >
+  band-closure 예산 245 → **raw 생성력은 충분**. 그런데 s_grip/l0=0.001 정체(stiff k →
+  즉시 stall → 안 걸음, 물리적으로 정확), **g_soft ~1.37e-2 mN/m 평탄**(~13× under
+  band). **A(1e-3) vs B(1e-7) 차이 ~5%뿐**(g_ik 5.2e-4 vs 4.95e-4, gen 3.43 vs 3.27nN).
+  ⇒ **crosslink 재anchor는 transmission 돌파구 아님.** 벽은 순수 transmission/기하 —
+  생성력은 충분한데 isotropic 상쇄로 hoop tension에 안 모임(Gate-A "transmission wall"을
+  교정된 작동점에서 재확인). γ magnitude = density/coherence 문제로 남음.
+- task#3: `GPU_MAIN_PORT_PHASE2_BINDER_PLAN_2026-06-10.md` 작성 — P2a(MyosinHeadForce
+  per-step sync 제거, 최우선) > P2b(cKDTree query GPU화, topology변이 분리) > P2c(native
+  벤치+gate, PI-gated). gbook dirty라 GPU 검증 불가 → 계획만, 포팅 커밋 안 함(verified-only).
+- NEXT: A/B 최종 JSON(WALL-A myosin/actin 분해+verdict) 캡처 → 브리프 §1에 수치 기록.
