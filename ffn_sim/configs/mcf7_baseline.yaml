@@ -199,3 +199,17 @@ optional_subsystems:
                          # max_tether_dist=200nm (KU-3.17), membrane_offset=50nm (¼ reach)
                          # use module defaults. ⚠ bleb rupture (σ_crit_bleb) + reservoir
                          # release (f_excess) stay PI-pending (None) → those paths blocked.
+  ventral_stress_fibers: # H.SF ventral actomyosin bundles (FA→FA) — LIVE 2026-06-09
+    enabled: false       # default-OFF; sf_ bonds γ-denylisted (registry-driven).
+                         # PASSIVE backbone only (NMII deferred → sf_myosin_* prefix +
+                         # equilibrated active gate). requires fa ON (anchors on integrin
+                         # clutch beads); FA-pairs LONG-AXIS-ALIGNED on the basal footprint
+                         # (PI 2026-06-09) via select_aligned_fa_pairs.
+    N_filaments: 20      # vSF cross-section filament count → μ_SF = N·EA_single.
+                         # Cramer 1997 (10-30); ORDER / conf MEDIUM — PI-pending ratification
+                         # (module default None → enabled build HALTS until set). EA_single=
+                         # 4.3e-8 N (Gittes 1993, SOLID) is the module default.
+    n_SF: 20             # bundle count (layout; grid-free observable)
+    n_beads_per_SF: 24   # beads per bundle (grid-invariant; T=μ_SF·ε independent of count)
+                         # ⚠ Kumar 2006 10-30 nN single-SF tension band is the ACTIVE+
+                         # equilibrated gate (needs NMII) — DEFERRED. See PLATFORM_PI_QUEUE.

@@ -705,50 +705,57 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="ventral_stress_fibers",
         category="adhesion",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); PASSIVE backbone, long-axis-aligned FA pairs, sf_ γ-denylisted. Active NMII deferred (sf_myosin_ prefix).
         enabled_default=False,
-        summary="Contractile ventral actomyosin bundles spanning FA to FA (alpha-actinin-banded, NMII-loaded).",
-        manifest_path=None,
+        summary="Contractile ventral actomyosin bundles spanning FA to FA (long-axis-aligned, α-actinin-banded). PASSIVE backbone LIVE; NMII deferred.",
+        manifest_path=("optional_subsystems", "ventral_stress_fibers"),
         resolve_ref="ffn_sim.cell.stress_fibers.resolve_stress_fibers",
         performance_contract=_live(
-            particle_types_added=("sf_actin", "sf_myosin"),
-            n_particles_mesoscale="~n_SF * beads_per_SF",
+            particle_types_added=("sf_actin", "sf_xlink_head"),  # PASSIVE: no sf_myosin yet
+            n_particles_mesoscale="n_SF*(n_beads + 2*n_sarc)",
             n_particles_native="(scaled)",
-            n_bonds="sf backbone + sf_alpha_actinin + sf_myosin bipolar",
-            n_angles="sf bending (low — bundles are stiff)",
-            per_step_force=False,
-            per_batch_updater=True,
-            uses_cpu_local_snapshot=True,
-            uses_broad_phase=False,          # FA anchors are known endpoints
-            expected_on_recipes=("adherent_active_spread (optional)",),
+            n_bonds="sf_actin_bond backbone + sf_anchor (FA) + sf_xlink_intra/attach (α-actinin banding)",
+            n_angles=0,                      # straight FA→FA chord (no bending term)
+            per_step_force=False,            # passive backbone is a builtin md.bond.Harmonic
+            per_batch_updater=False,         # NMII updater deferred (active phase)
+            uses_cpu_local_snapshot=False,
+            uses_broad_phase=True,           # ONCE at build (long-axis-aligned FA pairing)
+            expected_on_recipes=("ventral_stress_fibers_passive", "adherent_active_spread (optional)"),
             hot_path_priority=HotPathPriority.P2,
-            gpu_path_now=GpuPath.CPU,
+            gpu_path_now=GpuPath.HOOMD_BUILTIN,
             native_forcecompute_candidate=False,
-            bottleneck_risk="Reuses myosin/xlink updater pattern; microbench at authoring.",
+            bottleneck_risk="Passive backbone is a builtin bonded force (cheap). NMII updater (deferred) is the host-sync cost when the active phase lands.",
         ),
-        gpu_readiness=GpuReadiness(device_resident_now=False, optimization_debt="reuses cortex binder host-sync (P3 port)"),
+        gpu_readiness=GpuReadiness(device_resident_now=True, optimization_debt="NMII binder host-sync (active phase, deferred)"),
         gamma_contaminating=True,
-        denylist_bond_types=("sf_", "cortex_myosin_"),
+        # PASSIVE backbone adds only sf_ bonds → denylist ('sf_',). The ACTIVE
+        # NMII phase will add the distinct 'sf_myosin_' prefix to this tuple (it
+        # is NOT cortex_*, so the estimator denylists it cleanly); cortex_myosin_
+        # is the cortex signal itself (the estimator removes cortex_* from the
+        # denylist) and must NOT be listed here (it would fail the contamination
+        # cross-check + wrongly imply the estimator should drop it).
+        denylist_bond_types=("sf_",),
         requires=("fa",),
         citations=(
             "Kojima/Gittes 1993 / Kojima 1994 (F-actin EA_single~4.3e-8 N)",
             "Cramer 1997 (vSF bundling N_filaments~10-30)",
-            "Kumar 2006 single-SF ~10-30 nN (VALIDATION band only)",
+            "Kumar 2006 single-SF ~10-30 nN (VALIDATION band only — deferred active gate)",
             "Tojkander 2012 / Hotulainen-Lappalainen 2006 (sarcomeric periodicity)",
         ),
         pi_decisions=(
-            "ACTIVATION BLOCKER: SF NMII currently reuses the cortex 'cortex_myosin_*' bond "
-            "types (shared D5/D6 builder); those ARE the active-gamma signal and are NOT "
-            "sf_-denylisted — a LIVE SF build would contaminate cortical gamma. A distinct "
-            "'sf_myosin_*' prefix is required before wiring (or denylist cortex_myosin_* on SF builds).",
-            "mu_SF = N_filaments*EA_single (DERIVED from F-actin EA, not back-solved from the "
-            "Kumar tension band) but defaults to None: N_filaments has no single x40-mesoscale "
-            "default, so the enabled build HALTS (NotImplementedError) until PI ratifies N_filaments. "
-            "(2026-06-09 audit fix: retired the non-physical 1e-2 N/m placeholder.)",
-            "Bundle bending rigidity (angle/buckling EI) not modelled — straight FA->FA chord only.",
+            "FA-pair geometry RATIFIED (PI 2026-06-09): long-axis-aligned basal pairs "
+            "(select_aligned_fa_pairs — basal subset → in-plane PCA principal axis → "
+            "low/high-projection pairing), NOT random spans. Bundle alignment |cos|≈0.93.",
+            "N_filaments = 20 (Cramer 1997 10-30; ORDER, conf MEDIUM) is the config "
+            "candidate → μ_SF = N·EA_single (EA_single=4.3e-8 N Gittes 1993 SOLID). Module "
+            "default None (enabled build HALTS until set). PI ratification pending.",
+            "ACTIVE NMII DEFERRED: needs the distinct 'sf_myosin_*' prefix split in "
+            "cortex/myosin.py (else SF motors would contaminate cortical γ) + the equilibrated "
+            "Kumar 10-30 nN tension gate. PASSIVE backbone only is LIVE.",
+            "Bundle bending rigidity (angle/buckling EI) not modelled — straight FA→FA chord.",
         ),
-        sanity_gate_ref="ffn_sim/cell/stress_fibers.py",
-        notes="Anchors at FA clutches; bundle tension is a basal-plane observable, NOT cortical hoop gamma.",
+        sanity_gate_ref="ffn_sim/tests/test_stress_fibers.py",
+        notes="Anchors at FA integrin clutches; long-axis-aligned basal bundles. Bundle tension is a basal-plane observable, NOT cortical hoop γ (sf_ denylisted). PASSIVE backbone; NMII/Kumar-tension is the deferred active gate.",
     ),
     CompartmentSpec(
         name="linc",

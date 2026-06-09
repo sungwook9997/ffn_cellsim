@@ -1,0 +1,39 @@
+# ============================================================================
+# RECIPE: ventral_stress_fibers_passive  (H.7 platform — H.SF LIVE, 2026-06-09)
+# ============================================================================
+# The FA-adhered MCF7 cell with explicit ventral STRESS FIBERS turned ON:
+# contractile actomyosin bundles spanning FA→FA across the basal plane. PASSIVE
+# backbone only (NMII deferred — the active phase needs the sf_myosin_* prefix
+# split + the equilibrated Kumar-tension gate). The FA-anchor pairs are
+# LONG-AXIS-ALIGNED on the basal footprint (PI 2026-06-09 pairing rule), so the
+# bundle geometry is physiological vSF (aligned, cell-scale span) rather than
+# random spans. sf_ bonds are γ-denylisted (registry-driven) so the bundles do
+# NOT contaminate the cortical-tension estimator.
+#
+# Extends adherent_passive (fa + rigid_ligand_coating): SF REQUIRES fa — the
+# bundles anchor on FA integrin clutch beads.
+# ============================================================================
+
+name: ventral_stress_fibers_passive
+description: FA-adhered MCF7 cell with explicit long-axis-aligned ventral stress fibers (passive backbone).
+scope: adherent
+extends: adherent_passive
+
+observables: [cortical_tension, sf_axial_tension]
+
+enable:
+  - ventral_stress_fibers   # H.SF FA→FA passive actomyosin bundles (aligned)
+
+disable: []
+declare_pending: []
+
+notes: >
+  PASSIVE backbone (NMII off). μ_SF = N_filaments·EA_single with N_filaments=20
+  (Cramer 1997 candidate, ORDER, PI-pending) and EA_single=4.3e-8 N (Gittes 1993,
+  SOLID). FA-anchor pairs are LONG-AXIS-ALIGNED basal pairs (select_aligned_fa_pairs:
+  basal subset → in-plane PCA principal axis → low/high-projection pairing) at the
+  footprint scale (~8 µm bundles, alignment |cos|≈0.93). The PRIMARY build-time
+  controls (bundle assembled + force-free + aligned + cortical γ_soft unchanged ON
+  vs OFF, sf_ denylisted) are the LIVE gate. The Kumar 2006 10-30 nN single-SF
+  tension band is the ACTIVE+equilibrated gate (needs NMII via the sf_myosin_*
+  prefix split + the equilibration prelude) — DEFERRED. See PLATFORM_PI_QUEUE.

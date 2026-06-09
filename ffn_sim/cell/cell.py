@@ -179,6 +179,12 @@ from ffn_sim.cell.membrane_reservoir import (  # H.8 membrane reservoir (additiv
     ResolvedMembraneReservoir,
     extend_snapshot_with_membrane_reservoir,
 )
+from ffn_sim.cell.stress_fibers import (  # H.SF ventral stress fibers (additive, default-off)
+    ResolvedStressFibers,
+    extend_snapshot_with_stress_fibers,
+    register_stress_fiber_bond_params,
+    select_aligned_fa_pairs,
+)
 from ffn_sim.cell.lamellipodium import (
     ResolvedH5,
     WaveMembranePin,
@@ -739,6 +745,7 @@ def build_cortex_full_simulation(
     p_intermediate_filaments: "ResolvedIntermediateFilaments | None" = None,  # H.IF cage
     p_linc: "ResolvedLINC | None" = None,  # H.LINC nucleus↔IF-cage bridges (default-off)
     p_membrane_reservoir: "ResolvedMembraneReservoir | None" = None,  # H.8 mem_node layer (default-off)
+    p_stress_fibers: "ResolvedStressFibers | None" = None,  # H.SF ventral SF (default-off)
     reconcile_dt: bool = False,
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
@@ -1192,6 +1199,47 @@ def build_cortex_full_simulation(
             gamma_mem=_gamma_mem, seed=int(p_cortex.seed),
         )
 
+    # H.SF ventral stress fibers (additive, default-off). Explicit FA→FA
+    # actomyosin bundles. PASSIVE backbone only here (NMII deferred — needs the
+    # sf_myosin_* prefix split + the equilibrated active gate). REQUIRES fa: the
+    # bundles anchor on FA integrin clutch beads. The FA-anchor pairs are
+    # LONG-AXIS-ALIGNED on the basal footprint (PI 2026-06-09; select_aligned_fa_
+    # pairs), not random spans, so the bundle geometry is physiological vSF.
+    # MUST run AFTER FA (integrins exist) + BEFORE create_state. No-op when None.
+    sf_layout = None
+    enable_sf = (
+        p_stress_fibers is not None
+        and getattr(p_stress_fibers, "enabled", False)
+        and int(getattr(p_stress_fibers, "n_SF", 0)) > 0
+    )
+    if enable_sf:
+        if not enable_fa:
+            raise RuntimeError(
+                "ventral_stress_fibers enabled but fa is OFF — SF bundles anchor "
+                "on FA integrin clutch beads (registry requires=('fa',)). Enable "
+                "fa (e.g. the adherent_passive recipe)."
+            )
+        _sf_types = list(snap.particles.types)
+        _sf_tid = np.asarray(snap.particles.typeid, dtype=np.int64).reshape(-1)
+        _sf_pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(-1, 3)
+        if FA_TYPE_INTEGRIN not in _sf_types:
+            raise RuntimeError(
+                "ventral_stress_fibers enabled but no integrin anchors found in "
+                "the build (FA did not seed integrins)."
+            )
+        _int_rows = np.nonzero(_sf_tid == _sf_types.index(FA_TYPE_INTEGRIN))[0]
+        # Long-axis-aligned basal FA-anchor pairs (PI-ratified pairing rule).
+        _sf_pos_ord, _sf_tags_ord = select_aligned_fa_pairs(
+            _sf_pos[_int_rows], _int_rows.astype(np.int64),
+            n_SF=int(p_stress_fibers.n_SF), R_cell=float(p_cortex.R_cell),
+        )
+        snap = extend_snapshot_with_stress_fibers(
+            snap, p_stress_fibers, _sf_pos_ord, _sf_tags_ord,
+            rng=np.random.default_rng(int(p_cortex.seed)), pair_mode="as_given",
+            per_bundle_r0=True,   # EXACT ell0_b per bundle → force-free construction
+        )
+        sf_layout = getattr(snap, "stress_fiber_layout", None)
+
     # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p_cortex.seed
@@ -1284,6 +1332,12 @@ def build_cortex_full_simulation(
         bond.params[MEM_TETHER_BOND] = dict(
             k=p_membrane_reservoir.k_tether,
             r0=float(p_membrane_reservoir.membrane_offset),
+        )
+    # H.SF the four sf_ bond types on the SHARED bond force (passive backbone +
+    # α-actinin banding; NMII off). All sf_-prefixed → γ-denylisted.
+    if enable_sf and sf_layout is not None and len(sf_layout.actin_tags) > 0:
+        register_stress_fiber_bond_params(
+            bond, p_stress_fibers, sf_layout, per_bundle_r0=True,
         )
 
     angle = md.angle.Harmonic()
@@ -1491,6 +1545,35 @@ def build_cortex_full_simulation(
             _enable_pair("mem_node", "mtoc", repulsive=False)
         if enable_if:
             _enable_pair("mem_node", "if_bead", repulsive=False)
+
+    if enable_sf and sf_layout is not None and len(sf_layout.actin_tags) > 0:
+        # H.SF: sf_actin / sf_xlink_head are bond-held bundle beads (NOT steric
+        # bodies) — all sf pairs r_cut=0 (mirrors if_bead/mem_node). Cover every
+        # present type-pair (md.pair.LJ demands full coverage).
+        for sft in ("sf_actin", "sf_xlink_head"):
+            _enable_pair(sft, "sf_actin", repulsive=False)
+            _enable_pair(sft, "sf_xlink_head", repulsive=False)
+            _enable_pair(sft, "actin_cortex", repulsive=False)
+            if enable_xl:
+                _enable_pair(sft, "xlink_head", repulsive=False)
+            if enable_myo:
+                _enable_pair(sft, "cortex_myosin_backbone", repulsive=False)
+                _enable_pair(sft, "cortex_myosin_head", repulsive=False)
+            if enable_lamel:
+                _enable_pair(sft, "actin_lamel", repulsive=False)
+                _enable_pair(sft, "wave_particle", repulsive=False)
+            if enable_fa:
+                _enable_pair(sft, FA_TYPE_INTEGRIN, repulsive=False)
+                _enable_pair(sft, FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
+            if enable_nucleus:
+                _enable_pair(sft, "nucleus_bead", repulsive=False)
+            if enable_microtubules:
+                _enable_pair(sft, "mt_bead", repulsive=False)
+                _enable_pair(sft, "mtoc", repulsive=False)
+            if enable_if:
+                _enable_pair(sft, "if_bead", repulsive=False)
+            if enable_mem and mem_layout is not None and mem_layout.n_tether > 0:
+                _enable_pair(sft, "mem_node", repulsive=False)
 
     lj.mode = "shift"
 
@@ -1740,6 +1823,18 @@ def build_cortex_full_simulation(
             gamma_map["mem_node"] = (
                 6.0 * math.pi * _eta_memg * (0.5 * float(p_cortex.lj_sigma))
             )
+        if enable_sf and sf_layout is not None and len(sf_layout.actin_tags) > 0:
+            # H.SF sf_actin + sf_xlink_head Stokes drag at CYTOPLASM viscosity
+            # (6π·η_eff·R_sfbead, R_sfbead = ½·lj_sigma; NOT water — the bundle
+            # lives in the cytoplasm). Set directly (sf types not in the immersed
+            # set → already the cytoplasm value).
+            _eta_sfg = (
+                float(getattr(p_cytoplasm, "eta_eff", 1.0e-3))
+                if p_cytoplasm is not None else 1.0e-3
+            )
+            _gamma_sf = 6.0 * math.pi * _eta_sfg * (0.5 * float(p_cortex.lj_sigma))
+            gamma_map["sf_actin"] = _gamma_sf
+            gamma_map["sf_xlink_head"] = _gamma_sf
         # H.10 cytoplasm Tier-1 (per-type effective-viscosity drag): scale the
         # immersed types' Stokes drag by eta_eff/eta_water once gamma_map is fully
         # assembled. p_cytoplasm is None => bit-for-bit identical (water). FDT-safe:
@@ -2033,6 +2128,9 @@ def build_cortex_full_simulation(
         # H.8 membrane reservoir — None / 0 when off.
         "membrane_tether_layout": mem_layout,
         "n_mem_tethers": (mem_layout.n_tether if mem_layout is not None else 0),
+        # H.SF ventral stress fibers — None / 0 when off.
+        "stress_fiber_layout": sf_layout,
+        "n_stress_fibers": (len(sf_layout.actin_tags) if sf_layout is not None else 0),
         "baoab_updater": baoab_updater,
         "baoab_action": baoab_action,
         "xlink_updater": xlink_updater,
@@ -2123,6 +2221,7 @@ class CellBuildOptions:
     with_intermediate_filaments: bool = False   # H.IF cage (default-off)
     with_linc: bool = False   # H.LINC nucleus↔IF-cage bridges (default-off)
     with_membrane_reservoir: bool = False   # H.8 mem_node tether layer (default-off)
+    with_stress_fibers: bool = False   # H.SF ventral stress fibers (default-off)
 
 
 @dataclass(slots=True)
@@ -2193,6 +2292,7 @@ class Cell:
     p_intermediate_filaments: Any | None = None   # H.IF cage (default-off)
     p_linc: Any | None = None   # H.LINC nucleus↔IF-cage bridges (default-off)
     p_membrane_reservoir: Any | None = None   # H.8 mem_node tether layer (default-off)
+    p_stress_fibers: Any | None = None   # H.SF ventral stress fibers (default-off)
 
     extras: dict[str, Any] = field(default_factory=dict)
 
@@ -2233,6 +2333,7 @@ class Cell:
         p_intermediate_filaments: "ResolvedIntermediateFilaments | None" = None,  # H.IF
         p_linc: "ResolvedLINC | None" = None,  # H.LINC nucleus↔IF-cage (default-off)
         p_membrane_reservoir: "ResolvedMembraneReservoir | None" = None,  # H.8 (default-off)
+        p_stress_fibers: "ResolvedStressFibers | None" = None,  # H.SF (default-off)
         constrained: bool = False,
         constrained_dt: float | None = None,
         reconcile_dt: bool = False,
@@ -2346,7 +2447,7 @@ class Cell:
                 p_enclosed_volume, p_membrane_surface, p_nucleus,
                 p_cytoplasm, p_substrate, p_turnover, p_membrane,
                 p_microtubules, p_intermediate_filaments, p_linc,
-                p_membrane_reservoir,
+                p_membrane_reservoir, p_stress_fibers,
             ))
             or constrained or reconcile_dt or equilibrate or connected_mesh
         )
@@ -2376,6 +2477,7 @@ class Cell:
                 p_intermediate_filaments=p_intermediate_filaments,
                 p_linc=p_linc,
                 p_membrane_reservoir=p_membrane_reservoir,
+                p_stress_fibers=p_stress_fibers,
                 device=device, with_baoab=opts.with_baoab,
                 constrained=constrained, constrained_dt=constrained_dt,
                 reconcile_dt=reconcile_dt,
@@ -2466,6 +2568,7 @@ class Cell:
             p_intermediate_filaments=p_intermediate_filaments,
             p_linc=p_linc,
             p_membrane_reservoir=p_membrane_reservoir,
+            p_stress_fibers=p_stress_fibers,
             p_myosin=p_myosin,
             p_lamellipodium=p_lamellipodium,
             options=opts,

@@ -380,3 +380,94 @@ def test_pi_decisions_documented():
     joined = " ".join(PI_DECISIONS).lower()
     assert "k_actin" in joined
     assert "k_anchor" in joined
+
+
+# ---------------------------------------------------------------------------
+# LIVE activation wiring (2026-06-09; PI 소유권 허용): FA-adhered build +
+# long-axis-aligned basal FA pairing + per-bundle EXACT-r0 (force-free) backbone.
+# cell.py snapshot-extension + sf LJ/gamma_map + registry LIVE. PASSIVE backbone
+# (NMII deferred — sf_myosin_* prefix + Kumar active gate).
+# ---------------------------------------------------------------------------
+class TestStressFibersActivationWiring:
+    def test_off_build_is_bit_identity(self):
+        from ffn_sim.cell.manifest import (
+            build_baseline_cell, load_manifest, resolve_baseline,
+        )
+        rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
+        assert rb.p_stress_fibers is None
+        cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        assert cell.p_stress_fibers is None
+        assert cell.simulation.state.N_particles > 0
+
+    def test_on_bundles_assemble_aligned_forcefree_no_contam(self):
+        import numpy as np
+        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.cell.stress_fibers import sf_actin_backbone_bin_names
+        from ffn_sim.cortex.cortical_tension import (
+            _is_adhesion_bond_type, measure_cortical_tension,
+        )
+
+        base = load_manifest("mcf7_baseline.yaml")
+        m_off, d0 = REGISTRY.compose_manifest(
+            load_recipe("adherent_passive"), base_manifest=base, strict=True
+        )
+        m_on, d1 = REGISTRY.compose_manifest(
+            load_recipe("ventral_stress_fibers_passive"), base_manifest=base, strict=True
+        )
+        assert d0 == [] and d1 == []
+        off = build_baseline_cell("mcf7_baseline.yaml", manifest=m_off, seed=1)
+        on = build_baseline_cell("mcf7_baseline.yaml", manifest=m_on, seed=1)
+        p = on.p_stress_fibers
+        assert p is not None and p.enabled
+
+        sn = on.simulation.state.get_snapshot()
+        n_sf = int(on.extras["handles"]["n_stress_fibers"])
+        layout = on.extras["handles"]["stress_fiber_layout"]
+        assert n_sf == p.n_SF > 0
+        assert "sf_actin" in sn.particles.types and "sf_xlink_head" in sn.particles.types
+        sf_bonds = [t for t in sn.bonds.types if t.startswith("sf_")]
+        assert sf_bonds and all(_is_adhesion_bond_type(t) for t in sf_bonds)
+        # ALIGNED: bundle axes vs the in-plane footprint long axis.
+        pos = np.asarray(sn.particles.position, dtype=np.float64)
+        fe = np.asarray(layout.fa_endpoints, dtype=np.int64)
+        vecs = pos[fe[:, 1]] - pos[fe[:, 0]]
+        lens = np.linalg.norm(vecs, axis=1)
+        u = vecs / np.maximum(lens[:, None], 1e-30)
+        ax = u.mean(axis=0); ax = ax / np.linalg.norm(ax)
+        assert float(np.mean(np.abs(u @ ax))) >= 0.8   # aligned, not random
+        # FORCE-FREE: per-bundle backbone born at its EXACT ell0_b.
+        g = np.asarray(sn.bonds.group, dtype=np.int64)
+        bt = np.asarray(sn.bonds.typeid, dtype=np.int64)
+        bn = list(sn.bonds.types)
+        worst = 0.0
+        for b, name in enumerate(sf_actin_backbone_bin_names(n_sf)):
+            if name not in bn:
+                continue
+            m = bt == bn.index(name)
+            if not m.any():
+                continue
+            ln = np.linalg.norm(pos[g[m][:, 0]] - pos[g[m][:, 1]], axis=1)
+            r0 = float(layout.ell0_actin[b])
+            worst = max(worst, float(np.max(np.abs(ln - r0) / r0)))
+        assert worst < 1e-6
+        # NO contamination: cortical γ_soft identical OFF vs ON (sf_ denylisted).
+        off.simulation.run(0); on.simulation.run(0)
+        go = measure_cortical_tension(off.simulation, R_cell=off.p_cortex.R_cell,
+                                      p_enclosed_volume=off.p_enclosed_volume)
+        gn = measure_cortical_tension(on.simulation, R_cell=on.p_cortex.R_cell,
+                                      p_enclosed_volume=on.p_enclosed_volume)
+        k = "gamma_soft_N_per_m" if "gamma_soft_N_per_m" in go else "gamma_soft"
+        assert abs(gn[k] - go[k]) <= 1e-12 * max(1.0, abs(go[k]))
+
+    def test_enabled_requires_fa(self):
+        import pytest
+        from ffn_sim.cell.manifest import load_manifest, resolve_baseline
+        m = load_manifest("mcf7_baseline.yaml")
+        m.setdefault("optional_subsystems", {})
+        m["optional_subsystems"]["ventral_stress_fibers"] = {
+            "enabled": True, "n_SF": 4, "N_filaments": 20,
+        }
+        # fa OFF → SF resolve must raise (requires fa).
+        with pytest.raises(ValueError):
+            resolve_baseline(m)

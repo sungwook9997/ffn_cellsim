@@ -106,10 +106,15 @@ activation that needs NO cortical_tension edit.
 | 12:30 | viz#2 (PI feedback): compartment_vis.py → **SimuCell3D-style surfaces** (faceted cortex/membrane ConvexHull + cutaway exposing nucleus + MT aster/IF/LINC bonds) + **VERSIONED output** (outputs/h7/figs/morphology/cell_vNN_<label>.png, accumulates, never overwrites; cell_latest.png pointer). Retired flat compartment_cell_*.png. First snapshot cell_v01_membrane.png | (this commit) | VIZ |
 | 13:10 | ③ ventral_stress_fibers PUSHED + SCOPED: FA-adhered build + integrin harvest + SF extender all work mechanically (probe: adherent_passive → 2150 integrins; SF assembles 20 bundles on the real hoomd.Snapshot). ⚠SURFACED a fidelity-affecting **FA-pair geometry design decision** (generate_stress_fiber_layout pairs by RANDOM shuffle → unphysical bundle lengths across z=−7.35..1.6µm; physiological vSF need nearest-basal/aligned pairs) → per mission rule logged to PLATFORM_PI_QUEUE + recommend (a) nearest-basal pairing v1; HELD at EXPERIMENTAL (not faked LIVE on random pairing). Also: per-bundle k_actin/ell0 measure-wiring + N_filaments=20 candidate + sf_myosin prefix (active) still pending | (this commit) | PI-SURFACE |
 
+| 14:30 | PI ANSWERED ③ decision: **long-axis-aligned** FA pairing + "complete SF first". | — | PI-DIR |
+| 15:20 | ⭐**ventral_stress_fibers EXPERIMENTAL→LIVE** (6th graduation; PASSIVE backbone). stress_fibers.py: select_aligned_fa_pairs (basal subset→in-plane PCA long axis→low/high pairing) + pair_mode='as_given' + per_bundle_r0 EXACT-r0 backbone (sf_actin_backbone_bin_names; force-free even with varying bundle lengths). Full wiring: cell.py (import+sig+harvest integrins after FA+aligned pairs+SF extend pair_mode=as_given/per_bundle_r0+sf_actin/sf_xlink_head LJ r_cut=0+cytoplasm gamma_map+register sf bonds per-bundle+options/dataclass/build/handles); manifest stanza (requires fa); config (N_filaments=20 Cramer1997 candidate, n_SF=20); ventral_stress_fibers_passive recipe (extends adherent_passive); registry LIVE (denylist ('sf_',) — dropped cortex_myosin_ which the estimator never denylists). ⚠ denylist fix caught by test_live_contaminating_compartments | (this commit) | LIVE |
+| 15:20 | SF ACTIVATION GATE (FA-adhered OFF=adherent_passive vs ON, build-time): **PASS** 5 controls — bundles assembled n_SF=20 (+1120 part, +1460 bonds); ALIGNED mean|cos|=0.929 (long-axis, lengths 0.5-13.7µm — physiological vSF not random); FORCE-FREE per-bundle backbone max strain 1.56e-14; ⭐NO-CONTAM cortical γ_soft IDENTICAL OFF=ON=5.1411e-10 (sf_ registry-denylisted); off-identity. +3 build tests (test_stress_fibers.py 33 pass). Kumar 10-30nN tension band = ACTIVE+equilibrated gate (NMII via sf_myosin_ prefix) DEFERRED | (this commit) | GATE PASS |
+
 ### Phase-2 ACTIVATION summary (PI 소유권 허용)
-**5 compartments EXPERIMENTAL→LIVE** (osmotic_regulation, microtubules,
-intermediate_filaments, linc, membrane_reservoir) with passing activation gates;
-+ full-cell morphology visualizer (compartment_vis.py). Detail below. osmotic_regulation
+**6 compartments EXPERIMENTAL→LIVE** (osmotic_regulation, microtubules,
+intermediate_filaments, linc, membrane_reservoir, ventral_stress_fibers) with
+passing activation gates; + SimuCell3D-style versioned morphology visualizer
+(compartment_vis.py). Detail below. osmotic_regulation
 (τ_RVD in band, RVD sign, no-contam), microtubules (aster, CFL, no-contam γ identical;
 n_mt≤7 cap blocker found+documented), intermediate_filaments (cage, no-contam; linear
 path, nonlinear PI-pending), **linc** (Option A nucleus↔IF-cage per-bond EXACT-r0 bridges;
@@ -117,11 +122,14 @@ bridges-formed + force-free + no-contam γ identical + CFL ~4-order headroom; [2
 oracle deferred; unique-acceptor degree fix), **membrane_reservoir** (own mem_node
 offset layer + static mem_tether mesh; mesh-assembled + cross-layer + force-free +
 no-contam γ identical; bleb/reservoir-release PI-blocked; degree-aware exclusion-cap
-fix). **+ registry-driven γ-denylist** (unblocks no-contamination for all). **+
-internal_live integration capstone** (osmotic+MT+IF in one cell, no contamination).
-**6 crash-on-enable bugs fixed** + **2 nlist exclusion-cap fixes** (LINC + membrane
-acceptor-degree). **compartment-suite tests green** (LINC 45 + membrane 30 + registry +
-canary + IF + MT; full compartment/cell/cortex modulo the pre-existing KU-3.5 motors-off
-baseline failure, unrelated to platform work). Remaining 3 (ventral_stress_fibers,
-cadherin_junction, junctional_actin) need PI physics-design decisions (see
-REMAINING_DECISIONS) — recommendations given; proceeding unless PI redirects.
+fix), **ventral_stress_fibers** (PASSIVE backbone; PI-ratified long-axis-aligned basal
+FA pairs |cos|≈0.93, per-bundle EXACT-r0 force-free, no-contam γ identical; Kumar/NMII
+active gate deferred via sf_myosin_ prefix). **+ registry-driven γ-denylist** (unblocks
+no-contamination for all). **+ internal_live integration capstone** (osmotic+MT+IF in
+one cell, no contamination). **6 crash-on-enable bugs fixed** + **2 nlist exclusion-cap
+fixes** (LINC + membrane acceptor-degree). **compartment-suite tests green** (LINC 45 +
+membrane 30 + SF 33 + registry + canary + IF + MT; full compartment/cell/cortex modulo
+the pre-existing KU-3.5 motors-off baseline failure, unrelated to platform work).
+Remaining 2 (cadherin_junction — needs the new two-cell build_cell_doublet assembler;
+junctional_actin — STUB build, after cadherin) need PI physics-design decisions (see
+REMAINING_DECISIONS).

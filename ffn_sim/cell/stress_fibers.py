@@ -578,6 +578,24 @@ def sf_bond_type_names() -> list[str]:
     ]
 
 
+def sf_actin_backbone_bin_names(n_SF: int) -> list[str]:
+    """Per-bundle EXACT-r0 backbone bond-type names (``per_bundle_r0`` mode).
+
+    When the integrated build has FA→FA bundles of DIFFERENT lengths (the
+    long-axis-aligned basal layout), a single backbone rest length would strain
+    every off-mean bundle at construction. Instead each bundle gets its OWN
+    backbone bond type carrying its EXACT bead spacing ``ell0_b`` as the rest
+    length, so every bundle is born FORCE-FREE (mirrors the FA molecular-clutch /
+    LINC per-bond EXACT-r0 convention). Bundle 0 keeps the canonical
+    ``BOND_TYPE_SF_ACTIN`` name (backward-compat); bundles 1+ are
+    ``sf_actin_bond_b{i}`` (every name keeps the ``sf_`` γ-denylist prefix).
+    """
+    return [
+        BOND_TYPE_SF_ACTIN if i == 0 else f"{BOND_TYPE_SF_ACTIN}_b{i}"
+        for i in range(int(n_SF))
+    ]
+
+
 # ===========================================================================
 # Layout
 # ===========================================================================
@@ -616,6 +634,96 @@ class StressFiberLayout:
     particle_tag_start: int
 
 
+def select_aligned_fa_pairs(
+    fa_positions: np.ndarray,
+    fa_tags: np.ndarray,
+    *,
+    n_SF: int,
+    R_cell: float,
+    basal_frac: float = 0.5,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Select LONG-AXIS-ALIGNED basal FA-anchor pairs for physiological vSF.
+
+    PI-ratified pairing rule (2026-06-09): ventral stress fibers run along the
+    cell's long axis on the BASAL plane (not random spans). This pure helper
+    picks ``n_SF`` FA-anchor pairs that span the basal footprint ALONG its
+    in-plane principal axis, at increasing transverse offsets (parallel aligned
+    bundles), and returns the endpoints INTERLEAVED ``[A0, B0, A1, B1, ...]`` so
+    :func:`generate_stress_fiber_layout` with ``pair_mode='as_given'`` realises
+    exactly those bundles.
+
+    Algorithm: (1) take the basal subset (lowest ``basal_frac`` by z — the
+    adhesion contact zone); (2) compute the in-plane (x, y) PRINCIPAL axis (PCA)
+    = the cell long axis of the footprint; (3) split the basal anchors at the
+    median axial projection into a low-end and high-end group; (4) sort each by
+    the transverse coordinate and pair the i-th of each → ``n_SF`` bundles
+    running low→high along the long axis at evenly-spaced transverse offsets.
+
+    Args:
+        fa_positions: (M, 3) FA-anchor positions [m].
+        fa_tags: (M,) FA-anchor global tags.
+        n_SF: number of aligned bundles to select.
+        R_cell: cell radius [m] (provenance / span context).
+        basal_frac: fraction (by lowest z) treated as the basal contact zone.
+
+    Returns:
+        ``(ordered_positions (2·n_SF, 3), ordered_tags (2·n_SF,))`` interleaved.
+
+    Raises:
+        ValueError: if too few basal anchors to form ``n_SF`` aligned pairs.
+    """
+    pos = np.asarray(fa_positions, dtype=np.float64).reshape(-1, 3)
+    tags = np.asarray(fa_tags, dtype=np.int64).reshape(-1)
+    if pos.shape[0] != tags.shape[0]:
+        raise ValueError("fa_positions and fa_tags length mismatch.")
+    if n_SF < 1:
+        raise ValueError(f"n_SF must be ≥ 1; got {n_SF}.")
+
+    # (1) basal subset: lowest basal_frac by z (the ventral contact zone).
+    zsort = np.argsort(pos[:, 2])
+    n_basal = max(2 * n_SF, int(basal_frac * pos.shape[0]))
+    n_basal = min(n_basal, pos.shape[0])
+    bidx = zsort[:n_basal]
+    bp = pos[bidx]
+    bt = tags[bidx]
+
+    # (2) in-plane principal axis (PCA over x, y) = footprint long axis.
+    xy = bp[:, :2] - bp[:, :2].mean(axis=0)
+    cov = xy.T @ xy
+    w, V = np.linalg.eigh(cov)
+    axis = V[:, int(np.argmax(w))]
+    perp = V[:, int(np.argmin(w))]
+    proj = xy @ axis
+    tperp = xy @ perp
+
+    # (3) split at the median axial projection → low-end / high-end groups.
+    med = float(np.median(proj))
+    low = np.flatnonzero(proj < med)
+    high = np.flatnonzero(proj >= med)
+    k = min(low.size, high.size)
+    if k < n_SF:
+        raise ValueError(
+            f"only {k} aligned basal pairs available (need n_SF = {n_SF}); "
+            "reduce n_SF or widen the basal zone."
+        )
+
+    # (4) sort each group by transverse coord, pair the i-th → parallel bundles
+    # running low→high along the long axis at evenly-spaced transverse offsets.
+    low = low[np.argsort(tperp[low])]
+    high = high[np.argsort(tperp[high])]
+    sel = np.linspace(0, k - 1, n_SF).round().astype(int)
+    A = low[sel]
+    B = high[sel]
+
+    ordered_pos = np.empty((2 * n_SF, 3), dtype=np.float64)
+    ordered_tags = np.empty((2 * n_SF,), dtype=np.int64)
+    ordered_pos[0::2] = bp[A]
+    ordered_pos[1::2] = bp[B]
+    ordered_tags[0::2] = bt[A]
+    ordered_tags[1::2] = bt[B]
+    return ordered_pos, ordered_tags
+
+
 def generate_stress_fiber_layout(
     p: ResolvedStressFibers,
     fa_endpoint_positions: np.ndarray,
@@ -623,6 +731,7 @@ def generate_stress_fiber_layout(
     *,
     particle_tag_start: int,
     rng: np.random.Generator | None = None,
+    pair_mode: str = "random",
 ) -> StressFiberLayout:
     """Lay out ``n_SF`` bundles between pairs of FA endpoint positions.
 
@@ -675,9 +784,28 @@ def generate_stress_fiber_layout(
             f"bundles with distinct ends; got {M}."
         )
 
-    # Pair FA endpoints without reuse: shuffle, take consecutive pairs.
-    order = rng.permutation(M)
-    endpoint_pairs = order[: 2 * p.n_SF].reshape(p.n_SF, 2)
+    # Pair FA endpoints without reuse. ``pair_mode``:
+    #   "random"   — shuffle then take consecutive pairs (legacy / smoke / tests).
+    #   "as_given" — pair the endpoints AS PASSED (bundle b = rows 2b, 2b+1), no
+    #                shuffle. The caller (cell.py) pre-selects PHYSIOLOGICAL pairs
+    #                (e.g. long-axis-aligned basal FA pairs via
+    #                :func:`select_aligned_fa_pairs`) and passes them in
+    #                [A0,B0,A1,B1,...] order, so the bundle geometry is the caller's
+    #                physiological choice rather than a random span.
+    if pair_mode == "as_given":
+        if M < 2 * p.n_SF:
+            raise ValueError(
+                f"pair_mode='as_given' needs ≥ 2·n_SF = {2 * p.n_SF} ordered "
+                f"endpoints; got {M}."
+            )
+        endpoint_pairs = np.arange(2 * p.n_SF, dtype=np.int64).reshape(p.n_SF, 2)
+    elif pair_mode == "random":
+        order = rng.permutation(M)
+        endpoint_pairs = order[: 2 * p.n_SF].reshape(p.n_SF, 2)
+    else:
+        raise ValueError(
+            f"unknown pair_mode {pair_mode!r}; use 'random' or 'as_given'."
+        )
 
     actin_tags: list[np.ndarray] = []
     xlink_head_tags: list[np.ndarray] = []
@@ -761,6 +889,8 @@ def extend_snapshot_with_stress_fibers(
     fa_endpoint_tags: np.ndarray | None = None,
     *,
     rng: np.random.Generator | None = None,
+    pair_mode: str = "random",
+    per_bundle_r0: bool = False,
 ):
     """Append explicit SF particles + bonds onto a gsd/HOOMD snapshot.
 
@@ -821,6 +951,7 @@ def extend_snapshot_with_stress_fibers(
         fa_endpoint_tags,
         particle_tag_start=n_part_old,
         rng=rng,
+        pair_mode=pair_mode,
     )
 
     # Totals.
@@ -884,6 +1015,14 @@ def extend_snapshot_with_stress_fibers(
     for name in sf_bond_type_names():
         if name not in new_bond_types:
             new_bond_types.append(name)
+    # per_bundle_r0: register one backbone type per bundle (EXACT ell0_b → each
+    # bundle force-free at construction even when bundle lengths differ).
+    backbone_bin_tids: list[int] = []
+    if per_bundle_r0:
+        for name in sf_actin_backbone_bin_names(p.n_SF):
+            if name not in new_bond_types:
+                new_bond_types.append(name)
+            backbone_bin_tids.append(new_bond_types.index(name))
     tid_chain = new_bond_types.index(BOND_TYPE_SF_ACTIN)
     tid_anchor = new_bond_types.index(BOND_TYPE_SF_ANCHOR)
     tid_intra = new_bond_types.index(BOND_TYPE_SF_XLINK_INTRA)
@@ -906,10 +1045,12 @@ def extend_snapshot_with_stress_fibers(
         fa_a, fa_b = int(layout.fa_endpoints[b, 0]), int(layout.fa_endpoints[b, 1])
         nb = int(bead_tags.shape[0])
 
-        # backbone chain
+        # backbone chain. per_bundle_r0 → bundle b's own EXACT-r0 backbone type
+        # (force-free at its as-built ell0_b); else the single shared type.
+        bb_tid = backbone_bin_tids[b] if per_bundle_r0 else tid_chain
         for i in range(nb - 1):
             new_groups.append((int(bead_tags[i]), int(bead_tags[i + 1])))
-            new_btids.append(tid_chain)
+            new_btids.append(bb_tid)
         # FA anchors: bead 0 ↔ FA_A, last bead ↔ FA_B
         new_groups.append((int(bead_tags[0]), fa_a))
         new_btids.append(tid_anchor)
@@ -978,7 +1119,8 @@ def extend_snapshot_with_stress_fibers(
 # Bond-param registration
 # ===========================================================================
 def register_stress_fiber_bond_params(
-    bond: md.bond.Harmonic, p: ResolvedStressFibers, layout: StressFiberLayout
+    bond: md.bond.Harmonic, p: ResolvedStressFibers, layout: StressFiberLayout,
+    *, per_bundle_r0: bool = False,
 ) -> None:
     """Wire ``md.bond.Harmonic`` params for the four ``sf_`` bond types.
 
@@ -1008,6 +1150,17 @@ def register_stress_fiber_bond_params(
     # Anchor: as stiff as the backbone it terminates unless explicitly overridden.
     k_anchor = float(p.k_anchor) if p.k_anchor is not None else k_bond
     bond.params[BOND_TYPE_SF_ACTIN] = dict(k=k_bond, r0=ell0)
+    # per_bundle_r0: each bundle's backbone type carries its EXACT ell0_b (k_bond
+    # = μ_SF/ell0_b, grid-invariant) → force-free at construction even when bundle
+    # lengths differ (the long-axis-aligned basal layout). Mirrors FA/LINC.
+    if per_bundle_r0:
+        for b, name in enumerate(sf_actin_backbone_bin_names(p.n_SF)):
+            ell0_b = float(layout.ell0_actin[b]) if b < layout.ell0_actin.size else ell0
+            if ell0_b <= 0.0:
+                ell0_b = ell0
+            bond.params[name] = dict(
+                k=resolve_backbone_k_bond(p, ell0_b), r0=ell0_b,
+            )
     # Anchor rest length ≈ 0: the SF end bead is placed AT the FA endpoint so
     # the anchor is force-free at construction (physiological-baseline rule).
     bond.params[BOND_TYPE_SF_ANCHOR] = dict(k=k_anchor, r0=0.0)

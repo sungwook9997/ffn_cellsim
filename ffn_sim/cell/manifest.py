@@ -31,6 +31,7 @@ from ffn_sim.cell.intermediate_filaments import resolve_intermediate_filaments
 from ffn_sim.cell.linc import resolve_linc
 from ffn_sim.cell.membrane_reservoir import resolve_membrane_reservoir
 from ffn_sim.cell.membrane_surface import resolve_membrane_surface
+from ffn_sim.cell.stress_fibers import resolve_stress_fibers
 from ffn_sim.cell.microtubules import resolve_microtubules
 from ffn_sim.cell.nucleus import resolve_nucleus
 from ffn_sim.common.production_policy import (
@@ -92,6 +93,7 @@ class ResolvedBaseline:
     p_intermediate_filaments: Any | None = None  # H.IF perinuclear cage (LIVE)
     p_linc: Any | None = None                 # H.LINC nucleus↔IF-cage bridges (LIVE)
     p_membrane_reservoir: Any | None = None   # H.8 mem_node tether layer (LIVE)
+    p_stress_fibers: Any | None = None        # H.SF ventral stress fibers (LIVE)
     manifest: dict = field(default_factory=dict)
 
     def compartments(self) -> dict[str, Any]:
@@ -215,6 +217,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
     p_intermediate_filaments = None
     p_linc = None
     p_membrane_reservoir = None
+    p_stress_fibers = None
     lam_cfg: dict = {}
 
     fa_b = opt.get("fa")
@@ -405,6 +408,28 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
             mem_cfg, R_cell=p_cortex.R_cell, dt=dtc,
         )
 
+    # H.SF ventral stress fibers (LIVE, default-OFF). Explicit FA→FA actomyosin
+    # bundles; PASSIVE backbone (NMII deferred — needs the sf_myosin_* prefix +
+    # equilibrated active gate). REQUIRES fa (the bundles anchor on FA integrin
+    # clutch beads); FA-anchor pairs are long-axis-aligned on the basal footprint
+    # in Cell.build (PI 2026-06-09). N_filaments (→ μ_SF) is PI-pending (None) by
+    # default → the enabled build HALTS until ratified.
+    sf_b = opt.get("ventral_stress_fibers")
+    if _enabled(sf_b):
+        if p_fa is None:
+            raise ValueError(
+                "ventral_stress_fibers enabled but fa is OFF — SF bundles anchor "
+                "on FA integrin clutch beads (registry requires=('fa',)). Enable "
+                "fa (e.g. the adherent_passive recipe)."
+            )
+        sf_cfg = _opt_cfg(sf_b)            # flat block: n_SF, N_filaments, ...
+        sf_cfg["enabled"] = True           # _opt_cfg strips 'enabled'; force it on
+        # The module reads the 'stress_fibers' key — wrap the flat block.
+        p_stress_fibers = resolve_stress_fibers(
+            {"stress_fibers": sf_cfg}, kT=p_cortex.kT,
+            R_cell=p_cortex.R_cell, dt=dtc,
+        )
+
     return ResolvedBaseline(
         cell_type=cell_type,
         R_cell=R_cell,
@@ -427,6 +452,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         p_intermediate_filaments=p_intermediate_filaments,
         p_linc=p_linc,
         p_membrane_reservoir=p_membrane_reservoir,
+        p_stress_fibers=p_stress_fibers,
         manifest=manifest,
     )
 
@@ -517,6 +543,7 @@ def build_baseline_cell(
         with_intermediate_filaments=rb.p_intermediate_filaments is not None,
         with_linc=rb.p_linc is not None,
         with_membrane_reservoir=rb.p_membrane_reservoir is not None,
+        with_stress_fibers=rb.p_stress_fibers is not None,
     )
     cell = Cell.build(
         rb.p_cortex,
@@ -537,6 +564,7 @@ def build_baseline_cell(
         p_intermediate_filaments=rb.p_intermediate_filaments,
         p_linc=rb.p_linc,
         p_membrane_reservoir=rb.p_membrane_reservoir,
+        p_stress_fibers=rb.p_stress_fibers,
         p_membrane=rb.p_membrane,
         constrained=constrained,
         # constrained_dt_safety < 1 shrinks the constrained step: the rigid

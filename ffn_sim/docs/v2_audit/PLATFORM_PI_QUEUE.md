@@ -62,12 +62,18 @@
   = `REGISTRY.gamma_denylist()` minus `cortex_*`). Unblocks the no-contamination control
   for every γ-contaminating compartment. ⚠️ sibling Gate-B owns this file → merge-coordinate.
 
-## ⚠️ ventral_stress_fibers (③) — FA-pair GEOMETRY design decision (surfaced 2026-06-09)
-Pushed ③ per the recommended order; the FA-adhered build + SF extender + integrin
-harvest all work mechanically (probe: `adherent_passive` seeds **2150 integrins**;
-the SF extender assembles 20 bundles on the real `hoomd.Snapshot`). But a genuine
-**physics-design decision** blocks a *physiologically-valid* LIVE flip — beyond the
-already-known N_filaments + sf_myosin-prefix blockers:
+## ✅ ventral_stress_fibers (③) → LIVE (passive) 2026-06-09 — FA-pair decision RESOLVED by PI
+PI ratified **long-axis-aligned** basal FA pairing (2026-06-09). SF is now LIVE
+(PASSIVE backbone): `select_aligned_fa_pairs` (basal subset → in-plane PCA principal
+axis → low/high-projection pairing) yields aligned bundles (mean |cos|≈0.93, ~8 µm),
+per-bundle EXACT-r0 backbone (force-free, max strain 1.6e-14). Gate PASS (5 controls:
+bundles assembled n_SF=20, aligned, force-free, cortical γ_soft IDENTICAL OFF/ON =
+no-contam, off-identity). N_filaments=20 (Cramer 1997) config candidate. **Still
+DEFERRED to PI for the ACTIVE phase:** the Kumar 2006 10-30 nN single-SF tension
+band needs NMII via the **sf_myosin_* prefix split** in `cortex/myosin.py` (else SF
+motors contaminate cortical γ) + the equilibrated build (equilibration prelude). The
+PASSIVE backbone is LIVE; the active contractile gate is the follow-on. Historical
+detail of the now-resolved pairing decision:
 - **FA-pair selection geometry.** `generate_stress_fiber_layout` pairs FA endpoints
   by **random shuffle** (`rng.permutation(M)`). At the real footprint the 2150
   integrins span z = −7.35 … 1.6 µm, so random pairing yields bundles of wildly
@@ -89,9 +95,9 @@ already-known N_filaments + sf_myosin-prefix blockers:
   and the **sf_myosin_* prefix** split in `cortex/myosin.py` for the ACTIVE NMII
   phase (passive backbone needs neither; the Kumar 10-30 nN tension band is the
   active+equilibrated gate, deferred).
-**Status:** NOT flipped LIVE — held at EXPERIMENTAL pending the FA-pairing decision
-(a/b). The mechanical wiring is ready; only the pairing rule + measure-r0 wiring
-remain once PI picks (a) or (b).
+**Status:** RESOLVED — PI picked long-axis-aligned (b-style); SF is LIVE (passive).
+Per-bundle EXACT-r0 backbone (force-free) implemented; measure_sf_tension prefix-
+matches sf_actin_bond* for the deferred active gate.
 
 ## ⚠️ NEW BLOCKER found during activation
 - **MTOC single-hub degree vs HOOMD nlist exclusion cap (7).** The aster's single MTOC
