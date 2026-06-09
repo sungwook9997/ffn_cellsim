@@ -71,8 +71,15 @@ rounded/de-adhered HeLa/L929 proxy(NO MCF7, NO spread-adherent datum).
 | 6.0 | 0.0742 | 2.4× |
 | 21.0 | 0.191 | 0.94× (밴드 도달) |
 
-power-law fit **γ ∝ ρ^0.74** → **band_lo(0.18) 도달에 ρ≈19.6/µm², band_hi(0.40)에 ρ≈58/µm²**
-= proxy 0.6의 **~33–96×**. fig `h7_gamma_vs_density_2026-06-10.png`.
+power-law fit **γ ∝ ρ^0.74** → band_lo(0.18) 도달에 ρ≈19.6/µm². fig
+`h7_gamma_vs_density_2026-06-10.png`.
+
+**⭐ seed-robustness (2 seeds, loop23 단일-seed 과대주장 방어):** slope는 **robust**
+(seed1=0.739, seed2=0.713)이나 **절대 γ는 ~40-50% seed scatter**(prefactor ~1.5×). 멱승
+역산으로 band_lo 도달 density가 **seed1=19.6 vs seed2=47.3/µm²** = ~2.4× 벌어짐. ⇒ 정직한
+진술: density-bound 성격(γ∝ρ^≈0.73)은 확실, 하지만 **필요 density는 정밀값이 아니라
+"수십 /µm², proxy(0.6)의 ~30–80×"라는 order-of-magnitude**. 2-seed는 thin sample —
+firm한 절대값은 더 많은 seed + native-scale GPU 필요(PI-gated).
 ⚠️ **정직한 caveat:** mesoscale(×40)에서 density override는 head 수가 아니라 force_factor
 (4.24→148)를 키운다 — native density를 sanctioned ×40 coarse-graining으로 표현한 것(정당)이나,
 고밀도 점의 per-meso-head meanT(84·294pN)는 mesoscale-effective값이지 단일 cross-bridge force

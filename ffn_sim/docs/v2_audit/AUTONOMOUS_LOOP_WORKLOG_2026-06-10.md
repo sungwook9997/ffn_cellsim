@@ -78,3 +78,14 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
 - 누적 결론(iter5+6): **γ magnitude floor = density-bound(NOT transmission, NOT generation
   per-head: F_stall 도달). 밴드 도달엔 ρ~20/µm² 필요, lit proxy는 0.6(MCF7 datum 부재).**
   PI 결정2(A) 데이터 완비. 남은 자율거리: 워크트리 정리 또는 SF 고밀도(결정3) — 다음 이터.
+
+## Iter 7-8 — seed-robustness: slope robust, |γ| ~1.5× scatter
+- seed-2 3점 완료. **slope robust(seed1 0.739 / seed2 0.713)이나 절대 γ ~40-50% 낮음**
+  (0.6: 0.0137 vs 0.0083; 21: 0.191 vs 0.109). band_lo 도달 density seed1=19.6 vs
+  seed2=47.3/µm²(prefactor scatter가 멱승역산으로 ~2.4× 증폭).
+- ⇒ 정직 진술: **density-bound 성격은 확실, 필요 density는 정밀값 아닌 "수십/µm²,
+  proxy의 ~30-80×" order-of-magnitude.** 2-seed thin → firm 절대값은 더 많은 seed +
+  native GPU(PI-gated). loop23 단일-seed 과대주장 방어 = 이번 규율의 핵심.
+- 브리프 결정2에 seed caveat 기록, fig 2-seed overlay 갱신. task#6 DONE.
+- ✅ γ-floor 자율 특성화 완료(transmission A/B + density 2-seed). 머신 건강 양호(mem 96%
+  free, 좀비 없음). 이후: 가벼운 유지 + PI 대기. SF 고밀도(결정3)는 PI-gated 유지.
