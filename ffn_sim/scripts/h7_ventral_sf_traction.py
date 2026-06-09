@@ -47,7 +47,8 @@ def _angle_triplets(layout):
 
 
 def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
-                 anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None):
+                 anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None,
+                 myosin_force_scale=1.0):
     """Assemble the ventral SF HOOMD sim; optionally wire continuous_stroke myosin.
 
     Stage 2b-2: with_myosin=True places Stam-Hocky bipolar minifilaments (actin-aware,
@@ -183,7 +184,8 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
             ell0_cortex=ell0, cortex_beads_per_filament=lay.n_beads_per_fil,
         )
         sim.operations.updaters.append(myosin_updater)
-        ig.forces.append(MyosinHeadForce(action=myosin_action, p_myo=p_myo))
+        ig.forces.append(MyosinHeadForce(
+            action=myosin_action, p_myo=p_myo, force_scale=myosin_force_scale))
 
     anchor_tags = np.array(sorted(anchors), dtype=np.int64)
     return dict(sim=sim, bond=bond, layout=lay, anchors=anchor_tags,
@@ -224,31 +226,11 @@ def anchor_traction(handles):
     return float(axial_sum), float(max_T)
 
 
-def _time_avg_traction(h, *, equilibrate, contract, n_samples):
-    """Equilibrate, then TIME-AVERAGE the axial anchor traction over n_samples chunks.
-
-    Returns (mean_pN, std_pN, n_engaged_mean). Time-averaging is the 2b-1-mandated fix
-    for the noisy single-snapshot |T|; the differential (active − passive) cancels the
-    intrinsic taut-WLC thermal tension so what remains is the myosin-generated traction."""
-    sim = h["sim"]
-    sim.run(equilibrate)
-    samples, engaged = [], []
-    chunk = max(1, contract // n_samples)
-    for _ in range(n_samples):
-        sim.run(chunk)
-        t, _ = anchor_traction(h)
-        samples.append(t * _PN)
-        act = h.get("myosin_action")
-        engaged.append(int(act.n_engaged) if act is not None else 0)
-    arr = np.array(samples)
-    return float(arr.mean()), float(arr.std()), float(np.mean(engaged))
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--n-filaments", type=int, default=12)
-    ap.add_argument("--fiber-length-um", type=float, default=5.0)
-    ap.add_argument("--bundle-radius-nm", type=float, default=200.0)
+    ap.add_argument("--n-filaments", type=int, default=24)
+    ap.add_argument("--fiber-length-um", type=float, default=6.0)
+    ap.add_argument("--bundle-radius-nm", type=float, default=400.0)
     ap.add_argument("--equilibrate", type=int, default=2000)
     ap.add_argument("--contract", type=int, default=20000,
                     help="post-equilibration steps over which traction is time-averaged (2c)")
@@ -272,44 +254,65 @@ def main() -> int:
         n_fil=args.n_filaments, fiber_length=args.fiber_length_um * 1e-6,
         bundle_radius=args.bundle_radius_nm * 1e-9, seed=args.seed,
         anchor_drag_factor=args.anchor_drag_factor,
+        with_myosin=True, n_motors=args.n_motors,
     )
-    # Stage 2c: DIFFERENTIAL time-averaged traction (active − passive). The passive
-    # baseline carries the intrinsic taut-WLC thermal tension (2b-1 finding); the
-    # differential isolates the myosin-generated traction with the §9 corrected motor.
-    h_p = build_sf_sim(device=_dev(), with_myosin=False, **common)
-    n = h_p["layout"].positions.shape[0]
-    print(f"  SF: {h_p['layout'].n_fil} fil × {h_p['layout'].n_beads_per_fil} beads = {n} "
-          f"({h_p['anchors'].size} FA anchors), L={h_p['layout'].fiber_length*_UM:.2f}µm",
+    # Stage 2c REDESIGN — SAME-SEED PAIRED differential. The first design differenced
+    # two DIFFERENT random realizations (myosin-present vs myosin-absent), so the huge
+    # taut-WLC thermal tension (~10 nN) did NOT cancel and buried the ~tens-of-pN myosin
+    # signal. Here BOTH builds are bit-identical (same seed → same bundle + same myosin
+    # placement + same binding + same thermostat counter), differing ONLY in the myosin
+    # FORCE: force_scale=0 (myosin present, force OFF) vs 1 (force ON). HOOMD's
+    # counter-based RNG makes the thermal kicks identical at every (timestep, tag)
+    # regardless of position, so the differential cancels the thermal noise and the taut
+    # baseline EXACTLY — what remains is the pure myosin-generated traction. Sampled at
+    # MATCHED timesteps and differenced per-sample.
+    h_off = build_sf_sim(device=_dev(), myosin_force_scale=0.0, **common)
+    h_on = build_sf_sim(device=_dev(), myosin_force_scale=1.0, **common)
+    n = h_on["layout"].positions.shape[0]
+    print(f"  SF: {h_on['layout'].n_fil} fil × {h_on['layout'].n_beads_per_fil} beads = {n} "
+          f"({h_on['anchors'].size} FA anchors), L={h_on['layout'].fiber_length*_UM:.2f}µm; "
+          f"{h_on['p_myo'].n_motors_per_cell} minifilaments, dt={h_on['dt_used']:.3e}s",
           flush=True)
-    t_pass, sd_pass, _ = _time_avg_traction(
-        h_p, equilibrate=args.equilibrate, contract=args.contract, n_samples=args.n_samples)
-    print(f"  PASSIVE  traction = {t_pass:.3f} ± {sd_pass:.3f} pN (time-avg)", flush=True)
-
-    h_a = build_sf_sim(device=_dev(), with_myosin=True, n_motors=args.n_motors, **common)
-    print(f"  myosin: {h_a['p_myo'].n_motors_per_cell} minifilaments, "
-          f"continuous_stroke, dt={h_a['dt_used']:.3e}s (CFL-rederived)", flush=True)
-    t_act, sd_act, eng = _time_avg_traction(
-        h_a, equilibrate=args.equilibrate, contract=args.contract, n_samples=args.n_samples)
-    print(f"  ACTIVE   traction = {t_act:.3f} ± {sd_act:.3f} pN (time-avg, "
-          f"{eng:.0f} engaged heads)", flush=True)
-    diff = t_act - t_pass
-    print(f"  ⇒ DIFFERENTIAL (active − passive) = {diff:+.3f} pN  "
-          f"[{'CONTRACTILE +traction' if diff > 0 else 'no net active traction'}]", flush=True)
+    # Equilibrate both identically (same seed → identical trajectories up to here).
+    h_off["sim"].run(args.equilibrate)
+    h_on["sim"].run(args.equilibrate)
+    chunk = max(1, args.contract // args.n_samples)
+    diffs, t_offs, t_ons, engs = [], [], [], []
+    for _ in range(args.n_samples):
+        h_off["sim"].run(chunk)
+        h_on["sim"].run(chunk)
+        t_off, _ = anchor_traction(h_off)
+        t_on, _ = anchor_traction(h_on)
+        diffs.append((t_on - t_off) * _PN)
+        t_offs.append(t_off * _PN); t_ons.append(t_on * _PN)
+        engs.append(int(h_on["myosin_action"].n_engaged))
+    diffs = np.array(diffs)
+    diff_mean, diff_sem = float(diffs.mean()), float(diffs.std() / max(1, len(diffs) ** 0.5))
+    eng = float(np.mean(engs))
+    print(f"  force-OFF traction = {np.mean(t_offs):.1f} ± {np.std(t_offs):.1f} pN", flush=True)
+    print(f"  force-ON  traction = {np.mean(t_ons):.1f} ± {np.std(t_ons):.1f} pN "
+          f"({eng:.0f} engaged heads)", flush=True)
+    print(f"  ⇒ SAME-SEED DIFFERENTIAL (ON − OFF) = {diff_mean:+.3f} ± {diff_sem:.3f} pN "
+          f"[{'CONTRACTILE +traction' if diff_mean > 2 * diff_sem else 'within noise'}]",
+          flush=True)
 
     out = {
-        "stage": "2b-2 + 2c: continuous_stroke myosin on ventral SF + differential time-avg traction",
-        "n_fil": h_a["layout"].n_fil, "n_beads": int(n), "n_anchors": int(h_a["anchors"].size),
-        "fiber_length_um": h_a["layout"].fiber_length * _UM,
-        "n_motors": h_a["p_myo"].n_motors_per_cell,
-        "stepping_mode": "continuous_stroke",
-        "dt_used_s": h_a["dt_used"],
+        "stage": "2c REDESIGN: same-seed paired differential (force ON vs OFF) on ventral SF",
+        "n_fil": h_on["layout"].n_fil, "n_beads": int(n), "n_anchors": int(h_on["anchors"].size),
+        "fiber_length_um": h_on["layout"].fiber_length * _UM,
+        "n_motors": h_on["p_myo"].n_motors_per_cell,
+        "stepping_mode": "continuous_stroke", "dt_used_s": h_on["dt_used"],
         "equilibrate": args.equilibrate, "contract": args.contract, "n_samples": args.n_samples,
-        "passive_traction_pN": t_pass, "passive_traction_std_pN": sd_pass,
-        "active_traction_pN": t_act, "active_traction_std_pN": sd_act,
+        "force_off_traction_pN": float(np.mean(t_offs)),
+        "force_on_traction_pN": float(np.mean(t_ons)),
         "engaged_heads_mean": eng,
-        "differential_traction_pN": diff,
-        "note": "differential cancels the intrinsic taut-WLC thermal tension → myosin-generated "
-                "traction with the §9 corrected (capped, stiff cross-bridge) motor.",
+        "differential_traction_pN": diff_mean,
+        "differential_sem_pN": diff_sem,
+        "per_sample_differential_pN": diffs.tolist(),
+        "significant": bool(diff_mean > 2 * diff_sem),
+        "note": "same-seed paired (force_scale 1 vs 0): identical bundle/binding/thermostat, "
+                "force the only difference → taut baseline + thermal noise cancel exactly; "
+                "the differential is the pure §9-corrected myosin traction.",
     }
     Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out_json).write_text(json.dumps(out, indent=2))

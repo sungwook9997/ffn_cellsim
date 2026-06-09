@@ -1630,6 +1630,7 @@ class MyosinHeadForce(md.force.Custom):
         *,
         action: "MyosinStepUpdater",
         p_myo: ResolvedCortexMyosin,
+        force_scale: float = 1.0,
         aniso: bool = False,
     ) -> None:
         super().__init__(aniso=aniso)
@@ -1642,6 +1643,12 @@ class MyosinHeadForce(md.force.Custom):
         self.p = p_myo
         self.k_head_actin = float(p_myo.k_head_actin)
         self.F_stall = float(p_myo.F_stall_per_head)
+        # force_scale multiplies the delivered force. =1.0 production; =0.0 gives a
+        # myosin-PRESENT / force-OFF baseline for a SAME-SEED paired differential
+        # (identical bundle + binding + thermostat seed, force the ONLY difference →
+        # the passive taut tension and the myosin-bead perturbation cancel exactly).
+        # Also the natural knob for partial inhibition (blebbistatin-like) studies.
+        self.force_scale = float(force_scale)
         # Static head-local → global particle-tag map (depends only on the layout).
         n_heads_total = int(2 * p_myo.n_heads_per_side * p_myo.n_motors_per_cell)
         self._head_global_tags = np.array(
@@ -1664,7 +1671,7 @@ class MyosinHeadForce(md.force.Custom):
             head_tags = self._head_global_tags[engaged]
             bead_tags = bound[engaged]
             s_grip = self._action._head_grip_s[engaged]
-            F_mag = continuous_stroke_force(
+            F_mag = self.force_scale * continuous_stroke_force(
                 s_grip, self.k_head_actin, self.F_stall
             )
             head_rows = rtag[head_tags]
