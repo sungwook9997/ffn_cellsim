@@ -882,6 +882,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
         cortex_beads_per_filament: int | None = None,
         cortex_filament_starts: np.ndarray | None = None,
         cortex_n_beads_per_filament: np.ndarray | None = None,
+        actin_pool_tags: np.ndarray | None = None,
         seed_offset: int = 3,
     ) -> None:
         super().__init__()
@@ -890,6 +891,24 @@ class MyosinStepUpdater(hoomd.custom.Action):
         self.kT = float(kT)
         self.n_cortex_actin = int(n_cortex_actin)
         self._rng = np.random.default_rng(p_myo.seed + seed_offset)
+        # Bindable-actin POOL (KU-3.5 SF NMII generalization, PI 2026-06-09).
+        # The heads bind beads in this pool. DEFAULT ``None`` → the contiguous
+        # cortex block ``arange(n_cortex_actin)`` (BYTE-IDENTICAL to the legacy
+        # "cortex actin occupies global tags [0, n_cortex_actin)" assumption).
+        # An SF NMII placement passes the (non-contiguous) global tags of the
+        # ``sf_actin`` chain so the same Stam-Hocky/Hill machinery loads the
+        # ventral stress fiber instead of the cortex shell. All bead identifiers
+        # below stay GLOBAL tags; only the KDTree pool is local-indexed (with a
+        # global→local map), and for ``arange`` local == global → no change.
+        if actin_pool_tags is None:
+            self._actin_pool_tags = np.arange(int(n_cortex_actin), dtype=np.int64)
+        else:
+            self._actin_pool_tags = np.asarray(actin_pool_tags, dtype=np.int64)
+        self._n_pool = int(self._actin_pool_tags.shape[0])
+        # global tag → local pool index (only pool tags appear).
+        self._pool_g2l = {
+            int(g): i for i, g in enumerate(self._actin_pool_tags)
+        }
         # Grip-walk geometry (KU-3.5 redesign). Required iff stepping_mode is
         # "grip_walk": the bead-tag ↔ (filament, position) map + the bead
         # spacing ℓ₀ that one walked sub-bead step is measured in.
@@ -934,11 +953,17 @@ class MyosinStepUpdater(hoomd.custom.Action):
             if cortex_bond_groups is not None else None
         )
         if self._cortex_bond_groups is not None:
-            # Per-bead adjacency: which segments touch each bead.
-            adj: list[list[int]] = [[] for _ in range(int(n_cortex_actin))]
+            # Per-bead adjacency: which segments touch each bead. Indexed by
+            # LOCAL pool position (nbr indices from the KDTree are local). The
+            # segment endpoints (a, b) are GLOBAL tags → mapped to local via
+            # _pool_g2l. For the default arange pool local == global, so this is
+            # byte-identical to the legacy [0, n_cortex_actin) adjacency.
+            adj: list[list[int]] = [[] for _ in range(self._n_pool)]
             for s, (a, b) in enumerate(self._cortex_bond_groups):
-                if 0 <= a < n_cortex_actin: adj[int(a)].append(s)
-                if 0 <= b < n_cortex_actin: adj[int(b)].append(s)
+                la = self._pool_g2l.get(int(a))
+                lb = self._pool_g2l.get(int(b))
+                if la is not None: adj[la].append(s)
+                if lb is not None: adj[lb].append(s)
             self._bead_to_segs = [np.asarray(v, dtype=np.int64) for v in adj]
         else:
             self._bead_to_segs = None
@@ -1100,10 +1125,16 @@ class MyosinStepUpdater(hoomd.custom.Action):
         # Margin of 1 under 7 covers sequential-binder timing. (bg is reassigned
         # to the cortex backbone groups later, so compute this from the full
         # bonds.group HERE.)
+        # Degree is GLOBAL-tag-indexed over ALL particles (sized to N) so SF
+        # actin tags (≫ n_cortex_actin) index correctly. For the default arange
+        # pool the values at indices < n_cortex_actin are byte-identical to the
+        # legacy ``bincount(_flat_bg[_flat_bg < n], minlength=n)`` (an endpoint's
+        # appearance count is unchanged by also counting the other endpoint).
         _flat_bg = bg.reshape(-1)
+        _N_part = int(read_snap.particles.N)
         _cortex_bead_degree = np.bincount(
-            _flat_bg[_flat_bg < self.n_cortex_actin],
-            minlength=self.n_cortex_actin,
+            _flat_bg[(_flat_bg >= 0) & (_flat_bg < _N_part)],
+            minlength=_N_part,
         ).astype(np.int64)
         _MAX_CORTEX_BEAD_DEGREE = 6
 
@@ -1180,7 +1211,10 @@ class MyosinStepUpdater(hoomd.custom.Action):
                 dtype=np.int64,
             )
             r_heads = pos[unbound_head_tags]
-            r_actin_all = pos[:self.n_cortex_actin]
+            # Pool positions (local-indexed; for the default arange pool this is
+            # exactly pos[:n_cortex_actin]). Global tag of local idx j is
+            # self._actin_pool_tags[j].
+            r_actin_all = pos[self._actin_pool_tags]
             p_bind = 1.0 - np.exp(-self.p.head_actin_k_on * self.p.batch_dt)
             u2 = self._rng.uniform(0.0, 1.0, size=unbound_head_locals.size)
             new_bonds_list = []
@@ -1206,11 +1240,14 @@ class MyosinStepUpdater(hoomd.custom.Action):
                 # ≈ 500nm × ~90 monomers cannot host arbitrarily many myosin
                 # heads simultaneously).
                 MAX_HEADS_PER_BEAD = 3
-                bead_attach_count = np.zeros(self.n_cortex_actin, dtype=np.int32)
+                # GLOBAL-tag-indexed (sized to N) so SF actin tags index safely;
+                # for the cortex arange pool the used indices (< n_cortex_actin)
+                # are byte-identical to the legacy n_cortex_actin-sized array.
+                bead_attach_count = np.zeros(_N_part, dtype=np.int32)
                 if attach_bonds.shape[0] > 0:
                     for ab in attach_bonds[:, 1]:
                         ab = int(ab)
-                        if 0 <= ab < self.n_cortex_actin:
+                        if 0 <= ab < _N_part:
                             bead_attach_count[ab] += 1
                 for k, nbrs in enumerate(nbr_lists):
                     if len(nbrs) == 0 or u2[k] >= p_bind:
@@ -1223,8 +1260,10 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     ))
                     best_perp = np.inf; best_bead = -1; best_d_use = 0.0
                     for s in cand_segs:
+                        # Segment endpoints are GLOBAL tags → read GLOBAL pos
+                        # (for the arange pool pos[a_idx] == r_actin_all[a_idx]).
                         a_idx = int(bg[s, 0]); b_idx = int(bg[s, 1])
-                        A = r_actin_all[a_idx]; B = r_actin_all[b_idx]
+                        A = pos[a_idx]; B = pos[b_idx]
                         seg = B - A; L2 = float(seg @ seg)
                         if L2 <= 0.0: continue
                         t = float((h - A) @ seg) / L2          # axial parameter
@@ -1294,7 +1333,9 @@ class MyosinStepUpdater(hoomd.custom.Action):
                         r_actin_all[nbrs_arr] - r_heads[k], axis=1
                     )
                     nearest_local = int(np.argmin(d_nbrs))
-                    actin_tag = int(nbrs_arr[nearest_local])
+                    # nbrs_arr indexes the LOCAL pool → map to the GLOBAL tag
+                    # (for the arange pool local == global, byte-identical).
+                    actin_tag = int(self._actin_pool_tags[nbrs_arr[nearest_local]])
                     d_use = float(d_nbrs[nearest_local])
                     idx_bin = int(min(self.p.n_bins - 1,
                                       max(0, int(d_use / bin_width))))
@@ -1566,6 +1607,7 @@ def make_cortex_myosin_updater(
     cortex_beads_per_filament: int | None = None,
     cortex_filament_starts: np.ndarray | None = None,
     cortex_n_beads_per_filament: np.ndarray | None = None,
+    actin_pool_tags: np.ndarray | None = None,
     seed_offset: int = 3,
 ) -> tuple[MyosinStepUpdater, hoomd.update.CustomUpdater]:
     action = MyosinStepUpdater(
@@ -1576,6 +1618,7 @@ def make_cortex_myosin_updater(
         cortex_beads_per_filament=cortex_beads_per_filament,
         cortex_filament_starts=cortex_filament_starts,
         cortex_n_beads_per_filament=cortex_n_beads_per_filament,
+        actin_pool_tags=actin_pool_tags,
         seed_offset=seed_offset,
     )
     updater = hoomd.update.CustomUpdater(
