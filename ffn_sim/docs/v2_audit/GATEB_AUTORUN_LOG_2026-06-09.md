@@ -138,3 +138,17 @@ drag-limited. Is bulk η_cyto the right drag for membrane-associated cortical ac
 (hydrodynamic screening / 2D membrane drag / network-effective drag)? If the effective cortical drag is
 lower, contraction develops faster + condensation may engage. NEXT: longer run to watch trend + the drag
 question. dt-unlock itself = genuine reusable infra (contraction timescale now reachable).
+
+## LOOP 12: ETA reality — dt-unlock validated, but BINDER HOST-SYNC is the next bottleneck
+dt scan stable to 76000× (dt≈1e-3s). BUT the dt-unlock reduces BAOAB position steps, NOT myosin
+updater ticks: the myosin act() runs per tick (cpu_local_snapshot read + KDTree-bind + write,
+~0.48s/tick at smoke), and tick count = physical_time / batch_dt (batch_dt capped ~2e-3 by binding
+CFL, INDEPENDENT of dt). So wall-time ∝ physical_time, NOT step-count. Drag-limited contraction needs
+many physical seconds → ETA: s_grip-onset (156s)=~79k ticks=~10h CPU; condensation plateau (400s)=~27h.
+**The 400s run was killed (27h); relaunched 30s early-trend (~2h).** Early samples (t=2-6s): s_grip~0,
+bond/ℓ0=1.0000 (no condensation yet — onset far off), g_soft floor — consistent with drag-limit.
+⭐BOTTLENECK = the host-sync myosin updater (per memory: binders are cpu_local_snapshot-bound → GPU≈CPU)
+= GPU-main binder-port territory. dt-unlock removed the 1e9-BAOAB-step wall but exposed the binder
+host-sync as the next wall. DECISION POINT for PI: (a) overnight ~10h onset run, (b) GPU-main binder
+port (bigger, removes host-sync → enables the seconds-timescale contraction), (c) bank dt-unlock +
+the firm generation/architecture conclusion. The dt-unlock is genuine reusable infra regardless.
