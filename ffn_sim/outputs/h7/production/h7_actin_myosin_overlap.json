@@ -1,0 +1,23 @@
+{
+  "operating_point": "suspended/rounded, FA OFF, turgor ON, connected mesh, grip_walk, LOADING",
+  "scale": {
+    "n_filaments": 200,
+    "n_cortex_actin": 1400,
+    "n_motors": 100
+  },
+  "geometry_refs_nm": {
+    "cortex_bead_spacing_ell0": 500.0,
+    "minifilament_backbone_assumed_arm": 301.0,
+    "actin_filament_length_ceiling": 3000.0
+  },
+  "engaged_motors": 98,
+  "complete_bipolar": 24,
+  "frac_complete": 0.24489795918367346,
+  "frac_complete_diff_filament": 1.0,
+  "mean_engagement_span_nm": 593.2203389830509,
+  "median_engagement_span_nm": 500.0,
+  "mean_ell_eff_nm": 301.0,
+  "median_ell_eff_nm": 301.0,
+  "overlap_ratio_vs_backbone": 1.9708316909735908,
+  "ell_eff_vs_filament_ceiling": 0.10033333333333333
+}

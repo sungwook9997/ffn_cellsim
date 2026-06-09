@@ -92,3 +92,17 @@ on CPU smoke → not local-feasible; GPU (gbook) genuinely required for contract
 STATUS: active-γ frontier diagnosed + literature-resolved (8 loops); PI items answered; awaiting PI
 fork decision (relax-backbone[gated] / construction-overlap / scope-pivot-ζΔμ / other). All committed,
 tree clean. Ready to execute any fork on PI word; GPU forks gated on gbook code-deploy.
+
+## LOOP 9 (non-gated, fork-informing): actin-myosin OVERLAP probe → Option-2 won't work, lever is transmission
+Built h7_actin_myosin_overlap.py (loading-phase structural probe; non-gated). Result (200 fil):
+98/100 motors engaged but only **24.5% complete bipolar** (75% single-sided, reaction into backbone);
+all complete pairs bind DIFFERENT filaments (good). Per-side engagement overlap ADEQUATE (~1.97×
+backbone, ~2 beads) → construction-lengthening is NOT the missing factor. **Realized dipole arm =
+minifilament backbone 301nm = only 10% of the actin-filament length (3µm) — the dipole acts over the
+SHORT minifilament, not the long actin network.** ⇒ the architecture limit is (a) bipolar completion
+(binding-throughput, prior-refuted as a γ lever) + (b) NETWORK TRANSMISSION (myosin tension doesn't
+load the actin network into a long-arm prestress; rigid M-SHAKE backbone). **DECISION-RELEVANT: the
+non-gated Option 2 (construction overlap) likely WON'T close the gap (per-side overlap already
+adequate); the real lever is TRANSMISSION (relax backbone, Option 1, integrator-gated).** Confirms +
+mechanistically locates the literature (Truong Quang overlap = transmitted-arm, not per-side) and my
+bond-resolved no-propagation finding. fig/json h7_actin_myosin_overlap.
