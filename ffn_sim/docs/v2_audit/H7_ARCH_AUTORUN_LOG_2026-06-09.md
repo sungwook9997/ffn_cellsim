@@ -261,3 +261,21 @@ CAPPED, not k·r), gen=4.1nN — the §9 per-head→F_stall target developing on
 n_fil=12, 8 motors, continuous_stroke, 120k+180k steps ×2 builds (passive+active differential). Both
 results pending (~40min). NEXT: collect γ magnitude (force-budget) + SF differential traction, then
 Notion closeout.
+
+## LOOP 20 (ventral SF 2c REDESIGN): same-seed paired differential — noise floor 300× lower
+The loop19 2c differenced DIFFERENT realizations → ~10nN taut baseline didn't cancel (got -2495pN,
+noise ±900pN). REDESIGN: MyosinHeadForce gains force_scale; 2c builds force-OFF (scale 0) + force-ON
+(scale 1) with the SAME seed → identical bundle/myosin/binding/thermostat counter (HOOMD counter-based
+RNG → thermal kicks bit-identical per (timestep,tag) regardless of position), so ON−OFF cancels noise +
+taut baseline EXACTLY. CPU smoke (20 motors, short): force-OFF 3052.8±698 vs force-ON 3058.0±706 pN
+(~identical, same seed), DIFFERENTIAL = +5.22 ± 2.89 pN — POSITIVE (contractile), noise floor ±900→±2.9pN
+(~300× lower). Resolvable; 4 engaged heads in smoke → longer run develops engagement. Commit 04bb6e0.
+
+## GPU RUN: force-budget RESULT (plateaued, tick 150k-275k stable)
+per-head meanT = 8.44-8.47 pN = F_stall 8.48 pN → PER-HEAD FORCE AT STALL, CAPPED (not k·r ~900pN). ✓
+engagement 10.8% (=§9 D3 ~11% geometric limit). γ_soft 7.8e-3 mN/m (~23× under band) = the §9 density/
+overlap+engagement gap (band LOCKED, NOT tuned). §9 GENERATION FIX VERIFIED: old soft-k 0.74pN(11×-under)
++ γ~260× under → now F_stall + γ~23× under. Residual gap = documented structural/scope limit (§9 gate 7).
+
+## GPU RUN: SF same-seed differential launched (PID 344489, n_fil=24, 20 motors, 150k+150k ×2)
+Develops engagement for a significant positive traction signal. Pending (~50min).
