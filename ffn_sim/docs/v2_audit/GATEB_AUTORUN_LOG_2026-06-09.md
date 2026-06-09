@@ -180,3 +180,22 @@ no condensation, γ 3e-4). The dt-unlock EXCLUDED the timescale confound. Active
 confirmed = generation/transmission-bound (NOT timescale, NOT density-datum, NOT buckling, NOT isotropy)
 → architecture/overlap physics (Chugh2017/TruongQuang2021) the model doesn't capture. dt-unlock = genuine
 reusable infra. Artifacts: h7_dt_overdamped_contract_gpu.log. NEXT: scope pivot (ζΔμ supplier) or PI call.
+
+## SESSION WRAP (PI: wrap here, 2026-06-09) — active-γ DEFINITIVELY CLOSED
+14 loops + verified deep-research + GPU. Final verdict: the active-myosin cortical-γ floor is
+**generation/transmission-bound = the actin ARCHITECTURE/OVERLAP physics (Chugh2017/TruongQuang2021/
+Miyazaki2015) the mean-field model doesn't capture** — NOT timescale, NOT density-datum, NOT buckling,
+NOT isotropy, NOT engagement (every lever tested & excluded). Stack vs MCF7 γ_act 0.39-0.41 (Hosseini/FF
+2021): envelope 0.005-0.010 (~40-80× under) → engagement ~11% → neither mode condenses (constrained:
+s_grip develops but rigid; unconstrained GPU 390s: stalls at loading floor). 
+Session wins: (1) literature settled — no cortical density >0.6/µm² exists (deep-research 101 agents),
+MCF7 active anchor updated to 0.40; (2) overdamped-dt UNLOCK (95,328× water-vs-cytoplasm-γ mismatch;
+stable to 76000×; reusable infra); (3) GPU condensation REFUTE on gbook (restored+rsync, ~50× CPU) —
+excluded the timescale confound. 
+Binder GPU-port (proposed next thrust) RECONSIDERED & not pursued: project already data-deferred it
+(6-7% constrained, GPU_MAIN_PORT_PHASE1b) + its science motivation spent (condensation refuted). 
+Records: Notion day-log 37a120da, memory project-gamma-floor-layered-resolution, docs H7_ACTIVE_GAMMA_
+SYNTHESIS / H7_ACTIVE_FORCE_BUDGET / H7_MYOSIN_DENSITY_LITERATURE / this log. Commits 07a75b8→(wrap).
+Production myosin density UNCHANGED (0.6/µm²); no tuning. gbook restored to authoritative branch (backup
+~/ffn_sim_code_backup_pre_h7deploy.tgz). OPEN for PI: SE-register Hosseini2021/Chugh2017/TruongQuang2021/
+Tinevez2009; scope (active-γ gate vs ζΔμ-supplier); architecture/overlap = the one untested physical lever.
