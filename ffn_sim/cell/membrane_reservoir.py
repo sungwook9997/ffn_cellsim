@@ -293,6 +293,12 @@ DEFAULT_W_MCA: float = 1.0e-5  # J/m²  KU-3.B1.4 (γ_MCA; Hochmuth 1996 / Deré
 #: prefix so it is excluded from γ_soft).
 MEM_TETHER_BOND: str = "mem_tether"
 
+#: Own membrane-node particle type (BLOCKER-1 fix). The plasma membrane is
+#: represented by its OWN radially-offset ``mem_node`` bead layer sitting one
+#: tether length outside the cortex shell — distinct from the cortex beads, so the
+#: mem_tether mesh is genuinely cross-layer (not degenerate self-pairs).
+MEM_NODE_TYPE: str = "mem_node"
+
 
 def _require_finite_positive(name: str, x: float) -> None:
     """Raise ValueError unless ``x`` is finite and strictly positive."""
@@ -339,6 +345,10 @@ class ResolvedMembraneReservoir:
     k_tether: float              # N/m   tether harmonic stiffness
     R_cell: float                # m     shell radius (per-bead area share)
     max_tether_dist: float       # m     acceptor search radius
+    # Own mem_node offset layer (BLOCKER-1 fix: the membrane rides cortex tags, so
+    # it needs its OWN radially-offset bead layer or the tethers are self-pairs).
+    membrane_offset: float = 50.0e-9   # m  radial gap mem_node sits outside cortex
+    n_mem_nodes: int = 2000            # membrane-shell node count (discretisation)
     # PI-gated uncertain MCF7 constants — None keeps their code path disabled.
     sigma_crit_bleb: float | None = None   # N/m  Tinevez 2009 σ_crit (MCF7 ?)
     f_excess: float | None = None          # —    reservoir excess area (MCF7 ?)
@@ -443,6 +453,8 @@ def resolve_membrane_reservoir(
             k_tether=0.0,
             R_cell=0.0,
             max_tether_dist=0.0,
+            membrane_offset=0.0,
+            n_mem_nodes=0,
             sigma_crit_bleb=None,
             f_excess=None,
             batch_steps=int(cfg.get("batch_steps", 100)),
@@ -460,6 +472,13 @@ def resolve_membrane_reservoir(
     # cortex is ~200 nm thick (KU-3.17); the membrane sits within a tether length
     # of it, so 200 nm is the physical acceptor reach (NOT a tuned bind_scale).
     max_tether_dist = float(cfg.get("max_tether_dist", 200.0e-9))
+    # Own mem_node offset layer (BLOCKER-1). The membrane sits one tether length
+    # outside the cortex; the gap is the membrane–cortex tether rest length (must
+    # be < max_tether_dist so the acceptor query finds the cortex). Geometry knob;
+    # default = ¼ of the acceptor reach (= 50 nm at the 200 nm production reach),
+    # so the constraint membrane_offset < max_tether_dist is auto-satisfied.
+    membrane_offset = float(cfg.get("membrane_offset", 0.25 * max_tether_dist))
+    n_mem_nodes = int(cfg.get("n_mem_nodes", 2000))
 
     # Optional PI-anchored uncertain constants (default None — never invented).
     sigma_crit_bleb = cfg.get("sigma_crit_bleb", None)
@@ -477,6 +496,14 @@ def resolve_membrane_reservoir(
     _require_finite_positive("W_MCA", W_MCA)
     _require_finite_positive("k_tether", k_tether)
     _require_finite_positive("max_tether_dist", max_tether_dist)
+    _require_finite_positive("membrane_offset", membrane_offset)
+    if membrane_offset >= max_tether_dist:
+        raise ValueError(
+            f"membrane_offset = {membrane_offset:.3e} m must be < max_tether_dist "
+            f"= {max_tether_dist:.3e} m (else no cortex acceptor is within reach)."
+        )
+    if n_mem_nodes < 1:
+        raise ValueError(f"n_mem_nodes must be ≥ 1; got {n_mem_nodes!r}")
     if batch_steps < 1:
         raise ValueError(f"batch_steps must be ≥ 1; got {batch_steps!r}")
     if not (math.isfinite(dt) and dt >= 0.0):
@@ -506,6 +533,8 @@ def resolve_membrane_reservoir(
         k_tether=k_tether,
         R_cell=float(R_cell),
         max_tether_dist=max_tether_dist,
+        membrane_offset=membrane_offset,
+        n_mem_nodes=n_mem_nodes,
         sigma_crit_bleb=sigma_crit_bleb,
         f_excess=f_excess,
         batch_steps=batch_steps,
@@ -702,6 +731,237 @@ def _clone_frame_with_bonds(
         out.angles.group = np.asarray(snap.angles.group, dtype=np.uint32)
 
     out.configuration.box = list(snap.configuration.box)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Own mem_node offset-layer extender (integrated cell; BLOCKER-1 fix)
+# ---------------------------------------------------------------------------
+def extend_snapshot_with_membrane_reservoir(
+    snap: Any,
+    p: ResolvedMembraneReservoir,
+    *,
+    cortex_type_name: str = "actin_cortex",
+    gamma_mem: float,
+    max_anchor_degree: int = 5,
+    seed: int = 0,
+) -> tuple[Any, MembraneTetherLayout]:
+    """Append an OWN ``mem_node`` offset layer + ``mem_tether`` mesh (fresh snap).
+
+    The integrated-cell activation path (the smoke fabricated this standalone): the
+    plasma membrane gets its OWN radially-offset ``mem_node`` bead layer sitting
+    ``p.membrane_offset`` outside the cortex shell, and each node is joined to a
+    distinct cortex bead by a ``mem_tether`` harmonic at rest length =
+    ``membrane_offset`` (force-free at construction). Resolves BLOCKER-1 (a shared
+    shell would make the tethers degenerate self-pairs).
+
+    Construction (per node):
+      1. seed ``p.n_mem_nodes`` provisional directions on a Fibonacci sphere;
+      2. pair each to its nearest ELIGIBLE cortex bead (degree ≤
+         ``max_anchor_degree``) within ``p.max_tether_dist``, each cortex acceptor
+         used AT MOST ONCE — bounds the per-cortex bond-degree gain to +1 so the
+         HOOMD nlist exclusion cap never overflows (the LINC / MTOC lesson);
+      3. RE-PLACE the node radially ``membrane_offset`` outside its anchor so the
+         tether rest length is EXACTLY ``membrane_offset`` for every node (one
+         ``mem_tether`` type, force-free).
+
+    Returns a FRESH ``hoomd.Snapshot`` (mem_node particles + mem_tether bonds
+    appended; all existing particles/bonds/angles copied unchanged). STRICT NO-OP
+    (returns ``snap`` + empty layout) when ``p.enabled`` is False, the cortex type
+    is absent, or no eligible cortex acceptor is found. Adds NO bleb machinery (the
+    rupture updater + reservoir release stay PI-blocked).
+
+    Args:
+        snap: A ``hoomd.Snapshot`` / ``gsd.hoomd.Frame`` to extend.
+        p: Resolved membrane-reservoir parameters (enabled).
+        cortex_type_name: Particle type of the cortex acceptor shell.
+        gamma_mem: Per-bead Stokes drag for the mem_node layer [N·s/m] (> 0;
+            informational — the host BAOAB gamma_map stores it).
+        max_anchor_degree: Skip cortex beads already carrying more than this many
+            bonds (exclusion-cap safety; the membrane tethers to available sites).
+        seed: Deterministic RNG seed offset.
+
+    Returns:
+        ``(out_snap, layout)``. No-op path: ``out_snap is snap``, ``n_tether==0``.
+    """
+    empty = MembraneTetherLayout(
+        tether_pairs=np.empty((0, 2), dtype=np.int64),
+        tether_r0=np.empty((0,), dtype=np.float64),
+        n_tether=0,
+        rupture_force=0.0,
+    )
+    if not p.enabled:
+        return snap, empty
+
+    _require_finite_positive("gamma_mem", gamma_mem)
+    types = list(snap.particles.types)
+    if cortex_type_name not in types:
+        return snap, empty
+    tid = np.asarray(snap.particles.typeid, dtype=np.int64).reshape(-1)
+    pos = np.asarray(snap.particles.position, dtype=np.float64).reshape(-1, 3)
+    n_old = int(snap.particles.N)
+    cortex_rows = np.flatnonzero(tid == types.index(cortex_type_name))
+    if cortex_rows.size == 0:
+        return snap, empty
+
+    # Per-cortex current bond degree (exclusion-cap safety: only tether to beads
+    # with headroom). Count occurrences in the existing bond groups.
+    deg = np.zeros(n_old, dtype=np.int64)
+    if int(snap.bonds.N) > 0:
+        bg = np.asarray(snap.bonds.group, dtype=np.int64).reshape(-1, 2)
+        np.add.at(deg, bg[:, 0], 1)
+        np.add.at(deg, bg[:, 1], 1)
+    eligible = cortex_rows[deg[cortex_rows] <= int(max_anchor_degree)]
+    if eligible.size == 0:
+        return snap, empty
+
+    centroid = pos[cortex_rows].mean(axis=0)
+    cpos = pos[eligible] - centroid
+    cr = np.linalg.norm(cpos, axis=1)
+    R_shell = float(np.median(cr[cr > 0])) if np.any(cr > 0) else float(p.R_cell)
+
+    # Provisional Fibonacci directions at the membrane radius.
+    n_req = int(p.n_mem_nodes)
+    k = np.arange(n_req, dtype=np.float64) + 0.5
+    phi = math.pi * (3.0 - math.sqrt(5.0))
+    cos_t = np.clip(1.0 - 2.0 * k / float(n_req), -1.0, 1.0)
+    sin_t = np.sqrt(np.maximum(0.0, 1.0 - cos_t * cos_t))
+    az = phi * k
+    dirs = np.stack([sin_t * np.cos(az), sin_t * np.sin(az), cos_t], axis=1)
+    prov = centroid + (R_shell + p.membrane_offset) * dirs
+
+    # Pair each provisional node → nearest eligible cortex (unique acceptor).
+    from scipy.spatial import cKDTree
+
+    tree = cKDTree(pos[eligible])
+    d, j = tree.query(prov, k=1, distance_upper_bound=p.max_tether_dist + R_shell)
+    order = np.argsort(d, kind="stable")
+    seen: set[int] = set()
+    anchor_local: list[int] = []
+    for qi in order.tolist():
+        if not math.isfinite(d[qi]):
+            continue
+        a = int(j[qi])
+        if a in seen:
+            continue
+        seen.add(a)
+        anchor_local.append(a)
+    if not anchor_local:
+        return snap, empty
+
+    anchor_rows = eligible[np.array(anchor_local, dtype=np.int64)]
+    a_vec = pos[anchor_rows] - centroid
+    a_norm = np.linalg.norm(a_vec, axis=1, keepdims=True)
+    a_hat = np.divide(a_vec, a_norm, out=np.zeros_like(a_vec), where=a_norm > 0)
+    # RE-PLACE the mem_node EXACTLY membrane_offset radially outside its anchor →
+    # tether rest length r0 = membrane_offset for all nodes (force-free, 1 type).
+    mem_pos = pos[anchor_rows] + p.membrane_offset * a_hat
+    n_new = int(mem_pos.shape[0])
+
+    # mem_node tags are appended AFTER the existing particles (row == tag).
+    mem_tags = np.arange(n_old, n_old + n_new, dtype=np.int64)
+    tether_pairs = np.stack([mem_tags, anchor_rows], axis=1).astype(np.int64)
+    r0 = np.full(n_new, float(p.membrane_offset), dtype=np.float64)
+    rupture_force = p.rupture_force(n_new)
+
+    out = _clone_frame_with_mem_layer(
+        snap, mem_pos, tether_pairs, gamma_mem=gamma_mem,
+    )
+    layout = MembraneTetherLayout(
+        tether_pairs=tether_pairs,
+        tether_r0=r0,
+        n_tether=n_new,
+        rupture_force=rupture_force,
+    )
+    return out, layout
+
+
+def _clone_frame_with_mem_layer(
+    snap: Any,
+    mem_pos: np.ndarray,
+    tether_pairs: np.ndarray,
+    *,
+    gamma_mem: float,
+) -> "hoomd.Snapshot":
+    """Fresh ``hoomd.Snapshot`` = snap + mem_node particles + mem_tether bonds.
+
+    Handles a build-time ``gsd.hoomd.Frame`` (None-valued unset fields) and a
+    ``hoomd.Snapshot`` (mirrors the MT/IF/LINC extenders; an in-place bond mutation
+    fails on a hoomd.Snapshot). ``gamma_mem`` is accepted for parity but the BAOAB
+    ``gamma_map`` (host) carries the drag, not the snapshot.
+    """
+    def _pf(arr, default):
+        return default if arr is None else np.asarray(arr)
+
+    def _grp(arr, width):
+        if arr is None:
+            return np.empty((0, width), dtype=np.int64)
+        a = np.asarray(arr, dtype=np.int64)
+        return a.reshape(-1, width) if a.size else np.empty((0, width), np.int64)
+
+    def _tid(arr):
+        if arr is None:
+            return np.empty((0,), dtype=np.uint32)
+        return np.asarray(arr, dtype=np.uint32).reshape(-1)
+
+    n_old = int(snap.particles.N)
+    n_new = int(mem_pos.shape[0])
+    n_tot = n_old + n_new
+    out = hoomd.Snapshot()
+    out.particles.N = n_tot
+
+    types = list(snap.particles.types)
+    if MEM_NODE_TYPE not in types:
+        types.append(MEM_NODE_TYPE)
+    out.particles.types = types
+    mem_typeid = types.index(MEM_NODE_TYPE)
+
+    old_tid = _pf(snap.particles.typeid, np.zeros(n_old, np.uint32)).astype(np.uint32).reshape(-1)
+    out.particles.typeid[:] = np.concatenate(
+        [old_tid, np.full(n_new, mem_typeid, dtype=np.uint32)]
+    )
+    old_pos = _pf(snap.particles.position, np.zeros((n_old, 3))).astype(np.float64).reshape(-1, 3)
+    out.particles.position[:] = np.concatenate([old_pos, mem_pos], axis=0)
+    old_vel = _pf(snap.particles.velocity, np.zeros((n_old, 3))).astype(np.float64).reshape(-1, 3)
+    out.particles.velocity[:] = np.concatenate([old_vel, np.zeros((n_new, 3))], axis=0)
+    old_mass = _pf(snap.particles.mass, np.ones(n_old)).astype(np.float64).reshape(-1)
+    out.particles.mass[:] = np.concatenate([old_mass, np.ones(n_new)])
+    old_img = _pf(snap.particles.image, np.zeros((n_old, 3), np.int32)).astype(np.int32).reshape(-1, 3)
+    out.particles.image[:] = np.concatenate([old_img, np.zeros((n_new, 3), np.int32)], axis=0)
+    _box = snap.configuration.box
+    out.configuration.box = list(_box) if _box is not None else [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
+
+    bond_types = list(snap.bonds.types or [])
+    if MEM_TETHER_BOND not in bond_types:
+        bond_types.append(MEM_TETHER_BOND)
+    mem_bt = bond_types.index(MEM_TETHER_BOND)
+    old_bg = _grp(snap.bonds.group, 2)
+    old_bt = _tid(snap.bonds.typeid)
+    new_bg = np.asarray(tether_pairs, dtype=np.int64).reshape(-1, 2)
+    new_bt = np.full(new_bg.shape[0], mem_bt, dtype=np.uint32)
+    merged_bg = np.concatenate([old_bg, new_bg], axis=0).astype(np.uint32)
+    merged_bt = np.concatenate([old_bt, new_bt]).astype(np.uint32)
+    out.bonds.types = bond_types
+    out.bonds.N = int(merged_bg.shape[0])
+    if merged_bg.shape[0] > 0:
+        out.bonds.group[:] = merged_bg
+        out.bonds.typeid[:] = merged_bt
+
+    for grp_name in ("angles", "dihedrals", "impropers"):
+        src = getattr(snap, grp_name, None)
+        if src is None:
+            continue
+        src_n = int(getattr(src, "N", 0) or 0)
+        src_types = list(getattr(src, "types", None) or [])
+        dst = getattr(out, grp_name)
+        if src_n > 0:
+            dst.N = src_n
+            dst.types = src_types
+            dst.group[:] = np.asarray(src.group)
+            dst.typeid[:] = np.asarray(src.typeid)
+        elif src_types:
+            dst.N = 0
+            dst.types = src_types
     return out
 
 

@@ -888,33 +888,45 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="membrane_reservoir",
         category="membrane",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); STATIC tether mesh (own mem_node layer), bleb/reservoir-release still PI-blocked
         enabled_default=False,
-        summary="Membrane excess-area reservoir + bleb machinery: cortex-membrane detachment & area buffering.",
-        manifest_path=None,
+        summary="Plasma-membrane reservoir: own mem_node layer + static mem_tether mesh (membrane–cortex adhesion). Bleb/reservoir-release PI-pending.",
+        manifest_path=("optional_subsystems", "membrane_reservoir"),
         resolve_ref="ffn_sim.cell.membrane_reservoir.resolve_membrane_reservoir",
         performance_contract=_live(
             particle_types_added=("mem_node",),
-            n_particles_mesoscale="(reservoir nodes; estimate at authoring)",
+            n_particles_mesoscale="n_mem_nodes (default 2000)",
             n_particles_native="(scaled)",
-            n_bonds="mem-cortex tether (breakable) + reservoir area buffer",
+            n_bonds="mem_tether (one per mem_node → distinct cortex bead; force-free at offset)",
             n_angles=0,
-            per_step_force=True,
-            per_batch_updater=True,          # detachment/bleb nucleation kinetics
-            uses_cpu_local_snapshot=True,
-            uses_broad_phase=False,
-            expected_on_recipes=("(blebbing / confinement studies)",),
+            per_step_force=False,            # static mem_tether is a builtin md.bond.Harmonic
+            per_batch_updater=False,         # rupture updater PI-blocked (σ_crit_bleb None)
+            uses_cpu_local_snapshot=False,
+            uses_broad_phase=True,           # ONCE at build time (cKDTree mem_node→cortex pairing)
+            expected_on_recipes=("membrane_reservoir_tethered", "(blebbing / confinement studies)"),
             hot_path_priority=HotPathPriority.P2,
-            gpu_path_now=GpuPath.CPU,
-            native_forcecompute_candidate=True,
-            bottleneck_risk="Couples to membrane_surface + ERM; tether-break updater host-sync.",
+            gpu_path_now=GpuPath.HOOMD_BUILTIN,
+            native_forcecompute_candidate=False,
+            bottleneck_risk="Static mem_tether is a builtin bonded force (cheap). The bleb-rupture updater (PI-blocked) would be the host-sync cost when enabled.",
         ),
-        gpu_readiness=GpuReadiness(device_resident_now=False, optimization_debt="tether-break/bleb updater host-sync"),
+        gpu_readiness=GpuReadiness(device_resident_now=True, optimization_debt="bleb-rupture updater host-sync (when PI-unblocked)"),
         gamma_contaminating=True,
         denylist_bond_types=("mem_",),       # module GAMMA_DENYLIST_PREFIX='mem_' (mem_tether, ...)
         requires=("membrane_surface",),
-        pi_decisions=("Bleb nucleation threshold + reservoir excess-area fraction need literature anchors or PI call.",),
-        sanity_gate_ref="ffn_sim/cell/membrane_reservoir.py",
+        citations=(
+            "KU-3.B1.4 W_MCA 1e-6..1e-4 J/m² (Hochmuth 1996 / Derényi 2002 / Diz-Muñoz 2013)",
+            "Charras 2008 BJ (k_ERM ~0.1 N/m tether stiffness order)",
+            "Tinevez 2009 PNAS (σ_crit bleb growth — PI-pending)",
+            "Raucher-Sheetz 1999 / Figard 2014 (reservoir excess-area f_excess — PI-pending)",
+        ),
+        pi_decisions=(
+            "Bleb nucleation threshold σ_crit_bleb (Tinevez 2009; MCF7 uncertain) is None → the "
+            "MembraneTetherUpdater rupture path stays disabled (raises). Static tether mesh is LIVE.",
+            "Reservoir excess-area fraction f_excess (Raucher-Sheetz/Figard; MCF7 uncertain) is None "
+            "→ released_area() raises; tension-buffering reservoir release stays disabled.",
+        ),
+        sanity_gate_ref="ffn_sim/tests/test_membrane_reservoir.py",
+        notes="Own radially-offset mem_node layer (BLOCKER-1 fix) at membrane_offset outside the cortex; each node tethers to a distinct cortex bead (degree-aware, exclusion-cap safe), force-free at the offset. Static MCA load path, NOT cortical hoop γ.",
     ),
     CompartmentSpec(
         name="cadherin_junction",

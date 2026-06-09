@@ -350,3 +350,83 @@ def test_denylist_matches_cortical_tension_estimator():
     wiring that adds GAMMA_DENYLIST_PREFIX to its denylist excludes mem_tether.
     """
     assert MEM_TETHER_BOND.startswith(GAMMA_DENYLIST_PREFIX)
+
+
+# ---------------------------------------------------------------------------
+# LIVE activation wiring (2026-06-09; PI 소유권 허용): own mem_node offset layer +
+# static mem_tether mesh on the full physiological baseline. cell.py snapshot-
+# extension + LJ r_cut=0 + gamma_map + manifest stanza + registry LIVE. Bleb
+# rupture + reservoir release stay PI-blocked.
+# ---------------------------------------------------------------------------
+class TestMembraneReservoirActivationWiring:
+    def test_off_build_is_bit_identity(self):
+        from ffn_sim.cell.manifest import (
+            build_baseline_cell, load_manifest, resolve_baseline,
+        )
+        rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
+        assert rb.p_membrane_reservoir is None
+        cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        assert cell.p_membrane_reservoir is None
+        assert cell.simulation.state.N_particles > 0
+
+    def test_on_mesh_assembles_without_contamination(self):
+        import numpy as np
+        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.cortex.cortical_tension import (
+            _is_adhesion_bond_type, measure_cortical_tension,
+        )
+
+        base = load_manifest("mcf7_baseline.yaml")
+        m_on, deferred = REGISTRY.compose_manifest(
+            load_recipe("membrane_reservoir_tethered"), base_manifest=base, strict=True
+        )
+        assert deferred == []
+        off = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        on = build_baseline_cell("mcf7_baseline.yaml", manifest=m_on, seed=1)
+        p = on.p_membrane_reservoir
+        assert p is not None and p.enabled
+
+        so = off.simulation.state.get_snapshot()
+        sn = on.simulation.state.get_snapshot()
+        n_teth = int(on.extras["handles"]["n_mem_tethers"])
+        layout = on.extras["handles"]["membrane_tether_layout"]
+        # MESH ASSEMBLED: own mem_node layer (+1 particle per tether) + mem_tether.
+        assert n_teth > 0
+        assert "mem_node" in sn.particles.types
+        assert "mem_tether" in sn.bonds.types
+        assert sn.particles.N - so.particles.N == n_teth   # one mem_node per tether
+        assert sn.bonds.N - so.bonds.N == n_teth
+        mem_bonds = [t for t in sn.bonds.types if t.startswith("mem_")]
+        assert all(_is_adhesion_bond_type(t) for t in mem_bonds)
+        # CROSS-LAYER: mem_node ↔ cortex, distinct cortex anchors, no self-pairs.
+        types = list(sn.particles.types)
+        tid = np.asarray(sn.particles.typeid, dtype=np.int64)
+        pairs = np.asarray(layout.tether_pairs, dtype=np.int64)
+        assert (tid[pairs[:, 0]] == types.index("mem_node")).all()
+        assert (tid[pairs[:, 1]] == types.index("actin_cortex")).all()
+        assert len(set(pairs[:, 1].tolist())) == pairs.shape[0]   # unique anchors
+        assert int((pairs[:, 0] == pairs[:, 1]).sum()) == 0
+        # FORCE-FREE: every tether born at exactly membrane_offset.
+        pos = np.asarray(sn.particles.position, dtype=np.float64)
+        sep = np.linalg.norm(pos[pairs[:, 0]] - pos[pairs[:, 1]], axis=1)
+        assert float(np.max(np.abs(sep - p.membrane_offset) / p.membrane_offset)) < 1e-6
+        # NO contamination: cortical γ_soft identical OFF vs ON (mem_ denylisted).
+        off.simulation.run(0); on.simulation.run(0)
+        go = measure_cortical_tension(off.simulation, R_cell=off.p_cortex.R_cell,
+                                      p_enclosed_volume=off.p_enclosed_volume)
+        gn = measure_cortical_tension(on.simulation, R_cell=on.p_cortex.R_cell,
+                                      p_enclosed_volume=on.p_enclosed_volume)
+        k = "gamma_soft_N_per_m" if "gamma_soft_N_per_m" in go else "gamma_soft"
+        assert abs(gn[k] - go[k]) <= 1e-12 * max(1.0, abs(go[k]))
+
+    def test_enabled_requires_membrane_surface(self):
+        # membrane_reservoir requires membrane_surface; resolving with it OFF raises.
+        import pytest
+        from ffn_sim.cell.manifest import load_manifest, resolve_baseline
+        m = load_manifest("mcf7_baseline.yaml")
+        m.setdefault("optional_subsystems", {})
+        m["optional_subsystems"]["membrane_reservoir"] = {"enabled": True}
+        m.setdefault("compartments", {}).setdefault("membrane_surface", {})["enabled"] = False
+        with pytest.raises((ValueError, Exception)):
+            resolve_baseline(m)

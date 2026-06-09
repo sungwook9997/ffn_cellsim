@@ -252,16 +252,15 @@ def test_forcing_experimental_into_enable_raises():
 
 def test_forcing_experimental_non_strict_defers():
     base = load_manifest("mcf7_baseline.yaml")
-    # membrane_reservoir is still EXPERIMENTAL (osmotic_regulation / microtubules /
-    # intermediate_filaments / linc graduated LIVE 2026-06-09). It requires
-    # membrane_surface, which is baseline-required (suspended_round enables it),
-    # so it defers cleanly (no dependency error).
+    # cadherin_junction is still EXPERIMENTAL (osmotic_regulation / microtubules /
+    # intermediate_filaments / linc / membrane_reservoir graduated LIVE 2026-06-09).
+    # It has no hard deps, so it defers cleanly (no dependency error) in non-strict.
     recipe = {
         "name": "bad",
-        "enable": list(load_recipe("suspended_round")["enable"]) + ["membrane_reservoir"],
+        "enable": list(load_recipe("suspended_round")["enable"]) + ["cadherin_junction"],
     }
     manifest, deferred = REGISTRY.compose_manifest(recipe, base_manifest=base, strict=False)
-    assert "membrane_reservoir" in deferred
+    assert "cadherin_junction" in deferred
 
 
 def test_dropping_baseline_compartment_raises():

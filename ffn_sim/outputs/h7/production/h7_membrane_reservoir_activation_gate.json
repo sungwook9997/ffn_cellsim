@@ -1,0 +1,46 @@
+{
+  "gate": "H.8 membrane_reservoir activation",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "W_MCA_Jm2": 1e-05,
+    "k_tether_Npm": 0.1,
+    "max_tether_dist_m": 2e-07,
+    "membrane_offset_m": 5e-08,
+    "n_mem_nodes_requested": 2000,
+    "rupture_force_N": 8.473412227959695e-10
+  },
+  "controls": {
+    "mesh_assembled": true,
+    "n_mem_tethers": 1969,
+    "n_particle_delta": 1969,
+    "n_bond_delta": 1969,
+    "cross_layer": {
+      "ok": true,
+      "self_pairs": 0,
+      "unique_cortex_anchors": true
+    },
+    "force_free_construction": {
+      "ok": true,
+      "max_strain": 1.6675961149069038e-14
+    },
+    "no_contamination": {
+      "mask_excludes_all_mem": true,
+      "gamma_soft_off_N_per_m": 5.141050220221626e-10,
+      "gamma_soft_on_N_per_m": 5.141050220221626e-10,
+      "gamma_identical": true
+    },
+    "off_identity": true,
+    "bleb_paths_blocked": {
+      "sigma_crit_bleb_is_none": true,
+      "f_excess_is_none": true,
+      "rupture_updater_raises": true,
+      "reservoir_release_raises": true
+    }
+  },
+  "deferred": {
+    "bleb_nucleation": "\u03c3_crit_bleb None (Tinevez 2009; MCF7 PI-pending) \u2192 MembraneTetherUpdater raises.",
+    "reservoir_release": "f_excess None (Raucher-Sheetz/Figard; MCF7 PI-pending) \u2192 released_area raises."
+  },
+  "note": "REAL build-time activation gate on the full physiological baseline. STATIC mem_tether mesh on an OWN mem_node offset layer (BLOCKER-1 fix). KEY control is no-contamination: cortical \u03b3_soft identical OFF vs ON (mem_ registry-denylisted). Degree-aware unique-acceptor selection bounds per-cortex bond degree to +1 (exclusion-cap safe). Bleb rupture + reservoir release are PI-pending and honestly blocked."
+}

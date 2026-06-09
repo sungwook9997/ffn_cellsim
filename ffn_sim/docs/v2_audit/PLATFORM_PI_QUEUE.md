@@ -39,6 +39,25 @@
     production path (a coarser shared per-r0 bin needs ~hundreds of bins at k_linc=1e-2 to stay
     thermal, so exact-r0 is actually the leaner choice — a native bond plugin or a stiffness-aware
     binning is the real fix).
+- **membrane_reservoir → LIVE** (gate PASS: mesh assembled n_tethers≈1969, cross-layer
+  no self-pairs, FORCE-FREE at the offset, γ_soft IDENTICAL OFF/ON = no contamination,
+  off-identity, bleb paths honestly blocked). STATIC mem_tether mesh on an OWN
+  radially-offset mem_node layer (BLOCKER-1 fix); requires=('membrane_surface',).
+  Degree-aware unique-acceptor selection (max_anchor_degree=5) bounds per-cortex bond
+  degree to +1 (nlist exclusion-cap safe). Anchored defaults: W_MCA=1e-5 J/m² (KU-3.B1.4),
+  k_tether=0.1 N/m (ERM order), max_tether_dist=200 nm (KU-3.17), membrane_offset=50 nm
+  (¼ reach). **PI items still pending (the bleb/reservoir paths stay DISABLED until ratified):**
+  - **σ_crit_bleb** (Tinevez 2009 critical cortical tension for bleb growth; MCF7 uncertain)
+    is None → MembraneTetherUpdater (bleb nucleation) raises. Also the Bell-Evans rupture
+    loop in `act()` is an unimplemented TODO (refused unconditionally). Anchor σ_crit_bleb
+    AND implement the rupture loop before enabling the bleb-nucleation path.
+  - **f_excess** (membrane reservoir excess-area fraction; Raucher-Sheetz 1999 / Figard 2014
+    report a few %–tens of %; MCF7 uncertain) is None → `released_area()` raises; the
+    tension-buffering reservoir-release path stays disabled.
+  - ⚠ **membrane_offset / n_mem_nodes are mesoscale discretisation knobs** (geometry,
+    grid-invariant; membrane_offset=¼ acceptor reach, n_mem_nodes=2000 shell nodes). Not
+    physiological magic numbers — but flag if a specific MCF7 membrane area / node density
+    is later required.
 - **cortical_tension γ-denylist → registry-driven** (`NONCORTICAL_COMPARTMENT_PREFIXES`
   = `REGISTRY.gamma_denylist()` minus `cortex_*`). Unblocks the no-contamination control
   for every γ-contaminating compartment. ⚠️ sibling Gate-B owns this file → merge-coordinate.

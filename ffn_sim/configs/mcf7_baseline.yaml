@@ -189,3 +189,13 @@ optional_subsystems:
                          # separation is ~0.5-1.5 µm (NOT the 50 nm real nesprin span), so
                          # r0 is an EFFECTIVE mesoscale coupling length and the 8 pN f_rest
                          # oracle is approximate — see PLATFORM_PI_QUEUE.
+  membrane_reservoir:    # H.8 plasma-membrane reservoir / tether mesh — LIVE 2026-06-09
+    enabled: false       # default-OFF; mem_ bonds γ-denylisted (registry-driven).
+                         # Own radially-offset mem_node layer + static mem_tether mesh
+                         # (each node → a distinct cortex bead, force-free at the offset;
+                         # BLOCKER-1 fix). requires membrane_surface ON.
+    n_mem_nodes: 2000    # membrane-shell node count (discretisation; grid-free observable).
+                         # W_MCA=1e-5 J/m² (KU-3.B1.4 SOLID), k_tether=0.1 N/m (ERM order),
+                         # max_tether_dist=200nm (KU-3.17), membrane_offset=50nm (¼ reach)
+                         # use module defaults. ⚠ bleb rupture (σ_crit_bleb) + reservoir
+                         # release (f_excess) stay PI-pending (None) → those paths blocked.

@@ -174,6 +174,11 @@ from ffn_sim.cell.linc import (  # H.LINC nesprin-SUN bridges (additive, default
     configure_linc_bond_potential,
     extend_snapshot_with_linc_layout,
 )
+from ffn_sim.cell.membrane_reservoir import (  # H.8 membrane reservoir (additive, default-off)
+    MEM_TETHER_BOND,
+    ResolvedMembraneReservoir,
+    extend_snapshot_with_membrane_reservoir,
+)
 from ffn_sim.cell.lamellipodium import (
     ResolvedH5,
     WaveMembranePin,
@@ -733,6 +738,7 @@ def build_cortex_full_simulation(
     p_microtubules: "ResolvedMicrotubules | None" = None,  # H.MT aster (default-off)
     p_intermediate_filaments: "ResolvedIntermediateFilaments | None" = None,  # H.IF cage
     p_linc: "ResolvedLINC | None" = None,  # H.LINC nucleus↔IF-cage bridges (default-off)
+    p_membrane_reservoir: "ResolvedMembraneReservoir | None" = None,  # H.8 mem_node layer (default-off)
     reconcile_dt: bool = False,
     equilibrate: bool = False,
     equilibrate_steps: int = 0,
@@ -1163,6 +1169,29 @@ def build_cortex_full_simulation(
         )
         snap = extend_snapshot_with_linc_layout(snap, p_linc, linc_layout)
 
+    # H.8 membrane reservoir (additive, default-off). Seeds an OWN radially-offset
+    # mem_node bead layer outside the cortex shell + a static mem_tether mesh
+    # (each node → a distinct cortex bead, force-free at the offset). BLOCKER-1
+    # fix (the membrane otherwise rides cortex tags → self-pairs). Bleb rupture +
+    # reservoir release stay PI-blocked (σ_crit_bleb / f_excess None). MUST run
+    # BEFORE create_state_from_snapshot. No-op / bit-identical when None.
+    mem_layout = None
+    enable_mem = (
+        p_membrane_reservoir is not None
+        and getattr(p_membrane_reservoir, "enabled", False)
+    )
+    if enable_mem:
+        _eta_mem = (
+            float(getattr(p_cytoplasm, "eta_eff", 1.0e-3))
+            if p_cytoplasm is not None else 1.0e-3
+        )
+        _R_membead = 0.5 * float(p_cortex.lj_sigma)
+        _gamma_mem = 6.0 * math.pi * _eta_mem * _R_membead
+        snap, mem_layout = extend_snapshot_with_membrane_reservoir(
+            snap, p_membrane_reservoir, cortex_type_name="actin_cortex",
+            gamma_mem=_gamma_mem, seed=int(p_cortex.seed),
+        )
+
     # 5. HOOMD Simulation + state
     sim = hoomd.Simulation(
         device=device or hoomd.device.CPU(), seed=p_cortex.seed
@@ -1249,6 +1278,13 @@ def build_cortex_full_simulation(
     # separation). linc_ types are γ-denylisted. Only when bridges formed.
     if enable_linc and linc_layout is not None:
         configure_linc_bond_potential(bond, p_linc, layout=linc_layout)
+    # H.8 mem_tether on the SHARED bond force (single type; rest length =
+    # membrane_offset, force-free at the as-built radial gap). mem_ γ-denylisted.
+    if enable_mem and mem_layout is not None and mem_layout.n_tether > 0:
+        bond.params[MEM_TETHER_BOND] = dict(
+            k=p_membrane_reservoir.k_tether,
+            r0=float(p_membrane_reservoir.membrane_offset),
+        )
 
     angle = md.angle.Harmonic()
     angle.params["cortex-angle"] = dict(k=p_cortex.angle_k, t0=p_cortex.angle_t0)
@@ -1430,6 +1466,31 @@ def build_cortex_full_simulation(
         if enable_microtubules:
             _enable_pair("if_bead", "mt_bead", repulsive=False)
             _enable_pair("if_bead", "mtoc", repulsive=False)
+
+    if enable_mem and mem_layout is not None and mem_layout.n_tether > 0:
+        # H.8: mem_node is a tether-held surface layer (NOT a steric body) — all
+        # mem_node pairs r_cut=0 (mirrors if_bead/nucleus). Every present type-pair
+        # MUST be registered (md.pair.LJ demands full coverage).
+        _enable_pair("mem_node", "mem_node", repulsive=False)
+        _enable_pair("mem_node", "actin_cortex", repulsive=False)
+        if enable_xl:
+            _enable_pair("mem_node", "xlink_head", repulsive=False)
+        if enable_myo:
+            _enable_pair("mem_node", "cortex_myosin_backbone", repulsive=False)
+            _enable_pair("mem_node", "cortex_myosin_head", repulsive=False)
+        if enable_lamel:
+            _enable_pair("mem_node", "actin_lamel", repulsive=False)
+            _enable_pair("mem_node", "wave_particle", repulsive=False)
+        if enable_fa:
+            _enable_pair("mem_node", FA_TYPE_INTEGRIN, repulsive=False)
+            _enable_pair("mem_node", FA_TYPE_SUBSTRATE_LIGAND, repulsive=False)
+        if enable_nucleus:
+            _enable_pair("mem_node", "nucleus_bead", repulsive=False)
+        if enable_microtubules:
+            _enable_pair("mem_node", "mt_bead", repulsive=False)
+            _enable_pair("mem_node", "mtoc", repulsive=False)
+        if enable_if:
+            _enable_pair("mem_node", "if_bead", repulsive=False)
 
     lj.mode = "shift"
 
@@ -1667,6 +1728,17 @@ def build_cortex_full_simulation(
             )
             gamma_map["if_bead"] = (
                 6.0 * math.pi * _eta_ifg * (0.5 * float(p_intermediate_filaments.d_if))
+            )
+        if enable_mem and mem_layout is not None and mem_layout.n_tether > 0:
+            # H.8 mem_node Stokes drag at CYTOPLASM viscosity (6π·η_eff·R_membead,
+            # R_membead = ½·lj_sigma = cortex bead radius; NOT water). Set directly
+            # (mem_node not in the immersed-type set → already cytoplasm value).
+            _eta_memg = (
+                float(getattr(p_cytoplasm, "eta_eff", 1.0e-3))
+                if p_cytoplasm is not None else 1.0e-3
+            )
+            gamma_map["mem_node"] = (
+                6.0 * math.pi * _eta_memg * (0.5 * float(p_cortex.lj_sigma))
             )
         # H.10 cytoplasm Tier-1 (per-type effective-viscosity drag): scale the
         # immersed types' Stokes drag by eta_eff/eta_water once gamma_map is fully
@@ -1958,6 +2030,9 @@ def build_cortex_full_simulation(
         # H.LINC nucleus↔IF-cage bridges — None / 0 when LINC is off.
         "linc_layout": linc_layout,
         "n_linc_bridges": (linc_layout.n_bridges if linc_layout is not None else 0),
+        # H.8 membrane reservoir — None / 0 when off.
+        "membrane_tether_layout": mem_layout,
+        "n_mem_tethers": (mem_layout.n_tether if mem_layout is not None else 0),
         "baoab_updater": baoab_updater,
         "baoab_action": baoab_action,
         "xlink_updater": xlink_updater,
@@ -2047,6 +2122,7 @@ class CellBuildOptions:
     with_microtubules: bool = False   # H.MT aster (default-off)
     with_intermediate_filaments: bool = False   # H.IF cage (default-off)
     with_linc: bool = False   # H.LINC nucleus↔IF-cage bridges (default-off)
+    with_membrane_reservoir: bool = False   # H.8 mem_node tether layer (default-off)
 
 
 @dataclass(slots=True)
@@ -2116,6 +2192,7 @@ class Cell:
     p_microtubules: Any | None = None   # H.MT aster (default-off)
     p_intermediate_filaments: Any | None = None   # H.IF cage (default-off)
     p_linc: Any | None = None   # H.LINC nucleus↔IF-cage bridges (default-off)
+    p_membrane_reservoir: Any | None = None   # H.8 mem_node tether layer (default-off)
 
     extras: dict[str, Any] = field(default_factory=dict)
 
@@ -2155,6 +2232,7 @@ class Cell:
         p_microtubules: "ResolvedMicrotubules | None" = None,  # H.MT aster (default-off)
         p_intermediate_filaments: "ResolvedIntermediateFilaments | None" = None,  # H.IF
         p_linc: "ResolvedLINC | None" = None,  # H.LINC nucleus↔IF-cage (default-off)
+        p_membrane_reservoir: "ResolvedMembraneReservoir | None" = None,  # H.8 (default-off)
         constrained: bool = False,
         constrained_dt: float | None = None,
         reconcile_dt: bool = False,
@@ -2268,6 +2346,7 @@ class Cell:
                 p_enclosed_volume, p_membrane_surface, p_nucleus,
                 p_cytoplasm, p_substrate, p_turnover, p_membrane,
                 p_microtubules, p_intermediate_filaments, p_linc,
+                p_membrane_reservoir,
             ))
             or constrained or reconcile_dt or equilibrate or connected_mesh
         )
@@ -2296,6 +2375,7 @@ class Cell:
                 p_microtubules=p_microtubules,
                 p_intermediate_filaments=p_intermediate_filaments,
                 p_linc=p_linc,
+                p_membrane_reservoir=p_membrane_reservoir,
                 device=device, with_baoab=opts.with_baoab,
                 constrained=constrained, constrained_dt=constrained_dt,
                 reconcile_dt=reconcile_dt,
@@ -2385,6 +2465,7 @@ class Cell:
             p_microtubules=p_microtubules,
             p_intermediate_filaments=p_intermediate_filaments,
             p_linc=p_linc,
+            p_membrane_reservoir=p_membrane_reservoir,
             p_myosin=p_myosin,
             p_lamellipodium=p_lamellipodium,
             options=opts,

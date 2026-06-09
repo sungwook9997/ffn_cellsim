@@ -56,6 +56,7 @@ _STYLE: dict[str, tuple] = {
     "if_bead":               ("#8c564b", 4.0, 5, "IF perinuclear cage"),
     "mt_bead":               ("#9e3ac4", 4.0, 6, "microtubule aster"),
     "mtoc":                  ("#000000", 30.0, 7, "MTOC"),
+    "mem_node":              ("#d95f02", 2.0, 2, "plasma-membrane layer"),
 }
 # Structural bond families drawn in the cross-sections (skip the dense cortex /
 # myosin / xlink bonds so the internal architecture is legible).
@@ -63,6 +64,7 @@ _BOND_DRAW: dict[str, tuple] = {
     "mt_backbone":  ("#9e3ac4", 0.6, "MT backbone"),
     "if_backbone":  ("#8c564b", 0.5, "IF backbone"),
     "linc_nesprin": ("#d62728", 0.9, "LINC nesprin bridge"),
+    "mem_tether":   ("#7570b3", 0.4, "membrane–cortex tether"),
 }
 
 
@@ -72,7 +74,7 @@ def build_full_live_cell(seed: int = 1):
     # linc_coupled extends if_cage (IF + LINC + nucleus baseline); add the other
     # LIVE internal compartments (osmotic + MT) so the whole activated stack shows.
     enable = set(load_recipe("linc_coupled")["enable"]) | {
-        "osmotic_regulation", "microtubules",
+        "osmotic_regulation", "microtubules", "membrane_reservoir",
     }
     manifest, deferred = REGISTRY.compose_manifest(
         {"name": "all_live_vis", "enable": sorted(enable)},

@@ -29,6 +29,7 @@ from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
 from ffn_sim.cell.membrane import resolve_membrane
 from ffn_sim.cell.intermediate_filaments import resolve_intermediate_filaments
 from ffn_sim.cell.linc import resolve_linc
+from ffn_sim.cell.membrane_reservoir import resolve_membrane_reservoir
 from ffn_sim.cell.membrane_surface import resolve_membrane_surface
 from ffn_sim.cell.microtubules import resolve_microtubules
 from ffn_sim.cell.nucleus import resolve_nucleus
@@ -90,6 +91,7 @@ class ResolvedBaseline:
     p_microtubules: Any | None = None         # H.MT centrosomal aster (LIVE)
     p_intermediate_filaments: Any | None = None  # H.IF perinuclear cage (LIVE)
     p_linc: Any | None = None                 # H.LINC nucleus↔IF-cage bridges (LIVE)
+    p_membrane_reservoir: Any | None = None   # H.8 mem_node tether layer (LIVE)
     manifest: dict = field(default_factory=dict)
 
     def compartments(self) -> dict[str, Any]:
@@ -212,6 +214,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
     p_microtubules = None
     p_intermediate_filaments = None
     p_linc = None
+    p_membrane_reservoir = None
     lam_cfg: dict = {}
 
     fa_b = opt.get("fa")
@@ -379,6 +382,29 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
             linc_cfg, R_cell=p_cortex.R_cell, R_nuc=_R_nuc_linc,
         )
 
+    # H.8 membrane reservoir (LIVE, default-OFF). Own radially-offset mem_node
+    # layer + static mem_tether mesh; requires membrane_surface (baseline-required,
+    # always on). Bleb rupture (σ_crit_bleb) + reservoir release (f_excess) stay
+    # PI-blocked (None) — only the static tether mesh activates here.
+    mem_b = opt.get("membrane_reservoir")
+    if _enabled(mem_b):
+        if p_membrane_surface is None:
+            raise ValueError(
+                "membrane_reservoir enabled but membrane_surface is OFF — the "
+                "reservoir tethers the plasma-membrane layer, which requires the "
+                "membrane_surface compartment (registry requires=('membrane_surface',))."
+            )
+        mem_cfg = _opt_cfg(mem_b)
+        _mm = mem_cfg
+        if isinstance(_mm.get("cell"), dict):
+            _mm = _mm["cell"]
+        if isinstance(_mm.get("membrane_reservoir"), dict):
+            _mm = _mm["membrane_reservoir"]
+        _mm["enabled"] = True
+        p_membrane_reservoir = resolve_membrane_reservoir(
+            mem_cfg, R_cell=p_cortex.R_cell, dt=dtc,
+        )
+
     return ResolvedBaseline(
         cell_type=cell_type,
         R_cell=R_cell,
@@ -400,6 +426,7 @@ def resolve_baseline(manifest: dict, *, allow_no_nucleus: bool = False) -> Resol
         p_microtubules=p_microtubules,
         p_intermediate_filaments=p_intermediate_filaments,
         p_linc=p_linc,
+        p_membrane_reservoir=p_membrane_reservoir,
         manifest=manifest,
     )
 
@@ -489,6 +516,7 @@ def build_baseline_cell(
         with_microtubules=rb.p_microtubules is not None,
         with_intermediate_filaments=rb.p_intermediate_filaments is not None,
         with_linc=rb.p_linc is not None,
+        with_membrane_reservoir=rb.p_membrane_reservoir is not None,
     )
     cell = Cell.build(
         rb.p_cortex,
@@ -508,6 +536,7 @@ def build_baseline_cell(
         p_microtubules=rb.p_microtubules,
         p_intermediate_filaments=rb.p_intermediate_filaments,
         p_linc=rb.p_linc,
+        p_membrane_reservoir=rb.p_membrane_reservoir,
         p_membrane=rb.p_membrane,
         constrained=constrained,
         # constrained_dt_safety < 1 shrinks the constrained step: the rigid

@@ -96,3 +96,6 @@ bridges; 19,656 particles) and renders the ACTUAL constructed geometry. Under
   internal organelles).
 - `h7_linc_activation_gate.png` — LINC gate: nucleus↔IF bridges, per-bond EXACT-r0
   histogram (force-free), cortical γ_soft identical OFF vs ON (no contamination).
+- `h7_membrane_reservoir_activation_gate.png` — membrane gate: own mem_node layer +
+  cross-layer mem_tether mesh, force-free r0 histogram, cortical γ_soft identical OFF vs ON.
+  The morphology figs now also render the mem_node membrane layer just outside the cortex.
