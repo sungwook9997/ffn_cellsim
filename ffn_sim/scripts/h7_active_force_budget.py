@@ -63,7 +63,7 @@ _HOSSEINI_BAND = (0.18e-3, 0.40e-3)  # N/m, MCF7 interphase IQR (contract §7)
 
 def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed,
                         areal_density=None, cm_z_struct=None, cm_bundle_mult=None,
-                        faithful=False, stepping_mode=None):
+                        faithful=False, stepping_mode=None, xlink_k=None):
     """Suspended/rounded MCF7 (FA OFF, turgor ON), connected mesh, grip_walk myosin.
 
     Mirrors h7_gate_b_probe._build_settled_cell exactly so this audit measures the
@@ -90,6 +90,16 @@ def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, 
         myo = (manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
                .setdefault("myosin", {}))
         myo["stepping_mode"] = str(stepping_mode)
+    if xlink_k is not None:
+        # A/B SENSITIVITY ONLY (NOT a production config change): override the dynamic
+        # crosslinker harmonic-bond stiffness k_intra/k_attach to isolate the
+        # transmission lever's contribution to γ. Production stays at the loop18
+        # re-anchored 1.0e-3 N/m (KB-1.28); pass 1.0e-7 to reproduce the PRE-re-anchor
+        # transmission-floored state for a clean A/B (PI_DECISION_BRIEF_2026-06-10 §1).
+        xl = (manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+              .setdefault("dynamic_crosslinkers", {}))
+        xl["k_intra"] = float(xlink_k)
+        xl["k_attach"] = float(xlink_k)
     if n_nuc_beads is not None:
         manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
     cm_kw = {}
@@ -494,6 +504,10 @@ def main() -> int:
     ap.add_argument("--faithful", action="store_true",
                     help="use the bimodal faithful cortex (Arp2/3 branches + bimodal "
                          "lengths) instead of the uniform production mesh (ARCH test)")
+    ap.add_argument("--xlink-k", type=float, default=None,
+                    help="override dynamic crosslinker k_intra/k_attach [N/m] for the "
+                         "transmission-lever A/B (sensitivity ONLY — production = loop18 "
+                         "re-anchored 1.0e-3; pass 1.0e-7 for the pre-re-anchor state)")
     ap.add_argument("--sweep-densities", type=str, default=None,
                     help="comma-list of densities [1/µm²] to sweep (mechanism confirm: γ∝ρ); "
                          "writes a γ-vs-density curve instead of a single audit")
@@ -519,6 +533,7 @@ def main() -> int:
         areal_density=args.areal_density,
         cm_z_struct=args.cm_z_struct, cm_bundle_mult=args.cm_bundle_mult,
         faithful=args.faithful, stepping_mode=args.stepping_mode,
+        xlink_k=args.xlink_k,
     )
     s = audit(cell=cell, n_contract_steps=args.contract_steps,
               sample_every=args.sample_every)

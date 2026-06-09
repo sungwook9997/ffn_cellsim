@@ -10,34 +10,30 @@ datum(**myosin areal density + active-vs-network 구분**)에 막혀 있다.
 
 ---
 
-## 결정 1 — crosslink 강성 재anchor `k_intra/k_attach: 1e-7 → 1e-3 N/m`
+## 결정 1 — crosslink 강성 재anchor ✅ **이미 완료(loop18) — 결정 불필요, 측정만 남음**
 
-**무엇이/왜.** cortex `dynamic_crosslinkers.k_intra = k_attach = 1.0e-7 N/m`(0.1 pN/µm)은
-KB-1.28(검증됨, High: H=(k_xl/2)|r|², k_xl 1e-4–1e-2 N/m, default **1e-3 N/m = 1 pN/nm**)
-보다 **~10⁴× 약하다**(range floor 1e-4보다도 10³×). config 주석의 anchor
-("0.1 pN/µm, KU-3.19 Furuike 2001")는 강성 datum이 아니다 — KB-3.19는 crosslinker
-**kinetics(off-rate)만** 명시(k 없음), Furuike 2001은 filamin **unfolding kinetics**.
-= 2026-06-02/06-08 audit가 잡은 mis-attribution 클래스와 동일 패턴.
+> ⚠️ **2026-06-10 정정**: 최초 브리프는 이 결정을 "PI 대기"로 적었으나, git 확인 결과
+> **이미 loop18(commit 236101e, "PI-approved")에서 1e-7→1e-3로 재anchor·커밋됨.**
+> 최초 판단은 stale한 설계 doc §10(loop17 시점)을 참조한 오류. 결정 1은 **닫혔다.**
 
-**왜 중요(γ lever).** Gate-A FINAL = REFUTE: γ_soft가 3.06e-3 mN/m = 밴드의 1/114에서
-plateau. 진단 결론은 **transmission-limited** — heads는 bind/load/walk/step/contract를
-다 하지만(γ 16.2× 상승 확인) rigid M-SHAKE backbone에서 국소 수축이 shunt되어 ~1%만
-hoop tension에 도달. crosslink가 fiber↔fiber 전달 고리이고, 1e-7은 그 고리를 ~10⁴× 약하게
-만든다. **이것이 가장 유력한 transmission lever.**
+**현재 상태.** `phase1_h3.yaml:141-142` = `k_intra: 1.0e-3`, `k_attach: 1.0e-3`
+(KB-1.28, 1 pN/nm). 이전 1e-7(0.1 pN/µm)은 mis-attribution(KU-3.19는 kinetics만, Furuike
+2001은 filamin unfolding — 강성 datum 아님)으로 확정되어 교체됨. CFL 영향 없음
+(τ_xl=391ns ≫ myosin dt 9.2ns). cross-bridge 강성 fix(continuous_stroke + k=1e-3)도
+loop14-17에서 빌드·검증 완료(13 sanity 테스트 PASS).
 
-**증거 요약.** WALL-A 전파 smoke가 connected mesh에서 이미 66.8%; CFL은 안 조여짐
-(τ_xl=391ns @ 1e-3 ≫ myosin dt 9.2ns). 정량 γ 영향은 Lead가 진단 중(task #2, 샌드박스).
+**진짜 남은 것 = 결정이 아니라 측정.** config 주석이 명시: *"이미 돈 Gate-A/B는 이 강성에서
+재실행 필요."* 즉 교정된 작동점(continuous_stroke + crosslink 1e-3)에서 γ가 full-stall
+envelope에 도달하는지(transmission이 풀렸는지), 아니면 여전히 제한인지 **long GPU
+contraction run으로 재측정**해야 한다. Lead가 이를 자율 진행 중:
+- `h7_active_force_budget.py`에 `--xlink-k` A/B override 추가(2026-06-10, additive,
+  sensitivity-only) → crosslink 1e-3(production) vs 1e-7(pre-re-anchor)로 transmission
+  lever의 γ 기여를 정량.
+- 기존 Gate-A(1e-7, binned) γ_soft = 3.06e-3 mN/m = 밴드의 1/114가 비교 baseline.
 
-**선택지 + 비용.**
-| 선택 | 비용/영향 |
-|---|---|
-| (A) 승인 — 1e-3 재anchor | lit-first(KB-1.28). **production-wide gate-contract 변경**: 모든 cortex build + 이미 돈 Gate-A/B 무효화·재실행. CFL 영향 없음. 단, flexible crosslinker의 분자 강성 ≠ sim harmonic-bond 강성 개념(KB range 100× span) |
-| (B) 보류 — 더 검증 | 1e-7의 올바른 단일분자 anchor를 KB에서 더 탐색 후 결정 |
-| (C) 먼저 영향 분석 | 재anchor 시 γ가 실제 얼마나 오르는지 샌드박스 정량(task #2) → 그 수치 보고 PI 판단 |
-
-**Lead 추천: (C) → (A).** 진단(task #2)이 "재anchor가 γ를 밴드 쪽으로 유의하게
-끌어올린다"를 보이면 (A)가 lit-first로 명확. 끌어올리지 못하면 transmission이 lever가
-아니라는 추가 증거 → 결정 2(density)로 무게 이동.
+**PI에게 남는 판단(측정 후):** 재측정 γ가 full-stall envelope(~18–36× under = 알려진
+density 갭)에 도달하면 → "transmission 풀림, 잔여는 density-bound"로 결정 2와 묶어 종결.
+여전히 ≫envelope로 floored면 → transmission에 crosslink 외 다른 lever가 있다는 새 발견.
 
 ---
 
