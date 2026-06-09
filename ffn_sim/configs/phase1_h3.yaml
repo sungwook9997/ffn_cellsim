@@ -119,8 +119,27 @@ cortex:
     alpha_fraction: 0.30       # KU-3.19 (Stricker 2010)
     alpha_length: 35.0e-9      # m   α-actinin extended length
     filamin_length: 150.0e-9   # m   filamin extended length
-    k_intra: 1.0e-7            # N/m intra-xlink head-to-head (0.1 pN/μm, KU-3.19)
-    k_attach: 1.0e-7           # N/m dynamic head-to-actin attach bond
+    # k_intra / k_attach Magic-Number Block (KU-3.5 §9 RE-ANCHOR, PI-approved
+    # 2026-06-09; production-wide). PRIOR value 1.0e-7 N/m (0.1 pN/µm) — its anchor
+    # comment "0.1 pN/µm, KU-3.19 (Furuike 2001)" was a MIS-ATTRIBUTION: KU-3.19
+    # (KB-3.19, verified) specifies crosslinker KINETICS ONLY (Bell-Evans off-rates,
+    # no spring constant), and Furuike 2001 is filamin UNFOLDING kinetics, not a
+    # 0.1 pN/µm stiffness. The same mis-attribution class the 2026-06-02/06-08
+    # SourceEvidence audits caught.
+    #   Value: k = 1.0e-3 N/m (1 pN/nm) — the crosslink harmonic-bond stiffness.
+    #   Primary anchor: KB-1.28 (verified, High) — the shared crosslink bond
+    #     Hamiltonian H=(k_xl/2)|r_A−r_B|², k_xl ∈ [1e-4, 1e-2] N/m, DEFAULT 1e-3.
+    #     1e-7 sat ~10⁴× below this default (and 10³× below the range floor) — the
+    #     §8 "separate soft transmission link" slip that floored fiber↔fiber force
+    #     transmission (g_actin myosin-insensitive at Gate-A/B).
+    #   Grid-invariance: intensive per-bond stiffness [N/m], N-independent.
+    #   CFL: τ_xl = γ_b/k = 3.91e-10/1e-3 ≈ 391 ns ≫ both the legacy cortex dt
+    #     (13 ns) and the continuous_stroke myosin dt (9.2 ns) → no CFL tightening.
+    #   ⚠️ PRODUCTION-WIDE: applies to ALL cortex builds (grip_walk + the
+    #     compartment-platform session + the already-run Gate-A/B, which must be
+    #     re-run at this stiffness). PI-ratified knowing this impact.
+    k_intra: 1.0e-3            # N/m intra-xlink head-to-head (KB-1.28, 1 pN/nm)
+    k_attach: 1.0e-3           # N/m dynamic head-to-actin attach bond (KB-1.28)
     max_bind_dist: 60.0e-9     # m   acceptor search radius (brief §Crosslinkers)
     # ---- α-actinin: Bell SLIP off-rate (k_off = k_off0·exp(+F·x_β/kT)) ----
     # alpha_k_off0 Magic-Number Block (C4 correction, mechanism audit
