@@ -1,13 +1,14 @@
 {
-  "gate": "B5(i) SF tension force-budget (quasi-static, generation-limit probe)",
+  "gate": "B5(i) SF tension force-budget + Route-B NMII force-scaling probe",
   "verdict": "REFUTE",
   "physics_claim": true,
-  "provisional": true,
+  "provisional": false,
+  "halt_to_pi": true,
   "budget": {
     "phi_engaged": 0.9930486593843098,
-    "n_heads_per_side": 10,
-    "F_stall_per_head_N": 5e-13,
-    "f_per_minifilament_N": 4.965243296921549e-12,
+    "n_heads_per_side_model": 10,
+    "F_stall_per_head_model_N": 5e-13,
+    "f_per_minifilament_model_N": 4.965243296921549e-12,
     "T_cable_raw_N": 4.965243296921549e-12,
     "kumar_band_N": [
       1e-08,
@@ -16,7 +17,30 @@
     "in_kumar_band_raw": false,
     "gap_to_band_lo": 2014.0000000000002,
     "mesoscale_force_factor_needed_to_band_centre": 4028.0000000000005,
-    "n_motors": 40
+    "n_motors": 40,
+    "native_heads_per_side": 30,
+    "lit_per_minifilament_stall_N": 1.7e-11,
+    "factor_mini_molecular": 3.4238000000000004,
+    "f_per_minifilament_corrected_N": 1.7e-11,
+    "parallel_per_cross_section_datum": null,
+    "parallel_refuted_generous": 50,
+    "parallel_geometric_max": [
+      5,
+      15
+    ],
+    "parallel_backsolved_to_kumar": [
+      588.2352941176471,
+      1764.705882352941
+    ],
+    "T_active_geometric_N": [
+      8.499999999999999e-11,
+      2.55e-10
+    ],
+    "T_active_refuted50_N": 8.5e-10,
+    "sf_active_target_N": 6e-09,
+    "sf_network_total_N": 2.5e-08,
+    "gap_active_refuted50_vs_kassianidou": 7.058823529411765,
+    "gap_active_refuted50_vs_kumar_lo": 11.764705882352942
   },
-  "note": "QUASI-STATIC FORCE BUDGET (no stiff-backbone dynamics, no frozen integrator). The single-SF tension is MOTOR-generation-limited and N_filaments-INDEPENDENT (N sets strain \u03b5=T/\u03bc_SF, not the tension). Raw mesoscale tension 4.97e-12 N vs Kumar 1e-08-3e-08 N \u2192 2014x under band: the SAME generation-limit as the cortical \u03b3-floor. Reaching Kumar needs either the mesoscale force-scale factor (~4028x, Route B native:effective parallel-bundle scaling) or a native/density fix \u2014 NOT a backbone-stiffness (N_filaments) change. ASSUMPTIONS: \u03c6 zero-load upper estimate; per-minifilament series tension; provisional pending the cross-simulator deep-research + B5-method decision."
+  "note": "REFUTE \u2014 the SF generation-limit is NOT closable from a measured NMII density datum. The DERIVABLE Route-B piece is the per-minifilament MOLECULAR correction (model 4.97e-12 N \u2192 literature 1.70e-11 N, factor_mini\u22483.4\u00d7, Stachowiak 2009 ORDER; native 30 heads/side SOLID). The OTHER Route-B multiplier \u2014 parallel minifilaments per cross-section \u2014 has NO usable datum: the ~50 literature estimate was REFUTED 0-3, and the back-solve (~590-1760) is geometrically impossible (cross-section hosts O(5-15)). Even the refuted-generous 50 \u00d7 2e-11 N = 8.50e-10 N is ~7\u00d7 under the single-fiber ACTIVE target (~6 nN, Kassianidou/Schwarz/Kumar 2017 PNAS) and ~12\u00d7 under Kumar 10 nN. REFRAME: Kumar 10-30 nN conflates single-fiber active myosin (~5-6 nN) with NETWORK/PRESTRESS (~25 nN); the active component is itself unclosed (load-dependent duty ratio is the open variable). SF instance of the cortical \u03b3-floor \u2014 same \u00bd\u00b7n\u00b7f\u00b7\u2113 budget, same missing motor-density datum. HALT\u2192PI on the gate-reframe (active-only target ~6 nN vs network-total 10-30 nN)."
 }
