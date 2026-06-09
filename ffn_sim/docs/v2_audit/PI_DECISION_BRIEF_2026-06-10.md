@@ -98,10 +98,21 @@ firm한 절대값은 더 많은 seed + native-scale GPU 필요(PI-gated).
 고밀도 점의 per-meso-head meanT(84·294pN)는 mesoscale-effective값이지 단일 cross-bridge force
 아님. γ∝ρ 스케일링 자체는 유효(native 모터 수 ∝ ρ).
 
+**⭐ KB 대조 (2026-06-10, tag_query.py — citation-integrity 하드룰):**
+- **MCF7-specific myosin minifilament areal density는 KB에 없음** (내 결론 확증). cortex-composition
+  앵커(Salbreux2012/ChughPaluch2018/Murrell2015)는 generic/review-level, MCF7 아님.
+- ⭐ 단 **KB-3.18(High): cortex-wide 분자 myosin density ~100/µm² (~1.3×10⁴/cell)** 존재 —
+  이는 *분자*(per-myosin) 밀도. ~30 myosin/minifilament(KB-3.18 구조) → **minifilament 밀도
+  ~3.3/µm²**. 모델 proxy 0.6의 ~5×이나, 내 sweep이 밴드에 요구한 ~20–58/µm²의 **여전히 6–17×
+  아래.** ⇒ "MCF7 datum 부재"를 넘어, **KB의 generic 분자 consensus조차 밴드 요구치보다 한 자릿수
+  낮다** → 밴드가 direct-dipole로는 어떤 생리 density에서도 도달 불가일 수 있음(coherence-
+  amplification 필요 OR 밴드=de-adhered/rounded HeLa proxy 아티팩트, 메모리 [[project-gamma-floor-
+  layered-resolution]] 2026-06-05 REFRAME 강화). KB-3.4/3.5는 myosin을 active-gel ρ_M로만 다룸(per-µm² 수 없음).
+
 **선택지 + 비용.**
 | 선택 | 비용/영향 |
 |---|---|
-| (A) generation/density-bound로 종결 | γ가 lit-proxy density(0.6)에서 ~13× under, 밴드 도달엔 ρ≈20–58/µm² 필요(곡선 정량). 잔여 갭 = "MCF7 density datum 부재(proxy의 33–96×)"로 명시 종결. 정직, magnitude는 datum-bound로 종결 |
+| (A) generation/density-bound로 종결 | γ가 lit-proxy density(0.6)에서 ~15× under, 밴드 도달엔 ρ≈20–58/µm² 필요(곡선 정량). KB 분자 consensus(~3.3/µm² minifil)조차 6–17× 부족 → 밴드가 direct-dipole 도달불가/de-adhered-artifact 가능. 잔여 갭 = "density datum + 밴드 타당성" 명시 종결. 정직, magnitude는 datum/coherence-bound |
 | (B) density datum 탐색 계속 | MCF7 minifilament areal density deep-research(이전 104-agent 탐색은 parallel-per-cross-section datum REFUTED — 추가 탐색 회수 낮을 듯) |
 | (C) 밴드 active-fraction 재정의 | blebb ~halving → active-fraction ~0.135로 밴드 하한 재해석 → 갭 축소(여전히 density 필요) |
 

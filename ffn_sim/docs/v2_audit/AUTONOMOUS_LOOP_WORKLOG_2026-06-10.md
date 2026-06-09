@@ -100,3 +100,11 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
 - ✅✅ **γ-floor 자율 특성화 최종 완료.** 결론: active-γ floor = lit density에서 ~15×
   under, **density/coherence-bound**(transmission 풀림+per-head F_stall), 밴드엔 ρ~수십/µm²
   필요(MCF7 datum 없음). PI 결정1=닫힘, 결정2=데이터 완비, 결정3=PI-gated.
+
+## Iter 11-12 — health-check + KB 대조 (citation-grounding)
+- Iter11 health-check: 전부 안정(git clean, 0 procs, mem 96%, gbook 여전히 dirty 구 브랜치=GPU 차단).
+- Iter12 KB 대조(tag_query.py, 읽기전용): 내 density 결론을 KB SoT에 대조 → ⭐**MCF7 myosin
+  density datum 부재 확증** + 새 앵커 **KB-3.18 cortex-wide 분자 myosin ~100/µm²**(~30/minifil →
+  minifil ~3.3/µm²). 모델 proxy 0.6의 ~5×지만 밴드 요구 ~20-58/µm²의 여전히 6-17× 아래 ⇒
+  KB generic 분자 consensus조차 밴드보다 한 자릿수 낮음 → 밴드 direct-dipole 도달불가 가능
+  (coherence 필요 OR 밴드=de-adhered artifact). 브리프 결정2에 KB 인용 보강.
