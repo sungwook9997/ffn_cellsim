@@ -145,3 +145,17 @@ extreme-x ends of each filament (the substrate-pin / traction-reaction set). Thi
 architecture the suspended isotropic sphere lacked (pivot §2/§6). Fine-grained (bead-spring, no lumped bundle).
 6 sanity-gate tests PASS (dims/topology, ventral-above-substrate, aligned-along-axis, mixed-polarity,
 anchors-are-ends, boundary). Geometry only; myosin/α-actinin = Stage 2b, traction (FA-anchor reaction) = 2c.
+
+## LOOP 11: ADHERENT pivot Stage-2b-1 — ventral SF traction SCAFFOLD (build+run+readout) [WIP]
+Built scripts/h7_ventral_sf_traction.py: assembles the ventral SF bundle (layout → HOOMD snapshot: sf_actin +
+fa_anchor types, sf-bond Harmonic, sf-angle straight, WCA) + BAOAB, FA anchors held by OVERDAMPED HIGH-DRAG
+(γ_anchor=1e4·γ_b, rigid-substrate limit — NOT a re-pin: a hard re-pin after BAOAB is energetically
+inconsistent + integrator/ is PI-frozen so no filter). Traction readout = Σ|axial backbone tension| at anchors
+(from bond geometry T=k·(r−r0), robust vs HOOMD force-access timing). BUILD+RUN+READOUT all work. ⚠️FINDINGS
+for 2b-2: (1) a fiber at FULL CONTOUR extension is TAUT → intrinsic thermal/entropic tension at rest (passive
+≠0, expected — a taut WLC carries tension); (2) single-snapshot |T| is noisy (139/109/581 pN across times =
+fluctuation, not divergence); ⇒ the Stage-2c SCIENCE measurement must be DIFFERENTIAL (myosin_ON−myosin_OFF) +
+TIME-AVERAGED, and/or place FA separation with slack. Myosin (actin-aware Stam-Hocky, reusable) + α-actinin NOT
+yet added (2b-2). NEXT: 2b-2 add myosin+α-actinin on the bundle; 2c differential time-averaged traction vs
+myosin (+ soft-coupling-fix overlay). Lane clean (consumed nothing of FA/substrate internals; integrator/
+untouched; no other-session files).

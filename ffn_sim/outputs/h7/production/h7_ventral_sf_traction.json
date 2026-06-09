@@ -1,0 +1,16 @@
+{
+  "stage": "2b-1 SCAFFOLD: bundle build + FA anchor + traction readout (WIP)",
+  "n_fil": 8,
+  "n_beads": 88,
+  "n_anchors": 16,
+  "fiber_length_um": 5.0,
+  "passive_traction_pN_t0": 7.713579530965826,
+  "passive_traction_pN_equilibrated": 727.8542596222078,
+  "known_issues_for_2b2": [
+    "taut full-contour placement \u2192 intrinsic thermal tension (add slack or differential)",
+    "single-snapshot |T| is noisy \u2192 time-average over samples",
+    "overdamped high-drag anchor is a stand-in for the FA SubstrateLigandPin (consume it)",
+    "myosin + alpha-actinin not yet added (Stage 2b-2)"
+  ],
+  "note": "BUILD+RUN+READOUT validated; quantitative traction = Stage 2c (differential, time-avg)"
+}
