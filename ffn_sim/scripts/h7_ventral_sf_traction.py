@@ -48,7 +48,8 @@ def _angle_triplets(layout):
 
 def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
                  anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None,
-                 myosin_force_scale=1.0, myosin_backbone_bending=True):
+                 myosin_force_scale=1.0, myosin_backbone_bending=True,
+                 sarcomeric=False, n_sarcomeres=3, overlap_frac=0.3):
     """Assemble the ventral SF HOOMD sim; optionally wire continuous_stroke myosin.
 
     Stage 2b-2: with_myosin=True places Stam-Hocky bipolar minifilaments (actin-aware,
@@ -71,10 +72,23 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     z_basal = -0.5 * R
 
     rng = np.random.default_rng(seed)
-    lay = generate_ventral_sf_layout(
-        n_fil=n_fil, fiber_length=fiber_length, ell0=ell0, z_basal=z_basal,
-        bundle_radius=bundle_radius, rng=rng,
-    )
+    if sarcomeric:
+        # n_fil = filaments per cross-section (bundle thickness); total =
+        # n_sarcomeres·2·n_fil half-filaments.
+        from ffn_sim.cortex.ventral_stress_fiber import generate_sarcomeric_sf_layout
+        lay = generate_sarcomeric_sf_layout(
+            n_cross=n_fil, fiber_length=fiber_length, ell0=ell0, z_basal=z_basal,
+            bundle_radius=bundle_radius, rng=rng,
+            n_sarcomeres=n_sarcomeres, overlap_frac=overlap_frac,
+        )
+        # α-actinin Z-disc stiffness = the re-anchored crosslink k (KB-1.28).
+        k_zdisc = float(cfg["cortex"]["dynamic_crosslinkers"]["k_attach"])
+    else:
+        lay = generate_ventral_sf_layout(
+            n_fil=n_fil, fiber_length=fiber_length, ell0=ell0, z_basal=z_basal,
+            bundle_radius=bundle_radius, rng=rng,
+        )
+        k_zdisc = 0.0
     n = lay.positions.shape[0]
     anchors = set(int(b) for b in lay.anchor_beads)
 
@@ -91,10 +105,21 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
     snap.particles.typeid = typeid
     snap.particles.position = lay.positions
     snap.particles.mass = np.ones(n)
-    snap.bonds.N = int(lay.backbone_bonds.shape[0])
-    snap.bonds.types = ["sf-bond"]
-    snap.bonds.typeid = np.zeros(lay.backbone_bonds.shape[0], dtype=np.uint32)
-    snap.bonds.group = lay.backbone_bonds.astype(np.uint32)
+    n_bb = int(lay.backbone_bonds.shape[0])
+    n_xl = int(lay.crosslink_bonds.shape[0])   # α-actinin Z-disc (sarcomeric only)
+    if n_xl > 0:
+        snap.bonds.N = n_bb + n_xl
+        snap.bonds.types = ["sf-bond", "sf_zdisc"]
+        snap.bonds.typeid = np.concatenate([
+            np.zeros(n_bb, dtype=np.uint32), np.ones(n_xl, dtype=np.uint32)])
+        snap.bonds.group = np.concatenate([
+            lay.backbone_bonds.astype(np.uint32),
+            lay.crosslink_bonds.astype(np.uint32)], axis=0)
+    else:
+        snap.bonds.N = n_bb
+        snap.bonds.types = ["sf-bond"]
+        snap.bonds.typeid = np.zeros(n_bb, dtype=np.uint32)
+        snap.bonds.group = lay.backbone_bonds.astype(np.uint32)
     snap.angles.N = int(angles.shape[0])
     snap.angles.types = ["sf-angle"]
     snap.angles.typeid = np.zeros(angles.shape[0], dtype=np.uint32)
@@ -135,6 +160,11 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
 
     bond = md.bond.Harmonic()
     bond.params["sf-bond"] = dict(k=p.bond_k, r0=ell0)
+    if n_xl > 0:
+        # α-actinin Z-disc crosslink: barbed ends meeting at a Z-band are held
+        # together (r0=0 idealised Z-disc; the bond's nlist exclusion stops the WCA
+        # between the co-located pair). k = KB-1.28 re-anchored crosslink stiffness.
+        bond.params["sf_zdisc"] = dict(k=k_zdisc, r0=0.0)
     angle = md.angle.Harmonic()
     angle.params["sf-angle"] = dict(k=p.angle_k, t0=np.pi)  # straight aligned fiber
     if with_myosin and p_myo is not None and p_myo.backbone_bending:
@@ -263,6 +293,11 @@ def main() -> int:
                     help="post-equilibration steps over which traction is time-averaged (2c)")
     ap.add_argument("--n-samples", type=int, default=10)
     ap.add_argument("--n-motors", type=int, default=20)
+    ap.add_argument("--sarcomeric", action="store_true",
+                    help="graded-polarity SARCOMERIC SF (Z/M bands + α-actinin) instead of "
+                         "the random mixed-polarity bundle — rectifies myosin sliding into traction")
+    ap.add_argument("--n-sarcomeres", type=int, default=3)
+    ap.add_argument("--overlap-frac", type=float, default=0.3)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--anchor-drag-factor", type=float, default=1.0e4,
                     help="FA-anchor drag multiple of gamma_b (overdamped rigid-substrate limit)")
@@ -282,6 +317,8 @@ def main() -> int:
         bundle_radius=args.bundle_radius_nm * 1e-9, seed=args.seed,
         anchor_drag_factor=args.anchor_drag_factor,
         with_myosin=True, n_motors=args.n_motors,
+        sarcomeric=args.sarcomeric, n_sarcomeres=args.n_sarcomeres,
+        overlap_frac=args.overlap_frac,
     )
     # Stage 2c REDESIGN — SAME-SEED PAIRED differential. The first design differenced
     # two DIFFERENT random realizations (myosin-present vs myosin-absent), so the huge
