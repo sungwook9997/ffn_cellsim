@@ -238,3 +238,26 @@ NOT changed inline → SURFACED to PI (design doc §10). Generation fix needs NO
 it is the downstream transmission lever (smoke WALL-A already 66.8% in connected mesh).
 STATUS: §9 generation half (items 1-4) DONE + verified (cap + CFL stable, end-to-end). Item 5 (crosslink)
 + M4 (GPU magnitude run) are PI-gated. HALT→PI for the crosslink contract decision before the GPU run.
+
+## LOOP 18 (§9 Increment 5): crosslink k re-anchor 1e-7→1e-3 (KB-1.28, PI-approved)
+PI approved (production-wide). dynamic_crosslinkers k_intra/k_attach 1e-7→1e-3 N/m (KB-1.28 verified
+default; the 1e-7 "Furuike 2001/KU-3.19" anchor was a mis-attribution — KU-3.19=kinetics-only,
+Furuike=unfolding). Magic-Number Block added. CFL not tightened (τ_xl=391ns≫9.2ns myosin dt). Smoke
+STABLE (no blowup). ⚠️production-wide (re-run Gate-A/B). Commit 236101e. §9 atomic set (items 1-5) COMPLETE.
+
+## LOOP 19 (ventral SF 2b-2): wire continuous_stroke myosin onto the SF bundle
+build_sf_sim with_myosin: actin-aware Stam-Hocky minifilaments along SF tangents (±x̂), MyosinHeadForce
+(capped per-head), SF actin = binding substrate; CFL dt re-derived locally (myosin k_backbone, NO
+integrator/ edit). main() = 2c DIFFERENTIAL (passive vs active time-avg traction, cancels taut-WLC
+thermal tension). CPU smoke: build + passive(2389±496pN) + active + differential pipeline RUN; binding
+STARTS (geometry correct); 0-engagement at short smoke = timescale artifact (binding ~1/k_on=0.02s ≈
+5e5 steps at CFL dt), NOT a bug. Commit 7237ddc.
+
+## GPU RUNS LAUNCHED (gbook, parallel; PI both-in-parallel directive)
+Mac→gbook rsync to FRESH dir ~/ffn_cellsim_h7run (PI-approved remote-overwrite; gbook's own tree had
+stale orphaned edits → untouched). (1) FORCE-BUDGET contraction PID 342791: n_fil=500, continuous_stroke,
+400k contract steps, reconcile_dt. PROGRESS tick 25000: engagement 9.7%, meanT=7.56pN (→F_stall 8.48pN,
+CAPPED, not k·r), gen=4.1nN — the §9 per-head→F_stall target developing on GPU. (2) SF 2c PID 343006:
+n_fil=12, 8 motors, continuous_stroke, 120k+180k steps ×2 builds (passive+active differential). Both
+results pending (~40min). NEXT: collect γ magnitude (force-budget) + SF differential traction, then
+Notion closeout.
