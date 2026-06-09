@@ -184,9 +184,21 @@ class ResolvedCortexMyosin:
     #                filament minus end (re-targets the bond to downstream beads),
     #                a continuous commanded sub-bead stretch s_grip carries force
     #                (r0_eff = max(r − s_grip, 0)); sustained contraction.
+    # "continuous_stroke" — KU-3.5 §9 redesign (2026-06-09, PI-approved): the
+    #                same binding + s_grip walk + bipolar gate as grip_walk, BUT
+    #                the per-head contractile FORCE is delivered by a continuous
+    #                ``MyosinHeadForce`` (md.force.Custom): F = min(k·s_grip,
+    #                F_stall) along the head→bead unit vector (reaction on the
+    #                head), capped at F_stall — NOT the harmonic attach bond's
+    #                k·r (which explodes at the canonical stiff k=1e-3, loop12/13).
+    #                The attach bond is retained with k=0 ONLY for Bell-Evans
+    #                off-rate bookkeeping + the nlist exclusion (no double-count).
+    #                Required by the unit-slip fix: the bin scheme cannot resolve
+    #                the ~4 nm stiff-cross-bridge stroke over the binding range
+    #                (§9). Opt-in; grip_walk/binned_r0 stay byte-identical.
     # PI-ratified 2026-05-31 (decisions 1.4 continuous sub-bead / 2 Option-A
     # polarity / 3 bipolar antiparallel gate / 4 no param change). Opt-in.
-    stepping_mode: str           # "binned_r0" | "grip_walk"
+    stepping_mode: str           # "binned_r0" | "grip_walk" | "continuous_stroke"
 
     # Seed
     seed: int
@@ -274,10 +286,10 @@ def resolve_cortex_myosin(
         raise ValueError(f"batch_steps must be ≥ 1; got {p.batch_steps}")
     if p.n_bins < 1:
         raise ValueError(f"n_bins must be ≥ 1; got {p.n_bins}")
-    if p.stepping_mode not in ("binned_r0", "grip_walk"):
+    if p.stepping_mode not in ("binned_r0", "grip_walk", "continuous_stroke"):
         raise ValueError(
-            f"stepping_mode must be 'binned_r0' or 'grip_walk'; "
-            f"got {p.stepping_mode!r}"
+            f"stepping_mode must be 'binned_r0', 'grip_walk', or "
+            f"'continuous_stroke'; got {p.stepping_mode!r}"
         )
 
     # Mesoscale myosin FORCE scaling (KU-3.5 Route B, PI-ratified 2026-05-31).
@@ -300,7 +312,9 @@ def resolve_cortex_myosin(
     # satisfies the Magic-Number Block. Opt-in + grip_walk only (binned_r0 legacy
     # proxy stays byte-identical). v0 (per-motor kinetics) is unchanged.
     p.extras["mesoscale_force_scaling"] = False
-    if bool(cfg.get("mesoscale_force_scaling", False)) and p.stepping_mode == "grip_walk":
+    if bool(cfg.get("mesoscale_force_scaling", False)) and p.stepping_mode in (
+        "grip_walk", "continuous_stroke"
+    ):
         if R_cell is None or not (math.isfinite(R_cell) and R_cell > 0.0):
             raise ValueError(
                 "mesoscale_force_scaling requires a finite R_cell > 0 (to derive "
@@ -387,7 +401,7 @@ def cortex_myosin_attach_bin_rest_lengths(
       contractile force is carried by the s_grip pos_a_end accumulator, not the
       bond rest length (no in-grip requantization).
     """
-    if stepping_mode == "grip_walk":
+    if stepping_mode in ("grip_walk", "continuous_stroke"):
         return np.full(n_bins, _GRIP_WALK_R0_EPS, dtype=np.float64)
     edges = np.linspace(0.0, max_bind_dist, n_bins + 1, dtype=np.float64)
     return 0.5 * (edges[:-1] + edges[1:])
@@ -779,8 +793,15 @@ def register_cortex_myosin_bond_params(
         p_myo.n_bins, p_myo.head_actin_max_bind_dist,
         stepping_mode=p_myo.stepping_mode,
     )
+    # continuous_stroke (KU-3.5 §9): the attach bond carries NO mechanical force —
+    # the per-head contractile force is delivered by MyosinHeadForce (md.force.
+    # Custom) as F = min(k·s_grip, F_stall), NOT the harmonic k·r. The bond is
+    # retained at k=0 ONLY for (a) the Bell-Evans off-rate bond bookkeeping and
+    # (b) the HOOMD nlist exclusion that stops WCA/LJ pushing a bound head and its
+    # actin bead apart. This is the no-double-count contract (§9 item 1).
+    attach_k = 0.0 if p_myo.stepping_mode == "continuous_stroke" else p_myo.k_head_actin
     for name, r0 in zip(cortex_myosin_attach_bin_names(p_myo.n_bins), bin_r0):
-        bond.params[name] = dict(k=p_myo.k_head_actin, r0=float(r0))
+        bond.params[name] = dict(k=attach_k, r0=float(r0))
 
 
 # ---------------------------------------------------------------------------
@@ -790,6 +811,31 @@ def _bell_evans_k_off(
     F: np.ndarray, k_off0: float, x_beta: float, kT: float,
 ) -> np.ndarray:
     return k_off0 * np.exp(F * x_beta / kT)
+
+
+def continuous_stroke_force(
+    s_grip: np.ndarray, k_head_actin: float, F_stall: float
+) -> np.ndarray:
+    """Per-head delivered contractile force ``F = min(k·s_grip, F_stall)`` [N].
+
+    The KU-3.5 §9 continuous power-stroke law (PI-approved 2026-06-09). The
+    cross-bridge delivers its stiffness ``k_head_actin`` times the COMMANDED
+    sub-bead stretch ``s_grip`` (the AFINES ``pos_a_end`` power stroke advanced
+    by the Hill stepping kernel), capped at the Hill stall force ``F_stall``.
+
+    This REPLACES the grip_walk harmonic attach bond's force ``k·(r − r0) ≈ k·r``
+    (r0 ≈ 0). At the canonical stiff cross-bridge stiffness ``k = 1e-3 N/m``
+    (1 pN/nm; Veigel 2002 / Kaya 2010 / bridge/motor.py) that bond force EXPLODES
+    to ``k·r ≈ 322 pN`` for a head freshly bound at ``r ~ 76 nm`` (loop12 diagnosis)
+    — unphysical: a real cross-bridge binds FORCE-FREE and generates ``≤ F_stall``
+    via the nm-scale power stroke, NOT ``k·r`` over the whole binding distance.
+    With ``min(·, F_stall)`` the delivered force is bounded by the stall force by
+    construction (the §9 verification target: per-head delivered force caps at
+    F_stall, not k·r). Vectorised, units N; ``s_grip`` clamped ≥ 0.
+    """
+    return np.minimum(
+        k_head_actin * np.clip(s_grip, 0.0, None), F_stall
+    )
 
 
 class MyosinStepUpdater(hoomd.custom.Action):
@@ -857,14 +903,14 @@ class MyosinStepUpdater(hoomd.custom.Action):
             np.asarray(cortex_n_beads_per_filament, dtype=np.int64)
             if cortex_n_beads_per_filament is not None else None
         )
-        if self.stepping_mode == "grip_walk":
+        if self.stepping_mode in ("grip_walk", "continuous_stroke"):
             _have_tag_map = (
                 self._cortex_beads_per_filament is not None
                 or self._cortex_filament_starts is not None
             )
             if self._ell0_cortex is None or not _have_tag_map:
                 raise ValueError(
-                    "grip_walk stepping_mode requires ell0_cortex + a bead-tag ↔ "
+                    "grip_walk/continuous_stroke stepping_mode requires ell0_cortex + a bead-tag ↔ "
                     "(filament, pos) map: cortex_beads_per_filament (uniform fixed-N) "
                     "OR cortex_filament_starts (variable-length bimodal); got None."
                 )
@@ -1082,7 +1128,24 @@ class MyosinStepUpdater(hoomd.custom.Action):
             r = np.linalg.norm(r_head - r_actin, axis=1)
             bond_bins = bt[is_attach] - attach_bin_typeids[0]
             r0_per_bond = bin_r0[bond_bins]
-            F_mag = self.p.k_head_actin * np.clip(r - r0_per_bond, 0.0, None)
+            if self.stepping_mode == "continuous_stroke":
+                # §9: the bond carries NO mechanical force (k=0); the Bell-Evans
+                # off-rate must see the ACTUAL delivered cross-bridge load
+                # F = min(k·s_grip, F_stall), not the harmonic k·(r−r0). Map each
+                # engaged attach bond's head tag → head local index → its s_grip.
+                H = self.p.n_heads_per_side
+                N = self.p.n_backbone
+                per_motor = self.p.n_particles_per_motor
+                offset_s1 = head_tags - self.layout.motor_tag_start
+                head_locals_s1 = (offset_s1 // per_motor) * (2 * H) + (
+                    (offset_s1 % per_motor) - N
+                )
+                F_mag = continuous_stroke_force(
+                    self._head_grip_s[head_locals_s1],
+                    self.p.k_head_actin, self.p.F_stall_per_head,
+                )
+            else:
+                F_mag = self.p.k_head_actin * np.clip(r - r0_per_bond, 0.0, None)
             k_off = _bell_evans_k_off(
                 F_mag, self.p.head_actin_k_off0, self.p.head_actin_x_beta, self.kT,
             )
@@ -1193,7 +1256,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
                         continue
                     head_local = int(unbound_head_locals[k])
                     bw_fil = bw_pos = -1
-                    if self.stepping_mode == "grip_walk":
+                    if self.stepping_mode in ("grip_walk", "continuous_stroke"):
                         # ---- Bipolar sidedness gate (PI decision 3) ----
                         # Organize the +/− head sets into a net contractile
                         # dipole (Stam–Hocky): + side binds filaments whose
@@ -1215,7 +1278,7 @@ class MyosinStepUpdater(hoomd.custom.Action):
                     new_bonds_list.append((head_tag, best_bead))
                     new_bins_list.append(idx_bin)
                     self._head_bound_to_actin[head_local] = best_bead
-                    if self.stepping_mode == "grip_walk":
+                    if self.stepping_mode in ("grip_walk", "continuous_stroke"):
                         # Initialise the grip at the bound bead, zero stretch
                         # (r0_eff = r at bind → force-free construction, §6.2).
                         self._head_bound_filament[head_local] = bw_fil
@@ -1496,6 +1559,103 @@ class MyosinStepUpdater(hoomd.custom.Action):
     @property
     def steps_run(self) -> int:
         return self._steps_run
+
+
+# ---------------------------------------------------------------------------
+# Continuous per-head contractile force (KU-3.5 §9, continuous_stroke mode)
+# ---------------------------------------------------------------------------
+class MyosinHeadForce(md.force.Custom):
+    """Continuous per-head myosin power-stroke force (``continuous_stroke``).
+
+    Replaces the harmonic attach bond as the FORCE-bearing element of the
+    cross-bridge (the bond stays at k=0 for Bell-Evans bookkeeping + nlist
+    exclusion). Each step, for every engaged head ``h`` bound to cortex-actin
+    bead ``b`` with commanded sub-bead stretch ``s_grip[h]``:
+
+    * ``F = min(k_head_actin · s_grip[h], F_stall)``  (``continuous_stroke_force``)
+    * direction ``û = unit(pos[b] − pos[h])`` — the head is pulled TOWARD its
+      bound bead (the contractile power stroke; identical direction to a
+      STRETCHED harmonic attach bond, so the validated bipolar/grip-walk
+      geometry is unchanged — only the MAGNITUDE law differs).
+    * ``force[h] += F·û`` and ``force[b] −= F·û`` (Newton's 3rd law: the pair
+      force conserves momentum; the head transmits to its minifilament backbone
+      through the existing head-backbone harmonic spring HOOMD integrates).
+
+    The per-head binding state (which head is bound to which bead, and each
+    head's ``s_grip``) lives on the paired :class:`MyosinStepUpdater`; this force
+    reads it every step (the updater rewrites it every ``batch_steps``).
+
+    Sanity Gate (§9; STATIC checks in tests/test_myosin.py)
+    -------------------------------------------------------
+    1. Dimensional: ``k_head_actin`` [N/m] · ``s_grip`` [m] → [N]; capped at
+       ``F_stall`` [N]. Force·position → energy not tracked (constant-force
+       power stroke is non-conservative; potential_energy left 0).
+    2. Boundary: no engaged head → zero force; ``s_grip = 0`` → zero force
+       (force-free at bind, §6.2). ``k·s_grip ≥ F_stall`` → exactly F_stall.
+    3. Conservation: ``force[h] = −force[b]`` per pair → Σ force = 0 (Newton 3).
+    4. Sign: head pulled toward bead (contractile / inward) — never expandile.
+    5. Measurement: the delivered force is ``continuous_stroke_force`` (NOT k·r),
+       so the force-budget audit reads it as the cross-bridge load.
+
+    ⚠️ GPU-main note (§9): ``md.force.Custom`` syncs the device→host each step
+    (``cpu_local_snapshot``). This CPU path is the sanity-gated dev form; the
+    production GPU-resident form is a cupy ``gpu_local_force_arrays`` variant
+    (mirroring the compartment-force CPU/GPU swap in cell.py) — a follow-up port.
+    """
+
+    def __init__(
+        self,
+        *,
+        action: "MyosinStepUpdater",
+        p_myo: ResolvedCortexMyosin,
+        aniso: bool = False,
+    ) -> None:
+        super().__init__(aniso=aniso)
+        if p_myo.stepping_mode != "continuous_stroke":
+            raise ValueError(
+                "MyosinHeadForce requires stepping_mode='continuous_stroke'; "
+                f"got {p_myo.stepping_mode!r}"
+            )
+        self._action = action
+        self.p = p_myo
+        self.k_head_actin = float(p_myo.k_head_actin)
+        self.F_stall = float(p_myo.F_stall_per_head)
+        # Static head-local → global particle-tag map (depends only on the layout).
+        n_heads_total = int(2 * p_myo.n_heads_per_side * p_myo.n_motors_per_cell)
+        self._head_global_tags = np.array(
+            [action._head_global_tag(h) for h in range(n_heads_total)],
+            dtype=np.int64,
+        )
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        bound = self._action._head_bound_to_actin
+        engaged = bound >= 0
+        with self._state.cpu_local_snapshot as snap:
+            tag = np.asarray(snap.particles.tag).copy()
+            pos = np.asarray(snap.particles.position).copy()
+        n_rows = pos.shape[0]
+        F_vec = np.zeros((n_rows, 3), dtype=np.float64)
+        if engaged.any():
+            # Tag → row inverse map (single-rank dense tags 0..N-1).
+            rtag = np.empty(int(tag.max()) + 1, dtype=np.int64)
+            rtag[tag] = np.arange(n_rows, dtype=np.int64)
+            head_tags = self._head_global_tags[engaged]
+            bead_tags = bound[engaged]
+            s_grip = self._action._head_grip_s[engaged]
+            F_mag = continuous_stroke_force(
+                s_grip, self.k_head_actin, self.F_stall
+            )
+            head_rows = rtag[head_tags]
+            bead_rows = rtag[bead_tags]
+            d = pos[bead_rows] - pos[head_rows]              # head → bead
+            r = np.linalg.norm(d, axis=1)
+            uhat = d / r[:, None].clip(min=1e-30)
+            F_pair = F_mag[:, None] * uhat                   # on head, toward bead
+            # Multiple heads may grip the same bead → accumulate (Newton 3).
+            np.add.at(F_vec, head_rows, F_pair)
+            np.add.at(F_vec, bead_rows, -F_pair)
+        with self.cpu_local_force_arrays as arrays:
+            arrays.force[:] = F_vec
 
 
 def make_cortex_myosin_updater(

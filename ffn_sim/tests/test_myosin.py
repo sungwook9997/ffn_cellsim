@@ -21,12 +21,15 @@ from ffn_sim.cortex.myosin import (
     BOND_TYPE_MYOSIN_BACKBONE,
     BOND_TYPE_MYOSIN_HEAD_BACKBONE,
     CortexMyosinLayout,
+    MyosinHeadForce,
     MyosinStepUpdater,
     ResolvedCortexMyosin,
+    continuous_stroke_force,
     cortex_myosin_attach_bin_names,
     cortex_myosin_attach_bin_rest_lengths,
     extend_state_with_cortex_myosin,
     generate_cortex_myosin_layout,
+    register_cortex_myosin_bond_params,
     resolve_cortex_myosin,
 )
 
@@ -318,6 +321,158 @@ class TestGripWalk:
             fil, pos_j = upd._tag_to_fil_pos(tag)
             assert (fil, pos_j) == (tag // 4, tag % 4)
             assert upd._bead_tag(fil, pos_j) == tag
+
+
+# ---------------------------------------------------------------------------
+# KU-3.5 §9 continuous_stroke — continuous per-head custom force (2026-06-09,
+# PI-approved). The bin scheme cannot resolve the ~4 nm stiff-cross-bridge stroke
+# over the binding range (§9), so the FORCE is delivered by MyosinHeadForce
+# (md.force.Custom) as F = min(k·s_grip, F_stall), NOT the harmonic k·r.
+# ---------------------------------------------------------------------------
+class _StubAction:
+    """Minimal stand-in exposing the 3 attributes MyosinHeadForce reads.
+
+    The full binding/walk state machine is the grip_walk MyosinStepUpdater
+    (tested above); continuous_stroke reuses it verbatim, so the FORCE class is
+    tested in isolation against a controlled bound state."""
+
+    def __init__(self, head_global_tags, bound, s_grip):
+        self._tags = np.asarray(head_global_tags, dtype=np.int64)
+        self._head_bound_to_actin = np.asarray(bound, dtype=np.int64)
+        self._head_grip_s = np.asarray(s_grip, dtype=np.float64)
+
+    def _head_global_tag(self, h):
+        return int(self._tags[h])
+
+
+def _cs_p_myo(p_cortex, *, k=1.0e-3, F_stall=5.0e-13):
+    cfg = _demo_cfg(n_motors=1)
+    cfg["cortex"]["myosin"]["n_heads_per_side"] = 1
+    cfg["cortex"]["myosin"]["n_backbone"] = 2
+    cfg["cortex"]["myosin"]["k_head_actin"] = k
+    cfg["cortex"]["myosin"]["k_head_spring"] = k
+    cfg["cortex"]["myosin"]["F_stall_per_head"] = F_stall
+    cfg["cortex"]["myosin"]["stepping_mode"] = "continuous_stroke"
+    return resolve_cortex_myosin(cfg, dt=p_cortex.dt_cfl)
+
+
+class TestContinuousStrokeForceLaw:
+    """§9 sanity gates 1,2,4 on the pure delivered-force law."""
+
+    def test_resolve_accepts_mode(self, p_cortex):
+        p = _cs_p_myo(p_cortex)
+        assert p.stepping_mode == "continuous_stroke"
+
+    def test_cap_at_F_stall(self):
+        # k·s_grip well past F_stall → exactly F_stall (per-head cap, not k·r).
+        F = continuous_stroke_force(np.array([1.0e-6]), 1.0e-3, 5.0e-13)
+        assert math.isclose(float(F[0]), 5.0e-13)
+
+    def test_linear_ramp_below_stall(self):
+        # Below the cap the force is k·s_grip (the power-stroke ramp).
+        s = 2.0e-10  # k·s = 1e-3·2e-10 = 2e-13 < F_stall 5e-13
+        F = continuous_stroke_force(np.array([s]), 1.0e-3, 5.0e-13)
+        assert math.isclose(float(F[0]), 1.0e-3 * s)
+
+    def test_zero_at_zero_stretch(self):
+        # Force-free at bind (s_grip = 0) — §6.2; and non-negative for s<0.
+        F = continuous_stroke_force(np.array([0.0, -1.0e-9]), 1.0e-3, 5.0e-13)
+        assert float(F[0]) == 0.0 and float(F[1]) == 0.0
+
+
+class TestContinuousStrokeRegistration:
+    """§9 item 1: attach bond demoted to k=0 (Bell-Evans + nlist only)."""
+
+    def test_attach_bond_k_zero_in_continuous(self, p_cortex):
+        import hoomd.md as md
+        p = _cs_p_myo(p_cortex)
+        bond = md.bond.Harmonic()
+        # backbone + head-backbone springs must be registered too.
+        register_cortex_myosin_bond_params(bond, p)
+        for name in cortex_myosin_attach_bin_names(p.n_bins):
+            assert bond.params[name]["k"] == 0.0, (
+                f"{name} must carry NO force in continuous_stroke (no double-count)"
+            )
+        # The head-backbone spring (the series transmission element) is UNCHANGED.
+        assert bond.params[BOND_TYPE_MYOSIN_HEAD_BACKBONE]["k"] == p.k_head_spring
+
+    def test_grip_walk_attach_bond_unchanged(self, p_cortex):
+        """Legacy byte-identical: grip_walk attach bonds still carry k_head_actin."""
+        import hoomd.md as md
+        cfg = _demo_cfg(n_motors=1)
+        cfg["cortex"]["myosin"]["stepping_mode"] = "grip_walk"
+        p = resolve_cortex_myosin(cfg, dt=p_cortex.dt_cfl)
+        bond = md.bond.Harmonic()
+        register_cortex_myosin_bond_params(bond, p)
+        for name in cortex_myosin_attach_bin_names(p.n_bins):
+            assert bond.params[name]["k"] == p.k_head_actin
+
+
+class TestContinuousStrokeForceIntegration:
+    """§9 sanity gates 3 (Newton-3) + 4 (contractile sign) in a HOOMD sim."""
+
+    @staticmethod
+    def _run(p_myo, *, s_grip, bead_pos=(3.0e-7, 0.0, 0.0)):
+        import hoomd
+        import hoomd.md as md
+        dev = hoomd.device.CPU(notice_level=0)
+        sim = hoomd.Simulation(device=dev, seed=1)
+        snap = hoomd.Snapshot(dev.communicator)
+        if snap.communicator.rank == 0:
+            snap.particles.N = 2
+            snap.particles.types = ["actin", "head"]
+            snap.particles.typeid[:] = [0, 1]
+            # tag 0 = actin bead (bound target), tag 1 = head at origin.
+            snap.particles.position[:] = [list(bead_pos), [0.0, 0.0, 0.0]]
+            snap.configuration.box = [2.0e-5, 2.0e-5, 2.0e-5, 0, 0, 0]
+        sim.create_state_from_snapshot(snap)
+        # head local 0 → global tag 1; bound to actin tag 0; the other head free.
+        action = _StubAction(
+            head_global_tags=[1, 1],
+            bound=[0, -1],
+            s_grip=[s_grip, 0.0],
+        )
+        force = MyosinHeadForce(action=action, p_myo=p_myo)
+        ig = md.Integrator(dt=1.0e-12, forces=[force], methods=[])
+        sim.operations.integrator = ig
+        sim.run(0)
+        F = np.asarray(force.forces).copy()
+        with sim.state.cpu_local_snapshot as s:
+            tag = np.asarray(s.particles.tag).copy()
+        row_bead = int(np.argwhere(tag == 0).item())
+        row_head = int(np.argwhere(tag == 1).item())
+        return F, row_bead, row_head
+
+    def test_newton_third_law(self, p_cortex):
+        p = _cs_p_myo(p_cortex)
+        F, rb, rh = self._run(p, s_grip=1.0e-10)
+        net = F.sum(axis=0)
+        assert np.allclose(net, 0.0, atol=1e-20), f"Σforce = {net} ≠ 0 (Newton 3)"
+        assert np.allclose(F[rb], -F[rh], atol=1e-20)
+
+    def test_contractile_sign(self, p_cortex):
+        """Head pulled TOWARD bead (+x), bead toward head (−x): contractile."""
+        p = _cs_p_myo(p_cortex)
+        F, rb, rh = self._run(p, s_grip=1.0e-10, bead_pos=(3.0e-7, 0.0, 0.0))
+        assert F[rh][0] > 0.0, "head must be pulled toward the bead (+x)"
+        assert F[rb][0] < 0.0, "bead must be pulled toward the head (−x)"
+
+    def test_delivered_force_caps_at_stall_not_kr(self, p_cortex):
+        """THE §9 target: delivered |F| = F_stall (capped), NOT k·r = 1e-3·3e-7
+        = 3e-4 N (the loop12 explosion). The bead is 300 nm away."""
+        p = _cs_p_myo(p_cortex, k=1.0e-3, F_stall=5.0e-13)
+        # s_grip large so k·s_grip ≫ F_stall → force must cap at F_stall.
+        F, rb, rh = self._run(p, s_grip=1.0e-6, bead_pos=(3.0e-7, 0.0, 0.0))
+        mag = float(np.linalg.norm(F[rh]))
+        assert math.isclose(mag, 5.0e-13, rel_tol=1e-9), (
+            f"delivered |F| = {mag:.3e} N, expected F_stall 5e-13 N "
+            f"(k·r would be 3e-4 N — the explosion this fix prevents)"
+        )
+
+    def test_zero_force_when_unengaged(self, p_cortex):
+        p = _cs_p_myo(p_cortex)
+        F, rb, rh = self._run(p, s_grip=0.0)  # s_grip=0 → force-free at bind
+        assert np.allclose(F, 0.0, atol=1e-20)
 
     def test_walk_toward_minus_clamps_at_zero(self, p_cortex):
         """Walking decrements toward the minus end (bead 0) and clamps there."""
