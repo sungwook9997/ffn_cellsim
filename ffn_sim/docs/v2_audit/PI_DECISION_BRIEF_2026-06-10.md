@@ -10,6 +10,20 @@ datum(**myosin areal density + active-vs-network 구분**)에 막혀 있다.
 
 ---
 
+## ⚠️ 추가 항목 (결정 아님 — 잠복 회귀, PI fix 필요) — crosslink 재anchor가 CFL 테스트 2개 깸
+
+자율-루프 회귀 테스트 중 발견: **loop18 crosslink 재anchor(k 1e-7→1e-3)가 `test_crosslinkers.py`
+2개를 깨뜨렸다**(`test_batch_cfl_shrinks_when_violated`, `test_demo_xlink_sim_builds_and_runs_no_NaN`).
+근본: batch-CFL envelope `_F_env = k_attach·max_bind_dist`가 데모의 넓은 bind 반경(1µm)×stiff
+k=1e-3 = **1nN** → Bell-Evans off-rate `k_off_max=2.56e+39/s` 폭발. envelope이 soft-k 가정
+(주석 명시)인데 재anchor 때 갱신 안 됨. ✅ **Production(60nm 반경)은 안전**(k_off_max=18/s,
+batch=100) → **이번 세션 γ 결론 무관**. ❌ test suite RED. **Lead 미수정**(CFL contract=
+gate-loosening 금지). 상세+수정안 3개(A cap/B thermal-bound[추천]/C fixture) →
+`CROSSLINK_REANCHOR_CFL_REGRESSION_2026-06-10.md`. PI: 재anchor를 production-wide로 승인했으니
+이 CFL envelope도 stiff-k에 맞게 재유도 필요.
+
+---
+
 ## 결정 1 — crosslink 강성 재anchor ✅ **이미 완료(loop18) — 결정 불필요, 측정만 남음**
 
 > ⚠️ **2026-06-10 정정**: 최초 브리프는 이 결정을 "PI 대기"로 적었으나, git 확인 결과

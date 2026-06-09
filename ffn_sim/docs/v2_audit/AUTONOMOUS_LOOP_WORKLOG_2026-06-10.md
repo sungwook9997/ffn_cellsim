@@ -108,3 +108,12 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
   minifil ~3.3/µm²). 모델 proxy 0.6의 ~5×지만 밴드 요구 ~20-58/µm²의 여전히 6-17× 아래 ⇒
   KB generic 분자 consensus조차 밴드보다 한 자릿수 낮음 → 밴드 direct-dipole 도달불가 가능
   (coherence 필요 OR 밴드=de-adhered artifact). 브리프 결정2에 KB 인용 보강.
+
+## Iter 13 — ⚠️ 잠복 회귀 발견: loop18 재anchor가 crosslinker CFL 테스트 2개 깸
+- 회귀 테스트(verified-work diligence) 중 `test_crosslinkers.py` 2 FAILED 발견.
+- root cause: batch-CFL envelope `_F_env=k_attach·max_bind_dist`가 데모 bind 반경(1µm)×
+  stiff k=1e-3 = 1nN → Bell-Evans k_off_max=2.56e39/s 폭발. soft-k 가정 envelope가 loop18
+  재anchor 때 미갱신. ✅production(60nm)=18/s 안전→γ 결론 무관. ❌test RED.
+- Lead 미수정(CFL contract=gate-loosening 금지). 문서 CROSSLINK_REANCHOR_CFL_REGRESSION_
+  2026-06-10.md(수정안 3: A cap/B thermal-bound 추천/C fixture). PI 브리프에 ⚠️항목 추가.
+- ⇒ watch 중 실제 버그 1건 포착(회귀 테스트가 값을 함). 자율 fix 안 함=disciplined.
