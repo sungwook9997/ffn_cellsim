@@ -63,3 +63,16 @@ engagement ~11% geometric. Net envelope(18-36×)×1/9×1/11→~260× under band.
 (H7_MYOSIN_OVERLAP_MECHANISM_DESIGN_2026-06-09.md): O2 overlap-accumulation (in-lane, opt-in) + O1
 cross-bridge stiffness (magic-number/PI trigger) + sanity gates + stages M1-M4. ⭐O1 = dominant fixable
 deficit AND a magic-number trigger → HALT→PI (stiffness datum sign-off) per hard rules.
+
+## LOOP 5: ROOT CAUSE — cortex head stiffness 1000× softer than the canonical shared motor
+The H.3 brief says cortex/myosin shares the Stam-Hocky/AFINES motor via bridge/motor.py (H.4). But the
+configs DISAGREE 1000×: bridge/motor head_spring_k=1.0e-3 N/m (1 pN/nm, "AFINES motor stiffness") vs cortex
+k_head_spring=1.0e-6 N/m (1 pN/µm), and k_head_actin=1e-6 ("= k_head_spring"). Literature cross-bridge
+stiffness ~0.3-2 pN/NM (Veigel/Kaya/Finer) = 300-2000 pN/µm — the canonical 1e-3 is right, cortex 1e-6 is a
+pN/µm-vs-pN/nm UNIT SLIP in the H.3 brief literal. This IS deficit D1: at k=1e-6 the Hill stall needs
+min(s,r)≈17µm (unreachable → head delivers only k·r≈0.74pN); at the canonical k=1e-3 the stall binds at
+≈4nm → head delivers F_stall (~11× more, dominant fixable deficit, makes grip_walk physically correct).
+It's a brief-literal CONTRACT value → PI sign-off + literature anchor (NOT inline). CFL: at k=1e-3,
+k_backbone=1e-2 → τ_backbone≈39ns≈3×dt — the "far above CFL" note breaks; re-derive (cortex
+cfl_safety_factor, not frozen integrator/) or use M-SHAKE rigid. HALT→PI for the contract sign-off.
+doc §7. No param changed.

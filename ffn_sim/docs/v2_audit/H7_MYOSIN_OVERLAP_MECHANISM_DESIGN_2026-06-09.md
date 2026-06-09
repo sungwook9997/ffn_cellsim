@@ -129,3 +129,42 @@ cheap M1/M2 CPU evidence first.
 - The honest fallback if O2+O1 still fall short: the active-γ floor is a genuine
   fine-grained-model prediction (sub-band) and the tool's role is to SUPPLY ζΔμ to the
   coarse layers, not to hit the absolute band (the long-standing scope question).
+
+## 7. ⭐ ROOT-CAUSE FOUND (D1/O1): cortex head stiffness is 1000× softer than the canonical motor
+
+The H.3 brief states the Stam-Hocky/AFINES motor kernel is SHARED via
+`ffn_sim/bridge/motor.py` (H.4-owned). The two configs that instantiate that same motor
+DISAGREE by exactly 1000×:
+
+| param | bridge/motor (H.4, phase1_h4.yaml) | cortex/myosin (H.3, phase1_h3.yaml) | ratio |
+|---|---|---|---|
+| head spring k | `head_spring_k: 1.0e-3` N/m = **1 pN/nm** ("AFINES motor stiffness") | `k_head_spring: 1.0e-6` N/m = 1 pN/µm | **1000×** |
+| head-actin k | (k_xb = head_spring_k = 1e-3) | `k_head_actin: 1.0e-6` ("= k_head_spring") | **1000×** |
+
+The literature cross-bridge stiffness is ~0.3–2 pN/**nm** (Veigel 2002, Kaya-Higuchi 2010,
+Finer 1994) = 300–2000 pN/µm. The canonical motor's 1e-3 N/m (1 pN/nm) is right; the
+cortex 1e-6 N/m (1 pN/µm) is **1000× too soft — a pN/µm-vs-pN/nm unit slip in the H.3
+brief literal**, inherited by `k_head_actin` ("= k_head_spring").
+
+**Consequence (this IS deficit D1).** With k = 1e-6, the Hill stall needs
+min(s,r) = F_stall/k_series ≈ 17 µm — unreachable, so the head walks to the 2ℓ₀ cap
+delivering only k·r ≈ 0.74 pN. With the canonical k = 1e-3, the Hill stall binds at
+min(s,r) = F_stall/k_series ≈ **4 nm**, so the head delivers **F_stall** — ~11× more force,
+the dominant fixable deficit, AND it makes the grip_walk physically correct (the motor
+stalls at a physiological sub-bead stretch instead of saturating on a soft spring).
+
+**This is a brief-literal CONTRACT value** ("k_head_spring = 1 pN/μm = 1e-6 N/m brief
+literal", phase1_h3.yaml:331). Per the hard rules, correcting it is a contract change →
+**PI sign-off + literature anchor**, NOT an inline edit. Two coupled checks:
+- **CFL (integrator-freeze adjacent):** at k = 1e-3, k_backbone = 10·k = 1e-2 N/m →
+  τ_backbone = γ_b/k_backbone ≈ 3.91e-10/1e-2 ≈ 39 ns ≈ 3×dt(13 ns). The H.3 CFL note
+  ("FAR ABOVE dt_CFL") no longer holds at the corrected stiffness — the step may need to
+  shrink (cortex dt is set via cfl_safety_factor in the cortex config, NOT the
+  PI-frozen integrator/, per this session's pattern), or the backbone treated rigid
+  (M-SHAKE constrained mode already does this). MUST re-derive before running.
+- **Mesoscale interaction:** the ×4.24 parallel-scaling multiplies k too; s_grip_max =
+  F_stall/k stays invariant, so the correction composes cleanly with mesoscale.
+
+This supersedes the framing that O1 is merely "a soft spring" — it is a concrete 1000×
+divergence from the project's own canonical motor module. HALT → PI for the contract
+sign-off (brief-literal change + CFL re-derivation).
