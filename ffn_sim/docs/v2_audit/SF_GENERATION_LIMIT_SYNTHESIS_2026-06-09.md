@@ -197,3 +197,14 @@ None of these is a gate edit; any contract change is a PI sign-off item.
   gap; lit minifilament == cortical 56 pN; fidelity ≈ 11×; cross-section count order-hundreds;
   engagement is a penalty not a credit).
 - `docs/v2_audit/SF_GENERATION_LIMIT_SYNTHESIS_2026-06-09.md` — this doc.
+- `scripts/h7_sf_generation_limit_vis.py` → `outputs/h7/figs/h7_sf_generation_limit.png`.
+
+## Figures
+
+- **`figs/h7_sf_generation_limit.png`** — (left) labeled waterfall of the single-SF force
+  budget: raw ≈5 pN brief-literal minifilament → ×~11 per-minifilament fidelity → ×~180
+  (floor) / ~360 (centre) cross-sectional NMII count, reaching the overlaid Kumar 2006
+  10–30 nN band (log y-axis, noted); annotated with the coherent-bundle upper-bound /
+  §11-slackening / engagement-realism caveats. (right) the cortex ∥ SF unification — same
+  ½·n·f·ℓ budget, same f≈56 pN dipole, same missing-MCF7-density-datum gap, same
+  organisation-not-count lever.
