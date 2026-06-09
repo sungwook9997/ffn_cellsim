@@ -290,6 +290,45 @@ def test_sf_myosin_types_all_sf_prefixed():
     assert not any(t.startswith("cortex_myosin_") for t in types)
 
 
+# --- bending EI anchor (the missing SF/basal flexural term) ---
+def test_basal_bending_resolve_scales_with_N():
+    from ffn_sim.cell.basal_mesh import resolve_basal_bending, EI_SINGLE_ACTIN
+    b10 = resolve_basal_bending(N_filaments=10, ell0=ELL0)
+    b20 = resolve_basal_bending(N_filaments=20, ell0=ELL0)
+    # loose bundle: EI_cable = N·EI_single.
+    assert math.isclose(b10["EI_cable_N_m2"], 10 * EI_SINGLE_ACTIN, rel_tol=1e-12)
+    assert math.isclose(b20["EI_cable_N_m2"], 20 * EI_SINGLE_ACTIN, rel_tol=1e-12)
+    assert math.isclose(b20["EI_cable_N_m2"], 2 * b10["EI_cable_N_m2"], rel_tol=1e-12)
+    # tight bundle scales N².
+    bt = resolve_basal_bending(N_filaments=10, ell0=ELL0, bundle_coupling="tight")
+    assert math.isclose(bt["EI_cable_N_m2"], 100 * EI_SINGLE_ACTIN, rel_tol=1e-12)
+
+
+def test_basal_bending_report_force_free_and_bend_before_stretch():
+    app = _apparatus(n_cables=12, n_infill=500)
+    rep = basal_bending_report(app, N_filaments=20, ell0=ELL0)
+    c = rep["controls"]
+    assert c["angle_groups_present"]
+    assert c["n_angle_triplets"] > 0
+    assert c["force_free"]["ok"]                         # straight chains → θ≈π
+    bvs = c["bend_vs_stretch"]
+    # the AFINES condition: stretch ≫ bending → filaments bend before they stretch.
+    assert bvs["bend_before_stretch"]
+    assert bvs["ratio_ka_over_kbend"] > 1e3              # large headroom (~1.5e5)
+    assert rep["verdict"] == "PASS"
+
+
+def test_bend_vs_stretch_ratio_is_N_independent():
+    # both ka (=N·EA/ℓ0) and kbend (=N·EI/ℓ0³) scale with N → ratio cancels N.
+    app = _apparatus()
+    r7 = basal_bending_report(app, N_filaments=7, ell0=ELL0)["controls"]["bend_vs_stretch"]["ratio_ka_over_kbend"]
+    r30 = basal_bending_report(app, N_filaments=30, ell0=ELL0)["controls"]["bend_vs_stretch"]["ratio_ka_over_kbend"]
+    assert math.isclose(r7, r30, rel_tol=1e-9)
+
+
+from ffn_sim.cell.basal_mesh import basal_bending_report  # noqa: E402
+
+
 def test_jitter_spreads_cables():
     lay0 = _layout(n=2000, long_axis_jitter_deg=0.0, seed=9)
     layj = _layout(n=2000, long_axis_jitter_deg=20.0, seed=9)

@@ -863,3 +863,125 @@ def sf_myosin_placement_report(
     }
     ok = assembled and force_free and heads_near and sf_denylisted and distinct
     return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
+
+
+# ===========================================================================
+# Bending EI anchor (SF/basal angle potential — the missing flexural term)
+# ===========================================================================
+# The SF/basal filaments were built as straight chords with NO bending potential
+# (stress_fibers.py: "NO angles ... documented TODO (needs an EI anchor)"). The
+# cortex HAS one (md.angle.Harmonic, angle_k = κ_B/ℓ0, κ_B = ℓ_p·kT). This wires
+# the same for the basal apparatus, anchored to the F-actin flexural rigidity.
+#
+# EI_single = single-F-actin FLEXURAL rigidity = 7.3e-26 N·m² (Gittes 1993 JCB
+# 120:923 — the CORRECT use of Gittes, flexural EI / persistence length ~17 µm;
+# distinct from the AXIAL EA which is Kojima 1994). For a vSF BUNDLE of N_filaments
+# the flexural rigidity is bundle-coupling-dependent: LOOSE (filaments slide,
+# α-actinin permits shear) → EI_bundle ≈ N·EI_single; TIGHT (no slip) → up to
+# N²·EI_single. We default LOOSE (conservative, α-actinin-crosslinked bundles
+# shear) and expose the choice. Same N_filaments as the stretch μ_SF (swept).
+EI_SINGLE_ACTIN: float = 7.3e-26   # N·m²  (Gittes 1993 flexural; κ_B = ℓ_p·kT)
+
+
+def resolve_basal_bending(
+    *,
+    N_filaments: int,
+    ell0: float,
+    EI_single: float = EI_SINGLE_ACTIN,
+    bundle_coupling: str = "loose",
+) -> dict[str, float]:
+    """Bending moduli + angle stiffnesses for the basal apparatus (cortex convention).
+
+    Returns ``EI_cable`` / ``EI_infill`` [N·m²] and the harmonic angle stiffnesses
+    ``angle_k_cable`` / ``angle_k_infill`` [N·m/rad²] = ``EI / ell0`` (the cortex
+    ``angle_k = bending_modulus/rest_length`` convention; force-free at θ0=π).
+
+    ``bundle_coupling``: 'loose' → EI_cable = N·EI_single (α-actinin shear-coupled,
+    default); 'tight' → N²·EI_single (no-slip bound).
+    """
+    if N_filaments < 1:
+        raise ValueError(f"N_filaments must be ≥ 1; got {N_filaments}")
+    if not (math.isfinite(ell0) and ell0 > 0.0):
+        raise ValueError(f"ell0 must be finite > 0; got {ell0!r}")
+    if bundle_coupling == "loose":
+        EI_cable = N_filaments * EI_single
+    elif bundle_coupling == "tight":
+        EI_cable = (N_filaments ** 2) * EI_single
+    else:
+        raise ValueError(f"bundle_coupling must be 'loose' or 'tight'; got {bundle_coupling!r}")
+    EI_infill = EI_single   # infill = single/few-filament actin
+    return {
+        "EI_single_N_m2": float(EI_single),
+        "EI_cable_N_m2": float(EI_cable),
+        "EI_infill_N_m2": float(EI_infill),
+        "angle_k_cable_N_m_per_rad2": float(EI_cable / ell0),
+        "angle_k_infill_N_m_per_rad2": float(EI_infill / ell0),
+        "bundle_coupling": bundle_coupling,
+    }
+
+
+def basal_bending_report(
+    app: BasalApparatus,
+    *,
+    N_filaments: int,
+    ell0: float,
+    EA_single: float = 4.37e-8,
+    EI_single: float = EI_SINGLE_ACTIN,
+    bundle_coupling: str = "loose",
+) -> dict[str, Any]:
+    """Build-time bending gate: angle groups present, force-free, bend-vs-stretch.
+
+    Controls:
+      * angle_groups_present — the apparatus layout carries chain angle triplets.
+      * force_free — construction chain angles ≈ π (straight) → bending energy ≈ 0.
+      * bend_before_stretch — the AFINES condition ka ≫ κ_B/ℓ³ (stretch much stiffer
+        than bending per unit length), so filaments BEND before they STRETCH. The
+        ratio also gives the MAX factor by which the stretch spring may be SOFTENED
+        (AFINES-style) while still keeping stretch ≥ bending (justifies a feasible dt).
+    """
+    lay = app.layout
+    ag = np.asarray(lay.angle_groups, dtype=np.int64).reshape(-1, 3)
+    present = bool(ag.shape[0] > 0)
+
+    pos = np.asarray(lay.positions_flat, dtype=np.float64)
+    if present:
+        a = pos[ag[:, 0]]; b = pos[ag[:, 1]]; c = pos[ag[:, 2]]
+        u = a - b; v = c - b
+        un = u / np.linalg.norm(u, axis=1, keepdims=True).clip(min=1e-30)
+        vn = v / np.linalg.norm(v, axis=1, keepdims=True).clip(min=1e-30)
+        cosang = np.clip(np.einsum("ij,ij->i", un, vn), -1.0, 1.0)
+        theta = np.arccos(cosang)                      # interior angle at b
+        # straight chain → θ ≈ π → (θ−π)² ≈ 0 (force-free under θ0=π Harmonic).
+        max_dev_from_pi = float(np.max(np.abs(theta - math.pi)))
+    else:
+        max_dev_from_pi = 0.0
+    force_free = bool(present and max_dev_from_pi < 1e-6)
+
+    bend = resolve_basal_bending(
+        N_filaments=N_filaments, ell0=ell0, EI_single=EI_single,
+        bundle_coupling=bundle_coupling,
+    )
+    # AFINES condition: ka (stretch, N/m) vs κ_B/ℓ³ (bending stiffness scale, N/m).
+    mu_SF = N_filaments * EA_single
+    ka_cable = mu_SF / ell0                              # stretch spring [N/m]
+    kbend_cable = bend["EI_cable_N_m2"] / ell0 ** 3      # bending scale [N/m]
+    ratio = ka_cable / kbend_cable if kbend_cable > 0 else float("inf")
+    bend_before_stretch = bool(ratio > 1.0)
+    # max stretch-softening factor that keeps stretch ≥ bending (AFINES headroom).
+    max_soften_factor = ratio
+
+    controls = {
+        "angle_groups_present": present,
+        "n_angle_triplets": int(ag.shape[0]),
+        "force_free": {"ok": force_free, "max_dev_from_pi_rad": max_dev_from_pi},
+        "bending": bend,
+        "bend_vs_stretch": {
+            "ka_cable_N_per_m": ka_cable,
+            "kbend_cable_N_per_m": kbend_cable,
+            "ratio_ka_over_kbend": ratio,
+            "bend_before_stretch": bend_before_stretch,
+            "max_stretch_soften_factor": max_soften_factor,
+        },
+    }
+    ok = present and force_free and bend_before_stretch
+    return {"verdict": "PASS" if ok else "REVIEW", "controls": controls}
