@@ -70,6 +70,12 @@ invariant).
 ~27–36×. **MCF7 areal-density datum이 존재하지 않는다.** 밴드[0.35–0.65 mN/m] 자체도
 rounded/de-adhered HeLa/L929 proxy(NO MCF7, NO spread-adherent datum).
 
+**⭐ 헤드라인 floor 수치 (2026-06-10, Lead 자율 5-seed 앙상블, lit proxy density 0.6/µm²):**
+**γ_active = 1.16e-2 ± 0.21e-2 mN/m (n=5, CV 18%) = 15.5× under band_lo (0.18).**
+per-seed range 0.83–1.37e-2. fig `h7_gamma_active_ensemble_2026-06-10.png`. = 교정된 작동점
+(continuous_stroke, per-head F_stall, crosslink 1e-3)에서의 active 피질장력 = lit density에서
+~15× under. 단일-seed 아닌 앙상블 → 견고.
+
 **측정 결과 (2026-06-10, Lead 자율 γ-vs-density sweep, continuous_stroke):**
 
 | ρ [1/µm²] | γ_soft [mN/m] | ×under band_lo |

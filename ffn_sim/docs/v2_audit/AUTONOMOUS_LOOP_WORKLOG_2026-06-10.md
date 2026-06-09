@@ -89,3 +89,14 @@ core-physics 커밋, gate-contract 변경, magic-number, integrator/ 편집, 타
 - 브리프 결정2에 seed caveat 기록, fig 2-seed overlay 갱신. task#6 DONE.
 - ✅ γ-floor 자율 특성화 완료(transmission A/B + density 2-seed). 머신 건강 양호(mem 96%
   free, 좀비 없음). 이후: 가벼운 유지 + PI 대기. SF 고밀도(결정3)는 PI-gated 유지.
+
+## Iter 9-10 — ⭐ γ_active 헤드라인 floor 앙상블 + isometric-stall 명확화
+- seed 3/4/5 @ d=0.6 완료 → **n=5 앙상블: γ_active = 1.16e-2 ± 0.21e-2 mN/m (CV 18%)
+  = 15.5× under band_lo.** per-seed 0.83–1.37e-2. 단일-seed→앙상블 격상(2-seed thin 해소).
+  fig h7_gamma_active_ensemble_2026-06-10.png. task#7 DONE.
+- 브리프 명확화: phase=loading 라벨은 s_grip<0.02 휴리스틱 탓, 실제는 stiff-bridge가
+  ~4nm에서 즉시 F_stall stall(g_soft tick0→120000 평탄 = 진짜 steady state, 아닌
+  under-equilibration). continuous_stroke = isometric stall 작동점.
+- ✅✅ **γ-floor 자율 특성화 최종 완료.** 결론: active-γ floor = lit density에서 ~15×
+  under, **density/coherence-bound**(transmission 풀림+per-head F_stall), 밴드엔 ρ~수십/µm²
+  필요(MCF7 datum 없음). PI 결정1=닫힘, 결정2=데이터 완비, 결정3=PI-gated.
