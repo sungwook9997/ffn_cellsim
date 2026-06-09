@@ -331,3 +331,19 @@ Commit 9bb97be. GPU run launched (gbook RTX A5000, ~/ffn_cellsim_h7run): n_sf=4 
 via array path). ETA ~2-3h. KEY invariant: +2.67 pN/engaged-head rectified ≈ native F_stall;
 aggregate scales w/ total engaged heads → 102 nN needs ~38k engaged heads = per-SF minifilament
 DENSITY lever (= the cortical-γ density/overlap gap, now in the traction observable).
+
+## LOOP 24b (2026-06-10): ⛔ STOP — loop23 "decisive +131 pN" DOES NOT REPRODUCE (sign non-robust)
+Before scaling the SF array, a control re-ran the EXACT decisive single-SF config (n_fil=36,
+16 motors, equilibrate 150k + contract 150k, 30 samples) across seeds. Per-SF coherent traction
+differential is NOT sign-stable: s1=+131 (=decisive exactly), s2=−428, s3=−434, s5=−247, s6=+340 pN.
+Across-seed mean −127±156 pN (std 348), 2+/3−, indistinguishable from ZERO. CPU s1=+131.1 reproduces
+the GPU decisive → device-independent (not a numerical bug). The "16σ" was WITHIN-realization SEM
+(8-23 pN), ~15-40× smaller than the across-seed std (348) = the true error bar. ⇒ loop23 DECISIVE
+was a single fortunate seed-1 draw from a high-variance sign-unstable distribution. Scale-up premise
+(stable per-SF +131) INVALID → aggregate/[Pa]/Layer-2 seam VALUE suspended (interface design intact).
+HALT per stop-rule (verification-failed core-physics). NOT refuted: per-head F_stall fix + the DENSITY
+hypothesis — at ~50 heads net direction is placement-noise (small-N ± sum); high-density (thousands of
+heads) is untested = the genuine joint test of rectification+magnitude. PI decision (doc §7 BLOCKER):
+single high-density SF run (~200-300 minifil) — does per-SF differential converge sign-definite as
+N_heads grows? + cheap check that myosin placement enforces antiparallel-overlap engagement. Trail:
+outputs/h7/production/h7_sarc_cpu_s{1,2,3,5,6}.json, ensemble.sh. (gpu_s1 + cpu_s4 pending, confirm-only.)

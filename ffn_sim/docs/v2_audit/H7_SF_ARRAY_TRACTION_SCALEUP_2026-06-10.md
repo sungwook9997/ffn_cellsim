@@ -1,7 +1,45 @@
 # H.7 — SF-array scale-up → aggregate substrate traction [Pa], PI-platform comparison, Layer-2 seam
 
-**Date** 2026-06-10 · **Branch** `h7/full-cell-integration` · **Status** IN-PROGRESS (GPU run
-developing engagement on gbook). Builds directly on the DECISIVE single-SF result (loop23,
+> ## ⛔ STOP — the foundation (loop23 "decisive +131 pN") DOES NOT REPRODUCE (2026-06-10)
+>
+> Before scaling, a control re-ran the EXACT decisive single-SF config across seeds. The per-SF
+> coherent traction differential is **NOT sign-stable across realizations**:
+>
+> | seed | differential (pN) | within-seed SEM | engaged heads |
+> |---|---|---|---|
+> | s1 (= decisive) | **+131.1** | ±8.2 | 49.2 |
+> | s2 | **−428.1** | ±23.3 | 51.4 |
+> | s3 | **−433.7** | ±17.9 | 59.8 |
+> | s5 | **−247.0** | ±13.5 | 55.1 |
+> | s6 | **+340.4** | ±12.3 | 51.2 |
+>
+> **Across-seed: mean −127 ± 156 pN (SEM), std 348 pN, 2 positive / 3 negative.** The mean is
+> statistically **indistinguishable from zero**; the across-seed std (348 pN) is **~15–40× the
+> within-seed SEM (8–23 pN)**. CPU s1 = +131.1 reproduces the GPU decisive EXACTLY → the result is
+> device-independent, not a numerical bug. ⇒ **The loop23 "DECISIVE sarcomeric rectification
+> +131 pN, 16σ" was a single fortunate draw (seed 1) from a high-variance, sign-unstable
+> distribution.** The "16σ" measured the *within-realization* sample SEM and badly understated the
+> *across-realization* uncertainty (the true error bar). At the tested engaged-head count (~50),
+> the net axial direction is dominated by stochastic minifilament-placement/engagement detail, NOT
+> robustly biased to contractile by the sarcomeric geometry.
+>
+> **Consequence:** the scale-up's premise (per-SF traction = a stable +131 pN) is **invalid**. The
+> aggregate, the [Pa] comparison, and the Layer-2 seam VALUE are all **suspended** (the *interface*
+> design in §5 is still sound; only the number it carries is unestablished). Per the CLAUDE.md stop
+> rule (verification-failed core-physics → halt, document, PI surface), the scale-up does **not**
+> proceed. The method/code/anchors below are retained as the (correct) machinery; what is missing is
+> a robust per-SF traction.
+>
+> **What is NOT refuted:** the per-head generation fix (F_stall reached on the cortex, verified) and
+> the DENSITY hypothesis (§3) — at ~50 heads the contractile bias, if any, is swamped by placement
+> noise (small-N sum of ± contributions); the high-density regime (thousands of heads, where a
+> geometric bias could dominate the noise) is the untested case and the genuine test of both the
+> rectification AND the magnitude. See "Open items → PI" for the decision.
+>
+> Trail: `outputs/h7/production/h7_sarc_cpu_s{1,2,3,5,6}.json`; ensemble launcher `ensemble.sh`.
+
+**Date** 2026-06-10 · **Branch** `h7/full-cell-integration` · **Status** ⛔ SCALE-UP HALTED — per-SF
+traction sign non-robust (see banner). Machinery/anchors below retained. Builds directly on the DECISIVE single-SF result (loop23,
 `H7_MYOSIN_OVERLAP_MECHANISM_DESIGN` §12): a graded-polarity SARCOMERIC ventral SF rectifies the
 §9-corrected continuous-stroke myosin into **+131 ± 8 pN coherent contractile traction (16σ,
 +2.67 pN/engaged-head ≈ native F_stall)** at its FA anchors. This doc scales that single fiber to
@@ -154,6 +192,19 @@ documented CBM rim-reduction to land `f_traction`. The seam is **values + interf
 
 ## 7. Open items → PI
 
+- **⛔(BLOCKER — sign non-robustness, the STOP)** The per-SF coherent traction is sign-unstable
+  across seeds (mean ≈ 0, banner). Two readings, PI to adjudicate: **(i)** the sarcomeric
+  rectification is a low-N statistical artifact and the true per-SF net is ~0 (→ the adherent-pivot
+  "traction emerges" claim, like the suspended cortical-γ, is GENERATION/density-bound, not solved
+  by structure); or **(ii)** the rectification is real but only emerges at high minifilament density
+  (thousands of heads → the geometric bias dominates the placement noise). **(ii) is testable and is
+  the SAME high-density run that would also close the magnitude gap** — so the decisive next
+  experiment is a single high-density SF (e.g. ~200–300 minifilaments, ≫ the tested ~16): does the
+  per-SF differential converge to a stable, sign-definite contractile value as N_heads grows? If yes,
+  rectification + magnitude are jointly demonstrated; if it stays sign-unstable, the mechanism does
+  not rectify and we halt the traction line. Also worth a cheap check: confirm the myosin placement
+  actually enforces the sarcomeric antiparallel-overlap engagement (the construction may not bias
+  contraction as intended).
 - **(per-SF density)** Is there a defensible MCF-7 ventral-SF minifilament density (minifilaments
   per M-band / per SF)? Without it the aggregate is reported at the validated test density with the
   scaling law (§3), the honest fine-grained-prediction stance (same as the cortical-γ density datum).
