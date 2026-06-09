@@ -244,23 +244,32 @@ def test_full_physiological_enables_only_baseline():
 
 def test_forcing_experimental_into_enable_raises():
     base = load_manifest("mcf7_baseline.yaml")
-    recipe = {"name": "bad", "enable": list(load_recipe("suspended_round")["enable"]) + ["cadherin_junction"]}
-    # cadherin_junction requires nothing extra but is EXPERIMENTAL -> strict raises.
+    # junctional_actin is STUB (cadherin_junction graduated LIVE 2026-06-09); enable
+    # its dep cadherin_junction (LIVE) so the requires-check passes and the STUB
+    # status itself is what makes strict compose raise.
+    recipe = {
+        "name": "bad",
+        "enable": list(load_recipe("suspended_round")["enable"])
+        + ["cadherin_junction", "junctional_actin"],
+    }
     with pytest.raises(UnratifiedCompartmentError):
         REGISTRY.compose_manifest(recipe, base_manifest=base, strict=True)
 
 
 def test_forcing_experimental_non_strict_defers():
     base = load_manifest("mcf7_baseline.yaml")
-    # cadherin_junction is still EXPERIMENTAL (osmotic_regulation / microtubules /
-    # intermediate_filaments / linc / membrane_reservoir graduated LIVE 2026-06-09).
-    # It has no hard deps, so it defers cleanly (no dependency error) in non-strict.
+    # junctional_actin is still STUB (osmotic_regulation / microtubules /
+    # intermediate_filaments / linc / membrane_reservoir / ventral_stress_fibers /
+    # cadherin_junction graduated LIVE 2026-06-09). It requires cadherin_junction
+    # (now LIVE), so enable both: cadherin_junction composes (LIVE, no manifest
+    # slot) and junctional_actin (STUB) defers cleanly in non-strict.
     recipe = {
         "name": "bad",
-        "enable": list(load_recipe("suspended_round")["enable"]) + ["cadherin_junction"],
+        "enable": list(load_recipe("suspended_round")["enable"])
+        + ["cadherin_junction", "junctional_actin"],
     }
     manifest, deferred = REGISTRY.compose_manifest(recipe, base_manifest=base, strict=False)
-    assert "cadherin_junction" in deferred
+    assert "junctional_actin" in deferred
 
 
 def test_dropping_baseline_compartment_raises():

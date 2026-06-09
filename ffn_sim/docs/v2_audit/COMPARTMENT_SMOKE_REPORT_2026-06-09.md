@@ -103,5 +103,9 @@ across activations is preserved; `cell_latest.png` points at the newest. Run wit
 - `h7_stress_fibers_activation_gate.png` — SF gate: basal long-axis-aligned vSF bundles
   (mean |cos|≈0.93), FA→FA bundle-length histogram (per-bundle EXACT-r0 force-free),
   cortical γ_soft identical OFF vs ON.
+- `h7_cadherin_junction_activation_gate.png` — GATE-J: two-cell doublet (cell A / cell B
+  cortices + the cadherin interface), trans-dimer length histogram (force-free at r0_trans),
+  A↔B-vs-intra bar (genuine two-cell junction, intra=0).
 - morphology snapshots accumulate: `cell_v01_membrane.png` (suspended, 5 internal LIVE) →
-  `cell_v02_stressfibers_adherent.png` (adherent, all 6 LIVE + FA + ventral stress fibers).
+  `cell_v02_stressfibers_adherent.png` (adherent, all 6 single-cell LIVE + FA + vSF). The
+  cadherin junction is a TWO-cell construct (its own GATE-J doublet figure above).

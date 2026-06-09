@@ -110,11 +110,15 @@ activation that needs NO cortical_tension edit.
 | 15:20 | ⭐**ventral_stress_fibers EXPERIMENTAL→LIVE** (6th graduation; PASSIVE backbone). stress_fibers.py: select_aligned_fa_pairs (basal subset→in-plane PCA long axis→low/high pairing) + pair_mode='as_given' + per_bundle_r0 EXACT-r0 backbone (sf_actin_backbone_bin_names; force-free even with varying bundle lengths). Full wiring: cell.py (import+sig+harvest integrins after FA+aligned pairs+SF extend pair_mode=as_given/per_bundle_r0+sf_actin/sf_xlink_head LJ r_cut=0+cytoplasm gamma_map+register sf bonds per-bundle+options/dataclass/build/handles); manifest stanza (requires fa); config (N_filaments=20 Cramer1997 candidate, n_SF=20); ventral_stress_fibers_passive recipe (extends adherent_passive); registry LIVE (denylist ('sf_',) — dropped cortex_myosin_ which the estimator never denylists). ⚠ denylist fix caught by test_live_contaminating_compartments | (this commit) | LIVE |
 | 15:20 | SF ACTIVATION GATE (FA-adhered OFF=adherent_passive vs ON, build-time): **PASS** 5 controls — bundles assembled n_SF=20 (+1120 part, +1460 bonds); ALIGNED mean|cos|=0.929 (long-axis, lengths 0.5-13.7µm — physiological vSF not random); FORCE-FREE per-bundle backbone max strain 1.56e-14; ⭐NO-CONTAM cortical γ_soft IDENTICAL OFF=ON=5.1411e-10 (sf_ registry-denylisted); off-identity. +3 build tests (test_stress_fibers.py 33 pass). Kumar 10-30nN tension band = ACTIVE+equilibrated gate (NMII via sf_myosin_ prefix) DEFERRED | (this commit) | GATE PASS |
 
+| 16:10 | viz#3: compartment_vis.py builds the FULLEST cell (adherent: +fa +ventral_stress_fibers); morphology v02 cell_v02_stressfibers_adherent.png (24,938 part) — progression v01(suspended,5 internal)→v02(adherent,6 LIVE+FA+vSF) preserved | (commit) | VIZ |
+| 17:30 | ⭐**cadherin_junction EXPERIMENTAL→LIVE** (7th graduation; FIRST multicell). NEW two-cell assembler cell/doublet.py::build_cell_doublet — two cortex shells (build_cortex_state ×2, offset +2R+gap), merged frame (bond/angle reindex), cadherins seeded on MATCHED facing caps (shared y,z, ±r0_trans/2 across interface → force-free trans-dimer), trans-dimers SEEDED pre-bound (engaged-junction baseline; bare junction needs ~1e3 binder batches), cadherin_anchor bonds hold cadherins on the surface, attach_cadherin_junction binder maintains. registry LIVE (manifest_path None — doublet build, NOT single-cell toggle; requires=()). ⚠defensive n_sub cap in cadherin binder (extreme-slip RNG-overflow guard). 2 registry tests switched to junctional_actin (still STUB) | (this commit) | LIVE |
+| 17:30 | GATE-J (two-cell doublet, build-time): **PASS** 5 controls — doublet assembled (2×7000 cortex + 120 cadherins + cadherin_trans/cadherin_anchor); TRANS ENGAGED n=60 dimers ALL A↔B (cross=60, intra=0 — genuine 2-cell junction); FORCE-FREE max strain 1.06e-15; ⭐NO-CONTAM cadherin_ excluded from cortical mask (γ_soft=1.23e-5 over cortex only); binder attached. +2 doublet tests (test_cadherin_junction.py 34 pass). DYNAMIC catch-slip maintenance + Iturri ~6.5nN de-adhesion DEFERRED (equilibrated run; BAOAB guard) | (this commit) | GATE PASS |
+
 ### Phase-2 ACTIVATION summary (PI 소유권 허용)
-**6 compartments EXPERIMENTAL→LIVE** (osmotic_regulation, microtubules,
-intermediate_filaments, linc, membrane_reservoir, ventral_stress_fibers) with
-passing activation gates; + SimuCell3D-style versioned morphology visualizer
-(compartment_vis.py). Detail below. osmotic_regulation
+**7 compartments EXPERIMENTAL→LIVE** (osmotic_regulation, microtubules,
+intermediate_filaments, linc, membrane_reservoir, ventral_stress_fibers,
+cadherin_junction) with passing activation gates; + SimuCell3D-style versioned
+morphology visualizer (compartment_vis.py). Detail below. osmotic_regulation
 (τ_RVD in band, RVD sign, no-contam), microtubules (aster, CFL, no-contam γ identical;
 n_mt≤7 cap blocker found+documented), intermediate_filaments (cage, no-contam; linear
 path, nonlinear PI-pending), **linc** (Option A nucleus↔IF-cage per-bond EXACT-r0 bridges;
@@ -124,12 +128,14 @@ offset layer + static mem_tether mesh; mesh-assembled + cross-layer + force-free
 no-contam γ identical; bleb/reservoir-release PI-blocked; degree-aware exclusion-cap
 fix), **ventral_stress_fibers** (PASSIVE backbone; PI-ratified long-axis-aligned basal
 FA pairs |cos|≈0.93, per-bundle EXACT-r0 force-free, no-contam γ identical; Kumar/NMII
-active gate deferred via sf_myosin_ prefix). **+ registry-driven γ-denylist** (unblocks
-no-contamination for all). **+ internal_live integration capstone** (osmotic+MT+IF in
-one cell, no contamination). **6 crash-on-enable bugs fixed** + **2 nlist exclusion-cap
-fixes** (LINC + membrane acceptor-degree). **compartment-suite tests green** (LINC 45 +
-membrane 30 + SF 33 + registry + canary + IF + MT; full compartment/cell/cortex modulo
+active gate deferred via sf_myosin_ prefix), **cadherin_junction** (FIRST multicell; new
+two-cell build_cell_doublet assembler — 60 trans-dimers all A↔B, force-free, cadherin_
+γ-excluded; dynamic catch-slip maintenance + Iturri de-adhesion deferred). **+ registry-
+driven γ-denylist** (unblocks no-contamination for all). **+ internal_live integration
+capstone** (osmotic+MT+IF in one cell, no contamination). **6 crash-on-enable bugs
+fixed** + **2 nlist exclusion-cap fixes** (LINC + membrane acceptor-degree) + **cadherin
+binder n_sub overflow guard**. **compartment-suite tests green** (LINC 45 + membrane 30 +
+SF 33 + cadherin 34 + registry + canary + IF + MT; full compartment/cell/cortex modulo
 the pre-existing KU-3.5 motors-off baseline failure, unrelated to platform work).
-Remaining 2 (cadherin_junction — needs the new two-cell build_cell_doublet assembler;
-junctional_actin — STUB build, after cadherin) need PI physics-design decisions (see
-REMAINING_DECISIONS).
+Remaining 1 (junctional_actin — STUB build path, depends on cadherin_junction; the
+α-catenin catch-set + reserved HOOMD build are the last leg).

@@ -514,3 +514,57 @@ def test_attach_on_multi_bond_type_state_runs():
     assert set(h.params.keys()) >= {"cortex-bond", cj.CADHERIN_TRANS_BOND}
     # the load-bearing assertion: a multi-bond-type run must not raise.
     sim.run(1)
+
+
+# ---------------------------------------------------------------------------
+# GATE-J LIVE activation (2026-06-09; PI 소유권 허용): the two-cell doublet
+# assembler build_cell_doublet — two cortex shells + the cadherin interface.
+# ---------------------------------------------------------------------------
+class TestCadherinDoubletActivation:
+    def test_doublet_builds_engaged_AB_junction_force_free_no_contam(self):
+        import numpy as np
+        from ffn_sim.cell.doublet import build_cell_doublet
+        from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
+
+        d = build_cell_doublet(
+            "mcf7_baseline.yaml", n_cad_per_cell=30, seed=1, run_binder_batches=0,
+        )
+        s = d.simulation.state.get_snapshot()
+        types = list(s.particles.types)
+        tid = np.asarray(s.particles.typeid, dtype=np.int64)
+        pos = np.asarray(s.particles.position, dtype=np.float64)
+        bn = list(s.bonds.types)
+        bg = np.asarray(s.bonds.group, dtype=np.int64)
+        bt = np.asarray(s.bonds.typeid, dtype=np.int64)
+        p = d.p_cadherin
+
+        # DOUBLET ASSEMBLED: two cortices + 2*n_cad cadherins + both bond types.
+        assert d.n_cortex_per_cell > 0
+        assert int((tid == types.index("cadherin")).sum()) == 2 * p.n_cad_per_cell
+        assert "cadherin_trans" in bn and "cadherin_anchor" in bn
+        # TRANS ENGAGED: seeded dimers, EVERY one A↔B (no intra-cell bond).
+        trans = bg[bt == bn.index("cadherin_trans")]
+        assert trans.shape[0] == p.n_cad_per_cell
+        a_set = set(d.cell_a_cadherin_tags.tolist())
+        b_set = set(d.cell_b_cadherin_tags.tolist())
+        for u, v in trans:
+            assert (u in a_set and v in b_set) or (u in b_set and v in a_set)
+        # FORCE-FREE: each trans-dimer born at r0_trans.
+        L = np.linalg.norm(pos[trans[:, 0]] - pos[trans[:, 1]], axis=1)
+        assert float(np.max(np.abs(L - p.r0_trans) / p.r0_trans)) < 1e-6
+        # NO-CONTAM: every cadherin_ bond type excluded from the cortical mask.
+        cad_bonds = [t for t in bn if t.startswith("cadherin_")]
+        assert cad_bonds and all(_is_adhesion_bond_type(t) for t in cad_bonds)
+        # BINDER ATTACHED (ready to maintain the junction).
+        assert d.cadherin_binder is not None
+        # builds + steps without error (build-time).
+        d.simulation.run(0)
+
+    def test_doublet_off_no_cadherin_bonds_in_single_cell(self):
+        # Sanity: the single-cell baseline build carries NO cadherin bonds (the
+        # junction is a doublet-only construct).
+        from ffn_sim.cell.manifest import build_baseline_cell
+        cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
+        s = cell.simulation.state.get_snapshot()
+        assert not any(t.startswith("cadherin_") for t in s.bonds.types)
+        assert "cadherin" not in s.particles.types

@@ -1,0 +1,44 @@
+{
+  "gate": "GATE-J cadherin_junction activation (two-cell doublet)",
+  "verdict": "PASS",
+  "physics_claim": true,
+  "params": {
+    "n_cad_per_cell": 60,
+    "k_trans_Npm": 5.84e-05,
+    "r0_trans_m": 5e-07,
+    "r_bind_m": 1e-06,
+    "k_on_s": 27.9624810892587,
+    "batch_steps": 51,
+    "n_cad_scale_bridge": 60.0
+  },
+  "controls": {
+    "doublet_assembled": true,
+    "n_cortex_per_cell": 7000,
+    "n_cadherin_total": 120,
+    "trans_engaged": {
+      "ok": true,
+      "n_trans_dimers": 60,
+      "cross_AB": 60,
+      "intra_cell": 0
+    },
+    "force_free_construction": {
+      "ok": true,
+      "max_strain": 1.0587911840678754e-15
+    },
+    "no_contamination": {
+      "ok": true,
+      "mask_excludes_all_cadherin": true,
+      "cadherin_bond_types": [
+        "cadherin_trans",
+        "cadherin_anchor"
+      ],
+      "gamma_soft_N_per_m": 1.2288828086148035e-05
+    },
+    "binder_attached": true
+  },
+  "deferred": {
+    "dynamic_catch_slip_maintenance": "bound-fraction \u03c6 \u2248 k_on/(k_on+k_off) equilibrium + the Iturri ~6.5 nN ensemble de-adhesion observable \u2014 needs an equilibrated run (raw run trips the BAOAB guard).",
+    "iturri_SourceEvidence": "Iturri 2020 de-adhesion anchor unregistered in the Notion SoT \u2014 register before citing in a deliverable (PI queue)."
+  },
+  "note": "REAL build-time GATE-J on the new two-cell doublet assembler. The engaged junction is SEEDED pre-bound (physiological baseline; a bare junction needs ~1e3 binder batches to engage). KEY controls: every trans-dimer is A\u2194B (genuine two-cell junction), force-free at r0_trans, and cadherin_ bonds are excluded from cortical \u03b3 (registry-denylisted). Dynamic catch-slip maintenance + the Iturri de-adhesion observable are deferred (equilibrated run)."
+}

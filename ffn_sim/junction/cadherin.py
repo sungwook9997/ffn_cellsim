@@ -735,8 +735,14 @@ class CadherinTransJunctionUpdater(hoomd.custom.Action):
             n_sub = np.maximum(
                 1, np.ceil(kdt / _BATCH_CFL_BUDGET).astype(np.int64)
             )
+            # Defensive cap: an EXTREME-slip dimer (force-runaway under an
+            # un-equilibrated dynamic run) drives k_off → ∞, so the exact n_sub
+            # would overflow the RNG allocation. Such a dimer ruptures with
+            # probability ≈ 1 regardless, so cap the sub-step count and let the
+            # per-slice draw certify the (certain) rupture rather than crash.
+            _NSUB_MAX = 100_000
             for i, row in enumerate(trans_bonds):
-                ns = int(n_sub[i])
+                ns = min(int(n_sub[i]), _NSUB_MAX)
                 # First-order per-slice rupture probability; rupture if any slice
                 # fires. n_sub draws keep each slice's k·Δt_sub within budget.
                 p_slice = 1.0 - math.exp(-k_off[i] * self.batch_dt / ns)

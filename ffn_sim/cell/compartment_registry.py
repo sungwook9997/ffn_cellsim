@@ -938,19 +938,19 @@ _SPECS: tuple[CompartmentSpec, ...] = (
     CompartmentSpec(
         name="cadherin_junction",
         category="multicell",
-        status=CompartmentStatus.EXPERIMENTAL,
+        status=CompartmentStatus.LIVE,   # wired 2026-06-09 (PI 소유권 허용); two-cell build_cell_doublet assembler, GATE-J PASS. NOT a single-cell manifest toggle.
         enabled_default=False,
-        summary="Explicit E-cadherin trans-dimer catch-bond cell-cell junction (Rakshit sliding-rebinding).",
-        manifest_path=None,
+        summary="Explicit E-cadherin trans-dimer catch-bond cell-cell junction (Rakshit sliding-rebinding); built via the two-cell build_cell_doublet assembler.",
+        manifest_path=None,              # multicell: built by cell/doublet.build_cell_doublet, NOT the single-cell manifest loader
         resolve_ref="ffn_sim.junction.cadherin.resolve_cadherin_junction",
         performance_contract=_live(
             particle_types_added=("cadherin",),
-            n_particles_mesoscale="~n_cad per cell-cell interface",
+            n_particles_mesoscale="2*n_cad per cell-cell interface",
             n_particles_native="(scaled)",
-            n_bonds="cadherin_trans_b{i} (dynamic catch-bond, r0-binned)",
+            n_bonds="cadherin_trans (dynamic catch-bond) + cadherin_anchor (cadherin→cortex)",
             n_angles=0,
             per_step_force=False,
-            per_batch_updater=True,          # CadherinBondUpdater (catch-slip bind/unbind)
+            per_batch_updater=True,          # CadherinTransJunctionUpdater (catch-slip bind/unbind)
             uses_cpu_local_snapshot=True,
             uses_broad_phase=True,           # cross-cell partner search
             expected_on_recipes=("multicell_junction",),
@@ -962,13 +962,22 @@ _SPECS: tuple[CompartmentSpec, ...] = (
         gpu_readiness=GpuReadiness(device_resident_now=False, optimization_debt="cross-cell binder host-sync"),
         gamma_contaminating=True,
         denylist_bond_types=("cadherin_",),
+        requires=(),                      # the doublet builds its own two cortices (not a single-cell add-on)
         citations=(
             "Rakshit 2012 X-dimer sliding-rebinding (validation/cadherin_sliding_rebinding.py)",
             "spheroid/cadherin_bonds.CadherinBondUpdater (existing runtime catch-bond)",
+            "Iturri 2020 Cells 9(4):935 MCF7–MCF7 ~6.5 nN de-adhesion (n_cad scale bridge; UNREGISTERED — PI queue)",
         ),
-        pi_decisions=("No slip-only shortcut, no lumped line tension (full KU-4.2 catch-bond per architectural rule).",),
-        sanity_gate_ref="ffn_sim/tests/test_cadherin_catch_bond.py",
-        notes="Adapts the existing single-cell-aggregate cadherin catch-bond to an explicit two-cell interface.",
+        pi_decisions=(
+            "No slip-only shortcut, no lumped line tension (full KU-4.2 catch-bond per architectural rule).",
+            "GATE-J is the two-cell build_cell_doublet build-time gate (trans-dimers A↔B, force-free, "
+            "no-contam). The trans-dimers are SEEDED pre-bound (engaged-junction baseline; a bare junction "
+            "needs ~1e3 binder batches to engage). DYNAMIC catch-slip maintenance + the Iturri ~6.5 nN "
+            "ensemble de-adhesion observable need an equilibrated run (BAOAB guard) — DEFERRED.",
+            "Iturri-2020 de-adhesion anchor UNREGISTERED in the Notion SoT — register before any deliverable cite.",
+        ),
+        sanity_gate_ref="ffn_sim/tests/test_cadherin_junction.py",
+        notes="Two-cell doublet (cell/doublet.py): two cortex shells facing across an interface, cadherins seeded on facing caps, trans-dimers seeded pre-bound + maintained by the catch-slip binder. cadherin_ bonds γ-denylisted. Built by build_cell_doublet, NOT the single-cell loader (manifest_path None).",
     ),
     CompartmentSpec(
         name="junctional_actin",

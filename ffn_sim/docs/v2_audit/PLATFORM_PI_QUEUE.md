@@ -99,6 +99,25 @@ detail of the now-resolved pairing decision:
 Per-bundle EXACT-r0 backbone (force-free) implemented; measure_sf_tension prefix-
 matches sf_actin_bond* for the deferred active gate.
 
+## ✅ cadherin_junction (④) → LIVE 2026-06-09 (FIRST multicell; two-cell doublet)
+GATE-J PASS via the NEW two-cell assembler `cell/doublet.py::build_cell_doublet`
+(two cortex shells facing across an interface; cadherins seeded on matched facing
+caps; trans-dimers SEEDED pre-bound = the engaged-junction baseline; the catch-slip
+binder maintains them). Build-time controls: 60 trans-dimers ALL A↔B (cross=60,
+intra=0 — genuine two-cell junction), force-free (strain 1e-15), cadherin_ excluded
+from cortical γ (denylisted), binder attached. Registry LIVE with `manifest_path=None`
+(built by `build_cell_doublet`, NOT the single-cell loader). **Still DEFERRED to PI:**
+- **Dynamic catch-slip maintenance** (bound-fraction φ ≈ k_on/(k_on+k_off) equilibrium)
+  + the **Iturri ~6.5 nN ensemble de-adhesion** observable need an equilibrated run
+  (the raw doublet run trips the BAOAB guard — equilibration prelude required; the
+  binder's `n_sub` overflow guard was added defensively for that path).
+- **Iturri-2020 SourceEvidence** (Cells 9(4):935) is UNREGISTERED in the Notion SoT —
+  register before any deliverable cite (it sets the n_cad scale bridge + the ensemble
+  de-adhesion report).
+- **Scope:** GATE-J is a CORTEX doublet (two cortices + the junction). Per-cell full
+  internal compartment stacks on a doublet (each cell with nucleus/MT/IF/membrane/SF)
+  is a follow-on (run the single-cell extenders per cell of the doublet).
+
 ## ⚠️ NEW BLOCKER found during activation
 - **MTOC single-hub degree vs HOOMD nlist exclusion cap (7).** The aster's single MTOC
   carries n_mt backbone bonds; with the full-cell LJ nlist on (`exclusions=("bond","1-3")`),
