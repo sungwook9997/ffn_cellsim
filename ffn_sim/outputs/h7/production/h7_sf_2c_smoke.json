@@ -1,0 +1,20 @@
+{
+  "stage": "2b-2 + 2c: continuous_stroke myosin on ventral SF + differential time-avg traction",
+  "n_fil": 12,
+  "n_beads": 132,
+  "n_anchors": 24,
+  "fiber_length_um": 5.0,
+  "n_motors": 8,
+  "stepping_mode": "continuous_stroke",
+  "dt_used_s": 3.909209402567923e-09,
+  "equilibrate": 1000,
+  "contract": 8000,
+  "n_samples": 8,
+  "passive_traction_pN": 2389.2552372915734,
+  "passive_traction_std_pN": 496.36042110514046,
+  "active_traction_pN": 1280.3099998954865,
+  "active_traction_std_pN": 342.75617828555215,
+  "engaged_heads_mean": 0.0,
+  "differential_traction_pN": -1108.945237396087,
+  "note": "differential cancels the intrinsic taut-WLC thermal tension \u2192 myosin-generated traction with the \u00a79 corrected (capped, stiff cross-bridge) motor."
+}
