@@ -152,3 +152,16 @@ dynamic phases (cortex+SF NMII via sf_myosin_ prefix, cadherin/junctional catch-
 maintenance, nonlinear IF Table law, membrane bleb, dense junctional belt) + PI
 parameter ratifications (k_linc, N_filaments, σ_crit_bleb, f_excess, Iturri SE) — see
 PLATFORM_PI_QUEUE — NOT activations.
+
+---
+
+## Phase 3 — ACTIVE / DYNAMIC deepening (PI "절대 멈추지 마"; DEFERRED items in priority order)
+
+Activation backlog COMPLETE → working the deferred active/dynamic physics +
+fidelity, priority ① active NMII → ② catch-slip maintenance → ③ PI ratifications
+→ ④ fidelity. Sibling Gate-B session (`h7/full-cell-integration`) untouched.
+
+| time | item | commit | result |
+|---|---|---|---|
+| ①a | **cortex/myosin.py prefix-split** — ResolvedCortexMyosin.prefix (default "cortex_myosin_", byte-identical) + resolver read/validate + prefix-derived name helpers (myosin_particle_type_names / *_bond_name / myosin_attach_bin_names; cortex_myosin_attach_bin_names = default wrapper) + extend/register/MyosinStepUpdater filter all derive from prefix. sf_myosin_ placement → under existing ('sf_',) γ-denylist; cortex_myosin_ stays in active-γ. test_myosin 31 + new test_myosin_prefix_split 11 pass; SF/registry/cortical_tension regress clean | 3c5795c | DONE |
+| ①b | **MyosinStepUpdater actin-pool generalization** — explicit actin_pool_tags (default None→arange(n_cortex_actin), byte-identical). All bead ids stay GLOBAL; KDTree pool local-indexed via _pool_g2l. r_actin_all=pos[pool], segment pos[a_idx] global, _bead_to_segs local-indexed, degree/bead_attach_count sized N_part. SF binds the (non-contiguous) sf_actin chain via the same Stam-Hocky/Hill machinery. 63 dynamics tests byte-identical (myosin/grip_walk/dipole gates) + new test_myosin_sf_pool 2 (PARITY shifted-pool==default + CONFINEMENT bound∈pool) | db00c20 | DONE |

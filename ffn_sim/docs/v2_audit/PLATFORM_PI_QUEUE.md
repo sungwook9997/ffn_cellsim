@@ -99,6 +99,44 @@ detail of the now-resolved pairing decision:
 Per-bundle EXACT-r0 backbone (force-free) implemented; measure_sf_tension prefix-
 matches sf_actin_bond* for the deferred active gate.
 
+### ⚙️ ACTIVE-NMII progress (Phase-3 ① in flight, 2026-06-09) + a NEW physics-design decision
+**DONE (prerequisites, byte-identity-safe, committed):**
+- **①a prefix-split** (`3c5795c`): `cortex/myosin.py` is now parameterized by a
+  type-name `prefix` (default `"cortex_myosin_"`, byte-identical). An SF placement
+  passes `prefix="sf_myosin_"` → its motor bonds fall under the existing `("sf_",)`
+  γ-denylist, so SF NMII can never contaminate the cortical active-γ signal. This is
+  the split the queue asked for. 42 myosin/SF tests + 11 new prefix tests pass.
+- **①b actin-pool generalization** (`db00c20`): `MyosinStepUpdater` now takes an
+  explicit `actin_pool_tags` (default `None`→`arange(n_cortex_actin)`, byte-identical),
+  so the SAME Stam-Hocky/Hill machinery can bind the (non-contiguous) `sf_actin` chain
+  instead of the cortex shell. 63 dynamics tests byte-identical + 2 new
+  parity/confinement tests on a shifted pool.
+
+**⛔ NEW PI DECISION NEEDED — SF contraction TOPOLOGY (blocks the live Kumar gate):**
+The grip_walk NMII contraction (KU-3.5, PI-ratified 2026-05-31) is a **Stam-Hocky
+BIPOLAR dipole**: `_bipolar_accepts` requires the +/− head-sets to grip **two
+DIFFERENT (antiparallel) filaments** — that clause removes the zero-dipole degeneracy
+in the cortex MESHWORK. But a ventral stress fiber is currently modeled as **ONE
+`sf_actin` chain per bundle** (single filament), so the bipolar gate BLOCKS both
+head-sets from gripping the same bundle → no contraction. The single-chain bundle
+cannot host the antiparallel-filament dipole as written. Options:
+- **(a) Antiparallel sub-chains** — split each bundle into 2 (or more) interdigitated
+  antiparallel `sf_actin` sub-chains (true sarcomeric SF: NMII bridges antiparallel
+  actin, Hotulainen-Lappalainen 2006). MOST FAITHFUL; a `stress_fibers.py` actin-
+  scaffold topology change (doubles SF actin, re-does the backbone/anchor wiring) +
+  the bipolar gate then works UNCHANGED. **Recommend** for fidelity.
+- **(b) Same-filament center-walk** — a `cortex/myosin.py` SF-mode flag that lets the
+  two head-sets grip the SAME chain at different positions and walk toward the
+  minifilament centre (shorten the bundle). Smaller change, but a NEW contraction
+  variant distinct from the ratified cortex bipolar gate → needs a modeling sign-off.
+- **(c) Lumped cable tension** — REJECTED (violates the no-lumped-mechanism rule).
+The PLACEMENT of `sf_myosin_*` minifilaments (where the beads sit, force-free) is the
+same under (a)/(b); the actin SCAFFOLD differs, which is why I'm holding it for the
+decision rather than building on an undecided topology. Also still pending: the Kumar
+gate needs an **equilibration prelude** (raw full-cell SF run trips the BAOAB guard;
+`cell/equilibration.equilibrate_cell` exists), `N_filaments` ratification (→ μ_SF),
+and an explicit `k_actin` for `measure_sf_tension` (currently None → raises).
+
 ## ✅ cadherin_junction (④) → LIVE 2026-06-09 (FIRST multicell; two-cell doublet)
 GATE-J PASS via the NEW two-cell assembler `cell/doublet.py::build_cell_doublet`
 (two cortex shells facing across an interface; cadherins seeded on matched facing
