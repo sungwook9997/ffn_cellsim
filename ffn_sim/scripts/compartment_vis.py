@@ -60,6 +60,8 @@ _PT_STYLE: dict[str, tuple] = {
     "actin_cortex": ("#9ecae1", "cortex actin"),
     "cortex_myosin_backbone": ("#e6550d", "myosin"),
     "xlink_head":   ("#74c476", "crosslinker"),
+    "sf_actin":     ("#d62728", "ventral stress fibers"),
+    "integrin":     ("#54278f", "FA integrin (basal)"),
 }
 # Structural bond families drawn as lines in the cutaway.
 _BOND_DRAW: dict[str, tuple] = {
@@ -67,15 +69,25 @@ _BOND_DRAW: dict[str, tuple] = {
     "if_backbone":  ("#8c564b", 0.5, "IF backbone"),
     "if_crosslink": ("#c49a8a", 0.3, "IF crosslink"),
     "linc_nesprin": ("#d62728", 1.0, "LINC bridge"),
+    "sf_actin_bond": ("#e31a1c", 1.6, "ventral stress fiber"),
 }
 
 
-def build_full_live_cell(seed: int = 1):
-    """Build the full physiological cell with every LIVE compartment ON."""
+def build_full_live_cell(seed: int = 1, *, adherent: bool = True):
+    """Build the full physiological cell with every LIVE compartment ON.
+
+    ``adherent=True`` (default) also turns on the FA adhesion + ventral stress
+    fibers (the adherent operating point), giving the FULLEST cell — all six
+    activated compartments at once. ``adherent=False`` gives the suspended cell
+    (no fa / SF).
+    """
     base = load_manifest("mcf7_baseline.yaml")
     enable = set(load_recipe("linc_coupled")["enable"]) | {
         "osmotic_regulation", "microtubules", "membrane_reservoir",
     }
+    if adherent:
+        # adds fa + rigid_ligand_coating + ventral_stress_fibers (basal vSF).
+        enable |= set(load_recipe("ventral_stress_fibers_passive")["enable"])
     manifest, deferred = REGISTRY.compose_manifest(
         {"name": "all_live_vis", "enable": sorted(enable)},
         base_manifest=base, strict=True,
@@ -204,7 +216,7 @@ def make_figure(cell, label: str) -> tuple[Path, dict, int]:
             seg = seg[seg.mean(axis=1)[:, 1] <= 0.0]
         if len(seg) == 0:
             continue
-        emph = 2.2 if fam in ("mt_backbone", "linc_nesprin") else lw
+        emph = 2.2 if fam in ("mt_backbone", "linc_nesprin", "sf_actin_bond") else lw
         for a, b in seg:
             ax2.plot([a[0], b[0]], [a[1], b[1]], [a[2], b[2]],
                      color=col, lw=emph, alpha=0.9)

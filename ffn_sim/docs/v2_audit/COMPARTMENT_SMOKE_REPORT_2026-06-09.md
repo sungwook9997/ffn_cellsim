@@ -100,4 +100,8 @@ across activations is preserved; `cell_latest.png` points at the newest. Run wit
   histogram (force-free), cortical γ_soft identical OFF vs ON (no contamination).
 - `h7_membrane_reservoir_activation_gate.png` — membrane gate: own mem_node layer +
   cross-layer mem_tether mesh, force-free r0 histogram, cortical γ_soft identical OFF vs ON.
-  The morphology figs now also render the mem_node membrane layer just outside the cortex.
+- `h7_stress_fibers_activation_gate.png` — SF gate: basal long-axis-aligned vSF bundles
+  (mean |cos|≈0.93), FA→FA bundle-length histogram (per-bundle EXACT-r0 force-free),
+  cortical γ_soft identical OFF vs ON.
+- morphology snapshots accumulate: `cell_v01_membrane.png` (suspended, 5 internal LIVE) →
+  `cell_v02_stressfibers_adherent.png` (adherent, all 6 LIVE + FA + ventral stress fibers).
