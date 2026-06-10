@@ -185,12 +185,19 @@ class DcmSubstrateForce(md.force.Custom):
         dz > +range  : F_z = 0                         (out of adhesion reach)
     """
 
-    def __init__(self, *, z0: float, W_cs: float, adh_range: float) -> None:
+    def __init__(self, *, z0: float, W_cs: float, adh_range: float,
+                 k_sub: float | None = None) -> None:
         super().__init__(aniso=False)
         self.z0 = float(z0)
         self.W_cs = float(W_cs)                       # J adhesion energy / node
         self.rng = float(adh_range)
-        self.k_well = 2.0 * self.W_cs / (self.rng ** 2)   # N/m (CFL-safe)
+        k_well = 2.0 * self.W_cs / (self.rng ** 2)    # N/m adhesion-well stiffness
+        # Substrate COMPLIANCE: a finite-stiffness substrate (k_sub) softens the
+        # felt restoring stiffness via the series combination (a node pressing
+        # down also displaces the soft ground) → less traction → less spreading
+        # on soft substrates = the durotaxis / rigidity-sensing knob. k_sub=None
+        # ⇒ rigid dish (glass; the PI's prep) ⇒ k_eff = k_well (unchanged).
+        self.k_well = k_well if k_sub is None else (k_well * k_sub) / (k_well + k_sub)
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
         with self._state.cpu_local_snapshot as snap:
@@ -335,7 +342,9 @@ def build_dcm_simulation(p: ResolvedDCM, n_cells: int, *, device=None):
     # Per-node membrane patch area (for converting adhesion energy densities).
     area_per_node = 4.0 * np.pi * p.R_cell ** 2 / nv
     W_cc = p.W_cc_Jm2 * area_per_node      # J per contacting node pair (cell-cell)
-    W_cs = p.W_cs_Jm2 * area_per_node      # J per node (cell-substrate)
+    # Cell-substrate adhesion energy scales with areal LIGAND DENSITY (Gallant/
+    # García; linear regime) — the coating-density / ECM-condition knob.
+    W_cs = p.W_cs_Jm2 * p.ligand_density * area_per_node   # J per node
 
     # Cell-cell LJ: same-cell repulsive WCA (excluded vol), diff-cell attractive
     # (cadherin-scale adhesion). sigma ~ node spacing; r_cut adhesive tail.
@@ -365,7 +374,7 @@ def build_dcm_simulation(p: ResolvedDCM, n_cells: int, *, device=None):
     # Adhesive substrate (wetting → spreading). Reach = R_cell so a whole bottom
     # hemisphere wets (drives flattening), capped-harmonic well = BAOAB-stable.
     substrate = DcmSubstrateForce(
-        z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell)
+        z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell, k_sub=p.k_sub_Nm)
     ig.forces.append(substrate)
 
     sim.operations.integrator = ig

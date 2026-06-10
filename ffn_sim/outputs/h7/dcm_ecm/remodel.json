@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "n_particles": 2916,
+    "n_ecm": 2754,
+    "nv": 162,
+    "contractility": 0.7,
+    "dt": 5e-10,
+    "steps": 40000,
+    "bond_k": 0.017199999999999997,
+    "tension_decay_loglog_slope": 0.430825001290698,
+    "final_mean_inward_nm": 15.053587332659164,
+    "final_max_inward_nm": 532.0890303826686
+  },
+  "series": [
+    {
+      "step": 0,
+      "mean_inward_nm": 0.0,
+      "max_inward_nm": -0.0,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 4000,
+      "mean_inward_nm": 9.180507278393417,
+      "max_inward_nm": 425.71560624076585,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 8000,
+      "mean_inward_nm": 11.912547187862808,
+      "max_inward_nm": 476.0865971521606,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 12000,
+      "mean_inward_nm": 13.049748792862413,
+      "max_inward_nm": 496.2139767035501,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 16000,
+      "mean_inward_nm": 13.67233149676732,
+      "max_inward_nm": 509.3088664209053,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 20000,
+      "mean_inward_nm": 14.077401450414595,
+      "max_inward_nm": 513.5302441330404,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 24000,
+      "mean_inward_nm": 14.28185830504619,
+      "max_inward_nm": 520.1672687331153,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 28000,
+      "mean_inward_nm": 14.415340466951402,
+      "max_inward_nm": 525.1743630386984,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 32000,
+      "mean_inward_nm": 14.583132768185484,
+      "max_inward_nm": 529.3485197597578,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 36000,
+      "mean_inward_nm": 14.830836968528152,
+      "max_inward_nm": 532.6618789926747,
+      "n_fa_engaged": 0
+    },
+    {
+      "step": 40000,
+      "mean_inward_nm": 15.053587332659164,
+      "max_inward_nm": 532.0890303826686,
+      "n_fa_engaged": 0
+    }
+  ]
+}
