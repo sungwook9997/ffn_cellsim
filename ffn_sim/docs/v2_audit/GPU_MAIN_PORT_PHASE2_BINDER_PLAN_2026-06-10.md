@@ -84,6 +84,12 @@ GPU-resident로 만들 수는 없다. 포팅의 목표는 **host round-trip을 �
   남는다(PI_DECISION_BRIEF §2).
 
 ## 5. 차단자
-- gbook 코드 동기화: 현재 phase1/h3-cortex(d9249e5) dirty. GPU 검증 전 PI가 gbook을
-  h7/full-cell-integration로 정리(미커밋 작업 처리) 필요 = remote-overwrite, PI-gated.
+- ✅ **RESOLVED 2026-06-11 (PI-approved):** gbook 코드 동기화 완료. gbook→Mac SSH 인증
+  복구(gbook 키 생성 + Mac authorized_keys 등록 + IdentitiesOnly; "too many auth
+  failures"는 키 미설정이 원인이었음), `git fetch`로 h7/full-cell-integration 수신,
+  gbook `~/ffn_cellsim`를 dirty(phase1/h3-cortex d9249e5; 413줄 미커밋, 고유작업 없음=전부
+  Mac h7에 tracked 확인)에서 clean h7 `@82fd7e8`로 force-checkout+clean. 미커밋분은
+  `~/ffn_cellsim_dirtybackup_2026-06-11.tar`(1.5G, 전체 트리)로 보존. gbook hoomd
+  gpu_enabled=True, cupy 14.1.0 확인 → native-scale GPU(P2c) 차단 해제. 단 P2c gate
+  재검증은 여전히 PI sign-off.
 - integrator/ freeze 불가침(P2는 cortex/ + cell/ 만 건드림).
