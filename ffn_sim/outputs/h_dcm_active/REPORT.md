@@ -31,7 +31,23 @@ bilinear-tent spheroid — the mechanisms the static passive sweep was missing (
 | switched cells | 0 | **8** (bulk pressure > 0.5 kPa) |
 | divisions | 0 | **4** (12→16 cells) |
 All 4 criteria PASS: active>passive ✓, junction switch fires ✓, division grows cluster ✓,
-A/A₀ grows over time ✓. Traction ALONE (no division) gives A/A₀ ≈ 3.0–3.7 (in band, ≈ the
+A/A₀ grows over time ✓.
+
+**Morphology animation (MP4):** `figs/active_spheroid_morphology.mp4` (31 frames) —
+synchronized top-down (basal footprint spreading) + side (z, ball flattening onto substrate)
+views, mesh nodes coloured by 3-zone cell state, junction-switched cells ringed; title
+tracks step / N cells / A/A₀. Script `scripts/dcm_active_morphology_mp4.py` (re-runs with
+per-frame node capture). (Animations are MP4, not GIF, going forward.)
+
+**GPU wiring (gbook-ready, commit `83df8ce`):** `cell/dcm_gpu_forces.py` device-dispatch
+(`DeviceDispatch`: GPU → gpu_local_snapshot + cupy + kernels_gpu; CPU → cpu_local + numpy +
+kernels_cpu, cupy import guarded), `DcmTentContactGPU` + `DcmSubstrateForceGPU`, a
+parity-matched `tent_contact_forces` kernel (kernels_cpu/gpu), the gbook large-run script
+`scripts/dcm_gpu_run.py` (GPU auto / CPU fallback, --n-cells up to a few hundred), and
+`tests/test_dcm_gpu_forces_parity.py`. CPU-path bit-parity PASS (max abs force diff ~5e-26 N
+≪ 1e-12 gate); full suite 1419 passed. GPU path structurally complete, gbook-A5000-validated
+later (this Mac has no CUDA). Run on gbook:
+`python -m ffn_sim.scripts.dcm_gpu_run --n-cells 200 --equil-blocks 18`. Traction ALONE (no division) gives A/A₀ ≈ 3.0–3.7 (in band, ≈ the
 single-cell engine's 2.03 and the passive native+tent 2.36). Figure:
 `figs/active_spheroid.png` (6 panels: A/A₀ active-vs-passive, cell number, junction-switch +
 pressure, 3-zone fractions, final cluster with switched cells, per-cell pressure+integrin).
