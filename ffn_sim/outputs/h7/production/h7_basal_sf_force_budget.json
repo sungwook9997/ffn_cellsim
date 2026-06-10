@@ -42,5 +42,18 @@
     "gap_active_refuted50_vs_kassianidou": 7.058823529411765,
     "gap_active_refuted50_vs_kumar_lo": 11.764705882352942
   },
+  "decomposition": {
+    "per_minifilament_fidelity_factor": 11.200000000000001,
+    "lit_minifilament_N": 5.6e-11,
+    "lit_heads_per_side": 28,
+    "lit_f_per_head_N": 2e-12,
+    "cross_sectional_nmii_count_to_band_centre": 359.6428571428572,
+    "cross_sectional_nmii_count_to_band_lo": 179.8214285714286,
+    "engagement_realism_penalty_factor": 8.710953152493945,
+    "cortex_realised_engagement": 0.114,
+    "decomposition_check_product": 4028.0000000000014,
+    "unified_with_cortical_gamma_floor": "SAME \u00bd\u00b7n\u00b7f\u00b7\u2113 generation budget. Cortex: \u03b3_active=\u00bd\u00b7n2D\u00b7f\u00b7\u2113, ~36-80\u00d7 under the MCF7 active target \u2192 needs n2D\u224816-47/\u00b5m\u00b2 vs the HeLa-proxy 0.6/\u00b5m\u00b2 (NO MCF7 datum). SF: T=N_cross\u00b7f, ~180\u00d7 under Kumar after the per-minifilament fix \u2192 needs N_cross\u2248360 literature minifilaments across one SF cross-section (NO MCF7 SF-NMII datum). Same f\u224856 pN dipole, same density-datum gap (areal for cortex, cross-sectional for SF), same architecture caveat: count is the WRONG lever \u2014 cortex tension is overlap-set (Chugh 2017 / Truong Quang 2021), SF tension is sarcomeric-polarity-set (\u00a711 SF-2c: random polarity \u2192 \u221261 pN slackening; Hotulainen-Lappalainen 2006).",
+    "upper_bound_caveat": "All factors evaluated at the UPPER engagement \u03c6\u22480.99 AND assume coherent axial summation (cos=1). Both are optimistic: realised engagement ~11% (\u00d79 worse) and a random mixed-polarity bundle does NOT rectify (\u00a711). The budget is the CEILING a perfectly-organised sarcomeric SF could reach, not a prediction of the current random-polarity construction."
+  },
   "note": "REFUTE \u2014 the SF generation-limit is NOT closable from a measured NMII density datum. The DERIVABLE Route-B piece is the per-minifilament MOLECULAR correction (model 4.97e-12 N \u2192 literature 1.70e-11 N, factor_mini\u22483.4\u00d7, Stachowiak 2009 ORDER; native 30 heads/side SOLID). The OTHER Route-B multiplier \u2014 parallel minifilaments per cross-section \u2014 has NO usable datum: the ~50 literature estimate was REFUTED 0-3, and the back-solve (~590-1760) is geometrically impossible (cross-section hosts O(5-15)). Even the refuted-generous 50 \u00d7 2e-11 N = 8.50e-10 N is ~7\u00d7 under the single-fiber ACTIVE target (~6 nN, Kassianidou/Schwarz/Kumar 2017 PNAS) and ~12\u00d7 under Kumar 10 nN. REFRAME: Kumar 10-30 nN conflates single-fiber active myosin (~5-6 nN) with NETWORK/PRESTRESS (~25 nN); the active component is itself unclosed (load-dependent duty ratio is the open variable). SF instance of the cortical \u03b3-floor \u2014 same \u00bd\u00b7n\u00b7f\u00b7\u2113 budget, same missing motor-density datum. HALT\u2192PI on the gate-reframe (active-only target ~6 nN vs network-total 10-30 nN)."
 }

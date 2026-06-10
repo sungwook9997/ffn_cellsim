@@ -63,6 +63,40 @@ motor-density datum). Encoded REFUTE in `scripts/h7_basal_sf_force_budget.py` (n
 (→ session ii)? **Default if silent:** keep `ventral_stress_fibers` LIVE-but-active-bounded,
 NO back-solved factor, hand the unified generation-limit to session (ii).
 
+### ✅ Session (ii) LANDED 2026-06-09 (branch `h7/sf-generation-floor`) — generation-bound ACCEPTED
+**Deliverable: `docs/v2_audit/SF_GENERATION_LIMIT_SYNTHESIS_2026-06-09.md`** (+
+`scripts/h7_basal_sf_force_budget.py::decompose_generation_gap` + 5 consistency tests).
+- **SF tension is GENERATION-limited, N_filaments-INDEPENDENT.** Raw budget ≈5 pN, ~2014×
+  under Kumar. **Decomposed (labeled):** ~11× per-minifilament fidelity (brief 5 pN → lit 56 pN
+  dipole = the SAME §9 cortical per-head/stiffness fix) × ~180×(floor)/~360×(centre)
+  **cross-sectional NMII count per SF** = the Route-B native:effective factor = the MISSING
+  MCF7 SF-NMII density datum (= session (i)'s target). Engagement realism ~9× WORSE.
+- **UNIFIED with the cortical active-γ floor:** same ½·n·f·ℓ aggregate-motor budget, same f≈56 pN
+  dipole, same missing-MCF7-density-datum gap (areal n₂D for cortex, cross-sectional N for SF),
+  same architecture caveat — raw count is the WRONG lever; tension is set by ORGANISATION
+  (cortex: actin overlap, Chugh/Truong Quang; SF: sarcomeric polarity, §11 SF-2c −61 pN
+  slackening, Hotulainen-Lappalainen).
+- **Bound honesty:** budget is an UPPER bound on a COHERENT bundle; the current random-polarity
+  construction realises ~0 net traction even with the per-head fix → the **sarcomeric-polarity
+  SF construction (§11 NEXT)** is the distinct organisation lever (separate from (i)'s count datum).
+- **PI items surfaced (no gate-loosening):** (1) active-fraction scope (Kumar total vs
+  blebb-sensitive; SF-2c shows ~+3476 pN passive pre-tension), (2) tool-role scope (fine-grained
+  tool SUPPLIES ζΔμ ∝ ρ_NMII vs owns the absolute band), (3) density-conditioned provisional band,
+  (4) cross-line per-head reconciliation (0.5 / 2 / 8.48 pN across SF-brief / cortical-dipole / §9).
+- **✅ RECONCILED w/ (i) 2026-06-09 (commit `f6b956c`, `h7/sf-nmii-forcescale`):** (i) REFUTE'd —
+  Kumar NOT density-closable. Both sessions now CONVERGE → the generation-bound conclusion is
+  **DECISIVE, jointly HALT→PI** (no longer provisional). (i) sharpens 3 ways: (1) molecular
+  correction is SMALL + reconciled (~3.4× at (i)'s 17 pN Stachowiak per-minifilament stall, vs my
+  ~11× dipole upper bound); (2) the cross-section count is **GEOMETRICALLY IMPOSSIBLE** (band needs
+  ~590–1760, a 50–250 nm cross-section holds O(5–15)) → gap **irreducible**, and the cortical
+  γ-floor canNOT get its density datum from the SF side either; (3) **decisive gate-reframe**
+  (Kassianidou/Kumar 2017 PNAS): Kumar 10–30 nN is mostly **network/prestress**, single-fiber
+  **active** myosin ≈5–6 nN — supplied in our platform by basal mesh + FA + turgor, not `sf_myosin_`;
+  active component ~7× under even the 6 nN target. **PI ask:** re-scope the SF active gate to the
+  ~6 nN single-fiber active target (NOT the 10–30 nN composite); the absolute band is owned by the
+  network/prestress layer. ⚠️ both branches extended `h7_basal_sf_force_budget.py` → Lead merge at
+  integration. Folded into `SF_GENERATION_LIMIT_SYNTHESIS_2026-06-09.md` §1/§6/§7.
+
 ---
 
 
