@@ -1,8 +1,25 @@
-# GPU-main port — Phase 2 PLAN: myosin/xlink binder host-sync (2026-06-10)
+# GPU-main port — Phase 2: myosin/xlink binder host-sync (2026-06-10)
 
-> Autonomous-loop authored (PI 수면 중). **계획만** — gbook이 dirty 구 브랜치라
-> cupy GPU 검증 불가 → 검증 없는 GPU 포팅은 커밋 안 함(verified-only 룰). 이 문서는
-> 다음 GPU 세션(gbook 정리 후)이 바로 실행할 수 있는 phased plan.
+> Autonomous-loop authored as a plan; **P2a EXECUTED + gbook-VALIDATED** when PI
+> said "gpu 포팅 진행" (2026-06-10). P2b/P2c remain planned.
+
+## ✅ P2a DONE + VALIDATED (commit 3c1c14e + validation)
+`MyosinHeadForce.set_forces`의 per-step 전체-위치 host-sync 제거. device 분기:
+CPU→`_set_forces_cpu`(BYTE-IDENTICAL, test_myosin 41 green), GPU→`_set_forces_gpu`
+(gpu_local_snapshot+cupy, force는 gpu_local_force_arrays; binding 상태=host updater
+소유라 작은 engaged subset만 device로). `continuous_stroke_force`에 xp 백엔드.
+- **gbook RTX A5000 검증**(dirty 메인 트리 미접촉 — fresh deploy `~/ffn_cellsim_h7run`로
+  rsync): cupy 경로 에러 없이 완료, **GPU γ_soft=1.385e-2 vs CPU 1.374e-2(0.8%, seed
+  scatter 내), per-head meanT=8.24pN≈F_stall**. 물리 동일, host-sync 제거 확인.
+  결과 outputs/h7/production/gpu_validate/fb_gpu_s1.{json,png}.
+- ⚠️ cupy RNG≠numpy → GPU/CPU는 통계적 일치(bit-exact 아님, Phase1과 동일 설계).
+- 속도: 이 검증은 mesoscale n=120(GPU 교차점 N~10k 미만이라 속도 이득 없음 — 정확성
+  검증용). per-step sync 제거의 속도 payoff는 native scale에서(Phase1 integrator 11-12×와
+  동일 메커니즘). native 속도 측정 = follow-up.
+
+---
+
+## (원래 계획 — P2b/P2c는 아래 유지)
 
 ## 0. 왜 이게 next target인가
 `GPU_MAIN_PORT_PHASE1_2026-06-01.md` §4: integrator(constrained BAOAB)는 cupy/native
