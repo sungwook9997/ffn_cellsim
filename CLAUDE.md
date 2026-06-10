@@ -211,7 +211,7 @@ The previous 4-role split (Main / Sub / Orchestrator + PI-as-relay) is **retired
 ### State stores (read on session boot)
 
 - `ffn_sim/docs/briefs/H*.md` — **immutable unit specs** (contracts). Not edited.
-- Notion [Development Logs & Reviews](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) — **Phase 1 status board** (Status / Owner / Start / End / Log) + per-unit milestone Day-logs + **Open items**. The authoritative project record.
+- Notion [Development Logs & Reviews](https://www.notion.so/37b120daec5d815cb5acfba11c801ad4) — **Phase 1 status board** (Status / Owner / Start / End / Log) + per-unit milestone Day-logs + **Open items**. The authoritative project record.
 - On disk — latest commit on `phase1/h{N}-*`, `ffn_sim/outputs/h{X}/REPORT.md`, working tree.
 - **Knowledge base** — Notion Contract-Graph (SoT) + the Obsidian graph mirror and TAG/DuckDB query layer under `ffn_sim/outputs/{obsidian_rag_full,tag_kb}/`. See the *Knowledge base — RAG + TAG + Obsidian* section above for which layer to query and how. Ask KB questions via `tag_kb/tag_query.py`, not by guessing from memory.
 - The Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) is **retired for relay** (banner at its top). No more next-prompt drafts, stale-markers, cross-session signal-routing, or PI pre-dispatch checklist.
@@ -244,5 +244,5 @@ The single Lead owns all of `ffn_sim/`. When a `worktree` subagent is spawned fo
 - Read `ffn_sim/docs/PHASE_0_CLOSEOUT.md` for current state.
 - Read `ffn_sim/docs/PHASE_0_3_DECISIONS.md` for the ratified design vocabulary.
 - Read the relevant `ffn_sim/docs/briefs/H*.md` for the unit you're touching.
-- Read the Notion [Development Logs status board](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) + Open items for the current task.
+- Read the Notion [Development Logs status board](https://www.notion.so/37b120daec5d815cb5acfba11c801ad4) + Open items for the current task.
 - Ask the PI before deviating from any principle in this file.
