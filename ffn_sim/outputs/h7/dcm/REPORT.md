@@ -132,6 +132,14 @@ b/R term is rim cell-division (surface/volume ∝ 1/R), its c/R² a cohesion pen
 area-multiplying mechanism). This is the in-flight next build; the deformable-cell tier
 is the substrate it runs on.
 
+**VERIFIED — proliferation drives A/A₀ into the band (`cell/dcm_prolif.py`).** A
+proliferating DCM cluster (rim-biased, contact-inhibited division) grows 7→18 cells over
+11 divisions and the footprint rises **A/A₀ 1.00 → 2.38** — past the ~1.2 mechanical-wetting
+ceiling and INTO the physiological band [2,4] — at conserved cell volume (V/V₀≈1.0) and
+~constant monolayer height (~17 µm). This empirically confirms the a+b/R+c/R² law is
+proliferation-driven (footprint grows by cell NUMBER, not by stretching a fixed set).
+Figure: `figs/dcm_prolif/proliferation_AA0_vs_ncells.png`.
+
 **Proliferation must be paired with CORE NECROSIS (PI 2026-06-11).** A faithful spheroid
 is 3-zone under the O₂/nutrient gradient: a proliferating RIM (outer, nutrient access) +
 a quiescent middle + a **necrotic CORE** (central hypoxia → cell death). This is exactly
