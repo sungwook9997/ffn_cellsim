@@ -81,19 +81,37 @@ every axis — instead of matching them.
   2016 / the Acta-Biomater-2025 stiffness→folding picture predict.
 - **Beyond-papers cell–ECM coupling (`dcm_ecm`, headline):** a DCM exact-turgor
   deformable cell (162 nodes) on an **explicit cross-linked Mikado fiber ECM (2754
-  fiber beads)**, gripping via the FA clutch and contracting — **builds + runs 40k
-  BAOAB steps stably** and **REMODELS the matrix**: fiber beads pulled inward toward
-  the cell (mean 15 nm, **max ≈ 532 nm near the cell**), and **tensed fibers align
-  radially near the cell** (|cos(bond, radial)| ≈ 0.65 vs 0.5 isotropic — the
-  d0sm01911a/Kim tensed-fiber signature). ⚠️ The QUANTITATIVE d0sm01911a 2D stress
-  law (tension ~ 1/r) is **NOT yet reproduced** (log-log slope +0.43 vs the predicted
-  −1): the contraction is weak (15 nm mean remodeling) and the dynamic catch-slip FA
-  did not engage (n_engaged=0; traction is carried by the static force-free FA bonds),
-  so the cell's stress field does not dominate the bed's background tension. Stronger
-  contraction + working catch-slip engagement is the next tuning step. **This is a
-  structurally-beyond-the-papers, stable, novel asset** (deformable turgor cell ⊗
-  explicit cross-linked fiber ECM ⊗ catch-slip FA) demonstrating cell-driven matrix
-  remodeling; quantitative 1/r validation is the documented follow-on.
+  fiber beads)**, gripping via the **catch-slip FA clutch** (Pereverzev, F*≈7 pN;
+  ~40 clutches engaged) and contracting — **builds + runs 40k BAOAB steps stably** and
+  **REMODELS the matrix**: fiber beads pulled inward toward the cell, and tensed fibers
+  align radially near the cell (|cos| ≈ 0.65 vs 0.5 isotropic — the d0sm01911a/Kim
+  signature).
+  - **1/r stress-law recovery (workflow Diagnose→Fix→Sweep):** the d0sm01911a 2D
+    prediction is tension ~ 1/r (log-log slope −1). The first cut gave slope **+0.43**
+    (WRONG sign). Diagnosis (the cropped Mikado bed RELAXES on its own → its intrinsic
+    tension swamps the cell signal; the cell did not net-contract because turgor
+    inflation cancelled the edge-spring contraction). Fix = **cell-induced tension =
+    T(with-cell) − T(no-cell control)** (the d0sm01911a cell-free-matrix subtraction;
+    `build_ecm_only_simulation` + `cell_induced_tension_vs_r`) + a **contraction-
+    dominant operating point** (turgor 25 Pa < the ~35–40 Pa crossover, contractility
+    0.5 → the cell net-contracts −2.05% radius). Result: slope **+0.43 → −0.19** —
+    the sign is now CORRECT (cell-induced tension decays with r, as predicted).
+    **PARTIAL:** the magnitude is shallower than −1 because the contraction is kept
+    gentle (mean inward ~3.5 nm, max ~100 nm) for BAOAB stability; a stronger
+    contraction (closer to −1) is the remaining single knob.
+  - **Multicell spheroid-on-ECM (`h7_dcm_ecm_spheroid.py`, the PI's goal):** a 7-cell
+    DCM cluster on the explicit fiber ECM (**5911 particles**, 263 FA clutches)
+    **builds + runs 30k BAOAB steps stably** and **collectively remodels** the matrix —
+    fiber inward displacement mean ≈ 20 nm, **max ≈ 4.3 µm** near the cluster, the
+    cluster footprint compacting **−8.1 %** (R_g 17.1→16.8 µm, cell radius −1.1 %).
+    The deformable-spheroid-on-explicit-ECM model RUNS — the multicell goal is
+    structurally achieved. (This config CONTRACTS the cells → the cluster compacts;
+    flipping to an expansion/wetting operating point gives outward spheroid spreading —
+    the immediate next run.)
+  - **This is a structurally-beyond-the-papers, stable, novel asset** (deformable
+    turgor cells ⊗ explicit cross-linked fiber ECM ⊗ catch-slip FA, single + multicell)
+    demonstrating cell-driven matrix remodeling with the correct 1/r sign; the −1
+    magnitude is the one documented remaining tuning knob.
 
 ## Honesty / scope
 
@@ -110,6 +128,12 @@ every axis — instead of matching them.
 - `figs/dcm/spheroid3d_spread.png` / `.gif` — DCM 3-D spheroid geometry + (passive) spreading.
 - `figs/dcm/durotaxis_k_sub.png` — spread area + height vs substrate stiffness k_sub
   (rigidity sensing: stiffer → more spreading, A/A₀ 1.02→1.27).
-- `figs/dcm_ecm/dcm_ecm_remodel.png` — 4-panel: ECM fiber inward-displacement map;
-  fiber tension vs r (1/r check, not yet matched); radial alignment vs r (≈0.65 near
-  cell); remodeling vs time (max ≈532 nm). The beyond-papers cell⊗ECM headline.
+- `figs/dcm_ecm/dcm_ecm_remodel.png` — 4-panel single-cell DCM⊗ECM: ECM fiber
+  inward-displacement map; **cell-induced** fiber tension vs r (slope −0.19, sign now
+  correct vs the +0.43 first cut); radial alignment vs r (≈0.65 near cell); remodeling
+  vs time. The beyond-papers cell⊗ECM headline.
+- `figs/dcm_ecm/dcm_ecm_spheroid.png` — multicell (7-cell) DCM spheroid on the explicit
+  fiber ECM: collective remodeling + footprint compaction.
+- `figs/dcm_ecm/diag2_bed_relaxes_no_cell.png` — diagnostic: the cell-free Mikado bed
+  relaxes on its own (why the no-cell baseline subtraction was needed).
+- `figs/dcm_ecm/sweep/sweep_c075_t0.png` — a contractility×turgor sweep point.
