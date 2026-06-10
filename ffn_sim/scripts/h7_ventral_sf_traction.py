@@ -49,6 +49,8 @@ def _angle_triplets(layout):
 def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
                  anchor_drag_factor=1.0e4, with_myosin=False, n_motors=None,
                  myosin_force_scale=1.0, myosin_backbone_bending=True,
+                 mband=False,   # loop24d M-band targeting: A/B-rejected (no improvement,
+                                # 2026-06-10) → preserved but OFF by default; opt in via flag
                  sarcomeric=False, n_sarcomeres=3, overlap_frac=0.3,
                  array=False, n_sf=1, sf_spacing=2.0e-6,
                  sarcomere_period=2.0e-6, contact_area=1822.0e-12):
@@ -168,6 +170,12 @@ def build_sf_sim(*, n_fil, fiber_length, bundle_radius, device, seed,
             cortex_tangents=fil_tangents,
             beads_per_filament=lay.n_beads_per_fil,
             cortex_filament_idx=lay.filament_idx,
+            # M-band targeting (loop24d): place minifilaments at the antiparallel-overlap
+            # zones so both sides engage antiparallel pairs (vs random → single-sided).
+            # ``mband=False`` is the A/B control arm: random greedy placement (pre-loop24d).
+            sarcomere_m_band_x=(lay.m_band_x if mband
+                                and getattr(lay, "m_band_x", None) is not None
+                                and lay.m_band_x.size > 0 else None),
         )
         snap = extend_state_with_cortex_myosin(snap, myo_layout, p_myo)
 
@@ -314,6 +322,13 @@ def main() -> int:
     ap.add_argument("--sarcomeric", action="store_true",
                     help="graded-polarity SARCOMERIC SF (Z/M bands + α-actinin) instead of "
                          "the random mixed-polarity bundle — rectifies myosin sliding into traction")
+    ap.add_argument("--mband-mode", choices=["on", "off"], default="off",
+                    help="M-band targeting (loop24d): 'on' orders minifilament placement by "
+                         "proximity to sarcomere M-bands (antiparallel-overlap zone); 'off' "
+                         "(DEFAULT) = random greedy placement. The 2026-06-10 CPU A/B "
+                         "(mband_ab/) found NO improvement and large seed instability, so 'off' "
+                         "(the validated path) is the default; 'on' is retained for re-testing. "
+                         "No effect unless the layout supplies M-band positions (i.e. --sarcomeric).")
     ap.add_argument("--n-sarcomeres", type=int, default=3)
     ap.add_argument("--overlap-frac", type=float, default=0.3)
     ap.add_argument("--array", action="store_true",
@@ -355,6 +370,7 @@ def main() -> int:
         bundle_radius=args.bundle_radius_nm * 1e-9, seed=args.seed,
         anchor_drag_factor=args.anchor_drag_factor,
         with_myosin=True, n_motors=n_motors_total,
+        mband=(args.mband_mode == "on"),
         sarcomeric=args.sarcomeric, n_sarcomeres=args.n_sarcomeres,
         overlap_frac=args.overlap_frac,
         array=args.array, n_sf=args.n_sf,
@@ -442,6 +458,7 @@ def main() -> int:
         "fiber_length_um": h_on["layout"].fiber_length * _UM,
         "n_motors": h_on["p_myo"].n_motors_per_cell,
         "stepping_mode": "continuous_stroke", "dt_used_s": h_on["dt_used"],
+        "mband_mode": args.mband_mode,
         "equilibrate": args.equilibrate, "contract": args.contract, "n_samples": args.n_samples,
         "coherent_off_traction_pN": float(np.mean(c_offs)),
         "coherent_on_traction_pN": float(np.mean(c_ons)),

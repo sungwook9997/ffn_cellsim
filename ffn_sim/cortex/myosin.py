@@ -553,6 +553,7 @@ def generate_cortex_myosin_layout(
     cortex_tangents: np.ndarray | None = None,
     beads_per_filament: int | None = None,
     cortex_filament_idx: np.ndarray | None = None,
+    sarcomere_m_band_x: np.ndarray | None = None,
 ) -> CortexMyosinLayout:
     """Place ``n_motors_per_cell`` minifilaments on the cortex shell.
 
@@ -618,6 +619,24 @@ def generate_cortex_myosin_layout(
         # Greedy: shuffle, accept if far enough from already-picked.
         min_sep = float(L) + 100.0e-9   # backbone_length + 100 nm slack
         order = rng.permutation(n_actin)
+        # SARCOMERIC M-band targeting (2026-06-10 loop24d). Hypothesis: real myosin
+        # minifilaments sit at the M-band (the antiparallel-overlap zone), NOT at random
+        # positions; random centers leave ~50% of minifilaments SINGLE-SIDED (one side finds
+        # no antiparallel partner) → unbalanced random-sign pulls → per-SF traction is
+        # sign-noise. When the M-band x-positions are given, ORDER the candidate beads by
+        # |x − nearest M-band| (ascending) so the greedy spacing picks M-band-proximal beads
+        # first → both minifilament sides reach the interdigitated antiparallel filaments.
+        # STATUS: A/B-REJECTED (not adopted). The 2026-06-10 CPU preliminary
+        # (outputs/h7/production/mband_ab/, REPORT) found NO improvement vs random
+        # (paired Δ = +62 ± 156 pN over 3 seeds, NS) — both arms are seed-unstable (sign
+        # flips ±150 pN), so the differential cannot resolve a targeting effect. Code is
+        # PRESERVED but the only caller (h7_ventral_sf_traction) defaults mband=off. Do not
+        # enable in production until the per-SF traction measurement is seed-stabilised (PI).
+        if sarcomere_m_band_x is not None and sarcomere_m_band_x.size > 0:
+            bead_x = cortex_positions[:, 0]
+            d_to_mband = np.abs(bead_x[:, None] - sarcomere_m_band_x[None, :]).min(axis=1)
+            # jitter ties with rng so cross-section spread isn't degenerate
+            order = np.lexsort((rng.random(n_actin), d_to_mband))
         picked: list[int] = []
         picked_pos: list[np.ndarray] = []
         for idx in order:

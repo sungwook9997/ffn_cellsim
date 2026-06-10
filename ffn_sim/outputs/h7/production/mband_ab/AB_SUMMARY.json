@@ -1,0 +1,36 @@
+{
+  "config": "sarcomeric n_fil=36 n_beads=144 n_motors=16 equil=120000 contract=120000 nsamp=20",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "n_seeds": 3,
+  "on_diff_pN": [
+    -1.9390401848676624,
+    88.97589419364684,
+    -416.56648527704647
+  ],
+  "off_diff_pN": [
+    101.65905287912058,
+    -285.19738039762507,
+    -333.1185051207084
+  ],
+  "on_ensemble_mean_pN": -109.84321042275576,
+  "on_ensemble_sem_pN": 155.59108460562896,
+  "off_ensemble_mean_pN": -172.21894421307096,
+  "off_ensemble_sem_pN": 137.635964918457,
+  "paired_delta_mean_pN": 62.3757337903152,
+  "paired_delta_sem_pN": 156.007250472204,
+  "improved": false,
+  "on_engaged": [
+    42.85,
+    39.55,
+    49.0
+  ],
+  "off_engaged": [
+    41.2,
+    43.0,
+    48.3
+  ]
+}
