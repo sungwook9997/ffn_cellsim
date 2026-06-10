@@ -95,6 +95,27 @@ criteria, and the status of each piece (several built/running in parallel).
   fine-grained cadherin catch-bond + actomyosin cortex should reproduce the jamming line
   emergently; CLAUDE.md no-lumped-mechanism rule.)
 
+## Necrosis TIMING + morphology (PI 2026-06-11, refinement)
+
+- **Necrosis develops DURING the days-long aggregation, not as a final-size threshold.**
+  The PI's spheroid took ~5 days to form from individual cells; the core is nutrient-starved
+  as soon as the aggregate exceeds the penetration depth, so the core begins necrosing well
+  BEFORE the spreading assay — the spheroid arrives at spreading **already carrying a
+  necrotic core**. Model = an AGGREGATION phase (ball compacts + ages; core cells cross into
+  necrosis by depth over time) THEN a spreading phase (pre-formed necrotic core persists/
+  grows). Necrosis is a depth×time process on the live cluster, visualized as evolving
+  3-zone state (rim proliferating / quiescent / necrotic core) — must be SHOWN, not just
+  criterion-ed.
+- **Morphology:** the spreading observable is a 3-D ball that compacts (cell-cell adhesion),
+  contacts the substrate, then WETS/spreads. The early 18-cell, 2-D-ish result looked wrong
+  because too few cells + flat packing — needs a 3-D spherical cluster + enough cells.
+  Visible necrotic core requires the ball to span > ~2× the ~150 µm penetration depth
+  (real 5-day spheroid ~300–500 µm) → either many fine cells (GPU) or a documented
+  coarse-graining (each DCM cell = a patch) for a CPU demo.
+- **Bulk pressure + junction switch must also be VISUALIZED** (per-cell compressive stress
+  building toward the core; cadherin→integrin flip on high-pressure rim cells → unjamming/
+  spreading), not only literature-calibrated.
+
 ## GPU-optimization status (MUST do before the large-spheroid production assembly)
 
 **The current DCM code is GPU-RUNNABLE but NOT GPU-OPTIMIZED** — it inherits the
