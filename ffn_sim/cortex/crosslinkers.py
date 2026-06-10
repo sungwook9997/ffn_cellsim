@@ -273,9 +273,20 @@ def resolve_crosslinkers(cfg: dict, *, dt: float) -> ResolvedCrosslinkers:
     # and filamin ≈ 0.12 /s (catch0 0.1 + slip0 0.02), k_off_max ≈ 0.12 /s.
     # CFL: batch_dt · 0.12 ≤ 1e-3 → batch_dt ≤ 8.3 ms. With dt ≈ 13 ns,
     # batch_steps ≤ 6.4e5 — any reasonable batch_steps (100) is well within.
-    # F at fully-stretched dynamic bond at the bind-radius edge (envelope).
-    _F_env = p.k_attach * p.max_bind_dist
+    # Envelope force = force at the LESSER of the thermal RMS displacement and the
+    # geometric bind radius (2026-06-10 CFL-regression fix, PI-approved). The original
+    # code used the GEOMETRIC envelope k·max_bind_dist, but the comment above already
+    # named the thermal bound as "more meaningful": equipartition ½k⟨Δr²⟩=½kT ⇒ RMS
+    # displacement √(kT/k), RMS force √(kT·k). At the soft brief-default k=1e-7 both
+    # bounds are tiny so it never mattered; at the loop18 re-anchored stiff k=1e-3 the
+    # geometric k·max_bind_dist (60 pN at 60 nm; 1 nN at the 1 µm demo radius) drove
+    # the Bell-Evans off-rate to ~1e39/s — unphysical (a stiff bond ruptures long
+    # before stretching to the bind radius), breaking the batch-CFL on every
+    # crosslinker-bearing build (14 tests RED). The thermal-capped bound is k-robust
+    # and grid-invariant (no magic number; kT and k are config-resolved). See
+    # docs/v2_audit/CROSSLINK_REANCHOR_CFL_REGRESSION_2026-06-10.md.
     _kT = 4.28e-21
+    _F_env = min(math.sqrt(_kT * p.k_attach), p.k_attach * p.max_bind_dist)
     # α-actinin slip envelope: k_off0 · exp(+F·x_β/kT).
     _k_off_alpha = p.alpha_k_off0 * math.exp(p.alpha_x_beta * _F_env / _kT)
     # filamin catch-slip envelope: catch branch decays, slip branch grows;

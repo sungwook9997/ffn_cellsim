@@ -1,7 +1,14 @@
-# 잠복 회귀: loop18 crosslink 재anchor가 crosslinker batch-CFL 테스트 2개를 깨뜨림
+# 잠복 회귀: loop18 crosslink 재anchor가 crosslinker batch-CFL 테스트 14개를 깨뜨림 → ✅ FIXED
 
-> Lead 자율-루프(2026-06-10 iter13) 회귀 테스트 중 발견. **수정 안 함 — CFL contract
-> 테스트라 gate-loosening 금지(하드룰), PI surface.** Production은 안전(γ 결론 무관).
+> Lead 자율-루프(2026-06-10 iter13-15) 회귀 테스트 중 발견 → PI 복귀 후 **PI-approved
+> 수정 적용(option B thermal-bound)**, 14 테스트 GREEN 복구. 상세 경과 아래.
+>
+> **✅ 수정(2026-06-10, PI-approved):** envelope 힘을 `_F_env = k·max_bind_dist`(stiff k
+> 폭발)에서 **`min(√(kT·k), k·max_bind_dist)`**(thermal RMS 변위 force, 기하 반경으로 cap)로.
+> 등분배 ½k⟨Δr²⟩=½kT ⇒ RMS force √(kT·k); 매직넘버 없음(kT·k 모두 config). 실은 기존 주석이
+> 이미 이 thermal bound을 "more meaningful"로 명시했는데 코드가 기하 envelope을 쓰던 불일치를
+> 바로잡음. 결과: k_off_max PROD 18→**0.123/s**(주석 예측 0.12와 일치), DEMO 2.56e39→0.123/s,
+> 14 테스트 GREEN. crosslinkers.py:276. **production γ 결론 불변**(off-rate 더 낮아져 CFL 여유 회복).
 
 ## 증상 — ⚠️ blast radius = 14 테스트 (처음 본 2개가 아님)
 `python -m pytest ffn_sim/tests/` 전체 → **22 FAILED**. root-cause 분류:
