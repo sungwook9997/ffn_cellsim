@@ -95,6 +95,35 @@ criteria, and the status of each piece (several built/running in parallel).
   fine-grained cadherin catch-bond + actomyosin cortex should reproduce the jamming line
   emergently; CLAUDE.md no-lumped-mechanism rule.)
 
+## GPU-optimization status (MUST do before the large-spheroid production assembly)
+
+**The current DCM code is GPU-RUNNABLE but NOT GPU-OPTIMIZED** — it inherits the
+platform-wide GPU-main porting gap (it follows the pre-port `cpu_local_snapshot` pattern,
+which forces a GPU→CPU sync every step). Bottlenecks:
+- **BAOAB integrator** `integrator/baoab.py:283,408` — per-STEP cpu_local_snapshot +
+  set_snapshot (the hot loop; worst offender).
+- **DCM custom forces** — turgor/substrate `cell/dcm.py:140,203`; turgor/FA-clutch
+  `cell/dcm_ecm.py:340,409`; turgor/adhesion/division `cell/dcm_prolif.py:154,299,381` —
+  cpu_local_force_arrays every force eval.
+- **Custom updaters** — FA catch-slip `dcm_ecm.py:222`, ProliferationUpdater
+  `dcm_prolif.py:299,381` — get_snapshot/cpu_local + set_snapshot per tick (batched, so
+  less critical than BAOAB).
+- **per-cell LJ types** `cell/dcm.py:351-358` (N×N pair params) → "many types perform
+  poorly on the GPU" (observed warning). `dcm_prolif.py` already moved to a shared
+  membrane type + custom adhesion (right direction; but custom = CPU sync until ported).
+
+Native `md.bond.Harmonic` / `md.angle.Harmonic` / `md.pair.LJ` are already GPU-native (OK).
+
+**Port path already exists** (`docs/v2_audit/GPU_OPTIMIZATION_ROADMAP_2026-06-01.md`,
+`GPU_MAIN_PORT_PHASE1*.md`, `native/`, GPU-main P2a validated on the gbook A5000 with a
+cupy path). To make the DCM production-ready: (1) BAOAB → gpu_local_snapshot/cupy (biggest
+win); (2) DCM turgor/substrate/adhesion custom forces → cupy gpu_local kernels (face-normal
+pressure + wells vectorize well); (3) shared membrane type + cupy cell-id-aware adhesion
+(drop per-cell LJ types); (4) keep slow topology updaters (division, catch-slip) at low
+cadence. **Two blockers to production:** (a) this GPU port; (b) the gbook hardware itself
+is blocked (old branch dirty — PI cleanup needed). Both must clear before the large-spheroid
+production run.
+
 ## Honesty / scale
 Mesoscale CPU caps the cell count; a genuinely LARGE spheroid (hundreds of cells, R 30–80 µm
 to hit the layer-2 fit range) needs the gbook A5000 GPU (dirty-branch cleanup pending) or
