@@ -937,7 +937,7 @@ def _bell_evans_k_off(
 
 
 def continuous_stroke_force(
-    s_grip: np.ndarray, k_head_actin: float, F_stall: float
+    s_grip: np.ndarray, k_head_actin: float, F_stall: float, xp=np
 ) -> np.ndarray:
     """Per-head delivered contractile force ``F = min(k·s_grip, F_stall)`` [N].
 
@@ -956,8 +956,8 @@ def continuous_stroke_force(
     construction (the §9 verification target: per-head delivered force caps at
     F_stall, not k·r). Vectorised, units N; ``s_grip`` clamped ≥ 0.
     """
-    return np.minimum(
-        k_head_actin * np.clip(s_grip, 0.0, None), F_stall
+    return xp.minimum(
+        k_head_actin * xp.clip(s_grip, 0.0, None), F_stall
     )
 
 
@@ -1720,10 +1720,17 @@ class MyosinHeadForce(md.force.Custom):
     5. Measurement: the delivered force is ``continuous_stroke_force`` (NOT k·r),
        so the force-budget audit reads it as the cross-bridge load.
 
-    ⚠️ GPU-main note (§9): ``md.force.Custom`` syncs the device→host each step
-    (``cpu_local_snapshot``). This CPU path is the sanity-gated dev form; the
-    production GPU-resident form is a cupy ``gpu_local_force_arrays`` variant
-    (mirroring the compartment-force CPU/GPU swap in cell.py) — a follow-up port.
+    GPU-main port (2026-06-10, GPU_MAIN_PORT_PHASE2 P2a): ``set_forces`` is now
+    device-aware. On a CPU device it runs ``_set_forces_cpu`` (the original numpy
+    path, BYTE-IDENTICAL — the existing sanity gates are the reference). On a GPU
+    device it runs ``_set_forces_gpu``: positions are read device-resident via
+    ``gpu_local_snapshot`` + cupy and the force written via ``gpu_local_force_arrays``
+    so the per-step full-position device→host sync (the dominant cost at full-cell N)
+    is removed. The small per-head binding state (``bound``/``s_grip``, owned by the
+    CPU batch updater) is moved to device per step (n_heads-sized, cheap). Identical
+    physics: ``F = min(k·s_grip, F_stall)`` toward the bound bead, Newton-3 pair.
+    Mirrors the compartment-force CPU/GPU swap (cell/membrane_surface_gpu.py).
+    GPU numeric validation is gbook-gated (no GPU on the dev Mac).
     """
 
     def __init__(
@@ -1756,8 +1763,18 @@ class MyosinHeadForce(md.force.Custom):
             [action._head_global_tag(h) for h in range(n_heads_total)],
             dtype=np.int64,
         )
+        self._cp = None  # lazy cupy handle (GPU device only)
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
+        # Device-aware dispatch (GPU-main P2a). CPU path is byte-identical to the
+        # pre-port code (the sanity gates reference it); GPU path is the device-
+        # resident cupy twin that removes the per-step full-position host-sync.
+        if isinstance(self._state._simulation.device, hoomd.device.GPU):
+            self._set_forces_gpu(timestep)
+        else:
+            self._set_forces_cpu(timestep)
+
+    def _set_forces_cpu(self, timestep: int) -> None:
         bound = self._action._head_bound_to_actin
         engaged = bound >= 0
         with self._state.cpu_local_snapshot as snap:
@@ -1785,6 +1802,52 @@ class MyosinHeadForce(md.force.Custom):
             np.add.at(F_vec, head_rows, F_pair)
             np.add.at(F_vec, bead_rows, -F_pair)
         with self.cpu_local_force_arrays as arrays:
+            arrays.force[:] = F_vec
+
+    def _set_forces_gpu(self, timestep: int) -> None:
+        """Device-resident twin of :meth:`_set_forces_cpu` (GPU-main P2a).
+
+        Identical physics; positions read via ``gpu_local_snapshot`` (no per-step
+        full-position device→host copy) and force written via
+        ``gpu_local_force_arrays``. The per-head binding state (``bound``/``s_grip``)
+        is owned by the CPU batch updater, so the small engaged subset is moved to
+        device each step (n_heads-sized — cheap; the large array that USED to sync
+        every step was the full position buffer, now device-resident).
+        """
+        if self._cp is None:
+            import cupy as cp
+            import cupyx
+            self._cp = cp
+            self._cupyx = cupyx
+        cp = self._cp
+        bound = self._action._head_bound_to_actin       # host (CPU updater owns it)
+        engaged = bound >= 0                             # host bool — no device sync
+        with self._state.gpu_local_snapshot as snap:
+            tag = cp.asarray(snap.particles.tag)
+            pos = cp.asarray(snap.particles.position, dtype=cp.float64)
+            n_rows = pos.shape[0]
+            F_vec = cp.zeros((n_rows, 3), dtype=cp.float64)
+            if bool(engaged.any()):
+                # Tag → row inverse map (single-rank dense tags 0..N-1, so size N;
+                # avoids a tag.max() device→host sync vs the CPU path's max()+1).
+                rtag = cp.empty(n_rows, dtype=cp.int64)
+                rtag[tag] = cp.arange(n_rows, dtype=cp.int64)
+                head_tags = cp.asarray(self._head_global_tags[engaged])
+                bead_tags = cp.asarray(bound[engaged])
+                s_grip = cp.asarray(self._action._head_grip_s[engaged])
+                F_mag = self.force_scale * continuous_stroke_force(
+                    s_grip, self.k_head_actin, self.F_stall, xp=cp
+                )
+                head_rows = rtag[head_tags]
+                bead_rows = rtag[bead_tags]
+                d = pos[bead_rows] - pos[head_rows]              # head → bead
+                r = cp.linalg.norm(d, axis=1)
+                uhat = d / cp.clip(r[:, None], 1e-30, None)
+                F_pair = F_mag[:, None] * uhat                   # on head, toward bead
+                # Multiple heads may grip the same bead → scatter-accumulate (Newton 3).
+                self._cupyx.scatter_add(F_vec, head_rows, F_pair)
+                self._cupyx.scatter_add(F_vec, bead_rows, -F_pair)
+        with self.gpu_local_force_arrays as arrays:
             arrays.force[:] = F_vec
 
 
