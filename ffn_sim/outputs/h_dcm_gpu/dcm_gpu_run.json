@@ -1,0 +1,33 @@
+{
+  "finite_gate": true,
+  "on_gpu": false,
+  "device_note": "no CUDA GPU build available \u2014 FALLBACK to CPU",
+  "n_cells": 6,
+  "n_particles": 972,
+  "subdivisions": 2,
+  "dt": 3e-10,
+  "seed": 7,
+  "steps_per_s": 68.79100117971406,
+  "total_steps": 1200,
+  "R_eff_um": 24.148577036299702,
+  "R_max_um": 16.648577036299706,
+  "R_rms_um": 13.25847999101618,
+  "R_cluster_um": 24.148577036299702,
+  "AoverA0": 1.189517507566686,
+  "AoverA0_tailstd": 0.0,
+  "A_traj": [
+    1.1841545880048565,
+    1.1868924632397269,
+    1.189517507566686
+  ],
+  "A_abs_um2_traj": [
+    367.43701526991697,
+    368.2865637280935,
+    369.10110134186414
+  ],
+  "A0_self_um2": 310.2948035602342,
+  "necrotic_frac": 0.0,
+  "quiescent_frac": 0.0,
+  "prolif_frac": 1.0,
+  "gpu_substrate": true
+}

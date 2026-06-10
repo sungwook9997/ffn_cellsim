@@ -36,6 +36,9 @@ KERNELS = [
     ("bond_spring", lambda M, m: m.bond_spring_forces(M["pos"], M["bonds"], M["r0"], M["k_bond"])),
     ("group_pair", lambda M, m: m.group_pair_forces(
         M["pos"], M["group_id"], M["sigma"], M["r_cut"], M["k_core"], M["f_well0"])),
+    ("tent_contact", lambda M, m: m.tent_contact_forces(
+        M["pos"], M["group_id"], M["r_contact"], M["c_adh"], M["rep_strength"],
+        M["adh_strength"], M["patch_area"], M["force_cap"])),
 ]
 
 

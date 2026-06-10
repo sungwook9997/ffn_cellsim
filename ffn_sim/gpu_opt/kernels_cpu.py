@@ -128,6 +128,75 @@ def group_pair_forces(pos, group_id, sigma, r_cut, k_core, f_well0):
 
 
 # ---------------------------------------------------------------------------
+# K5. tent_contact_forces — SimuCell3D bilinear-tent cell-cell contact
+#     (mirrors cell/dcm_contact.py DcmTentContact's per-pair law exactly)
+# ---------------------------------------------------------------------------
+def tent_contact_forces(pos, cell_id, r_contact, c_adh, rep_strength,
+                        adh_strength, patch_area, force_cap, cad_mult=None):
+    """SimuCell3D bilinear-tent inter-cell contact (node↔node first cut).
+
+    Bit-for-bit the per-pair force law of ``cell/dcm_contact.py::DcmTentContact``,
+    extracted as a standalone array kernel so it can be evaluated identically on
+    numpy (CPU) and cupy (GPU). For every i<j node pair of DIFFERENT cells with
+    separation ``d = |pos_i − pos_j|`` below the search radius
+    ``max(r_contact, c_adh)``::
+
+        REPULSION (d < r_contact):  fmag = +rep·A·(r_contact − d)   (push apart)
+        ADHESION  (r_contact ≤ d < c_adh, ω>0):  bilinear tent, peak at c_adh/2
+              d ≥ c_adh/2 : tent = c_adh − d   (hardening)
+              d <  c_adh/2: tent = d           (softening)
+              fmag = −ω·A·tent·√(cad_mult_i·cad_mult_j)   (pull together)
+
+    ``fmag`` is clipped to ``[−force_cap, +force_cap]`` (BAOAB int32 guard) and
+    applied as ``fmag·r̂`` on i, ``−fmag·r̂`` on j (Newton-3 exact).
+
+    pos (N,3); cell_id (N,) int, −1 = dormant; cad_mult (n_cells,) or None.
+    Returns per-node force (N,3). The reference uses a brute-force O(N²) inter-node
+    search; the GPU twin replaces it with the K4 uniform-grid neighbour list.
+    """
+    F = np.zeros_like(pos)
+    active = np.flatnonzero(cell_id >= 0)
+    if active.size < 2:
+        return F
+    ap = pos[active]
+    ac = cell_id[active]
+    r_search = max(r_contact, c_adh)
+    half = 0.5 * c_adh
+    n = active.size
+    for ii in range(n):                                     # reference O(N²)
+        d_vec = ap[ii] - ap[ii + 1:]                        # r_vec: ii (this) ← jj
+        r = np.linalg.norm(d_vec, axis=1)
+        jj = np.arange(ii + 1, n)
+        diff = ac[jj] != ac[ii]
+        in_cut = (r < r_search) & diff & (r > 1e-18)
+        if not in_cut.any():
+            continue
+        rs = r[in_cut]
+        d_safe = np.where(rs > 1e-18, rs, 1e-18)
+        rhat = d_vec[in_cut] / d_safe[:, None]
+        fmag = np.zeros(rs.shape[0])
+        ov = r_contact - rs                                 # repulsion overlap
+        rep_m = ov > 0.0
+        fmag[rep_m] = rep_strength * patch_area * ov[rep_m]
+        if adh_strength > 0.0:
+            adh_m = (~rep_m) & (rs < c_adh)
+            da = rs[adh_m]
+            tent = np.where(da >= half, c_adh - da, da)
+            amag = adh_strength * patch_area * tent
+            if cad_mult is not None:
+                jj_in = jj[in_cut][adh_m]
+                mi = cad_mult[ac[ii]]
+                mj = cad_mult[ac[jj_in]]
+                amag = amag * np.sqrt(mi * mj)
+            fmag[adh_m] = -amag
+        np.clip(fmag, -force_cap, force_cap, out=fmag)
+        fvec = fmag[:, None] * rhat
+        F[active[ii]] += np.sum(fvec, axis=0)               # + on this node ii
+        np.add.at(F, active[jj[in_cut]], -fvec)             # − on jj (Newton-3)
+    return F
+
+
+# ---------------------------------------------------------------------------
 # Synthetic test arrays (no framework; for the parity/benchmark harness)
 # ---------------------------------------------------------------------------
 def _shell(n, R, c, rng):
@@ -158,4 +227,7 @@ def make_test_arrays(n_groups=30, n_per_group=42, R=7.5e-6, seed=0):
         bonds=bonds, r0=r0, V0=(4.0 / 3.0) * np.pi * R ** 3, p0=133.0, K=1.0e3,
         z0=0.0, k_well=3.0e-4, w=R,
         sigma=0.6 * 1.5e-6, r_cut=2.5 * 0.6 * 1.5e-6, k_core=5.0, f_well0=1.0e-9, k_bond=1.0e-3,
+        # K5 tent_contact (SimuCell3D bilinear-tent; mcf7-ish bands) — uses group_id as cell_id
+        r_contact=1.2e-6, c_adh=2.0e-6, rep_strength=1.0e8, adh_strength=1.0e8,
+        patch_area=5.0e-13, force_cap=5.0e-8,
     )
