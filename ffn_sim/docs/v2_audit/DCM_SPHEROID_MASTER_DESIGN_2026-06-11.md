@@ -59,6 +59,42 @@ criteria, and the status of each piece (several built/running in parallel).
   size-dependent A/A₀ = a + b/R + c/R² and the junction-switch/pressure-release dynamics.
   Scale via coarse cells (subdiv≤1) + native GPU on gbook.
 
+## Calibrated bands (from the two literature workflows — trusted directly)
+
+**NECROSIS / 3-zone (refs `references/analysis/_necrosis/`):**
+- O₂ consumption-limited penetration depth = **viable rim ~100–150 µm**, ~CONSTANT as the
+  spheroid grows (Greenspan invariant); only the necrotic core expands.
+- Critical diameter: <200 µm fully viable; **~200 µm hypoxic core begins**; ~400–600 µm
+  necrotic band; **>500 µm robust necrotic core** (MCF7-confirmed); 600–800 µm growth plateau.
+- Zones: proliferating shell ~20–40 µm / quiescent middle / necrotic core.
+- MCF7: hypoxic >200 µm, necrotic >500 µm, intercellular gaps 5–10 µm, PI⁺ death by day 6.
+  BT-474 necrotic volume fraction d5/d6/d7 = 0.20/0.29/0.61.
+- **DCM rule (route A, depth-from-surface):** per cell depth d = R_spheroid − r. d < ~40 µm
+  → PROLIFERATE; 40–150 µm → QUIESCENT (arrest division); **d > ~150 µm → NECROSE**
+  (deactivate). Equivalently necrotic-core radius R_nec = max(0, R − 150 µm). Upgrade =
+  route B (steady O₂ reaction-diffusion field, D≈1.5–3.8e-9 m²/s, necrosis at O₂<0.02 mM /
+  glucose<0.06–0.08 mM). Refs: Thomlinson-Gray 1955, Greenspan 1972, Grimes 2014, Jiang 2005.
+
+**JUNCTION SWITCH / BULK PRESSURE / UNJAMMING (refs `references/analysis/_junction/`):**
+- Pressure ledger: resting turgor ~40–100 Pa; proliferation/motility gating **onset
+  ~0.5 kPa, saturating ~5 kPa** (Dolega 2021, Delarue 2014); strong arrest 5–10 kPa
+  (Montel 2011); endogenous growth-induced solid stress 0.37–19 kPa (Stylianopoulos 2012).
+  Compression arrest is fully REVERSIBLE (release → re-fluidization → escape).
+- **Unjamming threshold (shape index):** 2D q* = P/√A ≈ **3.81**; 3D SI = A/V^(2/3) ≈ **5.4**
+  (Bi 2015/2016, Park 2015, Merkel-Manning 2018). Han 2021: core SI 5.84 (jammed) vs
+  periphery 6.6 (unjammed). q is a STATIC snapshot order parameter (validation observable).
+- **Cadherin→integrin switch = clutch competition** for shared actin/vinculin, gated at the
+  **~5 pN** talin-R3 / α-catenin unfold (vinculin recruitment) threshold (Yao 2014 ×2);
+  E-cadherin <12→>43 pN matured, integrin α5β1 catch-bond strengthens 10–30 pN
+  (Wang 2016, Kong 2009); cell-pair cadherin ~100 nN, intercellular = 0.47× total ECM
+  traction (Maruthamuthu 2011 — adhesions co-scale, not bond-for-bond trade).
+- **DCM rule:** per-cell local compressive stress (neighbour crowding / contact force) →
+  above ~0.5–5 kPa: weaken cell-cell cadherin bonds + strengthen cell-ECM integrin/FA
+  clutch; track the shape index q; when local q crosses q* (release/unjamming) the cell
+  fluidizes and escapes outward → spreading. (Vertex/SPV are ORACLES only — the
+  fine-grained cadherin catch-bond + actomyosin cortex should reproduce the jamming line
+  emergently; CLAUDE.md no-lumped-mechanism rule.)
+
 ## Honesty / scale
 Mesoscale CPU caps the cell count; a genuinely LARGE spheroid (hundreds of cells, R 30–80 µm
 to hit the layer-2 fit range) needs the gbook A5000 GPU (dirty-branch cleanup pending) or
