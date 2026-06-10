@@ -606,7 +606,8 @@ def build_active_spheroid(p: ResolvedActiveSpheroid, n_active: int, n_max: int,
     # ball + the rest parked. So we build n_max cells then PARK the surplus far off
     # and mark them dormant. (Simplest reuse of the validated builder + mesh.)
     base = p.to_native()
-    h = build_native_dcm_simulation(base, n_max, substrate=True, contact=True)
+    h = build_native_dcm_simulation(base, n_max, substrate=True, contact=True,
+                                    device=device)
     sim = h["sim"]
     ranges = h["ranges"]
     cell_of_tag = h["cell_of_tag"]      # (N,) cell id per node (immutable here)
