@@ -118,7 +118,16 @@ criteria, and the status of each piece (several built/running in parallel).
 
 ## GPU-optimization status (MUST do before the large-spheroid production assembly)
 
-**The current DCM code is GPU-RUNNABLE but NOT GPU-OPTIMIZED** — it inherits the
+**UPDATE 2026-06-11 — the 4 DCM hot-loop kernels are PORTED + A5000-VALIDATED.** The cupy
+port (`gpu_opt/kernels_gpu.py`, by the Fable model + multi-agent review) passes bit-parity on
+the RTX A5000 (max abs ≤ 2.5e-21 N) with **group_pair 827× / mesh_pressure 9.5× / plane_well
+1.9×** at N=32,400 (`gpu_opt/GPU_RESULT_A5000.md`). group_pair (cell-cell adhesion neighbour
+search, the O(N²) #1 bottleneck) drops 11.7 s → 14 ms — the large many-cell spheroid is now
+computationally reachable. **Phase 2 (Opus): wire these kernels into the HOOMD `md.force.Custom`
+classes via gpu_local_snapshot** (DcmTurgorForce/DcmSubstrateForce, FaClutchForce,
+DcmCellCellAdhesion), CPU path bit-identical, then the A5000 production run.
+
+**The current DCM code is GPU-RUNNABLE but NOT YET GPU-WIRED** — it inherits the
 platform-wide GPU-main porting gap (it follows the pre-port `cpu_local_snapshot` pattern,
 which forces a GPU→CPU sync every step). Bottlenecks:
 - **BAOAB integrator** `integrator/baoab.py:283,408` — per-STEP cpu_local_snapshot +
