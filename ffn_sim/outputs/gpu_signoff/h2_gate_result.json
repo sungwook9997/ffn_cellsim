@@ -1,0 +1,24 @@
+{
+  "gpu": {
+    "npz": "h2_traj_gpu.npz",
+    "n_frames": 200,
+    "L_p_C1_um": 22.06643380099445,
+    "L_p_tail_um": 1287.4232893695903,
+    "equipartition_mean_over_kT": 0.7387521462632105,
+    "C1": 0.9775959343440963,
+    "in_band_C1": false,
+    "in_band_tail": false,
+    "equipart_within_tol": true
+  },
+  "cpu": {
+    "npz": "h2_traj_cpu.npz",
+    "n_frames": 200,
+    "L_p_C1_um": 22.06643380284906,
+    "L_p_tail_um": 1287.4232804638466,
+    "equipartition_mean_over_kT": 0.7387521461981267,
+    "C1": 0.977595934345958,
+    "in_band_C1": false,
+    "in_band_tail": false,
+    "equipart_within_tol": true
+  }
+}
