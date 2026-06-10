@@ -239,6 +239,20 @@ Steps 1–4 complete before the final user-facing message; step 5 is the explici
 
 The single Lead owns all of `ffn_sim/`. When a `worktree` subagent is spawned for a parallel module, that subagent owns its module directory for the duration and the Lead does not touch those files until integration. Cross-module changes are sequenced by the Lead. `ffn_sim/validation/oracles/`, `ffn_sim/docs/briefs/`, `STRUCTURE.md`, `README.md`, `pyproject.toml` stay read-only during normal unit work.
 
+### Closeout obligation — MUST, every session (Main / Sub / Orchestrator)
+
+At session end or any freeze-point (e.g. BAOAB sign-off), **before** the final user-facing message:
+
+1. **Session Handoff Board** — write the closeout block to your role's section (template pinned at the bottom of the board) AND draft the role's next `[ready]` prompt below it.
+2. **Phase 1 status board (Dev Logs)** — update your unit's row: Status / Owner / Start / End / Log.
+3. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page under [Dev Logs](https://www.notion.so/365120daec5d81969e74ffbb757d55c8). Head with start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference. (Format pinned in Dev Logs §작성 규칙.)
+
+The final user-facing message MUST end with the literal line **`Notion 업데이트 완료`** so PI can confirm the loop closed. Without it, the session is treated as still open.
+
+If the Notion MCP is unavailable, rate-limited, or any of the three stores cannot be written, **halt and surface to PI** — do not silently skip and do not emit the receipt line.
+
+Per-prompt §Closeout sections in worker Next prompts only carry *unit-specific* obligations (e.g. PI sign-off after BAOAB, surfacing on KU FAIL); the three-store + receipt-line rule above is universal and lives only here.
+
 ## When in doubt
 
 - Read `ffn_sim/docs/PHASE_0_CLOSEOUT.md` for current state.
