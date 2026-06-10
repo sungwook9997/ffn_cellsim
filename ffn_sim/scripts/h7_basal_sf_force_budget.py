@@ -1,33 +1,63 @@
-"""B5 (i) — quasi-static SF TENSION force-budget (KU-3.5, PI directive (a)/(A)).
+"""B5 (i) — single-SF TENSION force-budget + Route-B NMII force-scaling probe.
 
-SKETCH / DIAGNOSTIC. The full dynamic B5 hits two known walls (PLATFORM_PI_QUEUE /
-BASAL_MESH_DESIGN): (1) the physical EA backbone k≈1.75 N/m makes explicit BAOAB
-dt≈2e-11 s → ~1e10 steps for a 0.5 s contraction (needs the FROZEN native constrained
-M-SHAKE integrator), and (2) the mesoscale myosin force budget is far below the Kumar
-10-30 nN band — the SAME generation-limit as the cortical γ-floor. This script
-sidesteps the integrator wall and quantifies wall (2) directly: it computes the
-STEADY-STATE single-SF tension as a motor FORCE BUDGET and compares it to Kumar.
+PI directive (a)/(A), SESSION (i) "CLOSE THE FLOOR" (PLATFORM_PI_QUEUE.md). This
+script quantifies the SF generation-limit (the SF instance of the cortical γ-floor)
+and tests whether a REAL native-NMII density datum closes the Kumar 10-30 nN single-SF
+tension band via the Route-B mesoscale force-scale factor — WITHOUT a frozen integrator
+and WITHOUT back-solving the factor to hit the band.
 
-Key physics (why this is N-independent):
-  At force balance a contractile bundle's tension = the aggregate MOTOR force pulling
-  across a cross-section, NOT μ_SF·ε with μ_SF set by N_filaments. μ_SF only sets the
-  STRAIN ε = T/μ_SF at that tension; the tension itself is motor-generation-limited.
-  So sweeping N changes ε, not the tension ceiling — the Kumar comparison is a
-  GENERATION question, exactly like the cortical γ-floor.
+Two walls (PLATFORM_PI_QUEUE / BASAL_MESH_DESIGN): (1) the physical EA backbone makes
+explicit BAOAB dt tiny — SOLVED by the bending wire (bend-before-stretch → AFINES
+soft-stretch); (2) the mesoscale myosin force budget is far below Kumar — the SAME
+generation-limit as the cortical γ-floor. This script sidesteps (1) and quantifies (2).
 
-Budget model (assumptions stated explicitly; PROVISIONAL):
-  * engaged fraction φ = k_on/(k_on + k_off0)  (zero-load steady; an UPPER estimate).
-  * per-bipolar-minifilament axial contractile force
-        f_mini = φ · n_heads_per_side · F_stall_per_head · ⟨|cos|⟩_axial.
-  * along ONE mesoscale cable, minifilaments are in SERIES → same tension →
-        T_cable(mesoscale) ≈ f_mini · (mean # minifilaments engaged on the cable, as a
-        coherence/duty proxy ≥ 1).
-  * the mesoscale cable stands for ~N_filaments native filaments in PARALLEL across the
-    bundle cross-section, plus the native:effective minifilament ratio → the
-    PHYSICAL bundle tension needs a mesoscale FORCE-SCALE factor (Route B). We report
-    the RAW mesoscale tension AND the factor needed to reach the Kumar band.
+═══════════════════════════════════════════════════════════════════════════════════
+DEEP-RESEARCH RESULT (2026-06-09, 104-agent harness, 3-vote adversarial verify).
+The literature decomposes the single-SF tension into pieces of VERY different quality:
 
-This is option (i): no frozen integrator, decisive on whether SF hits the γ-floor.
+  ANCHOR 2a — per-minifilament MOLECULAR content (SOLID, 3-0):
+    Native NMII bipolar minifilament = ~28-30 molecules = ~56-60 heads, ~30 heads/SIDE,
+    300 nm long (Billington 2013 JBC EM; Hu 2017 NCB 3D-SIM U2OS; Melli 2018 eLife EM;
+    Niederman & Pollard 1975 platelet). The runtime models 10 heads/side @ 0.5 pN/head.
+
+  ANCHOR 2b — per-minifilament FORCE (ORDER / EXTRAPOLATED, self-flagged):
+    The contractile stall force of a single NMII minifilament is NOT directly measured.
+    The ONLY primary estimate: fs ≈ 17 pN = 10 heads/side × 1.7 pN muscle-myosin head
+    (Stachowiak & O'Shaughnessy 2009 Biophys J, explicitly "using ... muscle myosin II
+    since nonmuscle myosin II forces have not been directly measured"). Per-head NMII
+    force spans ~0.7-10 pN; unloaded duty ratio NM2-A ~0.05 (RISES under load — Kovacs
+    2007), so the engaged-head fraction in a LOADED fiber is the open variable.
+
+  ANCHOR 1 — parallel minifilaments per CROSS-SECTION (THE MISSING DATUM):
+    *** No surviving primary source gives a direct measured count. *** The one explicit
+    estimate (~50/cross-section, Stachowiak-derived from ~100 actin filaments ÷ 2) was
+    REFUTED 0-3 in verification. Back-solving 10-30 nN ÷ 17 pN ⇒ ~590-1760 parallel
+    minifilaments — GEOMETRICALLY IMPOSSIBLE: an SF cross-section is 50-250 nm radius,
+    ~10-30 actin filaments across (MBC 2021) → can host O(5-15) minifilaments, not ~600.
+
+  REFRAME — single-fiber ACTIVE vs NETWORK total (HIGH, 3-0 / 2-1):
+    Kassianidou, Brand, Schwarz & Kumar 2017 (PNAS 114:2622, U2OS, the Kumar lab's OWN
+    active-Kelvin-Voigt model): single-fiber aggregate motor stall force Fs = k·Lo ≈
+    6 nN (k=3 nN/µm, Lo=2 µm); a CONNECTING SF adds only ~5 nN of ACTIVE myosin force,
+    while the length-defined SF reaches ~25 nN at center — the rest is NETWORK/PRESTRESS.
+    ⇒ Kumar 10-30 nN is NOT a pure single-fiber active-generation target; the active
+    component is ~5-6 nN. Kumar 2006 itself reports STRESS (Pa), not a clean per-SF nN.
+
+VERDICT LOGIC (stated BEFORE the run, no gate-loosening):
+  * The DERIVABLE Route-B piece is the per-minifilament MOLECULAR correction (Anchor 2a/2b):
+    bring the model minifilament (5 pN) up to the literature per-minifilament estimate
+    (~17 pN). factor_mini = 17/5 ≈ 3.4×, grid-invariant, lit-anchored — NOT back-solved.
+  * The parallel-cross-section count (Anchor 1) — the OTHER multiplier Route B needs — has
+    NO usable datum (refuted; back-solve geometrically impossible). So the FULL factor that
+    would reach Kumar CANNOT be derived from a density datum.
+  * Even granting the molecular correction AND the (refuted-generous) ~50 parallel count:
+    50 × 17 pN ≈ 0.85 nN — still ~7× under the ~6 nN single-fiber ACTIVE target and
+    ~12-35× under Kumar 10-30 nN. With the geometric max (~5-15): ~0.09-0.26 nN.
+  ⇒ REFUTE: the SF generation-limit is REAL and is NOT closable from a measured density
+    datum. This is the SF instance of the cortical γ-floor (same ½·n·f·ℓ budget; same
+    MISSING motor-density datum; same insight that the literature band includes passive/
+    prestress the active motors alone do not supply). HALT→PI on the gate-reframe.
+
 Run:  python ffn_sim/scripts/h7_basal_sf_force_budget.py
 """
 
@@ -63,6 +93,28 @@ N_INFILL = 500
 N_MOTORS = 40
 KUMAR_BAND_N = (10.0e-9, 30.0e-9)
 
+# ── Literature anchors (deep-research 2026-06-09; provenance + confidence labelled) ──
+# Anchor 2a — native minifilament molecular content (SOLID, 3-0).
+NATIVE_HEADS_PER_SIDE = 30          # ~30 heads/side (≈30 molecules, ~60 heads total)
+#   Billington 2013 JBC (PMC3829186) NM2A 29/58, NM2B 30/60; Hu 2017 NCB (28114270)
+#   ~30 molecules, 300±20 nm; Melli 2018 eLife (32871) 30 (A/B); Niederman&Pollard
+#   1975 JCB 67:72 28/56. Confidence SOLID.
+# Anchor 2b — per-minifilament STALL force (ORDER / EXTRAPOLATED, self-flagged).
+LIT_PER_MINIFILAMENT_STALL_N = 17.0e-12   # fs ≈ 17 pN (Stachowiak & O'Shaughnessy 2009
+#   Biophys J PMC2711311 = 10 heads/side × 1.7 pN muscle-myosin; the ONLY primary
+#   per-minifilament estimate, authors flag it is NOT a direct NMII measurement).
+#   Confidence ORDER. (Canonical 30 heads/side × 1.7 pN ⇒ ~51 pN optimistic stall, but
+#   unloaded duty 0.05 lowers it; 17 pN is the conservative literature anchor.)
+# Anchor 1 — parallel minifilaments per CROSS-SECTION: *** NO USABLE DATUM ***.
+PARALLEL_PER_CROSS_SECTION = None         # MISSING — the ~50 estimate was REFUTED 0-3;
+#   back-solve (590-1760) is geometrically impossible. NONE-GATED (no magic number).
+PARALLEL_REFUTED_GENEROUS = 50            # the REFUTED literature value (for the bound only)
+PARALLEL_GEOMETRIC_MAX = (5, 15)          # SF cross-section 50-250 nm r, ~10-30 actin →
+#   O(5-15) minifilaments (2 actin/minifilament). Geometric ceiling, not a count datum.
+# Reframe — single-fiber ACTIVE myosin force (HIGH, 3-0): Kassianidou/Schwarz/Kumar 2017
+SF_ACTIVE_TARGET_N = 6.0e-9               # ~5-6 nN single-fiber ACTIVE (PNAS 114:2622)
+SF_NETWORK_TOTAL_N = 25.0e-9             # ~25 nN length-defined SF center (network+prestress)
+
 
 def _engaged_fraction(p_sf) -> float:
     """Zero-load steady bound fraction φ = k_on/(k_on+k_off0) (UPPER estimate)."""
@@ -70,7 +122,12 @@ def _engaged_fraction(p_sf) -> float:
 
 
 def force_budget(app, p_sf, myo) -> dict:
-    """Quasi-static single-SF (cable) tension force budget vs Kumar."""
+    """Quasi-static single-SF tension force budget + Route-B molecular correction.
+
+    Reports (a) the RAW mesoscale per-minifilament tension, (b) the DERIVABLE
+    per-minifilament molecular correction toward the literature ~17 pN, and (c) the
+    HONEST accounting of the MISSING parallel-cross-section count — never a back-solve.
+    """
     phi = _engaged_fraction(p_sf)
     H = int(p_sf.n_heads_per_side)
     F_stall = float(p_sf.F_stall_per_head)
@@ -78,31 +135,68 @@ def force_budget(app, p_sf, myo) -> dict:
     # per-bipolar-minifilament axial contractile force (one side pulls inward;
     # ⟨|cos|⟩ ≈ 1 for minifilaments laid along their host filament tangent).
     cos_axial = 1.0
-    f_mini = phi * H * F_stall * cos_axial
+    f_mini = phi * H * F_stall * cos_axial      # model raw per-minifilament force [N]
 
     # raw single-mesoscale-cable tension: minifilaments along a cable are in series
     # (same tension); take f_mini as the per-cross-section motor force.
     T_cable_raw = f_mini
 
     lo, hi = KUMAR_BAND_N
+    band_centre = 0.5 * (lo + hi)
     in_band_raw = bool(lo <= T_cable_raw <= hi)
     gap_to_lo = lo / T_cable_raw if T_cable_raw > 0 else float("inf")
-
-    # mesoscale FORCE-SCALE factor needed to reach the Kumar band centre.
-    band_centre = 0.5 * (lo + hi)
     factor_needed = band_centre / T_cable_raw if T_cable_raw > 0 else float("inf")
 
+    # ── Route-B DERIVABLE piece: per-minifilament MOLECULAR correction (Anchor 2a/2b) ──
+    # Bring the model minifilament (10 heads/side × 0.5 pN) up to the literature
+    # per-minifilament STALL estimate (~17 pN, Stachowiak 2009). This factor is
+    # grid-invariant and lit-anchored (NOT chosen to pass the band).
+    factor_mini = LIT_PER_MINIFILAMENT_STALL_N / f_mini if f_mini > 0 else float("inf")
+    f_mini_corrected = LIT_PER_MINIFILAMENT_STALL_N      # = f_mini × factor_mini
+
+    # ── The OTHER Route-B multiplier — parallel cross-section count — is MISSING ──
+    # We do NOT pick a value. We report the single-fiber active tension under the
+    # bounding parallel counts (refuted-generous 50, geometric 5-15) to show the
+    # residual gap is irreducible without a measured count.
+    gmin, gmax = PARALLEL_GEOMETRIC_MAX
+    T_active_geom_lo = gmin * f_mini_corrected
+    T_active_geom_hi = gmax * f_mini_corrected
+    T_active_refuted = PARALLEL_REFUTED_GENEROUS * f_mini_corrected   # 50 × 17 pN
+
+    # gap of the MOST GENEROUS (refuted-50) single-fiber active estimate vs targets.
+    gap_active_vs_kassianidou = SF_ACTIVE_TARGET_N / T_active_refuted
+    gap_active_vs_kumar_lo = lo / T_active_refuted
+
     return {
+        # raw model minifilament
         "phi_engaged": phi,
-        "n_heads_per_side": H,
-        "F_stall_per_head_N": F_stall,
-        "f_per_minifilament_N": f_mini,
+        "n_heads_per_side_model": H,
+        "F_stall_per_head_model_N": F_stall,
+        "f_per_minifilament_model_N": f_mini,
         "T_cable_raw_N": T_cable_raw,
         "kumar_band_N": list(KUMAR_BAND_N),
         "in_kumar_band_raw": in_band_raw,
         "gap_to_band_lo": gap_to_lo,
         "mesoscale_force_factor_needed_to_band_centre": factor_needed,
         "n_motors": int(p_sf.n_motors_per_cell),
+        # DERIVABLE molecular correction (Anchor 2a/2b)
+        "native_heads_per_side": NATIVE_HEADS_PER_SIDE,
+        "lit_per_minifilament_stall_N": LIT_PER_MINIFILAMENT_STALL_N,
+        "factor_mini_molecular": factor_mini,
+        "f_per_minifilament_corrected_N": f_mini_corrected,
+        # MISSING parallel count (Anchor 1) — honest accounting, no back-solve
+        "parallel_per_cross_section_datum": PARALLEL_PER_CROSS_SECTION,  # None = MISSING
+        "parallel_refuted_generous": PARALLEL_REFUTED_GENEROUS,
+        "parallel_geometric_max": list(PARALLEL_GEOMETRIC_MAX),
+        "parallel_backsolved_to_kumar": [lo / LIT_PER_MINIFILAMENT_STALL_N,
+                                         hi / LIT_PER_MINIFILAMENT_STALL_N],
+        # single-fiber active tension under bounding parallel counts
+        "T_active_geometric_N": [T_active_geom_lo, T_active_geom_hi],
+        "T_active_refuted50_N": T_active_refuted,
+        "sf_active_target_N": SF_ACTIVE_TARGET_N,
+        "sf_network_total_N": SF_NETWORK_TOTAL_N,
+        "gap_active_refuted50_vs_kassianidou": gap_active_vs_kassianidou,
+        "gap_active_refuted50_vs_kumar_lo": gap_active_vs_kumar_lo,
     }
 
 
@@ -122,26 +216,36 @@ def run() -> dict:
     myo = place_sf_myosin_on_apparatus(app, p_sf, rng=np.random.default_rng(11))
 
     budget = force_budget(app, p_sf, myo)
-    verdict = "REFUTE" if not budget["in_kumar_band_raw"] else "PASS"
+    # REFUTE: the raw tension is far under band AND the full Route-B factor is not
+    # derivable (parallel count missing/refuted/geometrically impossible).
+    verdict = "REFUTE"
     return {
-        "gate": "B5(i) SF tension force-budget (quasi-static, generation-limit probe)",
+        "gate": "B5(i) SF tension force-budget + Route-B NMII force-scaling probe",
         "verdict": verdict,
         "physics_claim": True,
-        "provisional": True,
+        "provisional": False,   # the MISSING-datum finding is decisive, not provisional
+        "halt_to_pi": True,
         "budget": budget,
         "note": (
-            "QUASI-STATIC FORCE BUDGET (no stiff-backbone dynamics, no frozen "
-            "integrator). The single-SF tension is MOTOR-generation-limited and "
-            "N_filaments-INDEPENDENT (N sets strain ε=T/μ_SF, not the tension). "
-            f"Raw mesoscale tension {budget['T_cable_raw_N']:.2e} N vs Kumar "
-            f"{KUMAR_BAND_N[0]:.0e}-{KUMAR_BAND_N[1]:.0e} N → "
-            f"{budget['gap_to_band_lo']:.0f}x under band: the SAME generation-limit as "
-            "the cortical γ-floor. Reaching Kumar needs either the mesoscale "
-            f"force-scale factor (~{budget['mesoscale_force_factor_needed_to_band_centre']:.0f}x, "
-            "Route B native:effective parallel-bundle scaling) or a native/density "
-            "fix — NOT a backbone-stiffness (N_filaments) change. ASSUMPTIONS: φ "
-            "zero-load upper estimate; per-minifilament series tension; provisional "
-            "pending the cross-simulator deep-research + B5-method decision."
+            "REFUTE — the SF generation-limit is NOT closable from a measured NMII "
+            "density datum. The DERIVABLE Route-B piece is the per-minifilament "
+            f"MOLECULAR correction (model {budget['f_per_minifilament_model_N']:.2e} N → "
+            f"literature {budget['lit_per_minifilament_stall_N']:.2e} N, "
+            f"factor_mini≈{budget['factor_mini_molecular']:.1f}×, Stachowiak 2009 ORDER; "
+            f"native {budget['native_heads_per_side']} heads/side SOLID). The OTHER "
+            "Route-B multiplier — parallel minifilaments per cross-section — has NO "
+            "usable datum: the ~50 literature estimate was REFUTED 0-3, and the "
+            "back-solve (~590-1760) is geometrically impossible (cross-section hosts "
+            f"O(5-15)). Even the refuted-generous 50 × {budget['lit_per_minifilament_stall_N']:.0e} N "
+            f"= {budget['T_active_refuted50_N']:.2e} N is "
+            f"~{budget['gap_active_refuted50_vs_kassianidou']:.0f}× under the single-fiber "
+            f"ACTIVE target (~6 nN, Kassianidou/Schwarz/Kumar 2017 PNAS) and "
+            f"~{budget['gap_active_refuted50_vs_kumar_lo']:.0f}× under Kumar 10 nN. REFRAME: "
+            "Kumar 10-30 nN conflates single-fiber active myosin (~5-6 nN) with NETWORK/"
+            "PRESTRESS (~25 nN); the active component is itself unclosed (load-dependent "
+            "duty ratio is the open variable). SF instance of the cortical γ-floor — "
+            "same ½·n·f·ℓ budget, same missing motor-density datum. HALT→PI on the gate-"
+            "reframe (active-only target ~6 nN vs network-total 10-30 nN)."
         ),
     }
 
@@ -153,18 +257,26 @@ def main() -> int:
     with open(path, "w") as fh:
         json.dump(rep, fh, indent=2, default=str)
     b = rep["budget"]
-    print(f"[B5(i) SF force-budget] {rep['verdict']} (provisional)")
-    print(f"  φ_engaged={b['phi_engaged']:.3f}, {b['n_heads_per_side']} heads/side, "
-          f"F_stall={b['F_stall_per_head_N']:.1e} N")
-    print(f"  f/minifilament={b['f_per_minifilament_N']:.2e} N → "
-          f"T_cable(raw mesoscale)={b['T_cable_raw_N']:.2e} N")
+    print(f"[B5(i) SF force-budget + Route-B probe] {rep['verdict']} (HALT→PI)")
+    print(f"  model: φ={b['phi_engaged']:.3f}, {b['n_heads_per_side_model']} heads/side, "
+          f"F_stall={b['F_stall_per_head_model_N']:.1e} N → "
+          f"f/minifilament={b['f_per_minifilament_model_N']:.2e} N")
     print(f"  Kumar band {b['kumar_band_N'][0]:.0e}-{b['kumar_band_N'][1]:.0e} N → "
-          f"in_band={b['in_kumar_band_raw']}, {b['gap_to_band_lo']:.0f}x UNDER lo")
-    print(f"  mesoscale force-scale factor to band centre: "
-          f"~{b['mesoscale_force_factor_needed_to_band_centre']:.0f}x (Route B)")
-    print(f"  → SF tension is GENERATION-limited (same as cortical γ-floor), "
-          f"N_filaments-INDEPENDENT.")
-    print(f"  json: {path}")
+          f"raw {b['gap_to_band_lo']:.0f}× under lo")
+    print(f"  DERIVABLE molecular correction (Anchor 2a/2b, Stachowiak 2009 ORDER): "
+          f"native {b['native_heads_per_side']} heads/side, lit "
+          f"{b['lit_per_minifilament_stall_N']:.1e} N/minifilament → "
+          f"factor_mini≈{b['factor_mini_molecular']:.1f}×")
+    print(f"  MISSING datum (Anchor 1): parallel/cross-section = {b['parallel_per_cross_section_datum']} "
+          f"(refuted ~50; geometric {b['parallel_geometric_max']}; back-solve "
+          f"{b['parallel_backsolved_to_kumar'][0]:.0f}-{b['parallel_backsolved_to_kumar'][1]:.0f} impossible)")
+    print(f"  refuted-generous 50 × {b['lit_per_minifilament_stall_N']:.0e} N = "
+          f"{b['T_active_refuted50_N']:.2e} N → "
+          f"~{b['gap_active_refuted50_vs_kassianidou']:.0f}× under ~6 nN ACTIVE target, "
+          f"~{b['gap_active_refuted50_vs_kumar_lo']:.0f}× under Kumar lo")
+    print(f"  REFRAME: single-fiber ACTIVE ~{b['sf_active_target_N']:.0e} N (Kassianidou 2017) "
+          f"vs NETWORK total ~{b['sf_network_total_N']:.0e} N → Kumar band is not pure active")
+    print(f"  → SF generation-limit REAL, not density-closable. HALT→PI. json: {path}")
     return 0
 
 

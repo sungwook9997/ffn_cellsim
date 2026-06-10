@@ -43,6 +43,26 @@ the SF line is unblocked (and the cortical γ-floor gets its density datum); if 
 generation-bound conclusion stands (SF + cortical γ as one bounded generation-limit). Whichever
 session lands the result updates this queue + the Dev-Logs board.
 
+### ⛔ SESSION (i) RESULT (2026-06-09, `h7/sf-nmii-forcescale`) — REFUTE / HALT→PI
+**The Kumar 10-30 nN gate is NOT closable from a measured native-NMII density datum.**
+Deep-research (104-agent, 3-vote verify) found: native minifilament ≈ **30 heads/side, 17 pN
+stall** (Anchor 2a SOLID / 2b ORDER) → a DERIVABLE per-minifilament molecular correction
+**≈3.4×** (model 5 pN → lit 17 pN); BUT the OTHER Route-B multiplier — **parallel
+minifilaments per cross-section** — has **NO usable datum** (the only estimate ~50 was
+**REFUTED 0-3**; back-solve ~590-1760 is geometrically impossible, cross-section hosts O(5-15)).
+Even refuted-generous 50 × 17 pN ≈ **0.85 nN** = ~7× under the single-fiber **ACTIVE** target
+and ~12-35× under Kumar. ⭐**REFRAME (Kassianidou/Schwarz/Kumar 2017 PNAS, HIGH):** single-fiber
+**active** myosin ≈ **5-6 nN**; Kumar 10-30 nN is mostly **network/prestress**, not single-fiber
+generation. = the **SF instance of the cortical γ-floor** (same ½·n·f·ℓ budget, same missing
+motor-density datum). Encoded REFUTE in `scripts/h7_basal_sf_force_budget.py` (no back-solved
+`myosin.py` factor — forbidden). Full result + SE candidates + PI questions:
+`docs/v2_audit/H7_SF_NMII_FORCESCALE_RESULT_2026-06-09.md`.
+**PI decisions:** (Q-SF-1) gate scope = single-fiber ACTIVE ~6 nN vs network-total 10-30 nN?
+(Q-SF-2) the residual ~7-70× even at the active target → load-dependent duty-ratio lever
+(touches frozen `myosin.py` Hill/Bell kinetics, PI-gated)? (Q-SF-3) accept generation-bound now
+(→ session ii)? **Default if silent:** keep `ventral_stress_fibers` LIVE-but-active-bounded,
+NO back-solved factor, hand the unified generation-limit to session (ii).
+
 ---
 
 
