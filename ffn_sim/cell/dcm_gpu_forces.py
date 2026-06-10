@@ -215,3 +215,159 @@ class DcmSubstrateForceGPU(md.force.Custom):
         with d.force_arrays() as arr:
             arr.force[:] = F
             arr.potential_energy[:] = U
+
+
+# ---------------------------------------------------------------------------
+# GPU-capable ACTIVE RIM TRACTION (coarse-grained lamellipodium + belt + clutch)
+# ---------------------------------------------------------------------------
+class DcmActiveRimTractionGPU(md.force.Custom):
+    """Device-dispatched active OUTWARD traction on basal rim-cell nodes.
+
+    Same force law, same construction signature, and same diagnostics as
+    ``cell/dcm_active.py::ActiveRimTraction`` (the coarse-grained lamellipodium +
+    actomyosin contraction-belt + FA-clutch engine at the DCM cell scale — see
+    that class's docstring for the physics). The only difference is the device
+    dispatch: this class routes its array math through :class:`DeviceDispatch`, so
+
+      * on a ``hoomd.device.GPU`` the per-cell centroid / neighbour-crowding /
+        rim-detection / per-node traction is computed in cupy on the
+        ``gpu_local_snapshot`` (forces written to ``gpu_local_force_arrays``) —
+        NO host transfer in the hot loop; and
+      * on a ``hoomd.device.CPU`` the array module is numpy and the operations are
+        the SAME ones (in the same order) as ``ActiveRimTraction.set_forces`` — so
+        the CPU path is BIT-IDENTICAL (max abs force diff < 1e-12 N; see
+        ``tests/test_dcm_active_gpu_parity.py``).
+
+    The per-cell loop (rim detection, basal/apical node split, outward direction)
+    stays a Python loop over the (small) active-cell count on both devices — the
+    HOT cost is the all-node force write, which IS device-resident. The low-cadence
+    STATE updaters (necrosis / pressure / junction / division) are NOT ported here;
+    they remain the CPU ``hoomd.custom.Action`` updaters in ``dcm_active.py`` (they
+    run batched at low cadence, off the per-step path — porting them buys nothing).
+
+    Args: identical to ``ActiveRimTraction.__init__`` (cell_of_node, ranges,
+    active, int_mult, R_cell, z0, f_act, f_cap, ramp_steps, contact_band,
+    neighbour_factor, max_neighbours, integrin_switch_gain, belt_factor).
+    """
+
+    def __init__(self, *, cell_of_node: np.ndarray, ranges, active: np.ndarray,
+                 int_mult: np.ndarray, R_cell: float, z0: float, f_act: float,
+                 f_cap: float, ramp_steps: int, contact_band: float,
+                 neighbour_factor: float, max_neighbours: int,
+                 integrin_switch_gain: float, belt_factor: float) -> None:
+        super().__init__(aniso=False)
+        self.cell_of_node = cell_of_node
+        self.ranges = ranges
+        self.active = active
+        self.int_mult = int_mult
+        self.R = float(R_cell)
+        self.z0 = float(z0)
+        self.f_act = float(f_act)
+        self.f_cap = float(f_cap)
+        self.ramp_steps = max(1, int(ramp_steps))
+        self.contact_band = float(contact_band)
+        self.r_neigh = float(neighbour_factor * R_cell)
+        self.max_neigh = int(max_neighbours)
+        self.switch_gain = float(integrin_switch_gain)
+        self.belt = float(belt_factor)
+        # diagnostics (read by the driver) — kept on host (numpy) like the CPU class
+        self.rim_cells: np.ndarray = np.empty(0, dtype=np.int64)
+        self.f_per_cell: dict[int, float] = {}
+        self._ramp = 0.0
+        self._d: DeviceDispatch | None = None      # lazy (device known at run(0))
+
+    def _dispatch(self) -> DeviceDispatch:
+        if self._d is None:
+            self._d = DeviceDispatch(self)
+        return self._d
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        d = self._dispatch()
+        xp = d.xp
+        with d.snapshot() as snap:
+            tag = xp.asarray(snap.particles.tag)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            n = int(pos.shape[0])
+            perm = xp.argsort(tag)
+            pos_g = pos[perm]
+            F_g = xp.zeros_like(pos_g)
+
+            ramp = float(min(1.0, timestep / self.ramp_steps))
+            self._ramp = ramp
+            active_ids = xp.where(xp.asarray(self.active))[0]
+
+            if int(active_ids.shape[0]) < 2 or ramp <= 0.0:
+                F = xp.empty_like(pos)
+                F[perm] = F_g
+                U = xp.zeros(n, dtype=xp.float64)
+                self.rim_cells = np.empty(0, dtype=np.int64)
+                self.f_per_cell = {}
+                with d.force_arrays() as arr:
+                    arr.force[:] = F
+                    arr.potential_energy[:] = U
+                return
+
+            # per-cell centroid (same stacking order as ActiveRimTraction).
+            cents = xp.asarray(
+                [pos_g[self.ranges[int(c)][0]:self.ranges[int(c)][1]].mean(0)
+                 for c in active_ids])
+            cluster_cen = cents.mean(0)
+            # neighbour count by centroid distance (rim = few neighbours)
+            d2 = xp.sum((cents[:, None, :] - cents[None, :, :]) ** 2, axis=2)
+            within = d2 < self.r_neigh ** 2
+            xp.fill_diagonal(within, False)
+            crowd = within.sum(axis=1)
+
+            int_mult = xp.asarray(self.int_mult)
+            rim_list: list[int] = []
+            f_per_cell: dict[int, float] = {}
+            zc = self.z0 + self.contact_band * self.R
+            for k in range(int(active_ids.shape[0])):
+                c = int(active_ids[k])
+                if int(crowd[k]) > self.max_neigh:
+                    continue  # interior cell (well-coordinated) — not a rim cell
+                lo, hi = self.ranges[c]
+                cell_pos = pos_g[lo:hi]
+                basal = cell_pos[:, 2] < zc
+                if not bool(basal.any()):
+                    continue  # not in substrate contact — cannot lamellipodiate
+                rim_list.append(c)
+                # in-plane outward direction (cluster centroid -> cell centroid)
+                rxy = cents[k][:2] - cluster_cen[:2]
+                rn = float(xp.hypot(rxy[0], rxy[1]))
+                if rn < 1e-12:
+                    continue  # cell at the very centre — no defined outward dir
+                rhat = xp.asarray([rxy[0] / rn, rxy[1] / rn, 0.0])
+                gain = float(int_mult[c])
+                fmag = ramp * self.f_act * gain
+                fmag = min(fmag, self.f_cap)
+                f_per_cell[c] = fmag
+                # basal nodes pull OUTWARD (lamellipodium + clutch grip)
+                idx = xp.where(basal)[0]
+                F_g[lo:hi][idx] += fmag * rhat
+                # apical nodes: weak INWARD contraction-belt tension
+                if self.belt > 0.0:
+                    apic = xp.where(~basal)[0]
+                    if int(apic.shape[0]):
+                        fb = min(self.belt * fmag, self.f_cap)
+                        F_g[lo:hi][apic] += -fb * rhat
+
+            # cap per node (BAOAB int32 guard) — never let a node exceed f_cap
+            fn = xp.linalg.norm(F_g, axis=1)
+            over = fn > self.f_cap
+            if bool(over.any()):
+                F_g[over] *= (self.f_cap / fn[over])[:, None]
+
+            # diagnostics back to host (numpy) for the driver
+            self.rim_cells = np.asarray(
+                xp.asnumpy(xp.asarray(rim_list, dtype=xp.int64)) if d.gpu
+                else np.array(rim_list, dtype=np.int64))
+            self.f_per_cell = f_per_cell
+
+            F = xp.empty_like(pos)
+            F[perm] = F_g
+            U = xp.zeros(n, dtype=xp.float64)
+
+        with d.force_arrays() as arr:
+            arr.force[:] = F
+            arr.potential_energy[:] = U

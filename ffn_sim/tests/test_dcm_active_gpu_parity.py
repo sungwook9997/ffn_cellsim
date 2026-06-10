@@ -1,0 +1,114 @@
+"""CPU-path bit-parity: DcmActiveRimTractionGPU vs the live ActiveRimTraction.
+
+On a CUDA-less machine only the CPU dispatch path of
+``cell/dcm_gpu_forces.py::DcmActiveRimTractionGPU`` is exercisable. This test
+asserts that path is BIT-IDENTICAL to the existing
+``cell/dcm_active.py::ActiveRimTraction`` (the deliverable's hard gate,
+max abs force diff < 1e-12 N).
+
+Both forces are constructed with the SAME parameters and SHARED mutable state
+(cell_of_node / ranges / active / int_mult) on the same ACTIVE native+tent
+spheroid, each computes its force array over the same snapshot, and the two
+arrays are compared. The GPU path itself (cupy / gpu_local) is structurally
+constructed but only gbook-A5000-validated — there is no CUDA GPU here.
+
+Run:  ~/miniconda3/envs/ffn_sim/bin/python -m pytest \
+          ffn_sim/tests/test_dcm_active_gpu_parity.py -q
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from ffn_sim.cell.dcm_active import (
+    ActiveRimTraction,
+    ResolvedActiveSpheroid,
+    build_active_spheroid,
+)
+from ffn_sim.cell.dcm_gpu_forces import DcmActiveRimTractionGPU, on_gpu
+
+
+def _force_of(force) -> np.ndarray:
+    """Force array (N,3) of a Custom force after its set_forces ran (CPU path)."""
+    with force.cpu_local_force_arrays as arr:
+        return np.asarray(arr.force).copy()
+
+
+def _build(n_active=8, n_max=10):
+    """Build an active spheroid, then attach a twin DcmActiveRimTractionGPU.
+
+    Returns (sim, traction_ref, traction_gpu, handles). The reference traction is
+    the ``ActiveRimTraction`` wired by ``build_active_spheroid``; the GPU twin is
+    built with the SAME parameters and SHARED state arrays so HOOMD calls its
+    set_forces over the identical configuration.
+    """
+    p = ResolvedActiveSpheroid(subdivisions=2, spacing_factor=2.3, dt=3.0e-10,
+                               seed=7)
+    h = build_active_spheroid(p, n_active, n_max, belt=True,
+                              integrin_substrate=True)
+    sim = h["sim"]
+    ref = h["traction"]
+    assert isinstance(ref, ActiveRimTraction)
+
+    gpu = DcmActiveRimTractionGPU(
+        cell_of_node=h["cell_of_node"], ranges=h["ranges"], active=h["active"],
+        int_mult=h["st"].int_mult, R_cell=p.R_cell, z0=p.z_substrate,
+        f_act=p.f_act, f_cap=p.f_cap, ramp_steps=p.ramp_steps,
+        contact_band=p.rim_contact_band, neighbour_factor=p.rim_neighbour_factor,
+        max_neighbours=p.rim_max_neighbours,
+        integrin_switch_gain=p.integrin_switch_gain, belt_factor=p.belt_factor)
+    sim.operations.integrator.forces.append(gpu)
+    sim.run(0)
+    return sim, ref, gpu, h, p
+
+
+def test_cpu_path_is_cpu_not_gpu():
+    """Guard: on this machine the dispatch must pick the CPU path (no CUDA)."""
+    sim, _, gpu, _, _ = _build(n_active=4, n_max=5)
+    assert not on_gpu(sim)
+    assert gpu._dispatch().gpu is False
+    import numpy as _np
+    assert gpu._dispatch().xp is _np
+
+
+@pytest.mark.parametrize("n_active", [4, 8])
+def test_active_traction_gpu_cpu_path_bit_parity(n_active):
+    """DcmActiveRimTractionGPU (CPU path) == ActiveRimTraction, diff < 1e-12 N."""
+    sim, ref, gpu, _, _ = _build(n_active=n_active, n_max=n_active + 2)
+
+    # Run past the ramp so the traction is at full magnitude (non-trivial forces),
+    # then recompute both at the SAME snapshot/timestep.
+    sim.run(5000)
+    ref.set_forces(sim.timestep)
+    gpu.set_forces(sim.timestep)
+    F_ref = _force_of(ref)
+    F_gpu = _force_of(gpu)
+
+    assert np.all(np.isfinite(F_ref))
+    assert np.all(np.isfinite(F_gpu))
+    # the active traction must actually be engaged (else a trivial all-zero pass)
+    assert np.abs(F_ref).max() > 0.0, "no rim traction engaged — test is trivial"
+
+    max_abs = float(np.abs(F_ref - F_gpu).max())
+    assert max_abs < 1e-12, f"active-traction CPU-path diff {max_abs:.3e} N > 1e-12"
+
+    # rim diagnostics must also match
+    assert np.array_equal(np.sort(ref.rim_cells), np.sort(gpu.rim_cells))
+
+
+def test_switched_integrin_gain_bit_parity():
+    """The int_mult (junction-switch integrin gain) branch is also bit-identical."""
+    sim, ref, gpu, h, p = _build(n_active=8, n_max=10)
+    # raise integrin gain on a couple of cells (the junction-switch effect)
+    st = h["st"]
+    st.int_mult[0] = p.integrin_strong_factor
+    st.int_mult[3] = p.integrin_strong_factor
+
+    sim.run(5000)
+    ref.set_forces(sim.timestep)
+    gpu.set_forces(sim.timestep)
+    F_ref = _force_of(ref)
+    F_gpu = _force_of(gpu)
+    max_abs = float(np.abs(F_ref - F_gpu).max())
+    assert max_abs < 1e-12, f"int_mult CPU-path diff {max_abs:.3e} N > 1e-12"
