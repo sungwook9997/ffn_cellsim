@@ -60,6 +60,10 @@ import hoomd
 import hoomd.md as md
 
 from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.common.production_policy import (
+    add_production_device_args,
+    validate_production_device_args,
+)
 
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "phase1_h2.yaml"
@@ -322,6 +326,7 @@ def run_h2_and_sample(
     n_sample: int | None = None,
     sample_interval: int | None = None,
     integrator: str = "lm_baoab",
+    device: Any = None,
 ) -> dict[str, Any]:
     """Drive the H.2 sim through equilibrate + sample phases.
 
@@ -333,7 +338,8 @@ def run_h2_and_sample(
     n_smp = n_sample if n_sample is not None else p.n_steps_sample
     si = sample_interval if sample_interval is not None else p.sample_interval
 
-    sim, _updater, _action = build_h2_simulation(p, integrator=integrator)
+    sim, _updater, _action = build_h2_simulation(
+        p, integrator=integrator, device=device)
 
     t0 = time.time()
     sim.run(n_eq)
@@ -370,7 +376,10 @@ def main() -> None:
     ap.add_argument("--n-sample", type=int, default=None)
     ap.add_argument("--sample-interval", type=int, default=None)
     ap.add_argument("--demo", action="store_true")
+    add_production_device_args(ap, default="gpu")
     args = ap.parse_args()
+    validate_production_device_args(ap, args)
+    device = hoomd.device.GPU() if args.device == "gpu" else hoomd.device.CPU()
 
     with open(CONFIG_PATH) as f:
         cfg = yaml.safe_load(f)
@@ -388,7 +397,7 @@ def main() -> None:
     print(f"[h2_single_filament] N={p.beads_per_fiber}, ℓ_0={p.rest_length:.3e} m, "
           f"k_bond={p.bond_k:.3e} N/m, k_angle={p.angle_k:.3e} N·m, "
           f"γ_b={p.gamma_b:.3e} N·s/m, dt={p.dt_cfl:.3e} s")
-    result = run_h2_and_sample(p, **kw)
+    result = run_h2_and_sample(p, device=device, **kw)
     print(f"[h2_single_filament] Sampled {result['positions'].shape[0]} frames "
           f"in {result['wall_s']:.2f} s")
 
