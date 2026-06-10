@@ -132,6 +132,17 @@ b/R term is rim cell-division (surface/volume ∝ 1/R), its c/R² a cohesion pen
 area-multiplying mechanism). This is the in-flight next build; the deformable-cell tier
 is the substrate it runs on.
 
+**Proliferation must be paired with CORE NECROSIS (PI 2026-06-11).** A faithful spheroid
+is 3-zone under the O₂/nutrient gradient: a proliferating RIM (outer, nutrient access) +
+a quiescent middle + a **necrotic CORE** (central hypoxia → cell death). This is exactly
+why the b/R term is physical — division is rim-localized (surface ∝ 1/R) *because* the
+core is nutrient-limited and necroses/arrests; larger spheroids carry a bigger necrotic
+core (∝ R³) under a relatively thinner living rim (∝ R²), which is the b/R + c/R²
+size-dependence. So the proliferation build adds, on the SAME local-density / rim-depth
+field: rim cells (low density, within the nutrient-penetration depth) divide; deep-core
+cells (beyond the penetration depth) NECROSE (deactivate). 3-zone DCM spheroid =
+proliferating rim / quiescent mid / necrotic core.
+
 ## Honesty / scope
 
 - Literature bands trusted directly (PI 2026-06-11): cell–substrate adhesion
