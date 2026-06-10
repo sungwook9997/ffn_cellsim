@@ -63,7 +63,8 @@ _HOSSEINI_BAND = (0.18e-3, 0.40e-3)  # N/m, MCF7 interphase IQR (contract §7)
 
 def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, seed,
                         areal_density=None, cm_z_struct=None, cm_bundle_mult=None,
-                        faithful=False, stepping_mode=None, xlink_k=None):
+                        faithful=False, stepping_mode=None, xlink_k=None,
+                        xl_n=None, xl_koff0=None, xl_xbeta=None):
     """Suspended/rounded MCF7 (FA OFF, turgor ON), connected mesh, grip_walk myosin.
 
     Mirrors h7_gate_b_probe._build_settled_cell exactly so this audit measures the
@@ -100,6 +101,22 @@ def _build_settled_cell(*, n_filaments, n_nuc_beads, warmup, softstart, device, 
               .setdefault("dynamic_crosslinkers", {}))
         xl["k_intra"] = float(xlink_k)
         xl["k_attach"] = float(xlink_k)
+    if xl_n is not None or xl_koff0 is not None or xl_xbeta is not None:
+        # ab_xlink_v2 transmission redesign (Slater 2021 Soft Matter 17:10274): the
+        # actual stress-transmission knobs are crosslink DENSITY + force-dependent
+        # unbinding (Bell-Evans k_off0, x_beta), NOT stiffness (v1 tested stiffness →
+        # γ ~5%). A/B SENSITIVITY ONLY (not a production change): production stays at
+        # the phase1_h3 anchors (n_xl, alpha_k_off0=0.066 Ferrer2008, alpha_x_beta=0.4nm).
+        # Sweep values must be KU-anchored ±multiples (no magic numbers); see
+        # docs/AB_XLINK_TRANSMISSION_REDESIGN_2026-06-11.md.
+        xl = (manifest.setdefault("cortex_overrides", {}).setdefault("cortex", {})
+              .setdefault("dynamic_crosslinkers", {}))
+        if xl_n is not None:
+            xl["n_xl"] = int(xl_n)
+        if xl_koff0 is not None:
+            xl["alpha_k_off0"] = float(xl_koff0)
+        if xl_xbeta is not None:
+            xl["alpha_x_beta"] = float(xl_xbeta)
     if n_nuc_beads is not None:
         manifest["compartments"]["nucleus"]["n_beads"] = int(n_nuc_beads)
     cm_kw = {}
@@ -508,6 +525,16 @@ def main() -> int:
                     help="override dynamic crosslinker k_intra/k_attach [N/m] for the "
                          "transmission-lever A/B (sensitivity ONLY — production = loop18 "
                          "re-anchored 1.0e-3; pass 1.0e-7 for the pre-re-anchor state)")
+    ap.add_argument("--xl-n", type=int, default=None,
+                    help="ab_xlink_v2: override crosslink COUNT n_xl (density knob; prod "
+                         "1000). Slater-redesign transmission A/B — sensitivity ONLY.")
+    ap.add_argument("--xl-koff0", type=float, default=None,
+                    help="ab_xlink_v2: override α-actinin Bell zero-force off-rate "
+                         "alpha_k_off0 [1/s] (prod 0.066, Ferrer2008). Lower = more "
+                         "connected/longer transmission. KU-anchored ±multiples only.")
+    ap.add_argument("--xl-xbeta", type=float, default=None,
+                    help="ab_xlink_v2: override α-actinin Bell length alpha_x_beta [m] "
+                         "(prod 0.4e-9). Force sensitivity of unbinding.")
     ap.add_argument("--sweep-densities", type=str, default=None,
                     help="comma-list of densities [1/µm²] to sweep (mechanism confirm: γ∝ρ); "
                          "writes a γ-vs-density curve instead of a single audit")
@@ -534,6 +561,7 @@ def main() -> int:
         cm_z_struct=args.cm_z_struct, cm_bundle_mult=args.cm_bundle_mult,
         faithful=args.faithful, stepping_mode=args.stepping_mode,
         xlink_k=args.xlink_k,
+        xl_n=args.xl_n, xl_koff0=args.xl_koff0, xl_xbeta=args.xl_xbeta,
     )
     s = audit(cell=cell, n_contract_steps=args.contract_steps,
               sample_every=args.sample_every)
