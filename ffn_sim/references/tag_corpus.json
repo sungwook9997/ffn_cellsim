@@ -96,6 +96,18 @@
     "linked_to_source_evidence": true
   },
   {
+    "citation_key": "full-length-article-637d68",
+    "title": "Full length article",
+    "doi": "10.1016/j.actbio.2025.05.069",
+    "path": "1-s2.0-S1742706125004039-main.pdf",
+    "n_pages": 12,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 42,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Sakamoto2024_CellReportsPhysicalScien",
     "title": "Substrate geometry and topography induce F-actin",
     "doi": "10.1016/j.xcrp.2024.102338",
@@ -468,6 +480,18 @@
     "linked_to_source_evidence": false
   },
   {
+    "citation_key": "computational-study-of-biophysical-mecha-13d096",
+    "title": "COMPUTATIONAL STUDY OF BIOPHYSICAL MECHANISMS OF",
+    "doi": "",
+    "path": "REVDissertation_Donghyun Yim.pdf",
+    "n_pages": 94,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 151,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Kadzik2026_Jour",
     "title": "Rapid actin filament turnover maintains cortical connectivity while allowing",
     "doi": "10.64898/2026.05.24.727551",
@@ -598,6 +622,18 @@
     "se_citation_key": "Shah2025_Cells",
     "n_chunks": 106,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "10274-soft-matter-2021-17-10274-10285-55a265",
+    "title": "10274 |  Soft Matter, 2021, 17, 10274–10285",
+    "doi": "10.1039/d0sm01911a",
+    "path": "d0sm01911a.pdf",
+    "n_pages": 12,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 37,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Dmitrieff2017_ProcNatlAcadSciUSA",
