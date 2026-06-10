@@ -113,6 +113,25 @@ every axis — instead of matching them.
     demonstrating cell-driven matrix remodeling with the correct 1/r sign; the −1
     magnitude is the one documented remaining tuning knob.
 
+## Spreading-law criterion (A/A₀ = a + b/R + c/R²) — the spheroid SPREADING target
+
+Two DISTINCT validation criteria (do not conflate): **tension ~ 1/r** (d0sm01911a) is
+the cell–ECM *stress-decay / remodeling* check (the dcm_ecm contraction result above);
+**A/A₀ = a + b/R + c/R²** (the layer-2 law: a=−0.33, b=188.7 µm, c=−2655 µm², r²=0.98,
+fit R=31–78 µm) is the *spheroid SPREADING-magnitude* law — the correct target for the
+spreading goal.
+
+**Empirical finding (this session):** a FIXED-cell-number DCM aggregate spreads by
+mechanical WETTING only to **A/A₀ ≈ 1.2 (a hard ceiling)** — even with W_cs cranked to
+200 mJ/m² (far above physiological) the 19-cell cluster gave A/A₀ = 1.06–1.18, and the
+ceiling is size-independent (`figs/dcm/spreading_law_vs_wetting_ceiling.png`). The
+layer-2 a+b/R+c/R² law reaches A/A₀ ≈ 2–3 because it is **PROLIFERATION-driven** — its
+b/R term is rim cell-division (surface/volume ∝ 1/R), its c/R² a cohesion penalty. So
+**reproducing your A/A₀ = a + b/R + c/R² law requires adding cell DIVISION to the DCM**
+(rim-biased, contact-inhibited) — mechanical wetting alone cannot (it has no
+area-multiplying mechanism). This is the in-flight next build; the deformable-cell tier
+is the substrate it runs on.
+
 ## Honesty / scope
 
 - Literature bands trusted directly (PI 2026-06-11): cell–substrate adhesion
