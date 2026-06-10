@@ -2,7 +2,8 @@
 
 부트 순서: CLAUDE.md → 이 파일 → Dev Logs 상태판 → `git log -8` → `conda activate ffn_sim`.
 env: 비대화형/백그라운드는 `PYTHONPATH=. ~/miniconda3/envs/ffn_sim/bin/python` 직접
-([[reference_ffn_run_invocation]]). 현재 HEAD `9cf4091` (Mac), gbook 동기화됨.
+([[reference_ffn_run_invocation]]). 현재 HEAD `b39f205` (Mac; 9cf4091 이후 부트프롬프트
+`2e65b64` + Dev Logs 재구성 `b39f205`), gbook 동기화됨.
 
 ## 이 라인의 정체
 fine-grained 단일세포 magnitude 라인 (route a). cortical active-γ floor + ventral SF
@@ -48,4 +49,7 @@ transmission/aggregation/coherence는 벽 아님). band 도달엔 density datum(
   3-store Notion + "Notion 업데이트 완료" 수령선. 결정은 PI 고유권한.
 - **outputs/ = git-tracked + Syncthing 동시** → gbook git pull이 untracked-outputs 충돌.
   설계는 코드=git / 산출물=Syncthing. gbook은 code@git + outputs@Syncthing으로 완비.
-- Dev Logs 페이지 126K(아카이빙 진행 중), tag_kb 옛 duckdb 백업 정리됨.
+- Dev Logs: 새 going-forward 페이지(Notion `37b120daec5d815cb5acfba11c801ad4`)로 재구성 완료,
+  옛 125K는 Archive(`365120daec5d81969e74ffbb757d55c8`)로 rename·CLAUDE.md 링크 repoint. 이번 세션
+  4개 엔트리(loop24d/gbook sync/GPU sign-off/ab_xlink_v2)는 Archive 맨 아래에 보존. tag_kb 옛
+  duckdb 백업 정리됨(112M→47M).
