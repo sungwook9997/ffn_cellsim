@@ -527,7 +527,10 @@ def main() -> int:
                          "re-anchored 1.0e-3; pass 1.0e-7 for the pre-re-anchor state)")
     ap.add_argument("--xl-n", type=int, default=None,
                     help="ab_xlink_v2: override crosslink COUNT n_xl (density knob; prod "
-                         "1000). Slater-redesign transmission A/B — sensitivity ONLY.")
+                         "1000). Slater-redesign transmission A/B — sensitivity ONLY. "
+                         "⚠️ NO EFFECT under connected_mesh: there n_xl is a SEEDING OUTPUT "
+                         "(cell.py:745), so the config value is ignored — to vary connected-"
+                         "mesh crosslink density use --cm-z-struct, or run connected_mesh=False.")
     ap.add_argument("--xl-koff0", type=float, default=None,
                     help="ab_xlink_v2: override α-actinin Bell zero-force off-rate "
                          "alpha_k_off0 [1/s] (prod 0.066, Ferrer2008). Lower = more "
