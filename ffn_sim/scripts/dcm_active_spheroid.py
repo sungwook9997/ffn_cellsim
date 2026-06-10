@@ -364,6 +364,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true",
                     help="short run (smoke): fewer blocks + cells")
+    ap.add_argument("--p-div", type=float, default=None,
+                    help="per-eligible-rim-cell division prob / cadence "
+                         "(default: ResolvedActiveSpheroid.p_div, slow)")
+    ap.add_argument("--div-every", type=int, default=None,
+                    help="division-check cadence in steps (raise to make division "
+                         "rare so traction dominates A/A0; default 20000)")
+    ap.add_argument("--f-act", type=float, default=None,
+                    help="per-node active traction [N] (default 1.2e-10)")
+    ap.add_argument("--spread-blocks", type=int, default=None,
+                    help="number of active-spreading blocks (override default)")
+    ap.add_argument("--migrate-factor", type=float, default=None,
+                    help="whole-cell outward migration force = factor*f_act per node "
+                         "(0 = old basal-only splay; default 0.6)")
     args = ap.parse_args()
 
     if args.quick:
@@ -372,26 +385,49 @@ def main():
     else:
         n_active, n_max = 14, 34
         aggreg, spread, block = 6, 26, 1000
+    if args.spread_blocks is not None:
+        spread = args.spread_blocks
 
-    p = ResolvedActiveSpheroid(subdivisions=2, dt=3.0e-10)
+    # SLOW DIVISION (PI 2026-06-11): the cell-cycle timescale >> spreading timescale,
+    # so division should be RARE over the spread phase (~0-2 events) and the active
+    # TRACTION (centroid migration) should be the visible A/A0 driver. Default
+    # div_every is set so that across `spread*block` steps there are only ~1-2
+    # division checks (vs the old div_every=4000 => ~6 checks => division-stacked).
+    div_every = args.div_every if args.div_every is not None else 20000
+
+    kw = dict(subdivisions=2, dt=3.0e-10)
+    if args.p_div is not None:
+        kw["p_div"] = args.p_div
+    if args.f_act is not None:
+        kw["f_act"] = args.f_act
+    if args.migrate_factor is not None:
+        kw["migrate_factor"] = args.migrate_factor
+    p = ResolvedActiveSpheroid(**kw)
 
     print("=== ACTIVE-spreading DCM spheroid ===")
     print(f"    start cells {n_active}, pool {n_max}, aggreg {aggreg}x{block} + "
           f"spread {spread}x{block} steps, dt {p.dt:.0e}")
-    print(f"    f_act={p.f_act:.1e} N/node (cap {p.f_cap:.1e}); P_switch="
-          f"{p.P_switch_kPa} kPa; p_div={p.p_div}\n")
+    print(f"    f_act={p.f_act:.1e} N/node (cap {p.f_cap:.1e}); migrate_factor="
+          f"{p.migrate_factor}; P_switch={p.P_switch_kPa} kPa; "
+          f"p_div={p.p_div}; div_every={div_every}\n")
 
     print("-- PASSIVE baseline (no traction, no switch, no division) --")
     passive = run_active(p, n_active=n_active, n_max=n_active, active_traction=False,
                          do_switch=False, do_div=False, dt=p.dt,
                          aggreg_blocks=aggreg, spread_blocks=spread, block=block,
-                         label="PASSIVE")
+                         div_every=div_every, label="PASSIVE")
 
-    print("-- ACTIVE (traction + junction switch + division) --")
+    print("-- TRACTION-ONLY (active traction + switch, division OFF) --")
+    traction_only = run_active(p, n_active=n_active, n_max=n_active,
+                               active_traction=True, do_switch=True, do_div=False,
+                               dt=p.dt, aggreg_blocks=aggreg, spread_blocks=spread,
+                               block=block, div_every=div_every, label="TRACTION-ONLY")
+
+    print("-- ACTIVE (traction + junction switch + SLOW division) --")
     active = run_active(p, n_active=n_active, n_max=n_max, active_traction=True,
                         do_switch=True, do_div=True, dt=p.dt,
                         aggreg_blocks=aggreg, spread_blocks=spread, block=block,
-                        label="ACTIVE")
+                        div_every=div_every, label="ACTIVE")
 
     if not (passive.get("finite") and active.get("finite")):
         print("FAIL: a run went non-finite.")
@@ -403,23 +439,39 @@ def main():
         div_grew = active["n_cells_final"] > active["ts"]["n_cells"][0]
         a_traj = active["ts"]["AoverA0"]
         a_grew = a_traj[-1] > a_traj[0]
+        traction_only_aa = traction_only.get("AoverA0_final")
+        # traction must DOMINATE (division slow): A/A0 is in the physiological 2-4
+        # band from traction ALONE, and the slow-division run stays near it (not
+        # the old division-stacked ~9).
+        traction_dominated = (traction_only_aa is not None
+                              and 1.8 <= traction_only_aa <= 4.5)
+        div_slow = active["n_divisions"] <= 3
         print("\n=== RESULT ===")
-        print(f"  ACTIVE A/A0 final {active['AoverA0_final']:.3f}  vs  PASSIVE "
+        print(f"  TRACTION-ONLY A/A0 final {traction_only_aa:.3f} "
+              f"(division OFF, traction-alone band)")
+        print(f"  ACTIVE (slow div) A/A0 final {active['AoverA0_final']:.3f}  vs  PASSIVE "
               f"{passive['AoverA0_final']:.3f}  -> active>passive: {active_over_passive}")
+        print(f"  traction-dominated (2-4 band, division slow): "
+              f"{traction_dominated and div_slow}")
         print(f"  junction switch fired: {switch_fired} "
               f"({active['switched_final']} cells switched)")
-        print(f"  division grew cluster: {div_grew} "
+        print(f"  division SLOW: {div_slow} "
               f"({active['ts']['n_cells'][0]}->{active['n_cells_final']} cells, "
               f"{active['n_divisions']} divisions)")
         print(f"  A/A0 grew over time: {a_grew} "
               f"({a_traj[0]:.3f}->{a_traj[-1]:.3f})")
         result = {
-            "passive": passive, "active": active,
+            "passive": passive, "traction_only": traction_only, "active": active,
             "active_over_passive": bool(active_over_passive),
+            "traction_only_AoverA0": traction_only_aa,
+            "traction_dominated": bool(traction_dominated),
+            "division_slow": bool(div_slow),
+            "n_divisions": int(active["n_divisions"]),
             "switch_fired": bool(switch_fired),
             "division_grew_cluster": bool(div_grew),
             "AoverA0_grew_over_time": bool(a_grew),
-            "ok": bool(active_over_passive and switch_fired and div_grew),
+            "ok": bool(traction_dominated and div_slow and switch_fired
+                       and active_over_passive),
         }
 
     result["params"] = {k: getattr(p, k) for k in p.__slots__ if k != "extras"}
@@ -428,7 +480,14 @@ def main():
         "its FA clutch k_int=1e-3 N/m at clutch extensions 50-200 nm gives per-clutch "
         "traction 5e-11..2e-10 N; the DCM substrate well max pull is ~6e-10 N/node, so "
         "f_act is in the single-cell clutch band AND ~0.2x the passive well => a genuine "
-        "active over-drive of wetting, ~400x below the 5e-8 N contact cap (BAOAB-safe).")
+        "active over-drive of wetting, ~400x below the 5e-8 N contact cap (BAOAB-safe). "
+        "migrate_factor=0.6 applies a NET whole-cell outward body force "
+        "(migrate*f_act per node) so the centroid TRANSLOCATES (the cell migrates as a "
+        "unit), not just the basal lip splaying; the old belt-only scheme summed to a "
+        "near-zero net cell force => centroids did not move. Whole-cell net "
+        "~162*0.6*1.2e-10 ~ 1.2e-8 N < 5e-8 cap. Division is SLOW (div_every=20000, "
+        "p_div=0.04) so the cell-cycle:spreading timescale RATIO is physical and the "
+        "traction (not division stacking) is the visible A/A0 driver.")
 
     jpath = os.path.join(OUT, "active_spheroid.json")
     with open(jpath, "w") as f:

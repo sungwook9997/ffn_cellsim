@@ -39,26 +39,41 @@ def _build(n_active=8, n_max=10):
     """Build an active spheroid, then attach a twin DcmActiveRimTractionGPU.
 
     Returns (sim, traction_ref, traction_gpu, handles). The reference traction is
-    the ``ActiveRimTraction`` wired by ``build_active_spheroid``; the GPU twin is
-    built with the SAME parameters and SHARED state arrays so HOOMD calls its
-    set_forces over the identical configuration.
+    a LEGACY-MODE ``ActiveRimTraction`` (migrate_factor=0, lead_bias=1) — the
+    basal-only splay law that the frozen ``DcmActiveRimTractionGPU`` (a separate,
+    PI-gated GPU port file) still implements. This test pins CPU↔GPU parity OF THE
+    SAME LAW; the production CPU traction additionally applies the whole-cell
+    migration term (PI 2026-06-11, migrate_factor=0.6) which the GPU twin does not
+    yet carry — porting it is frozen-file work tracked for the GPU port, not this
+    parity gate. We REMOVE the production traction that build_active_spheroid wired
+    (migration-on) and append a legacy-mode twin + the GPU twin, both with the same
+    shared state, so set_forces runs over the identical configuration.
     """
     p = ResolvedActiveSpheroid(subdivisions=2, spacing_factor=2.3, dt=3.0e-10,
                                seed=7)
     h = build_active_spheroid(p, n_active, n_max, belt=True,
                               integrin_substrate=True)
     sim = h["sim"]
-    ref = h["traction"]
-    assert isinstance(ref, ActiveRimTraction)
+    ig = sim.operations.integrator
+    # drop the production (migration-on) traction wired by the builder
+    if h["traction"] in ig.forces:
+        ig.forces.remove(h["traction"])
 
-    gpu = DcmActiveRimTractionGPU(
+    common = dict(
         cell_of_node=h["cell_of_node"], ranges=h["ranges"], active=h["active"],
         int_mult=h["st"].int_mult, R_cell=p.R_cell, z0=p.z_substrate,
         f_act=p.f_act, f_cap=p.f_cap, ramp_steps=p.ramp_steps,
         contact_band=p.rim_contact_band, neighbour_factor=p.rim_neighbour_factor,
         max_neighbours=p.rim_max_neighbours,
         integrin_switch_gain=p.integrin_switch_gain, belt_factor=p.belt_factor)
-    sim.operations.integrator.forces.append(gpu)
+
+    # legacy-mode CPU reference (matches the GPU twin's basal-only law)
+    ref = ActiveRimTraction(migrate_factor=0.0, lead_bias=1.0, **common)
+    assert isinstance(ref, ActiveRimTraction)
+    ig.forces.append(ref)
+
+    gpu = DcmActiveRimTractionGPU(**common)
+    ig.forces.append(gpu)
     sim.run(0)
     return sim, ref, gpu, h, p
 

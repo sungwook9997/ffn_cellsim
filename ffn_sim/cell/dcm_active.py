@@ -120,6 +120,21 @@ class ResolvedActiveSpheroid:
     rim_max_neighbours: int = 9     # a rim cell has <= this many close neighbours
     belt_factor: float = 0.25       # apical contraction-belt tension = belt*f_act (inward)
     integrin_switch_gain: float = 3.0  # switched cells' active traction x this
+    # --- WHOLE-CELL MIGRATION (centroid translocation, not just basal splay) ---
+    # migrate_factor: the per-NODE outward body force applied to ALL of a rim
+    # cell's nodes = migrate_factor * f_act. UNLIKE the basal lamellipodial pull
+    # (which deforms/splays the basal lip but, once the inward belt is summed over
+    # the ~131 apical nodes, gives a near-ZERO net cell force => the centroid does
+    # NOT translocate — the diagnosis the PI flagged), this term is a genuine NET
+    # outward force on the whole cell body: the lamellipodium PULLS THE CELL BODY
+    # forward (the molecular clutch transmits traction through the cytoskeleton to
+    # the nucleus/body, not just to the membrane edge). With it, the cell migrates
+    # as a unit and the tent cohesion drags the followers. Calibrated so the
+    # whole-cell net (n_node * migrate*f_act ~ 162 * 0.6 * 1.2e-10 ~ 1.2e-8 N) is
+    # below the contact cap (5e-8 N) and per node 0.6*f_act=7.2e-11 N is in the
+    # single-cell FA-clutch band => BAOAB-safe. Set 0 to recover basal-only splay.
+    migrate_factor: float = 0.6
+    lead_bias: float = 1.5          # leading-edge basal nodes pull extra (x this) — directional crawl
 
     # --- BULK-PRESSURE JUNCTION SWITCH (#6) -----------------------------------
     contact_factor: float = 2.6     # neighbour contact radius = factor*R (centroids)
@@ -132,7 +147,14 @@ class ResolvedActiveSpheroid:
     integrin_strong_factor: float = 3.0
 
     # --- LIVE PROLIFERATION ----------------------------------------------------
-    p_div: float = 0.18             # per-eligible-rim-cell division prob / cadence
+    # SLOW vs spreading (PI 2026-06-11): the cell-cycle timescale (~hours) is FAR
+    # longer than the spreading/migration timescale (~minutes), so over a single
+    # spread phase a rim cell divides at most ~0-2 times. p_div is lowered and the
+    # driver's div cadence raised so the active TRACTION (centroid migration), not
+    # division-stacking, is the visible A/A0 driver. The earlier p_div=0.18 +
+    # div_every=4000 stacked ~6 division checks => 4-9 divisions => A/A0 was
+    # division-dominated (~9), masking the ~2-3 traction band.
+    p_div: float = 0.04             # per-eligible-rim-cell division prob / cadence (slow)
     div_gap_factor: float = 0.4     # daughter placed 2R + gap*R outward (no overlap)
 
     # --- necrosis 3-zone (depth-from-surface) ---------------------------------
@@ -201,7 +223,8 @@ class ActiveRimTraction(md.force.Custom):
                  int_mult: np.ndarray, R_cell: float, z0: float, f_act: float,
                  f_cap: float, ramp_steps: int, contact_band: float,
                  neighbour_factor: float, max_neighbours: int,
-                 integrin_switch_gain: float, belt_factor: float) -> None:
+                 integrin_switch_gain: float, belt_factor: float,
+                 migrate_factor: float = 0.6, lead_bias: float = 1.5) -> None:
         super().__init__(aniso=False)
         self.cell_of_node = cell_of_node
         self.ranges = ranges
@@ -217,9 +240,15 @@ class ActiveRimTraction(md.force.Custom):
         self.max_neigh = int(max_neighbours)
         self.switch_gain = float(integrin_switch_gain)
         self.belt = float(belt_factor)
+        self.migrate = float(migrate_factor)
+        self.lead_bias = float(lead_bias)
         # diagnostics (read by the driver)
         self.rim_cells: np.ndarray = np.empty(0, dtype=np.int64)
         self.f_per_cell: dict[int, float] = {}
+        # per-rim-cell (centroid, outward-unit-vector, net-cell-force) for arrow viz
+        self.cell_centroids: dict[int, np.ndarray] = {}
+        self.cell_rhat: dict[int, np.ndarray] = {}
+        self.cell_net_force: dict[int, np.ndarray] = {}
         self._ramp = 0.0
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
@@ -254,6 +283,9 @@ class ActiveRimTraction(md.force.Custom):
 
         rim_list = []
         f_per_cell = {}
+        cell_centroids = {}
+        cell_rhat = {}
+        cell_net = {}
         zc = self.z0 + self.contact_band * self.R
         for k, c in enumerate(active_ids):
             c = int(c)
@@ -275,15 +307,47 @@ class ActiveRimTraction(md.force.Custom):
             fmag = ramp * self.f_act * gain
             fmag = min(fmag, self.f_cap)
             f_per_cell[c] = fmag
-            # basal nodes pull OUTWARD (lamellipodium + clutch grip)
+            cell_F = np.zeros_like(cell_pos)  # this cell's added force (for diag)
             idx = np.where(basal)[0]
-            F_g[lo:hi][idx] += fmag * rhat
-            # apical nodes: weak INWARD contraction-belt tension (cell body follows)
+
+            # LEGACY basal-only splay law (migrate_factor=0 AND lead_bias=1.0): the
+            # original scheme — uniform outward fmag on every basal node + inward
+            # belt on apical. Kept bit-exact so the GPU twin's parity gate (a
+            # separate frozen-file port) still holds against this configuration.
+            legacy = (self.migrate == 0.0 and self.lead_bias == 1.0)
+            if legacy:
+                cell_F[idx] += fmag * rhat
+            else:
+                # (1) WHOLE-CELL MIGRATION: a NET outward body force on EVERY node so
+                # the centroid translocates as a unit (clutch transmits traction to
+                # the cell body, not just the membrane lip). This is what makes the
+                # cell MIGRATE rather than only splay its basal footprint.
+                if self.migrate > 0.0:
+                    fm = ramp * self.migrate * self.f_act * gain
+                    cell_F += fm * rhat
+                # (2) LAMELLIPODIAL leading edge: basal nodes on the OUTWARD
+                # (leading) side pull extra — the protruding lamellipodium / clutch
+                # grip; a directional crawl bias.
+                off_xy = cell_pos[idx, :2] - cents[k][:2]
+                proj = off_xy @ rhat[:2]
+                lead = idx[proj > 0.0]
+                trail = idx[proj <= 0.0]
+                cell_F[lead] += self.lead_bias * fmag * rhat
+                cell_F[trail] += 0.3 * fmag * rhat   # weak trailing-edge grip
+
+            # (3) apical INWARD contraction belt — the actomyosin belt that drags
+            # the cell body after the edge; kept SMALL so it does NOT cancel the
+            # net migration (the old belt over-cancelled => zero centroid drift).
             if self.belt > 0.0:
                 apic = np.where(~basal)[0]
                 if apic.size:
                     fb = min(self.belt * fmag, self.f_cap)
-                    F_g[lo:hi][apic] += -fb * rhat
+                    cell_F[apic] += -fb * rhat
+
+            F_g[lo:hi] += cell_F
+            cell_centroids[c] = cents[k].copy()
+            cell_rhat[c] = rhat.copy()
+            cell_net[c] = cell_F.sum(axis=0)
 
         # cap per node (BAOAB int32 guard) — never let a node exceed f_cap
         fn = np.linalg.norm(F_g, axis=1)
@@ -293,6 +357,9 @@ class ActiveRimTraction(md.force.Custom):
 
         self.rim_cells = np.array(rim_list, dtype=np.int64)
         self.f_per_cell = f_per_cell
+        self.cell_centroids = cell_centroids
+        self.cell_rhat = cell_rhat
+        self.cell_net_force = cell_net
 
         F = np.empty_like(pos)
         F[perm] = F_g
@@ -681,7 +748,8 @@ def build_active_spheroid(p: ResolvedActiveSpheroid, n_active: int, n_max: int,
         f_act=p.f_act, f_cap=p.f_cap, ramp_steps=p.ramp_steps,
         contact_band=p.rim_contact_band, neighbour_factor=p.rim_neighbour_factor,
         max_neighbours=p.rim_max_neighbours,
-        integrin_switch_gain=p.integrin_switch_gain, belt_factor=p.belt_factor)
+        integrin_switch_gain=p.integrin_switch_gain, belt_factor=p.belt_factor,
+        migrate_factor=p.migrate_factor, lead_bias=p.lead_bias)
     ig.forces.append(traction)
 
     # Optionally replace the substrate with the integrin-modulated one (#6 grip).
