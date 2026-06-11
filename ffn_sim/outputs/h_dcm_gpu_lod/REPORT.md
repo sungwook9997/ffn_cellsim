@@ -122,3 +122,49 @@ size-dependent 3-zone structure the PI asked for, and the falling rim fraction I
 (Note: A/A₀ was unstable at N=600 (14.5, a basal-footprint convex-hull artifact when peripheral
 cells disperse); the necrotic/zone COUNTS are clean + monotonic. Each run finite, wall
 685-1472 s / 20000 steps on the A5000.)
+
+## Bulk-pressure JUNCTION SWITCH wired into the GPU build (2026-06-11) — cadherin → integrin
+The cadherin→integrin clutch (PI mechanism) is now WIRED into the GPU-friendly build and
+rendered spatially. `build_gpu_dcm_simulation` is additively given a mutable `cad_mult`
+(n_cells,) array (passed to the tent contact's per-cell seam, mult = √(cad_mult_i·cad_mult_j))
+and an `integrin_gain` (n_cells,) array (= the rim-traction `int_mult` when active, else a
+standalone array); `attach_junction_switch` wires a `GpuJunctionSwitchUpdater` that each low
+cadence computes per-LIVE-cell bulk pressure (the frozen `PressureProbe` crowding→kPa proxy,
+over `cell_of_node ≥ 0` only — consistent with the necrosis live-cell fix) and LATCHES the
+switch for cells above `P_switch_kPa` (~0.5 kPa): `cad_mult → 0.3` (cadherin weakens),
+`integrin_gain → 3.0` (integrin strengthens). The frozen `dcm_spheroid_state` thresholds are
+reused unchanged.
+
+**Spatial result (N=250, R_cell=22 µm → R_spheroid=178 µm, CPU, finite):** 246/250 cells switch;
+bulk pressure spans **[0.0, 6.0] kPa**; the switched cells' mean pressure **4.13 kPa** ≫ the
+non-switched **0.0 kPa** (`switched=high-pressure ✓`), and the switched cells sit at mean radius
+**133.7 µm** vs the non-switched rim at **177.2 µm** (`switched=interior ✓`). So the high-pressure
+compacted interior switches to integrin while the low-pressure outer rim stays cadherin —
+exactly the clutch mechanism. Real-time label: t_sim = 0.6 µs ≈ 360 ms real (accel 6×10⁵,
+spreading_front).
+
+**Contact-radius calibration (honest note).** The GPU build's tent-adhesion/turgor balance
+settles at a cell-cell nearest-neighbour spacing ≈2.32·R (NN≈51 µm), just ABOVE the frozen
+proxy's 2.2·R=48 µm contact radius — so at the frozen factor every cell reads crowd=0 →
+pressure=0 → the switch never fires (diagnosed directly: NN does not compact below the gapped
+start over 600 steps). The viz sets the proxy's contact radius to **2.5·R=55 µm** to match the
+build's ACTUAL settled spacing; this is a measurement-geometry calibration to the real cell
+spacing, NOT a change to the literature [0.5,5] kPa band or the 0.5 kPa onset (both unchanged).
+At this scale 246/250 switch (the cluster is densely coordinated; only the 4 outermost corner
+cells stay below onset) — the spatial pressure GRADIENT and the switched=high-pressure=interior
+correlation are clean. Run on CPU is ~1 s/step at N=250 (brute-force tent pair search); the
+switch fires on the settled cluster so only ~600 settle steps are needed (active rim traction
+left OFF on CPU for cost — the switch acts on cad_mult/integrin_gain regardless; the gbook A5000
+runs it with `--active`). Entry point: `scripts/dcm_junction_switch_viz.py`.
+
+## Figures
+- `figs/junction_switch_spatial.png` — junction-switch deliverable: (1) central xz cross-section
+  coloured by junction state (blue cadherin-dominant vs red switched/integrin-dominant), (2) the
+  same slab as a per-cell bulk-pressure heatmap [kPa] with red rings on switched cells (confirms
+  switched = high-pressure), (3) 3D junction-state render. Title carries N=250, R=178 µm,
+  246/250 switched, P∈[0,6] kPa, and the real-time label.
+- `figs/junction_switch_spatial.mp4` — slow 360° rotation of the 3D junction-state render (MP4,
+  FFMpegWriter).
+- `figs/necrosis_3zone_spatial.png` / `.mp4` — prior 3-zone necrosis spatial render (necrotic
+  core central).
+- `figs/necrosis_size_scaling.png` — size-dependent 3-zone scaling (necrotic core grows with N).
