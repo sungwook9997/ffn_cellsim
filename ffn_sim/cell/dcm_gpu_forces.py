@@ -254,7 +254,10 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                  int_mult: np.ndarray, R_cell: float, z0: float, f_act: float,
                  f_cap: float, ramp_steps: int, contact_band: float,
                  neighbour_factor: float, max_neighbours: int,
-                 integrin_switch_gain: float, belt_factor: float) -> None:
+                 integrin_switch_gain: float, belt_factor: float,
+                 arrest_radius_factor: float | None = 1.35,
+                 arrest_width: float = 0.45,
+                 arrest_settle_steps: int = 4000) -> None:
         super().__init__(aniso=False)
         self.cell_of_node = cell_of_node
         self.ranges = ranges
@@ -270,16 +273,93 @@ class DcmActiveRimTractionGPU(md.force.Custom):
         self.max_neigh = int(max_neighbours)
         self.switch_gain = float(integrin_switch_gain)
         self.belt = float(belt_factor)
+        # SPREADING-ARREST (membrane-tension / contact-inhibition stall). The
+        # outward rim traction is smoothly switched OFF as a rim cell's radial
+        # distance r from the cluster centroid approaches a physiological maximum
+        # r_max = arrest_radius_factor · R0_cluster (R0_cluster = the INITIAL
+        # cluster radius, captured once at the first non-trivial call so the cap is
+        # N-invariant — a multiplicative factor on the natural cluster scale, NOT an
+        # empirical absolute length). The arrest gain is a SMOOTH ramp over a width
+        # band so the stall is BAOAB-safe (no hard clip, no discontinuous force):
+        #     g(r) = clip((r_max − r) / (arrest_width · r_max), 0, 1)
+        # so traction is full deep inside (r ≤ (1−width)·r_max), ramps to 0 across
+        # the band, and is exactly 0 beyond r_max. At equilibrium the rim sits where
+        # g·f_act balances cohesion → traction → 0 → STABLE A/A₀ plateau. The
+        # mechanism is the motor-clutch / membrane-tension feedback stall
+        # (Chan-Odde / Elosegui-Artola; the same protrusion-stalls-as-tension-rises
+        # physics the single-cell reference cell/spreading_drive.py models via the
+        # max_radius footprint cap). arrest_radius_factor=None ⇒ NO arrest (the
+        # legacy blow-up path, kept for the A/B comparison); the default 1.7 puts
+        # the equilibrium footprint expansion ~1.7× linear → A/A₀ ≈ 1.7² ≈ 2.9 ∈ [2,4].
+        self.arrest_factor = (None if arrest_radius_factor is None
+                              else float(arrest_radius_factor))
+        self.arrest_width = float(max(arrest_width, 1.0e-3))
+        self._R0_cluster: float | None = None   # settled cluster radius (lazy)
+        # R0 is captured AFTER the cluster has compacted from the gapped start (the
+        # gapped t≈0 radius over-estimates the natural scale → an unreachable cap).
+        # Captured at the first call with timestep ≥ arrest_settle_steps.
+        self.arrest_settle_steps = max(0, int(arrest_settle_steps))
         # diagnostics (read by the driver) — kept on host (numpy) like the CPU class
         self.rim_cells: np.ndarray = np.empty(0, dtype=np.int64)
         self.f_per_cell: dict[int, float] = {}
         self._ramp = 0.0
+        self.arrest_gain_mean: float = 1.0      # mean per-rim arrest gain (diag)
+        self.rn_max: float = 0.0                # max rim radial distance [m] (diag)
         self._d: DeviceDispatch | None = None      # lazy (device known at run(0))
 
     def _dispatch(self) -> DeviceDispatch:
         if self._d is None:
             self._d = DeviceDispatch(self)
         return self._d
+
+    def _capture_R0_cluster(self, rn, timestep: int = 0) -> None:
+        """Record the SETTLED cluster radius once (max in-plane rim radius).
+
+        ``rn`` is the (n_active,) array of in-plane radial distances of the active
+        cell centroids from the cluster centroid. The max rim radius is also stored
+        each call as ``rn_max`` (diagnostic). The arrest cap ``r_max`` is a
+        multiplicative factor on this SETTLED cluster radius, so it is N-invariant
+        (it scales with the cluster, not an absolute empirical length).
+
+        Capture is DEFERRED until ``timestep ≥ arrest_settle_steps`` because the
+        build starts cells GAPPED (spacing ~2.3·R); the gapped t≈0 radius
+        over-estimates the natural scale (the cluster compacts before it spreads),
+        which would put the cap out of reach and disable the arrest. Capturing after
+        the settle anchors the cap to the real compacted cluster size.
+        """
+        try:
+            self.rn_max = float(rn.max())
+        except Exception:  # pragma: no cover — degenerate
+            self.rn_max = 0.0
+        if self.arrest_factor is None or self._R0_cluster is not None:
+            return
+        if timestep < self.arrest_settle_steps:
+            return
+        # guard a degenerate state (all centroids coincident) → defer until non-zero.
+        if self.rn_max > 1.0e-9:
+            self._R0_cluster = self.rn_max
+
+    def _arrest_gain(self, xp, rn):
+        """Per-active-cell smooth arrest gain g(r) ∈ [0, 1] (membrane-tension stall).
+
+        ``g(r) = clip((r_max − r) / (arrest_width · r_max), 0, 1)`` with
+        ``r_max = arrest_radius_factor · R0_cluster``. Returns all-ones (no arrest)
+        when arrest is disabled or the initial cluster radius is not yet captured.
+
+        Args:
+            xp: the array module (numpy / cupy).
+            rn: (n_active,) in-plane radial distances of active centroids.
+
+        Returns:
+            (n_active,) array of arrest gains in [0, 1].
+        """
+        if self.arrest_factor is None or self._R0_cluster is None:
+            return xp.ones_like(rn)
+        r_max = self.arrest_factor * self._R0_cluster
+        if r_max <= 0.0:
+            return xp.ones_like(rn)
+        g = (r_max - rn) / (self.arrest_width * r_max)
+        return xp.clip(g, 0.0, 1.0)
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
         d = self._dispatch()
@@ -318,10 +398,32 @@ class DcmActiveRimTractionGPU(md.force.Custom):
             xp.fill_diagonal(within, False)
             crowd = within.sum(axis=1)
 
+            # SPREADING-ARREST: per-active-cell OWN BASAL MEMBRANE RADIUS r_spread —
+            # the in-plane spread of each cell's basal nodes about THAT CELL's own
+            # centroid (the per-cell membrane strain). The over-spread is each rim
+            # cell FLATTENING its basal membrane outward; its basal disk enlarges
+            # while the cell centroids barely move relative to the cluster. Same
+            # quantity as the vec path. R0 captured at settle, then the smooth gain
+            # g(r) ∈ [0,1]. With arrest disabled this is all-ones → bit-identical.
+            zc = self.z0 + self.contact_band * self.R
+            r_spread_list = []
+            for k in range(int(active_ids.shape[0])):
+                c = int(active_ids[k])
+                lo, hi = self.ranges[c]
+                cp = pos_g[lo:hi]
+                bm = cp[:, 2] < zc
+                nrxy = cp[:, :2] - cents[k][:2]
+                nr = xp.sqrt(nrxy[:, 0] ** 2 + nrxy[:, 1] ** 2)
+                nr_basal = xp.where(bm, nr, 0.0)
+                r_spread_list.append(nr_basal.max())
+            r_spread_all = xp.asarray(r_spread_list)
+            self._capture_R0_cluster(r_spread_all, timestep)
+            arrest_all = self._arrest_gain(xp, r_spread_all)
+
             int_mult = xp.asarray(self.int_mult)
             rim_list: list[int] = []
             f_per_cell: dict[int, float] = {}
-            zc = self.z0 + self.contact_band * self.R
+            arrest_used: list[float] = []
             for k in range(int(active_ids.shape[0])):
                 c = int(active_ids[k])
                 if int(crowd[k]) > self.max_neigh:
@@ -343,7 +445,11 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                 rhat = xp.concatenate(
                     [rxy / rn, xp.zeros(1, dtype=rxy.dtype)])
                 gain = float(int_mult[c])
-                fmag = ramp * self.f_act * gain
+                # spreading-arrest: reduce the outward traction toward 0 as this
+                # rim cell's radial spread approaches the physiological cap.
+                arrest = float(arrest_all[k])
+                arrest_used.append(arrest)
+                fmag = ramp * self.f_act * gain * arrest
                 fmag = min(fmag, self.f_cap)
                 f_per_cell[c] = fmag
                 # basal nodes pull OUTWARD (lamellipodium + clutch grip)
@@ -367,6 +473,8 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                 xp.asnumpy(xp.asarray(rim_list, dtype=xp.int64)) if d.gpu
                 else np.array(rim_list, dtype=np.int64))
             self.f_per_cell = f_per_cell
+            self.arrest_gain_mean = (float(np.mean(arrest_used))
+                                     if arrest_used else 1.0)
 
             F = xp.empty_like(pos)
             F[perm] = F_g
@@ -496,9 +604,27 @@ class DcmActiveRimTractionGPUVec(DcmActiveRimTractionGPU):
             rhat[:, 0] = rxy[:, 0] / rn_safe
             rhat[:, 1] = rxy[:, 1] / rn_safe
 
+            # SPREADING-ARREST keys on each cell's OWN BASAL MEMBRANE RADIUS — the
+            # in-plane spread of its basal nodes about THAT CELL's own centroid (the
+            # per-cell membrane strain). The over-spread is each rim cell FLATTENING
+            # its basal membrane outward (its basal disk enlarges) while the cell
+            # centroids barely move relative to the cluster — so the cell-centroid /
+            # cluster-centroid distance is a poor arrest signal, but the per-cell
+            # basal radius grows directly with the flattening. Capping it at r_max
+            # arrests the flattening → the footprint plateaus.
+            cell_cen_xy = cents[:, :2]                             # (na, 2)
+            node_rxy = act_blk[:, :, :2] - cell_cen_xy[:, None, :]  # (na, nv, 2)
+            node_r = xp.sqrt(node_rxy[:, :, 0] ** 2
+                             + node_rxy[:, :, 1] ** 2)             # (na, nv)
+            # only basal nodes count toward the membrane spread (apical belt pulls in)
+            node_r_basal = xp.where(basal, node_r, 0.0)            # (na, nv)
+            r_spread = node_r_basal.max(axis=1)                    # (na,)
+            self._capture_R0_cluster(r_spread, timestep)
+            arrest = self._arrest_gain(xp, r_spread)               # (na,)
+
             int_mult = xp.asarray(self.int_mult)
             gain = int_mult[active_ids]                   # (na,)
-            fmag = xp.minimum(ramp * self.f_act * gain, self.f_cap)  # (na,)
+            fmag = xp.minimum(ramp * self.f_act * gain * arrest, self.f_cap)  # (na,)
             fmag = xp.where(contributes, fmag, 0.0)       # (na,) gate non-contrib
 
             # per-node force on each active cell block (na, nv, 3):
@@ -535,6 +661,12 @@ class DcmActiveRimTractionGPUVec(DcmActiveRimTractionGPU):
             fmag_host = (xp.asnumpy(fmag) if d.gpu else np.asarray(fmag))
             self.f_per_cell = {int(active_ids_host[i]): float(fmag_host[i])
                                for i in np.where(contrib_host)[0]}
+            # arrest diagnostic: mean gain over the contributing cells (matches the
+            # parent loop, which averages over the same rim+rn-passing set).
+            arrest_host = (xp.asnumpy(arrest) if d.gpu else np.asarray(arrest))
+            contrib_idx = np.where(contrib_host)[0]
+            self.arrest_gain_mean = (float(np.mean(arrest_host[contrib_idx]))
+                                     if contrib_idx.size else 1.0)
 
             F = xp.empty_like(pos)
             F[perm] = F_g
@@ -664,7 +796,10 @@ class DcmFusedForceGPU(md.force.Custom):
                  int_mult: np.ndarray | None = None, R_cell: float = 7.5e-6,
                  f_act: float = 0.0, f_cap: float = 0.0, ramp_steps: int = 1,
                  contact_band: float = 0.5, neighbour_factor: float = 2.6,
-                 max_neighbours: int = 9, belt_factor: float = 0.0) -> None:
+                 max_neighbours: int = 9, belt_factor: float = 0.0,
+                 arrest_radius_factor: float | None = 1.35,
+                 arrest_width: float = 0.45,
+                 arrest_settle_steps: int = 4000) -> None:
         super().__init__(aniso=False)
         self.n_cells = int(n_cells)
         # turgor
@@ -701,11 +836,23 @@ class DcmFusedForceGPU(md.force.Custom):
         self.r_neigh = float(neighbour_factor * R_cell)
         self.max_neigh = int(max_neighbours)
         self.belt = float(belt_factor)
+        # spreading-arrest (same law as DcmActiveRimTractionGPUVec)
+        self.arrest_factor = (None if arrest_radius_factor is None
+                              else float(arrest_radius_factor))
+        self.arrest_width = float(max(arrest_width, 1.0e-3))
+        self.arrest_settle_steps = max(0, int(arrest_settle_steps))
+        self._R0_cluster: float | None = None
         # active diagnostics (mirror the standalone vec force)
         self.rim_cells: np.ndarray = np.empty(0, dtype=np.int64)
         self.f_per_cell: dict[int, float] = {}
         self._ramp = 0.0
+        self.arrest_gain_mean: float = 1.0
+        self.rn_max: float = 0.0
         self._d: DeviceDispatch | None = None
+
+    # arrest helpers (identical law to DcmActiveRimTractionGPU)
+    _capture_R0_cluster = DcmActiveRimTractionGPU._capture_R0_cluster
+    _arrest_gain = DcmActiveRimTractionGPU._arrest_gain
 
     def _dispatch(self) -> DeviceDispatch:
         if self._d is None:
@@ -753,8 +900,15 @@ class DcmFusedForceGPU(md.force.Custom):
         rhat = xp.zeros((na, 3), dtype=pos_g.dtype)
         rhat[:, 0] = rxy[:, 0] / rn_safe
         rhat[:, 1] = rxy[:, 1] / rn_safe
+        # spreading-arrest gain on the per-cell OWN BASAL MEMBRANE RADIUS (same law
+        # as the vec force): basal-node spread about each cell's own centroid.
+        node_rxy = act_blk[:, :, :2] - cents[:, None, :2]
+        node_r = xp.sqrt(node_rxy[:, :, 0] ** 2 + node_rxy[:, :, 1] ** 2)
+        r_spread = xp.where(basal, node_r, 0.0).max(axis=1)
+        self._capture_R0_cluster(r_spread, timestep)
+        arrest = self._arrest_gain(xp, r_spread)
         gain = xp.asarray(self.int_mult)[active_ids]
-        fmag = xp.minimum(ramp * self.f_act * gain, self.f_cap)
+        fmag = xp.minimum(ramp * self.f_act * gain * arrest, self.f_cap)
         fmag = xp.where(contributes, fmag, 0.0)
         fb = xp.minimum(self.belt * fmag, self.f_cap) if self.belt > 0.0 \
             else xp.zeros_like(fmag)
@@ -775,6 +929,9 @@ class DcmFusedForceGPU(md.force.Custom):
         self.rim_cells = ids_h[is_rim_h].astype(np.int64)
         self.f_per_cell = {int(ids_h[i]): float(fmag_h[i])
                            for i in np.where(contrib_h)[0]}
+        arrest_h = xp.asnumpy(arrest) if d.gpu else np.asarray(arrest)
+        ci = np.where(contrib_h)[0]
+        self.arrest_gain_mean = float(np.mean(arrest_h[ci])) if ci.size else 1.0
         return F_act
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
