@@ -42,6 +42,7 @@ from typing import Any
 import numpy as np
 
 import hoomd
+import hoomd.custom
 import hoomd.md as md
 
 from ffn_sim.cell.dcm import icosphere_mesh, _cluster_centers
@@ -263,3 +264,314 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         V0=V0, turgor=turgor, contact=contact, substrate=substrate,
         traction=traction, baoab=action, gamma=gamma, p=p,
         area_per_node=area_per_node, centers=b["centers"])
+
+
+# ===========================================================================
+# LIVE PROLIFERATION on the GPU-friendly build — pre-allocated cell POOL
+# ===========================================================================
+# WHY A POOL (NO MESH SPLIT). The GPU-friendly build's K1 turgor groups faces by
+# the per-face ``face_cell`` array and the tent contact distinguishes cells by the
+# per-node ``cell_of_node`` array — both are FIXED tag-space lookups, NOT native
+# md.mesh types. A true division would have to APPEND nodes/faces to the snapshot,
+# which renumbers every tag and breaks both arrays (same constraint the native
+# stack hit, see ``cell/dcm_active.py``). So we pre-allocate an ``n_max``-cell
+# pool: build n_max icosphere shells, start ``n_active`` in the ball + PARK the
+# surplus dormant (far off, undeformed → turgor V≈V0 → force-free; cell_of_node=−1
+# → tent skips them; high z → outside the substrate well → force-free). A division
+# ACTIVATES a parked pool cell as the daughter — copies an undeformed icosphere
+# into its (already-allocated) node range, places it gapped-outward from the
+# dividing rim cell, and flips its ``face_cell`` / ``cell_of_node`` / traction
+# ``active`` ON. The turgor's V0 is per-cell-uniform (all shells share one V0) so
+# the daughter is conserved the instant ``face_cell`` points its faces at it —
+# nothing in the fixed tag space changes. The K1 turgor reads ``face_cell`` fresh
+# each step (set on the live force object), so updating it in place is enough.
+
+
+def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
+                              device=None, active: bool = False):
+    """GPU-friendly DCM spheroid with a PRE-ALLOCATED proliferation pool.
+
+    Builds ``n_max`` icosphere shells in a SINGLE fixed tag space (so the K1
+    turgor's ``face_cell`` and the tent's ``cell_of_node`` never renumber). The
+    first ``n_active`` cells start in a compact FCC ball resting on the substrate;
+    the remaining ``n_max − n_active`` are PARKED far off and marked dormant
+    (``cell_of_node = −1``, undeformed → force-free). A ``GpuProliferationUpdater``
+    (attached by the caller, low cadence) activates parked cells as daughters.
+
+    Mirrors ``build_gpu_dcm_simulation`` (same forces, same BAOAB) but with the
+    pool + a mutable ``active`` (n_max,) mask and mutable ``face_cell`` so the
+    turgor follows daughters. Returns the same handle dict + ``active``,
+    ``n_active``, ``n_max``, ``verts0`` (the daughter template), and an unattached
+    ``prolif`` updater factory is left to the caller (the run-script wires it).
+
+    Args:
+        n_active: cells that start active in the ball.
+        n_max: total pool size (n_active + dormant reserve).
+        active: if True, wire ``DcmActiveRimTractionGPU`` (only active-mask cells
+            pull). Default False.
+    """
+    from ffn_sim.integrator.baoab import make_baoab_updater
+    import gsd.hoomd
+
+    verts0, edges, tris0 = icosphere_mesh(p.R_cell, p.subdivisions)
+    nv = verts0.shape[0]
+    ne = edges.shape[0]
+    nf = tris0.shape[0]
+    mean_edge = float(np.linalg.norm(
+        verts0[edges[:, 0]] - verts0[edges[:, 1]], axis=1).mean())
+
+    # --- pool geometry: n_active in a compact ball, surplus parked far off -----
+    spacing = p.spacing_factor * p.R_cell
+    centers = _cluster_centers(n_active, spacing, p.z_substrate, p.R_cell,
+                               mode=p.cluster)
+
+    all_pos, bond_groups, cell_of_node = [], [], []
+    face_groups, face_cell, ranges = [], [], []
+    tag = 0
+    park0 = 60.0 * p.R_cell
+    for c in range(n_max):
+        ranges.append((tag, tag + nv))
+        if c < n_active:
+            ctr = centers[c]
+            con = np.full(nv, c, dtype=np.int64)
+        else:
+            d = c - n_active
+            px = park0 + (d % 8) * (3.0 * p.R_cell)
+            py = park0 + (d // 8) * (3.0 * p.R_cell)
+            ctr = np.array([px, py, park0])
+            con = np.full(nv, -1, dtype=np.int64)      # dormant → tent skips it
+        all_pos.append(verts0 + ctr)
+        cell_of_node.append(con)
+        bond_groups.append(edges + tag)
+        face_groups.append(tris0 + tag)
+        face_cell.append(np.full(nf, c, dtype=np.int64))  # turgor: own cell id
+        tag += nv
+
+    pos = np.concatenate(all_pos, axis=0)
+    cell_of_node = np.concatenate(cell_of_node)            # (N,) mutable
+    bonds = np.concatenate(bond_groups, axis=0)
+    faces = np.concatenate(face_groups, axis=0)
+    face_cell = np.concatenate(face_cell)                  # (F,) mutable
+
+    box_edge = float(np.abs(pos).max() * 2.5 + 4.0 * p.R_cell)
+    snap = gsd.hoomd.Frame()
+    snap.particles.N = pos.shape[0]
+    snap.particles.types = ["dcm_mem", "dcm_inert"]
+    snap.particles.position = pos
+    snap.particles.typeid = np.zeros(pos.shape[0], dtype=np.uint32)
+    snap.particles.mass = np.ones(pos.shape[0])
+    snap.bonds.N = bonds.shape[0]
+    snap.bonds.types = ["dcm_edge"]
+    snap.bonds.typeid = np.zeros(bonds.shape[0], dtype=np.uint32)
+    snap.bonds.group = bonds.astype(np.uint32)
+    snap.configuration.box = [box_edge, box_edge, box_edge, 0, 0, 0]
+
+    dev = pick_device(device)
+    sim = hoomd.Simulation(device=dev, seed=p.seed)
+    sim.create_state_from_snapshot(snap)
+
+    ig = md.Integrator(dt=p.dt)
+
+    bond = md.bond.Harmonic()
+    bond.params["dcm_edge"] = dict(k=p.k_edge, r0=mean_edge)
+    ig.forces.append(bond)
+
+    area_per_node = 4.0 * np.pi * p.R_cell ** 2 / nv
+    W_cs = p.W_cs_Jm2 * p.ligand_density * area_per_node
+
+    # TURGOR over the WHOLE pool (n_max cells). face_cell is mutable and read fresh
+    # each step → a daughter's faces are conserved as soon as it activates. Parked
+    # cells are undeformed (V≈V0) so their turgor force is ~0 (force-free pool).
+    V0 = (4.0 / 3.0) * np.pi * p.R_cell ** 3
+    turgor = DcmTurgorForceGPU(faces=faces, face_cell=face_cell, n_cells=n_max,
+                               V0=V0, turgor_dP0=p.turgor_dP0, K_vol=p.K_vol)
+    ig.forces.append(turgor)
+
+    r_contact = p.r_contact_factor * mean_edge
+    contact = DcmTentContactGPU(
+        cell_of_node=cell_of_node, r_contact=r_contact, c_adh=p.c_adh,
+        rep_strength=p.rep_strength, adh_strength=p.adh_strength,
+        patch_area=area_per_node, force_cap=p.contact_force_cap)
+    ig.forces.append(contact)
+
+    substrate = DcmSubstrateForceGPU(
+        z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell, k_sub=p.k_sub_Nm)
+    ig.forces.append(substrate)
+
+    # active mask over the POOL: only the active ball pulls; parked cells off.
+    active_mask = np.zeros(n_max, dtype=bool)
+    active_mask[:n_active] = True
+    int_mult = np.ones(n_max, dtype=np.float64)
+
+    traction = None
+    if active:
+        traction = DcmActiveRimTractionGPU(
+            cell_of_node=cell_of_node, ranges=ranges, active=active_mask,
+            int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
+            f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
+            neighbour_factor=2.6, max_neighbours=9, integrin_switch_gain=3.0,
+            belt_factor=0.25)
+        ig.forces.append(traction)
+
+    sim.operations.integrator = ig
+    sim.run(0)
+
+    gamma = {"dcm_mem": p.gamma_node, "dcm_inert": p.gamma_node}
+    baoab_action, updater = make_baoab_updater(
+        kT=p.kT, gamma=gamma, dt=p.dt, seed=p.seed + 1)
+    sim.operations.updaters.append(updater)
+
+    return dict(
+        sim=sim, cell_of_node=cell_of_node, ranges=ranges, faces=faces,
+        face_cell=face_cell, n_cells=n_max, n_max=n_max, n_active=n_active,
+        nv=nv, ne=ne, mean_edge=mean_edge, V0=V0, turgor=turgor, contact=contact,
+        substrate=substrate, traction=traction, baoab=baoab_action, gamma=gamma,
+        p=p, area_per_node=area_per_node, centers=centers, verts0=verts0,
+        active=active_mask, int_mult=int_mult)
+
+
+class GpuProliferationUpdater(hoomd.custom.Action):
+    """Rim-biased, contact-inhibited, necrosis-gated division on the GPU pool.
+
+    NO mesh split (see the module-level pool note): each ``act`` activates a parked
+    pool cell as the daughter of a dividing rim cell. SLOW relative to spreading
+    (PI 2026-06-11: the cell-cycle timescale ≫ the spreading timescale, so over one
+    spread phase a rim cell divides ~0–2 times) — small ``p_div`` + a Periodic
+    trigger at ``div_every`` so division BOOSTS A/A₀ physically without stacking /
+    exploding it.
+
+    Each fired ``act`` (cadence gated by ``div_every``):
+      1. read centroids of ACTIVE pool cells;
+      2. RIM = 3D convex-hull vertices of the active centroids (free-edge /
+         contact-inhibition geometry) AND in substrate contact AND non-necrotic
+         (necrosis via the LOD classifier's ``cell_inert`` core mask, if wired —
+         a frozen/necrotic core cell never divides);
+      3. each eligible rim cell divides with prob ``p_div``: pop the first parked
+         pool cell, copy an undeformed icosphere into its node range placed
+         ``2R + gap`` OUTWARD from the parent (gapped → no t=0 contact-core overlap
+         → BAOAB-safe), lift it ≥ z0+R, then flip ON its ``cell_of_node`` (tent),
+         ``face_cell`` (turgor), and traction ``active`` mask. Daughter is
+         force-free at activation (undeformed, no overlap).
+
+    The turgor's ``face_cell`` and the tent's ``cell_of_node`` are the SAME mutable
+    arrays the live forces read each step, so editing them in place is the whole
+    activation — no snapshot rebuild, no tag renumber.
+
+    Args:
+        handles: the ``build_gpu_spheroid_prolif`` dict (sim, active, ranges,
+            cell_of_node, face_cell, turgor, traction, verts0, nv, p).
+        p_div: per-eligible-rim-cell division prob per cadence (SMALL — slow).
+        div_every: trigger period in steps (LARGE — slow vs spreading).
+        gap_factor: daughter placed 2R + gap_factor·R outward (no overlap).
+        cell_inert: optional (n_max,) bool LOD core mask — inert ⇒ no division.
+        rng_seed: RNG seed.
+    """
+
+    def __init__(self, *, handles: dict, p_div: float, gap_factor: float = 0.4,
+                 cell_inert: np.ndarray | None = None, rng_seed: int = 99) -> None:
+        super().__init__()
+        self.h = handles
+        self.sim = handles["sim"]
+        self.active = handles["active"]              # (n_max,) bool, mutable
+        self.ranges = handles["ranges"]
+        self.cell_of_node = handles["cell_of_node"]  # (N,) int, mutable (tent)
+        # turgor reads face_cell off the live force object → edit THAT array.
+        self.face_cell = handles["turgor"].face_cell  # (F,) int, mutable
+        self.nf_per_cell = handles["faces"].shape[0] // handles["n_max"]
+        self.traction = handles.get("traction")
+        self.verts0 = np.asarray(handles["verts0"], dtype=np.float64)
+        self.nv = int(handles["nv"])
+        p = handles["p"]
+        self.R = float(p.R_cell)
+        self.z0 = float(p.z_substrate)
+        self.contact_band = 0.6
+        self.p_div = float(p_div)
+        self.gap = float(gap_factor * p.R_cell)
+        self.cell_inert = cell_inert
+        self._rng = np.random.default_rng(rng_seed)
+        self.n_divisions = 0
+        self._sim = None
+
+    def attach(self, simulation):  # noqa: D401
+        super().attach(simulation)
+        self._sim = simulation
+
+    def _face_range(self, c: int):
+        lo = c * self.nf_per_cell
+        return lo, lo + self.nf_per_cell
+
+    def _live_mask(self) -> np.ndarray:
+        """(n_max,) bool: cell c is LIVE iff its first node's cell_of_node ≥ 0.
+
+        ``cell_of_node`` is the liveness AUTHORITY (the tent + turgor governing
+        signal) — NOT the traction ``active`` mask, which the LOD classifier shares
+        and overwrites for isolated parked cells. Reading liveness here keeps the
+        proliferation accounting correct under LOD.
+        """
+        first_node = np.array([self.ranges[c][0] for c in range(len(self.ranges))])
+        return self.cell_of_node[first_node] >= 0
+
+    def act(self, timestep: int) -> None:  # noqa: D401
+        live = self._live_mask()
+        free = np.where(~live)[0]
+        if free.size == 0:
+            return  # pool exhausted
+        live_ids = np.where(live)[0]
+        if live_ids.size < 4:
+            return
+        with self._sim.state.cpu_local_snapshot as snap:
+            tag = np.asarray(snap.particles.tag).copy()
+            pos = np.asarray(snap.particles.position).copy()
+        perm = np.argsort(tag)
+        pos_g = pos[perm]
+        cents = np.array([pos_g[self.ranges[int(c)][0]:self.ranges[int(c)][1]].mean(0)
+                          for c in live_ids])
+        cluster_cen = cents.mean(0)
+
+        # RIM = convex-hull vertices of the LIVE centroids (free-edge geometry).
+        try:
+            from scipy.spatial import ConvexHull
+            hull = ConvexHull(cents)
+            rim_k = np.unique(hull.vertices)
+        except Exception:  # noqa: BLE001 — degenerate (coplanar/too few) → no division
+            return
+
+        zc = self.z0 + self.contact_band * self.R
+        free_ptr = 0                                   # next free pool slot to claim
+        divided = False
+        for k in rim_k:
+            c = int(live_ids[k])
+            if free_ptr >= free.size:
+                break  # pool exhausted this act
+            if self.cell_inert is not None and bool(self.cell_inert[c]):
+                continue  # necrotic / jammed core (LOD) — gate division off
+            lo, hi = self.ranges[c]
+            if not bool((pos_g[lo:hi][:, 2] < zc).any()):
+                continue  # not in substrate contact — no free basal edge
+            if self._rng.random() >= self.p_div:
+                continue
+            daughter = int(free[free_ptr])             # claim a distinct free slot
+            free_ptr += 1
+            outward = cents[k] - cluster_cen
+            nrm = float(np.linalg.norm(outward))
+            if nrm < 1e-12:
+                outward = self._rng.standard_normal(3)
+                nrm = float(np.linalg.norm(outward))
+            outward = outward / nrm
+            new_center = cents[k] + (2.0 * self.R + self.gap) * outward
+            new_center[2] = max(new_center[2], self.z0 + self.R)
+            dlo, dhi = self.ranges[daughter]
+            pos_g[dlo:dhi] = self.verts0 + new_center      # undeformed → force-free
+            self.cell_of_node[dlo:dhi] = daughter          # tent: ON (+ liveness)
+            flo, fhi = self._face_range(daughter)
+            self.face_cell[flo:fhi] = daughter             # turgor: ON
+            self.active[daughter] = True                   # traction: ON
+            if self.traction is not None:
+                self.traction.int_mult[daughter] = 1.0
+            self.n_divisions += 1
+            divided = True
+        if divided:
+            pos_back = np.empty_like(pos)
+            pos_back[perm] = pos_g
+            with self._sim.state.cpu_local_snapshot as snap:
+                np.asarray(snap.particles.position)[:] = pos_back

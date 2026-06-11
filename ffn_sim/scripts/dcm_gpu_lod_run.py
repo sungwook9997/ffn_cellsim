@@ -36,7 +36,14 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
+import hoomd as _hoomd
+
+from ffn_sim.cell.dcm_gpu_build import (
+    ResolvedGpuDCM,
+    build_gpu_dcm_simulation,
+    build_gpu_spheroid_prolif,
+    GpuProliferationUpdater,
+)
 from ffn_sim.cell.dcm_gpu_lod import (
     ResolvedLOD,
     attach_activity_lod,
@@ -67,26 +74,75 @@ def _footprint_area(pos: np.ndarray, z0: float, band: float) -> float:
         return float((xy[:, 0].ptp()) * (xy[:, 1].ptp()))
 
 
+def _live_node_mask(h: dict, n: int) -> np.ndarray:
+    """Boolean node mask of cells that are LIVE in the spheroid (not dormant).
+
+    A pool cell is live iff its nodes carry a non-negative ``cell_of_node`` — the
+    proliferation updater sets that ON for activated daughters and leaves the
+    parked reserve at −1. This is the authoritative liveness signal: the LOD
+    classifier may flip the (shared) traction ``active`` mask for isolated parked
+    cells, but it NEVER touches ``cell_of_node``/``face_cell`` (the turgor + tent
+    governing arrays), so counting via ``cell_of_node`` excludes the dormant pool.
+    """
+    return np.asarray(h["cell_of_node"]) >= 0
+
+
+def _footprint_active(h: dict, pos: np.ndarray, z0: float, band: float) -> float:
+    """Footprint of LIVE pool cells only (excludes parked dormant nodes)."""
+    return _footprint_area(pos[_live_node_mask(h, pos.shape[0])], z0, band)
+
+
+def _active_pos(h: dict, pos: np.ndarray) -> np.ndarray:
+    """Positions of LIVE pool-cell nodes only (parked reserve dropped)."""
+    return pos[_live_node_mask(h, pos.shape[0])]
+
+
 def _radius_of_gyration(pos: np.ndarray) -> float:
     c = pos.mean(0)
     return float(np.sqrt(((pos - c) ** 2).sum(1).mean()))
 
 
 def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
-             use_lod: bool, lod_cfg: ResolvedLOD, device=None):
-    """Build + run one configuration; return (metrics dict, sim)."""
-    h = build_gpu_dcm_simulation(p, n_cells, device=device, active=active)
-    sim = h["sim"]
+             use_lod: bool, lod_cfg: ResolvedLOD, device=None,
+             prolif: bool = False, p_div: float = 0.04, div_every: int = 4000,
+             n_max: int | None = None):
+    """Build + run one configuration; return (metrics dict, sim).
+
+    With ``prolif=True`` the GPU pool build is used: ``n_cells`` cells start
+    active and a dormant reserve up to ``n_max`` is parked for division. A
+    ``GpuProliferationUpdater`` fires every ``div_every`` steps (necrosis-gated by
+    the LOD ``cell_inert`` mask when LOD is on).
+    """
     band = lod_cfg.contact_band * p.R_cell
+
+    if prolif:
+        n_max = n_max if n_max is not None else int(np.ceil(n_cells * 1.6))
+        h = build_gpu_spheroid_prolif(p, n_cells, n_max, device=device,
+                                      active=active)
+        n_start = n_cells
+    else:
+        h = build_gpu_dcm_simulation(p, n_cells, device=device, active=active)
+        n_start = n_cells
+    sim = h["sim"]
 
     if use_lod:
         attach_activity_lod(h, lod_cfg)
 
+    prolif_upd = None
+    if prolif:
+        prolif_upd = GpuProliferationUpdater(
+            handles=h, p_div=p_div, gap_factor=0.4,
+            cell_inert=h.get("cell_inert"), rng_seed=p.seed + 3)
+        sim.operations.updaters.append(_hoomd.update.CustomUpdater(
+            action=prolif_upd, trigger=_hoomd.trigger.Periodic(div_every)))
+
     # finite gate FIRST
     sim.run(0)
     pos0 = _positions(sim)
-    A0 = _footprint_area(pos0, p.z_substrate, band)
-    Rg0 = _radius_of_gyration(pos0)
+    # footprint / Rg of the ACTIVE subset only (parked dormant pool cells excluded).
+    A0 = _footprint_active(h, pos0, p.z_substrate, band) if prolif \
+        else _footprint_area(pos0, p.z_substrate, band)
+    Rg0 = _radius_of_gyration(_active_pos(h, pos0) if prolif else pos0)
 
     t0 = time.perf_counter()
     sim.run(steps)
@@ -95,18 +151,31 @@ def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
     wall = time.perf_counter() - t0
 
     finite = bool(np.all(np.isfinite(pos1)))
-    A1 = _footprint_area(pos1, p.z_substrate, band)
-    Rg1 = _radius_of_gyration(pos1)
+    A1 = _footprint_active(h, pos1, p.z_substrate, band) if prolif \
+        else _footprint_area(pos1, p.z_substrate, band)
+    Rg1 = _radius_of_gyration(_active_pos(h, pos1) if prolif else pos1)
 
     lod = h.get("lod_updater")
+    # LIVE cell count = cells with a non-negative cell_of_node (daughters that the
+    # proliferation updater activated). NOT h["active"].sum() — the LOD classifier
+    # shares + overwrites that mask, so it is not the liveness authority.
+    n_live = int(len(np.unique(np.asarray(h["cell_of_node"])[
+        np.asarray(h["cell_of_node"]) >= 0]))) if prolif else n_start
+    n_active_final = n_live
     m = dict(
-        n_cells=n_cells, steps=steps, active=active, use_lod=use_lod,
+        n_cells=n_cells, n_start=n_start, steps=steps, active=active,
+        use_lod=use_lod, prolif=prolif,
         device=type(sim.device).__name__, N_particles=int(sim.state.N_particles),
         finite=finite, wall_s=wall,
         A0=A0, A1=A1, A_over_A0=(A1 / A0 if A0 > 0 else float("nan")),
         Rg0=Rg0, Rg1=Rg1, Rg_ratio=(Rg1 / Rg0 if Rg0 > 0 else float("nan")),
         steps_per_s=(steps / wall if wall > 0 else float("nan")),
     )
+    if prolif:
+        m.update(dict(
+            n_active_final=n_active_final,
+            n_divisions=(prolif_upd.n_divisions if prolif_upd else 0),
+            n_max=h["n_max"], p_div=p_div, div_every=div_every))
     if lod is not None:
         m.update(dict(
             n_active=lod.n_active, n_inert=lod.n_inert, n_necrotic=lod.n_necrotic,
@@ -174,6 +243,14 @@ def main() -> None:
                     help="also run WITHOUT LOD at the same N (measure the speedup)")
     ap.add_argument("--cpu", action="store_true", help="force CPU device")
     ap.add_argument("--cadence", type=int, default=500)
+    ap.add_argument("--prolif", action="store_true",
+                    help="enable live proliferation (pre-allocated pool + division)")
+    ap.add_argument("--p-div", type=float, default=0.04,
+                    help="per-eligible-rim-cell division prob per cadence (slow)")
+    ap.add_argument("--div-every", type=int, default=4000,
+                    help="division-check period in steps (large = slow vs spreading)")
+    ap.add_argument("--n-max", type=int, default=None,
+                    help="proliferation pool size (default ceil(1.6*n_cells))")
     args = ap.parse_args()
 
     _OUT.mkdir(parents=True, exist_ok=True)
@@ -184,22 +261,31 @@ def main() -> None:
     device = hoomd.device.CPU(notice_level=0) if args.cpu else None
 
     print(f"[lod-run] N={args.n_cells} steps={args.steps} active={args.active} "
-          f"ab={args.ab}")
+          f"ab={args.ab} prolif={args.prolif}")
 
     m_lod, _ = _run_one(p, args.n_cells, args.steps, active=args.active,
-                        use_lod=True, lod_cfg=lod_cfg, device=device)
+                        use_lod=True, lod_cfg=lod_cfg, device=device,
+                        prolif=args.prolif, p_div=args.p_div,
+                        div_every=args.div_every, n_max=args.n_max)
     print(f"[LOD]    finite={m_lod['finite']} wall={m_lod['wall_s']:.2f}s "
           f"A/A0={m_lod['A_over_A0']:.3f} active={m_lod.get('n_active')}/"
           f"{args.n_cells} inert={m_lod.get('n_inert')} "
           f"necrotic={m_lod.get('n_necrotic')}")
+    if args.prolif:
+        print(f"[PROLIF] divisions={m_lod.get('n_divisions')} "
+              f"n_active: {m_lod.get('n_start')} -> {m_lod.get('n_active_final')} "
+              f"(pool n_max={m_lod.get('n_max')}, p_div={args.p_div}, "
+              f"div_every={args.div_every})")
 
     out = dict(steps=args.steps, n_cells=args.n_cells, active=args.active,
-               lod=m_lod)
+               prolif=args.prolif, lod=m_lod)
 
     if args.ab:
         dev2 = hoomd.device.CPU(notice_level=0) if args.cpu else None
         m_no, _ = _run_one(p, args.n_cells, args.steps, active=args.active,
-                           use_lod=False, lod_cfg=lod_cfg, device=dev2)
+                           use_lod=False, lod_cfg=lod_cfg, device=dev2,
+                           prolif=args.prolif, p_div=args.p_div,
+                           div_every=args.div_every, n_max=args.n_max)
         speedup = m_no["wall_s"] / m_lod["wall_s"] if m_lod["wall_s"] > 0 else float("nan")
         out["no_lod"] = m_no
         out["lod_speedup"] = speedup
