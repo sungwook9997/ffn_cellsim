@@ -42,6 +42,7 @@ from ffn_sim.cell.dcm_active import (
 from ffn_sim.scripts.dcm_active_spheroid import (
     _positions, _active_node_mask, _footprint_area,
 )
+from ffn_sim.common.sim_realtime import map_realtime, format_time
 
 _UM = 1e6
 _STATE_COLOR = {
@@ -102,7 +103,7 @@ def capture(p: ResolvedActiveSpheroid, *, n_active, n_max, dt=3.0e-10,
         tractions = {int(c): tr.cell_net_force.get(int(c)) for c in ids
                      if tr.cell_net_force.get(int(c)) is not None}
         frames.append(dict(
-            t=int(sim.timestep), phase=phase,
+            t=int(sim.timestep), dt=float(dt), phase=phase,
             xyz_um=(pg[mask]) * _UM,
             node_state=st.state[con[mask]].copy(),
             node_switched=st.switched[con[mask]].copy(),
@@ -169,8 +170,15 @@ def render(frames, out_path, trail_k=8):
     arrow_um = 6.0  # an f_ref-magnitude pull renders as this many µm long
 
     fig, (axxy, axxz) = plt.subplots(1, 2, figsize=(13.5, 6.4))
+    # REAL-TIME readout (PI 2026-06-11): spreading-front accel factor maps the
+    # accelerated-sim time to a real-time equivalent (a MAPPING, not native).
+    _dt = float(frames[-1].get("dt", 3.0e-10))
+    _rt_end = map_realtime(frames[-1]["t"], _dt)
     fig.suptitle("ACTIVE DCM spheroid — TRACTION-DRIVEN migration "
-                 "(centroid trails + active-pull arrows)", fontweight="bold")
+                 "(centroid trails + active-pull arrows)\n"
+                 f" end: t = {_rt_end.t_sim_human} sim  ≈ {_rt_end.t_real_human} real  "
+                 f"(accel {_rt_end.accel_factor:.0e}, spreading-front)",
+                 fontweight="bold")
 
     mean_dr, max_dr, agg_idx = _radial_centroid_migration(frames)
 
@@ -248,8 +256,12 @@ def render(frames, out_path, trail_k=8):
         axxz.set_title("side (z = crawl onto substrate)")
         axxz.set_xlabel("x [µm]"); axxz.set_ylabel("z [µm]")
         axxy.legend(loc="upper right", fontsize=7, framealpha=0.9)
-        fig.text(0.5, 0.93,
-                 f"{f['phase']}   step {f['t']}   N={f['n_cells']} cells   "
+        # per-frame real-time-equivalent timestamp (t_sim → t_real via accel S)
+        rt_f = map_realtime(f["t"], f.get("dt", _dt))
+        fig.text(0.5, 0.885,
+                 f"{f['phase']}   step {f['t']}   "
+                 f"t={rt_f.t_sim_human} sim ≈ {rt_f.t_real_human} real   "
+                 f"N={f['n_cells']} cells   "
                  f"| rim centroids migrated outward {mean_dr:+.2f} µm (mean), "
                  f"{max_dr:+.2f} µm (max)",
                  ha="center", fontsize=9.5)

@@ -45,6 +45,7 @@ from ffn_sim.cell.dcm_active import (
     build_active_spheroid,
 )
 from ffn_sim.cell.dcm_spheroid_state import CellState
+from ffn_sim.common.sim_realtime import map_realtime
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "outputs", "h_dcm_active")
 FIGS = os.path.join(OUT, "figs")
@@ -244,7 +245,7 @@ def run_active(p: ResolvedActiveSpheroid, *, n_active, n_max, active_traction=Tr
 # ---------------------------------------------------------------------------
 # Figure
 # ---------------------------------------------------------------------------
-def make_figure(active, passive, p):
+def make_figure(active, passive, p, realtime=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -338,9 +339,14 @@ def make_figure(active, passive, p):
     a5.set_title("(f) per-cell bulk pressure + integrin gain")
     fig.colorbar(sc, ax=a5, label="bulk pressure [kPa]", fraction=0.046, pad=0.04)
 
+    rt_line = ""
+    if realtime is not None:
+        rt_line = (f"\nt = {realtime['t_sim_human']} sim  ≈ {realtime['t_real_human']} "
+                   f"real  (accel {realtime['accel_factor']:.0e}, spreading-front; "
+                   f"a real-time MAPPING, not native)")
     fig.suptitle("ACTIVE-spreading DCM spheroid: active rim traction + bulk-pressure "
                  "junction switch + live proliferation\n(coarse-grained on the "
-                 "validated native-mesh + bilinear-tent stack)", fontsize=12)
+                 "validated native-mesh + bilinear-tent stack)" + rt_line, fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     path = os.path.join(FIGS, "active_spheroid.png")
     fig.savefig(path, dpi=120)
@@ -489,14 +495,26 @@ def main():
         "p_div=0.04) so the cell-cycle:spreading timescale RATIO is physical and the "
         "traction (not division stacking) is the visible A/A0 driver.")
 
+    # REAL-TIME readout (PI 2026-06-11): map the accelerated-sim time of the ACTIVE
+    # run to a real-time equivalent via the spreading-front accel factor. The raw
+    # integrator time t_sim = dt·steps is only ~µs; t_real is a MAPPING (not native
+    # real time). Total ACTIVE-run steps = (aggreg + spread) blocks × block.
+    total_steps = (aggreg + spread) * block
+    rt = map_realtime(total_steps, p.dt)
+    rt_d = rt.to_dict()
+    result["realtime"] = rt_d
+    print(f"\n  [TIME] active run {total_steps} steps × dt={p.dt:g}s = "
+          f"{rt_d['t_sim_human']} sim ≈ {rt_d['t_real_human']} real-equivalent "
+          f"(accel {rt.accel_factor:.0e}, {rt.basis})")
+
     jpath = os.path.join(OUT, "active_spheroid.json")
     with open(jpath, "w") as f:
         json.dump(result, f, indent=2)
-    print(f"\n  json -> {os.path.relpath(jpath)}")
+    print(f"  json -> {os.path.relpath(jpath)}")
 
     if passive.get("ts") and active.get("ts"):
         try:
-            make_figure(active, passive, p)
+            make_figure(active, passive, p, realtime=result.get("realtime"))
         except Exception as e:  # noqa: BLE001
             import traceback
             print(f"  (figure skipped: {e})")

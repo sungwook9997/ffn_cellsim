@@ -48,6 +48,7 @@ from ffn_sim.cell.dcm_gpu_lod import (
     ResolvedLOD,
     attach_activity_lod,
 )
+from ffn_sim.common.sim_realtime import map_realtime
 
 _OUT = Path("ffn_sim/outputs/h_dcm_gpu_lod")
 
@@ -196,6 +197,11 @@ def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
         Rg0=Rg0, Rg1=Rg1, Rg_ratio=(Rg1 / Rg0 if Rg0 > 0 else float("nan")),
         steps_per_s=(steps / wall if wall > 0 else float("nan")),
     )
+    # REAL-TIME readout (PI 2026-06-11): the raw integrator time t_sim = dt·steps
+    # is only ~µs (accelerated kinetics); t_real is the real-time equivalent via
+    # the spreading-front acceleration factor S. MAPPING, not native real time.
+    rt = map_realtime(steps, p.dt)
+    m.update(rt.to_dict())
     if prolif:
         # Necrosis over LIVE cells ONLY (the parked dormant pool corrupts the
         # pool-wide LOD depth/centroid → spurious all-necrotic; see helper).
@@ -267,8 +273,13 @@ def _figure(metrics: dict, out_png: Path):
         ax.set_title(f"wall-time ({metrics['steps']} steps)")
     ax.set_ylabel("wall-time [s]")
 
+    # REAL-TIME readout: raw integrator time (~µs) AND the real-time equivalent
+    # via the spreading-front accel factor (a MAPPING, not native real time).
+    rt_line = (f"t = {lod.get('t_sim_human', '?')} sim  "
+               f"≈ {lod.get('t_real_human', '?')} real  "
+               f"(accel {lod.get('accel_factor', float('nan')):.0e}, spreading-front)")
     fig.suptitle(f"GPU-friendly DCM + activity-LOD  ({lod['device']}, "
-                 f"N={lod['n_cells']}, {lod['N_particles']} nodes)")
+                 f"N={lod['n_cells']}, {lod['N_particles']} nodes)\n{rt_line}")
     fig.tight_layout()
     fig.savefig(out_png, dpi=110)
     plt.close(fig)
@@ -315,6 +326,9 @@ def main() -> None:
           f"A/A0={m_lod['A_over_A0']:.3f} active={m_lod.get('n_active')}/"
           f"{args.n_cells} inert={m_lod.get('n_inert')} "
           f"necrotic={m_lod.get('n_necrotic')}")
+    print(f"[TIME]   t_sim={m_lod['t_sim_human']} (raw integrator, dt={args.dt:g}s) "
+          f"≈ {m_lod['t_real_human']} real-equivalent "
+          f"(accel {m_lod['accel_factor']:.0e}, {m_lod['realtime_basis']})")
     if args.prolif:
         print(f"[PROLIF] divisions={m_lod.get('n_divisions')} "
               f"n_active: {m_lod.get('n_start')} -> {m_lod.get('n_active_final')} "

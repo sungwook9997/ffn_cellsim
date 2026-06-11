@@ -42,6 +42,7 @@ from ffn_sim.cell.dcm_native_shell import (  # noqa: E402
 from ffn_sim.cell.dcm_confluence import (  # noqa: E402
     capture_positions, compute_confluence, per_cell_tris)
 from ffn_sim.cell.dcm import _cluster_centers  # noqa: E402
+from ffn_sim.common.sim_realtime import map_realtime  # noqa: E402
 
 matplotlib.rcParams["animation.ffmpeg_path"] = "/opt/homebrew/bin/ffmpeg"
 
@@ -187,9 +188,13 @@ def main() -> None:
             stage = ("separated FCC ball" if i < n * 0.18 else
                      "cells adhere + deform" if i < n * 0.6 else
                      "confluent spheroid")
+            # per-frame real-time-equivalent (t_sim → t_real via accel S; a MAPPING)
+            rt_f = map_realtime(i * STEPS_PER_FRAME, p.dt)
             ax.set_title(
                 f"DCM spheroid — {N_CELLS} deformable cells  ·  {stage}\n"
                 f"step {i*STEPS_PER_FRAME:>5d}   "
+                f"t={rt_f.t_sim_human} sim ≈ {rt_f.t_real_human} real "
+                f"(accel {rt_f.accel_factor:.0e})\n"
                 f"packing Φ={m.packing_fraction:.2f}   "
                 f"contact-node frac={m.contact_fraction:.2f}",
                 fontsize=10)
