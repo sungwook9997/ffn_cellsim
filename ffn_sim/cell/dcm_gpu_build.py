@@ -241,8 +241,8 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
 def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              active: bool = False, fast_active: bool = True,
                              arrest: bool = True,
-                             arrest_radius_factor: float = 1.35,
-                             arrest_width: float = 0.45,
+                             arrest_radius_factor: float = 1.12,
+                             arrest_width: float = 0.4,
                              arrest_settle_steps: int = 4000,
                              settle_force: float = 4.0e-10):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.

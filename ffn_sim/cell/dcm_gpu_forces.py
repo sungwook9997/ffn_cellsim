@@ -255,8 +255,8 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                  f_cap: float, ramp_steps: int, contact_band: float,
                  neighbour_factor: float, max_neighbours: int,
                  integrin_switch_gain: float, belt_factor: float,
-                 arrest_radius_factor: float | None = 1.35,
-                 arrest_width: float = 0.45,
+                 arrest_radius_factor: float | None = 1.12,
+                 arrest_width: float = 0.4,
                  arrest_settle_steps: int = 4000) -> None:
         super().__init__(aniso=False)
         self.cell_of_node = cell_of_node
@@ -361,6 +361,35 @@ class DcmActiveRimTractionGPU(md.force.Custom):
         g = (r_max - rn) / (self.arrest_width * r_max)
         return xp.clip(g, 0.0, 1.0)
 
+    def _footprint_radius(self, xp, act_blk, basal):
+        """Robust colony FOOTPRINT radius — p90 in-plane radius of active basal nodes.
+
+        ``act_blk`` is (na, nv, 3) active-cell node positions, ``basal`` (na, nv) the
+        per-node basal mask. The footprint radius is the 90th-percentile in-plane
+        distance of the active BASAL nodes from their collective centroid — a
+        measure ROBUST to a few scattered outliers (which inflate a max / convex
+        hull), so it tracks the bulk colony spread, the quantity that genuinely
+        blows up. Returns a 0-d array (the array module's scalar).
+        """
+        b = basal.reshape(-1)                                  # (na*nv,)
+        nodes_xy = act_blk[:, :, :2].reshape(-1, 2)            # (na*nv, 2)
+        # basal-node centroid (mean of basal nodes only).
+        w = b.astype(nodes_xy.dtype)
+        denom = w.sum()
+        # guard: if no basal node, fall back to all-node centroid (denom→nv*na).
+        safe_denom = xp.where(denom > 0, denom, xp.asarray(nodes_xy.shape[0],
+                                                           dtype=nodes_xy.dtype))
+        cen_xy = (nodes_xy * w[:, None]).sum(axis=0) / safe_denom   # (2,)
+        d = nodes_xy - cen_xy[None, :]
+        r = xp.sqrt(d[:, 0] ** 2 + d[:, 1] ** 2)              # (na*nv,)
+        # p90 over the BASAL nodes ONLY (non-basal → NaN, nanpercentile ignores
+        # them): robust to a few scattered outliers (which inflate a max/hull), so it
+        # tracks the BULK footprint, not measurement noise. Fully vectorized (no host
+        # sync to gather the variable-length basal subset).
+        nan = xp.asarray(float("nan"), dtype=r.dtype)
+        r_basal = xp.where(b, r, nan)
+        return xp.nanpercentile(r_basal, 90.0)
+
     def set_forces(self, timestep: int) -> None:  # noqa: D401
         d = self._dispatch()
         xp = d.xp
@@ -398,32 +427,27 @@ class DcmActiveRimTractionGPU(md.force.Custom):
             xp.fill_diagonal(within, False)
             crowd = within.sum(axis=1)
 
-            # SPREADING-ARREST: per-active-cell OWN BASAL MEMBRANE RADIUS r_spread —
-            # the in-plane spread of each cell's basal nodes about THAT CELL's own
-            # centroid (the per-cell membrane strain). The over-spread is each rim
-            # cell FLATTENING its basal membrane outward; its basal disk enlarges
-            # while the cell centroids barely move relative to the cluster. Same
-            # quantity as the vec path. R0 captured at settle, then the smooth gain
-            # g(r) ∈ [0,1]. With arrest disabled this is all-ones → bit-identical.
+            # SPREADING-ARREST keys on the COLONY FOOTPRINT RADIUS (same global gain
+            # for every rim cell): the robust p90 in-plane radius of ALL active basal
+            # nodes about their collective centroid. The over-spread is the basal
+            # footprint exploding as cells DISPERSE (per-cell membrane radius and cell
+            # centroids both stay bounded — only the footprint tracks the blow-up).
+            # As the footprint → R_max=factor·R0_footprint the traction → 0 for every
+            # rim cell → the colony stops. Same quantity + helper as the vec path
+            # (uniform contiguous blocks here ⇒ act_blk reshape is valid → identical).
             zc = self.z0 + self.contact_band * self.R
-            r_spread_list = []
-            for k in range(int(active_ids.shape[0])):
-                c = int(active_ids[k])
-                lo, hi = self.ranges[c]
-                cp = pos_g[lo:hi]
-                bm = cp[:, 2] < zc
-                nrxy = cp[:, :2] - cents[k][:2]
-                nr = xp.sqrt(nrxy[:, 0] ** 2 + nrxy[:, 1] ** 2)
-                nr_basal = xp.where(bm, nr, 0.0)
-                r_spread_list.append(nr_basal.max())
-            r_spread_all = xp.asarray(r_spread_list)
-            self._capture_R0_cluster(r_spread_all, timestep)
-            arrest_all = self._arrest_gain(xp, r_spread_all)
+            n_cells_all = len(self.ranges)
+            nv_blk = self.ranges[0][1] - self.ranges[0][0]
+            pos_blk_l = pos_g.reshape(n_cells_all, nv_blk, 3)
+            act_blk_l = pos_blk_l[active_ids]
+            basal_blk_l = act_blk_l[:, :, 2] < zc
+            R_foot = self._footprint_radius(xp, act_blk_l, basal_blk_l)
+            self._capture_R0_cluster(xp.reshape(R_foot, (1,)), timestep)
+            arrest_scalar = float(self._arrest_gain(xp, R_foot))
 
             int_mult = xp.asarray(self.int_mult)
             rim_list: list[int] = []
             f_per_cell: dict[int, float] = {}
-            arrest_used: list[float] = []
             for k in range(int(active_ids.shape[0])):
                 c = int(active_ids[k])
                 if int(crowd[k]) > self.max_neigh:
@@ -445,10 +469,9 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                 rhat = xp.concatenate(
                     [rxy / rn, xp.zeros(1, dtype=rxy.dtype)])
                 gain = float(int_mult[c])
-                # spreading-arrest: reduce the outward traction toward 0 as this
-                # rim cell's radial spread approaches the physiological cap.
-                arrest = float(arrest_all[k])
-                arrest_used.append(arrest)
+                # spreading-arrest: the single global colony-footprint arrest gain
+                # reduces the outward traction toward 0 as the footprint → R_max.
+                arrest = arrest_scalar
                 fmag = ramp * self.f_act * gain * arrest
                 fmag = min(fmag, self.f_cap)
                 f_per_cell[c] = fmag
@@ -473,8 +496,8 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                 xp.asnumpy(xp.asarray(rim_list, dtype=xp.int64)) if d.gpu
                 else np.array(rim_list, dtype=np.int64))
             self.f_per_cell = f_per_cell
-            self.arrest_gain_mean = (float(np.mean(arrest_used))
-                                     if arrest_used else 1.0)
+            self.arrest_gain_mean = arrest_scalar
+            self.rn_max = float(R_foot)
 
             F = xp.empty_like(pos)
             F[perm] = F_g
@@ -604,23 +627,19 @@ class DcmActiveRimTractionGPUVec(DcmActiveRimTractionGPU):
             rhat[:, 0] = rxy[:, 0] / rn_safe
             rhat[:, 1] = rxy[:, 1] / rn_safe
 
-            # SPREADING-ARREST keys on each cell's OWN BASAL MEMBRANE RADIUS — the
-            # in-plane spread of its basal nodes about THAT CELL's own centroid (the
-            # per-cell membrane strain). The over-spread is each rim cell FLATTENING
-            # its basal membrane outward (its basal disk enlarges) while the cell
-            # centroids barely move relative to the cluster — so the cell-centroid /
-            # cluster-centroid distance is a poor arrest signal, but the per-cell
-            # basal radius grows directly with the flattening. Capping it at r_max
-            # arrests the flattening → the footprint plateaus.
-            cell_cen_xy = cents[:, :2]                             # (na, 2)
-            node_rxy = act_blk[:, :, :2] - cell_cen_xy[:, None, :]  # (na, nv, 2)
-            node_r = xp.sqrt(node_rxy[:, :, 0] ** 2
-                             + node_rxy[:, :, 1] ** 2)             # (na, nv)
-            # only basal nodes count toward the membrane spread (apical belt pulls in)
-            node_r_basal = xp.where(basal, node_r, 0.0)            # (na, nv)
-            r_spread = node_r_basal.max(axis=1)                    # (na,)
-            self._capture_R0_cluster(r_spread, timestep)
-            arrest = self._arrest_gain(xp, r_spread)               # (na,)
+            # SPREADING-ARREST keys on the COLONY FOOTPRINT RADIUS — the robust
+            # (90th-percentile) in-plane radius of ALL active basal nodes about their
+            # collective centroid. The over-spread is the basal FOOTPRINT exploding as
+            # cells DISPERSE outward (the cluster scattering), NOT per-cell membrane
+            # flattening nor cell-centroid drift (both stay bounded; measured directly
+            # — only the footprint radius tracks the blow-up). This is the colony-scale
+            # contact-inhibition-of-locomotion / membrane-tension stall: as the
+            # footprint approaches its physiological max R_max = factor·R0_footprint,
+            # the outward traction is smoothly switched off for EVERY rim cell (a
+            # single global gain), so the colony stops and the footprint plateaus.
+            R_foot = self._footprint_radius(xp, act_blk, basal)    # scalar (0-d)
+            self._capture_R0_cluster(xp.reshape(R_foot, (1,)), timestep)
+            arrest = self._arrest_gain(xp, R_foot)                 # scalar broadcast
 
             int_mult = xp.asarray(self.int_mult)
             gain = int_mult[active_ids]                   # (na,)
@@ -661,12 +680,9 @@ class DcmActiveRimTractionGPUVec(DcmActiveRimTractionGPU):
             fmag_host = (xp.asnumpy(fmag) if d.gpu else np.asarray(fmag))
             self.f_per_cell = {int(active_ids_host[i]): float(fmag_host[i])
                                for i in np.where(contrib_host)[0]}
-            # arrest diagnostic: mean gain over the contributing cells (matches the
-            # parent loop, which averages over the same rim+rn-passing set).
-            arrest_host = (xp.asnumpy(arrest) if d.gpu else np.asarray(arrest))
-            contrib_idx = np.where(contrib_host)[0]
-            self.arrest_gain_mean = (float(np.mean(arrest_host[contrib_idx]))
-                                     if contrib_idx.size else 1.0)
+            # arrest diagnostic: the single global colony-footprint arrest gain.
+            self.arrest_gain_mean = float(arrest)
+            self.rn_max = float(self._footprint_radius(xp, act_blk, basal))
 
             F = xp.empty_like(pos)
             F[perm] = F_g
@@ -797,8 +813,8 @@ class DcmFusedForceGPU(md.force.Custom):
                  f_act: float = 0.0, f_cap: float = 0.0, ramp_steps: int = 1,
                  contact_band: float = 0.5, neighbour_factor: float = 2.6,
                  max_neighbours: int = 9, belt_factor: float = 0.0,
-                 arrest_radius_factor: float | None = 1.35,
-                 arrest_width: float = 0.45,
+                 arrest_radius_factor: float | None = 1.12,
+                 arrest_width: float = 0.4,
                  arrest_settle_steps: int = 4000) -> None:
         super().__init__(aniso=False)
         self.n_cells = int(n_cells)
@@ -901,12 +917,11 @@ class DcmFusedForceGPU(md.force.Custom):
         rhat[:, 0] = rxy[:, 0] / rn_safe
         rhat[:, 1] = rxy[:, 1] / rn_safe
         # spreading-arrest gain on the per-cell OWN BASAL MEMBRANE RADIUS (same law
-        # as the vec force): basal-node spread about each cell's own centroid.
-        node_rxy = act_blk[:, :, :2] - cents[:, None, :2]
-        node_r = xp.sqrt(node_rxy[:, :, 0] ** 2 + node_rxy[:, :, 1] ** 2)
-        r_spread = xp.where(basal, node_r, 0.0).max(axis=1)
-        self._capture_R0_cluster(r_spread, timestep)
-        arrest = self._arrest_gain(xp, r_spread)
+        # as the vec force): the global colony-footprint arrest gain (p90 radius of
+        # all active basal nodes about their collective centroid → R_max stall).
+        R_foot = self._footprint_radius(xp, act_blk, basal)
+        self._capture_R0_cluster(xp.reshape(R_foot, (1,)), timestep)
+        arrest = self._arrest_gain(xp, R_foot)
         gain = xp.asarray(self.int_mult)[active_ids]
         fmag = xp.minimum(ramp * self.f_act * gain * arrest, self.f_cap)
         fmag = xp.where(contributes, fmag, 0.0)
@@ -929,9 +944,8 @@ class DcmFusedForceGPU(md.force.Custom):
         self.rim_cells = ids_h[is_rim_h].astype(np.int64)
         self.f_per_cell = {int(ids_h[i]): float(fmag_h[i])
                            for i in np.where(contrib_h)[0]}
-        arrest_h = xp.asnumpy(arrest) if d.gpu else np.asarray(arrest)
-        ci = np.where(contrib_h)[0]
-        self.arrest_gain_mean = float(np.mean(arrest_h[ci])) if ci.size else 1.0
+        self.arrest_gain_mean = float(arrest)
+        self.rn_max = float(R_foot)
         return F_act
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
