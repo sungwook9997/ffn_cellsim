@@ -1,0 +1,391 @@
+{
+  "summary": {
+    "n_cells": 200,
+    "r_cell_um": 22.0,
+    "dt_s": 1e-09,
+    "device": "CPU",
+    "N_particles": 8400,
+    "finite": true,
+    "R_spheroid_um": 184.34931751175947,
+    "A0_m2": 1.8480894427601213e-09,
+    "n_frames": 24,
+    "total_steps": 8900,
+    "gate_steps": 2000,
+    "steps_per_frame": 300,
+    "AoverA0_first": 2.5064186221380416,
+    "AoverA0_final": 3.2231160489211863,
+    "AoverA0_grows": true,
+    "n_necrotic_first": 0,
+    "n_necrotic_final": 2,
+    "core_emerges": true,
+    "rim_depth_um": 40.0,
+    "necrotic_depth_um": 150.0,
+    "accel_factor": 600000.0,
+    "t_real_first_s": 1.2000000000000002,
+    "t_real_final_s": 5.340000000000001,
+    "t_real_span_human": "1.2 s \u2192 5.34 s",
+    "t_sim_span_human": "2 \u00b5s \u2192 8.9 \u00b5s"
+  },
+  "trajectory": [
+    {
+      "frame": 0,
+      "step": 2000,
+      "label": "settle",
+      "AoverA0": 2.5064186221380416,
+      "A_m2": 4.632085794710684e-09,
+      "r_surface_um": 173.90791538480548,
+      "zone_counts": {
+        "rim": 107,
+        "quiescent": 93,
+        "necrotic": 0
+      },
+      "n_necrotic": 0,
+      "t_real_s": 1.2000000000000002
+    },
+    {
+      "frame": 1,
+      "step": 2300,
+      "label": "spread",
+      "AoverA0": 2.559027916471421,
+      "A_m2": 4.729312476159263e-09,
+      "r_surface_um": 174.7295923552579,
+      "zone_counts": {
+        "rim": 106,
+        "quiescent": 94,
+        "necrotic": 0
+      },
+      "n_necrotic": 0,
+      "t_real_s": 1.38
+    },
+    {
+      "frame": 2,
+      "step": 2600,
+      "label": "spread",
+      "AoverA0": 2.584407039713501,
+      "A_m2": 4.776215365889459e-09,
+      "r_surface_um": 175.41027216687903,
+      "zone_counts": {
+        "rim": 105,
+        "quiescent": 95,
+        "necrotic": 0
+      },
+      "n_necrotic": 0,
+      "t_real_s": 1.56
+    },
+    {
+      "frame": 3,
+      "step": 2900,
+      "label": "spread",
+      "AoverA0": 2.640566016553659,
+      "A_m2": 4.8800021781039654e-09,
+      "r_surface_um": 176.30379114399022,
+      "zone_counts": {
+        "rim": 104,
+        "quiescent": 96,
+        "necrotic": 0
+      },
+      "n_necrotic": 0,
+      "t_real_s": 1.7400000000000002
+    },
+    {
+      "frame": 4,
+      "step": 3200,
+      "label": "spread",
+      "AoverA0": 2.6936868911992895,
+      "A_m2": 4.9781743057267386e-09,
+      "r_surface_um": 177.15009246133064,
+      "zone_counts": {
+        "rim": 103,
+        "quiescent": 97,
+        "necrotic": 0
+      },
+      "n_necrotic": 0,
+      "t_real_s": 1.9200000000000002
+    },
+    {
+      "frame": 5,
+      "step": 3500,
+      "label": "spread",
+      "AoverA0": 2.7390572442025265,
+      "A_m2": 5.062022776126321e-09,
+      "r_surface_um": 178.00106754894634,
+      "zone_counts": {
+        "rim": 102,
+        "quiescent": 97,
+        "necrotic": 1
+      },
+      "n_necrotic": 1,
+      "t_real_s": 2.1
+    },
+    {
+      "frame": 6,
+      "step": 3800,
+      "label": "spread",
+      "AoverA0": 2.776602368748031,
+      "A_m2": 5.131409524425981e-09,
+      "r_surface_um": 178.72415724018035,
+      "zone_counts": {
+        "rim": 101,
+        "quiescent": 98,
+        "necrotic": 1
+      },
+      "n_necrotic": 1,
+      "t_real_s": 2.28
+    },
+    {
+      "frame": 7,
+      "step": 4100,
+      "label": "spread",
+      "AoverA0": 2.808393508196561,
+      "A_m2": 5.1901623936141245e-09,
+      "r_surface_um": 179.3342616542219,
+      "zone_counts": {
+        "rim": 99,
+        "quiescent": 100,
+        "necrotic": 1
+      },
+      "n_necrotic": 1,
+      "t_real_s": 2.4600000000000004
+    },
+    {
+      "frame": 8,
+      "step": 4400,
+      "label": "spread",
+      "AoverA0": 2.835385157039148,
+      "A_m2": 5.240045374882798e-09,
+      "r_surface_um": 179.84992284235977,
+      "zone_counts": {
+        "rim": 97,
+        "quiescent": 101,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 2.64
+    },
+    {
+      "frame": 9,
+      "step": 4700,
+      "label": "spread",
+      "AoverA0": 2.8587857369820635,
+      "A_m2": 5.2832917396297645e-09,
+      "r_surface_um": 180.285974433054,
+      "zone_counts": {
+        "rim": 97,
+        "quiescent": 101,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 2.82
+    },
+    {
+      "frame": 10,
+      "step": 5000,
+      "label": "spread",
+      "AoverA0": 2.879865008902139,
+      "A_m2": 5.322248119526326e-09,
+      "r_surface_um": 180.65672831416,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 3.0000000000000004
+    },
+    {
+      "frame": 11,
+      "step": 5300,
+      "label": "spread",
+      "AoverA0": 2.898666919637973,
+      "A_m2": 5.356995732260939e-09,
+      "r_surface_um": 180.97304664877348,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 3.18
+    },
+    {
+      "frame": 12,
+      "step": 5600,
+      "label": "spread",
+      "AoverA0": 2.915782104321065,
+      "A_m2": 5.388626124384651e-09,
+      "r_surface_um": 181.24272021908118,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 3.3600000000000003
+    },
+    {
+      "frame": 13,
+      "step": 5900,
+      "label": "spread",
+      "AoverA0": 2.931795773839637,
+      "A_m2": 5.418220817961773e-09,
+      "r_surface_um": 181.4722270097044,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 3.54
+    },
+    {
+      "frame": 14,
+      "step": 6200,
+      "label": "spread",
+      "AoverA0": 2.9467612992334393,
+      "A_m2": 5.445878447447418e-09,
+      "r_surface_um": 181.66899718823385,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 3.7200000000000006
+    },
+    {
+      "frame": 15,
+      "step": 6500,
+      "label": "spread",
+      "AoverA0": 2.9608106129009566,
+      "A_m2": 5.471842835714382e-09,
+      "r_surface_um": 181.8381169427973,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 3.9000000000000004
+    },
+    {
+      "frame": 16,
+      "step": 6800,
+      "label": "spread",
+      "AoverA0": 2.977774799893455,
+      "A_m2": 5.503194170600227e-09,
+      "r_surface_um": 182.04579237607086,
+      "zone_counts": {
+        "rim": 96,
+        "quiescent": 102,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 4.08
+    },
+    {
+      "frame": 17,
+      "step": 7100,
+      "label": "spread",
+      "AoverA0": 3.0099034325662006,
+      "A_m2": 5.562570757453046e-09,
+      "r_surface_um": 182.3690811508747,
+      "zone_counts": {
+        "rim": 95,
+        "quiescent": 103,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 4.260000000000001
+    },
+    {
+      "frame": 18,
+      "step": 7400,
+      "label": "spread",
+      "AoverA0": 3.043132923436325,
+      "A_m2": 5.623981828718417e-09,
+      "r_surface_um": 182.641644450256,
+      "zone_counts": {
+        "rim": 95,
+        "quiescent": 103,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 4.44
+    },
+    {
+      "frame": 19,
+      "step": 7700,
+      "label": "spread",
+      "AoverA0": 3.078445807526533,
+      "A_m2": 5.689243196998942e-09,
+      "r_surface_um": 182.9170346125836,
+      "zone_counts": {
+        "rim": 95,
+        "quiescent": 103,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 4.62
+    },
+    {
+      "frame": 20,
+      "step": 8000,
+      "label": "spread",
+      "AoverA0": 3.1169224500863955,
+      "A_m2": 5.760351473906679e-09,
+      "r_surface_um": 183.31226257780222,
+      "zone_counts": {
+        "rim": 94,
+        "quiescent": 104,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 4.800000000000001
+    },
+    {
+      "frame": 21,
+      "step": 8300,
+      "label": "spread",
+      "AoverA0": 3.149019147869252,
+      "A_m2": 5.819669042226638e-09,
+      "r_surface_um": 183.64223277143017,
+      "zone_counts": {
+        "rim": 93,
+        "quiescent": 105,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 4.98
+    },
+    {
+      "frame": 22,
+      "step": 8600,
+      "label": "spread",
+      "AoverA0": 3.185201168347075,
+      "A_m2": 5.886536652289434e-09,
+      "r_surface_um": 183.97533482545046,
+      "zone_counts": {
+        "rim": 93,
+        "quiescent": 105,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 5.16
+    },
+    {
+      "frame": 23,
+      "step": 8900,
+      "label": "spread",
+      "AoverA0": 3.2231160489211863,
+      "A_m2": 5.956606742801959e-09,
+      "r_surface_um": 184.34931751175947,
+      "zone_counts": {
+        "rim": 92,
+        "quiescent": 106,
+        "necrotic": 2
+      },
+      "n_necrotic": 2,
+      "t_real_s": 5.340000000000001
+    }
+  ]
+}
