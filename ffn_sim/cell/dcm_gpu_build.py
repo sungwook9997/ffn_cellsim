@@ -52,7 +52,51 @@ from ffn_sim.cell.dcm_gpu_forces import (
     DcmSubstrateForceGPU,
     DcmActiveRimTractionGPU,
     DcmActiveRimTractionGPUVec,
+    on_gpu,
 )
+
+
+class SettlingForce(md.force.Custom):
+    """Weak constant downward (−z) body force on the live membrane nodes — the
+    sedimentation / plating of the spheroid onto the dish.
+
+    WETTING DRIVER (2026-06-11 fix): without it the adhesive substrate well only
+    grips nodes already near z0, so a free spheroid floats (~20% contact, never
+    wets — diagnosed maxZ stays ~54 µm, footprint flat). A plated spheroid
+    sediments under its buoyant weight, contacts, then wets/spreads by adhesion +
+    active crawling. Applies only to ``mem_typeid`` (live membrane), never the
+    parked dormant pool. Device-dispatched (GPU cupy / CPU numpy).
+    """
+
+    def __init__(self, *, f_settle: float, mem_typeid: int = 0) -> None:
+        super().__init__(aniso=False)
+        self.f = float(f_settle)
+        self.mem_typeid = int(mem_typeid)
+        self._gpu: bool | None = None
+        self._xp = None
+
+    def _setup(self) -> None:
+        if self._gpu is None:
+            self._gpu = on_gpu(self._state)
+            if self._gpu:
+                import cupy as cp           # guarded GPU-only import
+                self._xp = cp
+            else:
+                self._xp = np
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        self._setup()
+        xp = self._xp
+        snap_ctx = (self._state.gpu_local_snapshot if self._gpu
+                    else self._state.cpu_local_snapshot)
+        with snap_ctx as snap:
+            tid = xp.asarray(snap.particles.typeid)
+            fz = xp.where(tid == self.mem_typeid, -self.f, 0.0)
+        farr_ctx = (self.gpu_local_force_arrays if self._gpu
+                    else self.cpu_local_force_arrays)
+        with farr_ctx as arr:
+            arr.force[:] = 0.0
+            arr.force[:, 2] = fz
 # Prolif-aware activity-LOD (Problem 2 fix) subclasses the FROZEN classifier; the
 # frozen module (dcm_gpu_lod.py) is imported, never modified. No circular import:
 # dcm_gpu_lod imports only from dcm_gpu_forces.
@@ -195,7 +239,12 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
 # Full GPU-friendly simulation assembly
 # ---------------------------------------------------------------------------
 def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
-                             active: bool = False, fast_active: bool = True):
+                             active: bool = False, fast_active: bool = True,
+                             arrest: bool = True,
+                             arrest_radius_factor: float = 1.35,
+                             arrest_width: float = 0.45,
+                             arrest_settle_steps: int = 4000,
+                             settle_force: float = 4.0e-10):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
     No native md.mesh, no per-cell mesh/particle/bond types. Returns a dict of
@@ -213,6 +262,23 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             bit-identical (max abs diff < 1e-10 N, ``test_dcm_active_vec_parity.py``)
             and collapses that to a handful of ms. Default True (the win); pass
             False to wire the original loop (e.g. for an A/B wall comparison).
+        arrest: SPREADING-ARREST (membrane-tension / contact-inhibition stall),
+            default ON (production gets the physical plateau). The outward rim
+            traction is smoothly switched off as a rim cell's radial spread
+            approaches ``arrest_radius_factor · R0_cluster`` so the spheroid reaches
+            and HOLDS a stable A/A₀ plateau instead of blowing up. Pass
+            ``arrest=False`` for the legacy no-arrest blow-up path (the A/B control).
+        arrest_radius_factor: the cap on each rim cell's radial spread as a multiple
+            of the SETTLED cluster radius R0 (captured after ``arrest_settle_steps``,
+            N-invariant). At plateau the footprint area ≈ factor² × the settled area,
+            and the settled footprint is already ~1.5× A₀ (the gapped start compacts
+            then begins to spread by the settle), so factor 1.35 → plateau A/A₀ ≈
+            1.5·1.35² ≈ 2.7 ∈ the physiological [2,4] band.
+        arrest_width: the smooth-ramp width as a fraction of r_max (the arrest gain
+            falls from 1 to 0 across ``[(1−width)·r_max, r_max]``). Default 0.45.
+        arrest_settle_steps: defer the R0 capture until this step so the cap anchors
+            to the COMPACTED cluster, not the gapped t≈0 radius (which is too large →
+            cap unreachable → arrest never engages). Default 4000 (= the ramp).
     """
     from ffn_sim.integrator.baoab import make_baoab_updater
 
@@ -265,6 +331,20 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell, k_sub=p.k_sub_Nm)
     ig.forces.append(substrate)
 
+    # SEDIMENTATION / PLATING — a weak constant downward body force on the live
+    # membrane nodes. WHY (the wetting fix, 2026-06-11): the adhesive substrate
+    # well only acts on nodes already within adh_range of z0, so a free spheroid
+    # FLOATS (only its bottom ~20% touches) and never wets — diagnosed: maxZ stays
+    # ~54 µm, footprint flat. A plated spheroid physically SEDIMENTS onto the dish
+    # under its (buoyant) weight, contacts, then the cells wet/spread by adhesion +
+    # active crawling. This force supplies that sedimentation. Calibrated (diagnostic
+    # sweep): f_settle≈4e-10 N/node brings maxZ 54→~33 µm with all cells reaching
+    # the substrate and the footprint growing — i.e. genuine wetting/spreading (vs
+    # 0 = floats, 1.5e-9 = full pancake). Applies only to the mem type (typeid 0),
+    # never the parked dormant pool. f_settle=0 disables (legacy float behaviour).
+    if settle_force and settle_force > 0.0:
+        ig.forces.append(SettlingForce(f_settle=settle_force, mem_typeid=0))
+
     traction = None
     # integrin_gain (n_cells,) is the MUTABLE per-cell integrin (cell-substrate)
     # multiplier the junction switch RAISES in place. When active=True it IS the
@@ -284,7 +364,9 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
             neighbour_factor=2.6, max_neighbours=9, integrin_switch_gain=3.0,
-            belt_factor=0.25)
+            belt_factor=0.25,
+            arrest_radius_factor=(arrest_radius_factor if arrest else None),
+            arrest_width=arrest_width, arrest_settle_steps=arrest_settle_steps)
         ig.forces.append(traction)
 
     sim.operations.integrator = ig
@@ -473,7 +555,8 @@ def attach_junction_switch(handles: dict, *, sp=None, cadence: int = 500):
 
 def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
                               device=None, active: bool = False,
-                              fast_active: bool = True):
+                              fast_active: bool = True, arrest: bool = True,
+                              arrest_radius_factor: float = 1.7):
     """GPU-friendly DCM spheroid with a PRE-ALLOCATED proliferation pool.
 
     Builds ``n_max`` icosphere shells in a SINGLE fixed tag space (so the K1
@@ -602,7 +685,9 @@ def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
             neighbour_factor=2.6, max_neighbours=9, integrin_switch_gain=3.0,
-            belt_factor=0.25)
+            belt_factor=0.25,
+            arrest_radius_factor=(arrest_radius_factor if arrest else None),
+            arrest_width=arrest_width, arrest_settle_steps=arrest_settle_steps)
         ig.forces.append(traction)
 
     sim.operations.integrator = ig
