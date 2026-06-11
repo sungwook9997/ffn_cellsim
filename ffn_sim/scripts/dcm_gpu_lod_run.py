@@ -102,6 +102,30 @@ def _radius_of_gyration(pos: np.ndarray) -> float:
     return float(np.sqrt(((pos - c) ** 2).sum(1).mean()))
 
 
+def _live_necrotic_count(h: dict, pos: np.ndarray, necrotic_depth_um: float) -> int:
+    """Necrotic count over LIVE pool cells ONLY (parked dormant cells excluded).
+
+    The LOD classifier (``dcm_gpu_lod.py``, read-only) computes its depth /
+    centroid over ALL n_max pool cells, so the parked dormant cells (z≈60·R, far
+    off) corrupt the surface radius and make every LIVE cell read "deep" →
+    spuriously necrotic. Here we restrict to LIVE cells (``cell_of_node ≥ 0``),
+    compute their OWN centroid + surface radius, and count cells deeper than the
+    necrosis onset. At R_surface ≪ 150 µm this is 0, as physics requires.
+    """
+    live = _live_node_mask(h, pos.shape[0])
+    ranges = h["ranges"]
+    con = np.asarray(h["cell_of_node"])
+    live_cells = [c for c in range(len(ranges))
+                  if con[ranges[c][0]] >= 0]
+    if len(live_cells) == 0:
+        return 0
+    cents = np.array([pos[ranges[c][0]:ranges[c][1]].mean(0) for c in live_cells])
+    cluster_cen = cents.mean(0)
+    r_cell = np.linalg.norm(cents - cluster_cen, axis=1)
+    depth = float(r_cell.max()) - r_cell
+    return int((depth > necrotic_depth_um * 1.0e-6).sum())
+
+
 def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
              use_lod: bool, lod_cfg: ResolvedLOD, device=None,
              prolif: bool = False, p_div: float = 0.04, div_every: int = 4000,
@@ -132,7 +156,8 @@ def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
     if prolif:
         prolif_upd = GpuProliferationUpdater(
             handles=h, p_div=p_div, gap_factor=0.4,
-            cell_inert=h.get("cell_inert"), rng_seed=p.seed + 3)
+            cell_inert=h.get("cell_inert"),
+            necrotic_depth_um=lod_cfg.necrotic_depth_um, rng_seed=p.seed + 3)
         sim.operations.updaters.append(_hoomd.update.CustomUpdater(
             action=prolif_upd, trigger=_hoomd.trigger.Periodic(div_every)))
 
@@ -172,15 +197,34 @@ def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
         steps_per_s=(steps / wall if wall > 0 else float("nan")),
     )
     if prolif:
+        # Necrosis over LIVE cells ONLY (the parked dormant pool corrupts the
+        # pool-wide LOD depth/centroid → spurious all-necrotic; see helper).
+        n_necrotic_live = _live_necrotic_count(h, pos1, lod_cfg.necrotic_depth_um)
         m.update(dict(
             n_active_final=n_active_final,
             n_divisions=(prolif_upd.n_divisions if prolif_upd else 0),
+            n_necrotic_live=n_necrotic_live,
             n_max=h["n_max"], p_div=p_div, div_every=div_every))
     if lod is not None:
-        m.update(dict(
-            n_active=lod.n_active, n_inert=lod.n_inert, n_necrotic=lod.n_necrotic,
-            active_frac=lod.active_frac, necrotic_frac=lod.necrotic_frac,
-            k_freeze=h.get("lod_kfreeze")))
+        if prolif:
+            # Report the LIVE-cell necrosis (parked dormant pool excluded), not the
+            # LOD classifier's pool-wide count (which mislabels every live cell).
+            n_live = n_active_final
+            m.update(dict(
+                n_active=lod.n_active, n_inert=max(0, n_live - n_necrotic_live),
+                n_necrotic=n_necrotic_live,
+                active_frac=lod.active_frac,
+                necrotic_frac=(n_necrotic_live / max(1, n_live)),
+                k_freeze=h.get("lod_kfreeze")))
+        else:
+            m.update(dict(
+                n_active=lod.n_active, n_inert=lod.n_inert,
+                n_necrotic=lod.n_necrotic,
+                active_frac=lod.active_frac, necrotic_frac=lod.necrotic_frac,
+                k_freeze=h.get("lod_kfreeze")))
+    elif prolif:
+        # No LOD wired but prolif on → still report the live-cell necrosis count.
+        m["n_necrotic"] = n_necrotic_live
     return m, sim
 
 

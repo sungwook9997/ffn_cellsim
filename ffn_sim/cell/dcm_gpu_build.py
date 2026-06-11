@@ -468,7 +468,8 @@ class GpuProliferationUpdater(hoomd.custom.Action):
     """
 
     def __init__(self, *, handles: dict, p_div: float, gap_factor: float = 0.4,
-                 cell_inert: np.ndarray | None = None, rng_seed: int = 99) -> None:
+                 cell_inert: np.ndarray | None = None,
+                 necrotic_depth_um: float = 150.0, rng_seed: int = 99) -> None:
         super().__init__()
         self.h = handles
         self.sim = handles["sim"]
@@ -487,7 +488,15 @@ class GpuProliferationUpdater(hoomd.custom.Action):
         self.contact_band = 0.6
         self.p_div = float(p_div)
         self.gap = float(gap_factor * p.R_cell)
-        self.cell_inert = cell_inert
+        # NOTE: the pool-wide LOD ``cell_inert`` mask is NOT used to gate division.
+        # It is classified over ALL n_max pool cells including the PARKED dormant
+        # cells (at z≈60·R, far off), which corrupt the cluster centroid +
+        # per-cell depth-from-surface so the live cells spuriously read "deep" →
+        # necrotic → every live cell inert → division never fires. We compute the
+        # necrosis gate over the LIVE subset only (see ``_live_necrotic``).
+        self.cell_inert = cell_inert  # kept for back-compat / introspection only
+        self.necrotic_depth_m = float(necrotic_depth_um) * 1.0e-6
+        self.n_necrotic_live = 0     # last live-cell necrotic count (diagnostic)
         self._rng = np.random.default_rng(rng_seed)
         self.n_divisions = 0
         self._sim = None
@@ -511,6 +520,32 @@ class GpuProliferationUpdater(hoomd.custom.Action):
         first_node = np.array([self.ranges[c][0] for c in range(len(self.ranges))])
         return self.cell_of_node[first_node] >= 0
 
+    @staticmethod
+    def live_necrotic_mask(cents_live: np.ndarray, cluster_cen: np.ndarray,
+                           necrotic_depth_m: float) -> np.ndarray:
+        """Necrosis mask over the LIVE centroids ONLY (radial-depth proxy).
+
+        Mirrors the LOD classifier's necrosis rule (depth from the cluster
+        surface > ``necrotic_depth``), but computed on the LIVE-cell centroids
+        and their OWN centroid — so the parked dormant pool cells never enter the
+        surface-radius / depth estimate. At small spheroids (R_surface ≪ 150 µm)
+        every depth is below threshold → necrotic mask all-False → necrosis = 0.
+
+        Args:
+            cents_live: (n_live, 3) live-cell centroids.
+            cluster_cen: (3,) live-cell cluster centroid.
+            necrotic_depth_m: depth-from-surface necrosis onset [m].
+
+        Returns:
+            (n_live,) bool — True where the live cell is in the necrotic core.
+        """
+        if cents_live.shape[0] == 0:
+            return np.zeros(0, dtype=bool)
+        r_cell = np.linalg.norm(cents_live - cluster_cen, axis=1)
+        r_surface = float(r_cell.max())
+        depth = r_surface - r_cell
+        return depth > necrotic_depth_m
+
     def act(self, timestep: int) -> None:  # noqa: D401
         live = self._live_mask()
         free = np.where(~live)[0]
@@ -528,6 +563,12 @@ class GpuProliferationUpdater(hoomd.custom.Action):
                           for c in live_ids])
         cluster_cen = cents.mean(0)
 
+        # NECROSIS gate over the LIVE subset ONLY (parked pool excluded). Indexed
+        # by position in ``live_ids``, parallel to ``cents`` / ``rim_k``.
+        necrotic_live = self.live_necrotic_mask(
+            cents, cluster_cen, self.necrotic_depth_m)
+        self.n_necrotic_live = int(necrotic_live.sum())
+
         # RIM = convex-hull vertices of the LIVE centroids (free-edge geometry).
         try:
             from scipy.spatial import ConvexHull
@@ -543,8 +584,8 @@ class GpuProliferationUpdater(hoomd.custom.Action):
             c = int(live_ids[k])
             if free_ptr >= free.size:
                 break  # pool exhausted this act
-            if self.cell_inert is not None and bool(self.cell_inert[c]):
-                continue  # necrotic / jammed core (LOD) — gate division off
+            if bool(necrotic_live[k]):
+                continue  # necrotic core (live-cell depth gate) — no division
             lo, hi = self.ranges[c]
             if not bool((pos_g[lo:hi][:, 2] < zc).any()):
                 continue  # not in substrate contact — no free basal edge
