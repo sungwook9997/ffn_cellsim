@@ -130,6 +130,42 @@ contract; checks marked ``RUNTIME`` are asserted in
      instrumenting the Updater with a deterministic RNG and checking
      the buffer state after two calls.
 
+Device dispatch (GPU-main port, 2026-06-11 — PI integrator-freeze sign-off)
+--------------------------------------------------------------------------
+``act()`` is device-dispatched. On a ``hoomd.device.CPU`` it runs the
+ORIGINAL numpy + ``cpu_local_snapshot`` path, **byte-for-byte unchanged**
+(same per-Action ``np.random.default_rng(seed)`` stream, same draw order,
+same tag-indexed gather/scatter, same ``_wrap_into_box``) — this is the
+regression-critical invariant that keeps every H.1–H.5 CPU gate, the
+KU-3.5 cortex / L_p / KU-3.20 nematic trajectories, and ``test_baoab.py``
+bit-identical. On a ``hoomd.device.GPU`` the WHOLE hot loop runs
+device-resident over ``gpu_local_snapshot`` with cupy (positions /
+net_force / image / tag read as cupy, ``dr`` computed in cupy, positions
+and image flags written in place) — NO per-step GPU→CPU sync. This is the
+A5000 step-rate unlock for long-real-time spreading runs (the per-step
+``cpu_local_snapshot`` host transfer was the cap).
+
+The cupy import is GUARDED (deferred to first GPU ``act()`` via
+``constrained_baoab.array_backend``), so this module imports and the CPU
+path runs on a machine with no CUDA / no cupy. The GPU branch is only
+ever taken under ``on_gpu(sim)`` (``isinstance(sim.device,
+hoomd.device.GPU)``), so a ``device=GPU`` request on a CUDA-less host
+never reaches it (HOOMD itself would fail to construct the GPU device
+first).
+
+**HONEST RNG CAVEAT — GPU trajectories are NOT bit-identical to CPU.**
+The GPU noise stream uses ``cupy.random`` (a cupy ``Generator`` seeded
+from the same ``seed``); cupy's Gaussian generator is a different
+algorithm from numpy's, so the per-step ``W_n`` draws differ. Therefore
+the *stochastic* part of the displacement differs between GPU and CPU by
+necessity. What IS identical: the DETERMINISTIC force-displacement
+``(F/γ)·Δt``, the prefactor ``√(kT/(2γΔt))``, the dt, the γ map, and the
+Leimkuhler-Matthews two-Gaussian-average scheme. The GPU and CPU
+dynamics are therefore *statistically equivalent* (same kT, γ, dt, same
+L-M sampler), not trajectory-identical. The CPU path is the regression
+oracle and stays bit-identical; GPU execution + speedup are
+gbook-A5000-validated separately (this dev Mac has no CUDA device).
+
 Failure handling
 ----------------
 If any RUNTIME check fails, ``act`` raises and the Simulation halts.
@@ -175,6 +211,15 @@ import numpy as np
 
 import hoomd
 import hoomd.custom
+
+# NOTE on imports (GPU-main port, 2026-06-11): this module is foundational —
+# ``constrained_baoab`` imports ``_wrap_into_box`` FROM here, so ``baoab`` must
+# NOT import ``constrained_baoab`` (or ``dcm_gpu_forces``, which pulls the GPU
+# kernels) at module top, on pain of an import cycle. The device-dispatch
+# helpers (``on_gpu`` device check, cupy ``array_backend``) are therefore
+# imported LAZILY inside ``attach()`` / ``act()``, only when a GPU device is
+# actually in play. The cupy-compatible wrap is the local ``_wrap_into_box_xp``
+# below. The CPU/dev path never touches any of this and never needs cupy.
 
 
 class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
@@ -241,6 +286,7 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self.kT = float(kT)
         self.dt = float(dt)
         self.gamma_map = dict(gamma)
+        self._seed = int(seed)
         self._rng = np.random.default_rng(seed)
 
         # All per-particle state below is indexed by HOOMD particle TAG
@@ -253,6 +299,16 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._prv_rnds: np.ndarray | None = None  # shape (N_tags, 3)
         self._sim_ref: hoomd.Simulation | None = None
         self._steps_run: int = 0
+
+        # Device-dispatch state (GPU-main port, 2026-06-11). All None / numpy
+        # until attach() inspects the device. On a GPU device, attach() flips
+        # ``_on_gpu`` True, sets ``_xp`` to cupy, re-seeds ``_rng`` as a cupy
+        # Generator (statistical — NOT bit-identical — noise; see module
+        # docstring §Device dispatch), and converts the per-tag buffers to
+        # cupy. On CPU these stay numpy and the path is byte-for-byte the
+        # original code.
+        self._on_gpu: bool = False
+        self._xp = np
 
     # ------------------------------------------------------------------
     # HOOMD Action lifecycle
@@ -321,6 +377,30 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         self._prv_rnds = np.zeros((N, 3), dtype=np.float64)
         self._steps_run = 0
 
+        # Device dispatch (GPU-main port, 2026-06-11). The buffers above are
+        # built once on the host (cheap, attach-time only). If the simulation
+        # runs on a GPU device, flip the whole hot loop onto cupy +
+        # gpu_local_snapshot: convert the per-tag buffers to cupy and re-seed
+        # the RNG as a cupy Generator. The cupy import is deferred to here via
+        # ``array_backend`` and is reached ONLY on a real GPU device — the
+        # CPU/dev path (no cupy installed) never enters this branch. The GPU
+        # noise stream is statistically equivalent but NOT bit-identical to
+        # the numpy CPU stream (different Gaussian algorithm); the CPU path
+        # remains the bit-identical regression oracle. See module docstring
+        # §Device dispatch for the honest RNG caveat.
+        from ffn_sim.cell.dcm_gpu_forces import on_gpu  # lazy: avoid import cycle
+        self._on_gpu = on_gpu(simulation)
+        if self._on_gpu:
+            from ffn_sim.integrator.constrained_baoab import (
+                array_backend,  # lazy: deferred cupy import, GPU hosts only
+            )
+            xp = array_backend(True)
+            self._xp = xp
+            self._rng = xp.random.default_rng(self._seed)
+            self._gamma_by_tag = xp.asarray(self._gamma_by_tag)
+            self._bd_prefactor_by_tag = xp.asarray(self._bd_prefactor_by_tag)
+            self._prv_rnds = xp.asarray(self._prv_rnds)
+
     def _extend_tag_buffers(
         self,
         *,
@@ -342,23 +422,36 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
 
         Invariants:
           - Existing tags' buffer entries are unchanged (bit-for-bit
-            regression for fixed-N workloads).
+            regression for fixed-N workloads). On GPU the existing cupy
+            buffer entries are preserved identically (concatenation, not
+            overwrite).
           - New tag type must already be in ``self.gamma_map`` — the
             upstream Updater must extend gamma_map BEFORE the topology
             mutation (typically: register the new type's drag at
             ``Cell.build`` time, when the actin_lamel type is first
             added to the simulation state).
+
+        Device dispatch (GPU-main port, 2026-06-11): the buffers are
+        extended with ``self._xp`` (cupy on a GPU device, numpy on CPU),
+        so a division event that grows the tag space mid-run keeps the
+        per-tag buffers device-resident. ``tag`` / ``typeid`` may be cupy
+        arrays here; the new-tag lookup uses ``xp.where`` and converts only
+        the (rare) per-new-tag scalar index to host — a tiny sync confined
+        to topology-mutation events, off the per-step hot path. With
+        ``xp is numpy`` the body is byte-for-byte the original code.
         """
-        new_gamma = np.empty(new_buf_size - old_buf_size, dtype=np.float64)
+        xp = self._xp
+        n_new = new_buf_size - old_buf_size
+        new_gamma = np.empty(n_new, dtype=np.float64)
         for t in range(old_buf_size, new_buf_size):
-            rows = np.where(tag == t)[0]
-            if rows.size != 1:
+            rows = xp.where(tag == t)[0]
+            if int(rows.shape[0]) != 1:
                 raise RuntimeError(
                     f"New tag {t} expected to appear exactly once in "
-                    f"snapshot; found {rows.size}. Tag-space mutation "
-                    "must be append-only with dense tags."
+                    f"snapshot; found {int(rows.shape[0])}. Tag-space "
+                    "mutation must be append-only with dense tags."
                 )
-            tname = type_names[int(typeid[rows[0]])]
+            tname = type_names[int(typeid[int(rows[0])])]
             if tname not in self.gamma_map:
                 raise RuntimeError(
                     f"gamma_map missing entry for type '{tname}' of "
@@ -369,16 +462,19 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         new_bd_pref = np.sqrt(
             self.kT / (2.0 * new_gamma * self.dt)
         ).reshape(-1, 1)
-        self._gamma_by_tag = np.concatenate([self._gamma_by_tag, new_gamma])
-        self._bd_prefactor_by_tag = np.concatenate(
-            [self._bd_prefactor_by_tag, new_bd_pref], axis=0
+        # Place the freshly-built host blocks on the active device before the
+        # concatenate (no-op on CPU where xp is numpy; host→device copy of the
+        # small new-tag block on GPU).
+        new_gamma_x = xp.asarray(new_gamma)
+        new_bd_pref_x = xp.asarray(new_bd_pref)
+        self._gamma_by_tag = xp.concatenate([self._gamma_by_tag, new_gamma_x])
+        self._bd_prefactor_by_tag = xp.concatenate(
+            [self._bd_prefactor_by_tag, new_bd_pref_x], axis=0
         )
-        self._prv_rnds = np.concatenate(
+        self._prv_rnds = xp.concatenate(
             [
                 self._prv_rnds,
-                np.zeros(
-                    (new_buf_size - old_buf_size, 3), dtype=np.float64
-                ),
+                xp.zeros((n_new, 3), dtype=np.float64),
             ],
             axis=0,
         )
@@ -405,12 +501,25 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
         sim = self._sim_ref
         assert sim is not None  # set in attach()
 
-        with sim.state.cpu_local_snapshot as snap:
-            pos = np.asarray(snap.particles.position)         # (N, 3) rw
-            F = np.asarray(snap.particles.net_force)          # (N, 3) ro
-            image = np.asarray(snap.particles.image)          # (N, 3) rw
-            tag = np.asarray(snap.particles.tag)              # (N,) stable id
-            typeid = np.asarray(snap.particles.typeid)        # (N,) type lookup
+        # Device dispatch (GPU-main port, 2026-06-11). On a GPU device the
+        # WHOLE hot loop runs device-resident over ``gpu_local_snapshot`` with
+        # cupy (``xp``) — NO per-step GPU→CPU sync, which was the A5000
+        # step-rate cap. On CPU ``xp is numpy``, the context is
+        # ``cpu_local_snapshot``, and the wrap is the frozen
+        # :func:`_wrap_into_box`, so every operation below is byte-for-byte the
+        # original code (the regression-critical invariant). See the module
+        # docstring §Device dispatch for the honest GPU/CPU RNG caveat.
+        xp = self._xp
+        snap_ctx = (
+            sim.state.gpu_local_snapshot if self._on_gpu
+            else sim.state.cpu_local_snapshot
+        )
+        with snap_ctx as snap:
+            pos = xp.asarray(snap.particles.position)         # (N, 3) rw
+            F = xp.asarray(snap.particles.net_force)          # (N, 3) ro
+            image = xp.asarray(snap.particles.image)          # (N, 3) rw
+            tag = xp.asarray(snap.particles.tag)              # (N,) stable id
+            typeid = xp.asarray(snap.particles.typeid)        # (N,) type lookup
             N = pos.shape[0]
 
             # Tag-space mutation handling (Path A, PI-ratified 2026-05-29).
@@ -448,12 +557,14 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
                     "be append-only."
                 )
 
-            if not np.all(np.isfinite(F)):
-                bad = np.argwhere(~np.isfinite(F))
+            if not bool(xp.all(xp.isfinite(F))):
+                bad = xp.argwhere(~xp.isfinite(F))[:5]
+                if self._on_gpu:
+                    bad = xp.asnumpy(bad)
                 raise FloatingPointError(
                     f"Non-finite net_force at timestep={timestep}; "
                     f"first offending (particle, dim) entries: "
-                    f"{bad[:5].tolist()}. AFINES analogue: "
+                    f"{bad.tolist()}. AFINES analogue: "
                     "bead::update_force abort (bead.cpp:54-63)."
                 )
 
@@ -471,20 +582,28 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
             )
             new_pos = pos + dr
 
-            if not np.all(np.isfinite(new_pos)):
-                bad = np.argwhere(~np.isfinite(new_pos))
+            if not bool(xp.all(xp.isfinite(new_pos))):
+                bad = xp.argwhere(~xp.isfinite(new_pos))[:5]
+                if self._on_gpu:
+                    bad = xp.asnumpy(bad)
                 raise FloatingPointError(
                     f"Non-finite position after L-M step at timestep={timestep}; "
-                    f"first offending entries: {bad[:5].tolist()}."
+                    f"first offending entries: {bad.tolist()}."
                 )
 
             # Minimum-image wrap into the (possibly Lees-Edwards-sheared)
             # simulation box, updating image flags. HOOMD 7's Python Box
             # exposes no public ``wrap``; we implement the upper-triangular
             # fractional-coord wrap directly so xy-tilt (used by KU-1.30 #2
-            # strain stiffening) is handled correctly.
+            # strain stiffening) is handled correctly. On CPU this is the
+            # frozen :func:`_wrap_into_box` (byte-for-byte); on GPU the
+            # cupy sibling :func:`_wrap_into_box_xp` keeps positions
+            # device-resident (same wrap math + int32 image-overflow guard).
             box = sim.state.box
-            wrapped, img_delta = _wrap_into_box(new_pos, box)
+            if self._on_gpu:
+                wrapped, img_delta = _wrap_into_box_xp(new_pos, box, xp)
+            else:
+                wrapped, img_delta = _wrap_into_box(new_pos, box)
             pos[:] = wrapped
             image[:] = image + img_delta
 
@@ -498,9 +617,19 @@ class LeimkuhlerMatthewsBAOAB(hoomd.custom.Action):
     # ------------------------------------------------------------------
     @property
     def prv_rnds(self) -> np.ndarray | None:
-        """Read-only view of the persisted W_{n-1} buffer (None pre-attach)."""
+        """Read-only host-numpy view of the persisted W_{n-1} buffer.
+
+        ``None`` pre-attach. On a GPU device ``_prv_rnds`` is a cupy array;
+        this property copies it to host (``cupy.asnumpy``) so callers /
+        tests always see a numpy array. On CPU it returns a read-only view
+        of the live numpy buffer (zero-copy), unchanged from the original.
+        """
         if self._prv_rnds is None:
             return None
+        if self._on_gpu:
+            v = np.asarray(self._xp.asnumpy(self._prv_rnds))
+            v.flags.writeable = False
+            return v
         v = self._prv_rnds.view()
         v.flags.writeable = False
         return v
@@ -578,6 +707,78 @@ def _wrap_into_box(
     out[:, 2] = Lz * fz
 
     img_delta = np.empty_like(pos, dtype=np.int32)
+    img_delta[:, 0] = nx.astype(np.int32)
+    img_delta[:, 1] = ny.astype(np.int32)
+    img_delta[:, 2] = nz.astype(np.int32)
+    return out, img_delta
+
+
+def _wrap_into_box_xp(
+    pos, box: hoomd.box.Box, xp
+) -> tuple["object", "object"]:
+    """Device-aware sibling of :func:`_wrap_into_box` (GPU-main port).
+
+    Same upper-triangular fractional-coordinate wrap and the same §4
+    int32-image overflow guard as the frozen CPU :func:`_wrap_into_box`,
+    but every array op dispatches through ``xp`` so it runs on cupy when
+    ``pos`` is a ``gpu_local_snapshot`` device array (no host transfer of
+    the position array). With ``xp is numpy`` it is identical to
+    :func:`_wrap_into_box` (so the GPU branch and the CPU branch share the
+    same wrap math). Box dimensions are HOST scalars (reading ``box.Lx``
+    etc. does not sync device arrays); ``pos`` is the only device array.
+    The three ``.any()`` / ``.max()`` reductions in the guard are 0-d
+    device→host scalars (a tiny, necessary safety sync — not a full-array
+    transfer), matching ``constrained_baoab._wrap_into_box_xp``.
+
+    Returns ``(wrapped_pos, image_delta)`` as ``xp`` arrays (float64 /
+    int32), matching the frozen reference's contract.
+    """
+    Lx, Ly, Lz = box.Lx, box.Ly, box.Lz
+    xy, xz, yz = box.xy, box.xz, box.yz
+
+    rz = pos[:, 2]
+    ry = pos[:, 1]
+    rx = pos[:, 0]
+
+    fz = rz / Lz
+    fy = (ry - yz * Lz * fz) / Ly
+    fx = (rx - xy * Ly * fy - xz * Lz * fz) / Lx
+
+    nx = xp.round(fx)
+    ny = xp.round(fy)
+    nz = xp.round(fz)
+
+    INT32_GUARD = 1.0e8
+    if (
+        bool((xp.abs(nx) > INT32_GUARD).any())
+        or bool((xp.abs(ny) > INT32_GUARD).any())
+        or bool((xp.abs(nz) > INT32_GUARD).any())
+    ):
+        worst = float(
+            max(
+                float(xp.abs(nx).max()),
+                float(xp.abs(ny).max()),
+                float(xp.abs(nz).max()),
+            )
+        )
+        raise FloatingPointError(
+            "BAOAB _wrap_into_box_xp: |fractional coord| exceeded the "
+            f"int32-image guard (worst |round(f)|={worst:.3e} > "
+            f"{INT32_GUARD:.0e}); see _wrap_into_box for the rationale "
+            "(unphysical per-step displacement — add an equilibration "
+            "prelude or reduce dt)."
+        )
+
+    fx = fx - nx
+    fy = fy - ny
+    fz = fz - nz
+
+    out = xp.empty_like(pos)
+    out[:, 0] = Lx * fx + xy * Ly * fy + xz * Lz * fz
+    out[:, 1] = Ly * fy + yz * Lz * fz
+    out[:, 2] = Lz * fz
+
+    img_delta = xp.empty_like(pos, dtype=np.int32)
     img_delta[:, 0] = nx.astype(np.int32)
     img_delta[:, 1] = ny.astype(np.int32)
     img_delta[:, 2] = nz.astype(np.int32)
