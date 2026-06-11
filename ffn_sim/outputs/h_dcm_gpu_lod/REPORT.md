@@ -21,6 +21,15 @@ jammed core is mechanically inert, so freezing it is both physical AND faster. M
 falls with size (the surface/volume ratio) — exactly the rim-active / core-inert structure the
 PI specified.
 
+**LOD speedup (measured, N=180, GPU):** LOD 146.4 s vs no-LOD 166.9 s = **1.14×**. Honest:
+the speedup is MODEST because the LOD freeze (large overdamping on inert nodes) only removes
+those nodes' integration DRIFT — the per-step cost is still dominated by (a) the BAOAB
+per-step CPU sync over ALL particles and (b) the contact + turgor forces, which still process
+every cell (frozen or not). A bigger LOD win requires SKIPPING frozen cells in the force /
+neighbour-list computation (and/or the BAOAB port) — a deeper optimization. The LOD as built
+is physically correct (the jammed core is inert) and helps more at larger N (higher inert
+fraction), but is not yet a dramatic speedup at this scale.
+
 ## 3. The a+b/R+c/R² spreading law on the GPU (R = 31-78 µm, the PI's range)
 **Correction:** the PI law range R=31-78 µm is BELOW the necrosis onset (~150 µm), so these
 spheroids are fully viable (no necrotic core) — the law there is PROLIFERATION + COHESION
