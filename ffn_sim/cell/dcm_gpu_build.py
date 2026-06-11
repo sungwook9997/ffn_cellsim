@@ -97,6 +97,65 @@ class SettlingForce(md.force.Custom):
         with farr_ctx as arr:
             arr.force[:] = 0.0
             arr.force[:, 2] = fz
+
+
+class AggregationDrive(md.force.Custom):
+    """Weak CENTRIPETAL confinement that drives STAGE-1 aggregation (hanging-drop /
+    surface-tension analog).
+
+    Each live membrane node is pulled toward the aggregation ``center`` so a loosely
+    placed cluster COMPACTS and ROUNDS into a cohesive spheroid (the cells come
+    together). The cell-cell tent adhesion is short range (it cannot pull cells across
+    a gap), so on its own a loose cluster just sits there — this confinement supplies
+    the aggregation drive that a hanging-drop / low-adhesion well supplies in vitro.
+    The FINAL ball size is set by cohesion + turgor + excluded-volume balancing the
+    inward pull (the confinement only brings the cells in); per-node force is harmonic
+    toward the centre with a magnitude cap (BAOAB-safe). It is an INITIAL-CONDITION
+    protocol to produce a realistic starting aggregate for STAGE-2 spreading — it is
+    NOT wired during spreading and is not a spreading-physics mechanism. Applies only
+    to ``mem_typeid`` (live membrane). Device-dispatched (GPU cupy / CPU numpy).
+    """
+
+    def __init__(self, *, center, k_agg: float, f_cap: float = 3.0e-10,
+                 mem_typeid: int = 0) -> None:
+        super().__init__(aniso=False)
+        self.center = np.asarray(center, dtype=np.float64)
+        self.k = float(k_agg)
+        self.f_cap = float(f_cap)
+        self.mem_typeid = int(mem_typeid)
+        self._gpu: bool | None = None
+        self._xp = None
+
+    def _setup(self) -> None:
+        if self._gpu is None:
+            self._gpu = on_gpu(self._state)
+            if self._gpu:
+                import cupy as cp                # guarded GPU-only import
+                self._xp = cp
+            else:
+                self._xp = np
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        self._setup()
+        xp = self._xp
+        c = xp.asarray(self.center)
+        snap_ctx = (self._state.gpu_local_snapshot if self._gpu
+                    else self._state.cpu_local_snapshot)
+        with snap_ctx as snap:
+            tid = xp.asarray(snap.particles.typeid)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            F = -self.k * (pos - c[None, :])                 # harmonic toward centre
+            mag = xp.sqrt((F * F).sum(axis=1))
+            scale = xp.where(mag > self.f_cap,
+                             self.f_cap / xp.where(mag > 0, mag, 1.0), 1.0)
+            F = F * scale[:, None]
+            F = xp.where((tid == self.mem_typeid)[:, None], F, 0.0)
+        farr_ctx = (self.gpu_local_force_arrays if self._gpu
+                    else self.cpu_local_force_arrays)
+        with farr_ctx as arr:
+            arr.force[:] = F
+
+
 # Prolif-aware activity-LOD (Problem 2 fix) subclasses the FROZEN classifier; the
 # frozen module (dcm_gpu_lod.py) is imported, never modified. No circular import:
 # dcm_gpu_lod imports only from dcm_gpu_forces.
@@ -257,7 +316,9 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              arrest_radius_factor: float = 1.4,
                              arrest_width: float = 0.18,
                              arrest_settle_steps: int = 4000,
-                             settle_force: float = 4.0e-10):
+                             settle_force: float = 4.0e-10,
+                             with_substrate: bool = True,
+                             init_pos: "np.ndarray | None" = None):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
     No native md.mesh, no per-cell mesh/particle/bond types. Returns a dict of
@@ -306,6 +367,21 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     ranges = b["ranges"]
     faces, face_cell = b["faces"], b["face_cell"]
 
+    # STAGE 2 hand-off: replace the freshly-placed lattice with the AGGREGATED
+    # spheroid positions captured at the end of stage 1 (same topology/order, so the
+    # bonds/faces/cell_of_node all still line up) — translated so the ball sits on the
+    # dish. This is the PI requirement: spreading must start from a REAL aggregated
+    # spheroid, not a just-placed lattice, or the rim traction is ill-defined.
+    if init_pos is not None:
+        ip = np.asarray(init_pos, dtype=snap.particles.position.dtype)
+        if ip.shape != snap.particles.position.shape:
+            raise ValueError(f"init_pos {ip.shape} != snapshot "
+                             f"{snap.particles.position.shape} (N/topology mismatch)")
+        L = float(np.abs(ip).max() * 2.5 + 6.0 * p.R_cell)   # box headroom for spread
+        if L > snap.configuration.box[0]:
+            snap.configuration.box = [L, L, L, 0, 0, 0]
+        snap.particles.position[:] = ip
+
     dev = pick_device(device)
     sim = hoomd.Simulation(device=dev, seed=p.seed)
     sim.create_state_from_snapshot(snap)
@@ -343,10 +419,15 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         cad_mult=cad_mult)
     ig.forces.append(contact)
 
-    # SUBSTRATE — adhesive capped-harmonic well at z0.
-    substrate = DcmSubstrateForceGPU(
-        z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell, k_sub=p.k_sub_Nm)
-    ig.forces.append(substrate)
+    # SUBSTRATE — adhesive capped-harmonic well at z0. Skipped for STAGE 1
+    # (free-float aggregation): with_substrate=False removes the dish entirely so the
+    # cells aggregate into a free-floating spheroid under cohesion+turgor ALONE (no
+    # wetting), then STAGE 2 re-introduces the dish under the aggregated ball.
+    substrate = None
+    if with_substrate:
+        substrate = DcmSubstrateForceGPU(
+            z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell, k_sub=p.k_sub_Nm)
+        ig.forces.append(substrate)
 
     # SEDIMENTATION / PLATING — a weak constant downward body force on the live
     # membrane nodes. WHY (the wetting fix, 2026-06-11): the adhesive substrate
@@ -359,7 +440,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     # the substrate and the footprint growing — i.e. genuine wetting/spreading (vs
     # 0 = floats, 1.5e-9 = full pancake). Applies only to the mem type (typeid 0),
     # never the parked dormant pool. f_settle=0 disables (legacy float behaviour).
-    if settle_force and settle_force > 0.0:
+    if with_substrate and settle_force and settle_force > 0.0:
         ig.forces.append(SettlingForce(f_settle=settle_force, mem_typeid=0))
 
     traction = None
