@@ -131,14 +131,27 @@ class ResolvedGpuDCM:
     # per-node well depths via area_per_node at build).
     W_cs_Jm2: float = 0.5e-3        # J/m² cell-substrate adhesion (spreading driver)
 
-    # SimuCell3D bilinear-tent cell-cell contact (same bands as the native capstone)
-    rep_strength: float = 1.0e8     # Pa/m repulsion stiffness ξ
-    adh_strength: float = 1.0e8     # Pa/m adhesion stiffness ω
-    c_adh: float = 5.0e-7           # m adhesion cutoff (tent peaks at c_adh/2)
+    # SimuCell3D bilinear-tent cell-cell contact — COHESIVE bands (PI 2026-06-11).
+    # The bilinear tent only ADHERES on node pairs in [r_contact, c_adh); since
+    # r_contact = r_contact_factor·mean_edge = 4.37 µm at subdivisions=1, the old
+    # c_adh=5.0e-7 (0.5 µm) made that band EMPTY → cell-cell adhesion was DEAD, the
+    # "spheroid" a gapped lattice of mutually-repelling balls that dispersed under
+    # any push (the convex-hull A/A₀ blow-up). A spheroid is a COHESIVE aggregate:
+    # cells must be adhered cell-to-cell from t=0. These bands are the validated
+    # confluent regime (dcm_confluent_tune config 3 / dcm_surface_mp4): with c_adh=5
+    # µm > r_contact the adhesion band exists, and at the touching spacing 2.0·R the
+    # cluster starts 73 % node-node in contact and STAYS bound (Rg flat, no
+    # dispersal, no explosion — verified by scripts/dcm_cohesion_check.py). The
+    # validated stiff cortex (k_edge) + turgor are KEPT (cohesion is an adhesion fix,
+    # not a mechanics change).
+    rep_strength: float = 2.0e8     # Pa/m repulsion stiffness ξ (non-penetration)
+    adh_strength: float = 8.0e8     # Pa/m adhesion stiffness ω (strong cohesion)
+    c_adh: float = 5.0e-6           # m adhesion cutoff (> r_contact ⇒ band exists)
     contact_force_cap: float = 5.0e-8   # N per-pair force cap (BAOAB guard)
     r_contact_factor: float = 1.0   # r_contact = factor · mean_edge
 
-    spacing_factor: float = 2.3     # cell-center spacing = factor · R_cell
+    spacing_factor: float = 2.0     # cell-center spacing = factor · R_cell (touching
+                                    # → adhesion engages from t=0, cohesive start)
     cluster: str = "3d"             # "3d" spheroid ball | "2d" monolayer
 
     k_sub_Nm: float | None = None   # N/m substrate compliance (None = rigid dish)
@@ -240,9 +253,9 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
 # ---------------------------------------------------------------------------
 def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              active: bool = False, fast_active: bool = True,
-                             arrest: bool = True,
-                             arrest_radius_factor: float = 1.12,
-                             arrest_width: float = 0.4,
+                             arrest: bool = False,
+                             arrest_radius_factor: float = 1.4,
+                             arrest_width: float = 0.18,
                              arrest_settle_steps: int = 4000,
                              settle_force: float = 4.0e-10):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
@@ -263,11 +276,15 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             and collapses that to a handful of ms. Default True (the win); pass
             False to wire the original loop (e.g. for an A/B wall comparison).
         arrest: SPREADING-ARREST (membrane-tension / contact-inhibition stall),
-            default ON (production gets the physical plateau). The outward rim
-            traction is smoothly switched off as a rim cell's radial spread
-            approaches ``arrest_radius_factor · R0_cluster`` so the spheroid reaches
-            and HOLDS a stable A/A₀ plateau instead of blowing up. Pass
-            ``arrest=False`` for the legacy no-arrest blow-up path (the A/B control).
+            default OFF (opt-in). The outward rim traction is smoothly switched off
+            as a rim cell's radial spread approaches ``arrest_radius_factor ·
+            R0_cluster``. It is OFF by default because the diagnostic sweep showed it
+            does NOT cure the over-spread it targeted (the runaway is a convex-hull
+            footprint artifact + the now-fixed float artifact, not the rim push —
+            full arrest gain→0 still blows A/A₀ up, ``probe3_on.json``), and a factor
+            chosen to land A/A₀ in a band is a no-magic-number violation. The
+            physical cure is the cohesive-start + real-wetting baseline. Pass
+            ``arrest=True`` to A/B the (opt-in, tuned) cap; see DcmActiveRimTractionGPU.
         arrest_radius_factor: the cap on each rim cell's radial spread as a multiple
             of the SETTLED cluster radius R0 (captured after ``arrest_settle_steps``,
             N-invariant). At plateau the footprint area ≈ factor² × the settled area,

@@ -255,8 +255,8 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                  f_cap: float, ramp_steps: int, contact_band: float,
                  neighbour_factor: float, max_neighbours: int,
                  integrin_switch_gain: float, belt_factor: float,
-                 arrest_radius_factor: float | None = 1.12,
-                 arrest_width: float = 0.4,
+                 arrest_radius_factor: float | None = None,
+                 arrest_width: float = 0.18,
                  arrest_settle_steps: int = 4000) -> None:
         super().__init__(aniso=False)
         self.cell_of_node = cell_of_node
@@ -283,14 +283,29 @@ class DcmActiveRimTractionGPU(md.force.Custom):
         # band so the stall is BAOAB-safe (no hard clip, no discontinuous force):
         #     g(r) = clip((r_max − r) / (arrest_width · r_max), 0, 1)
         # so traction is full deep inside (r ≤ (1−width)·r_max), ramps to 0 across
-        # the band, and is exactly 0 beyond r_max. At equilibrium the rim sits where
-        # g·f_act balances cohesion → traction → 0 → STABLE A/A₀ plateau. The
-        # mechanism is the motor-clutch / membrane-tension feedback stall
-        # (Chan-Odde / Elosegui-Artola; the same protrusion-stalls-as-tension-rises
-        # physics the single-cell reference cell/spreading_drive.py models via the
-        # max_radius footprint cap). arrest_radius_factor=None ⇒ NO arrest (the
-        # legacy blow-up path, kept for the A/B comparison); the default 1.7 puts
-        # the equilibrium footprint expansion ~1.7× linear → A/A₀ ≈ 1.7² ≈ 2.9 ∈ [2,4].
+        # the band, and is exactly 0 beyond r_max. The mechanism is the
+        # motor-clutch / membrane-tension feedback stall (Chan-Odde /
+        # Elosegui-Artola; the same protrusion-stalls-as-tension-rises physics the
+        # single-cell reference cell/spreading_drive.py models via the max_radius
+        # footprint cap). arrest_radius_factor=None ⇒ NO arrest.
+        #
+        # DEFAULT = None (arrest OFF), and it is OPT-IN, on purpose (2026-06-11):
+        #   1. The over-spread it was meant to cap is NOT active-traction-driven —
+        #      the diagnostic sweep (outputs/h_dcm_gpu_lod/probe3_on.json) shows
+        #      A/A₀ still BLOWS UP (gain→0.0, full arrest) because the runaway is a
+        #      convex-hull footprint artifact of a few scattered cells + the
+        #      now-fixed FLOAT artifact, not the rim push. So arrest does not solve
+        #      the problem it was added for.
+        #   2. Choosing the factor to land A/A₀ in a band (the old "1.7² ≈ 2.9 ∈
+        #      [2,4]" note) is exactly the no-magic-number / no-fitting violation
+        #      (CLAUDE.md): a tuned proxy, not a derived physiological setpoint.
+        #   3. It is a LUMPED proxy for membrane-tension / contact-inhibition; the
+        #      architectural rule prefers the mechanistic alternative. The correct
+        #      cure for over-spread is the COHESIVE-start + real wetting baseline
+        #      (cells adhered from t=0), not a traction cap.
+        # The code + its dedicated test (test_dcm_spreading_arrest.py) are kept so a
+        # future mechanistic membrane-tension force can be A/B'd, but production runs
+        # OFF until a derived (non-tuned) cap is justified.
         self.arrest_factor = (None if arrest_radius_factor is None
                               else float(arrest_radius_factor))
         self.arrest_width = float(max(arrest_width, 1.0e-3))
@@ -382,13 +397,24 @@ class DcmActiveRimTractionGPU(md.force.Custom):
         cen_xy = (nodes_xy * w[:, None]).sum(axis=0) / safe_denom   # (2,)
         d = nodes_xy - cen_xy[None, :]
         r = xp.sqrt(d[:, 0] ** 2 + d[:, 1] ** 2)              # (na*nv,)
-        # p90 over the BASAL nodes ONLY (non-basal → NaN, nanpercentile ignores
-        # them): robust to a few scattered outliers (which inflate a max/hull), so it
-        # tracks the BULK footprint, not measurement noise. Fully vectorized (no host
-        # sync to gather the variable-length basal subset).
-        nan = xp.asarray(float("nan"), dtype=r.dtype)
-        r_basal = xp.where(b, r, nan)
-        return xp.nanpercentile(r_basal, 90.0)
+        # p90 over the BASAL nodes ONLY, robust to a few scattered outliers (which
+        # inflate a max/hull) → tracks the BULK footprint, not measurement noise.
+        # cupy has no nanpercentile, so compute it via a sort (cupy-safe, no host
+        # sync): set non-basal radii to 0 (basal radii are > 0), sort ascending → the
+        # n_basal real radii occupy the TOP positions; the p90 is the basal radius at
+        # rank ⌈0.9·n_basal⌉ from the bottom of that top block, i.e. ascending index
+        # ``N − n_basal + ⌊0.9·(n_basal−1)⌋``.
+        r_basal0 = xp.where(b, r, 0.0)                        # (N,), non-basal → 0
+        rs = xp.sort(r_basal0)                                # ascending
+        N = rs.shape[0]
+        n_basal = b.sum()
+        # guard: if no basal node, return 0 (caller treats as no spread).
+        nb = xp.maximum(n_basal, 1)
+        # 90th-percentile rank within the basal block (lower-interpolation index).
+        idx_in_block = xp.floor(0.9 * (nb.astype(rs.dtype) - 1.0)).astype(xp.int64)
+        idx = (N - nb) + idx_in_block
+        idx = xp.clip(idx, 0, N - 1)
+        return rs[idx]
 
     def set_forces(self, timestep: int) -> None:  # noqa: D401
         d = self._dispatch()
@@ -813,8 +839,8 @@ class DcmFusedForceGPU(md.force.Custom):
                  f_act: float = 0.0, f_cap: float = 0.0, ramp_steps: int = 1,
                  contact_band: float = 0.5, neighbour_factor: float = 2.6,
                  max_neighbours: int = 9, belt_factor: float = 0.0,
-                 arrest_radius_factor: float | None = 1.12,
-                 arrest_width: float = 0.4,
+                 arrest_radius_factor: float | None = None,
+                 arrest_width: float = 0.18,
                  arrest_settle_steps: int = 4000) -> None:
         super().__init__(aniso=False)
         self.n_cells = int(n_cells)

@@ -67,12 +67,19 @@ def _build(n_active=8, n_max=10):
         max_neighbours=p.rim_max_neighbours,
         integrin_switch_gain=p.integrin_switch_gain, belt_factor=p.belt_factor)
 
-    # legacy-mode CPU reference (matches the GPU twin's basal-only law)
+    # legacy-mode CPU reference (matches the GPU twin's basal-only law). The legacy
+    # ActiveRimTraction has NO spreading-arrest term, so it takes no arrest kwarg.
     ref = ActiveRimTraction(migrate_factor=0.0, lead_bias=1.0, **common)
     assert isinstance(ref, ActiveRimTraction)
     ig.forces.append(ref)
 
-    gpu = DcmActiveRimTractionGPU(**common)
+    # SAME LAW as the legacy reference: pin the GPU twin's arrest OFF so the
+    # bit-parity comparison is of the basal-only splay law alone. (Arrest is
+    # opt-in/default-off anyway; pinning it here keeps the test correct regardless of
+    # the default — it was the prior failure: the GPU twin defaulted arrest ON,
+    # throttling the int_mult-boosted footprint while the legacy ref could not, a
+    # 1.2e-10 N mismatch in test_switched_integrin_gain_bit_parity.)
+    gpu = DcmActiveRimTractionGPU(**common, arrest_radius_factor=None)
     ig.forces.append(gpu)
     sim.run(0)
     return sim, ref, gpu, h, p

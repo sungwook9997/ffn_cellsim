@@ -185,3 +185,64 @@ cohesion and the cells scatter). So:
   active traction as the cell footprint approaches a physiological max, or a membrane-tension
   restoring force), so the spheroid reaches and HOLDS a stable A/A₀ plateau over long
   real-time. This is the scientifically correct next step for the real-time spreading goal.
+
+## ⚠️ CORRECTION (2026-06-11 PM) — the over-spread was DEAD CELL-CELL ADHESION, not a missing arrest
+The section above diagnosed the A/A₀ blow-up as a missing spreading-arrest law. That was
+WRONG. The root cause is a parameter bug: **cell-cell adhesion was DEAD**, so the "spheroid"
+was a gapped lattice of mutually-repelling balls that DISPERSED — the convex-hull footprint
+exploded because the cells scattered, not because they over-spread. Two independent lines of
+evidence:
+
+1. **The arrest cannot fix it (proves arrest is not the lever).** `outputs/h_dcm_gpu_lod/
+   probe3_on.json`: with arrest at FULL strength (gain → 0.0, active traction entirely
+   switched off), A/A₀ STILL blows up (hull 50, p90 16) and the footprint radius still grows
+   16 → 53 µm. If the runaway were active over-spreading, killing the traction would stop it.
+   It does not → the dispersal is not traction-driven.
+2. **The adhesion band was EMPTY.** The SimuCell3D bilinear tent only ADHERES on node pairs in
+   `[r_contact, c_adh)`. The GPU build had `c_adh = 0.5 µm` but `r_contact = r_contact_factor
+   · mean_edge = 4.37 µm` (subdivisions=1), so the band `[4.37, 0.5)` is EMPTY → **no cell-cell
+   adhesion ever fires** (diagnosed directly, `scripts/dcm_cohesion_check.py`: contact-node
+   fraction 0.0 at t=0 AND after relaxation; cells drift apart). The same bug is in
+   `ResolvedActiveSpheroid` (the native law-sweep build, `c_adh=5e-7`), so the prior law-fit
+   numbers were also measured on dispersing, non-cohesive balls.
+
+### Cohesion fix (PI 2026-06-11: "the cells must START adhered, not separated")
+Adopted the validated CONFLUENT contact bands (`dcm_confluent_tune` config 3 /
+`dcm_surface_mp4`) into `ResolvedGpuDCM`, keeping the validated stiff cortex + turgor
+(cohesion is an ADHESION fix, not a mechanics change):
+
+| band | old (dead) | new (cohesive) |
+|---|---|---|
+| `c_adh` | 0.5 µm (< r_contact ⇒ empty band) | **5.0 µm** (> r_contact ⇒ band exists) |
+| `adh_strength` | 1.0e8 | **8.0e8** (strong cohesion) |
+| `rep_strength` | 1.0e8 | **2.0e8** (non-penetration) |
+| `spacing_factor` | 2.3·R (2.25 µm surface GAP) | **2.0·R** (touching ⇒ adhesion engages at t=0) |
+
+Verified (`scripts/dcm_cohesion_check.py`, N=16): cells start **73 % node-node in contact**
+and STAY bound (Rg flat, NN 2.0→2.18·R settle, finite, no explosion) — a COHESIVE aggregate
+from t=0, vs the old build's 0 % contact and dispersal.
+
+### Spreading-arrest → DEFAULT OFF (opt-in)
+Given (1) above, the arrest is not the lever; it is also a LUMPED proxy (CLAUDE.md prefers the
+mechanistic alternative) and the old default factor was chosen to land A/A₀ in the [2,4] band
+(a no-magic-number violation). It is now **default OFF** in `build_gpu_dcm_simulation` (and the
+force-class default `arrest_radius_factor=None`); the mechanism + its dedicated test
+(`test_dcm_spreading_arrest.py`) are kept for an opt-in A/B if a DERIVED membrane-tension force
+is later justified. This also fixed the failing parity test
+(`test_switched_integrin_gain_bit_parity`): the GPU twin is now pinned arrest-OFF to match the
+legacy `ActiveRimTraction` law it is compared against.
+
+### Lamellipodium visualisation (PI request — "visualise the lamellipodium separately")
+`scripts/dcm_lamellipodium_viz.py` renders the DCM lamellipodium faithfully on the COHESIVE
+spheroid (rim/basal/outward-direction geometry recomputed exactly as `ActiveRimTraction` and
+cross-checked against the live force object's `rim_cells`): `figs/lamellipodium_anatomy.png`
+(A: top-down lamellipodial front + wetted-footprint outline + outward traction arrows; B:
+side — thin basal lamellipodium layer vs rounded cell bodies; C: single rim-cell anatomy with
+leading edge + traction vector) and `figs/lamellipodium_front.mp4`. At N=40: **8 rim cells
+lamellipodiate, footprint grows 1390 → 2176 µm² MONOTONICALLY** (a coherent COHESIVE spread,
+not the old dispersal).
+
+### A/A₀ re-measurement (`scripts/dcm_gpu_cohesive_law.py`) — pending
+Re-measures A/A₀ on the cohesive + wetting spheroid with a robust footprint (hull + p90),
+checks the spreading PLATEAUS (a cohesive drop must reach a contact angle, not disperse), and
+re-fits `a + b/R + c/R²`. [results to be filled after the sweep]

@@ -135,3 +135,6 @@ ffn_sim/outputs/**/*.status
 
 # CuPy/CUDA on-disk compilation cache (build artifact, regenerated on demand).
 ffn_sim/outputs/cupy_cache/
+
+# DCM lamellipodium-viz render cache (regenerable from the sim; do not commit)
+ffn_sim/outputs/**/_lamel_cache_*.pkl
