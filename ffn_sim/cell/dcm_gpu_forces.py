@@ -378,6 +378,174 @@ class DcmActiveRimTractionGPU(md.force.Custom):
 
 
 # ---------------------------------------------------------------------------
+# VECTORIZED GPU active rim traction — the per-cell Python loop removed
+# ---------------------------------------------------------------------------
+class DcmActiveRimTractionGPUVec(DcmActiveRimTractionGPU):
+    """Drop-in, math-identical, FULLY-VECTORIZED active rim traction.
+
+    WHY (gbook A5000 profile, 2026-06-11). The full-stack per-step profiler showed
+    ``DcmActiveRimTractionGPU.set_forces`` is the single dominant cost at N=200 —
+    ~22 ms/step, ~57% of the ~39 ms/step production total (passive total is only
+    ~17 ms). The cost is NOT the ``gpu_local`` context (that floor is ~0.2 ms/force)
+    and NOT cross-force dispatch (fusing 4 forces → 1 saves only ~0.7 ms): it is the
+    PYTHON per-cell orchestration INSIDE this one force —
+
+      * the centroid list-comprehension
+        ``cents = xp.asarray([pos_g[lo:hi].mean(0) for c in active_ids])``
+        (one device op + a host list build per active cell, ~10 ms at N=200), and
+      * the ``for k in range(n_active)`` loop, each iteration doing ``int(c)`` /
+        ``int(crowd[k])`` / ``bool(basal.any())`` / ``float(rn)`` / ``float(gain)``
+        on 0-d cupy arrays — each a BLOCKING GPU→CPU scalar sync (~1000 syncs/step
+        at N=200, ~11 ms) so the A5000 sits idle while Python dispatches.
+
+    This subclass reproduces the EXACT same legacy basal-splay + apical contraction-
+    belt law as the parent ``DcmActiveRimTractionGPU.set_forces`` (the law the GPU
+    twin's frozen parity gate ``tests/test_dcm_active_gpu_parity.py`` pins to the
+    legacy-mode ``ActiveRimTraction``), but with ZERO per-cell Python loop and ZERO
+    per-cell scalar syncs: positions are reshaped to ``(n_cells, nv, 3)`` (the build
+    uses uniform ``nv`` nodes per cell, contiguous tag blocks), centroids are one
+    ``mean(axis=1)``, crowding is one O(n_active²) matrix, the per-cell mask /
+    direction / magnitude are computed as whole arrays, and the per-node force is a
+    single broadcast write. Output is bit-identical to the parent (max abs diff
+    < 1e-10 N on the CPU path; see ``tests/test_dcm_active_vec_parity.py``).
+
+    Construction signature is identical to ``DcmActiveRimTractionGPU`` — it is a true
+    drop-in; ``dcm_gpu_build.build_gpu_dcm_simulation(..., fast_active=True)`` wires
+    this class instead of the parent. The same mutable shared state (``active``,
+    ``int_mult``, ``cell_of_node``) is read live each step.
+
+    ASSUMPTION (asserted at first call): uniform per-cell node count and contiguous
+    blocks, i.e. ``ranges[c] == (c·nv, (c+1)·nv)``. The GPU-friendly builds
+    (``build_gpu_dcm_simulation`` / ``build_gpu_spheroid_prolif``) always satisfy
+    this. If a build ever violated it, this subclass refuses (falls back is the
+    caller's job) rather than silently miscomputing.
+    """
+
+    def _uniform_block(self) -> int:
+        """Per-cell node count nv, asserting uniform contiguous ranges."""
+        ranges = self.ranges
+        nv = ranges[0][1] - ranges[0][0]
+        # cheap structural check (host-side ints, no device sync)
+        for c, (lo, hi) in enumerate(ranges):
+            if lo != c * nv or hi != (c + 1) * nv:
+                raise ValueError(
+                    "DcmActiveRimTractionGPUVec requires uniform contiguous "
+                    f"per-cell node blocks (ranges[{c}]=({lo},{hi}) != "
+                    f"({c * nv},{(c + 1) * nv})).")
+        return int(nv)
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        d = self._dispatch()
+        xp = d.xp
+        nv = self._uniform_block()
+        with d.snapshot() as snap:
+            tag = xp.asarray(snap.particles.tag)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            n = int(pos.shape[0])
+            perm = xp.argsort(tag)
+            pos_g = pos[perm]
+            n_cells = len(self.ranges)
+
+            ramp = float(min(1.0, timestep / self.ramp_steps))
+            self._ramp = ramp
+            active_mask = xp.asarray(self.active)
+            active_ids = xp.where(active_mask)[0]
+            na = int(active_ids.shape[0])
+
+            if na < 2 or ramp <= 0.0:
+                F = xp.empty_like(pos)
+                F[perm] = xp.zeros_like(pos_g)
+                U = xp.zeros(n, dtype=xp.float64)
+                self.rim_cells = np.empty(0, dtype=np.int64)
+                self.f_per_cell = {}
+                with d.force_arrays() as arr:
+                    arr.force[:] = F
+                    arr.potential_energy[:] = U
+                return
+
+            # (n_cells, nv, 3) block view — uniform contiguous ranges (asserted).
+            pos_blk = pos_g.reshape(n_cells, nv, 3)
+            act_blk = pos_blk[active_ids]                 # (na, nv, 3)
+
+            # per-active-cell centroid — ONE reduction, no list comprehension.
+            cents = act_blk.mean(axis=1)                  # (na, 3)
+            cluster_cen = cents.mean(axis=0)              # (3,)
+
+            # crowding among active centroids (rim = few neighbours).
+            diff = cents[:, None, :] - cents[None, :, :]
+            d2 = xp.sum(diff * diff, axis=2)
+            within = d2 < self.r_neigh ** 2
+            xp.fill_diagonal(within, False)
+            crowd = within.sum(axis=1)                    # (na,)
+
+            zc = self.z0 + self.contact_band * self.R
+            basal = act_blk[:, :, 2] < zc                 # (na, nv) bool
+            has_basal = basal.any(axis=1)                 # (na,)
+
+            # rim = crowd ≤ max_neigh AND has a basal node (the parent appends to
+            # rim_list under EXACTLY these two conditions, BEFORE the rn check).
+            is_rim = (crowd <= self.max_neigh) & has_basal   # (na,)
+
+            # in-plane outward direction (cluster centroid → cell centroid).
+            rxy = cents[:, :2] - cluster_cen[:2]          # (na, 2)
+            rn = xp.sqrt(rxy[:, 0] ** 2 + rxy[:, 1] ** 2)  # (na,) == hypot
+            # force contributes only for rim cells with a defined outward dir.
+            contributes = is_rim & (rn >= 1e-12)          # (na,)
+            rn_safe = xp.where(rn >= 1e-12, rn, 1.0)
+            rhat = xp.zeros((na, 3), dtype=pos_g.dtype)   # (na, 3), z=0
+            rhat[:, 0] = rxy[:, 0] / rn_safe
+            rhat[:, 1] = rxy[:, 1] / rn_safe
+
+            int_mult = xp.asarray(self.int_mult)
+            gain = int_mult[active_ids]                   # (na,)
+            fmag = xp.minimum(ramp * self.f_act * gain, self.f_cap)  # (na,)
+            fmag = xp.where(contributes, fmag, 0.0)       # (na,) gate non-contrib
+
+            # per-node force on each active cell block (na, nv, 3):
+            #   basal nodes  += fmag · rhat
+            #   apical nodes += −min(belt·fmag, f_cap) · rhat   (if belt > 0)
+            fb = xp.minimum(self.belt * fmag, self.f_cap) if self.belt > 0.0 \
+                else xp.zeros_like(fmag)
+            # node weight per (cell, node): +fmag on basal, −fb on apical.
+            node_w = xp.where(basal, fmag[:, None], -fb[:, None])  # (na, nv)
+            # zero apical weight entirely when belt == 0 (fb is all-zero then).
+            F_act_blk = node_w[:, :, None] * rhat[:, None, :]      # (na, nv, 3)
+
+            # scatter the active blocks back into the full (n_cells, nv, 3) force.
+            F_blk = xp.zeros((n_cells, nv, 3), dtype=pos_g.dtype)
+            F_blk[active_ids] = F_act_blk
+            F_g = F_blk.reshape(n, 3)
+
+            # cap per node (BAOAB int32 guard) — never let a node exceed f_cap.
+            fn = xp.linalg.norm(F_g, axis=1)
+            over = fn > self.f_cap
+            # always-vectorized cap (xp.where avoids the bool(any) host sync).
+            scale = xp.where(over, self.f_cap / xp.where(fn > 0, fn, 1.0), 1.0)
+            F_g = F_g * scale[:, None]
+
+            # diagnostics (host): rim_cells = active cells with is_rim True.
+            is_rim_host = (xp.asnumpy(is_rim) if d.gpu else np.asarray(is_rim))
+            active_ids_host = (xp.asnumpy(active_ids) if d.gpu
+                               else np.asarray(active_ids))
+            self.rim_cells = active_ids_host[is_rim_host].astype(np.int64)
+            # f_per_cell: cells that actually contributed (parent sets it after the
+            # rn check) → contributes mask.
+            contrib_host = (xp.asnumpy(contributes) if d.gpu
+                            else np.asarray(contributes))
+            fmag_host = (xp.asnumpy(fmag) if d.gpu else np.asarray(fmag))
+            self.f_per_cell = {int(active_ids_host[i]): float(fmag_host[i])
+                               for i in np.where(contrib_host)[0]}
+
+            F = xp.empty_like(pos)
+            F[perm] = F_g
+            U = xp.zeros(n, dtype=xp.float64)
+
+        with d.force_arrays() as arr:
+            arr.force[:] = F
+            arr.potential_energy[:] = U
+
+
+# ---------------------------------------------------------------------------
 # GPU-capable PER-CELL TURGOR via the validated K1 mesh-pressure kernel
 # ---------------------------------------------------------------------------
 class DcmTurgorForceGPU(md.force.Custom):
@@ -438,6 +606,207 @@ class DcmTurgorForceGPU(md.force.Custom):
             F_g = d.kernels.mesh_pressure_forces(
                 pos_g, faces, face_cell, self.n_cells,
                 self.V0, self.turgor_dP0, self.K_vol)
+
+            F = xp.empty_like(pos)
+            F[perm] = F_g
+            U = xp.zeros(n, dtype=xp.float64)
+
+        with d.force_arrays() as arr:
+            arr.force[:] = F
+            arr.potential_energy[:] = U
+
+
+# ---------------------------------------------------------------------------
+# FUSED single-callback force — turgor + tent + substrate + active in ONE pass
+# ---------------------------------------------------------------------------
+class DcmFusedForceGPU(md.force.Custom):
+    """All per-step DCM custom forces summed in ONE ``set_forces`` callback.
+
+    Computes TURGOR (K1 mesh-pressure) + CELL-CELL TENT contact + adhesive
+    SUBSTRATE well + (optional) vectorized ACTIVE rim traction in a SINGLE
+    ``md.force.Custom`` — one ``gpu_local_snapshot`` enter, one position read, one
+    ``argsort``, one ``gpu_local_force_arrays`` write — instead of 3-4 separate
+    Custom forces each paying their own context enter/exit + position read each
+    step. The per-pair / per-cell MATH is IDENTICAL to the separate forces (it
+    calls the same kernels and the same vectorized active law), so the fused total
+    equals the sum of the separate forces to floating-point round-off (max abs diff
+    < 1e-10 N on the CPU path; see ``tests/test_dcm_fused_parity.py``).
+
+    HONEST SCOPE (gbook A5000 profile, 2026-06-11). Fusing removes the redundant
+    per-force context/Python overhead, which the profile measured at only ~0.2 ms
+    PER FORCE (so ~0.6-0.7 ms/step saved going 4 → 1) — a SMALL win (~2% of the
+    ~39 ms/step production total). The DOMINANT cost is INSIDE the active traction's
+    per-cell Python loop, addressed by :class:`DcmActiveRimTractionGPUVec` (which
+    this fused force uses for its active term). Fusing is provided for completeness
+    and composes with the vectorized active; the big lever is the vectorization.
+
+    Construction takes the SAME parameters as the four separate forces. The active
+    block is optional (``with_active=False`` ⇒ passive turgor + tent + substrate).
+    Mutable shared state (``cell_of_node``, ``cad_mult``, ``active``, ``int_mult``)
+    is read live each step exactly as the separate forces do.
+    """
+
+    def __init__(self, *, n_cells: int,
+                 # turgor (K1)
+                 faces: np.ndarray, face_cell: np.ndarray, V0: float,
+                 turgor_dP0: float, K_vol: float,
+                 # tent contact (K5)
+                 cell_of_node: np.ndarray, r_contact: float, c_adh: float,
+                 rep_strength: float, adh_strength: float, patch_area: float,
+                 contact_force_cap: float = 5.0e-8,
+                 cad_mult: np.ndarray | None = None,
+                 # substrate (K2)
+                 z0: float = 0.0, W_cs: float = 0.0, adh_range: float = 1.0,
+                 k_sub: float | None = None,
+                 # active rim traction (vectorized) — optional
+                 with_active: bool = False, ranges=None,
+                 active: np.ndarray | None = None,
+                 int_mult: np.ndarray | None = None, R_cell: float = 7.5e-6,
+                 f_act: float = 0.0, f_cap: float = 0.0, ramp_steps: int = 1,
+                 contact_band: float = 0.5, neighbour_factor: float = 2.6,
+                 max_neighbours: int = 9, belt_factor: float = 0.0) -> None:
+        super().__init__(aniso=False)
+        self.n_cells = int(n_cells)
+        # turgor
+        self.faces = np.asarray(faces, dtype=np.int64)
+        self.face_cell = np.asarray(face_cell, dtype=np.int64)
+        self.V0 = float(V0)
+        self.turgor_dP0 = float(turgor_dP0)
+        self.K_vol = float(K_vol)
+        # tent
+        self.cell_of_node = cell_of_node
+        self.r_contact = float(r_contact)
+        self.c_adh = float(c_adh)
+        self.rep = float(rep_strength)
+        self.omega = float(adh_strength)
+        self.A = float(patch_area)
+        self.contact_force_cap = float(contact_force_cap)
+        self.cad_mult = cad_mult
+        # substrate (well stiffness derived as in DcmSubstrateForceGPU)
+        k_well = 2.0 * float(W_cs) / (float(adh_range) ** 2) if adh_range else 0.0
+        self.sub_k = (k_well if k_sub is None
+                      else (k_well * k_sub) / (k_well + k_sub)) if k_well else 0.0
+        self.z0 = float(z0)
+        self.sub_range = float(adh_range)
+        # active (vectorized law params)
+        self.with_active = bool(with_active)
+        self.ranges = ranges
+        self.active = active
+        self.int_mult = int_mult
+        self.R = float(R_cell)
+        self.f_act = float(f_act)
+        self.f_cap = float(f_cap)
+        self.ramp_steps = max(1, int(ramp_steps))
+        self.contact_band = float(contact_band)
+        self.r_neigh = float(neighbour_factor * R_cell)
+        self.max_neigh = int(max_neighbours)
+        self.belt = float(belt_factor)
+        # active diagnostics (mirror the standalone vec force)
+        self.rim_cells: np.ndarray = np.empty(0, dtype=np.int64)
+        self.f_per_cell: dict[int, float] = {}
+        self._ramp = 0.0
+        self._d: DeviceDispatch | None = None
+
+    def _dispatch(self) -> DeviceDispatch:
+        if self._d is None:
+            self._d = DeviceDispatch(self)
+        return self._d
+
+    def _active_term(self, d, pos_g, timestep: int):
+        """Vectorized active rim traction force in GLOBAL (tag) order → (N,3).
+
+        Bit-identical to :meth:`DcmActiveRimTractionGPUVec.set_forces`'s F_g (same
+        legacy basal-splay + apical belt law); written here so the fused force pays
+        the snapshot/argsort once. Updates ``rim_cells`` / ``f_per_cell``.
+        """
+        xp = d.xp
+        n = int(pos_g.shape[0])
+        ranges = self.ranges
+        nv = ranges[0][1] - ranges[0][0]
+        n_cells = len(ranges)
+        ramp = float(min(1.0, timestep / self.ramp_steps))
+        self._ramp = ramp
+        active_ids = xp.where(xp.asarray(self.active))[0]
+        na = int(active_ids.shape[0])
+        if na < 2 or ramp <= 0.0:
+            self.rim_cells = np.empty(0, dtype=np.int64)
+            self.f_per_cell = {}
+            return xp.zeros_like(pos_g)
+
+        pos_blk = pos_g.reshape(n_cells, nv, 3)
+        act_blk = pos_blk[active_ids]
+        cents = act_blk.mean(axis=1)
+        cluster_cen = cents.mean(axis=0)
+        diff = cents[:, None, :] - cents[None, :, :]
+        d2 = xp.sum(diff * diff, axis=2)
+        within = d2 < self.r_neigh ** 2
+        xp.fill_diagonal(within, False)
+        crowd = within.sum(axis=1)
+        zc = self.z0 + self.contact_band * self.R
+        basal = act_blk[:, :, 2] < zc
+        has_basal = basal.any(axis=1)
+        is_rim = (crowd <= self.max_neigh) & has_basal
+        rxy = cents[:, :2] - cluster_cen[:2]
+        rn = xp.sqrt(rxy[:, 0] ** 2 + rxy[:, 1] ** 2)
+        contributes = is_rim & (rn >= 1e-12)
+        rn_safe = xp.where(rn >= 1e-12, rn, 1.0)
+        rhat = xp.zeros((na, 3), dtype=pos_g.dtype)
+        rhat[:, 0] = rxy[:, 0] / rn_safe
+        rhat[:, 1] = rxy[:, 1] / rn_safe
+        gain = xp.asarray(self.int_mult)[active_ids]
+        fmag = xp.minimum(ramp * self.f_act * gain, self.f_cap)
+        fmag = xp.where(contributes, fmag, 0.0)
+        fb = xp.minimum(self.belt * fmag, self.f_cap) if self.belt > 0.0 \
+            else xp.zeros_like(fmag)
+        node_w = xp.where(basal, fmag[:, None], -fb[:, None])
+        F_act_blk = node_w[:, :, None] * rhat[:, None, :]
+        F_blk = xp.zeros((n_cells, nv, 3), dtype=pos_g.dtype)
+        F_blk[active_ids] = F_act_blk
+        F_act = F_blk.reshape(n, 3)
+        fn = xp.linalg.norm(F_act, axis=1)
+        over = fn > self.f_cap
+        scale = xp.where(over, self.f_cap / xp.where(fn > 0, fn, 1.0), 1.0)
+        F_act = F_act * scale[:, None]
+        # diagnostics
+        is_rim_h = xp.asnumpy(is_rim) if d.gpu else np.asarray(is_rim)
+        ids_h = xp.asnumpy(active_ids) if d.gpu else np.asarray(active_ids)
+        contrib_h = xp.asnumpy(contributes) if d.gpu else np.asarray(contributes)
+        fmag_h = xp.asnumpy(fmag) if d.gpu else np.asarray(fmag)
+        self.rim_cells = ids_h[is_rim_h].astype(np.int64)
+        self.f_per_cell = {int(ids_h[i]): float(fmag_h[i])
+                           for i in np.where(contrib_h)[0]}
+        return F_act
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        d = self._dispatch()
+        xp = d.xp
+        with d.snapshot() as snap:
+            tag = xp.asarray(snap.particles.tag)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            n = int(pos.shape[0])
+            perm = xp.argsort(tag)
+            pos_g = pos[perm]
+
+            # --- TURGOR (K1) ---
+            F_g = d.kernels.mesh_pressure_forces(
+                pos_g, xp.asarray(self.faces), xp.asarray(self.face_cell),
+                self.n_cells, self.V0, self.turgor_dP0, self.K_vol)
+
+            # --- CELL-CELL TENT (K5) ---
+            cad = None if self.cad_mult is None else xp.asarray(self.cad_mult)
+            F_g = F_g + d.kernels.tent_contact_forces(
+                pos_g, xp.asarray(self.cell_of_node), self.r_contact, self.c_adh,
+                self.rep, self.omega, self.A, self.contact_force_cap,
+                cad_mult=cad)
+
+            # --- SUBSTRATE (K2) — z-only well, position already global order ---
+            if self.sub_k > 0.0:
+                F_g = F_g + d.kernels.plane_well_forces(
+                    pos_g, self.z0, self.sub_k, self.sub_range)
+
+            # --- ACTIVE rim traction (vectorized) ---
+            if self.with_active:
+                F_g = F_g + self._active_term(d, pos_g, timestep)
 
             F = xp.empty_like(pos)
             F[perm] = F_g

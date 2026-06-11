@@ -51,6 +51,7 @@ from ffn_sim.cell.dcm_gpu_forces import (
     DcmTentContactGPU,
     DcmSubstrateForceGPU,
     DcmActiveRimTractionGPU,
+    DcmActiveRimTractionGPUVec,
 )
 # Prolif-aware activity-LOD (Problem 2 fix) subclasses the FROZEN classifier; the
 # frozen module (dcm_gpu_lod.py) is imported, never modified. No circular import:
@@ -194,7 +195,7 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
 # Full GPU-friendly simulation assembly
 # ---------------------------------------------------------------------------
 def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
-                             active: bool = False):
+                             active: bool = False, fast_active: bool = True):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
     No native md.mesh, no per-cell mesh/particle/bond types. Returns a dict of
@@ -202,8 +203,16 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     substrate, traction|None, baoab, p, nv, ne, mean_edge).
 
     Args:
-        active: if True, wire ``DcmActiveRimTractionGPU`` (basal-rim active
-            traction). Default False (passive turgor + adhesion wetting only).
+        active: if True, wire active basal-rim traction (passive turgor +
+            adhesion wetting only if False).
+        fast_active: when ``active`` is True, use the FULLY-VECTORIZED
+            ``DcmActiveRimTractionGPUVec`` (no per-cell Python loop) instead of the
+            original ``DcmActiveRimTractionGPU``. The gbook A5000 profile
+            (2026-06-11) found the original's per-cell loop is ~22 ms/step (~57% of
+            the ~39 ms/step production total at N=200); the vectorized form is
+            bit-identical (max abs diff < 1e-10 N, ``test_dcm_active_vec_parity.py``)
+            and collapses that to a handful of ms. Default True (the win); pass
+            False to wire the original loop (e.g. for an A/B wall comparison).
     """
     from ffn_sim.integrator.baoab import make_baoab_updater
 
@@ -236,11 +245,19 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     ig.forces.append(turgor)
 
     # CELL-CELL — bilinear-tent contact, distinguishes cells by cell_of_node.
+    # cad_mult (n_cells,) is the MUTABLE per-cell cadherin multiplier the junction
+    # switch lowers in place (mult = √(cad_mult_i·cad_mult_j); see
+    # dcm_gpu_forces.DcmTentContactGPU / kernels_cpu.tent_contact_forces). Init 1.0
+    # (= full cadherin); a pressure-loaded cell's entry is driven toward
+    # cadherin_weak_factor by attach_junction_switch (additive — switch off by
+    # default, so passing it is backward-compatible: all-1 ⇒ identical physics).
+    cad_mult = np.ones(n_cells, dtype=np.float64)
     r_contact = p.r_contact_factor * mean_edge
     contact = DcmTentContactGPU(
         cell_of_node=cell_of_node, r_contact=r_contact, c_adh=p.c_adh,
         rep_strength=p.rep_strength, adh_strength=p.adh_strength,
-        patch_area=area_per_node, force_cap=p.contact_force_cap)
+        patch_area=area_per_node, force_cap=p.contact_force_cap,
+        cad_mult=cad_mult)
     ig.forces.append(contact)
 
     # SUBSTRATE — adhesive capped-harmonic well at z0.
@@ -249,10 +266,20 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     ig.forces.append(substrate)
 
     traction = None
+    # integrin_gain (n_cells,) is the MUTABLE per-cell integrin (cell-substrate)
+    # multiplier the junction switch RAISES in place. When active=True it IS the
+    # rim-traction ``int_mult`` (so a switched cell's substrate traction is scaled
+    # up live); when active=False it is a standalone array the switch still raises
+    # (read by the visualiser / available to any substrate gain wiring). Init 1.0.
+    integrin_gain = np.ones(n_cells, dtype=np.float64)
     if active:
         active_mask = np.ones(n_cells, dtype=bool)
-        int_mult = np.ones(n_cells, dtype=np.float64)
-        traction = DcmActiveRimTractionGPU(
+        int_mult = integrin_gain          # share the SAME array → switch raises traction
+        # vectorized (default) vs original per-cell-loop active traction — same law,
+        # same construction signature (the vec is a true drop-in subclass).
+        TractionCls = (DcmActiveRimTractionGPUVec if fast_active
+                       else DcmActiveRimTractionGPU)
+        traction = TractionCls(
             cell_of_node=cell_of_node, ranges=ranges, active=active_mask,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
@@ -274,7 +301,153 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         face_cell=face_cell, n_cells=n_cells, nv=nv, ne=ne, mean_edge=mean_edge,
         V0=V0, turgor=turgor, contact=contact, substrate=substrate,
         traction=traction, baoab=action, gamma=gamma, p=p,
-        area_per_node=area_per_node, centers=b["centers"])
+        area_per_node=area_per_node, centers=b["centers"],
+        cad_mult=cad_mult, integrin_gain=integrin_gain)
+
+
+# ===========================================================================
+# BULK-PRESSURE JUNCTION SWITCH (cadherin → integrin clutch) on the GPU build
+# ===========================================================================
+# WHY (PI 2026-06-11). As the spheroid compacts, per-cell bulk pressure rises; a
+# cell whose pressure exceeds an onset (~0.5 kPa) WEAKENS its cadherin (cell-cell)
+# adhesion and STRENGTHENS its integrin (cell-substrate) — the cadherin→integrin
+# clutch switch that lets pressure-loaded cells unjam/spread. The mechanism and its
+# constants live in the FROZEN ``cell/dcm_spheroid_state.py``
+# (``PressureProbe`` crowding→kPa, ``JunctionSwitchUpdater`` switch rule,
+# ``ResolvedSpheroidState`` thresholds); this wires them onto the GPU-friendly
+# build's MUTABLE ``cad_mult`` / ``integrin_gain`` arrays.
+#
+# WHY A LIVE-CELL WRAPPER (not the frozen updater directly). The frozen
+# PressureProbe/JunctionSwitchUpdater operate on a ``SpheroidStateArrays`` and an
+# ``active`` mask; the GPU build instead exposes ``cell_of_node`` (the tent/turgor
+# liveness authority) and its own ``cad_mult`` / ``integrin_gain``. So the wrapper
+# REPLICATES the frozen crowding→kPa pressure proxy + the > P_switch rule EXACTLY,
+# but computes pressure over LIVE cells ONLY (``cell_of_node ≥ 0``) — consistent
+# with the necrosis live-cell fix (``LiveCellActivityLOD`` /
+# ``dcm_gpu_lod_run._live_necrotic_count``), so a parked dormant pool (if present)
+# never inflates the crowd count. The crowding/kPa map + P_switch read straight
+# from ``ResolvedSpheroidState`` (the frozen literature bands), with R_patch tied
+# to the build's actual ``p.R_cell`` so the contact radius scales with the cells.
+
+
+class GpuJunctionSwitchUpdater(hoomd.custom.Action):
+    """Bulk-pressure cadherin→integrin clutch on the GPU-friendly DCM build.
+
+    Each (low-cadence) ``act`` computes per-LIVE-cell bulk pressure from neighbour-
+    cell crowding (the FROZEN ``PressureProbe`` proxy: count active neighbours
+    within ``contact_factor·R``, clip-ramp the crowd count to the [P_min, P_max] kPa
+    band between ``crowd_lo`` and ``crowd_hi``), then applies the FROZEN
+    ``JunctionSwitchUpdater`` rule: any live cell whose pressure exceeds
+    ``P_switch_kPa`` is LATCHED switched — its ``cad_mult`` is lowered to
+    ``cadherin_weak_factor`` (cell-cell adhesion weakens) and its ``integrin_gain``
+    raised to ``integrin_strong_factor`` (cell-substrate adhesion strengthens). The
+    modulated tent contact reads ``cad_mult`` live (mult = √(cad_mult_i·cad_mult_j))
+    and the rim traction reads ``integrin_gain`` (= its ``int_mult``) live, so a
+    switched cell loses cohesion and gains traction the next step.
+
+    Pressure is computed over LIVE cells only (``cell_of_node ≥ 0``) so any parked
+    dormant pool never inflates the crowd count (consistent with the necrosis
+    live-cell fix). The switch is latched (does not revert) within a run.
+
+    Args:
+        handles: the ``build_gpu_dcm_simulation`` dict (sim, ranges, cell_of_node,
+            cad_mult, integrin_gain).
+        sp: ``ResolvedSpheroidState`` carrying the crowding→kPa proxy bands +
+            the junction-switch thresholds (frozen literature values). If None, a
+            default is created with ``R_patch`` tied to the build's ``p.R_cell``.
+    """
+
+    def __init__(self, *, handles: dict, sp=None) -> None:
+        super().__init__()
+        from ffn_sim.cell.dcm_spheroid_state import ResolvedSpheroidState
+        self.h = handles
+        self.ranges = handles["ranges"]
+        self.cell_of_node = handles["cell_of_node"]          # (N,) int, −1 = dormant
+        self.cad_mult = handles["cad_mult"]                  # (n_cells,) mutable
+        self.integrin_gain = handles["integrin_gain"]        # (n_cells,) mutable
+        p = handles["p"]
+        # Default thresholds = frozen literature bands; R_patch tied to the build's
+        # actual cell radius so the contact radius scales with these cells.
+        self.sp = sp or ResolvedSpheroidState(R_patch=float(p.R_cell))
+        self.r_contact = float(self.sp.contact_factor * self.sp.R_patch)
+        n_cells = len(self.ranges)
+        # per-cell diagnostics (read by the visualiser / driver)
+        self.pressure_kPa = np.zeros(n_cells, dtype=np.float64)
+        self.switched = np.zeros(n_cells, dtype=bool)
+        self.n_switched = 0
+        self._sim = None
+
+    def attach(self, simulation):  # noqa: D401
+        super().attach(simulation)
+        self._sim = simulation
+
+    def _live_ids(self) -> np.ndarray:
+        """(k,) cell ids that are LIVE (first node's cell_of_node ≥ 0)."""
+        first_node = np.array([lo for (lo, _hi) in self.ranges])
+        return np.flatnonzero(self.cell_of_node[first_node] >= 0)
+
+    def compute_pressure(self, pos_g: np.ndarray):
+        """Per-LIVE-cell bulk pressure [kPa] from neighbour crowding (frozen proxy).
+
+        Mirrors ``PressureProbe.act`` exactly (count active neighbours within
+        ``contact_factor·R``, clip-ramp crowd → [P_min, P_max] kPa between
+        ``crowd_lo`` and ``crowd_hi``) but over the LIVE-cell centroids only.
+
+        Returns ``(live_ids, P_live)`` — live cell ids and their pressures [kPa].
+        """
+        live_ids = self._live_ids()
+        if live_ids.size == 0:
+            return live_ids, np.zeros(0)
+        cents = np.array([pos_g[self.ranges[int(c)][0]:self.ranges[int(c)][1]].mean(0)
+                          for c in live_ids])
+        d2 = np.sum((cents[:, None, :] - cents[None, :, :]) ** 2, axis=2)
+        within = d2 < self.r_contact ** 2
+        np.fill_diagonal(within, False)
+        crowd = within.sum(axis=1).astype(float)
+        frac = np.clip((crowd - self.sp.crowd_lo)
+                       / (self.sp.crowd_hi - self.sp.crowd_lo), 0.0, 1.0)
+        P = self.sp.P_min_kPa + (self.sp.P_max_kPa - self.sp.P_min_kPa) * frac
+        return live_ids, P
+
+    def act(self, timestep: int) -> None:  # noqa: D401
+        with self._sim.state.cpu_local_snapshot as snap:
+            tag = np.asarray(snap.particles.tag).copy()
+            pos = np.asarray(snap.particles.position).copy()
+        pos_g = pos[np.argsort(tag)]
+        live_ids, P = self.compute_pressure(pos_g)
+        for k, c in enumerate(live_ids):
+            c = int(c)
+            self.pressure_kPa[c] = P[k]
+            if self.switched[c]:
+                continue
+            if P[k] > self.sp.P_switch_kPa:
+                self.switched[c] = True
+                self.cad_mult[c] = self.sp.cadherin_weak_factor       # cadherin ↓
+                self.integrin_gain[c] = self.sp.integrin_strong_factor  # integrin ↑
+        self.n_switched = int(self.switched.sum())
+
+
+def attach_junction_switch(handles: dict, *, sp=None, cadence: int = 500):
+    """Wire the bulk-pressure cadherin→integrin clutch onto a GPU DCM build.
+
+    Attaches a :class:`GpuJunctionSwitchUpdater` (low cadence) that each fire
+    computes per-LIVE-cell bulk pressure and latches the junction switch for cells
+    above ``P_switch_kPa`` — lowering their ``cad_mult`` (cell-cell) and raising
+    their ``integrin_gain`` (cell-substrate). Additive: with the updater absent the
+    arrays stay all-1 and the build is unchanged.
+
+    ``handles`` is the dict from :func:`build_gpu_dcm_simulation`. Adds
+    ``junction_switch`` (the updater) + ``junction_updater`` (the CustomUpdater).
+    Returns the updated ``handles``.
+    """
+    sim = handles["sim"]
+    upd = GpuJunctionSwitchUpdater(handles=handles, sp=sp)
+    cu = hoomd.update.CustomUpdater(
+        action=upd, trigger=hoomd.trigger.Periodic(int(cadence)))
+    sim.operations.updaters.append(cu)
+    handles["junction_switch"] = upd
+    handles["junction_updater"] = cu
+    return handles
 
 
 # ===========================================================================
@@ -299,7 +472,8 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
 
 
 def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
-                              device=None, active: bool = False):
+                              device=None, active: bool = False,
+                              fast_active: bool = True):
     """GPU-friendly DCM spheroid with a PRE-ALLOCATED proliferation pool.
 
     Builds ``n_max`` icosphere shells in a SINGLE fixed tag space (so the K1
@@ -420,7 +594,10 @@ def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
 
     traction = None
     if active:
-        traction = DcmActiveRimTractionGPU(
+        # vectorized (default) vs original per-cell-loop active traction (same law).
+        TractionCls = (DcmActiveRimTractionGPUVec if fast_active
+                       else DcmActiveRimTractionGPU)
+        traction = TractionCls(
             cell_of_node=cell_of_node, ranges=ranges, active=active_mask,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
