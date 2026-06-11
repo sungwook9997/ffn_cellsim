@@ -168,3 +168,20 @@ runs it with `--active`). Entry point: `scripts/dcm_junction_switch_viz.py`.
 - `figs/necrosis_3zone_spatial.png` / `.mp4` — prior 3-zone necrosis spatial render (necrotic
   core central).
 - `figs/necrosis_size_scaling.png` — size-dependent 3-zone scaling (necrotic core grows with N).
+
+## Spreading-over-real-time — HONEST finding: the model OVER-SPREADS without arrest
+After the 2.12× active-vectorization speedup, a long spreading-curve run (N=100, sampling
+A/A₀ vs real-time) was launched to capture spreading over MINUTES of real time. It revealed
+that A/A₀ does NOT plateau — it BLOWS UP: A/A₀ = 3.6 (12 s real) → 6.3 (24 s) → 12.0 (36 s) →
+17.5 (48 s), monotonic and accelerating. This is UNPHYSICAL over-dispersion (the basal
+convex-hull footprint explodes as sustained active rim traction overwhelms the cell-cell
+cohesion and the cells scatter). So:
+- **Physical spreading is the EARLY phase (~12-20 s real, A/A₀ ~3-4, in band).**
+- Beyond that the model lacks a SPREADING-ARREST mechanism: real cells stop spreading at a
+  maximum area (membrane-tension limit / contact inhibition), but our active traction keeps
+  pushing indefinitely → over-spread.
+- **Therefore "run longer for more real-time spreading" makes the result WORSE, not better.**
+  Covering minutes of physical spreading requires adding a spreading-arrest law (cap the
+  active traction as the cell footprint approaches a physiological max, or a membrane-tension
+  restoring force), so the spheroid reaches and HOLDS a stable A/A₀ plateau over long
+  real-time. This is the scientifically correct next step for the real-time spreading goal.
