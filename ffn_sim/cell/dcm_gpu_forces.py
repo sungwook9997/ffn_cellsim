@@ -218,6 +218,119 @@ class DcmSubstrateForceGPU(md.force.Custom):
 
 
 # ---------------------------------------------------------------------------
+# ACTIVE SELF-PROPULSION (SPP) — STAGE-1 aggregation by motile search-and-capture
+# ---------------------------------------------------------------------------
+class DcmActiveMotilitySPP(md.force.Custom):
+    """Per-cell active self-propulsion that drives biological cell AGGREGATION.
+
+    PI 2026-06-12 + research synthesis: a spheroid forms by ACTIVE-MATTER COALESCENCE
+    (search-and-capture), NOT by an external pull. Each LIVE cell is a self-propelled
+    particle carrying a unit polarity ``p_c`` (reoriented out-of-band by
+    :class:`DcmPolarityUpdater` with persistence ``tau_p``); the cell gets a NET active
+    force ``f_active·p_c`` shared equally over its ``nv`` live nodes. This raises the
+    cell-cell COLLISION rate far above passive diffusion, so motile cells encounter +
+    cadherin-adhere (the existing tent) + coalesce into ONE rounded aggregate; the
+    aggregate ROUNDS by the emergent adhesion-cortex-turgor (γ/β) surface tension, not
+    by this force. The propulsion is the cell's OWN internally-generated traction — it
+    is NOT directed toward any centre (contrast the rejected central-pull hack).
+
+    ALL cells full physics (PI hard rule): the force iterates over EVERY live cell with
+    NO rim/interior split and NO activity-LOD — unlike DcmActiveRimTractionGPU (which
+    excludes interior cells for contact inhibition), dispersed cells must ALL wander to
+    find neighbours. Vectorized (per-node gather by cell index) + device-dispatched
+    (GPU cupy / CPU numpy); the CPU path is the parity reference.
+
+    Magnitude (no magic number): bare f_active = v_m·γ_cell ≈ 1µm/min · 1.64e-8 N·s/m
+    ≈ 2.7e-16 N (invisible on the mechanical clock → kinetic acceleration is
+    mandatory); on the accelerated clock f_active ≈ S·2.7e-16 ≈ 1.6e-10 N/cell
+    (~3.9e-12 N/node over 42 nodes), same order as the rim traction, ≪ f_cap.
+    """
+
+    def __init__(self, *, cell_of_node: np.ndarray, ranges, n_cells: int,
+                 f_active: float, f_cap: float = 5.0e-9, ramp_steps: int = 4000,
+                 mem_typeid: int = 0, seed: int = 7) -> None:
+        super().__init__(aniso=False)
+        self.cell_of_node = np.asarray(cell_of_node)
+        self.ranges = ranges
+        self.n_cells = int(n_cells)
+        self.f_active = float(f_active)
+        self.f_cap = float(f_cap)
+        self.ramp_steps = max(1, int(ramp_steps))
+        self.mem_typeid = int(mem_typeid)
+        self.nv = int(ranges[0][1] - ranges[0][0]) if len(ranges) else 1
+        # per-cell polarity: random unit vectors, seed-controlled. Host-resident; the
+        # DcmPolarityUpdater mutates it in place (rotational diffusion).
+        rng = np.random.default_rng(seed)
+        p = rng.normal(size=(self.n_cells, 3))
+        self.p = (p / np.linalg.norm(p, axis=1, keepdims=True)).astype(np.float64)
+        self._gpu: bool | None = None
+        self._xp = None
+
+    def _setup(self) -> None:
+        if self._gpu is None:
+            self._gpu = on_gpu(self._state)
+            if self._gpu:
+                import cupy as cp                # guarded GPU-only import
+                self._xp = cp
+            else:
+                self._xp = np
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        self._setup()
+        xp = self._xp
+        ramp = float(min(1.0, timestep / self.ramp_steps))
+        fmag = ramp * self.f_active / float(self.nv)          # per-node net share
+        con = xp.asarray(self.cell_of_node)                   # cell of each GLOBAL node
+        p_dev = xp.asarray(self.p)
+        snap_ctx = (self._state.gpu_local_snapshot if self._gpu
+                    else self._state.cpu_local_snapshot)
+        with snap_ctx as snap:
+            tag = xp.asarray(snap.particles.tag)              # local → global index
+            tid = xp.asarray(snap.particles.typeid)
+            cidx = con[tag]                                   # cell of each LOCAL node
+            live = (cidx >= 0) & (tid == self.mem_typeid)
+            cidx_safe = xp.where(cidx >= 0, cidx, 0)
+            F = fmag * p_dev[cidx_safe]                       # (N,3) in LOCAL order
+            F = xp.where(live[:, None], F, 0.0)
+            mag = xp.sqrt((F * F).sum(axis=1))                # per-node cap (BAOAB)
+            scale = xp.where(mag > self.f_cap,
+                             self.f_cap / xp.where(mag > 0, mag, 1.0), 1.0)
+            F = F * scale[:, None]
+        farr_ctx = (self.gpu_local_force_arrays if self._gpu
+                    else self.cpu_local_force_arrays)
+        with farr_ctx as arr:
+            arr.force[:] = F
+
+
+class DcmPolarityUpdater(hoomd.custom.Action):
+    """Rotational-diffusion (Ornstein-Uhlenbeck) reorientation of the SPP polarities.
+
+    Out-of-band updater (cadence ``reorient_every``) that decorrelates each cell's
+    heading with persistence ``tau_p`` — kept OFF the per-step force path so the
+    propulsion is piecewise-constant between reorientations (BAOAB-safe, like the
+    ramped rim traction). For each cell: draw a Gaussian, project it perpendicular to
+    the current polarity, take a step ``√(2·D_r_eff·dt_reorient)`` and renormalise to
+    a unit vector (|p|=1 exactly, no drift). ``D_r_eff = S/tau_p`` puts the heading
+    decorrelation on the accelerated clock (preserving the persistence ratio L_p/R).
+    Mutates the shared ``DcmActiveMotilitySPP.p`` in place.
+    """
+
+    def __init__(self, *, motility: DcmActiveMotilitySPP, D_r_eff: float,
+                 dt_reorient: float, seed: int = 7) -> None:
+        self.mot = motility
+        self.coeff = float(np.sqrt(2.0 * D_r_eff * dt_reorient))
+        self.rng = np.random.default_rng(seed + 1)
+
+    def act(self, timestep: int) -> None:  # noqa: D401
+        p = self.mot.p
+        xi = self.rng.normal(size=p.shape)
+        xi_perp = xi - np.sum(xi * p, axis=1, keepdims=True) * p   # ⟂ to p
+        p_new = p + self.coeff * xi_perp
+        n = np.linalg.norm(p_new, axis=1, keepdims=True)
+        self.mot.p[:] = p_new / np.where(n > 0, n, 1.0)
+
+
+# ---------------------------------------------------------------------------
 # GPU-capable ACTIVE RIM TRACTION (coarse-grained lamellipodium + belt + clutch)
 # ---------------------------------------------------------------------------
 class DcmActiveRimTractionGPU(md.force.Custom):

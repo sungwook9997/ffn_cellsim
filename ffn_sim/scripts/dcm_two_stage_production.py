@@ -1,32 +1,35 @@
-"""TWO-STAGE DCM spheroid production (PI 2026-06-12) — aggregation THEN spreading.
+"""TWO-STAGE DCM spheroid production (PI 2026-06-12, v2 — BIOLOGICAL aggregation).
 
-PI directive: spreading must NOT start from a just-placed cell lattice. It must take a
-spheroid that has gone through real AGGREGATION (cells pulled together into a compact
-ball) and place THAT on the dish — else the rim traction is ill-defined. So:
+PI rejected v1: spreading must NOT start from a just-placed lattice, AND the v1
+"aggregation" (AggregationDrive central pull) was a forced hack — cells were dragged
+to a point, not aggregated. Reference: SimuCell3D organoid cell aggregation. v2 makes
+the aggregation EMERGENT (active-matter coalescence, search-and-capture):
 
-  STAGE 1 · AGGREGATION (free-float, no dish): N cells start loosely spaced
-    (spacing ~2.4·R, within the cadherin reach) and AGGREGATE under cohesion + turgor
-    ALONE into a compact, rounded spheroid (Rg shrinks, contact fraction rises, the
-    cluster rounds up). No substrate, no settling, no active traction.
+  STAGE 1 · AGGREGATION (free-float hanging drop, all cells full physics):
+    Loosely-seeded cells are SELF-PROPELLED (DcmActiveMotilitySPP: each cell carries a
+    polarity reoriented with persistence tau_p by DcmPolarityUpdater) inside a SOFT
+    SPHERICAL DROP (DcmDropConfinement: force-free interior, inward only at r>R_drop —
+    the hanging-drop meniscus, NOT a central pull). Motile cells collide, cadherin-
+    adhere (existing tent), and COALESCE into ONE aggregate that ROUNDS by the emergent
+    adhesion-cortex-turgor surface tension. Run TO CONVERGENCE (Rg plateau + contact
+    fraction > 0.7 + asphericity → 0), not a fixed step budget. NO central force, NO
+    activity-LOD, NO rim/interior split — every cell wanders + has full physics.
 
-  STAGE 2 · SPREADING (on the dish): the aggregated spheroid is translated onto the
-    substrate (bottom at z0) and run WITH substrate adhesion + settling + active rim
-    traction — it sediments, contacts, wets and spreads as a cohesive aggregate.
+  STAGE 2 · SPREADING: the CONVERGED aggregate (stage-1 final positions, same topology)
+    is placed on the substrate via build init_pos and run with substrate + settling +
+    active rim traction (drop + motility OFF). Hand-off verified (stage-2 frame 0 ==
+    stage-1 final).
 
-Both stages save per-frame node positions + physical diagnostics so the MacBook can
-visualise them (gbook computes, MacBook renders). Diagnostics include per-cell VOLUME
-conservation V/V0 (PI asked: is volume held, or do cells just flatten? — turgor must
-hold V while the SHAPE flattens), radius of gyration, max height, basal footprint.
+Diagnostics per frame: per-cell V/V0 (turgor held?), Rg, asphericity, maxZ, basal
+footprint, AND contact-node fraction. gbook computes; the MacBook renders. Real-time
+labels (S, t_sim, t_real) reported honestly.
 
-Designed for the gbook RTX A5000 (build auto-selects GPU; CPU fallback for dev). Save
-output is a pickle the viz script loads.
-
-Run (gbook, one size):
+Run (gbook, one size, to convergence):
     PYTHONPATH=. python ffn_sim/scripts/dcm_two_stage_production.py --n 200 \
-        --agg-steps 30000 --spread-steps 30000
-Run (CPU dev smoke, tiny):
+        --agg-max-steps 10000000 --spread-steps 30000
+Run (CPU dev smoke — confirm FORM only):
     PYTHONPATH=. python ffn_sim/scripts/dcm_two_stage_production.py --n 30 \
-        --agg-steps 3000 --spread-steps 3000 --frames 6
+        --agg-max-steps 300000 --spread-steps 3000 --frames 6
 """
 
 from __future__ import annotations
@@ -38,23 +41,24 @@ import time
 from pathlib import Path
 
 import numpy as np
+import hoomd
 
 from ffn_sim.cell.dcm import icosphere_mesh
 from ffn_sim.cell.dcm_gpu_build import (
-    AggregationDrive, ResolvedGpuDCM, build_gpu_dcm_simulation, pick_device)
+    DcmDropConfinement, ResolvedGpuDCM, build_gpu_dcm_simulation, pick_device)
+from ffn_sim.cell.dcm_gpu_forces import DcmActiveMotilitySPP, DcmPolarityUpdater
 from ffn_sim.cell.dcm_confluence import capture_positions
 from ffn_sim.common.sim_realtime import map_realtime
+from ffn_sim.scripts.dcm_native_capstone import _footprint_area, _effective_radius
+from ffn_sim.scripts.dcm_cohesion_check import _contact_fraction
 
 OUT = Path("ffn_sim/outputs/h_dcm_two_stage")
 OUT.mkdir(parents=True, exist_ok=True)
 UM = 1.0e6
+S_ACCEL = 6.0e5            # accelerated-kinetics factor (common/sim_realtime basis)
 
 
-# ---------------------------------------------------------------------------
-# physical diagnostics (per frame)
-# ---------------------------------------------------------------------------
 def cell_volume(verts, tris):
-    """Enclosed volume of one triangulated cell shell (divergence theorem)."""
     t = verts[tris]
     return abs(np.einsum("ij,ij->i", t[:, 0], np.cross(t[:, 1], t[:, 2])).sum()) / 6.0
 
@@ -63,15 +67,14 @@ def centroids(pos, ranges):
     return np.array([pos[lo:hi].mean(0) for lo, hi in ranges])
 
 
-def diagnostics(pos, ranges, tris0, *, R, z0, V0):
-    """V/V0 (mean/min/max), Rg, asphericity, maxZ, basal footprint area [µm²]."""
+def diagnostics(pos, ranges, cell_of_node, tris0, *, R, z0, V0, c_adh):
+    """V/V0, Rg, asphericity, maxZ, basal footprint, contact-node fraction."""
     vols = np.array([cell_volume(pos[lo:hi], tris0) for lo, hi in ranges])
     vr = vols / V0
     cen = centroids(pos, ranges)
     cc = cen.mean(0)
     r = np.linalg.norm(cen - cc, axis=1)
     Rg = float(np.sqrt((r ** 2).mean())) if len(cen) else 0.0
-    # asphericity from the gyration tensor eigenvalues (0 = sphere)
     if len(cen) >= 4:
         d = cen - cc
         G = (d[:, :, None] * d[:, None, :]).mean(0)
@@ -80,65 +83,151 @@ def diagnostics(pos, ranges, tris0, *, R, z0, V0):
     else:
         asph = 0.0
     maxZ = float(pos[:, 2].max())
-    # basal footprint (xy hull of substrate-contact nodes)
-    from scipy.spatial import ConvexHull
-    basal = pos[pos[:, 2] < z0 + 0.5 * R][:, :2]
-    if basal.shape[0] >= 3:
-        try:
-            foot = float(ConvexHull(basal).volume)
-        except Exception:  # noqa: BLE001
-            foot = float(np.ptp(basal[:, 0]) * np.ptp(basal[:, 1]))
-    else:
-        foot = 0.0
+    foot = _footprint_area(pos, z0, R)
+    cfrac = float(_contact_fraction(pos, cell_of_node, c_adh))
     return dict(VV0_mean=float(vr.mean()), VV0_min=float(vr.min()),
                 VV0_max=float(vr.max()), Rg_um=Rg * UM, asphericity=asph,
-                maxZ_um=maxZ * UM, footprint_um2=foot * UM * UM)
+                maxZ_um=maxZ * UM, footprint_um2=foot * UM * UM, contact_frac=cfrac)
 
 
-def run_stage(sim, *, n_frames, steps_per_frame, ranges, tris0, R, z0, V0, label, dt):
-    """Run a stage in chunks, capturing per-frame positions + diagnostics."""
-    sim.run(0)
-    frames, diags, steps = [], [], []
-    pos = capture_positions(sim)
-    frames.append(pos.copy())
-    diags.append(diagnostics(pos, ranges, tris0, R=R, z0=z0, V0=V0))
-    steps.append(int(sim.timestep))
-    print(f"  [{label}] frame 0 step {sim.timestep}: "
-          f"V/V0={diags[0]['VV0_mean']:.3f} Rg={diags[0]['Rg_um']:.1f}µm "
-          f"maxZ={diags[0]['maxZ_um']:.1f}µm foot={diags[0]['footprint_um2']:.0f}µm²",
+def _rt(steps, dt):
+    rt = map_realtime(int(steps), float(dt))
+    return f"{rt.t_sim_human} sim ≈ {rt.t_real_human} real"
+
+
+# ---------------------------------------------------------------------------
+# STAGE 1 — biological aggregation to CONVERGENCE
+# ---------------------------------------------------------------------------
+def aggregate(p, n_cells, *, dev, f_active, tau_p_min, reorient_every, R_drop_factor,
+              k_wall, max_steps, frames, R, z0, V0, tris0, seed):
+    h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=False,
+                                 with_substrate=False, settle_force=0.0)
+    sim, ranges = h["sim"], h["ranges"]
+    nbuilt = h["n_cells"]
+    cell_of_node = h["cell_of_node"]
+    # drop centre (fixed; interior is force-free so the exact value barely matters)
+    snap0 = sim.state.get_snapshot()
+    center = np.asarray(snap0.particles.position).mean(0)
+    R_drop = (nbuilt ** (1.0 / 3.0) + R_drop_factor) * R
+    # SPP motility (all live cells) + soft drop wall + polarity reorientation updater
+    mot = DcmActiveMotilitySPP(cell_of_node=cell_of_node, ranges=ranges,
+                               n_cells=nbuilt, f_active=f_active, ramp_steps=4000,
+                               seed=seed)
+    sim.operations.integrator.forces.append(mot)
+    sim.operations.integrator.forces.append(
+        DcmDropConfinement(center=center, R_drop=R_drop, k_wall=k_wall))
+    dt_reorient = reorient_every * float(p.dt)
+    D_r_eff = S_ACCEL / (tau_p_min * 60.0)           # accelerated rotational diffusion
+    pol = DcmPolarityUpdater(motility=mot, D_r_eff=D_r_eff, dt_reorient=dt_reorient,
+                             seed=seed)
+    sim.operations.writers.append(hoomd.write.CustomWriter(
+        action=pol, trigger=hoomd.trigger.Periodic(reorient_every)))
+
+    print(f"STAGE 1 · AGGREGATION (n_cells={nbuilt}, f_active={f_active:.2e} N/cell, "
+          f"tau_p={tau_p_min}min, R_drop={R_drop*UM:.0f}µm, drop+motility, ALL cells):",
           flush=True)
-    t0 = time.time()
-    for f in range(1, n_frames):
-        sim.run(steps_per_frame)
+    sim.run(0)
+    chunk = max(2000, max_steps // max(1, frames - 1))
+    Frames, diags, steps = [], [], []
+
+    def snap_diag():
         pos = capture_positions(sim)
+        return pos, diagnostics(pos, ranges, cell_of_node, tris0,
+                                R=R, z0=z0, V0=V0, c_adh=p.c_adh)
+
+    pos, dg = snap_diag()
+    Frames.append(pos.copy()); diags.append(dg); steps.append(int(sim.timestep))
+    print(f"  [agg] f0 step 0: Rg={dg['Rg_um']:.1f}µm asph={dg['asphericity']:.3f} "
+          f"contact={dg['contact_frac']:.2f} V/V0={dg['VV0_mean']:.3f}", flush=True)
+    t0 = time.time()
+    converged = False
+    rg_hist = [dg["Rg_um"]]
+    while int(sim.timestep) < max_steps:
+        sim.run(chunk)
+        pos, dg = snap_diag()
         if not np.isfinite(pos).all():
-            print(f"  [{label}] NON-FINITE at frame {f} — truncating", flush=True)
-            break
-        frames.append(pos.copy())
-        diags.append(diagnostics(pos, ranges, tris0, R=R, z0=z0, V0=V0))
-        steps.append(int(sim.timestep))
-        dd = diags[-1]
-        print(f"  [{label}] frame {f} step {sim.timestep}: "
-              f"V/V0={dd['VV0_mean']:.3f} Rg={dd['Rg_um']:.1f}µm "
-              f"maxZ={dd['maxZ_um']:.1f}µm foot={dd['footprint_um2']:.0f}µm²", flush=True)
+            print("  [agg] NON-FINITE — truncating", flush=True); break
+        Frames.append(pos.copy()); diags.append(dg); steps.append(int(sim.timestep))
+        rg_hist.append(dg["Rg_um"])
+        print(f"  [agg] f{len(Frames)-1} step {sim.timestep}: Rg={dg['Rg_um']:.1f}µm "
+              f"asph={dg['asphericity']:.3f} contact={dg['contact_frac']:.2f} "
+              f"V/V0={dg['VV0_mean']:.3f}  ({_rt(sim.timestep, p.dt)})", flush=True)
+        # CONVERGENCE: Rg plateaued (last 3 within 1%) AND contact>0.7 AND asph<0.05
+        if len(rg_hist) >= 4:
+            window = rg_hist[-3:]
+            plateau = (max(window) - min(window)) / max(np.mean(window), 1e-9) < 0.01
+            if plateau and dg["contact_frac"] > 0.70 and dg["asphericity"] < 0.05:
+                converged = True
+                print(f"  [agg] CONVERGED at step {sim.timestep} "
+                      f"(Rg plateau, contact {dg['contact_frac']:.2f}, "
+                      f"asph {dg['asphericity']:.3f})", flush=True)
+                break
     wall = time.time() - t0
-    return dict(frames=frames, diags=diags, steps=steps, label=label,
-                wall_s=round(wall, 1))
+    return dict(frames=Frames, diags=diags, steps=steps, wall_s=round(wall, 1),
+                converged=converged, R_drop_um=R_drop * UM, f_active=f_active,
+                tau_p_min=tau_p_min), h, ranges, Frames[-1].copy(), cell_of_node
+
+
+# ---------------------------------------------------------------------------
+# STAGE 2 — spreading from the converged aggregate
+# ---------------------------------------------------------------------------
+def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0):
+    h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=True,
+                                 with_substrate=True, init_pos=init_pos)
+    sim, ranges = h["sim"], h["ranges"]
+    cell_of_node = h["cell_of_node"]
+    print(f"STAGE 2 · SPREADING (from converged aggregate, active rim traction):",
+          flush=True)
+    sim.run(0)
+    spf = max(1, steps // max(1, frames - 1))
+    Frames, diags, st = [], [], []
+
+    def snap_diag():
+        pos = capture_positions(sim)
+        return pos, diagnostics(pos, ranges, cell_of_node, tris0,
+                                R=R, z0=z0, V0=V0, c_adh=p.c_adh)
+
+    pos, dg = snap_diag()
+    Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
+    print(f"  [spread] f0 step 0: Rg={dg['Rg_um']:.1f}µm maxZ={dg['maxZ_um']:.1f}µm "
+          f"foot={dg['footprint_um2']:.0f}µm² V/V0={dg['VV0_mean']:.3f}", flush=True)
+    t0 = time.time()
+    for f in range(1, frames):
+        sim.run(spf)
+        pos, dg = snap_diag()
+        if not np.isfinite(pos).all():
+            print("  [spread] NON-FINITE — truncating", flush=True); break
+        Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
+        print(f"  [spread] f{f} step {sim.timestep}: Rg={dg['Rg_um']:.1f}µm "
+              f"maxZ={dg['maxZ_um']:.1f}µm foot={dg['footprint_um2']:.0f}µm² "
+              f"V/V0={dg['VV0_mean']:.3f}", flush=True)
+    return dict(frames=Frames, diags=diags, steps=st, wall_s=round(time.time() - t0, 1)), h
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=200, help="cell count")
-    ap.add_argument("--agg-steps", type=int, default=30000)
+    ap.add_argument("--n", type=int, default=200)
+    ap.add_argument("--agg-max-steps", type=int, default=10_000_000,
+                    help="aggregation safety cap; runs to CONVERGENCE before this")
     ap.add_argument("--spread-steps", type=int, default=30000)
-    ap.add_argument("--frames", type=int, default=12)
+    ap.add_argument("--frames", type=int, default=16)
     ap.add_argument("--agg-spacing", type=float, default=2.6,
-                    help="initial cell spacing for aggregation (·R; loose start)")
-    ap.add_argument("--k-agg", type=float, default=1.5e-5,
-                    help="aggregation-confinement stiffness N/m (0 disables). The "
-                         "centripetal pull that compacts the loose cluster into a ball.")
-    ap.add_argument("--r-cell-um", type=float, default=7.5,
-                    help="cell radius µm (coarse-grain to a tissue patch for big R)")
+                    help="loose seed spacing ·R (within cadherin reach; motility coalesces)")
+    ap.add_argument("--f-active", type=float, default=1.6e-10,
+                    help="per-cell active self-propulsion [N] (accelerated kinetics)")
+    ap.add_argument("--tau-p-min", type=float, default=20.0, help="polarity persistence [min]")
+    ap.add_argument("--reorient-every", type=int, default=200)
+    ap.add_argument("--agg-dt", type=float, default=1.0e-8,
+                    help="aggregation timestep [s]. Larger than the spreading dt (1e-9) "
+                         "is stable while cells are loose (stiff contact inactive) and "
+                         "covers the slow aggregation in feasible step counts.")
+    ap.add_argument("--agg-k-edge", type=float, default=None,
+                    help="cortex edge-spring stiffness during aggregation [N/m]. "
+                         "Default keeps the validated stiff band (1e-3); a softer value "
+                         "(~5e-5, the confluent regime) lets cells DEFORM into dense "
+                         "polygonal contact (higher contact fraction, rounding) as a "
+                         "real organoid does — SimuCell3D deformable-cell aggregation.")
+    ap.add_argument("--r-cell-um", type=float, default=7.5)
     ap.add_argument("--seed", type=int, default=7)
     args = ap.parse_args()
 
@@ -148,67 +237,54 @@ def main():
     _v, _e, tris0 = icosphere_mesh(R, 1)
     dev = pick_device(None)
     is_gpu = type(dev).__name__.endswith("GPU")
-    spf_a = max(1, args.agg_steps // max(1, args.frames - 1))
-    spf_s = max(1, args.spread_steps // max(1, args.frames - 1))
-    print(f"[two-stage] N={args.n} R_cell={args.r_cell_um}µm device={'GPU' if is_gpu else 'CPU'} "
-          f"agg={args.agg_steps} spread={args.spread_steps}\n", flush=True)
+    print(f"[two-stage v2 BIOLOGICAL] N={args.n} R_cell={args.r_cell_um}µm "
+          f"device={'GPU' if is_gpu else 'CPU'} S={S_ACCEL:.0e}\n", flush=True)
 
-    # ---- STAGE 1: AGGREGATION (loose start, no dish, no active) ----
-    p_agg = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
-                                spacing_factor=args.agg_spacing)
-    h1 = build_gpu_dcm_simulation(p_agg, args.n, device=dev, active=False,
-                                  with_substrate=False, settle_force=0.0)
-    ranges = h1["ranges"]
-    # AGGREGATION DRIVE: pull cells toward the initial cluster centre so the loose
-    # placement COMPACTS + ROUNDS into a real cohesive spheroid (the short-range tent
-    # cannot pull cells across a gap on its own). Appended BEFORE the first run.
-    snap0 = h1["sim"].state.get_snapshot()
-    agg_center = np.asarray(snap0.particles.position).mean(0)
-    if args.k_agg > 0.0:
-        h1["sim"].operations.integrator.forces.append(
-            AggregationDrive(center=agg_center, k_agg=args.k_agg))
-    print(f"STAGE 1 · AGGREGATION (n_cells={h1['n_cells']}, free-float, "
-          f"k_agg={args.k_agg:.1e}):", flush=True)
-    s1 = run_stage(h1["sim"], n_frames=args.frames, steps_per_frame=spf_a,
-                   ranges=ranges, tris0=tris0, R=R, z0=z0, V0=V0, label="agg", dt=p_agg.dt)
-    agg_pos = s1["frames"][-1].copy()
-    # translate the aggregated ball onto the dish: bottom node at z0
+    agg_over = dict(R_cell=R, spacing_factor=args.agg_spacing, dt=args.agg_dt)
+    if args.agg_k_edge is not None:
+        agg_over["k_edge"] = args.agg_k_edge       # soft cortex → deformable cells
+    p_agg = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), **agg_over)
+    s1, h1, ranges, agg_pos, _con = aggregate(
+        p_agg, args.n, dev=dev, f_active=args.f_active, tau_p_min=args.tau_p_min,
+        reorient_every=args.reorient_every, R_drop_factor=2.0, k_wall=1.0e-3,
+        max_steps=args.agg_max_steps, frames=args.frames, R=R, z0=z0, V0=V0,
+        tris0=tris0, seed=args.seed)
+    # place the converged aggregate onto the dish (bottom at z0, centred in xy)
     agg_pos[:, 2] -= (agg_pos[:, 2].min() - z0)
-    # also recentre xy over the origin so it sits centred on the dish
-    cen_xy = centroids(agg_pos, ranges).mean(0)[:2]
-    agg_pos[:, 0] -= cen_xy[0]; agg_pos[:, 1] -= cen_xy[1]
+    cxy = centroids(agg_pos, ranges).mean(0)[:2]
+    agg_pos[:, 0] -= cxy[0]; agg_pos[:, 1] -= cxy[1]
     print(f"  -> aggregated: Rg {s1['diags'][0]['Rg_um']:.1f}→{s1['diags'][-1]['Rg_um']:.1f}µm, "
           f"asph {s1['diags'][0]['asphericity']:.3f}→{s1['diags'][-1]['asphericity']:.3f}, "
-          f"V/V0 {s1['diags'][-1]['VV0_mean']:.3f}\n", flush=True)
+          f"contact {s1['diags'][0]['contact_frac']:.2f}→{s1['diags'][-1]['contact_frac']:.2f}, "
+          f"converged={s1['converged']}\n", flush=True)
 
-    # ---- STAGE 2: SPREADING from the aggregate (on the dish, active) ----
-    p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R)   # cohesive defaults
-    h2 = build_gpu_dcm_simulation(p, args.n, device=dev, active=True,
-                                  with_substrate=True, init_pos=agg_pos)
-    print(f"STAGE 2 · SPREADING (from aggregate, active rim traction):", flush=True)
-    s2 = run_stage(h2["sim"], n_frames=args.frames, steps_per_frame=spf_s,
-                   ranges=h2["ranges"], tris0=tris0, R=R, z0=z0, V0=V0, label="spread", dt=p.dt)
-
-    rt_a = map_realtime(s1["steps"][-1], float(p_agg.dt))
-    rt_s = map_realtime(s2["steps"][-1], float(p.dt))
+    # stage 2 uses the cohesive contact bands (ResolvedGpuDCM defaults) but the SAME
+    # spacing_factor as stage 1 so _cluster_centers yields the SAME cell count/topology
+    # → the converged aggregate's init_pos lines up (the lattice positions it places
+    # are overridden by init_pos anyway, so spacing here only fixes the topology).
+    p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
+                            spacing_factor=args.agg_spacing)
+    s2, h2 = spread(p, args.n, dev=dev, init_pos=agg_pos, steps=args.spread_steps,
+                    frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0)
     tr = h2["traction"]
+
     out = dict(
-        n_cells=int(h2["n_cells"]), R_cell=R, V0=V0, z0=z0,
+        n_cells=int(h2["n_cells"]), R_cell=R, V0=V0, z0=z0, S=S_ACCEL,
         tris0=tris0, ranges=h2["ranges"], device="GPU" if is_gpu else "CPU",
         agg=s1, spread=s2, p_agg=p_agg, p=p,
-        # rim-detection params so the viz can colour the lamellipodiating cells
-        # exactly as the traction does (rim = few neighbours + basal contact).
         rim_params=dict(r_neigh=float(tr.r_neigh), max_neigh=int(tr.max_neigh),
                         contact_band=float(tr.contact_band), R=R, z0=z0),
-        realtime=dict(agg=rt_a.t_real_human, spread=rt_s.t_real_human,
-                      accel=rt_a.accel_factor))
+        realtime=dict(agg=_rt(s1["steps"][-1], p_agg.dt),
+                      spread=_rt(s2["steps"][-1], p.dt), accel=S_ACCEL))
     path = OUT / f"two_stage_n{args.n}.pkl"
     with open(path, "wb") as fh:
         pickle.dump(out, fh)
-    print(f"\nwrote {path} (agg {s1['wall_s']}s + spread {s2['wall_s']}s)", flush=True)
-    print(f"VOLUME held: agg V/V0={s1['diags'][-1]['VV0_mean']:.3f}, "
-          f"spread V/V0={s2['diags'][-1]['VV0_mean']:.3f} "
-          f"(≈1 + turgor inflation; flat = cells keep volume, shape flattens)", flush=True)
+    print(f"\nwrote {path} (agg {s1['wall_s']}s converged={s1['converged']} + "
+          f"spread {s2['wall_s']}s)", flush=True)
+    print(f"AGGREGATION biological check: contact {s1['diags'][-1]['contact_frac']:.2f} "
+          f"(>0.7?), asph {s1['diags'][-1]['asphericity']:.3f} (→0?), "
+          f"Rg {s1['diags'][0]['Rg_um']:.0f}→{s1['diags'][-1]['Rg_um']:.0f}µm; "
+          f"VOLUME held V/V0={s1['diags'][-1]['VV0_mean']:.3f}", flush=True)
 
 
 if __name__ == "__main__":

@@ -99,28 +99,39 @@ class SettlingForce(md.force.Custom):
             arr.force[:, 2] = fz
 
 
-class AggregationDrive(md.force.Custom):
-    """Weak CENTRIPETAL confinement that drives STAGE-1 aggregation (hanging-drop /
-    surface-tension analog).
+class DcmDropConfinement(md.force.Custom):
+    """Soft ONE-SIDED spherical confining wall = the hanging-drop / U-well meniscus
+    that BOUNDS Stage-1 aggregation (it does NOT aggregate the cells).
 
-    Each live membrane node is pulled toward the aggregation ``center`` so a loosely
-    placed cluster COMPACTS and ROUNDS into a cohesive spheroid (the cells come
-    together). The cell-cell tent adhesion is short range (it cannot pull cells across
-    a gap), so on its own a loose cluster just sits there — this confinement supplies
-    the aggregation drive that a hanging-drop / low-adhesion well supplies in vitro.
-    The FINAL ball size is set by cohesion + turgor + excluded-volume balancing the
-    inward pull (the confinement only brings the cells in); per-node force is harmonic
-    toward the centre with a magnitude cap (BAOAB-safe). It is an INITIAL-CONDITION
-    protocol to produce a realistic starting aggregate for STAGE-2 spreading — it is
-    NOT wired during spreading and is not a spreading-physics mechanism. Applies only
-    to ``mem_typeid`` (live membrane). Device-dispatched (GPU cupy / CPU numpy).
+    Replaces the rejected ``AggregationDrive`` central-pull hack (PI 2026-06-12). A
+    central harmonic pull ``F=-k·(pos-center)`` is biologically wrong: it is an
+    EXTERNAL body force toward a point that carries zero cell-cell information (it
+    would compact a bag of sand identically), it is a LUMPED PROXY for surface
+    tension (CLAUDE.md forbids), it over-compacts the core + pre-strains turgor/cortex
+    against a phantom load, and it destroys cell sorting (a force identical for all
+    cells overwhelms the cadherin differentials). Aggregation must instead EMERGE from
+    the cells' own active motility (``DcmActiveMotilitySPP``) + mutual tent adhesion;
+    this wall only keeps the motile search BOUNDED, exactly as a drop's air-liquid
+    meniscus does:
+
+        F = 0                                (r <= R_drop)   ← FORCE-FREE interior
+        F = -k_wall · (r − R_drop) · r̂       (r >  R_drop)   ← inward only, capped
+
+    The interior is force-free, so it imposes NO density/pressure gradient, does NOT
+    pre-strain turgor/cortex, and does NOT manufacture surface tension or rounding —
+    the ball shape is the EMERGENT adhesion–cortex–turgor balance, verifiable by
+    removing the wall (the coalesced ball must STAY rounded). ``center`` is fixed (the
+    interior being force-free, its exact value barely matters). ``R_drop`` is sized a
+    few cell diameters larger than the target packed ball so the wall guides without
+    crushing. Applies only to ``mem_typeid``. Device-dispatched (GPU cupy / CPU numpy).
     """
 
-    def __init__(self, *, center, k_agg: float, f_cap: float = 3.0e-10,
-                 mem_typeid: int = 0) -> None:
+    def __init__(self, *, center, R_drop: float, k_wall: float = 1.0e-3,
+                 f_cap: float = 5.0e-9, mem_typeid: int = 0) -> None:
         super().__init__(aniso=False)
         self.center = np.asarray(center, dtype=np.float64)
-        self.k = float(k_agg)
+        self.R_drop = float(R_drop)
+        self.k_wall = float(k_wall)
         self.f_cap = float(f_cap)
         self.mem_typeid = int(mem_typeid)
         self._gpu: bool | None = None
@@ -144,11 +155,13 @@ class AggregationDrive(md.force.Custom):
         with snap_ctx as snap:
             tid = xp.asarray(snap.particles.typeid)
             pos = xp.asarray(snap.particles.position, dtype=xp.float64)
-            F = -self.k * (pos - c[None, :])                 # harmonic toward centre
-            mag = xp.sqrt((F * F).sum(axis=1))
-            scale = xp.where(mag > self.f_cap,
-                             self.f_cap / xp.where(mag > 0, mag, 1.0), 1.0)
-            F = F * scale[:, None]
+            d = pos - c[None, :]                              # node → centre vector
+            r = xp.sqrt((d * d).sum(axis=1))
+            over = r - self.R_drop                            # > 0 ⇔ outside the drop
+            mag = xp.where(over > 0.0, self.k_wall * over, 0.0)
+            mag = xp.minimum(mag, self.f_cap)
+            r_safe = xp.where(r > 0.0, r, 1.0)
+            F = -(mag / r_safe)[:, None] * d                  # inward (−d̂), 0 inside
             F = xp.where((tid == self.mem_typeid)[:, None], F, 0.0)
         farr_ctx = (self.gpu_local_force_arrays if self._gpu
                     else self.cpu_local_force_arrays)
