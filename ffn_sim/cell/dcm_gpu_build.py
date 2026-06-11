@@ -147,6 +147,13 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
     spacing = p.spacing_factor * p.R_cell
     centers = _cluster_centers(n_cells, spacing, p.z_substrate, p.R_cell,
                                mode=p.cluster)
+    # _cluster_centers (dcm.py) returns a lattice whose count need not equal
+    # n_cells exactly (e.g. an FCC ball filter gives 1372 for a requested 1500,
+    # which crashed build at large N). Clamp to the actual centers available so
+    # any N is safe; if it overshoots, take the first n_cells.
+    if len(centers) != n_cells:
+        n_cells = min(n_cells, len(centers))
+        centers = centers[:n_cells]
 
     all_pos, bond_groups, cell_of_node = [], [], []
     face_groups, face_cell, ranges = [], [], []
@@ -328,6 +335,10 @@ def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
     spacing = p.spacing_factor * p.R_cell
     centers = _cluster_centers(n_active, spacing, p.z_substrate, p.R_cell,
                                mode=p.cluster)
+    # guard the same lattice-count mismatch as the plain build (see above): if
+    # _cluster_centers returns fewer than n_active, clamp the live count.
+    if len(centers) < n_active:
+        n_active = len(centers)
 
     all_pos, bond_groups, cell_of_node = [], [], []
     face_groups, face_cell, ranges = [], [], []
