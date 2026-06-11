@@ -56,3 +56,22 @@ toward the PI curve while keeping the form. r²=0.63 is moderate (the N=110 poin
 Next: a proliferation-enabled GPU sweep to close the magnitude gap. The BAOAB per-step CPU
 sync remains (forces are GPU-pathed; integrator port is frozen/PI-gated) — a secondary
 throughput item, not blocking these results.
+
+## Proliferation magnitude-closure — HONEST finding (2026-06-11 night)
+Attempting to raise A/A₀ toward the PI band (1.9-2.9) via live division revealed that the
+division rate is a FREE, physically-UNANCHORED parameter, so tuning it to hit the band would
+be FITTING, not validation (CLAUDE.md no-magic-number rule):
+- p_div=0.10 (sweep): **0 divisions** at every size → A/A₀ ~1.1 (even below active-only ~1.4;
+  the prolif build also classifies very FEW cells active — e.g. 10/60 — so its active traction
+  is weaker, a separate bug).
+- p_div=0.50 (diagnostic N=60): **26 divisions** (60→86) → A/A₀ **9.94** (explodes far above band).
+The PI band sits between → there exists a p_div that lands A/A₀ in-band, but choosing it to
+match is circular.
+**Correct path (now possible via the real-time mapping):** anchor the division rate to the
+real CELL-CYCLE time (12-24 h) relative to the spreading time via `common/sim_realtime.py`,
+so "divisions per spreading episode" is PHYSICAL (~a few, since spreading≈minutes-hours ≪
+one cell cycle) and the resulting magnitude is a PREDICTION, not a tuned fit. Also fix the
+prolif build's over-restrictive active-cell classification (only ~10/60 cells get traction).
+**Robust result stands:** the law FORM + negative size-dependence + coefficient signs/order
+are reproduced by the active mechanism (commit 55f23c0); the absolute magnitude is
+proliferation-rate-dependent and must be physically anchored, not tuned.

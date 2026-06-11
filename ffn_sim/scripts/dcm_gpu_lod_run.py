@@ -306,12 +306,16 @@ def main() -> None:
                     help="division-check period in steps (large = slow vs spreading)")
     ap.add_argument("--n-max", type=int, default=None,
                     help="proliferation pool size (default ceil(1.6*n_cells))")
+    ap.add_argument("--r-cell-um", type=float, default=7.5,
+                    help="per-cell radius [um]; >7.5 = coarse-grained tissue patch "
+                         "(reaches R>150um necrosis onset at fewer cells)")
     args = ap.parse_args()
 
     _OUT.mkdir(parents=True, exist_ok=True)
     (_OUT / "figs").mkdir(parents=True, exist_ok=True)
 
-    p = ResolvedGpuDCM(subdivisions=args.subdivisions, dt=args.dt, seed=args.seed)
+    p = ResolvedGpuDCM(subdivisions=args.subdivisions, dt=args.dt, seed=args.seed,
+                       R_cell=args.r_cell_um * 1e-6)
     lod_cfg = ResolvedLOD(cadence=args.cadence)
     device = hoomd.device.CPU(notice_level=0) if args.cpu else None
 
