@@ -1,0 +1,28 @@
+{
+  "steps": 8000,
+  "n_cells": 20,
+  "active": false,
+  "lod": {
+    "n_cells": 20,
+    "steps": 8000,
+    "active": false,
+    "use_lod": true,
+    "device": "CPU",
+    "N_particles": 840,
+    "finite": true,
+    "wall_s": 112.38654150000366,
+    "A0": 8.122286553107878e-10,
+    "A1": 1.3664369540298663e-09,
+    "A_over_A0": 1.6823303943973986,
+    "Rg0": 2.124298045825962e-05,
+    "Rg1": 2.3835290688675335e-05,
+    "Rg_ratio": 1.1220313804604467,
+    "steps_per_s": 71.18290048991088,
+    "n_active": 19,
+    "n_inert": 1,
+    "n_necrotic": 0,
+    "active_frac": 0.95,
+    "necrotic_frac": 0.0,
+    "k_freeze": 0.0003
+  }
+}

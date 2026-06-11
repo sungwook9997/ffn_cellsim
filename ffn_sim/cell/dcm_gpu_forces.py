@@ -337,7 +337,11 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                 rn = float(xp.hypot(rxy[0], rxy[1]))
                 if rn < 1e-12:
                     continue  # cell at the very centre — no defined outward dir
-                rhat = xp.asarray([rxy[0] / rn, rxy[1] / rn, 0.0])
+                # cupy forbids building an array from a list of device scalars
+                # (rxy[i]/rn are 0-d device arrays) -> stay in array ops: the
+                # (2,) in-plane unit vector concatenated with a (1,) z=0.
+                rhat = xp.concatenate(
+                    [rxy / rn, xp.zeros(1, dtype=rxy.dtype)])
                 gain = float(int_mult[c])
                 fmag = ramp * self.f_act * gain
                 fmag = min(fmag, self.f_cap)
@@ -363,6 +367,77 @@ class DcmActiveRimTractionGPU(md.force.Custom):
                 xp.asnumpy(xp.asarray(rim_list, dtype=xp.int64)) if d.gpu
                 else np.array(rim_list, dtype=np.int64))
             self.f_per_cell = f_per_cell
+
+            F = xp.empty_like(pos)
+            F[perm] = F_g
+            U = xp.zeros(n, dtype=xp.float64)
+
+        with d.force_arrays() as arr:
+            arr.force[:] = F
+            arr.potential_energy[:] = U
+
+
+# ---------------------------------------------------------------------------
+# GPU-capable PER-CELL TURGOR via the validated K1 mesh-pressure kernel
+# ---------------------------------------------------------------------------
+class DcmTurgorForceGPU(md.force.Custom):
+    """Device-dispatched per-cell osmotic turgor via the K1 mesh-pressure kernel.
+
+    Same construction signature and physics as ``cell/dcm.py::DcmTurgorForce`` —
+    each cell's enclosed volume is the exact divergence-theorem volume of its
+    triangulated shell, the osmotic pressure ``ΔP_c = turgor_dP0 + K_vol·(V0 −
+    V_c)/V0`` is applied as an outward face-normal force split to the 3 facet
+    nodes. The math lives in ``gpu_opt.kernels_{cpu,gpu}.mesh_pressure_forces``
+    (K1, validated on the A5000 — 9.5×, parity OK), grouped by ``face_cell`` (=
+    the cell id of each face). This is the GPU-FRIENDLY turgor path: ONE custom
+    force, per-cell volume by face-grouping, NO per-cell mesh triangle types — so
+    it does NOT trigger the native ``md.mesh.conservation.Volume`` many-triangle-
+    types GPU stall (the A5000 0% util blocker at N=60).
+
+    On a ``hoomd.device.GPU`` the force is computed in cupy via ``kernels_gpu``
+    (NO host transfer in the hot loop); on a ``hoomd.device.CPU`` it routes
+    through ``kernels_cpu`` and is BIT-IDENTICAL to ``DcmTurgorForce`` (both call
+    the same divergence-theorem volume + face-normal pressure over the same
+    tag-ordered positions → same FP ops; max abs force diff < 1e-12 N, see
+    ``tests/test_dcm_turgor_gpu_parity.py``).
+
+    Args: identical to ``DcmTurgorForce.__init__`` (faces, face_cell, n_cells,
+    V0, turgor_dP0, K_vol).
+    """
+
+    def __init__(self, *, faces: np.ndarray, face_cell: np.ndarray, n_cells: int,
+                 V0: float, turgor_dP0: float, K_vol: float) -> None:
+        super().__init__(aniso=False)
+        self.faces = np.asarray(faces, dtype=np.int64)          # (F,3) global idx
+        self.face_cell = np.asarray(face_cell, dtype=np.int64)  # (F,)
+        self.n_cells = int(n_cells)
+        self.V0 = float(V0)
+        self.turgor_dP0 = float(turgor_dP0)
+        self.K_vol = float(K_vol)
+        self._d: DeviceDispatch | None = None       # lazy (device known at run(0))
+
+    def _dispatch(self) -> DeviceDispatch:
+        if self._d is None:
+            self._d = DeviceDispatch(self)
+        return self._d
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        d = self._dispatch()
+        xp = d.xp
+        with d.snapshot() as snap:
+            tag = xp.asarray(snap.particles.tag)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            n = int(pos.shape[0])
+            # local-row order -> tag(global) order, then scatter back (mirrors the
+            # CPU DcmTurgorForce permutation exactly so faces index the same nodes).
+            perm = xp.argsort(tag)
+            pos_g = pos[perm]
+            faces = xp.asarray(self.faces)
+            face_cell = xp.asarray(self.face_cell)
+
+            F_g = d.kernels.mesh_pressure_forces(
+                pos_g, faces, face_cell, self.n_cells,
+                self.V0, self.turgor_dP0, self.K_vol)
 
             F = xp.empty_like(pos)
             F[perm] = F_g
