@@ -52,6 +52,10 @@ from ffn_sim.cell.dcm_gpu_forces import (
     DcmSubstrateForceGPU,
     DcmActiveRimTractionGPU,
 )
+# Prolif-aware activity-LOD (Problem 2 fix) subclasses the FROZEN classifier; the
+# frozen module (dcm_gpu_lod.py) is imported, never modified. No circular import:
+# dcm_gpu_lod imports only from dcm_gpu_forces.
+from ffn_sim.cell.dcm_gpu_lod import DcmActivityLOD
 
 _KT_310 = 4.28e-21  # J at 310 K
 _UM = 1.0e6
@@ -616,3 +620,185 @@ class GpuProliferationUpdater(hoomd.custom.Action):
             pos_back[perm] = pos_g
             with self._sim.state.cpu_local_snapshot as snap:
                 np.asarray(snap.particles.position)[:] = pos_back
+
+
+# ===========================================================================
+# PROLIF-AWARE activity-LOD — classify over LIVE cells ONLY
+# ===========================================================================
+# WHY (Problem 2, PI 2026-06-11 night). The plain ``attach_activity_lod`` wires a
+# ``DcmActivityLOD`` (cell/dcm_gpu_lod.py, FROZEN) that classifies over ALL
+# ``n_cells`` ranges. On the PROLIFERATION pool that is ``n_max`` — including the
+# PARKED dormant reserve (``cell_of_node = −1``, sitting at z≈60·R, far off the
+# cluster). Those parked cells corrupt every per-cell statistic the classifier
+# uses: the cluster centroid is dragged toward the parked corner, and — fatally —
+# the surface radius ``r_surface = max(‖cent − cluster_cen‖)`` is set by a parked
+# cell ~hundreds of µm away, so EVERY live cell reads as "deep" (depth ≫ necrotic
+# onset) → spuriously NECROTIC → INERT → its traction ``active`` flag is cleared.
+# Result: the prolif build classifies far too few cells active (measured 18/30 vs
+# the plain active build's 28/30) and its rim traction is much weaker → A/A₀
+# collapses to ~1.19 vs the plain active ~1.55, even with proliferation OFF.
+#
+# THE FIX (additive, frozen LOD untouched). Subclass ``DcmActivityLOD`` and run the
+# EXACT SAME classification rule, but over the LIVE subset only (``cell_of_node ≥
+# 0`` — the necrosis fix already applied to the run-script's counting). Live
+# centroid / live surface-radius / live crowding / live substrate-contact → no
+# parked-pool contamination. The full-pool masks are then written so parked cells
+# stay INERT + non-active (they must, they are dormant) and live cells get the
+# correct active/inert split. With proliferation OFF (or 0 divisions) this makes
+# the prolif build's active set + A/A₀ MATCH the plain active build at the same N.
+
+
+class LiveCellActivityLOD(DcmActivityLOD):
+    """Activity-LOD classifier that classifies over LIVE pool cells ONLY.
+
+    Identical classification PHYSICS to :class:`~ffn_sim.cell.dcm_gpu_lod.DcmActivityLOD`
+    (periphery-OR-substrate-contact AND non-necrotic ⇒ active; everything else
+    frozen), but the centroid, cluster surface radius, crowding, substrate-contact
+    and necrosis-depth are all computed over the LIVE cells of the proliferation
+    pool (``cell_of_node ≥ 0``) — never the parked dormant reserve. Parked cells
+    are forced INERT + non-active (they are dormant: undeformed, force-free, off
+    the substrate). Live cells get the correct rim-active / core-inert split.
+
+    This is the prolif-pool counterpart of ``attach_activity_lod``; it exists so
+    that, with proliferation OFF or 0 divisions, the prolif build reproduces the
+    plain ``build_gpu_spheroid --active`` active-cell set + A/A₀ (Problem 2 fix).
+    The frozen LOD module is not modified — this only OVERRIDES ``act``.
+    """
+
+    def act(self, timestep: int) -> None:  # noqa: D401
+        if self._last >= 0 and (timestep - self._last) < self.cfg.cadence:
+            return
+        self._last = timestep
+        cfg = self.cfg
+        with self._state.cpu_local_snapshot as snap:
+            tag = np.asarray(snap.particles.tag).copy()
+            pos = np.asarray(snap.particles.position).copy()
+        perm = np.argsort(tag)
+        pos_g = pos[perm]                            # pos_g[global tag] = position
+
+        # LIVE = cells whose first node carries a non-negative cell_of_node (the
+        # tent + turgor liveness authority; the parked reserve is −1). All
+        # statistics below are computed over LIVE cells ONLY so the parked pool
+        # (z≈60·R, far off) never corrupts the centroid / surface radius / depth.
+        con = self.cell_of_node
+        first_node = np.array([lo for (lo, _hi) in self.ranges])
+        live = con[first_node] >= 0
+        live_ids = np.flatnonzero(live)
+
+        # default: everything inert / non-active (the right state for parked cells)
+        active_full = np.zeros(self.n_cells, dtype=bool)
+        necrotic_full = np.zeros(self.n_cells, dtype=bool)
+
+        if live_ids.size >= 1:
+            cents = np.array([pos_g[self.ranges[int(c)][0]:self.ranges[int(c)][1]].mean(0)
+                              for c in live_ids])
+            cluster_cen = cents.mean(0)
+
+            # crowding among LIVE centroids only (rim = few live neighbours)
+            d2 = np.sum((cents[:, None, :] - cents[None, :, :]) ** 2, axis=2)
+            within = d2 < (cfg.neighbour_factor * self.R) ** 2
+            np.fill_diagonal(within, False)
+            crowd = within.sum(axis=1)
+
+            # substrate contact (any basal node within the contact band)
+            zc = self.z0 + cfg.contact_band * self.R
+            in_contact = np.array(
+                [bool((pos_g[self.ranges[int(c)][0]:self.ranges[int(c)][1]][:, 2]
+                       < zc).any()) for c in live_ids])
+
+            # necrotic = deep from the LIVE-cluster surface (radial-depth proxy).
+            # r_surface is the max LIVE centroid distance → no parked-pool inflation.
+            r_cell = np.linalg.norm(cents - cluster_cen, axis=1)
+            r_surface = float(r_cell.max()) if live_ids.size else 0.0
+            depth = r_surface - r_cell
+            necrotic = depth > (cfg.necrotic_depth_um * 1.0e-6)
+
+            periphery = crowd <= cfg.max_neighbours
+            active = (periphery | in_contact) & (~necrotic)
+
+            active_full[live_ids] = active
+            necrotic_full[live_ids] = necrotic
+
+        inert_full = ~active_full
+
+        # capture anchors for cells that are NEWLY inert so they pin at their
+        # CURRENT position (live cells that just went inert; parked cells too —
+        # harmless, they are already at rest).
+        newly_inert = inert_full & (~self.cell_inert)
+        for c in np.flatnonzero(newly_inert):
+            lo, hi = self.ranges[int(c)]
+            self.anchor[lo:hi] = pos_g[lo:hi]
+        self.cell_inert[:] = inert_full
+        if self.traction_active is not None:
+            self.traction_active[:] = active_full
+
+        # diagnostics: report over the LIVE cells (consistent with the run-script's
+        # live-cell necrosis counting), not the full n_max pool.
+        n_live = int(live_ids.size)
+        self.n_active = int(active_full.sum())
+        self.n_inert = max(0, n_live - self.n_active)
+        self.n_necrotic = int(necrotic_full.sum())
+        self.active_frac = self.n_active / max(1, n_live)
+        self.necrotic_frac = self.n_necrotic / max(1, n_live)
+
+
+def attach_activity_lod_prolif(handles: dict, cfg=None):
+    """Wire the LIVE-cell activity-LOD onto a ``build_gpu_spheroid_prolif`` build.
+
+    Prolif-pool counterpart of ``dcm_gpu_lod.attach_activity_lod``: same overdamped
+    freeze force + the SAME classification physics, but the classifier is the
+    :class:`LiveCellActivityLOD` (classifies over LIVE cells only, so the parked
+    dormant reserve cannot mis-mark live cells necrotic/inert — Problem 2 fix).
+
+    ``handles`` is the dict from ``build_gpu_spheroid_prolif``. Adds ``lod_freeze``,
+    ``lod_updater``, ``cell_inert``, ``anchor``, ``lod_kfreeze`` (mirrors
+    ``attach_activity_lod``), sharing the mutable masks with the freeze force and
+    flipping the traction ``active`` mask. Returns the updated ``handles``.
+    """
+    import hoomd
+
+    from ffn_sim.cell.dcm_gpu_lod import (
+        DcmLodFreezeForce,
+        ResolvedLOD as _ResolvedLOD,
+    )
+
+    cfg = cfg or _ResolvedLOD()
+    sim = handles["sim"]
+    p = handles["p"]
+    n_cells = handles["n_cells"]          # = n_max (the full pool)
+    cell_of_node = handles["cell_of_node"]
+    ranges = handles["ranges"]
+    N = sum(hi - lo for (lo, hi) in ranges)
+
+    cell_inert = np.zeros(n_cells, dtype=bool)
+    anchor = np.zeros((N, 3), dtype=np.float64)
+
+    # overdamped CFL: k_freeze·dt/γ < 1. Clamp to 0.5·γ/dt for margin (same as the
+    # frozen attach_activity_lod).
+    gamma = p.gamma_node
+    k_max = 0.5 * gamma / p.dt
+    k_freeze = min(cfg.k_freeze, k_max)
+
+    freeze = DcmLodFreezeForce(
+        cell_of_node=cell_of_node, cell_inert=cell_inert, anchor=anchor,
+        k_freeze=k_freeze)
+    sim.operations.integrator.forces.append(freeze)
+    sim.run(0)
+
+    traction = handles.get("traction")
+    traction_active = traction.active if traction is not None else None
+
+    lod = LiveCellActivityLOD(
+        cfg=cfg, cell_of_node=cell_of_node, ranges=ranges, n_cells=n_cells,
+        R_cell=p.R_cell, z0=p.z_substrate, cell_inert=cell_inert, anchor=anchor,
+        traction_active=traction_active)
+    updater = hoomd.update.CustomUpdater(
+        action=lod, trigger=hoomd.trigger.Periodic(cfg.cadence))
+    sim.operations.updaters.append(updater)
+
+    handles["lod_freeze"] = freeze
+    handles["lod_updater"] = lod
+    handles["cell_inert"] = cell_inert
+    handles["anchor"] = anchor
+    handles["lod_kfreeze"] = k_freeze
+    return handles

@@ -43,12 +43,13 @@ from ffn_sim.cell.dcm_gpu_build import (
     build_gpu_dcm_simulation,
     build_gpu_spheroid_prolif,
     GpuProliferationUpdater,
+    attach_activity_lod_prolif,
 )
 from ffn_sim.cell.dcm_gpu_lod import (
     ResolvedLOD,
     attach_activity_lod,
 )
-from ffn_sim.common.sim_realtime import map_realtime
+from ffn_sim.common.sim_realtime import map_realtime, division_probability
 
 _OUT = Path("ffn_sim/outputs/h_dcm_gpu_lod")
 
@@ -130,13 +131,19 @@ def _live_necrotic_count(h: dict, pos: np.ndarray, necrotic_depth_um: float) -> 
 def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
              use_lod: bool, lod_cfg: ResolvedLOD, device=None,
              prolif: bool = False, p_div: float = 0.04, div_every: int = 4000,
-             n_max: int | None = None):
+             n_max: int | None = None, auto_pdiv: bool = False,
+             cell_cycle_h: float = 20.0):
     """Build + run one configuration; return (metrics dict, sim).
 
     With ``prolif=True`` the GPU pool build is used: ``n_cells`` cells start
     active and a dormant reserve up to ``n_max`` is parked for division. A
     ``GpuProliferationUpdater`` fires every ``div_every`` steps (necrosis-gated by
     the LOD ``cell_inert`` mask when LOD is on).
+
+    With ``auto_pdiv=True`` the division probability is DERIVED from physics
+    (``common/sim_realtime.division_probability``) instead of the passed ``p_div``:
+    p_div = S·dt·div_every / T_cycle, so the realised divisions reproduce the
+    cell-cycle fraction the spreading episode occupies (a PREDICTION, not a fit).
     """
     band = lod_cfg.contact_band * p.R_cell
 
@@ -151,7 +158,25 @@ def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
     sim = h["sim"]
 
     if use_lod:
-        attach_activity_lod(h, lod_cfg)
+        # PROLIF builds use the LIVE-cell-only classifier (Problem 2 fix): the
+        # parked dormant pool would otherwise mis-mark live cells necrotic/inert
+        # and collapse the active rim. Plain builds use the frozen attach.
+        if prolif:
+            attach_activity_lod_prolif(h, lod_cfg)
+        else:
+            attach_activity_lod(h, lod_cfg)
+
+    # PHYSICAL division-rate anchoring (Problem 1, PI 2026-06-11). Derive p_div
+    # from the real cell-cycle time vs the run's real-time-equivalent duration,
+    # NOT a free knob tuned to an A/A₀ band. p_div = S·dt·div_every / T_cycle.
+    div_anchor = None
+    if prolif and auto_pdiv:
+        # rim estimate for the EXPECTED-TOTAL print only (does not enter p_div).
+        # A small spheroid is nearly all-rim → n_start is a fair rim estimate.
+        div_anchor = division_probability(
+            steps, p.dt, t_cycle_h=cell_cycle_h, div_every=div_every,
+            n_rim_est=n_start)
+        p_div = div_anchor.p_div
 
     prolif_upd = None
     if prolif:
@@ -210,7 +235,10 @@ def _run_one(p: ResolvedGpuDCM, n_cells: int, steps: int, *, active: bool,
             n_active_final=n_active_final,
             n_divisions=(prolif_upd.n_divisions if prolif_upd else 0),
             n_necrotic_live=n_necrotic_live,
-            n_max=h["n_max"], p_div=p_div, div_every=div_every))
+            n_max=h["n_max"], p_div=p_div, div_every=div_every,
+            auto_pdiv=auto_pdiv))
+        if div_anchor is not None:
+            m.update(div_anchor.to_dict())
     if lod is not None:
         if prolif:
             # Report the LIVE-cell necrosis (parked dormant pool excluded), not the
@@ -301,7 +329,14 @@ def main() -> None:
     ap.add_argument("--prolif", action="store_true",
                     help="enable live proliferation (pre-allocated pool + division)")
     ap.add_argument("--p-div", type=float, default=0.04,
-                    help="per-eligible-rim-cell division prob per cadence (slow)")
+                    help="per-eligible-rim-cell division prob per cadence (slow). "
+                         "Ignored when --auto-pdiv is set (then DERIVED from physics)")
+    ap.add_argument("--auto-pdiv", action="store_true",
+                    help="DERIVE p_div from physics (real cell cycle vs the run's "
+                         "real-time-equivalent via sim_realtime); not a free knob")
+    ap.add_argument("--cell-cycle-h", type=float, default=20.0,
+                    help="real cell-cycle / division time [hours] for --auto-pdiv "
+                         "(MCF7 ~18-24 h; default 20)")
     ap.add_argument("--div-every", type=int, default=4000,
                     help="division-check period in steps (large = slow vs spreading)")
     ap.add_argument("--n-max", type=int, default=None,
@@ -325,7 +360,8 @@ def main() -> None:
     m_lod, _ = _run_one(p, args.n_cells, args.steps, active=args.active,
                         use_lod=True, lod_cfg=lod_cfg, device=device,
                         prolif=args.prolif, p_div=args.p_div,
-                        div_every=args.div_every, n_max=args.n_max)
+                        div_every=args.div_every, n_max=args.n_max,
+                        auto_pdiv=args.auto_pdiv, cell_cycle_h=args.cell_cycle_h)
     print(f"[LOD]    finite={m_lod['finite']} wall={m_lod['wall_s']:.2f}s "
           f"A/A0={m_lod['A_over_A0']:.3f} active={m_lod.get('n_active')}/"
           f"{args.n_cells} inert={m_lod.get('n_inert')} "
@@ -334,9 +370,21 @@ def main() -> None:
           f"≈ {m_lod['t_real_human']} real-equivalent "
           f"(accel {m_lod['accel_factor']:.0e}, {m_lod['realtime_basis']})")
     if args.prolif:
+        if args.auto_pdiv and ("auto_p_div" in m_lod):
+            # PHYSICAL division-rate derivation header (Problem 1): show t_real,
+            # T_cycle, expected divisions, and the DERIVED p_div — a prediction.
+            print(f"[AUTO-PDIV] DERIVED p_div={m_lod['auto_p_div']:.3e} "
+                  f"(= S·dt·div_every/T_cycle) — NOT tuned to A/A0")
+            print(f"[AUTO-PDIV]   t_real={m_lod['div_t_real_human']} "
+                  f"(=S·dt·steps)  T_cycle={m_lod['cell_cycle_human']} "
+                  f"(={args.cell_cycle_h:g} h)  S={m_lod['div_accel_factor']:.0e}")
+            print(f"[AUTO-PDIV]   div/cell={m_lod['div_per_cell']:.3e}  "
+                  f"expected total divisions≈{m_lod['expected_divisions']:.3g} "
+                  f"over n_rim≈{m_lod.get('n_start')} "
+                  f"({m_lod['div_n_checks']} checks)")
         print(f"[PROLIF] divisions={m_lod.get('n_divisions')} "
               f"n_active: {m_lod.get('n_start')} -> {m_lod.get('n_active_final')} "
-              f"(pool n_max={m_lod.get('n_max')}, p_div={args.p_div}, "
+              f"(pool n_max={m_lod.get('n_max')}, p_div={m_lod.get('p_div'):.3e}, "
               f"div_every={args.div_every})")
 
     out = dict(steps=args.steps, n_cells=args.n_cells, active=args.active,
@@ -347,7 +395,9 @@ def main() -> None:
         m_no, _ = _run_one(p, args.n_cells, args.steps, active=args.active,
                            use_lod=False, lod_cfg=lod_cfg, device=dev2,
                            prolif=args.prolif, p_div=args.p_div,
-                           div_every=args.div_every, n_max=args.n_max)
+                           div_every=args.div_every, n_max=args.n_max,
+                           auto_pdiv=args.auto_pdiv,
+                           cell_cycle_h=args.cell_cycle_h)
         speedup = m_no["wall_s"] / m_lod["wall_s"] if m_lod["wall_s"] > 0 else float("nan")
         out["no_lod"] = m_no
         out["lod_speedup"] = speedup

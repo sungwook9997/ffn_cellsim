@@ -239,6 +239,134 @@ def proliferation_accel(*, dt_s: float, div_every_steps: int,
     return float(t_cycle_s) / t_sim_per_div
 
 
+@dataclass(frozen=True, slots=True)
+class DivisionRateAnchor:
+    """A PHYSICALLY-ANCHORED division probability for a proliferation run (pure data).
+
+    Derived (no free parameter, no fitting-to-PI-band) from the REAL cell-cycle
+    time relative to the run's real-time-equivalent duration via the spreading-front
+    acceleration factor S (``common/sim_realtime``). See :func:`division_probability`.
+
+    Attributes:
+        p_div: per-eligible-rim-cell division probability PER division-check
+            (the value to feed ``GpuProliferationUpdater(p_div=…)``).
+        t_real_s: run real-time equivalent = S · dt · steps [s] (the spreading
+            episode's biological-equivalent length).
+        t_cycle_s: real cell-cycle / division time used [s].
+        div_per_cell: expected divisions a single rim cell undergoes over the run
+            = t_real / T_cycle (the per-cell physical expectation p_div is set to
+            reproduce; ``= n_checks · p_div``).
+        expected_divisions: expected TOTAL division events over the spheroid
+            = div_per_cell · n_rim_est (the spheroid-level prediction, NOT a tuned
+            target). Typically ≪ 1 for a single short spreading episode.
+        n_checks: number of division-checks over the run = steps // div_every.
+        accel_factor: the spreading-front acceleration factor S used.
+        detail: one-line human derivation note (for the run header / metrics).
+    """
+
+    p_div: float
+    t_real_s: float
+    t_cycle_s: float
+    div_per_cell: float
+    expected_divisions: float
+    n_checks: int
+    accel_factor: float
+    detail: str
+
+    def to_dict(self) -> dict:
+        """JSON-serialisable provenance block (drop into a metrics dict)."""
+        return {
+            "auto_p_div": float(self.p_div),
+            "div_t_real_s": float(self.t_real_s),
+            "div_t_real_human": format_time(self.t_real_s),
+            "cell_cycle_s": float(self.t_cycle_s),
+            "cell_cycle_human": format_time(self.t_cycle_s),
+            "div_per_cell": float(self.div_per_cell),
+            "expected_divisions": float(self.expected_divisions),
+            "div_n_checks": int(self.n_checks),
+            "div_accel_factor": float(self.accel_factor),
+            "div_anchor_detail": self.detail,
+        }
+
+
+def division_probability(steps: int, dt_s: float, *, t_cycle_h: float,
+                         div_every: int, n_rim_est: int,
+                         accel: float = DEFAULT_SPREADING_ACCEL
+                         ) -> DivisionRateAnchor:
+    """Derive the per-rim-cell division probability from PHYSICS (no free knob).
+
+    The mechanistic anchor (PI 2026-06-11): each rim cell carries its OWN cell
+    cycle of real length ``T_cycle`` (12–24 h). The run's real-time-equivalent
+    duration is ``t_real = S · dt · steps`` (the spreading-front mapping, eq. 1 of
+    this module). A division-check fires every ``div_every`` steps, i.e. every
+
+        Δt_real_per_check = S · dt · div_every                                  (s)
+
+    of real-time-equivalent. Over one check interval a single rim cell completes a
+    fraction ``Δt_real_per_check / T_cycle`` of its cycle, so the PHYSICAL
+    per-check division probability is
+
+        p_div = (S · dt · div_every) / T_cycle                                  (3)
+
+    This makes the realised divisions a PREDICTION: over ``n_checks = steps //
+    div_every`` checks a rim cell's expected divisions are
+    ``n_checks · p_div = t_real / T_cycle = div_per_cell`` — the cell-cycle fraction
+    the spreading episode occupies — and the spheroid total is ``div_per_cell ·
+    n_rim``. Because one spreading episode (seconds–hours) is ≪ one 12–24 h cycle,
+    ``div_per_cell ≪ 1`` and the expected total is typically ≪ 1: proliferation
+    barely moves A/A₀ over a single episode. That LOW number IS the honest physical
+    answer — it is NOT chosen to hit any A/A₀ band (the b/R proliferation term in
+    the PI law reflects spreading over the FULL days-long assay, not one episode).
+
+    Args:
+        steps: integrator steps the run will execute.
+        dt_s: BAOAB timestep [s].
+        t_cycle_h: real cell-cycle / division time [hours] (MCF7 ~18–24 h).
+        div_every: division-check cadence in steps.
+        n_rim_est: estimate of the number of eligible (rim) cells, for the
+            expected-TOTAL-divisions prediction only (does NOT enter ``p_div``).
+        accel: spreading-front acceleration factor S (default = the H.7 anchor
+            6e5; the SAME S the real-time mapping uses for the spreading episode).
+
+    Returns:
+        A :class:`DivisionRateAnchor` (``p_div`` + full provenance). ``p_div`` is
+        clamped to [0, 1] (it is a probability); the un-clamped derivation is kept
+        in ``detail`` if the clamp ever bites (it never does at physiological
+        bands — ``p_div`` is ~1e-5).
+    """
+    if steps < 0:
+        raise ValueError(f"steps must be >= 0, got {steps}")
+    if dt_s <= 0:
+        raise ValueError(f"dt_s must be > 0, got {dt_s}")
+    if div_every <= 0:
+        raise ValueError(f"div_every must be > 0, got {div_every}")
+    if t_cycle_h <= 0:
+        raise ValueError(f"t_cycle_h must be > 0, got {t_cycle_h}")
+    if accel <= 0:
+        raise ValueError(f"accel must be > 0, got {accel}")
+    t_cycle_s = float(t_cycle_h) * 3600.0
+    t_real_s = float(accel) * float(dt_s) * float(steps)
+    # eq. (3): per-check real-time fraction of one cell cycle.
+    dt_real_per_check = float(accel) * float(dt_s) * float(div_every)
+    p_raw = dt_real_per_check / t_cycle_s
+    p_div = min(1.0, max(0.0, p_raw))
+    n_checks = int(steps) // int(div_every)
+    div_per_cell = t_real_s / t_cycle_s
+    expected_divisions = div_per_cell * float(max(0, n_rim_est))
+    detail = (
+        f"p_div={p_raw:.2e} = S·dt·div_every/T_cycle "
+        f"(S={_sci(accel)}, dt={dt_s:g}s, div_every={div_every}, "
+        f"T_cycle={format_time(t_cycle_s)}); "
+        f"t_real={format_time(t_real_s)} ⇒ div/cell={div_per_cell:.2e}, "
+        f"expected total≈{expected_divisions:.2g} over n_rim≈{n_rim_est} "
+        f"({n_checks} checks). PHYSICAL prediction, not tuned to A/A₀."
+    )
+    return DivisionRateAnchor(
+        p_div=p_div, t_real_s=t_real_s, t_cycle_s=t_cycle_s,
+        div_per_cell=div_per_cell, expected_divisions=expected_divisions,
+        n_checks=n_checks, accel_factor=float(accel), detail=detail)
+
+
 def map_realtime(steps: int, dt_s: float, *,
                  accel: float = DEFAULT_SPREADING_ACCEL,
                  basis: str = "spreading_front",
