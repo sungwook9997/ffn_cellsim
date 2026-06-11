@@ -110,3 +110,15 @@ the law FORM + size-dependence + coefficient signs/order ARE reproduced per-epis
 robust result); the absolute magnitude is a multi-day proliferation integral, reproducible
 only with a faster integrator (BAOAB GPU port) or a longer-timescale division model — and
 must NOT be faked by tuning p_div. This is the scientifically defensible conclusion.
+
+## Size-dependent necrosis (2026-06-11 night) — the 3-zone evolves with spheroid size
+Necrosis size sweep N=200/400/600/800 (R_cell=22 µm patches → R=180/222/252/275 µm, all above
+the ~150 µm onset). The **necrotic CORE grows monotonically with size: 3→24→64→101 cells**
+(fraction 1.5%→5.7%→9.6%→11.2%), while the **proliferating RIM fraction falls 0.64→0.41** and
+the **quiescent middle rises 0.34→0.48** — the Greenspan surface/volume scaling: bigger
+spheroids have proportionally less active rim and a larger dead core. This is the
+size-dependent 3-zone structure the PI asked for, and the falling rim fraction IS the b/R
+(surface/volume) mechanism behind the spreading law. Figure: `figs/necrosis_size_scaling.png`.
+(Note: A/A₀ was unstable at N=600 (14.5, a basal-footprint convex-hull artifact when peripheral
+cells disperse); the necrotic/zone COUNTS are clean + monotonic. Each run finite, wall
+685-1472 s / 20000 steps on the A5000.)
