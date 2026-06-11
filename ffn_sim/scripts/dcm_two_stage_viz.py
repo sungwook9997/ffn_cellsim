@@ -92,14 +92,18 @@ def diagnostics_panel(ax, d, R):
     na = len(a["diags"])
     xa = np.arange(na)
     xs = np.arange(len(s["diags"])) + na
-    def col(stg, k): return [g[k] for g in stg["diags"]]
+    def col(stg, k): return [g.get(k, np.nan) for g in stg["diags"]]
     ax.axvspan(-0.5, na - 0.5, color="0.93", zorder=0)
     ax.axvspan(na - 0.5, na + len(s["diags"]) - 0.5, color="0.86", zorder=0)
     ax.plot(xa, col(a, "VV0_mean"), "-o", ms=3, color="C0", label="V/V0 (agg)")
     ax.plot(xs, col(s, "VV0_mean"), "-o", ms=3, color="C0", mfc="w", label="V/V0 (spread)")
+    # contact-node fraction = the aggregation observable (cells adhered cell-to-cell)
+    ax.plot(xa, col(a, "contact_frac"), "-D", ms=3, color="C4",
+            label="contact frac (agg: cells adhere)")
+    ax.plot(xs, col(s, "contact_frac"), "-D", ms=3, color="C4", mfc="w")
     ax.axhline(1.0, color="0.5", lw=0.8, ls=":")
-    ax.set_ylabel("V / V0  (volume held)", color="C0")
-    ax.set_ylim(0.8, 1.3)
+    ax.set_ylabel("V/V0 · contact fraction", color="C0")
+    ax.set_ylim(0.0, 1.35)
     ax.tick_params(axis="y", colors="C0")
     ax2 = ax.twinx()
     ax2.plot(xa, col(a, "Rg_um"), "-s", ms=3, color="C3", label="Rg (agg→shrinks)")

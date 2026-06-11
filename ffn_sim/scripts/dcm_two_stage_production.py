@@ -152,14 +152,21 @@ def aggregate(p, n_cells, *, dev, f_active, tau_p_min, reorient_every, R_drop_fa
         print(f"  [agg] f{len(Frames)-1} step {sim.timestep}: Rg={dg['Rg_um']:.1f}µm "
               f"asph={dg['asphericity']:.3f} contact={dg['contact_frac']:.2f} "
               f"V/V0={dg['VV0_mean']:.3f}  ({_rt(sim.timestep, p.dt)})", flush=True)
-        # CONVERGENCE: Rg plateaued (last 3 within 1%) AND contact>0.7 AND asph<0.05
-        if len(rg_hist) >= 4:
-            window = rg_hist[-3:]
-            plateau = (max(window) - min(window)) / max(np.mean(window), 1e-9) < 0.01
-            if plateau and dg["contact_frac"] > 0.70 and dg["asphericity"] < 0.05:
+        # CONVERGENCE for a TURGID-ROUNDED-CELL aggregate (not confluent/deformed):
+        # the cohesive-ball equilibrium is contact≈0.45 (rounded cells touch ~half
+        # their surface), NOT 0.7 (which needs deformed polyhedral cells). Converge
+        # when the contact fraction has RISEN substantially AND plateaued (cells
+        # reached their cohesive equilibrium), Rg stable, aggregate round.
+        if len(rg_hist) >= 5:
+            cf = [g["contact_frac"] for g in diags[-3:]]
+            cf_plateau = (max(cf) - min(cf)) < 0.02
+            rgw = rg_hist[-3:]
+            rg_plateau = (max(rgw) - min(rgw)) / max(np.mean(rgw), 1e-9) < 0.01
+            if cf_plateau and rg_plateau and dg["contact_frac"] > 0.35 \
+                    and dg["asphericity"] < 0.10:
                 converged = True
                 print(f"  [agg] CONVERGED at step {sim.timestep} "
-                      f"(Rg plateau, contact {dg['contact_frac']:.2f}, "
+                      f"(contact {dg['contact_frac']:.2f} plateau, Rg plateau, "
                       f"asph {dg['asphericity']:.3f})", flush=True)
                 break
     wall = time.time() - t0
