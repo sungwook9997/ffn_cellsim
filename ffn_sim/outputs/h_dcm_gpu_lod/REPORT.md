@@ -75,3 +75,15 @@ prolif build's over-restrictive active-cell classification (only ~10/60 cells ge
 **Robust result stands:** the law FORM + negative size-dependence + coefficient signs/order
 are reproduced by the active mechanism (commit 55f23c0); the absolute magnitude is
 proliferation-rate-dependent and must be physically anchored, not tuned.
+
+## Large necrosis-ON production (2026-06-11 night) — 3-zone at scale
+First GPU run to CROSS the necrosis onset: N=400 coarse-grained cells (R_cell=22 µm tissue
+patches via --r-cell-um) → R_spheroid > 150 µm → **necrosis activates**. Result (A5000, GPU):
+finite, wall=957.7 s (20000 steps), **A/A₀=3.147**, and the full 3-ZONE structure —
+**active proliferating rim 225 (0.56) / quiescent-inert 175 (0.44) / NECROTIC CORE 24 (0.06)**.
+Real-time label: t_sim=20 µs ≈ 12.0 s real (accel 6e5, spreading-front). Figure:
+`figs/dcm_gpu_lod_n400_s20000_GPU.png`. This is the necrosis-ON large spheroid the PI asked
+for — the 3-zone (rim/quiescent/core) emerges at R>150 µm as physics requires (and is 0 below
+it, per the live-cell necrosis fix). Coarse-graining (each cell = a tissue patch) is the
+feasible route to R>150 µm on the current BAOAB-sync-limited GPU; a fine-grained R>150 µm
+spheroid (~thousands of 7.5 µm cells) is hours-to-days of wall-time (BAOAB GPU port needed).
