@@ -892,9 +892,12 @@ class DcmFusedForceGPU(md.force.Custom):
         self.rn_max: float = 0.0
         self._d: DeviceDispatch | None = None
 
-    # arrest helpers (identical law to DcmActiveRimTractionGPU)
+    # arrest helpers (identical law to DcmActiveRimTractionGPU). _active_term calls
+    # all three; _footprint_radius was MISSING from this borrow list (pre-existing
+    # bug → AttributeError whenever the fused active term ran) — restored here.
     _capture_R0_cluster = DcmActiveRimTractionGPU._capture_R0_cluster
     _arrest_gain = DcmActiveRimTractionGPU._arrest_gain
+    _footprint_radius = DcmActiveRimTractionGPU._footprint_radius
 
     def _dispatch(self) -> DeviceDispatch:
         if self._d is None:

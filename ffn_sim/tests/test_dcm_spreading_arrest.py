@@ -34,6 +34,19 @@ def _force_of(force) -> np.ndarray:
         return np.asarray(arr.force).copy()
 
 
+def _dispersal_p():
+    """NON-cohesive (dispersal-prone) bands — the regime the spreading-arrest mechanism
+    targets. With the cohesion fix now the default (c_adh=5µm etc.), a production spheroid
+    does NOT over-spread (cells stay adhered), so the arrest's "the basal footprint grows
+    past the cap" premise only holds in the LEGACY non-cohesive regime. Building the arrest
+    tests on these legacy bands (a) restores that premise so the arrest actually engages and
+    (b) keeps them fast — cohesive contact is ~4× heavier per step (cells actually touch).
+    The arrest law itself is band-agnostic; this only controls whether the rim over-spreads.
+    """
+    return ResolvedGpuDCM(subdivisions=1, seed=7, c_adh=5.0e-7, adh_strength=1.0e8,
+                          rep_strength=1.0e8, spacing_factor=2.3)
+
+
 def _common(parent, p, h, *, arrest_radius_factor):
     return dict(
         cell_of_node=h["cell_of_node"], ranges=h["ranges"], active=parent.active,
@@ -48,7 +61,7 @@ def _common(parent, p, h, *, arrest_radius_factor):
 
 def test_arrest_off_is_legacy_bit_identical():
     """arrest_radius_factor=None == the legacy traction (no arrest), diff = 0."""
-    p = ResolvedGpuDCM(subdivisions=1, seed=7)
+    p = _dispersal_p()
     # build WITHOUT arrest so the in-build traction is the legacy path
     h = build_gpu_dcm_simulation(p, 30, active=True, arrest=False)
     sim = h["sim"]
@@ -77,7 +90,7 @@ def test_arrest_reduces_traction():
     rim-force magnitude must be ≤ arrest-OFF everywhere and STRICTLY smaller for at
     least the outer rim cells (whose radial distance has grown toward r_max).
     """
-    p = ResolvedGpuDCM(subdivisions=1, seed=7)
+    p = _dispersal_p()
     h = build_gpu_dcm_simulation(p, 30, active=True, arrest=True,
                                  arrest_radius_factor=1.2)  # tight cap → clear effect
     sim = h["sim"]
@@ -104,7 +117,7 @@ def test_arrest_reduces_traction():
 
 def test_arrest_vec_loop_fused_parity():
     """Loop / vec / fused arrest paths are bit-parity (< 1e-10 N) with arrest ON."""
-    p = ResolvedGpuDCM(subdivisions=1, seed=7)
+    p = _dispersal_p()
     h = build_gpu_dcm_simulation(p, 24, active=True, arrest=True,
                                  arrest_radius_factor=1.5)
     sim = h["sim"]
@@ -151,7 +164,7 @@ def test_arrest_vec_loop_fused_parity():
 
 def test_arrest_gain_helper_law():
     """The arrest gain helper is the documented smooth clip g=clip((r_max-r)/(w·r_max),0,1)."""
-    p = ResolvedGpuDCM(subdivisions=1, seed=7)
+    p = _dispersal_p()
     h = build_gpu_dcm_simulation(p, 12, active=True, arrest=True,
                                  arrest_radius_factor=2.0)
     f = h["traction"]
