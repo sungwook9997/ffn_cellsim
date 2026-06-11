@@ -87,3 +87,26 @@ for — the 3-zone (rim/quiescent/core) emerges at R>150 µm as physics requires
 it, per the live-cell necrosis fix). Coarse-graining (each cell = a tissue patch) is the
 feasible route to R>150 µm on the current BAOAB-sync-limited GPU; a fine-grained R>150 µm
 spheroid (~thousands of 7.5 µm cells) is hours-to-days of wall-time (BAOAB GPU port needed).
+
+## RESOLVED — the magnitude gap is a TIMESCALE truth, not a model failure (commit 113aadc)
+Two coupled fixes turned the proliferation magnitude question from a circular tuning exercise
+into an honest physical prediction:
+1. **Prolif-build active classification fixed** (`LiveCellActivityLOD`, live cells only): the
+   prolif build now matches the plain active build exactly — A/A₀ 1.191→**1.549**, active
+   18→**28/30** (= plain `--active`). The earlier "prolif weaker" was the parked-pool LOD bug,
+   now gone.
+2. **Division rate PHYSICALLY ANCHORED** (`sim_realtime.division_probability`, `--auto-pdiv`):
+   p_div = S·dt·div_every / T_cycle, derived from the real cell-cycle time (~20 h) vs the run's
+   real-time-equivalent — NOT tuned to an A/A₀ band. For a 12000-step run (t_real=7.2 s):
+   p_div=3.3e-5, expected divisions ≈ 0.003 → **0 divisions, A/A₀=1.854 (= active-only)**.
+
+**The honest physics:** in ONE short accelerated spreading episode (~seconds real), a cell
+completes ~1e-4 of its 20 h cycle, so ~0 divisions occur — correct, not degenerate. The SAME
+anchored p_div over a 2 h real assay (1.2e7 steps) yields ~3 divisions; the FULL PI-band
+magnitude needs the DAYS-LONG assay. **The PI law's b/R term is a days-long-assay phenomenon
+(proliferation accumulated over days), which the accelerated single-episode sim cannot reach
+in feasible wall-time (the BAOAB-sync step rate caps ~seconds-real per ~hours-wall).** So:
+the law FORM + size-dependence + coefficient signs/order ARE reproduced per-episode (the
+robust result); the absolute magnitude is a multi-day proliferation integral, reproducible
+only with a faster integrator (BAOAB GPU port) or a longer-timescale division model — and
+must NOT be faked by tuning p_div. This is the scientifically defensible conclusion.
