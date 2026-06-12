@@ -383,7 +383,17 @@ def main():
     agg_over = dict(R_cell=R, spacing_factor=args.agg_spacing, dt=args.agg_dt)
     if args.agg_k_edge is not None:
         agg_over["k_edge"] = args.agg_k_edge       # soft cortex → deformable cells
+    # node-face contact-stiffness overrides MUST reach the AGGREGATION params too
+    # (not just the spread p) — else node-face aggregation runs at the stiff default
+    # rep_strength=2e8 and over-pressurises the packed cells (V/V0 1.17-1.69).
+    if args.rep_strength is not None:
+        agg_over["rep_strength"] = args.rep_strength
+    if args.adh_strength is not None:
+        agg_over["adh_strength"] = args.adh_strength
     p_agg = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), **agg_over)
+    if args.rep_strength is not None or args.adh_strength is not None:
+        print(f"[agg contact] rep={p_agg.rep_strength:.1e} adh={p_agg.adh_strength:.1e}",
+              flush=True)
 
     s1 = None
     if args.spread_from_npy:                       # skip stage 1 — load a saved spheroid
