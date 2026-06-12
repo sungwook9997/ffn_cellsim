@@ -8,6 +8,37 @@ Spec for the contact/remeshing port: `SIMUCELL3D_INTEGRATION_2026-06-11.md`.
 > pressure — same principle as the TAG KB / Dev-Logs / CLAUDE.md "state lives on disk, a
 > fresh session boots from it"). Re-read it at the start of each work-piece; keep it current.
 
+## 0b. AGGREGATION RESOLVED — clean cohesive spheroid sweep (2026-06-13)
+
+⭐⭐⭐ **The DCM aggregation now produces genuine, physiological cohesive spheroids at
+N=400/600/800/1000** (PI overnight goal). Three layered fixes:
+1. **node-FACE cohesion** (not node-node): node-node "contact ~0.9" was a 5µm-proximity-metric
+   ARTIFACT — cells floated ~4µm apart, held by the drop-confinement WALL not adhesion (ultracode
+   caught this; = the `dcm_gpu_build.py:213` gapped-lattice warning). node-face = surfaces
+   genuinely touch.
+2. **DRIVER BUG fixed**: `--rep-strength/--adh-strength` were applied only to the SPREAD params,
+   never to aggregation → every node-face aggregate secretly ran at the STIFF default rep=2e8/
+   adh=8e8 → over-pressurised cells (V/V0 up to 1.69). Now the LIT-ANCHORED 4e7/5e7 (MCF7-doc
+   ξ̄=0.48/ω̄~0.6) actually reaches aggregation.
+3. **Robustness**: detached node-face RawKernel crashed (NVRTC) until `CUDA_HOME=$CONDA_PREFIX`;
+   launches needed `ssh -n`+`setsid`+`loginctl enable-linger` for wifi/session survival.
+
+**Result (genuine-contact checker `scripts/dcm_agg_check.py`, all N, f_active=0, agg-dt=1e-5):**
+| N | contact@2µm | V/V0 mean (min–max) | over-inflated | isolated | packing | asph |
+|---|---|---|---|---|---|---|
+| 400 | 0.755 | 1.125 (1.05–1.14) | 0 | 0 | 0.512 | 0.013 |
+| 600 | 0.767 | 1.122 (1.03–1.14) | 0 | 0 | 0.518 | — |
+| 800 | 0.774 | 1.120 (1.02–1.14) | 0 | 0 | 0.520 | — |
+| 1000 | 0.776 | 1.113 (0.99–1.14) | 0 | 0 | 0.524 | 0.007 |
+
+Genuine surface contact (vs node-node 0.000 below 3µm), physiological V/V0 (free cell ~1.05, cap
+1.133; 0 over-inflated/collapsed at every N), round, 0 isolated, consistent + physical N-trend.
+Figs `outputs/h_dcm_two_stage/figs/agg_anchored_n{400,600,800,1000}.png`. Spheroids
+`/tmp/spheroid_nf_n{N}.npy` on gbook. **Recipe** (in `scripts/agg_sweep_gbook.sh`): node-face,
+rep=4e7/adh=5e7, f_active=0, agg-dt=1e-5, agg-spacing 2.3, substrate-touch start at spread
+(driver L382 lowest-node→z0). 2 PM fallback (node-face two-stage, spread-dt=2e-3) scheduled on
+gbook. **NEXT: the node-face SPREAD-stage collapse (separate from aggregation) → then A/A0.**
+
 ## 0. STATUS — resume from here (2026-06-12)
 
 - ⭐⭐ **COHESION FINDING (2026-06-12, ultracode-verified + confirmed): node-NODE tent contact gives
