@@ -113,6 +113,33 @@ Adherent γ · osmotic turgor ΔP · osmotic bulk modulus K · membrane k_a · c
 one is PROXY/geometry-inherited. The one MCF7 membrane datum (Pradhan 2021, BBRC 587:126) reports
 apparent *tension*, value paywalled (retrieve via gbook/KAIST).
 
+## 7. Empirical re-tune validation (gbook A5000, N=7, node-face + remesh)
+
+Tested the §3 lit-anchored softer contact via `--rep-strength/--adh-strength`:
+
+| config | dt | outcome |
+|---|---|---|
+| un-tuned ξ=2e8, ω=8e8 | 1e-4 | STABLE but **COMPRESSES**: V/V0 0.87→**0.54** (adhesion≫turgor) |
+| **re-tuned ξ=4e7, ω=5e7** | 1e-4 | STABLE, **V/V0 HELD ~0.87–1.0** (compression FIXED), A/A0 ~1.0, 120 swaps |
+| **re-tuned ξ=4e7, ω=5e6** (ω̄~0.06) | 1e-4 | STABLE, **V/V0 ~1.0 + A/A0 creeps 1.0→1.10** (cell holds volume + begins to spread), 31 splits |
+| re-tuned ξ=4e7, ω=5e7 | 1e-3 / 3e-3 | **DIVERGES** (A/A0→379×, maxZ→323µm, V/V0→±1e4) — *identical* to un-tuned |
+
+**Two separable results:**
+1. ✅ **The lit-anchored re-tune WORKS at the stable dt** — it fixes the adhesion-driven
+   compression/collapse (V/V0 0.54→~1.0) and the cell begins to spread (A/A0→1.10). The §3
+   dimensionless analysis is empirically validated.
+2. ⛔ **The dt ceiling is a SEPARATE, contact-INDEPENDENT instability.** dt=1e-3 diverges with
+   the softened contact *exactly* as with the stiff one (V/V0 goes NEGATIVE = mesh inversion /
+   large-dt overshoot-tangling). So contact stiffness is NOT what gates dt — a distinct
+   integration instability (likely large-dt node overshoot → mesh tangle → turgor sign-flip) is.
+   This must be resolved (soft-start ramp, velocity cap, or sub-stepping) to reach the dt≥3e-3
+   "5× faster" runtime; until then the spread runs correctly at dt=1e-4.
+
+⇒ **NEXT (post-PI-decisions): (a) add γ as a node-face surface-tension term (anchored ~1e-2 N/m,
+PI route A/B) and freeze ξ/ω/K per §4; (b) diagnose + fix the contact-independent dt-ceiling
+instability** (instrument per-force contributions at dt=1e-3, check mesh-inversion onset, add
+soft-start). The aggregation re-derivation (brief §6) remains the other gate to a multi-cell A/A0.
+
 ## 6. Citation-integrity fixes (carry into the KB + code)
 
 | # | Fix | Where |

@@ -25,7 +25,7 @@ Spec for the contact/remeshing port: `SIMUCELL3D_INTEGRATION_2026-06-11.md`.
   live on gbook A5000: 91 swaps+77 splits fire, mesh stays a closed manifold, pool not
   exhausted, turgor/contact faces stay consistent.
 - ⛔ **Spreading A/A0 validation BLOCKED** — node-face `rep/adh` (2e8/8e8 Pa/m) are un-tuned for
-  the A_face law (brief §1): dt=1e-3 EXPLODES (cold-start adhesion snap, A/A0→380×, V/V0→±1e4),
+  the A_face law (brief §1): dt=1e-3 DIVERGES (cold-start adhesion snap, A/A0→380×, V/V0→±1e4),
   dt=1e-4 STABLE but COMPRESSES (adhesion≫traction+turgor, V/V0 0.87→0.54, no spread). Two gates
   to a clean A/A0: (1) node-face ξ/ω + force-balance re-tune [the immediate unblocker], (2) the
   §6 aggregation re-derivation under physiological γ. Both lit-anchored (§4 param rule).

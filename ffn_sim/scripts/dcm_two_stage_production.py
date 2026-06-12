@@ -203,11 +203,13 @@ def aggregate(p, n_cells, *, dev, f_active, tau_p_min, reorient_every, R_drop_fa
 # ---------------------------------------------------------------------------
 # STAGE 2 — spreading from the converged aggregate
 # ---------------------------------------------------------------------------
-def _remesh_aware_diag(pos, cell_of_node, turgor, V0):
+def _remesh_aware_diag(pos, cell_of_node, turgor, V0, *, ranges=None, z0=0.0, R=7.5e-6):
     """Remesh-safe diagnostics: TOP-DOWN A over LIVE nodes only (parked pool nodes
     excluded so the hull is not inflated), V/V0 from the CURRENT turgor faces grouped
     by face_cell, and the closed-manifold check on the current mesh. Topology-aware so
-    it stays correct as SPLIT/COLLAPSE change the per-cell face set."""
+    it stays correct as SPLIT/COLLAPSE change the per-cell face set. Also carries the
+    Rg/asphericity/footprint keys the surface renderer (dcm_two_stage_viz) reads,
+    computed over LIVE cells."""
     from ffn_sim.cell.dcm_remesh import mesh_edges, enclosed_volume
     cof = np.asarray(cell_of_node)
     live = cof >= 0
@@ -221,7 +223,22 @@ def _remesh_aware_diag(pos, cell_of_node, turgor, V0):
     vr = np.array(vr) if vr else np.array([1.0])
     _e, ef, _a, bnd = mesh_edges(faces)
     manifold = bool((not bnd.any()) and (ef >= 0).all())
+    # per-LIVE-cell centroids → Rg + asphericity (renderer keys); footprint over live
+    Rg = asph = 0.0
+    if ranges is not None:
+        cents = np.array([pos[a:b].mean(0) for (a, b) in ranges
+                          if cof[a] >= 0])
+        if len(cents):
+            cc = cents.mean(0); rr = np.linalg.norm(cents - cc, axis=1)
+            Rg = float(np.sqrt((rr ** 2).mean()))
+            if len(cents) >= 4:
+                dd = cents - cc
+                G = (dd[:, :, None] * dd[:, None, :]).mean(0)
+                ev = np.sort(np.linalg.eigvalsh(G))[::-1]
+                asph = float((ev[0] - 0.5 * (ev[1] + ev[2])) / max(ev.sum(), 1e-30))
+    foot = _footprint_area(pos[live], z0, R) if live.any() else 0.0
     return dict(topdown_um2=_topdown_area(pos[live]) * UM * UM,
+                footprint_um2=foot * UM * UM, Rg_um=Rg * UM, asphericity=asph,
                 VV0_mean=float(vr.mean()), VV0_min=float(vr.min()),
                 VV0_max=float(vr.max()), maxZ_um=float(pos[live, 2].max()) * UM,
                 manifold=manifold, n_faces=int(faces.shape[0]),
@@ -257,7 +274,8 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
     def snap_diag():
         pos = capture_positions(sim)
         if use_rd:
-            return pos, _remesh_aware_diag(pos, cell_of_node, turgor, V0)
+            return pos, _remesh_aware_diag(pos, cell_of_node, turgor, V0,
+                                           ranges=ranges, z0=z0, R=R)
         return pos, diagnostics(pos, ranges, cell_of_node, tris0,
                                 R=R, z0=z0, V0=V0, c_adh=p.c_adh)
 

@@ -55,7 +55,7 @@ brief-flagged issue, surfaced concretely here:
 
 | spread dt | outcome |
 |---|---|
-| **1e-3** | EXPLODES on the cold-start adhesion snap — A/A0→380×, maxZ 26→321 µm, V/V0→±1.4e4 (mesh inverting). Remesh kept the topology manifold but cannot save an unstable integration. |
+| **1e-3** | DIVERGES on the cold-start adhesion snap — A/A0→380×, maxZ 26→321 µm, V/V0→±1.4e4 (mesh inverting). Remesh kept the topology manifold but cannot save an unstable integration. |
 | **1e-4** | STABLE (manifold, swaps suppress slivers) but the cluster **COMPRESSES and loses volume** — V/V0 0.87→0.54, A/A0 1.0→0.88. Adhesion (ω=8e8 Pa/m) dominates traction+turgor ⇒ cells compact, no spreading. |
 
 **Root cause** (= brief §1 `⚠ force ∝ A_face → rep/adh stiffness re-tunes`): the
