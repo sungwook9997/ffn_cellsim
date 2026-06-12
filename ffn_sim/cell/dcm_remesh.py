@@ -91,3 +91,128 @@ def classify_remesh(pos, faces, l_min, *, sliver_q=0.2):
                 n_sliver=int(swap_faces.size), q_min=float(q.min()) if q.size else 1.0,
                 l_min_obs=float(L.min()) if L.size else 0.0,
                 l_max_obs=float(L.max()) if L.size else 0.0)
+
+
+# ===========================================================================
+# Phase 2 step 2 — the topology MUTATIONS (SWAP / SPLIT / COLLAPSE)
+# ===========================================================================
+# Each mutation operates on the GLOBAL mesh arrays the live forces read:
+#   pos          (N,3)  node positions, tag order (active + dormant pool nodes).
+#   faces        (F,3)  outward-wound node-id triplets (≡ DcmTurgorForceGPU.faces /
+#                       FaceContactForceGPU.faces — index the SAME global tags).
+#   face_cell    (F,)   owner-cell id per face (turgor groups by this).
+#   cell_of_node (N,)   per-node cell id, −1 = DORMANT (the pre-allocated pool;
+#                       a SPLIT activates one dormant node, a COLLAPSE returns one).
+# Faces are a plain numpy attribute on the Custom forces (NOT HOOMD tag space) so we
+# may freely resize them between steps; only the NODE count is fixed → the dormant
+# pool. Every op preserves OUTWARD winding so the divergence volume V=(1/6)Σv0·(v1×v2)
+# stays positive, and the closed-manifold invariant (every interior edge bounds
+# exactly 2 faces, Euler V−E+F=2). SI units; host numpy, LOW cadence (clarity first).
+
+
+def enclosed_volume(pos: np.ndarray, faces: np.ndarray) -> float:
+    """Divergence-theorem enclosed volume V = (1/6) Σ v0·(v1×v2) of a closed shell.
+
+    Positive for outward-wound triangles; the turgor invariant remesh must preserve.
+    """
+    pos = np.asarray(pos, float)
+    v0, v1, v2 = pos[faces[:, 0]], pos[faces[:, 1]], pos[faces[:, 2]]
+    return float(np.sum(np.einsum("ij,ij->i", v0, np.cross(v1, v2))) / 6.0)
+
+
+def _directed_edge_apex(face, n0: int, n1: int):
+    """For triangle ``face`` containing nodes n0,n1, return (u, v, apex) where u→v is
+    the edge as it is *directed* in the face's cyclic winding and apex is the third
+    vertex. Raises if the face does not contain the edge (caller guarantees it does).
+    """
+    a, b, c = int(face[0]), int(face[1]), int(face[2])
+    for u, v, ap in ((a, b, c), (b, c, a), (c, a, b)):
+        if {u, v} == {n0, n1}:
+            return u, v, ap
+    raise ValueError(f"edge ({n0},{n1}) not in face {tuple(face)}")
+
+
+def swap_edge(faces: np.ndarray, f0: int, f1: int, n0: int, n1: int) -> np.ndarray:
+    """Flip the interior edge (n0,n1) shared by faces f0,f1 → the apex–apex diagonal.
+
+    Node count FIXED (lowest-risk op). The shared edge appears directed one way in
+    f0 (apex c) and the opposite way in f1 (apex d); the two triangles re-tile the
+    quad along (c,d) with the SAME boundary winding, so outward orientation (hence
+    positive turgor volume) is preserved. Returns a NEW faces array (f0,f1 rewritten
+    in place at their slots — face count unchanged, so face_cell stays valid).
+    """
+    faces = np.array(faces, dtype=np.int64, copy=True)
+    a, b, c = _directed_edge_apex(faces[f0], n0, n1)      # f0 directs a→b, apex c
+    # f1 carries the OPPOSITE directed edge b→a; its apex is d.
+    bb, aa, d = _directed_edge_apex(faces[f1], n0, n1)
+    if (bb, aa) != (b, a):                                 # both faces same winding?
+        raise ValueError("non-manifold or inconsistent winding for swap")
+    # quad boundary cycle c→a→d→b; split along new diagonal (c,d):
+    faces[f0] = (c, a, d)
+    faces[f1] = (c, d, b)
+    return faces
+
+
+def split_edge(pos, faces, cell_of_node, f0, f1, n0, n1, *, cell_id, park=None):
+    """Subdivide interior edge (n0,n1): activate a dormant node at the midpoint, 2→4 faces.
+
+    Each incident triangle is bisected through the new node m, keeping its apex (so
+    winding — and outward orientation — is preserved). Node +1, face +2, edge +3 ⇒
+    Euler invariant. The activated node inherits the midpoint position; its velocity
+    handling (SimuCell3D's ⅓-momentum rule) is applied by the caller that owns the
+    HOOMD snapshot. Returns (pos', faces', cell_of_node', m) or raises if the dormant
+    pool is exhausted.
+    """
+    pos = np.array(pos, float, copy=True)
+    cell_of_node = np.array(cell_of_node, np.int64, copy=True)
+    dormant = np.flatnonzero(cell_of_node < 0)
+    if dormant.size == 0:
+        raise RuntimeError("dormant node pool exhausted — cannot SPLIT")
+    m = int(dormant[0])
+    a, b, c = _directed_edge_apex(faces[f0], n0, n1)       # f0: a→b apex c
+    bb, aa, d = _directed_edge_apex(faces[f1], n0, n1)      # f1: b→a apex d
+    if (bb, aa) != (b, a):
+        raise ValueError("non-manifold or inconsistent winding for split")
+    pos[m] = 0.5 * (pos[n0] + pos[n1])
+    cell_of_node[m] = int(cell_id)
+    faces = np.array(faces, dtype=np.int64, copy=True)
+    faces[f0] = (a, m, c)                                  # a→m→c (apex c kept)
+    faces[f1] = (b, m, d)                                  # b→m→d (apex d kept)
+    extra = np.array([(m, b, c), (m, a, d)], dtype=np.int64)
+    faces = np.concatenate([faces, extra], axis=0)
+    return pos, faces, cell_of_node, m
+
+
+def can_be_merged(faces: np.ndarray, n0: int, n1: int) -> bool:
+    """SimuCell3D non-manifold guard: edge (n0,n1) is collapsible iff its endpoints
+    share EXACTLY 2 common neighbours (the two apexes). More than 2 ⇒ collapsing
+    would fold a tetrahedral region into a non-manifold sliver.
+    """
+    nbr = defaultdict(set)
+    for a, b, c in faces:
+        for u, v in ((a, b), (b, c), (c, a)):
+            nbr[int(u)].add(int(v)); nbr[int(v)].add(int(u))
+    return len(nbr[int(n0)] & nbr[int(n1)]) == 2
+
+
+def collapse_edge(pos, faces, cell_of_node, n0, n1, *, park=None):
+    """Merge over-short edge (n0,n1) to its midpoint: keep n0, return n1 to the pool.
+
+    Drops the two faces on the edge, repoints every other face's n1→n0, moves n0 to
+    the midpoint, and DEACTIVATES n1 (cell_of_node=−1, parked). Node −1, face −2,
+    edge −3 ⇒ Euler invariant. Requires :func:`can_be_merged` (caller checks).
+    Returns (pos', faces', cell_of_node', n1).
+    """
+    pos = np.array(pos, float, copy=True)
+    cell_of_node = np.array(cell_of_node, np.int64, copy=True)
+    faces = np.asarray(faces, np.int64)
+    pos[n0] = 0.5 * (pos[n0] + pos[n1])
+    # drop the two faces on the edge; repoint n1→n0 in every survivor.
+    on_edge = np.array([({int(a), int(b), int(c)} >= {n0, n1})
+                        for a, b, c in faces], dtype=bool)
+    out = faces[~on_edge].copy()
+    out[out == n1] = n0
+    if park is not None:
+        pos[n1] = np.asarray(park, float)
+    cell_of_node[n1] = -1
+    return pos, out, cell_of_node, int(n1)
