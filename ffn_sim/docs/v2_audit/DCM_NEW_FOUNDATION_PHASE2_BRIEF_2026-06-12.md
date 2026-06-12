@@ -10,6 +10,22 @@ Spec for the contact/remeshing port: `SIMUCELL3D_INTEGRATION_2026-06-11.md`.
 
 ## 0. STATUS — resume from here (2026-06-12)
 
+- ⭐⭐ **COHESION FINDING (2026-06-12, ultracode-verified + confirmed): node-NODE tent contact gives
+  FAKE cohesion; node-FACE gives GENUINE cohesion.** The node-node aggregation "contact ~0.88" is a
+  5µm-proximity-metric ARTIFACT (`_contact_fraction` uses c_adh=5µm=0.67R); true contact at ≤2µm is
+  **0.000** — cells float ~4µm apart at the node-node *r_contact repulsion floor* (r_contact_factor
+  1.0×mean_edge=4.72µm), with the adhesive band [4.72,5.0)µm UNOCCUPIED (~100% pairs repulsive). The
+  spheroid is held by the drop-confinement WALL + turgor repulsion, NOT adhesion → low-N cells
+  scatter. (= the `dcm_gpu_build.py:213` "gapped lattice of mutually-repelling balls" warning.) **By
+  contrast node-FACE aggregation: nearest foreign-node dist median 0.05µm, contact 0.74 surviving
+  ≤0.5µm — surfaces GENUINELY touch, V/V0 held (no collapse) — at agg-dt=1e-5, re-tuned ξ/ω 4e7/5e7,
+  f_active=0.** ⇒ **use node-FACE for aggregation.** Figs: `agg_n400_dead_adhesion.png`. (Spread
+  still collapses w/ node-face at larger dt+substrate+traction — separate open issue.)
+- **PI GOAL (active):** run N=400/600/800/1000; after each stage-1 aggregation ultracode-VERIFY it is
+  genuinely aggregated + extend if still compacting; spread from a substrate-touching (lowest node at
+  z0, already in driver L382) start. Driver: `--agg-only/--agg-init-npy/--spread-from-npy/
+  --save-spheroid/--node-face-contact` (committed). Recipe: f_active=0 (broken S-motility off),
+  agg-dt=1e-5, node-face, re-tuned ξ/ω.
 - **Foundation DONE + committed** (§1): physiological γ (8aef5e9), node-face contact RawKernel
   (f6cdb8c, 2.5× faster + parity-exact), top-down A/A0, arrest removed. `FaceContactForceGPU`
   wired opt-in (`build_gpu_dcm_simulation(node_face_contact=True)`), compiles — NOT yet
