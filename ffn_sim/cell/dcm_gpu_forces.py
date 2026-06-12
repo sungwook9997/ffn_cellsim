@@ -929,3 +929,79 @@ class DcmFusedForceGPU(md.force.Custom):
         with d.force_arrays() as arr:
             arr.force[:] = F
             arr.potential_energy[:] = U
+
+
+# ---------------------------------------------------------------------------
+# SimuCell3D node-vs-FACE penalty contact (device-dispatched Custom force).
+# Drop-in replacement for DcmTentContactGPU's cell-cell interpenetration role:
+# GPU -> nodeface_rawkernel.node_face_contact_raw (thread-per-node CUDA kernel),
+# CPU -> dcm_face_contact.node_face_contact_forces_vec (numpy). Same per-pair
+# bilinear-tent/linear-repulsion law, but node-vs-closest-point-on-face so two
+# shells cannot slip between each other's nodes. r_search = c + 0.6*max_edge
+# (the tight bound: centroid<->face-point <= 0.58*edge), max_edge recomputed
+# each step (deforming mesh). cad_mult seam preserved (junction switch).
+# ---------------------------------------------------------------------------
+class FaceContactForceGPU(md.force.Custom):
+    """SimuCell3D node-vs-face penalty contact, device-dispatched.
+
+    Args:
+        cell_of_node: (N,) int, mutable; cell id per node (-1 = dormant).
+        faces: (M,3) int node-id triplets; face_cell: (M,) owner cell per face.
+        rep_strength, adh_strength: Pa/m repulsion / adhesion stiffness.
+        c_rep, c_adh: m repulsion / adhesion cutoffs.
+        cad_mult: (n_cells,) per-cell adhesion multiplier or None.
+        edge_factor: r_search = max(c_rep,c_adh) + edge_factor*max_edge (0.6 tight).
+    """
+
+    def __init__(self, *, cell_of_node, faces, face_cell, rep_strength,
+                 adh_strength, c_rep, c_adh, cad_mult=None, edge_factor=0.6):
+        super().__init__(aniso=False)
+        self.cell_of_node = cell_of_node
+        self.faces = np.asarray(faces, dtype=np.int64)
+        self.face_cell = np.asarray(face_cell, dtype=np.int64)
+        self.rep = float(rep_strength)
+        self.adh = float(adh_strength)
+        self.c_rep = float(c_rep)
+        self.c_adh = float(c_adh)
+        self.cad_mult = cad_mult
+        self.edge_factor = float(edge_factor)
+        self._d: DeviceDispatch | None = None
+
+    def _dispatch(self) -> DeviceDispatch:
+        if self._d is None:
+            self._d = DeviceDispatch(self)
+        return self._d
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        d = self._dispatch()
+        xp = d.xp
+        with d.snapshot() as snap:
+            tag = xp.asarray(snap.particles.tag)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            n = int(pos.shape[0])
+            perm = xp.argsort(tag)
+            pos_g = pos[perm]
+            faces = xp.asarray(self.faces)
+            fcell = xp.asarray(self.face_cell)
+            cof = xp.asarray(self.cell_of_node)
+            cad = None if self.cad_mult is None else xp.asarray(self.cad_mult)
+            # tight r_search bound from the CURRENT (deformed) mesh
+            e0 = pos_g[faces[:, 0]]; e1 = pos_g[faces[:, 1]]; e2 = pos_g[faces[:, 2]]
+            max_edge = float(xp.sqrt(xp.maximum(xp.maximum(
+                xp.sum((e1 - e0) ** 2, axis=1), xp.sum((e2 - e1) ** 2, axis=1)),
+                xp.sum((e0 - e2) ** 2, axis=1)).max())) * self.edge_factor
+            kw = dict(rep_strength=self.rep, adh_strength=self.adh,
+                      c_rep=self.c_rep, c_adh=self.c_adh, max_edge=max_edge,
+                      cad_mult=cad)
+            if d.gpu:
+                from ffn_sim.gpu_opt.nodeface_rawkernel import node_face_contact_raw
+                F_g = node_face_contact_raw(pos_g, cof, faces, fcell, **kw)
+            else:
+                from ffn_sim.cell.dcm_face_contact import node_face_contact_forces_vec
+                F_g = node_face_contact_forces_vec(xp, pos_g, cof, faces, fcell, **kw)
+            F = xp.empty_like(pos)
+            F[perm] = F_g
+            U = xp.zeros(n, dtype=xp.float64)
+        with d.force_arrays() as arr:
+            arr.force[:] = F
+            arr.potential_energy[:] = U

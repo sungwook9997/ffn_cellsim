@@ -49,6 +49,7 @@ from ffn_sim.cell.dcm import icosphere_mesh, _cluster_centers
 from ffn_sim.cell.dcm_gpu_forces import (
     DcmTurgorForceGPU,
     DcmTentContactGPU,
+    FaceContactForceGPU,
     DcmSubstrateForceGPU,
     DcmActiveRimTractionGPU,
     DcmActiveRimTractionGPUVec,
@@ -331,6 +332,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              settle_force: float = 4.0e-10,
                              with_substrate: bool = True,
                              eta_cytoplasm_Pas: float = 65.9,
+                             node_face_contact: bool = False,
                              init_pos: "np.ndarray | None" = None):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
@@ -404,11 +406,19 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     # default, so passing it is backward-compatible: all-1 ⇒ identical physics).
     cad_mult = np.ones(n_cells, dtype=np.float64)
     r_contact = p.r_contact_factor * mean_edge
-    contact = DcmTentContactGPU(
-        cell_of_node=cell_of_node, r_contact=r_contact, c_adh=p.c_adh,
-        rep_strength=p.rep_strength, adh_strength=p.adh_strength,
-        patch_area=area_per_node, force_cap=p.contact_force_cap,
-        cad_mult=cad_mult)
+    if node_face_contact:
+        # SimuCell3D node-vs-face penalty (prevents shell interpenetration;
+        # ⚠ force ∝ A_face not patch_area → rep/adh stiffness re-tunes vs node-node).
+        contact = FaceContactForceGPU(
+            cell_of_node=cell_of_node, faces=faces, face_cell=face_cell,
+            rep_strength=p.rep_strength, adh_strength=p.adh_strength,
+            c_rep=r_contact, c_adh=p.c_adh, cad_mult=cad_mult)
+    else:
+        contact = DcmTentContactGPU(
+            cell_of_node=cell_of_node, r_contact=r_contact, c_adh=p.c_adh,
+            rep_strength=p.rep_strength, adh_strength=p.adh_strength,
+            patch_area=area_per_node, force_cap=p.contact_force_cap,
+            cad_mult=cad_mult)
     ig.forces.append(contact)
 
     # SUBSTRATE — adhesive capped-harmonic well at z0. Skipped for STAGE 1
