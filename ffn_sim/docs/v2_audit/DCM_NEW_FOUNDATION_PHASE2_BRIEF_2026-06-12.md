@@ -29,9 +29,16 @@ Spec for the contact/remeshing port: `SIMUCELL3D_INTEGRATION_2026-06-11.md`.
   dt=1e-4 STABLE but COMPRESSES (adhesion≫traction+turgor, V/V0 0.87→0.54, no spread). Two gates
   to a clean A/A0: (1) node-face ξ/ω + force-balance re-tune [the immediate unblocker], (2) the
   §6 aggregation re-derivation under physiological γ. Both lit-anchored (§4 param rule).
-- ⭐ **NEXT = node-face contact re-tune** (lit-anchored ξ/ω for A_face + soft-start ramp + force
-  balance vs turgor/traction at the physiological op-point); same missing-datum class as the
-  Phase-3 γ → surface to PI.
+- ✅ **MCF7 parameter collection DONE** (Ultracode 17-agent lit workflow → `MCF7_PARAMETER_COLLECTION_2026-06-12.md`):
+  fully-cited table + the **γ discrepancy RESOLVED** — γ=2.7e-4 N/m is NOT a measured MCF7 value
+  (SimuCell3D sub-floor config); the only direct MCF7 cortical tension is **~1e-2 N/m (10 mN/m,
+  Moazzeni 2021, suspended)**; Nagle 21-45 mN/m is AGGREGATE/MCF10A not MCF7. Contact re-tune
+  quantified: **ξ̄=2.42 vs target 0.48 → ξ≈4e7 Pa/m (5× softer)**; ω̄=9.7 vs mcf7 design ω=0
+  (cohesion→cadherin module). 7 PI decision points (γ route A/B, cohesion location, K re-anchor,
+  turgor op-point, η, radius, k_a). Citation fixes applied (η = Dessard 2024 not "Hu 2024").
+- ⭐ **NEXT = apply the lit-anchored node-face contact re-tune** (ξ≈4e7, ω≈5e7 ω̄~0.6, + add γ as a
+  node-face surface-tension term) + soft-start; empirical gbook probe in progress. PI decisions in
+  the MCF7 doc §4 gate freezing the values (esp. K re-anchor — rescales all ratios).
 - **Cross-module audit (§5/§6)**: running in a background subagent (all BAOAB dynamics + all
   compartments for old-γ / node-node / old-S dependence). Result → §6 when it returns.
 - **Param rule (§4)**: every re-tuned constant (γ, rep/adh stiffness, k_a…) must be
