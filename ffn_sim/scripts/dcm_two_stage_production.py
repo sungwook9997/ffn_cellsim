@@ -203,19 +203,61 @@ def aggregate(p, n_cells, *, dev, f_active, tau_p_min, reorient_every, R_drop_fa
 # ---------------------------------------------------------------------------
 # STAGE 2 — spreading from the converged aggregate
 # ---------------------------------------------------------------------------
-def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0):
+def _remesh_aware_diag(pos, cell_of_node, turgor, V0):
+    """Remesh-safe diagnostics: TOP-DOWN A over LIVE nodes only (parked pool nodes
+    excluded so the hull is not inflated), V/V0 from the CURRENT turgor faces grouped
+    by face_cell, and the closed-manifold check on the current mesh. Topology-aware so
+    it stays correct as SPLIT/COLLAPSE change the per-cell face set."""
+    from ffn_sim.cell.dcm_remesh import mesh_edges, enclosed_volume
+    cof = np.asarray(cell_of_node)
+    live = cof >= 0
+    faces = np.asarray(turgor.faces)
+    fc = np.asarray(turgor.face_cell)
+    vr = []
+    for c in np.unique(fc):
+        cf = faces[fc == c]
+        if cf.shape[0]:
+            vr.append(enclosed_volume(pos, cf) / V0)
+    vr = np.array(vr) if vr else np.array([1.0])
+    _e, ef, _a, bnd = mesh_edges(faces)
+    manifold = bool((not bnd.any()) and (ef >= 0).all())
+    return dict(topdown_um2=_topdown_area(pos[live]) * UM * UM,
+                VV0_mean=float(vr.mean()), VV0_min=float(vr.min()),
+                VV0_max=float(vr.max()), maxZ_um=float(pos[live, 2].max()) * UM,
+                manifold=manifold, n_faces=int(faces.shape[0]),
+                n_live=int(live.sum()))
+
+
+def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
+           node_face_contact=False, n_pool=0, remesh=False, remesh_period=2000,
+           remesh_max_ops=24):
     h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=True,
-                                 with_substrate=True, init_pos=init_pos)
+                                 with_substrate=True, init_pos=init_pos,
+                                 node_face_contact=node_face_contact, n_pool=n_pool)
     sim, ranges = h["sim"], h["ranges"]
     cell_of_node = h["cell_of_node"]
-    print(f"STAGE 2 · SPREADING (from converged aggregate, active rim traction):",
+    turgor = h["turgor"]
+    remesh_action = None
+    if remesh:
+        from ffn_sim.cell.dcm_remesh_updater import attach_remesh_updater
+        remesh_action, _ = attach_remesh_updater(
+            h, period=remesh_period, max_ops=remesh_max_ops)
+    print(f"STAGE 2 · SPREADING (from converged aggregate, active rim traction; "
+          f"contact={'node-FACE' if node_face_contact else 'node-node'}, "
+          f"remesh={'ON p=%d pool=%d' % (remesh_period, n_pool) if remesh else 'OFF'}):",
           flush=True)
     sim.run(0)
     spf = max(1, steps // max(1, frames - 1))
     Frames, diags, st = [], [], []
+    # remesh changes the per-cell topology, so V/V0 + top-down come from the
+    # remesh-aware diagnostic (current faces, live nodes); the static-topology
+    # diagnostics() (Rg/asph/contact from ranges) is overlaid for the non-remesh path.
+    use_rd = remesh or node_face_contact or n_pool > 0
 
     def snap_diag():
         pos = capture_positions(sim)
+        if use_rd:
+            return pos, _remesh_aware_diag(pos, cell_of_node, turgor, V0)
         return pos, diagnostics(pos, ranges, cell_of_node, tris0,
                                 R=R, z0=z0, V0=V0, c_adh=p.c_adh)
 
@@ -223,8 +265,8 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0):
     Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
     A0_top = max(dg["topdown_um2"], 1e-9)   # A₀ = spheroid top-down shadow at t=0
     print(f"  [spread] f0 step 0: A/A0=1.00 (A0_topdown={A0_top:.0f}µm²) "
-          f"Rg={dg['Rg_um']:.1f}µm maxZ={dg['maxZ_um']:.1f}µm "
-          f"basal={dg['footprint_um2']:.0f}µm² V/V0={dg['VV0_mean']:.3f}", flush=True)
+          f"maxZ={dg['maxZ_um']:.1f}µm V/V0={dg['VV0_mean']:.3f} "
+          f"faces={dg.get('n_faces','-')}", flush=True)
     t0 = time.time()
     for f in range(1, frames):
         sim.run(spf)
@@ -234,8 +276,12 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0):
         Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
         print(f"  [spread] f{f} step {sim.timestep}: "
               f"A/A0={dg['topdown_um2']/A0_top:.3f} (top-down, the assay obs) "
-              f"Rg={dg['Rg_um']:.1f}µm maxZ={dg['maxZ_um']:.1f}µm "
-              f"basal={dg['footprint_um2']:.0f}µm² V/V0={dg['VV0_mean']:.3f}", flush=True)
+              f"maxZ={dg['maxZ_um']:.1f}µm V/V0={dg['VV0_mean']:.3f} "
+              f"manifold={dg.get('manifold','-')} faces={dg.get('n_faces','-')}",
+              flush=True)
+    if remesh_action is not None:
+        print(f"  [spread] remesh totals: {remesh_action.totals} "
+              f"({remesh_action.n_acts} acts)", flush=True)
     return dict(frames=Frames, diags=diags, steps=st, wall_s=round(time.time() - t0, 1),
                 A0_topdown_um2=A0_top), h
 
@@ -265,6 +311,20 @@ def main():
                          "real organoid does — SimuCell3D deformable-cell aggregation.")
     ap.add_argument("--r-cell-um", type=float, default=7.5)
     ap.add_argument("--seed", type=int, default=7)
+    # Phase 2 step 2: node-face contact + remeshing on the SPREAD stage.
+    ap.add_argument("--node-face-contact", action="store_true",
+                    help="STAGE 2 uses the SimuCell3D node-vs-face penalty contact "
+                         "(no shell interpenetration) instead of the node-node tent.")
+    ap.add_argument("--remesh", action="store_true",
+                    help="attach the low-cadence DcmRemeshUpdater during spreading "
+                         "(keeps edges in [l_min,3·l_min]; prevents sliver blow-up).")
+    ap.add_argument("--remesh-period", type=int, default=2000,
+                    help="steps between remesh passes (low cadence).")
+    ap.add_argument("--n-pool", type=int, default=0,
+                    help="dormant node-pool size per build (SPLIT headroom). Default "
+                         "0; set ~ (frames·max_ops·2) headroom for a long spread.")
+    ap.add_argument("--remesh-max-ops", type=int, default=24,
+                    help="max mutations per remesh pass.")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -301,7 +361,10 @@ def main():
     p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
                             spacing_factor=args.agg_spacing)
     s2, h2 = spread(p, args.n, dev=dev, init_pos=agg_pos, steps=args.spread_steps,
-                    frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0)
+                    frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0,
+                    node_face_contact=args.node_face_contact, n_pool=args.n_pool,
+                    remesh=args.remesh, remesh_period=args.remesh_period,
+                    remesh_max_ops=args.remesh_max_ops)
     tr = h2["traction"]
 
     out = dict(

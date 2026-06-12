@@ -486,7 +486,13 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         int_mult = integrin_gain          # share the SAME array → switch raises traction
         # vectorized (default) vs original per-cell-loop active traction — same law,
         # same construction signature (the vec is a true drop-in subclass).
-        TractionCls = (DcmActiveRimTractionGPUVec if fast_active
+        # ⚠ the vec form reshapes pos → (n_cells, nv, 3), which a DORMANT NODE POOL
+        # (extra trailing nodes) breaks; the per-cell-loop form writes by ``ranges``
+        # (pool nodes lie outside every range → zero traction), so force it when a
+        # pool exists (remesh runs). Activated split nodes (outside the original
+        # range) likewise get no traction — interior nodes, a negligible rim effect.
+        use_fast = fast_active and n_pool == 0
+        TractionCls = (DcmActiveRimTractionGPUVec if use_fast
                        else DcmActiveRimTractionGPU)
         traction = TractionCls(
             cell_of_node=cell_of_node, ranges=ranges, active=active_mask,
