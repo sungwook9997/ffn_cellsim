@@ -14,14 +14,24 @@ Spec for the contact/remeshing port: `SIMUCELL3D_INTEGRATION_2026-06-11.md`.
   (f6cdb8c, 2.5× faster + parity-exact), top-down A/A0, arrest removed. `FaceContactForceGPU`
   wired opt-in (`build_gpu_dcm_simulation(node_face_contact=True)`), compiles — NOT yet
   spreading-validated.
-- **Phase 2 IN PROGRESS** (§3): step 1 **DONE+TESTED** = `cell/dcm_remesh.py` (mesh_edges /
-  edge_lengths / face_quality S_f / classify_remesh — pure ANALYSIS foundation;
-  `tests/test_dcm_remesh.py` 4/4 PASS: closed-manifold edges, S_f equilateral=1/sliver<0.2,
-  split/collapse/swap classification). step 2 NEXT = the MUTATIONS: SWAP first (node count
-  FIXED, lowest risk — flip a sliver's longest interior edge, re-wind for outward volume) →
-  then the node-pool SPLIT/COLLAPSE (the fixed-tag-space topology risk: pre-allocated dormant
-  node+face pool; a low-cadence CustomUpdater; turgor faces/face_cell + node-face faces mutate
-  in place — preserve the DcmTurgorForce interface contract).
+- **Phase 2 step 1 DONE+TESTED** = `cell/dcm_remesh.py` analysis foundation (mesh_edges /
+  edge_lengths / face_quality S_f / classify_remesh).
+- **Phase 2 step 2 MACHINERY DONE+VALIDATED** (commits e2716de · 631b046 · b5abe41 · a961a9f;
+  full writeup `PHASE2_STEP2_RESULT_2026-06-12.md`): the SWAP/SPLIT/COLLAPSE mutation kernel +
+  `remesh_pass` (`dcm_remesh.py`, tests 4→12), the live `DcmRemeshUpdater` +
+  `attach_remesh_updater` (`dcm_remesh_updater.py`, no State-rebuild → no leak), the `n_pool`
+  dormant node pool in `dcm_gpu_build.py`, and the `--node-face-contact/--remesh/--n-pool/
+  --spread-dt` wiring + remesh-aware diagnostics in `dcm_two_stage_production.py`. Verified
+  live on gbook A5000: 91 swaps+77 splits fire, mesh stays a closed manifold, pool not
+  exhausted, turgor/contact faces stay consistent.
+- ⛔ **Spreading A/A0 validation BLOCKED** — node-face `rep/adh` (2e8/8e8 Pa/m) are un-tuned for
+  the A_face law (brief §1): dt=1e-3 EXPLODES (cold-start adhesion snap, A/A0→380×, V/V0→±1e4),
+  dt=1e-4 STABLE but COMPRESSES (adhesion≫traction+turgor, V/V0 0.87→0.54, no spread). Two gates
+  to a clean A/A0: (1) node-face ξ/ω + force-balance re-tune [the immediate unblocker], (2) the
+  §6 aggregation re-derivation under physiological γ. Both lit-anchored (§4 param rule).
+- ⭐ **NEXT = node-face contact re-tune** (lit-anchored ξ/ω for A_face + soft-start ramp + force
+  balance vs turgor/traction at the physiological op-point); same missing-datum class as the
+  Phase-3 γ → surface to PI.
 - **Cross-module audit (§5/§6)**: running in a background subagent (all BAOAB dynamics + all
   compartments for old-γ / node-node / old-S dependence). Result → §6 when it returns.
 - **Param rule (§4)**: every re-tuned constant (γ, rep/adh stiffness, k_a…) must be
