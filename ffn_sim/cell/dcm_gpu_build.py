@@ -261,12 +261,19 @@ def pick_device(device=None, *, seed_notice: int = 0):
 # ---------------------------------------------------------------------------
 # Snapshot — single membrane type, single bond type
 # ---------------------------------------------------------------------------
-def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
+def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int, *, n_pool: int = 0):
     """Build a packed cluster of n_cells DCM shells with ONE membrane type.
 
     Returns a dict with the gsd Frame and all the per-cell bookkeeping the forces
     need: cell_of_node (mutable, used by the tent contact), ranges (per-cell node
     tag ranges), faces / face_cell (for the K1 turgor), nv/ne, mean_edge.
+
+    ``n_pool`` > 0 pre-allocates that many DORMANT node-pool nodes (cell_of_node=−1,
+    typeid ``dcm_inert`` so the settling body force skips them, parked far from the
+    cluster, in NO bond and NO face) — the fixed-tag-space headroom a SPLIT activates
+    during remeshing (:class:`DcmRemeshUpdater`). Dormant nodes are inert to turgor
+    (not in any face) and to the node-face contact (which skips cell_of_node < 0), so
+    a pool leaves the t=0 physics identical to ``n_pool=0``.
     """
     import gsd.hoomd
 
@@ -307,12 +314,30 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
     faces = np.concatenate(face_groups, axis=0)
     face_cell = np.concatenate(face_cell)
 
+    # DORMANT node pool (remesh SPLIT headroom): cell_of_node=−1, typeid dcm_inert,
+    # parked in a compact grid offset far from the cluster (well outside any contact
+    # cutoff), in no bond/face. Appended AFTER the active nodes so the active tag
+    # range (and every existing face/bond index) is unchanged.
+    n_active = pos.shape[0]
+    typeid = np.zeros(n_active, dtype=np.uint32)       # active nodes = dcm_mem
+    if n_pool > 0:
+        side = int(np.ceil(n_pool ** (1.0 / 3.0)))
+        gx, gy, gz = np.meshgrid(np.arange(side), np.arange(side), np.arange(side))
+        grid = np.column_stack([gx.ravel(), gy.ravel(), gz.ravel()])[:n_pool]
+        park0 = np.array([np.abs(pos[:, 0]).max() + 8.0 * p.R_cell,
+                          np.abs(pos[:, 1]).max() + 8.0 * p.R_cell,
+                          p.z_substrate + 2.0 * p.R_cell])
+        pool_pos = park0 + grid * (2.5 * p.R_cell)
+        pos = np.concatenate([pos, pool_pos], axis=0)
+        cell_of_node = np.concatenate([cell_of_node, -np.ones(n_pool, np.int64)])
+        typeid = np.concatenate([typeid, np.ones(n_pool, dtype=np.uint32)])  # inert
+
     box_edge = float(np.abs(pos).max() * 2.5 + 4.0 * p.R_cell)
     snap = gsd.hoomd.Frame()
     snap.particles.N = pos.shape[0]
     snap.particles.types = ["dcm_mem", "dcm_inert"]   # single active type + LOD freeze type
     snap.particles.position = pos
-    snap.particles.typeid = np.zeros(pos.shape[0], dtype=np.uint32)  # all active
+    snap.particles.typeid = typeid
     snap.particles.mass = np.ones(pos.shape[0])
     snap.bonds.N = bonds.shape[0]
     snap.bonds.types = ["dcm_edge"]                   # SINGLE bond type
@@ -333,6 +358,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              with_substrate: bool = True,
                              eta_cytoplasm_Pas: float = 65.9,
                              node_face_contact: bool = False,
+                             n_pool: int = 0,
                              init_pos: "np.ndarray | None" = None):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
@@ -354,7 +380,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     """
     from ffn_sim.integrator.baoab import make_baoab_updater
 
-    b = build_gpu_dcm_snapshot(p, n_cells)
+    b = build_gpu_dcm_snapshot(p, n_cells, n_pool=n_pool)
     snap = b["snap"]
     nv, ne, mean_edge = b["nv"], b["ne"], b["mean_edge"]
     cell_of_node = b["cell_of_node"]
@@ -368,13 +394,16 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     # spheroid, not a just-placed lattice, or the rim traction is ill-defined.
     if init_pos is not None:
         ip = np.asarray(init_pos, dtype=snap.particles.position.dtype)
-        if ip.shape != snap.particles.position.shape:
-            raise ValueError(f"init_pos {ip.shape} != snapshot "
-                             f"{snap.particles.position.shape} (N/topology mismatch)")
+        n_snap = snap.particles.position.shape[0]
+        # init_pos may cover only the ACTIVE nodes (n_snap − n_pool); the dormant
+        # pool keeps its parked placement.
+        if ip.shape[0] not in (n_snap, n_snap - n_pool) or ip.shape[1] != 3:
+            raise ValueError(f"init_pos {ip.shape} != snapshot active "
+                             f"{(n_snap - n_pool, 3)} or full {(n_snap, 3)}")
         L = float(np.abs(ip).max() * 2.5 + 6.0 * p.R_cell)   # box headroom for spread
         if L > snap.configuration.box[0]:
             snap.configuration.box = [L, L, L, 0, 0, 0]
-        snap.particles.position[:] = ip
+        snap.particles.position[:ip.shape[0]] = ip
 
     dev = pick_device(device)
     sim = hoomd.Simulation(device=dev, seed=p.seed)

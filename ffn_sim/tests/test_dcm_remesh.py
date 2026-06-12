@@ -6,7 +6,8 @@ import pytest
 from ffn_sim.cell.dcm import icosphere_mesh
 from ffn_sim.cell.dcm_remesh import (
     mesh_edges, edge_lengths, face_quality, classify_remesh,
-    enclosed_volume, swap_edge, split_edge, collapse_edge, can_be_merged)
+    enclosed_volume, swap_edge, split_edge, collapse_edge, can_be_merged,
+    remesh_pass)
 
 
 def _is_closed_manifold(faces):
@@ -153,3 +154,41 @@ def test_split_then_collapse_roundtrips_topology():
     assert faces3.shape[0] == tris.shape[0]
     assert _is_closed_manifold(faces3) and _euler(faces3) == 2
     assert int((con3 < 0).sum()) == 2                   # pool restored
+
+
+# --- remesh_pass orchestrator ---------------------------------------------
+
+def test_remesh_pass_splits_a_stretched_shell_and_stays_manifold():
+    # stretch the icosphere 4x in z so its z-edges blow past l_max → SPLITs fire.
+    verts, _e, tris = icosphere_mesh(7.5e-6, 1)
+    nv = verts.shape[0]
+    me = float(edge_lengths(verts, mesh_edges(tris)[0]).mean())
+    pos = np.vstack([verts.copy(), np.full((60, 3), 1e3)])
+    pos[:nv, 2] *= 4.0                                   # over-stretch
+    cof = np.concatenate([np.zeros(nv, np.int64), -np.ones(60, np.int64)])
+    fc = np.zeros(tris.shape[0], np.int64)
+    l_min = me / 2.0                                     # band [me/2, 1.5*me]
+    p2, f2, c2, fc2, counts = remesh_pass(pos, tris, cof, l_min,
+                                          face_cell=fc, max_ops=60)
+    assert counts["split"] > 0                           # over-long edges subdivided
+    assert f2.shape[0] == fc2.shape[0]                   # face_cell stays aligned
+    assert _is_closed_manifold(f2)                       # still closed
+    assert _euler(f2) == 2                               # still a sphere
+    assert enclosed_volume(p2, f2) > 0                   # outward winding intact
+    # every retained edge is now within [l_min, l_max] (or close): max edge drops
+    L2 = edge_lengths(p2, mesh_edges(f2)[0])
+    assert L2.max() < edge_lengths(pos, mesh_edges(tris)[0]).max()
+    # activated pool nodes carry the owner cell id
+    assert np.all(c2[np.flatnonzero(c2 >= 0)] == 0)
+
+
+def test_remesh_pass_noop_on_a_healthy_icosphere():
+    verts, _e, tris = icosphere_mesh(7.5e-6, 1)
+    nv = verts.shape[0]
+    me = float(edge_lengths(verts, mesh_edges(tris)[0]).mean())
+    pos = np.vstack([verts, np.full((4, 3), 1e3)])
+    cof = np.concatenate([np.zeros(nv, np.int64), -np.ones(4, np.int64)])
+    fc = np.zeros(tris.shape[0], np.int64)
+    p2, f2, c2, fc2, counts = remesh_pass(pos, tris, cof, me / 2.0, face_cell=fc)
+    assert counts["split"] == 0 and counts["collapse"] == 0 and counts["swap"] == 0
+    assert f2.shape == tris.shape                        # untouched

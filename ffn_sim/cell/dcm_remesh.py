@@ -153,15 +153,17 @@ def swap_edge(faces: np.ndarray, f0: int, f1: int, n0: int, n1: int) -> np.ndarr
     return faces
 
 
-def split_edge(pos, faces, cell_of_node, f0, f1, n0, n1, *, cell_id, park=None):
+def split_edge(pos, faces, cell_of_node, f0, f1, n0, n1, *, cell_id,
+               face_cell=None):
     """Subdivide interior edge (n0,n1): activate a dormant node at the midpoint, 2→4 faces.
 
     Each incident triangle is bisected through the new node m, keeping its apex (so
     winding — and outward orientation — is preserved). Node +1, face +2, edge +3 ⇒
     Euler invariant. The activated node inherits the midpoint position; its velocity
     handling (SimuCell3D's ⅓-momentum rule) is applied by the caller that owns the
-    HOOMD snapshot. Returns (pos', faces', cell_of_node', m) or raises if the dormant
-    pool is exhausted.
+    HOOMD snapshot. If ``face_cell`` (the turgor/contact owner-cell array) is given it
+    is threaded — the 2 appended faces inherit f0's owner — and returned. Returns
+    (pos', faces', cell_of_node', m[, face_cell']); raises if the pool is exhausted.
     """
     pos = np.array(pos, float, copy=True)
     cell_of_node = np.array(cell_of_node, np.int64, copy=True)
@@ -180,7 +182,12 @@ def split_edge(pos, faces, cell_of_node, f0, f1, n0, n1, *, cell_id, park=None):
     faces[f1] = (b, m, d)                                  # b→m→d (apex d kept)
     extra = np.array([(m, b, c), (m, a, d)], dtype=np.int64)
     faces = np.concatenate([faces, extra], axis=0)
-    return pos, faces, cell_of_node, m
+    if face_cell is None:
+        return pos, faces, cell_of_node, m
+    fc = np.asarray(face_cell, np.int64)
+    owner = int(fc[f0])
+    fc = np.concatenate([fc, np.array([owner, owner], np.int64)])
+    return pos, faces, cell_of_node, m, fc
 
 
 def can_be_merged(faces: np.ndarray, n0: int, n1: int) -> bool:
@@ -195,13 +202,14 @@ def can_be_merged(faces: np.ndarray, n0: int, n1: int) -> bool:
     return len(nbr[int(n0)] & nbr[int(n1)]) == 2
 
 
-def collapse_edge(pos, faces, cell_of_node, n0, n1, *, park=None):
+def collapse_edge(pos, faces, cell_of_node, n0, n1, *, park=None, face_cell=None):
     """Merge over-short edge (n0,n1) to its midpoint: keep n0, return n1 to the pool.
 
     Drops the two faces on the edge, repoints every other face's n1→n0, moves n0 to
     the midpoint, and DEACTIVATES n1 (cell_of_node=−1, parked). Node −1, face −2,
-    edge −3 ⇒ Euler invariant. Requires :func:`can_be_merged` (caller checks).
-    Returns (pos', faces', cell_of_node', n1).
+    edge −3 ⇒ Euler invariant. Requires :func:`can_be_merged` (caller checks). If
+    ``face_cell`` is given the same 2 rows are dropped from it and it is returned.
+    Returns (pos', faces', cell_of_node', n1[, face_cell']).
     """
     pos = np.array(pos, float, copy=True)
     cell_of_node = np.array(cell_of_node, np.int64, copy=True)
@@ -215,4 +223,111 @@ def collapse_edge(pos, faces, cell_of_node, n0, n1, *, park=None):
     if park is not None:
         pos[n1] = np.asarray(park, float)
     cell_of_node[n1] = -1
-    return pos, out, cell_of_node, int(n1)
+    if face_cell is None:
+        return pos, out, cell_of_node, int(n1)
+    fc = np.asarray(face_cell, np.int64)[~on_edge].copy()
+    return pos, out, cell_of_node, int(n1), fc
+
+
+def _edge_face_map(faces):
+    """{(n0,n1) sorted: [face ids]} for a triangle mesh."""
+    d = defaultdict(list)
+    for fi, (a, b, c) in enumerate(faces):
+        for u, v in ((a, b), (b, c), (c, a)):
+            d[(int(min(u, v)), int(max(u, v)))].append(fi)
+    return d
+
+
+def remesh_pass(pos, faces, cell_of_node, l_min, *, face_cell, max_ops=24,
+                sliver_q=0.2, park=None):
+    """Apply up to ``max_ops`` SWAP/SPLIT/COLLAPSE ops to keep every edge in
+    [l_min, 3·l_min] and no face below ``sliver_q``.
+
+    One operation per iteration, re-classifying from the mutated arrays each time so
+    the face/edge indices never go stale (cheap: the mesh is O(10²) faces, low
+    cadence). Priority SWAP → SPLIT → COLLAPSE: a swap fixes a sliver at fixed node
+    count (cheapest), a split relieves over-stretch (the spreading sliver source), a
+    collapse reclaims over-compressed edges. Every op preserves the closed-manifold
+    + outward-winding invariants (so the turgor volume stays positive); face_cell is
+    threaded so the turgor/contact owner-cell groups stay consistent. Returns
+    (pos, faces, cell_of_node, face_cell, counts).
+    """
+    pos = np.array(pos, float, copy=True)
+    faces = np.array(faces, np.int64, copy=True)
+    cof = np.array(cell_of_node, np.int64, copy=True)
+    fc = np.array(face_cell, np.int64, copy=True)
+    l_max = 3.0 * l_min
+    counts = dict(swap=0, split=0, collapse=0, pool_exhausted=0)
+
+    for _ in range(max_ops):
+        edges, ef, _ea, bnd = mesh_edges(faces)
+        if bnd.any():                                  # safety: never operate on a
+            break                                      # non-manifold mesh
+        L = edge_lengths(pos, edges)
+        q = face_quality(pos, faces)
+        emap = _edge_face_map(faces)
+        existing = set(map(tuple, edges.tolist()))
+
+        # 1) SWAP the worst sliver whose longest edge flip strictly improves quality.
+        did = False
+        for fi in np.flatnonzero(q < sliver_q)[np.argsort(q[q < sliver_q])]:
+            tri = faces[fi]
+            e3 = [(int(min(u, v)), int(max(u, v)))
+                  for u, v in ((tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0]))]
+            n0, n1 = max(e3, key=lambda e: np.linalg.norm(pos[e[0]] - pos[e[1]]))
+            inc = emap[(n0, n1)]
+            if len(inc) != 2:
+                continue
+            f0, f1 = inc
+            _u, _v, c = _directed_edge_apex(faces[f0], n0, n1)
+            _u2, _v2, dd = _directed_edge_apex(faces[f1], n0, n1)
+            if (min(c, dd), max(c, dd)) in existing:   # flip would double an edge
+                continue
+            try:
+                cand = swap_edge(faces, f0, f1, n0, n1)
+            except ValueError:
+                continue
+            q_old = min(q[f0], q[f1])
+            q_new = float(face_quality(pos, cand[[f0, f1]]).min())
+            if q_new > q_old + 1e-9:
+                faces = cand
+                counts["swap"] += 1
+                did = True
+                break
+        if did:
+            continue
+
+        # 2) SPLIT the longest over-long interior edge.
+        too_long = L > l_max
+        if too_long.any():
+            i = int(np.argmax(np.where(too_long, L, -np.inf)))
+            n0, n1 = int(edges[i, 0]), int(edges[i, 1])
+            f0, f1 = int(ef[i, 0]), int(ef[i, 1])
+            owner = int(fc[f0])
+            try:
+                pos, faces, cof, _m, fc = split_edge(
+                    pos, faces, cof, f0, f1, n0, n1, cell_id=owner, face_cell=fc)
+                counts["split"] += 1
+                continue
+            except RuntimeError:
+                counts["pool_exhausted"] += 1            # pool dry — stop splitting
+
+        # 3) COLLAPSE the shortest over-short interior edge that can be merged.
+        too_short = L < l_min
+        if too_short.any():
+            for i in np.argsort(np.where(too_short, L, np.inf)):
+                if not too_short[i]:
+                    break
+                n0, n1 = int(edges[i, 0]), int(edges[i, 1])
+                if can_be_merged(faces, n0, n1):
+                    pk = None if park is None else np.asarray(park, float)
+                    pos, faces, cof, _r, fc = collapse_edge(
+                        pos, faces, cof, n0, n1, park=pk, face_cell=fc)
+                    counts["collapse"] += 1
+                    did = True
+                    break
+            if did:
+                continue
+        break                                            # nothing left to do
+
+    return pos, faces, cof, fc, counts
