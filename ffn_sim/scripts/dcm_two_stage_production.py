@@ -124,10 +124,11 @@ def _rt(steps, dt):
 # STAGE 1 — biological aggregation to CONVERGENCE
 # ---------------------------------------------------------------------------
 def aggregate(p, n_cells, *, dev, f_active, tau_p_min, reorient_every, R_drop_factor,
-              k_wall, max_steps, frames, R, z0, V0, tris0, seed, init_pos=None):
+              k_wall, max_steps, frames, R, z0, V0, tris0, seed, init_pos=None,
+              node_face_contact=False):
     h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=False,
                                  with_substrate=False, settle_force=0.0,
-                                 init_pos=init_pos)
+                                 init_pos=init_pos, node_face_contact=node_face_contact)
     sim, ranges = h["sim"], h["ranges"]
     nbuilt = h["n_cells"]
     cell_of_node = h["cell_of_node"]
@@ -400,7 +401,8 @@ def main():
             p_agg, args.n, dev=dev, f_active=args.f_active, tau_p_min=args.tau_p_min,
             reorient_every=args.reorient_every, R_drop_factor=2.0, k_wall=1.0e-3,
             max_steps=args.agg_max_steps, frames=args.frames, R=R, z0=z0, V0=V0,
-            tris0=tris0, seed=args.seed, init_pos=agg_init)
+            tris0=tris0, seed=args.seed, init_pos=agg_init,
+            node_face_contact=args.node_face_contact)
         print(f"  -> aggregated: Rg {s1['diags'][0]['Rg_um']:.1f}→{s1['diags'][-1]['Rg_um']:.1f}µm, "
               f"asph {s1['diags'][0]['asphericity']:.3f}→{s1['diags'][-1]['asphericity']:.3f}, "
               f"contact {s1['diags'][0]['contact_frac']:.2f}→{s1['diags'][-1]['contact_frac']:.2f}, "
