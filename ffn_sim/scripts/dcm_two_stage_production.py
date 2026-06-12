@@ -124,9 +124,10 @@ def _rt(steps, dt):
 # STAGE 1 — biological aggregation to CONVERGENCE
 # ---------------------------------------------------------------------------
 def aggregate(p, n_cells, *, dev, f_active, tau_p_min, reorient_every, R_drop_factor,
-              k_wall, max_steps, frames, R, z0, V0, tris0, seed):
+              k_wall, max_steps, frames, R, z0, V0, tris0, seed, init_pos=None):
     h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=False,
-                                 with_substrate=False, settle_force=0.0)
+                                 with_substrate=False, settle_force=0.0,
+                                 init_pos=init_pos)
     sim, ranges = h["sim"], h["ranges"]
     nbuilt = h["n_cells"]
     cell_of_node = h["cell_of_node"]
@@ -358,6 +359,15 @@ def main():
                     help="override node-face repulsion xi [Pa/m] (default: p value).")
     ap.add_argument("--adh-strength", type=float, default=None,
                     help="override node-face adhesion omega [Pa/m] (default: p value).")
+    # aggregation checkpoint / resume (so stage 1 can be verified + extended before spread)
+    ap.add_argument("--agg-only", action="store_true",
+                    help="run STAGE 1 only, save the aggregated spheroid, skip spread.")
+    ap.add_argument("--agg-init-npy", default=None,
+                    help="resume aggregation FROM these saved node positions (extend).")
+    ap.add_argument("--spread-from-npy", default=None,
+                    help="skip aggregation; load this spheroid + spread it (substrate-touch).")
+    ap.add_argument("--save-spheroid", default=None,
+                    help="path to save the aggregated spheroid positions (.npy).")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -373,19 +383,47 @@ def main():
     if args.agg_k_edge is not None:
         agg_over["k_edge"] = args.agg_k_edge       # soft cortex → deformable cells
     p_agg = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), **agg_over)
-    s1, h1, ranges, agg_pos, _con = aggregate(
-        p_agg, args.n, dev=dev, f_active=args.f_active, tau_p_min=args.tau_p_min,
-        reorient_every=args.reorient_every, R_drop_factor=2.0, k_wall=1.0e-3,
-        max_steps=args.agg_max_steps, frames=args.frames, R=R, z0=z0, V0=V0,
-        tris0=tris0, seed=args.seed)
-    # place the converged aggregate onto the dish (bottom at z0, centred in xy)
+
+    s1 = None
+    if args.spread_from_npy:                       # skip stage 1 — load a saved spheroid
+        agg_pos = np.load(args.spread_from_npy)
+        # rebuild ranges from topology so the dish placement works
+        ranges = build_gpu_dcm_snapshot(p_agg, args.n)["ranges"]
+        print(f"[spread-from-npy] loaded spheroid {agg_pos.shape} from {args.spread_from_npy}",
+              flush=True)
+    else:
+        agg_init = np.load(args.agg_init_npy) if args.agg_init_npy else None
+        if agg_init is not None:
+            print(f"[agg-resume] continuing aggregation from {args.agg_init_npy} "
+                  f"{agg_init.shape}", flush=True)
+        s1, h1, ranges, agg_pos, _con = aggregate(
+            p_agg, args.n, dev=dev, f_active=args.f_active, tau_p_min=args.tau_p_min,
+            reorient_every=args.reorient_every, R_drop_factor=2.0, k_wall=1.0e-3,
+            max_steps=args.agg_max_steps, frames=args.frames, R=R, z0=z0, V0=V0,
+            tris0=tris0, seed=args.seed, init_pos=agg_init)
+        print(f"  -> aggregated: Rg {s1['diags'][0]['Rg_um']:.1f}→{s1['diags'][-1]['Rg_um']:.1f}µm, "
+              f"asph {s1['diags'][0]['asphericity']:.3f}→{s1['diags'][-1]['asphericity']:.3f}, "
+              f"contact {s1['diags'][0]['contact_frac']:.2f}→{s1['diags'][-1]['contact_frac']:.2f}, "
+              f"converged={s1['converged']}\n", flush=True)
+        if args.save_spheroid:                     # save RAW aggregated positions (resume/spread)
+            np.save(args.save_spheroid, agg_pos)
+            print(f"[save-spheroid] wrote {args.save_spheroid} {agg_pos.shape}", flush=True)
+        if args.agg_only:
+            import json
+            meta = dict(n=int(args.n), agg=s1, spheroid=args.save_spheroid)
+            with open(OUT / f"agg_only_n{args.n}.pkl", "wb") as fh:
+                pickle.dump(dict(n_cells=args.n, agg=s1, ranges=ranges, tris0=tris0,
+                                 R_cell=R, V0=V0, z0=z0), fh)
+            print(f"AGG-ONLY done (contact "
+                  f"{s1['diags'][0]['contact_frac']:.2f}→{s1['diags'][-1]['contact_frac']:.2f}, "
+                  f"converged={s1['converged']}); wrote agg_only_n{args.n}.pkl", flush=True)
+            return
+
+    # place the converged aggregate onto the dish (bottom at z0, centred in xy) — the
+    # PI substrate-touching start: lowest node EXACTLY at z0, spheroid centred in xy.
     agg_pos[:, 2] -= (agg_pos[:, 2].min() - z0)
     cxy = centroids(agg_pos, ranges).mean(0)[:2]
     agg_pos[:, 0] -= cxy[0]; agg_pos[:, 1] -= cxy[1]
-    print(f"  -> aggregated: Rg {s1['diags'][0]['Rg_um']:.1f}→{s1['diags'][-1]['Rg_um']:.1f}µm, "
-          f"asph {s1['diags'][0]['asphericity']:.3f}→{s1['diags'][-1]['asphericity']:.3f}, "
-          f"contact {s1['diags'][0]['contact_frac']:.2f}→{s1['diags'][-1]['contact_frac']:.2f}, "
-          f"converged={s1['converged']}\n", flush=True)
 
     # stage 2 uses the cohesive contact bands (ResolvedGpuDCM defaults) but the SAME
     # spacing_factor as stage 1 so _cluster_centers yields the SAME cell count/topology
@@ -415,17 +453,19 @@ def main():
         agg=s1, spread=s2, p_agg=p_agg, p=p,
         rim_params=dict(r_neigh=float(tr.r_neigh), max_neigh=int(tr.max_neigh),
                         contact_band=float(tr.contact_band), R=R, z0=z0),
-        realtime=dict(agg=_rt(s1["steps"][-1], p_agg.dt),
+        realtime=dict(agg=_rt(s1["steps"][-1], p_agg.dt) if s1 else None,
                       spread=_rt(s2["steps"][-1], p.dt), accel=S_ACCEL))
     path = OUT / f"two_stage_n{args.n}.pkl"
     with open(path, "wb") as fh:
         pickle.dump(out, fh)
-    print(f"\nwrote {path} (agg {s1['wall_s']}s converged={s1['converged']} + "
+    print(f"\nwrote {path} (agg "
+          f"{(str(s1['wall_s'])+'s converged='+str(s1['converged'])) if s1 else 'from-npy'} + "
           f"spread {s2['wall_s']}s)", flush=True)
-    print(f"AGGREGATION biological check: contact {s1['diags'][-1]['contact_frac']:.2f} "
-          f"(>0.7?), asph {s1['diags'][-1]['asphericity']:.3f} (→0?), "
-          f"Rg {s1['diags'][0]['Rg_um']:.0f}→{s1['diags'][-1]['Rg_um']:.0f}µm; "
-          f"VOLUME held V/V0={s1['diags'][-1]['VV0_mean']:.3f}", flush=True)
+    if s1:
+        print(f"AGGREGATION biological check: contact {s1['diags'][-1]['contact_frac']:.2f} "
+              f"(>0.7?), asph {s1['diags'][-1]['asphericity']:.3f} (→0?), "
+              f"Rg {s1['diags'][0]['Rg_um']:.0f}→{s1['diags'][-1]['Rg_um']:.0f}µm; "
+              f"VOLUME held V/V0={s1['diags'][-1]['VV0_mean']:.3f}", flush=True)
     A0t = s2["A0_topdown_um2"]
     print(f"SPREADING A/A0 (TOP-DOWN silhouette = the experimental observable): "
           f"{s2['diags'][0]['topdown_um2']/A0t:.3f} → "
