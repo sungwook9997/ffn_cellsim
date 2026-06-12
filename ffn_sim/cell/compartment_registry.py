@@ -331,7 +331,7 @@ _SPECS: tuple[CompartmentSpec, ...] = (
         ),
         gamma_contaminating=False,
         baseline_required=True,
-        citations=("Hu 2024 MCF7 cytoplasm 65.9 Pa.s",),
+        citations=("Dessard, Manneville & Berret 2024 (10.1039/d4na00003j) MCF7 cytoplasm 65.9 Pa.s",),
         sanity_gate_ref="ffn_sim/tests/test_h10_cytoplasm.py",
         notes="Physiological-baseline HARD rule: production must NOT silently drop to water drag.",
     ),

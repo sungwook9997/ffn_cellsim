@@ -49,19 +49,25 @@ stay **exact** for any per-type ``γ`` — raising ``η_eff`` lowers ``D`` by ex
 dissipation violation. This is why Tier-1 is the cheapest faithful option: FDT is
 preserved by the integrator's own per-type construction, not by anything here.
 
-Magic-Number Block (η bands — Hu 2024, provenance)
---------------------------------------------------
+Magic-Number Block (η bands — Dessard et al. 2024, provenance)
+-------------------------------------------------------------
 The cytoplasm viscosities are **measured acceptance oracles**, never fitting
-targets, never grid-tuned. Microrheology viscosity is probe-length-dependent
-(η ∝ L²); all values below are at the MRS wire length L ≈ 3 ± 1 µm.
+targets, never grid-tuned. Microrheology viscosity is probe-length-dependent;
+for MCF-7 the source reports η = 65.9 ± 11.4 Pa·s as the ALL-WIRE ensemble mean
+(n=60) and η = 56.4 ± 16.6 Pa·s for the L = 3 ± 1 µm wire-length subset.
 
   - MCF10A (normal)            η = 41.6 Pa·s   (MRS;  KU-3.B3.1 / H.10 brief)
-  - MCF-7   (low-invasion)     η = 65.9 ± 11.4 Pa·s  (Hu 2024 refined; 56.4 MRS)
-  - MDA-MB-231 (high-invasion) η = 12.0 ± 5.7 Pa·s   (Hu 2024 refined; 10.7 MRS)
-  - contrast: MCF-7 ≈ 5.5× MDA (Hu 2024) / 5.3× (MRS) — the validation target.
+  - MCF-7   (low-invasion)     η = 65.9 ± 11.4 Pa·s  (all-wire mean; 56.4 L=3µm)
+  - MDA-MB-231 (high-invasion) η = 12.0 Pa·s (dict)  ⚠ Dessard source = 10.7 ± 5.4;
+                               the "12.0 refined" provenance is unclear → flag PI
+  - contrast: MCF-7 ≈ 5× MDA — the validation target.
 
-Source: Hu et al. 2024, *Nanoscale Adv* (PMC10929591), magnetic rotational
-spectroscopy; cross-checked against H.10 brief KU-3.B3.1. ``η_water = 6.913e-4
+Source: Dessard, Manneville & Berret 2024, *Nanoscale Adv* 6(6):1727-1738
+(DOI 10.1039/d4na00003j, PMC10929591), magnetic rotational spectroscopy on
+adherent cells at 37 °C; cross-checked against H.10 brief KU-3.B3.1. (Citation
+fix 2026-06-12: the value+PMC are correct; the prior "Hu 2024" attribution was
+wrong — first author Marie Dessard, corresp. J.-F. Berret. See
+docs/v2_audit/MCF7_PARAMETER_COLLECTION_2026-06-12.md §6.) ``η_water = 6.913e-4
 Pa·s`` (NIST, 310 K; KU-1.26) is the default → bit-identity. Defaults live in
 ``ffn_sim/cell/cytoplasm.py`` constants below and the additive ``cytoplasm:``
 block in ``ffn_sim/configs/phase1_h10.yaml``.
@@ -74,7 +80,7 @@ PI-gate (why this is DEFAULT-OFF, not auto-on)
 but it is a large, physics-altering, frozen-medium-policy change that interacts
 with gates tuned at η_water. Per ``docs/H10_CYTOPLASM_DESIGN.md`` §"The PI-gate":
 **the η_eff magnitude + a re-run of the existing CFL/timestep gates must be
-surfaced to PI before enabling.** Not a magic number (η_eff is the Hu-2024
+surfaced to PI before enabling.** Not a magic number (η_eff is the Dessard-2024
 measurement); a medium-policy gate. Tier-2/3 are separate frozen-``integrator/``
 PI-gates and are not built here.
 
@@ -107,7 +113,7 @@ smoke there.*
 
 References
 ----------
-- Hu et al. 2024, *Nanoscale Adv* (PMC10929591) — cytoplasm viscosity by MRS.
+- Dessard, Manneville & Berret 2024, *Nanoscale Adv* 6(6):1727-1738 (10.1039/d4na00003j, PMC10929591) — cytoplasm viscosity by MRS.
 - ``ffn_sim/docs/H10_CYTOPLASM_DESIGN.md`` (Tier-1/2/3 staging, PI-gates).
 - ``ffn_sim/docs/briefs/H10_cytoplasm.md`` (KU-3.B3 anchors).
 - ``ffn_sim/integrator/baoab.py`` (the gamma_map contract + per-type FDT noise).
@@ -130,13 +136,13 @@ logger = logging.getLogger(__name__)
 ETA_WATER: float = 6.913e-4
 
 #: Per-cell-type cytoplasm effective viscosities [Pa·s], MRS probe L ≈ 3 µm.
-#: Hu 2024 (PMC10929591) refined for MCF7/MDA; MRS for MCF10A. Acceptance
+#: Dessard 2024 (PMC10929591) for MCF7/MDA; MRS for MCF10A. Acceptance
 #: oracles, NEVER fitting targets. ``"water"`` is the explicit no-op default.
 ETA_CYTO_BY_CELLTYPE: dict[str, float] = {
     "water": ETA_WATER,   # default / no-op (bit-identity)
     "MCF10A": 41.6,       # normal epithelial  (MRS; KU-3.B3.1)
-    "MCF7": 65.9,         # low-invasion       (Hu 2024 refined; 56.4 MRS)
-    "MDA-MB-231": 12.0,   # high-invasion      (Hu 2024 refined; 10.7 MRS)
+    "MCF7": 65.9,         # low-invasion       (Dessard 2024 all-wire; 56.4 L=3µm)
+    "MDA-MB-231": 12.0,   # high-invasion      (dict; Dessard 2024 = 10.7 — flag PI)
 }
 
 #: Cytoplasm-immersed interior particle types (water-exposed membrane / cortex
@@ -170,7 +176,7 @@ class CytoplasmTier1:
     ----------
     eta_eff
         Cytoplasm effective viscosity [Pa·s] for the immersed types. Default
-        ``ETA_WATER`` → no-op. A literature value (Hu 2024) when enabled.
+        ``ETA_WATER`` → no-op. A literature value (Dessard 2024) when enabled.
     eta_water
         Reference water viscosity [Pa·s] that the resolved ``gamma_b`` already
         encodes. The override scales each immersed type's drag by
@@ -231,7 +237,7 @@ def resolve_cytoplasm(
 
     Args:
         eta_eff: Cytoplasm viscosity [Pa·s]; overrides ``cell_type`` if given.
-        cell_type: Cell-type key into the Hu-2024 viscosity table.
+        cell_type: Cell-type key into the Dessard-2024 viscosity table.
         eta_water: Reference water viscosity the resolved ``γ_b`` encodes
             [Pa·s] (default NIST 310 K). The override is a ratio to this.
         immersed_types: Iterable of immersed type names; default
@@ -252,7 +258,7 @@ def resolve_cytoplasm(
             raise KeyError(
                 f"cell_type {cell_type!r} not in ETA_CYTO_BY_CELLTYPE "
                 f"{sorted(ETA_CYTO_BY_CELLTYPE)}; supply an explicit eta_eff "
-                "or add a literature-anchored entry (Hu 2024)."
+                "or add a literature-anchored entry (Dessard 2024)."
             )
         eta = float(ETA_CYTO_BY_CELLTYPE[cell_type])
     else:
