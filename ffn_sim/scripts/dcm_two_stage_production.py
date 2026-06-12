@@ -325,6 +325,12 @@ def main():
                          "0; set ~ (frames·max_ops·2) headroom for a long spread.")
     ap.add_argument("--remesh-max-ops", type=int, default=24,
                     help="max mutations per remesh pass.")
+    ap.add_argument("--spread-dt", type=float, default=1.0e-3,
+                    help="STAGE-2 spreading timestep [s]. The physiological-γ "
+                         "foundation raised the overdamped CFL ceiling (~0.25 s) so a "
+                         "much larger dt than the legacy 1e-9 is stable; default 1e-3 "
+                         "(3e-3 ceiling-validated, 1e-3 is a safe margin) so the spread "
+                         "actually progresses in feasible step counts.")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -359,7 +365,7 @@ def main():
     # → the converged aggregate's init_pos lines up (the lattice positions it places
     # are overridden by init_pos anyway, so spacing here only fixes the topology).
     p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
-                            spacing_factor=args.agg_spacing)
+                            spacing_factor=args.agg_spacing, dt=args.spread_dt)
     s2, h2 = spread(p, args.n, dev=dev, init_pos=agg_pos, steps=args.spread_steps,
                     frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0,
                     node_face_contact=args.node_face_contact, n_pool=args.n_pool,
