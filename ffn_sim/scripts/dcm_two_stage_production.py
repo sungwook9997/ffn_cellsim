@@ -331,6 +331,15 @@ def main():
                          "much larger dt than the legacy 1e-9 is stable; default 1e-3 "
                          "(3e-3 ceiling-validated, 1e-3 is a safe margin) so the spread "
                          "actually progresses in feasible step counts.")
+    # node-face contact stiffness CALIBRATION overrides (Phase-2 re-tune; the
+    # ResolvedGpuDCM defaults 2e8/8e8 are node-NODE patch_area values, ~5x too stiff /
+    # ~10x over the mcf7_p0.xml dimensionless ratio for the A_face law). Anchor:
+    # mcf7 xi≈4e7 Pa/m at our K, adhesion via cadherin (mcf7 omega=0) — these let the
+    # calibration sweep the lit-anchored ratio without editing the frozen defaults.
+    ap.add_argument("--rep-strength", type=float, default=None,
+                    help="override node-face repulsion xi [Pa/m] (default: p value).")
+    ap.add_argument("--adh-strength", type=float, default=None,
+                    help="override node-face adhesion omega [Pa/m] (default: p value).")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -366,6 +375,15 @@ def main():
     # are overridden by init_pos anyway, so spacing here only fixes the topology).
     p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
                             spacing_factor=args.agg_spacing, dt=args.spread_dt)
+    # node-face contact stiffness calibration overrides (Phase-2 re-tune)
+    _contact_over = {}
+    if args.rep_strength is not None:
+        _contact_over["rep_strength"] = args.rep_strength
+    if args.adh_strength is not None:
+        _contact_over["adh_strength"] = args.adh_strength
+    if _contact_over:
+        p = dataclasses.replace(p, **_contact_over)
+        print(f"[contact re-tune] {_contact_over}", flush=True)
     s2, h2 = spread(p, args.n, dev=dev, init_pos=agg_pos, steps=args.spread_steps,
                     frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0,
                     node_face_contact=args.node_face_contact, n_pool=args.n_pool,
