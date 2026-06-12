@@ -45,7 +45,8 @@ import hoomd
 
 from ffn_sim.cell.dcm import icosphere_mesh
 from ffn_sim.cell.dcm_gpu_build import (
-    DcmDropConfinement, ResolvedGpuDCM, build_gpu_dcm_simulation, pick_device)
+    DcmDropConfinement, ResolvedGpuDCM, build_gpu_dcm_simulation,
+    build_gpu_dcm_snapshot, pick_device)
 from ffn_sim.cell.dcm_gpu_forces import DcmActiveMotilitySPP, DcmPolarityUpdater
 from ffn_sim.cell.dcm_confluence import capture_positions
 from ffn_sim.common.sim_realtime import map_realtime
