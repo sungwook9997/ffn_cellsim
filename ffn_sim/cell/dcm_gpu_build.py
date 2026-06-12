@@ -197,7 +197,10 @@ class ResolvedGpuDCM:
     turgor_dP0: float = 133.0       # Pa baseline osmotic turgor (Young-Laplace)
     K_vol: float = 1.0e3            # Pa osmotic bulk modulus (ΔP per ΔV/V)
     k_edge: float = 1.0e-3          # N/m membrane edge spring (cortical elasticity)
-    gamma_node: float = 3.9e-10     # N·s/m per-node Stokes drag (membrane type)
+    gamma_node: float = 3.9e-10     # N·s/m LEGACY per-node drag (η~7e-6 Pa·s — a
+                                    # non-physiological accel hack). SUPERSEDED: the
+                                    # build now DERIVES γ_node from the physiological
+                                    # MCF7 cytoplasm viscosity (build arg eta_cytoplasm_Pas).
 
     # cell-substrate / cell-cell adhesion energy densities (J/m², converted to
     # per-node well depths via area_per_node at build).
@@ -325,12 +328,9 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int):
 # ---------------------------------------------------------------------------
 def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              active: bool = False, fast_active: bool = True,
-                             arrest: bool = False,
-                             arrest_radius_factor: float = 1.4,
-                             arrest_width: float = 0.18,
-                             arrest_settle_steps: int = 4000,
                              settle_force: float = 4.0e-10,
                              with_substrate: bool = True,
+                             eta_cytoplasm_Pas: float = 65.9,
                              init_pos: "np.ndarray | None" = None):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
@@ -349,27 +349,6 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             bit-identical (max abs diff < 1e-10 N, ``test_dcm_active_vec_parity.py``)
             and collapses that to a handful of ms. Default True (the win); pass
             False to wire the original loop (e.g. for an A/B wall comparison).
-        arrest: SPREADING-ARREST (membrane-tension / contact-inhibition stall),
-            default OFF (opt-in). The outward rim traction is smoothly switched off
-            as a rim cell's radial spread approaches ``arrest_radius_factor ·
-            R0_cluster``. It is OFF by default because the diagnostic sweep showed it
-            does NOT cure the over-spread it targeted (the runaway is a convex-hull
-            footprint artifact + the now-fixed float artifact, not the rim push —
-            full arrest gain→0 still blows A/A₀ up, ``probe3_on.json``), and a factor
-            chosen to land A/A₀ in a band is a no-magic-number violation. The
-            physical cure is the cohesive-start + real-wetting baseline. Pass
-            ``arrest=True`` to A/B the (opt-in, tuned) cap; see DcmActiveRimTractionGPU.
-        arrest_radius_factor: the cap on each rim cell's radial spread as a multiple
-            of the SETTLED cluster radius R0 (captured after ``arrest_settle_steps``,
-            N-invariant). At plateau the footprint area ≈ factor² × the settled area,
-            and the settled footprint is already ~1.5× A₀ (the gapped start compacts
-            then begins to spread by the settle), so factor 1.35 → plateau A/A₀ ≈
-            1.5·1.35² ≈ 2.7 ∈ the physiological [2,4] band.
-        arrest_width: the smooth-ramp width as a fraction of r_max (the arrest gain
-            falls from 1 to 0 across ``[(1−width)·r_max, r_max]``). Default 0.45.
-        arrest_settle_steps: defer the R0 capture until this step so the cap anchors
-            to the COMPACTED cluster, not the gapped t≈0 radius (which is too large →
-            cap unreachable → arrest never engages). Default 4000 (= the ramp).
     """
     from ffn_sim.integrator.baoab import make_baoab_updater
 
@@ -475,16 +454,21 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
             neighbour_factor=2.6, max_neighbours=9, integrin_switch_gain=3.0,
-            belt_factor=0.25,
-            arrest_radius_factor=(arrest_radius_factor if arrest else None),
-            arrest_width=arrest_width, arrest_settle_steps=arrest_settle_steps)
+            belt_factor=0.25)
         ig.forces.append(traction)
 
     sim.operations.integrator = ig
     sim.run(0)
 
-    # BAOAB — gamma covers the single membrane type (+ the LOD inert freeze type).
-    gamma = {"dcm_mem": p.gamma_node, "dcm_inert": p.gamma_node}
+    # BAOAB — PHYSIOLOGICAL per-node drag derived from the MCF7 cytoplasm viscosity
+    # (physiological-baseline rule): distribute the cell's Stokes drag 6π·η·R_cell over
+    # the nv surface nodes so the cell's translational mobility matches the continuum.
+    # This replaces the legacy non-physiological gamma_node (~7e-6 Pa·s) and, being
+    # ~6e5× larger, raises the overdamped CFL ceiling (dt < 2γ/k) by the same factor —
+    # so a much larger, non-brittle dt is now stable. η = eta_cytoplasm_Pas (build arg,
+    # MCF7 65.9 Pa·s default; not a ResolvedGpuDCM field → old pkls unaffected).
+    gamma_node = 6.0 * np.pi * eta_cytoplasm_Pas * p.R_cell / nv
+    gamma = {"dcm_mem": gamma_node, "dcm_inert": gamma_node}
     action, updater = make_baoab_updater(
         kT=p.kT, gamma=gamma, dt=p.dt, seed=p.seed + 1)
     sim.operations.updaters.append(updater)
@@ -666,8 +650,7 @@ def attach_junction_switch(handles: dict, *, sp=None, cadence: int = 500):
 
 def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
                               device=None, active: bool = False,
-                              fast_active: bool = True, arrest: bool = True,
-                              arrest_radius_factor: float = 1.7):
+                              fast_active: bool = True):
     """GPU-friendly DCM spheroid with a PRE-ALLOCATED proliferation pool.
 
     Builds ``n_max`` icosphere shells in a SINGLE fixed tag space (so the K1
@@ -796,9 +779,7 @@ def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=1.2e-10, f_cap=6.0e-10, ramp_steps=4000, contact_band=0.5,
             neighbour_factor=2.6, max_neighbours=9, integrin_switch_gain=3.0,
-            belt_factor=0.25,
-            arrest_radius_factor=(arrest_radius_factor if arrest else None),
-            arrest_width=arrest_width, arrest_settle_steps=arrest_settle_steps)
+            belt_factor=0.25)
         ig.forces.append(traction)
 
     sim.operations.integrator = ig

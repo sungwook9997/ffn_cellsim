@@ -209,46 +209,47 @@ def tent_contact_forces(pos, cell_id, r_contact, c_adh, rep_strength,
     # --- bin active nodes on a uniform grid of edge r_search --------------
     mn = ap.min(axis=0)
     cell = cp.floor((ap - mn) / r_search).astype(cp.int64)
-    dims = cell.max(axis=0) + 1
-    nx, ny, nz = (int(dims[0]), int(dims[1]), int(dims[2]))
+    dims = cell.max(axis=0) + 1                          # (3,) DEVICE — no int()
+    ny, nz = dims[1], dims[2]                            # device scalars, no host sync
     cid_grid = (cell[:, 0] * ny + cell[:, 1]) * nz + cell[:, 2]
-
     order = cp.argsort(cid_grid)
     cid_sorted = cid_grid[order]
-    dims_arr = cp.asarray([nx, ny, nz], dtype=cp.int64)
+    dims_arr = dims
 
-    # --- candidate pairs from the 27 neighbour-cell offsets ---------------
-    i_parts, j_parts = [], []
-    for dx in (-1, 0, 1):
-        for dy in (-1, 0, 1):
-            for dz in (-1, 0, 1):
-                off = cp.asarray([dx, dy, dz], dtype=cp.int64)
-                ncoord = cell + off
-                valid = cp.logical_and(
-                    (ncoord >= 0).all(axis=1), (ncoord < dims_arr).all(axis=1))
-                ncid = (ncoord[:, 0] * ny + ncoord[:, 1]) * nz + ncoord[:, 2]
-                ncid = cp.where(valid, ncid, 0)
-                st = cp.searchsorted(cid_sorted, ncid, side="left")
-                en = cp.searchsorted(cid_sorted, ncid, side="right")
-                st = cp.where(valid, st, 0)
-                cnt = cp.where(valid, en - st, 0)
-                total = int(cnt.sum())
-                if total == 0:
-                    continue
-                cum = cp.cumsum(cnt)
-                k = cp.arange(total, dtype=cp.int64)
-                src = cp.searchsorted(cum, k, side="right")
-                pair_i = src
-                within = k - (cum[src] - cnt[src])
-                j_sortedpos = st[src] + within
-                pair_j = order[j_sortedpos]
-                i_parts.append(pair_i)
-                j_parts.append(pair_j)
-
-    if not i_parts:
+    # --- candidate pairs from the 27 offsets, SYNC-FREE -------------------
+    # The reference looped the 27 offsets with a per-offset ``int(cnt.sum())``
+    # host read (~27 GPU->CPU stalls/step) + 3 ``int(dims)`` + 1 ``int(keep.sum())``.
+    # Here the per-(offset,node) candidate counts are accumulated on-device and
+    # inverted with ONE global cumsum + searchsorted, so only the single
+    # total-allocation read touches the host (≈31 host syncs/step -> 1). The
+    # candidate SET (and therefore every per-pair force) is identical; only the
+    # generation order changes, and the final scatter_add is order-independent.
+    offs = cp.asarray(
+        [(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+         for dz in (-1, 0, 1)], dtype=cp.int64)           # (27, 3)
+    st_list, cnt_list = [], []
+    for o in range(27):
+        ncoord = cell + offs[o]
+        valid = cp.logical_and((ncoord >= 0).all(axis=1),
+                               (ncoord < dims_arr).all(axis=1))
+        ncid = (ncoord[:, 0] * ny + ncoord[:, 1]) * nz + ncoord[:, 2]
+        ncid = cp.where(valid, ncid, 0)
+        st = cp.searchsorted(cid_sorted, ncid, side="left")
+        en = cp.searchsorted(cid_sorted, ncid, side="right")
+        st_list.append(st)
+        cnt_list.append(cp.where(valid, en - st, 0))
+    st_all = cp.concatenate(st_list)                      # (27n,)
+    cnt_all = cp.concatenate(cnt_list)                    # (27n,)
+    src_node = cp.tile(cp.arange(n, dtype=cp.int64), 27)  # node of each (off,node)
+    cum = cp.cumsum(cnt_all)
+    total = int(cum[-1])                                  # the ONLY host sync here
+    if total == 0:
         return F
-    pi = cp.concatenate(i_parts)
-    pj = cp.concatenate(j_parts)
+    kk = cp.arange(total, dtype=cp.int64)
+    seg = cp.searchsorted(cum, kk, side="right")          # which (off,node) entry
+    within = kk - (cum[seg] - cnt_all[seg])
+    pi = src_node[seg]
+    pj = order[st_all[seg] + within]
 
     # --- filter: i<j dedup, different cells, within search radius ---------
     keep = pi < pj
@@ -258,9 +259,7 @@ def tent_contact_forces(pos, cell_id, r_contact, c_adh, rep_strength,
     # r_vec points FROM node pj TO node pi (matches kernels_cpu: ap[ii]-ap[jj]).
     d_vec = ap[pi] - ap[pj]
     r = cp.sqrt(cp.sum(d_vec * d_vec, axis=1))
-    keep = cp.logical_and(r < r_search, r > 1e-18)
-    if int(keep.sum()) == 0:
-        return F
+    keep = cp.logical_and(r < r_search, r > 1e-18)        # empty -> harmless no-op
     pi, pj, d_vec, r = pi[keep], pj[keep], d_vec[keep], r[keep]
 
     # --- per-pair tent law, identical to the reference --------------------

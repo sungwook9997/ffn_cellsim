@@ -73,13 +73,10 @@ def _build(n_active=8, n_max=10):
     assert isinstance(ref, ActiveRimTraction)
     ig.forces.append(ref)
 
-    # SAME LAW as the legacy reference: pin the GPU twin's arrest OFF so the
-    # bit-parity comparison is of the basal-only splay law alone. (Arrest is
-    # opt-in/default-off anyway; pinning it here keeps the test correct regardless of
-    # the default — it was the prior failure: the GPU twin defaulted arrest ON,
-    # throttling the int_mult-boosted footprint while the legacy ref could not, a
-    # 1.2e-10 N mismatch in test_switched_integrin_gain_bit_parity.)
-    gpu = DcmActiveRimTractionGPU(**common, arrest_radius_factor=None)
+    # SAME LAW as the legacy reference: the GPU twin is the basal-only splay law
+    # alone (the spreading-arrest term was REMOVED 2026-06-12 — it was a lumped,
+    # tuned over-spread cap built to fix a measurement artifact, not real physics).
+    gpu = DcmActiveRimTractionGPU(**common)
     ig.forces.append(gpu)
     sim.run(0)
     return sim, ref, gpu, h, p

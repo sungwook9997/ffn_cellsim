@@ -139,5 +139,6 @@ ffn_sim/outputs/cupy_cache/
 # DCM lamellipodium-viz render cache (regenerable from the sim; do not commit)
 ffn_sim/outputs/**/_lamel_cache_*.pkl
 
-# two-stage production data pickles (regenerable; large gbook outputs)
-ffn_sim/outputs/h_dcm_two_stage/two_stage_n*.pkl
+# two-stage / dt-sweep / blow-up-capture data pickles (regenerable; large gbook
+# outputs — frames behind the committed figures, not source).
+ffn_sim/outputs/h_dcm_two_stage/*.pkl

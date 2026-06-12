@@ -67,8 +67,31 @@ def centroids(pos, ranges):
     return np.array([pos[lo:hi].mean(0) for lo, hi in ranges])
 
 
+def _topdown_area(pos):
+    """TOP-DOWN projected silhouette area A (xy convex hull of ALL nodes).
+
+    This is the EXPERIMENTAL observable (PI's spheroid spreading assay is imaged
+    from above): a spheroid projects its full shadow (≈ π R_spheroid² at t=0), and
+    A grows ONLY when cells migrate OUT beyond that silhouette → A/A₀ ≥ 1 from then
+    on. It is the correct denominator for A/A₀ = a + b/R + c/R².
+
+    Distinct from ``_footprint_area`` (basal CONTACT footprint), which counts only
+    substrate-touching nodes and gives a tiny t=0 denominator (the bottom contact
+    cap), inflating A/A₀ ~10–20× as the contact patch grows toward the silhouette —
+    a measurement artifact, NOT spreading. Never report basal A/A₀ as the assay value.
+    """
+    from scipy.spatial import ConvexHull
+    xy = pos[:, :2]
+    if xy.shape[0] < 3:
+        return 0.0
+    try:
+        return float(ConvexHull(xy).volume)  # 2D hull "volume" == area
+    except Exception:  # noqa: BLE001
+        return float(np.ptp(xy[:, 0]) * np.ptp(xy[:, 1]))
+
+
 def diagnostics(pos, ranges, cell_of_node, tris0, *, R, z0, V0, c_adh):
-    """V/V0, Rg, asphericity, maxZ, basal footprint, contact-node fraction."""
+    """V/V0, Rg, asphericity, maxZ, top-down silhouette + basal footprint, contact."""
     vols = np.array([cell_volume(pos[lo:hi], tris0) for lo, hi in ranges])
     vr = vols / V0
     cen = centroids(pos, ranges)
@@ -83,11 +106,13 @@ def diagnostics(pos, ranges, cell_of_node, tris0, *, R, z0, V0, c_adh):
     else:
         asph = 0.0
     maxZ = float(pos[:, 2].max())
-    foot = _footprint_area(pos, z0, R)
+    topd = _topdown_area(pos)              # A — experimental top-down silhouette
+    foot = _footprint_area(pos, z0, R)     # basal contact (NOT the assay A)
     cfrac = float(_contact_fraction(pos, cell_of_node, c_adh))
     return dict(VV0_mean=float(vr.mean()), VV0_min=float(vr.min()),
                 VV0_max=float(vr.max()), Rg_um=Rg * UM, asphericity=asph,
-                maxZ_um=maxZ * UM, footprint_um2=foot * UM * UM, contact_frac=cfrac)
+                maxZ_um=maxZ * UM, topdown_um2=topd * UM * UM,
+                footprint_um2=foot * UM * UM, contact_frac=cfrac)
 
 
 def _rt(steps, dt):
@@ -196,8 +221,10 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0):
 
     pos, dg = snap_diag()
     Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
-    print(f"  [spread] f0 step 0: Rg={dg['Rg_um']:.1f}µm maxZ={dg['maxZ_um']:.1f}µm "
-          f"foot={dg['footprint_um2']:.0f}µm² V/V0={dg['VV0_mean']:.3f}", flush=True)
+    A0_top = max(dg["topdown_um2"], 1e-9)   # A₀ = spheroid top-down shadow at t=0
+    print(f"  [spread] f0 step 0: A/A0=1.00 (A0_topdown={A0_top:.0f}µm²) "
+          f"Rg={dg['Rg_um']:.1f}µm maxZ={dg['maxZ_um']:.1f}µm "
+          f"basal={dg['footprint_um2']:.0f}µm² V/V0={dg['VV0_mean']:.3f}", flush=True)
     t0 = time.time()
     for f in range(1, frames):
         sim.run(spf)
@@ -205,10 +232,12 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0):
         if not np.isfinite(pos).all():
             print("  [spread] NON-FINITE — truncating", flush=True); break
         Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
-        print(f"  [spread] f{f} step {sim.timestep}: Rg={dg['Rg_um']:.1f}µm "
-              f"maxZ={dg['maxZ_um']:.1f}µm foot={dg['footprint_um2']:.0f}µm² "
-              f"V/V0={dg['VV0_mean']:.3f}", flush=True)
-    return dict(frames=Frames, diags=diags, steps=st, wall_s=round(time.time() - t0, 1)), h
+        print(f"  [spread] f{f} step {sim.timestep}: "
+              f"A/A0={dg['topdown_um2']/A0_top:.3f} (top-down, the assay obs) "
+              f"Rg={dg['Rg_um']:.1f}µm maxZ={dg['maxZ_um']:.1f}µm "
+              f"basal={dg['footprint_um2']:.0f}µm² V/V0={dg['VV0_mean']:.3f}", flush=True)
+    return dict(frames=Frames, diags=diags, steps=st, wall_s=round(time.time() - t0, 1),
+                A0_topdown_um2=A0_top), h
 
 
 def main():
@@ -292,6 +321,11 @@ def main():
           f"(>0.7?), asph {s1['diags'][-1]['asphericity']:.3f} (→0?), "
           f"Rg {s1['diags'][0]['Rg_um']:.0f}→{s1['diags'][-1]['Rg_um']:.0f}µm; "
           f"VOLUME held V/V0={s1['diags'][-1]['VV0_mean']:.3f}", flush=True)
+    A0t = s2["A0_topdown_um2"]
+    print(f"SPREADING A/A0 (TOP-DOWN silhouette = the experimental observable): "
+          f"{s2['diags'][0]['topdown_um2']/A0t:.3f} → "
+          f"{s2['diags'][-1]['topdown_um2']/A0t:.3f}  "
+          f"(A0={A0t:.0f}µm²; basal-contact ratio is NOT the assay value)", flush=True)
 
 
 if __name__ == "__main__":
