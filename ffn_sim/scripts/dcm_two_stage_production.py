@@ -251,15 +251,23 @@ def _remesh_aware_diag(pos, cell_of_node, turgor, V0, *, ranges=None, z0=0.0, R=
 def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
            node_face_contact=False, n_pool=0, remesh=False, remesh_period=2000,
            remesh_max_ops=24, f_act=1.2e-10, f_cap=6.0e-10, traction_ramp=4000,
-           settle_force=4.0e-10, belt_factor=0.25):
-    h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=True,
+           settle_force=4.0e-10, belt_factor=0.25, lamellipodium=None):
+    # active rim traction is the body-force proxy; when a mechanistic lamellipodium
+    # is supplied build_gpu_dcm_simulation skips the proxy and wires the real engine.
+    h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=(lamellipodium is None),
                                  with_substrate=True, init_pos=init_pos,
                                  node_face_contact=node_face_contact, n_pool=n_pool,
                                  f_act=f_act, f_cap=f_cap, traction_ramp=traction_ramp,
-                                 settle_force=settle_force, belt_factor=belt_factor)
+                                 settle_force=settle_force, belt_factor=belt_factor,
+                                 lamellipodium=lamellipodium)
     sim, ranges = h["sim"], h["ranges"]
     cell_of_node = h["cell_of_node"]
     turgor = h["turgor"]
+    lamel_state = h.get("lamel_state")
+    lamel_tether = None
+    if lamellipodium is not None:
+        lamel_tether = [f for f in sim.operations.integrator.forces
+                        if type(f).__name__ == "LamellipodialTractionTetherGPU"][0]
     remesh_action = None
     if remesh:
         from ffn_sim.cell.dcm_remesh_updater import attach_remesh_updater
@@ -298,10 +306,14 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
         if not np.isfinite(pos).all():
             print("  [spread] NON-FINITE — truncating", flush=True); break
         Frames.append(pos.copy()); diags.append(dg); st.append(int(sim.timestep))
+        lam = ""
+        if lamel_state is not None:
+            lam = (f" n_actin={lamel_state.n_used}/{lamel_state.n_pool} "
+                   f"n_teth={lamel_tether.n_tethered}")
         print(f"  [spread] f{f} step {sim.timestep}: "
               f"A/A0={dg['topdown_um2']/A0_top:.3f} (top-down, the assay obs) "
               f"maxZ={dg['maxZ_um']:.1f}µm V/V0={dg['VV0_mean']:.3f} "
-              f"manifold={dg.get('manifold','-')} faces={dg.get('n_faces','-')}",
+              f"manifold={dg.get('manifold','-')} faces={dg.get('n_faces','-')}{lam}",
               flush=True)
     if remesh_action is not None:
         print(f"  [spread] remesh totals: {remesh_action.totals} "
@@ -393,6 +405,31 @@ def main():
                     help="apical inward contraction-belt as fraction of f_act (scales "
                          "WITH traction). 0 = pure outward lamellipodial spread (no apical "
                          "contraction). Default 0.25 counteracts spreading at high f_act.")
+    # --- MECHANISTIC LAMELLIPODIUM (replaces the body-force rim traction) ---
+    ap.add_argument("--lamellipodium", action="store_true",
+                    help="spread with the mechanistic per-rim-cell lamellipodium "
+                         "(dormant actin pool + FA clutch anchor + traction tether, "
+                         "the polymerisation ratchet) instead of the body-force proxy.")
+    ap.add_argument("--lamel-pool-per-cell", type=int, default=60,
+                    help="dormant actin beads pre-allocated per basal rim cell.")
+    ap.add_argument("--lamel-batch", type=int, default=50,
+                    help="BAOAB steps between ratchet ticks.")
+    ap.add_argument("--lamel-vfront-umin", type=float, default=6.0,
+                    help="band-matched lamellipodial front velocity [µm/min] (lit 3-12).")
+    ap.add_argument("--lamel-S", type=float, default=1.0,
+                    help="kinetic clock acceleration on the polymerisation ratchet "
+                         "(S=1 = physiological real-time; >1 accelerates the active "
+                         "CLOCK uniformly to reach large A/A0 in feasible steps — the "
+                         "ratchet's catch-gate keeps it quasi-static. Documented "
+                         "kinetic-budget device, surfaced to PI; old foundation used 6e5).")
+    ap.add_argument("--lamel-k-clutch", type=float, default=5.0e-2,
+                    help="FA-ensemble clutch anchor stiffness [N/m] (≈N_int·KU-2.4).")
+    ap.add_argument("--lamel-k-tether", type=float, default=4.0e-3,
+                    help="actin→membrane traction tether stiffness [N/m].")
+    ap.add_argument("--lamel-tether-cap", type=float, default=5.0e-9,
+                    help="per-node traction cap [N] (=5·60Pa·area_per_node lit MCF7).")
+    ap.add_argument("--lamel-contact-band", type=float, default=1.5,
+                    help="rim cell if centroid z within band·R of z0 (basal contact).")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -490,21 +527,46 @@ def main():
     print(f"[traction] f_act={f_act:.2e} N/node (={TRACTION_STRESS_PA}Pa·area_per_node="
           f"{area_per_node:.2e}m²) f_cap={f_cap:.2e} ramp={args.traction_ramp} "
           f"settle={args.settle_force:.1e}", flush=True)
+
+    # MECHANISTIC LAMELLIPODIUM (the real spreading engine; replaces the body-force
+    # proxy that provably contracts). Built from the lit-anchored bands.
+    plam = None
+    if args.lamellipodium:
+        from ffn_sim.cell.dcm_lamellipodium_gpu import ResolvedGpuLamellipodium
+        plam = ResolvedGpuLamellipodium(
+            v_front=args.lamel_vfront_umin * 1e-6 / 60.0, S_kinetic=args.lamel_S,
+            pool_per_cell=args.lamel_pool_per_cell, batch_steps=args.lamel_batch,
+            k_clutch=args.lamel_k_clutch, k_tether=args.lamel_k_tether,
+            tether_cap=args.lamel_tether_cap, rim_contact_band=args.lamel_contact_band,
+            seed=args.seed)
+        print(f"[lamellipodium] v_front={args.lamel_vfront_umin}µm/min S={args.lamel_S} "
+              f"pool/cell={args.lamel_pool_per_cell} k_clutch={args.lamel_k_clutch:.1e} "
+              f"k_tether={args.lamel_k_tether:.1e} tether_cap={args.lamel_tether_cap:.1e} "
+              f"contact_band={args.lamel_contact_band}", flush=True)
+
     s2, h2 = spread(p, args.n, dev=dev, init_pos=agg_pos, steps=args.spread_steps,
                     frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0,
                     node_face_contact=args.node_face_contact, n_pool=args.n_pool,
                     remesh=args.remesh, remesh_period=args.remesh_period,
                     remesh_max_ops=args.remesh_max_ops,
                     f_act=f_act, f_cap=f_cap, traction_ramp=args.traction_ramp,
-                    settle_force=args.settle_force, belt_factor=args.belt_factor)
+                    settle_force=args.settle_force, belt_factor=args.belt_factor,
+                    lamellipodium=plam)
     tr = h2["traction"]
+    # rim_params is the body-force-proxy rim geometry (None under the mechanistic
+    # lamellipodium, which has no DcmActiveRimTraction); record the rim-cell count.
+    if tr is not None:
+        rim_params = dict(r_neigh=float(tr.r_neigh), max_neigh=int(tr.max_neigh),
+                          contact_band=float(tr.contact_band), R=R, z0=z0)
+    else:
+        rim_params = dict(lamellipodium=True, R=R, z0=z0,
+                          n_rim=int(h2["lamel_rim"].size) if h2.get("lamel_rim") is not None else 0)
 
     out = dict(
         n_cells=int(h2["n_cells"]), R_cell=R, V0=V0, z0=z0, S=S_ACCEL,
         tris0=tris0, ranges=h2["ranges"], device="GPU" if is_gpu else "CPU",
         agg=s1, spread=s2, p_agg=p_agg, p=p,
-        rim_params=dict(r_neigh=float(tr.r_neigh), max_neigh=int(tr.max_neigh),
-                        contact_band=float(tr.contact_band), R=R, z0=z0),
+        rim_params=rim_params,
         realtime=dict(agg=_rt(s1["steps"][-1], p_agg.dt) if s1 else None,
                       spread=_rt(s2["steps"][-1], p.dt), accel=S_ACCEL))
     path = OUT / f"two_stage_n{args.n}.pkl"

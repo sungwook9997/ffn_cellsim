@@ -361,7 +361,8 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              n_pool: int = 0,
                              f_act: float = 1.2e-10, f_cap: float = 6.0e-10,
                              traction_ramp: int = 4000, belt_factor: float = 0.25,
-                             init_pos: "np.ndarray | None" = None):
+                             init_pos: "np.ndarray | None" = None,
+                             lamellipodium=None):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
     No native md.mesh, no per-cell mesh/particle/bond types. Returns a dict of
@@ -406,6 +407,30 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         if L > snap.configuration.box[0]:
             snap.configuration.box = [L, L, L, 0, 0, 0]
         snap.particles.position[:ip.shape[0]] = ip
+
+    # MECHANISTIC LAMELLIPODIUM (replaces the body-force rim traction). Add a
+    # dormant actin-bead pool to the snapshot up front (HOOMD forbids adding types
+    # after create_state); rim cells are detected from the AGGREGATED centroids.
+    lamel_state = None
+    lamel_rim = None
+    if lamellipodium is not None:
+        from ffn_sim.cell.dcm_lamellipodium_gpu import (
+            ResolvedGpuLamellipodium, add_actin_pool_to_snapshot, detect_rim_cells,
+            LamelState)
+        plam = lamellipodium
+        # cell centroids from the (post-init_pos) active membrane nodes
+        cur = np.asarray(snap.particles.position)
+        cur_centers = np.array([cur[a:b].mean(axis=0) for (a, b) in ranges])
+        lamel_rim = detect_rim_cells(
+            cur_centers, R=p.R_cell, z0=p.z_substrate,
+            contact_band=plam.rim_contact_band,
+            neighbour_factor=plam.rim_neighbour_factor,
+            max_neighbours=plam.rim_max_neighbours)
+        n_actin = int(lamel_rim.size) * int(plam.pool_per_cell)
+        cell_of_node, a0_actin = add_actin_pool_to_snapshot(
+            snap, cell_of_node, n_actin=n_actin, R_cell=p.R_cell,
+            z_substrate=p.z_substrate)
+        lamel_state = LamelState(a0=a0_actin, n_pool=n_actin)
 
     dev = pick_device(device)
     sim = hoomd.Simulation(device=dev, seed=p.seed)
@@ -483,7 +508,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     # up live); when active=False it is a standalone array the switch still raises
     # (read by the visualiser / available to any substrate gain wiring). Init 1.0.
     integrin_gain = np.ones(n_cells, dtype=np.float64)
-    if active:
+    if active and lamellipodium is None:
         active_mask = np.ones(n_cells, dtype=bool)
         int_mult = integrin_gain          # share the SAME array → switch raises traction
         # vectorized (default) vs original per-cell-loop active traction — same law,
@@ -504,6 +529,27 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             belt_factor=belt_factor)
         ig.forces.append(traction)
 
+    # MECHANISTIC LAMELLIPODIUM forces: FA clutch anchor + traction tether (the
+    # ratchet updater is attached after the integrator/BAOAB). Replaces the body-
+    # force rim traction above (skipped when lamellipodium is set).
+    lamel_advance = None
+    if lamellipodium is not None:
+        from ffn_sim.cell.dcm_lamellipodium_gpu import (
+            ActinClutchAnchorGPU, LamellipodialTractionTetherGPU)
+        plam = lamellipodium
+        n_mem = int(ranges[-1][1])               # active membrane node count
+        z_basal = p.z_substrate + plam.seed_basal_offset
+        basal_band = plam.basal_band_factor * p.R_cell
+        clutch = ActinClutchAnchorGPU(
+            state=lamel_state, k_clutch=plam.k_clutch, force_cap=plam.clutch_cap)
+        ig.forces.append(clutch)
+        tether = LamellipodialTractionTetherGPU(
+            state=lamel_state, cell_of_node=cell_of_node[:n_mem],
+            rim_cells=lamel_rim, mem_typeid=0, n_mem=n_mem, z_basal=z_basal,
+            basal_band=basal_band, lead_frac=plam.lead_frac, k_tether=plam.k_tether,
+            force_cap=plam.tether_cap, tether_radius=plam.tether_radius)
+        ig.forces.append(tether)
+
     sim.operations.integrator = ig
     sim.run(0)
 
@@ -516,9 +562,35 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     # MCF7 65.9 Pa·s default; not a ResolvedGpuDCM field → old pkls unaffected).
     gamma_node = 6.0 * np.pi * eta_cytoplasm_Pas * p.R_cell / nv
     gamma = {"dcm_mem": gamma_node, "dcm_inert": gamma_node}
+    if lamellipodium is not None:
+        # actin beads are immersed in the same cytoplasm → same per-node drag
+        # (physiological-baseline rule; sets the actin BAOAB BD prefactor).
+        gamma["actin_lamel"] = gamma_node
     action, updater = make_baoab_updater(
         kT=p.kT, gamma=gamma, dt=p.dt, seed=p.seed + 1)
     sim.operations.updaters.append(updater)
+
+    # MECHANISTIC LAMELLIPODIUM ratchet updater (low cadence; activates dormant
+    # actin beads at the advancing front — the membrane-tracked polymerisation
+    # ratchet). Attached after BAOAB so it ticks between integration batches.
+    if lamellipodium is not None:
+        from ffn_sim.cell.dcm_lamellipodium_gpu import GpuLamellipodiumAdvance
+        plam = lamellipodium
+        n_mem = int(ranges[-1][1])
+        z_basal = p.z_substrate + plam.seed_basal_offset
+        basal_band = plam.basal_band_factor * p.R_cell
+        p_advance = min(1.0, plam.v_front * (plam.batch_steps * p.dt)
+                        * plam.S_kinetic / plam.actin_rest_length)
+        lamel_advance = GpuLamellipodiumAdvance(
+            state=lamel_state, cell_of_node=cell_of_node[:n_mem],
+            rim_cells=lamel_rim, mem_typeid=0, n_mem=n_mem, z_basal=z_basal,
+            basal_band=basal_band, lead_frac=plam.lead_frac,
+            rest_length=plam.actin_rest_length, catch_factor=plam.catch_factor,
+            p_advance=p_advance, tether_radius=plam.tether_radius,
+            seed_offset=plam.seed_offset, seed=plam.seed)
+        lamel_upd = hoomd.update.CustomUpdater(
+            action=lamel_advance, trigger=hoomd.trigger.Periodic(plam.batch_steps))
+        sim.operations.updaters.append(lamel_upd)
 
     return dict(
         sim=sim, cell_of_node=cell_of_node, ranges=ranges, faces=faces,
@@ -526,7 +598,8 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         V0=V0, turgor=turgor, contact=contact, substrate=substrate,
         traction=traction, baoab=action, gamma=gamma, p=p,
         area_per_node=area_per_node, centers=b["centers"],
-        cad_mult=cad_mult, integrin_gain=integrin_gain)
+        cad_mult=cad_mult, integrin_gain=integrin_gain,
+        lamel_state=lamel_state, lamel_rim=lamel_rim, lamel_advance=lamel_advance)
 
 
 # ===========================================================================
