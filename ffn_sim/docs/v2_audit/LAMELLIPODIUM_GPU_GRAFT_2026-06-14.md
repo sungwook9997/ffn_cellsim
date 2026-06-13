@@ -93,6 +93,18 @@ The 400-cell cohesive spheroid does NOT spread — it slowly COMPACTS:
 | 4     | 8420  | 0.917 | 143.7   | 1.007 | 23     |
 | 5     | 10525 | 0.877 | 142.0   | 0.983 | 16     |
 | 6     | 12630 | 0.843 | 140.6   | 0.959 | 13     |
+| 8     | 16840 | 0.793 | 138.3   | 0.917 | 5      |
+| 13    | 27365 | 0.695 | 134.4   | 0.808 | 0      |
+| 19    | 39995 | **0.597** | 128.3 | **0.669** | 0  |
+
+By f13 the lamellipodium has FULLY DISENGAGED (n_teth=0): as the ball compacts the
+basal+outward leading nodes vanish, so the front cannot advance (n_actin frozen at
+95) — the compaction is SELF-REINFORCING (compaction → fewer rim nodes → weaker
+lamellipodium → more compaction). End state A/A0=0.60, V/V0=0.67 (cells lost 33%
+volume to cohesive compression). 54 min wall, ~12 steps/s.
+
+**Figure**: `outputs/h_dcm_two_stage/two_stage_n400_lamel_S10_topdown.png` (top-down
+polygon mesh start vs end + A/A0/V-V0/maxZ curves) + `..._S10_spread.mp4`.
 
 Two superposed effects, both swamping the lamellipodium: (1) the aggregate starts
 OVER-DISTENDED (V/V0=1.125, adhesion-distended from stage 1) and RELAXES toward 1.0
