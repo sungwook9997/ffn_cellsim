@@ -386,6 +386,9 @@ def main():
                     help="rim-traction ramp-in steps (soft-start; raise for stability).")
     ap.add_argument("--settle-force", type=float, default=4.0e-10,
                     help="plating/sedimentation body force per mem node [N].")
+    ap.add_argument("--w-cs-jm2", type=float, default=None,
+                    help="cell-substrate adhesion energy [J/m²] (wetting/spreading driver). "
+                         "Default 0.5e-3; lit ~2.85e-3 from Gil-Redondo strain energy / spread area.")
     ap.add_argument("--belt-factor", type=float, default=0.25,
                     help="apical inward contraction-belt as fraction of f_act (scales "
                          "WITH traction). 0 = pure outward lamellipodial spread (no apical "
@@ -464,6 +467,9 @@ def main():
     # are overridden by init_pos anyway, so spacing here only fixes the topology).
     p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
                             spacing_factor=args.agg_spacing, dt=args.spread_dt)
+    if args.w_cs_jm2 is not None:
+        p = dataclasses.replace(p, W_cs_Jm2=args.w_cs_jm2)
+        print(f"[wetting] W_cs_Jm2={args.w_cs_jm2:.2e} J/m²", flush=True)
     # node-face contact stiffness calibration overrides (Phase-2 re-tune)
     _contact_over = {}
     if args.rep_strength is not None:
