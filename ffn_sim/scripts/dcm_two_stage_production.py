@@ -251,12 +251,12 @@ def _remesh_aware_diag(pos, cell_of_node, turgor, V0, *, ranges=None, z0=0.0, R=
 def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
            node_face_contact=False, n_pool=0, remesh=False, remesh_period=2000,
            remesh_max_ops=24, f_act=1.2e-10, f_cap=6.0e-10, traction_ramp=4000,
-           settle_force=4.0e-10):
+           settle_force=4.0e-10, belt_factor=0.25):
     h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=True,
                                  with_substrate=True, init_pos=init_pos,
                                  node_face_contact=node_face_contact, n_pool=n_pool,
                                  f_act=f_act, f_cap=f_cap, traction_ramp=traction_ramp,
-                                 settle_force=settle_force)
+                                 settle_force=settle_force, belt_factor=belt_factor)
     sim, ranges = h["sim"], h["ranges"]
     cell_of_node = h["cell_of_node"]
     turgor = h["turgor"]
@@ -386,6 +386,10 @@ def main():
                     help="rim-traction ramp-in steps (soft-start; raise for stability).")
     ap.add_argument("--settle-force", type=float, default=4.0e-10,
                     help="plating/sedimentation body force per mem node [N].")
+    ap.add_argument("--belt-factor", type=float, default=0.25,
+                    help="apical inward contraction-belt as fraction of f_act (scales "
+                         "WITH traction). 0 = pure outward lamellipodial spread (no apical "
+                         "contraction). Default 0.25 counteracts spreading at high f_act.")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -486,7 +490,7 @@ def main():
                     remesh=args.remesh, remesh_period=args.remesh_period,
                     remesh_max_ops=args.remesh_max_ops,
                     f_act=f_act, f_cap=f_cap, traction_ramp=args.traction_ramp,
-                    settle_force=args.settle_force)
+                    settle_force=args.settle_force, belt_factor=args.belt_factor)
     tr = h2["traction"]
 
     out = dict(

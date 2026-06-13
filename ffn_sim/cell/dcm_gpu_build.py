@@ -360,7 +360,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              node_face_contact: bool = False,
                              n_pool: int = 0,
                              f_act: float = 1.2e-10, f_cap: float = 6.0e-10,
-                             traction_ramp: int = 4000,
+                             traction_ramp: int = 4000, belt_factor: float = 0.25,
                              init_pos: "np.ndarray | None" = None):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
@@ -501,7 +501,7 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
             int_mult=int_mult, R_cell=p.R_cell, z0=p.z_substrate,
             f_act=f_act, f_cap=f_cap, ramp_steps=traction_ramp, contact_band=0.5,
             neighbour_factor=2.6, max_neighbours=9, integrin_switch_gain=3.0,
-            belt_factor=0.25)
+            belt_factor=belt_factor)
         ig.forces.append(traction)
 
     sim.operations.integrator = ig
