@@ -8,6 +8,25 @@ Spec for the contact/remeshing port: `SIMUCELL3D_INTEGRATION_2026-06-11.md`.
 > pressure — same principle as the TAG KB / Dev-Logs / CLAUDE.md "state lives on disk, a
 > fresh session boots from it"). Re-read it at the start of each work-piece; keep it current.
 
+## 0c. SPREADING — diagnosed; mechanistic-lamellipodium graft started (2026-06-14)
+
+The aggregate is solid (§0b) but it does NOT spread (top-down A/A0 stays <1, contracts).
+Diagnosed exhaustively (PI-confirmed):
+- **cell-cell adhesion too strong**: ω=5e7→6 nN/pair (>measured MCF7 1-5 nN, Hyler); default
+  8e8→98 nN. Weak ω=1e7 (~1.2 nN/pair lit) reduces contraction (A/A0 0.63→0.89) + V/V0 healthy
+  ~1.0, but doesn't spread alone.
+- **the spread uses a CRUDE body-force proxy** (`DcmActiveRimTraction`) that provably can't spread —
+  exhausted belt=0, lit ξ/ω (4e7/5e7), weak cohesion, traction sweep 8×/50× (all CONTRACT;
+  dt=2e-3 "A/A0=10" was a divergence). A body force can't FLATTEN a cell onto the substrate.
+- **the real mechanistic lamellipodium** (`dcm_lamellipodium.py`, protrusion+FA-clutch+traction,
+  took a single cell to A/A0 2.03) is on the OLD foundation + UNWIRED from the GPU spread.
+- Magnitude NOT capped at 2 (center-based limit); mechanistic+de-cohesion CAN reach A/A0 7-10.
+- ⭐ **NEXT = mechanistic-lamellipodium GRAFT** (PI chose "build it"). Plan:
+  `LAMELLIPODIUM_GRAFT_PLAN_2026-06-14.md`. Stage 1 DONE (param fixes: S→1, γ→2.22e-4,
+  tether_cap→5e-9). Stage 2-5 = graft onto `build_gpu_dcm_simulation` (dormant actin pool, no
+  set_snapshot leak) + GPU-port the 3 CPU forces + kinetic budget ~75k steps/tip + CPU small-N
+  validate first. Driver f_act/f_cap/ramp/settle/belt_factor now configurable.
+
 ## 0b. AGGREGATION RESOLVED — clean cohesive spheroid sweep (2026-06-13)
 
 ⭐⭐⭐ **The DCM aggregation now produces genuine, physiological cohesive spheroids at
