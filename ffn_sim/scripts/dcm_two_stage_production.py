@@ -250,10 +250,13 @@ def _remesh_aware_diag(pos, cell_of_node, turgor, V0, *, ranges=None, z0=0.0, R=
 
 def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
            node_face_contact=False, n_pool=0, remesh=False, remesh_period=2000,
-           remesh_max_ops=24):
+           remesh_max_ops=24, f_act=1.2e-10, f_cap=6.0e-10, traction_ramp=4000,
+           settle_force=4.0e-10):
     h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=True,
                                  with_substrate=True, init_pos=init_pos,
-                                 node_face_contact=node_face_contact, n_pool=n_pool)
+                                 node_face_contact=node_face_contact, n_pool=n_pool,
+                                 f_act=f_act, f_cap=f_cap, traction_ramp=traction_ramp,
+                                 settle_force=settle_force)
     sim, ranges = h["sim"], h["ranges"]
     cell_of_node = h["cell_of_node"]
     turgor = h["turgor"]
@@ -370,6 +373,19 @@ def main():
                     help="skip aggregation; load this spheroid + spread it (substrate-touch).")
     ap.add_argument("--save-spheroid", default=None,
                     help="path to save the aggregated spheroid positions (.npy).")
+    # §6 active-traction re-derivation (lit-anchored to MCF7 traction stress).
+    # The rim traction per basal node = traction_stress · area_per_node. MCF7
+    # measured stress ~60 Pa (Gil-Redondo 2023 102nN/1822µm²; Liew 2024) → with
+    # area_per_node=4πR²/nv≈1.68e-11 m², f_act≈1.0e-9 N (≈8× the legacy 1.2e-10).
+    ap.add_argument("--spread-f-act", type=float, default=None,
+                    help="rim-traction per-node force [N] (default: 60 Pa·area_per_node, "
+                         "lit-anchored). Legacy was 1.2e-10.")
+    ap.add_argument("--spread-f-cap", type=float, default=None,
+                    help="rim-traction per-node cap [N] (default: 5·f_act).")
+    ap.add_argument("--traction-ramp", type=int, default=4000,
+                    help="rim-traction ramp-in steps (soft-start; raise for stability).")
+    ap.add_argument("--settle-force", type=float, default=4.0e-10,
+                    help="plating/sedimentation body force per mem node [N].")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -453,11 +469,24 @@ def main():
     if _contact_over:
         p = dataclasses.replace(p, **_contact_over)
         print(f"[contact re-tune] {_contact_over}", flush=True)
+    # §6 active-traction re-derivation: f_act = MCF7 traction stress (~60 Pa) ·
+    # area_per_node, lit-anchored (Gil-Redondo 2023 / Liew 2024). Override-able.
+    nv = 42
+    area_per_node = 4.0 * np.pi * R ** 2 / nv
+    TRACTION_STRESS_PA = 60.0
+    f_act = args.spread_f_act if args.spread_f_act is not None \
+        else TRACTION_STRESS_PA * area_per_node
+    f_cap = args.spread_f_cap if args.spread_f_cap is not None else 5.0 * f_act
+    print(f"[traction] f_act={f_act:.2e} N/node (={TRACTION_STRESS_PA}Pa·area_per_node="
+          f"{area_per_node:.2e}m²) f_cap={f_cap:.2e} ramp={args.traction_ramp} "
+          f"settle={args.settle_force:.1e}", flush=True)
     s2, h2 = spread(p, args.n, dev=dev, init_pos=agg_pos, steps=args.spread_steps,
                     frames=args.frames, R=R, z0=z0, V0=V0, tris0=tris0,
                     node_face_contact=args.node_face_contact, n_pool=args.n_pool,
                     remesh=args.remesh, remesh_period=args.remesh_period,
-                    remesh_max_ops=args.remesh_max_ops)
+                    remesh_max_ops=args.remesh_max_ops,
+                    f_act=f_act, f_cap=f_cap, traction_ramp=args.traction_ramp,
+                    settle_force=args.settle_force)
     tr = h2["traction"]
 
     out = dict(
