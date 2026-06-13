@@ -108,8 +108,12 @@ class ResolvedLamellipodiumSpheroid:
                                     # within grip_radius of the z0 ligands)
 
     # --- leading-edge nucleation (the Arp2/3 polymerization ratchet) ---
-    v_front: float = 6.0e-6 / 60.0  # m/s band-matched front velocity (6 µm/min)
-    S_kinetic: float = 6.0e5        # kinetic acceleration (matches single-cell run)
+    v_front: float = 6.0e-6 / 60.0  # m/s band-matched front velocity (6 µm/min, lit 3-12)
+    S_kinetic: float = 1.0          # PHYSIOLOGICAL real-time (new foundation, 2026-06-14).
+                                    # WAS 6.0e5 (accelerated clock on the old low-γ
+                                    # foundation). With S=1 + dt~1e-3, advancing the front
+                                    # one ℓ₀ takes ~ℓ₀/(v_front·dt)≈5e3 steps → A/A0≈2 needs
+                                    # ~75k steps/tip (kinetic-budget tradeoff of removing S).
     actin_rest_length: float = 0.5e-6   # ℓ₀ monomer step [m]
     max_advance_per_cell: int = 8   # tips advanced per tick per cell (cost bound)
     contact_band_frac: float = 1.5  # advance band = frac*mean_edge about z_basal
@@ -125,7 +129,10 @@ class ResolvedLamellipodiumSpheroid:
 
     # --- actin→membrane traction tether (transmits traction to the cell body) ---
     k_tether: float = 4.0e-3        # N/m actin→leading-membrane tether spring
-    tether_force_cap: float = 5.0e-8    # N per-node cap (BAOAB guard)
+    tether_force_cap: float = 5.0e-9    # N per-node cap = 5·(60Pa·area_per_node) lit
+                                    # MCF7 per-node traction (was 5e-8; mirrors the proxy
+                                    # f_cap=5·f_act so a tether can't exceed physiological
+                                    # traction by 50×).
     tether_radius: float = 3.0e-6   # m a membrane node tethers to actin within this
 
     # --- basal-sheet tether (keep lamellipodial actin in the basal plane) ---
@@ -133,8 +140,12 @@ class ResolvedLamellipodiumSpheroid:
 
     # --- pool / numerics ---
     pool_per_cell: int = 220        # pre-allocated append headroom per rim cell
-    gamma_actin: float = 3.9e-10    # N·s/m actin-bead drag (= node drag)
-    gamma_ligand: float = 3.9e-10   # N·s/m ligand drag (pinned; large effective)
+    # PHYSIOLOGICAL drag (new foundation): derive at build time as 6π·η·R/nv with
+    # η=65.9 Pa·s MCF7 cytoplasm → 2.22e-4 for R=7.5µm,nv=42 (×5.7e5 vs the old 3.9e-10
+    # water-like default). Actin beads are immersed in the same cytoplasm; ligand is
+    # pinned (γ only sets its BD prefactor). Build must override from the run's η/R/nv.
+    gamma_actin: float = 2.22e-4    # N·s/m actin-bead drag = physiological node drag
+    gamma_ligand: float = 2.22e-4   # N·s/m ligand drag (pinned; large effective)
     batch_steps: int = 50           # BAOAB steps between updater ticks
     seed: int = 7
     extras: dict[str, Any] = field(default_factory=dict)
