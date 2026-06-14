@@ -106,6 +106,27 @@ volume to cohesive compression). 54 min wall, ~12 steps/s.
 **Figure**: `outputs/h_dcm_two_stage/two_stage_n400_lamel_S10_topdown.png` (top-down
 polygon mesh start vs end + A/A0/V-V0/maxZ curves) + `..._S10_spread.mp4`.
 
+### 4b. Wetting + lamellipodium (PI-directed experiment) → ALSO compacts
+
+Strong lit wetting (W_cs=2.85e-3, Gil-Redondo) + lamellipodium + weak cohesion,
+dt=1e-4, S=10: A/A0 1.0 → **0.587**, V/V0 1.125 → **0.684**, maxZ 147 → 122 µm —
+**essentially identical to the no-wetting run** (0.597). The ONE difference: wetting
+kept the lamellipodium FULLY engaged the whole run (n_teth=49 throughout, vs the
+no-wetting run where it self-disengaged to 0). So tripling+ the crawling engagement
+changed the outcome by ~nothing.
+
+**KEY REFRAME (the decisive diagnostic).** The blocker is NOT the spreading drive —
+it is VOLUME COMPRESSION. In every spread config the cells are squeezed below rest
+volume (V/V0 1.125 → ~0.68, a ~40% loss), and that shrinks the top-down silhouette
+regardless of how many cells crawl. The compaction is present even with the
+lamellipodium barely engaged (no-wetting n_teth=13) AND fully engaged (wetting
+n_teth=49), so it is driven by the spread-stage FORCE BALANCE — node-face cohesion +
+substrate/settle vs turgor — NOT by the lamellipodium. Turgor (133 Pa baseline,
+K_vol=1e3) should hold V/V0≈1 but is overpowered. Until V/V0 holds ~1 on the dish, no
+lamellipodium can spread the ball. Figure `..._lamel_wet_topdown.png` + `_wet_spread.mp4`.
+This is now the root-cause question for PI: the turgor-vs-cohesion-vs-downward-spread
+force balance (physiological-baseline territory), upstream of the spreading itself.
+
 Two superposed effects, both swamping the lamellipodium: (1) the aggregate starts
 OVER-DISTENDED (V/V0=1.125, adhesion-distended from stage 1) and RELAXES toward 1.0
 under the soft spread cohesion (ω=1e7) — a contraction the basal traction can't
