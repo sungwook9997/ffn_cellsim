@@ -206,7 +206,14 @@ class ResolvedGpuDCM:
 
     # cell-substrate / cell-cell adhesion energy densities (J/m², converted to
     # per-node well depths via area_per_node at build).
-    W_cs_Jm2: float = 0.5e-3        # J/m² cell-substrate adhesion (spreading driver)
+    W_cs_Jm2: float = 2.85e-3       # J/m² cell-substrate adhesion (spreading driver).
+    # PHYSIOLOGICAL BASELINE (HARD rule): MCF7-on-FN/collagen W_cs = 2.85e-3 J/m²
+    # (Gil-Redondo 2023 10.1002/jemt.24368: traction 102±59 nN, spread 1822±886 µm²,
+    # strain energy 0.0052 pJ; CONFIRMED MCF7 in MCF7_PARAMETER_COLLECTION_2026-06-12).
+    # The prior default 0.5e-3 was a convenient null — 5.7× too weak AND below the
+    # Young-Dupré spreading threshold W_cs > 2γ ≈ 0.7–1.3 mJ/m² (γ 0.35–0.65 mN/m), so a
+    # cell at the default could not even cross the wetting threshold. Production scripts
+    # already override via --w-cs-jm2 2.85e-3; this fixes the default to match.
 
     # SimuCell3D bilinear-tent cell-cell contact — COHESIVE bands (PI 2026-06-11).
     # The bilinear tent only ADHERES on node pairs in [r_contact, c_adh); since
