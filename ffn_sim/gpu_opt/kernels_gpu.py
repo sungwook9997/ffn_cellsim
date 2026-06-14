@@ -32,7 +32,10 @@ def mesh_pressure_forces(pos, tris, tri_group, n_groups, V0, p0, K):
     vol_contrib = cp.einsum("ij,ij->i", v0, cross) / 6.0
     Vg = cp.zeros(n_groups, dtype=cp.float64)
     cupyx.scatter_add(Vg, tg, vol_contrib)
-    P = p0 + K * (V0 - Vg) / V0
+    # EVERSION GUARD (signed-volume clamp) — see kernels_cpu.mesh_pressure_forces:
+    # bounds P so a transiently-flipped facet (Vg→negative/huge) stays recoverable
+    # instead of running away (the subdiv-2 autocatalytic eversion). Parity-matched.
+    P = p0 + K * (V0 - cp.clip(Vg, 0.2 * V0, 3.0 * V0)) / V0
     Pf = P[tg]
     f_facet = (Pf[:, None] * cross / 2.0) / 3.0
     F = cp.zeros_like(p)

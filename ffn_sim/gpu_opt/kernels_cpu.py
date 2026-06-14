@@ -40,7 +40,13 @@ def mesh_pressure_forces(pos, tris, tri_group, n_groups, V0, p0, K):
     vol_contrib = np.einsum("ij,ij->i", v0, cross) / 6.0
     Vg = np.zeros(n_groups)
     np.add.at(Vg, tri_group, vol_contrib)
-    P = p0 + K * (V0 - Vg) / V0
+    # EVERSION GUARD (signed-volume clamp). The turgor uses the SIGNED enclosed volume
+    # Vg; if a contact transiently flips a facet, Vg can go negative/huge, P = p0 +
+    # K·(V0−Vg)/V0 explodes and turgor turns ANTI-restoring → autocatalytic eversion
+    # (V/V0 1→148→201, the subdiv-2 blowup, 2026-06-14). Clamping Vg to [0.2,3]·V0
+    # bounds P (±~K) so a flipped facet stays RECOVERABLE (contact+neighbours pull it
+    # back) instead of running away. Healthy cells (Vg≈V0) are untouched.
+    P = p0 + K * (V0 - np.clip(Vg, 0.2 * V0, 3.0 * V0)) / V0
     Pf = P[tri_group]
     f_facet = (Pf[:, None] * cross / 2.0) / 3.0
     F = np.zeros_like(pos)
