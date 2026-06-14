@@ -356,6 +356,12 @@ def main():
                          "polygonal contact (higher contact fraction, rounding) as a "
                          "real organoid does — SimuCell3D deformable-cell aggregation.")
     ap.add_argument("--r-cell-um", type=float, default=7.5)
+    ap.add_argument("--subdiv", type=int, default=1,
+                    help="icosphere subdivisions per cell (1=42 nodes/80 faces default; "
+                         "2=162/320; 3=642). Use 2 for SPREADING production: cuts the "
+                         "mesh-volume error 12.65%%->3.4%% and resolves the flattened cell "
+                         "shape for a faithful A/A0 (~4x node cost per level, NO dt change "
+                         "since the BAOAB CFL is per-node).")
     ap.add_argument("--seed", type=int, default=7)
     # Phase 2 step 2: node-face contact + remeshing on the SPREAD stage.
     ap.add_argument("--node-face-contact", action="store_true",
@@ -456,7 +462,7 @@ def main():
 
     R = args.r_cell_um * 1e-6
     z0 = 0.0
-    _v, _e, tris0 = icosphere_mesh(R, 1)
+    _v, _e, tris0 = icosphere_mesh(R, args.subdiv)
     # V0 = the MESH enclosed volume (matches the K1 turgor kernel's V_g at rest and
     # the build's V0), NOT the analytic sphere (4/3πR³) which over-estimates ~12.65%
     # at subdiv 1 — so the diagnostic V/V0 reads 1.0 at rest, not 0.8735.
@@ -469,7 +475,8 @@ def main():
     print(f"[two-stage v2 BIOLOGICAL] N={args.n} R_cell={args.r_cell_um}µm "
           f"device={'GPU' if is_gpu else 'CPU'} S={S_ACCEL:.0e}\n", flush=True)
 
-    agg_over = dict(R_cell=R, spacing_factor=args.agg_spacing, dt=args.agg_dt)
+    agg_over = dict(R_cell=R, spacing_factor=args.agg_spacing, dt=args.agg_dt,
+                    subdivisions=args.subdiv)
     if args.agg_k_edge is not None:
         agg_over["k_edge"] = args.agg_k_edge       # soft cortex → deformable cells
     # node-face contact-stiffness overrides MUST reach the AGGREGATION params too
@@ -540,7 +547,8 @@ def main():
     # → the converged aggregate's init_pos lines up (the lattice positions it places
     # are overridden by init_pos anyway, so spacing here only fixes the topology).
     p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
-                            spacing_factor=args.agg_spacing, dt=args.spread_dt)
+                            spacing_factor=args.agg_spacing, dt=args.spread_dt,
+                            subdivisions=args.subdiv)
     if args.k_vol is not None:
         p = dataclasses.replace(p, K_vol=args.k_vol)
     if args.turgor_dp0 is not None:
