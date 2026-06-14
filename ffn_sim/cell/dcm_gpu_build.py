@@ -506,9 +506,14 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         # free energy actually spreads the basal patch (the cell flattens onto the
         # dish). Energy-based + cortex-balanced (NOT the rejected body-force proxy).
         if substrate_wetting:
+            # TIGHT contact gate (~2 µm, the true cell-substrate contact zone), NOT
+            # adh_range=R: with the large gate the wetting acted on the WHOLE thin cell
+            # once it flattened below R, over-spreading both top+bottom faces and
+            # slivering the mesh (diagnosis 2026-06-14). A tight gate spreads only the
+            # genuine basal cap (fried-egg flatten), keeping the mesh representable.
             wetting = DcmSubstrateWettingGPU(
                 faces=faces, z0=p.z_substrate, W_cs_Jm2=p.W_cs_Jm2,
-                adh_range=p.R_cell)
+                adh_range=2.0e-6)
             ig.forces.append(wetting)
 
     # SEDIMENTATION / PLATING — a weak constant downward body force on the live

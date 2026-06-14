@@ -190,13 +190,19 @@ class DcmSubstrateForceGPU(md.force.Custom):
     """
 
     def __init__(self, *, z0: float, W_cs: float, adh_range: float,
-                 k_sub: float | None = None) -> None:
+                 k_sub: float | None = None, k_floor: float = 1.0) -> None:
         super().__init__(aniso=False)
         self.z0 = float(z0)
         self.W_cs = float(W_cs)
         self.rng = float(adh_range)
         k_well = 2.0 * self.W_cs / (self.rng ** 2)
         self.k_well = k_well if k_sub is None else (k_well * k_sub) / (k_well + k_sub)
+        # HARD FLOOR: a stiff one-sided harmonic repulsion below z0 (the RIGID dish).
+        # The adhesive well's upward push CAPS at k_well·adh_range, which the now-
+        # physiological (stiff K_vol) turgor overwhelms → nodes penetrated the dish
+        # ~5µm (mesh-quality diagnosis 2026-06-14). This non-capped k_floor keeps the
+        # basal nodes AT z0 (a cell cannot enter the substrate). CFL: dt<2γ/k_floor.
+        self.k_floor = float(k_floor)
         self._d: DeviceDispatch | None = None
 
     def _dispatch(self) -> DeviceDispatch:
@@ -211,6 +217,9 @@ class DcmSubstrateForceGPU(md.force.Custom):
             pos = xp.asarray(snap.particles.position, dtype=xp.float64)
             n = int(pos.shape[0])
             F = d.kernels.plane_well_forces(pos, self.z0, self.k_well, self.rng)
+            # stiff non-capped floor: F_z += k_floor·max(0, z0 − z)  (z < z0 only)
+            below = xp.maximum(0.0, self.z0 - pos[:, 2])
+            F[:, 2] += self.k_floor * below
             U = xp.zeros(n, dtype=xp.float64)
         with d.force_arrays() as arr:
             arr.force[:] = F
