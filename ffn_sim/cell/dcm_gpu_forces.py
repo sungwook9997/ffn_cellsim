@@ -217,6 +217,94 @@ class DcmSubstrateForceGPU(md.force.Custom):
             arr.potential_energy[:] = U
 
 
+class DcmSubstrateWettingGPU(md.force.Custom):
+    """In-plane (area-maximizing) substrate WETTING force — the missing spreading
+    driver (CODE-1, diagnosis 2026-06-14).
+
+    The plain ``DcmSubstrateForceGPU`` well is z-ONLY: it pins basal nodes vertically
+    but applies ZERO lateral force, so the favourable cell-substrate adhesion free
+    energy (S = W_cs − 2σ > 0) is never converted to outward motion — the cell stays
+    rounded (A/A0 ≈ 1). This force supplies the in-plane drive: it is the xy-gradient
+    of the substrate adhesion energy ``U_adh = −W_cs_Jm2 · A_contact`` summed over the
+    cell's basal CONTACT triangles, where ``A_contact`` is the xy-PROJECTED triangle
+    area. Minimising U (the cell lowering its energy by maximising substrate contact
+    area) spreads the basal patch outward — the node-vs-substrate analogue of the
+    cell-cell node-face adhesion, and the discrete form of soap-film wetting.
+
+    Why this is NOT the rejected body-force proxy (adversarial check): it is the
+    CONSERVATIVE gradient of a real energy, balanced by the cortex (edge springs
+    resist area increase) → a stable Young-angle equilibrium spread, not an
+    un-anchored constant outward push (which contracted). The force on each basal
+    contact face's vertices is ``W_cs_Jm2 · w(z) · ∂A_xy/∂vertex`` (xy only; z is
+    left to the vertical pin), with ``w(z) = clip(1 − (z_c−z0)/adh_range, 0, 1)`` the
+    contact engagement (1 at the dish, 0 at adh_range). Capped (BAOAB guard).
+    Device-dispatched (cupy/GPU, numpy/CPU).
+
+    Args:
+        faces: (M,3) int node-id triplets (the mesh triangles; tag space).
+        z0: substrate plane z [m]. W_cs_Jm2: adhesion energy density [J/m²].
+        adh_range: contact engagement range [m]. force_cap: per-node cap [N].
+    """
+
+    def __init__(self, *, faces: np.ndarray, z0: float, W_cs_Jm2: float,
+                 adh_range: float, force_cap: float = 5.0e-8) -> None:
+        super().__init__(aniso=False)
+        self.faces = np.asarray(faces, dtype=np.int64)
+        self.z0 = float(z0)
+        self.W = float(W_cs_Jm2)
+        self.rng = float(adh_range)
+        self.cap = float(force_cap)
+        self._d: DeviceDispatch | None = None
+
+    def _dispatch(self) -> DeviceDispatch:
+        if self._d is None:
+            self._d = DeviceDispatch(self)
+        return self._d
+
+    def set_forces(self, timestep: int) -> None:  # noqa: D401
+        d = self._dispatch()
+        xp = d.xp
+        with d.snapshot() as snap:
+            tag = xp.asarray(snap.particles.tag)
+            pos = xp.asarray(snap.particles.position, dtype=xp.float64)
+            n = int(pos.shape[0])
+            perm = xp.argsort(tag)
+            pos_g = pos[perm]
+            faces = xp.asarray(self.faces)
+            v0 = pos_g[faces[:, 0]]; v1 = pos_g[faces[:, 1]]; v2 = pos_g[faces[:, 2]]
+            # contact engagement by face-centroid height (1 at dish → 0 at adh_range)
+            zc = (v0[:, 2] + v1[:, 2] + v2[:, 2]) / 3.0
+            w = xp.clip(1.0 - (zc - self.z0) / self.rng, 0.0, 1.0)
+            # signed xy-projected area S and its vertex gradient (∂A_xy = sign(S)·∂S)
+            S = 0.5 * ((v1[:, 0] - v0[:, 0]) * (v2[:, 1] - v0[:, 1])
+                       - (v1[:, 1] - v0[:, 1]) * (v2[:, 0] - v0[:, 0]))
+            coef = (0.5 * self.W) * w * xp.sign(S)          # per-face scalar
+            F_g = xp.zeros((n, 3), dtype=xp.float64)
+            # ∂A_xy/∂v0 = (y1−y2, x2−x1); cyclic for v1, v2 (the area-inflating force)
+            f0 = xp.stack([coef * (v1[:, 1] - v2[:, 1]), coef * (v2[:, 0] - v1[:, 0])], axis=1)
+            f1 = xp.stack([coef * (v2[:, 1] - v0[:, 1]), coef * (v0[:, 0] - v2[:, 0])], axis=1)
+            f2 = xp.stack([coef * (v0[:, 1] - v1[:, 1]), coef * (v1[:, 0] - v0[:, 0])], axis=1)
+            self._scatter(xp, F_g, faces[:, 0], f0)
+            self._scatter(xp, F_g, faces[:, 1], f1)
+            self._scatter(xp, F_g, faces[:, 2], f2)
+            # per-node BAOAB cap on the in-plane magnitude
+            mag = xp.sqrt((F_g[:, :2] ** 2).sum(axis=1))
+            scale = xp.where(mag > self.cap, self.cap / xp.where(mag > 0, mag, 1.0), 1.0)
+            F_g[:, 0] *= scale; F_g[:, 1] *= scale
+            F = xp.empty_like(pos)
+            F[perm] = F_g
+        with d.force_arrays() as arr:
+            arr.force[:] = F
+
+    @staticmethod
+    def _scatter(xp, a, idx, v) -> None:
+        if xp is np:
+            np.add.at(a[:, :2], idx, v)
+        else:
+            import cupyx
+            cupyx.scatter_add(a[:, :2], idx, v)
+
+
 # ---------------------------------------------------------------------------
 # ACTIVE SELF-PROPULSION (SPP) — STAGE-1 aggregation by motile search-and-capture
 # ---------------------------------------------------------------------------

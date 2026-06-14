@@ -51,6 +51,7 @@ from ffn_sim.cell.dcm_gpu_forces import (
     DcmTentContactGPU,
     FaceContactForceGPU,
     DcmSubstrateForceGPU,
+    DcmSubstrateWettingGPU,
     DcmActiveRimTractionGPU,
     DcmActiveRimTractionGPUVec,
     on_gpu,
@@ -372,7 +373,8 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
                              f_act: float = 1.2e-10, f_cap: float = 6.0e-10,
                              traction_ramp: int = 4000, belt_factor: float = 0.25,
                              init_pos: "np.ndarray | None" = None,
-                             lamellipodium=None):
+                             lamellipodium=None,
+                             substrate_wetting: bool = False):
     """Assemble the GPU-friendly DCM spheroid on the BAOAB integrator.
 
     No native md.mesh, no per-cell mesh/particle/bond types. Returns a dict of
@@ -498,6 +500,16 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
         substrate = DcmSubstrateForceGPU(
             z0=p.z_substrate, W_cs=W_cs, adh_range=p.R_cell, k_sub=p.k_sub_Nm)
         ig.forces.append(substrate)
+        # CODE-1: in-plane WETTING force (the xy area-gradient of −W_cs·A_contact) —
+        # the missing spreading driver. The z-only well above pins the basal nodes;
+        # this supplies the outward, area-maximising drive so the favourable adhesion
+        # free energy actually spreads the basal patch (the cell flattens onto the
+        # dish). Energy-based + cortex-balanced (NOT the rejected body-force proxy).
+        if substrate_wetting:
+            wetting = DcmSubstrateWettingGPU(
+                faces=faces, z0=p.z_substrate, W_cs_Jm2=p.W_cs_Jm2,
+                adh_range=p.R_cell)
+            ig.forces.append(wetting)
 
     # SEDIMENTATION / PLATING — a weak constant downward body force on the live
     # membrane nodes. WHY (the wetting fix, 2026-06-11): the adhesive substrate
