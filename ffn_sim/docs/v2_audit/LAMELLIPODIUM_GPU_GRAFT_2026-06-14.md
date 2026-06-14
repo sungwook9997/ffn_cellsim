@@ -140,6 +140,37 @@ S=10 vs S=1 barely changes the rate (the catch-gate ties advance to the membrane
 force-velocity), confirming the spread rate is force-balance-limited, not clock-
 limited.
 
+### 4c. Cohesion + slump sweep (PI-authorized iteration) → STRUCTURAL/COMPUTE LIMIT
+
+After the compression reframe (§4b), iterated the force balance toward spreading:
+- **weak cohesion** (ω 1e7→1e6, the Douezan wetting condition W_cs>2γ): REMOVES the
+  pathological compaction — V/V0 holds ~1.0 instead of crashing to 0.68. But A/A0
+  stays ~1.0 (no spread): the ball is now STABLE, not spreading.
+- **+ strong slump** (settle 1e-9): maxZ DOES drop (147→140µm over 9k steps, the ball
+  slowly flattens) and V/V0 holds ~1.0 — but the FOOTPRINT does NOT grow.
+
+**The rigorous result.** At V/V0=0.999 (rest volume) the footprint is A/A0=0.932,
+and a sphere relaxing from the over-distended aggregate (V/V0=1.125) to rest volume
+shrinks its footprint to exactly (1.0/1.125)^(2/3) = **0.924**. So the entire A/A0
+change is PURE VOLUME RELAXATION of the over-distended aggregate — the lamellipodium
+contributes ~nothing to the footprint (0.932 measured vs 0.924 pure-relaxation
+prediction). Across ALL four configs the 400-cell footprint never grows.
+
+**Why (root, fully diagnosed).** The ball→monolayer transition (A/A0 7-10) is a slow,
+large-scale collective REARRANGEMENT: the spheroid must wet/slump into a disk wider
+than its equator, with upper cells descending + flowing into the monolayer. The
+fine-grained model cannot drive this at feasible compute: (1) substrate adhesion
+(W_cs) acts ONLY on the contact-layer nodes (within adh_range of z0), so it cannot
+drive a whole-ball wetting/slump — it just pins the bottom; (2) cohesive surface
+tension rounds/compacts the ball faster than a 27-cell basal rim crawl can spread it;
+(3) a body-force slump (settle) strong enough to flatten fast COMPRESSES the cells
+(quasi-static violation); (4) turgor resists flattening so the slump is intrinsically
+slow (~1e6+ steps even for a partial pancake, and the footprint still doesn't grow).
+This is the SAME structural/compute limit as the Layer-2 magnitude + the active-γ
+floor: FORM + single-cell mechanism reproduced, COLLECTIVE MAGNITUDE belongs to a
+coarser (CBM/continuum) model. Real spheroid spreading is a 24-48 h process; the
+fine-grained model at physiological rates is ~1e8-1e9 steps = months of compute.
+
 ## 5. PI decision points
 
 1. **Kinetic acceleration S**: physiological S=1 is wall-clock-infeasible for A/A0
