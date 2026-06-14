@@ -455,9 +455,15 @@ def main():
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
-    V0 = (4.0 / 3.0) * np.pi * R ** 3
     z0 = 0.0
     _v, _e, tris0 = icosphere_mesh(R, 1)
+    # V0 = the MESH enclosed volume (matches the K1 turgor kernel's V_g at rest and
+    # the build's V0), NOT the analytic sphere (4/3πR³) which over-estimates ~12.65%
+    # at subdiv 1 — so the diagnostic V/V0 reads 1.0 at rest, not 0.8735.
+    V0 = float(np.einsum(
+        "ij,ij->i", _v[tris0[:, 0]],
+        np.cross(_v[tris0[:, 1]] - _v[tris0[:, 0]],
+                 _v[tris0[:, 2]] - _v[tris0[:, 0]])).sum() / 6.0)
     dev = pick_device(None)
     is_gpu = type(dev).__name__.endswith("GPU")
     print(f"[two-stage v2 BIOLOGICAL] N={args.n} R_cell={args.r_cell_um}µm "
