@@ -386,6 +386,13 @@ def main():
                     help="override node-face repulsion xi [Pa/m] (default: p value).")
     ap.add_argument("--adh-strength", type=float, default=None,
                     help="override node-face adhesion omega [Pa/m] (default: p value).")
+    ap.add_argument("--k-vol", type=float, default=None,
+                    help="override osmotic VOLUME-STRAIN modulus K_vol [Pa] for BOTH "
+                         "aggregation and spread. Default 1e3 is ~770x too soft (cells "
+                         "compress unphysically); the physical value is the osmotic bulk "
+                         "modulus ~Pi=c*R*T~0.77 MPa so cells deform at ~constant volume.")
+    ap.add_argument("--turgor-dp0", type=float, default=None,
+                    help="override resting turgor dP0 [Pa] (both stages).")
     # aggregation checkpoint / resume (so stage 1 can be verified + extended before spread)
     ap.add_argument("--agg-only", action="store_true",
                     help="run STAGE 1 only, save the aggregated spheroid, skip spread.")
@@ -466,7 +473,16 @@ def main():
         agg_over["rep_strength"] = args.rep_strength
     if args.adh_strength is not None:
         agg_over["adh_strength"] = args.adh_strength
+    # osmotic volume stiffness / turgor MUST reach aggregation too (cells must stay
+    # ~volume-incompressible while packing, not get squished by cohesion+confinement).
+    if args.k_vol is not None:
+        agg_over["K_vol"] = args.k_vol
+    if args.turgor_dp0 is not None:
+        agg_over["turgor_dP0"] = args.turgor_dp0
     p_agg = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), **agg_over)
+    if args.k_vol is not None or args.turgor_dp0 is not None:
+        print(f"[osmotic] K_vol={p_agg.K_vol:.2e} Pa turgor_dP0={p_agg.turgor_dP0:.1f} Pa "
+              f"(volume stiffness — cells deform at ~constant V)", flush=True)
     if args.rep_strength is not None or args.adh_strength is not None:
         print(f"[agg contact] rep={p_agg.rep_strength:.1e} adh={p_agg.adh_strength:.1e}",
               flush=True)
@@ -519,6 +535,10 @@ def main():
     # are overridden by init_pos anyway, so spacing here only fixes the topology).
     p = dataclasses.replace(ResolvedGpuDCM(seed=args.seed), R_cell=R,
                             spacing_factor=args.agg_spacing, dt=args.spread_dt)
+    if args.k_vol is not None:
+        p = dataclasses.replace(p, K_vol=args.k_vol)
+    if args.turgor_dp0 is not None:
+        p = dataclasses.replace(p, turgor_dP0=args.turgor_dp0)
     if args.w_cs_jm2 is not None:
         p = dataclasses.replace(p, W_cs_Jm2=args.w_cs_jm2)
         print(f"[wetting] W_cs_Jm2={args.w_cs_jm2:.2e} J/m²", flush=True)

@@ -282,6 +282,16 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int, *, n_pool: int = 0):
     ne = edges.shape[0]
     mean_edge = float(np.linalg.norm(
         verts0[edges[:, 0]] - verts0[edges[:, 1]], axis=1).mean())
+    # V0 = the MESH's enclosed volume at rest (computed EXACTLY as the K1 turgor
+    # kernel does, mesh_pressure_forces V_g = Σ v0·((v1−v0)×(v2−v0))/6), NOT the
+    # analytic sphere (4/3πR³). A subdiv-1 icosphere encloses only 0.8735× the
+    # sphere, so V0=analytic puts t=0 at V/V0=0.8735 = a spurious −12.65% strain;
+    # harmless at the legacy-soft K_vol=1e3 but at the physiological K_vol≈0.77 MPa
+    # it injects ~98 kPa of false inflation pressure → blow-up. Match the kernel.
+    mesh_V0 = float(np.einsum(
+        "ij,ij->i", verts0[tris0[:, 0]],
+        np.cross(verts0[tris0[:, 1]] - verts0[tris0[:, 0]],
+                 verts0[tris0[:, 2]] - verts0[tris0[:, 0]])).sum() / 6.0)
 
     # surface-gapped start (no t=0 node overlap → no BAOAB blow-up); adhesion
     # pulls cells into contact gently over the settle.
@@ -346,7 +356,7 @@ def build_gpu_dcm_snapshot(p: ResolvedGpuDCM, n_cells: int, *, n_pool: int = 0):
     snap.configuration.box = [box_edge, box_edge, box_edge, 0, 0, 0]
     return dict(snap=snap, cell_of_node=cell_of_node, ranges=ranges,
                 faces=faces, face_cell=face_cell, nv=nv, ne=ne,
-                mean_edge=mean_edge, centers=centers)
+                mean_edge=mean_edge, centers=centers, mesh_V0=mesh_V0)
 
 
 # ---------------------------------------------------------------------------
@@ -448,7 +458,9 @@ def build_gpu_dcm_simulation(p: ResolvedGpuDCM, n_cells: int, *, device=None,
     W_cs = p.W_cs_Jm2 * p.ligand_density * area_per_node    # J per node
 
     # TURGOR — K1 mesh-pressure (GPU-friendly: one custom force, face-grouped).
-    V0 = (4.0 / 3.0) * np.pi * p.R_cell ** 3
+    # V0 = the MESH enclosed volume (matches the kernel's V_g at rest) — NOT the
+    # analytic sphere, which would put t=0 at a spurious −12.65% strain (subdiv 1).
+    V0 = b["mesh_V0"]
     turgor = DcmTurgorForceGPU(faces=faces, face_cell=face_cell, n_cells=n_cells,
                                V0=V0, turgor_dP0=p.turgor_dP0, K_vol=p.K_vol)
     ig.forces.append(turgor)
@@ -868,7 +880,12 @@ def build_gpu_spheroid_prolif(p: ResolvedGpuDCM, n_active: int, n_max: int, *,
     # TURGOR over the WHOLE pool (n_max cells). face_cell is mutable and read fresh
     # each step → a daughter's faces are conserved as soon as it activates. Parked
     # cells are undeformed (V≈V0) so their turgor force is ~0 (force-free pool).
-    V0 = (4.0 / 3.0) * np.pi * p.R_cell ** 3
+    # V0 = the MESH enclosed volume (matches the kernel V_g at rest; the analytic
+    # sphere over-estimates ~12.65% at subdiv 1 → false strain at stiff K_vol).
+    V0 = float(np.einsum(
+        "ij,ij->i", verts0[tris0[:, 0]],
+        np.cross(verts0[tris0[:, 1]] - verts0[tris0[:, 0]],
+                 verts0[tris0[:, 2]] - verts0[tris0[:, 0]])).sum() / 6.0)
     turgor = DcmTurgorForceGPU(faces=faces, face_cell=face_cell, n_cells=n_max,
                                V0=V0, turgor_dP0=p.turgor_dP0, K_vol=p.K_vol)
     ig.forces.append(turgor)
