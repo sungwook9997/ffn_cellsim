@@ -251,7 +251,8 @@ def _remesh_aware_diag(pos, cell_of_node, turgor, V0, *, ranges=None, z0=0.0, R=
 def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
            node_face_contact=False, n_pool=0, remesh=False, remesh_period=2000,
            remesh_max_ops=24, f_act=1.2e-10, f_cap=6.0e-10, traction_ramp=4000,
-           settle_force=4.0e-10, belt_factor=0.25, lamellipodium=None):
+           settle_force=4.0e-10, belt_factor=0.25, lamellipodium=None,
+           junction_switch=False):
     # active rim traction is the body-force proxy; when a mechanistic lamellipodium
     # is supplied build_gpu_dcm_simulation skips the proxy and wires the real engine.
     h = build_gpu_dcm_simulation(p, n_cells, device=dev, active=(lamellipodium is None),
@@ -260,6 +261,15 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
                                  f_act=f_act, f_cap=f_cap, traction_ramp=traction_ramp,
                                  settle_force=settle_force, belt_factor=belt_factor,
                                  lamellipodium=lamellipodium)
+    # PRESSURE-TRIGGERED DE-COHESION (physiological junction remodeling): as cells
+    # compact, bulk pressure rises → cad_mult lowers → cell-cell adhesion weakens so
+    # the cells can slide apart + spread (vs globally-weak cohesion = a crude proxy
+    # that also disperses non-loaded cells). Keeps a coherent monolayer.
+    if junction_switch:
+        from ffn_sim.cell.dcm_gpu_build import attach_junction_switch
+        attach_junction_switch(h, cadence=500)
+        print("[junction-switch] pressure-triggered de-cohesion ON (cad_mult↓ under load)",
+              flush=True)
     sim, ranges = h["sim"], h["ranges"]
     cell_of_node = h["cell_of_node"]
     turgor = h["turgor"]
@@ -430,6 +440,11 @@ def main():
                     help="per-node traction cap [N] (=5·60Pa·area_per_node lit MCF7).")
     ap.add_argument("--lamel-contact-band", type=float, default=1.5,
                     help="rim cell if centroid z within band·R of z0 (basal contact).")
+    ap.add_argument("--junction-switch", action="store_true",
+                    help="pressure-triggered de-cohesion (cad_mult↓ under bulk pressure) "
+                         "so compacting cells weaken cohesion + spread as a coherent "
+                         "monolayer (physiological junction remodeling; the proper fix "
+                         "for the cohesion-driven compression vs globally-weak cohesion).")
     args = ap.parse_args()
 
     R = args.r_cell_um * 1e-6
@@ -551,7 +566,7 @@ def main():
                     remesh_max_ops=args.remesh_max_ops,
                     f_act=f_act, f_cap=f_cap, traction_ramp=args.traction_ramp,
                     settle_force=args.settle_force, belt_factor=args.belt_factor,
-                    lamellipodium=plam)
+                    lamellipodium=plam, junction_switch=args.junction_switch)
     tr = h2["traction"]
     # rim_params is the body-force-proxy rim geometry (None under the mechanistic
     # lamellipodium, which has no DcmActiveRimTraction); record the rim-cell count.
