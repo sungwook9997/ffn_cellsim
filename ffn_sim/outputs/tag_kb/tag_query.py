@@ -247,6 +247,12 @@ FEWSHOT = textwrap.dedent("""\
     WHERE g.vg_id = 'VG-H7-gate-a';
     ```
 
+    Q: Which headline result-claims are NOT verified (retracted / needs-regen / GPU-unreproduced)?
+    ```sql
+    SELECT claim_id, verdict, metric, note FROM run_audit
+    WHERE verdict <> 'VERIFIED' ORDER BY verdict;
+    ```
+
     Q: Which code modules implement the focal-adhesion motor-clutch contract?
     ```sql
     SELECT cm.path, cm.status
@@ -353,7 +359,14 @@ GEN_SYS = (
     "or superseded-looking statement in the SQL rows or PDF excerpts. Report it "
     "as the current answer; reference superseded records ONLY as history and say "
     "explicitly that they were superseded. Never present a superseded conclusion "
-    "as the current status."
+    "as the current status.\n"
+    "RESULTS-AUDIT RULE: the run_audit table is the disk-grounded integrity verdict "
+    "for headline result-claims (twin of source_audit for citations). A result is "
+    "'done / validated' ONLY if its run_audit verdict is VERIFIED. If a result has "
+    "verdict RETRACT (forbidden basal-footprint metric or value drift), NEEDS_REGEN "
+    "(claimed artifact absent — number only in prose/PNG), or GPU_UNREPRODUCED "
+    "(GPU-only, no committed build/CI trace), state that explicitly and do NOT report "
+    "it as established — cite the verdict and its note."
 )
 
 

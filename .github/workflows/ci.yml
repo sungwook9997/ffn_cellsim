@@ -75,3 +75,22 @@ jobs:
       - uses: astral-sh/ruff-action@v3
         with:
           args: check --output-format=github
+
+  # Results-integrity gate — the teeth of the RAG/TAG results audit. Fast,
+  # blocking, no HOOMD: checks every headline result-claim in
+  # ffn_sim/outputs/tag_kb/results_manifest.yaml against committed disk artifacts.
+  # FAILS if any claim's disk verdict is worse than its declared level (an
+  # over-claim): a forbidden basal-footprint A/A0 metric, a value drift, or a
+  # claimed artifact that isn't committed. This is what stops the 2026-06-19
+  # drift class (PNG-title numbers, forbidden-metric REPORTs) from recurring.
+  results-gate:
+    name: results-integrity gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pyyaml
+      - name: verify result-claims vs committed disk artifacts
+        run: python ffn_sim/outputs/tag_kb/verify_runs.py --gate

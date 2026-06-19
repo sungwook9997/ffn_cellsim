@@ -1,0 +1,69 @@
+# results_manifest.yaml — the declarative contract of headline RESULT-claims.
+#
+# The RESULTS-side twin of the SourceEvidence citation list. Every "done /
+# breakthrough / validated" result the project leans on is declared here with
+# its artifact, metric, and HONEST status; verify_runs.py checks each against
+# DISK. A result is "done" only when its verdict is VERIFIED. Declaring a claim
+# with no committed artifact, or with the PI-forbidden basal-footprint A/A0
+# metric, makes the CI gate RED — by design. This is what stops the 2026-06-19
+# drift class (PNG-title numbers, forbidden-metric REPORTs, prose-inflated
+# speedups that the RAG/TAG citation audit could never catch).
+#
+# Fields:
+#   id        cross-ref to the 2026-06-19 grounding pass (Cxx) where applicable
+#   desc      one line
+#   artifact  repo-root-relative path to the committed evidence
+#   metric    top-down-silhouette (sanctioned) | basal-contact-hull (FORBIDDEN) | n/a
+#   expect    {field: <dotted.json.path>, value: <num>, tol: <num>}  (optional; .json only)
+#   repro     cpu (independently reproducible) | gpu (gbook-only, no build/CI trace)
+#   declared  honest current status: verified | gpu-unreproduced | needs-regen | retract
+#             verify_runs DOWNGRADES this if disk is worse; a DRIFT = CI gate failure.
+#
+# To claim a NEW result as done: add it here with declared: verified + a committed
+# artifact (+ an expect block if it is JSON). If the artifact is absent or the
+# number is only in a figure title, the gate stays red until you regenerate+commit.
+
+claims:
+  # --- GPU-only, present + internally consistent (value-checked from committed JSON) ---
+  - id: C2-compartment-speedup
+    desc: "Full GPU-main stack 5.86x vs cupy (native integrator + compartment forces)"
+    artifact: ffn_sim/outputs/h7/production/h7_compartment_gpu_port.json
+    metric: n/a
+    expect: {field: speedups_vs_cupy_cpucomp.native_gpucomp, value: 5.864, tol: 0.01}
+    repro: gpu
+    declared: gpu-unreproduced
+
+  - id: C3-fullcell-speedup
+    desc: "Native full-cell 2.43x vs cupy at the real op point (201 steps/s = 11.5d/2e8)"
+    artifact: ffn_sim/outputs/h7/production/h7_native_fullcell_go.json
+    metric: n/a
+    expect: {field: end_to_end_speedup_native_over_cupy, value: 2.4325, tol: 0.01}
+    repro: gpu
+    declared: gpu-unreproduced
+
+  - id: C12-dcm-compaction
+    desc: "DCM full mechanistic spheroid COMPACTS top-down (the verified NEGATIVE, A/A0->0.597)"
+    artifact: ffn_sim/outputs/h_dcm_two_stage/two_stage_n400.pkl
+    metric: top-down-silhouette
+    repro: gpu
+    declared: gpu-unreproduced
+
+  # --- RETRACT: forbidden metric (the 2026-06-19 C14 finding, encoded so it can't recur) ---
+  - id: C14-dcm-footprint-report
+    desc: "DCM REPORT 'spreading footprint' headline — RETRACTED (basal-footprint is forbidden)"
+    artifact: ffn_sim/outputs/h_dcm_two_stage/REPORT.md
+    metric: basal-contact-hull
+    declared: retract
+
+  # --- NEEDS_REGEN: claimed but no committed data (numbers lived only in PNG titles) ---
+  - id: C13-cleanball-187
+    desc: "clean-ball A/A0 1.0->1.87 'breakthrough' — no committed pkl (PNG title only)"
+    artifact: ffn_sim/outputs/h_dcm_two_stage/cleanball_n12.pkl
+    metric: top-down-silhouette
+    declared: needs-regen
+
+  - id: C17-aa0-fit
+    desc: "A/A0=a+b/R+c/R^2 fit r^2=0.96 — underlying cleanball data absent (PNG legend only)"
+    artifact: ffn_sim/outputs/h_dcm_two_stage/cleanball_aa0_fit.json
+    metric: top-down-silhouette
+    declared: needs-regen

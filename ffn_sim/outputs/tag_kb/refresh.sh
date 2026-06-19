@@ -28,6 +28,10 @@ echo "[sanity] citation integrity (non-destructive; full re-verify = verify_sour
 python verify_sources.py --check
 
 echo
+echo "[sanity] results integrity (disk-grounded; rebuilds run_audit table from results_manifest.yaml)"
+python verify_runs.py
+
+echo
 echo "[sanity] ops-linkage drift (disk runs/modules not yet in the graph)"
 python harvest_ops.py --check
 
