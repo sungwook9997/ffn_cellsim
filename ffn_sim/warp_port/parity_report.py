@@ -105,6 +105,24 @@ def _shake_parity() -> dict:
     }
 
 
+def _bond_parity() -> dict:
+    """Harmonic bond (cortex axial spring) vs HOOMD md.bond.Harmonic."""
+    from ffn_sim.warp_port.network_warp import run_harmonic_bond_warp
+
+    fx = dict(np.load(os.path.join(FIX, "network_bond_ref.npz")))
+    got = run_harmonic_bond_warp(
+        pos=fx["pos"], bonds=fx["bonds"], k=float(fx["k"]), r0=float(fx["r0"]),
+        box_L=(float(fx["L"]),) * 3, device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    Uscale = float(np.abs(fx["ref_energy"]).max()) + 1e-30
+    return {
+        "N": int(fx["N"]), "B": int(fx["B"]),
+        "force_rel": float(np.abs(got["force"] - fx["ref_force"]).max()) / Fscale,
+        "energy_rel": float(np.abs(got["energy"] - fx["ref_energy"]).max()) / Uscale,
+    }
+
+
 def _fixman_parity() -> dict:
     """Fixman: Warp metric pseudo-force vs the committed Python LAPACK reference."""
     from ffn_sim.warp_port.fixman_warp import run_fixman_warp
@@ -144,6 +162,7 @@ def main() -> None:
         "B2_radial_shell": _radial_shell_parity(),
         "MSHAKE_chain_constraint": _shake_parity(),
         "Fixman_metric_force": _fixman_parity(),
+        "compartment_harmonic_bond": _bond_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -151,7 +170,8 @@ def main() -> None:
     print(f"wrote {OUT}")
     print(json.dumps({k: report[k] for k in
                       ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
-                       "Fixman_metric_force", "B4_differentiability")}, indent=2))
+                       "Fixman_metric_force", "compartment_harmonic_bond",
+                       "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":

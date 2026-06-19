@@ -153,6 +153,19 @@ claims:
     repro: cpu
     declared: verified
 
+  # Compartment/network force: harmonic bond (cortex axial spring) vs HOOMD
+  # md.bond.Harmonic. Verified by tests/warp_port/test_network_warp_parity.py vs
+  # network_bond_ref.npz. One thread/bond, atomic-add to shared beads; achieved
+  # force rel ~5e-16. (angle bending + LJ excluded-volume are the remaining
+  # network forces, follow-on sub-pieces.)
+  - id: warp-compartment-harmonic-bond
+    desc: "Warp harmonic-bond cortex network force parity vs HOOMD md.bond.Harmonic"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: compartment_harmonic_bond.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
