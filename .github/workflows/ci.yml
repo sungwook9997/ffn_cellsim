@@ -1,0 +1,76 @@
+name: CI
+
+# First automated correctness gate for ffn_cellsim (added 2026-06-19).
+#
+# Why this exists: the repo had ZERO CI and no GitHub remote — every "done /
+# passes / validated" claim was hand-run, and GPU results left no reproducible
+# trace. This gate makes "the suite imports cleanly + the CPU tests pass" a
+# machine-checked fact on every push, so a green checkmark means something.
+#
+# Scope (honest): this is the CPU gate. GPU/cupy tests auto-skip on the CPU
+# runner (importorskip('cupy')); the native CUDA plugin and GPU bit-parity are
+# NOT covered here (they need a CUDA runner — tracked separately). The two
+# long-running DCM Simulation-build parity tests are excluded to keep the gate
+# bounded; a per-test timeout backstops any other hang.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpu-tests:
+    name: CPU tests (HOOMD 7.0.1, conda-forge)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up micromamba env (HOOMD + scientific stack)
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: ffn_sim
+          condarc: |
+            channels:
+              - conda-forge
+            channel_priority: strict
+          create-args: >-
+            hoomd=7.0.1
+            freud
+            gsd
+            numpy>=2.0
+            scipy>=1.13
+            h5py
+            pyyaml
+            matplotlib
+            pytest>=8
+            pytest-timeout
+
+      - name: Install ffn_sim (editable, no extra deps)
+        run: pip install -e . --no-deps
+
+      - name: Import / collection gate (suite must import cleanly)
+        run: pytest --collect-only -q
+
+      - name: CPU test gate
+        run: |
+          pytest ffn_sim/tests \
+            --timeout=300 -p no:cacheprovider \
+            --ignore=ffn_sim/tests/test_dcm_fused_parity.py \
+            --ignore=ffn_sim/tests/test_dcm_active_vec_parity.py
+
+  lint:
+    name: ruff (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          args: check --output-format=github
