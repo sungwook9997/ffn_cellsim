@@ -81,6 +81,30 @@ def _radial_shell_parity() -> dict:
     return out
 
 
+def _shake_parity() -> dict:
+    """M-SHAKE: Warp chain-constraint projection vs the committed Python reference."""
+    from ffn_sim.warp_port.shake_warp import run_shake_warp
+
+    fx = dict(np.load(os.path.join(FIX, "shake_ref.npz")))
+    got = run_shake_warp(
+        pred_pos=fx["pred"], ref_pos=fx["ref"], chains=fx["chains"],
+        inv_mass=fx["inv_mass"], rest_length=float(fx["r0"]),
+        box_L=(float(fx["L"]),) * 3, tol=float(fx["tol"]),
+        max_iter=int(fx["max_iter"]), device="cpu",
+    )
+    pscale = float(np.abs(fx["ref_proj"]).max())
+    lscale = float(np.abs(fx["ref_lam"]).max()) + 1e-30
+    s = got["pos"][fx["chains"][:, :-1]] - got["pos"][fx["chains"][:, 1:]]
+    bond = np.sqrt((s * s).sum(axis=2))
+    return {
+        "F": int(fx["F"]), "m": int(fx["m"]),
+        "nonconverged": got["nonconverged"],
+        "pos_rel": float(np.abs(got["pos"] - fx["ref_proj"]).max()) / pscale,
+        "lam_rel": float(np.abs(got["lam"] - fx["ref_lam"]).max()) / lscale,
+        "bond_rel_err": float(np.abs(bond - float(fx["r0"])).max() / float(fx["r0"])),
+    }
+
+
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
@@ -99,13 +123,15 @@ def main() -> None:
         ),
         "B1_baoab": _baoab_parity(),
         "B2_radial_shell": _radial_shell_parity(),
+        "MSHAKE_chain_constraint": _shake_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
         json.dump(report, f, indent=2)
     print(f"wrote {OUT}")
     print(json.dumps({k: report[k] for k in
-                      ("B1_baoab", "B2_radial_shell", "B4_differentiability")}, indent=2))
+                      ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
+                       "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":

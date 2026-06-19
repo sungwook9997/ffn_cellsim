@@ -126,6 +126,20 @@ claims:
     repro: cpu
     declared: verified
 
+  # M-SHAKE chain constraint projection (rigid Matrix-SHAKE, one thread/chain).
+  # Verified by tests/warp_port/test_shake_warp_parity.py vs shake_ref.npz (the
+  # committed shake_project_chains output). Iterative solver → not bit-for-bit
+  # (Warp FMA vs numpy converges to a slightly different valid manifold point);
+  # gated on relative position agreement < 1e-9 (well under the native 1e-8) +
+  # constraint satisfaction + zero nonconvergence.
+  - id: warp-MSHAKE-chain-constraint
+    desc: "Warp Matrix-SHAKE rigid chain-constraint projection parity vs HOOMD shake_project_chains (pos rel + nonconv=0)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: MSHAKE_chain_constraint.pos_rel, value: 0.0, tol: 1.0e-9}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
