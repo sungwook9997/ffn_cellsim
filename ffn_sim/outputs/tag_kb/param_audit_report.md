@@ -1,6 +1,6 @@
 # Parameter-provenance audit (disk + citation-grounded)
 
-Audited **7** headline simulation constants from `params_manifest.yaml` (constant -> KU -> citation -> verdict).
+Audited **8** headline simulation constants from `params_manifest.yaml` (constant -> KU -> citation -> verdict).
 
 ## Summary
 
@@ -8,7 +8,7 @@ Audited **7** headline simulation constants from `params_manifest.yaml` (constan
 |---|---|---|
 | UNSOURCED | 2 | no KU / citation_key — constant not traceable to a paper |
 | SOURCE_UNVERIFIED | 2 | citation verdict CHECK/NO_DOI_FOUND (real paper, not confirmed-OK) |
-| VERIFIED | 3 | value matches disk + KU present + citation verdict OK |
+| VERIFIED | 4 | value matches disk + KU present + citation verdict OK |
 
 **0 DRIFT rows** (disk worse than declared — these FAIL the CI gate).
 
@@ -23,3 +23,4 @@ Audited **7** headline simulation constants from `params_manifest.yaml` (constan
 | VERIFIED |  | P1-junction-dx-star-phase1 | phase1_unit4_1.yaml:junction.dx_star_phase1 | KU-4.17 | Bell1978_Science | value OK (1e-10); Bell1978_Science citation verdict=OK |
 | VERIFIED |  | P2-junction-dx-star-ku417 | phase1_unit4_1.yaml:junction.dx_star_ku417 | KU-4.17 | Buckley2014_Science | value OK (4e-09); Buckley2014_Science citation verdict=OK |
 | VERIFIED |  | P3-talin-unfold-rate | phase1_unit2_2.yaml:bridge.talin.k_u0 | KU-2.6 | DelRio2009_Science | value OK (0.01); DelRio2009_Science citation verdict=OK |
+| VERIFIED |  | P8-talin-dx-star | phase1_unit2_2.yaml:bridge.talin.dx_star | KU-2.6 | DelRio2009_Science | value OK (1.5e-09); DelRio2009_Science citation verdict=OK |

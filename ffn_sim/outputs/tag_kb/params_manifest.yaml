@@ -75,6 +75,16 @@ claims:
     citation_key: DelRio2009_Science
     declared: verified
 
+  - id: P8-talin-dx-star
+    desc: "Talin Bell-Evans transition-state distance dx_star (del Rio 2009, same anchor as k_u0)"
+    config: ffn_sim/validation/oracles/configs/phase1_unit2_2.yaml
+    key: bridge.talin.dx_star
+    value: 1.5e-9
+    unit: m
+    ku: KU-2.6
+    citation_key: DelRio2009_Science
+    declared: verified
+
   # --- sourced but citation NOT confirmed-OK (honestly declared source-unverified) ---
   - id: P4-cortex-gamma
     desc: "Cortex active+passive surface tension gamma_cortex (KU-3.5 mid-range; THE gamma-floor parameter)"
