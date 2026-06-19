@@ -1,0 +1,37 @@
+# ffn_cellsim — developer entrypoints.
+#
+# The KB integrity gates are pure-Python (stdlib + pyyaml) and read only
+# COMMITTED artifacts (config YAMLs, *_manifest.yaml, source_audit_report.md) —
+# no Notion token, no network — so they run anywhere in well under a second.
+# CI runs the blocking gates on every push (.github/workflows/ci.yml); this
+# Makefile is the single local entrypoint so CI, the git hook, and the docs
+# never drift apart.
+
+TKB := ffn_sim/outputs/tag_kb
+
+.PHONY: help kb-check kb-figs hooks
+
+help:
+	@echo "make kb-check  - run the KB integrity gates (results + params blocking; citation audit informational)"
+	@echo "make kb-figs   - regenerate the KB presentation figures"
+	@echo "make hooks     - enable the tracked git pre-commit hook (runs kb-check before each commit)"
+
+# All KB auditors. results + params are BLOCKING gates (exit 1 on drift = a
+# result/constant claimed better than the disk supports). The citation audit is
+# read-only here; the production-cited subset of sources is already enforced via
+# the params gate (a fabrication-risk citation on a constant declared 'verified'
+# drifts -> blocks).
+kb-check:
+	@python $(TKB)/verify_runs.py --gate
+	@python $(TKB)/verify_params.py --gate
+	@python $(TKB)/verify_sources.py --check
+
+kb-figs:
+	@cd $(TKB)/presentation && for f in fig*_*.py; do echo "  render $$f"; python "$$f" >/dev/null; done
+	@echo "figures -> $(TKB)/presentation/figs/"
+
+# Opt-in: route git hooks to the tracked .githooks/ dir so the gates also run
+# locally before each commit. Reversible: git config --unset core.hooksPath
+hooks:
+	@git config core.hooksPath .githooks
+	@echo "pre-commit hook enabled (core.hooksPath=.githooks)."

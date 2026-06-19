@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# ffn_cellsim pre-commit — run the KB integrity gates before each commit.
+#
+# Pure-Python, sub-second, reads only committed artifacts. BLOCKS the commit on a
+# DRIFT (a result or constant claimed better than what the disk + citation audit
+# support). Fails OPEN on environment problems (no python / no pyyaml) since CI
+# is the authoritative enforcement — a missing local dep must not block a commit.
+#
+# Enable:        make hooks       (git config core.hooksPath .githooks)
+# Bypass once:   git commit --no-verify
+set -e
+TKB="ffn_sim/outputs/tag_kb"
+PY="$(command -v python || command -v python3 || true)"
+if [ -z "$PY" ]; then
+  echo "[pre-commit] no python found — skipping KB gates (CI still enforces)"; exit 0
+fi
+if ! "$PY" -c "import yaml" 2>/dev/null; then
+  echo "[pre-commit] pyyaml not importable — skipping KB gates (CI still enforces)"; exit 0
+fi
+echo "[pre-commit] KB integrity gates ..."
+"$PY" "$TKB/verify_runs.py" --gate
+"$PY" "$TKB/verify_params.py" --gate
+echo "[pre-commit] KB gates OK"

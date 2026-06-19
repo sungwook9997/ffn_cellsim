@@ -172,13 +172,32 @@ def check() -> int:
     count (so a citation-integrity check rides every refresh; the slow CrossRef
     re-verification stays an explicit `verify_sources.py` run). Always exits 0.
     """
+    # Robust to an absent / un-materialized DB: the citation audit reads from
+    # kb.duckdb (Notion -> duckdb), which is gitignored and absent on a fresh
+    # clone / CI / any machine without a Notion pull. Fail OPEN (skip, exit 0) so
+    # `make kb-check` and refresh.sh never hard-crash where the DB isn't built;
+    # CI enforcement of the production-cited subset rides verify_params instead.
+    if not DB_PATH.exists():
+        print("  [audit] kb.duckdb absent — run refresh.sh (Notion->duckdb) to "
+              "materialize source_evidence before the citation audit; skipped.")
+        return 0
     con = duckdb.connect(str(DB_PATH), read_only=True)
-    has = con.execute("SELECT count(*) FROM information_schema.tables "
-                      "WHERE table_name='source_audit'").fetchone()[0]
+
+    def _has_table(name: str) -> bool:
+        return con.execute("SELECT count(*) FROM information_schema.tables "
+                           "WHERE table_name=?", [name]).fetchone()[0] > 0
+
+    if not _has_table("source_evidence"):
+        print("  [audit] source_evidence not materialized in kb.duckdb — run "
+              "refresh.sh (Notion=SoT) first; citation audit skipped.")
+        con.close()
+        return 0
+    has = _has_table("source_audit")
     n_se = con.execute("SELECT count(*) FROM source_evidence").fetchone()[0]
     if not has:
         print("  [audit] source_audit table MISSING — run `python verify_sources.py` "
               f"to audit all {n_se} SourceEvidence rows.")
+        con.close()
         return 0
     rows = con.execute("SELECT verdict, count(*) FROM source_audit "
                        "GROUP BY 1 ORDER BY 2 DESC").fetchall()
