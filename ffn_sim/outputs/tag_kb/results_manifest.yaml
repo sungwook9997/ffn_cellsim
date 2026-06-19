@@ -140,6 +140,19 @@ claims:
     repro: cpu
     declared: verified
 
+  # Fixman metric pseudo-force (tridiagonal continuant for ln det G + G^-1).
+  # Verified by tests/warp_port/test_fixman_warp_parity.py vs fixman_ref.npz (the
+  # committed fixman_logdet_and_force LAPACK output). Tolerance-based (continuant
+  # vs LAPACK differ in last ULPs); gated on the native contract force rel < 1e-7
+  # (achieved ~6e-16). Force is what feeds the dynamics.
+  - id: warp-Fixman-metric-force
+    desc: "Warp Fixman metric pseudo-force (continuant ln det G) parity vs HOOMD fixman_logdet_and_force"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: Fixman_metric_force.force_rel, value: 0.0, tol: 1.0e-7}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.

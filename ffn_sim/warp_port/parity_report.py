@@ -105,6 +105,25 @@ def _shake_parity() -> dict:
     }
 
 
+def _fixman_parity() -> dict:
+    """Fixman: Warp metric pseudo-force vs the committed Python LAPACK reference."""
+    from ffn_sim.warp_port.fixman_warp import run_fixman_warp
+
+    fx = dict(np.load(os.path.join(FIX, "fixman_ref.npz")))
+    got = run_fixman_warp(
+        pos=fx["pos"], chains=fx["chains"], inv_gamma=fx["inv_gamma"],
+        kT=float(fx["kT"]), box_L=(float(fx["L"]),) * 3, device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    Uscale = abs(float(fx["ref_U"])) + 1e-30
+    return {
+        "F": int(fx["F"]), "m": int(fx["m"]),
+        "bad_sign": got["bad_sign"],
+        "force_rel": float(np.abs(got["force"] - fx["ref_force"]).max()) / Fscale,
+        "U_rel": abs(got["U_F"] - float(fx["ref_U"])) / Uscale,
+    }
+
+
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
@@ -124,6 +143,7 @@ def main() -> None:
         "B1_baoab": _baoab_parity(),
         "B2_radial_shell": _radial_shell_parity(),
         "MSHAKE_chain_constraint": _shake_parity(),
+        "Fixman_metric_force": _fixman_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -131,7 +151,7 @@ def main() -> None:
     print(f"wrote {OUT}")
     print(json.dumps({k: report[k] for k in
                       ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
-                       "B4_differentiability")}, indent=2))
+                       "Fixman_metric_force", "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":
