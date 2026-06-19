@@ -1,5 +1,5 @@
 {
-  "_about": "Warp-CPU vs HOOMD-numpy bit-parity per ported piece. Reference = committed HOOMD fixtures (frozen Action / native plugin). Gate thresholds: kT=0 < 1e-9 (bit-for-bit), kT>0 < 1e-7 (drift).",
+  "_about": "Warp-CPU vs HOOMD-numpy bit-parity per ported piece. Reference = committed HOOMD fixtures (frozen Action / production forces). Gate thresholds: B1 kT=0 < 1e-9 / kT>0 < 1e-7; B2 host force-law < 1e-12, full warp-reduce < 1e-8 (reduction-order).",
   "B1_baoab": {
     "kt0": {
       "kT": 0.0,
@@ -18,6 +18,32 @@
       "max_abs_image_diff": 0,
       "max_abs_prv_diff": 0.0,
       "max_abs_image_flag": 6
+    }
+  },
+  "B2_radial_shell": {
+    "nucleus": {
+      "law": 0,
+      "N": 2048,
+      "host_force_rel": 0.0,
+      "host_energy_rel": 0.0,
+      "warp_force_rel": 0.0,
+      "warp_energy_rel": 0.0
+    },
+    "membrane": {
+      "law": 1,
+      "N": 2048,
+      "host_force_rel": 0.0,
+      "host_energy_rel": 1.1555919653681454e-16,
+      "warp_force_rel": 1.75063701376744e-12,
+      "warp_energy_rel": 2.582632483401268e-12
+    },
+    "turgor": {
+      "law": 2,
+      "N": 2048,
+      "host_force_rel": 4.6959403038584427e-14,
+      "host_energy_rel": 9.390853563145041e-14,
+      "warp_force_rel": 1.3122749715270562e-12,
+      "warp_energy_rel": 2.628398139527061e-12
     }
   }
 }

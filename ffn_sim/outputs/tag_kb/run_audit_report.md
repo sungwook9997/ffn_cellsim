@@ -1,6 +1,6 @@
 # Results-integrity audit (disk-grounded)
 
-Audited **8** headline result-claims from `results_manifest.yaml`.
+Audited **11** headline result-claims from `results_manifest.yaml`.
 
 ## Summary
 
@@ -9,7 +9,7 @@ Audited **8** headline result-claims from `results_manifest.yaml`.
 | RETRACT | 1 | disk contradicts claim (forbidden metric / value drift) |
 | NEEDS_REGEN | 3 | claimed artifact ABSENT — regenerate + commit |
 | GPU_UNREPRODUCED | 2 | present but GPU-only, no committed build/CI trace |
-| VERIFIED | 2 | artifact present, metric sanctioned, value matches |
+| VERIFIED | 5 | artifact present, metric sanctioned, value matches |
 
 **0 DRIFT rows** (disk worse than declared — these FAIL the CI gate).
 
@@ -25,3 +25,6 @@ Audited **8** headline result-claims from `results_manifest.yaml`.
 | GPU_UNREPRODUCED |  | C3-fullcell-speedup | n/a | value OK: end_to_end_speedup_native_over_cupy=2.432515605855367 ~= 2.4325; GPU-only, no committed build/CI trace |
 | VERIFIED |  | warp-B1-baoab-kt0 | n/a | value OK: B1_baoab.kt0.max_abs_pos_diff=0.0 ~= 0.0 |
 | VERIFIED |  | warp-B1-baoab-ktpos | n/a | value OK: B1_baoab.ktpos.max_abs_pos_diff=0.0 ~= 0.0 |
+| VERIFIED |  | warp-B2-radial-membrane | n/a | value OK: B2_radial_shell.membrane.host_force_rel=0.0 ~= 0.0 |
+| VERIFIED |  | warp-B2-radial-nucleus | n/a | value OK: B2_radial_shell.nucleus.host_force_rel=0.0 ~= 0.0 |
+| VERIFIED |  | warp-B2-radial-turgor | n/a | value OK: B2_radial_shell.turgor.host_force_rel=4.6959403038584427e-14 ~= 0.0 |

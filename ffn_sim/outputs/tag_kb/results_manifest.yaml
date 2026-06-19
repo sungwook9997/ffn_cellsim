@@ -95,3 +95,33 @@ claims:
     expect: {field: B1_baoab.ktpos.max_abs_pos_diff, value: 0.0, tol: 1.0e-7}
     repro: cpu
     declared: verified
+
+  # B2 radial-shell compartment force (3 laws). Verified by
+  # tests/warp_port/test_radial_shell_warp_parity.py vs radial_ref_*.npz (the
+  # real NucleusConfinement / MembraneSurfaceTension / EnclosedVolumePressure
+  # forces run in HOOMD). Gated on the host-reduced FORCE-LAW rel error < 1e-12
+  # (the full atomic-reduction port matches to ~2.6e-12 = reduction-order, < the
+  # native plugin's own 1e-8 — recorded as *_warp_* fields, not gated here).
+  - id: warp-B2-radial-nucleus
+    desc: "Warp radial-shell nucleus bilinear-confinement force-law bit-parity vs HOOMD NucleusConfinement"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B2_radial_shell.nucleus.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  - id: warp-B2-radial-membrane
+    desc: "Warp radial-shell membrane Laplace-tension force-law parity vs HOOMD MembraneSurfaceTension"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B2_radial_shell.membrane.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  - id: warp-B2-radial-turgor
+    desc: "Warp radial-shell turgor osmotic-pressure force-law parity vs HOOMD EnclosedVolumePressure"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B2_radial_shell.turgor.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified

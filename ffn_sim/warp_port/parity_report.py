@@ -51,19 +51,51 @@ def _baoab_parity() -> dict:
     return results
 
 
+def _radial_shell_parity() -> dict:
+    """Run the B2 radial-shell Warp kernel against the 3 committed law fixtures.
+
+    Reports both the host-reduced force-LAW parity (gated < 1e-12) and the full
+    Warp atomic-reduction parity (diagnostic, reduction-order < 1e-8)."""
+    from ffn_sim.warp_port.radial_shell_warp import run_radial_shell_warp
+
+    out = {}
+    for name in ("nucleus", "membrane", "turgor"):
+        fx = dict(np.load(os.path.join(FIX, f"radial_ref_{name}.npz")))
+        kw = dict(
+            pos=fx["pos"], tag=fx["tag"],
+            tag_range=(int(fx["t0"]), int(fx["t1"])),
+            law=int(fx["law"]), R0=float(fx["R0"]), pa=float(fx["pa"]),
+            pb=float(fx["pb"]), pc=float(fx["pc"]), pd=float(fx["pd"]),
+            device="cpu",
+        )
+        rec = {"law": int(fx["law"]), "N": int(fx["N"])}
+        for mode in ("host", "warp"):
+            got = run_radial_shell_warp(reduce=mode, **kw)
+            dF = float(np.abs(got["force"] - fx["ref_force"]).max())
+            sF = float(np.abs(fx["ref_force"]).max()) + 1e-300
+            dU = float(np.abs(got["energy"] - fx["ref_energy"]).max())
+            sU = float(np.abs(fx["ref_energy"]).max()) + 1e-300
+            rec[f"{mode}_force_rel"] = dF / sF
+            rec[f"{mode}_energy_rel"] = dU / sU
+        out[name] = rec
+    return out
+
+
 def main() -> None:
     report = {
         "_about": (
             "Warp-CPU vs HOOMD-numpy bit-parity per ported piece. Reference = "
-            "committed HOOMD fixtures (frozen Action / native plugin). Gate "
-            "thresholds: kT=0 < 1e-9 (bit-for-bit), kT>0 < 1e-7 (drift)."
+            "committed HOOMD fixtures (frozen Action / production forces). Gate "
+            "thresholds: B1 kT=0 < 1e-9 / kT>0 < 1e-7; B2 host force-law < 1e-12, "
+            "full warp-reduce < 1e-8 (reduction-order)."
         ),
         "B1_baoab": _baoab_parity(),
+        "B2_radial_shell": _radial_shell_parity(),
     }
     with open(OUT, "w") as f:
         json.dump(report, f, indent=2)
     print(f"wrote {OUT}")
-    print(json.dumps(report["B1_baoab"], indent=2))
+    print(json.dumps({k: report[k] for k in ("B1_baoab", "B2_radial_shell")}, indent=2))
 
 
 if __name__ == "__main__":
