@@ -1,5 +1,7 @@
 # H.7 Native GPU optimization — sub-session summary (2026-06-07)
 
+> ⚠️ **CORRECTION (2026-06-19, grounding-pass C1/C5).** Two numbers below drifted in prose and are corrected here. (1) **"44× integrator-only" is wrong** — the project's own same-day record (`H7_NATIVE_FULLCELL_GO_2026-06-07.md`) measured the same microbench at **39.47×** (native 5598 / cupy 142 steps/s); the only committed-JSON-verifiable figure is the **2.43× full-cell** (`h7_native_fullcell_go.json`). (2) The compartment-force **"parity 1e-15..1e-12" is unbacked** — the on-disk parity script compares native vs **CPU** (not cupy) at tolerance **rel 1e-8**, stdout-only, no committed artifact. Every speedup/parity number here is **GPU-only, gbook-measured, with NO committed build trace (.so/CMakeCache) and no CI** → unreproduced on dev. See the grounding-pass table + `project-rebuild-audit` memory.
+
 Device-integrator sub-session, concurrent with the Lead's manifold/FA session. Goal:
 make the constrained full-cell production fast enough for Gate-A/B (~2×10⁸ steps).
 All deliverables are **additive + opt-in, GPU-only, CPU-fallback-safe**, in new files
@@ -9,7 +11,7 @@ or `native/` — no edits to the Lead's runtime/cell-physics files (zero collisi
 
 | Lever | What | Result | Commits |
 |---|---|---|---|
-| **Integrator** | native C++/CUDA constrained L-M BAOAB (Fixman + M-SHAKE, 4 one-thread-per-chain kernels) | bit/tol parity; **44× integrator-only**, **2.43× full-cell** (Lead-measured), γ_soft+γ_rigid parity | cacb27b 0e2d490 24f12ad |
+| **Integrator** | native C++/CUDA constrained L-M BAOAB (Fixman + M-SHAKE, 4 one-thread-per-chain kernels) | bit/tol parity; **~39.5× integrator-only** (⚠️ corrected from "44×" — see banner), **2.43× full-cell** (Lead-measured, JSON-verified), γ_soft+γ_rigid parity | cacb27b 0e2d490 24f12ad |
 | **Compartment forces** | native `FFNRadialShellForce` ForceCompute (turgor/membrane/nucleus, sphere-equivalent radial laws, block-reduced) | parity 1e-15..1e-12; 3 forces **173 µs** (was 1860 cupy / 3700 cpu) | b659674 2a18203 (+ Lead wire a3a63ca) |
 | **Gate-A verify** | everything-native on `build_baseline_cell` (real production path) | **6.0× vs cupy / ~4.6 d per 2e8**, nonconv=0, γ-parity (Lead's 5.86× agrees) | a8601a6 |
 | **Binder enabler** | native `FFNAttachmentSpringForce` fixed-pool (head↔actin springs in device arrays; bind/unbind = `set_attachments` toggle, NO set_snapshot) | parity 3.4e-16 vs md.bond.Harmonic; toggle **17 µs** (vs **51.9 ms** set_snapshot); end-to-end **5.3×** vs set_snapshot binder | 3a26565 145ebb2 |
