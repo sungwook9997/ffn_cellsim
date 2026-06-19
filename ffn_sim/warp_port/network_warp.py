@@ -67,6 +67,79 @@ def harmonic_bond_kernel(
     wp.atomic_add(energy, j, wp.float64(0.5) * u)
 
 
+@wp.kernel
+def harmonic_angle_kernel(
+    pos: wp.array(dtype=wp.vec3d),              # (N,) ro
+    angles: wp.array(dtype=wp.int32, ndim=2),   # (A, 3) bead indices (a, b=vertex, c)
+    k_arr: wp.array(dtype=wp.float64),          # (A,) bending constant
+    t0_arr: wp.array(dtype=wp.float64),         # (A,) rest angle [rad]
+    force: wp.array(dtype=wp.vec3d),            # (N,) out atomic accumulate
+    energy: wp.array(dtype=wp.float64),         # (N,) out atomic accumulate
+    Lx: wp.float64,
+    Ly: wp.float64,
+    Lz: wp.float64,
+):
+    """HOOMD md.angle.Harmonic: U=½k(θ−θ₀)², vertex b. a=−k(θ−θ₀)/sinθ; the
+    a11/a12/a22 decomposition is the analytic ∂cosθ/∂r gradient (HOOMD convention)."""
+    n = wp.tid()
+    ia = angles[n, 0]
+    ib = angles[n, 1]
+    ic = angles[n, 2]
+    ra = pos[ia]
+    rb = pos[ib]
+    rc = pos[ic]
+    dabx = ra[0] - rb[0]
+    daby = ra[1] - rb[1]
+    dabz = ra[2] - rb[2]
+    dabx = dabx - Lx * wp.rint(dabx / Lx)
+    daby = daby - Ly * wp.rint(daby / Ly)
+    dabz = dabz - Lz * wp.rint(dabz / Lz)
+    dcbx = rc[0] - rb[0]
+    dcby = rc[1] - rb[1]
+    dcbz = rc[2] - rb[2]
+    dcbx = dcbx - Lx * wp.rint(dcbx / Lx)
+    dcby = dcby - Ly * wp.rint(dcby / Ly)
+    dcbz = dcbz - Lz * wp.rint(dcbz / Lz)
+
+    rsqab = dabx * dabx + daby * daby + dabz * dabz
+    rab = wp.sqrt(rsqab)
+    rsqcb = dcbx * dcbx + dcby * dcby + dcbz * dcbz
+    rcb = wp.sqrt(rsqcb)
+
+    cab = (dabx * dcbx + daby * dcby + dabz * dcbz) / (rab * rcb)
+    if cab > wp.float64(1.0):
+        cab = wp.float64(1.0)
+    if cab < wp.float64(-1.0):
+        cab = wp.float64(-1.0)
+    s = wp.sqrt(wp.float64(1.0) - cab * cab)
+    if s < wp.float64(0.001):  # HOOMD SMALL guard for near-collinear angles
+        s = wp.float64(0.001)
+    sinv = wp.float64(1.0) / s
+
+    dth = wp.acos(cab) - t0_arr[n]
+    tk = k_arr[n] * dth
+    a = -tk * sinv
+    a11 = a * cab / rsqab
+    a12 = -a / (rab * rcb)
+    a22 = a * cab / rsqcb
+
+    fax = a11 * dabx + a12 * dcbx
+    fay = a11 * daby + a12 * dcby
+    faz = a11 * dabz + a12 * dcbz
+    fcx = a22 * dcbx + a12 * dabx
+    fcy = a22 * dcby + a12 * daby
+    fcz = a22 * dcbz + a12 * dabz
+    wp.atomic_add(force, ia, wp.vec3d(fax, fay, faz))
+    wp.atomic_add(force, ic, wp.vec3d(fcx, fcy, fcz))
+    wp.atomic_add(force, ib, wp.vec3d(-(fax + fcx), -(fay + fcy), -(faz + fcz)))
+
+    u = wp.float64(0.5) * k_arr[n] * dth * dth
+    u3 = u / wp.float64(3.0)
+    wp.atomic_add(energy, ia, u3)
+    wp.atomic_add(energy, ib, u3)
+    wp.atomic_add(energy, ic, u3)
+
+
 def run_harmonic_bond_warp(
     *,
     pos: np.ndarray,        # (N, 3)
@@ -96,6 +169,45 @@ def run_harmonic_bond_warp(
     wp.launch(
         harmonic_bond_kernel, dim=B,
         inputs=[pos_d, bonds_d, k_d, r0_d, force_d, energy_d,
+                wp.float64(Lx), wp.float64(Ly), wp.float64(Lz)],
+        device=device,
+    )
+    wp.synchronize_device(device)
+    return {
+        "force": force_d.numpy().astype(np.float64),
+        "energy": energy_d.numpy().astype(np.float64),
+    }
+
+
+def run_harmonic_angle_warp(
+    *,
+    pos: np.ndarray,        # (N, 3)
+    angles: np.ndarray,     # (A, 3) int32 (a, b=vertex, c)
+    k: np.ndarray,          # (A,) or scalar
+    t0: np.ndarray,         # (A,) or scalar [rad]
+    box_L: tuple[float, float, float],
+    device: str = "cpu",
+) -> dict:
+    """Harmonic angle (bending) force + energy in Warp (one thread/angle). Returns
+    (N,3) force and (N,) per-bead energy, matching HOOMD ``md.angle.Harmonic``."""
+    pos = np.ascontiguousarray(pos, dtype=np.float64)
+    angles = np.ascontiguousarray(angles, dtype=np.int32)
+    N = pos.shape[0]
+    A = angles.shape[0]
+    k = np.broadcast_to(np.asarray(k, dtype=np.float64), (A,)).copy()
+    t0 = np.broadcast_to(np.asarray(t0, dtype=np.float64), (A,)).copy()
+    Lx, Ly, Lz = box_L
+
+    pos_d = wp.array(pos, dtype=wp.vec3d, device=device)
+    angles_d = wp.array(angles, dtype=wp.int32, device=device)
+    k_d = wp.array(k, dtype=wp.float64, device=device)
+    t0_d = wp.array(t0, dtype=wp.float64, device=device)
+    force_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    energy_d = wp.zeros(N, dtype=wp.float64, device=device)
+
+    wp.launch(
+        harmonic_angle_kernel, dim=A,
+        inputs=[pos_d, angles_d, k_d, t0_d, force_d, energy_d,
                 wp.float64(Lx), wp.float64(Ly), wp.float64(Lz)],
         device=device,
     )
