@@ -2,6 +2,8 @@
 
 *A talk for biophysics / wet-lab researchers. The running problem: we are building a fine-grained cell-mechanics simulator (`ffn_cellsim`) in which every constant and every result is supposed to be traceable back to a real paper. The talk is about how we make a machine answer questions about that knowledge **without lying to us** — and prove its answers back to the paper they came from.*
 
+*Delivering this? See [`SPEAKER_NOTES.md`](./SPEAKER_NOTES.md) for a slide-by-slide script (~10–12 min) + Q&A prep. One-file slides: `KB_PRESENTATION.html` (run `make kb-figs`).*
+
 ---
 
 ## Executive hook
