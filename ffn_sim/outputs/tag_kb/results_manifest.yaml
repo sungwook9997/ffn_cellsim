@@ -41,12 +41,17 @@ claims:
     repro: gpu
     declared: gpu-unreproduced
 
+  # The gate flagged this on its first CI run (2026-06-19): the bulk .pkl is
+  # gitignored run-data (Syncthing/outputs, NOT version-controlled), so it is
+  # ABSENT in the canonical repo checkout -> a "present" claim was unverifiable.
+  # Lesson encoded: a result-claim must reference a COMMITTED lightweight artifact
+  # (a top-down-A/A0 summary JSON), not an uncommitted bulk pkl. Down-declared to
+  # needs-regen until that summary is committed.
   - id: C12-dcm-compaction
-    desc: "DCM full mechanistic spheroid COMPACTS top-down (the verified NEGATIVE, A/A0->0.597)"
-    artifact: ffn_sim/outputs/h_dcm_two_stage/two_stage_n400.pkl
+    desc: "DCM full mechanistic spheroid COMPACTS top-down (A/A0->0.597) — confirmed manually, but evidence pkl is gitignored; needs a committed top-down summary JSON"
+    artifact: ffn_sim/outputs/h_dcm_two_stage/two_stage_n400_topdown_summary.json
     metric: top-down-silhouette
-    repro: gpu
-    declared: gpu-unreproduced
+    declared: needs-regen
 
   # --- RETRACT: forbidden metric (the 2026-06-19 C14 finding, encoded so it can't recur) ---
   - id: C14-dcm-footprint-report

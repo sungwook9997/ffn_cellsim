@@ -7,8 +7,8 @@ Audited **6** headline result-claims from `results_manifest.yaml`.
 | verdict | n | meaning |
 |---|---|---|
 | RETRACT | 1 | disk contradicts claim (forbidden metric / value drift) |
-| NEEDS_REGEN | 2 | claimed artifact ABSENT — regenerate + commit |
-| GPU_UNREPRODUCED | 3 | present but GPU-only, no committed build/CI trace |
+| NEEDS_REGEN | 3 | claimed artifact ABSENT — regenerate + commit |
+| GPU_UNREPRODUCED | 2 | present but GPU-only, no committed build/CI trace |
 
 **0 DRIFT rows** (disk worse than declared — these FAIL the CI gate).
 
@@ -17,8 +17,8 @@ Audited **6** headline result-claims from `results_manifest.yaml`.
 | verdict | drift | claim | metric | note |
 |---|---|---|---|---|
 | RETRACT |  | C14-dcm-footprint-report | basal-contact-hull | PI-FORBIDDEN metric 'basal-contact-hull' — A/A0 must be top-down silhouette |
+| NEEDS_REGEN |  | C12-dcm-compaction | top-down-silhouette | claimed artifact ABSENT on disk: ffn_sim/outputs/h_dcm_two_stage/two_stage_n400_topdown_summary.json |
 | NEEDS_REGEN |  | C13-cleanball-187 | top-down-silhouette | claimed artifact ABSENT on disk: ffn_sim/outputs/h_dcm_two_stage/cleanball_n12.pkl |
 | NEEDS_REGEN |  | C17-aa0-fit | top-down-silhouette | claimed artifact ABSENT on disk: ffn_sim/outputs/h_dcm_two_stage/cleanball_aa0_fit.json |
-| GPU_UNREPRODUCED |  | C12-dcm-compaction | top-down-silhouette | artifact present; GPU-only, no committed build/CI trace |
 | GPU_UNREPRODUCED |  | C2-compartment-speedup | n/a | value OK: speedups_vs_cupy_cpucomp.native_gpucomp=5.863981474746499 ~= 5.864; GPU-only, no committed build/CI trace |
 | GPU_UNREPRODUCED |  | C3-fullcell-speedup | n/a | value OK: end_to_end_speedup_native_over_cupy=2.432515605855367 ~= 2.4325; GPU-only, no committed build/CI trace |
