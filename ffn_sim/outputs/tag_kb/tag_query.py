@@ -253,6 +253,12 @@ FEWSHOT = textwrap.dedent("""\
     WHERE verdict <> 'VERIFIED' ORDER BY verdict;
     ```
 
+    Q: Which simulation constants are NOT fully sourced (value drift / unsourced / unverified citation)?
+    ```sql
+    SELECT claim_id, location, ku, citation_key, verdict, note FROM param_audit
+    WHERE verdict <> 'VERIFIED' ORDER BY verdict;
+    ```
+
     Q: Which code modules implement the focal-adhesion motor-clutch contract?
     ```sql
     SELECT cm.path, cm.status
@@ -366,7 +372,15 @@ GEN_SYS = (
     "verdict RETRACT (forbidden basal-footprint metric or value drift), NEEDS_REGEN "
     "(claimed artifact absent — number only in prose/PNG), or GPU_UNREPRODUCED "
     "(GPU-only, no committed build/CI trace), state that explicitly and do NOT report "
-    "it as established — cite the verdict and its note."
+    "it as established — cite the verdict and its note.\n"
+    "PARAMETER-PROVENANCE RULE: the param_audit table is the disk+citation-grounded "
+    "integrity verdict for the simulation constants (constant -> KU -> citation -> "
+    "verdict). A constant is 'literature-anchored / no magic number' ONLY if its "
+    "param_audit verdict is VERIFIED. If verdict is VALUE_DRIFT (config value != its "
+    "sourced value), UNSOURCED (no committed KU->source link), SOURCE_SUSPECT "
+    "(fabrication-risk citation) or SOURCE_UNVERIFIED (citation only CHECK/NO_DOI), "
+    "say so explicitly and do NOT present the constant as fully sourced — cite the "
+    "verdict, the KU, and the citation_key."
 )
 
 

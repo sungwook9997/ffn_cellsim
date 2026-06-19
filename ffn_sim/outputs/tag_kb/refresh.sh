@@ -32,6 +32,10 @@ echo "[sanity] results integrity (disk-grounded; rebuilds run_audit table from r
 python verify_runs.py
 
 echo
+echo "[sanity] parameter provenance (disk + citation-grounded; rebuilds param_audit from params_manifest.yaml)"
+python verify_params.py
+
+echo
 echo "[sanity] ops-linkage drift (disk runs/modules not yet in the graph)"
 python harvest_ops.py --check
 

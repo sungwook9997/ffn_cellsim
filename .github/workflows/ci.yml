@@ -96,3 +96,23 @@ jobs:
       - run: pip install pyyaml
       - name: verify result-claims vs committed disk artifacts
         run: python ffn_sim/outputs/tag_kb/verify_runs.py --gate
+
+  # Parameter-provenance gate — the PARAMETERS-side twin of results-gate. Fast,
+  # blocking, no HOOMD: checks every headline simulation constant in
+  # ffn_sim/outputs/tag_kb/params_manifest.yaml against (a) its value in the real
+  # config YAML on disk and (b) its citation's verdict in the committed
+  # source_audit_report.md. FAILS if any constant's disk verdict is worse than
+  # declared (an over-claim): a value drifted off its sourced value, an
+  # over-declared citation, or a constant claimed sourced that isn't. This is the
+  # machine enforcement of the "no empirical magic numbers" HARD rule.
+  params-gate:
+    name: parameter-provenance gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pyyaml
+      - name: verify simulation constants vs disk + citation audit
+        run: python ffn_sim/outputs/tag_kb/verify_params.py --gate
