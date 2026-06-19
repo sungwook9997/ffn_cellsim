@@ -13,7 +13,7 @@ TKB := ffn_sim/outputs/tag_kb
 
 help:
 	@echo "make kb-check  - run the KB integrity gates (results + params blocking; citation audit informational)"
-	@echo "make kb-figs   - regenerate the KB presentation figures"
+	@echo "make kb-figs   - regenerate all presentation artifacts (figures + 5-hop demo + standalone HTML)"
 	@echo "make hooks     - enable the tracked git pre-commit hook (runs kb-check before each commit)"
 
 # All KB auditors. results + params are BLOCKING gates (exit 1 on drift = a
@@ -28,7 +28,9 @@ kb-check:
 
 kb-figs:
 	@cd $(TKB)/presentation && for f in fig*_*.py; do echo "  render $$f"; python "$$f" >/dev/null; done
-	@echo "figures -> $(TKB)/presentation/figs/"
+	@python $(TKB)/presentation/demo_5hop_query.py >/dev/null && echo "  demo  -> DEMO_5hop_query.md"
+	@python $(TKB)/presentation/export_html.py
+	@echo "presentation artifacts -> $(TKB)/presentation/"
 
 # Opt-in: route git hooks to the tracked .githooks/ dir so the gates also run
 # locally before each commit. Reversible: git config --unset core.hooksPath
