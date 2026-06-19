@@ -132,3 +132,19 @@ The differentiator over RAG and plain TAG is **not a cleverer query engine** —
 2. **The provenance governance / integrity gates** — three disk-grounded auditors that make the system **refuse to call a number "validated" unless an auditor agrees**, running in CI on every push so a wrong number is blocked before it ever reaches the simulation.
 
 > **Speaker takeaway:** RAG finds *what sounds relevant*; TAG answers *what is exactly related*; the contract-graph with integrity gates answers *what is actually true and still holds today* — and proves it back to the paper it came from. A knowledge base that audits itself, every push.
+
+---
+
+## Appendix — live demo (the 5-hop query, reproducible)
+
+For the talk, a one-command live demo runs the signature query end-to-end on a faithful in-memory copy of the contract-graph (touches no real file):
+
+```
+python ffn_sim/outputs/tag_kb/presentation/demo_5hop_query.py
+```
+
+It answers the reviewer's real question — *"this run failed its gate; what constant is it testing and which paper does that number come from, and is that citation verified?"* — by walking `run_result → validation_gate → model_contract → parameter → source_evidence` in a single SQL statement, returning:
+
+> RUN-H7-001 (FAIL) → VG-H7-gate-a → MC-U5-cortical-tension → **gamma_cortex = 0.5e-3 N/m** → **Chugh2017_NatCellBiol** (citation verdict **CHECK** — not yet confirmed-OK).
+
+That single row — a red CI run traced in one hop-chain back to the exact paper, *and* flagged that the paper's citation is still unverified — is precisely what a RAG similarity search cannot produce. Full transcript: [`DEMO_5hop_query.md`](./DEMO_5hop_query.md).
