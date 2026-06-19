@@ -1,5 +1,7 @@
 # DCM ACTIVE-spreading spheroid — active traction + junction switch + live division
 
+> ⚠️ **CORRECTION / RETRACTION (2026-06-19, grounding-pass C14).** The "spreading" results below are measured by the **basal-contact / convex-hull FOOTPRINT** metric, which the PI FORBADE on 2026-06-12: valid spreading A/A0 MUST be the **top-down xy silhouette** (all nodes). Footprint inflates A/A0 ~10–20× and does **not** represent valid spreading. Where top-down was actually measured (`two_stage_n400_lamel_S10`), the full mechanistic stack **COMPACTS** — top-down A/A0 1.0 → **0.597** (V/V0 → 0.669), the OPPOSITE sign. Treat every footprint "spreading"/"A/A0" figure below as **not valid** until regenerated with the top-down metric on the gbook GPU. See the grounding-pass table + `project-rebuild-audit` memory.
+
 **2026-06-11 · branch `h7/compartment-platform` · commit `504ffaf`.**
 Integrates the PI-specified ACTIVE spreading drivers into the validated native-mesh +
 bilinear-tent spheroid — the mechanisms the static passive sweep was missing (commit

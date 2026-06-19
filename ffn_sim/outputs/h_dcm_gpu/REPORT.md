@@ -1,5 +1,7 @@
 # DCM GPU — device-dispatch wiring + active+necrosis law sweep (gbook-ready)
 
+> ⚠️ **CORRECTION / RETRACTION (2026-06-19, grounding-pass C14).** Any "spreading" / A/A0 result below measured by the **basal-contact / convex-hull FOOTPRINT** metric is **not valid**: the PI FORBADE it on 2026-06-12 — valid spreading A/A0 MUST be the **top-down xy silhouette** (all nodes). Footprint inflates A/A0 ~10–20×. Where top-down was actually measured (`two_stage_n400_lamel_S10`), the full mechanistic stack **COMPACTS** — top-down A/A0 1.0 → **0.597**, the OPPOSITE sign. Treat footprint "spreading-law" fits below as **not valid** until regenerated with the top-down metric on the gbook GPU. See the grounding-pass table + `project-rebuild-audit` memory.
+
 **2026-06-11 · branch `h7/compartment-platform`.** Continues the GPU work: the validated cupy
 kernels (A5000, 827×) are now WIRED into the live HOOMD DCM via device-dispatch, the active
 traction is GPU-pathed, and a large active+necrosis size-sweep script tests the PI spreading

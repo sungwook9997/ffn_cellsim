@@ -1,5 +1,7 @@
 # GPU DCM spheroid — K1-turgor + activity-LOD, and the a+b/R+c/R² law on the A5000
 
+> ⚠️ **CORRECTION / RETRACTION (2026-06-19, grounding-pass C14).** Any "spreading" / A/A0 / a+b/R+c/R² result below measured by the **basal-contact / convex-hull FOOTPRINT** metric is **not valid**: the PI FORBADE it on 2026-06-12 — valid spreading A/A0 MUST be the **top-down xy silhouette** (all nodes). Footprint inflates A/A0 ~10–20×. Where top-down was actually measured (`two_stage_n400_lamel_S10`), the full mechanistic stack **COMPACTS** — top-down A/A0 1.0 → **0.597**, the OPPOSITE sign. Treat the footprint "spreading-law" validation below as **not valid** until regenerated with the top-down metric on the gbook GPU. See the grounding-pass table + `project-rebuild-audit` memory.
+
 **2026-06-11 · branch `h7/compartment-platform`.** The gbook RTX A5000 GPU run, finally
 unblocked, and a first validation of the PI layer-2 spreading law on the GPU.
 
