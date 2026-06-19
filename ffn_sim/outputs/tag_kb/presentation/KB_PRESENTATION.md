@@ -99,9 +99,10 @@ A forbidden-metric REPORT, a PNG-title number, and an inflated prose speedup are
 
 **What fires today on each path a researcher uses:**
 
-- **`git push` / open PR** → results-gate + params-gate fire and block the merge. **Two of the three integrity gates are enforced here.**
-- **`bash refresh.sh`** → runs all three verifiers, but non-blocking (informational `--check`); this is the only place the **source/citation** verifier runs at all.
-- **`git commit` (local)** → nothing fires; **session closeout** updates Notion/figures/receipt but does not run any KB gate.
+- **`git push` / open PR** → results-gate + params-gate fire in CI and **block the merge** on drift.
+- **`git commit` (local)** → with `make hooks` enabled, the `.githooks/pre-commit` runs the two blocking gates *before* the commit lands — drift is caught without a GitHub round-trip.
+- **`make kb-check` (any time)** → the one-command local check a researcher runs before pushing.
+- **`bash refresh.sh`** → runs all verifiers (informational `--check`); the citation audit's full CrossRef re-verification stays an explicit `verify_sources.py` run.
 
 **The gaps we found (wiring audit):**
 
@@ -110,12 +111,16 @@ A forbidden-metric REPORT, a PNG-title number, and an inflated prose speedup are
 3. **No one-command local check** — a researcher must remember two script paths and two flags to self-check before pushing.
 4. **Closeout protocol doesn't mention the gates** — the "am I done?" ritual is Notion + figures + receipt only.
 
-**Ranked improvements (cheapest, most coverage first):**
+**What we fixed this pass (commit `548dad1`):**
 
-1. **Add a `source-integrity` gate to CI** — give `verify_sources.py` a `--gate` mode reading the already-committed `source_audit_report.md` (no Notion/CrossRef call needed), mirror the `params-gate` job. Closes the one unenforced gate → all three blocking on push.
-2. **Add a `Makefile` with `make kb-check`** — single canonical entrypoint running all three `--gate` invocations, so CI, the hook, and CLAUDE.md never drift apart.
-3. **Install a tracked `.githooks/pre-commit`** calling `make kb-check` (`git config core.hooksPath .githooks`) — catches drift at commit time; the gates are sub-second pure-Python.
-4. **Add one closeout line to CLAUDE.md** — "run `make kb-check`; halt and surface to PI on DRIFT before the receipt line" — ties the gates into the existing mandatory ritual.
+1. ✅ **`Makefile` with `make kb-check`** — single canonical entrypoint running the blocking gates (`verify_runs --gate`, `verify_params --gate`) + the citation audit, so CI, the hook, and the docs never drift apart. Plus `make kb-figs` (regenerate these figures) and `make hooks`.
+2. ✅ **Tracked `.githooks/pre-commit`** (opt-in via `make hooks`) — runs the gates before each commit, catching drift *before* the GitHub round-trip; sub-second pure-Python, fails open on env problems so it never wrongly blocks a commit.
+3. ✅ **Robustness fix** — `verify_sources.py --check` no longer hard-crashes where `kb.duckdb` isn't materialized (fresh clone / CI / dev machine); it skips with a clear message, so `make kb-check` and `refresh.sh` run anywhere.
+
+**Deliberately NOT done, with reason:**
+
+- **Separate `source-integrity` CI gate** — *redundant*. The production-cited subset of sources is already enforced by `verify_params`: a fabrication-risk citation (`DOI_DEAD`/`MISMATCH`) on a constant declared `verified` becomes `SOURCE_SUSPECT` → a DRIFT → blocks the merge. A standalone gate over all 329 rows would only re-flag the metadata-drift/preprint backlog (noise).
+- **CLAUDE.md closeout line** ("run `make kb-check` before the receipt") — left for PI: editing the project-instruction contract is a PI call, surfaced as a recommendation.
 
 ---
 
