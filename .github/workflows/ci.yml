@@ -49,6 +49,8 @@ jobs:
             h5py
             pyyaml
             matplotlib
+            duckdb
+            requests
             pytest>=8
             pytest-timeout
 
