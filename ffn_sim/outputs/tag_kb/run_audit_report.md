@@ -1,6 +1,6 @@
 # Results-integrity audit (disk-grounded)
 
-Audited **11** headline result-claims from `results_manifest.yaml`.
+Audited **12** headline result-claims from `results_manifest.yaml`.
 
 ## Summary
 
@@ -9,7 +9,7 @@ Audited **11** headline result-claims from `results_manifest.yaml`.
 | RETRACT | 1 | disk contradicts claim (forbidden metric / value drift) |
 | NEEDS_REGEN | 3 | claimed artifact ABSENT — regenerate + commit |
 | GPU_UNREPRODUCED | 2 | present but GPU-only, no committed build/CI trace |
-| VERIFIED | 5 | artifact present, metric sanctioned, value matches |
+| VERIFIED | 6 | artifact present, metric sanctioned, value matches |
 
 **0 DRIFT rows** (disk worse than declared — these FAIL the CI gate).
 
@@ -28,3 +28,4 @@ Audited **11** headline result-claims from `results_manifest.yaml`.
 | VERIFIED |  | warp-B2-radial-membrane | n/a | value OK: B2_radial_shell.membrane.host_force_rel=0.0 ~= 0.0 |
 | VERIFIED |  | warp-B2-radial-nucleus | n/a | value OK: B2_radial_shell.nucleus.host_force_rel=0.0 ~= 0.0 |
 | VERIFIED |  | warp-B2-radial-turgor | n/a | value OK: B2_radial_shell.turgor.host_force_rel=4.6959403038584427e-14 ~= 0.0 |
+| VERIFIED |  | warp-B4-differentiability | n/a | value OK: B4_differentiability.rel_err_vs_analytic=2.596797331012674e-15 ~= 0.0 |

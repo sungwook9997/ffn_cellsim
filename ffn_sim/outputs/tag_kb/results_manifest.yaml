@@ -125,3 +125,14 @@ claims:
     expect: {field: B2_radial_shell.turgor.host_force_rel, value: 0.0, tol: 1.0e-12}
     repro: cpu
     declared: verified
+
+  # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
+  # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
+  # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
+  - id: warp-B4-differentiability
+    desc: "Warp reverse-mode autodiff through the membrane force law matches the analytic gradient (~machine eps)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B4_differentiability.rel_err_vs_analytic, value: 0.0, tol: 1.0e-9}
+    repro: cpu
+    declared: verified

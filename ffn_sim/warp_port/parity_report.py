@@ -81,6 +81,14 @@ def _radial_shell_parity() -> dict:
     return out
 
 
+def _b4_differentiability() -> dict:
+    """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
+    vs closed-form analytic + finite-difference."""
+    from ffn_sim.warp_port.differentiability_b4 import run_check
+
+    return run_check(device="cpu")
+
+
 def main() -> None:
     report = {
         "_about": (
@@ -91,11 +99,13 @@ def main() -> None:
         ),
         "B1_baoab": _baoab_parity(),
         "B2_radial_shell": _radial_shell_parity(),
+        "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
         json.dump(report, f, indent=2)
     print(f"wrote {OUT}")
-    print(json.dumps({k: report[k] for k in ("B1_baoab", "B2_radial_shell")}, indent=2))
+    print(json.dumps({k: report[k] for k in
+                      ("B1_baoab", "B2_radial_shell", "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":

@@ -45,5 +45,13 @@
       "warp_force_rel": 1.3122749715270562e-12,
       "warp_energy_rel": 2.628398139527061e-12
     }
+  },
+  "B4_differentiability": {
+    "loss": 1.3638974124511983e-18,
+    "grad_autodiff": -9.721031620603243e-15,
+    "grad_analytic": -9.721031620603268e-15,
+    "grad_finite_diff": -9.721031844901678e-15,
+    "rel_err_vs_analytic": 2.596797331012674e-15,
+    "rel_err_vs_finite_diff": 2.3073521285555567e-08
   }
 }
