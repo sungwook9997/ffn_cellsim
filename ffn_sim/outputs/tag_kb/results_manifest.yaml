@@ -72,3 +72,26 @@ claims:
     artifact: ffn_sim/outputs/h_dcm_two_stage/cleanball_aa0_fit.json
     metric: top-down-silhouette
     declared: needs-regen
+
+  # --- Warp port (Phase B) — CPU-reproducible bit-parity vs committed HOOMD reference ---
+  # Each Warp piece is "done" ONLY when its committed pytest parity test passes
+  # against a committed HOOMD reference fixture; this records the lightweight,
+  # committed parity-result JSON the gate enforces. repro: cpu (Warp CPU backend
+  # — independently re-runnable: warp_port/parity_report.py). Verified by
+  # tests/warp_port/test_baoab_warp_parity.py against
+  # warp_port/fixtures/baoab_ref_*.npz (frozen LeimkuhlerMatthewsBAOAB output).
+  - id: warp-B1-baoab-kt0
+    desc: "Warp overdamped L-M BAOAB step kT=0 bit-for-bit vs frozen HOOMD Action (triclinic box, image flags)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B1_baoab.kt0.max_abs_pos_diff, value: 0.0, tol: 1.0e-9}
+    repro: cpu
+    declared: verified
+
+  - id: warp-B1-baoab-ktpos
+    desc: "Warp overdamped L-M BAOAB step kT>0 drift vs frozen HOOMD Action (identical injected noise)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B1_baoab.ktpos.max_abs_pos_diff, value: 0.0, tol: 1.0e-7}
+    repro: cpu
+    declared: verified
