@@ -89,6 +89,10 @@
     "host_force_rel": 3.2549486989017824e-16,
     "warp_force_rel": 2.1157166542861584e-15
   },
+  "DCM_cohesion_force": {
+    "N": 80,
+    "force_rel": 2.2948042557516973e-16
+  },
   "B4_differentiability": {
     "loss": 1.3638974124511983e-18,
     "grad_autodiff": -9.721031620603243e-15,

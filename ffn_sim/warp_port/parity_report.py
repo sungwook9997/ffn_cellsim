@@ -215,6 +215,25 @@ def _dcm_turgor_parity() -> dict:
     return rec
 
 
+def _dcm_cohesion_parity() -> dict:
+    """DCM node-node cohesion: Warp vs the committed HOOMD DcmTentContact."""
+    from ffn_sim.warp_port.dcm_cohesion_warp import run_dcm_cohesion_warp
+
+    fx = dict(np.load(os.path.join(FIX, "dcm_cohesion_ref.npz")))
+    got = run_dcm_cohesion_warp(
+        pos=fx["pos"], cell_of_node=fx["cell_of_node"],
+        r_contact=float(fx["r_contact"]), c_adh=float(fx["c_adh"]),
+        rep_strength=float(fx["rep"]), adh_strength=float(fx["adh"]),
+        patch_area=float(fx["patch_area"]), force_cap=float(fx["force_cap"]),
+        cad_mult=fx["cad_mult"], device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    return {
+        "N": int(fx["N"]),
+        "force_rel": float(np.abs(got["force"] - fx["ref_force"]).max()) / Fscale,
+    }
+
+
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
@@ -240,6 +259,7 @@ def main() -> None:
         "compartment_lj_wca": _lj_parity(),
         "DCM_node_face_contact": _dcm_contact_parity(),
         "DCM_turgor_force": _dcm_turgor_parity(),
+        "DCM_cohesion_force": _dcm_cohesion_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -250,7 +270,7 @@ def main() -> None:
                        "Fixman_metric_force", "compartment_harmonic_bond",
                        "compartment_harmonic_angle", "compartment_lj_wca",
                        "DCM_node_face_contact", "DCM_turgor_force",
-                       "B4_differentiability")}, indent=2))
+                       "DCM_cohesion_force", "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":

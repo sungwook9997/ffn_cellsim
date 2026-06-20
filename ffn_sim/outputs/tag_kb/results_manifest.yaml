@@ -220,6 +220,18 @@ claims:
     repro: cpu
     declared: verified
 
+  # DCM node-node cell-cell cohesion (inter-cell repulsion + adhesive cadherin tent).
+  # Verified by tests/warp_port/test_dcm_cohesion_warp_parity.py vs dcm_cohesion_ref.npz
+  # (the real DcmTentContact run in HOOMD, both branches + cad_mult). Atomic-free
+  # Newton-3 (each node computes its own pair forces); achieved force rel ~2e-16.
+  - id: warp-DCM-cohesion-force
+    desc: "Warp DCM node-node cohesion (rep + cadherin adhesive tent) parity vs HOOMD DcmTentContact"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_cohesion_force.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
