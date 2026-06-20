@@ -193,6 +193,19 @@ claims:
     repro: cpu
     declared: verified
 
+  # DCM node-vs-face penalty contact (SimuCell3D, Ericson closest-point). Verified
+  # by tests/warp_port/test_dcm_contact_warp_parity.py vs dcm_contact_ref.npz (the
+  # brute-force numpy node_face_contact_forces ground truth, 2 interpenetrating
+  # icosahedral cells, rep+adh+cad_mult). Force on a FIXED mesh → no dynamic
+  # topology (that risk is in the remesh, a later piece); achieved force rel ~4e-16.
+  - id: warp-DCM-node-face-contact
+    desc: "Warp DCM node-vs-face penalty contact force parity vs numpy node_face_contact_forces ground truth"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_node_face_contact.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.

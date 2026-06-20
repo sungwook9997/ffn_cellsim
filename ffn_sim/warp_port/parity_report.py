@@ -178,6 +178,24 @@ def _fixman_parity() -> dict:
     }
 
 
+def _dcm_contact_parity() -> dict:
+    """DCM node-face contact: Warp vs the numpy brute-force ground truth."""
+    from ffn_sim.warp_port.dcm_contact_warp import run_node_face_contact_warp
+
+    fx = dict(np.load(os.path.join(FIX, "dcm_contact_ref.npz")))
+    got = run_node_face_contact_warp(
+        pos=fx["pos"], cell_of_node=fx["cell_of_node"], faces=fx["faces"],
+        face_cell=fx["face_cell"], rep_strength=float(fx["rep_strength"]),
+        adh_strength=float(fx["adh_strength"]), c_rep=float(fx["c_rep"]),
+        c_adh=float(fx["c_adh"]), cad_mult=fx["cad_mult"], device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    return {
+        "N": int(fx["N"]), "M": int(fx["M"]),
+        "force_rel": float(np.abs(got["force"] - fx["ref_force"]).max()) / Fscale,
+    }
+
+
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
@@ -201,6 +219,7 @@ def main() -> None:
         "compartment_harmonic_bond": _bond_parity(),
         "compartment_harmonic_angle": _angle_parity(),
         "compartment_lj_wca": _lj_parity(),
+        "DCM_node_face_contact": _dcm_contact_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -210,7 +229,7 @@ def main() -> None:
                       ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
                        "Fixman_metric_force", "compartment_harmonic_bond",
                        "compartment_harmonic_angle", "compartment_lj_wca",
-                       "B4_differentiability")}, indent=2))
+                       "DCM_node_face_contact", "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":
