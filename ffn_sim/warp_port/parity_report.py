@@ -196,6 +196,25 @@ def _dcm_contact_parity() -> dict:
     }
 
 
+def _dcm_turgor_parity() -> dict:
+    """DCM exact-volume turgor force: Warp vs the committed HOOMD DcmTurgorForce."""
+    from ffn_sim.warp_port.dcm_turgor_warp import run_dcm_turgor_warp
+
+    fx = dict(np.load(os.path.join(FIX, "dcm_turgor_ref.npz")))
+    kw = dict(
+        pos=fx["pos"], faces=fx["faces"], face_cell=fx["face_cell"],
+        n_cells=int(fx["n_cells"]), V0=float(fx["V0"]),
+        turgor_dP0=float(fx["turgor_dP0"]), K_vol=float(fx["K_vol"]), device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    rec = {"N": int(fx["N"]), "n_cells": int(fx["n_cells"])}
+    for mode in ("host", "warp"):
+        got = run_dcm_turgor_warp(reduce=mode, **kw)
+        rec[f"{mode}_force_rel"] = float(
+            np.abs(got["force"] - fx["ref_force"]).max()) / Fscale
+    return rec
+
+
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
@@ -220,6 +239,7 @@ def main() -> None:
         "compartment_harmonic_angle": _angle_parity(),
         "compartment_lj_wca": _lj_parity(),
         "DCM_node_face_contact": _dcm_contact_parity(),
+        "DCM_turgor_force": _dcm_turgor_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -229,7 +249,8 @@ def main() -> None:
                       ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
                        "Fixman_metric_force", "compartment_harmonic_bond",
                        "compartment_harmonic_angle", "compartment_lj_wca",
-                       "DCM_node_face_contact", "B4_differentiability")}, indent=2))
+                       "DCM_node_face_contact", "DCM_turgor_force",
+                       "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":

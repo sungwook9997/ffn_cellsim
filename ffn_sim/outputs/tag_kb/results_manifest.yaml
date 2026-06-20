@@ -206,6 +206,20 @@ claims:
     repro: cpu
     declared: verified
 
+  # DCM exact-volume turgor force (divergence-theorem volume → osmotic face-normal
+  # pressure; the core DCM intra-cell mechanic driving rim spreading). Verified by
+  # tests/warp_port/test_dcm_turgor_warp_parity.py vs dcm_turgor_ref.npz (the real
+  # DcmTurgorForce run in HOOMD on a 2-cell mesh). Gated on host force-law rel
+  # < 1e-12 (full atomic-volume reduce matches to ~2e-15). Fixed mesh → no dynamic
+  # topology (the remesh is the separate risk piece).
+  - id: warp-DCM-turgor-force
+    desc: "Warp DCM exact-volume turgor force parity vs HOOMD DcmTurgorForce"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_turgor_force.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
