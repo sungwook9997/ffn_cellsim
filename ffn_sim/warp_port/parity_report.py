@@ -141,6 +141,24 @@ def _angle_parity() -> dict:
     }
 
 
+def _lj_parity() -> dict:
+    """LJ excluded volume (WCA) vs HOOMD md.pair.LJ (mode=shift, r_cut=2^(1/6)σ)."""
+    from ffn_sim.warp_port.network_warp import run_wca_pair_warp
+
+    fx = dict(np.load(os.path.join(FIX, "network_lj_ref.npz")))
+    got = run_wca_pair_warp(
+        pos=fx["pos"], epsilon=float(fx["epsilon"]), sigma=float(fx["sigma"]),
+        r_cut=float(fx["r_cut"]), box_L=(float(fx["L"]),) * 3, shift=True, device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    Uscale = float(np.abs(fx["ref_energy"]).max()) + 1e-30
+    return {
+        "N": int(fx["N"]),
+        "force_rel": float(np.abs(got["force"] - fx["ref_force"]).max()) / Fscale,
+        "energy_rel": float(np.abs(got["energy"] - fx["ref_energy"]).max()) / Uscale,
+    }
+
+
 def _fixman_parity() -> dict:
     """Fixman: Warp metric pseudo-force vs the committed Python LAPACK reference."""
     from ffn_sim.warp_port.fixman_warp import run_fixman_warp
@@ -182,6 +200,7 @@ def main() -> None:
         "Fixman_metric_force": _fixman_parity(),
         "compartment_harmonic_bond": _bond_parity(),
         "compartment_harmonic_angle": _angle_parity(),
+        "compartment_lj_wca": _lj_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -190,7 +209,8 @@ def main() -> None:
     print(json.dumps({k: report[k] for k in
                       ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
                        "Fixman_metric_force", "compartment_harmonic_bond",
-                       "compartment_harmonic_angle", "B4_differentiability")}, indent=2))
+                       "compartment_harmonic_angle", "compartment_lj_wca",
+                       "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":

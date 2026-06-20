@@ -1,11 +1,12 @@
-"""Warp port of the cortex network forces — harmonic bond (Phase B, compartment forces).
+"""Warp port of the cortex network forces — bond, angle, and LJ excluded volume.
 
 The full single-cell per-step force stack is: the radial-shell compartment custom
 forces (nucleus / membrane / turgor — ported in B2) PLUS the cortex NETWORK forces,
 which in this codebase are HOOMD-native (``md.bond.Harmonic`` axial springs,
 ``md.angle.Harmonic`` bending, ``md.pair.LJ`` excluded volume). This module ports
-the **harmonic bond** — the cortex axial spring, the most fundamental network force
-and the smallest-first of the remaining compartment forces.
+all three: the **harmonic bond** (cortex axial spring), the **harmonic angle**
+(bending), and the **LJ excluded volume** (WCA repulsion) — the last network
+sub-force, completing the compartment per-step force stack on Warp.
 
 Harmonic bond (HOOMD ``md.bond.Harmonic`` convention) for bond (i, j):
     dr = min_image(r_i − r_j),  r = |dr|
@@ -209,6 +210,104 @@ def run_harmonic_angle_warp(
         harmonic_angle_kernel, dim=A,
         inputs=[pos_d, angles_d, k_d, t0_d, force_d, energy_d,
                 wp.float64(Lx), wp.float64(Ly), wp.float64(Lz)],
+        device=device,
+    )
+    wp.synchronize_device(device)
+    return {
+        "force": force_d.numpy().astype(np.float64),
+        "energy": energy_d.numpy().astype(np.float64),
+    }
+
+
+@wp.kernel
+def wca_pair_kernel(
+    pos: wp.array(dtype=wp.vec3d),              # (N,) ro
+    n: wp.int32,                                # particle count (inner-loop bound)
+    lj1: wp.float64,                            # 4 ε σ¹²  (HOOMD EvaluatorPairLJ)
+    lj2: wp.float64,                            # 4 ε σ⁶
+    rcutsq: wp.float64,                         # r_cut²  (= (2^(1/6) σ)² for WCA)
+    eshift: wp.float64,                         # energy at r_cut (subtracted; "shift" mode)
+    Lx: wp.float64,
+    Ly: wp.float64,
+    Lz: wp.float64,
+    force: wp.array(dtype=wp.vec3d),            # (N,) out — one thread owns its row (no atomics)
+    energy: wp.array(dtype=wp.float64),         # (N,) out — per-particle (½ of each pair)
+):
+    """LJ excluded volume, HOOMD ``md.pair.LJ`` convention, one thread per particle i
+    summing all j within r_cut (O(N²) — exact for the bond-free parity fixture; the
+    production kernel would use a Warp hash-grid neighbour list). Force law matches
+    HOOMD ``EvaluatorPairLJ``: force_divr = r⁻²r⁻⁶(12·lj1·r⁻⁶ − 6·lj2),
+    pair_eng = r⁻⁶(lj1·r⁻⁶ − lj2) − eshift. Orthorhombic min-image (``wp.rint``)."""
+    i = wp.tid()
+    ri = pos[i]
+    fx = wp.float64(0.0)
+    fy = wp.float64(0.0)
+    fz = wp.float64(0.0)
+    e = wp.float64(0.0)
+    for j in range(n):
+        if j != i:
+            rj = pos[j]
+            dx = ri[0] - rj[0]
+            dy = ri[1] - rj[1]
+            dz = ri[2] - rj[2]
+            dx = dx - Lx * wp.rint(dx / Lx)
+            dy = dy - Ly * wp.rint(dy / Ly)
+            dz = dz - Lz * wp.rint(dz / Lz)
+            rsq = dx * dx + dy * dy + dz * dz
+            if rsq < rcutsq:
+                if rsq > wp.float64(0.0):
+                    r2inv = wp.float64(1.0) / rsq
+                    r6inv = r2inv * r2inv * r2inv
+                    force_divr = r2inv * r6inv * (
+                        wp.float64(12.0) * lj1 * r6inv - wp.float64(6.0) * lj2
+                    )
+                    pair_eng = r6inv * (lj1 * r6inv - lj2) - eshift
+                    fx = fx + force_divr * dx
+                    fy = fy + force_divr * dy
+                    fz = fz + force_divr * dz
+                    e = e + wp.float64(0.5) * pair_eng
+    force[i] = wp.vec3d(fx, fy, fz)
+    energy[i] = e
+
+
+def run_wca_pair_warp(
+    *,
+    pos: np.ndarray,        # (N, 3)
+    epsilon: float,
+    sigma: float,
+    r_cut: float,
+    box_L: tuple[float, float, float],
+    shift: bool = True,
+    device: str = "cpu",
+) -> dict:
+    """LJ excluded-volume (WCA) force + energy in Warp (one thread/particle, all-pairs
+    within r_cut), matching HOOMD ``md.pair.LJ`` with ``mode='shift'``. Returns (N,3)
+    force and (N,) per-particle energy. ``lj1/lj2`` and the energy shift are formed on
+    the host exactly as HOOMD's ``EvaluatorPairLJ`` does so the only parity gap is
+    neighbour-summation order (gated tolerance-class, as for bond/angle)."""
+    pos = np.ascontiguousarray(pos, dtype=np.float64)
+    N = pos.shape[0]
+    lj1 = 4.0 * epsilon * sigma ** 12
+    lj2 = 4.0 * epsilon * sigma ** 6
+    rcutsq = r_cut * r_cut
+    if shift:
+        rcut2inv = 1.0 / rcutsq
+        rcut6inv = rcut2inv * rcut2inv * rcut2inv
+        eshift = rcut6inv * (lj1 * rcut6inv - lj2)   # HOOMD subtracts U(r_cut)
+    else:
+        eshift = 0.0
+    Lx, Ly, Lz = box_L
+
+    pos_d = wp.array(pos, dtype=wp.vec3d, device=device)
+    force_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    energy_d = wp.zeros(N, dtype=wp.float64, device=device)
+
+    wp.launch(
+        wca_pair_kernel, dim=N,
+        inputs=[pos_d, wp.int32(N), wp.float64(lj1), wp.float64(lj2),
+                wp.float64(rcutsq), wp.float64(eshift),
+                wp.float64(Lx), wp.float64(Ly), wp.float64(Lz),
+                force_d, energy_d],
         device=device,
     )
     wp.synchronize_device(device)

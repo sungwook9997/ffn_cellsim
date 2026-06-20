@@ -65,3 +65,27 @@ def test_harmonic_angle_warp_parity():
     dU = float(np.abs(got["energy"] - fx["ref_energy"]).max())
     assert dF / Fscale < 1e-12, f"angle force rel error too large: {dF/Fscale:.3e}"
     assert dU / Uscale < 1e-12, f"angle energy rel error too large: {dU/Uscale:.3e}"
+
+
+def test_wca_pair_warp_parity():
+    """Warp LJ excluded-volume (WCA) force + energy match HOOMD md.pair.LJ (mode=shift).
+
+    Reference fixture is a bond-free dense bead cluster run through HOOMD's native
+    ``md.pair.LJ`` with ``r_cut = 2^(1/6) σ`` (see generate_lj_fixture.py). The Warp
+    kernel sums all pairs within r_cut per particle (own-thread write, no atomics);
+    the only parity gap is neighbour-summation order, gated rel < 1e-12.
+    """
+    pytest.importorskip("warp")
+    from ffn_sim.warp_port.network_warp import run_wca_pair_warp
+
+    fx = _load("network_lj_ref")
+    got = run_wca_pair_warp(
+        pos=fx["pos"], epsilon=float(fx["epsilon"]), sigma=float(fx["sigma"]),
+        r_cut=float(fx["r_cut"]), box_L=(float(fx["L"]),) * 3, shift=True, device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    Uscale = float(np.abs(fx["ref_energy"]).max()) + 1e-30
+    dF = float(np.abs(got["force"] - fx["ref_force"]).max())
+    dU = float(np.abs(got["energy"] - fx["ref_energy"]).max())
+    assert dF / Fscale < 1e-12, f"WCA force rel error too large: {dF/Fscale:.3e}"
+    assert dU / Uscale < 1e-12, f"WCA energy rel error too large: {dU/Uscale:.3e}"

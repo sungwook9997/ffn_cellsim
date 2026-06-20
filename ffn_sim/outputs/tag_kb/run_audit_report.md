@@ -1,6 +1,6 @@
 # Results-integrity audit (disk-grounded)
 
-Audited **16** headline result-claims from `results_manifest.yaml`.
+Audited **17** headline result-claims from `results_manifest.yaml`.
 
 ## Summary
 
@@ -9,7 +9,7 @@ Audited **16** headline result-claims from `results_manifest.yaml`.
 | RETRACT | 1 | disk contradicts claim (forbidden metric / value drift) |
 | NEEDS_REGEN | 3 | claimed artifact ABSENT — regenerate + commit |
 | GPU_UNREPRODUCED | 2 | present but GPU-only, no committed build/CI trace |
-| VERIFIED | 10 | artifact present, metric sanctioned, value matches |
+| VERIFIED | 11 | artifact present, metric sanctioned, value matches |
 
 **0 DRIFT rows** (disk worse than declared — these FAIL the CI gate).
 
@@ -33,3 +33,4 @@ Audited **16** headline result-claims from `results_manifest.yaml`.
 | VERIFIED |  | warp-MSHAKE-chain-constraint | n/a | value OK: MSHAKE_chain_constraint.pos_rel=7.365694533460985e-12 ~= 0.0 |
 | VERIFIED |  | warp-compartment-harmonic-angle | n/a | value OK: compartment_harmonic_angle.force_rel=2.2066914540404608e-13 ~= 0.0 |
 | VERIFIED |  | warp-compartment-harmonic-bond | n/a | value OK: compartment_harmonic_bond.force_rel=4.782658393999819e-16 ~= 0.0 |
+| VERIFIED |  | warp-compartment-lj-wca | n/a | value OK: compartment_lj_wca.force_rel=1.753578873717259e-15 ~= 0.0 |

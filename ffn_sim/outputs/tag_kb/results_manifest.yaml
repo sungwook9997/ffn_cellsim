@@ -179,6 +179,20 @@ claims:
     repro: cpu
     declared: verified
 
+  # LJ excluded volume (WCA) — last cortex network sub-force. md.pair.LJ,
+  # mode=shift, r_cut=2^(1/6)σ. Warp all-pairs-within-cutoff kernel (one thread
+  # per particle, own-thread write, no atomics) vs HOOMD on a bond-free cluster
+  # (no nlist exclusions → all-pairs exact). Verified by
+  # tests/warp_port/test_network_warp_parity.py::test_wca_pair_warp_parity vs
+  # network_lj_ref.npz; machine-eps (~1.8e-15).
+  - id: warp-compartment-lj-wca
+    desc: "Warp LJ excluded-volume (WCA) parity vs HOOMD md.pair.LJ (mode=shift, r_cut=2^(1/6)σ)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: compartment_lj_wca.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
