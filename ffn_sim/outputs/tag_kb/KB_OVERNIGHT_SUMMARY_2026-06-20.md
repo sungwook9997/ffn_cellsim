@@ -22,7 +22,7 @@ This index is what to read first when you wake up.
 
 - **source_audit** (citations): 329 sources, 177 OK — runs in `refresh.sh`; production-cited subset enforced via params gate.
 - **run_audit** (results): 6 headline result-claims; 0 drift. Blocking in CI.
-- **param_audit** (constants): 8 declared, **5 VERIFIED / 3 SOURCE_UNVERIFIED / 0 UNSOURCED**, 0 drift. Blocking in CI. (Unsourced backlog resolved from the Notion Contract-Graph via MCP: myosin stall → Bangasser2013_BiophysJ [OK], persistence length → Lindstrom2010_Biomaterials [CHECK].)
+- **param_audit** (constants): **all 42 KU-tagged physical constants** declared, **19 VERIFIED / 13 SOURCE_UNVERIFIED / 10 UNSOURCED**, 0 drift. Blocking in CI. (Coverage expanded 8→42; each KU→source link resolved from the Notion Contract-Graph via MCP — `_migrations/gen_params_manifest.py`. The 10 unsourced are KUs whose Notion claim has no single citation; the rest map to e.g. Bangasser2013 [OK], Buckley2014 [OK], Discher2005 [OK], BroederszMacKintosh2014 [OK], DelRio2009 [OK], Chugh2017 [CHECK], Pereverzev2005/Jansen2018/Lindstrom2010 [NO-DOI/CHECK].)
 - `make kb-check` → PASS · `pytest tests/test_kb_integrity_gates.py` → 13 passed.
 
 ## How to use it
