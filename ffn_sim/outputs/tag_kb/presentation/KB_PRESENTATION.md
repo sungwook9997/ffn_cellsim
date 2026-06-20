@@ -50,7 +50,7 @@ Two things are added on top of TAG.
 
 - **`verify_sources.py` → `source_audit`** — does each cited paper actually exist and match (CrossRef-checked)? Of **329** sources: **OK 177 / CHECK 93 / NO_DOI 46 / MISMATCH 7 / DEAD 6**.
 - **`verify_runs.py` → `run_audit`** — does each headline result still hold in the actual output files, measured with the *sanctioned* metric (top-down silhouette, **not** the PI-forbidden basal footprint)? Verdicts: `RETRACT < NEEDS_REGEN < GPU_UNREPRODUCED < VERIFIED`.
-- **`verify_params.py` → `param_audit`** — does each simulation constant match its config value *and* trace constant → KU → citation → verdict=OK? Of 8 declared: **4 VERIFIED / 2 SOURCE_UNVERIFIED / 2 UNSOURCED**.
+- **`verify_params.py` → `param_audit`** — does each simulation constant match its config value *and* trace constant → KU → citation → verdict=OK? Of 8 declared: **5 VERIFIED / 3 SOURCE_UNVERIFIED / 0 UNSOURCED** — every constant now traces to a literature source (the unsourced backlog was resolved from the Notion Contract-Graph); the 3 SOURCE_UNVERIFIED ride a citation whose audit verdict is only CHECK, surfaced honestly rather than hidden.
 
 ![Tier 3: Notion 8-DB contract-graph -> Obsidian + DuckDB/TAG, governed by 3 disk-grounded integrity gates and a 5-hop provenance chain](./figs/contractgraph_mechanism.png)
 

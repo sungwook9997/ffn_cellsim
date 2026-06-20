@@ -106,23 +106,25 @@ claims:
     citation_key: Pereverzev2005_BiophysJ   # audit verdict = NO_DOI_FOUND
     declared: source-unverified
 
-  # --- KU-tagged but KU->source link not yet committed (honest backlog) ---
+  # --- KU->source links resolved from the Notion Contract-Graph via MCP (2026-06-20).
+  #     These were the UNSOURCED backlog; the config named no paper inline, so the
+  #     citation_key was read from the KnowledgeClaim row's Citations field in Notion. ---
   - id: P6-myosin-stall
-    desc: "Myosin stall force per motor, 2 pN (KU-2.18 motor-clutch defaults; source link pending)"
+    desc: "Myosin stall force per motor, 2 pN (KU-2.18; Bangasser-Rosenfeld-Odde 2013 Biophys J Table 1, Chan-Odde lineage)"
     config: ffn_sim/validation/oracles/configs/phase1_unit2_1.yaml
     key: bridge.motor_clutch.F_stall_per_motor
     value: 2.0e-12
     unit: N
     ku: KU-2.18
-    citation_key: null
-    declared: unsourced
+    citation_key: Bangasser2013_BiophysJ
+    declared: verified
 
   - id: P7-ecm-persistence-length
-    desc: "Collagen fiber persistence length ell_p = 17 um (KU-1.1; source link pending)"
+    desc: "Collagen fiber persistence length ell_p = 17 um (KU-1.1; Lindstrom 2010 collagen measurement, median of 9-22 um)"
     config: ffn_sim/validation/oracles/configs/phase1_unit1.yaml
     key: ecm.persistence_length
     value: 17.0e-6
     unit: m
     ku: KU-1.1
-    citation_key: null
-    declared: unsourced
+    citation_key: Lindstrom2010_Biomaterials   # KnowledgeClaim KB-1.1 primary citation; audit verdict CHECK -> source-unverified
+    declared: source-unverified
