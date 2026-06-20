@@ -232,6 +232,19 @@ claims:
     repro: cpu
     declared: verified
 
+  # Lamellipodial traction-tether (rim leading nodes pulled to nearest outward
+  # clutch-anchored actin = the emergent crawl traction). Verified by
+  # tests/warp_port/test_lamellipodium_warp_parity.py vs lamellipodium_ref.npz (the
+  # real LamellipodialTractionTether run in HOOMD). Host per-cell geometry + leading
+  # selection, Warp per-node nearest-actin search + capped force; bit-for-bit (0.0).
+  - id: warp-lamellipodium-tether
+    desc: "Warp lamellipodial traction-tether force parity vs HOOMD LamellipodialTractionTether"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: lamellipodium_tether.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
   # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
   # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
   # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.

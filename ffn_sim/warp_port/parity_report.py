@@ -234,6 +234,26 @@ def _dcm_cohesion_parity() -> dict:
     }
 
 
+def _lamellipodium_parity() -> dict:
+    """Lamellipodial traction-tether: Warp vs committed HOOMD LamellipodialTractionTether."""
+    from ffn_sim.warp_port.lamellipodium_warp import run_lamellipodium_tether_warp
+
+    fx = dict(np.load(os.path.join(FIX, "lamellipodium_ref.npz")))
+    got = run_lamellipodium_tether_warp(
+        pos=fx["pos"], typeid=fx["typeid"], cell_of_node=fx["cell_of_node"],
+        rim_cells=fx["rim_cells"], actin_typeid=int(fx["actin_typeid"]),
+        mem_typeid=int(fx["mem_typeid"]), z_basal=float(fx["z_basal"]),
+        basal_band=float(fx["basal_band"]), k_tether=float(fx["k_tether"]),
+        force_cap=float(fx["force_cap"]), tether_radius=float(fx["tether_radius"]),
+        lead_frac=float(fx["lead_frac"]), device="cpu",
+    )
+    Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
+    return {
+        "N": int(fx["N"]), "n_tethered": int(got["n_tethered"]),
+        "force_rel": float(np.abs(got["force"] - fx["ref_force"]).max()) / Fscale,
+    }
+
+
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
@@ -260,6 +280,7 @@ def main() -> None:
         "DCM_node_face_contact": _dcm_contact_parity(),
         "DCM_turgor_force": _dcm_turgor_parity(),
         "DCM_cohesion_force": _dcm_cohesion_parity(),
+        "lamellipodium_tether": _lamellipodium_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
     with open(OUT, "w") as f:
@@ -270,7 +291,8 @@ def main() -> None:
                        "Fixman_metric_force", "compartment_harmonic_bond",
                        "compartment_harmonic_angle", "compartment_lj_wca",
                        "DCM_node_face_contact", "DCM_turgor_force",
-                       "DCM_cohesion_force", "B4_differentiability")}, indent=2))
+                       "DCM_cohesion_force", "lamellipodium_tether",
+                       "B4_differentiability")}, indent=2))
 
 
 if __name__ == "__main__":
