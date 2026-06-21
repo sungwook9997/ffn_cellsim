@@ -1,21 +1,28 @@
 """Mesh-surface visualization of the Warp de-cohesion spread (Phase-C migration).
 
-Renders the cell SURFACE meshes (triangulated faces, colored per cell) — NOT point
-clouds — across frames, in two views:
-  * top-down (xy): the A/A0 silhouette (footprint) — what spreading grows.
-  * side (xz): the height profile — shows maxZ HELD while the footprint widens
-    (genuine lateral spread, not the vertical-flatten settle-confound).
+Renders the cell SURFACE meshes (triangulated faces) — NOT point clouds — across frames,
+in two views:
+  * top-down (xy): the A/A0 silhouette (footprint) — what aggregation compacts / spread grows.
+  * side (xz): the height profile — maxZ HELD while the footprint widens = genuine lateral
+    spread (not the vertical-flatten settle-confound).
 
-Integrity (the viz rules + the landmine lessons):
-  * mesh (filled triangles), not points; equal aspect (true proportions, no distortion);
-  * axis limits FIXED across frames (from the max extent) so the spread is comparable —
-    NOT per-frame autoscale (which would hide it);
-  * A/A0 annotation = the driver's TOP-DOWN silhouette value (never basal contact);
-  * SI→µm, config (no body-force proxy) stated on the figure.
+The npz (from ``dcm_warp_decohesion.py --save-frames``) spans BOTH phases when
+``--settle-frames`` was used: phase 0 = AGGREGATE (the spherical cluster compacting into a
+rounded spheroid), phase 1 = SPREAD. ``aa0`` is normalised to the rested baseline, so
+aggregate frames read >1 falling to 1.0 (compaction) and spread frames climb above 1.0.
 
-Input: the npz written by `dcm_warp_decohesion.py --save-frames`.
+Color modes:
+  * default       — per cell (tab20), distinguishes cells.
+  * --color-by-contact  — rim (ECM-contacting) red, dragged (no ECM) blue: the collective drag.
+  * --color-by-junction — per-frame from ``cad``: junction-SWITCHED cells (cad<1, cadherin
+    weakened → integrin strengthened) orange, intact cells teal: shows the switch propagating.
 
-    python -m ffn_sim.scripts.warp_decoh_mesh_viz --npz frames.npz --out fig.png
+Integrity (viz rules + landmine lessons): mesh not points; equal aspect; axis limits FIXED
+across frames (never per-frame autoscale); A/A0 = top-down silhouette (never basal contact);
+SI→µm; NO body-force proxy.
+
+    python -m ffn_sim.scripts.warp_decoh_mesh_viz --npz frames.npz --out fig.png \
+        [--mp4 surf.mp4] [--color-by-contact | --color-by-junction] [--ncols 6] [--fps 8]
 """
 
 from __future__ import annotations
@@ -27,44 +34,58 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
+from matplotlib.patches import Patch
 
 UM = 1.0e6
+ALPHA = 0.6
+RIM_RGBA = np.array([0.85, 0.20, 0.15, ALPHA])      # rim / ECM-contacting
+DRAG_RGBA = np.array([0.15, 0.40, 0.85, ALPHA])     # dragged / non-ECM
+SWITCH_RGBA = np.array([0.95, 0.55, 0.10, ALPHA])   # junction-switched (cadherin weak)
+INTACT_RGBA = np.array([0.10, 0.65, 0.55, ALPHA])   # intact junction
 
 
-def _rim_mask_cells(frame0: np.ndarray, cof: np.ndarray, z0: float = 0.0,
-                    contact_band: float = 1.5) -> np.ndarray:
-    """Which CELLS are rim (ECM-contacting) at the rested baseline (frame 0), by the same
-    criterion the driver uses: centroid z within ``contact_band·R`` of z0. R is estimated
-    from the mesh (mean per-cell node radius). Returns a per-cell bool array."""
+def _rim_mask_cells(frame0, cof, z0=0.0, contact_band=1.5):
+    """Per-cell bool: rim (ECM-contacting) at the baseline by the driver's criterion
+    (centroid z within ``contact_band·R`` of z0; R estimated as the mean per-cell node radius)."""
     n_cells = int(cof.max()) + 1
     cen = np.zeros((n_cells, 3)); cnt = np.zeros(n_cells)
     np.add.at(cen, cof, frame0); np.add.at(cnt, cof, 1.0)
     cen /= np.maximum(cnt, 1.0)[:, None]
-    # per-cell radius = mean node distance from its own centroid
     rad = np.linalg.norm(frame0 - cen[cof], axis=1)
     R = np.zeros(n_cells); rc = np.zeros(n_cells)
     np.add.at(R, cof, rad); np.add.at(rc, cof, 1.0)
-    R /= np.maximum(rc, 1.0)
-    Rmean = float(R.mean())
-    return (cen[:, 2] - z0) <= contact_band * Rmean
+    return (cen[:, 2] - z0) <= contact_band * float((R / np.maximum(rc, 1.0)).mean())
 
 
-def _face_colors(faces, cof, color_by_contact, frame0, alpha=0.55):
-    """Per-face RGBA. Default: tab20 per cell. ``color_by_contact``: rim (ECM-contacting)
-    cells warm/red, dragged (non-ECM) cells cool/blue — so the collective drag reads."""
+def _make_color_fn(faces, cof, frames, mode, cad):
+    """Return (colors_for(fi), legend_handles). ``colors_for`` gives the (M,4) per-face RGBA
+    for frame fi — static for default/contact, per-frame for junction."""
     face_cell = cof[faces[:, 0]]
-    if color_by_contact:
-        rim = _rim_mask_cells(frame0, cof)
-        fc = np.where(rim[face_cell][:, None],
-                      np.array([0.85, 0.20, 0.15, alpha]),   # rim — crawl front (red)
-                      np.array([0.15, 0.40, 0.85, alpha]))    # dragged — non-ECM (blue)
-        return fc, rim
-    fc = plt.get_cmap("tab20")(face_cell % 20); fc[:, 3] = alpha
-    return fc, None
+    if mode == "contact":
+        rim = _rim_mask_cells(frames[-1], cof)   # use the spread baseline (last frame) rim
+        fc = np.where(rim[face_cell][:, None], RIM_RGBA, DRAG_RGBA)
+        leg = [Patch(color=RIM_RGBA[:3], label="rim (ECM-contacting, crawls)"),
+               Patch(color=DRAG_RGBA[:3], label="dragged (no ECM contact)")]
+        print(f"rim cells: {int(rim.sum())}/{rim.size}  dragged: {int((~rim).sum())}")
+        return (lambda fi: fc), leg
+    if mode == "junction":
+        if cad is None:
+            raise SystemExit("--color-by-junction needs a `cad` array in the npz (run with --junction-switch)")
+        def colors_for(fi):
+            switched = cad[fi][face_cell] < 0.999
+            return np.where(switched[:, None], SWITCH_RGBA, INTACT_RGBA)
+        leg = [Patch(color=SWITCH_RGBA[:3], label="junction-switched (cadherin↓ integrin↑)"),
+               Patch(color=INTACT_RGBA[:3], label="intact junction")]
+        return colors_for, leg
+    fc = plt.get_cmap("tab20")(face_cell % 20); fc[:, 3] = ALPHA
+    return (lambda fi: fc), None
 
 
-def _write_mp4(frames, faces, fcolors, step, aa0, maxZ, vv0, out, fps, rim_legend):
-    """Animate the two-view surface render across ALL frames → mp4 (ffmpeg) or gif fallback."""
+def _phase_tag(phase, fi):
+    return "AGG" if (phase is not None and phase[fi] == 0) else "SPREAD"
+
+
+def _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, out, fps, legend, title):
     import matplotlib.animation as animation
     allp = frames * UM
     xylim = float(np.abs(allp[..., :2]).max()) * 1.05
@@ -74,27 +95,26 @@ def _write_mp4(frames, faces, fcolors, step, aa0, maxZ, vv0, out, fps, rim_legen
         return P[faces][:, :, [i, j]]
 
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(11, 5.4))
-    pc0 = PolyCollection([], facecolors=fcolors, edgecolors=(0, 0, 0, 0.12), linewidths=0.1)
-    pc1 = PolyCollection([], facecolors=fcolors, edgecolors=(0, 0, 0, 0.12), linewidths=0.1)
+    pc0 = PolyCollection([], edgecolors=(0, 0, 0, 0.12), linewidths=0.1)
+    pc1 = PolyCollection([], edgecolors=(0, 0, 0, 0.12), linewidths=0.1)
     ax0.add_collection(pc0); ax1.add_collection(pc1)
     ax0.set_xlim(-xylim, xylim); ax0.set_ylim(-xylim, xylim); ax0.set_aspect("equal")
     ax0.set_xlabel("x (µm)"); ax0.set_ylabel("y (µm)")
     ax1.set_xlim(-xylim, xylim); ax1.set_ylim(zmin - 2.0, zmax + 4.0); ax1.set_aspect("equal")
     ax1.axhline(0.0, color="saddlebrown", lw=1.2, alpha=0.7)
     ax1.set_xlabel("x (µm)"); ax1.set_ylabel("z (µm)")
-    if rim_legend:
-        from matplotlib.patches import Patch
-        ax0.legend(handles=[Patch(color=(0.85, 0.20, 0.15), label="rim (ECM-contacting, crawls)"),
-                            Patch(color=(0.15, 0.40, 0.85), label="dragged (no ECM contact)")],
-                   loc="upper right", fontsize=7, framealpha=0.9)
+    if legend:
+        ax0.legend(handles=legend, loc="upper right", fontsize=7, framealpha=0.9)
     sup = fig.suptitle("")
 
     def update(fi):
         P = frames[fi] * UM
-        pc0.set_verts(tri(P, 0, 1)); pc1.set_verts(tri(P, 0, 2))
-        ax0.set_title(f"top-down (xy) — A/A0 = {aa0[fi]:.2f}", fontsize=10)
-        ax1.set_title(f"side (xz) — maxZ = {maxZ[fi]:.0f}µm  V/V0 = {vv0[fi]:.2f}", fontsize=10)
-        sup.set_text(f"Warp DCM · de-cohesion N=100 lamellipodium+wetting (M2)  ·  step {int(step[fi])}")
+        col = colors_for(fi)
+        pc0.set_verts(tri(P, 0, 1)); pc0.set_facecolors(col)
+        pc1.set_verts(tri(P, 0, 2)); pc1.set_facecolors(col)
+        ax0.set_title(f"[{_phase_tag(phase, fi)}] top-down — A/A0 = {aa0[fi]:.2f}", fontsize=10)
+        ax1.set_title(f"side — maxZ = {maxZ[fi]:.0f}µm  V/V0 = {vv0[fi]:.2f}", fontsize=10)
+        sup.set_text(f"{title}  ·  step {int(step[fi])}")
         return pc0, pc1
 
     anim = animation.FuncAnimation(fig, update, frames=len(frames), blit=False)
@@ -113,34 +133,36 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--npz", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--ncols", type=int, default=5)
+    ap.add_argument("--ncols", type=int, default=6)
     ap.add_argument("--mp4", default=None, help="also render a surface animation to this mp4 path")
-    ap.add_argument("--fps", type=int, default=6)
+    ap.add_argument("--fps", type=int, default=8)
     ap.add_argument("--color-by-contact", action="store_true",
                     help="color rim (ECM-contacting) cells red, dragged non-ECM cells blue")
+    ap.add_argument("--color-by-junction", action="store_true",
+                    help="color junction-switched cells (cad<1) orange, intact teal (per frame)")
+    ap.add_argument("--title", default="Warp DCM · de-cohesion (M1-M3)")
     args = ap.parse_args()
 
     d = np.load(args.npz)
-    frames = d["frames"]                 # (F, N, 3) metres
-    faces = d["faces"]                   # (M, 3) node indices
-    cof = d["cof"]                       # (N,) cell-of-node
+    frames = d["frames"]; faces = d["faces"]; cof = d["cof"]
     step, aa0, maxZ, vv0 = d["step"], d["aa0"], d["maxZ"], d["vv0"]
+    phase = d["phase"] if "phase" in d.files else None
+    cad = d["cad"] if "cad" in d.files else None
     F = frames.shape[0]
 
-    sel = np.unique(np.linspace(0, F - 1, args.ncols).astype(int))
-    fcolors, rim = _face_colors(faces, cof, args.color_by_contact, frames[0])
-    if rim is not None:
-        print(f"rim (ECM-contacting) cells: {int(rim.sum())}/{rim.size}  "
-              f"dragged (non-ECM): {int((~rim).sum())}")
-    if args.mp4:
-        _write_mp4(frames, faces, fcolors, step, aa0, maxZ, vv0, args.mp4, args.fps,
-                   rim_legend=args.color_by_contact)
+    mode = "junction" if args.color_by_junction else ("contact" if args.color_by_contact else "default")
+    colors_for, legend = _make_color_fn(faces, cof, frames, mode, cad)
 
+    if args.mp4:
+        _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0,
+                   args.mp4, args.fps, legend, args.title)
+
+    sel = np.unique(np.linspace(0, F - 1, args.ncols).astype(int))
     allp = frames * UM
-    xylim = float(np.abs(allp[..., :2]).max()) * 1.05      # FIXED across frames
+    xylim = float(np.abs(allp[..., :2]).max()) * 1.05
     zmin, zmax = float(allp[..., 2].min()), float(allp[..., 2].max())
 
-    def tri(P, i, j):                    # (M,3,2) triangle polygons for projection (i,j)
+    def tri(P, i, j):
         return P[faces][:, :, [i, j]]
 
     fig, axes = plt.subplots(2, len(sel), figsize=(3.2 * len(sel), 6.8))
@@ -148,35 +170,34 @@ def main() -> None:
         axes = axes.reshape(2, 1)
     for c, fi in enumerate(sel):
         P = frames[fi] * UM
+        col = colors_for(fi)
         ax = axes[0, c]
-        ax.add_collection(PolyCollection(tri(P, 0, 1), facecolors=fcolors,
+        ax.add_collection(PolyCollection(tri(P, 0, 1), facecolors=col,
                                          edgecolors=(0, 0, 0, 0.12), linewidths=0.1))
         ax.set_xlim(-xylim, xylim); ax.set_ylim(-xylim, xylim); ax.set_aspect("equal")
-        ax.set_title(f"step {int(step[fi])}\nA/A0 = {aa0[fi]:.2f}", fontsize=9)
+        ax.set_title(f"[{_phase_tag(phase, fi)}] step {int(step[fi])}\nA/A0 = {aa0[fi]:.2f}", fontsize=9)
         ax.tick_params(labelsize=6)
         if c == 0:
-            ax.set_ylabel("top-down (xy)  µm\n[A/A0 silhouette]", fontsize=8)
-
+            ax.set_ylabel("top-down (xy)  µm\n[footprint / A0_rested]", fontsize=8)
+            if legend:
+                ax.legend(handles=legend, loc="upper left", fontsize=6, framealpha=0.9)
         ax = axes[1, c]
-        ax.add_collection(PolyCollection(tri(P, 0, 2), facecolors=fcolors,
+        ax.add_collection(PolyCollection(tri(P, 0, 2), facecolors=col,
                                          edgecolors=(0, 0, 0, 0.12), linewidths=0.1))
         ax.set_xlim(-xylim, xylim); ax.set_ylim(zmin - 2.0, zmax + 4.0); ax.set_aspect("equal")
-        ax.axhline(0.0, color="saddlebrown", lw=1.2, alpha=0.7)   # substrate plane z0
+        ax.axhline(0.0, color="saddlebrown", lw=1.2, alpha=0.7)
         ax.set_title(f"maxZ = {maxZ[fi]:.0f} µm\nV/V0 = {vv0[fi]:.2f}", fontsize=9)
         ax.tick_params(labelsize=6)
         if c == 0:
             ax.set_ylabel("side (xz)  µm\n[maxZ held]", fontsize=8)
 
-    _drag = " · rim=red (ECM-contacting), dragged=blue (no ECM)" if rim is not None else ""
     fig.suptitle(
-        "Warp DCM engine — de-cohesion N=100 lamellipodium+wetting cleanball (M2, gbook A5000)\n"
-        "cell SURFACE mesh" + _drag + " · NO body-force proxy, physiological γ, dt=8e-6\n"
-        "top-down (A/A0 silhouette) GROWS while side (maxZ) HELD → genuine lateral spread; "
-        "bonded rim cells drag the non-ECM cells outward (collective)",
+        args.title + " — cell SURFACE mesh, NO body-force proxy, physiological γ, dt=8e-6\n"
+        "AGG phase: spherical cluster COMPACTS (A/A0→1) · SPREAD phase: footprint GROWS at held maxZ",
         fontsize=10)
-    fig.tight_layout(rect=[0, 0, 1, 0.92])
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
     fig.savefig(args.out, dpi=130)
-    print(f"wrote {args.out}  ({len(sel)} frames, {faces.shape[0]} triangles/frame, "
+    print(f"wrote {args.out}  ({len(sel)} frames, {faces.shape[0]} tri/frame, "
           f"A/A0 {aa0[0]:.2f}->{aa0[-1]:.2f}, maxZ {maxZ[0]:.0f}->{maxZ[-1]:.0f}µm)")
 
 

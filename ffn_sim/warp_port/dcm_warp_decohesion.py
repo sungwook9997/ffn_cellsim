@@ -44,19 +44,49 @@ from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, Junct
 wp.init()
 
 
-def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
-                                 gap: float = 2.2):
-    """Compact ball of cells RESTING on the substrate plane z0 (lowest node at z0).
+def _spherical_centers(n_cells: int, R: float, gap: float) -> np.ndarray:
+    """``n_cells`` lattice centres packed in a roughly SPHERICAL cluster (not a cube).
 
-    Reuses ``build_multicell`` (cubic-ish pack) then drops the whole ball so its lowest
-    node sits at z0 — the basal nodes engage the substrate well/wetting. ``gap`` is the
-    centre spacing in units of R; default 2.2 (shells just SEPARATED, ~0.2R apart) so the
-    stiff contact repulsion does not blow up from initial overlap (gap<2 overlaps), while
-    staying inside the cohesion range so the ball holds together. Returns pooled arrays + npc.
-    """
-    pos, edges, faces, cof, face_cell, npc = build_multicell(n_cells, subdiv, R, gap=gap)
+    A cubic lattice is too symmetric to AGGREGATE: an interior cell is pulled equally by
+    neighbours on all sides → net force ≈ 0 → the pack is metastable and never compacts
+    (the lattice just persists through settle — the failure the spread montage showed).
+    Selecting the ``n_cells`` lattice points CLOSEST to the centre instead gives a sphere
+    whose surface cells feel a net INWARD cohesive pull (curvature) → the cluster rounds
+    and compacts during the settle/aggregate phase, which is the whole point of that phase.
+    ``gap`` is the centre spacing in units of R."""
+    side = int(np.ceil((2.2 * n_cells) ** (1.0 / 3.0))) + 2     # oversample the lattice
+    g = np.arange(side) - (side - 1) / 2.0
+    X, Y, Z = np.meshgrid(g, g, g, indexing="ij")
+    pts = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
+    keep = np.argsort(np.linalg.norm(pts, axis=1))[:n_cells]    # the n_cells nearest centre
+    centers = pts[keep] * (gap * R)
+    return centers - centers.mean(0)
+
+
+def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
+                                 gap: float = 2.05):
+    """SPHERICAL cluster of cells RESTING on the substrate plane z0 (lowest node at z0).
+
+    Cells are icospheres placed at :func:`_spherical_centers` (a rounded cluster, NOT the
+    cubic lattice of ``build_multicell`` — see that helper for why a cube won't aggregate),
+    then the whole ball is dropped so its lowest node sits at z0 (basal nodes engage the
+    substrate well/wetting). ``gap`` is the centre spacing in R; the default **2.05** packs
+    the shells essentially TOUCHING (≈0.05R apart) so the cluster STARTS as a compact,
+    tissue-like aggregate — not the sparse 0.2R-gap lattice that just persists through settle
+    (weak surface cohesion can't beat the stiff turgor that inflates each cell ~14%, so a
+    loose pack never compacts; starting them in contact lets turgor + contact press the
+    cells into flattened junctions = a genuine dense aggregate). gap<2.0 would hard-overlap
+    and spike the contact repulsion, so 2.05 is the tight-but-safe floor with the soft-start."""
+    verts1, edges1, tris1 = icosphere_mesh(R, subdiv)
+    npc = verts1.shape[0]
+    centers = _spherical_centers(n_cells, R, gap)
+    pos = np.concatenate([verts1 + c for c in centers], axis=0)
+    faces = np.concatenate([tris1 + ci * npc for ci in range(n_cells)], axis=0)
+    edges = np.concatenate([edges1 + ci * npc for ci in range(n_cells)], axis=0)
+    cof = np.repeat(np.arange(n_cells), npc).astype(np.int64)
+    face_cell = np.repeat(np.arange(n_cells), tris1.shape[0]).astype(np.int64)
     pos[:, 2] += (z0 - pos[:, 2].min())          # rest the ball on the dish
-    return pos, edges, faces, cof, face_cell, npc
+    return pos, edges.astype(np.int64), faces.astype(np.int64), cof, face_cell, npc
 
 
 def _topdown_area_um2(pos_xy_um: np.ndarray) -> float:
@@ -83,10 +113,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    frames: int = 20, device: str = "cpu", dt: float = 8.0e-6,
                    k_vol: float = 7.73e5, rep_strength: float = 2.0e8,
                    adh_strength: float = 1.0e7, w_cs_jm2: float = 2.85e-3,
-                   adh_range: float = 0.5e-6, k_floor: float = 1.0,
+                   adh_range: float = 0.5e-6, k_floor: float = 1.0, gap: float = 2.05,
                    substrate_wetting: bool = True, use_substrate_well: bool = True,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
-                   settle_steps: int = 0,
+                   settle_steps: int = 0, settle_frames: int = 0,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -103,7 +133,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
-        n_cells, subdiv, R, z0)
+        n_cells, subdiv, R, z0, gap=gap)
     N = pos_a.shape[0]
     mean_edge = float(np.linalg.norm(pos_a[edges_a[:, 0]] - pos_a[edges_a[:, 1]], axis=1).mean())
     R0 = float(np.linalg.norm(icosphere_mesh(R, subdiv)[0], axis=1).mean())
@@ -271,21 +301,46 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     m_init, ok = measure()
     if not ok:
         return {"error": "non-finite at init"}
+    Vinit = m_init["Vsum"]
 
-    # gentle soft-start: settle the initial pack at 0.1× dt (the stiff turgor/contact
-    # need it; the HOOMD driver equilibrates similarly before the measured spread)
+    # frame/trajectory recording spanning BOTH phases (so the montage shows the
+    # aggregation compacting the cube→ball, then the spread). aa0 is normalised at the
+    # end to the RESTED baseline (post-settle area) — settle frames then read >1 falling
+    # to 1.0 (= compaction), spread frames climb above 1.0 (= spread).
+    frame_list = [] if save_frames else None
+    cad_list = [] if save_frames else None
+    recs = []   # {gstep, phase, area, maxZ, Vsum, com}
+
+    def cad_now():
+        return js.cad_mult.copy() if js is not None else np.ones(n_cells)
+
+    def record(gstep, phase, m):
+        recs.append({"gstep": gstep, "phase": phase, "area": m["A_um2"],
+                     "maxZ_um": m["maxZ_um"], "Vsum": m["Vsum"], "com": m["com"]})
+        if frame_list is not None:
+            frame_list.append(m["P"].astype(np.float32))
+            cad_list.append(cad_now().astype(np.float32))
+
+    record(0, 0, m_init)   # as-built ball
+
+    # gentle soft-start: settle the initial pack at 0.1× dt (the stiff turgor/contact need it)
     for s in range(warmup):
         step_once(s, dt * 0.1, do_spread=False)
     wp.synchronize_device(device)
 
-    # AGGREGATION / SETTLE phase (do_spread=False): the clean ball compacts into a
-    # cohesive spheroid RESTING at z0 — substrate well holds the basal nodes at z=0,
-    # turgor + cohesion + contact round it out, but NO wetting / NO lamellipodium yet.
-    # The de-cohesion spread is then measured FROM this rested baseline (A0 below), so
-    # the cells start mutually bonded and at z=0 exactly as PI prescribed — the upper
-    # (non-ECM) cells are then dragged outward by the bonded rim cells once spread fires.
-    for s in range(settle_steps):
+    # AGGREGATION / SETTLE phase (do_spread=False): the SPHERICAL cluster compacts into a
+    # cohesive rounded spheroid RESTING at z0 — substrate well holds basal nodes at z=0,
+    # cohesion pulls the surface cells inward (curvature ⇒ net inward pull) + turgor/contact
+    # round it. NO wetting / NO lamellipodium / NO junction-switch yet (the aggregate forms
+    # cohesively first). The spread is then measured FROM this rested baseline.
+    every_s = max(1, settle_steps // settle_frames) if (settle_frames and settle_steps) else settle_steps + 1
+    for s in range(1, settle_steps + 1):
         step_once(s, dt, do_spread=False)
+        if s % every_s == 0:
+            wp.synchronize_device(device)
+            m, ok = measure()
+            if ok:
+                record(s, 0, m)
     wp.synchronize_device(device)
 
     # baseline = the RESTED spheroid (not the as-built ball)
@@ -293,13 +348,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if not ok:
         return {"error": "non-finite after settle"}
     A0 = m0["A_um2"]; V0sum = m0["Vsum"]; com0 = m0["com"]
-    every = max(1, steps // max(1, frames))
-    traj = [{"step": 0, "aa0": 1.0, "maxZ_um": m0["maxZ_um"], "vv0": 1.0, "drift_um": 0.0}]
-    frame_list = [m0["P"].astype(np.float32)] if save_frames else None
-    print(f"  [settle] done ({warmup} warmup + {settle_steps} settle): "
-          f"A0={A0:.1f}um^2  maxZ={m0['maxZ_um']:.1f}um  Vsum/Vinit="
-          f"{m0['Vsum']/m_init['Vsum']:.3f}", flush=True)
+    record(settle_steps, 1, m0)   # transition frame (start of spread, A/A0 ≡ 1)
+    print(f"  [aggregate] done ({warmup} warmup + {settle_steps} settle): A0_rested={A0:.1f}um^2 "
+          f"(as-built {m_init['A_um2']:.1f}um^2 → compaction {m_init['A_um2']/A0 if A0 else 0:.2f}×)  "
+          f"maxZ={m0['maxZ_um']:.1f}um  Vsum/Vinit={m0['Vsum']/Vinit:.3f}", flush=True)
 
+    every = max(1, steps // max(1, frames))
     t0 = time.perf_counter()
     truncated_at = None
     for s in range(1, steps + 1):
@@ -327,35 +381,41 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 truncated_at = s
                 print(f"  [decoh] NON-FINITE at step {s} — truncating", flush=True)
                 break
-            rec = {"step": s, "aa0": m["A_um2"] / A0 if A0 > 0 else 0.0,
-                   "maxZ_um": m["maxZ_um"], "vv0": m["Vsum"] / V0sum if V0sum else 0.0,
-                   "drift_um": float(np.linalg.norm(m["com"] - com0) * 1e6)}
-            traj.append(rec)
-            if frame_list is not None:
-                frame_list.append(m["P"].astype(np.float32))
-            print(f"  step {s:>7}  A/A0={rec['aa0']:.3f}  maxZ={rec['maxZ_um']:.1f}um  "
-                  f"V/V0={rec['vv0']:.3f}  drift={rec['drift_um']:.2f}um", flush=True)
+            record(settle_steps + s, 1, m)
+            print(f"  step {s:>7}  A/A0={m['A_um2']/A0 if A0 else 0:.3f}  maxZ={m['maxZ_um']:.1f}um  "
+                  f"V/V0={m['Vsum']/V0sum if V0sum else 0:.3f}  "
+                  f"drift={np.linalg.norm(m['com']-com0)*1e6:.2f}um"
+                  + (f"  switched={js.n_switched}" if js is not None else ""), flush=True)
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
+
+    # normalise all recorded frames to the rested baseline + assemble the trajectory
+    traj = [{"step": r["gstep"], "phase": r["phase"], "aa0": r["area"] / A0 if A0 > 0 else 0.0,
+             "maxZ_um": r["maxZ_um"], "vv0": r["Vsum"] / V0sum if V0sum else 0.0,
+             "drift_um": float(np.linalg.norm(r["com"] - com0) * 1e6)} for r in recs]
 
     if save_frames and frame_list is not None:
         np.savez_compressed(
             save_frames, frames=np.array(frame_list, dtype=np.float32),
             faces=faces_a.astype(np.int32), cof=cof_a.astype(np.int32),
+            cad=np.array(cad_list, dtype=np.float32),
             step=np.array([r["step"] for r in traj]),
+            phase=np.array([r["phase"] for r in traj]),
             aa0=np.array([r["aa0"] for r in traj]),
             maxZ=np.array([r["maxZ_um"] for r in traj]),
             vv0=np.array([r["vv0"] for r in traj]))
         print(f"  saved {len(frame_list)} frames -> {save_frames}", flush=True)
 
-    aa = [r["aa0"] for r in traj]
+    spread_aa = [r["aa0"] for r in traj if r["phase"] == 1] or [1.0]
     out = {
         "device": device, "n_cells": n_cells, "N": N, "subdiv": subdiv, "dt": dt,
         "steps": steps, "warmup": warmup, "settle_steps": settle_steps,
         "truncated_at": truncated_at, "steps_per_s": (truncated_at or steps) / elapsed,
         "substrate_wetting": substrate_wetting, "use_substrate_well": use_substrate_well,
         "lamellipodium": lamellipodium, "junction_switch": junction_switch,
-        "aa0_peak": max(aa), "aa0_final": aa[-1], "maxZ_final_um": traj[-1]["maxZ_um"],
+        "A0_rested_um2": A0, "compaction_x": (m_init["A_um2"] / A0) if A0 else 0.0,
+        "aa0_peak": max(spread_aa), "aa0_final": spread_aa[-1],
+        "maxZ_final_um": traj[-1]["maxZ_um"],
         "vv0_final": traj[-1]["vv0"], "drift_final_um": traj[-1]["drift_um"],
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
@@ -383,8 +443,11 @@ def main():
     ap.add_argument("--warmup", type=int, default=1000, help="soft-start steps at 0.1x dt")
     ap.add_argument("--settle-steps", type=int, default=0,
                     help="aggregation/settle steps at full dt with NO spread drivers (rest the spheroid at z0 before the measured spread; baseline A0 is taken AFTER this)")
+    ap.add_argument("--settle-frames", type=int, default=0,
+                    help="number of frames to capture DURING the aggregate/settle phase (shows the cube→compact-ball compaction in the montage)")
     ap.add_argument("--lamellipodium", action="store_true", help="enable the M2 per-cell lamellipodium crawl")
     ap.add_argument("--junction-switch", action="store_true", help="enable the M3 crowd-pressure cadherin→integrin junction switch")
+    ap.add_argument("--gap", type=float, default=2.05, help="cell centre spacing in R for the spherical aggregate (2.05 = touching/compact)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -394,6 +457,7 @@ def main():
     out = run_decohesion(
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
+        settle_frames=args.settle_frames, gap=args.gap,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
