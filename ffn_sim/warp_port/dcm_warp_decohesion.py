@@ -843,6 +843,31 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                              "n_slipped": ecm.n_slipped, "k_fa": ecm.k_fa,
                              "engage_range": ecm.engage_range, "F_s": ecm.p.F_s,
                              "F_c": ecm.p.F_c, "fa_batch_steps": ecm.fa_batch_steps}
+
+    # D11 VALIDATION GATES — explicit PASS/FAIL contracts evaluated from this run's diagnostics
+    # (the gate is a contract written before the run; surface to PI, never loosen inline). The
+    # single-run-checkable gates are wired here; G1 (Young-Dupre contact angle) and G3 (the
+    # A/A0=a+b/R+c/R² size-law r²≥0.95 fit) are SWEEP-level — they need a multi-N batch, so they
+    # are evaluated by the sweep harness, not a single run (flagged below, not silently passed).
+    PEN_GATE = 0.3            # G2: max interpenetration / mean_edge (cells must not overlap)
+    VV0_TOL = 0.10            # volume conservation sanity
+    gates = {}
+    gates["finite"] = {"pass": truncated_at is None, "truncated_at": truncated_at}
+    gates["G2_interpenetration"] = {"pass": out["pen_frac_peak"] <= PEN_GATE,
+                                    "pen_frac_peak": out["pen_frac_peak"], "threshold": PEN_GATE}
+    gates["volume_conservation"] = {"pass": abs(out["vv0_final"] - 1.0) <= VV0_TOL,
+                                    "vv0_final": out["vv0_final"], "tol": VV0_TOL}
+    if division:
+        nf = out["division_stats"]["n_active_final"]
+        gates["G4_division"] = {"pass": nf > n_active, "n_active0": n_active, "n_active_final": nf,
+                                "note": "G4 A/A0∈[2,4] band is checked by the multi-N sweep"}
+    gates["G1_contact_angle"] = {"pass": None, "note": "sweep-level (Young-Dupre); not a single run"}
+    gates["G3_size_law_fit"] = {"pass": None, "note": "sweep-level (A/A0=a+b/R+c/R² r²≥0.95)"}
+    out["gates"] = gates
+    verdict = [(k, v["pass"]) for k, v in gates.items() if v["pass"] is not None]
+    line = "  ".join(f"{k}={'PASS' if p else 'FAIL'}" for k, p in verdict)
+    print(f"  [GATES] {line}", flush=True)
+    out["gates_all_pass"] = all(p for _, p in verdict)
     return out
 
 
