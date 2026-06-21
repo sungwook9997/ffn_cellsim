@@ -43,6 +43,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
+from ffn_sim.warp_port.dcm_division_host import DivisionHost, DivisionParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
@@ -73,7 +74,8 @@ PARK_POS = np.array([1.0e-2, 1.0e-2, 1.0e-2])   # dormant pool node home (≫ ce
 
 
 def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
-                                 gap: float = 2.05, pool_factor: float = 0.0):
+                                 gap: float = 2.05, pool_factor: float = 0.0,
+                                 n_parked_cells: int = 0):
     """SPHERICAL cluster of cells RESTING on the substrate plane z0 (lowest node at z0).
 
     Cells are icospheres placed at :func:`_spherical_centers` (a rounded cluster, NOT the
@@ -89,17 +91,25 @@ def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float 
     verts1, edges1, tris1 = icosphere_mesh(R, subdiv)
     npc = verts1.shape[0]
     centers = _spherical_centers(n_cells, R, gap)
-    pos = np.concatenate([verts1 + c for c in centers], axis=0)
-    faces = np.concatenate([tris1 + ci * npc for ci in range(n_cells)], axis=0)
-    edges = np.concatenate([edges1 + ci * npc for ci in range(n_cells)], axis=0)
-    cof = np.repeat(np.arange(n_cells), npc).astype(np.int64)
-    face_cell = np.repeat(np.arange(n_cells), tris1.shape[0]).astype(np.int64)
-    pos[:, 2] += (z0 - pos[:, 2].min())          # rest the ball on the dish (active nodes only)
+    # C7 CELL POOL: n_parked_cells extra UNDEFORMED icospheres parked far (cof=−1 → cohesion/
+    # contact/measure/centroid skip them; turgor sees V=V0 → 0 force). A division ACTIVATES one
+    # (sets its nodes' cof to the daughter id + moves it next to the mother) — faces/edges are
+    # pre-allocated so no device topology resync, only pos/cof. Parked spread on a far lattice.
+    n_total_cells = n_cells + n_parked_cells
+    park_centers = [PARK_POS + np.array([3.0 * R * (k + 1), 0.0, 0.0]) for k in range(n_parked_cells)]
+    all_centers = list(centers) + park_centers
+    pos = np.concatenate([verts1 + c for c in all_centers], axis=0)
+    faces = np.concatenate([tris1 + ci * npc for ci in range(n_total_cells)], axis=0)
+    edges = np.concatenate([edges1 + ci * npc for ci in range(n_total_cells)], axis=0)
+    cof = np.repeat(np.arange(n_total_cells), npc).astype(np.int64)
+    cof[n_cells * npc:] = -1                      # parked cells start dormant (nodes cof=−1)
+    face_cell = np.repeat(np.arange(n_total_cells), tris1.shape[0]).astype(np.int64)
+    # rest the ACTIVE cluster on the dish (z0 = lowest active node); parked cells stay far
+    act = np.zeros(pos.shape[0], dtype=bool); act[:n_cells * npc] = True
+    pos[:, 2] += (z0 - pos[act, 2].min())
 
-    # DORMANT NODE POOL for remeshing (A1): SPLIT activates a parked node, COLLAPSE returns
-    # one. Parked at PARK_POS (≫ cell scale, +z) so every force is 0 there (well: |dz|≫rng and
-    # above z0 → 0; cohesion/contact: cof<0 skipped; not in any face/edge). n_pool extra rows.
-    n_pool = int(pool_factor * pos.shape[0])
+    # DORMANT NODE POOL for remeshing (A1): SPLIT activates a parked node, COLLAPSE returns one.
+    n_pool = int(pool_factor * (n_cells * npc))
     if n_pool > 0:
         pool = np.tile(PARK_POS, (n_pool, 1))
         pos = np.concatenate([pos, pool], axis=0)
@@ -141,6 +151,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
+                   division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.5,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -156,8 +167,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     above them, the upper (non-ECM-contacting) cells are dragged along (collective spread)."""
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
+    # A1 remesh and C7 division both draw dormant nodes from cof<0; until the cof-sentinel
+    # disambiguation lands (remesh pool == −1 vs parked cell == −2) they cannot co-run safely —
+    # remesh SPLIT would grab a parked cell's node. Guard: division wins (it owns the pool).
+    if division and remesh_period:
+        print("  [warn] division + remesh both requested — disabling remesh this run "
+              "(shared cof<0 pool; disambiguation is a follow-up).", flush=True)
+        remesh_period = 0
+    n_active = n_cells                              # requested live cells (C7 adds a parked pool)
+    n_parked = int(div_pool_factor * n_cells) if division else 0
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
-        n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0))
+        n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0),
+        n_parked_cells=n_parked)
+    n_cells = n_active + n_parked                   # per-cell arrays size to the FULL pool
     N = pos_a.shape[0]
     mean_edge = float(np.linalg.norm(pos_a[edges_a[:, 0]] - pos_a[edges_a[:, 1]], axis=1).mean())
     R0 = float(np.linalg.norm(icosphere_mesh(R, subdiv)[0], axis=1).mean())
@@ -276,6 +298,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  [nucleus] R_nuc={R_nuc*1e6:.2f}um ({R_nuc_factor:.2f}·R)  E_nuc={E_nuc:.0f}Pa  "
               f"ratio_lamin={ratio_lamin}  knee={knee_strain}  k_chrom={k_chrom:.2e}N/m  "
               f"k_lamin={k_lamin:.2e}N/m  (deformable core; bilinear chromatin→lamin)", flush=True)
+
+    # C7 cell division (proliferation): rim cells divide into parked pool cells at low cadence.
+    div = None
+    if division:
+        verts0 = icosphere_mesh(R, subdiv)[0]
+        div = DivisionHost(verts0=verts0, npc=npc, n_total=n_cells, n_active0=n_active,
+                           R=R, z0=z0, params=DivisionParams(p_div=div_rate))
+        print(f"  [division] n_active={n_active} + parked pool={n_parked} (n_total={n_cells})  "
+              f"p_div={div_rate}  batch={div.batch_steps}  rim-cell proliferation", flush=True)
 
     # C6 explicit integrin-ECM catch-slip clutch (replaces the wetting proxy). Basal nodes grip
     # the dish; Pereverzev catch-slip governs hold/release → traction-limited mechanistic spread.
@@ -625,6 +656,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             ecm.update(pos_d.numpy().astype(np.float64))
             ecm.upload(device)
+        # C7: cell division (rim-cell proliferation) — activate parked daughters, resync cof
+        if div is not None and s % div.batch_steps == 0:
+            wp.synchronize_device(device)
+            P = pos_d.numpy().astype(np.float64)
+            if div.update(P, cof_a):
+                pos_d.assign(np.ascontiguousarray(P))
+                cof_d.assign(cof_a.astype(np.int32))
+                if lam is not None: lam.cof = cof_a
+                if js is not None: js.cof = cof_a
+                if cad is not None: cad.cof = cof_a
+                if ecm is not None: ecm.cof = cof_a
+                print(f"  [division] step {s}: {div.n_divisions} total divisions "
+                      f"({int((cof_a[np.arange(n_cells)*npc]>=0).sum())} active cells)", flush=True)
         stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
@@ -708,6 +752,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                  "n_broken": cad.n_broken, "k_trans": cad.p.k_trans,
                                  "r0_trans": cad.p.r0_trans, "k_on": cad.p.k_on,
                                  "batch_steps": cad.batch_steps}
+    if div is not None:
+        out["division_stats"] = {"n_divisions": div.n_divisions, "n_active0": n_active,
+                           "n_active_final": int((cof_a[np.arange(n_cells) * npc] >= 0).sum()),
+                           "n_parked": n_parked, "p_div": div_rate}
     if ecm is not None:
         out["ecm_clutch_stats"] = {"n_clutches_final": ecm.n_clutches, "n_engaged": ecm.n_engaged,
                              "n_slipped": ecm.n_slipped, "k_fa": ecm.k_fa,
@@ -744,6 +792,9 @@ def main():
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
     ap.add_argument("--gamma-surf", type=float, default=1.0e-4, help="B4 surface tension coefficient [N/m]")
     ap.add_argument("--k-area", type=float, default=0.0, help="B4 global area-constraint stiffness [N/m] (0=off)")
+    ap.add_argument("--division", action="store_true", help="C7: rim-cell proliferation (parked cell pool → daughters)")
+    ap.add_argument("--div-pool-factor", type=float, default=1.0, help="C7 parked cell pool size as a fraction of n-cells")
+    ap.add_argument("--div-rate", type=float, default=0.5, help="C7 per-rim-cell division probability per tick")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -759,6 +810,7 @@ def main():
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
+        division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
