@@ -41,10 +41,12 @@ Earlier I called some work "token-blocked." That was wrong: the **Notion MCP int
 
 ## Open items
 
-1. **Widen manifest coverage** — the 8 manifest constants are all now sourced. The broader ~44 KU-tagged config lines aren't in the manifest yet; each KU→source is resolvable live via the Notion MCP. Say the word and I'll add them (a few MCP calls per constant).
-2. **`source-integrity` standalone CI gate** — intentionally skipped (redundant with the params gate). Revisit only to enforce citation integrity over the *whole* 329-row corpus, not just the production-cited subset.
+1. ✅ **DONE — widen manifest coverage**: all 42 KU-tagged physical constants now declared (19 VERIFIED / 13 SOURCE_UNVERIFIED / 10 legitimately-UNSOURCED), each KU→source resolved from Notion.
+4. ✅ **DONE — Notion → git snapshot** (the KB-audit's #1 durability fix): token provided → materialized kb.duckdb (662 nodes / 1242 edges) and committed `snapshots/notion_snapshot.json` (428 KB, 662 rows, all 8 DBs). The SoT is now reproducible from git alone; `dump_notion_snapshot.py` wired into `refresh.sh`.
+
+Remaining (decision calls, not blockers):
+2. **`source-integrity` standalone CI gate** — intentionally skipped (redundant with the params gate). Revisit only to enforce citation integrity over the *whole* 332-row corpus, not just the production-cited subset.
 3. **CLAUDE.md closeout line** ("run `make kb-check` before the receipt") — a project-instruction change = your call.
-4. **Notion → git snapshot** (the KB-audit's #1 durability fix) — doable via MCP but slow (240 SourceEvidence + 144 KnowledgeClaim rows = many fetches); far cheaper via the file-token `refresh.sh`. Best done where the file token lives; I can do a partial/targeted snapshot via MCP if you want it now.
 
 ## Status
 
