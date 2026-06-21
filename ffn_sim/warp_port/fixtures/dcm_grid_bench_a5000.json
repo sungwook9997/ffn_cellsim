@@ -1,0 +1,19 @@
+{
+  "_about": "Multi-cell DCM Warp hybrid: hash-grid neighbour-list acceleration of the inter-cell forces (cohesion + node-face contact) vs the committed brute-force kernels. gbook RTX A5000, 2026-06-21. icosphere subdiv=2.",
+  "device": "gbook RTX A5000",
+  "grid_vs_brute_correctness": {
+    "cohesion_rel_err": 5.32e-18,
+    "contact_rel_err_tight_pack": 2.83e-16,
+    "note": "grid reproduces the brute-force force to machine-eps (it only prunes far pairs that contribute 0); tight-pack config has 720/1296 nodes in real contact, so the comparison is non-trivial."
+  },
+  "scaling_steps_per_s_a5000": {
+    "n_cells_8_nodes_1296":  {"brute": 32.3, "grid": 352.7, "speedup": 10.9},
+    "n_cells_16_nodes_2592": {"brute": 15.9, "grid": 267.5, "speedup": 16.9},
+    "n_cells_27_nodes_4374": {"brute": 9.3,  "grid": 341.8, "speedup": 36.8}
+  },
+  "finding": "The Warp HashGrid neighbour list turns the inter-cell pair search from O(N^2)/O(N*M) into O(N*k): grid throughput stays ~constant (~270-350 steps/s) as the spheroid grows while brute collapses quadratically, so the speedup GROWS with cell count (10.9x at 8 cells -> 36.8x at 27 cells / 4374 nodes). Key fix: the face-centroid query radius must be c_adh + the triangle circumradius (~0.7*l_max), NOT c_adh + 2*max_edge -- HashGrid cell size = query radius, so an oversized radius makes coarse cells that return far too many candidates (that mistake gave only ~2x).",
+  "remesh_optimization": "Added a device-side edge-length gate (_edge_extent: atomic max/min over edges, one tiny reduction + a 2-float read): the expensive host remesh_pass + full-pool download is SKIPPED entirely unless an edge is out of [l_min, l_max]. In equilibrium phases a remesh epoch costs ~one reduction instead of a download+python-remesh; it still fires (correctly) in the spreading-refinement regime.",
+  "remaining_headroom": "grid throughput (~340 steps/s) is below the intra-cell ceiling (~10k) due to 2 grid rebuilds/step + query overhead at these sizes; building the node grid over only ACTIVE nodes (skip the dormant pool) and reusing grid buffers would narrow it further.",
+  "repro": "gpu",
+  "scripts": ["ffn_sim/warp_port/dcm_neighbor_warp.py", "ffn_sim/warp_port/dcm_warp_hybrid_multicell.py"]
+}

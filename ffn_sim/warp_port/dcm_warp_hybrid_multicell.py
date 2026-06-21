@@ -35,6 +35,8 @@ from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_forc
 from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate, _bd_step, _edges_from_faces
+from ffn_sim.warp_port.dcm_neighbor_warp import (
+    pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel)
 
 wp.init()
 
@@ -50,6 +52,21 @@ def _dp_from_vol(Vc: wp.array(dtype=wp.float64), V0: wp.float64,
 @wp.kernel
 def _zero_vec(force: wp.array(dtype=wp.vec3d)):
     force[wp.tid()] = wp.vec3d(wp.float64(0.0), wp.float64(0.0), wp.float64(0.0))
+
+
+@wp.kernel
+def _edge_extent(pos: wp.array(dtype=wp.vec3d),
+                 edges: wp.array(dtype=wp.int32, ndim=2),
+                 out: wp.array(dtype=wp.float64)):
+    """out[0] = max edge length, out[1] = -(min edge length) (device reduction).
+
+    Lets the host remesh be SKIPPED entirely when every edge is in [l_min, l_max]
+    — the equilibrium common case — so a remesh epoch costs one tiny reduction +
+    a 2-float read instead of a full-pool download + python remesh_pass."""
+    e = wp.tid()
+    d = wp.length(pos[edges[e, 0]] - pos[edges[e, 1]])
+    wp.atomic_max(out, 0, d)
+    wp.atomic_max(out, 1, -d)
 
 
 def build_multicell(n_cells: int, subdiv: int, R: float, gap: float = 1.7):
@@ -83,7 +100,8 @@ def build_multicell(n_cells: int, subdiv: int, R: float, gap: float = 1.7):
 def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                   remesh_period: int = 0, device: str = "cpu", kT: float = 0.0,
                   dt: float = 5.0e-8, pool_factor: float = 3.0, warmup: int = 30,
-                  use_contact: bool = True, use_cohesion: bool = True) -> dict:
+                  use_contact: bool = True, use_cohesion: bool = True,
+                  use_grid: bool = False) -> dict:
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_multicell(n_cells, subdiv, R)
@@ -94,7 +112,7 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     R0 = float(np.linalg.norm(icosphere_mesh(R, subdiv)[0], axis=1).mean())
     V0 = (4.0 / 3.0) * np.pi * R0 ** 3
     area_per_node = 4.0 * np.pi * R0 ** 2 / npc
-    park_pos = np.array([1.0e3, 1.0e3, 1.0e3])
+    park_pos = np.array([1.0e-2, 1.0e-2, 1.0e-2])  # dormant: far vs ~1e-5 m cell, modest cell-index
 
     inv_gamma = 1.0 / p.gamma_node
     bd_pref = float(np.sqrt(2.0 * kT / p.gamma_node * dt)) if kT > 0 else 0.0
@@ -130,20 +148,52 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     n_edges = edges_h.shape[0]
     n_faces = faces_h.shape[0]
 
+    # --- hash-grid neighbour-list acceleration (use_grid) ---
+    max_edge = float(np.linalg.norm(pos_a[edges_a[:, 0]] - pos_a[edges_a[:, 1]], axis=1).max())
+    coh_radius = float(c_adh)                       # node-node interaction range
+    # face-centroid query radius: c_adh + the centroid->closest-point reach, bounded
+    # by the triangle circumradius (~0.58*edge); use 0.7*l_max so the grid cell size
+    # stays small (coarse cells = too many candidates = the slow grid). l_max=3*l_min.
+    con_radius = float(c_adh + 0.7 * (3.0 * l_min))
+    node_f32 = wp.zeros(MAX, dtype=wp.vec3, device=device)
+    cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+    node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
+    face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
+
+    extent_d = wp.zeros(2, dtype=wp.float64, device=device)
+    l_max = 3.0 * l_min
+
     remesh_count = {"swap": 0, "split": 0, "collapse": 0}
     n_remesh_events = 0
+    n_remesh_skipped = 0
     sync_time = 0.0
 
     def step_once(s):
         wp.launch(_zero_vec, dim=MAX, inputs=[force_d], device=device)
+        if use_grid:
+            wp.launch(pos_to_f32, dim=MAX, inputs=[pos_d, node_f32], device=device)
+            if use_cohesion:
+                node_grid.build(points=node_f32, radius=coh_radius)
+            if use_contact:
+                wp.launch(face_centroids_f32, dim=n_faces,
+                          inputs=[pos_d, faces_d, cent_f32], device=device)
+                face_grid.build(points=cent_f32, radius=con_radius)
         # 1) cohesion (own-row write onto the zeroed force)
         if use_cohesion:
-            wp.launch(dcm_cohesion_kernel, dim=MAX,
-                      inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(MAX),
-                              wp.float64(r_contact), wp.float64(c_adh),
-                              wp.float64(rep_strength), wp.float64(adh_strength),
-                              wp.float64(area_per_node), wp.float64(force_cap), force_d],
-                      device=device)
+            if use_grid:
+                wp.launch(cohesion_grid_kernel, dim=MAX,
+                          inputs=[node_grid.id, node_f32, pos_d, cof_d,
+                                  wp.float32(coh_radius), wp.float64(r_contact),
+                                  wp.float64(c_adh), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(area_per_node),
+                                  wp.float64(force_cap), force_d], device=device)
+            else:
+                wp.launch(dcm_cohesion_kernel, dim=MAX,
+                          inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(MAX),
+                                  wp.float64(r_contact), wp.float64(c_adh),
+                                  wp.float64(rep_strength), wp.float64(adh_strength),
+                                  wp.float64(area_per_node), wp.float64(force_cap), force_d],
+                          device=device)
         # 2) exact per-cell turgor: volume -> dP -> per-face force (atomic add)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces,
@@ -155,11 +205,18 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                   inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
         # 3) node-face contact (atomic add)
         if use_contact:
-            wp.launch(node_face_contact_kernel, dim=MAX,
-                      inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0),
-                              wp.int32(n_faces), wp.float64(rep_strength),
-                              wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
-                              force_d], device=device)
+            if use_grid:
+                wp.launch(contact_grid_kernel, dim=MAX,
+                          inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                                  wp.float32(con_radius), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(c_rep),
+                                  wp.float64(c_adh), force_d], device=device)
+            else:
+                wp.launch(node_face_contact_kernel, dim=MAX,
+                          inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0),
+                                  wp.int32(n_faces), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                                  force_d], device=device)
         # 4) cortex edge springs (atomic add)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
@@ -176,8 +233,16 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     for s in range(steps):
         step_once(s)
         if remesh_period > 0 and s > 0 and s % remesh_period == 0:
-            wp.synchronize_device(device)
             ts = time.perf_counter()
+            # cheap device gate: skip the host remesh unless an edge is out of bounds
+            extent_d.zero_()
+            wp.launch(_edge_extent, dim=n_edges, inputs=[pos_d, edges_d, extent_d], device=device)
+            ext = extent_d.numpy()
+            if float(ext[0]) <= l_max and -float(ext[1]) >= l_min:
+                n_remesh_skipped += 1
+                sync_time += time.perf_counter() - ts
+                continue
+            wp.synchronize_device(device)
             pos_h = pos_d.numpy().astype(np.float64)
             pos_h, faces_h, cof, face_cell, counts = remesh_pass(
                 pos_h, faces_h, cof, l_min, face_cell=face_cell, max_ops=12, park=park_pos)
@@ -194,6 +259,8 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                 edges_d = wp.array(edges_h, dtype=wp.int32, device=device)
                 r0_d = wp.array(r0_h, dtype=wp.float64, device=device)
                 n_edges, n_faces = edges_h.shape[0], faces_h.shape[0]
+                if use_grid:
+                    cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
             sync_time += time.perf_counter() - ts
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
@@ -206,8 +273,9 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
         "n_active0": n_active0, "pool_MAX": MAX, "n_active_final": int(active.sum()),
         "n_faces": n_faces, "steps": steps, "remesh_period": remesh_period,
         "elapsed_s": elapsed, "steps_per_s": steps / elapsed,
-        "finite": finite, "remesh_events": n_remesh_events, "remesh_ops": remesh_count,
-        "remesh_sync_frac": sync_time / elapsed if elapsed else 0.0,
+        "finite": finite, "remesh_events": n_remesh_events,
+        "remesh_skipped": n_remesh_skipped, "remesh_ops": remesh_count,
+        "remesh_sync_frac": sync_time / elapsed if elapsed else 0.0, "use_grid": use_grid,
         "kT": kT, "dt": dt,
     }
 
