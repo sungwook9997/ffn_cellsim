@@ -256,8 +256,10 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                 n_remesh_events += 1
                 edges_h = _edges_from_faces(faces_h)
                 r0_h = np.linalg.norm(pos_h[edges_h[:, 0]] - pos_h[edges_h[:, 1]], axis=1)
-                pos_d = wp.array(pos_h, dtype=wp.vec3d, device=device)
-                cof_d = wp.array(cof.astype(np.int32), dtype=wp.int32, device=device)
+                # #4: pos/cof are fixed MAX-pool size -> REUSE the buffers (assign),
+                # no per-epoch realloc; only faces/edges/r0 grow -> must realloc.
+                pos_d.assign(pos_h)
+                cof_d.assign(cof.astype(np.int32))
                 faces_d = wp.array(faces_h.astype(np.int32), dtype=wp.int32, device=device)
                 fcell_d = wp.array(face_cell.astype(np.int32), dtype=wp.int32, device=device)
                 edges_d = wp.array(edges_h, dtype=wp.int32, device=device)

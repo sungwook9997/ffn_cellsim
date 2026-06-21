@@ -131,6 +131,36 @@ def _bd_step(pos: wp.array(dtype=wp.vec3d), force: wp.array(dtype=wp.vec3d),
     )
 
 
+@wp.kernel
+def _bd_step_lm(pos: wp.array(dtype=wp.vec3d), force: wp.array(dtype=wp.vec3d),
+                cof: wp.array(dtype=wp.int32), prv: wp.array(dtype=wp.vec3d),
+                inv_gamma: wp.float64, bd_pref: wp.float64, dt: wp.float64,
+                seed: wp.int32, step: wp.int32):
+    """#5: Leimkuhler-Matthews two-Gaussian overdamped step (O(dt^2) on harmonic
+    systems) — the committed-parity integrator, device-resident:
+        r += (F/gamma) dt + sqrt(kT/(2 gamma dt)) (W_n + W_{n-1}) dt
+    with bd_pref = sqrt(kT/(2 gamma dt)). prv holds W_{n-1} per node. On-device RNG
+    (Warp randn) -> statistically equivalent, not bit-identical, to the numpy stream
+    (same policy as the committed GPU path). At kT=0 (bd_pref=0) it is identical to
+    the single-Gaussian step."""
+    i = wp.tid()
+    if cof[i] < 0:
+        return
+    st = wp.rand_init(seed, i + step * 1000003)
+    Wx = wp.float64(wp.randn(st))
+    Wy = wp.float64(wp.randn(st))
+    Wz = wp.float64(wp.randn(st))
+    f = force[i]
+    p = pos[i]
+    pv = prv[i]
+    pos[i] = wp.vec3d(
+        p[0] + f[0] * inv_gamma * dt + bd_pref * (Wx + pv[0]) * dt,
+        p[1] + f[1] * inv_gamma * dt + bd_pref * (Wy + pv[1]) * dt,
+        p[2] + f[2] * inv_gamma * dt + bd_pref * (Wz + pv[2]) * dt,
+    )
+    prv[i] = wp.vec3d(Wx, Wy, Wz)
+
+
 def _edges_from_faces(faces: np.ndarray) -> np.ndarray:
     eset = set()
     for a, b, c in faces:
@@ -142,7 +172,8 @@ def _edges_from_faces(faces: np.ndarray) -> np.ndarray:
 def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
                device: str = "cpu", kT: float = 0.0, dt: float = 1.0e-7,
                turgor_scale: float = 1.0, pool_factor: float = 6.0,
-               warmup: int = 50, use_graph: bool = False) -> dict:
+               warmup: int = 50, use_graph: bool = False,
+               integrator: str = "lm") -> dict:
     """GPU-resident hybrid loop with a fixed node-pool + host low-cadence remesh."""
     p = ResolvedDCM(subdivisions=subdiv)
     verts, edges, tris = icosphere_mesh(p.R_cell, subdiv)
@@ -155,7 +186,12 @@ def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
     park_pos = np.array([1.0e3, 1.0e3, 1.0e3])  # dormant nodes parked far away
 
     inv_gamma = 1.0 / p.gamma_node
-    bd_pref = float(np.sqrt(2.0 * kT / p.gamma_node * dt)) if kT > 0 else 0.0
+    # #5: L-M two-Gaussian prefactor sqrt(kT/(2 gamma dt)); "euler" keeps the
+    # single-Gaussian sqrt(2 kT/(gamma dt)). At kT=0 both -> 0 (identical).
+    if integrator == "lm":
+        bd_pref = float(np.sqrt(kT / (2.0 * p.gamma_node * dt))) if kT > 0 else 0.0
+    else:
+        bd_pref = float(np.sqrt(2.0 * kT / p.gamma_node * dt)) if kT > 0 else 0.0
 
     # node pool: first n0 active (cof=0), rest dormant (cof=-1, parked)
     pos_h = np.tile(park_pos, (MAX, 1)).astype(np.float64)
@@ -171,6 +207,7 @@ def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
     cof_d = wp.array(cof.astype(np.int32), dtype=wp.int32, device=device)
     force_d = wp.zeros(MAX, dtype=wp.vec3d, device=device)
     acc_d = wp.zeros(5, dtype=wp.float64, device=device)
+    prv_d = wp.zeros(MAX, dtype=wp.vec3d, device=device)   # #5: L-M W_{n-1} per node
     edges_d = wp.array(edges_h, dtype=wp.int32, device=device)
     r0_d = wp.array(r0_h, dtype=wp.float64, device=device)
     n_edges = edges_h.shape[0]
@@ -188,9 +225,15 @@ def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
                           wp.float64(p.K_vol), wp.float64(V0), force_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
-        wp.launch(_bd_step, dim=MAX,
-                  inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(bd_pref),
-                          wp.float64(dt), wp.int32(12345), wp.int32(s)], device=device)
+        if integrator == "lm":
+            wp.launch(_bd_step_lm, dim=MAX,
+                      inputs=[pos_d, force_d, cof_d, prv_d, wp.float64(inv_gamma),
+                              wp.float64(bd_pref), wp.float64(dt), wp.int32(12345),
+                              wp.int32(s)], device=device)
+        else:
+            wp.launch(_bd_step, dim=MAX,
+                      inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(bd_pref),
+                              wp.float64(dt), wp.int32(12345), wp.int32(s)], device=device)
 
     for s in range(warmup):
         step_once(s)
@@ -235,10 +278,10 @@ def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
                 n_remesh_events += 1
                 edges_h = _edges_from_faces(faces_h)
                 r0_h = np.linalg.norm(pos_h[edges_h[:, 0]] - pos_h[edges_h[:, 1]], axis=1)
-                # node-pool resync: pos array is the SAME fixed size — re-upload the
-                # (few) changed nodes + the new edge/active arrays. No realloc.
-                pos_d = wp.array(pos_h, dtype=wp.vec3d, device=device)
-                cof_d = wp.array(cof.astype(np.int32), dtype=wp.int32, device=device)
+                # node-pool resync: pos/cof are the SAME fixed MAX size -> REUSE the
+                # buffers (#4, assign, no realloc); only edges/r0 grow -> realloc.
+                pos_d.assign(pos_h)
+                cof_d.assign(cof.astype(np.int32))
                 edges_d = wp.array(edges_h, dtype=wp.int32, device=device)
                 r0_d = wp.array(r0_h, dtype=wp.float64, device=device)
                 n_edges = edges_h.shape[0]
