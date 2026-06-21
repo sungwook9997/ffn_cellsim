@@ -49,6 +49,7 @@ from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
+from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy
 
 wp.init()
 
@@ -188,6 +189,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.5,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
+                   integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -203,6 +205,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     above them, the upper (non-ECM-contacting) cells are dragged along (collective spread)."""
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
+    implicit = (integrator == "implicit")          # I-opt: linearly-implicit IMEX integration
+    if implicit and accel_dt:
+        dt = accel_dt                              # implicit unlocks a larger (accuracy-bound) dt
+    if implicit:
+        print(f"  [integrator] IMPLICIT (IMEX linearly-implicit) dt={dt:.1e}  cg_maxiter={cg_maxiter} "
+              f"— stiff operator (contact/turgor/edges/well/nucleus/bending) implicit, soft drivers explicit", flush=True)
     # A1 remesh and C7 division both draw dormant nodes from cof<0; until the cof-sentinel
     # disambiguation lands (remesh pool == −1 vs parked cell == −2) they cannot co-run safely —
     # remesh SPLIT would grab a parked cell's node. Guard: division wins (it owns the pool).
@@ -282,6 +290,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
     pen_d = wp.zeros(N, dtype=wp.float64, device=device)   # interpenetration diagnostic
+    # I-opt implicit: all-device CG scratch (only when --integrator implicit)
+    cg_scratch = ({k: wp.zeros(N, dtype=wp.vec3d, device=device)
+                   for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp", "Fb")} if implicit else None)
+    if implicit:
+        cg_scratch["sca"] = wp.zeros(1, dtype=wp.float64, device=device)
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
     face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
 
@@ -415,6 +428,60 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             lam.cof = cof_a            # activated/collapsed nodes changed the node→cell map
         if js is not None:
             js.cof = cof_a
+
+    def stiff_force_into(pos_buf, out_d):
+        """I-opt: the STIFF (CFL-setting + structural) force on an arbitrary position buffer, with
+        FROZEN neighbour grids (built on x_n by step_once) → the implicit operator's force eval.
+        Excludes the soft/explicit spreading drivers (wetting, lamellipodium, cadherin/clutch
+        springs) — those are in the RHS b. qpts=node_f32 (frozen) freezes connectivity for a valid
+        Hessian; pos_buf supplies the force math."""
+        wp.launch(_zero_vec, dim=N, inputs=[out_d], device=device)
+        if use_grid:
+            if js is not None:
+                wp.launch(cohesion_grid_cad_kernel, dim=N,
+                          inputs=[node_grid.id, node_f32, pos_buf, cof_d, cad_d, wp.float32(coh_q),
+                                  wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
+                                  wp.float64(coh_adh), wp.float64(area_per_node), wp.float64(force_cap), out_d], device=device)
+            else:
+                wp.launch(cohesion_grid_kernel, dim=N,
+                          inputs=[node_grid.id, node_f32, pos_buf, cof_d, wp.float32(coh_q),
+                                  wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
+                                  wp.float64(coh_adh), wp.float64(area_per_node), wp.float64(force_cap), out_d], device=device)
+        Vc_d.zero_()
+        wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, Vc_d], device=device)
+        wp.launch(_dp_from_vol, dim=n_cells, inputs=[Vc_d, wp.float64(V0), wp.float64(p.turgor_dP0),
+                  wp.float64(k_vol), dP_d], device=device)
+        if necro is not None:
+            wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
+        wp.launch(dcm_turgor_force_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, dP_d, out_d], device=device)
+        if use_grid:
+            if js is not None:
+                wp.launch(contact_grid_cad_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d, cad_d,
+                                  wp.float32(con_q), wp.float64(rep_strength), wp.float64(coh_adh),
+                                  wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
+            else:
+                wp.launch(contact_grid_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
+                                  wp.float32(con_q), wp.float64(rep_strength), wp.float64(coh_adh),
+                                  wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
+        wp.launch(_bond_accumulate, dim=n_edges, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
+        if use_substrate_well:
+            wp.launch(dcm_substrate_well_accum_kernel, dim=N, inputs=[pos_buf, wp.float64(z0),
+                      wp.float64(k_well), wp.float64(adh_range), wp.float64(k_floor), out_d], device=device)
+        if nucleus:
+            csum_d.zero_(); ccnt_d.zero_()
+            wp.launch(cell_centroid_accum_kernel, dim=N, inputs=[pos_buf, cof_d, csum_d, ccnt_d], device=device)
+            wp.launch(nucleus_force_kernel, dim=N, inputs=[pos_buf, cof_d, csum_d, ccnt_d, wp.float64(R_nuc),
+                      wp.float64(d_knee_nuc), wp.float64(k_chrom), wp.float64(k_lamin), out_d], device=device)
+        if bending:
+            nsum_d.zero_(); ncnt_d.zero_()
+            wp.launch(edge_neighbor_sum_kernel, dim=n_edges, inputs=[pos_buf, edges_d, nsum_d, ncnt_d], device=device)
+            wp.launch(umbrella_kernel, dim=N, inputs=[pos_buf, nsum_d, ncnt_d, lap_d], device=device)
+            nsum_d.zero_(); ncnt_d.zero_()
+            wp.launch(edge_neighbor_sum_kernel, dim=n_edges, inputs=[lap_d, edges_d, nsum_d, ncnt_d], device=device)
+            wp.launch(umbrella_kernel, dim=N, inputs=[lap_d, nsum_d, ncnt_d, bilap_d], device=device)
+            wp.launch(bending_apply_kernel, dim=N, inputs=[bilap_d, cof_d, wp.float64(k_bend), out_d], device=device)
 
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
@@ -557,9 +624,18 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               d["actin"], d["actin_cell"], wp.int32(d["n_used"]),
                               wp.float64(lam.p.k_tether), wp.float64(lam.p.tether_cap),
                               wp.float64(lam.p.tether_radius), force_d], device=device)
-        wp.launch(_bd_step, dim=N,
-                  inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
-                          wp.float64(dt_step), wp.int32(7), wp.int32(s)], device=device)
+        if implicit:
+            # IMEX linearly-implicit Euler: (γ/dt·I + K_stiff)Δx = F_total(xₙ) [=force_d].
+            # Grids/node_f32 were just built on xₙ above → frozen-neighbour operator. Soft drivers
+            # (wetting/lamellipodium/cadherin/clutch) are already in force_d (explicit RHS).
+            a_imp = (1.0 / inv_gamma) / dt_step          # γ_node / dt
+            dx_d, _ = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
+                                maxiter=cg_maxiter, device=device)
+            wp.launch(_vaxpy, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d], device=device)   # x += Δx
+        else:
+            wp.launch(_bd_step, dim=N,
+                      inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
+                              wp.float64(dt_step), wp.int32(7), wp.int32(s)], device=device)
 
     def _penetration_frac():
         """max node-into-other-cell penetration depth / mean_edge (0 = no interpenetration).
@@ -806,6 +882,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "cfl_limit": cfl_limit, "max_substeps": max_substeps, "n_sub_final": n_sub[0],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
+        "integrator": integrator, "accel_dt": (dt if implicit else None), "cg_maxiter": cg_maxiter,
         "nucleus": nucleus, "surface_tension": surface_tension,
         "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
         "bending": bending, "k_bend": k_bend if bending else None, "necrosis": necrosis,
@@ -907,6 +984,9 @@ def main():
     ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
     ap.add_argument("--necrosis", action="store_true", help="C8: 3-zone depth necrosis (O2-proxy; softens core turgor, gates division to the rim)")
     ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi"], help="D10: spheroid cell-centre packing (fcc=isotropic close-pack; voronoi=Lloyd CVT)")
+    ap.add_argument("--integrator", default="baoab", choices=["baoab", "implicit"], help="I-opt: time integrator (implicit = IMEX linearly-implicit, unlocks larger accel-dt)")
+    ap.add_argument("--accel-dt", type=float, default=None, help="I-opt: larger dt for --integrator implicit (accuracy-bound; e.g. 100× the explicit dt)")
+    ap.add_argument("--cg-maxiter", type=int, default=80, help="I-opt: max CG iterations per implicit step")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -924,6 +1004,7 @@ def main():
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
+        integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
