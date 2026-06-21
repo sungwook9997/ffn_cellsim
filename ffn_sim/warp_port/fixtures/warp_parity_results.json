@@ -94,6 +94,12 @@
     "N": 80,
     "force_rel": 2.2948042557516973e-16
   },
+  "DCM_substrate_force": {
+    "N": 12,
+    "well_force_rel": 0.0,
+    "wetting_host_force_rel": 0.0,
+    "wetting_warp_force_rel": 3.444244348696763e-16
+  },
   "lamellipodium_tether": {
     "N": 56,
     "n_tethered": 11,

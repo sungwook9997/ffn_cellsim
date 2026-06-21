@@ -237,6 +237,31 @@ def _dcm_cohesion_parity() -> dict:
     }
 
 
+def _dcm_substrate_parity() -> dict:
+    """DCM substrate z-well + in-plane wetting: Warp vs the committed HOOMD refs."""
+    from ffn_sim.warp_port.dcm_substrate_warp import (
+        run_dcm_substrate_well_warp, run_dcm_substrate_wetting_warp)
+
+    fx = dict(np.load(os.path.join(FIX, "dcm_substrate_ref.npz")))
+    rec = {"N": int(fx["N"])}
+    gw = run_dcm_substrate_well_warp(
+        pos=fx["pos"], z0=float(fx["z0"]), W_cs=float(fx["W_cs"]),
+        adh_range=float(fx["adh_range"]), k_sub=None, k_floor=float(fx["k_floor"]),
+        device=_DEVICE)
+    Sw = float(np.abs(fx["ref_force_well"]).max()) + 1e-30
+    rec["well_force_rel"] = float(
+        np.abs(gw["force"] - fx["ref_force_well"]).max()) / Sw
+    St = float(np.abs(fx["ref_force_wetting"]).max()) + 1e-30
+    for mode in ("host", "warp"):
+        gt = run_dcm_substrate_wetting_warp(
+            pos=fx["pos"], faces=fx["faces"], z0=float(fx["z0"]),
+            W_cs_Jm2=float(fx["W_cs_Jm2"]), adh_range=float(fx["adh_range"]),
+            force_cap=float(fx["force_cap"]), reduce=mode, device=_DEVICE)
+        rec[f"wetting_{mode}_force_rel"] = float(
+            np.abs(gt["force"] - fx["ref_force_wetting"]).max()) / St
+    return rec
+
+
 def _lamellipodium_parity() -> dict:
     """Lamellipodial traction-tether: Warp vs committed HOOMD LamellipodialTractionTether."""
     from ffn_sim.warp_port.lamellipodium_warp import run_lamellipodium_tether_warp
@@ -293,6 +318,7 @@ def main() -> None:
         "DCM_node_face_contact": _dcm_contact_parity(),
         "DCM_turgor_force": _dcm_turgor_parity(),
         "DCM_cohesion_force": _dcm_cohesion_parity(),
+        "DCM_substrate_force": _dcm_substrate_parity(),
         "lamellipodium_tether": _lamellipodium_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
@@ -306,7 +332,8 @@ def main() -> None:
                        "Fixman_metric_force", "compartment_harmonic_bond",
                        "compartment_harmonic_angle", "compartment_lj_wca",
                        "DCM_node_face_contact", "DCM_turgor_force",
-                       "DCM_cohesion_force", "lamellipodium_tether",
+                       "DCM_cohesion_force", "DCM_substrate_force",
+                       "lamellipodium_tether",
                        "B4_differentiability")}, indent=2))
 
 

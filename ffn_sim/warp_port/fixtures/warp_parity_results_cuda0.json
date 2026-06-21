@@ -27,7 +27,7 @@
       "N": 2048,
       "host_force_rel": 1.0134847349561482e-15,
       "host_energy_rel": 2.0819129844755607e-15,
-      "warp_force_rel": 1.0134847349561482e-15,
+      "warp_force_rel": 1.2668559186951852e-15,
       "warp_energy_rel": 2.0819129844755607e-15
     },
     "membrane": {
@@ -35,16 +35,16 @@
       "N": 2048,
       "host_force_rel": 2.5046670201980687e-16,
       "host_energy_rel": 1.1555919653681454e-16,
-      "warp_force_rel": 1.7502613137144104e-12,
-      "warp_energy_rel": 2.582748042597805e-12
+      "warp_force_rel": 1.1249711921219624e-12,
+      "warp_energy_rel": 1.6603545358409512e-12
     },
     "turgor": {
       "law": 2,
       "N": 2048,
       "host_force_rel": 3.623638974630924e-14,
       "host_energy_rel": 7.205051440688868e-14,
-      "warp_force_rel": 1.3107959352108804e-12,
-      "warp_energy_rel": 2.6256225177842597e-12
+      "warp_force_rel": 1.07895699265031e-12,
+      "warp_energy_rel": 2.1620936867364108e-12
     }
   },
   "MSHAKE_chain_constraint": {
@@ -93,6 +93,12 @@
   "DCM_cohesion_force": {
     "N": 80,
     "force_rel": 3.4422063836275458e-16
+  },
+  "DCM_substrate_force": {
+    "N": 12,
+    "well_force_rel": 0.0,
+    "wetting_host_force_rel": 0.0,
+    "wetting_warp_force_rel": 0.0
   },
   "lamellipodium_tether": {
     "N": 56,

@@ -303,3 +303,49 @@ claims:
     expect: {field: B4_differentiability.rel_err_vs_analytic, value: 0.0, tol: 1.0e-9}
     repro: gpu
     declared: gpu
+
+  # ── Phase C · G2 — DCM SUBSTRATE forces ported to Warp (z-well + in-plane wetting). ──
+  # The route-a spreading drivers that replace the deleted SettlingForce proxy.
+  # Verified by tests/warp_port/test_dcm_substrate_warp_parity.py vs the committed HOOMD
+  # reference dcm_substrate_ref.npz (real DcmSubstrateForceGPU + DcmSubstrateWettingGPU,
+  # one cell straddling z0 — all branches: well/floor/cap, engaged/non-engaged faces).
+  # CPU well + wetting-host are bit-for-bit (0.0); GPU (cuda:0) all three are 0.0.
+  - id: warp-DCM-substrate-well
+    desc: "DCM substrate z-well (plane-well + rigid floor) Warp own-row force bit-for-bit vs HOOMD DcmSubstrateForceGPU"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_substrate_force.well_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  - id: warp-DCM-substrate-wetting-host
+    desc: "DCM in-plane wetting per-face force law (host scatter) vs HOOMD DcmSubstrateWettingGPU"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_substrate_force.wetting_host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  - id: warp-DCM-substrate-wetting-warp
+    desc: "DCM in-plane wetting full Warp port (atomic scatter) vs HOOMD (reduction-order < 1e-8)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_substrate_force.wetting_warp_force_rel, value: 0.0, tol: 1.0e-8}
+    repro: cpu
+    declared: verified
+
+  - id: warp-gpu-DCM-substrate-well
+    desc: "GPU-backend: DCM substrate z-well force vs HOOMD DcmSubstrateForceGPU (cuda:0, < 1e-12)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: DCM_substrate_force.well_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: gpu
+    declared: gpu
+
+  - id: warp-gpu-DCM-substrate-wetting
+    desc: "GPU-backend: DCM in-plane wetting force law vs HOOMD DcmSubstrateWettingGPU (cuda:0, < 1e-12)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: DCM_substrate_force.wetting_host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: gpu
+    declared: gpu
