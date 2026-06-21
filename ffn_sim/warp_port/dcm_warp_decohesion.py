@@ -37,6 +37,7 @@ from ffn_sim.warp_port.dcm_substrate_warp import (
 from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
+    edge_midpoints_f32, edge_edge_contact_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
@@ -131,6 +132,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
                    settle_steps: int = 0, settle_frames: int = 0,
                    remesh_period: int = 0, pool_factor: float = 0.5,
+                   edge_edge: bool = False,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -196,6 +198,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
     face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
 
+    # A2 edge-edge contact buffers (per-edge owner cell + midpoint grid). ee_q bounds the
+    # midpoint separation of two edges that can pass within c_rep (c_rep + the two half-lengths,
+    # half-length ≤ l_max/2 = 1.5·l_min).
+    edge_cell_d = wp.array(cof_a[edges_a[:, 0]].astype(np.int32), dtype=wp.int32, device=device)
+    emid_f32 = wp.zeros(n_edges, dtype=wp.vec3, device=device)
+    edge_grid = wp.HashGrid(48, 48, 48, device=device) if (use_grid and edge_edge) else None
+    ee_q = float(c_rep + 3.0 * l_min)
+
     # M2 lamellipodium host (rim detection one-shot at build; advances at cadence).
     lam = None
     if lamellipodium:
@@ -223,7 +233,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
 
     def do_remesh():
         nonlocal faces_a, fcell_a, cof_a, edges_a, n_faces, n_edges
-        nonlocal faces_d, fcell_d, edges_d, r0_d, cent_f32
+        nonlocal faces_d, fcell_d, edges_d, r0_d, cent_f32, edge_cell_d, emid_f32
         P = pos_d.numpy().astype(np.float64)
         pos_new, faces_new, cof_new, fc_new, counts = remesh_pass(
             P, faces_a, cof_a, remesh_l_min, face_cell=fcell_a,
@@ -247,6 +257,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         edges_d = wp.array(edges_a.astype(np.int32), dtype=wp.int32, device=device)
         r0_d = wp.array(r0_new, dtype=wp.float64, device=device)
         cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+        edge_cell_d = wp.array(cof_a[edges_a[:, 0]].astype(np.int32), dtype=wp.int32, device=device)
+        emid_f32 = wp.zeros(n_edges, dtype=wp.vec3, device=device)
         if lam is not None:
             lam.cof = cof_a            # activated/collapsed nodes changed the node→cell map
         if js is not None:
@@ -308,6 +320,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               wp.float64(c_rep), wp.float64(c_adh), force_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
+        # A2 edge-edge excluded volume (always on, like contact — catches the edge-pokethrough
+        # node-face misses). Build the edge-midpoint grid then the seg-seg penalty kernel.
+        if edge_edge and use_grid:
+            wp.launch(edge_midpoints_f32, dim=n_edges, inputs=[pos_d, edges_d, emid_f32], device=device)
+            edge_grid.build(points=emid_f32, radius=ee_q)
+            wp.launch(edge_edge_contact_kernel, dim=n_edges,
+                      inputs=[edge_grid.id, emid_f32, pos_d, edges_d, edge_cell_d,
+                              wp.float32(ee_q), wp.float64(c_rep), wp.float64(rep_strength),
+                              wp.float64(area_per_node), force_d], device=device)
         # substrate z-well (own-row accumulate) — pins basal nodes at z0
         if use_substrate_well:
             wp.launch(dcm_substrate_well_accum_kernel, dim=N,
@@ -517,6 +538,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "pen_frac_peak": max(r["pen_frac"] for r in traj),
         "pen_frac_final": traj[-1]["pen_frac"],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
+        "edge_edge": edge_edge,
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
     if lam is not None:
@@ -550,6 +572,7 @@ def main():
     ap.add_argument("--gap", type=float, default=2.05, help="cell centre spacing in R for the spherical aggregate (2.05 = touching/compact)")
     ap.add_argument("--remesh-period", type=int, default=0, help="A1: host SWAP/SPLIT/COLLAPSE remesh every N steps (0=off); keeps edges in band → no slivers")
     ap.add_argument("--pool-factor", type=float, default=0.5, help="dormant node pool size as a fraction of active nodes (for remesh SPLIT)")
+    ap.add_argument("--edge-edge", action="store_true", help="A2: edge-edge contact (catches the edge-pokethrough node-face misses)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -561,6 +584,7 @@ def main():
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
         settle_frames=args.settle_frames, gap=args.gap,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
+        edge_edge=args.edge_edge,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)

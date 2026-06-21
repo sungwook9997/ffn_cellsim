@@ -33,6 +33,109 @@ def pos_to_f32(pos: wp.array(dtype=wp.vec3d), out: wp.array(dtype=wp.vec3)):
 
 
 @wp.kernel
+def edge_midpoints_f32(pos: wp.array(dtype=wp.vec3d),
+                       edges: wp.array(dtype=wp.int32, ndim=2),
+                       out: wp.array(dtype=wp.vec3)):
+    e = wp.tid()
+    a = pos[edges[e, 0]]
+    b = pos[edges[e, 1]]
+    h = wp.float64(0.5)
+    out[e] = wp.vec3(wp.float32(h * (a[0] + b[0])),
+                     wp.float32(h * (a[1] + b[1])),
+                     wp.float32(h * (a[2] + b[2])))
+
+
+@wp.func
+def _clamp01(x: wp.float64) -> wp.float64:
+    if x < wp.float64(0.0):
+        return wp.float64(0.0)
+    if x > wp.float64(1.0):
+        return wp.float64(1.0)
+    return x
+
+
+@wp.kernel
+def edge_edge_contact_kernel(
+    grid: wp.uint64,                         # grid over EDGE midpoints
+    mids: wp.array(dtype=wp.vec3),           # f32 edge midpoints (query points)
+    pos: wp.array(dtype=wp.vec3d),
+    edges: wp.array(dtype=wp.int32, ndim=2),
+    edge_cell: wp.array(dtype=wp.int32),     # per-edge owner cell
+    radius: wp.float32,                      # query radius (= c_rep + max edge half-length)
+    c_rep: wp.float64, rep: wp.float64, A: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """A2 edge-edge excluded volume: the case node-vs-face MISSES — a triangle edge of one
+    cell sliding between the (sparse) nodes of another. One thread per edge e1: find the
+    nearest OTHER-cell edge e2 (segment-segment closest point, Ericson), and if the segments
+    pass within ``c_rep`` push e1's two endpoints away from e2 by ``rep·A·(c_rep−d)`` split
+    by the closest-point barycentric. Each edge pushes only ITS OWN endpoints (e2's thread
+    pushes e2) → symmetric, no double count, momentum-clean. Same-cell edges are skipped."""
+    e1 = wp.tid()
+    c1 = edge_cell[e1]
+    if c1 < wp.int32(0):
+        return
+    p1 = pos[edges[e1, 0]]
+    q1 = pos[edges[e1, 1]]
+    d1 = q1 - p1
+    a = wp.dot(d1, d1)
+    z = wp.float64(0.0)
+    eps = wp.float64(1.0e-30)
+    best_d = wp.float64(1.0e300)
+    best_s = z
+    best_dir = wp.vec3d(z, z, z)
+    q = wp.hash_grid_query(grid, mids[e1], radius)
+    e2 = wp.int32(0)
+    while wp.hash_grid_query_next(q, e2):
+        if e2 != e1 and edge_cell[e2] != c1 and edge_cell[e2] >= wp.int32(0):
+            p2 = pos[edges[e2, 0]]
+            q2 = pos[edges[e2, 1]]
+            d2 = q2 - p2
+            r = p1 - p2
+            e = wp.dot(d2, d2)
+            f = wp.dot(d2, r)
+            s = z
+            t = z
+            if a <= eps and e <= eps:
+                s = z
+                t = z
+            elif a <= eps:
+                t = _clamp01(f / e)
+            else:
+                cc = wp.dot(d1, r)
+                if e <= eps:
+                    s = _clamp01(-cc / a)
+                else:
+                    b = wp.dot(d1, d2)
+                    denom = a * e - b * b
+                    if denom > eps or denom < -eps:
+                        s = _clamp01((b * f - cc * e) / denom)
+                    t = (b * s + f) / e
+                    if t < z:
+                        t = z
+                        s = _clamp01(-cc / a)
+                    elif t > wp.float64(1.0):
+                        t = wp.float64(1.0)
+                        s = _clamp01((b - cc) / a)
+            cp1 = p1 + d1 * s
+            cp2 = p2 + d2 * t
+            sep = cp1 - cp2
+            dist = wp.length(sep)
+            if dist < best_d:
+                best_d = dist
+                best_s = s
+                best_dir = sep
+    if best_d < c_rep:
+        dlen = best_d
+        if dlen < eps:
+            dlen = eps
+        amp = rep * A * (c_rep - best_d)
+        fvec = best_dir * (amp / dlen)               # push e1 AWAY from e2
+        wp.atomic_add(force, edges[e1, 0], fvec * (wp.float64(1.0) - best_s))
+        wp.atomic_add(force, edges[e1, 1], fvec * best_s)
+
+
+@wp.kernel
 def face_centroids_f32(pos: wp.array(dtype=wp.vec3d),
                        faces: wp.array(dtype=wp.int32, ndim=2),
                        out: wp.array(dtype=wp.vec3)):
