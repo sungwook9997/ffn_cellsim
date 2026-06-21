@@ -40,6 +40,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
     ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
     surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
+    edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
@@ -152,6 +153,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.5,
+                   bending: bool = False, k_bend: float = 1.0e-5,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -217,6 +219,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                          pos_a[faces_a[:, 2]] - pos_a[faces_a[:, 0]]), axis=1)
     _A0c = np.zeros(n_cells); np.add.at(_A0c, fcell_a, _fa0)
     a0cell_d = wp.array(_A0c, dtype=wp.float64, device=device)
+    # B5 bending: biharmonic via two umbrella-Laplacian passes (per-node neighbour buffers)
+    lap_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    bilap_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    nsum_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    ncnt_d = wp.zeros(N, dtype=wp.float64, device=device)
     R_nuc = R_nuc_factor * R
     d_knee_nuc = knee_strain * R_nuc
     k_chrom = 4.0 * np.pi * E_nuc * R_nuc / npc          # continuum bridge (H.9 eq B), N-invariant
@@ -290,6 +297,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
               f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
               f"catch-slip f0=29.2pN @ capture limit (Rakshit, ×40 bridge)", flush=True)
 
+    if bending:
+        print(f"  [bending] k_bend={k_bend:.2e}N/m  (biharmonic Δ²r thin-plate; resists curvature "
+              f"variation, distinct from surface tension)", flush=True)
     if surface_tension:
         print(f"  [surface-tension] gamma={gamma_surf:.2e}N/m  k_area={k_area:.2e}N/m  "
               f"A0_cell={float(_A0c.mean())*1e12:.1f}um^2 (area-minimising membrane tension"
@@ -426,6 +436,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                       inputs=[pos_d, cof_d, csum_d, ccnt_d, wp.float64(R_nuc),
                               wp.float64(d_knee_nuc), wp.float64(k_chrom), wp.float64(k_lamin),
                               force_d], device=device)
+        # B5 thin-plate bending: biharmonic Δ²r via two umbrella-Laplacian passes
+        if bending:
+            nsum_d.zero_(); ncnt_d.zero_()
+            wp.launch(edge_neighbor_sum_kernel, dim=n_edges, inputs=[pos_d, edges_d, nsum_d, ncnt_d], device=device)
+            wp.launch(umbrella_kernel, dim=N, inputs=[pos_d, nsum_d, ncnt_d, lap_d], device=device)
+            nsum_d.zero_(); ncnt_d.zero_()
+            wp.launch(edge_neighbor_sum_kernel, dim=n_edges, inputs=[lap_d, edges_d, nsum_d, ncnt_d], device=device)
+            wp.launch(umbrella_kernel, dim=N, inputs=[lap_d, nsum_d, ncnt_d, bilap_d], device=device)
+            wp.launch(bending_apply_kernel, dim=N, inputs=[bilap_d, cof_d, wp.float64(k_bend), force_d], device=device)
         # B4 membrane surface tension (area-minimising) + optional global area constraint
         if surface_tension:
             wp.launch(surface_tension_kernel, dim=n_faces,
@@ -732,6 +751,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
         "nucleus": nucleus, "surface_tension": surface_tension,
         "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
+        "bending": bending, "k_bend": k_bend if bending else None,
         "nucleus_params": ({"R_nuc": R_nuc, "E_nuc": E_nuc, "k_chrom": k_chrom,
                             "k_lamin": k_lamin, "ratio_lamin": ratio_lamin,
                             "knee_strain": knee_strain} if nucleus else None),
@@ -795,6 +815,8 @@ def main():
     ap.add_argument("--division", action="store_true", help="C7: rim-cell proliferation (parked cell pool → daughters)")
     ap.add_argument("--div-pool-factor", type=float, default=1.0, help="C7 parked cell pool size as a fraction of n-cells")
     ap.add_argument("--div-rate", type=float, default=0.5, help="C7 per-rim-cell division probability per tick")
+    ap.add_argument("--bending", action="store_true", help="B5: thin-plate biharmonic membrane bending (Helfrich-like)")
+    ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -811,6 +833,7 @@ def main():
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
+        bending=args.bending, k_bend=args.k_bend,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)

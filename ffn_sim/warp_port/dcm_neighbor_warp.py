@@ -450,6 +450,46 @@ def cadherin_bond_force_kernel(
         wp.atomic_add(force, j, -fvec)
 
 
+@wp.kernel
+def edge_neighbor_sum_kernel(
+    vals: wp.array(dtype=wp.vec3d), edges: wp.array(dtype=wp.int32, ndim=2),
+    vsum: wp.array(dtype=wp.vec3d), vcnt: wp.array(dtype=wp.float64),
+):
+    """Accumulate each node's 1-ring neighbour sum of ``vals`` over the mesh edges (zero
+    vsum/vcnt first). Symmetric: edge (i,j) adds vals[j]→i and vals[i]→j."""
+    e = wp.tid()
+    i = edges[e, 0]; j = edges[e, 1]
+    wp.atomic_add(vsum, i, vals[j]); wp.atomic_add(vcnt, i, wp.float64(1.0))
+    wp.atomic_add(vsum, j, vals[i]); wp.atomic_add(vcnt, j, wp.float64(1.0))
+
+
+@wp.kernel
+def umbrella_kernel(
+    vals: wp.array(dtype=wp.vec3d), vsum: wp.array(dtype=wp.vec3d),
+    vcnt: wp.array(dtype=wp.float64), out: wp.array(dtype=wp.vec3d),
+):
+    """Discrete umbrella Laplacian: out[i] = mean(neighbours of vals) − vals[i] (0 if isolated)."""
+    i = wp.tid()
+    n = vcnt[i]
+    if n > wp.float64(0.0):
+        out[i] = vsum[i] / n - vals[i]
+    else:
+        out[i] = wp.vec3d(wp.float64(0.0), wp.float64(0.0), wp.float64(0.0))
+
+
+@wp.kernel
+def bending_apply_kernel(
+    bilap: wp.array(dtype=wp.vec3d), cof: wp.array(dtype=wp.int32),
+    k_bend: wp.float64, force: wp.array(dtype=wp.vec3d),
+):
+    """B5 thin-plate (Helfrich-like) bending: F = −k_bend·Δ²r (biharmonic = umbrella-of-umbrella).
+    Resists curvature VARIATION (flat and uniformly-curved are both low-energy) — true bending,
+    distinct from the area-gradient surface tension. Skips dormant nodes (cof<0)."""
+    i = wp.tid()
+    if cof[i] >= wp.int32(0):
+        wp.atomic_add(force, i, bilap[i] * (-k_bend))
+
+
 @wp.func
 def _tri_area_grads(a: wp.vec3d, b: wp.vec3d, c: wp.vec3d):
     """Per-vertex area gradient of triangle (a,b,c): ∂A/∂a = ½ n̂×(c−b), etc. Returns the three
