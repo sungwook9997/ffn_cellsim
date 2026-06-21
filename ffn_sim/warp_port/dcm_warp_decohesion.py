@@ -33,6 +33,8 @@ from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.warp_port.dcm_substrate_warp import (
     dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel)
+from ffn_sim.warp_port.dcm_neighbor_warp import (
+    pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel)
 
 wp.init()
 
@@ -78,7 +80,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    adh_strength: float = 1.0e7, w_cs_jm2: float = 2.85e-3,
                    adh_range: float = 0.5e-6, k_floor: float = 1.0,
                    substrate_wetting: bool = True, use_substrate_well: bool = True,
-                   force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000) -> dict:
+                   force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
+                   use_grid: bool = True) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1)."""
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
@@ -119,13 +122,37 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     n_edges = edges_a.shape[0]
     n_faces = faces_a.shape[0]
 
+    # hash-grid neighbour list (M1.5): cohesion + node-face contact become O(N·k) instead
+    # of O(N²)/O(N·M) — the speed lever at spheroid scale (grid == brute to machine-eps;
+    # face query radius = c_adh + triangle circumradius ~0.7·l_max, l_max = 3·l_min).
+    l_min = mean_edge / 2.9
+    coh_q = float(c_adh)
+    con_q = float(c_adh + 0.7 * (3.0 * l_min))
+    node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
+    cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+    node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
+    face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
+
     def step_once(s, dt_step):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
-        wp.launch(dcm_cohesion_kernel, dim=N,
-                  inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(N),
-                          wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
-                          wp.float64(adh_strength), wp.float64(area_per_node),
-                          wp.float64(force_cap), force_d], device=device)
+        if use_grid:
+            # rebuild both grids every step (build is negligible — the path is query-bound;
+            # the persistent-grid lever was an honest negative, so every-step grid is fastest)
+            wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
+            node_grid.build(points=node_f32, radius=coh_q)
+            wp.launch(face_centroids_f32, dim=n_faces, inputs=[pos_d, faces_d, cent_f32], device=device)
+            face_grid.build(points=cent_f32, radius=con_q)
+            wp.launch(cohesion_grid_kernel, dim=N,
+                      inputs=[node_grid.id, node_f32, pos_d, cof_d, wp.float32(coh_q),
+                              wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
+                              wp.float64(adh_strength), wp.float64(area_per_node),
+                              wp.float64(force_cap), force_d], device=device)
+        else:
+            wp.launch(dcm_cohesion_kernel, dim=N,
+                      inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(N),
+                              wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
+                              wp.float64(adh_strength), wp.float64(area_per_node),
+                              wp.float64(force_cap), force_d], device=device)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_d, faces_d, fcell_d, Vc_d], device=device)
         wp.launch(_dp_from_vol, dim=n_cells,
@@ -133,10 +160,17 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                           wp.float64(k_vol), dP_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces,
                   inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
-        wp.launch(node_face_contact_kernel, dim=N,
-                  inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0), wp.int32(n_faces),
-                          wp.float64(rep_strength), wp.float64(adh_strength),
-                          wp.float64(c_rep), wp.float64(c_adh), force_d], device=device)
+        if use_grid:
+            wp.launch(contact_grid_kernel, dim=N,
+                      inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                              wp.float32(con_q), wp.float64(rep_strength),
+                              wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                              force_d], device=device)
+        else:
+            wp.launch(node_face_contact_kernel, dim=N,
+                      inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0), wp.int32(n_faces),
+                              wp.float64(rep_strength), wp.float64(adh_strength),
+                              wp.float64(c_rep), wp.float64(c_adh), force_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
         # substrate z-well (own-row accumulate) — pins basal nodes at z0
@@ -222,12 +256,14 @@ def main():
     ap.add_argument("--dt", type=float, default=8.0e-6)
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
+    ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
     args = ap.parse_args()
     import json
     out = run_decohesion(
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt,
-        substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well)
+        substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
+        use_grid=not args.no_grid)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
 
