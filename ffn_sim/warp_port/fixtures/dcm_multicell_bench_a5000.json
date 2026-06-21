@@ -1,0 +1,21 @@
+{
+  "_about": "Multi-cell DCM Warp hybrid (per-cell turgor + cortex edges + node-node cohesion + node-face contact, all device-resident) + host remesh. gbook RTX A5000, measured 2026-06-21. icosphere subdiv=2 (162 nodes/cell).",
+  "device": "gbook RTX A5000",
+  "integration": "all 4 committed parity-verified inter/intra-cell Warp kernels wired into one device-resident per-step loop on a shared node-pool; host remesh_pass + resync (multi-cell validated: 648->672 nodes via splits; remesh sync <1% of runtime).",
+  "throughput_steps_per_s": {
+    "n_cells_4_all_forces": 70.9,
+    "n_cells_8_all_forces": 32.3,
+    "n_cells_8_with_remesh_period_500": 31.6
+  },
+  "per_kernel_isolation_n_cells_4_a5000": {
+    "turgor_plus_edges_only_intracell": 10690.8,
+    "plus_cohesion_only": 404.8,
+    "plus_contact_only": 85.8,
+    "all_four": 70.9
+  },
+  "finding": "Intra-cell forces (turgor+edges) are FAST and fully GPU-resident (10.7k steps/s = same as single-cell). The bottleneck is the BRUTE-FORCE inter-cell pair search in the committed kernels: node-face contact is O(N*M) with the per-pair Ericson closest-point-on-triangle (dominant, -> 86 steps/s), cohesion is O(N^2) (secondary, -> 405). These kernels were written for PARITY (correctness), not speed; their own docstrings note production would use a neighbour list.",
+  "next_lever": "Warp hash-grid (wp.HashGrid) neighbour list -> contact/cohesion become O(N*k) (k~tens of local neighbours) instead of O(N*M)/O(N^2). For 4 cells M=1280, k~30 => ~40x fewer pairs; expected to lift the all-forces multi-cell throughput toward the intra-cell 10k ceiling. The node-face grid (faces by AABB/centroid + node query) is the larger of the two.",
+  "remesh_note": "remesh sync_frac < 1% at n_cells=8 period 500 -> remesh is NOT the multi-cell bottleneck (unlike single-cell where it was the only host cost); the inter-cell brute force dominates.",
+  "repro": "gpu",
+  "scripts": ["ffn_sim/warp_port/dcm_warp_hybrid_multicell.py"]
+}

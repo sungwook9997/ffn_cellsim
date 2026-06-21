@@ -82,7 +82,8 @@ def build_multicell(n_cells: int, subdiv: int, R: float, gap: float = 1.7):
 
 def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                   remesh_period: int = 0, device: str = "cpu", kT: float = 0.0,
-                  dt: float = 5.0e-8, pool_factor: float = 3.0, warmup: int = 30) -> dict:
+                  dt: float = 5.0e-8, pool_factor: float = 3.0, warmup: int = 30,
+                  use_contact: bool = True, use_cohesion: bool = True) -> dict:
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_multicell(n_cells, subdiv, R)
@@ -136,12 +137,13 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     def step_once(s):
         wp.launch(_zero_vec, dim=MAX, inputs=[force_d], device=device)
         # 1) cohesion (own-row write onto the zeroed force)
-        wp.launch(dcm_cohesion_kernel, dim=MAX,
-                  inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(MAX),
-                          wp.float64(r_contact), wp.float64(c_adh),
-                          wp.float64(rep_strength), wp.float64(adh_strength),
-                          wp.float64(area_per_node), wp.float64(force_cap), force_d],
-                  device=device)
+        if use_cohesion:
+            wp.launch(dcm_cohesion_kernel, dim=MAX,
+                      inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(MAX),
+                              wp.float64(r_contact), wp.float64(c_adh),
+                              wp.float64(rep_strength), wp.float64(adh_strength),
+                              wp.float64(area_per_node), wp.float64(force_cap), force_d],
+                      device=device)
         # 2) exact per-cell turgor: volume -> dP -> per-face force (atomic add)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces,
@@ -152,11 +154,12 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
         wp.launch(dcm_turgor_force_kernel, dim=n_faces,
                   inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
         # 3) node-face contact (atomic add)
-        wp.launch(node_face_contact_kernel, dim=MAX,
-                  inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0),
-                          wp.int32(n_faces), wp.float64(rep_strength),
-                          wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
-                          force_d], device=device)
+        if use_contact:
+            wp.launch(node_face_contact_kernel, dim=MAX,
+                      inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0),
+                              wp.int32(n_faces), wp.float64(rep_strength),
+                              wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                              force_d], device=device)
         # 4) cortex edge springs (atomic add)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
