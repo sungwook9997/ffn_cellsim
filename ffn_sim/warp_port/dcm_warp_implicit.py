@@ -114,5 +114,74 @@ def _spring_demo():
                 speedup_steps=int(dt_big / dt_e))
 
 
+def make_dcm_stiff_force(device="cpu", subdiv=2):
+    """Build a single-cell DCM **stiff** force callable `stiff_force(pos_np)->force_np` from the
+    real Warp kernels (turgor + cortex edges — the stiff terms that set the CFL). Used by I2 to
+    validate the implicit step against the actual DCM physics (not just a toy spring)."""
+    import warp as wp
+    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+
+    p = ResolvedDCM(subdivisions=subdiv)
+    verts, edges, faces = icosphere_mesh(p.R_cell, subdiv)
+    N, nf, ne = verts.shape[0], faces.shape[0], edges.shape[0]
+    R0 = float(np.linalg.norm(verts, axis=1).mean()); V0 = (4/3)*np.pi*R0**3
+    fcell = np.zeros(nf, np.int32)
+    pos_d = wp.array(verts, dtype=wp.vec3d, device=device)
+    force_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    faces_d = wp.array(faces.astype(np.int32), dtype=wp.int32, device=device)
+    fcell_d = wp.array(fcell, dtype=wp.int32, device=device)
+    edges_d = wp.array(edges.astype(np.int32), dtype=wp.int32, device=device)
+    r0_d = wp.array(np.linalg.norm(verts[edges[:,0]]-verts[edges[:,1]], axis=1), dtype=wp.float64, device=device)
+    Vc_d = wp.zeros(1, dtype=wp.float64, device=device); dP_d = wp.zeros(1, dtype=wp.float64, device=device)
+    gamma = 6.0*np.pi*65.9*p.R_cell/N
+
+    def stiff_force(pos_np):
+        pos_d.assign(np.ascontiguousarray(pos_np.reshape(N,3)))
+        wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
+        Vc_d.zero_()
+        wp.launch(dcm_volume_kernel, dim=nf, inputs=[pos_d, faces_d, fcell_d, Vc_d], device=device)
+        wp.launch(_dp_from_vol, dim=1, inputs=[Vc_d, wp.float64(V0), wp.float64(p.turgor_dP0), wp.float64(7.73e5), dP_d], device=device)
+        wp.launch(dcm_turgor_force_kernel, dim=nf, inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
+        wp.launch(_bond_accumulate, dim=ne, inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
+        wp.synchronize_device(device)
+        return force_d.numpy().astype(np.float64)
+
+    return stiff_force, verts.copy(), gamma, V0, faces, fcell
+
+
+def _dcm_stiff_demo(device="cpu"):
+    """I2: relax a SQUASHED single DCM cell under the real turgor+edge stiff force. Explicit @8e-6
+    (production dt) vs explicit @100× (blow-up) vs IMPLICIT @100× (stable, same rest shape)."""
+    stiff_force, verts, gamma, V0, faces, fcell = make_dcm_stiff_force(device)
+    N = verts.shape[0]
+    def vol(x):
+        v0,v1,v2 = x[faces[:,0]],x[faces[:,1]],x[faces[:,2]]
+        return abs(float(np.einsum('ij,ij->i', v0, np.cross(v1-v0,v2-v0)).sum()/6.0))
+    x0 = verts.copy(); x0[:,2] *= 0.7            # squash to 70% in z (off-equilibrium)
+    dt_e = 8.0e-6                                 # production explicit dt (known stable)
+    dt_big = 100*dt_e
+
+    def run(stepper, dt, nsteps):
+        x = x0.copy()
+        for _ in range(nsteps):
+            x,_ = stepper(x, stiff_force, gamma, dt)
+            if not np.isfinite(x).all() or vol(x) > 50*V0: return x, False
+        return x, True
+    T = 0.02
+    xe, oke = run(explicit_overdamped_step, dt_e, int(T/dt_e))
+    xeb, okeb = run(explicit_overdamped_step, dt_big, int(T/dt_big))
+    xi, oki = run(implicit_overdamped_step, dt_big, int(T/dt_big))
+    print(f"single DCM cell (N={N}), squashed z×0.7  V0={V0:.2e}  γ={gamma:.2e}  dt_exp={dt_e:.0e}")
+    print(f"  explicit @dt   ({int(T/dt_e)} steps): stable={oke}  V/V0={vol(xe)/V0:.3f}")
+    print(f"  explicit @100× ({int(T/dt_big)} steps): stable={okeb}  ← expect BLOW-UP")
+    print(f"  IMPLICIT @100× ({int(T/dt_big)} steps): stable={oki}  V/V0={vol(xi)/V0:.3f}  |xi−xe|={np.linalg.norm(xi-xe):.2e}")
+    return dict(explicit_ok=oke, explicit_big_ok=okeb, implicit_ok=oki,
+                vv0_implicit=vol(xi)/V0, implicit_vs_explicit=float(np.linalg.norm(xi-xe)))
+
+
 if __name__ == "__main__":
-    _spring_demo()
+    print("== I1 spring solver =="); _spring_demo()
+    print("== I2 DCM stiff force =="); _dcm_stiff_demo()
