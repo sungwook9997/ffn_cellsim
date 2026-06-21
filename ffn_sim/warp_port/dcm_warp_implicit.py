@@ -63,6 +63,72 @@ def implicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float,
     return x, {"cg_iters": tot_cg, "newton_iters": n_used, "g_norm": float(gnorm)}
 
 
+import warp as wp
+wp.init()
+
+
+@wp.kernel
+def _vdot(a: wp.array(dtype=wp.vec3d), b: wp.array(dtype=wp.vec3d), out: wp.array(dtype=wp.float64)):
+    i = wp.tid(); wp.atomic_add(out, 0, wp.dot(a[i], b[i]))
+
+@wp.kernel
+def _vaxpy(y: wp.array(dtype=wp.vec3d), alpha: wp.float64, x: wp.array(dtype=wp.vec3d)):  # y += αx
+    i = wp.tid(); y[i] = y[i] + alpha * x[i]
+
+@wp.kernel
+def _vxpby(out: wp.array(dtype=wp.vec3d), x: wp.array(dtype=wp.vec3d), beta: wp.float64,
+           p: wp.array(dtype=wp.vec3d)):  # out = x + β·p
+    i = wp.tid(); out[i] = x[i] + beta * p[i]
+
+@wp.kernel
+def _vcopy(dst: wp.array(dtype=wp.vec3d), src: wp.array(dtype=wp.vec3d)):
+    i = wp.tid(); dst[i] = src[i]
+
+@wp.kernel
+def _operator(out: wp.array(dtype=wp.vec3d), a: wp.float64, v: wp.array(dtype=wp.vec3d),
+              Fp: wp.array(dtype=wp.vec3d), Fx: wp.array(dtype=wp.vec3d), inv_s: wp.float64):
+    # out = a·v + K·v,  K·v = −(F(x+s v) − F(x))/s = −(Fp − Fx)·inv_s
+    i = wp.tid(); out[i] = a * v[i] - (Fp[i] - Fx[i]) * inv_s
+
+
+def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e-9, device="cpu"):
+    """All-device matrix-free CG for (a·I + K)Δx = b. Big vectors stay on the GPU; only the CG
+    scalars (dot products) cross to host. ``stiff_into(pos_d, out_d)`` writes F(pos) on device;
+    K·v via a perturbed stiff eval. ``scratch`` = dict of pre-allocated device vec3d buffers."""
+    N = x_d.shape[0]
+    r, p, Ap, dx, Fx, Fp, xp, sca = (scratch[k] for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp", "sca"))
+
+    def dot(u, v):
+        sca.zero_(); wp.launch(_vdot, dim=N, inputs=[u, v, sca], device=device)
+        wp.synchronize_device(device); return float(sca.numpy()[0])
+
+    stiff_into(x_d, Fx)                                  # F(x) once
+
+    def applyA(v, out):
+        vn = (dot(v, v) / N) ** 0.5
+        s = eps / (vn + 1e-30)
+        wp.launch(_vxpby, dim=N, inputs=[xp, x_d, wp.float64(s), v], device=device)   # xp = x + s v
+        stiff_into(xp, Fp)
+        wp.launch(_operator, dim=N, inputs=[out, wp.float64(a), v, Fp, Fx, wp.float64(1.0 / s)], device=device)
+
+    dx.zero_()
+    wp.launch(_vcopy, dim=N, inputs=[r, b_d], device=device)     # r = b - A·0 = b
+    wp.launch(_vcopy, dim=N, inputs=[p, r], device=device)
+    rs = dot(r, r); bnorm = max(dot(b_d, b_d) ** 0.5, 1e-30); it = 0
+    for it in range(1, maxiter + 1):
+        applyA(p, Ap)
+        alpha = rs / max(dot(p, Ap), 1e-300)
+        wp.launch(_vaxpy, dim=N, inputs=[dx, wp.float64(alpha), p], device=device)    # x += α p
+        wp.launch(_vaxpy, dim=N, inputs=[r, wp.float64(-alpha), Ap], device=device)   # r -= α Ap
+        rs_new = dot(r, r)
+        if (rs_new ** 0.5) < tol * bnorm:
+            break
+        beta = rs_new / rs
+        wp.launch(_vxpby, dim=N, inputs=[p, r, wp.float64(beta), p], device=device)   # p = r + β p
+        rs = rs_new
+    return dx, it
+
+
 def explicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float):
     """One explicit overdamped Euler step xₙ₊₁ = xₙ + (dt/γ) F(xₙ) — the CFL-capped reference."""
     x0 = np.ascontiguousarray(pos, dtype=np.float64)
@@ -188,6 +254,59 @@ def _dcm_stiff_demo(device="cpu"):
     print(f"  IMPLICIT @100× ({int(T/dt_big)} steps): stable={oki}  V/V0={vol(xi)/V0:.3f}  |xi−xe|={np.linalg.norm(xi-xe):.2e}")
     return dict(explicit_ok=oke, explicit_big_ok=okeb, implicit_ok=oki,
                 vv0_implicit=vol(xi)/V0, implicit_vs_explicit=float(np.linalg.norm(xi-xe)))
+
+
+def make_dcm_stiff_into(device="cpu", subdiv=2):
+    """Device-native single-cell DCM stiff force: ``stiff_into(pos_d, out_d)`` runs turgor+edges
+    on device buffers (no numpy round-trip) for the all-device CG. Returns the callable + handles."""
+    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    p = ResolvedDCM(subdivisions=subdiv)
+    verts, edges, faces = icosphere_mesh(p.R_cell, subdiv)
+    N, nf, ne = verts.shape[0], faces.shape[0], edges.shape[0]
+    R0 = float(np.linalg.norm(verts, axis=1).mean()); V0 = (4/3)*np.pi*R0**3
+    faces_d = wp.array(faces.astype(np.int32), dtype=wp.int32, device=device)
+    fcell_d = wp.zeros(nf, dtype=wp.int32, device=device)
+    edges_d = wp.array(edges.astype(np.int32), dtype=wp.int32, device=device)
+    r0_d = wp.array(np.linalg.norm(verts[edges[:,0]]-verts[edges[:,1]], axis=1), dtype=wp.float64, device=device)
+    Vc_d = wp.zeros(1, dtype=wp.float64, device=device); dP_d = wp.zeros(1, dtype=wp.float64, device=device)
+    gamma = 6.0*np.pi*65.9*p.R_cell/N
+
+    def stiff_into(pos_d, out_d):
+        wp.launch(_zero_vec, dim=N, inputs=[out_d], device=device)
+        Vc_d.zero_()
+        wp.launch(dcm_volume_kernel, dim=nf, inputs=[pos_d, faces_d, fcell_d, Vc_d], device=device)
+        wp.launch(_dp_from_vol, dim=1, inputs=[Vc_d, wp.float64(V0), wp.float64(p.turgor_dP0), wp.float64(7.73e5), dP_d], device=device)
+        wp.launch(dcm_turgor_force_kernel, dim=nf, inputs=[pos_d, faces_d, fcell_d, dP_d, out_d], device=device)
+        wp.launch(_bond_accumulate, dim=ne, inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
+    return stiff_into, verts, gamma, V0, faces, N
+
+
+def _device_cg_demo(device="cpu"):
+    """(b) validate the all-device Warp CG implicit step == the scipy implicit step (same answer),
+    on the real DCM stiff force. Proves the host-transfer-free CG path is correct before wiring it."""
+    stiff_into, verts, gamma, V0, faces, N = make_dcm_stiff_into(device)
+    stiff_np, _, _, _, _, _ = make_dcm_stiff_force(device)   # numpy wrapper for the scipy ref
+    def vol(x):
+        v0,v1,v2 = x[faces[:,0]],x[faces[:,1]],x[faces[:,2]]
+        return abs(float(np.einsum('ij,ij->i', v0, np.cross(v1-v0,v2-v0)).sum()/6.0))
+    x0 = verts.copy(); x0[:,2] *= 0.95         # MILD perturbation (well-conditioned single step)
+    dt = 8.0e-6*10; a = gamma/dt               # dt×10 (CG converges cleanly → fair device==scipy check)
+    scratch = {k: wp.zeros(N, dtype=wp.vec3d, device=device) for k in ("r","p","Ap","dx","Fx","Fp","xp","Fb")}
+    scratch["sca"] = wp.zeros(1, dtype=wp.float64, device=device)
+    # one DEVICE implicit-Euler step (n_newton=1): b=F(x0), solve (aI+K)dx=b
+    x_d = wp.array(np.ascontiguousarray(x0), dtype=wp.vec3d, device=device)
+    stiff_into(x_d, scratch["Fb"])
+    dx_d, iters = device_cg(stiff_into, x_d, a, scratch["Fb"], scratch, device=device)
+    x_dev = x0 + dx_d.numpy()
+    # one SCIPY implicit step (reference)
+    x_sci, info = implicit_overdamped_step(x0, stiff_np, gamma, dt, n_newton=1)
+    print(f"(b) device-CG vs scipy-CG implicit step (DCM stiff, dt=10×, N={N}):")
+    print(f"  device  : V/V0={vol(x_dev)/V0:.5f}  CG iters={iters}")
+    print(f"  scipy   : V/V0={vol(x_sci)/V0:.5f}  CG iters={info['cg_iters']}")
+    print(f"  |x_dev − x_sci| = {np.linalg.norm(x_dev-x_sci):.2e}  (expect ~0 → device CG correct)")
 
 
 def _dt_ramp(device="cpu"):
