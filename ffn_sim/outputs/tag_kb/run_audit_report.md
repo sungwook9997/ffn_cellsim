@@ -1,6 +1,6 @@
 # Results-integrity audit (disk-grounded)
 
-Audited **21** headline result-claims from `results_manifest.yaml`.
+Audited **26** headline result-claims from `results_manifest.yaml`.
 
 ## Summary
 
@@ -8,7 +8,7 @@ Audited **21** headline result-claims from `results_manifest.yaml`.
 |---|---|---|
 | RETRACT | 1 | disk contradicts claim (forbidden metric / value drift) |
 | NEEDS_REGEN | 3 | claimed artifact ABSENT — regenerate + commit |
-| GPU_UNREPRODUCED | 2 | present but GPU-only, no committed build/CI trace |
+| GPU_UNREPRODUCED | 7 | present but GPU-only, no committed build/CI trace |
 | VERIFIED | 15 | artifact present, metric sanctioned, value matches |
 
 **0 DRIFT rows** (disk worse than declared — these FAIL the CI gate).
@@ -23,6 +23,11 @@ Audited **21** headline result-claims from `results_manifest.yaml`.
 | NEEDS_REGEN |  | C17-aa0-fit | top-down-silhouette | claimed artifact ABSENT on disk: ffn_sim/outputs/h_dcm_two_stage/cleanball_aa0_fit.json |
 | GPU_UNREPRODUCED |  | C2-compartment-speedup | n/a | value OK: speedups_vs_cupy_cpucomp.native_gpucomp=5.863981474746499 ~= 5.864; GPU-only, no committed build/CI trace |
 | GPU_UNREPRODUCED |  | C3-fullcell-speedup | n/a | value OK: end_to_end_speedup_native_over_cupy=2.432515605855367 ~= 2.4325; GPU-only, no committed build/CI trace |
+| GPU_UNREPRODUCED |  | warp-gpu-B1-baoab-kt0 | n/a | value OK: B1_baoab.kt0.max_abs_pos_diff=1.7208456881689926e-15 ~= 0.0; GPU-only, no committed build/CI trace |
+| GPU_UNREPRODUCED |  | warp-gpu-B4-differentiability | n/a | value OK: B4_differentiability.rel_err_vs_analytic=2.596797331012674e-15 ~= 0.0; GPU-only, no committed build/CI trace |
+| GPU_UNREPRODUCED |  | warp-gpu-dcm-turgor-reduce | n/a | value OK: DCM_turgor_force.warp_force_rel=2.2784640892312476e-15 ~= 0.0; GPU-only, no committed build/CI trace |
+| GPU_UNREPRODUCED |  | warp-gpu-mshake | n/a | value OK: MSHAKE_chain_constraint.pos_rel=7.3656854841737e-12 ~= 0.0; GPU-only, no committed build/CI trace |
+| GPU_UNREPRODUCED |  | warp-gpu-radial-turgor-reduce | n/a | value OK: B2_radial_shell.turgor.warp_force_rel=1.3107959352108804e-12 ~= 0.0; GPU-only, no committed build/CI trace |
 | VERIFIED |  | warp-B1-baoab-kt0 | n/a | value OK: B1_baoab.kt0.max_abs_pos_diff=0.0 ~= 0.0 |
 | VERIFIED |  | warp-B1-baoab-ktpos | n/a | value OK: B1_baoab.ktpos.max_abs_pos_diff=0.0 ~= 0.0 |
 | VERIFIED |  | warp-B2-radial-membrane | n/a | value OK: B2_radial_shell.membrane.host_force_rel=0.0 ~= 0.0 |

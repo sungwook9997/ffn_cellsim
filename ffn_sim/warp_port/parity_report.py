@@ -24,6 +24,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FIX = os.path.join(HERE, "fixtures")
 OUT = os.path.join(FIX, "warp_parity_results.json")
 
+# Warp backend device, overridable via main()'s --device (Phase C G1: cuda:0 on gbook A5000).
+_DEVICE = "cpu"
+
 
 def _baoab_parity() -> dict:
     """Run the B1 BAOAB Warp kernel against both committed fixtures."""
@@ -37,7 +40,7 @@ def _baoab_parity() -> dict:
             pos0=fx["pos0"], image0=fx["image0"], force=fx["force"],
             gamma=fx["gamma"], kT=float(fx["kT"]), dt=float(fx["dt"]),
             noise=fx["noise"], box=tuple(float(x) for x in fx["box"]),
-            device="cpu",
+            device=_DEVICE,
         )
         results[label] = {
             "kT": float(fx["kT"]),
@@ -66,7 +69,7 @@ def _radial_shell_parity() -> dict:
             tag_range=(int(fx["t0"]), int(fx["t1"])),
             law=int(fx["law"]), R0=float(fx["R0"]), pa=float(fx["pa"]),
             pb=float(fx["pb"]), pc=float(fx["pc"]), pd=float(fx["pd"]),
-            device="cpu",
+            device=_DEVICE,
         )
         rec = {"law": int(fx["law"]), "N": int(fx["N"])}
         for mode in ("host", "warp"):
@@ -90,7 +93,7 @@ def _shake_parity() -> dict:
         pred_pos=fx["pred"], ref_pos=fx["ref"], chains=fx["chains"],
         inv_mass=fx["inv_mass"], rest_length=float(fx["r0"]),
         box_L=(float(fx["L"]),) * 3, tol=float(fx["tol"]),
-        max_iter=int(fx["max_iter"]), device="cpu",
+        max_iter=int(fx["max_iter"]), device=_DEVICE,
     )
     pscale = float(np.abs(fx["ref_proj"]).max())
     lscale = float(np.abs(fx["ref_lam"]).max()) + 1e-30
@@ -112,7 +115,7 @@ def _bond_parity() -> dict:
     fx = dict(np.load(os.path.join(FIX, "network_bond_ref.npz")))
     got = run_harmonic_bond_warp(
         pos=fx["pos"], bonds=fx["bonds"], k=float(fx["k"]), r0=float(fx["r0"]),
-        box_L=(float(fx["L"]),) * 3, device="cpu",
+        box_L=(float(fx["L"]),) * 3, device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     Uscale = float(np.abs(fx["ref_energy"]).max()) + 1e-30
@@ -130,7 +133,7 @@ def _angle_parity() -> dict:
     fx = dict(np.load(os.path.join(FIX, "network_angle_ref.npz")))
     got = run_harmonic_angle_warp(
         pos=fx["pos"], angles=fx["angles"], k=float(fx["k"]), t0=float(fx["t0"]),
-        box_L=(float(fx["L"]),) * 3, device="cpu",
+        box_L=(float(fx["L"]),) * 3, device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     Uscale = float(np.abs(fx["ref_energy"]).max()) + 1e-30
@@ -148,7 +151,7 @@ def _lj_parity() -> dict:
     fx = dict(np.load(os.path.join(FIX, "network_lj_ref.npz")))
     got = run_wca_pair_warp(
         pos=fx["pos"], epsilon=float(fx["epsilon"]), sigma=float(fx["sigma"]),
-        r_cut=float(fx["r_cut"]), box_L=(float(fx["L"]),) * 3, shift=True, device="cpu",
+        r_cut=float(fx["r_cut"]), box_L=(float(fx["L"]),) * 3, shift=True, device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     Uscale = float(np.abs(fx["ref_energy"]).max()) + 1e-30
@@ -166,7 +169,7 @@ def _fixman_parity() -> dict:
     fx = dict(np.load(os.path.join(FIX, "fixman_ref.npz")))
     got = run_fixman_warp(
         pos=fx["pos"], chains=fx["chains"], inv_gamma=fx["inv_gamma"],
-        kT=float(fx["kT"]), box_L=(float(fx["L"]),) * 3, device="cpu",
+        kT=float(fx["kT"]), box_L=(float(fx["L"]),) * 3, device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     Uscale = abs(float(fx["ref_U"])) + 1e-30
@@ -187,7 +190,7 @@ def _dcm_contact_parity() -> dict:
         pos=fx["pos"], cell_of_node=fx["cell_of_node"], faces=fx["faces"],
         face_cell=fx["face_cell"], rep_strength=float(fx["rep_strength"]),
         adh_strength=float(fx["adh_strength"]), c_rep=float(fx["c_rep"]),
-        c_adh=float(fx["c_adh"]), cad_mult=fx["cad_mult"], device="cpu",
+        c_adh=float(fx["c_adh"]), cad_mult=fx["cad_mult"], device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     return {
@@ -204,7 +207,7 @@ def _dcm_turgor_parity() -> dict:
     kw = dict(
         pos=fx["pos"], faces=fx["faces"], face_cell=fx["face_cell"],
         n_cells=int(fx["n_cells"]), V0=float(fx["V0"]),
-        turgor_dP0=float(fx["turgor_dP0"]), K_vol=float(fx["K_vol"]), device="cpu",
+        turgor_dP0=float(fx["turgor_dP0"]), K_vol=float(fx["K_vol"]), device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     rec = {"N": int(fx["N"]), "n_cells": int(fx["n_cells"])}
@@ -225,7 +228,7 @@ def _dcm_cohesion_parity() -> dict:
         r_contact=float(fx["r_contact"]), c_adh=float(fx["c_adh"]),
         rep_strength=float(fx["rep"]), adh_strength=float(fx["adh"]),
         patch_area=float(fx["patch_area"]), force_cap=float(fx["force_cap"]),
-        cad_mult=fx["cad_mult"], device="cpu",
+        cad_mult=fx["cad_mult"], device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     return {
@@ -245,7 +248,7 @@ def _lamellipodium_parity() -> dict:
         mem_typeid=int(fx["mem_typeid"]), z_basal=float(fx["z_basal"]),
         basal_band=float(fx["basal_band"]), k_tether=float(fx["k_tether"]),
         force_cap=float(fx["force_cap"]), tether_radius=float(fx["tether_radius"]),
-        lead_frac=float(fx["lead_frac"]), device="cpu",
+        lead_frac=float(fx["lead_frac"]), device=_DEVICE,
     )
     Fscale = float(np.abs(fx["ref_force"]).max()) + 1e-30
     return {
@@ -259,17 +262,27 @@ def _b4_differentiability() -> dict:
     vs closed-form analytic + finite-difference."""
     from ffn_sim.warp_port.differentiability_b4 import run_check
 
-    return run_check(device="cpu")
+    return run_check(device=_DEVICE)
 
 
 def main() -> None:
+    import argparse
+
+    global _DEVICE
+    ap = argparse.ArgumentParser(
+        description="Warp-vs-HOOMD parity report (CPU or CUDA backend).")
+    ap.add_argument("--device", default="cpu",
+                    help="Warp device: 'cpu' (default) or 'cuda:0' (gbook A5000, Phase C G1).")
+    _DEVICE = ap.parse_args().device
     report = {
         "_about": (
-            "Warp-CPU vs HOOMD-numpy bit-parity per ported piece. Reference = "
+            f"Warp[{_DEVICE}] vs HOOMD-numpy parity per ported piece. Reference = "
             "committed HOOMD fixtures (frozen Action / production forces). Gate "
             "thresholds: B1 kT=0 < 1e-9 / kT>0 < 1e-7; B2 host force-law < 1e-12, "
-            "full warp-reduce < 1e-8 (reduction-order)."
+            "full warp-reduce < 1e-8 (reduction-order). On CUDA the atomic-reduce + "
+            "iterative (M-SHAKE) kernels carry a GPU reduction-order tol, not bit-parity."
         ),
+        "_device": _DEVICE,
         "B1_baoab": _baoab_parity(),
         "B2_radial_shell": _radial_shell_parity(),
         "MSHAKE_chain_constraint": _shake_parity(),
@@ -283,9 +296,11 @@ def main() -> None:
         "lamellipodium_tether": _lamellipodium_parity(),
         "B4_differentiability": _b4_differentiability(),
     }
-    with open(OUT, "w") as f:
+    out_path = OUT if _DEVICE == "cpu" else OUT.replace(
+        ".json", "_" + _DEVICE.replace(":", "") + ".json")
+    with open(out_path, "w") as f:
         json.dump(report, f, indent=2)
-    print(f"wrote {OUT}")
+    print(f"wrote {out_path}")
     print(json.dumps({k: report[k] for k in
                       ("B1_baoab", "B2_radial_shell", "MSHAKE_chain_constraint",
                        "Fixman_metric_force", "compartment_harmonic_bond",

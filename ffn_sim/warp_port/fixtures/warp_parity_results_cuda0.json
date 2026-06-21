@@ -1,12 +1,12 @@
 {
-  "_about": "Warp[cpu] vs HOOMD-numpy parity per ported piece. Reference = committed HOOMD fixtures (frozen Action / production forces). Gate thresholds: B1 kT=0 < 1e-9 / kT>0 < 1e-7; B2 host force-law < 1e-12, full warp-reduce < 1e-8 (reduction-order). On CUDA the atomic-reduce + iterative (M-SHAKE) kernels carry a GPU reduction-order tol, not bit-parity.",
-  "_device": "cpu",
+  "_about": "Warp[cuda:0] vs HOOMD-numpy parity per ported piece. Reference = committed HOOMD fixtures (frozen Action / production forces). Gate thresholds: B1 kT=0 < 1e-9 / kT>0 < 1e-7; B2 host force-law < 1e-12, full warp-reduce < 1e-8 (reduction-order). On CUDA the atomic-reduce + iterative (M-SHAKE) kernels carry a GPU reduction-order tol, not bit-parity.",
+  "_device": "cuda:0",
   "B1_baoab": {
     "kt0": {
       "kT": 0.0,
       "N": 64,
       "K": 400,
-      "max_abs_pos_diff": 0.0,
+      "max_abs_pos_diff": 1.7208456881689926e-15,
       "max_abs_image_diff": 0,
       "max_abs_prv_diff": 0.0,
       "max_abs_image_flag": 2
@@ -15,7 +15,7 @@
       "kT": 1.5,
       "N": 64,
       "K": 400,
-      "max_abs_pos_diff": 0.0,
+      "max_abs_pos_diff": 1.9984014443252818e-15,
       "max_abs_image_diff": 0,
       "max_abs_prv_diff": 0.0,
       "max_abs_image_flag": 6
@@ -25,34 +25,34 @@
     "nucleus": {
       "law": 0,
       "N": 2048,
-      "host_force_rel": 0.0,
-      "host_energy_rel": 0.0,
-      "warp_force_rel": 0.0,
-      "warp_energy_rel": 0.0
+      "host_force_rel": 1.0134847349561482e-15,
+      "host_energy_rel": 2.0819129844755607e-15,
+      "warp_force_rel": 1.0134847349561482e-15,
+      "warp_energy_rel": 2.0819129844755607e-15
     },
     "membrane": {
       "law": 1,
       "N": 2048,
-      "host_force_rel": 0.0,
+      "host_force_rel": 2.5046670201980687e-16,
       "host_energy_rel": 1.1555919653681454e-16,
-      "warp_force_rel": 1.75063701376744e-12,
-      "warp_energy_rel": 2.582632483401268e-12
+      "warp_force_rel": 1.7502613137144104e-12,
+      "warp_energy_rel": 2.582748042597805e-12
     },
     "turgor": {
       "law": 2,
       "N": 2048,
-      "host_force_rel": 4.6959403038584427e-14,
-      "host_energy_rel": 9.390853563145041e-14,
-      "warp_force_rel": 1.3122749715270562e-12,
-      "warp_energy_rel": 2.628398139527061e-12
+      "host_force_rel": 3.623638974630924e-14,
+      "host_energy_rel": 7.205051440688868e-14,
+      "warp_force_rel": 1.3107959352108804e-12,
+      "warp_energy_rel": 2.6256225177842597e-12
     }
   },
   "MSHAKE_chain_constraint": {
     "F": 1000,
     "m": 6,
     "nonconverged": 0,
-    "pos_rel": 7.365694533460985e-12,
-    "lam_rel": 4.1866555668714577e-10,
+    "pos_rel": 7.3656854841737e-12,
+    "lam_rel": 4.1866595763821526e-10,
     "bond_rel_err": 4.9223132236875244e-11
   },
   "Fixman_metric_force": {
@@ -65,19 +65,19 @@
   "compartment_harmonic_bond": {
     "N": 3200,
     "B": 2800,
-    "force_rel": 4.782658393999819e-16,
-    "energy_rel": 6.080664409436583e-16
+    "force_rel": 2.8695950363998913e-16,
+    "energy_rel": 0.0
   },
   "compartment_harmonic_angle": {
     "N": 3200,
     "A": 2400,
-    "force_rel": 2.2066914540404608e-13,
-    "energy_rel": 2.9247168430467505e-15
+    "force_rel": 6.1021540381347e-16,
+    "energy_rel": 2.9997095826120516e-16
   },
   "compartment_lj_wca": {
     "N": 512,
-    "force_rel": 1.753578873717259e-15,
-    "energy_rel": 9.020143446851025e-16
+    "force_rel": 2.391243918705353e-16,
+    "energy_rel": 3.608057378740411e-16
   },
   "DCM_node_face_contact": {
     "N": 24,
@@ -88,11 +88,11 @@
     "N": 24,
     "n_cells": 2,
     "host_force_rel": 3.2549486989017824e-16,
-    "warp_force_rel": 2.1157166542861584e-15
+    "warp_force_rel": 2.2784640892312476e-15
   },
   "DCM_cohesion_force": {
     "N": 80,
-    "force_rel": 2.2948042557516973e-16
+    "force_rel": 3.4422063836275458e-16
   },
   "lamellipodium_tether": {
     "N": 56,

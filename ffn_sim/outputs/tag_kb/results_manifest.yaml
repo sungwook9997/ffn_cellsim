@@ -255,3 +255,51 @@ claims:
     expect: {field: B4_differentiability.rel_err_vs_analytic, value: 0.0, tol: 1.0e-9}
     repro: cpu
     declared: verified
+
+  # ── Phase C · G1 — GPU-BACKEND parity (gbook A5000 cuda:0, 2026-06-21). ───────
+  # The 15 pieces above were gated on Warp's CPU backend; these lock the SAME
+  # kernels' parity on the CUDA backend. Full 15/15 scorecard:
+  # fixtures/warp_parity_results_cuda0.json + docs/v2_audit/PHASE_C_GPU_PARITY_2026-06-21.md.
+  # declared: gpu (= GPU_UNREPRODUCED) — honest level: parity RAN + committed, but
+  # CI cannot re-run GPU, so NOT 'verified'. Representative make-or-break rows below
+  # (force-laws machine-eps; atomic-reduce <1e-8; B1 BAOAB CPU-bit-0 -> GPU 1.7e-15
+  # FMA, still <1e-9; reverse-mode autodiff clean on GPU).
+  - id: warp-gpu-B1-baoab-kt0
+    desc: "GPU-backend: BAOAB kT=0 vs frozen HOOMD (CPU bit-for-bit -> GPU machine-eps via FMA, < 1e-9)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: B1_baoab.kt0.max_abs_pos_diff, value: 0.0, tol: 1.0e-9}
+    repro: gpu
+    declared: gpu
+
+  - id: warp-gpu-radial-turgor-reduce
+    desc: "GPU-backend: radial-shell turgor full warp atomic-reduce (reduction-order, < 1e-8)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: B2_radial_shell.turgor.warp_force_rel, value: 0.0, tol: 1.0e-8}
+    repro: gpu
+    declared: gpu
+
+  - id: warp-gpu-mshake
+    desc: "GPU-backend: M-SHAKE chain-constraint pos parity (deterministic iterative tol, < 1e-9)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: MSHAKE_chain_constraint.pos_rel, value: 0.0, tol: 1.0e-9}
+    repro: gpu
+    declared: gpu
+
+  - id: warp-gpu-dcm-turgor-reduce
+    desc: "GPU-backend: DCM exact-volume turgor warp-reduce vs HOOMD DcmTurgorForce (< 1e-8)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: DCM_turgor_force.warp_force_rel, value: 0.0, tol: 1.0e-8}
+    repro: gpu
+    declared: gpu
+
+  - id: warp-gpu-B4-differentiability
+    desc: "GPU-backend: reverse-mode autodiff through the force law matches analytic grad (Warp's prize, on CUDA, < 1e-9)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results_cuda0.json
+    metric: n/a
+    expect: {field: B4_differentiability.rel_err_vs_analytic, value: 0.0, tol: 1.0e-9}
+    repro: gpu
+    declared: gpu
