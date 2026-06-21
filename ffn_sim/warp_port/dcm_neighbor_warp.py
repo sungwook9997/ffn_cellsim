@@ -451,6 +451,49 @@ def cadherin_bond_force_kernel(
 
 
 @wp.kernel
+def cell_centroid_accum_kernel(
+    pos: wp.array(dtype=wp.vec3d), cof: wp.array(dtype=wp.int32),
+    csum: wp.array(dtype=wp.vec3d), ccnt: wp.array(dtype=wp.float64),
+):
+    """Scatter membrane-node positions into per-cell sum + count (zero csum/ccnt first)."""
+    i = wp.tid()
+    c = cof[i]
+    if c >= wp.int32(0):
+        wp.atomic_add(csum, c, pos[i])
+        wp.atomic_add(ccnt, c, wp.float64(1.0))
+
+
+@wp.kernel
+def nucleus_force_kernel(
+    pos: wp.array(dtype=wp.vec3d), cof: wp.array(dtype=wp.int32),
+    csum: wp.array(dtype=wp.vec3d), ccnt: wp.array(dtype=wp.float64),
+    R_nuc: wp.float64, d_knee: wp.float64, k_chrom: wp.float64, k_lamin: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """E2 nucleus as a deformable stiff core (H.9 KU-3.B2). The DCM shell is hollow, so the
+    nucleus is the radial confinement a membrane node feels when it intrudes within R_nuc of
+    its cell centroid (the cell thinning below the nuclear size): an OUTWARD bilinear push —
+    soft chromatin (k_chrom) up to the lamin knee (d_knee = knee_strain·R_nuc), stiff lamin-A
+    shell (k_chrom+k_lamin) beyond. k_chrom = 4π·E_nuc·R_nuc/npc (continuum bridge, N-invariant);
+    k_lamin = (ratio_lamin−1)·k_chrom. Force-free at r = R_nuc; never pulls inward (excluded
+    volume of the nuclear core) → sets the cell-thinning / maxZ floor as it spreads."""
+    i = wp.tid()
+    c = cof[i]
+    if c < wp.int32(0):
+        return
+    cen = csum[c] / ccnt[c]
+    rv = pos[i] - cen
+    r = wp.length(rv)
+    if r < R_nuc and r > wp.float64(1.0e-30):
+        d = R_nuc - r                         # intrusion depth into the nucleus (>0)
+        if d <= d_knee:
+            fmag = k_chrom * d
+        else:
+            fmag = k_chrom * d_knee + (k_chrom + k_lamin) * (d - d_knee)
+        wp.atomic_add(force, i, rv * (fmag / r))   # push OUTWARD
+
+
+@wp.kernel
 def ecm_clutch_force_kernel(
     node_idx: wp.array(dtype=wp.int32),      # (M,) basal node of each engaged clutch
     anchor: wp.array(dtype=wp.vec3d),        # (M,) fixed substrate site it gripped

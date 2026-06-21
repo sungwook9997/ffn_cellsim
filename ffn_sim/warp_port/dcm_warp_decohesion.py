@@ -38,7 +38,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
-    ecm_clutch_force_kernel,
+    ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
@@ -137,6 +137,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False,
+                   nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
+                   knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -182,6 +184,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     dP_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
     cad_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     integrin_d = wp.ones(n_cells, dtype=wp.float64, device=device)
+    # E2 nucleus: per-cell centroid reduction buffers + the bilinear chromatin/lamin stiffnesses
+    csum_d = wp.zeros(n_cells, dtype=wp.vec3d, device=device)
+    ccnt_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
+    R_nuc = R_nuc_factor * R
+    d_knee_nuc = knee_strain * R_nuc
+    k_chrom = 4.0 * np.pi * E_nuc * R_nuc / npc          # continuum bridge (H.9 eq B), N-invariant
+    k_lamin = (ratio_lamin - 1.0) * k_chrom
     faces_d = wp.array(faces_a.astype(np.int32), dtype=wp.int32, device=device)
     fcell_d = wp.array(fcell_a.astype(np.int32), dtype=wp.int32, device=device)
     edges_d = wp.array(edges_a.astype(np.int32), dtype=wp.int32, device=device)
@@ -250,6 +259,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  [cadherin] k_trans={cad.p.k_trans:.2e}N/m  r0={cad.p.r0_trans*1e6:.2f}um  "
               f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
               f"catch-slip f0=29.2pN @ capture limit (Rakshit, ×40 bridge)", flush=True)
+
+    if nucleus:
+        print(f"  [nucleus] R_nuc={R_nuc*1e6:.2f}um ({R_nuc_factor:.2f}·R)  E_nuc={E_nuc:.0f}Pa  "
+              f"ratio_lamin={ratio_lamin}  knee={knee_strain}  k_chrom={k_chrom:.2e}N/m  "
+              f"k_lamin={k_lamin:.2e}N/m  (deformable core; bilinear chromatin→lamin)", flush=True)
 
     # C6 explicit integrin-ECM catch-slip clutch (replaces the wetting proxy). Basal nodes grip
     # the dish; Pereverzev catch-slip governs hold/release → traction-limited mechanistic spread.
@@ -359,6 +373,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               wp.float64(c_rep), wp.float64(c_adh), force_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
+        # E2 nucleus deformable core (always on; resists membrane intruding within R_nuc of the
+        # cell centroid). Per-cell centroid via an atomic scatter-reduction, then the bilinear push.
+        if nucleus:
+            csum_d.zero_(); ccnt_d.zero_()
+            wp.launch(cell_centroid_accum_kernel, dim=N,
+                      inputs=[pos_d, cof_d, csum_d, ccnt_d], device=device)
+            wp.launch(nucleus_force_kernel, dim=N,
+                      inputs=[pos_d, cof_d, csum_d, ccnt_d, wp.float64(R_nuc),
+                              wp.float64(d_knee_nuc), wp.float64(k_chrom), wp.float64(k_lamin),
+                              force_d], device=device)
         # A2 edge-edge excluded volume (always on, like contact — catches the edge-pokethrough
         # node-face misses). Build the edge-midpoint grid then the seg-seg penalty kernel.
         if edge_edge and use_grid:
@@ -639,6 +663,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "cfl_limit": cfl_limit, "max_substeps": max_substeps, "n_sub_final": n_sub[0],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
+        "nucleus": nucleus,
+        "nucleus_params": ({"R_nuc": R_nuc, "E_nuc": E_nuc, "k_chrom": k_chrom,
+                            "k_lamin": k_lamin, "ratio_lamin": ratio_lamin,
+                            "knee_strain": knee_strain} if nucleus else None),
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
     if lam is not None:
@@ -687,6 +715,8 @@ def main():
     ap.add_argument("--max-substeps", type=int, default=16, help="A3: cap on adaptive substeps per step")
     ap.add_argument("--cadherin", action="store_true", help="E1: explicit cadherin catch-bonds (fine-grained adhesion; replaces cohesion tent + M3 switch; de-cohesion emergent)")
     ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
+    ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
+    ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -700,6 +730,7 @@ def main():
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch,
+        nucleus=args.nucleus, E_nuc=args.e_nuc,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
