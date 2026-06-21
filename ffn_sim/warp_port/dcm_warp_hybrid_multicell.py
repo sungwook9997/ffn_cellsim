@@ -101,7 +101,8 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                   remesh_period: int = 0, device: str = "cpu", kT: float = 0.0,
                   dt: float = 5.0e-8, pool_factor: float = 3.0, warmup: int = 30,
                   use_contact: bool = True, use_cohesion: bool = True,
-                  use_grid: bool = False) -> dict:
+                  use_grid: bool = False, grid_period: int = 1,
+                  skin_frac: float = 0.0) -> dict:
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_multicell(n_cells, subdiv, R)
@@ -155,6 +156,12 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     # by the triangle circumradius (~0.58*edge); use 0.7*l_max so the grid cell size
     # stays small (coarse cells = too many candidates = the slow grid). l_max=3*l_min.
     con_radius = float(c_adh + 0.7 * (3.0 * l_min))
+    # PERSISTENT grid (Verlet skin): rebuild every grid_period steps; pad the query
+    # radius by skin so no neighbour that drifts into range between rebuilds is missed
+    # (valid while max displacement over grid_period < skin/2; verified vs every-step).
+    skin = float(skin_frac * mean_edge)
+    coh_q = coh_radius + skin
+    con_q = con_radius + skin
     node_f32 = wp.zeros(MAX, dtype=wp.vec3, device=device)
     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
@@ -171,23 +178,27 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     # dormant] and SPLIT fills dormant slots in order, so active stays contiguous
     # [0:launch_n]; COLLAPSE can punch a hole -> fall back to MAX (correct, slower).
     launch_n = n_active0
+    _fr = [True]  # force grid rebuild (set after remesh / topology change)
 
     def step_once(s):
         wp.launch(_zero_vec, dim=MAX, inputs=[force_d], device=device)
         if use_grid:
+            # query points are CURRENT every step; grid buckets rebuilt at cadence
             wp.launch(pos_to_f32, dim=launch_n, inputs=[pos_d, node_f32], device=device)
-            if use_cohesion:
-                node_grid.build(points=node_f32[:launch_n], radius=coh_radius)
-            if use_contact:
-                wp.launch(face_centroids_f32, dim=n_faces,
-                          inputs=[pos_d, faces_d, cent_f32], device=device)
-                face_grid.build(points=cent_f32, radius=con_radius)
+            if s % grid_period == 0 or _fr[0]:
+                if use_cohesion:
+                    node_grid.build(points=node_f32[:launch_n], radius=coh_q)
+                if use_contact:
+                    wp.launch(face_centroids_f32, dim=n_faces,
+                              inputs=[pos_d, faces_d, cent_f32], device=device)
+                    face_grid.build(points=cent_f32, radius=con_q)
+                _fr[0] = False
         # 1) cohesion (own-row write onto the zeroed force)
         if use_cohesion:
             if use_grid:
                 wp.launch(cohesion_grid_kernel, dim=launch_n,
                           inputs=[node_grid.id, node_f32, pos_d, cof_d,
-                                  wp.float32(coh_radius), wp.float64(r_contact),
+                                  wp.float32(coh_q), wp.float64(r_contact),
                                   wp.float64(c_adh), wp.float64(rep_strength),
                                   wp.float64(adh_strength), wp.float64(area_per_node),
                                   wp.float64(force_cap), force_d], device=device)
@@ -212,7 +223,7 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
             if use_grid:
                 wp.launch(contact_grid_kernel, dim=launch_n,
                           inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
-                                  wp.float32(con_radius), wp.float64(rep_strength),
+                                  wp.float32(con_q), wp.float64(rep_strength),
                                   wp.float64(adh_strength), wp.float64(c_rep),
                                   wp.float64(c_adh), force_d], device=device)
             else:
@@ -270,6 +281,7 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                 # #2: refresh active-launch bound; contiguous iff [0:na] all active
                 na = int((cof >= 0).sum())
                 launch_n = na if bool((cof[:na] >= 0).all()) else MAX
+                _fr[0] = True  # topology changed -> force grid rebuild next step
             sync_time += time.perf_counter() - ts
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
@@ -285,7 +297,8 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
         "finite": finite, "remesh_events": n_remesh_events,
         "remesh_skipped": n_remesh_skipped, "remesh_ops": remesh_count,
         "remesh_sync_frac": sync_time / elapsed if elapsed else 0.0, "use_grid": use_grid,
-        "kT": kT, "dt": dt,
+        "grid_period": grid_period, "kT": kT, "dt": dt,
+        "_final_pos": pf[active].copy(),  # for persistent-vs-every-step correctness check
     }
 
 
