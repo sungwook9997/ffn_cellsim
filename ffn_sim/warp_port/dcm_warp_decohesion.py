@@ -81,7 +81,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    adh_range: float = 0.5e-6, k_floor: float = 1.0,
                    substrate_wetting: bool = True, use_substrate_well: bool = True,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
-                   use_grid: bool = True) -> dict:
+                   use_grid: bool = True, save_frames: str | None = None) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1)."""
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
@@ -208,6 +208,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     A0 = m0["A_um2"]; V0sum = m0["Vsum"]; com0 = m0["com"]
     every = max(1, steps // max(1, frames))
     traj = [{"step": 0, "aa0": 1.0, "maxZ_um": m0["maxZ_um"], "vv0": 1.0, "drift_um": 0.0}]
+    frame_list = [m0["P"].astype(np.float32)] if save_frames else None
 
     # gentle soft-start: settle the initial pack at 0.1× dt (the stiff turgor/contact
     # need it; the HOOMD driver equilibrates similarly before the measured spread)
@@ -230,10 +231,22 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    "maxZ_um": m["maxZ_um"], "vv0": m["Vsum"] / V0sum if V0sum else 0.0,
                    "drift_um": float(np.linalg.norm(m["com"] - com0) * 1e6)}
             traj.append(rec)
+            if frame_list is not None:
+                frame_list.append(m["P"].astype(np.float32))
             print(f"  step {s:>7}  A/A0={rec['aa0']:.3f}  maxZ={rec['maxZ_um']:.1f}um  "
                   f"V/V0={rec['vv0']:.3f}  drift={rec['drift_um']:.2f}um", flush=True)
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
+
+    if save_frames and frame_list is not None:
+        np.savez_compressed(
+            save_frames, frames=np.array(frame_list, dtype=np.float32),
+            faces=faces_a.astype(np.int32), cof=cof_a.astype(np.int32),
+            step=np.array([r["step"] for r in traj]),
+            aa0=np.array([r["aa0"] for r in traj]),
+            maxZ=np.array([r["maxZ_um"] for r in traj]),
+            vv0=np.array([r["vv0"] for r in traj]))
+        print(f"  saved {len(frame_list)} frames -> {save_frames}", flush=True)
 
     aa = [r["aa0"] for r in traj]
     return {
@@ -257,13 +270,14 @@ def main():
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
+    ap.add_argument("--save-frames", default=None, help="npz path to save per-frame mesh geometry (pos+faces+cof) for surface viz")
     args = ap.parse_args()
     import json
     out = run_decohesion(
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
-        use_grid=not args.no_grid)
+        use_grid=not args.no_grid, save_frames=args.save_frames)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
 
