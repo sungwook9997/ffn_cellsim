@@ -48,12 +48,14 @@ def _rim_mask_cells(frame0, cof, z0=0.0, contact_band=1.5):
     """Per-cell bool: rim (ECM-contacting) at the baseline by the driver's criterion
     (centroid z within ``contact_band·R`` of z0; R estimated as the mean per-cell node radius)."""
     n_cells = int(cof.max()) + 1
+    valid = cof >= 0                              # exclude dormant/parked nodes (cof=-1) — else
+    vc = cof[valid]; vp = frame0[valid]           # np.add.at folds them into cell[-1] (review fix #3)
     cen = np.zeros((n_cells, 3)); cnt = np.zeros(n_cells)
-    np.add.at(cen, cof, frame0); np.add.at(cnt, cof, 1.0)
+    np.add.at(cen, vc, vp); np.add.at(cnt, vc, 1.0)
     cen /= np.maximum(cnt, 1.0)[:, None]
-    rad = np.linalg.norm(frame0 - cen[cof], axis=1)
+    rad = np.linalg.norm(vp - cen[vc], axis=1)
     R = np.zeros(n_cells); rc = np.zeros(n_cells)
-    np.add.at(R, cof, rad); np.add.at(rc, cof, 1.0)
+    np.add.at(R, vc, rad); np.add.at(rc, vc, 1.0)
     return (cen[:, 2] - z0) <= contact_band * float((R / np.maximum(rc, 1.0)).mean())
 
 

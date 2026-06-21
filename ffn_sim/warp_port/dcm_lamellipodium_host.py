@@ -128,6 +128,12 @@ class LamellipodiumHost:
         ``P`` is the current node positions (device → host, shape (N,3))."""
         P = np.asarray(P, dtype=np.float64)
         cof = self.cof
+        # Recompute rim from the LIVE geometry each tick (review fix #5): rim was frozen at init,
+        # so division daughters (new cof ids the driver sets in self.cof) never crawled. Live
+        # detection is ~identical when there is no division (centroids stable) and lets daughters
+        # join the rim. (Actin pool stays sized from the initial n_rim; it caps gracefully if rim grows.)
+        self.rim_cells = detect_rim_cells(self._cell_centroids(P), self.z0, self.R,
+                                          self.p.rim_contact_band)
 
         # spheroid in-plane centroid from rim-cell nodes
         rim_node_mask = np.isin(cof, self.rim_cells)
@@ -238,8 +244,11 @@ class LamellipodiumHost:
         L = self.n_lead
         nu = self.n_used
         if self._dev is None or self._dev["cap_lead"] < L or self._dev["cap_act"] < nu:
-            cap_lead = max(L, 1, (self._dev["cap_lead"] if self._dev else 0))
-            cap_act = max(nu, 1, (self._dev["cap_act"] if self._dev else 0))
+            # geometric (×2) growth like CadherinBondHost/EcmClutchHost (review fix #10) — the
+            # append-only actin pool grew every tick, so max(L,old) reallocated the whole geometry
+            # block each cadence; doubling amortises it to O(log) reallocations.
+            cap_lead = max(L, 1, 2 * (self._dev["cap_lead"] if self._dev else 0))
+            cap_act = max(nu, 1, 2 * (self._dev["cap_act"] if self._dev else 0))
             self._dev = {
                 "cap_lead": cap_lead, "cap_act": cap_act,
                 "lead_rp": wp.zeros(cap_lead, dtype=wp.vec3d, device=device),

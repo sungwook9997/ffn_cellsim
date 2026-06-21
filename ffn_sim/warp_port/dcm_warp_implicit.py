@@ -101,6 +101,13 @@ def _vcopy(dst: wp.array(dtype=wp.vec3d), src: wp.array(dtype=wp.vec3d)):
     i = wp.tid(); dst[i] = src[i]
 
 @wp.kernel
+def _vaxpy_active(y: wp.array(dtype=wp.vec3d), alpha: wp.float64, x: wp.array(dtype=wp.vec3d),
+                  cof: wp.array(dtype=wp.int32)):  # y += αx for LIVE nodes only (cof>=0)
+    i = wp.tid()
+    if cof[i] >= wp.int32(0):
+        y[i] = y[i] + alpha * x[i]
+
+@wp.kernel
 def _operator(out: wp.array(dtype=wp.vec3d), a: wp.float64, v: wp.array(dtype=wp.vec3d),
               Fp: wp.array(dtype=wp.vec3d), Fx: wp.array(dtype=wp.vec3d), inv_s: wp.float64):
     # out = a·v + K·v,  K·v = −(F(x+s v) − F(x))/s = −(Fp − Fx)·inv_s

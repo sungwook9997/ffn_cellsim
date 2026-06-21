@@ -52,7 +52,7 @@ class CadherinParams:
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 
-def _build_koff_table(catch: CadherinCatchParams, f_max_pN: float = 90.0, n: int = 256):
+def _build_koff_table(catch: CadherinCatchParams, f_max_pN: float = 300.0, n: int = 512):
     """Force→k_off(F) lookup [grid F in N, k_off in s⁻¹] from the exact Rakshit generator."""
     fs = np.linspace(0.0, f_max_pN * 1e-12, n)
     koff = np.array([effective_k_off(float(f), catch) for f in fs])

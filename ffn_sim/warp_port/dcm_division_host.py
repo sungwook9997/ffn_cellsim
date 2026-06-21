@@ -18,7 +18,11 @@ import numpy as np
 
 @dataclass
 class DivisionParams:
-    p_div: float = 0.5             # per-rim-cell division probability per tick (dimensionless)
+    # per-rim-cell division probability per tick. Anchored to the HOOMD reference
+    # (cell/dcm_active.py:157 = 0.04): cell-cycle ~hours ≫ spreading ~minutes ⇒ 0-2 divisions per
+    # spread. The reference WARNS a high p_div makes A/A0 division-dominated (~9), masking the
+    # ~2-3 traction band — so do NOT raise this for a spreading/de-cohesion verdict (review fix #2).
+    p_div: float = 0.04
     div_gap: float = 0.4           # daughter placed at (2 + div_gap)·R outward of the mother
     batch_steps: int = 2000        # division updater cadence
     seed: int = 23
@@ -66,9 +70,11 @@ class DivisionHost:
         rim = np.zeros(active_ids.size, dtype=bool)
         try:
             from scipy.spatial import ConvexHull
-            rim[np.unique(ConvexHull(cents).vertices)] = True
+            # QJ (joggle) so a near-coplanar / thin (monolayer) cluster doesn't raise QhullError and
+            # silently disable all division (review fix #9); fall back to "all cells are rim" if it still fails.
+            rim[np.unique(ConvexHull(cents, qhull_options="QJ").vertices)] = True
         except Exception:
-            return False
+            rim[:] = True
         divided = False
         for k in np.where(rim)[0]:
             free = np.flatnonzero(~active)

@@ -49,7 +49,7 @@ from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
-from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy
+from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active
 
 wp.init()
 
@@ -186,7 +186,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
-                   division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.5,
+                   division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
@@ -206,6 +206,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     implicit = (integrator == "implicit")          # I-opt: linearly-implicit IMEX integration
+    if implicit and not use_grid:
+        # stiff_force_into builds cohesion/contact ONLY on the grid path; without it the implicit
+        # operator would omit the dominant contact stiffness (review fix #4). Require the grid.
+        raise ValueError("--integrator implicit requires the hash-grid path (do not combine with --no-grid)")
     if implicit and accel_dt:
         dt = accel_dt                              # implicit unlocks a larger (accuracy-bound) dt
     if implicit:
@@ -631,7 +635,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             a_imp = (1.0 / inv_gamma) / dt_step          # γ_node / dt
             dx_d, _ = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
                                 maxiter=cg_maxiter, device=device)
-            wp.launch(_vaxpy, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d], device=device)   # x += Δx
+            # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
+            # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
+            wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d, cof_d], device=device)
         else:
             wp.launch(_bd_step, dim=N,
                       inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
@@ -694,7 +700,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if cfl_limit <= 0.0:
             return
         if cfl_frac > 0.0:
-            target = int(np.ceil(n_sub[0] * cfl_frac / cfl_limit))
+            # cfl_frac is measured with the FULL dt (per-substep cfl = cfl_frac/n_sub), so the
+            # substep count that keeps per-substep displacement < cfl_limit·c_rep is just
+            # ceil(cfl_frac/cfl_limit) — NOT ×n_sub, which double-counted and ratcheted to the cap
+            # (review fix #7).
+            target = int(np.ceil(cfl_frac / cfl_limit))
             n_sub[0] = max(1, min(max_substeps, target))
 
     m_init, ok = measure()
@@ -979,7 +989,7 @@ def main():
     ap.add_argument("--k-area", type=float, default=0.0, help="B4 global area-constraint stiffness [N/m] (0=off)")
     ap.add_argument("--division", action="store_true", help="C7: rim-cell proliferation (parked cell pool → daughters)")
     ap.add_argument("--div-pool-factor", type=float, default=1.0, help="C7 parked cell pool size as a fraction of n-cells")
-    ap.add_argument("--div-rate", type=float, default=0.5, help="C7 per-rim-cell division probability per tick")
+    ap.add_argument("--div-rate", type=float, default=0.04, help="C7 per-rim-cell division probability per tick (ref dcm_active 0.04; higher masks the A/A0 traction band)")
     ap.add_argument("--bending", action="store_true", help="B5: thin-plate biharmonic membrane bending (Helfrich-like)")
     ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
     ap.add_argument("--necrosis", action="store_true", help="C8: 3-zone depth necrosis (O2-proxy; softens core turgor, gates division to the rim)")

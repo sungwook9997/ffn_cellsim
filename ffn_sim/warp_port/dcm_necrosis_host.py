@@ -28,7 +28,10 @@ PROLIFERATING, QUIESCENT, NECROTIC = 0, 1, 2
 class NecrosisParams:
     d_prolif_um: float = 40.0
     d_necrotic_um: float = 150.0
-    turgor_necrotic: float = 0.3       # necrotic-core turgor multiplier (lost pressure regulation)
+    # necrotic-core turgor multiplier (lost osmotic/pressure regulation). NOT a derived constant —
+    # a modeling assumption that a necrotic cell retains ~30% of its turgor; flagged for PI
+    # ratification (no single literature value). Surfaced per the no-magic-number rule (review fix #10).
+    turgor_necrotic: float = 0.3
     batch_steps: int = 2000
 
 
@@ -43,9 +46,13 @@ class NecrosisHost:
         self.npc = int(npc)
         self.R = float(R)
         self.batch_steps = self.p.batch_steps
-        self.zone = np.full(n_cells, QUIESCENT, dtype=np.int32)
+        # default PROLIFERATING (review fix #8): a cell (incl. a fresh division daughter) is
+        # proliferating until a necrosis tick DEMOTES it by depth. Defaulting QUIESCENT + can_divide
+        # all-False blocked ALL division before the first necrosis tick and starved daughters until
+        # the next tick (cadence-order coupling). Necrosis only ever demotes; it never gates the rim on.
+        self.zone = np.full(n_cells, PROLIFERATING, dtype=np.int32)
         self.turgor_mult = np.ones(n_cells, dtype=np.float64)
-        self.can_divide = np.zeros(n_cells, dtype=bool)
+        self.can_divide = np.ones(n_cells, dtype=bool)
         self.depth_um = np.zeros(n_cells, dtype=np.float64)
 
     def update(self, P: np.ndarray, cof: np.ndarray) -> None:
