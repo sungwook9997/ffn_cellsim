@@ -1,6 +1,6 @@
 # SourceEvidence hallucination audit (CrossRef)
 
-Audited **329** SourceEvidence rows.
+Audited **332** SourceEvidence rows.
 
 ## Summary
 
@@ -8,7 +8,7 @@ Audited **329** SourceEvidence rows.
 |---|---|---|
 | DOI_DEAD | 6 | DOI does not resolve — likely fabricated/wrong |
 | DOI_MISMATCH | 7 | DOI resolves to a DIFFERENT paper (author+year both off) |
-| CHECK | 93 | partial match (author XOR year) — review |
+| CHECK | 96 | partial match (author XOR year) — review |
 | NO_DOI_FOUND | 46 | real paper found — just missing DOI (suggested) |
 | OK | 177 | DOI resolves, author+year match — verified |
 
@@ -73,6 +73,7 @@ Audited **329** SourceEvidence rows.
 | CHECK | Hou2018_SciRep | https://doi.org/10.1038/s41598-018-25337 |  | CrossRef: hou 2018 — TASI: A software tool for spatial-temporal quantification of tumor sph |
 | CHECK | HuertaLopez2024_SciAdv | https://doi.org/10.1126/sciadv.adf9758 |  | CrossRef: huerta-lópez 2024 — Cell response to extracellular matrix viscous energy dissipation outwe |
 | CHECK | Jin2020_Jour | https://doi.org/10.1101/2020.12.06.41385 |  | CrossRef: jin 2020 — Mathematical model of tumour spheroid experiments with real-time cell  |
+| CHECK | Jo2025_ActaBiomaterialia | https://doi.org/10.1016/j.actbio.2025.05 |  | CrossRef: jo 2025 — Reciprocal folding dynamics in cellular networks at the stroma-basemen |
 | CHECK | K562_BBRC2019 | https://doi.org/10.1016/j.bbrc.2019.06.0 |  | CrossRef: takahashi 2019 — Inhibition of EP2/EP4 prostanoid receptor-mediated signaling suppresse |
 | CHECK | Kadzik2026_Jour | https://doi.org/10.64898/2026.05.24.7275 |  | CrossRef: kadzik 2026 — Rapid actin filament turnover maintains cortical connectivity while al |
 | CHECK | Keren2023_Cell | https://doi.org/10.1016/j.cell.2023.05.0 |  | CrossRef: keren 2023 — Effective membrane tension: A long-range integrator of cellular dynami |
@@ -90,6 +91,7 @@ Audited **329** SourceEvidence rows.
 | CHECK | MegeIshiyama_JBCReview | https://doi.org/10.1101/cshperspect.a028 |  | CrossRef: mège 2017 — Integration of Cadherin Adhesion and Cytoskeleton at
                   |
 | CHECK | Miroshnikova2018_NatCellBiol | https://doi.org/10.1038/s41556-017-0005- |  | CrossRef: miroshnikova 2017 — Adhesion forces and cortical tension couple cell proliferation and dif |
+| CHECK | Miyazaki2015_NatCellBiol | https://doi.org/10.1038/ncb3142 |  | CrossRef: miyazaki 2015 — Cell-sized spherical confinement induces the spontaneous formation of  |
 | CHECK | Moazzeni2021_PhysRevE | https://doi.org/10.1103/physreve.103.032 |  | CrossRef: moazzeni 2021 — Single-cell mechanical analysis and tension quantification via electro |
 | CHECK | Murrell2012_ProcNatlAcadSciUSA | https://doi.org/10.1073/pnas.1214753109 |  | CrossRef: murrell 2012 — F-actin buckling coordinates contractility and severing in a biomimeti |
 | CHECK | Mykuliak2020_BiophysicalJournal | https://doi.org/10.1016/j.bpj.2020.07.03 |  | CrossRef: mykuliak 2020 — Mechanical Unfolding of Proteins—A Comparative Nonequilibrium Molecula |
@@ -109,6 +111,7 @@ Audited **329** SourceEvidence rows.
 | CHECK | SensPlastino_NRMCB |  | 10.1088/0953-8984/27/27/273103 | author-only match (year differs); candidate: sens 2015 — Membrane tension and cytoskeleton organization in cell motil |
 | CHECK | Serwas2021_Jour | https://doi.org/10.1101/2021.06.28.45026 |  | CrossRef: serwas 2021 — Actin force generation in vesicle formation: mechanistic insights from |
 | CHECK | Shah2025_Cells | https://doi.org/10.3390/cells14100732 |  | CrossRef: shah 2025 — Modeling Tumor Microenvironment Complexity In Vitro: Spheroids as Phys |
+| CHECK | Slater2021_SoftMatter | https://doi.org/10.1039/d0sm01911a |  | CrossRef: slater 2021 — Transient mechanical interactions between cells and viscoelastic extra |
 | CHECK | Stam2017_ProcNatlAcadSciUSA | https://doi.org/10.1073/pnas.1708625114 |  | CrossRef: stam 2017 — Filament rigidity and connectivity tune the deformation modes of activ |
 | CHECK | Tam2021_Jour | https://doi.org/10.1101/2021.02.23.43258 |  | CrossRef: tam 2021 — Protein Friction and Filament Bending Facilitate Contraction of Disord |
 | CHECK | Tao2019_Jour | https://doi.org/10.1101/847046 |  | CrossRef: tao 2019 — Tuning cell motility via cell tension with a mechanochemical cell migr |
@@ -137,20 +140,20 @@ Audited **329** SourceEvidence rows.
 | NO_DOI_FOUND | Doss2020_PNAS |  | 10.1201/9780429344206 | candidate: ramamoorthy 2020 — Biology, Chemistry, and Applications of Apocarotenoids |
 | NO_DOI_FOUND | EloseguiArtola2016_NatMater |  | 10.1016/j.bpj.2017.05.020 | candidate: elosegui-artola 2017 — Amoebae as Mechanosensitive Tanks |
 | NO_DOI_FOUND | Fritzsche2013_MBC |  | 10.1007/978-3-642-37495-1_2 | candidate: fritzsche 2013 — Lebesgue-Theorie |
-| NO_DOI_FOUND | Fu2024_PNAS |  | 10.20944/preprints202406.1065.v1 | candidate: fu 2024 — An Introduction to Cosmos Thermodynamics |
+| NO_DOI_FOUND | Fu2024_PNAS |  | 10.20944/preprints202406.1065.v2 | candidate: fu 2024 — An Introduction to Cosmos Thermodynamics |
 | NO_DOI_FOUND | Guo2017_PNAS |  | 10.1145/3145690.3145698 | candidate: guo 2017 — Importance sampling measured BRDFs based on second order sph |
 | NO_DOI_FOUND | Han2017_PNAS |  | 10.2172/1477879 | candidate: han 2017 — Closeout Report for CTEQ Summer School 2017 |
 | NO_DOI_FOUND | Han2021_eLife |  | 10.4211/hs.7c5e032bdc7648a4a8c863a2c175e5b6 | candidate: han 2021 — DataShare for Han et al., 2021 Ecological Indicators |
 | NO_DOI_FOUND | Helfrich1973 |  | 10.1515/znc-1973-11-1209 | candidate: helfrich 1973 — Elastic Properties of Lipid Bilayers: Theory and Possible Ex |
 | NO_DOI_FOUND | Jansen2018_BiophysJ |  | 10.1016/j.jas.2018.02.016 | candidate: jansen 2018 — On the use of Cu isotope signatures in archaeometallurgy: A  |
-| NO_DOI_FOUND | Kim2021_PNAS |  | 10.1145/3508259.3508271 | candidate: kim 2021 — Color Separated Restoration for Lightweight Single Image Sup |
+| NO_DOI_FOUND | Kim2021_PNAS |  | 10.1145/3450507.3457434 | candidate: lee 2021 — Isle of reflections |
 | NO_DOI_FOUND | Kothari2018_JApplMech |  | 10.2514/6.2018-0530 | candidate: rustagi 2018 — Gyroscopic Stabilization of Flying Wing Aircraft |
 | NO_DOI_FOUND | Lindstrom2013_SoftMatter |  | 10.1093/obo/9780199766567-0108 | candidate: lindstrom 2013 — Cargo Cults |
 | NO_DOI_FOUND | Liu2019_ProstateMech |  | 10.1007/978-981-13-6962-9 | candidate: liu 2019 — Deuteride Materials |
 | NO_DOI_FOUND | Liu2025_NatPhysics |  | 10.22541/au.176275808.84444425/v1 | candidate: liu 2025 — Comment on Bandyopadhyay et al. |
 | NO_DOI_FOUND | Maitre2012_Nature |  | 10.3917/lav.daler.2012.01.0096 | candidate: bubrovszky 2012 — Pathologies schizophréniques |
 | NO_DOI_FOUND | Maitre2015_NCB |  | 10.1051/shsconf/20152000001 | candidate: colón de carvajal 2015 — Préface |
-| NO_DOI_FOUND | Malinova2021_NatCommun |  | 10.1017/nps.2020.87 | candidate: malinova 2021 — Politics of Memory and Nationalism |
+| NO_DOI_FOUND | Malinova2021_NatCommun |  | 10.34076/20713797_2021_2_29 | candidate: malinova 2021 — «Interest» as a legal concept: problems of doctrinal definit |
 | NO_DOI_FOUND | MarantanMahadevan2018_AmJPhys |  | 10.1119/1.5003376 | candidate: marantan 2018 — Mechanics and statistics of the worm-like chain |
 | NO_DOI_FOUND | Mogilner2002_2003 |  | 10.1002/3527601503.ch14 | candidate: scholey 2002 — Mitotic Spindle Motors |
 | NO_DOI_FOUND | Munster2013_PNAS |  | 10.7551/mitpress/8982.001.0001 | candidate: munster 2013 — An Aesthesia of Networks |
@@ -161,7 +164,7 @@ Audited **329** SourceEvidence rows.
 | NO_DOI_FOUND | Pronk2008_PNAS |  | 10.1057/dev.2008.28 | candidate: pronk 2008 — Climate, Scarcities and Development |
 | NO_DOI_FOUND | Ray2021_COCellBiol |  | 10.1016/j.ceb.2021.05.004 | candidate: ray 2021 — Aligned forces: Origins and mechanisms of cancer disseminati |
 | NO_DOI_FOUND | Steinberg1996_CurrTopDevBiol |  | 10.1387/ijdb.8877443 | candidate: drawbridge 1996 — Morphogenesis of the axolotl pronephric duct: a model system |
-| NO_DOI_FOUND | TapiaRojo2019_SciAdv |  | 10.1063/1.5126071 | candidate: tapia-rojo 2019 — Thermal versus mechanical unfolding in a model protein |
+| NO_DOI_FOUND | TapiaRojo2019_SciAdv |  | 10.1101/816801 | candidate: tapia-rojo 2019 — Thermal versus Mechanical Unfolding in a Model Protein |
 | NO_DOI_FOUND | Trichet2012_PNAS |  | 10.3917/bupsy.520.0365 | candidate: trichet 2012 — La notion de kakon . Histoire et enjeux psychopathologiques |
 | NO_DOI_FOUND | Varma2016_BiophysJ |  | 10.4135/9781526429629 | candidate: varma 2016 — Swiss Roll |
 | NO_DOI_FOUND | Vassalli2023_Cancers |  | 10.3917/mem.086.0017 | candidate: vassalli 2023 — L’hospitalité citoyenne : bien plus qu’un hébergement |
