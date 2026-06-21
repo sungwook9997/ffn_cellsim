@@ -34,7 +34,9 @@ from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.warp_port.dcm_substrate_warp import (
     dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel)
 from ffn_sim.warp_port.dcm_neighbor_warp import (
-    pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel)
+    pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
+    gather_lead_pos, lamellipodium_tether_multicell)
+from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 
 wp.init()
 
@@ -81,8 +83,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    adh_range: float = 0.5e-6, k_floor: float = 1.0,
                    substrate_wetting: bool = True, use_substrate_well: bool = True,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
-                   use_grid: bool = True, save_frames: str | None = None) -> dict:
-    """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1)."""
+                   settle_steps: int = 0,
+                   use_grid: bool = True, save_frames: str | None = None,
+                   lamellipodium: bool = False) -> dict:
+    """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
+    the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
+
+    The lamellipodium is the host-managed advancing-anchor port (see
+    :mod:`dcm_lamellipodium_host`): rim cells are detected once at build, then every
+    ``batch_steps`` the front is ratcheted (SEED/ADVANCE) on the host and the device
+    anchor + leading-node geometry arrays are refreshed; every step the device tether
+    (:func:`lamellipodium_tether_multicell`) pulls each rim cell's leading basal node
+    toward its own front. Wetting (M1) is the basal spread; the lamellipodium adds the
+    active crawl on top — and because the rim cells are cohesively bonded to the cells
+    above them, the upper (non-ECM-contacting) cells are dragged along (collective spread)."""
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
@@ -133,7 +147,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
     face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
 
-    def step_once(s, dt_step):
+    # M2 lamellipodium host (rim detection one-shot at build; advances at cadence).
+    lam = None
+    if lamellipodium:
+        lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt)
+        print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
+              f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
+
+    def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
         if use_grid:
             # rebuild both grids every step (build is negligible — the path is query-bound;
@@ -179,13 +200,24 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                       inputs=[pos_d, wp.float64(z0), wp.float64(k_well), wp.float64(adh_range),
                               wp.float64(k_floor), force_d], device=device)
         # substrate in-plane wetting: scatter into wbuf -> cap -> add (mechanistic spread)
-        if substrate_wetting:
+        if substrate_wetting and do_spread:
             wp.launch(_zero_vec, dim=N, inputs=[wbuf_d], device=device)
             wp.launch(dcm_wetting_scatter_kernel, dim=n_faces,
                       inputs=[pos_d, faces_d, wp.float64(z0), wp.float64(w_cs_jm2),
                               wp.float64(adh_range), wbuf_d], device=device)
             wp.launch(dcm_wetting_cap_add_kernel, dim=N,
                       inputs=[wbuf_d, wp.float64(force_cap), force_d], device=device)
+        # M2 lamellipodium traction tether (every step; anchors refreshed at cadence)
+        if lam is not None and do_spread and lam._dev is not None and lam._dev["n_lead"] > 0:
+            d = lam._dev
+            wp.launch(gather_lead_pos, dim=d["n_lead"],
+                      inputs=[pos_d, d["lead_idx"], d["lead_rp"]], device=device)
+            wp.launch(lamellipodium_tether_multicell, dim=d["n_lead"],
+                      inputs=[d["lead_rp"], d["lead_ccx"], d["lead_ccy"], d["lead_ox"],
+                              d["lead_oy"], d["lead_proj"], d["lead_idx"], d["lead_cell"],
+                              d["actin"], d["actin_cell"], wp.int32(d["n_used"]),
+                              wp.float64(lam.p.k_tether), wp.float64(lam.p.tether_cap),
+                              wp.float64(lam.p.tether_radius), force_d], device=device)
         wp.launch(_bd_step, dim=N,
                   inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
                           wp.float64(dt_step), wp.int32(7), wp.int32(s)], device=device)
@@ -202,23 +234,47 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         com = P[:, :2].mean(axis=0)
         return {"A_um2": A, "maxZ_um": maxZ, "Vsum": Vsum, "com": com, "P": P}, True
 
-    m0, ok = measure()
+    m_init, ok = measure()
     if not ok:
         return {"error": "non-finite at init"}
-    A0 = m0["A_um2"]; V0sum = m0["Vsum"]; com0 = m0["com"]
-    every = max(1, steps // max(1, frames))
-    traj = [{"step": 0, "aa0": 1.0, "maxZ_um": m0["maxZ_um"], "vv0": 1.0, "drift_um": 0.0}]
-    frame_list = [m0["P"].astype(np.float32)] if save_frames else None
 
     # gentle soft-start: settle the initial pack at 0.1× dt (the stiff turgor/contact
     # need it; the HOOMD driver equilibrates similarly before the measured spread)
     for s in range(warmup):
-        step_once(s, dt * 0.1)
+        step_once(s, dt * 0.1, do_spread=False)
     wp.synchronize_device(device)
+
+    # AGGREGATION / SETTLE phase (do_spread=False): the clean ball compacts into a
+    # cohesive spheroid RESTING at z0 — substrate well holds the basal nodes at z=0,
+    # turgor + cohesion + contact round it out, but NO wetting / NO lamellipodium yet.
+    # The de-cohesion spread is then measured FROM this rested baseline (A0 below), so
+    # the cells start mutually bonded and at z=0 exactly as PI prescribed — the upper
+    # (non-ECM) cells are then dragged outward by the bonded rim cells once spread fires.
+    for s in range(settle_steps):
+        step_once(s, dt, do_spread=False)
+    wp.synchronize_device(device)
+
+    # baseline = the RESTED spheroid (not the as-built ball)
+    m0, ok = measure()
+    if not ok:
+        return {"error": "non-finite after settle"}
+    A0 = m0["A_um2"]; V0sum = m0["Vsum"]; com0 = m0["com"]
+    every = max(1, steps // max(1, frames))
+    traj = [{"step": 0, "aa0": 1.0, "maxZ_um": m0["maxZ_um"], "vv0": 1.0, "drift_um": 0.0}]
+    frame_list = [m0["P"].astype(np.float32)] if save_frames else None
+    print(f"  [settle] done ({warmup} warmup + {settle_steps} settle): "
+          f"A0={A0:.1f}um^2  maxZ={m0['maxZ_um']:.1f}um  Vsum/Vinit="
+          f"{m0['Vsum']/m_init['Vsum']:.3f}", flush=True)
 
     t0 = time.perf_counter()
     truncated_at = None
     for s in range(1, steps + 1):
+        # M2: ratchet the lamellipodial front on the host at low cadence, then refresh
+        # the device anchor + leading-node geometry (the tether reads them every step)
+        if lam is not None and (s == 1 or s % lam.batch_steps == 0):
+            wp.synchronize_device(device)
+            lam.update(pos_d.numpy().astype(np.float64))
+            lam.upload(device)
         step_once(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
@@ -249,14 +305,21 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  saved {len(frame_list)} frames -> {save_frames}", flush=True)
 
     aa = [r["aa0"] for r in traj]
-    return {
+    out = {
         "device": device, "n_cells": n_cells, "N": N, "subdiv": subdiv, "dt": dt,
-        "steps": steps, "truncated_at": truncated_at, "steps_per_s": (truncated_at or steps) / elapsed,
+        "steps": steps, "warmup": warmup, "settle_steps": settle_steps,
+        "truncated_at": truncated_at, "steps_per_s": (truncated_at or steps) / elapsed,
         "substrate_wetting": substrate_wetting, "use_substrate_well": use_substrate_well,
+        "lamellipodium": lamellipodium,
         "aa0_peak": max(aa), "aa0_final": aa[-1], "maxZ_final_um": traj[-1]["maxZ_um"],
         "vv0_final": traj[-1]["vv0"], "drift_final_um": traj[-1]["drift_um"],
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
+    if lam is not None:
+        out["lamel"] = {"n_rim": lam.n_rim, "n_pool": lam.n_pool, "n_used": lam.n_used,
+                        "n_seeded": lam.n_seeded, "n_advanced": lam.n_advanced,
+                        "p_advance": lam.p_advance, "n_lead_final": lam.n_lead}
+    return out
 
 
 def main():
@@ -267,6 +330,10 @@ def main():
     ap.add_argument("--steps", type=int, default=40000)
     ap.add_argument("--frames", type=int, default=20)
     ap.add_argument("--dt", type=float, default=8.0e-6)
+    ap.add_argument("--warmup", type=int, default=1000, help="soft-start steps at 0.1x dt")
+    ap.add_argument("--settle-steps", type=int, default=0,
+                    help="aggregation/settle steps at full dt with NO spread drivers (rest the spheroid at z0 before the measured spread; baseline A0 is taken AFTER this)")
+    ap.add_argument("--lamellipodium", action="store_true", help="enable the M2 per-cell lamellipodium crawl")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -275,8 +342,9 @@ def main():
     import json
     out = run_decohesion(
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
-        device=args.device, dt=args.dt,
+        device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
+        lamellipodium=args.lamellipodium,
         use_grid=not args.no_grid, save_frames=args.save_frames)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 

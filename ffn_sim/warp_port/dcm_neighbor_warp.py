@@ -202,3 +202,59 @@ def lamellipodium_tether_accum(
             fvy = fvy * s
             fvz = fvz * s
         wp.atomic_add(force, lead_idx[t], wp.vec3d(fvx, fvy, fvz))
+
+
+@wp.kernel
+def lamellipodium_tether_multicell(
+    lead_rp: wp.array(dtype=wp.vec3d), lead_ccx: wp.array(dtype=wp.float64),
+    lead_ccy: wp.array(dtype=wp.float64), lead_ox: wp.array(dtype=wp.float64),
+    lead_oy: wp.array(dtype=wp.float64), lead_proj: wp.array(dtype=wp.float64),
+    lead_idx: wp.array(dtype=wp.int32), lead_cell: wp.array(dtype=wp.int32),
+    actin: wp.array(dtype=wp.vec3d), actin_cell: wp.array(dtype=wp.int32),
+    n_actin: wp.int32, k_tether: wp.float64, force_cap: wp.float64,
+    tether_radius: wp.float64, force: wp.array(dtype=wp.vec3d),
+):
+    """Multi-cell traction tether (M2): pull each rim cell's leading basal node
+    toward the nearest OUTWARD clutch-anchored actin bead **of its OWN cell**.
+
+    Two fixes over :func:`lamellipodium_tether_accum` (M2b §E): (a) a **same-cell
+    mask** (``actin_cell[a] == lead_cell[t]``) so a node only tethers to its own
+    cell's front — required once the actin pool is shared across all rim cells;
+    (b) **no Newton-3 reaction** on the actin bead — the host pins the clutch-gripped
+    actin as a rigid anchor (slip ≤ tether_cap/k_clutch = 0.1µm ≤ 0.2·ℓ₀), so the
+    bead is the fixed point and is never integrated. ``F = +k_tether·(r_actin − r_node)``
+    capped at ``force_cap`` (= tether_cap), accumulated into the shared force array."""
+    t = wp.tid()
+    rp = lead_rp[t]
+    ccx = lead_ccx[t]
+    ccy = lead_ccy[t]
+    ox = lead_ox[t]
+    oy = lead_oy[t]
+    npj = lead_proj[t]
+    lc = lead_cell[t]
+    min_dist = wp.float64(1.0e300)
+    jmin = wp.int32(-1)
+    for a in range(n_actin):
+        if actin_cell[a] == lc:
+            ap = actin[a]
+            dx = ap[0] - rp[0]
+            dy = ap[1] - rp[1]
+            dz = ap[2] - rp[2]
+            dist = wp.sqrt(dx * dx + dy * dy + dz * dz)
+            act_proj = (ap[0] - ccx) * ox + (ap[1] - ccy) * oy
+            if dist <= tether_radius and act_proj > npj:
+                if dist < min_dist:
+                    min_dist = dist
+                    jmin = wp.int32(a)
+    if jmin >= wp.int32(0):
+        ap = actin[jmin]
+        fvx = k_tether * (ap[0] - rp[0])
+        fvy = k_tether * (ap[1] - rp[1])
+        fvz = k_tether * (ap[2] - rp[2])
+        fmag = wp.sqrt(fvx * fvx + fvy * fvy + fvz * fvz)
+        if fmag > force_cap:
+            s = force_cap / fmag
+            fvx = fvx * s
+            fvy = fvy * s
+            fvz = fvz * s
+        wp.atomic_add(force, lead_idx[t], wp.vec3d(fvx, fvy, fvz))
