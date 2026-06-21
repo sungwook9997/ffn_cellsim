@@ -142,7 +142,7 @@ def _edges_from_faces(faces: np.ndarray) -> np.ndarray:
 def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
                device: str = "cpu", kT: float = 0.0, dt: float = 1.0e-7,
                turgor_scale: float = 1.0, pool_factor: float = 6.0,
-               warmup: int = 50) -> dict:
+               warmup: int = 50, use_graph: bool = False) -> dict:
     """GPU-resident hybrid loop with a fixed node-pool + host low-cadence remesh."""
     p = ResolvedDCM(subdivisions=subdiv)
     verts, edges, tris = icosphere_mesh(p.R_cell, subdiv)
@@ -195,6 +195,30 @@ def run_hybrid(*, steps: int, remesh_period: int, subdiv: int = 2,
     for s in range(warmup):
         step_once(s)
     wp.synchronize_device(device)
+
+    # --- #1 CUDA graph capture: replay the fixed 5-kernel step sequence (no per-step
+    # Python launch overhead). CUDA-only; requires remesh off (no realloc in-graph)
+    # and kT=0 (the bd RNG step arg is frozen at capture, irrelevant when bd_pref=0).
+    if use_graph and device != "cpu" and remesh_period == 0:
+        with wp.ScopedCapture(device) as cap:
+            step_once(0)
+        graph = cap.graph
+        wp.synchronize_device(device)
+        t0 = time.perf_counter()
+        for _ in range(steps):
+            wp.capture_launch(graph)
+        wp.synchronize_device(device)
+        elapsed = time.perf_counter() - t0
+        pf = pos_d.numpy()
+        return {
+            "device": device, "steps": steps, "n0": n0, "pool_MAX": MAX,
+            "n_active_final": int((cof >= 0).sum()), "subdiv": subdiv,
+            "remesh_period": 0, "graph_capture": True,
+            "elapsed_s": elapsed, "steps_per_s": steps / elapsed,
+            "r_mean_0": R0,
+            "r_mean_final": float(np.linalg.norm(pf[cof >= 0] - pf[cof >= 0].mean(0), axis=1).mean()),
+            "finite": bool(np.isfinite(pf[cof >= 0]).all()),
+        }
 
     t0 = time.perf_counter()
     for s in range(steps):
