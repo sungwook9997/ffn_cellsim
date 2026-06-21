@@ -85,7 +85,7 @@ def _phase_tag(phase, fi):
     return "AGG" if (phase is not None and phase[fi] == 0) else "SPREAD"
 
 
-def _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, out, fps, legend, title):
+def _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, pen, out, fps, legend, title):
     import matplotlib.animation as animation
     allp = frames * UM
     xylim = float(np.abs(allp[..., :2]).max()) * 1.05
@@ -113,7 +113,7 @@ def _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, out, fps,
         pc0.set_verts(tri(P, 0, 1)); pc0.set_facecolors(col)
         pc1.set_verts(tri(P, 0, 2)); pc1.set_facecolors(col)
         ax0.set_title(f"[{_phase_tag(phase, fi)}] top-down — A/A0 = {aa0[fi]:.2f}", fontsize=10)
-        ax1.set_title(f"side — maxZ = {maxZ[fi]:.0f}µm  V/V0 = {vv0[fi]:.2f}", fontsize=10)
+        ax1.set_title(f"side — maxZ = {maxZ[fi]:.0f}µm  V/V0 = {vv0[fi]:.2f}  pen = {pen[fi]:.2f}", fontsize=10)
         sup.set_text(f"{title}  ·  step {int(step[fi])}")
         return pc0, pc1
 
@@ -148,13 +148,16 @@ def main() -> None:
     step, aa0, maxZ, vv0 = d["step"], d["aa0"], d["maxZ"], d["vv0"]
     phase = d["phase"] if "phase" in d.files else None
     cad = d["cad"] if "cad" in d.files else None
+    pen = d["pen_frac"] if "pen_frac" in d.files else np.zeros(frames.shape[0])
     F = frames.shape[0]
+    print(f"interpenetration max/mean_edge: peak {float(pen.max()):.3f}  final {float(pen[-1]):.3f} "
+          f"(0 = no mesh overlap; >~0.3 = cells interpenetrating)")
 
     mode = "junction" if args.color_by_junction else ("contact" if args.color_by_contact else "default")
     colors_for, legend = _make_color_fn(faces, cof, frames, mode, cad)
 
     if args.mp4:
-        _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0,
+        _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, pen,
                    args.mp4, args.fps, legend, args.title)
 
     sel = np.unique(np.linspace(0, F - 1, args.ncols).astype(int))
@@ -186,7 +189,7 @@ def main() -> None:
                                          edgecolors=(0, 0, 0, 0.12), linewidths=0.1))
         ax.set_xlim(-xylim, xylim); ax.set_ylim(zmin - 2.0, zmax + 4.0); ax.set_aspect("equal")
         ax.axhline(0.0, color="saddlebrown", lw=1.2, alpha=0.7)
-        ax.set_title(f"maxZ = {maxZ[fi]:.0f} µm\nV/V0 = {vv0[fi]:.2f}", fontsize=9)
+        ax.set_title(f"maxZ = {maxZ[fi]:.0f} µm\nV/V0 = {vv0[fi]:.2f}  pen = {pen[fi]:.2f}", fontsize=9)
         ax.tick_params(labelsize=6)
         if c == 0:
             ax.set_ylabel("side (xz)  µm\n[maxZ held]", fontsize=8)

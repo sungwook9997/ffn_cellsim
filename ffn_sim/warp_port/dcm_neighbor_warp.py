@@ -266,6 +266,59 @@ def contact_grid_cad_kernel(
 
 
 @wp.kernel
+def penetration_depth_kernel(
+    grid: wp.uint64,                         # grid over FACE centroids
+    qpts: wp.array(dtype=wp.vec3),           # f32 node positions (query points)
+    pos: wp.array(dtype=wp.vec3d),           # f64 node positions
+    cof: wp.array(dtype=wp.int32),
+    faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32),
+    radius: wp.float32,
+    pen: wp.array(dtype=wp.float64),         # (N,) out: penetration depth (0 = outside)
+):
+    """DIAGNOSTIC (no force): per node, the depth it has penetrated INTO another cell.
+
+    Finds the node's nearest face on any OTHER cell (Ericson closest-point, same geometry
+    as ``contact_grid_kernel``); if the node sits on the INNER side of that face
+    (``sign = (node−closestpoint)·faceNormal < 0``), it is inside that cell and the
+    penetration depth is the closest-point distance. ``pen[ni]`` = that depth (0 if outside
+    or no neighbour). The driver reduces ``max(pen)/mean_edge`` per frame — interpenetration
+    is then tracked as a number (it is INVISIBLE in the surface render), never eyeballed."""
+    ni = wp.tid()
+    c1 = cof[ni]
+    if c1 < wp.int32(0):
+        pen[ni] = wp.float64(0.0)
+        return
+    z = wp.float64(0.0)
+    p = pos[ni]
+    best_d = wp.float64(1.0e300)
+    best_sign = wp.float64(1.0)
+    q = wp.hash_grid_query(grid, qpts[ni], radius)
+    fj = wp.int32(0)
+    while wp.hash_grid_query_next(q, fj):
+        if fcell[fj] != c1:
+            a = pos[faces[fj, 0]]
+            b = pos[faces[fj, 1]]
+            c = pos[faces[fj, 2]]
+            bary = closest_bary(p, a, b, c)
+            cpa = a * bary[0] + b * bary[1] + c * bary[2]
+            r_vec = p - cpa
+            d = wp.length(r_vec)
+            if d < best_d:
+                best_d = d
+                fnv = wp.cross(b - a, c - a)
+                nrm = wp.length(fnv)
+                if nrm > z:
+                    best_sign = wp.dot(r_vec, fnv) / nrm
+                else:
+                    best_sign = wp.float64(1.0)
+    if best_d < wp.float64(1.0e299) and best_sign < z:
+        pen[ni] = best_d
+    else:
+        pen[ni] = z
+
+
+@wp.kernel
 def gather_lead_pos(pos: wp.array(dtype=wp.vec3d), lead_idx: wp.array(dtype=wp.int32),
                     out: wp.array(dtype=wp.vec3d)):
     """Device gather lead_rp[t] = pos[lead_idx[t]] (per-step; leading-node SET is

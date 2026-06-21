@@ -36,7 +36,7 @@ from ffn_sim.warp_port.dcm_substrate_warp import (
     dcm_wetting_scatter_integrin_kernel)
 from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
-    cohesion_grid_cad_kernel, contact_grid_cad_kernel,
+    cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
@@ -178,6 +178,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     con_q = float(c_adh + 0.7 * (3.0 * l_min))
     node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+    pen_d = wp.zeros(N, dtype=wp.float64, device=device)   # interpenetration diagnostic
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
     face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
 
@@ -286,6 +287,22 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                   inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
                           wp.float64(dt_step), wp.int32(7), wp.int32(s)], device=device)
 
+    def _penetration_frac():
+        """max node-into-other-cell penetration depth / mean_edge (0 = no interpenetration).
+        Rebuilds the face grid on the CURRENT positions (measure runs after the integration
+        step, so the step's grid is stale) then reduces the diagnostic kernel on the host."""
+        if not use_grid:
+            return 0.0
+        wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
+        wp.launch(face_centroids_f32, dim=n_faces, inputs=[pos_d, faces_d, cent_f32], device=device)
+        face_grid.build(points=cent_f32, radius=con_q)
+        pen_d.zero_()
+        wp.launch(penetration_depth_kernel, dim=N,
+                  inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                          wp.float32(con_q), pen_d], device=device)
+        wp.synchronize_device(device)
+        return float(pen_d.numpy().max()) / mean_edge
+
     def measure():
         P = pos_d.numpy().astype(np.float64)
         finite = bool(np.isfinite(P).all())
@@ -296,7 +313,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         maxZ = float(P[:, 2].max() * UM)
         Vsum = float(_cell_volumes(P, faces_a, fcell_a, n_cells).sum())
         com = P[:, :2].mean(axis=0)
-        return {"A_um2": A, "maxZ_um": maxZ, "Vsum": Vsum, "com": com, "P": P}, True
+        return {"A_um2": A, "maxZ_um": maxZ, "Vsum": Vsum, "com": com, "P": P,
+                "pen_frac": _penetration_frac()}, True
 
     m_init, ok = measure()
     if not ok:
@@ -316,7 +334,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
 
     def record(gstep, phase, m):
         recs.append({"gstep": gstep, "phase": phase, "area": m["A_um2"],
-                     "maxZ_um": m["maxZ_um"], "Vsum": m["Vsum"], "com": m["com"]})
+                     "maxZ_um": m["maxZ_um"], "Vsum": m["Vsum"], "com": m["com"],
+                     "pen_frac": m.get("pen_frac", 0.0)})
         if frame_list is not None:
             frame_list.append(m["P"].astype(np.float32))
             cad_list.append(cad_now().astype(np.float32))
@@ -384,7 +403,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             record(settle_steps + s, 1, m)
             print(f"  step {s:>7}  A/A0={m['A_um2']/A0 if A0 else 0:.3f}  maxZ={m['maxZ_um']:.1f}um  "
                   f"V/V0={m['Vsum']/V0sum if V0sum else 0:.3f}  "
-                  f"drift={np.linalg.norm(m['com']-com0)*1e6:.2f}um"
+                  f"drift={np.linalg.norm(m['com']-com0)*1e6:.2f}um  "
+                  f"pen={m['pen_frac']:.3f}"
                   + (f"  switched={js.n_switched}" if js is not None else ""), flush=True)
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
@@ -392,7 +412,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # normalise all recorded frames to the rested baseline + assemble the trajectory
     traj = [{"step": r["gstep"], "phase": r["phase"], "aa0": r["area"] / A0 if A0 > 0 else 0.0,
              "maxZ_um": r["maxZ_um"], "vv0": r["Vsum"] / V0sum if V0sum else 0.0,
-             "drift_um": float(np.linalg.norm(r["com"] - com0) * 1e6)} for r in recs]
+             "drift_um": float(np.linalg.norm(r["com"] - com0) * 1e6),
+             "pen_frac": r["pen_frac"]} for r in recs]
 
     if save_frames and frame_list is not None:
         np.savez_compressed(
@@ -403,7 +424,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             phase=np.array([r["phase"] for r in traj]),
             aa0=np.array([r["aa0"] for r in traj]),
             maxZ=np.array([r["maxZ_um"] for r in traj]),
-            vv0=np.array([r["vv0"] for r in traj]))
+            vv0=np.array([r["vv0"] for r in traj]),
+            pen_frac=np.array([r["pen_frac"] for r in traj]))
         print(f"  saved {len(frame_list)} frames -> {save_frames}", flush=True)
 
     spread_aa = [r["aa0"] for r in traj if r["phase"] == 1] or [1.0]
@@ -417,6 +439,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "aa0_peak": max(spread_aa), "aa0_final": spread_aa[-1],
         "maxZ_final_um": traj[-1]["maxZ_um"],
         "vv0_final": traj[-1]["vv0"], "drift_final_um": traj[-1]["drift_um"],
+        "pen_frac_peak": max(r["pen_frac"] for r in traj),
+        "pen_frac_final": traj[-1]["pen_frac"],
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
     if lam is not None:
