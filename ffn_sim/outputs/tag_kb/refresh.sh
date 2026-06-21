@@ -9,6 +9,9 @@ cd "$(dirname "$0")"
 echo "[1/3] materializing Notion 8-DB Contract-Graph -> kb.duckdb ..."
 python notion_to_duckdb.py
 
+echo "[1b] committing a git-durable snapshot of the SoT -> snapshots/notion_snapshot.json ..."
+python dump_notion_snapshot.py
+
 echo "[2/3] ingesting references/ PDFs -> paper_refs + paper_chunks + FTS ..."
 python references_ingest.py
 
