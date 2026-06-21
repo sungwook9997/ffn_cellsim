@@ -40,11 +40,12 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
     ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
     surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
-    edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel,
+    edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel, scale_per_cell_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
 from ffn_sim.warp_port.dcm_division_host import DivisionHost, DivisionParams
+from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
@@ -154,6 +155,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.5,
                    bending: bool = False, k_bend: float = 1.0e-5,
+                   necrosis: bool = False,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -224,6 +226,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     bilap_d = wp.zeros(N, dtype=wp.vec3d, device=device)
     nsum_d = wp.zeros(N, dtype=wp.vec3d, device=device)
     ncnt_d = wp.zeros(N, dtype=wp.float64, device=device)
+    # C8 necrosis: per-cell turgor multiplier (necrotic core loses pressure regulation)
+    turgor_mult_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     R_nuc = R_nuc_factor * R
     d_knee_nuc = knee_strain * R_nuc
     k_chrom = 4.0 * np.pi * E_nuc * R_nuc / npc          # continuum bridge (H.9 eq B), N-invariant
@@ -308,6 +312,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  [nucleus] R_nuc={R_nuc*1e6:.2f}um ({R_nuc_factor:.2f}·R)  E_nuc={E_nuc:.0f}Pa  "
               f"ratio_lamin={ratio_lamin}  knee={knee_strain}  k_chrom={k_chrom:.2e}N/m  "
               f"k_lamin={k_lamin:.2e}N/m  (deformable core; bilinear chromatin→lamin)", flush=True)
+
+    # C8 necrosis 3-zone (depth-from-surface): assigns prolif/quiescent/necrotic, softens the
+    # necrotic core's turgor + gates division to the proliferating rim. Inert until N is large.
+    necro = None
+    if necrosis:
+        necro = NecrosisHost(cof=cof_a, n_cells=n_cells, npc=npc, R=R)
+        print(f"  [necrosis] d_prolif={necro.p.d_prolif_um}um  d_necrotic={necro.p.d_necrotic_um}um "
+              f"(O2-depth proxy)  turgor_necrotic={necro.p.turgor_necrotic}  batch={necro.batch_steps}",
+              flush=True)
 
     # C7 cell division (proliferation): rim cells divide into parked pool cells at low cadence.
     div = None
@@ -404,6 +417,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         wp.launch(_dp_from_vol, dim=n_cells,
                   inputs=[Vc_d, wp.float64(V0), wp.float64(p.turgor_dP0),
                           wp.float64(k_vol), dP_d], device=device)
+        if necro is not None:           # C8: necrotic core loses turgor regulation (dP *= mult)
+            wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces,
                   inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
         if use_grid:
@@ -675,11 +690,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             ecm.update(pos_d.numpy().astype(np.float64))
             ecm.upload(device)
+        # C8: necrosis 3-zone — reassign zones, push the per-cell turgor multiplier to device
+        if necro is not None and s % necro.batch_steps == 0:
+            wp.synchronize_device(device)
+            necro.update(pos_d.numpy().astype(np.float64), cof_a)
+            turgor_mult_d.assign(necro.turgor_mult)
+            cnt = necro.counts()
+            if cnt["necrotic"] > 0:
+                print(f"  [necrosis] step {s}: prolif={cnt['prolif']} quiescent={cnt['quiescent']} "
+                      f"necrotic={cnt['necrotic']}", flush=True)
         # C7: cell division (rim-cell proliferation) — activate parked daughters, resync cof
         if div is not None and s % div.batch_steps == 0:
             wp.synchronize_device(device)
             P = pos_d.numpy().astype(np.float64)
-            if div.update(P, cof_a):
+            if div.update(P, cof_a, can_divide=(necro.can_divide if necro is not None else None)):
                 pos_d.assign(np.ascontiguousarray(P))
                 cof_d.assign(cof_a.astype(np.int32))
                 if lam is not None: lam.cof = cof_a
@@ -751,7 +775,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
         "nucleus": nucleus, "surface_tension": surface_tension,
         "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
-        "bending": bending, "k_bend": k_bend if bending else None,
+        "bending": bending, "k_bend": k_bend if bending else None, "necrosis": necrosis,
         "nucleus_params": ({"R_nuc": R_nuc, "E_nuc": E_nuc, "k_chrom": k_chrom,
                             "k_lamin": k_lamin, "ratio_lamin": ratio_lamin,
                             "knee_strain": knee_strain} if nucleus else None),
@@ -772,6 +796,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                  "n_broken": cad.n_broken, "k_trans": cad.p.k_trans,
                                  "r0_trans": cad.p.r0_trans, "k_on": cad.p.k_on,
                                  "batch_steps": cad.batch_steps}
+    if necro is not None:
+        out["necrosis_stats"] = {**necro.counts(), "d_prolif_um": necro.p.d_prolif_um,
+                           "d_necrotic_um": necro.p.d_necrotic_um,
+                           "max_depth_um": float(necro.depth_um.max())}
     if div is not None:
         out["division_stats"] = {"n_divisions": div.n_divisions, "n_active0": n_active,
                            "n_active_final": int((cof_a[np.arange(n_cells) * npc] >= 0).sum()),
@@ -817,6 +845,7 @@ def main():
     ap.add_argument("--div-rate", type=float, default=0.5, help="C7 per-rim-cell division probability per tick")
     ap.add_argument("--bending", action="store_true", help="B5: thin-plate biharmonic membrane bending (Helfrich-like)")
     ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
+    ap.add_argument("--necrosis", action="store_true", help="C8: 3-zone depth necrosis (O2-proxy; softens core turgor, gates division to the rim)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -833,7 +862,7 @@ def main():
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
-        bending=args.bending, k_bend=args.k_bend,
+        bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)

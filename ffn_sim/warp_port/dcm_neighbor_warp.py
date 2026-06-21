@@ -451,6 +451,13 @@ def cadherin_bond_force_kernel(
 
 
 @wp.kernel
+def scale_per_cell_kernel(vals: wp.array(dtype=wp.float64), mult: wp.array(dtype=wp.float64)):
+    """C8: in-place per-cell scale (e.g. dP *= turgor_mult so the necrotic core loses pressure)."""
+    c = wp.tid()
+    vals[c] = vals[c] * mult[c]
+
+
+@wp.kernel
 def edge_neighbor_sum_kernel(
     vals: wp.array(dtype=wp.vec3d), edges: wp.array(dtype=wp.int32, ndim=2),
     vsum: wp.array(dtype=wp.vec3d), vcnt: wp.array(dtype=wp.float64),

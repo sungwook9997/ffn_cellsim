@@ -53,8 +53,10 @@ class DivisionHost:
         first = cof[np.arange(self.n_total) * self.npc]
         return first >= 0
 
-    def update(self, P: np.ndarray, cof: np.ndarray) -> bool:
-        """One division tick. Mutates P and cof IN PLACE; returns True if any cell divided."""
+    def update(self, P: np.ndarray, cof: np.ndarray, can_divide: np.ndarray | None = None) -> bool:
+        """One division tick. Mutates P and cof IN PLACE; returns True if any cell divided.
+        ``can_divide`` (per-cell bool, from C8 necrosis) further gates which cells may divide —
+        only PROLIFERATING (rim, nutrient-supplied) cells; necrotic/quiescent never divide."""
         active = self._cell_active(cof)
         active_ids = np.flatnonzero(active)
         if active_ids.size < 4 or not np.any(~active):
@@ -72,6 +74,8 @@ class DivisionHost:
             free = np.flatnonzero(~active)
             if free.size == 0:
                 break
+            if can_divide is not None and not can_divide[int(active_ids[k])]:
+                continue                                  # C8: only proliferating-zone cells divide
             if self._rng.random() >= self.p.p_div:
                 continue
             daughter = int(free[0])
