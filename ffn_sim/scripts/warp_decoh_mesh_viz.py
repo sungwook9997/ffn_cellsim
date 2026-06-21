@@ -57,42 +57,48 @@ def _rim_mask_cells(frame0, cof, z0=0.0, contact_band=1.5):
     return (cen[:, 2] - z0) <= contact_band * float((R / np.maximum(rc, 1.0)).mean())
 
 
-def _make_color_fn(faces, cof, frames, mode, cad):
-    """Return (colors_for(fi), legend_handles). ``colors_for`` gives the (M,4) per-face RGBA
-    for frame fi — static for default/contact, per-frame for junction."""
-    face_cell = cof[faces[:, 0]]
+def _make_color_fn(faces_at, cof_at, frames, mode, cad):
+    """Return (colors_for(fi), legend_handles). ``colors_for(fi)`` gives the (M_fi,4) per-face
+    RGBA for frame fi. Uses per-frame topology (``faces_at``/``cof_at``) so it is correct even
+    when remesh changed the mesh between frames."""
     if mode == "contact":
-        rim = _rim_mask_cells(frames[-1], cof)   # use the spread baseline (last frame) rim
-        fc = np.where(rim[face_cell][:, None], RIM_RGBA, DRAG_RGBA)
+        rim = _rim_mask_cells(frames[-1], cof_at(len(frames) - 1))   # rim at the spread baseline
+        def colors_for(fi):
+            fcell = cof_at(fi)[faces_at(fi)[:, 0]]
+            return np.where(rim[fcell][:, None], RIM_RGBA, DRAG_RGBA)
         leg = [Patch(color=RIM_RGBA[:3], label="rim (ECM-contacting, crawls)"),
                Patch(color=DRAG_RGBA[:3], label="dragged (no ECM contact)")]
         print(f"rim cells: {int(rim.sum())}/{rim.size}  dragged: {int((~rim).sum())}")
-        return (lambda fi: fc), leg
+        return colors_for, leg
     if mode == "junction":
         if cad is None:
             raise SystemExit("--color-by-junction needs a `cad` array in the npz (run with --junction-switch)")
         def colors_for(fi):
-            switched = cad[fi][face_cell] < 0.999
+            fcell = cof_at(fi)[faces_at(fi)[:, 0]]
+            switched = cad[fi][fcell] < 0.999
             return np.where(switched[:, None], SWITCH_RGBA, INTACT_RGBA)
         leg = [Patch(color=SWITCH_RGBA[:3], label="junction-switched (cadherin↓ integrin↑)"),
                Patch(color=INTACT_RGBA[:3], label="intact junction")]
         return colors_for, leg
-    fc = plt.get_cmap("tab20")(face_cell % 20); fc[:, 3] = ALPHA
-    return (lambda fi: fc), None
+    def colors_for(fi):
+        fcell = cof_at(fi)[faces_at(fi)[:, 0]]
+        fc = plt.get_cmap("tab20")(fcell % 20); fc[:, 3] = ALPHA
+        return fc
+    return colors_for, None
 
 
 def _phase_tag(phase, fi):
     return "AGG" if (phase is not None and phase[fi] == 0) else "SPREAD"
 
 
-def _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, pen, out, fps, legend, title):
+def _write_mp4(frames, faces_at, colors_for, step, phase, aa0, maxZ, vv0, pen, out, fps, legend, title):
     import matplotlib.animation as animation
     allp = frames * UM
     xylim = float(np.abs(allp[..., :2]).max()) * 1.05
     zmin, zmax = float(allp[..., 2].min()), float(allp[..., 2].max())
 
-    def tri(P, i, j):
-        return P[faces][:, :, [i, j]]
+    def tri(P, i, j, fi):
+        return P[faces_at(fi)][:, :, [i, j]]
 
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(11, 5.4))
     pc0 = PolyCollection([], edgecolors=(0, 0, 0, 0.12), linewidths=0.1)
@@ -110,8 +116,8 @@ def _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, pen, out,
     def update(fi):
         P = frames[fi] * UM
         col = colors_for(fi)
-        pc0.set_verts(tri(P, 0, 1)); pc0.set_facecolors(col)
-        pc1.set_verts(tri(P, 0, 2)); pc1.set_facecolors(col)
+        pc0.set_verts(tri(P, 0, 1, fi)); pc0.set_facecolors(col)
+        pc1.set_verts(tri(P, 0, 2, fi)); pc1.set_facecolors(col)
         ax0.set_title(f"[{_phase_tag(phase, fi)}] top-down — A/A0 = {aa0[fi]:.2f}", fontsize=10)
         ax1.set_title(f"side — maxZ = {maxZ[fi]:.0f}µm  V/V0 = {vv0[fi]:.2f}  pen = {pen[fi]:.2f}", fontsize=10)
         sup.set_text(f"{title}  ·  step {int(step[fi])}")
@@ -143,21 +149,28 @@ def main() -> None:
     ap.add_argument("--title", default="Warp DCM · de-cohesion (M1-M3)")
     args = ap.parse_args()
 
-    d = np.load(args.npz)
+    d = np.load(args.npz, allow_pickle=True)
     frames = d["frames"]; faces = d["faces"]; cof = d["cof"]
     step, aa0, maxZ, vv0 = d["step"], d["aa0"], d["maxZ"], d["vv0"]
     phase = d["phase"] if "phase" in d.files else None
     cad = d["cad"] if "cad" in d.files else None
     pen = d["pen_frac"] if "pen_frac" in d.files else np.zeros(frames.shape[0])
+    # per-frame topology (remesh): faces/cof vary across frames → object sequences
+    faces_seq = d["faces_seq"] if "faces_seq" in d.files else None
+    cof_seq = d["cof_seq"] if "cof_seq" in d.files else None
+    # object sequences store per-frame int arrays; cast to int (object dtype can't index)
+    faces_at = (lambda fi: np.asarray(faces_seq[fi], dtype=np.int64)) if faces_seq is not None else (lambda fi: faces)
+    cof_at = (lambda fi: np.asarray(cof_seq[fi], dtype=np.int64)) if cof_seq is not None else (lambda fi: cof)
     F = frames.shape[0]
     print(f"interpenetration max/mean_edge: peak {float(pen.max()):.3f}  final {float(pen[-1]):.3f} "
-          f"(0 = no mesh overlap; >~0.3 = cells interpenetrating)")
+          f"(0 = no mesh overlap; >~0.3 = cells interpenetrating)"
+          + ("  [per-frame topology: remesh ON]" if faces_seq is not None else ""))
 
     mode = "junction" if args.color_by_junction else ("contact" if args.color_by_contact else "default")
-    colors_for, legend = _make_color_fn(faces, cof, frames, mode, cad)
+    colors_for, legend = _make_color_fn(faces_at, cof_at, frames, mode, cad)
 
     if args.mp4:
-        _write_mp4(frames, faces, colors_for, step, phase, aa0, maxZ, vv0, pen,
+        _write_mp4(frames, faces_at, colors_for, step, phase, aa0, maxZ, vv0, pen,
                    args.mp4, args.fps, legend, args.title)
 
     sel = np.unique(np.linspace(0, F - 1, args.ncols).astype(int))
@@ -165,8 +178,8 @@ def main() -> None:
     xylim = float(np.abs(allp[..., :2]).max()) * 1.05
     zmin, zmax = float(allp[..., 2].min()), float(allp[..., 2].max())
 
-    def tri(P, i, j):
-        return P[faces][:, :, [i, j]]
+    def tri(P, i, j, fi):
+        return P[faces_at(fi)][:, :, [i, j]]
 
     fig, axes = plt.subplots(2, len(sel), figsize=(3.2 * len(sel), 6.8))
     if len(sel) == 1:
@@ -175,7 +188,7 @@ def main() -> None:
         P = frames[fi] * UM
         col = colors_for(fi)
         ax = axes[0, c]
-        ax.add_collection(PolyCollection(tri(P, 0, 1), facecolors=col,
+        ax.add_collection(PolyCollection(tri(P, 0, 1, fi), facecolors=col,
                                          edgecolors=(0, 0, 0, 0.12), linewidths=0.1))
         ax.set_xlim(-xylim, xylim); ax.set_ylim(-xylim, xylim); ax.set_aspect("equal")
         ax.set_title(f"[{_phase_tag(phase, fi)}] step {int(step[fi])}\nA/A0 = {aa0[fi]:.2f}", fontsize=9)
@@ -185,7 +198,7 @@ def main() -> None:
             if legend:
                 ax.legend(handles=legend, loc="upper left", fontsize=6, framealpha=0.9)
         ax = axes[1, c]
-        ax.add_collection(PolyCollection(tri(P, 0, 2), facecolors=col,
+        ax.add_collection(PolyCollection(tri(P, 0, 2, fi), facecolors=col,
                                          edgecolors=(0, 0, 0, 0.12), linewidths=0.1))
         ax.set_xlim(-xylim, xylim); ax.set_ylim(zmin - 2.0, zmax + 4.0); ax.set_aspect("equal")
         ax.axhline(0.0, color="saddlebrown", lw=1.2, alpha=0.7)

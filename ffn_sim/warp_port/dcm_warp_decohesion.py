@@ -40,6 +40,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
+from ffn_sim.cell.dcm_remesh import remesh_pass
 
 wp.init()
 
@@ -63,8 +64,11 @@ def _spherical_centers(n_cells: int, R: float, gap: float) -> np.ndarray:
     return centers - centers.mean(0)
 
 
+PARK_POS = np.array([1.0e-2, 1.0e-2, 1.0e-2])   # dormant pool node home (≫ cell scale; well=0)
+
+
 def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
-                                 gap: float = 2.05):
+                                 gap: float = 2.05, pool_factor: float = 0.0):
     """SPHERICAL cluster of cells RESTING on the substrate plane z0 (lowest node at z0).
 
     Cells are icospheres placed at :func:`_spherical_centers` (a rounded cluster, NOT the
@@ -85,7 +89,16 @@ def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float 
     edges = np.concatenate([edges1 + ci * npc for ci in range(n_cells)], axis=0)
     cof = np.repeat(np.arange(n_cells), npc).astype(np.int64)
     face_cell = np.repeat(np.arange(n_cells), tris1.shape[0]).astype(np.int64)
-    pos[:, 2] += (z0 - pos[:, 2].min())          # rest the ball on the dish
+    pos[:, 2] += (z0 - pos[:, 2].min())          # rest the ball on the dish (active nodes only)
+
+    # DORMANT NODE POOL for remeshing (A1): SPLIT activates a parked node, COLLAPSE returns
+    # one. Parked at PARK_POS (≫ cell scale, +z) so every force is 0 there (well: |dz|≫rng and
+    # above z0 → 0; cohesion/contact: cof<0 skipped; not in any face/edge). n_pool extra rows.
+    n_pool = int(pool_factor * pos.shape[0])
+    if n_pool > 0:
+        pool = np.tile(PARK_POS, (n_pool, 1))
+        pos = np.concatenate([pos, pool], axis=0)
+        cof = np.concatenate([cof, np.full(n_pool, -1, dtype=np.int64)])
     return pos, edges.astype(np.int64), faces.astype(np.int64), cof, face_cell, npc
 
 
@@ -117,6 +130,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    substrate_wetting: bool = True, use_substrate_well: bool = True,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
                    settle_steps: int = 0, settle_frames: int = 0,
+                   remesh_period: int = 0, pool_factor: float = 0.5,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -133,7 +147,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     p = ResolvedDCM(subdivisions=subdiv)
     R = p.R_cell
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
-        n_cells, subdiv, R, z0, gap=gap)
+        n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0))
     N = pos_a.shape[0]
     mean_edge = float(np.linalg.norm(pos_a[edges_a[:, 0]] - pos_a[edges_a[:, 1]], axis=1).mean())
     R0 = float(np.linalg.norm(icosphere_mesh(R, subdiv)[0], axis=1).mean())
@@ -196,6 +210,47 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  [junction] r_contact={js.r_contact*1e6:.1f}um  P_switch={js.p.P_switch_kPa}kPa  "
               f"cad_weak={js.p.cadherin_weak_factor}  integrin_strong={js.p.integrin_strong_factor}  "
               f"cadence={js.cadence}", flush=True)
+
+    # A1 REMESH (host-side, low cadence): keep every edge in [l_min, 3·l_min] so large
+    # spreading never stretches a triangle into a sliver (the contact penalty ∝ A_face fails
+    # on slivers → interpenetration). SPLIT activates a dormant pool node, COLLAPSE returns
+    # one, SWAP fixes slivers at fixed node count — all manifold/winding/volume preserving
+    # (turgor V stays consistent). r0 is reset to the current edge length (relaxed reference)
+    # since edge identity is lost across the re-triangulation; the cortex bond just holds the
+    # new mesh. N (incl. pool) is FIXED → only the face/edge arrays + cof/pos resync to device.
+    remesh_l_min = 0.5 * mean_edge
+    remesh_stats = {"calls": 0, "swap": 0, "split": 0, "collapse": 0, "pool_exhausted": 0}
+
+    def do_remesh():
+        nonlocal faces_a, fcell_a, cof_a, edges_a, n_faces, n_edges
+        nonlocal faces_d, fcell_d, edges_d, r0_d, cent_f32
+        P = pos_d.numpy().astype(np.float64)
+        pos_new, faces_new, cof_new, fc_new, counts = remesh_pass(
+            P, faces_a, cof_a, remesh_l_min, face_cell=fcell_a,
+            max_ops=max(32, 3 * n_cells), sliver_q=0.2, park=PARK_POS)
+        remesh_stats["calls"] += 1
+        for k in ("swap", "split", "collapse", "pool_exhausted"):
+            remesh_stats[k] += counts[k]
+        if counts["swap"] + counts["split"] + counts["collapse"] == 0:
+            return                                   # nothing out of band — no resync
+        faces_a = faces_new.astype(np.int64)
+        cof_a = cof_new.astype(np.int64)
+        fcell_a = fc_new.astype(np.int64)
+        edges_a = _edges_from_faces(faces_a).astype(np.int64)
+        n_faces = faces_a.shape[0]
+        n_edges = edges_a.shape[0]
+        r0_new = np.linalg.norm(pos_new[edges_a[:, 0]] - pos_new[edges_a[:, 1]], axis=1)
+        pos_d.assign(np.ascontiguousarray(pos_new))
+        cof_d.assign(cof_a.astype(np.int32))
+        faces_d = wp.array(faces_a.astype(np.int32), dtype=wp.int32, device=device)
+        fcell_d = wp.array(fcell_a.astype(np.int32), dtype=wp.int32, device=device)
+        edges_d = wp.array(edges_a.astype(np.int32), dtype=wp.int32, device=device)
+        r0_d = wp.array(r0_new, dtype=wp.float64, device=device)
+        cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+        if lam is not None:
+            lam.cof = cof_a            # activated/collapsed nodes changed the node→cell map
+        if js is not None:
+            js.cof = cof_a
 
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
@@ -305,15 +360,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
 
     def measure():
         P = pos_d.numpy().astype(np.float64)
-        finite = bool(np.isfinite(P).all())
-        if not finite:
+        active = cof_a >= 0                      # DORMANT pool nodes (cof<0) are parked at
+        Pa = P[active]                           # PARK_POS (≫ scale) — exclude from every
+        finite = bool(np.isfinite(Pa).all())     # measurement + the saved frame, else they
+        if not finite:                           # corrupt A/maxZ/COM and the viz axis limits.
             return None, False
         UM = 1e6
-        A = _topdown_area_um2(P[:, :2] * UM)
-        maxZ = float(P[:, 2].max() * UM)
-        Vsum = float(_cell_volumes(P, faces_a, fcell_a, n_cells).sum())
-        com = P[:, :2].mean(axis=0)
-        return {"A_um2": A, "maxZ_um": maxZ, "Vsum": Vsum, "com": com, "P": P,
+        A = _topdown_area_um2(Pa[:, :2] * UM)
+        maxZ = float(Pa[:, 2].max() * UM)
+        Vsum = float(_cell_volumes(P, faces_a, fcell_a, n_cells).sum())   # faces use active rows
+        com = Pa[:, :2].mean(axis=0)
+        Psave = P.copy()
+        Psave[~active] = Pa.mean(axis=0)         # park dormant at the live centroid for the frame
+        return {"A_um2": A, "maxZ_um": maxZ, "Vsum": Vsum, "com": com, "P": Psave,
                 "pen_frac": _penetration_frac()}, True
 
     m_init, ok = measure()
@@ -327,6 +386,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # to 1.0 (= compaction), spread frames climb above 1.0 (= spread).
     frame_list = [] if save_frames else None
     cad_list = [] if save_frames else None
+    faces_list = [] if save_frames else None     # per-frame topology (remesh changes it)
+    cof_list = [] if save_frames else None
     recs = []   # {gstep, phase, area, maxZ, Vsum, com}
 
     def cad_now():
@@ -339,6 +400,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if frame_list is not None:
             frame_list.append(m["P"].astype(np.float32))
             cad_list.append(cad_now().astype(np.float32))
+            faces_list.append(faces_a.astype(np.int32))   # snapshot — remesh mutates faces_a
+            cof_list.append(cof_a.astype(np.int32))
 
     record(0, 0, m_init)   # as-built ball
 
@@ -354,6 +417,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # cohesively first). The spread is then measured FROM this rested baseline.
     every_s = max(1, settle_steps // settle_frames) if (settle_frames and settle_steps) else settle_steps + 1
     for s in range(1, settle_steps + 1):
+        if remesh_period and s % remesh_period == 0:
+            wp.synchronize_device(device)
+            do_remesh()
         step_once(s, dt, do_spread=False)
         if s % every_s == 0:
             wp.synchronize_device(device)
@@ -392,6 +458,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 print(f"  [junction] step {s}: {js.n_switched}/{n_cells} cells switched "
                       f"(cad↓{js.p.cadherin_weak_factor}, integrin↑{js.p.integrin_strong_factor})",
                       flush=True)
+        # A1: low-cadence host remesh (keeps edges in band → no slivers → contact holds)
+        if remesh_period and s % remesh_period == 0:
+            wp.synchronize_device(device)
+            do_remesh()
         step_once(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
@@ -416,6 +486,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
              "pen_frac": r["pen_frac"]} for r in recs]
 
     if save_frames and frame_list is not None:
+        extra = {}
+        if remesh_period:
+            # topology varies across frames → save per-frame faces/cof as object sequences
+            extra["faces_seq"] = np.array(faces_list, dtype=object)
+            extra["cof_seq"] = np.array(cof_list, dtype=object)
         np.savez_compressed(
             save_frames, frames=np.array(frame_list, dtype=np.float32),
             faces=faces_a.astype(np.int32), cof=cof_a.astype(np.int32),
@@ -425,7 +500,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             aa0=np.array([r["aa0"] for r in traj]),
             maxZ=np.array([r["maxZ_um"] for r in traj]),
             vv0=np.array([r["vv0"] for r in traj]),
-            pen_frac=np.array([r["pen_frac"] for r in traj]))
+            pen_frac=np.array([r["pen_frac"] for r in traj]), **extra)
         print(f"  saved {len(frame_list)} frames -> {save_frames}", flush=True)
 
     spread_aa = [r["aa0"] for r in traj if r["phase"] == 1] or [1.0]
@@ -441,6 +516,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "vv0_final": traj[-1]["vv0"], "drift_final_um": traj[-1]["drift_um"],
         "pen_frac_peak": max(r["pen_frac"] for r in traj),
         "pen_frac_final": traj[-1]["pen_frac"],
+        "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
     if lam is not None:
@@ -472,6 +548,8 @@ def main():
     ap.add_argument("--lamellipodium", action="store_true", help="enable the M2 per-cell lamellipodium crawl")
     ap.add_argument("--junction-switch", action="store_true", help="enable the M3 crowd-pressure cadherin→integrin junction switch")
     ap.add_argument("--gap", type=float, default=2.05, help="cell centre spacing in R for the spherical aggregate (2.05 = touching/compact)")
+    ap.add_argument("--remesh-period", type=int, default=0, help="A1: host SWAP/SPLIT/COLLAPSE remesh every N steps (0=off); keeps edges in band → no slivers")
+    ap.add_argument("--pool-factor", type=float, default=0.5, help="dormant node pool size as a fraction of active nodes (for remesh SPLIT)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -482,6 +560,7 @@ def main():
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
         settle_frames=args.settle_frames, gap=args.gap,
+        remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
