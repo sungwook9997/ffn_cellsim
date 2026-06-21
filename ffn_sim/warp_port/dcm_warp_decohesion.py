@@ -37,8 +37,9 @@ from ffn_sim.warp_port.dcm_substrate_warp import (
 from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
-    edge_midpoints_f32, edge_edge_contact_kernel,
+    edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
+from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
@@ -133,6 +134,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    settle_steps: int = 0, settle_frames: int = 0,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
+                   cadherin: bool = False,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -214,12 +216,38 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
 
     # M3 junction switch host (crowd-pressure cadherin→integrin clutch; latches at cadence).
+    # SUPERSEDED by E1 explicit cadherin bonds — disabled whenever cadherin mode is on.
     js = None
-    if junction_switch:
+    if junction_switch and not cadherin:
         js = JunctionSwitchHost(cof=cof_a, n_cells=n_cells, R=R)
         print(f"  [junction] r_contact={js.r_contact*1e6:.1f}um  P_switch={js.p.P_switch_kPa}kPa  "
               f"cad_weak={js.p.cadherin_weak_factor}  integrin_strong={js.p.integrin_strong_factor}  "
               f"cadence={js.cadence}", flush=True)
+
+    # E1 explicit cadherin trans-dimer bonds (fine-grained cell-cell adhesion; replaces the
+    # cohesion tent attraction + M3). In cadherin mode the cohesion/contact run REPULSION-ONLY
+    # (adhesion arg → 0) and all adhesion is the catch-bond ensemble; de-cohesion is emergent.
+    cad = None
+    coh_adh = adh_strength
+    if cadherin:
+        # ×40 scale bridge (the sanctioned coarse-graining): a node-pair bond is the cadherin
+        # BUNDLE over a contact patch, so its rest length / capture radius are the MESH contact
+        # scale (r0=c_rep contact-equilibrium, r_bind=c_adh adhesion range) and its effective
+        # stiffness is set so the catch→slip transition f0=29.2pN is reached at the capture
+        # limit (k_trans = f0/(r_bind−r0)). The Rakshit catch-slip SHAPE + f0 stay molecular —
+        # only the geometric scale is bridged. Bonds then form at apposed interface nodes and
+        # rupture (slip) under the spreading traction → emergent de-cohesion.
+        f0 = 29.2e-12
+        r0_meso = c_rep
+        rbind_meso = c_adh
+        k_meso = f0 / max(rbind_meso - r0_meso, 1e-12)
+        cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
+                               params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
+                                                     r_bind=rbind_meso))
+        coh_adh = 0.0          # cohesion/contact adhesion OFF → bonds are the sole adhesion
+        print(f"  [cadherin] k_trans={cad.p.k_trans:.2e}N/m  r0={cad.p.r0_trans*1e6:.2f}um  "
+              f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
+              f"catch-slip f0=29.2pN @ capture limit (Rakshit, ×40 bridge)", flush=True)
 
     # A1 REMESH (host-side, low cadence): keep every edge in [l_min, 3·l_min] so large
     # spreading never stretches a triangle into a sliver (the contact penalty ∝ A_face fails
@@ -279,19 +307,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 wp.launch(cohesion_grid_cad_kernel, dim=N,
                           inputs=[node_grid.id, node_f32, pos_d, cof_d, cad_d, wp.float32(coh_q),
                                   wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
-                                  wp.float64(adh_strength), wp.float64(area_per_node),
+                                  wp.float64(coh_adh), wp.float64(area_per_node),
                                   wp.float64(force_cap), force_d], device=device)
             else:
                 wp.launch(cohesion_grid_kernel, dim=N,
                           inputs=[node_grid.id, node_f32, pos_d, cof_d, wp.float32(coh_q),
                                   wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
-                                  wp.float64(adh_strength), wp.float64(area_per_node),
+                                  wp.float64(coh_adh), wp.float64(area_per_node),
                                   wp.float64(force_cap), force_d], device=device)
         else:
             wp.launch(dcm_cohesion_kernel, dim=N,
                       inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(N),
                               wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
-                              wp.float64(adh_strength), wp.float64(area_per_node),
+                              wp.float64(coh_adh), wp.float64(area_per_node),
                               wp.float64(force_cap), force_d], device=device)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_d, faces_d, fcell_d, Vc_d], device=device)
@@ -305,18 +333,18 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 wp.launch(contact_grid_cad_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d, cad_d,
                                   wp.float32(con_q), wp.float64(rep_strength),
-                                  wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                                  wp.float64(coh_adh), wp.float64(c_rep), wp.float64(c_adh),
                                   force_d], device=device)
             else:
                 wp.launch(contact_grid_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
                                   wp.float32(con_q), wp.float64(rep_strength),
-                                  wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                                  wp.float64(coh_adh), wp.float64(c_rep), wp.float64(c_adh),
                                   force_d], device=device)
         else:
             wp.launch(node_face_contact_kernel, dim=N,
                       inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0), wp.int32(n_faces),
-                              wp.float64(rep_strength), wp.float64(adh_strength),
+                              wp.float64(rep_strength), wp.float64(coh_adh),
                               wp.float64(c_rep), wp.float64(c_adh), force_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
@@ -329,6 +357,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                       inputs=[edge_grid.id, emid_f32, pos_d, edges_d, edge_cell_d,
                               wp.float32(ee_q), wp.float64(c_rep), wp.float64(rep_strength),
                               wp.float64(area_per_node), force_d], device=device)
+        # E1 explicit cadherin trans-dimer adhesion (sole cell-cell attraction in cadherin
+        # mode; bonds managed on the host at batch cadence, force applied every step)
+        if cad is not None and cad._dev is not None and cad._dev["n"] > 0:
+            wp.launch(cadherin_bond_force_kernel, dim=cad._dev["n"],
+                      inputs=[cad._dev["bonds"], wp.int32(cad._dev["n"]), pos_d,
+                              wp.float64(cad.p.k_trans), wp.float64(cad.p.r0_trans), force_d],
+                      device=device)
         # substrate z-well (own-row accumulate) — pins basal nodes at z0
         if use_substrate_well:
             wp.launch(dcm_substrate_well_accum_kernel, dim=N,
@@ -468,6 +503,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if remesh_period and s % remesh_period == 0:
             wp.synchronize_device(device)
             do_remesh()
+        if cad is not None and s % cad.batch_steps == 0:   # E1 bond break/form (aggregate too)
+            wp.synchronize_device(device)
+            cad.update(pos_d.numpy().astype(np.float64))
+            cad.upload(device)
         stepped(s, dt, do_spread=False)
         if s % every_s == 0:
             wp.synchronize_device(device)
@@ -511,6 +550,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if remesh_period and s % remesh_period == 0:
             wp.synchronize_device(device)
             do_remesh()
+        # E1: cadherin bond break/form at the binder cadence (de-cohesion emerges here)
+        if cad is not None and s % cad.batch_steps == 0:
+            wp.synchronize_device(device)
+            cad.update(pos_d.numpy().astype(np.float64))
+            cad.upload(device)
         stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
@@ -525,7 +569,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                   f"V/V0={m['Vsum']/V0sum if V0sum else 0:.3f}  "
                   f"drift={np.linalg.norm(m['com']-com0)*1e6:.2f}um  "
                   f"pen={m['pen_frac']:.3f}  cfl={m['cfl_frac']:.2f}  nsub={n_sub[0]}"
-                  + (f"  switched={js.n_switched}" if js is not None else ""), flush=True)
+                  + (f"  switched={js.n_switched}" if js is not None else "")
+                  + (f"  bonds={cad.n_bonds}" if cad is not None else ""), flush=True)
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
 
@@ -569,7 +614,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "cfl_frac_peak": max(r["cfl_frac"] for r in traj),
         "cfl_limit": cfl_limit, "max_substeps": max_substeps, "n_sub_final": n_sub[0],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
-        "edge_edge": edge_edge,
+        "edge_edge": edge_edge, "cadherin": cadherin,
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
     if lam is not None:
@@ -582,6 +627,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                            "cad_weak": js.p.cadherin_weak_factor,
                            "integrin_strong": js.p.integrin_strong_factor,
                            "max_pressure_kPa": float(js.pressure_kPa.max())}
+    if cad is not None:
+        out["cadherin_bonds"] = {"n_bonds_final": cad.n_bonds, "n_formed": cad.n_formed,
+                                 "n_broken": cad.n_broken, "k_trans": cad.p.k_trans,
+                                 "r0_trans": cad.p.r0_trans, "k_on": cad.p.k_on,
+                                 "batch_steps": cad.batch_steps}
     return out
 
 
@@ -606,6 +656,7 @@ def main():
     ap.add_argument("--edge-edge", action="store_true", help="A2: edge-edge contact (catches the edge-pokethrough node-face misses)")
     ap.add_argument("--cfl-limit", type=float, default=0.0, help="A3: max per-step node displacement / c_rep (e.g. 0.3); adaptive substeps keep below it (0=off)")
     ap.add_argument("--max-substeps", type=int, default=16, help="A3: cap on adaptive substeps per step")
+    ap.add_argument("--cadherin", action="store_true", help="E1: explicit cadherin catch-bonds (fine-grained adhesion; replaces cohesion tent + M3 switch; de-cohesion emergent)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -618,6 +669,7 @@ def main():
         settle_frames=args.settle_frames, gap=args.gap,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
+        cadherin=args.cadherin,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)

@@ -422,6 +422,35 @@ def penetration_depth_kernel(
 
 
 @wp.kernel
+def cadherin_bond_force_kernel(
+    bonds: wp.array(dtype=wp.vec2i),         # (M,) node-index pairs (i in cell A, j in cell B)
+    n_bonds: wp.int32,
+    pos: wp.array(dtype=wp.vec3d),
+    k_trans: wp.float64, r0_trans: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """E1 explicit cadherin trans-dimer force: ATTRACTIVE-only harmonic tether. For a
+    stretched bond (L > r0_trans) the ectodomain bridge pulls its two membrane nodes
+    together with ``F = k_trans·(L − r0_trans)``; a slack bond (L ≤ r0) is force-free (a
+    floppy tether doesn't push). Excluded-volume repulsion is the cohesion/contact kernels'
+    job (run adhesion-OFF in cadherin mode), so this is the SOLE cell-cell adhesion — and
+    de-cohesion is emergent: the host breaks each bond at the Rakshit catch-slip rate."""
+    t = wp.tid()
+    if t >= n_bonds:
+        return
+    e = bonds[t]
+    i = e[0]
+    j = e[1]
+    rij = pos[j] - pos[i]
+    L = wp.length(rij)
+    if L > r0_trans and L > wp.float64(1.0e-30):
+        amp = k_trans * (L - r0_trans) / L
+        fvec = rij * amp                          # on i toward j (pull together)
+        wp.atomic_add(force, i, fvec)
+        wp.atomic_add(force, j, -fvec)
+
+
+@wp.kernel
 def gather_lead_pos(pos: wp.array(dtype=wp.vec3d), lead_idx: wp.array(dtype=wp.int32),
                     out: wp.array(dtype=wp.vec3d)):
     """Device gather lead_rp[t] = pos[lead_idx[t]] (per-step; leading-node SET is
