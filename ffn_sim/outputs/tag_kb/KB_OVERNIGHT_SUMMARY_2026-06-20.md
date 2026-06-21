@@ -44,9 +44,10 @@ Earlier I called some work "token-blocked." That was wrong: the **Notion MCP int
 1. ✅ **DONE — widen manifest coverage**: all 42 KU-tagged physical constants now declared (19 VERIFIED / 13 SOURCE_UNVERIFIED / 10 legitimately-UNSOURCED), each KU→source resolved from Notion.
 4. ✅ **DONE — Notion → git snapshot** (the KB-audit's #1 durability fix): token provided → materialized kb.duckdb (662 nodes / 1242 edges) and committed `snapshots/notion_snapshot.json` (428 KB, 662 rows, all 8 DBs). The SoT is now reproducible from git alone; `dump_notion_snapshot.py` wired into `refresh.sh`.
 
-Remaining (decision calls, not blockers):
-2. **`source-integrity` standalone CI gate** — intentionally skipped (redundant with the params gate). Revisit only to enforce citation integrity over the *whole* 332-row corpus, not just the production-cited subset.
-3. **CLAUDE.md closeout line** ("run `make kb-check` before the receipt") — a project-instruction change = your call.
+3. ✅ **DONE — CLAUDE.md closeout line**: `make kb-check` is now step 4 of the session closeout protocol (CLAUDE.md is read by every session at boot, so the gates run at every closeout automatically). Halt + surface to PI on DRIFT before committing/receipt.
+
+Remaining (decision call, not a blocker):
+2. **`source-integrity` standalone CI gate** — intentionally skipped (redundant with the params gate, which already blocks on a fabrication-risk citation reaching a production constant). Revisit only to enforce citation integrity over the *whole* 332-row corpus, not just the production-cited subset.
 
 ## Status
 
