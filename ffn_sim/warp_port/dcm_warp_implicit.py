@@ -28,33 +28,39 @@ import numpy as np
 
 
 def implicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float,
-                             *, eps: float = 1e-9, cg_tol: float = 1e-8, cg_maxiter: int = 200):
-    """One linearly-implicit overdamped Euler step. ``force_fn(pos)->(N,3)`` is the (stiff) force.
-
-    Solves (γ/dt I + K)Δx = F(xₙ) by matrix-free CG (K·v via a finite-difference JVP of force_fn),
-    returns (pos+Δx, info). γ scalar (diagonal drag). Pure-numpy CG here (the validation/reference
-    prototype); the production all-device Warp CG is the I-later optimisation."""
+                             *, eps: float = 1e-9, cg_tol: float = 1e-8, cg_maxiter: int = 200,
+                             n_newton: int = 1, newton_tol: float = 1e-10):
+    """One implicit overdamped Euler step via Newton (I4). The implicit-Euler nonlinear equation is
+    G(x) = γ(x−xₙ)/dt − F(x) = 0; Newton solves J_G Δx = −G with J_G = γ/dt·I − ∂F/∂x = γ/dt·I + K,
+    matrix-free (K·v = −[F(x+εv)−F(x)]/ε), CG per Newton iter. ``n_newton=1`` = the linearly-implicit
+    step (I1/I2); ``n_newton>1`` corrects the large-Δx nonlinearity that drifts V/V0 at huge dt (I3
+    finding). Returns (xₙ₊₁, info). γ scalar diagonal drag. scipy-CG prototype (all-device = I-opt)."""
     from scipy.sparse.linalg import cg, LinearOperator
 
     x0 = np.ascontiguousarray(pos, dtype=np.float64)
     n3 = x0.size
-    F0 = np.asarray(force_fn(x0), dtype=np.float64).reshape(-1)
     a = gamma / dt
+    x = x0.copy()
+    tot_cg = 0; n_used = 0
+    for _ in range(n_newton):
+        Fx = np.asarray(force_fn(x), dtype=np.float64).reshape(-1)
+        G = a * (x.reshape(-1) - x0.reshape(-1)) - Fx        # residual (=0 at the implicit solution)
+        gnorm = np.linalg.norm(G)
+        n_used += 1
+        if gnorm < newton_tol * max(a, 1.0):
+            break
 
-    def matvec(v):
-        V = v.reshape(x0.shape)
-        # K·v = −J·v ≈ −[F(x+εv) − F(x)]/ε   (scale ε to v for conditioning)
-        s = eps / (np.linalg.norm(v) / max(np.sqrt(n3), 1.0) + 1e-30)
-        Fp = np.asarray(force_fn(x0 + s * V), dtype=np.float64).reshape(-1)
-        Kv = -(Fp - F0) / s
-        return a * v + Kv
-
-    A = LinearOperator((n3, n3), matvec=matvec, dtype=np.float64)
-    iters = [0]
-    def _cb(xk): iters[0] += 1
-    dx, status = cg(A, F0, rtol=cg_tol, maxiter=cg_maxiter, callback=_cb)
-    x1 = x0 + dx.reshape(x0.shape)
-    return x1, {"cg_status": int(status), "cg_iters": iters[0], "dx_norm": float(np.linalg.norm(dx))}
+        def matvec(v):
+            V = v.reshape(x.shape)
+            s = eps / (np.linalg.norm(v) / max(np.sqrt(n3), 1.0) + 1e-30)
+            Fp = np.asarray(force_fn(x + s * V), dtype=np.float64).reshape(-1)
+            return a * v - (Fp - Fx) / s                     # (γ/dt I + K) v
+        A = LinearOperator((n3, n3), matvec=matvec, dtype=np.float64)
+        it = [0]
+        dx, _ = cg(A, -G, rtol=cg_tol, maxiter=cg_maxiter, callback=lambda xk: it.__setitem__(0, it[0] + 1))
+        tot_cg += it[0]
+        x = x + dx.reshape(x.shape)
+    return x, {"cg_iters": tot_cg, "newton_iters": n_used, "g_norm": float(gnorm)}
 
 
 def explicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float):
@@ -202,16 +208,19 @@ def _dt_ramp(device="cpu"):
     for _ in range(int(T/dt_e)):
         xref,_ = explicit_overdamped_step(xref, stiff_force, gamma, dt_e)
     print(f"reference (explicit dt={dt_e:.0e}, {int(T/dt_e)} steps): V/V0={vol(xref)/V0:.4f}")
-    print(f"{'dt/dt_e':>8} {'steps':>7} {'stable':>7} {'V/V0':>7} {'|x-ref|':>9} {'cgit/step':>9} {'speedup':>8}")
-    for mult in (1, 10, 100, 1000, 10000):
-        dt = dt_e*mult; ns = max(1, int(T/dt)); x = x0.copy(); tot_it=0; ok=True
-        for _ in range(ns):
-            x, info = implicit_overdamped_step(x, stiff_force, gamma, dt)
-            tot_it += info["cg_iters"]
-            if not np.isfinite(x).all() or vol(x) > 50*V0: ok=False; break
-        e = float(np.linalg.norm(x-xref)) if ok else float('inf')
-        print(f"{mult:>8} {ns:>7} {str(ok):>7} {vol(x)/V0 if ok else 0:>7.4f} {e:>9.2e} "
-              f"{tot_it/max(ns,1):>9.1f} {int(T/dt_e)/ns:>7.0f}x")
+    for nN in (1, 6):
+        tag = "linearly-implicit (n_newton=1)" if nN == 1 else "NEWTON (n_newton=6)"
+        print(f"-- {tag} --")
+        print(f"{'dt/dt_e':>8} {'steps':>7} {'V/V0':>7} {'|x-ref|':>9} {'cgit/step':>9} {'newton/step':>11}")
+        for mult in (100, 1000, 10000):
+            dt = dt_e*mult; ns = max(1, int(T/dt)); x = x0.copy(); tot_it=0; tot_nw=0; ok=True
+            for _ in range(ns):
+                x, info = implicit_overdamped_step(x, stiff_force, gamma, dt, n_newton=nN)
+                tot_it += info["cg_iters"]; tot_nw += info["newton_iters"]
+                if not np.isfinite(x).all() or vol(x) > 50*V0: ok=False; break
+            e = float(np.linalg.norm(x-xref)) if ok else float('inf')
+            print(f"{mult:>8} {ns:>7} {vol(x)/V0 if ok else 0:>7.4f} {e:>9.2e} "
+                  f"{tot_it/max(ns,1):>9.1f} {tot_nw/max(ns,1):>11.1f}")
 
 
 if __name__ == "__main__":
