@@ -50,6 +50,18 @@ KU_SOURCE = {
     "KU-4.17": "Buckley2014_Science",           # cadherin catch-bond (KU-4.17 anchors to Buckley 2014)
 }
 
+# For the KUs with no single-paper citation, WHY (confirmed in Notion 2026-06-20).
+# These are legitimately unsourced — derived / physical-constant / modelling — NOT
+# a citation gap; the note is appended to the constant's desc so the manifest is
+# self-documenting.
+KU_UNSOURCED_NOTE = {
+    "KU-1.5": "substrate-stiffness range claim, no single citation in Notion",
+    "KU-1.22": "DerivedFrom KU-1.1-1.21 + Phase-1 assumption (Notion), not a measured value",
+    "KU-1.26": "physical constant (NIST water viscosity / k_B*T), not a literature claim",
+    "KU-1.28": "Phase-1 harmonic value (1 pN/nm), no single-paper citation resolved",
+    "KU-3.17": "generic-cell geometry / modelling choice (Salbreux-Stewart-Chugh lineage)",
+}
+
 # Per-constant overrides where the config comment names a MORE specific source.
 KEY_SOURCE = {
     "junction.dx_star_phase1": "Bell1978_Science",          # "Bell 1978 lower bound"
@@ -160,10 +172,13 @@ def main():
             decl = declared_for(ck, verdict)
             tally[decl] = tally.get(decl, 0) + 1
             cid = path.replace(".", "-").replace("_", "-")
+            desc = clean(comment)
+            if not ck and ku in KU_UNSOURCED_NOTE:
+                desc = f"{desc}  [unsourced: {KU_UNSOURCED_NOTE[ku]}]"
             ckline = f'    citation_key: {ck}\n' if ck else '    citation_key: null\n'
             blocks.append(
                 f'  - id: {cid}\n'
-                f'    desc: "{clean(comment)}"\n'
+                f'    desc: "{desc}"\n'
                 f'    config: ffn_sim/validation/oracles/configs/{fname}\n'
                 f'    key: {path}\n'
                 f'    value: {val}\n'

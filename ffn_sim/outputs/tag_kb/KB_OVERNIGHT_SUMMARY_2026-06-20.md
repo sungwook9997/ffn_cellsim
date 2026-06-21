@@ -22,7 +22,7 @@ This index is what to read first when you wake up.
 
 - **source_audit** (citations): 329 sources, 177 OK — runs in `refresh.sh`; production-cited subset enforced via params gate.
 - **run_audit** (results): 6 headline result-claims; 0 drift. Blocking in CI.
-- **param_audit** (constants): **all 42 KU-tagged physical constants** declared, **19 VERIFIED / 13 SOURCE_UNVERIFIED / 10 UNSOURCED**, 0 drift. Blocking in CI. (Coverage expanded 8→42; each KU→source link resolved from the Notion Contract-Graph via MCP — `_migrations/gen_params_manifest.py`. The 10 unsourced are KUs whose Notion claim has no single citation; the rest map to e.g. Bangasser2013 [OK], Buckley2014 [OK], Discher2005 [OK], BroederszMacKintosh2014 [OK], DelRio2009 [OK], Chugh2017 [CHECK], Pereverzev2005/Jansen2018/Lindstrom2010 [NO-DOI/CHECK].)
+- **param_audit** (constants): **all 42 KU-tagged physical constants** declared, **19 VERIFIED / 13 SOURCE_UNVERIFIED / 10 UNSOURCED**, 0 drift. Blocking in CI. (Coverage expanded 8→42; each KU→source link resolved from the Notion Contract-Graph via MCP — `_migrations/gen_params_manifest.py`. The 10 unsourced are constants that legitimately have no single literature citation — derived (KU-1.22), NIST physical constants (KU-1.26 water viscosity / k_B·T), range claims (KU-1.5), and generic-cell modelling choices (KU-3.17) — confirmed in Notion, distinct from a citation gap. The rest map to Bangasser2013 [OK], Buckley2014 [OK], Discher2005 [OK], BroederszMacKintosh2014 [OK], DelRio2009 [OK], Bell1978 [OK]; and Chugh2017 [CHECK], Lindstrom2010 [CHECK], Jansen2018 [NO-DOI], Pereverzev2005 [NO-DOI] → source-unverified.)
 - `make kb-check` → PASS · `pytest tests/test_kb_integrity_gates.py` → 13 passed.
 
 ## How to use it

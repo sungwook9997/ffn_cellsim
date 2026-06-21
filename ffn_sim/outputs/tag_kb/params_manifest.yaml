@@ -20,7 +20,7 @@
 
 claims:
   - id: ecm-L-fiber
-    desc: "m contour length per fiber, KU-1.22"
+    desc: "m contour length per fiber, KU-1.22  [unsourced: DerivedFrom KU-1.1-1.21 + Phase-1 assumption (Notion), not a measured value]"
     config: ffn_sim/validation/oracles/configs/phase1_unit1.yaml
     key: ecm.L_fiber
     value: 10.0e-6
@@ -74,7 +74,7 @@ claims:
     declared: verified
 
   - id: ecm-xl-stiffness
-    desc: "N/m 1 pN/nm harmonic, KU-1.28"
+    desc: "N/m 1 pN/nm harmonic, KU-1.28  [unsourced: Phase-1 harmonic value (1 pN/nm), no single-paper citation resolved]"
     config: ffn_sim/validation/oracles/configs/phase1_unit1.yaml
     key: ecm.xl_stiffness
     value: 1.0e-3
@@ -83,7 +83,7 @@ claims:
     declared: unsourced
 
   - id: ecm-water-viscosity
-    desc: "Pa·s η_water at 310 K (NIST), KU-1.26"
+    desc: "Pa·s η_water at 310 K (NIST), KU-1.26  [unsourced: physical constant (NIST water viscosity / k_B*T), not a literature claim]"
     config: ffn_sim/validation/oracles/configs/phase1_unit1.yaml
     key: ecm.water_viscosity
     value: 6.913e-4
@@ -92,7 +92,7 @@ claims:
     declared: unsourced
 
   - id: bridge-substrate-young-modulus
-    desc: "Pa E, PAA mid-range, KU-1.5 (sign needed: PyYAML 1.1)"
+    desc: "Pa E, PAA mid-range, KU-1.5 (sign needed: PyYAML 1.1)  [unsourced: substrate-stiffness range claim, no single citation in Notion]"
     config: ffn_sim/validation/oracles/configs/phase1_unit2_1.yaml
     key: bridge.substrate.young_modulus
     value: 5.0e+3
@@ -254,7 +254,7 @@ claims:
     declared: verified
 
   - id: cell-R-cell
-    desc: "m cell radius, KU-3.17"
+    desc: "m cell radius, KU-3.17  [unsourced: generic-cell geometry / modelling choice (Salbreux-Stewart-Chugh lineage)]"
     config: ffn_sim/validation/oracles/configs/phase1_unit3.yaml
     key: cell.R_cell
     value: 10.0e-6
@@ -263,7 +263,7 @@ claims:
     declared: unsourced
 
   - id: cell-L-cortex-fiber
-    desc: "m short tangential fibers, KU-3.17"
+    desc: "m short tangential fibers, KU-3.17  [unsourced: generic-cell geometry / modelling choice (Salbreux-Stewart-Chugh lineage)]"
     config: ffn_sim/validation/oracles/configs/phase1_unit3.yaml
     key: cell.L_cortex_fiber
     value: 3.0e-6
@@ -272,7 +272,7 @@ claims:
     declared: unsourced
 
   - id: cell-xl-stiffness
-    desc: "N/m harmonic spring, KU-1.28"
+    desc: "N/m harmonic spring, KU-1.28  [unsourced: Phase-1 harmonic value (1 pN/nm), no single-paper citation resolved]"
     config: ffn_sim/validation/oracles/configs/phase1_unit3.yaml
     key: cell.xl_stiffness
     value: 1.0e-3
@@ -281,7 +281,7 @@ claims:
     declared: unsourced
 
   - id: cell-target-coordination-ref
-    desc: "⟨z⟩ cortex denser than ECM (KU-3.17)."
+    desc: "⟨z⟩ cortex denser than ECM (KU-3.17).  [unsourced: generic-cell geometry / modelling choice (Salbreux-Stewart-Chugh lineage)]"
     config: ffn_sim/validation/oracles/configs/phase1_unit3.yaml
     key: cell.target_coordination_ref
     value: 3.5
@@ -335,7 +335,7 @@ claims:
     declared: source-unverified
 
   - id: cell-water-viscosity
-    desc: "Pa·s η_water at 310 K (NIST), KU-1.26"
+    desc: "Pa·s η_water at 310 K (NIST), KU-1.26  [unsourced: physical constant (NIST water viscosity / k_B*T), not a literature claim]"
     config: ffn_sim/validation/oracles/configs/phase1_unit3.yaml
     key: cell.water_viscosity
     value: 6.913e-4
@@ -371,7 +371,7 @@ claims:
     declared: verified
 
   - id: junction-kT
-    desc: "J k_B T at 310 K (KU-1.26)"
+    desc: "J k_B T at 310 K (KU-1.26)  [unsourced: physical constant (NIST water viscosity / k_B*T), not a literature claim]"
     config: ffn_sim/validation/oracles/configs/phase1_unit4_1.yaml
     key: junction.kT
     value: 4.28e-21
