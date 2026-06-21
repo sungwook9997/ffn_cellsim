@@ -167,13 +167,17 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
     n_remesh_events = 0
     n_remesh_skipped = 0
     sync_time = 0.0
+    # #2: launch per-node kernels over ACTIVE nodes only. The pool is [active,
+    # dormant] and SPLIT fills dormant slots in order, so active stays contiguous
+    # [0:launch_n]; COLLAPSE can punch a hole -> fall back to MAX (correct, slower).
+    launch_n = n_active0
 
     def step_once(s):
         wp.launch(_zero_vec, dim=MAX, inputs=[force_d], device=device)
         if use_grid:
-            wp.launch(pos_to_f32, dim=MAX, inputs=[pos_d, node_f32], device=device)
+            wp.launch(pos_to_f32, dim=launch_n, inputs=[pos_d, node_f32], device=device)
             if use_cohesion:
-                node_grid.build(points=node_f32, radius=coh_radius)
+                node_grid.build(points=node_f32[:launch_n], radius=coh_radius)
             if use_contact:
                 wp.launch(face_centroids_f32, dim=n_faces,
                           inputs=[pos_d, faces_d, cent_f32], device=device)
@@ -181,15 +185,15 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
         # 1) cohesion (own-row write onto the zeroed force)
         if use_cohesion:
             if use_grid:
-                wp.launch(cohesion_grid_kernel, dim=MAX,
+                wp.launch(cohesion_grid_kernel, dim=launch_n,
                           inputs=[node_grid.id, node_f32, pos_d, cof_d,
                                   wp.float32(coh_radius), wp.float64(r_contact),
                                   wp.float64(c_adh), wp.float64(rep_strength),
                                   wp.float64(adh_strength), wp.float64(area_per_node),
                                   wp.float64(force_cap), force_d], device=device)
             else:
-                wp.launch(dcm_cohesion_kernel, dim=MAX,
-                          inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(MAX),
+                wp.launch(dcm_cohesion_kernel, dim=launch_n,
+                          inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(launch_n),
                                   wp.float64(r_contact), wp.float64(c_adh),
                                   wp.float64(rep_strength), wp.float64(adh_strength),
                                   wp.float64(area_per_node), wp.float64(force_cap), force_d],
@@ -206,13 +210,13 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
         # 3) node-face contact (atomic add)
         if use_contact:
             if use_grid:
-                wp.launch(contact_grid_kernel, dim=MAX,
+                wp.launch(contact_grid_kernel, dim=launch_n,
                           inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
                                   wp.float32(con_radius), wp.float64(rep_strength),
                                   wp.float64(adh_strength), wp.float64(c_rep),
                                   wp.float64(c_adh), force_d], device=device)
             else:
-                wp.launch(node_face_contact_kernel, dim=MAX,
+                wp.launch(node_face_contact_kernel, dim=launch_n,
                           inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0),
                                   wp.int32(n_faces), wp.float64(rep_strength),
                                   wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
@@ -221,7 +225,7 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
         wp.launch(_bond_accumulate, dim=n_edges,
                   inputs=[pos_d, edges_d, wp.float64(p.k_edge), r0_d, force_d], device=device)
         # 5) overdamped Langevin step
-        wp.launch(_bd_step, dim=MAX,
+        wp.launch(_bd_step, dim=launch_n,
                   inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(bd_pref),
                           wp.float64(dt), wp.int32(7), wp.int32(s)], device=device)
 
@@ -261,6 +265,9 @@ def run_multicell(*, n_cells: int = 4, subdiv: int = 2, steps: int = 2000,
                 n_edges, n_faces = edges_h.shape[0], faces_h.shape[0]
                 if use_grid:
                     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+                # #2: refresh active-launch bound; contiguous iff [0:na] all active
+                na = int((cof >= 0).sum())
+                launch_n = na if bool((cof[:na] >= 0).all()) else MAX
             sync_time += time.perf_counter() - ts
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
