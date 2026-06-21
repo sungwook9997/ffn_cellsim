@@ -29,7 +29,7 @@ import numpy as np
 
 def implicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float,
                              *, eps: float = 1e-9, cg_tol: float = 1e-8, cg_maxiter: int = 200,
-                             n_newton: int = 1, newton_tol: float = 1e-10):
+                             n_newton: int = 1, newton_tol: float = 1e-10, precond: bool = False):
     """One implicit overdamped Euler step via Newton (I4). The implicit-Euler nonlinear equation is
     G(x) = γ(x−xₙ)/dt − F(x) = 0; Newton solves J_G Δx = −G with J_G = γ/dt·I − ∂F/∂x = γ/dt·I + K,
     matrix-free (K·v = −[F(x+εv)−F(x)]/ε), CG per Newton iter. ``n_newton=1`` = the linearly-implicit
@@ -41,6 +41,7 @@ def implicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float,
     n3 = x0.size
     a = gamma / dt
     x = x0.copy()
+    rng = np.random.default_rng(0)
     tot_cg = 0; n_used = 0
     for _ in range(n_newton):
         Fx = np.asarray(force_fn(x), dtype=np.float64).reshape(-1)
@@ -56,8 +57,23 @@ def implicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float,
             Fp = np.asarray(force_fn(x + s * V), dtype=np.float64).reshape(-1)
             return a * v - (Fp - Fx) / s                     # (γ/dt I + K) v
         A = LinearOperator((n3, n3), matvec=matvec, dtype=np.float64)
+        # Jacobi preconditioner (OPT-IN, default OFF). MEASURED to HURT here: a Hutchinson diagonal
+        # from the noisy forward-diff JVP is unreliable → worse conditioning (2-cell contact: plain
+        # CG 3 iters vs this 157). Near equilibrium the γ/dt regulariser already conditions the
+        # operator well (plain CG ~3-5 iters), so no preconditioner is needed. A correct one needs
+        # the ANALYTIC diagonal stiffness (per-term contact/turgor/edge) — future work if far-from-
+        # equilibrium steps ever need it. Contact does NOT dominate the conditioning here.
+        M = None
+        if precond:
+            diagA = np.zeros(n3)
+            for _pi in range(4):
+                v = rng.choice(np.array([-1.0, 1.0]), size=n3)
+                diagA += v * matvec(v)
+            diagA = np.maximum(diagA / 4.0, a)
+            M = LinearOperator((n3, n3), matvec=lambda r: r / diagA, dtype=np.float64)
         it = [0]
-        dx, _ = cg(A, -G, rtol=cg_tol, maxiter=cg_maxiter, callback=lambda xk: it.__setitem__(0, it[0] + 1))
+        dx, _ = cg(A, -G, rtol=cg_tol, maxiter=cg_maxiter, M=M,
+                   callback=lambda xk: it.__setitem__(0, it[0] + 1))
         tot_cg += it[0]
         x = x + dx.reshape(x.shape)
     return x, {"cg_iters": tot_cg, "newton_iters": n_used, "g_norm": float(gnorm)}
@@ -307,6 +323,68 @@ def _device_cg_demo(device="cpu"):
     print(f"  device  : V/V0={vol(x_dev)/V0:.5f}  CG iters={iters}")
     print(f"  scipy   : V/V0={vol(x_sci)/V0:.5f}  CG iters={info['cg_iters']}")
     print(f"  |x_dev − x_sci| = {np.linalg.norm(x_dev-x_sci):.2e}  (expect ~0 → device CG correct)")
+
+
+def make_two_cell_contact_stiff(device="cpu", subdiv=1):
+    """TWO touching cells with node-face CONTACT — the testbed that actually exercises the contact
+    stiffness (rep≈2e8) that dominates the implicit conditioning. Returns numpy force_fn +
+    analytic per-node diagonal-stiffness estimator (contact rep·area + edges) for a Jacobi PCG."""
+    import warp as wp
+    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.warp_port.dcm_neighbor_warp import (pos_to_f32, face_centroids_f32,
+        cohesion_grid_kernel, contact_grid_kernel)
+    p = ResolvedDCM(subdivisions=subdiv); R = p.R_cell
+    v1, e1, f1 = icosphere_mesh(R, subdiv); npc = v1.shape[0]
+    me = float(np.linalg.norm(v1[e1[:,0]]-v1[e1[:,1]], axis=1).mean())
+    c_rep, c_adh, r_contact = 0.3*me, 0.8*me, 0.3*me
+    rep, adh, A = 2.0e8, 1.0e7, 4*np.pi*R**2/npc
+    verts = np.concatenate([v1 + [1.95*R,0,0], v1 + [-1.95*R,0,0]])  # two cells just touching
+    faces = np.concatenate([f1, f1+npc]); edges = np.concatenate([e1, e1+npc])
+    cof = np.array([0]*npc+[1]*npc, np.int64); fcell = np.array([0]*f1.shape[0]+[1]*f1.shape[0], np.int64)
+    N, nf, ne = verts.shape[0], faces.shape[0], edges.shape[0]
+    V0 = (4/3)*np.pi*(np.linalg.norm(v1,axis=1).mean())**3
+    coh_q = c_adh; con_q = c_adh + 0.7*(3*me/2.9)
+    gamma = 6*np.pi*65.9*R/npc
+    pos_d=wp.array(verts,dtype=wp.vec3d,device=device); force_d=wp.zeros(N,dtype=wp.vec3d,device=device)
+    cof_d=wp.array(cof.astype(np.int32),dtype=wp.int32,device=device)
+    faces_d=wp.array(faces.astype(np.int32),dtype=wp.int32,device=device); fcell_d=wp.array(fcell.astype(np.int32),dtype=wp.int32,device=device)
+    edges_d=wp.array(edges.astype(np.int32),dtype=wp.int32,device=device)
+    r0_d=wp.array(np.linalg.norm(verts[edges[:,0]]-verts[edges[:,1]],axis=1),dtype=wp.float64,device=device)
+    nf32=wp.zeros(N,dtype=wp.vec3,device=device); cf32=wp.zeros(nf,dtype=wp.vec3,device=device)
+    Vc=wp.zeros(2,dtype=wp.float64,device=device); dP=wp.zeros(2,dtype=wp.float64,device=device)
+    ng=wp.HashGrid(32,32,32,device=device); fg=wp.HashGrid(32,32,32,device=device)
+    fc_cap = 5e-8
+    def force_fn(pos_np):
+        pos_d.assign(np.ascontiguousarray(pos_np.reshape(N,3)))
+        wp.launch(_zero_vec,dim=N,inputs=[force_d],device=device)
+        wp.launch(pos_to_f32,dim=N,inputs=[pos_d,nf32],device=device); ng.build(points=nf32,radius=coh_q)
+        wp.launch(face_centroids_f32,dim=nf,inputs=[pos_d,faces_d,cf32],device=device); fg.build(points=cf32,radius=con_q)
+        wp.launch(cohesion_grid_kernel,dim=N,inputs=[ng.id,nf32,pos_d,cof_d,wp.float32(coh_q),wp.float64(r_contact),wp.float64(c_adh),wp.float64(rep),wp.float64(adh),wp.float64(A),wp.float64(fc_cap),force_d],device=device)
+        Vc.zero_(); wp.launch(dcm_volume_kernel,dim=nf,inputs=[pos_d,faces_d,fcell_d,Vc],device=device)
+        wp.launch(_dp_from_vol,dim=2,inputs=[Vc,wp.float64(V0),wp.float64(p.turgor_dP0),wp.float64(7.73e5),dP],device=device)
+        wp.launch(dcm_turgor_force_kernel,dim=nf,inputs=[pos_d,faces_d,fcell_d,dP,force_d],device=device)
+        wp.launch(contact_grid_kernel,dim=N,inputs=[fg.id,nf32,pos_d,cof_d,faces_d,fcell_d,wp.float32(con_q),wp.float64(rep),wp.float64(adh),wp.float64(c_rep),wp.float64(c_adh),force_d],device=device)
+        wp.launch(_bond_accumulate,dim=ne,inputs=[pos_d,edges_d,wp.float64(p.k_edge),r0_d,force_d],device=device)
+        wp.synchronize_device(device); return force_d.numpy().astype(np.float64)
+    return force_fn, verts, gamma, V0, faces, N
+
+
+def _precond_contact_demo(device="cpu"):
+    """Does the all-important CONTACT stiffness wreck CG conditioning, and does a preconditioner
+    help? Compress two touching cells, take ONE implicit step at dt×100, count CG iters with
+    NO preconditioner vs Jacobi(Hutchinson)."""
+    force_fn, verts, gamma, V0, faces, N = make_two_cell_contact_stiff(device)
+    x0 = verts.copy(); x0[:N//2,0] -= 0.3e-6; x0[N//2:,0] += 0.3e-6   # push the two cells together
+    dt = 8e-6*100
+    xa, ia = implicit_overdamped_step(x0, force_fn, gamma, dt, n_newton=1, cg_maxiter=600, precond=False)
+    xb, ib = implicit_overdamped_step(x0, force_fn, gamma, dt, n_newton=1, cg_maxiter=600, precond=True)
+    print(f"two-cell CONTACT (rep=2e8), 1 implicit step @dt×100 (N={N}):")
+    print(f"  NO preconditioner   : CG iters = {ia['cg_iters']}   |Δx|={np.linalg.norm(xa-x0):.2e}")
+    print(f"  Jacobi (Hutchinson) : CG iters = {ib['cg_iters']}   |Δx|={np.linalg.norm(xb-x0):.2e}")
+    print(f"  → confirms whether CONTACT stiffness dominates conditioning + if Jacobi helps")
 
 
 def _dt_ramp(device="cpu"):
