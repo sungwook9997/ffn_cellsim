@@ -9,12 +9,13 @@
 
 TKB := ffn_sim/outputs/tag_kb
 
-.PHONY: help kb-check kb-figs hooks
+.PHONY: help kb-check kb-figs hooks warp-parity
 
 help:
 	@echo "make kb-check  - run the KB integrity gates (results + params blocking; citation audit informational)"
 	@echo "make kb-figs   - regenerate all presentation artifacts (figures + 5-hop demo + standalone HTML)"
 	@echo "make hooks     - enable the tracked git pre-commit hook (runs kb-check before each commit)"
+	@echo "make warp-parity - Warp DCM engine parity tests, CPU backend (GPU verdict: parity_report.py --device cuda:0 on the A5000)"
 
 # All KB auditors. results + params are BLOCKING gates (exit 1 on drift = a
 # result/constant claimed better than the disk supports). The citation audit is
@@ -25,6 +26,11 @@ kb-check:
 	@python $(TKB)/verify_runs.py --gate
 	@python $(TKB)/verify_params.py --gate
 	@python $(TKB)/verify_sources.py --check
+
+# Phase-C Warp DCM engine parity (CPU backend). The GPU-backend verdict is produced
+# on the gbook A5000 via parity_report.py --device cuda:0 (see warp_port/ENGINE.md).
+warp-parity:
+	@python -m pytest ffn_sim/tests/warp_port -q
 
 kb-figs:
 	@cd $(TKB)/presentation && for f in fig*_*.py; do echo "  render $$f"; python "$$f" >/dev/null; done

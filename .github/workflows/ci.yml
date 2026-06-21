@@ -58,6 +58,12 @@ jobs:
       # sys.path so `import ffn_sim` resolves. This also sidesteps pyproject's
       # requires-python>=3.13 gate (conda-forge resolves HOOMD 7.0.1 onto py3.12
       # on the runner); the tests run fine there.
+      # Phase-C Warp DCM engine: install warp-lang so tests/warp_port/ actually RUN
+      # (CPU backend) instead of importorskip-ing — real drift protection for the
+      # parity-gated engine. CPU-only on the runner (the GPU verdict is gbook/A5000).
+      - name: Install warp-lang (Phase-C engine; warp_port CPU-backend parity)
+        run: pip install warp-lang==1.14.0
+
       - name: Import / collection gate (suite must import cleanly)
         run: python -m pytest --collect-only -q
 
