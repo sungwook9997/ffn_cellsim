@@ -1,0 +1,20 @@
+{
+  "_about": "DCM Warp HYBRID (GPU-resident per-step + host low-cadence remesh) vs the existing single-cell DCM per-step path. gbook RTX A5000, measured 2026-06-20. Single-cell icosphere subdiv=3 (642 nodes), physics = radial-shell turgor + cortex edge springs + overdamped Langevin, dt=1e-7.",
+  "device": "gbook RTX A5000",
+  "config": {"subdiv": 3, "n_nodes": 642, "dt": 1e-7,
+             "physics": "radial turgor (law2) + cortex harmonic edge springs + overdamped Langevin (device RNG)"},
+  "baseline_existing_path_steps_per_s": 344.0,
+  "warp_hybrid_steps_per_s": {
+    "per_step_remesh_off": 10412.3,
+    "remesh_period_2000": 8088.9,
+    "remesh_period_1000": 5646.5,
+    "remesh_period_500_aggressive": 3448.8
+  },
+  "speedup_per_step_vs_baseline": 30.3,
+  "speedup_net_with_remesh": {"period_2000": 23.5, "period_1000": 16.4, "period_500": 10.0},
+  "node_pool_resync_validated_cpu": "162 -> 390 active nodes via 228 SPLIT ops across 19 remesh events; pool fixed-size (pos array never reallocated); loop stable, cell inflates 7.5->9.55 um",
+  "remesh_epoch_cost_ms_approx": 113,
+  "interpretation": "The GPU-resident Warp per-step loop removes the existing per-step cpu_local_snapshot host sync -> 30x faster per step on the same A5000, same config. Remesh stays on host (dynamic topology, low cadence); the node-pool keeps the Warp pos array fixed-size so the GPU side is static-array. The host remesh epoch (~113ms: unoptimized python remesh_pass with per-op reclassify + full-pool re-upload) is the remaining lever and amortizes with cadence (10x at every-500-steps, 23.5x at every-2000). Even worst-case aggressive remesh stays 10x over the existing path.",
+  "repro": "gpu",
+  "scripts": ["ffn_sim/warp_port/dcm_warp_hybrid.py", "ffn_sim/warp_port/bench_dcm_baseline.py"]
+}

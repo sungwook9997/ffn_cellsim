@@ -72,3 +72,186 @@ claims:
     artifact: ffn_sim/outputs/h_dcm_two_stage/cleanball_aa0_fit.json
     metric: top-down-silhouette
     declared: needs-regen
+
+  # --- Warp port (Phase B) — CPU-reproducible bit-parity vs committed HOOMD reference ---
+  # Each Warp piece is "done" ONLY when its committed pytest parity test passes
+  # against a committed HOOMD reference fixture; this records the lightweight,
+  # committed parity-result JSON the gate enforces. repro: cpu (Warp CPU backend
+  # — independently re-runnable: warp_port/parity_report.py). Verified by
+  # tests/warp_port/test_baoab_warp_parity.py against
+  # warp_port/fixtures/baoab_ref_*.npz (frozen LeimkuhlerMatthewsBAOAB output).
+  - id: warp-B1-baoab-kt0
+    desc: "Warp overdamped L-M BAOAB step kT=0 bit-for-bit vs frozen HOOMD Action (triclinic box, image flags)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B1_baoab.kt0.max_abs_pos_diff, value: 0.0, tol: 1.0e-9}
+    repro: cpu
+    declared: verified
+
+  - id: warp-B1-baoab-ktpos
+    desc: "Warp overdamped L-M BAOAB step kT>0 drift vs frozen HOOMD Action (identical injected noise)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B1_baoab.ktpos.max_abs_pos_diff, value: 0.0, tol: 1.0e-7}
+    repro: cpu
+    declared: verified
+
+  # B2 radial-shell compartment force (3 laws). Verified by
+  # tests/warp_port/test_radial_shell_warp_parity.py vs radial_ref_*.npz (the
+  # real NucleusConfinement / MembraneSurfaceTension / EnclosedVolumePressure
+  # forces run in HOOMD). Gated on the host-reduced FORCE-LAW rel error < 1e-12
+  # (the full atomic-reduction port matches to ~2.6e-12 = reduction-order, < the
+  # native plugin's own 1e-8 — recorded as *_warp_* fields, not gated here).
+  - id: warp-B2-radial-nucleus
+    desc: "Warp radial-shell nucleus bilinear-confinement force-law bit-parity vs HOOMD NucleusConfinement"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B2_radial_shell.nucleus.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  - id: warp-B2-radial-membrane
+    desc: "Warp radial-shell membrane Laplace-tension force-law parity vs HOOMD MembraneSurfaceTension"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B2_radial_shell.membrane.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  - id: warp-B2-radial-turgor
+    desc: "Warp radial-shell turgor osmotic-pressure force-law parity vs HOOMD EnclosedVolumePressure"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B2_radial_shell.turgor.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # M-SHAKE chain constraint projection (rigid Matrix-SHAKE, one thread/chain).
+  # Verified by tests/warp_port/test_shake_warp_parity.py vs shake_ref.npz (the
+  # committed shake_project_chains output). Iterative solver → not bit-for-bit
+  # (Warp FMA vs numpy converges to a slightly different valid manifold point);
+  # gated on relative position agreement < 1e-9 (well under the native 1e-8) +
+  # constraint satisfaction + zero nonconvergence.
+  - id: warp-MSHAKE-chain-constraint
+    desc: "Warp Matrix-SHAKE rigid chain-constraint projection parity vs HOOMD shake_project_chains (pos rel + nonconv=0)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: MSHAKE_chain_constraint.pos_rel, value: 0.0, tol: 1.0e-9}
+    repro: cpu
+    declared: verified
+
+  # Fixman metric pseudo-force (tridiagonal continuant for ln det G + G^-1).
+  # Verified by tests/warp_port/test_fixman_warp_parity.py vs fixman_ref.npz (the
+  # committed fixman_logdet_and_force LAPACK output). Tolerance-based (continuant
+  # vs LAPACK differ in last ULPs); gated on the native contract force rel < 1e-7
+  # (achieved ~6e-16). Force is what feeds the dynamics.
+  - id: warp-Fixman-metric-force
+    desc: "Warp Fixman metric pseudo-force (continuant ln det G) parity vs HOOMD fixman_logdet_and_force"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: Fixman_metric_force.force_rel, value: 0.0, tol: 1.0e-7}
+    repro: cpu
+    declared: verified
+
+  # Compartment/network force: harmonic bond (cortex axial spring) vs HOOMD
+  # md.bond.Harmonic. Verified by tests/warp_port/test_network_warp_parity.py vs
+  # network_bond_ref.npz. One thread/bond, atomic-add to shared beads; achieved
+  # force rel ~5e-16. (angle bending + LJ excluded-volume are the remaining
+  # network forces, follow-on sub-pieces.)
+  - id: warp-compartment-harmonic-bond
+    desc: "Warp harmonic-bond cortex network force parity vs HOOMD md.bond.Harmonic"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: compartment_harmonic_bond.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # Compartment/network force: harmonic angle (cortex bending) vs HOOMD
+  # md.angle.Harmonic. Verified by tests/warp_port/test_network_warp_parity.py vs
+  # network_angle_ref.npz. One thread/angle, 3-body a11/a12/a22 gradient; achieved
+  # force rel ~2e-13 (acos transcendental + atomic order). (LJ excluded-volume is
+  # the last remaining network force.)
+  - id: warp-compartment-harmonic-angle
+    desc: "Warp harmonic-angle cortex bending force parity vs HOOMD md.angle.Harmonic"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: compartment_harmonic_angle.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # LJ excluded volume (WCA) — last cortex network sub-force. md.pair.LJ,
+  # mode=shift, r_cut=2^(1/6)σ. Warp all-pairs-within-cutoff kernel (one thread
+  # per particle, own-thread write, no atomics) vs HOOMD on a bond-free cluster
+  # (no nlist exclusions → all-pairs exact). Verified by
+  # tests/warp_port/test_network_warp_parity.py::test_wca_pair_warp_parity vs
+  # network_lj_ref.npz; machine-eps (~1.8e-15).
+  - id: warp-compartment-lj-wca
+    desc: "Warp LJ excluded-volume (WCA) parity vs HOOMD md.pair.LJ (mode=shift, r_cut=2^(1/6)σ)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: compartment_lj_wca.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # DCM node-vs-face penalty contact (SimuCell3D, Ericson closest-point). Verified
+  # by tests/warp_port/test_dcm_contact_warp_parity.py vs dcm_contact_ref.npz (the
+  # brute-force numpy node_face_contact_forces ground truth, 2 interpenetrating
+  # icosahedral cells, rep+adh+cad_mult). Force on a FIXED mesh → no dynamic
+  # topology (that risk is in the remesh, a later piece); achieved force rel ~4e-16.
+  - id: warp-DCM-node-face-contact
+    desc: "Warp DCM node-vs-face penalty contact force parity vs numpy node_face_contact_forces ground truth"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_node_face_contact.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # DCM exact-volume turgor force (divergence-theorem volume → osmotic face-normal
+  # pressure; the core DCM intra-cell mechanic driving rim spreading). Verified by
+  # tests/warp_port/test_dcm_turgor_warp_parity.py vs dcm_turgor_ref.npz (the real
+  # DcmTurgorForce run in HOOMD on a 2-cell mesh). Gated on host force-law rel
+  # < 1e-12 (full atomic-volume reduce matches to ~2e-15). Fixed mesh → no dynamic
+  # topology (the remesh is the separate risk piece).
+  - id: warp-DCM-turgor-force
+    desc: "Warp DCM exact-volume turgor force parity vs HOOMD DcmTurgorForce"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_turgor_force.host_force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # DCM node-node cell-cell cohesion (inter-cell repulsion + adhesive cadherin tent).
+  # Verified by tests/warp_port/test_dcm_cohesion_warp_parity.py vs dcm_cohesion_ref.npz
+  # (the real DcmTentContact run in HOOMD, both branches + cad_mult). Atomic-free
+  # Newton-3 (each node computes its own pair forces); achieved force rel ~2e-16.
+  - id: warp-DCM-cohesion-force
+    desc: "Warp DCM node-node cohesion (rep + cadherin adhesive tent) parity vs HOOMD DcmTentContact"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: DCM_cohesion_force.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # Lamellipodial traction-tether (rim leading nodes pulled to nearest outward
+  # clutch-anchored actin = the emergent crawl traction). Verified by
+  # tests/warp_port/test_lamellipodium_warp_parity.py vs lamellipodium_ref.npz (the
+  # real LamellipodialTractionTether run in HOOMD). Host per-cell geometry + leading
+  # selection, Warp per-node nearest-actin search + capped force; bit-for-bit (0.0).
+  - id: warp-lamellipodium-tether
+    desc: "Warp lamellipodial traction-tether force parity vs HOOMD LamellipodialTractionTether"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: lamellipodium_tether.force_rel, value: 0.0, tol: 1.0e-12}
+    repro: cpu
+    declared: verified
+
+  # B4 differentiability (Warp's prize — native CUDA plugin has no autodiff).
+  # Reverse-mode grad of the membrane force-law loss w.r.t. gamma_mem vs the
+  # closed-form analytic grad. Verified by tests/warp_port/test_warp_differentiability.py.
+  - id: warp-B4-differentiability
+    desc: "Warp reverse-mode autodiff through the membrane force law matches the analytic gradient (~machine eps)"
+    artifact: ffn_sim/warp_port/fixtures/warp_parity_results.json
+    metric: n/a
+    expect: {field: B4_differentiability.rel_err_vs_analytic, value: 0.0, tol: 1.0e-9}
+    repro: cpu
+    declared: verified
