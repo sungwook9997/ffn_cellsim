@@ -38,8 +38,10 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
+    ecm_clutch_force_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
+from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
@@ -134,7 +136,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    settle_steps: int = 0, settle_frames: int = 0,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
-                   cadherin: bool = False,
+                   cadherin: bool = False, ecm_clutch: bool = False,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -248,6 +250,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  [cadherin] k_trans={cad.p.k_trans:.2e}N/m  r0={cad.p.r0_trans*1e6:.2f}um  "
               f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
               f"catch-slip f0=29.2pN @ capture limit (Rakshit, ×40 bridge)", flush=True)
+
+    # C6 explicit integrin-ECM catch-slip clutch (replaces the wetting proxy). Basal nodes grip
+    # the dish; Pereverzev catch-slip governs hold/release → traction-limited mechanistic spread.
+    ecm = None
+    if ecm_clutch:
+        ecm = EcmClutchHost(cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt, c_adh=c_adh)
+        print(f"  [ecm-clutch] k_fa={ecm.k_fa:.2e}N/m  engage={ecm.engage_range*1e6:.2f}um  "
+              f"k_on={ecm.p.k_on:.1f}/s  batch={ecm.fa_batch_steps}  Pereverzev F*≈7pN catch-slip "
+              f"(×40 bridge: F_s@engage-limit) — WETTING OFF", flush=True)
 
     # A1 REMESH (host-side, low cadence): keep every edge in [l_min, 3·l_min] so large
     # spreading never stretches a triangle into a sliver (the contact penalty ∝ A_face fails
@@ -369,8 +380,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(dcm_substrate_well_accum_kernel, dim=N,
                       inputs=[pos_d, wp.float64(z0), wp.float64(k_well), wp.float64(adh_range),
                               wp.float64(k_floor), force_d], device=device)
-        # substrate in-plane wetting: scatter into wbuf -> cap -> add (mechanistic spread)
-        if substrate_wetting and do_spread:
+        # substrate in-plane wetting: scatter into wbuf -> cap -> add (mechanistic spread).
+        # In C6 ecm-clutch mode the wetting PROXY is OFF — the explicit integrin clutch provides
+        # the (traction-limited) substrate coupling instead.
+        if substrate_wetting and do_spread and ecm is None:
             wp.launch(_zero_vec, dim=N, inputs=[wbuf_d], device=device)
             if js is not None:
                 # M3: per-cell substrate wetting scaled by the integrin gain (raised on switch)
@@ -383,6 +396,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                   wp.float64(adh_range), wbuf_d], device=device)
             wp.launch(dcm_wetting_cap_add_kernel, dim=N,
                       inputs=[wbuf_d, wp.float64(force_cap), force_d], device=device)
+        # C6 integrin-ECM clutch traction (every step; engaged set refreshed at FA cadence)
+        if ecm is not None and do_spread and ecm._dev is not None and ecm._dev["n"] > 0:
+            wp.launch(ecm_clutch_force_kernel, dim=ecm._dev["n"],
+                      inputs=[ecm._dev["node"], ecm._dev["anchor"], wp.int32(ecm._dev["n"]),
+                              wp.float64(ecm.k_fa), pos_d, force_d], device=device)
         # M2 lamellipodium traction tether (every step; anchors refreshed at cadence)
         if lam is not None and do_spread and lam._dev is not None and lam._dev["n_lead"] > 0:
             d = lam._dev
@@ -555,6 +573,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             cad.update(pos_d.numpy().astype(np.float64))
             cad.upload(device)
+        # C6: integrin-ECM clutch engage/break (catch-slip) at the FA cadence
+        if ecm is not None and s % ecm.fa_batch_steps == 0:
+            wp.synchronize_device(device)
+            ecm.update(pos_d.numpy().astype(np.float64))
+            ecm.upload(device)
         stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
@@ -570,7 +593,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                   f"drift={np.linalg.norm(m['com']-com0)*1e6:.2f}um  "
                   f"pen={m['pen_frac']:.3f}  cfl={m['cfl_frac']:.2f}  nsub={n_sub[0]}"
                   + (f"  switched={js.n_switched}" if js is not None else "")
-                  + (f"  bonds={cad.n_bonds}" if cad is not None else ""), flush=True)
+                  + (f"  bonds={cad.n_bonds}" if cad is not None else "")
+                  + (f"  clutch={ecm.n_clutches}" if ecm is not None else ""), flush=True)
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
 
@@ -614,7 +638,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "cfl_frac_peak": max(r["cfl_frac"] for r in traj),
         "cfl_limit": cfl_limit, "max_substeps": max_substeps, "n_sub_final": n_sub[0],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
-        "edge_edge": edge_edge, "cadherin": cadherin,
+        "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
     }
     if lam is not None:
@@ -632,6 +656,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                  "n_broken": cad.n_broken, "k_trans": cad.p.k_trans,
                                  "r0_trans": cad.p.r0_trans, "k_on": cad.p.k_on,
                                  "batch_steps": cad.batch_steps}
+    if ecm is not None:
+        out["ecm_clutch_stats"] = {"n_clutches_final": ecm.n_clutches, "n_engaged": ecm.n_engaged,
+                             "n_slipped": ecm.n_slipped, "k_fa": ecm.k_fa,
+                             "engage_range": ecm.engage_range, "F_s": ecm.p.F_s,
+                             "F_c": ecm.p.F_c, "fa_batch_steps": ecm.fa_batch_steps}
     return out
 
 
@@ -657,6 +686,7 @@ def main():
     ap.add_argument("--cfl-limit", type=float, default=0.0, help="A3: max per-step node displacement / c_rep (e.g. 0.3); adaptive substeps keep below it (0=off)")
     ap.add_argument("--max-substeps", type=int, default=16, help="A3: cap on adaptive substeps per step")
     ap.add_argument("--cadherin", action="store_true", help="E1: explicit cadherin catch-bonds (fine-grained adhesion; replaces cohesion tent + M3 switch; de-cohesion emergent)")
+    ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -669,7 +699,7 @@ def main():
         settle_frames=args.settle_frames, gap=args.gap,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
-        cadherin=args.cadherin,
+        cadherin=args.cadherin, ecm_clutch=args.ecm_clutch,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)

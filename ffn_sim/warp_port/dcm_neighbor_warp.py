@@ -451,6 +451,28 @@ def cadherin_bond_force_kernel(
 
 
 @wp.kernel
+def ecm_clutch_force_kernel(
+    node_idx: wp.array(dtype=wp.int32),      # (M,) basal node of each engaged clutch
+    anchor: wp.array(dtype=wp.vec3d),        # (M,) fixed substrate site it gripped
+    n_clutch: wp.int32,
+    k_fa: wp.float64,
+    pos: wp.array(dtype=wp.vec3d),
+    force: wp.array(dtype=wp.vec3d),
+):
+    """C6 integrin-ECM clutch force: harmonic spring from the basal node to the substrate site
+    it gripped, ``F = k_fa·(anchor − r_node)``. The anchor is the rigid dish ligand (no
+    reaction), so the clutch RESISTS the node sliding off its grip — transmitting the
+    lamellipodium/membrane pull to the substrate as traction. The host breaks each clutch at
+    the Pereverzev catch-slip rate (catch near F*, slip at F≫F_s) → traction-limited spread."""
+    t = wp.tid()
+    if t >= n_clutch:
+        return
+    i = node_idx[t]
+    d = anchor[t] - pos[i]
+    wp.atomic_add(force, i, d * k_fa)
+
+
+@wp.kernel
 def gather_lead_pos(pos: wp.array(dtype=wp.vec3d), lead_idx: wp.array(dtype=wp.int32),
                     out: wp.array(dtype=wp.vec3d)):
     """Device gather lead_rp[t] = pos[lead_idx[t]] (per-step; leading-node SET is
