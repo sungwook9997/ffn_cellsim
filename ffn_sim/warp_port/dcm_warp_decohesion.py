@@ -132,7 +132,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
                    settle_steps: int = 0, settle_frames: int = 0,
                    remesh_period: int = 0, pool_factor: float = 0.5,
-                   edge_edge: bool = False,
+                   edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -393,8 +393,35 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         com = Pa[:, :2].mean(axis=0)
         Psave = P.copy()
         Psave[~active] = Pa.mean(axis=0)         # park dormant at the live centroid for the frame
+        # A3 CFL diagnostic: per-step node displacement (= dt·|F|/γ) as a fraction of the
+        # repulsion shell c_rep. >~0.3 ⇒ the fastest node can skip the thin contact shell in
+        # one step (tunnel through → deep interpenetration the penalty can't recover).
+        F = force_d.numpy().astype(np.float64)[active]
+        maxF = float(np.linalg.norm(F, axis=1).max()) if F.size else 0.0
+        cfl_frac = (dt * maxF / gamma_node) / c_rep
         return {"A_um2": A, "maxZ_um": maxZ, "Vsum": Vsum, "com": com, "P": Psave,
-                "pen_frac": _penetration_frac()}, True
+                "pen_frac": _penetration_frac(), "cfl_frac": cfl_frac, "maxF": maxF}, True
+
+    # A3 adaptive substepping: keep the per-step node displacement below cfl_limit·c_rep so a
+    # node can't tunnel through the thin contact shell (the pen-runaway mechanism). n_sub is
+    # retuned from the measured CFL each frame; cfl_limit=0 disables (n_sub≡1, fixed dt).
+    n_sub = [1]
+
+    def stepped(s, dt_step, do_spread=True):
+        ns = n_sub[0]
+        if ns <= 1:
+            step_once(s, dt_step, do_spread=do_spread)
+        else:
+            sub = dt_step / float(ns)
+            for _ in range(ns):
+                step_once(s, sub, do_spread=do_spread)
+
+    def retune_substeps(cfl_frac):
+        if cfl_limit <= 0.0:
+            return
+        if cfl_frac > 0.0:
+            target = int(np.ceil(n_sub[0] * cfl_frac / cfl_limit))
+            n_sub[0] = max(1, min(max_substeps, target))
 
     m_init, ok = measure()
     if not ok:
@@ -417,7 +444,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     def record(gstep, phase, m):
         recs.append({"gstep": gstep, "phase": phase, "area": m["A_um2"],
                      "maxZ_um": m["maxZ_um"], "Vsum": m["Vsum"], "com": m["com"],
-                     "pen_frac": m.get("pen_frac", 0.0)})
+                     "pen_frac": m.get("pen_frac", 0.0), "cfl_frac": m.get("cfl_frac", 0.0)})
         if frame_list is not None:
             frame_list.append(m["P"].astype(np.float32))
             cad_list.append(cad_now().astype(np.float32))
@@ -441,12 +468,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if remesh_period and s % remesh_period == 0:
             wp.synchronize_device(device)
             do_remesh()
-        step_once(s, dt, do_spread=False)
+        stepped(s, dt, do_spread=False)
         if s % every_s == 0:
             wp.synchronize_device(device)
             m, ok = measure()
             if ok:
                 record(s, 0, m)
+                retune_substeps(m["cfl_frac"])
     wp.synchronize_device(device)
 
     # baseline = the RESTED spheroid (not the as-built ball)
@@ -483,7 +511,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if remesh_period and s % remesh_period == 0:
             wp.synchronize_device(device)
             do_remesh()
-        step_once(s, dt)
+        stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
             m, ok = measure()
@@ -492,10 +520,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 print(f"  [decoh] NON-FINITE at step {s} — truncating", flush=True)
                 break
             record(settle_steps + s, 1, m)
+            retune_substeps(m["cfl_frac"])
             print(f"  step {s:>7}  A/A0={m['A_um2']/A0 if A0 else 0:.3f}  maxZ={m['maxZ_um']:.1f}um  "
                   f"V/V0={m['Vsum']/V0sum if V0sum else 0:.3f}  "
                   f"drift={np.linalg.norm(m['com']-com0)*1e6:.2f}um  "
-                  f"pen={m['pen_frac']:.3f}"
+                  f"pen={m['pen_frac']:.3f}  cfl={m['cfl_frac']:.2f}  nsub={n_sub[0]}"
                   + (f"  switched={js.n_switched}" if js is not None else ""), flush=True)
     wp.synchronize_device(device)
     elapsed = time.perf_counter() - t0
@@ -504,7 +533,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     traj = [{"step": r["gstep"], "phase": r["phase"], "aa0": r["area"] / A0 if A0 > 0 else 0.0,
              "maxZ_um": r["maxZ_um"], "vv0": r["Vsum"] / V0sum if V0sum else 0.0,
              "drift_um": float(np.linalg.norm(r["com"] - com0) * 1e6),
-             "pen_frac": r["pen_frac"]} for r in recs]
+             "pen_frac": r["pen_frac"], "cfl_frac": r["cfl_frac"]} for r in recs]
 
     if save_frames and frame_list is not None:
         extra = {}
@@ -537,6 +566,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "vv0_final": traj[-1]["vv0"], "drift_final_um": traj[-1]["drift_um"],
         "pen_frac_peak": max(r["pen_frac"] for r in traj),
         "pen_frac_final": traj[-1]["pen_frac"],
+        "cfl_frac_peak": max(r["cfl_frac"] for r in traj),
+        "cfl_limit": cfl_limit, "max_substeps": max_substeps, "n_sub_final": n_sub[0],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "edge_edge": edge_edge,
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
@@ -573,6 +604,8 @@ def main():
     ap.add_argument("--remesh-period", type=int, default=0, help="A1: host SWAP/SPLIT/COLLAPSE remesh every N steps (0=off); keeps edges in band → no slivers")
     ap.add_argument("--pool-factor", type=float, default=0.5, help="dormant node pool size as a fraction of active nodes (for remesh SPLIT)")
     ap.add_argument("--edge-edge", action="store_true", help="A2: edge-edge contact (catches the edge-pokethrough node-face misses)")
+    ap.add_argument("--cfl-limit", type=float, default=0.0, help="A3: max per-step node displacement / c_rep (e.g. 0.3); adaptive substeps keep below it (0=off)")
+    ap.add_argument("--max-substeps", type=int, default=16, help="A3: cap on adaptive substeps per step")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -584,7 +617,7 @@ def main():
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
         settle_frames=args.settle_frames, gap=args.gap,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
-        edge_edge=args.edge_edge,
+        edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
