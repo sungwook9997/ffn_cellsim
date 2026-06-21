@@ -24,6 +24,9 @@ kT=0 (deterministic overdamped) — no thermostat, so no implicit-Langevin subtl
 
 from __future__ import annotations
 
+import math
+import os
+
 import numpy as np
 
 
@@ -126,25 +129,62 @@ def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e
         wp.synchronize_device(device); return float(sca.numpy()[0])
 
     stiff_into(x_d, Fx)                                  # F(x) once
-
-    def applyA(v, out):
-        vn = (dot(v, v) / N) ** 0.5
-        s = eps / (vn + 1e-30)
-        wp.launch(_vxpby, dim=N, inputs=[xp, x_d, wp.float64(s), v], device=device)   # xp = x + s v
-        stiff_into(xp, Fp)
-        wp.launch(_operator, dim=N, inputs=[out, wp.float64(a), v, Fp, Fx, wp.float64(1.0 / s)], device=device)
+    _dbg = os.environ.get("CG_DEBUG")
 
     dx.zero_()
     wp.launch(_vcopy, dim=N, inputs=[r, b_d], device=device)     # r = b - A·0 = b
     wp.launch(_vcopy, dim=N, inputs=[p, r], device=device)
-    rs = dot(r, r); bnorm = max(dot(b_d, b_d) ** 0.5, 1e-30); it = 0
+    rs = dot(r, r); bnorm = max(dot(b_d, b_d) ** 0.5, 1e-30); rs0 = rs; it = 0
+    if _dbg:
+        print(f"    [cg-dbg] N={N} a={a:.3e} bnorm={bnorm:.3e} rs0={rs:.3e}", flush=True)
+    # Already at (or below) tolerance — F(x)≈0 ⇒ Δx≈0. Skip CG; a zero step is correct and
+    # avoids the forward-difference JVP catastrophically cancelling on Fp−Fx≈0 (a near-equilibrium
+    # configuration is exactly where that noise turns the matrix-free operator non-SPD).
+    if rs ** 0.5 <= tol * bnorm or not math.isfinite(rs):
+        return dx, 0
     for it in range(1, maxiter + 1):
-        applyA(p, Ap)
-        alpha = rs / max(dot(p, Ap), 1e-300)
+        # JVP perturbation scale from the current search direction. Guard a degenerate/diverged
+        # p (vn=0 or non-finite) BEFORE forming 1/s — an unfinite vn underflows s→0 and the old
+        # code crashed on the 1.0/s division. A zero/garbage direction means we stop here.
+        pp = dot(p, p)
+        vn = (pp / N) ** 0.5
+        if not math.isfinite(vn) or vn <= 1e-300:
+            if _dbg:
+                print(f"    [cg-dbg] it={it} degenerate vn={vn:.3e} — break", flush=True)
+            break
+        s = eps / vn
+        wp.launch(_vxpby, dim=N, inputs=[xp, x_d, wp.float64(s), p], device=device)   # xp = x + s p
+        stiff_into(xp, Fp)
+        wp.launch(_operator, dim=N, inputs=[Ap, wp.float64(a), p, Fp, Fx, wp.float64(1.0 / s)], device=device)
+        pAp = dot(p, Ap)
+        # A = (γ/dt)·I + K. The diagonal a·‖p‖² is exact and strictly positive; the physical
+        # stiffness K (penalty/turgor/edge/bending Hessians) is PSD at a stable equilibrium, so
+        # pᵀAp ≥ a·‖p‖² ALWAYS. Near equilibrium the forward-difference Jacobian K·p collapses to
+        # rounding noise (catastrophic cancellation on Fp−Fx≈0) and pᵀKp can go spuriously negative
+        # → a runaway α=rs/pAp that injected the giant displacement we saw at 100× dt. Floor pAp at
+        # the exact diagonal (ignore the FD noise) — physically justified, no scale-tuned constant.
+        pAp_diag = a * pp
+        if not math.isfinite(pAp) or pAp < pAp_diag:
+            if _dbg and pAp < pAp_diag:
+                print(f"    [cg-dbg] it={it} K-noise floor pAp={pAp:.3e}<diag={pAp_diag:.3e}", flush=True)
+            pAp = pAp_diag
+        alpha = rs / pAp
         wp.launch(_vaxpy, dim=N, inputs=[dx, wp.float64(alpha), p], device=device)    # x += α p
         wp.launch(_vaxpy, dim=N, inputs=[r, wp.float64(-alpha), Ap], device=device)   # r -= α Ap
         rs_new = dot(r, r)
+        if _dbg:
+            print(f"    [cg-dbg] it={it} rs={rs:.3e} pAp={pAp:.3e} -> rs_new={rs_new:.3e}", flush=True)
+        # Divergence guard. For this non-symmetric, K-dominated operator (large dt ⇒ a=γ/dt ≪‖K‖),
+        # diagonal-floored CG can diverge — the residual grows monotonically and ran away to ~1e128
+        # within a single solve. Stop at the first runaway (4× the initial residual) and return the
+        # current iterate. A diverging solve here is the SIGNAL that this dt exceeds the stable
+        # ceiling for this stack — the caller's V/V0 will then flag it, instead of an opaque NaN.
+        if not math.isfinite(rs_new) or rs_new > 4.0 * rs0:
+            if _dbg:
+                print(f"    [cg-dbg] it={it} DIVERGING rs_new={rs_new:.3e} > 4·rs0={4 * rs0:.3e} — break", flush=True)
+            break
         if (rs_new ** 0.5) < tol * bnorm:
+            rs = rs_new
             break
         beta = rs_new / rs
         wp.launch(_vxpby, dim=N, inputs=[p, r, wp.float64(beta), p], device=device)   # p = r + β p
