@@ -50,9 +50,11 @@ def implicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float,
         return a * v + Kv
 
     A = LinearOperator((n3, n3), matvec=matvec, dtype=np.float64)
-    dx, status = cg(A, F0, rtol=cg_tol, maxiter=cg_maxiter)
+    iters = [0]
+    def _cb(xk): iters[0] += 1
+    dx, status = cg(A, F0, rtol=cg_tol, maxiter=cg_maxiter, callback=_cb)
     x1 = x0 + dx.reshape(x0.shape)
-    return x1, {"cg_status": int(status), "dx_norm": float(np.linalg.norm(dx))}
+    return x1, {"cg_status": int(status), "cg_iters": iters[0], "dx_norm": float(np.linalg.norm(dx))}
 
 
 def explicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float):
@@ -182,6 +184,37 @@ def _dcm_stiff_demo(device="cpu"):
                 vv0_implicit=vol(xi)/V0, implicit_vs_explicit=float(np.linalg.norm(xi-xe)))
 
 
+def _dt_ramp(device="cpu"):
+    """I3: ramp dt (1/10/100/1000/10000× the explicit dt) on the real DCM stiff force. Measure
+    stability, equilibrium V/V0, error vs the converged-explicit reference, CG iters/step, and the
+    step-count speedup. Finds the accuracy ceiling (where the equilibrium stops matching), NOT a
+    stability limit (implicit is unconditionally stable)."""
+    stiff_force, verts, gamma, V0, faces, fcell = make_dcm_stiff_force(device)
+    N = verts.shape[0]
+    def vol(x):
+        v0,v1,v2 = x[faces[:,0]],x[faces[:,1]],x[faces[:,2]]
+        return abs(float(np.einsum('ij,ij->i', v0, np.cross(v1-v0,v2-v0)).sum()/6.0))
+    x0 = verts.copy(); x0[:,2] *= 0.7
+    dt_e = 8.0e-6; T = 0.02
+
+    # converged-explicit reference equilibrium
+    xref = x0.copy()
+    for _ in range(int(T/dt_e)):
+        xref,_ = explicit_overdamped_step(xref, stiff_force, gamma, dt_e)
+    print(f"reference (explicit dt={dt_e:.0e}, {int(T/dt_e)} steps): V/V0={vol(xref)/V0:.4f}")
+    print(f"{'dt/dt_e':>8} {'steps':>7} {'stable':>7} {'V/V0':>7} {'|x-ref|':>9} {'cgit/step':>9} {'speedup':>8}")
+    for mult in (1, 10, 100, 1000, 10000):
+        dt = dt_e*mult; ns = max(1, int(T/dt)); x = x0.copy(); tot_it=0; ok=True
+        for _ in range(ns):
+            x, info = implicit_overdamped_step(x, stiff_force, gamma, dt)
+            tot_it += info["cg_iters"]
+            if not np.isfinite(x).all() or vol(x) > 50*V0: ok=False; break
+        e = float(np.linalg.norm(x-xref)) if ok else float('inf')
+        print(f"{mult:>8} {ns:>7} {str(ok):>7} {vol(x)/V0 if ok else 0:>7.4f} {e:>9.2e} "
+              f"{tot_it/max(ns,1):>9.1f} {int(T/dt_e)/ns:>7.0f}x")
+
+
 if __name__ == "__main__":
     print("== I1 spring solver =="); _spring_demo()
     print("== I2 DCM stiff force =="); _dcm_stiff_demo()
+    print("== I3 dt ramp =="); _dt_ramp()
