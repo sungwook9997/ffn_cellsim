@@ -161,6 +161,53 @@ def dcm_wetting_scatter_kernel(
     wp.atomic_add(force, i2, wp.vec3d(c * (v0[1] - v1[1]), c * (v1[0] - v0[0]), z))
 
 
+# ──────────────────────────────────────────────────────────────────────────
+# Device-loop variants (ACCUMULATE into a shared force buffer; for the
+# device-resident hybrid loop, not the standalone parity above which overwrites).
+# Force LAWS are identical to the parity-verified kernels — only the write changes
+# (own-row add for the well; separate wetting buffer + per-node cap-then-add so the
+# cap applies to the wetting contribution ONLY, never the accumulated total).
+# ──────────────────────────────────────────────────────────────────────────
+@wp.kernel
+def dcm_substrate_well_accum_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    z0: wp.float64, k_well: wp.float64, rng: wp.float64, k_floor: wp.float64,
+    force: wp.array(dtype=wp.vec3d),     # (N,) ACCUMULATE (own-row read-add-write)
+):
+    i = wp.tid()
+    z = pos[i][2]
+    dz = z - z0
+    fz = wp.float64(0.0)
+    if wp.abs(dz) <= rng:
+        fz = -k_well * dz
+    elif dz < -rng:
+        fz = k_well * rng
+    below = z0 - z
+    if below > wp.float64(0.0):
+        fz = fz + k_floor * below
+    fo = force[i]
+    force[i] = wp.vec3d(fo[0], fo[1], fo[2] + fz)
+
+
+@wp.kernel
+def dcm_wetting_cap_add_kernel(
+    wbuf: wp.array(dtype=wp.vec3d),      # (N,) accumulated wetting force (xy)
+    cap: wp.float64,
+    force: wp.array(dtype=wp.vec3d),     # (N,) total force to add the capped wetting into
+):
+    i = wp.tid()
+    w = wbuf[i]
+    mag = wp.sqrt(w[0] * w[0] + w[1] * w[1])
+    sx = w[0]
+    sy = w[1]
+    if mag > cap:
+        s = cap / mag
+        sx = w[0] * s
+        sy = w[1] * s
+    fo = force[i]
+    force[i] = wp.vec3d(fo[0] + sx, fo[1] + sy, fo[2])
+
+
 def _cap_xy(F: np.ndarray, cap: float) -> np.ndarray:
     """Per-node cap on the in-plane magnitude (exactly the reference's clip)."""
     mag = np.sqrt((F[:, :2] ** 2).sum(axis=1))
