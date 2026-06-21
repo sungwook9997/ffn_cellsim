@@ -226,14 +226,15 @@ The previous 4-role split (Main / Sub / Orchestrator + PI-as-relay) is **retired
 
 ### Session closeout protocol — MUST (end of session, freeze-point, or when PI says "wrap")
 
-Steps 1–4 complete before the final user-facing message; step 5 is the explicit PI receipt.
+Steps 1–5 complete before the final user-facing message; step 6 is the explicit PI receipt.
 
 1. Commit work on `phase1/h{N}-*`. Do NOT push to `ffn/foundation` (renamed from `v2/foundation` 2026-05-20) without PI sign-off.
 2. **Dev Logs status board** — update the unit's row (Status / Owner / Start / End / Log) and the **Open items** list. Append a `Phase {N} — Unit H.{X} {milestone}` child Day-log (start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference — format in Dev Logs §작성 규칙). Large-body table-cell edits time out (~100K page); prefer a small milestone child page + a short inline note (see `reference_notion_handoff_board_size`).
 3. If a unit hits ✅ DONE / 🚧 / a production run lands / a sanity-gate flags a non-trivial finding: refresh figures per the visualize-at-closeout rule.
-4. If Notion MCP is unavailable or a store cannot be written: **halt and surface to PI** — do not silently skip.
-5. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`**.
-6. Stop. Do not speculate beyond what was actually done.
+4. **KB integrity gates** — run `make kb-check` (the disk-grounded results / params / citation gates under `ffn_sim/outputs/tag_kb/`). If any reports **DRIFT** — a result or simulation constant claimed better than the disk + citation audit support (e.g. a config value changed off its sourced value, a forbidden A/A0 metric, an over-declared citation) — **halt and surface to PI** before committing or emitting the receipt; never close over a red gate. Sub-second, pure-Python, reads committed artifacts only (no token needed).
+5. If Notion MCP is unavailable or a store cannot be written: **halt and surface to PI** — do not silently skip.
+6. **Receipt**: the final user-facing message ends with the literal line **`Notion 업데이트 완료`**.
+7. Stop. Do not speculate beyond what was actually done.
 
 ### File ownership
 
