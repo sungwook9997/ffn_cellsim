@@ -148,3 +148,57 @@ def contact_grid_kernel(
                 wp.atomic_add(force, ib, bary[1] * fvec)
                 wp.atomic_add(force, ic, bary[2] * fvec)
     wp.atomic_add(force, ni, fn_acc)
+
+
+@wp.kernel
+def gather_lead_pos(pos: wp.array(dtype=wp.vec3d), lead_idx: wp.array(dtype=wp.int32),
+                    out: wp.array(dtype=wp.vec3d)):
+    """Device gather lead_rp[t] = pos[lead_idx[t]] (per-step; leading-node SET is
+    clutch-gripped/low-cadence, but their POSITIONS move every step)."""
+    t = wp.tid()
+    out[t] = pos[lead_idx[t]]
+
+
+@wp.kernel
+def lamellipodium_tether_accum(
+    lead_rp: wp.array(dtype=wp.vec3d), lead_ccx: wp.array(dtype=wp.float64),
+    lead_ccy: wp.array(dtype=wp.float64), lead_ox: wp.array(dtype=wp.float64),
+    lead_oy: wp.array(dtype=wp.float64), lead_proj: wp.array(dtype=wp.float64),
+    lead_idx: wp.array(dtype=wp.int32), actin: wp.array(dtype=wp.vec3d),
+    n_actin: wp.int32, k_tether: wp.float64, force_cap: wp.float64,
+    tether_radius: wp.float64, force: wp.array(dtype=wp.vec3d),
+):
+    """ACCUMULATING variant of lamellipodium_tether_kernel (atomic_add, not overwrite)
+    so it composes with turgor/contact/cohesion/edges in the shared force array."""
+    t = wp.tid()
+    rp = lead_rp[t]
+    ccx = lead_ccx[t]
+    ccy = lead_ccy[t]
+    ox = lead_ox[t]
+    oy = lead_oy[t]
+    npj = lead_proj[t]
+    min_dist = wp.float64(1.0e300)
+    jmin = wp.int32(-1)
+    for a in range(n_actin):
+        ap = actin[a]
+        dx = ap[0] - rp[0]
+        dy = ap[1] - rp[1]
+        dz = ap[2] - rp[2]
+        dist = wp.sqrt(dx * dx + dy * dy + dz * dz)
+        act_proj = (ap[0] - ccx) * ox + (ap[1] - ccy) * oy
+        if dist <= tether_radius and act_proj > npj:
+            if dist < min_dist:
+                min_dist = dist
+                jmin = wp.int32(a)
+    if jmin >= wp.int32(0):
+        ap = actin[jmin]
+        fvx = k_tether * (ap[0] - rp[0])
+        fvy = k_tether * (ap[1] - rp[1])
+        fvz = k_tether * (ap[2] - rp[2])
+        fmag = wp.sqrt(fvx * fvx + fvy * fvy + fvz * fvz)
+        if fmag > force_cap:
+            s = force_cap / fmag
+            fvx = fvx * s
+            fvy = fvy * s
+            fvz = fvz * s
+        wp.atomic_add(force, lead_idx[t], wp.vec3d(fvx, fvy, fvz))
