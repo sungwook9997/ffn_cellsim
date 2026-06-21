@@ -53,22 +53,54 @@ from ffn_sim.cell.dcm_remesh import remesh_pass
 wp.init()
 
 
-def _spherical_centers(n_cells: int, R: float, gap: float) -> np.ndarray:
-    """``n_cells`` lattice centres packed in a roughly SPHERICAL cluster (not a cube).
+def _lattice_nearest(lattice: np.ndarray, n_cells: int) -> np.ndarray:
+    """The ``n_cells`` lattice points nearest the origin (a rounded spherical cluster)."""
+    return lattice[np.argsort(np.linalg.norm(lattice, axis=1))[:n_cells]]
 
-    A cubic lattice is too symmetric to AGGREGATE: an interior cell is pulled equally by
-    neighbours on all sides → net force ≈ 0 → the pack is metastable and never compacts
-    (the lattice just persists through settle — the failure the spread montage showed).
-    Selecting the ``n_cells`` lattice points CLOSEST to the centre instead gives a sphere
-    whose surface cells feel a net INWARD cohesive pull (curvature) → the cluster rounds
-    and compacts during the settle/aggregate phase, which is the whole point of that phase.
-    ``gap`` is the centre spacing in units of R."""
-    side = int(np.ceil((2.2 * n_cells) ** (1.0 / 3.0))) + 2     # oversample the lattice
-    g = np.arange(side) - (side - 1) / 2.0
-    X, Y, Z = np.meshgrid(g, g, g, indexing="ij")
-    pts = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
-    keep = np.argsort(np.linalg.norm(pts, axis=1))[:n_cells]    # the n_cells nearest centre
-    centers = pts[keep] * (gap * R)
+
+def _spherical_centers(n_cells: int, R: float, gap: float, mode: str = "fcc",
+                       seed: int = 5) -> np.ndarray:
+    """``n_cells`` cell centres in a rounded SPHERICAL cluster (centre spacing ≈ ``gap·R``).
+
+    A spherical cluster (not a cube) is required to AGGREGATE: surface cells feel a net INWARD
+    cohesive pull (curvature) so the cluster rounds + compacts during settle. ``mode`` (D10):
+      * ``cubic`` — simple-cubic lattice nearest-centre (legacy; cubic-axis anisotropy artifact).
+      * ``fcc`` — face-centred-cubic close packing (nearest-neighbour = a/√2), isotropic + denser;
+        the realistic default for a 3D tissue pack.
+      * ``voronoi`` — Lloyd-relaxed centroidal Voronoi: random points in a ball relaxed (k-means
+        over a dense ball sample) to even, isotropic spacing — the most tissue-like (no lattice
+        order at all). Scaled so the mean nearest-neighbour spacing = gap·R.
+    """
+    side = int(np.ceil((2.2 * n_cells) ** (1.0 / 3.0))) + 3
+    g = np.arange(-side, side + 1)
+    if mode == "cubic":
+        X, Y, Z = np.meshgrid(g, g, g, indexing="ij")
+        pts = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1).astype(float)
+        centers = _lattice_nearest(pts, n_cells) * (gap * R)
+    elif mode == "fcc":
+        X, Y, Z = np.meshgrid(g, g, g, indexing="ij")
+        pts = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
+        pts = pts[(pts.sum(axis=1) % 2) == 0].astype(float)     # FCC sublattice
+        centers = _lattice_nearest(pts, n_cells) * (gap * R / np.sqrt(2.0))   # nn = a/√2 → gap·R
+    elif mode == "voronoi":
+        rng = np.random.default_rng(seed)
+        # seed n_cells points in a unit ball, Lloyd-relax against a dense ball sample (CVT)
+        def in_ball(m):
+            q = rng.normal(size=(m, 3)); q /= np.linalg.norm(q, axis=1, keepdims=True)
+            return q * (rng.random(m) ** (1.0 / 3.0))[:, None]
+        c = in_ball(n_cells)
+        sample = in_ball(max(4000, 60 * n_cells))
+        for _ in range(25):                                     # Lloyd iterations
+            lbl = np.argmin(((sample[:, None, :] - c[None, :, :]) ** 2).sum(-1), axis=1)
+            for k in range(n_cells):
+                m = lbl == k
+                if m.any():
+                    c[k] = sample[m].mean(0)
+        # scale so the mean nearest-neighbour distance = gap·R
+        d = np.sort(np.linalg.norm(c[:, None, :] - c[None, :, :], axis=-1), axis=1)[:, 1]
+        centers = c * (gap * R / max(float(d.mean()), 1e-12))
+    else:
+        raise ValueError(f"unknown builder mode {mode!r} (cubic|fcc|voronoi)")
     return centers - centers.mean(0)
 
 
@@ -77,7 +109,7 @@ PARK_POS = np.array([1.0e-2, 1.0e-2, 1.0e-2])   # dormant pool node home (≫ ce
 
 def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
                                  gap: float = 2.05, pool_factor: float = 0.0,
-                                 n_parked_cells: int = 0):
+                                 n_parked_cells: int = 0, builder: str = "fcc"):
     """SPHERICAL cluster of cells RESTING on the substrate plane z0 (lowest node at z0).
 
     Cells are icospheres placed at :func:`_spherical_centers` (a rounded cluster, NOT the
@@ -92,7 +124,7 @@ def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float 
     and spike the contact repulsion, so 2.05 is the tight-but-safe floor with the soft-start."""
     verts1, edges1, tris1 = icosphere_mesh(R, subdiv)
     npc = verts1.shape[0]
-    centers = _spherical_centers(n_cells, R, gap)
+    centers = _spherical_centers(n_cells, R, gap, mode=builder)
     # C7 CELL POOL: n_parked_cells extra UNDEFORMED icospheres parked far (cof=−1 → cohesion/
     # contact/measure/centroid skip them; turgor sees V=V0 → 0 force). A division ACTIVATES one
     # (sets its nodes' cof to the daughter id + moves it next to the mother) — faces/edges are
@@ -155,7 +187,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.5,
                    bending: bool = False, k_bend: float = 1.0e-5,
-                   necrosis: bool = False,
+                   necrosis: bool = False, builder: str = "fcc",
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -182,7 +214,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     n_parked = int(div_pool_factor * n_cells) if division else 0
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
         n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0),
-        n_parked_cells=n_parked)
+        n_parked_cells=n_parked, builder=builder)
+    print(f"  [builder] {builder} pack: {n_active} active + {n_parked} parked, gap={gap}·R", flush=True)
     n_cells = n_active + n_parked                   # per-cell arrays size to the FULL pool
     N = pos_a.shape[0]
     mean_edge = float(np.linalg.norm(pos_a[edges_a[:, 0]] - pos_a[edges_a[:, 1]], axis=1).mean())
@@ -776,6 +809,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "nucleus": nucleus, "surface_tension": surface_tension,
         "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
         "bending": bending, "k_bend": k_bend if bending else None, "necrosis": necrosis,
+        "builder": builder,
         "nucleus_params": ({"R_nuc": R_nuc, "E_nuc": E_nuc, "k_chrom": k_chrom,
                             "k_lamin": k_lamin, "ratio_lamin": ratio_lamin,
                             "knee_strain": knee_strain} if nucleus else None),
@@ -846,6 +880,7 @@ def main():
     ap.add_argument("--bending", action="store_true", help="B5: thin-plate biharmonic membrane bending (Helfrich-like)")
     ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
     ap.add_argument("--necrosis", action="store_true", help="C8: 3-zone depth necrosis (O2-proxy; softens core turgor, gates division to the rim)")
+    ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi"], help="D10: spheroid cell-centre packing (fcc=isotropic close-pack; voronoi=Lloyd CVT)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -862,7 +897,7 @@ def main():
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
-        bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis,
+        bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
