@@ -40,7 +40,14 @@ class CadherinParams:
     r0_trans: float = 0.5e-6       # m    rest length (force-free bridge)
     r_bind: float = 0.5e-6         # m    capture radius (unbound A↔B → trans-dimer)
     k_on: float = 27.96            # s⁻¹  reformation rate (= k_off(0), rest-symmetric)
-    batch_steps: int = 8           # binder ticks every N steps
+    # binder cadence. The resolver's CFL-derived 8 made the host bond-management a near-per-step
+    # GPU→CPU sync, defeating the Warp port's whole purpose (GPU-main rule). Raised to 50 (matching
+    # the ecm-clutch / lamellipodium host-hybrid cadence): the EXACT survival probability
+    # 1−exp(−k_off·Δt_batch) is correct for ANY Δt_batch when k_off is ~constant over the batch,
+    # and in the overdamped slow spread the bond force (hence k_off) barely changes over 50 steps
+    # (4e-4 s) — so the kinetics stay faithful while the host sync is amortised (the accepted
+    # low-cadence host-hybrid, like remesh). Override via --cad-batch.
+    batch_steps: int = 50
     seed: int = 7
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 

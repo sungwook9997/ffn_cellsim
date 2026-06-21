@@ -181,7 +181,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    settle_steps: int = 0, settle_frames: int = 0,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
-                   cadherin: bool = False, ecm_clutch: bool = False,
+                   cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
@@ -328,7 +328,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         k_meso = f0 / max(rbind_meso - r0_meso, 1e-12)
         cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
-                                                     r_bind=rbind_meso))
+                                                     r_bind=rbind_meso, batch_steps=cad_batch))
         coh_adh = 0.0          # cohesion/contact adhesion OFF → bonds are the sole adhesion
         print(f"  [cadherin] k_trans={cad.p.k_trans:.2e}N/m  r0={cad.p.r0_trans*1e6:.2f}um  "
               f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
@@ -894,6 +894,7 @@ def main():
     ap.add_argument("--max-substeps", type=int, default=16, help="A3: cap on adaptive substeps per step")
     ap.add_argument("--cadherin", action="store_true", help="E1: explicit cadherin catch-bonds (fine-grained adhesion; replaces cohesion tent + M3 switch; de-cohesion emergent)")
     ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
+    ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
@@ -918,7 +919,7 @@ def main():
         settle_frames=args.settle_frames, gap=args.gap,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
-        cadherin=args.cadherin, ecm_clutch=args.ecm_clutch,
+        cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
