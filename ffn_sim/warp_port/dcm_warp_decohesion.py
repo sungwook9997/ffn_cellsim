@@ -32,11 +32,14 @@ from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_forc
 from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.warp_port.dcm_substrate_warp import (
-    dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel)
+    dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel,
+    dcm_wetting_scatter_integrin_kernel)
 from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
+    cohesion_grid_cad_kernel, contact_grid_cad_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
+from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 
 wp.init()
 
@@ -85,7 +88,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
                    settle_steps: int = 0,
                    use_grid: bool = True, save_frames: str | None = None,
-                   lamellipodium: bool = False) -> dict:
+                   lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
 
@@ -128,6 +131,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     Vc_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
     dP_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
     cad_d = wp.ones(n_cells, dtype=wp.float64, device=device)
+    integrin_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     faces_d = wp.array(faces_a.astype(np.int32), dtype=wp.int32, device=device)
     fcell_d = wp.array(fcell_a.astype(np.int32), dtype=wp.int32, device=device)
     edges_d = wp.array(edges_a.astype(np.int32), dtype=wp.int32, device=device)
@@ -154,6 +158,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
 
+    # M3 junction switch host (crowd-pressure cadherin→integrin clutch; latches at cadence).
+    js = None
+    if junction_switch:
+        js = JunctionSwitchHost(cof=cof_a, n_cells=n_cells, R=R)
+        print(f"  [junction] r_contact={js.r_contact*1e6:.1f}um  P_switch={js.p.P_switch_kPa}kPa  "
+              f"cad_weak={js.p.cadherin_weak_factor}  integrin_strong={js.p.integrin_strong_factor}  "
+              f"cadence={js.cadence}", flush=True)
+
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
         if use_grid:
@@ -163,11 +175,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             node_grid.build(points=node_f32, radius=coh_q)
             wp.launch(face_centroids_f32, dim=n_faces, inputs=[pos_d, faces_d, cent_f32], device=device)
             face_grid.build(points=cent_f32, radius=con_q)
-            wp.launch(cohesion_grid_kernel, dim=N,
-                      inputs=[node_grid.id, node_f32, pos_d, cof_d, wp.float32(coh_q),
-                              wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
-                              wp.float64(adh_strength), wp.float64(area_per_node),
-                              wp.float64(force_cap), force_d], device=device)
+            if js is not None:
+                # M3: cell-cell adhesion scaled by sqrt(cad_i·cad_j) (identity until a
+                # cell crowd-switches, so settle behaviour is unchanged)
+                wp.launch(cohesion_grid_cad_kernel, dim=N,
+                          inputs=[node_grid.id, node_f32, pos_d, cof_d, cad_d, wp.float32(coh_q),
+                                  wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(area_per_node),
+                                  wp.float64(force_cap), force_d], device=device)
+            else:
+                wp.launch(cohesion_grid_kernel, dim=N,
+                          inputs=[node_grid.id, node_f32, pos_d, cof_d, wp.float32(coh_q),
+                                  wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(area_per_node),
+                                  wp.float64(force_cap), force_d], device=device)
         else:
             wp.launch(dcm_cohesion_kernel, dim=N,
                       inputs=[pos_d, cof_d, cad_d, wp.int32(0), wp.int32(N),
@@ -182,11 +203,18 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         wp.launch(dcm_turgor_force_kernel, dim=n_faces,
                   inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
         if use_grid:
-            wp.launch(contact_grid_kernel, dim=N,
-                      inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
-                              wp.float32(con_q), wp.float64(rep_strength),
-                              wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
-                              force_d], device=device)
+            if js is not None:
+                wp.launch(contact_grid_cad_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d, cad_d,
+                                  wp.float32(con_q), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                                  force_d], device=device)
+            else:
+                wp.launch(contact_grid_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                                  wp.float32(con_q), wp.float64(rep_strength),
+                                  wp.float64(adh_strength), wp.float64(c_rep), wp.float64(c_adh),
+                                  force_d], device=device)
         else:
             wp.launch(node_face_contact_kernel, dim=N,
                       inputs=[pos_d, cof_d, faces_d, fcell_d, cad_d, wp.int32(0), wp.int32(n_faces),
@@ -202,9 +230,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # substrate in-plane wetting: scatter into wbuf -> cap -> add (mechanistic spread)
         if substrate_wetting and do_spread:
             wp.launch(_zero_vec, dim=N, inputs=[wbuf_d], device=device)
-            wp.launch(dcm_wetting_scatter_kernel, dim=n_faces,
-                      inputs=[pos_d, faces_d, wp.float64(z0), wp.float64(w_cs_jm2),
-                              wp.float64(adh_range), wbuf_d], device=device)
+            if js is not None:
+                # M3: per-cell substrate wetting scaled by the integrin gain (raised on switch)
+                wp.launch(dcm_wetting_scatter_integrin_kernel, dim=n_faces,
+                          inputs=[pos_d, faces_d, fcell_d, integrin_d, wp.float64(z0),
+                                  wp.float64(w_cs_jm2), wp.float64(adh_range), wbuf_d], device=device)
+            else:
+                wp.launch(dcm_wetting_scatter_kernel, dim=n_faces,
+                          inputs=[pos_d, faces_d, wp.float64(z0), wp.float64(w_cs_jm2),
+                                  wp.float64(adh_range), wbuf_d], device=device)
             wp.launch(dcm_wetting_cap_add_kernel, dim=N,
                       inputs=[wbuf_d, wp.float64(force_cap), force_d], device=device)
         # M2 lamellipodium traction tether (every step; anchors refreshed at cadence)
@@ -275,6 +309,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             lam.update(pos_d.numpy().astype(np.float64))
             lam.upload(device)
+        # M3: latch the crowd-pressure junction switch at low cadence; re-upload the
+        # mutable per-cell cad_mult / integrin_gain only when a new cell switches
+        if js is not None and s % js.cadence == 0:
+            wp.synchronize_device(device)
+            if js.update(pos_d.numpy().astype(np.float64)):
+                cad_d.assign(js.cad_mult)
+                integrin_d.assign(js.integrin_gain)
+                print(f"  [junction] step {s}: {js.n_switched}/{n_cells} cells switched "
+                      f"(cad↓{js.p.cadherin_weak_factor}, integrin↑{js.p.integrin_strong_factor})",
+                      flush=True)
         step_once(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
@@ -310,7 +354,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "steps": steps, "warmup": warmup, "settle_steps": settle_steps,
         "truncated_at": truncated_at, "steps_per_s": (truncated_at or steps) / elapsed,
         "substrate_wetting": substrate_wetting, "use_substrate_well": use_substrate_well,
-        "lamellipodium": lamellipodium,
+        "lamellipodium": lamellipodium, "junction_switch": junction_switch,
         "aa0_peak": max(aa), "aa0_final": aa[-1], "maxZ_final_um": traj[-1]["maxZ_um"],
         "vv0_final": traj[-1]["vv0"], "drift_final_um": traj[-1]["drift_um"],
         "W_cs_well_J": W_cs_well, "gamma_node": gamma_node, "trajectory": traj,
@@ -319,6 +363,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         out["lamel"] = {"n_rim": lam.n_rim, "n_pool": lam.n_pool, "n_used": lam.n_used,
                         "n_seeded": lam.n_seeded, "n_advanced": lam.n_advanced,
                         "p_advance": lam.p_advance, "n_lead_final": lam.n_lead}
+    if js is not None:
+        out["junction"] = {"n_switched": js.n_switched, "n_cells": n_cells,
+                           "P_switch_kPa": js.p.P_switch_kPa,
+                           "cad_weak": js.p.cadherin_weak_factor,
+                           "integrin_strong": js.p.integrin_strong_factor,
+                           "max_pressure_kPa": float(js.pressure_kPa.max())}
     return out
 
 
@@ -334,6 +384,7 @@ def main():
     ap.add_argument("--settle-steps", type=int, default=0,
                     help="aggregation/settle steps at full dt with NO spread drivers (rest the spheroid at z0 before the measured spread; baseline A0 is taken AFTER this)")
     ap.add_argument("--lamellipodium", action="store_true", help="enable the M2 per-cell lamellipodium crawl")
+    ap.add_argument("--junction-switch", action="store_true", help="enable the M3 crowd-pressure cadherin→integrin junction switch")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -344,7 +395,7 @@ def main():
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
-        lamellipodium=args.lamellipodium,
+        lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 

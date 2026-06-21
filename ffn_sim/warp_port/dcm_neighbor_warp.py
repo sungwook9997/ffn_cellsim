@@ -151,6 +151,121 @@ def contact_grid_kernel(
 
 
 @wp.kernel
+def cohesion_grid_cad_kernel(
+    grid: wp.uint64,
+    qpts: wp.array(dtype=wp.vec3),
+    pos: wp.array(dtype=wp.vec3d),
+    cof: wp.array(dtype=wp.int32),
+    cad: wp.array(dtype=wp.float64),         # (n_cells,) per-cell cadherin multiplier
+    radius: wp.float32,
+    r_contact: wp.float64, c_adh: wp.float64,
+    rep: wp.float64, omega: wp.float64, A: wp.float64, force_cap: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """M3 junction-switch variant of :func:`cohesion_grid_kernel`: the cell-cell
+    ADHESION (only) is scaled by ``mult = sqrt(cad[c1]·cad[c2])`` so a crowd-switched
+    cell (``cad`` lowered to ``cadherin_weak_factor``) de-coheres from its neighbours.
+    Repulsion is NOT modulated (excluded volume is unconditional)."""
+    i = wp.tid()
+    c1 = cof[i]
+    if c1 < wp.int32(0):
+        return
+    z = wp.float64(0.0)
+    half = wp.float64(0.5) * c_adh
+    pi = pos[i]
+    acc = wp.vec3d(z, z, z)
+    q = wp.hash_grid_query(grid, qpts[i], radius)
+    j = wp.int32(0)
+    while wp.hash_grid_query_next(q, j):
+        if j != i and cof[j] >= wp.int32(0) and cof[j] != c1:
+            r_vec = pi - pos[j]
+            d = wp.length(r_vec)
+            fmag = z
+            if d < r_contact:                                  # REPULSION (unmodulated)
+                fmag = rep * A * (r_contact - d)
+            else:
+                if d < c_adh:                                  # ADHESION tent (× cad)
+                    tent = c_adh - d
+                    if d < half:
+                        tent = d
+                    mult = wp.sqrt(cad[c1] * cad[cof[j]])
+                    fmag = -omega * A * tent * mult
+            if fmag > force_cap:
+                fmag = force_cap
+            if fmag < -force_cap:
+                fmag = -force_cap
+            if d > z and fmag != z:
+                acc = acc + r_vec * (fmag / d)
+    force[i] = acc
+
+
+@wp.kernel
+def contact_grid_cad_kernel(
+    grid: wp.uint64,
+    qpts: wp.array(dtype=wp.vec3),
+    pos: wp.array(dtype=wp.vec3d),
+    cof: wp.array(dtype=wp.int32),
+    faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32),
+    cad: wp.array(dtype=wp.float64),         # (n_cells,) per-cell cadherin multiplier
+    radius: wp.float32,
+    rep: wp.float64, adh: wp.float64, c_rep: wp.float64, c_adh: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """M3 junction-switch variant of :func:`contact_grid_kernel`: the node-face
+    ADHESION (only) is scaled by ``mult = sqrt(cad[c1]·cad[c_face])``. Repulsion
+    (excluded volume) is NOT modulated."""
+    ni = wp.tid()
+    c1 = cof[ni]
+    if c1 < wp.int32(0):
+        return
+    z = wp.float64(0.0)
+    half = wp.float64(0.5) * c_adh
+    p = pos[ni]
+    fn_acc = wp.vec3d(z, z, z)
+    q = wp.hash_grid_query(grid, qpts[ni], radius)
+    fj = wp.int32(0)
+    while wp.hash_grid_query_next(q, fj):
+        if fcell[fj] != c1:
+            ia = faces[fj, 0]
+            ib = faces[fj, 1]
+            ic = faces[fj, 2]
+            a = pos[ia]
+            b = pos[ib]
+            c = pos[ic]
+            bary = closest_bary(p, a, b, c)
+            cpa = a * bary[0] + b * bary[1] + c * bary[2]
+            r_vec = p - cpa
+            min_d = wp.length(r_vec)
+            fnv = wp.cross(b - a, c - a)
+            nrm = wp.length(fnv)
+            area = wp.float64(0.5) * nrm
+            sign = z
+            if nrm > z:
+                sign = wp.dot(r_vec, fnv) / nrm
+            amp = z
+            if sign < z and min_d < c_rep:
+                amp = rep * area                               # REPULSION (unmodulated)
+            else:
+                if adh > z and sign > z and min_d < c_adh:
+                    mult = wp.sqrt(cad[c1] * cad[fcell[fj]])
+                    if min_d >= half:
+                        md = min_d
+                        if md <= z:
+                            md = wp.float64(1.0e-30)
+                        amp = adh * (c_adh / md - wp.float64(1.0)) * area * mult
+                    else:
+                        amp = adh * area * mult
+            if amp != z:
+                fvec = r_vec * amp
+                fn_acc = fn_acc - fvec
+                wp.atomic_add(force, ia, bary[0] * fvec)
+                wp.atomic_add(force, ib, bary[1] * fvec)
+                wp.atomic_add(force, ic, bary[2] * fvec)
+    wp.atomic_add(force, ni, fn_acc)
+
+
+@wp.kernel
 def gather_lead_pos(pos: wp.array(dtype=wp.vec3d), lead_idx: wp.array(dtype=wp.int32),
                     out: wp.array(dtype=wp.vec3d)):
     """Device gather lead_rp[t] = pos[lead_idx[t]] (per-step; leading-node SET is

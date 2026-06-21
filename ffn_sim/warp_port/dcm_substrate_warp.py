@@ -161,6 +161,34 @@ def dcm_wetting_scatter_kernel(
     wp.atomic_add(force, i2, wp.vec3d(c * (v0[1] - v1[1]), c * (v1[0] - v0[0]), z))
 
 
+@wp.kernel
+def dcm_wetting_scatter_integrin_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32),
+    integrin: wp.array(dtype=wp.float64),        # (n_cells,) per-cell substrate gain
+    z0: wp.float64, W: wp.float64, rng: wp.float64,
+    force: wp.array(dtype=wp.vec3d),             # (N,) out, atomic accumulate
+):
+    """M3 junction-switch variant of :func:`dcm_wetting_scatter_kernel`: the per-face
+    in-plane wetting (cell→substrate traction) is scaled by the owning cell's
+    ``integrin`` gain (raised to ``integrin_strong_factor`` when the cell crowd-switches),
+    the cadherin→integrin clutch's substrate-strengthening half."""
+    fi = wp.tid()
+    i0 = faces[fi, 0]
+    i1 = faces[fi, 1]
+    i2 = faces[fi, 2]
+    v0 = pos[i0]
+    v1 = pos[i1]
+    v2 = pos[i2]
+    g = integrin[fcell[fi]]
+    c = _wetting_coef(v0, v1, v2, z0, W, rng) * g
+    z = wp.float64(0.0)
+    wp.atomic_add(force, i0, wp.vec3d(c * (v1[1] - v2[1]), c * (v2[0] - v1[0]), z))
+    wp.atomic_add(force, i1, wp.vec3d(c * (v2[1] - v0[1]), c * (v0[0] - v2[0]), z))
+    wp.atomic_add(force, i2, wp.vec3d(c * (v0[1] - v1[1]), c * (v1[0] - v0[0]), z))
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Device-loop variants (ACCUMULATE into a shared force buffer; for the
 # device-resident hybrid loop, not the standalone parity above which overwrites).
