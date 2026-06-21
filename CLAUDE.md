@@ -31,6 +31,10 @@ When in doubt, write down the option's Plan reference, the abstraction it introd
 - **Python**: 3.13.13
 - **Simulation core**: HOOMD-blue 7.0.1 (conda-forge)
 - **Integrator**: custom Leimkuhler-Matthews BAOAB-limit plugin (Phase 0.4)
+- **Phase-C engine (PI 2026-06-21)**: NVIDIA Warp port of the runtime — GPU-resident +
+  differentiable DCM engine (`ffn_sim/warp_port/`), adopted as the going-forward engine;
+  HOOMD-blue stays the fine-grained reference / parity oracle. GPU-backend parity verified
+  on the A5000 (`docs/v2_audit/PHASE_C_GPU_PARITY_2026-06-21.md`). See `warp_port/ENGINE.md`.
 - **Active filament model**: AFINES (Simfreed/AFINES canonical) re-implemented on HOOMD
 - **Env**: `conda activate ffn_sim`
 - **Sanity bench**: `python ffn_sim/scripts/hoomd_polymer_sanity.py --steps 50000 --bench`

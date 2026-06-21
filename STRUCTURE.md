@@ -36,6 +36,7 @@ git remote `origin` → `~/ActiveCellSim` (local path remote; v1 + image-constra
 | `ffn_sim/integrator/` | H.0.4 | Leimkuhler-Matthews BAOAB-limit custom plugin | skeleton (Phase 0 산출물에 알고리즘 정의 있음) |
 | `ffn_sim/common/` | shared | derived params, sanity-gate helpers, units, logging | skeleton |
 | `ffn_sim/__init__.py` | — | 패키지 루트 | 비어있음 |
+| `ffn_sim/warp_port/` | Phase C | NVIDIA Warp GPU-resident 미분가능 DCM 엔진 (HOOMD 대비 piece별 parity-gated; `engine.py`/`ENGINE.md`) | adopted 2026-06-21 (G1 GPU parity, G2 substrate) |
 
 ### 1.2 validation/
 
