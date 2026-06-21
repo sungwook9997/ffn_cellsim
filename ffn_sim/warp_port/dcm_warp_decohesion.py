@@ -39,6 +39,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
     ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
+    surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
@@ -139,6 +140,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cadherin: bool = False, ecm_clutch: bool = False,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
+                   surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    use_grid: bool = True, save_frames: str | None = None,
                    lamellipodium: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
@@ -187,6 +189,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # E2 nucleus: per-cell centroid reduction buffers + the bilinear chromatin/lamin stiffnesses
     csum_d = wp.zeros(n_cells, dtype=wp.vec3d, device=device)
     ccnt_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
+    # B4 surface tension / global area: per-cell area buffer + the initial per-cell area target A0
+    acell_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
+    _fa0 = 0.5 * np.linalg.norm(np.cross(pos_a[faces_a[:, 1]] - pos_a[faces_a[:, 0]],
+                                         pos_a[faces_a[:, 2]] - pos_a[faces_a[:, 0]]), axis=1)
+    _A0c = np.zeros(n_cells); np.add.at(_A0c, fcell_a, _fa0)
+    a0cell_d = wp.array(_A0c, dtype=wp.float64, device=device)
     R_nuc = R_nuc_factor * R
     d_knee_nuc = knee_strain * R_nuc
     k_chrom = 4.0 * np.pi * E_nuc * R_nuc / npc          # continuum bridge (H.9 eq B), N-invariant
@@ -260,6 +268,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
               f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
               f"catch-slip f0=29.2pN @ capture limit (Rakshit, ×40 bridge)", flush=True)
 
+    if surface_tension:
+        print(f"  [surface-tension] gamma={gamma_surf:.2e}N/m  k_area={k_area:.2e}N/m  "
+              f"A0_cell={float(_A0c.mean())*1e12:.1f}um^2 (area-minimising membrane tension"
+              f"{' + global area constraint' if k_area>0 else ''})", flush=True)
     if nucleus:
         print(f"  [nucleus] R_nuc={R_nuc*1e6:.2f}um ({R_nuc_factor:.2f}·R)  E_nuc={E_nuc:.0f}Pa  "
               f"ratio_lamin={ratio_lamin}  knee={knee_strain}  k_chrom={k_chrom:.2e}N/m  "
@@ -383,6 +395,17 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                       inputs=[pos_d, cof_d, csum_d, ccnt_d, wp.float64(R_nuc),
                               wp.float64(d_knee_nuc), wp.float64(k_chrom), wp.float64(k_lamin),
                               force_d], device=device)
+        # B4 membrane surface tension (area-minimising) + optional global area constraint
+        if surface_tension:
+            wp.launch(surface_tension_kernel, dim=n_faces,
+                      inputs=[pos_d, faces_d, wp.float64(gamma_surf), force_d], device=device)
+            if k_area > 0.0:
+                acell_d.zero_()
+                wp.launch(face_area_accum_kernel, dim=n_faces,
+                          inputs=[pos_d, faces_d, fcell_d, acell_d], device=device)
+                wp.launch(global_area_force_kernel, dim=n_faces,
+                          inputs=[pos_d, faces_d, fcell_d, acell_d, a0cell_d, wp.float64(k_area),
+                                  force_d], device=device)
         # A2 edge-edge excluded volume (always on, like contact — catches the edge-pokethrough
         # node-face misses). Build the edge-midpoint grid then the seg-seg penalty kernel.
         if edge_edge and use_grid:
@@ -663,7 +686,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "cfl_limit": cfl_limit, "max_substeps": max_substeps, "n_sub_final": n_sub[0],
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
-        "nucleus": nucleus,
+        "nucleus": nucleus, "surface_tension": surface_tension,
+        "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
         "nucleus_params": ({"R_nuc": R_nuc, "E_nuc": E_nuc, "k_chrom": k_chrom,
                             "k_lamin": k_lamin, "ratio_lamin": ratio_lamin,
                             "knee_strain": knee_strain} if nucleus else None),
@@ -717,6 +741,9 @@ def main():
     ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
+    ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
+    ap.add_argument("--gamma-surf", type=float, default=1.0e-4, help="B4 surface tension coefficient [N/m]")
+    ap.add_argument("--k-area", type=float, default=0.0, help="B4 global area-constraint stiffness [N/m] (0=off)")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
@@ -731,6 +758,7 @@ def main():
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
+        surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)

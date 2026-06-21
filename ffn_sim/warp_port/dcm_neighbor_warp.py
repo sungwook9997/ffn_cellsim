@@ -450,6 +450,68 @@ def cadherin_bond_force_kernel(
         wp.atomic_add(force, j, -fvec)
 
 
+@wp.func
+def _tri_area_grads(a: wp.vec3d, b: wp.vec3d, c: wp.vec3d):
+    """Per-vertex area gradient of triangle (a,b,c): ∂A/∂a = ½ n̂×(c−b), etc. Returns the three
+    gradient vectors packed; magnitude ½|opposite edge|, in-plane, pointing to INCREASE area."""
+    nrm = wp.cross(b - a, c - a)
+    L = wp.length(nrm)
+    z = wp.float64(0.0)
+    if L <= wp.float64(1.0e-30):
+        return wp.vec3d(z, z, z), wp.vec3d(z, z, z), wp.vec3d(z, z, z)
+    nh = nrm / L
+    h = wp.float64(0.5)
+    ga = wp.cross(nh, c - b) * h
+    gb = wp.cross(nh, a - c) * h
+    gc = wp.cross(nh, b - a) * h
+    return ga, gb, gc
+
+
+@wp.kernel
+def surface_tension_kernel(
+    pos: wp.array(dtype=wp.vec3d), faces: wp.array(dtype=wp.int32, ndim=2),
+    gamma: wp.float64, force: wp.array(dtype=wp.vec3d),
+):
+    """B4 membrane surface tension: F = −γ·∂A/∂r per face, scattered to its 3 vertices — the
+    area-minimising (rounding) tension of the cortex/membrane (SimuCell3D shell energy term)."""
+    f = wp.tid()
+    ia = faces[f, 0]; ib = faces[f, 1]; ic = faces[f, 2]
+    ga, gb, gc = _tri_area_grads(pos[ia], pos[ib], pos[ic])
+    wp.atomic_add(force, ia, ga * (-gamma))
+    wp.atomic_add(force, ib, gb * (-gamma))
+    wp.atomic_add(force, ic, gc * (-gamma))
+
+
+@wp.kernel
+def face_area_accum_kernel(
+    pos: wp.array(dtype=wp.vec3d), faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32), acell: wp.array(dtype=wp.float64),
+):
+    """Scatter each face area into its owner cell (zero acell first) → per-cell surface area."""
+    f = wp.tid()
+    nrm = wp.cross(pos[faces[f, 1]] - pos[faces[f, 0]], pos[faces[f, 2]] - pos[faces[f, 0]])
+    wp.atomic_add(acell, fcell[f], wp.float64(0.5) * wp.length(nrm))
+
+
+@wp.kernel
+def global_area_force_kernel(
+    pos: wp.array(dtype=wp.vec3d), faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32), acell: wp.array(dtype=wp.float64),
+    a0cell: wp.array(dtype=wp.float64), k_a: wp.float64, force: wp.array(dtype=wp.vec3d),
+):
+    """B4 global area constraint: F = −k_a·(A_cell − A0_cell)·∂A/∂r per face → resists the
+    cell's TOTAL surface area drifting from A0 (the membrane-reservoir / areal-incompressibility
+    term that complements turgor's volume constraint)."""
+    f = wp.tid()
+    c = fcell[f]
+    dev = k_a * (acell[c] - a0cell[c])
+    ia = faces[f, 0]; ib = faces[f, 1]; ic = faces[f, 2]
+    ga, gb, gc = _tri_area_grads(pos[ia], pos[ib], pos[ic])
+    wp.atomic_add(force, ia, ga * (-dev))
+    wp.atomic_add(force, ib, gb * (-dev))
+    wp.atomic_add(force, ic, gc * (-dev))
+
+
 @wp.kernel
 def cell_centroid_accum_kernel(
     pos: wp.array(dtype=wp.vec3d), cof: wp.array(dtype=wp.int32),
