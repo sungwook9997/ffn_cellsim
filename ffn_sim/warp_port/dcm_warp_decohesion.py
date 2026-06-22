@@ -495,10 +495,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
         edge_cell_d = wp.array(cof_a[edges_a[:, 0]].astype(np.int32), dtype=wp.int32, device=device)
         emid_f32 = wp.zeros(n_edges, dtype=wp.vec3, device=device)
+        # BUG FIX (remesh audit 2026-06-23): do_remesh REASSIGNS cof_a to a new array, severing the
+        # shared reference the host binders captured at construction. ALL FOUR cof-caching binders
+        # must be re-pointed (the division path at the step loop already does all four) — the prior
+        # code updated only lam/js, so cad/ecm read a STALE cof and missed dropping bonds whose node
+        # was COLLAPSE-parked → a box-scale spurious force on the next binder update. Mirror division.
         if lam is not None:
             lam.cof = cof_a            # activated/collapsed nodes changed the node→cell map
         if js is not None:
             js.cof = cof_a
+        if cad is not None:
+            cad.cof = cof_a
+        if ecm is not None:
+            ecm.cof = cof_a
 
     def stiff_force_into(pos_buf, out_d):
         """I-opt: the STIFF (CFL-setting + structural) force on an arbitrary position buffer, with

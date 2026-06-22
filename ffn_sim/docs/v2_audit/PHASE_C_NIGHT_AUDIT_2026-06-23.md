@@ -71,6 +71,34 @@ Confirmed. BUT it lives on the rigid-dish substrate-WELL PROXY path (being depre
 itself says C5 "needs the deformable/3D substrate (C6 Mikado ECM Warp port) to be meaningful."
 **Recommend: wire C5 together with C6, not onto the dying proxy now.** PI decision.
 
+## REMESH (adversarial audit `AUDIT_REMESH_2026-06-23.md`) — 2 HIGH bugs, machinery otherwise sound
+
+### R1. remesh binder-cof STALENESS — FIXED (FIX-SAFE, 2026-06-23) ✅
+`do_remesh` REASSIGNS `cof_a` to a new array (`:483`), severing the shared reference the host binders
+captured at construction. It re-pointed `lam.cof`/`js.cof` but **NOT `cad.cof`/`ecm.cof`** — the division
+path (`:922-925`) correctly updates all four (proving it's a 2-line omission, not design). Result:
+cadherin/ecm bonds to a COLLAPSE-parked node (parked at ~0.45·Lx) read a stale cof, never drop, and the
+force kernel applies a **box-scale spurious force**. **Lead FIXED it** (mirrored the division path into
+`do_remesh`: `if cad…: cad.cof=cof_a; if ecm…: ecm.cof=cof_a`). FIX-SAFE: only affects remesh+binder
+runs, which were BROKEN before (so no valid run changes); the current spreading run has remesh OFF.
+
+### R2. COLLAPSE not volume-conserving + V0 never re-seated → spurious turgor [SURFACE-PI]
+`V0=(4/3)πR0³` is fixed once (`:265`); `do_remesh` never re-seats it. SPLIT is exactly volume-conserving
+(verified dV=0) but **COLLAPSE drifts enclosed volume −2.1% (stretched) to −2.8% (compaction)** and SWAP
+−0.015%/swap. With `K_vol=7.73e5`, `dP=K_vol·(V0−V)/V0` then jumps **~+16 000 Pa ≈ 120× the 133 Pa
+baseline** — a pure topology artifact re-inflating the cell, in exactly the compaction/de-cohesion regime
+remesh exists for. Fix approach is a contract decision (make COLLAPSE volume-conserving, OR re-seat V0 to
+the post-remesh per-cell enclosed volume — physically the cell's biological rest volume shouldn't change
+when a mesh node is removed, so volume-preservation is preferred). **SURFACE-PI before any remesh-on
+compaction/de-cohesion production run.**
+
+### remesh OK (could not break): manifold integrity (0 bad/degenerate/flipped across stretched/perturbed/
+compacted), pool-exhaustion (raises, no OOB), determinism (bit-identical, no RNG), grid-invariant
+thresholds, implicit-solver ordering (remesh before the step, grids rebuilt → no mid-CG topology change).
+The memory "91 swaps + 77 splits, manifold held" is confirmed for manifold but watched ONLY manifold —
+it missed R1 (silent) and R2 (silent). **R4 note:** `do_remesh` resets r0 for the WHOLE mesh each remesh
+(zeroes cortex-bond strain globally) — may be intended (bond = Phase-3 proxy) but PI-confirm.
+
 ## MED
 
 ### M1. Deep-penetration zero-force tunnelling — REAL, but the naive fix EXPLODES [SURFACE-PI, needs proper inside-mesh]
