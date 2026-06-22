@@ -33,6 +33,19 @@ def pos_to_f32(pos: wp.array(dtype=wp.vec3d), out: wp.array(dtype=wp.vec3)):
 
 
 @wp.kernel
+def gravity_body_force_kernel(cof: wp.array(dtype=wp.int32), fz_node: wp.float64,
+                              force: wp.array(dtype=wp.vec3d)):
+    """D7: net sedimentation body force (gravity − buoyancy) on every LIVE node. ``fz_node``
+    is the per-node z-force = −Δρ·g·v_node (Δρ = ρ_cell − ρ_medium > 0, so the cell, being
+    denser than the medium, sinks toward the dish). Dormant/parked nodes (cof<0) get nothing.
+    A constant body force → it adds to the RHS only, leaving the implicit Jacobian unchanged."""
+    i = wp.tid()
+    if cof[i] >= wp.int32(0):
+        f = force[i]
+        force[i] = wp.vec3d(f[0], f[1], f[2] + fz_node)
+
+
+@wp.kernel
 def edge_midpoints_f32(pos: wp.array(dtype=wp.vec3d),
                        edges: wp.array(dtype=wp.int32, ndim=2),
                        out: wp.array(dtype=wp.vec3)):

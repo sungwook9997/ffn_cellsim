@@ -37,7 +37,7 @@ from ffn_sim.warp_port.dcm_substrate_warp import (
 from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
-    edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
+    edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel, gravity_body_force_kernel,
     ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
     surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
     edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel, scale_per_cell_kernel,
@@ -184,6 +184,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
                    cad_bundle: float = 1.0, ecm_bundle: float = 1.0,
+                   gravity: bool = False, delta_rho: float = 55.0,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
@@ -246,6 +247,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     eta_cytoplasm_Pas = 65.9          # MCF7 cytoplasm (Dessard 2024)
     gamma_node = 6.0 * np.pi * eta_cytoplasm_Pas * R / npc
     inv_gamma = 1.0 / gamma_node
+    # D7: net sedimentation body force (gravity − buoyancy). Δρ = ρ_cell − ρ_medium, DERIVED
+    # (no magic number): ρ_cell≈1060 (MCF7; SimuCell3D Table 2 1045–1099 kg/m³), ρ_medium≈1005
+    # (PBS/culture medium) → Δρ≈55 kg/m³. Per-node z-force = −Δρ·g·v_node, v_node = V0/npc.
+    # Small (~1 pN/cell) but physiological — it rests the spheroid on the dish at its real weight
+    # (replaces the removed 19000× wetting proxy, which was ~3×10⁵× this). Off ⇒ fz_node=0.
+    v_node = V0 / npc
+    fz_node = -(delta_rho * 9.80665 * v_node) if gravity else 0.0
+    if gravity:
+        print(f"  [gravity] Δρ={delta_rho:.0f}kg/m³  net f={-fz_node * npc * 1e12:.2f}pN/cell "
+              f"(sedimentation toward dish; gravity−buoyancy, derived)", flush=True)
     c_rep = 0.30 * mean_edge
     c_adh = 0.80 * mean_edge
     r_contact = 0.30 * mean_edge
@@ -494,6 +505,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
 
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
+        if gravity:                       # D7: constant sedimentation body force (RHS only)
+            wp.launch(gravity_body_force_kernel, dim=N,
+                      inputs=[cof_d, wp.float64(fz_node), force_d], device=device)
         if use_grid:
             # rebuild both grids every step (build is negligible — the path is query-bound;
             # the persistent-grid lever was an honest negative, so every-step grid is fastest)
@@ -991,6 +1005,8 @@ def main():
     ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
+    ap.add_argument("--gravity", action="store_true", help="D7: net gravity−buoyancy sedimentation body force (Δρ·g·v_node, derived; rests the spheroid on the dish at its physiological ~1pN/cell weight)")
+    ap.add_argument("--delta-rho", type=float, default=55.0, help="D7: ρ_cell−ρ_medium [kg/m³] (MCF7 ~1060 − medium ~1005; SimuCell3D Table 2)")
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
@@ -1020,6 +1036,7 @@ def main():
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
         cad_bundle=args.cad_bundle, ecm_bundle=args.ecm_bundle,
+        gravity=args.gravity, delta_rho=args.delta_rho,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
