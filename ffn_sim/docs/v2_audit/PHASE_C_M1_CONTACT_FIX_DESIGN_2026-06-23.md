@@ -50,20 +50,35 @@ Option B still flattens (oblate 0.94<1) and stays G2-clean (pen 0.13<0.3), but s
 (NN +6%) and flatter-by-less — so it CHANGES the equilibrium (single-face vs summed repulsion is a
 different law) → NOT byte-identical even on gentle runs → full re-baseline + PI ratification required.
 
-**(b) STRONG-force validation — INCONCLUSIVE (test mis-designed).** My first strong case used raw
-`adh=5e8`, which NUMERICALLY DIVERGES for BOTH baseline and Option B (NN→13–15R, pen→800–2100, vv0→1.2)
-— that is solver blow-up at an over-strong adhesion, not the penetration mode, so it tells us nothing.
-The correct penetration-inducing test is the actual cadherin ×40 bundle (the regime that gave the N=100
-spreading pen=3.1); that run is pending. **So Option B is gentle-validated but the decisive claim — does
-it cut the real bundle-regime penetration — is NOT yet established.**
+**(b) BUNDLE-REGIME validation — Option B REFUTED (it DIVERGES).** Tested the actual failure mode
+(N=12, cadherin ×40 bundle, the regime that gave the N=100 spreading pen=3.1):
+| | pen_final | vv0 |
+|---|---|---|
+| baseline (per-face penalty) | 2.92 | 0.9999 (penetrates but STABLE) |
+| Option B (nearest-face, no cap) | 3.68 | **175.3 — CATASTROPHIC BLOW-UP** |
+Option B does NOT fix it — it makes it WORSE and **diverges** (cells invert, vv0→175). Root cause: the
+depth-proportional force `|F| = min_d·rep·area` is UNBOUNDED once the c_rep cap is removed — a node at
+depth d feels a force ∝ d, so as the ×40 bundle drives it deeper the force runs away → ejection → cell
+inversion. **(My earlier adh=5e8 "strong" test also diverged for both — same uncapped blow-up.)**
 
-## Recommendation (honest, partial)
-Option B (nearest-face signed-distance) is the most tractable proper fix and is **promising** — it
-preserves gentle flattening and, by construction (single nearest face, never the far oblique faces),
-avoids the explosion that killed the naive gate-removal. BUT (1) it changes the contact law → re-baselines
-every prior equilibrium, and (2) its core promise (cutting the real bundle-regime pen 3.1) is still
-UNVALIDATED. **Do not adopt without:** the cadherin-bundle A/B (pen must drop), a parity-gated `--nearest-
-face-contact` flag (default OFF), and PI ratification. Option A (winding-number) remains the
-gold-standard if B's nearest-face proves insufficient for deep multi-cell tunnels (where the nearest face
-can be lost past the query radius). Option C (centroid backstop) is a cheap last-resort anti-merge guard
-to layer under either. **This is a design + prototype, NOT a shipped fix.**
+## ⭐ The real lesson — the `c_rep` cap is DOUBLY load-bearing
+The `min_d < c_rep` gate serves TWO purposes, and tunnelling is the price of BOTH:
+1. **Localization** — restricts repulsion to near faces (removing it → far-oblique-face explosion, NN→6.1).
+2. **Force-bounding** — caps the depth-proportional penalty so it can't run away (removing it → vv0→175).
+So you cannot fix tunnelling by simply extending the penalty past c_rep in EITHER direction (nearest-face
+OR all-faces) — both break. **The proper fix needs all three at once:** a true inside-closed-mesh test
+(winding number / generalized winding — Option A, so far faces never spuriously fire), a **BOUNDED
+barrier** force (e.g. a saturating/log-barrier penalty that stays finite at large depth instead of the
+linear `min_d·rep·area`), and **implicit treatment** of that contact stiffness so the large near-contact
+forces don't blow the step. This is a genuine contact-mechanics piece (IPC-style barrier + CCD, or
+SimuCell3D's actual contact model), NOT a one-kernel tweak.
+
+## Recommendation (honest)
+**Option B is REFUTED — do not pursue the nearest-face-no-cap path.** The M1 fix is harder than any of
+the three sketched options alone: it requires Option A's inside test + a bounded (non-linear, saturating)
+barrier + implicit treatment. Until then the per-face penalty (with its tunnelling) is the least-bad
+option, and the standing fact is: **at the lit cohesion strength the contact either tunnels (capped) or
+diverges (uncapped) — aggregation/spreading are blocked on a proper barrier contact.** Surface to PI as a
+scoped contact-mechanics task (reference: Incremental Potential Contact / IPC barrier methods). The
+prototype + this negative result save the PI from the nearest-face dead end. **Design + negative
+prototype, NOT a shipped fix.**
