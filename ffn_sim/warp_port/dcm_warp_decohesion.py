@@ -44,6 +44,9 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost, EcmClutchParams
+from ffn_sim.warp_port.dcm_filopodia_host import FilopodiaHost
+from ffn_sim.warp_port.dcm_filopodia_warp import (
+    filopodia_tip_face_force_kernel, filopodia_tip_plane_force_kernel)
 from ffn_sim.warp_port.dcm_division_host import DivisionHost, DivisionParams
 from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
@@ -195,7 +198,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
                    use_grid: bool = True, save_frames: str | None = None,
-                   lamellipodium: bool = False, junction_switch: bool = False) -> dict:
+                   lamellipodium: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
 
@@ -330,6 +333,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt)
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
+
+    # B3 filopodia host (explicit finger protrusions; tips probe + adhere node-FACE to other
+    # cells and node-to-plane to the dish). Additive; constructed only when --filopodia.
+    filo = None
+    if filopodia:
+        filo = FilopodiaHost(cof=cof_a, n_cells=n_cells, faces=faces_a, fcell=fcell_a,
+                             z0=z0, R=R, dt=dt)
+        print(f"  [filopodia] pool={filo.n_pool}  v_poly={filo.p.v_poly*1e9:.0f}nm/s  "
+              f"L_max={filo.p.L_max*1e6:.1f}um  k_tip={filo.p.k_tip:.1e}N/m (node-FACE + node-plane)", flush=True)
 
     # M3 junction switch host (crowd-pressure cadherin→integrin clutch; latches at cadence).
     # SUPERSEDED by E1 explicit cadherin bonds — disabled whenever cadherin mode is on.
@@ -663,6 +675,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               d["actin"], d["actin_cell"], wp.int32(d["n_used"]),
                               wp.float64(lam.p.k_tether), wp.float64(lam.p.tether_cap),
                               wp.float64(lam.p.tether_radius), force_d], device=device)
+        # B3 filopodia tip adhesions (every step; tips refreshed at cadence): node-FACE pull
+        # toward a neighbour's face + node-to-plane clutch to the dish.
+        if filo is not None and do_spread and filo._dev is not None:
+            fd = filo._dev
+            if fd["n_face"] > 0:
+                wp.launch(filopodia_tip_face_force_kernel, dim=fd["n_face"],
+                          inputs=[fd["face_base"], fd["face_id"], fd["face_bary"], wp.int32(fd["n_face"]),
+                                  faces_d, pos_d, wp.float64(filo.p.k_tip), wp.float64(filo.p.force_cap),
+                                  force_d], device=device)
+            if fd["n_plane"] > 0:
+                wp.launch(filopodia_tip_plane_force_kernel, dim=fd["n_plane"],
+                          inputs=[fd["plane_base"], fd["plane_anchor"], wp.int32(fd["n_plane"]),
+                                  wp.float64(filo.p.k_tip), wp.float64(filo.p.force_cap), pos_d,
+                                  force_d], device=device)
         if implicit:
             # IMEX linearly-implicit Euler: (γ/dt·I + K_stiff)Δx = F_total(xₙ) [=force_d].
             # Grids/node_f32 were just built on xₙ above → frozen-neighbour operator. Soft drivers
@@ -824,6 +850,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             lam.update(pos_d.numpy().astype(np.float64))
             lam.upload(device)
+        # B3: extend/probe filopodia + refresh tip-adhesion device arrays at low cadence
+        if filo is not None and (s == 1 or s % filo.batch_steps == 0):
+            wp.synchronize_device(device)
+            filo.update(pos_d.numpy().astype(np.float64))
+            filo.upload(device)
         # M3: latch the crowd-pressure junction switch at low cadence; re-upload the
         # mutable per-cell cad_mult / integrin_gain only when a new cell switches
         if js is not None and s % js.cadence == 0:
@@ -1012,6 +1043,7 @@ def main():
     ap.add_argument("--settle-frames", type=int, default=0,
                     help="number of frames to capture DURING the aggregate/settle phase (shows the cube→compact-ball compaction in the montage)")
     ap.add_argument("--lamellipodium", action="store_true", help="enable the M2 per-cell lamellipodium crawl")
+    ap.add_argument("--filopodia", action="store_true", help="B3: explicit filopodia (tips probe + adhere node-FACE to other cells, node-to-plane to the dish)")
     ap.add_argument("--junction-switch", action="store_true", help="enable the M3 crowd-pressure cadherin→integrin junction switch")
     ap.add_argument("--gap", type=float, default=2.05, help="cell centre spacing in R for the spherical aggregate (2.05 = touching/compact)")
     ap.add_argument("--remesh-period", type=int, default=0, help="A1: host SWAP/SPLIT/COLLAPSE remesh every N steps (0=off); keeps edges in band → no slivers")
@@ -1069,7 +1101,7 @@ def main():
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
-        lamellipodium=args.lamellipodium, junction_switch=args.junction_switch,
+        lamellipodium=args.lamellipodium, filopodia=args.filopodia, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
