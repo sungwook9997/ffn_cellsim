@@ -43,6 +43,15 @@ class LamelParams:
     lead_frac: float = 0.0
     basal_band_factor: float = 0.3      # ×R
     seed_basal_offset: float = 0.3e-6   # m
+    # B2: node-to-plane substrate clutch. Off (legacy) → the advancing actin anchor floats at
+    # z0+seed_basal_offset (an abstract actin-bead the membrane is tethered to). On → the anchor
+    # sits ON the dish plane (z=z0): the lamellipodial protrusion's nascent adhesion GRIPS a
+    # substrate ligand at the advancing front and pulls the leading node toward it — the SAME
+    # node-to-plane geometry as the ECM integrin clutch (unified-actin-architecture). The
+    # advancing-front + tether spring are unchanged; only the anchor's z is the dish, so the
+    # traction is transmitted to the rigid substrate (node-to-plane) instead of a floating bead.
+    # (Full Pereverzev catch-slip on the lamellipodial clutch is a documented follow-up.)
+    substrate_clutch: bool = False
     k_tether: float = 4.0e-3            # N/m
     tether_cap: float = 5.0e-9          # N (5·60Pa·area_node, Gil-Redondo 2023)
     tether_radius: float = 3.0e-6       # m
@@ -91,7 +100,8 @@ class LamellipodiumHost:
         self.n_rim = int(self.rim_cells.size)
         self.n_pool = self.n_rim * self.p.pool_per_cell
 
-        self.z_basal = z0 + self.p.seed_basal_offset
+        # B2: node-to-plane clutch anchors the protrusion ON the dish (z0); legacy floats it above.
+        self.z_basal = z0 if self.p.substrate_clutch else z0 + self.p.seed_basal_offset
         self.basal_band = self.p.basal_band_factor * R
         self.catch = self.p.catch_factor * self.p.l0
         self.seed_off = self.p.seed_offset * self.p.l0

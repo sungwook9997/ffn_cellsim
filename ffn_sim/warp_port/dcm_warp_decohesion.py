@@ -198,7 +198,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
                    use_grid: bool = True, save_frames: str | None = None,
-                   lamellipodium: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
+                   lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
 
@@ -330,7 +330,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # M2 lamellipodium host (rim detection one-shot at build; advances at cadence).
     lam = None
     if lamellipodium:
-        lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt)
+        lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt,
+                                params=LamelParams(substrate_clutch=lamel_clutch))
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
 
@@ -1043,6 +1044,7 @@ def main():
     ap.add_argument("--settle-frames", type=int, default=0,
                     help="number of frames to capture DURING the aggregate/settle phase (shows the cube→compact-ball compaction in the montage)")
     ap.add_argument("--lamellipodium", action="store_true", help="enable the M2 per-cell lamellipodium crawl")
+    ap.add_argument("--lamel-clutch", action="store_true", help="B2: lamellipodium substrate adhesion as a node-to-plane clutch (anchor ON the dish z0, like the ECM clutch) instead of a floating actin bead")
     ap.add_argument("--filopodia", action="store_true", help="B3: explicit filopodia (tips probe + adhere node-FACE to other cells, node-to-plane to the dish)")
     ap.add_argument("--junction-switch", action="store_true", help="enable the M3 crowd-pressure cadherin→integrin junction switch")
     ap.add_argument("--gap", type=float, default=2.05, help="cell centre spacing in R for the spherical aggregate (2.05 = touching/compact)")
@@ -1101,7 +1103,7 @@ def main():
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
-        lamellipodium=args.lamellipodium, filopodia=args.filopodia, junction_switch=args.junction_switch,
+        lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
