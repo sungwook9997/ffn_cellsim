@@ -103,8 +103,31 @@ def _spherical_centers(n_cells: int, R: float, gap: float, mode: str = "fcc",
         # scale so the mean nearest-neighbour distance = gap·R
         d = np.sort(np.linalg.norm(c[:, None, :] - c[None, :, :], axis=-1), axis=1)[:, 1]
         centers = c * (gap * R / max(float(d.mean()), 1e-12))
+    elif mode == "sphere":
+        # ROUND + DENSE (fixes FCC-faceting AND CVT-looseness): random-close-PACK inside a BALL.
+        # The ball boundary gives a smooth spherical envelope (no FCC cuboctahedral facets); the
+        # jamming relaxation pushes every overlapping pair to the contact distance d (no CVT
+        # isolated cells). → round AND all-touching, the proper aggregate init.
+        from scipy.spatial import cKDTree
+        rng = np.random.default_rng(seed)
+        d = gap * R
+        Rb = d * (n_cells / (8.0 * 0.64)) ** (1.0 / 3.0)     # ball radius at RCP density ~0.64
+        u = rng.normal(size=(n_cells, 3)); u /= np.linalg.norm(u, axis=1, keepdims=True)
+        c = u * (rng.random(n_cells) ** (1.0 / 3.0))[:, None] * Rb
+        for _ in range(400):                                  # jam: separate overlaps, keep in ball
+            pairs = cKDTree(c).query_pairs(d, output_type="ndarray")
+            disp = np.zeros_like(c)
+            if len(pairs):
+                v = c[pairs[:, 0]] - c[pairs[:, 1]]
+                nrm = np.linalg.norm(v, axis=1, keepdims=True) + 1e-12
+                push = 0.5 * (d - nrm) * v / nrm
+                np.add.at(disp, pairs[:, 0], push); np.add.at(disp, pairs[:, 1], -push)
+            c = c + disp
+            rr = np.linalg.norm(c, axis=1, keepdims=True)     # round boundary: project back into ball
+            c = np.where(rr > Rb, c * Rb / np.maximum(rr, 1e-30), c)
+        centers = c
     else:
-        raise ValueError(f"unknown builder mode {mode!r} (cubic|fcc|voronoi)")
+        raise ValueError(f"unknown builder mode {mode!r} (cubic|fcc|voronoi|sphere)")
     return centers - centers.mean(0)
 
 
@@ -1076,7 +1099,7 @@ def main():
     ap.add_argument("--bending", action="store_true", help="B5: thin-plate biharmonic membrane bending (Helfrich-like)")
     ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
     ap.add_argument("--necrosis", action="store_true", help="C8: 3-zone depth necrosis (O2-proxy; softens core turgor, gates division to the rim)")
-    ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi"], help="D10: spheroid cell-centre packing (fcc=isotropic close-pack; voronoi=Lloyd CVT)")
+    ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi", "sphere"], help="D10: spheroid cell-centre packing (fcc=isotropic close-pack; voronoi=Lloyd CVT)")
     ap.add_argument("--integrator", default="baoab", choices=["baoab", "implicit"], help="I-opt: time integrator (implicit = IMEX linearly-implicit, unlocks larger accel-dt)")
     ap.add_argument("--accel-dt", type=float, default=None, help="I-opt: larger dt for --integrator implicit (accuracy-bound; e.g. 100× the explicit dt)")
     ap.add_argument("--cg-maxiter", type=int, default=80, help="I-opt: max CG iterations per implicit step")
