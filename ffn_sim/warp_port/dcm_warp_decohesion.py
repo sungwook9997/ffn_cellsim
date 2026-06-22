@@ -1088,6 +1088,7 @@ def main():
     ap.add_argument("--delta-rho", type=float, default=55.0, help="D7: ρ_cell−ρ_medium [kg/m³] (MCF7 ~1060 − medium ~1005; SimuCell3D Table 2)")
     ap.add_argument("--coupling", action="store_true", help="A1: re-enable the continuous node-FACE bilinear adhesion (SimuCell3D-style) so cells flatten into a real tissue (regime II); without it only sparse cadherin point-bonds adhere → round cells stay round")
     ap.add_argument("--adh-strength", type=float, default=1.0e7, help="A1: node-FACE cohesion stress [Pa] used by --coupling (DCM-aggregation-resolved lit value ~4-5e7 → clean flattened spheroids)")
+    ap.add_argument("--rep-strength", type=float, default=2.0e8, help="node-FACE contact repulsion stiffness [Pa]; soft lit value ~4e7 (MCF7 ξ̄) gives just-touching deformable contact, the stiff 2e8 default over-packs/interpenetrates")
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
@@ -1119,7 +1120,7 @@ def main():
         cad_bundle=args.cad_bundle, ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,
         pen_cap=args.pen_cap, pen_cap_frac=args.pen_cap_frac,
-        adh_strength=args.adh_strength, ecm_ligand=args.ligand_density,
+        adh_strength=args.adh_strength, rep_strength=args.rep_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
