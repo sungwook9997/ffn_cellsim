@@ -8,21 +8,50 @@ Action tags: **[FIX-SAFE]** correctness-preserving / additive / parity-gated →
 **[SURFACE-PI]** contract/mechanism/magic-number change that would invalidate prior runs → PI decides.
 **[DOC]** documentation/hygiene only.
 
+## Adversarial self-verification (workflow `wf_ad040f4c`, 4 independent skeptics)
+The Lead's own 4 headline claims were each handed to an independent agent told to REFUTE them from the
+actual code/data (this lineage is artifact-prone). Verdicts:
+- **2-cell contact FLATTENS (oblate 0.90, not rigid overlap) — HOLDS** (high). Independently confirmed:
+  one-sided 6.3% dent facing the neighbor, far pole undeformed; excluding midplane-crossers makes oblate
+  go to 0.878 (MORE flattened); PCA aspect 0.973 shortest-axis aligned to contact. Robust.
+- **M1 `min_d<c_rep` gate is LOAD-BEARING (naive removal explodes) — HOLDS** (high). Reproduced the
+  explosion (NN→6.1); built a TENT variant (decays to 0 at c_rep, no gate) that is STABLE = proves the
+  far-face firing (276 far faces, 8.2× the legit force, 93% pointing outward) is the cause; depth-clamped
+  variant ALSO explodes ⇒ the proper fix is a true inside-mesh test, not a per-face depth tweak.
+- **Decisive A/A0=1.94 was 7-cell PEELING — HOLDS** (high). 7 basal cells move 29–54µm, 93 frozen
+  (<0.5µm); frozen-93 alone give A/A0=1.016, mobile-7 alone 5.54; maxZ doesn't drop; cadherin intact.
+- **H1 double-count negligible (0.2%) — REFUTED** (high). My units error; the real ratio is ~36% (see H1).
+  Corrected above + Notion. The verification caught a genuine Lead arithmetic mistake — its purpose.
+
 ## HIGH
 
-### H1. Excluded-volume repulsion double-count — QUANTIFIED NEGLIGIBLE (downgraded HIGH→LOW) [DOC]
+### H1. Excluded-volume repulsion double-count — REAL & MATERIAL (~36%), my "negligible" was a UNITS ERROR [SURFACE-PI]
 `dcm_warp_decohesion.py::step_once` launches BOTH `cohesion_grid_kernel` (node-NODE, `:578`) and
 `contact_grid_kernel` (node-FACE, `:606`) every step with the same `rep_strength`/`c_rep`, so a junction
-node is repelled by BOTH its nearest other-cell NODE and FACE. The audit flagged this HIGH structurally.
-**Lead ADVERSARIALLY VERIFIED the MAGNITUDE** (replicated both force laws in numpy on the 2-cell 10k
-equilibrium, `/tmp/_2c_eq.npz`): node-NODE repulsion total |F| = **1.80e-8 N** vs node-FACE
-**8.55e-6 N** → the node-NODE term is **~0.2% (≈500× weaker)** of node-FACE. Reason: node-NODE is a SOFT
-linear spring `rep·A·(c_rep−d)` (the (c_rep−d)≤0.69µm factor makes it tiny) while node-FACE is a STIFF
-constant penalty `rep·area` (force_cap-bounded, hit on multiple faces). 40 junction nodes fire both, but
-the node-FACE dominates by 3 orders of magnitude. **So the double-count is real but immaterial — it does
-NOT shift the equilibrium; the 2-cell flattening / aggregation results stand.** The node-NODE cohesion
-kernel is effectively VESTIGIAL (superseded by node-FACE, contributes ~0.2%). Cleanup-only: it could be
-dropped for a small perf gain + clarity (NOT a correctness fix). No PI contract change needed.
+node is repelled by BOTH its nearest other-cell NODE and FACE.
+⚠️ **CORRECTION (adversarial-verification workflow `wf_ad040f4c`, 2026-06-23):** my first pass claimed
+node-NODE = 0.2% of node-FACE and downgraded this to negligible — **that was WRONG, a units error in my
+numpy replication.** The node-FACE contact kernel computes `fvec = r_vec·amp` with `amp = rep·area`
+(no force_cap), so the force magnitude is `min_d·rep·area` (units N) — I instead treated `amp` (units
+**N/m**, ~5.8e-4) as the force, force_cap-clamped it to 5e-8, and summed → a spurious 8.55e-6 N (280× too
+big). The verifier **ran the ACTUAL Warp kernels** on the 2-cell equilibrium: node-NODE rep |F| =
+**1.73e-8 N**, node-FACE rep |F| = **3.07e-8 N** → **ratio ≈ 56% (same order), ~36% of total junction
+repulsion is double-counted** — stable across all 3 equilibrium frames. This is **config-independent**
+(rep is cadherin-unmodulated, so present in gentle 2-cell AND the cad40/ecm167 spreading stack alike).
+**So the double-count is MATERIAL in force budget (~36%)**, but the actual EQUILIBRIUM impact is small.
+**Lead ran the proper ablation** (`scripts/h1_ablation_nodenode_rep.py`: monkeypatch the node-NODE
+cohesion kernel to a rep-stripped variant so node-FACE solely owns excluded volume; 2-cell 10k settle):
+| | NN/R | oblate | Psi | pen | deep/R |
+|---|---|---|---|---|---|
+| node-NODE rep ON (current) | 1.578 | 0.9045 | 0.956 | 0.048 | 0.047 |
+| node-NODE rep OFF (node-FACE only) | 1.543 | 0.9171 | 0.948 | 0.039 | 0.078 |
+→ removing the double-count shifts NN **−2.2%** (cells settle slightly closer), pen barely moves
+(0.048→0.039), oblate +0.013, **flattening + clean junction PRESERVED**. So: the force budget claim
+"0.2% negligible" was a UNITS-ERROR and is wrong (it's ~36%); but the EQUILIBRIUM is fairly insensitive
+(stiff penalty → ~2% position shift), so the **2-cell flattening + aggregation MORPHOLOGY conclusions
+hold** — only exact NN/pen numbers move ~2%. **SURFACE-PI** cleanup: the node-NODE cohesion kernel is
+the superseded center-line model; make it adhesion-only (node-FACE owns excluded volume) for a clean
+single-channel rep — a contract decision that re-baselines prior equilibria by ~2% (NN) / ~36% (rep force).
 
 ### H2. Adhesion DOUBLE/TRIPLE-COUNT under `--cadherin --coupling` [SURFACE-PI]
 With both flags, three attractive channels run between apposed cells: node-NODE cohesion tent + node-
@@ -99,8 +128,11 @@ The other acceleration axis remains FEWER STEPS (I4 Newton / larger stable dt).
   dead flags (`--lamel-pool-per-cell`, `--substrate-wetting`, `--settle-force`) — would fail. Prune/fix.
 - **L5 [DOC]** gamma_surf=1e-4 unanchored to MCF7 (~100× below the direct datum; default-off);
   force_cap=5e-8 may bind & silently reshape the force law.
-- **E [SURFACE-PI]** Young-Dupré triplet gate `gaps.mean()` ≡ 120° tautology (already in
-  PHASE_C_CONTACT_RESOLVED).
+- **E [SURFACE-PI]** Young-Dupré triplet gate `gaps.mean()` ≡ 120° tautology. **EMPIRICALLY PROVEN
+  by Lead**: fed 3 deliberately asymmetric / near-degenerate triplets to `measure_triplet_angle` →
+  all return **φ=120.0000°** exactly (the mean of 3 gaps around a point is always 360/3 regardless of
+  geometry). The gate passes unconditionally and measures nothing. Fix = `std(gaps)`≈0 (centroid-
+  triangle symmetry) or the real interface dihedral vs Young–Dupré `cos(φ/2)=η/2`. PI-authored gate.
 
 ## Lead disposition (overnight)
 - FIX-SAFE applied tonight (parity-gated, additive, default-off): M1 (if N=400 tunnels), L1, L4.
