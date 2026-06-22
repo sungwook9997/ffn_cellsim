@@ -49,6 +49,12 @@ class CadherinParams:
     # low-cadence host-hybrid, like remesh). Override via --cad-batch.
     batch_steps: int = 50
     seed: int = 7
+    # ×40 mesoscale FORCE bridge (sanctioned coarse-graining). A node-pair bond is a BUNDLE of
+    # ~bundle_n cadherins over the contact patch: it transmits bundle_n × the single-molecule
+    # force, but its catch-slip k_off is still evaluated at the PER-MOLECULE load F/bundle_n (the
+    # Rakshit SHAPE + f0 stay molecular). bundle_n=1 → legacy single-molecule force (back-compat).
+    # Set so a typical junction lands in KB-4.11's audited 1–10 nN/junction (LeDuc2010, Buckley2014).
+    bundle_n: float = 1.0
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 

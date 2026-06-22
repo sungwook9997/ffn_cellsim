@@ -39,6 +39,12 @@ class EcmClutchParams:
     F_s: float = 30.0e-12          # N    slip force scale
     k_off_catch: float = 0.4       # s⁻¹  k_c
     F_c: float = 7.0e-12           # N    catch force scale
+    # FA-patch FORCE bridge. A basal node-clutch is one focal-adhesion PATCH (a BUNDLE of ~bundle_n
+    # integrins), so it transmits bundle_n × the single-integrin force; its Pereverzev k_off is still
+    # evaluated at the PER-INTEGRIN load F/bundle_n (F_s, F_c stay molecular). bundle_n=1 → legacy
+    # single-integrin force (back-compat). Set so per-clutch lands in KB-2.12's audited per-FA
+    # 1–10 nN (~5 nN; Plotnikov2012, Trichet2012) and per-cell in 10–100 nN.
+    bundle_n: float = 1.0
 
 
 class EcmClutchHost:

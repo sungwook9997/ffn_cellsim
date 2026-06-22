@@ -43,7 +43,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel, scale_per_cell_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
-from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost
+from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost, EcmClutchParams
 from ffn_sim.warp_port.dcm_division_host import DivisionHost, DivisionParams
 from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
@@ -183,6 +183,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
+                   cad_bundle: float = 1.0, ecm_bundle: float = 1.0,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
@@ -345,11 +346,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         k_meso = f0 / max(rbind_meso - r0_meso, 1e-12)
         cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
-                                                     r_bind=rbind_meso, batch_steps=cad_batch))
+                                                     r_bind=rbind_meso, batch_steps=cad_batch,
+                                                     bundle_n=cad_bundle))
         coh_adh = 0.0          # cohesion/contact adhesion OFF → bonds are the sole adhesion
         print(f"  [cadherin] k_trans={cad.p.k_trans:.2e}N/m  r0={cad.p.r0_trans*1e6:.2f}um  "
               f"r_bind={cad.p.r_bind*1e6:.2f}um  k_on={cad.p.k_on:.1f}/s  batch={cad.batch_steps}  "
-              f"catch-slip f0=29.2pN @ capture limit (Rakshit, ×40 bridge)", flush=True)
+              f"bundle_n={cad_bundle:.0f} (per-bond force {29.2*cad_bundle/1000:.2f}nN; "
+              f"catch-slip f0=29.2pN @ molecular load, Rakshit ×40 bridge)", flush=True)
 
     if bending:
         print(f"  [bending] k_bend={k_bend:.2e}N/m  (biharmonic Δ²r thin-plate; resists curvature "
@@ -385,10 +388,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # the dish; Pereverzev catch-slip governs hold/release → traction-limited mechanistic spread.
     ecm = None
     if ecm_clutch:
-        ecm = EcmClutchHost(cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt, c_adh=c_adh)
+        ecm = EcmClutchHost(cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt, c_adh=c_adh,
+                            params=EcmClutchParams(bundle_n=ecm_bundle))
         print(f"  [ecm-clutch] k_fa={ecm.k_fa:.2e}N/m  engage={ecm.engage_range*1e6:.2f}um  "
-              f"k_on={ecm.p.k_on:.1f}/s  batch={ecm.fa_batch_steps}  Pereverzev F*≈7pN catch-slip "
-              f"(×40 bridge: F_s@engage-limit) — WETTING OFF", flush=True)
+              f"k_on={ecm.p.k_on:.1f}/s  batch={ecm.fa_batch_steps}  bundle_n={ecm_bundle:.0f} "
+              f"(per-FA force {30.0*ecm_bundle/1000:.2f}nN; Pereverzev F_s=30pN @ per-integrin load) "
+              f"— WETTING OFF", flush=True)
 
     # A1 REMESH (host-side, low cadence): keep every edge in [l_min, 3·l_min] so large
     # spreading never stretches a triangle into a sliver (the contact penalty ∝ A_face fails
@@ -589,7 +594,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if cad is not None and cad._dev is not None and cad._dev["n"] > 0:
             wp.launch(cadherin_bond_force_kernel, dim=cad._dev["n"],
                       inputs=[cad._dev["bonds"], wp.int32(cad._dev["n"]), pos_d,
-                              wp.float64(cad.p.k_trans), wp.float64(cad.p.r0_trans), force_d],
+                              wp.float64(cad.p.k_trans * cad.p.bundle_n), wp.float64(cad.p.r0_trans),
+                              force_d],
                       device=device)
         # substrate z-well (own-row accumulate) — pins basal nodes at z0
         if use_substrate_well:
@@ -616,7 +622,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if ecm is not None and do_spread and ecm._dev is not None and ecm._dev["n"] > 0:
             wp.launch(ecm_clutch_force_kernel, dim=ecm._dev["n"],
                       inputs=[ecm._dev["node"], ecm._dev["anchor"], wp.int32(ecm._dev["n"]),
-                              wp.float64(ecm.k_fa), pos_d, force_d], device=device)
+                              wp.float64(ecm.k_fa * ecm.p.bundle_n), pos_d, force_d], device=device)
         # M2 lamellipodium traction tether (every step; anchors refreshed at cadence)
         if lam is not None and do_spread and lam._dev is not None and lam._dev["n_lead"] > 0:
             d = lam._dev
@@ -982,6 +988,8 @@ def main():
     ap.add_argument("--cadherin", action="store_true", help="E1: explicit cadherin catch-bonds (fine-grained adhesion; replaces cohesion tent + M3 switch; de-cohesion emergent)")
     ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
     ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
+    ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
+    ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
@@ -1010,6 +1018,7 @@ def main():
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
+        cad_bundle=args.cad_bundle, ecm_bundle=args.ecm_bundle,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
