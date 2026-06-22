@@ -184,6 +184,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
                    cad_bundle: float = 1.0, ecm_bundle: float = 1.0,
+                   ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
@@ -413,7 +414,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     ecm = None
     if ecm_clutch:
         ecm = EcmClutchHost(cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt, c_adh=c_adh,
-                            params=EcmClutchParams(bundle_n=ecm_bundle))
+                            params=EcmClutchParams(bundle_n=ecm_bundle, ligand_density=ecm_ligand))
         print(f"  [ecm-clutch] k_fa={ecm.k_fa:.2e}N/m  engage={ecm.engage_range*1e6:.2f}um  "
               f"k_on={ecm.p.k_on:.1f}/s  batch={ecm.fa_batch_steps}  bundle_n={ecm_bundle:.0f} "
               f"(per-FA force {30.0*ecm_bundle/1000:.2f}nN; Pereverzev F_s=30pN @ per-integrin load) "
@@ -1018,6 +1019,7 @@ def main():
     ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
+    ap.add_argument("--ligand-density", type=float, default=1.0, help="C4: substrate ECM ligand-coating density (Bare/Pre/Lam4) — scales the clutch engagement on-rate (more ligand → more engaged FAs → more traction). 1=baseline(Bare); set per-condition to the Lam4>Pre>Bare experimental ordering (NOT tuned)")
     ap.add_argument("--gravity", action="store_true", help="D7: net gravity−buoyancy sedimentation body force (Δρ·g·v_node, derived; rests the spheroid on the dish at its physiological ~1pN/cell weight)")
     ap.add_argument("--delta-rho", type=float, default=55.0, help="D7: ρ_cell−ρ_medium [kg/m³] (MCF7 ~1060 − medium ~1005; SimuCell3D Table 2)")
     ap.add_argument("--coupling", action="store_true", help="A1: re-enable the continuous node-FACE bilinear adhesion (SimuCell3D-style) so cells flatten into a real tissue (regime II); without it only sparse cadherin point-bonds adhere → round cells stay round")
@@ -1052,7 +1054,7 @@ def main():
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
         cad_bundle=args.cad_bundle, ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,
-        adh_strength=args.adh_strength,
+        adh_strength=args.adh_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,

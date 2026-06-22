@@ -45,6 +45,12 @@ class EcmClutchParams:
     # single-integrin force (back-compat). Set so per-clutch lands in KB-2.12's audited per-FA
     # 1–10 nN (~5 nN; Plotnikov2012, Trichet2012) and per-cell in 10–100 nN.
     bundle_n: float = 1.0
+    # C4: substrate ligand-coating density (Bare/Pre/Lam4). More ECM ligand → a basal node finds a
+    # binding site faster → higher effective engagement on-rate. Scales k_on (engagement), so the
+    # steady-state engaged-clutch count / traction rises with ligand density. ligand_density=1 =
+    # baseline (Bare). Per-condition values are EXPERIMENT-anchored to the Lam4>Pre>Bare ordering
+    # (the platform's PI MCF7-on-pV4D4/col-I conditions) — NOT tuned to a spreading outcome.
+    ligand_density: float = 1.0
 
 
 class EcmClutchHost:
@@ -110,7 +116,8 @@ class EcmClutchHost:
         basal = (cof >= 0) & (np.abs(P[:, 2] - self.z0) <= self.basal_band) & (~engaged)
         cand = np.flatnonzero(basal)
         if cand.size:
-            p_on = 1.0 - np.exp(-self.p.k_on * self.dt_batch)
+            # C4: engagement on-rate ∝ ligand density (more ligand sites → faster binding)
+            p_on = 1.0 - np.exp(-self.p.k_on * self.p.ligand_density * self.dt_batch)
             fire = cand[self._rng.random(cand.size) < p_on]
             if fire.size:
                 sites = P[fire].copy()
