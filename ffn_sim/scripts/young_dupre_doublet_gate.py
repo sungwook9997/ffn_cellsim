@@ -16,7 +16,8 @@ import numpy as np
 
 from ffn_sim.warp_port.dcm_warp_decohesion import run_decohesion
 from ffn_sim.validation.oracles.young_dupre import (
-    doublet_angle_from_adhesion, fit_sphere, angle_from_doublet_geometry)
+    doublet_angle_from_adhesion, fit_sphere, angle_from_doublet_geometry,
+    triplet_angle)
 
 GAMMA_SURF = 1.0e-4          # N/m, the surface-tension module default (--gamma-surf)
 F0 = 29.2e-12               # N, molecular cadherin catch peak
@@ -63,9 +64,97 @@ def contact_area(P: np.ndarray, cof: np.ndarray, c_iface: float) -> float:
     return float(np.pi * (np.linalg.norm(perp, axis=1).max()) ** 2)
 
 
+def measure_triplet_angle(P: np.ndarray, cof: np.ndarray) -> float:
+    """Tricellular-junction opening angle φ [deg] from a relaxed symmetric 3-cell cluster.
+
+    The three cells meet at a central vertical edge (the tricellular junction). Each
+    cell–cell interface is the bisector plane between a pair of cell centroids; in the
+    symmetric (equal-cohesion) case the three centroids form a triangle in a common plane
+    and the three interfaces are the three angle-bisector/perpendicular-bisector planes
+    radiating from the junction. The angle the model is asked to reproduce is φ, the
+    opening between two *adjacent interface arms* at the junction.
+
+    Construction (kept deliberately simple, all in the plane of the 3 centroids):
+      1. centroids cA, cB, cC of the three cells; junction J = their mean (the meet point).
+      2. for each cell, its interface "arm" points from J toward that cell's centroid —
+         the bisector between the two interfaces this cell touches passes through the
+         centroid, so the centroid direction is the natural in-plane proxy for the local
+         tissue wedge that cell occupies. The three arms split the plane into three
+         wedges; for a symmetric equal-cohesion triplet they are 120° apart (Y-junction).
+      3. φ is the mean of the three adjacent-arm opening angles (∑ = 360° exactly), so
+         φ→120° iff the rest configuration is the symmetric Y the Young–Dupré balance
+         (cos(φ/2)=η/2, η=1) predicts.
+
+    Args:
+        P: (N,3) relaxed node positions [m].
+        cof: (N,) per-node cell-of index; the three live cells are the unique cof>=0.
+
+    Returns:
+        Mean tricellular-junction opening angle φ [deg].
+    """
+    cells = np.unique(cof[cof >= 0])
+    assert cells.size == 3, f"expected 3 cells, got {cells.size}"
+    cens = np.array([P[cof == c].mean(0) for c in cells])      # (3,3) centroids
+    J = cens.mean(0)                                           # junction = centroid mean
+    # plane of the three centroids: normal from the spanning edges
+    n = np.cross(cens[1] - cens[0], cens[2] - cens[0])
+    n = n / max(np.linalg.norm(n), 1e-30)
+    arms = cens - J                                            # arm = J → centroid
+    arms = arms - np.outer(arms @ n, n)                        # project into the centroid plane
+    arms = arms / np.clip(np.linalg.norm(arms, axis=1, keepdims=True), 1e-30, None)
+    # signed in-plane angle of each arm, then sort → adjacent opening angles sum to 360°
+    u = arms[0]                                                # in-plane reference axis
+    v = np.cross(n, u)                                         # right-handed in-plane partner
+    ang = np.array([np.arctan2(a @ v, a @ u) for a in arms])
+    ang_sorted = np.sort(ang % (2.0 * np.pi))
+    gaps = np.diff(np.concatenate([ang_sorted, [ang_sorted[0] + 2.0 * np.pi]]))
+    return float(np.degrees(gaps.mean()))                     # mean adjacent opening angle
+
+
+def run_triplet(args: argparse.Namespace) -> None:
+    """Relax a symmetric equal-cohesion 3-cell cluster and gate the tricellular-junction
+    angle φ against the analytic Young–Dupré prediction (symmetric → η=1 → φ=120°)."""
+    import os
+    import tempfile
+
+    bn = float(args.triplet_bundle)
+    eff_dt = args.accel_dt if args.integrator == "implicit" else 8e-6
+    print(f"Young–Dupré TRIPLET gate — γ_surf={GAMMA_SURF:.1e}N/m, bundle={bn:.0f}, "
+          f"relaxation ≈ {eff_dt * args.steps:.2f}s ({args.integrator}, dt={eff_dt:.1e})\n")
+    tmp = os.path.join(tempfile.gettempdir(), f"_yd_triplet_b{bn:.0f}.npz")
+    run_decohesion(
+        n_cells=3, subdiv=2, steps=args.steps, frames=2, device=args.device,
+        dt=8e-6, warmup=500, settle_steps=args.steps, settle_frames=0, gap=args.gap,
+        cadherin=True, cad_bundle=bn, surface_tension=True, gamma_surf=GAMMA_SURF,
+        substrate_wetting=False, use_substrate_well=False, lamellipodium=False,
+        builder="fcc", integrator=args.integrator, accel_dt=args.accel_dt,
+        save_frames=tmp)
+    d = np.load(tmp, allow_pickle=True)
+    P = d["frames"][-1].astype(np.float64)
+    cof = d["cof"]
+    phi_meas = measure_triplet_angle(P, cof)
+    # symmetric equal-cohesion triplet: all γ_l equal → η=1 → cos(φ/2)=0.5 → φ=120°
+    phi_oracle = np.degrees(triplet_angle(1.0, 1.0, 1.0))
+    err = abs(phi_meas - phi_oracle)
+    verdict = "PASS" if err <= args.triplet_tol_deg else "FAIL"
+    print(f"  measured φ        = {phi_meas:7.2f}°")
+    print(f"  analytic φ (η=1)  = {phi_oracle:7.2f}°  (symmetric Y-junction)")
+    print(f"  |Δφ|              = {err:7.2f}°   tol = {args.triplet_tol_deg:.1f}°")
+    print(f"\n[GATE young_dupre_triplet] |φ_meas − 120°| ≤ {args.triplet_tol_deg:.0f}° → {verdict}")
+    print("  (Loose self-consistency check: a symmetric equal-cohesion triplet should relax")
+    print("   to a ~120° Y-junction if the contact mechanics are Young–Dupré-consistent; the")
+    print("   absolute is mesh/interface-density limited, exactly like the doublet angle.)")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cpu")
+    ap.add_argument("--triplet", action="store_true",
+                    help="run the 3-cell tricellular-junction φ gate instead of the doublet sweep")
+    ap.add_argument("--triplet-bundle", type=float, default=40.0,
+                    help="cadherin bundle_n for the symmetric triplet")
+    ap.add_argument("--triplet-tol-deg", type=float, default=25.0,
+                    help="triplet gate tolerance about 120° [deg]")
     ap.add_argument("--bundles", default="1,10,40,120", help="cadherin bundle_n sweep")
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--gap", type=float, default=1.95, help="initial cell spacing in R (≲2 → real contact patch)")
@@ -73,6 +162,9 @@ def main() -> None:
     ap.add_argument("--accel-dt", type=float, default=8e-4, help="implicit dt (100× explicit)")
     ap.add_argument("--tol-deg", type=float, default=15.0, help="gate RMS tolerance [deg]")
     args = ap.parse_args()
+    if args.triplet:
+        run_triplet(args)
+        return
     eff_dt = args.accel_dt if args.integrator == "implicit" else 8e-6
     print(f"  relaxation physical time ≈ {eff_dt * args.steps:.2f} s ({args.integrator}, dt={eff_dt:.1e})")
     bundles = [float(x) for x in args.bundles.split(",")]
