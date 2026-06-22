@@ -3,13 +3,27 @@
 Continues `PHASE_C_SESSION_HANDOFF_2026-06-22.md`. Resolves its two open questions.
 Branch `h7/compartment-platform`. Engine: Warp DCM, A5000 (gbook).
 
-## Headline
+## ⚠️ HEADLINE CORRECTED (2026-06-22, after per-cell + adversarial audit) — THIS RUN WAS NOT SPREADING
+
+**RETRACTED:** the original headline below claimed "the proxy-free spheroid DOES spread (ii),
+A/A0 → 1.94." That was WRONG — re-derived from `n100_implicit_decisive.npz`: **exactly 7 cells
+move** (all in the basal layer at z0≈7.5µm; radial displacement 29.6–54.1µm = peeling out as
+spokes), the **other 93 cells are frozen (median 0.44µm)**, and **maxZ holds 80.2→80.6µm (no
+flattening)**. So A/A0=1.94 is a **7-cell basal-rim PEELING artifact**, not collective spread.
+The cohesion-bundle fix then stops the peeling and A/A0 only reaches ~1.05 (modest, cohesive).
+**CORRECT verdict: the proxy-free mechanistic stack does NOT collectively spread — the earlier
+"does not spread / COMPACTS" finding STANDS.** (See `cohesion_fix_peeling_vs_cohesive.png`,
+`A1_actual_cells_3d.png`, and `PHASE_C_SPHEROID_AGGREGATION_RESEARCH_2026-06-22.md`.) The implicit
+accelerator + the per-cell diagnostic are still valid; only the spread conclusion is retracted.
+
+<details><summary>Original (WRONG) headline — kept for the record</summary>
 
 **The fully-mechanistic (proxy-free) spheroid DOES spread — answer (ii) slow-transient,
 not (i) no-spread-equilibrium. A/A0 climbs 1.0 → 1.94 over T≈3–18 s of physical time and
 plateaus. The earlier "A/A0 = 1.001 FLAT" headline was a TIMESCALE ARTIFACT** — the explicit
 production only reached T_spread ≈ 0.96 s, far below the minutes-scale onset of lamellipodial
 spreading. Reaching the decisive horizon required the implicit accelerator.
+</details>
 
 ## 1. Implicit driver was GPU-broken — fixed (commit 917e51d)
 
