@@ -921,7 +921,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if cad is not None:
         out["cadherin_bonds"] = {"n_bonds_final": cad.n_bonds, "n_formed": cad.n_formed,
                                  "n_broken": cad.n_broken, "k_trans": cad.p.k_trans,
-                                 "r0_trans": cad.p.r0_trans, "k_on": cad.p.k_on,
+                                 "r0_trans": cad.p.r0_trans, "r_bind": cad.p.r_bind,
+                                 "bundle_n": cad.p.bundle_n, "k_on": cad.p.k_on,
                                  "batch_steps": cad.batch_steps}
     if necro is not None:
         out["necrosis_stats"] = {**necro.counts(), "d_prolif_um": necro.p.d_prolif_um,
