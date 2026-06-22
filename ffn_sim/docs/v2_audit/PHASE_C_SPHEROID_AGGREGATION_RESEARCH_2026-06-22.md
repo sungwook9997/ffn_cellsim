@@ -65,6 +65,29 @@ together = what real biology does too, prong B; round + all-touching):
 - REFUTED: "RCP is the gold-standard sim init" — no single gold standard exists; init is 2nd-order.
 - REFUTED: "free-space/high-drag prevents equilibrium" — drag rescales time only.
 
+## ⚠️ UPDATE 2026-06-23 — the "soft rep" recommendation was TESTED and is WRONG for Warp; FCC+stiff-rep is correct
+Ran the recommended recipe (N=100, soft rep 4e7, gapped 2.3, long settle) + a clean 2-cell contact
+calibration. Findings that REVISE the research above:
+- **Cohesion CLOSES gaps** (the voronoi problem): N=100 went 33 isolated → 0 isolated, 100/100
+  touching. Cohesion-driven aggregation (NOT voronoi CVT even-spacing) is the right paradigm. ✓
+- **BUT "soft rep → just-touching" is FALSE in Warp.** 2-cell calibration (gap 2.05, in range,
+  adh 5e7): equilibrium centre distance **NN = 1.72R independent of rep** (4e7…5e8); only the
+  node-level interpenetration `pen_frac` varies — **soft rep 4e7 → pen 0.22 (messy poke-through),
+  stiff rep 2e8 → pen 0.05 (clean), 5e8 → 0.02.** So the OLD's V/V0 difference is NOT reproduced
+  by soft rep; soft rep makes contact WORSE (the N=100 repro G2-FAILed at pen, the PI flagged it
+  looks worse than FCC).
+- **NN < 2R is NOT interpenetration — it is correct deformable-cell contact FLATTENING** (centres
+  come closer as cells flatten into a junction; real epithelial polyhedra). The session's earlier
+  "rigid marbles / interpenetration" alarms were a MISREAD of flattening; pen_frac is the true
+  interpenetration measure and it is LOW at the stiff-rep FCC default.
+- **Net: FCC + stiff rep (the existing default) gives clean flattened junctions, all-touching, 0
+  isolated — it was correct all along.** The voronoi/sphere/soft-rep detours were all worse. The
+  remaining "not round" is small-N + cell-scale bumpiness (partly physical); roundness emerges at
+  N≥400 (curvature averaging — the one research claim the data supports). The V/V0=1.000-vs-1.12
+  "rigidity" framing was wrong: V/V0=1.000 is volume conservation, not rigidity; the cells deform.
+- **Standing recommendation:** keep FCC + stiff rep; avoid voronoi (gaps); validate at production
+  N=400 (the real "is it a round contact spheroid" test). Do NOT switch to soft rep.
+
 ## First experiment
 Re-run the OLD recipe on the WARP engine: N=400, gapped (2.3), rep 4e7 / adh 5e7, γ ON (lit),
 remesh ON, implicit, full settle → measure V/V0 (must →~1.12), asphericity (→~0.01), contact
