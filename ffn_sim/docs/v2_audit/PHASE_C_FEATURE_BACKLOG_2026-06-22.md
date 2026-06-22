@@ -73,6 +73,27 @@ Fix = SimuCell3D continuous node-FACE adhesion. (You can't spread a bag of marbl
 b0344b9 bundle FORCE fix (cad40/ecm167, KB-anchored, peeling→cohesive) · 4712693+4a73695 Young-Dupré
 oracle+gate (PASS) · 567658e spread_eval tooling · b6b0a8c D7 gravity. (A1 coupling staged, not committed.)
 
+## ✅ ALL 8 FEATURES COMMITTED (2026-06-22)
+- D7 gravity/buoyancy `b6b0a8c` · A1 node-FACE coupling `1e39a04` (+actual-cells viz `b0dfbc9`)
+- C5 ECM mechano-feedback `fef5cb8` · E triplet+R-sweep `68a22a6` · C4 ligand-density `76f4817`
+- D8 pen displacement cap `1e69e2b` · B3 filopodia `d5e593d` · B2 lamellipodium substrate-clutch `a1b92b7`
+All GPU-resident Warp, additive/default-off (back-compat), lit/KB-anchored (no outcome-tuning).
+New CLI flags: --coupling --adh-strength --gravity --delta-rho --ligand-density --pen-cap-frac
+--no-pen-cap --filopodia --lamel-clutch. New modules: dcm_coupling_host.py (node-NODE, SUPERSEDED
+by A1's node-FACE re-enable — can delete), dcm_filopodia_{host,warp}.py.
+
+### Documented FOLLOW-UPS (not blocking; surface to PI)
+- A1 de-cohesion reconciliation: layered (node-face geometric + cadherin catch-slip) → proper =
+  modulate node-face ω by the cadherin catch-bond state (node-face geometry + catch-slip kinetics).
+- A1 flattening is REAL but MODEST at lit adh (Ψ 0.989→0.956 at N=13; N=48 interior-cell test
+  running to judge proper regime-II — PI flagged N=13 too small vs SimuCell3D).
+- D8: validate pen 1.3→low on the N=100 strong-force production config (small tests have pen=0).
+- B2: full Pereverzev catch-slip on the lamellipodial clutch (v1 = anchor on dish plane only).
+- B3: tip-adhesion stiffness/cap/detach PROVISIONAL (no KB datum).
+- C5: needs the deformable/3D substrate (C6 explicit Mikado ECM Warp port) to be meaningful.
+- Implicit accelerator ~2-3× net (vs the old native 44× BAOAB); host-hybrid binders (cadherin/
+  ecm/lamel KDTree at cadence) are the remaining GPU-main port targets.
+
 ## NEXT (resume order)
 1. Read A1 lit-adh result (baveae8vy task) → if Ψ→~0.9, COMMIT A1 + viz montage. Else report limit.
 2. Review + commit C5 (subagent, dcm_substrate_warp.py) and E (subagent, gate+rsweep).
