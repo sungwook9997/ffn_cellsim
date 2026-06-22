@@ -49,7 +49,7 @@ from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
-from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active
+from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 
 wp.init()
 
@@ -186,6 +186,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cad_bundle: float = 1.0, ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
+                   pen_cap: bool = True, pen_cap_frac: float = 1.0,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
@@ -671,7 +672,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                 maxiter=cg_maxiter, device=device)
             # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
             # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
-            wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d, cof_d], device=device)
+            if pen_cap:        # D8: clamp each node's implicit step to the contact-shell scale
+                wp.launch(_vaxpy_active_capped, dim=N,
+                          inputs=[pos_d, dx_d, cof_d, wp.float64(pen_cap_frac * c_rep)], device=device)
+            else:
+                wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d, cof_d], device=device)
         else:
             wp.launch(_bd_step, dim=N,
                       inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
@@ -1020,6 +1025,8 @@ def main():
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
     ap.add_argument("--ligand-density", type=float, default=1.0, help="C4: substrate ECM ligand-coating density (Bare/Pre/Lam4) — scales the clutch engagement on-rate (more ligand → more engaged FAs → more traction). 1=baseline(Bare); set per-condition to the Lam4>Pre>Bare experimental ordering (NOT tuned)")
+    ap.add_argument("--no-pen-cap", dest="pen_cap", action="store_false", help="D8: disable the implicit per-node displacement cap (= the contact-shell clamp that stops frozen-grid tunneling/interpenetration). On by default")
+    ap.add_argument("--pen-cap-frac", type=float, default=1.0, help="D8: implicit step cap = frac·c_rep (contact-shell scale; geometric)")
     ap.add_argument("--gravity", action="store_true", help="D7: net gravity−buoyancy sedimentation body force (Δρ·g·v_node, derived; rests the spheroid on the dish at its physiological ~1pN/cell weight)")
     ap.add_argument("--delta-rho", type=float, default=55.0, help="D7: ρ_cell−ρ_medium [kg/m³] (MCF7 ~1060 − medium ~1005; SimuCell3D Table 2)")
     ap.add_argument("--coupling", action="store_true", help="A1: re-enable the continuous node-FACE bilinear adhesion (SimuCell3D-style) so cells flatten into a real tissue (regime II); without it only sparse cadherin point-bonds adhere → round cells stay round")
@@ -1054,6 +1061,7 @@ def main():
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
         cad_bundle=args.cad_bundle, ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,
+        pen_cap=args.pen_cap, pen_cap_frac=args.pen_cap_frac,
         adh_strength=args.adh_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,

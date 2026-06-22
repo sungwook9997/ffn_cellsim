@@ -110,6 +110,23 @@ def _vaxpy_active(y: wp.array(dtype=wp.vec3d), alpha: wp.float64, x: wp.array(dt
     if cof[i] >= wp.int32(0):
         y[i] = y[i] + alpha * x[i]
 
+
+@wp.kernel
+def _vaxpy_active_capped(y: wp.array(dtype=wp.vec3d), x: wp.array(dtype=wp.vec3d),
+                         cof: wp.array(dtype=wp.int32), cap: wp.float64):
+    """D8: y += Δx for LIVE nodes, but with each node's step clamped to ‖Δx‖ ≤ cap. The
+    frozen-grid implicit step evaluates contact on xₙ, so a node solved to move > the thin
+    contact shell can TUNNEL through a face in one big step (the pen-runaway). Clamping the
+    per-node displacement to the contact-shell scale (cap = c_rep, geometric — not tuned)
+    means no node can cross the shell un-checked; the residual motion is taken next step."""
+    i = wp.tid()
+    if cof[i] >= wp.int32(0):
+        dx = x[i]
+        n = wp.length(dx)
+        if n > cap and n > wp.float64(0.0):
+            dx = dx * (cap / n)
+        y[i] = y[i] + dx
+
 @wp.kernel
 def _operator(out: wp.array(dtype=wp.vec3d), a: wp.float64, v: wp.array(dtype=wp.vec3d),
               Fp: wp.array(dtype=wp.vec3d), Fx: wp.array(dtype=wp.vec3d), inv_s: wp.float64):
