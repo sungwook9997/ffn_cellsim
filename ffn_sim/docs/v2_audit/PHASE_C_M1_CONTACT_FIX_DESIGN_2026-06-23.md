@@ -109,8 +109,34 @@ collision detection so no node crosses a face within a step. This is the only on
 that is simultaneously non-tunnelling, bounded-in-practice (implicit), and strong enough to beat the
 bundle. **Scoped to PI as a contact-mechanics task (ref: Li et al. IPC, SIGGRAPH 2020).**
 
+## Fifth data point — naive IPC-barrier KERNEL also fails (pen→69): a barrier force ≠ the IPC METHOD
+Prototyped the recommended log-barrier as a drop-in nearest-face kernel (barrier `rep·area·(c_rep/gap−1)`
+→∞ as gap→0 for outside nodes + a strong recovery for inside nodes, in the implicit operator;
+d_hat=c_rep, kappa=rep, both derived). On the cadherin ×40 bundle (N=12): **pen 2.92 → 69.3, vv0 → 0.86
+(BLOWS UP).** Why: the cells START overlapping (pen high) so most contact nodes are already INSIDE
+(gap<0), where the barrier is undefined and the "recovery" injects huge ejection forces; and the →∞
+barrier's JVP is too stiff for the matrix-free CG (guards return bad steps). **A barrier FORCE in a kernel
+is NOT the IPC METHOD** — IPC's whole point is the **CCD-filtered line search that GUARANTEES gap stays
+> 0 every step** (so the barrier is never evaluated at gap≤0), plus the barrier's exact gradient/Hessian
+in a filtered Newton solve. Without CCD the barrier is worse than the penalty.
+
+## ⭐⭐ Exhaustive conclusion — 5 prototypes, the per-face/kernel framework CANNOT solve M1
+| prototype | result |
+|---|---|
+| linear unbounded (drop c_rep cap) | DIVERGES (far-face explosion NN→6.1) |
+| nearest-face unbounded | DIVERGES (vv0→175) |
+| nearest-face saturated cap | STABLE but TOO WEAK (pen 2.9→2.9) |
+| stiffer rep (sweep) | NO drop (pen 2.9→3.6) + diverges at 5e8/2e9 |
+| naive IPC barrier kernel | BLOWS UP (pen→69, no CCD) |
+**No kernel-level contact law in the penalty/barrier-force family solves it.** The fix is the FULL IPC
+method — **CCD-filtered line search (guarantees no penetration) + barrier energy + filtered Newton** — a
+real contact-mechanics implementation (Li et al., *Incremental Potential Contact*, SIGGRAPH 2020),
+GPU-portable but a genuine project, NOT a kernel swap. This is the definitive scoping for PI: do not spend
+more effort on penalty/barrier kernel variants; the path is a proper IPC (or a constraint-based contact
+like SimuCell3D's own relocation-to-average with a hard non-penetration constraint).
+
 ## Recommendation (honest)
-**Option B is REFUTED, the saturating cap is too weak — do not pursue either simple-penalty path.** The M1 fix is harder than any of
+**All 5 simple-contact prototypes REFUTED — the fix is the full IPC method (CCD + barrier + Newton).** The M1 fix is harder than any of
 the three sketched options alone: it requires Option A's inside test + a bounded (non-linear, saturating)
 barrier + implicit treatment. Until then the per-face penalty (with its tunnelling) is the least-bad
 option, and the standing fact is: **at the lit cohesion strength the contact either tunnels (capped) or
