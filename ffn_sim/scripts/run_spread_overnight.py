@@ -26,6 +26,10 @@ def main():
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--tag", default="n100_proxyfree_spread")
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--ipc", action="store_true",
+                    help="M1: use IPC node-face contact (barrier+CCD) instead of the capped penalty — "
+                         "the decisive validation that the strong cadherin/ecm bundle no longer tunnels "
+                         "(penalty gave pen 3.1; IPC target pen<0.3, V/V0 stable, A/A0 unconfounded)")
     a = ap.parse_args()
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
@@ -38,6 +42,7 @@ def main():
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=False,   # NO proxy
         builder="fcc", integrator="implicit", accel_dt=8e-4,
+        ipc=a.ipc,
         save_frames=npz)
     dt = time.time() - t0
     rec = {"tag": a.tag, "n": a.n, "steps": a.steps, "elapsed_s": round(dt, 1),
