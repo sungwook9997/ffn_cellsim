@@ -84,6 +84,17 @@ It cures the divergence (vv0=1.0, no blow-up) but **does NOT reduce the penetrat
 a constant-capped force can't out-push a stronger constant force — the node equilibrates deep where the
 ×40 bundle (~7nN) balances the capped contact (`rep·area·c_rep`); deeper penetration feels no extra push.
 
+## Fourth data point — can stiffer `rep` salvage the per-face penalty? NO (rep-sweep)
+Swept `rep_strength` on the cadherin ×40 bundle (N=12); pen does NOT drop, and stiff values diverge:
+| rep | 2e8 | 5e8 | 1e9 | 2e9 |
+|---|---|---|---|---|
+| pen_final | 2.92 | 2.82 | 3.58 | 3.61 |
+| vv0 | 1.00 | **7.2 (diverge)** | 1.00 | **39.3 (diverge)** |
+Stiffer rep does NOT reduce penetration (pen 2.9→3.6, slightly UP) and at 5e8/2e9 it DIVERGES. Why: the
+deep nodes that cause the pen are PAST c_rep, where the force is ZERO regardless of rep (the tunnelling);
+raising rep only stiffens the shallow shell → explicit-step blow-up. **So the per-face penalty cannot be
+salvaged by stiffness tuning — the fix must be a force that GROWS at depth, i.e. the IPC barrier.**
+
 ## ⭐ The three prototypes BRACKET the fix space → IPC log-barrier is the answer
 | contact force vs penetration depth | result |
 |---|---|
