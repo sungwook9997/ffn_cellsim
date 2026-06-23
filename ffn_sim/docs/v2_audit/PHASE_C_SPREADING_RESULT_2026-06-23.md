@@ -52,6 +52,24 @@ Lowering the bundle to make pen pass would be outcome-tuning a derived param (fo
    is "no collective spread" an artifact-free verdict. Until then: COMPACTS-no-spread holds, with the
    contact-confound caveat explicit.
 
+## Disentangle control — cadherin OFF, ecm-clutch ×167 + lamellipodium full traction (gentle node-face cohesion)
+To separate "no spread" from the cadherin-bundle contact confound, re-ran with **NO cadherin bundle**
+(cohesion = the gentle node-face adh5e7 tent, which holds N=400 at pen 0.12) + FULL traction
+(ecm ×167 + lamellipodium). Trajectory (killed at 55%/step 8778 — the trend is monotone + conclusive):
+| step | 266 | 2660 | 5320 | 7980 | 8778 |
+|---|---|---|---|---|---|
+| A/A0 | 0.997 | 0.965 | 0.929 | 0.904 | **0.897** |
+| pen | 0.00 | 2.80 | 2.06 | 2.68 | 2.63 (peak 3.23) |
+**Two decisive conclusions:**
+1. **No-spread is ROBUST / STRUCTURAL** — with the cadherin bundle entirely removed, A/A0 still **monotone
+   COMPACTS** 0.997→0.897 (never spreads; even cleaner than the cadherin run's late rim-creep to 1.04).
+   So "no collective spread" is NOT a cadherin/contact artifact — it holds across cohesion mechanisms,
+   confirming the Layer-2 fine-grained-single-cell structural-limit conclusion.
+2. **The M1 contact failure is GENERAL, not cadherin-specific** — pen rises to 2.6–3.2 from the **ecm ×167
+   traction ALONE** (no cadherin). So ANY strong mechanistic bundle (cell-cell OR cell-substrate) breaks
+   the per-face contact. The bind is fundamental: every active mechanistic force strong enough to drive
+   a real process (cohesion, traction) overwhelms the per-face penalty → M1/IPC is required regardless.
+
 ## Figures
 - `n100_proxyfree_spread_montage.png` — top-down (compact, no expansion) + side (maxZ holds, no pancake), 8 frames.
 - `n100_proxyfree_spread_traj.png` — A/A0 dip→1.04, maxZ flat, and pen→3.1 (the contact-failure story).
