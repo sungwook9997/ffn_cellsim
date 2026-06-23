@@ -113,6 +113,13 @@ packing. **The node-FACE contact produces a proper round, all-touching, flattene
 N=400** — definitively closing the "rigid sphere overlap" alarm at scale (it was wrong at 2-cell AND at
 N=400). Roundness EMERGES at N=400 (asph 0.0003) = the curvature-averaging the research predicted.
 
+**Roundness-vs-N (N=200 confirms the trend):** N=200 aggregation (8000-settle, same config) → asph
+**8.3e-5**, aniso 1.01, isolated 0, per-cell Ψ 0.954, contact 0.78, pen 0.13 (G2 PASS), deep_pen 0.18R —
+i.e. equally round + all-touching + flattened (asph even smaller than N=400's, within seed noise; both
+≪1e-3). **So the aggregation contact produces a clean round spheroid robustly across N=200–400** — the
+contact works for aggregation at every scale tested; only the strong-bundle de-cohesion regime fails
+(M1). Fig `n200_roundness.png`.
+
 ⭐ **Key distinction the two runs draw:** gentle aggregation (adh 5e7) → contact HOLDS (pen 0.12) even at
 N=400; the strong cadherin ×40 bundle (spreading/de-cohesion regime) → contact FAILS (pen 3.1, see
 `PHASE_C_SPREADING_RESULT`). **The M1 tunnelling is FORCE-MAGNITUDE-driven, not N-driven** — the contact
