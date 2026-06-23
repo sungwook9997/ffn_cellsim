@@ -349,11 +349,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # self-test uses con_q + 3·mean_edge; mirror it here. The activation gap d̂ is also enlarged
     # (c_rep=0.30·me is too tight vs big accel-dt steps) so the barrier engages BEFORE a node is
     # buried in one jump. Both are numerical-correctness levers (not outcome-tuning).
-    ipc_repel_q = float(con_q + 3.0 * mean_edge)
-    # d̂ reverted to c_rep: enlarging it to 1·mean_edge made the barrier act over a 3× wider range with
-    # the same κ → huge forces → cfl 55, bonds 3139→142, pen worsened to 4.0 (n100 diverged). The
-    # repel_q query-radius fix is the safe lever (only the NEAREST face feeds the barrier, so a larger
-    # search radius cannot add force — it only RETAINS a deep entry face). Keep d̂ at the derived c_rep.
+    # repel_q query-radius enlargement REFUTED by n100 data: con_q+3·me gave pen_final 2.20 (WORSE than
+    # con_q's 1.80) and 5× slower (61 min) — so entry-face-loss was NOT the bottleneck (the persistent
+    # penetration is the FEASIBILIZATION equilibrium of already-inside nodes under the strong bundle,
+    # which a larger search radius cannot touch). Reverted to con_q (the proven-best, fastest IPC config).
+    # d̂ likewise reverted to c_rep (enlarging to 1·me diverged: cfl 55, bonds 3139→142, pen 4.0).
+    ipc_repel_q = float(con_q)
     ipc_dhat = float(c_rep)
     grid_q = ipc_repel_q if ipc else con_q              # the FACE grid must be built >= the largest query radius
     node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
