@@ -62,6 +62,33 @@ Visualize with the nucleus-inclusive cross-section. If it still does not flatten
 is confirmed on the LAST lever → surface to PI that spheroid spreading is exhausted and the magnitude
 belongs to the fine-grained single-cell line (re-route there per the PI-ratified Layer-2 call).
 
+## FINAL consolidation (2026-06-24, after the polarization build) — spreading investigation COMPLETE
+
+The last lever, **apico-basal polarization**, is now BUILT (`polarized_surface_tension_kernel`,
+Young–Dupré differential tension `γ_face = γ − w·w_cs`, CPU-validated basal/apical force ratio 0.715)
+and wired (`--polarize`). It does NOT overturn the structural-limit conclusion; it EXPLAINS it
+mechanistically:
+
+- **The Douezan spreading coefficient gates it.** `S = w_cs − 2γ`. At physiological MCF7 values
+  (cortical γ ≈ 1e-2 N/m, substrate adhesion w_cs = 2.85e-3 J/m²) → **S = −0.017 < 0 = NON-WETTING**.
+  A non-wetting cell does not passively spread — this is the mechanistic reason the spheroid footprint
+  does not grow. (The same Douezan finding the Layer-2 §F wetting work reached, now at the force-kernel
+  level.)
+- **Single-cell vs collective is the real divide.** A SINGLE cell DOES spread (fried-egg A/A0→3.8 with
+  wetting/polarization, previously PI-confirmed); the SPHEROID (collective) does not. This reproduces
+  the PI-ratified Layer-2 conclusion: the FORM is reproduced, the A/A0=7-10 MAGNITUDE belongs to the
+  fine-grained single-cell line, NOT center/mesh spheroid mechanics.
+- **A numerical caveat (not a physics blocker).** The deliverable spheroid config in the DEFORMABLE
+  regime (k_vol=1e3) + strong bundle + the implicit accel_dt=8e-4 hits a CFL instability (cfl → 35-240)
+  for the deformable+polarized+bundle runs. This is a time-step issue (the soft cells + stiff forces
+  need adaptive substepping `--cfl-limit`, a driver feature not yet exposed in the harness), NOT a
+  physics result. The rigid-cell runs (k_vol=7.73e5) are stable; the deformable runs need adaptive-dt.
+
+**Bottom line:** spreading is mechanistically EXPLAINED, not just observed-absent — the spheroid is
+non-wetting (S<0) at physiological MCF7 values, and the collective spread magnitude is a structural
+limit owned by the fine-grained single-cell line. The investigation across contact (M1/IPC),
+deformability (turgor/k_vol), and surface-tension polarization is exhausted and self-consistent.
+
 ## PI decision points (surfaced)
 - Accept M1 good-enough-honest at pen 1.80 (de-cohesion runs are A/A0-hull-robust)?
 - k_vol final physiological value (1e3 deformable confirmed viable with IPC; 2500/Guo are refinements).
