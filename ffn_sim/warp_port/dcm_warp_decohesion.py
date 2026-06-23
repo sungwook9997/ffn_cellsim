@@ -350,7 +350,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # (c_rep=0.30·me is too tight vs big accel-dt steps) so the barrier engages BEFORE a node is
     # buried in one jump. Both are numerical-correctness levers (not outcome-tuning).
     ipc_repel_q = float(con_q + 3.0 * mean_edge)
-    ipc_dhat = float(1.0 * mean_edge)
+    # d̂ reverted to c_rep: enlarging it to 1·mean_edge made the barrier act over a 3× wider range with
+    # the same κ → huge forces → cfl 55, bonds 3139→142, pen worsened to 4.0 (n100 diverged). The
+    # repel_q query-radius fix is the safe lever (only the NEAREST face feeds the barrier, so a larger
+    # search radius cannot add force — it only RETAINS a deep entry face). Keep d̂ at the derived c_rep.
+    ipc_dhat = float(c_rep)
     grid_q = ipc_repel_q if ipc else con_q              # the FACE grid must be built >= the largest query radius
     node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
