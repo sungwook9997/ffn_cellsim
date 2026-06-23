@@ -53,7 +53,11 @@ def edge_lengths(pos: np.ndarray, edges: np.ndarray) -> np.ndarray:
 def face_quality(pos: np.ndarray, faces: np.ndarray) -> np.ndarray:
     """Per-face shape quality S_f = 36·A / (√3·P²) ∈ (0,1]; 1 = equilateral, →0 = sliver.
 
-    SimuCell3D SWAP fires below S_f = 0.2 (verdict-corrected, not 0.3).
+    SimuCell3D SWAP fires below S_f = 0.2. The paper *prose* (Runser, Vetter & Iber, Nat
+    Comput Sci 2024, Methods "local mesh adaptation") says 0.3, but the runtime SOURCE default
+    is ``static constexpr double triangle_score_min_ = 0.2;``
+    (``include/triangulation_modules/local_mesh_refiner.hpp`` @ ETH GitLab ``main``, read verbatim
+    2026-06-23). Code is authoritative over the prose → 0.2 is the faithful value, NOT a drift.
     """
     pos = np.asarray(pos, float)
     v0, v1, v2 = pos[faces[:, 0]], pos[faces[:, 1]], pos[faces[:, 2]]

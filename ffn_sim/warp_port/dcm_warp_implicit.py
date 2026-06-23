@@ -134,10 +134,18 @@ def _operator(out: wp.array(dtype=wp.vec3d), a: wp.float64, v: wp.array(dtype=wp
     i = wp.tid(); out[i] = a * v[i] - (Fp[i] - Fx[i]) * inv_s
 
 
-def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e-9, device="cpu"):
+def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e-9, device="cpu",
+              hess_apply=None):
     """All-device matrix-free CG for (a·I + K)Δx = b. Big vectors stay on the GPU; only the CG
     scalars (dot products) cross to host. ``stiff_into(pos_d, out_d)`` writes F(pos) on device;
-    K·v via a perturbed stiff eval. ``scratch`` = dict of pre-allocated device vec3d buffers."""
+    K·v via a perturbed stiff eval. ``scratch`` = dict of pre-allocated device vec3d buffers.
+
+    ``hess_apply(v_d, out_d)`` (optional, default None → unchanged behaviour): adds an ANALYTIC
+    PSD stiffness ``H·v`` to the operator matvec ``Ap`` — used for node-face CONTACT (M1), whose
+    finite-difference JVP is gated/C0 and would be thrown away by the ``pAp_diag`` floor below
+    (leaving the contact effectively explicit). With the analytic Hessian in ``Ap`` the implicit
+    solve genuinely ABSORBS the contact stiffness (frozen at xₙ, like the grid). See
+    ``dcm_contact_implicit_warp``."""
     N = x_d.shape[0]
     r, p, Ap, dx, Fx, Fp, xp, sca = (scratch[k] for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp", "sca"))
 
@@ -173,6 +181,8 @@ def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e
         wp.launch(_vxpby, dim=N, inputs=[xp, x_d, wp.float64(s), p], device=device)   # xp = x + s p
         stiff_into(xp, Fp)
         wp.launch(_operator, dim=N, inputs=[Ap, wp.float64(a), p, Fp, Fx, wp.float64(1.0 / s)], device=device)
+        if hess_apply is not None:
+            hess_apply(p, Ap)                                # Ap += H_contact·p  (analytic PSD, frozen at xₙ)
         pAp = dot(p, Ap)
         # A = (γ/dt)·I + K. The diagonal a·‖p‖² is exact and strictly positive; the physical
         # stiffness K (penalty/turgor/edge/bending Hessians) is PSD at a stable equilibrium, so

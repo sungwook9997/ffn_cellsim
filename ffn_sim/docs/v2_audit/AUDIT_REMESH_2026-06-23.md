@@ -87,6 +87,19 @@ spring as a Phase-3-replaced surface-tension proxy held by turgor + faces, so a 
 reset *may* be intended — but it is a non-local elastic-state change at remesh cadence
 and should be confirmed by PI, not assumed.
 
+### PROVENANCE #8 — SWAP sliver threshold S_f<0.2 is the VERIFIED SimuCell3D source default (not drift)
+`face_quality` (`dcm_remesh.py:53`) / `classify_remesh(..., sliver_q=0.2)` flags a face for
+SWAP below `S_f = 36·A/(√3·P²) < 0.2`. The SimuCell3D paper *prose* (Runser, Vetter & Iber,
+Nat Comput Sci 2024, Methods "local mesh adaptation") says **0.3**, but the runtime **source**
+default — read verbatim from the ETH GitLab raw blob (`main` branch,
+`include/triangulation_modules/local_mesh_refiner.hpp`, 2026-06-23) — is
+`static constexpr double triangle_score_min_ = 0.2;`, gated by
+`if(triangle_score < triangle_score_min_){ swap_edge(...); }`. **Code is authoritative over the
+prose**, so our 0.2 faithfully reproduces SimuCell3D's *running* behaviour; it is a deliberate
+verified correction, **not** an accidental 0.3→0.2 drift. (`master` raw 404s — the repo uses
+`main`; the tree/blob HTML listing is login-walled but the `/-/raw/main/<path>` endpoint served
+the header without login, clearing the prior "unverified, login-walled" caveat.) No physics change.
+
 ---
 
 ## What the memory claim ("91 swaps + 77 splits fire, manifold held") got right and missed
