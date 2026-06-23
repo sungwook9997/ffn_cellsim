@@ -141,8 +141,38 @@ GPU-portable but a genuine project, NOT a kernel swap. This is the definitive sc
 more effort on penalty/barrier kernel variants; the path is a proper IPC (or a constraint-based contact
 like SimuCell3D's own relocation-to-average with a hard non-penetration constraint).
 
-## Recommendation (honest)
-**All 5 simple-contact prototypes REFUTED — the fix is the full IPC method (CCD + barrier + Newton).** The M1 fix is harder than any of
+## ⚠️ Over-claim correction (night-deliverables verification) — CHEAPER rungs exist before full IPC
+The 2026-06-23 verification flagged "the fix needs full IPC" as PREMATURE — the prototypes ruled out only
+specific simple forms, and skipped cheaper rungs the analysis points to. Concretely, the verifier found:
+- **The contact Hessian is currently DISCARDED.** Contact IS launched inside `stiff_force_into` (it
+  nominally goes through the implicit operator), but `device_cg`'s `pAp_diag` floor (implicit.py:183-187)
+  THROWS AWAY the finite-difference contact Hessian whenever it goes spuriously negative — exactly what a
+  gated/discontinuous contact force does near the c_rep boundary. So **the contact is effectively EXPLICIT
+  right now** (its stiffness never resists the bundle implicitly). Wiring an **ANALYTIC contact+cadherin
+  diagonal Hessian** into the operator (a stub estimator already exists at implicit.py:395) would give the
+  IPC barrier-Hessian benefit **without CCD/line-search** — a genuinely cheaper rung not tested.
+- **The ×40 cadherin spring is mislabeled "soft."** It is a 1–2 nN spring in the EXPLICIT RHS; moving it
+  into the implicit operator (it is stiff, not soft) may let the implicit solve absorb it.
+- **Higher cap on the BOUNDED saturating barrier (untested).** The rep-sweep raised rep on the UNsaturated
+  penalty (diverges by stiffening the shallow shell); it never raised the CAP on the bounded saturating
+  nearest-face barrier — which the verifier hoped "cannot diverge by construction." **TESTED (2026-06-23):
+  rep 2e8 → stable but (converged) too weak; rep 2e9 → vv0=1.73 (DIVERGES).** So the bounded saturating
+  cap ALSO diverges at a high-enough cap — the "can't diverge" hope is REFUTED. **But this is the smoking
+  gun for the real diagnosis:** a *bounded* force diverging means the instability is NOT the force
+  magnitude per se — it is that the contact lives in the EXPLICIT RHS / its Hessian is discarded by the
+  pAp_diag floor, so the implicit solve never absorbs it. → the analytic-contact-Hessian-in-the-implicit-
+  operator rung (next bullet) is the one the evidence points to.
+- **Soft surface-constraint spring** inside `stiff_force_into` (not a hard post-step relocation) avoids the
+  energy-injection that killed prototype #6, and is cheaper than a full KKT Lagrange solve.
+
+So the honest standing: **the 6 prototypes rule out the SIMPLE penalty/barrier/projection forms, but the
+correct sequence before committing to full IPC is: (1) analytic contact Hessian in the implicit operator,
+(2) cadherin spring → implicit, (3) higher bounded-saturating cap — all cheaper, none yet fully tested.**
+Full IPC (CCD+barrier+Newton) remains the guaranteed-correct fallback, not the proven-necessary first step.
+
+## Recommendation (honest, corrected)
+**The 6 simple prototypes are refuted, but full IPC was an OVER-CLAIM as the immediate fix — test the 3
+cheaper rungs first (analytic contact Hessian in the implicit operator is the most promising).** The M1 fix is harder than any of
 the three sketched options alone: it requires Option A's inside test + a bounded (non-linear, saturating)
 barrier + implicit treatment. Until then the per-face penalty (with its tunnelling) is the least-bad
 option, and the standing fact is: **at the lit cohesion strength the contact either tunnels (capped) or
