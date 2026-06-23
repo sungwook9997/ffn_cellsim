@@ -46,6 +46,10 @@ def main():
                     help="turgor-engage / gentle-aggregation test: cadherin + ecm + lamellipodium OFF "
                          "(adh 5e7 node-face cohesion only), so V/V0 engagement under --k-vol is measured "
                          "WITHOUT the strong-bundle contact confound (this is the regime where pen~0.12).")
+    ap.add_argument("--well", action="store_true",
+                    help="substrate WELL/floor ON (z-anchor + rigid dish): the BOUND that the single-cell "
+                         "fried-egg used to keep S>0 spreading finite. Tests if the spheroid spreads with "
+                         "volume conservation (stiff k_vol) + substrate floor + polarization.")
     ap.add_argument("--cfl-limit", type=float, default=0.0, dest="cfl_limit",
                     help="A3 adaptive substepping: cap per-step node displacement < cfl_limit*c_rep "
                          "(0.3 stabilizes the deformable+polarized regime that diverges at fixed accel_dt)")
@@ -61,7 +65,7 @@ def main():
         polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
         cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
         cad_bundle=40.0, ecm_bundle=167.0,
-        substrate_wetting=False, use_substrate_well=False,   # NO proxy
+        substrate_wetting=False, use_substrate_well=a.well,   # well = the spreading BOUND (single-cell fried-egg had it)
         builder="fcc", integrator="implicit", accel_dt=8e-4,
         ipc=a.ipc,
         save_frames=npz)
