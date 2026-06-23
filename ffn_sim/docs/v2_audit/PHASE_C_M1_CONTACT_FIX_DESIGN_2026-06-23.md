@@ -73,8 +73,33 @@ linear `min_d·rep·area`), and **implicit treatment** of that contact stiffness
 forces don't blow the step. This is a genuine contact-mechanics piece (IPC-style barrier + CCD, or
 SimuCell3D's actual contact model), NOT a one-kernel tweak.
 
+## Third data point — SATURATING barrier (nearest-face, force capped at the c_rep level): STABLE but TOO WEAK
+Tested a bounded variant: nearest-face, `|F| = rep·area·min(min_d, c_rep)` — force grows to the c_rep
+level then SATURATES (constant for deeper penetration). On the cadherin ×40 bundle (N=12):
+| | pen_final | vv0 |
+|---|---|---|
+| baseline (per-face cap) | 2.921 | 0.9999 |
+| saturating nearest-face | **2.876** | **1.0000 (STABLE)** |
+It cures the divergence (vv0=1.0, no blow-up) but **does NOT reduce the penetration** (2.92→2.88). Why:
+a constant-capped force can't out-push a stronger constant force — the node equilibrates deep where the
+×40 bundle (~7nN) balances the capped contact (`rep·area·c_rep`); deeper penetration feels no extra push.
+
+## ⭐ The three prototypes BRACKET the fix space → IPC log-barrier is the answer
+| contact force vs penetration depth | result |
+|---|---|
+| linear UNBOUNDED (Option B, no cap) | DIVERGES (vv0→175) — too stiff for the explicit-ish step |
+| constant SATURATED (cap at c_rep) | STABLE but TOO WEAK (pen 2.9 — can't beat the bundle) |
+| → **must GROW near contact but stay solvable** | **IPC log-barrier** `F ∝ −ln(gap)` → ∞ as gap→0, **handled IMPLICITLY** so the stiffness goes in the Hessian/Newton, not an explicit force spike |
+A contact that REDUCES penetration must apply MORE force the deeper a node is — but a force that grows
+explicitly blows the step (Option B). The resolution is the **IPC (Incremental Potential Contact)
+log-barrier**: an energy barrier whose force →∞ as the gap →0, integrated IMPLICITLY (the existing
+`device_cg` operator already carries contact stiffness — the barrier Hessian goes there) + continuous
+collision detection so no node crosses a face within a step. This is the only one of the four force-laws
+that is simultaneously non-tunnelling, bounded-in-practice (implicit), and strong enough to beat the
+bundle. **Scoped to PI as a contact-mechanics task (ref: Li et al. IPC, SIGGRAPH 2020).**
+
 ## Recommendation (honest)
-**Option B is REFUTED — do not pursue the nearest-face-no-cap path.** The M1 fix is harder than any of
+**Option B is REFUTED, the saturating cap is too weak — do not pursue either simple-penalty path.** The M1 fix is harder than any of
 the three sketched options alone: it requires Option A's inside test + a bounded (non-linear, saturating)
 barrier + implicit treatment. Until then the per-face penalty (with its tunnelling) is the least-bad
 option, and the standing fact is: **at the lit cohesion strength the contact either tunnels (capped) or

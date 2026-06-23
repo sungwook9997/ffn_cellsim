@@ -97,6 +97,75 @@ def contact_grid_kernel_nearest(
     wp.atomic_add(force, ni, fn_acc)
 
 
+@wp.kernel
+def contact_grid_kernel_nf_saturating(
+    grid: wp.uint64, qpts: wp.array(dtype=wp.vec3), pos: wp.array(dtype=wp.vec3d),
+    cof: wp.array(dtype=wp.int32), faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32), radius: wp.float32,
+    rep: wp.float64, adh: wp.float64, c_rep: wp.float64, c_adh: wp.float64,
+    force: wp.array(dtype=wp.vec3d)):
+    """M1 fix candidate: nearest-face repulsion with a SATURATING barrier — force grows linearly to
+    the c_rep level then STAYS CONSTANT for deeper penetration (never 0 = no tunnelling, never
+    unbounded = no blow-up). Avoids BOTH failure modes: nearest-face (no far-face explosion) +
+    saturated magnitude (no runaway). |F| = rep·area·min(min_d, c_rep), direction = outward (−r̂_vec)."""
+    ni = wp.tid()
+    c1 = cof[ni]
+    if c1 < wp.int32(0):
+        return
+    z = wp.float64(0.0)
+    half = wp.float64(0.5) * c_adh
+    p = pos[ni]
+    fn_acc = wp.vec3d(z, z, z)
+    best_d = wp.float64(1.0e300)
+    best_rvec = wp.vec3d(z, z, z); best_sign = wp.float64(1.0); best_area = z
+    best_ia = wp.int32(-1); best_ib = wp.int32(-1); best_ic = wp.int32(-1)
+    best_ba = z; best_bb = z; best_bc = z
+    q = wp.hash_grid_query(grid, qpts[ni], radius)
+    fj = wp.int32(0)
+    while wp.hash_grid_query_next(q, fj):
+        if fcell[fj] != c1:
+            ia = faces[fj, 0]; ib = faces[fj, 1]; ic = faces[fj, 2]
+            a = pos[ia]; b = pos[ib]; c = pos[ic]
+            bary = closest_bary(p, a, b, c)
+            cpa = a * bary[0] + b * bary[1] + c * bary[2]
+            r_vec = p - cpa; min_d = wp.length(r_vec)
+            fnv = wp.cross(b - a, c - a); nrm = wp.length(fnv); area = wp.float64(0.5) * nrm
+            sign = z
+            if nrm > z:
+                sign = wp.dot(r_vec, fnv) / nrm
+            if min_d < best_d:
+                best_d = min_d; best_rvec = r_vec; best_sign = sign; best_area = area
+                best_ia = ia; best_ib = ib; best_ic = ic
+                best_ba = bary[0]; best_bb = bary[1]; best_bc = bary[2]
+            if adh > z and sign > z and min_d < c_adh:
+                amp = z
+                if min_d >= half:
+                    md = min_d
+                    if md <= z:
+                        md = wp.float64(1.0e-30)
+                    amp = adh * (c_adh / md - wp.float64(1.0)) * area
+                else:
+                    amp = adh * area
+                if amp != z:
+                    fvec = r_vec * amp
+                    fn_acc = fn_acc - fvec
+                    wp.atomic_add(force, ia, bary[0] * fvec)
+                    wp.atomic_add(force, ib, bary[1] * fvec)
+                    wp.atomic_add(force, ic, bary[2] * fvec)
+    if best_ia >= wp.int32(0) and best_sign < z and best_d > z:
+        d_eff = best_d                              # SATURATE the depth at c_rep
+        if d_eff > c_rep:
+            d_eff = c_rep
+        # outward unit dir = -best_rvec/best_d; magnitude = rep·area·d_eff
+        amp = rep * best_area * d_eff / best_d       # so |F| = rep·area·d_eff, dir = -best_rvec
+        fvec = best_rvec * amp
+        fn_acc = fn_acc - fvec
+        wp.atomic_add(force, best_ia, best_ba * fvec)
+        wp.atomic_add(force, best_ib, best_bb * fvec)
+        wp.atomic_add(force, best_ic, best_bc * fvec)
+    wp.atomic_add(force, ni, fn_acc)
+
+
 def run2(label, save, adh, settle=10000):
     out = drv.run_decohesion(n_cells=2, subdiv=2, steps=200, frames=2, device="cpu",
         dt=8e-6, warmup=300, settle_steps=settle, settle_frames=0, gap=2.05,
