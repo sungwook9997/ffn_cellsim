@@ -543,6 +543,40 @@ def surface_tension_kernel(
 
 
 @wp.kernel
+def polarized_surface_tension_kernel(
+    pos: wp.array(dtype=wp.vec3d), faces: wp.array(dtype=wp.int32, ndim=2),
+    gamma_apical: wp.float64, w_cs: wp.float64, z0: wp.float64, rng: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """Apico-basal DIFFERENTIAL surface tension (Young–Dupré / DITS) — the directional-spread
+    mechanism a spatially-uniform shell lacks. The cortical interfacial tension is REDUCED on
+    substrate-adhered (basal) faces by the adhesion energy ``w_cs``, while free (apical) faces keep
+    the full cortical ``gamma_apical``. Per face the basal engagement ``w = clip(1−(zc−z0)/rng,0,1)``
+    (zc = mean vertex z; same weight the wetting kernel uses) gives ``gamma_face = gamma_apical −
+    w·w_cs``. When ``w_cs > gamma`` (Douezan spreading coefficient ``S = w_cs − 2·gamma > 0``) the
+    basal face carries NEGATIVE effective tension → it EXPANDS (wets/spreads); apical faces round.
+    The basal/apical ASYMMETRY flattens a round pack into a spread sheet. Mechanistic: ``w_cs`` is the
+    literature substrate-adhesion energy and ``gamma_apical`` the cortical tension — NOT a tuned
+    per-face multiplier (the M3-junction-switch sin). Reduces to ``surface_tension_kernel`` at w_cs=0."""
+    f = wp.tid()
+    ia = faces[f, 0]; ib = faces[f, 1]; ic = faces[f, 2]
+    a = pos[ia]; b = pos[ib]; c = pos[ic]
+    z = wp.float64(0.0)
+    one = wp.float64(1.0)
+    zc = (a[2] + b[2] + c[2]) / wp.float64(3.0)
+    w = one - (zc - z0) / rng
+    if w < z:
+        w = z
+    if w > one:
+        w = one
+    gamma_face = gamma_apical - w * w_cs
+    ga, gb, gc = _tri_area_grads(a, b, c)
+    wp.atomic_add(force, ia, ga * (-gamma_face))
+    wp.atomic_add(force, ib, gb * (-gamma_face))
+    wp.atomic_add(force, ic, gc * (-gamma_face))
+
+
+@wp.kernel
 def face_area_accum_kernel(
     pos: wp.array(dtype=wp.vec3d), faces: wp.array(dtype=wp.int32, ndim=2),
     fcell: wp.array(dtype=wp.int32), acell: wp.array(dtype=wp.float64),
