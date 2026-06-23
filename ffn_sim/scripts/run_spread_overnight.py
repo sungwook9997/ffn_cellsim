@@ -46,6 +46,9 @@ def main():
                     help="turgor-engage / gentle-aggregation test: cadherin + ecm + lamellipodium OFF "
                          "(adh 5e7 node-face cohesion only), so V/V0 engagement under --k-vol is measured "
                          "WITHOUT the strong-bundle contact confound (this is the regime where pen~0.12).")
+    ap.add_argument("--cfl-limit", type=float, default=0.0, dest="cfl_limit",
+                    help="A3 adaptive substepping: cap per-step node displacement < cfl_limit*c_rep "
+                         "(0.3 stabilizes the deformable+polarized regime that diverges at fixed accel_dt)")
     a = ap.parse_args()
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
@@ -55,7 +58,7 @@ def main():
         k_vol=a.k_vol,
         rep_strength=2e8, adh_strength=5e7,
         surface_tension=True, gamma_surf=a.gamma_surf, bending=True, edge_edge=True, nucleus=True,
-        polarize=a.polarize, w_cs_polarize=a.w_cs_polarize,
+        polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
         cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=False,   # NO proxy
