@@ -344,6 +344,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     l_min = mean_edge / 2.9
     coh_q = float(c_adh)
     con_q = float(c_adh + 0.7 * (3.0 * l_min))
+    # M1 IPC needs a LARGER query radius than the penalty's con_q so a node penetrating deep under
+    # the strong bundle does not lose its entry face (the n100 partial-result cause #1). The IPC
+    # self-test uses con_q + 3·mean_edge; mirror it here. The activation gap d̂ is also enlarged
+    # (c_rep=0.30·me is too tight vs big accel-dt steps) so the barrier engages BEFORE a node is
+    # buried in one jump. Both are numerical-correctness levers (not outcome-tuning).
+    ipc_repel_q = float(con_q + 3.0 * mean_edge)
+    ipc_dhat = float(1.0 * mean_edge)
+    grid_q = ipc_repel_q if ipc else con_q              # the FACE grid must be built >= the largest query radius
     node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
     pen_d = wp.zeros(N, dtype=wp.float64, device=device)   # interpenetration diagnostic
@@ -601,7 +609,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
             node_grid.build(points=node_f32, radius=coh_q)
             wp.launch(face_centroids_f32, dim=n_faces, inputs=[pos_d, faces_d, cent_f32], device=device)
-            face_grid.build(points=cent_f32, radius=con_q)
+            face_grid.build(points=cent_f32, radius=grid_q)
             if js is not None:
                 # M3: cell-cell adhesion scaled by sqrt(cad_i·cad_j) (identity until a
                 # cell crowd-switches, so settle behaviour is unchanged)
@@ -637,7 +645,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             # (both derived). Already-penetrating nodes get the linear feasibilization push out.
             wp.launch(nearest_face_ipc_kernel, dim=N,
                       inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
-                              wp.float32(con_q), wp.float64(rep_strength), wp.float64(c_rep),
+                              wp.float32(ipc_repel_q), wp.float64(rep_strength), wp.float64(ipc_dhat),
                               force_d, ipc_cn_k, ipc_cn_nrm], device=device)
             if coh_adh > 0.0:                                   # node-face adhesion stays (multi-face), rep=0
                 wp.launch(contact_grid_kernel, dim=N,
@@ -773,7 +781,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
             if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
                 alpha = ccd_alpha(face_grid.id, node_f32, pos_d, dx_d, cof_d, faces_d, fcell_d,
-                                  con_q, ipc_t, eta=ipc_eta, device=device)
+                                  ipc_repel_q, ipc_t, eta=ipc_eta, device=device)
                 wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(alpha), dx_d, cof_d], device=device)
             elif pen_cap:      # D8: clamp each node's implicit step to the contact-shell scale
                 wp.launch(_vaxpy_active_capped, dim=N,
@@ -793,7 +801,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             return 0.0
         wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
         wp.launch(face_centroids_f32, dim=n_faces, inputs=[pos_d, faces_d, cent_f32], device=device)
-        face_grid.build(points=cent_f32, radius=con_q)
+        face_grid.build(points=cent_f32, radius=grid_q)
         pen_d.zero_()
         wp.launch(penetration_depth_kernel, dim=N,
                   inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
