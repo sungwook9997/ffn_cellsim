@@ -35,6 +35,10 @@ def main():
                          "VOLUME LOCK (a contact band-aid that pins V/V0=1.000). Set to the pre-fried-egg "
                          "soft default 1e3 to REMOVE the lock so turgor (dP0) engages (V/V0 emergent) — "
                          "only valid PAIRED WITH --ipc (which provides the real over-compression guard).")
+    ap.add_argument("--no-bundle", action="store_true",
+                    help="turgor-engage / gentle-aggregation test: cadherin + ecm + lamellipodium OFF "
+                         "(adh 5e7 node-face cohesion only), so V/V0 engagement under --k-vol is measured "
+                         "WITHOUT the strong-bundle contact confound (this is the regime where pen~0.12).")
     a = ap.parse_args()
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
@@ -44,7 +48,7 @@ def main():
         k_vol=a.k_vol,
         rep_strength=2e8, adh_strength=5e7,
         surface_tension=True, gamma_surf=1e-4, bending=True, edge_edge=True, nucleus=True,
-        cadherin=True, ecm_clutch=True, lamellipodium=True,
+        cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=False,   # NO proxy
         builder="fcc", integrator="implicit", accel_dt=8e-4,
