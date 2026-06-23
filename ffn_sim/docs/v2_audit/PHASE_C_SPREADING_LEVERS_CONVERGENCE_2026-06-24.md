@@ -120,6 +120,28 @@ substrate floor** to reach the bounded fried-egg equilibrium — exactly what th
 stack removed. The single cell has it (fried-egg works); the spheroid needs the C6 substrate model OR
 the fine-grained single-cell line.
 
+## IPC-barrier vs SimuCell3D-penalty A/B (the loop directive's contact comparison) — SURPRISE
+
+Ran the contact A/B the loop prompt repeatedly asked for, via `--ipc-dhat-factor` (d̂ = factor·c_rep):
+factor=1.0 = full IPC log-barrier; factor=0.01 = barrier negligible = **SimuCell3D-style implicit
+penalty-only** (only the inside feasibilization linear push-out, with its analytic Hessian). Same n100
+full bundle, same rep.
+
+| contact | pen_final | pen_peak | wall | A/A0 |
+|---|---|---|---|---|
+| IPC barrier (d̂=c_rep) | **2.61** | 3.42 | 633 s | 1.001 |
+| SimuCell3D penalty-only (d̂=0.01·c_rep) | **1.49** | 3.35 | 517 s | 1.024 |
+
+**Surprise (refutes the assumption that the barrier is best):** the simpler **implicit penalty-only
+BEATS the IPC barrier** — 43% lower final pen (1.49 vs 2.61), similar peak, ~18% faster, and NO
+transient cfl spikes (the barrier produced a cfl≈1.2e9 single-frame spike that self-recovered but
+perturbs the local config). The barrier's →∞ force near contact creates large transients that hurt
+more than the smooth linear penalty. So the PI was right to want this A/B: **the M1 contact
+recommendation is revised — the SimuCell3D-style implicit penalty (analytic-Hessian feasibilization,
+NO barrier, NO CCD) is the simpler, faster, lower-pen contact.** (pen 1.5 is still above good-enough
+~0.5-1.0, and pen is noisy/oscillating — neither fully closes M1, but penalty-only is the better base.)
+The barrier+CCD machinery (the bulk of the IPC build) is not earning its complexity here.
+
 ## PI decision points (surfaced)
 - Accept M1 good-enough-honest at pen 1.80 (de-cohesion runs are A/A0-hull-robust)?
 - k_vol final physiological value (1e3 deformable confirmed viable with IPC; 2500/Guo are refinements).
