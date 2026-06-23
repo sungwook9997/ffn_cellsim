@@ -219,6 +219,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    polarize: bool = False, w_cs_polarize: float = 2.85e-3,
+                   ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
@@ -356,7 +357,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # which a larger search radius cannot touch). Reverted to con_q (the proven-best, fastest IPC config).
     # d̂ likewise reverted to c_rep (enlarging to 1·me diverged: cfl 55, bonds 3139→142, pen 4.0).
     ipc_repel_q = float(con_q)
-    ipc_dhat = float(c_rep)
+    ipc_dhat = float(ipc_dhat_factor * c_rep)   # factor=1 -> IPC barrier; factor~0.01 -> barrier negligible = SimuCell3D-style implicit penalty-only (the A/B)
     grid_q = ipc_repel_q if ipc else con_q              # the FACE grid must be built >= the largest query radius
     node_f32 = wp.zeros(N, dtype=wp.vec3, device=device)
     cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
@@ -1170,6 +1171,9 @@ def main():
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
+    ap.add_argument("--ipc-dhat-factor", type=float, default=1.0, dest="ipc_dhat_factor",
+                    help="IPC barrier activation gap d_hat = factor*c_rep. 1.0=IPC barrier; ~0.01=barrier "
+                         "negligible = SimuCell3D-style implicit penalty-only (the IPC-vs-SimuCell3D A/B)")
     ap.add_argument("--polarize", action="store_true", help="apico-basal DIFFERENTIAL surface tension (Young-Dupre): basal faces wet (gamma - w*w_cs), apical keep gamma. Needs --surface-tension. The directional-spread lever.")
     ap.add_argument("--w-cs-polarize", type=float, default=2.85e-3, dest="w_cs_polarize", help="basal substrate-adhesion energy J/m2 for --polarize (lit MCF7 2.85e-3 -> S<0 non-wetting; >2*gamma -> S>0 spreads)")
     ap.add_argument("--gamma-surf", type=float, default=1.0e-4, help="B4 surface tension coefficient [N/m]")
@@ -1203,7 +1207,7 @@ def main():
         adh_strength=args.adh_strength, rep_strength=args.rep_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
-        polarize=args.polarize, w_cs_polarize=args.w_cs_polarize,
+        polarize=args.polarize, w_cs_polarize=args.w_cs_polarize, ipc_dhat_factor=args.ipc_dhat_factor,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,

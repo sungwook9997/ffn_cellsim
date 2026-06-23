@@ -50,6 +50,8 @@ def main():
                     help="substrate WELL/floor ON (z-anchor + rigid dish): the BOUND that the single-cell "
                          "fried-egg used to keep S>0 spreading finite. Tests if the spheroid spreads with "
                          "volume conservation (stiff k_vol) + substrate floor + polarization.")
+    ap.add_argument("--ipc-dhat-factor", type=float, default=1.0, dest="ipc_dhat_factor",
+                    help="IPC barrier activation d_hat=factor*c_rep. 1.0=IPC barrier; 0.01=SimuCell3D-style penalty-only (A/B)")
     ap.add_argument("--accel-dt", type=float, default=8e-4, dest="accel_dt",
                     help="implicit accel dt (default 8e-4 = 100x base). Lower (8e-5/8e-6) for the stiff "
                          "polarized+substrate regime that diverges/crawls at 8e-4 (Colab-sweepable across GPUs)")
@@ -66,6 +68,7 @@ def main():
         rep_strength=2e8, adh_strength=5e7,
         surface_tension=True, gamma_surf=a.gamma_surf, bending=True, edge_edge=True, nucleus=True,
         polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
+        ipc_dhat_factor=a.ipc_dhat_factor,
         cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=a.well,   # well = the spreading BOUND (single-cell fried-egg had it)
