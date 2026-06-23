@@ -35,6 +35,13 @@ def main():
                          "VOLUME LOCK (a contact band-aid that pins V/V0=1.000). Set to the pre-fried-egg "
                          "soft default 1e3 to REMOVE the lock so turgor (dP0) engages (V/V0 emergent) — "
                          "only valid PAIRED WITH --ipc (which provides the real over-compression guard).")
+    ap.add_argument("--polarize", action="store_true",
+                    help="apico-basal differential surface tension (Young-Dupre): basal faces wet, "
+                         "apical keep cortical gamma. The directional-spread lever. S=w_cs-2*gamma>0 spreads.")
+    ap.add_argument("--w-cs-polarize", type=float, default=2.85e-3, dest="w_cs_polarize",
+                    help="basal adhesion energy J/m2 (lit MCF7 2.85e-3 -> S<0; raise >2*gamma for S>0 spread test)")
+    ap.add_argument("--gamma-surf", type=float, default=1e-4, dest="gamma_surf",
+                    help="cortical/apical surface tension N/m (lit MCF7 ~1e-2; default 1e-4)")
     ap.add_argument("--no-bundle", action="store_true",
                     help="turgor-engage / gentle-aggregation test: cadherin + ecm + lamellipodium OFF "
                          "(adh 5e7 node-face cohesion only), so V/V0 engagement under --k-vol is measured "
@@ -47,7 +54,8 @@ def main():
         dt=8e-6, warmup=200, settle_steps=a.settle, gap=2.05,
         k_vol=a.k_vol,
         rep_strength=2e8, adh_strength=5e7,
-        surface_tension=True, gamma_surf=1e-4, bending=True, edge_edge=True, nucleus=True,
+        surface_tension=True, gamma_surf=a.gamma_surf, bending=True, edge_edge=True, nucleus=True,
+        polarize=a.polarize, w_cs_polarize=a.w_cs_polarize,
         cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=False,   # NO proxy

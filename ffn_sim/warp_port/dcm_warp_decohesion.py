@@ -39,7 +39,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel, gravity_body_force_kernel,
     ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
-    surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
+    surface_tension_kernel, polarized_surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
     edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel, scale_per_cell_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
@@ -218,6 +218,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
+                   polarize: bool = False, w_cs_polarize: float = 2.85e-3,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
@@ -697,7 +698,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(umbrella_kernel, dim=N, inputs=[lap_d, nsum_d, ncnt_d, bilap_d], device=device)
             wp.launch(bending_apply_kernel, dim=N, inputs=[bilap_d, cof_d, wp.float64(k_bend), force_d], device=device)
         # B4 membrane surface tension (area-minimising) + optional global area constraint
-        if surface_tension:
+        if surface_tension and polarize:
+            # apico-basal DIFFERENTIAL tension (Young-Dupre): basal faces wet (gamma - w*w_cs), apical
+            # keep full gamma. The directional-spread mechanism; S = w_cs - 2*gamma > 0 => basal spreads.
+            wp.launch(polarized_surface_tension_kernel, dim=n_faces,
+                      inputs=[pos_d, faces_d, wp.float64(gamma_surf), wp.float64(w_cs_polarize),
+                              wp.float64(z0), wp.float64(adh_range), force_d], device=device)
+        elif surface_tension:
             wp.launch(surface_tension_kernel, dim=n_faces,
                       inputs=[pos_d, faces_d, wp.float64(gamma_surf), force_d], device=device)
             if k_area > 0.0:
@@ -1163,6 +1170,8 @@ def main():
     ap.add_argument("--nucleus", action="store_true", help="E2: deformable nucleus core (H.9 bilinear chromatin/lamin; resists cell thinning below the nuclear size)")
     ap.add_argument("--e-nuc", type=float, default=3.0e3, help="nuclear Young's modulus [Pa] (KU-3.B2.1 1-10 kPa)")
     ap.add_argument("--surface-tension", action="store_true", help="B4: membrane area-gradient surface tension (+ global area constraint if --k-area>0)")
+    ap.add_argument("--polarize", action="store_true", help="apico-basal DIFFERENTIAL surface tension (Young-Dupre): basal faces wet (gamma - w*w_cs), apical keep gamma. Needs --surface-tension. The directional-spread lever.")
+    ap.add_argument("--w-cs-polarize", type=float, default=2.85e-3, dest="w_cs_polarize", help="basal substrate-adhesion energy J/m2 for --polarize (lit MCF7 2.85e-3 -> S<0 non-wetting; >2*gamma -> S>0 spreads)")
     ap.add_argument("--gamma-surf", type=float, default=1.0e-4, help="B4 surface tension coefficient [N/m]")
     ap.add_argument("--k-area", type=float, default=0.0, help="B4 global area-constraint stiffness [N/m] (0=off)")
     ap.add_argument("--division", action="store_true", help="C7: rim-cell proliferation (parked cell pool → daughters)")
@@ -1194,6 +1203,7 @@ def main():
         adh_strength=args.adh_strength, rep_strength=args.rep_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
+        polarize=args.polarize, w_cs_polarize=args.w_cs_polarize,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
