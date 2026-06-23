@@ -250,6 +250,78 @@ def contact_normal_hess_apply_kernel(
         out[i] = out[i] + n * (k * wp.dot(n, v[i]))
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 — CCD (continuous collision detection), conservative-advancement form.
+# Given the trial step Δx the implicit solve wants to take, find the largest fraction α∈(0,1]
+# such that x + α·Δx is still penetration-free. Per node, over each close other-cell face with
+# outward gap d>0, the gap closes at rate  approach = −(Δp_node − Δp_closestpoint)·n̂ ; if it is
+# closing, the safe fraction for that pair is  t = η·d/approach  (η<1 ⇒ gap stays ≥(1−η)·d>0).
+# Global α* = min over all node-face pairs (and 1). This is CONSERVATIVE (never lets a node
+# cross) and robust (no cubic-root TOI degeneracies). The barrier (Phase 1) keeps approach
+# slow so α* is rarely <1 except right at contact; CCD is the hard non-penetration GUARANTEE.
+# It replaces the crude scalar D8 displacement cap with a true per-step time-of-impact filter.
+# ---------------------------------------------------------------------------
+@wp.kernel
+def ccd_toi_kernel(
+    grid: wp.uint64,
+    qpts: wp.array(dtype=wp.vec3),
+    pos: wp.array(dtype=wp.vec3d),
+    dpos: wp.array(dtype=wp.vec3d),            # the trial step Δx
+    cof: wp.array(dtype=wp.int32),
+    faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32),
+    radius: wp.float32,
+    eta: wp.float64,                           # safety fraction (e.g. 0.9): gap stays ≥ (1−η)·d
+    t_out: wp.array(dtype=wp.float64),         # OUT: per-node safe fraction ∈ (0,1]
+):
+    ni = wp.tid()
+    z = wp.float64(0.0)
+    one = wp.float64(1.0)
+    t_out[ni] = one
+    c1 = cof[ni]
+    if c1 < wp.int32(0):
+        return
+    p = pos[ni]
+    dp = dpos[ni]
+    tbest = one
+    q = wp.hash_grid_query(grid, qpts[ni], radius)
+    fj = wp.int32(0)
+    while wp.hash_grid_query_next(q, fj):
+        if fcell[fj] != c1:
+            ia = faces[fj, 0]; ib = faces[fj, 1]; ic = faces[fj, 2]
+            a = pos[ia]; b = pos[ib]; c = pos[ic]
+            bary = closest_bary(p, a, b, c)
+            cpa = a * bary[0] + b * bary[1] + c * bary[2]
+            r_vec = p - cpa
+            min_d = wp.length(r_vec)
+            fnv = wp.cross(b - a, c - a)
+            nrm = wp.length(fnv)
+            if nrm > z and min_d > z:
+                sign = wp.dot(r_vec, fnv) / nrm
+                if sign > z:                    # OUTSIDE — gap = min_d; check the closing rate
+                    nout = r_vec * (one / min_d)
+                    dcp = dpos[ia] * bary[0] + dpos[ib] * bary[1] + dpos[ic] * bary[2]
+                    approach = -wp.dot(dp - dcp, nout)         # >0 = gap shrinking this step
+                    if approach > z:
+                        t = eta * min_d / approach
+                        if t < tbest:
+                            tbest = t
+    t_out[ni] = tbest
+
+
+def ccd_alpha(grid, qpts, pos_d, dpos_d, cof_d, faces_d, fcell_d, radius, t_buf,
+              *, eta=0.9, device="cpu"):
+    """Conservative time-of-impact fraction α* ∈ (0,1] for the trial step ``dpos_d``: the new
+    configuration ``pos + α*·dpos`` is guaranteed penetration-free. Reduces the per-node CCD
+    kernel to a global min (host reduce of ``t_buf``; a device atomic-min is the GPU optimisation)."""
+    N = pos_d.shape[0]
+    wp.launch(ccd_toi_kernel, dim=N,
+              inputs=[grid, qpts, pos_d, dpos_d, cof_d, faces_d, fcell_d,
+                      wp.float32(radius), wp.float64(eta), t_buf], device=device)
+    wp.synchronize_device(device)
+    return float(min(1.0, float(t_buf.numpy().min())))
+
+
 def make_contact_hess_apply(cn_k, cn_nrm, *, device="cpu"):
     """Return a ``hess_apply(v_d, out_d)`` closure that adds the frozen analytic contact stiffness
     ``H_contact·v`` to ``out_d`` — pass it to ``device_cg(..., hess_apply=...)``. ``cn_k``/``cn_nrm``
@@ -520,6 +592,180 @@ def _barrier_unittest(device="cpu"):
           f"({'grows as d->0 (non-penetration) PASS' if grow > 50 else 'CHECK'})")
 
 
+def _ccd_unittest(device="cpu"):
+    """Phase-2 CCD correctness on 1 node vs 1 STATIC triangle: a step that would penetrate is
+    filtered to α=η·d/Δ so the final gap = (1−η)·d > 0; a separating/short step gives α=1."""
+    import numpy as np
+    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+    me = 2.4e-6
+    a = np.array([-0.6, -0.35, 0.0]) * me
+    b = np.array([0.6, -0.35, 0.0]) * me
+    c = np.array([0.0, 0.7, 0.0]) * me
+    cen = (a + b + c) / 3.0
+    rq = float(3.0 * me); eta = 0.9
+    faces = np.array([[1, 2, 3]], np.int32); fcell = np.array([1], np.int32)
+    cof = np.array([0, 1, 1, 1], np.int32); N, nf = 4, 1
+    cof_d = wp.array(cof, dtype=wp.int32, device=device)
+    faces_d = wp.array(faces, dtype=wp.int32, device=device)
+    fcell_d = wp.array(fcell, dtype=wp.int32, device=device)
+    nf32 = wp.zeros(N, dtype=wp.vec3, device=device); cf32 = wp.zeros(nf, dtype=wp.vec3, device=device)
+    t_buf = wp.zeros(N, dtype=wp.float64, device=device)
+    pos_d = wp.zeros(N, dtype=wp.vec3d, device=device); dpos_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    fg = wp.HashGrid(8, 8, 8, device=device)
+
+    def alpha_for(d0, dz):
+        verts = np.vstack([cen + [0, 0, d0], a, b, c])
+        dpos = np.zeros((N, 3)); dpos[0, 2] = dz                # node moves by dz in z; triangle static
+        pos_d.assign(np.ascontiguousarray(verts)); dpos_d.assign(np.ascontiguousarray(dpos))
+        wp.launch(pos_to_f32, dim=N, inputs=[pos_d, nf32], device=device)
+        wp.launch(face_centroids_f32, dim=nf, inputs=[pos_d, faces_d, cf32], device=device)
+        fg.build(points=cf32, radius=rq)
+        al = ccd_alpha(fg.id, nf32, pos_d, dpos_d, cof_d, faces_d, fcell_d, rq, t_buf, eta=eta, device=device)
+        return al, d0 + al * dz                                  # (alpha, final gap)
+
+    print("(4) CCD unit test (1 node vs static triangle, eta=%.2f):" % eta)
+    d0 = 0.2 * me; ok = True
+    cases = [("penetrating 2x", -2.0 * d0, eta / 2.0), ("grazing 1.0x", -1.0 * d0, eta),
+             ("short 0.5x (still capped by eta)", -0.5 * d0, min(1.0, eta / 0.5)),
+             ("separating", +1.5 * d0, 1.0)]
+    for lbl, dz, a_exp in cases:
+        al, gap = alpha_for(d0, dz)
+        gap_ok = gap > 0 or dz >= 0
+        rel = abs(al - a_exp) / max(a_exp, 1e-30)
+        if rel > 1e-6 or not gap_ok:
+            ok = False
+        print(f"    {lbl:>34}: alpha={al:.4f} (exp {a_exp:.4f})  final_gap/d0={gap / d0:+.3f}  "
+              f"{'penetration-free' if gap > 0 or dz >= 0 else 'PENETRATES!'}")
+    print(f"    → {'PASS' if ok else 'CHECK'}: CCD caps the step so the final gap stays >0 "
+          f"(>= (1-eta)*d for a closing step); separating/short steps unrestricted")
+
+
+def _ipc_full_test(device="cpu"):
+    """The full IPC method end-to-end on a 2-cell + strong bundle-proxy pull: barrier force (Phase 1)
+    in the RHS + barrier Hessian in the implicit operator (Phase 0 hook) + CCD-filtered step (Phase 2).
+    Compared to the OLD capped per-face penalty. IPC must keep the cells penetration-free (pen→0) and
+    stable where OLD tunnels (pen grows past c_rep). Start state is overlapping → exercises the
+    feasibilization branch (push to gap≥0) before the barrier+CCD maintain gap>0."""
+    import numpy as np
+    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32, contact_grid_kernel
+    from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
+
+    m = _build_two_cell(device, overlap=0.45)
+    verts, faces, edges, cof, fcell = m["verts"], m["faces"], m["edges"], m["cof"], m["fcell"]
+    R, me, npc, p = m["R"], m["me"], m["npc"], m["params"]
+    N, nf, ne = verts.shape[0], faces.shape[0], edges.shape[0]
+    V0 = (4 / 3) * np.pi * (np.linalg.norm(verts[:npc] - verts[:npc].mean(0), axis=1).mean()) ** 3
+    rep = 2.0e8; c_rep, c_adh = 0.30 * me, 0.80 * me
+    d_hat = c_rep                                              # barrier activation gap (derived)
+    repel_q = float(c_adh + 0.7 * (3 * me / 2.9) + 3.0 * me)
+    gamma = 6.0 * np.pi * 65.9 * R / npc
+    area_typ = 4 * np.pi * R ** 2 / npc; Fcap = rep * area_typ * c_rep
+
+    pos_d = wp.array(verts, dtype=wp.vec3d, device=device); force_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    cof_d = wp.array(cof, dtype=wp.int32, device=device)
+    faces_d = wp.array(faces.astype(np.int32), dtype=wp.int32, device=device)
+    fcell_d = wp.array(fcell, dtype=wp.int32, device=device)
+    edges_d = wp.array(edges.astype(np.int32), dtype=wp.int32, device=device)
+    r0_d = wp.array(np.linalg.norm(verts[edges[:, 0]] - verts[edges[:, 1]], axis=1), dtype=wp.float64, device=device)
+    nf32 = wp.zeros(N, dtype=wp.vec3, device=device); cf32 = wp.zeros(nf, dtype=wp.vec3, device=device)
+    Vc = wp.zeros(2, dtype=wp.float64, device=device); dP = wp.zeros(2, dtype=wp.float64, device=device)
+    cn_k = wp.zeros(N, dtype=wp.float64, device=device); cn_nrm = wp.zeros(N, dtype=wp.vec3d, device=device)
+    t_ccd = wp.zeros(N, dtype=wp.float64, device=device)
+    fg = wp.HashGrid(32, 32, 32, device=device)
+    pull_d = wp.array(np.zeros((N, 3)), dtype=wp.vec3d, device=device)
+
+    def set_pull(F):
+        pull = np.zeros((N, 3)); pull[cof == 0, 0] = -F; pull[cof == 1, 0] = +F
+        pull_d.assign(np.ascontiguousarray(pull))
+
+    def build_grid(x):
+        pos_d.assign(np.ascontiguousarray(x.reshape(N, 3)))
+        wp.launch(pos_to_f32, dim=N, inputs=[pos_d, nf32], device=device)
+        wp.launch(face_centroids_f32, dim=nf, inputs=[pos_d, faces_d, cf32], device=device)
+        fg.build(points=cf32, radius=repel_q)
+
+    def smooth_into(pos_buf, out_d):
+        wp.launch(_zero_vec, dim=N, inputs=[out_d], device=device)
+        Vc.zero_()
+        wp.launch(dcm_volume_kernel, dim=nf, inputs=[pos_buf, faces_d, fcell_d, Vc], device=device)
+        wp.launch(_dp_from_vol, dim=2, inputs=[Vc, wp.float64(V0), wp.float64(p.turgor_dP0), wp.float64(7.73e5), dP], device=device)
+        wp.launch(dcm_turgor_force_kernel, dim=nf, inputs=[pos_buf, faces_d, fcell_d, dP, out_d], device=device)
+        wp.launch(_bond_accumulate, dim=ne, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
+        wp.launch(_vaxpy_active, dim=N, inputs=[out_d, wp.float64(1.0), pull_d, cof_d], device=device)
+
+    def old_into(pos_buf, out_d):
+        smooth_into(pos_buf, out_d)
+        wp.launch(contact_grid_kernel, dim=N,
+                  inputs=[fg.id, nf32, pos_buf, cof_d, faces_d, fcell_d, wp.float32(repel_q),
+                          wp.float64(rep), wp.float64(0.0), wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
+
+    def pen_frac(x):
+        # depth = |barrier/feasibilization force| recovered via cn_k; for outside nodes pen=0
+        build_grid(x); fz = wp.zeros(N, dtype=wp.vec3d, device=device)
+        wp.launch(nearest_face_ipc_kernel, dim=N,
+                  inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q),
+                          wp.float64(rep), wp.float64(d_hat), fz, cn_k, cn_nrm], device=device)
+        wp.synchronize_device(device)
+        # count only INSIDE nodes: feasibilization force = rep*area*depth, depth=|F|/(rep*area)=|F|/cn_k.
+        # But barrier nodes also have cn_k>0; distinguish by sign via penetration_depth_kernel instead.
+        from ffn_sim.warp_port.dcm_neighbor_warp import penetration_depth_kernel
+        pend = wp.zeros(N, dtype=wp.float64, device=device)
+        wp.launch(penetration_depth_kernel, dim=N,
+                  inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q), pend], device=device)
+        wp.synchronize_device(device)
+        return float(pend.numpy().max() / me)
+
+    def vol_cell(x):
+        v0, v1, v2 = x[faces[:, 0]], x[faces[:, 1]], x[faces[:, 2]]
+        return abs(float(np.einsum('ij,ij->i', v0, np.cross(v1 - v0, v2 - v0)).sum() / 6.0)) / 2.0
+
+    scratch = {k: wp.zeros(N, dtype=wp.vec3d, device=device) for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp")}
+    scratch["sca"] = wp.zeros(1, dtype=wp.float64, device=device)
+    dt = 8e-6 * 50; a_imp = gamma / dt; nsteps = 200
+
+    def run(mode):
+        x = verts.copy(); ok = True
+        for s in range(nsteps):
+            build_grid(x)
+            if mode == "old":
+                wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
+                old_into(pos_d, force_d)
+                dx_d, _ = device_cg(old_into, pos_d, a_imp, force_d, scratch, device=device)
+                wp.launch(_vaxpy_active_capped, dim=N, inputs=[pos_d, dx_d, cof_d, wp.float64(c_rep)], device=device)
+                x = pos_d.numpy().copy()
+            else:  # FULL IPC: barrier force + barrier Hessian (implicit) + CCD-filtered step
+                wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
+                smooth_into(pos_d, force_d)
+                wp.launch(nearest_face_ipc_kernel, dim=N,
+                          inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q),
+                                  wp.float64(rep), wp.float64(d_hat), force_d, cn_k, cn_nrm], device=device)
+                hess = make_contact_hess_apply(cn_k, cn_nrm, device=device)
+                dx_d, _ = device_cg(smooth_into, pos_d, a_imp, force_d, scratch, device=device, hess_apply=hess)
+                al = ccd_alpha(fg.id, nf32, pos_d, dx_d, cof_d, faces_d, fcell_d, repel_q, t_ccd, eta=0.9, device=device)
+                x = x + al * dx_d.numpy()
+            if not np.isfinite(x).all() or vol_cell(x) > 50 * V0:
+                ok = False; break
+        return x, ok
+
+    pen0 = pen_frac(verts)
+    print(f"(5) FULL IPC vs OLD penalty, 2-cell + bundle-proxy ({nsteps} steps @dt×50, "
+          f"start pen={pen0:.2f}, Fcap={Fcap:.1e}N):")
+    print(f"    {'Fpull/Fcap':>10} | {'OLD pen':>9} {'OLD V/V0':>9} | {'IPC pen':>9} {'IPC V/V0':>9}")
+    for mult in (1.0, 2.0, 4.0, 8.0):
+        set_pull(mult * Fcap)
+        xo, oko = run("old"); xi, oki = run("ipc")
+        po = pen_frac(xo) if oko else float('nan'); vo = vol_cell(xo) / V0 if oko else float('nan')
+        pi = pen_frac(xi) if oki else float('nan'); vi = vol_cell(xi) / V0 if oki else float('nan')
+        od = "DIVERGE" if not oko else f"{po:8.3f}"; idd = "DIVERGE" if not oki else f"{pi:8.3f}"
+        print(f"    {mult:>10.1f} | {od:>9} {vo:>9.3f} | {idd:>9} {vi:>9.3f}")
+    print(f"    → expect: IPC pen → ~0 (penetration-free) + stable at every pull; OLD tunnels (pen grows)")
+
+
 if __name__ == "__main__":
     _barrier_unittest()
+    _ccd_unittest()
+    _ipc_full_test()
     _selftest()
