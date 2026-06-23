@@ -89,6 +89,37 @@ non-wetting (S<0) at physiological MCF7 values, and the collective spread magnit
 limit owned by the fine-grained single-cell line. The investigation across contact (M1/IPC),
 deformability (turgor/k_vol), and surface-tension polarization is exhausted and self-consistent.
 
+## DEEPEST insight (S>0 demo) — spheroid spreading needs a SUBSTRATE MODEL + volume conservation
+
+Ran the S>0 polarization demo (γ=1e-4 → S = +2.65e-3 > 0, Douezan wetting) on the deformable
+(k_vol=1e3) + IPC + bundle deliverable config, with adaptive substepping `--cfl-limit 0.3`. It
+**hard-diverged** (cfl → 11035 at step 666, even at the max 16 substeps). Root cause is PHYSICAL, not
+numerical: at S>0 the basal effective tension ``γ_basal = γ − w_cs < 0`` is **NEGATIVE** = area-MAXIMISING
+= an inherent runaway (nothing bounds the basal expansion). This is exactly the spreading DRIVE
+(negative basal tension wets/spreads) — so the polarization mechanism genuinely produces the wetting
+force — but it has no EQUILIBRIUM here.
+
+**Why the single cell spreads (bounded, A/A0→3.8) but this runs away:** the single-cell fried-egg used
+(1) STIFF k_vol (volume conservation → the cell flattens at CONSTANT volume, so A/A0 is bounded by the
+volume) AND (2) a substrate WELL/floor (bounds the basal expansion at the contact line). The proxy-free
+DEFORMABLE stack removed BOTH: k_vol=1e3 (no volume bound) and use_substrate_well=False (no floor). So
+the negative basal tension expands without bound → divergence.
+
+**This reframes the whole picture and the turgor finding:**
+- The k_vol "volume lock" (7.73e5) was NOT only a contact band-aid — it ALSO provides the
+  **volume conservation that bounds spreading** (constant-volume flattening). "Remove the lock for
+  deformability" is in direct TENSION with "spreading needs volume conservation."
+- The proxy-free stack's ECM clutch provides substrate TRACTION, but NOT the substrate FLOOR /
+  contact-line mechanics that BOUNDS a spreading cell. **The missing piece for spheroid spreading is a
+  mechanistic SUBSTRATE MODEL** (a proper floor / contact-line / deformable substrate = the C6
+  "deformable/3D substrate" backlog item), together with volume conservation.
+
+So the full, self-consistent answer: spreading is gated by Douezan S (S<0 non-wetting at physiological
+MCF7); the S>0 wetting drive EXISTS in the polarization kernel but needs **volume conservation + a
+substrate floor** to reach the bounded fried-egg equilibrium — exactly what the proxy-free deformable
+stack removed. The single cell has it (fried-egg works); the spheroid needs the C6 substrate model OR
+the fine-grained single-cell line.
+
 ## PI decision points (surfaced)
 - Accept M1 good-enough-honest at pen 1.80 (de-cohesion runs are A/A0-hull-robust)?
 - k_vol final physiological value (1e3 deformable confirmed viable with IPC; 2500/Guo are refinements).
