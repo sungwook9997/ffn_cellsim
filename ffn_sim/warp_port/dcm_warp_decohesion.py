@@ -53,6 +53,8 @@ from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelPar
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
 from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
+from ffn_sim.warp_port.dcm_contact_implicit_warp import (
+    nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha)
 
 wp.init()
 
@@ -221,6 +223,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
                    use_grid: bool = True, save_frames: str | None = None,
+                   ipc: bool = False, ipc_eta: float = 0.9,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
@@ -349,6 +352,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp", "Fb")} if implicit else None)
     if implicit:
         cg_scratch["sca"] = wp.zeros(1, dtype=wp.float64, device=device)
+    # M1 IPC node-face contact (opt-in): barrier force RHS + analytic barrier Hessian (frozen at xₙ)
+    # in the implicit operator + a CCD-filtered step. d̂ = c_rep (derived activation gap), κ = rep.
+    ipc_cn_k = wp.zeros(N, dtype=wp.float64, device=device) if ipc else None
+    ipc_cn_nrm = wp.zeros(N, dtype=wp.vec3d, device=device) if ipc else None
+    ipc_t = wp.zeros(N, dtype=wp.float64, device=device) if ipc else None
+    ipc_hess = make_contact_hess_apply(ipc_cn_k, ipc_cn_nrm, device=device) if ipc else None
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
     face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
 
@@ -544,7 +553,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if necro is not None:
             wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, dP_d, out_d], device=device)
-        if use_grid:
+        # node-FACE contact. With --ipc the excluded volume is the analytic barrier Hessian fed
+        # to device_cg via hess_apply (NOT here) — so the FD operator excludes it (its C0 JVP was
+        # being discarded by the pAp floor); adhesion-only (rep=0) stays if coh_adh>0.
+        if use_grid and not ipc:
             if js is not None:
                 wp.launch(contact_grid_cad_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d, cad_d,
@@ -555,6 +567,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                           inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
                                   wp.float32(con_q), wp.float64(rep_strength), wp.float64(coh_adh),
                                   wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
+        elif use_grid and ipc and coh_adh > 0.0:                # IPC: adhesion-only (rep=0), barrier owns repulsion
+            wp.launch(contact_grid_kernel, dim=N,
+                      inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
+                              wp.float32(con_q), wp.float64(0.0), wp.float64(coh_adh),
+                              wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
         if use_substrate_well:
             wp.launch(dcm_substrate_well_accum_kernel, dim=N, inputs=[pos_buf, wp.float64(z0),
@@ -614,7 +631,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces,
                   inputs=[pos_d, faces_d, fcell_d, dP_d, force_d], device=device)
-        if use_grid:
+        if use_grid and ipc:
+            # M1 IPC node-FACE: log-barrier excluded volume into the RHS (force_d) + per-node barrier
+            # normal stiffness (ipc_cn_k/ipc_cn_nrm) for the implicit operator. d̂=c_rep, κ=rep_strength
+            # (both derived). Already-penetrating nodes get the linear feasibilization push out.
+            wp.launch(nearest_face_ipc_kernel, dim=N,
+                      inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                              wp.float32(con_q), wp.float64(rep_strength), wp.float64(c_rep),
+                              force_d, ipc_cn_k, ipc_cn_nrm], device=device)
+            if coh_adh > 0.0:                                   # node-face adhesion stays (multi-face), rep=0
+                wp.launch(contact_grid_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                                  wp.float32(con_q), wp.float64(0.0), wp.float64(coh_adh),
+                                  wp.float64(c_rep), wp.float64(c_adh), force_d], device=device)
+        elif use_grid:
             if js is not None:
                 wp.launch(contact_grid_cad_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d, cad_d,
@@ -738,10 +768,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             # (wetting/lamellipodium/cadherin/clutch) are already in force_d (explicit RHS).
             a_imp = (1.0 / inv_gamma) / dt_step          # γ_node / dt
             dx_d, _ = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
-                                maxiter=cg_maxiter, device=device)
+                                maxiter=cg_maxiter, device=device, hess_apply=ipc_hess)
             # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
             # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
-            if pen_cap:        # D8: clamp each node's implicit step to the contact-shell scale
+            if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
+                alpha = ccd_alpha(face_grid.id, node_f32, pos_d, dx_d, cof_d, faces_d, fcell_d,
+                                  con_q, ipc_t, eta=ipc_eta, device=device)
+                wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(alpha), dx_d, cof_d], device=device)
+            elif pen_cap:      # D8: clamp each node's implicit step to the contact-shell scale
                 wp.launch(_vaxpy_active_capped, dim=N,
                           inputs=[pos_d, dx_d, cof_d, wp.float64(pen_cap_frac * c_rep)], device=device)
             else:
@@ -1080,6 +1114,11 @@ def main():
     ap.add_argument("--steps", type=int, default=40000)
     ap.add_argument("--frames", type=int, default=20)
     ap.add_argument("--dt", type=float, default=8.0e-6)
+    ap.add_argument("--ipc", action="store_true",
+                    help="M1: IPC node-face contact (log-barrier force + analytic Hessian in the implicit "
+                         "operator + CCD-filtered step) instead of the capped penalty — guarantees "
+                         "non-penetration under the strong cadherin bundle (needs --integrator implicit)")
+    ap.add_argument("--ipc-eta", type=float, default=0.9, help="CCD safety fraction (gap stays >= (1-eta)*d)")
     ap.add_argument("--warmup", type=int, default=1000, help="soft-start steps at 0.1x dt")
     ap.add_argument("--settle-steps", type=int, default=0,
                     help="aggregation/settle steps at full dt with NO spread drivers (rest the spheroid at z0 before the measured spread; baseline A0 is taken AFTER this)")
@@ -1147,7 +1186,8 @@ def main():
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
-        use_grid=not args.no_grid, save_frames=args.save_frames)
+        use_grid=not args.no_grid, save_frames=args.save_frames,
+        ipc=args.ipc, ipc_eta=args.ipc_eta)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
 
