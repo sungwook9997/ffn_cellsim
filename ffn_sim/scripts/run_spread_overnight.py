@@ -30,12 +30,18 @@ def main():
                     help="M1: use IPC node-face contact (barrier+CCD) instead of the capped penalty — "
                          "the decisive validation that the strong cadherin/ecm bundle no longer tunnels "
                          "(penalty gave pen 3.1; IPC target pen<0.3, V/V0 stable, A/A0 unconfounded)")
+    ap.add_argument("--k-vol", type=float, default=7.73e5, dest="k_vol",
+                    help="osmotic bulk modulus (Pa). Default 7.73e5 = the 'fried-egg' near-incompressible "
+                         "VOLUME LOCK (a contact band-aid that pins V/V0=1.000). Set to the pre-fried-egg "
+                         "soft default 1e3 to REMOVE the lock so turgor (dP0) engages (V/V0 emergent) — "
+                         "only valid PAIRED WITH --ipc (which provides the real over-compression guard).")
     a = ap.parse_args()
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
     out = run_decohesion(
         n_cells=a.n, subdiv=2, steps=a.steps, frames=a.frames, device=a.device,
         dt=8e-6, warmup=200, settle_steps=a.settle, gap=2.05,
+        k_vol=a.k_vol,
         rep_strength=2e8, adh_strength=5e7,
         surface_tension=True, gamma_surf=1e-4, bending=True, edge_edge=True, nucleus=True,
         cadherin=True, ecm_clutch=True, lamellipodium=True,
