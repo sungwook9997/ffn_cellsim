@@ -1,5 +1,15 @@
 # Phase C — overnight adversarial audit consolidation (2026-06-23)
 
+> ⚠️ **TERMINOLOGY FIX (PI 2026-06-23):** where these night docs say "**M1**" for the node-FACE
+> contact / excluded-volume issue, that was a BAD label collision — it is **NOT** the project's
+> M1 milestone. The real milestones are **M1 = substrate** (z-well + wetting), **M2 = lamellipodium**,
+> **M3 = junction-switch / de-cohesion** (now via fine-grained cadherin catch-bonds). **We are at M3.**
+> The "contact" issue is the **excluded-volume FOUNDATION underneath all milestones** — read every "M1
+> [contact]" below as "**CONTACT foundation**". The night's spreading/de-cohesion runs ARE M3 work; they
+> found that M3's strong catch-bond bundle forces break that contact foundation (pen 3.1). Mea culpa on
+> both the label and on doing piecemeal contact prototypes (memory `feedback-junction-switch-fine-grained`
+> wanted build-order → ONE production test, not piecemeal).
+
 3 parallel adversarial subagents (wiring / performance / physics) + Lead verification. Branch
 `h7/compartment-platform`. Detail reports: `AUDIT_WIRING_2026-06-23.md`, `AUDIT_PERF_2026-06-23.md`,
 `AUDIT_PHYSICS_2026-06-23.md`. This file = the ranked, deduped, action-tagged master list.
