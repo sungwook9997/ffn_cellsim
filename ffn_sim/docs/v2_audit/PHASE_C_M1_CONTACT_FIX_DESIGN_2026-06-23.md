@@ -128,7 +128,13 @@ in a filtered Newton solve. Without CCD the barrier is worse than the penalty.
 | nearest-face saturated cap | STABLE but TOO WEAK (pen 2.9→2.9) |
 | stiffer rep (sweep) | NO drop (pen 2.9→3.6) + diverges at 5e8/2e9 |
 | naive IPC barrier kernel | BLOWS UP (pen→69, no CCD) |
-**No kernel-level contact law in the penalty/barrier-force family solves it.** The fix is the FULL IPC
+| constraint projection (post-step relocate-to-surface) | BLOWS UP (vv0→244) |
+**No kernel-level contact law in the penalty/barrier-force family solves it. Nor does the position-
+constraint family (6th prototype): a post-step projection that relocates inside nodes to the surface
+makes it WORSE (vv0→244) — the discontinuous relocation is seen by the next implicit step as a huge
+displacement, the turgor/edge forces react violently → energy injection → blow-up. A correct constraint
+must be solved WITHIN the implicit step (a Lagrange multiplier / KKT system), not bolted on after it —
+the same "real method, not a hack" lesson as IPC's CCD-in-the-line-search.** The fix is the FULL IPC
 method — **CCD-filtered line search (guarantees no penetration) + barrier energy + filtered Newton** — a
 real contact-mechanics implementation (Li et al., *Incremental Potential Contact*, SIGGRAPH 2020),
 GPU-portable but a genuine project, NOT a kernel swap. This is the definitive scoping for PI: do not spend
