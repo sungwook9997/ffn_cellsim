@@ -131,11 +131,19 @@ Perf audit: per-step cost = CG-iters × stiff-force-eval. **Lead MEASURED the re
 distribution** (CG_DEBUG=1, N=24 implicit-100×, 260 solves): **min 8, median 36, mean 32.1, max 80
 (cap), 1% at cap.** This CORRECTS the auditor's "~4 iters" (that was a too-easy isolated test point) and
 confirms the decisive doc's "14–35 evals/step." So the implicit step really does cost ~32 stiff evals.
-- **The high-value lever is a PRECONDITIONER** (#2): an analytic diagonal-Jacobi `M=(a+diag(K))` could
-  cut ~32 → ~10–15 iters ≈ **~2× net**, correctness-preserving (changes convergence rate, not solution).
-  The existing Jacobi is OFF because it was built from the NOISY FD JVP; the fix is an ANALYTIC diagonal
-  (edges k_edge·degree + bending + turgor + contact penalty). **NOT done overnight** — computing the
-  analytic diagonal wrong would destabilize/slow every run; this is a focused, parity-gated session.
+- **PRECONDITIONER — TESTED, the diagonal Jacobi does NOT help (measured).** Implemented the opt-in
+  analytic-diagonal Jacobi (`M=1/(a + k_edge·degree)`) in `device_cg` (minv arg, parity-verified:
+  minv=None byte-identical, vv0 1.00000) + a `--cg-precond` driver flag, and MEASURED on a real N=12
+  implicit stack: **CG iters 43 → 42 (median), vv0/pen identical — essentially ZERO benefit.** Reason
+  (now confirmed both by analysis and measurement): (1) the cortex-edge diagonal `k_edge·degree` is
+  **nearly UNIFORM** on the regular icosphere → a uniform diagonal ≈ a scalar ≈ a CG no-op; (2) the
+  dominant stiff mode is the **turgor incompressibility** (K_vol=7.73e5), a GLOBAL rank-1-per-cell
+  constraint that **no diagonal preconditioner can address**. This confirms + extends the existing
+  `dcm_warp_implicit.py:63-68` comment ("Jacobi measured to hurt … analytic diagonal = future work"):
+  the analytic diagonal is ALSO futile. **The opt-in code was REVERTED** (engine kept pristine) since it
+  doesn't help. **The real CG accelerator is a CONSTRAINT / DEFLATION preconditioner** that handles the
+  turgor volume-constraint global mode (or a Schur-complement on the volume DOF) — a substantial method
+  change, genuinely research-level, surfaced to PI. The diagonal-Jacobi path is now a closed question.
 - #1 per-iter host sync removal: small (CG α,β recurrence is sequential, `.numpy()` already syncs).
 - #3 warm-start dx ~1.05–1.3× but costs one operator eval; #4 bending→RHS parity-gated.
 **Conclusion: a real ~2× is on the table via an analytic-diagonal preconditioner — the single best
