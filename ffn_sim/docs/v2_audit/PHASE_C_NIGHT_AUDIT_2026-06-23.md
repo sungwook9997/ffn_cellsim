@@ -81,6 +81,17 @@ cadherin/ecm bonds to a COLLAPSE-parked node (parked at ~0.45·Lx) read a stale 
 force kernel applies a **box-scale spurious force**. **Lead FIXED it** (mirrored the division path into
 `do_remesh`: `if cad…: cad.cof=cof_a; if ecm…: ecm.cof=cof_a`). FIX-SAFE: only affects remesh+binder
 runs, which were BROKEN before (so no valid run changes); the current spreading run has remesh OFF.
+⚠️ **CORRECTION (night-deliverables verification): my "all four hosts" was WRONG — SIX hosts cache cof.**
+`FilopodiaHost` ALSO caches `self.cof` + `self.faces` + `self.fcell` (+ device arrays) and reads them in
+`update()` to detach tips on parked nodes; it is re-pointed NOWHERE, and there was NO filopodia+remesh
+guard → `--filopodia --remesh-period` had the SAME stale-reference bug (and worse: faces/fcell + device
+state also go stale on a topology change). **FIXED by GUARDING the combination** (disable remesh when
+filopodia is on, matching the existing division+remesh guard) — a partial host re-point would not fix the
+device-array staleness, so the safe complete fix is to forbid the combo until the filopodia host re-points
++ rebuilds on remesh. (NecrosisHost also caches self.cof but reads only the fresh `cof` arg, so it's safe.
+Production does not enable `--filopodia`, so this was latent.) The `:922-925` "mirror" framing is also
+imprecise: DivisionHost mutates cof IN-PLACE (its re-point is a cosmetic no-op); remesh's need is
+REASSIGNMENT-driven — the symmetry heuristic held but for a different reason.
 
 ### R2. COLLAPSE not volume-conserving + V0 never re-seated → spurious turgor [SURFACE-PI]
 `V0=(4/3)πR0³` is fixed once (`:265`); `do_remesh` never re-seats it. SPLIT is exactly volume-conserving
@@ -144,11 +155,18 @@ confirms the decisive doc's "14–35 evals/step." So the implicit step really do
   doesn't help. **The real CG accelerator is a CONSTRAINT / DEFLATION preconditioner** that handles the
   turgor volume-constraint global mode (or a Schur-complement on the volume DOF) — a substantial method
   change, genuinely research-level, surfaced to PI. The diagonal-Jacobi path is now a closed question.
-- #1 per-iter host sync removal: small (CG α,β recurrence is sequential, `.numpy()` already syncs).
-- #3 warm-start dx ~1.05–1.3× but costs one operator eval; #4 bending→RHS parity-gated.
-**Conclusion: a real ~2× is on the table via an analytic-diagonal preconditioner — the single best
-optimization. Deferred to a careful parity-gated session (overnight risk>reward); roadmap documented.**
-The other acceleration axis remains FEWER STEPS (I4 Newton / larger stable dt).
+- #1 per-iter host sync removal: the CG α,β recurrence is sequential and `.numpy()` already syncs, BUT
+  the verification flagged one **parity-exact small win** the first pass wrongly dismissed: `dot(p,p)`
+  (used only for the JVP probe scale `s=eps/‖p‖`) is one of 3 host reductions/iter and can be tracked by
+  the standard `‖p‖²` recurrence (`pp_new = rs_new + β²·pp`) instead of a fresh reduction → 3→2 syncs/iter,
+  ~a real fraction of per-step latency at N=12–100. NOT research-level; a ~5-line parity-exact change.
+  (Tested alternatives that do NOT survive: freezing the FD probe scale across iters changed the answer
+  47% in the capped far-from-eq regime; warm-start across steps gave only ~3% because the first cold
+  steps hit maxiter.) #3 warm-start ~1.05–1.3×; #4 bending→RHS parity-gated.
+**Conclusion (CORRECTED — the first draft mislabeled the lever): the analytic-DIAGONAL Jacobi does NOT
+help (measured 43→42, above) — the ~2× lever belongs to a CONSTRAINT/DEFLATION preconditioner on the
+turgor global mode (research-level, deferred). The only non-research win is the dot(p,p) sync removal
+(~5 lines, small). The other acceleration axis remains FEWER STEPS (I4 Newton / larger stable dt).**
 
 ## LOW / hygiene
 

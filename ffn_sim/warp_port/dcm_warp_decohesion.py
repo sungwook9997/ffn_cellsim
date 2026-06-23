@@ -252,6 +252,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         print("  [warn] division + remesh both requested — disabling remesh this run "
               "(shared cof<0 pool; disambiguation is a follow-up).", flush=True)
         remesh_period = 0
+    # FilopodiaHost caches self.cof / self.faces / self.fcell (host) PLUS device arrays built from the
+    # mesh topology; a remesh SWAP/SPLIT/COLLAPSE reassigns faces/fcell/cof and changes the topology,
+    # leaving the filopodia host's cached refs + device state STALE → a tip bonded to a parked node
+    # yields a box-scale spurious force (same class as the cad/ecm remesh bug, but device-deep). Until
+    # the filopodia host re-points + rebuilds on remesh, guard the combination (matches division above).
+    # (Found by the 2026-06-23 night-deliverables verification — the cad/ecm fix missed the 5th/6th host.)
+    if filopodia and remesh_period:
+        print("  [warn] filopodia + remesh both requested — disabling remesh this run "
+              "(FilopodiaHost caches cof/faces/fcell + device state; remesh would leave them stale).", flush=True)
+        remesh_period = 0
     n_active = n_cells                              # requested live cells (C7 adds a parked pool)
     n_parked = int(div_pool_factor * n_cells) if division else 0
     pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
