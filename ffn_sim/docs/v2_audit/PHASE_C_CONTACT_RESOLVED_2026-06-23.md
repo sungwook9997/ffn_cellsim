@@ -93,8 +93,32 @@ meaningful." Recommend wiring C5 together with C6, not onto the rigid-dish proxy
 - `figs/twocell_long_rep{4e+07,2e+08,1e+09,5e+09}.png` — per-rep cross-section + all-nodes diagnostic.
 - `figs/n400_contact_valid.png` — (pending) N=400 top-down + equatorial slab vs OLD n400 baseline.
 
-## NEXT
-- N=400 aggregation settle (running, gbook A5000, ~50 min ETA) → confirm round all-touching contact
-  spheroid at scale + whether deep_pen grows (latent-tunnel check). Compare to OLD n400
-  (aniso 1.02, asph 0.013, contact 1.0, V/V0 1.12, Psi 0.876).
-- PI decisions: A1 unification, E gate rewrite, C5 defer-vs-wire.
+## N=400 VALIDATION — clean round all-touching flattened spheroid ✓ (2026-06-23, gbook A5000, 2.97h)
+`run_decohesion` N=400, gentle aggregation (cohesion+contact, adh 5e7, no cadherin bundle), 8000-settle
+implicit. Analyzed with `scripts/n400_contact_analyze.py` (fig `n400_contact_valid.png`):
+| metric | N=400 (this) | OLD n400 | reading |
+|---|---|---|---|
+| asphericity | **0.0003** | 0.013 | round envelope (even rounder than OLD) |
+| anisotropy λ1/λ3 | **1.03** | 1.02 | round |
+| isolated cells | **0** | 0 | all-touching |
+| contact fraction | 0.74 | (1.0, diff metric) | dense |
+| per-cell Ψ (isoperimetric) | **0.959** | 0.876 (global) | flattened junctions |
+| coordination z | 9.8 | — | dense (FCC bulk 12) |
+| V/V0 | 1.000 | 1.12 | (OLD had softer K_vol) |
+| **pen_frac** | **0.12 (peak 0.13)** | — | **G2 PASS — gentle aggregation does NOT tunnel even at N=400** |
+| deep_pen (point-in-mesh) | 0.21 R | — | moderate, no catastrophic overlap |
+
+The equatorial slab (fig, right) shows polygonal cells with FLAT shared junctions — the regime-II tissue
+packing. **The node-FACE contact produces a proper round, all-touching, flattened-junction spheroid at
+N=400** — definitively closing the "rigid sphere overlap" alarm at scale (it was wrong at 2-cell AND at
+N=400). Roundness EMERGES at N=400 (asph 0.0003) = the curvature-averaging the research predicted.
+
+⭐ **Key distinction the two runs draw:** gentle aggregation (adh 5e7) → contact HOLDS (pen 0.12) even at
+N=400; the strong cadherin ×40 bundle (spreading/de-cohesion regime) → contact FAILS (pen 3.1, see
+`PHASE_C_SPREADING_RESULT`). **The M1 tunnelling is FORCE-MAGNITUDE-driven, not N-driven** — the contact
+is fine for aggregation, and only the strong-bundle de-cohesion regime needs the IPC-barrier fix (M1).
+
+## NEXT — PI decisions
+M1 barrier contact (gates the strong-bundle spreading/de-cohesion regime; gentle aggregation already
+works) · H1 node-NODE→adhesion-only · R2 remesh V0-reseat · A1 coupling unification · C5+C6 · E gate
+rewrite · rep 2e8-vs-lit-4e7 · K_vol reconcile · CG analytic-diagonal preconditioner (~2×).
