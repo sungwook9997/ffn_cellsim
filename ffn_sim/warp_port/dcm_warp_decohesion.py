@@ -1074,6 +1074,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 if js is not None: js.cof = cof_a
                 if cad is not None: cad.cof = cof_a
                 if ecm is not None: ecm.cof = cof_a
+                if filo is not None:
+                    # B3 de-conflict (2026-06-24): FilopodiaHost caches self.cof/faces/fcell (its
+                    # PROBE + the GPU probe read these). A division flips a parked cell's cof and
+                    # re-points cof_a, leaving filo's cached cof STALE → a tip could bond to a now-
+                    # active node with the wrong node→cell map (same class as the cad/ecm bug). The
+                    # host has no remesh-rebuild method (remesh is disabled when filopodia is on,
+                    # so faces/fcell never change under division — but re-point all three to match
+                    # the other hosts exactly + stay correct if that guard is ever lifted). n_cells,
+                    # n_per_cell (sized to the FULL active+parked pool) and the device adhesion
+                    # bundles (rebuilt each filo.upload from current state) need no re-point.
+                    filo.cof = cof_a
+                    filo.faces = faces_a
+                    filo.fcell = fcell_a
                 print(f"  [division] step {s}: {div.n_divisions} total divisions "
                       f"({int((cof_a[np.arange(n_cells)*npc]>=0).sum())} active cells)", flush=True)
         stepped(s, dt)

@@ -100,6 +100,10 @@ def main():
                          "p_div = S*dt*div_every/T_cycle so cells divide ~div_real_hours/T_cycle times. 0 = bare div_rate.")
     ap.add_argument("--div-t-cycle", type=float, default=24.0, dest="div_t_cycle_h",
                     help="cell-cycle / doubling time in HOURS (MCF7 ~24h). Used by time-consistent division.")
+    ap.add_argument("--necrosis", action="store_true",
+                    help="C8 3-zone necrosis ON. Depth-from-surface O2 proxy assigns prolif/quiescent/"
+                         "necrotic; necrotic core softens turgor and division is gated to the proliferating "
+                         "rim. Inert until the spheroid is large enough to develop an anoxic core.")
     ap.add_argument("--active-batch", type=int, default=50, dest="active_batch",
                     help="filopodia+lamellipodium host-update cadence (steps). 50 default; 200 = 4x fewer "
                          "expensive host PROBE updates (advance is batch-consistent so velocity is preserved). "
@@ -148,6 +152,7 @@ def main():
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
         division=a.division, div_real_hours=a.div_real_hours, div_t_cycle_h=a.div_t_cycle_h,
+        necrosis=a.necrosis,
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         proj_gap_factor=a.proj_gap_factor,
