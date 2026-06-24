@@ -147,3 +147,31 @@ The barrier+CCD machinery (the bulk of the IPC build) is not earning its complex
 - k_vol final physiological value (1e3 deformable confirmed viable with IPC; 2500/Guo are refinements).
 - Invest in the polarization build (last lever, likely tissue-deformation not magnitude) vs accept the
   structural-limit conclusion now (strongly re-confirmed across contact + deformability)?
+
+## Single-cell polarization test (the magnitude scale) — genuine ~2.3× spread, but raw A/A0 was an EJECTION ARTIFACT
+
+Ran the polarization kernel on a **single cell** (N=1, the scale where the spread magnitude lives per
+Layer-2): `--ipc --ipc-dhat-factor 0.01 --polarize --gamma-surf 1e-4 --well --no-bundle --accel-dt 8e-5`.
+γ=1e-4 → S = +2.65e-3 > 0 (Douezan complete-wetting regime). Stable (cfl 0, V/V0 1.000) over 15k steps.
+
+**Raw metric (top-down convex hull, ALL nodes): A/A0 climbed linearly 11.7 → 18.98, still rising.**
+The figure (`figs/n1_polarization_friedegg.png`, side view) revealed this is **NOT a genuine fried-egg**:
+the cell BULK barely flattened (z-span 15 → 13.6 µm, only **−9.5%**), while **12 of 162 perimeter nodes
+(7.4%) were EJECTED** out to x = ±35 µm (the S>0 negative basal tension `γ_basal = γ − w_cs < 0` is
+area-maximising and overpowers the cortex springs on individual perimeter nodes — a discretisation
+runaway, exactly the peeling/ejection failure mode the peeling-aware `spread_eval` guards against).
+
+**Honest robust metric (ejected nodes removed): A/A0 ≈ 2.14** — bulk footprint radius 7.5 → 11.4 µm
+(genuine 2.3× spread), height −9.5%. So:
+- **The polarization mechanism DOES produce genuine single-cell spreading** (~2.3×, O(2–4), consistent
+  with the previously PI-confirmed single-cell fried-egg A/A0→3.8). Magnitude lives at the single-cell
+  scale: **2.14 (single) vs 1.0 (spheroid)** — the single-vs-collective divide is real and reproduced.
+- **The raw A/A0=19 was an artifact** (12 ejected nodes inflating the hull) — caught and corrected; the
+  committed figure now marks the ejected nodes and reports the robust 2.14. (Lesson re-applied: the
+  top-down-hull A/A0 must be ejection/peeling-robust, not raw — same class as the retracted A/A0→1.94.)
+- **Remaining mechanistic gap = bounding the S>0 wetting drive.** The negative basal tension has no
+  contact-line equilibrium at the node scale → it ejects nodes instead of spreading coherently. A
+  physical bound (Young contact-angle / line tension at the basal perimeter, or a γ_basal≥0 clamp, i.e.
+  the C6 substrate/contact-line model) is what converts the ejection runaway into a clean bounded
+  fried-egg. This is the precise, sharpened statement of the C6 backlog item — not "a substrate model"
+  generically, but specifically a **contact-line equilibrium** to bound the wetting drive.
