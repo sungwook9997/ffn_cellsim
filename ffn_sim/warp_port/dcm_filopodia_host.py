@@ -149,8 +149,14 @@ class FilopodiaHost:
 
     def __init__(self, *, cof: np.ndarray, n_cells: int, faces: np.ndarray,
                  fcell: np.ndarray, z0: float, R: float, dt: float,
-                 params: FilopodiaParams | None = None):
+                 params: FilopodiaParams | None = None,
+                 use_gpu_probe: bool = False, device: str = "cpu"):
         self.p = params or FilopodiaParams()
+        # opt-in GPU PROBE: when True, the O(free×n_faces) nearest-other-cell-face scan
+        # in update() runs as one Warp hash-grid kernel launch (dcm_filopodia_probe_warp)
+        # instead of the per-tip numpy scan. Default OFF = byte-identical host behaviour.
+        self.use_gpu_probe = bool(use_gpu_probe)
+        self.device = device
         self.cof = np.asarray(cof, dtype=np.int64)
         self.n_cells = int(n_cells)
         self.faces = np.asarray(faces, dtype=np.int64)
@@ -264,45 +270,70 @@ class FilopodiaHost:
             self.n_extended += 1
 
         # --- 3. PROBE + ADHERE free tips (substrate first, then nearest other-cell face) ---
-        # PERF: precompute ALL face centroids ONCE (was recomputed per free tip → O(free·n_faces)
-        # fancy-index gathers, the dominant per-batch host cost at large pools). Cell-independent, so
-        # hoisting is exact (each tip just indexes fc_all[cand]). ~free× fewer gathers, no physics change.
-        fc_all = (P[self.faces[:, 0]] + P[self.faces[:, 1]] + P[self.faces[:, 2]]) / 3.0
-        _cand_cache = {}                              # PERF: other-cell face set is the SAME for all
-        free = np.flatnonzero(self.alive & (self.state == 0))   # tips of a cell → cache per base-cell
+        # (a) SUBSTRATE pass (always host): tips that reach the dish band grip it and are removed
+        #     from the face-probe set. This is the substrate-first branch the GPU never touches.
+        free = np.flatnonzero(self.alive & (self.state == 0))
+        probe_idx = []                                # free, non-substrate tips → face probe
         for i in free:
             tip = self.tip[i]
-            # (a) substrate: tip reached the dish band
             if (tip[2] - self.z0) <= self.p.grip_band:
                 self.state[i] = 2
                 site = tip.copy(); site[2] = self.z0     # grip the dish ligand at z0
                 self.anchor[i] = site
                 self.n_sub_adhered += 1
-                continue
-            # (b) nearest OTHER-cell face within tip_capture (node-FACE closest point)
-            b = self.base_idx[i]
-            cb = cof[b]
-            cand = _cand_cache.get(cb)
-            if cand is None:
-                cand = np.flatnonzero((self.fcell != cb) & (self.fcell >= 0))
-                _cand_cache[cb] = cand
-            if cand.size == 0:
-                continue
-            # cheap pre-prune by face-centroid distance (precomputed fc_all), then exact closest-point
-            dcent = np.linalg.norm(fc_all[cand] - tip, axis=1)
-            near = cand[dcent <= (self.p.tip_capture + self.R)]
-            best_d = np.inf; best_f = -1; best_bary = None
-            for fj in near:
-                t = self.faces[fj]
-                cpa, bw = self._closest_point_bary(tip, P[t[0]], P[t[1]], P[t[2]])
-                dd = np.linalg.norm(cpa - tip)
-                if dd < best_d:
-                    best_d = dd; best_f = int(fj); best_bary = bw
-            if best_f >= 0 and best_d <= self.p.tip_capture:
-                self.state[i] = 1
-                self.tgt_face[i] = best_f
-                self.bary[i] = best_bary
-                self.n_face_adhered += 1
+            else:
+                probe_idx.append(i)
+
+        # (b) FACE pass: nearest OTHER-cell face within tip_capture (node-FACE closest point).
+        if self.use_gpu_probe and probe_idx:
+            # GPU PROBE: one hash-grid kernel over ALL free non-substrate tips, replacing the
+            # per-tip O(n_faces) numpy scan. Same acceptance + transitions as the host branch.
+            from ffn_sim.warp_port.dcm_filopodia_probe_warp import probe_faces_gpu
+            pidx = np.asarray(probe_idx, dtype=np.int64)
+            tips_xyz = self.tip[pidx]
+            owncell = cof[self.base_idx[pidx]].astype(np.int32)
+            bf, bb, _bd = probe_faces_gpu(
+                free_tips_xyz=tips_xyz, free_tip_owncell=owncell,
+                pos=P, faces=self.faces, fcell=self.fcell,
+                tip_capture=self.p.tip_capture, R=self.R, device=self.device)
+            for k, i in enumerate(pidx):
+                best_f = int(bf[k])
+                if best_f >= 0:                          # kernel already gated by tip_capture
+                    self.state[i] = 1
+                    self.tgt_face[i] = best_f
+                    self.bary[i] = bb[k]
+                    self.n_face_adhered += 1
+        elif probe_idx:
+            # HOST PROBE (default): precompute ALL face centroids ONCE (was recomputed per free
+            # tip → O(free·n_faces) gathers, the dominant per-batch host cost). Cell-independent,
+            # so hoisting is exact (each tip just indexes fc_all[cand]). No physics change.
+            fc_all = (P[self.faces[:, 0]] + P[self.faces[:, 1]] + P[self.faces[:, 2]]) / 3.0
+            _cand_cache = {}                          # other-cell face set is SAME for a cell's tips
+            for i in probe_idx:
+                tip = self.tip[i]
+                b = self.base_idx[i]
+                cb = cof[b]
+                cand = _cand_cache.get(cb)
+                if cand is None:
+                    cand = np.flatnonzero((self.fcell != cb) & (self.fcell >= 0))
+                    _cand_cache[cb] = cand
+                if cand.size == 0:
+                    continue
+                # cheap pre-prune by face-centroid distance, then exact closest-point
+                dcent = np.linalg.norm(fc_all[cand] - tip, axis=1)
+                near = cand[dcent <= (self.p.tip_capture + self.R)]
+                best_d = np.inf; best_f = -1; best_bary = None
+                for fj in near:
+                    t = self.faces[fj]
+                    cpa, bw = self._closest_point_bary(tip, P[t[0]], P[t[1]], P[t[2]])
+                    dd = np.linalg.norm(cpa - tip)
+                    if dd < best_d:
+                        best_d = dd; best_f = int(fj); best_bary = bw
+                if best_f >= 0 and best_d <= self.p.tip_capture:
+                    self.state[i] = 1
+                    self.tgt_face[i] = best_f
+                    self.bary[i] = best_bary
+                    self.n_face_adhered += 1
 
         # --- 4. SEED new filopodia from outward surface nodes (low cadence) ---
         if self.alive.sum() < self.n_pool:
