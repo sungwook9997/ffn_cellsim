@@ -227,6 +227,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    use_grid: bool = True, save_frames: str | None = None,
                    ipc: bool = False, ipc_eta: float = 0.9,
                    project: bool = False, proj_omega: float = 0.7, proj_iter: int = 8,
+                   proj_gap_factor: float = 1.0,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
@@ -821,7 +822,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 face_grid.build(points=cent_f32, radius=grid_q)
             _rebuild_proj(pos_d)
             project_contacts(face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d, grid_q, proj_dpos,
-                             proj_gap=c_rep, omega=proj_omega, n_iter=proj_iter,
+                             proj_gap=proj_gap_factor * c_rep, omega=proj_omega, n_iter=proj_iter,
                              rebuild=_rebuild_proj, device=device)
 
     def _penetration_frac():

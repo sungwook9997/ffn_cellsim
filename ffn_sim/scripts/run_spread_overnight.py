@@ -62,6 +62,10 @@ def main():
                          "8 = margin since the momentum-conserving 50/50 split moves the node only half/sweep)")
     ap.add_argument("--proj-omega", type=float, default=0.7, dest="proj_omega",
                     help="projection relaxation (0.5-1.0; 0.7 default, lower = gentler/more stable)")
+    ap.add_argument("--proj-gap-factor", type=float, default=1.0, dest="proj_gap_factor",
+                    help="projection target clearance = factor*c_rep. 1.0=full c_rep shell (fights adhesion -> "
+                         "diverged at accel_dt 8e-4); ~0.05 = near-zero gap = PURE non-penetration (only acts on "
+                         "actual overlap, does NOT fight the force equilibrium) — the stability diagnostic")
     ap.add_argument("--accel-dt", type=float, default=8e-4, dest="accel_dt",
                     help="implicit accel dt (default 8e-4 = 100x base). Lower (8e-5/8e-6) for the stiff "
                          "polarized+substrate regime that diverges/crawls at 8e-4 (Colab-sweepable across GPUs)")
@@ -84,6 +88,7 @@ def main():
         substrate_wetting=False, use_substrate_well=a.well,   # well = the spreading BOUND (single-cell fried-egg had it)
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
+        proj_gap_factor=a.proj_gap_factor,
         save_frames=npz)
     dt = time.time() - t0
     rec = {"tag": a.tag, "n": a.n, "steps": a.steps, "elapsed_s": round(dt, 1),
