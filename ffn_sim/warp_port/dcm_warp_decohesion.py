@@ -54,7 +54,7 @@ from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, Junct
 from ffn_sim.cell.dcm_remesh import remesh_pass
 from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 from ffn_sim.warp_port.dcm_contact_implicit_warp import (
-    nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha)
+    nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha, project_contacts)
 
 wp.init()
 
@@ -226,6 +226,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
                    use_grid: bool = True, save_frames: str | None = None,
                    ipc: bool = False, ipc_eta: float = 0.9,
+                   project: bool = False, proj_omega: float = 0.7, proj_iter: int = 4,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
@@ -373,6 +374,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     ipc_cn_nrm = wp.zeros(N, dtype=wp.vec3d, device=device) if ipc else None
     ipc_t = wp.zeros(N, dtype=wp.float64, device=device) if ipc else None
     ipc_hess = make_contact_hess_apply(ipc_cn_k, ipc_cn_nrm, device=device) if ipc else None
+    # M1 PROJECTION (opt-in): post-step geometric non-penetration constraint (SimuCell3D hard-constraint
+    # method). Buffer for the per-node positional correction; applied after the integrator's pos update.
+    proj_dpos = wp.zeros(N, dtype=wp.vec3d, device=device) if project else None
     node_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
     face_grid = wp.HashGrid(48, 48, 48, device=device) if use_grid else None
 
@@ -805,6 +809,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(_bd_step, dim=N,
                       inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
                               wp.float64(dt_step), wp.int32(7), wp.int32(s)], device=device)
+
+        if project and use_grid:
+            # M1 hard-constraint: geometric non-penetration projection AFTER the integrator step.
+            # Rebuild the face grid on the just-moved positions (the step's grid is on xₙ), then run
+            # a few Jacobi sweeps that push any penetrating node out to c_rep clearance — a constraint,
+            # not a force-balance, so the strong cohesion bundle cannot tunnel it (pen → ~0 vs ~1.5).
+            def _rebuild_proj(pp):
+                wp.launch(pos_to_f32, dim=N, inputs=[pp, node_f32], device=device)
+                wp.launch(face_centroids_f32, dim=n_faces, inputs=[pp, faces_d, cent_f32], device=device)
+                face_grid.build(points=cent_f32, radius=grid_q)
+            _rebuild_proj(pos_d)
+            project_contacts(face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d, grid_q, proj_dpos,
+                             proj_gap=c_rep, omega=proj_omega, n_iter=proj_iter,
+                             rebuild=_rebuild_proj, device=device)
 
     def _penetration_frac():
         """max node-into-other-cell penetration depth / mean_edge (0 = no interpenetration).

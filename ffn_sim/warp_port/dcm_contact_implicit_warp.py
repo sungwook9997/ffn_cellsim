@@ -322,6 +322,109 @@ def ccd_alpha(grid, qpts, pos_d, dpos_d, cof_d, faces_d, fcell_d, radius, t_buf,
     return float(min(1.0, float(t_buf.numpy().min())))
 
 
+# ---------------------------------------------------------------------------
+# Position-based PROJECTION contact — the SimuCell3D hard-constraint method (lever #3 "제약방식").
+# Distinct from the penalty (force ∝ depth) and the IPC barrier (force → ∞): this enforces
+# non-penetration GEOMETRICALLY — after the integrator's position update, any node that has
+# penetrated (or sits within proj_gap of) the nearest other-cell face is MOVED back out to the
+# face surface + proj_gap, independent of force magnitude. A few Jacobi sweeps (driver-side)
+# converge it. So a strong cohesion bundle can no longer tunnel the contact: the projection
+# clamps penetration regardless of how hard the bundle pulls (the penalty/barrier both let pen
+# ride up to ~1.5-2.6 because they are force-balances; this is a constraint, not a balance).
+# ---------------------------------------------------------------------------
+@wp.kernel
+def nearest_face_project_kernel(
+    grid: wp.uint64,
+    qpts: wp.array(dtype=wp.vec3),
+    pos: wp.array(dtype=wp.vec3d),
+    cof: wp.array(dtype=wp.int32),
+    faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32),
+    radius: wp.float32,
+    proj_gap: wp.float64,                      # target clearance to enforce (= c_rep)
+    omega: wp.float64,                         # Jacobi relaxation (0.5-1.0)
+    dpos: wp.array(dtype=wp.vec3d),            # OUT: per-node positional correction (outward)
+):
+    """Per node: find the nearest OTHER-cell face; if the node is inside (sign<0) or within
+    ``proj_gap`` of the surface (0<min_d<proj_gap), write the outward displacement that lands the
+    node at exactly ``proj_gap`` clearance (× ``omega``). Else write 0. Apply ``pos += dpos`` host-side
+    and (optionally) iterate — a geometric non-penetration projection, no force, no Hessian."""
+    ni = wp.tid()
+    z = wp.float64(0.0)
+    dpos[ni] = wp.vec3d(z, z, z)
+    c1 = cof[ni]
+    if c1 < wp.int32(0):
+        return
+    p = pos[ni]
+    best_d = wp.float64(1.0e300)
+    best_i = wp.int32(-1)
+    q = wp.hash_grid_query(grid, qpts[ni], radius)
+    fj = wp.int32(0)
+    while wp.hash_grid_query_next(q, fj):
+        if fcell[fj] != c1:
+            a = pos[faces[fj, 0]]; b = pos[faces[fj, 1]]; c = pos[faces[fj, 2]]
+            bary = closest_bary(p, a, b, c)
+            cpa = a * bary[0] + b * bary[1] + c * bary[2]
+            d = wp.length(p - cpa)
+            if d < best_d:
+                best_d = d
+                best_i = fj
+    if best_i < wp.int32(0):
+        return
+    a = pos[faces[best_i, 0]]; b = pos[faces[best_i, 1]]; c = pos[faces[best_i, 2]]
+    bary = closest_bary(p, a, b, c)
+    cpa = a * bary[0] + b * bary[1] + c * bary[2]
+    r_vec = p - cpa
+    min_d = wp.length(r_vec)
+    fnv = wp.cross(b - a, c - a)
+    nrm = wp.length(fnv)
+    if nrm <= z or min_d <= z:
+        return
+    sign = wp.dot(r_vec, fnv) / nrm
+    move = z
+    nout = r_vec * (wp.float64(1.0) / min_d)               # outward when OUTSIDE
+    if sign > z:                                           # outside — only correct if inside the gap
+        if min_d < proj_gap:
+            move = proj_gap - min_d
+    else:                                                  # inside — push fully out + proj_gap
+        nout = r_vec * (-wp.float64(1.0) / min_d)
+        move = min_d + proj_gap
+    if move != z:
+        dpos[ni] = nout * (omega * move)
+
+
+def project_contacts(grid, qpts, pos_d, cof_d, faces_d, fcell_d, radius, dpos_d, *,
+                     proj_gap, omega=0.7, n_iter=3, rebuild=None, track_max=False, device="cpu"):
+    """Apply ``n_iter`` Jacobi projection sweeps in place on ``pos_d`` (geometric non-penetration).
+    ``rebuild(pos_d)`` (optional) refreshes the hash-grid + qpts between sweeps so a node that moved
+    can see a newly-nearest face; if None the grid is reused (cheaper, fine for small corrections).
+    ``track_max`` pulls dpos to host each sweep to report convergence (a GPU→CPU sync — leave False
+    in production; True for the self-test). Returns the max correction magnitude of the last sweep
+    when tracked (≈0 ⇒ converged / penetration-free), else 0.0."""
+    import numpy as np
+    N = pos_d.shape[0]
+    last_max = 0.0
+    for _ in range(n_iter):
+        wp.launch(nearest_face_project_kernel, dim=N,
+                  inputs=[grid, qpts, pos_d, cof_d, faces_d, fcell_d, wp.float32(radius),
+                          wp.float64(proj_gap), wp.float64(omega), dpos_d], device=device)
+        wp.launch(_apply_dpos, dim=N, inputs=[pos_d, dpos_d], device=device)
+        if track_max:
+            wp.synchronize_device(device)
+            last_max = float(np.linalg.norm(dpos_d.numpy(), axis=1).max())
+            if last_max < 1e-12:
+                break
+        if rebuild is not None:
+            rebuild(pos_d)
+    return last_max
+
+
+@wp.kernel
+def _apply_dpos(pos: wp.array(dtype=wp.vec3d), dpos: wp.array(dtype=wp.vec3d)):
+    i = wp.tid()
+    pos[i] = pos[i] + dpos[i]
+
+
 def make_contact_hess_apply(cn_k, cn_nrm, *, device="cpu"):
     """Return a ``hess_apply(v_d, out_d)`` closure that adds the frozen analytic contact stiffness
     ``H_contact·v`` to ``out_d`` — pass it to ``device_cg(..., hess_apply=...)``. ``cn_k``/``cn_nrm``
@@ -764,8 +867,56 @@ def _ipc_full_test(device="cpu"):
     print(f"    → expect: IPC pen → ~0 (penetration-free) + stable at every pull; OLD tunnels (pen grows)")
 
 
+def _projection_unittest(device="cpu"):
+    """Position-based PROJECTION hard-constraint on two deeply-overlapping cells: a few Jacobi sweeps
+    drive penetration out geometrically, and a final probe sweep produces ~0 correction ⇒ the state is
+    penetration-free regardless of any force balance (the constraint guarantee the penalty/barrier lack)."""
+    import numpy as np
+    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+    m = _build_two_cell(device, overlap=0.50)               # deep overlap = strongly penetrating start
+    verts, faces, cof, fcell = m["verts"], m["faces"], m["cof"], m["fcell"]
+    me, R = m["me"], m["R"]
+    N, nf = verts.shape[0], faces.shape[0]
+    c_rep = 0.30 * me
+    rq = float(c_rep + 3.0 * me)                            # query radius (covers entry faces)
+    pos_d = wp.array(verts, dtype=wp.vec3d, device=device)
+    dpos_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    cof_d = wp.array(cof, dtype=wp.int32, device=device)
+    faces_d = wp.array(faces.astype(np.int32), dtype=wp.int32, device=device)
+    fcell_d = wp.array(fcell, dtype=wp.int32, device=device)
+    nf32 = wp.zeros(N, dtype=wp.vec3, device=device); cf32 = wp.zeros(nf, dtype=wp.vec3, device=device)
+    fg = wp.HashGrid(32, 32, 32, device=device)
+
+    def rebuild(pp):
+        wp.launch(pos_to_f32, dim=N, inputs=[pp, nf32], device=device)
+        wp.launch(face_centroids_f32, dim=nf, inputs=[pp, faces_d, cf32], device=device)
+        fg.build(points=cf32, radius=rq)
+
+    rebuild(pos_d)
+    # initial correction magnitude (one probe sweep, omega=1, then undo by re-asserting verts)
+    init = project_contacts(fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, rq, dpos_d,
+                            proj_gap=c_rep, omega=1.0, n_iter=1, track_max=True, device=device)
+    pos_d.assign(np.ascontiguousarray(verts.reshape(N, 3))); rebuild(pos_d)        # reset
+    # converge the projection
+    last = project_contacts(fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, rq, dpos_d,
+                            proj_gap=c_rep, omega=0.7, n_iter=12, rebuild=rebuild, track_max=True, device=device)
+    # final probe: one more sweep should be ~0 ⇒ penetration-free
+    probe = project_contacts(fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, rq, dpos_d,
+                             proj_gap=c_rep, omega=1.0, n_iter=1, track_max=True, device=device)
+    drift = float(np.linalg.norm(pos_d.numpy().reshape(N, 3).mean(0) - verts.reshape(N, 3).mean(0)))
+    ok = probe < 0.15 * c_rep                               # residual correction < 15% of the gap
+    print("(5) PROJECTION hard-constraint unit test (two cells, 0.50·R overlap):")
+    print(f"    initial correction needed  = {init/me:.3f}·me ({init/c_rep:.2f}·c_rep)")
+    print(f"    after 12 sweeps last corr  = {last/me:.4f}·me")
+    print(f"    final probe-sweep residual = {probe/c_rep:.4f}·c_rep  "
+          f"({'penetration-free PASS' if ok else 'CHECK'})")
+    print(f"    COM drift from projection  = {drift/me:.4f}·me (mesh not shoved off-centre)")
+    return ok
+
+
 if __name__ == "__main__":
     _barrier_unittest()
     _ccd_unittest()
     _ipc_full_test()
     _selftest()
+    _projection_unittest()

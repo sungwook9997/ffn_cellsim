@@ -52,6 +52,15 @@ def main():
                          "volume conservation (stiff k_vol) + substrate floor + polarization.")
     ap.add_argument("--ipc-dhat-factor", type=float, default=1.0, dest="ipc_dhat_factor",
                     help="IPC barrier activation d_hat=factor*c_rep. 1.0=IPC barrier; 0.01=SimuCell3D-style penalty-only (A/B)")
+    ap.add_argument("--project", action="store_true",
+                    help="M1 lever#3: SimuCell3D-style position-based PROJECTION hard-constraint (post-step "
+                         "geometric non-penetration). A few Jacobi sweeps push penetrating nodes out to "
+                         "c_rep clearance regardless of force magnitude — clamps pen where penalty/barrier "
+                         "plateau at ~1.5-2.6. Compatible with the penalty contact (not paired with --ipc).")
+    ap.add_argument("--proj-iter", type=int, default=4, dest="proj_iter",
+                    help="projection Jacobi sweeps per step (self-test converged 3.67*c_rep penetration in ~6-12)")
+    ap.add_argument("--proj-omega", type=float, default=0.7, dest="proj_omega",
+                    help="projection relaxation (0.5-1.0; 0.7 default, lower = gentler/more stable)")
     ap.add_argument("--accel-dt", type=float, default=8e-4, dest="accel_dt",
                     help="implicit accel dt (default 8e-4 = 100x base). Lower (8e-5/8e-6) for the stiff "
                          "polarized+substrate regime that diverges/crawls at 8e-4 (Colab-sweepable across GPUs)")
@@ -73,7 +82,7 @@ def main():
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=a.well,   # well = the spreading BOUND (single-cell fried-egg had it)
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
-        ipc=a.ipc,
+        ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         save_frames=npz)
     dt = time.time() - t0
     rec = {"tag": a.tag, "n": a.n, "steps": a.steps, "elapsed_s": round(dt, 1),
