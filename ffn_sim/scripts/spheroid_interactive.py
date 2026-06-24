@@ -34,10 +34,10 @@ def render(npz_path, out, frame=-1, slider=0, r_label=""):
     aa0 = float(d["aa0"][frame]) if "aa0" in d else float("nan")
     vv0 = float(d["vv0"][frame]) if "vv0" in d else float("nan")
 
-    def traces_for(P, *, base_visible=True, edges=True):
+    def traces_for(P, *, base_visible=True):
         P_um = P * UM
+        com = P_um[cof >= 0].mean(0)
         out_tr = []
-        ex, ey, ez = [], [], []                   # combined wireframe edge segments (all cells)
         for k, c in enumerate(cells):
             nm = np.where(cof == c)[0]
             if nm.size < 3:
@@ -48,23 +48,11 @@ def render(npz_path, out, frame=-1, slider=0, r_label=""):
             col = PALETTE[int(c) % len(PALETTE)]
             out_tr.append(go.Mesh3d(
                 x=x, y=y, z=z, i=loc[:, 0], j=loc[:, 1], k=loc[:, 2],
-                color=col, opacity=1.0, flatshading=True,     # flat facets so the mesh reads as a polyhedron
-                lighting=dict(ambient=0.5, diffuse=0.85, specular=0.15, roughness=0.7, fresnel=0.1),
+                color=col, opacity=1.0, flatshading=False,
+                lighting=dict(ambient=0.45, diffuse=0.8, specular=0.25, roughness=0.55, fresnel=0.1),
                 lightposition=dict(x=200, y=200, z=300),
                 name=f"cell {int(c)}", showlegend=True, hovertext=f"cell {int(c)}",
                 visible=base_visible))
-            if edges:                              # unique triangle edges of THIS cell -> dark wireframe
-                e = np.vstack([fc[:, [0, 1]], fc[:, [1, 2]], fc[:, [2, 0]]])
-                e = np.unique(np.sort(e, axis=1), axis=0)
-                for a, b in e:
-                    ex += [P_um[a, 0], P_um[b, 0], None]
-                    ey += [P_um[a, 1], P_um[b, 1], None]
-                    ez += [P_um[a, 2], P_um[b, 2], None]
-        if edges and ex:
-            out_tr.append(go.Scatter3d(
-                x=ex, y=ey, z=ez, mode="lines",
-                line=dict(color="rgba(20,20,20,0.55)", width=1.2),
-                name="mesh edges", hoverinfo="skip", showlegend=True, visible=base_visible))
         return out_tr
 
     P0 = np.asarray(frames_all[frame], float)
