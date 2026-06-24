@@ -80,6 +80,10 @@ def main():
     ap.add_argument("--gap", type=float, default=2.05, dest="gap",
                     help="initial inter-cell center spacing factor (2.05 default; 2.3 = gapped start, "
                          "lets turgor+cohesion compact rather than starting pre-overlapped)")
+    ap.add_argument("--coupling", action="store_true",
+                    help="node-FACE CONTINUOUS adhesion ON (coh_adh=adh_strength) — the flat-interface "
+                         "adhesion that, with surface tension, facets cells into space-filling polyhedra "
+                         "(vs sparse node-node point cohesion). Physiological-baseline: should be ON in production.")
     a = ap.parse_args()
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
@@ -92,6 +96,7 @@ def main():
         polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
         ipc_dhat_factor=a.ipc_dhat_factor,
         cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
+        coupling=a.coupling,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=False, use_substrate_well=a.well,   # well = the spreading BOUND (single-cell fried-egg had it)
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
