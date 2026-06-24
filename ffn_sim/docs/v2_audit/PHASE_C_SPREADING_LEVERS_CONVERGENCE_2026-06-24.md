@@ -203,3 +203,28 @@ not passively spread**, exactly as Douezan predicts at physiological values.
 scales — single cell (non-wetting at physiological γ) and spheroid (collective structural limit). The
 only routes to the A/A0=7–10 magnitude are PI-scoped: an **active** spreading mechanism (lamellipodium
 as the driver, not a modulator) and/or the C6 contact-line substrate model — not any passive lever.
+
+## M1 contact lever#3 — SimuCell3D position-based PROJECTION hard-constraint (built + self-test PASS)
+
+The contact A/B established that both force-based methods plateau under the strong cad×40/ecm×167
+bundle: penalty (capped) pen ~3.1, IPC penalty-only ~1.5, IPC barrier ~2.6. Lever#3 in the loop
+directive ("제약방식" / constraint method) is the **third, non-force option**: a geometric
+non-penetration **constraint**, the SimuCell3D hard-constraint approach.
+
+**Built** (`dcm_contact_implicit_warp.py`): `nearest_face_project_kernel` + `project_contacts()`.
+After the integrator's position update, a few Jacobi sweeps move any penetrating node out along the
+nearest-other-cell-face outward normal to `c_rep` clearance — **independent of force magnitude**, so a
+strong cohesion bundle cannot tunnel it. Wired opt-in into `run_decohesion` (`--project`), compatible
+with the penalty contact path (post-step correction; not paired with `--ipc`).
+
+**Self-test PASS** (`_projection_unittest`, two cells at 0.50·R overlap):
+- initial penetration 3.67·c_rep → **penetration-free in 12 sweeps** (final probe-sweep residual
+  0.0000·c_rep),
+- COM drift from projection 0.0066·me (the mesh is not shoved off-centre — the correction is local + symmetric).
+- CPU smoke (n12 through the full driver) runs end-to-end, all gates PASS, drift ~9e-6 µm.
+
+So **a true hard constraint IS achievable and penetration-free where the force-based methods saturate** —
+answering lever#3 affirmatively. The gbook A/B (full-bundle penalty vs penalty+projection: does pen drop
+from ~3.1 to ~0?) is in flight (`n100_project_fullbundle`). If it confirms, the M1 recommendation
+updates again: the projection hard-constraint is the penetration-honest contact, at the cost of a
+post-step geometric correction (no per-step host sync in production; a few cheap Jacobi sweeps).
