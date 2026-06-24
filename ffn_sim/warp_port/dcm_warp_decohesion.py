@@ -223,6 +223,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
                    div_real_hours: float = 0.0, div_t_cycle_h: float = 24.0,
+                   accel_real_hours: float = 0.0,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
@@ -415,11 +416,31 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     edge_grid = wp.HashGrid(48, 48, 48, device=device) if (use_grid and edge_edge) else None
     ee_q = float(c_rep + 3.0 * l_min)
 
+    # ── UNIFIED time-acceleration factor S (quasi-static timescale separation; PI 2026-06-24).
+    # The integrator dt (accel_dt when set, else dt) is REAL physical time anchored to MCF7
+    # cytoplasm viscosity — the MECHANICAL forces (turgor, contact, cortex/edge springs, cadherin
+    # bond FORCE) stay at the faithful dt and are NEVER scaled. Only the SLOW BIOLOGICAL RATES
+    # (protrusion velocities, nucleation/binding probabilities, cadherin k_on/k_off, division) are
+    # multiplied by ONE factor S, so the RELATIVE timing of every slow process is preserved and the
+    # run REPRESENTS  t_real = S · dt · steps  of real biology. S = (accel_real_hours·3600)/(dt·steps);
+    # accel_real_hours=0 ⇒ S=1 ⇒ native rates ⇒ byte-identical to the un-accelerated run (ADDITIVE).
+    _dt_accel = accel_dt if accel_dt else dt
+    S_accel = ((accel_real_hours * 3600.0) / (_dt_accel * max(steps, 1))
+               if accel_real_hours > 0 else 1.0)
+    if accel_real_hours > 0:
+        print(f"  [accel] S={S_accel:.3e}  run represents {accel_real_hours:.1f}h real "
+              f"(dt={_dt_accel:.1e}s, {steps} steps)", flush=True)
+        # UNIFY division with the global S: when accel_real_hours is set, division uses the SAME S
+        # (div_real_hours defaults to accel_real_hours) so its kinetics are not double-accelerated.
+        if division and div_real_hours <= 0.0:
+            div_real_hours = accel_real_hours
+
     # M2 lamellipodium host (rim detection one-shot at build; advances at cadence).
     lam = None
     if lamellipodium:
         lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt,
-                                params=LamelParams(substrate_clutch=lamel_clutch, batch_steps=active_batch),
+                                params=LamelParams(substrate_clutch=lamel_clutch, batch_steps=active_batch,
+                                                   S_kinetic=S_accel),
                                 use_gpu_ratchet=str(device).startswith("cuda"), device=device)
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
@@ -428,8 +449,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # cells and node-to-plane to the dish). Additive; constructed only when --filopodia.
     filo = None
     if filopodia:
+        # Scale the SLOW RATES by S (from the native dataclass defaults, not hard-coded): the tip
+        # polymerization velocity (extension advance = v_poly·batch_steps·dt covers S× more real
+        # distance per mechanics-step) and the per-batch nucleation probability (capped at 1.0).
+        # L_max / k_tip / capture geometry (lengths & FORCES) are LEFT NATIVE — only rates scale.
+        _fnat = FilopodiaParams()
         filo = FilopodiaHost(cof=cof_a, n_cells=n_cells, faces=faces_a, fcell=fcell_a,
-                             z0=z0, R=R, dt=dt, params=FilopodiaParams(batch_steps=active_batch),
+                             z0=z0, R=R, dt=dt,
+                             params=FilopodiaParams(v_poly=_fnat.v_poly * S_accel,
+                                                    p_seed=min(1.0, _fnat.p_seed * S_accel),
+                                                    batch_steps=active_batch),
                              use_gpu_probe=(gpu_probe or str(device).startswith("cuda")), device=device)   # GPU-only on cuda (radius fix resolved the stall; CPU parity exact)
         print(f"  [filopodia] pool={filo.n_pool}  v_poly={filo.p.v_poly*1e9:.0f}nm/s  "
               f"L_max={filo.p.L_max*1e6:.1f}um  k_tip={filo.p.k_tip:.1e}N/m (node-FACE + node-plane)", flush=True)
@@ -464,6 +493,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
                                                      r_bind=rbind_meso, batch_steps=cad_batch,
                                                      bundle_n=cad_bundle))
+        # Accelerate the bond KINETICS by S (NOT the FORCE): the on-rate k_on and the entire
+        # force-dependent off-rate k_off(F) lookup table are multiplied by S, so bonds form and
+        # rupture S× faster while the trans-dimer FORCE constant k_trans (catch-slip f0=29.2pN,
+        # Rakshit shape) is UNTOUCHED. The exact survival prob 1−exp(−k·Δt_batch) stays faithful.
+        if S_accel != 1.0:
+            cad.p.k_on *= S_accel
+            cad._koff *= S_accel
         # A1: node-FACE coupling. By default the sparse cadherin node-NODE bonds are the sole
         # adhesion (coh_adh=0) — but they bond only the few apposed node-pairs (~6/junction,
         # mesh-density-limited) so cells touch at POINTS and stay round (Ψ≈0.99 "bag of marbles";

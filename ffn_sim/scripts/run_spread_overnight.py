@@ -100,6 +100,13 @@ def main():
                          "p_div = S*dt*div_every/T_cycle so cells divide ~div_real_hours/T_cycle times. 0 = bare div_rate.")
     ap.add_argument("--div-t-cycle", type=float, default=24.0, dest="div_t_cycle_h",
                     help="cell-cycle / doubling time in HOURS (MCF7 ~24h). Used by time-consistent division.")
+    ap.add_argument("--accel-real-hours", type=float, default=0.0, dest="accel_real_hours",
+                    help="UNIFIED time-acceleration: the real biological hours this ONE feasible run "
+                         "REPRESENTS (e.g. 24-48 for spheroid formation). >0 => a single factor "
+                         "S=accel_real_hours*3600/(dt*steps) multiplies ALL slow biological RATES "
+                         "(filopodia v_poly/p_seed, cadherin k_on/k_off, lamellipodium front, division) "
+                         "while the MECHANICAL forces stay at the faithful dt. div-real-hours defaults to "
+                         "this so division is not double-accelerated. 0 = native rates (S=1).")
     ap.add_argument("--necrosis", action="store_true",
                     help="C8 3-zone necrosis ON. Depth-from-surface O2 proxy assigns prolif/quiescent/"
                          "necrotic; necrotic core softens turgor and division is gated to the proliferating "
@@ -152,6 +159,7 @@ def main():
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
         division=a.division, div_real_hours=a.div_real_hours, div_t_cycle_h=a.div_t_cycle_h,
+        accel_real_hours=a.accel_real_hours,
         necrosis=a.necrosis,
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
