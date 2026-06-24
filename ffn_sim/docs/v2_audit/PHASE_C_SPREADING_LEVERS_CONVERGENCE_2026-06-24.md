@@ -228,3 +228,31 @@ answering lever#3 affirmatively. The gbook A/B (full-bundle penalty vs penalty+p
 from ~3.1 to ~0?) is in flight (`n100_project_fullbundle`). If it confirms, the M1 recommendation
 updates again: the projection hard-constraint is the penetration-honest contact, at the cost of a
 post-step geometric correction (no per-step host sync in production; a few cheap Jacobi sweeps).
+
+## Projection hard-constraint — adversarial review CAUGHT a divergence bug (the value of verify-before-trust)
+
+Before trusting the projection A/B's headline (pen→~0 even under the full bundle), ran a 35-agent
+adversarial review (4 lenses — geometry / convergence / physics / measurement-honesty — each finding
+concerns, then an independent verifier per concern reading the actual code). 31 concerns, **22 confirmed
+real, 3 critical.** This was not ceremony — it caught a RUN-BREAKING bug the early A/B data hid:
+
+- **The one-sided projection DIVERGED in production.** With the original kernel (node shoved out, NO
+  reaction on the contact face), the n100 full-bundle run was stable early (step 665: pen 0.066,
+  V/V0 1.000, cfl 0.71) but **diverged by step 2527: V/V0 = 109.3 (volume blew up 109×), cfl = 2.9e10,
+  A/A0 = 267.** The momentum the one-sided shove injected each step accumulated until the bundle +
+  projection feedback exploded. The early pen→0 would have been a misleading "it works."
+- **Fix (review critical #3): momentum-conserving 50/50 barycentric split.** The node moves out by
+  half, the contact face's 3 vertices move in by the barycentric-weighted half (atomic_add, Σdpos=0) —
+  Newton's third law, matching the repel/IPC kernels' existing reactions. Self-test COM drift
+  **0.0066 → 0.0000·me**, still penetration-free (probe residual 0.0000·c_rep).
+- **Also applied:** proj_iter default 4 → 8 (review critical #2 — the 50/50 split moves the node only
+  half/sweep, so a margin; per-step penetration is small).
+- **Reviewer call NOT applied (judgment over deference):** critical #1 (project along the face normal
+  using signed distance, not the 3D closest-feature vector). The kernel projects along the
+  closest-FEATURE direction r_vec — the gradient of the node-triangle distance, valid for
+  interior/edge/vertex contacts alike; the fnv-normal alternative is correct only for face-interior
+  contacts and would regress edge cases. Kept r_vec (self-test-proven penetration-free), documented inline.
+
+**Decisive re-test in flight** (`n100_project_momfix`, proj_iter=8, momentum-conserving, full bundle):
+does the fix carry the run past the old kernel's step-2527 divergence to a stable pen→~0 at 8000 steps?
+Divergence-guarded poll armed (flags V/V0>5 / cfl-blow / nan). This is the real M1-lever#3 verdict.
