@@ -57,8 +57,9 @@ def main():
                          "geometric non-penetration). A few Jacobi sweeps push penetrating nodes out to "
                          "c_rep clearance regardless of force magnitude — clamps pen where penalty/barrier "
                          "plateau at ~1.5-2.6. Compatible with the penalty contact (not paired with --ipc).")
-    ap.add_argument("--proj-iter", type=int, default=4, dest="proj_iter",
-                    help="projection Jacobi sweeps per step (self-test converged 3.67*c_rep penetration in ~6-12)")
+    ap.add_argument("--proj-iter", type=int, default=8, dest="proj_iter",
+                    help="projection Jacobi sweeps per step (self-test converged 3.67*c_rep penetration in ~6-12; "
+                         "8 = margin since the momentum-conserving 50/50 split moves the node only half/sweep)")
     ap.add_argument("--proj-omega", type=float, default=0.7, dest="proj_omega",
                     help="projection relaxation (0.5-1.0; 0.7 default, lower = gentler/more stable)")
     ap.add_argument("--accel-dt", type=float, default=8e-4, dest="accel_dt",

@@ -349,9 +349,11 @@ def nearest_face_project_kernel(
     ``proj_gap`` of the surface (0<min_d<proj_gap), write the outward displacement that lands the
     node at exactly ``proj_gap`` clearance (× ``omega``). Else write 0. Apply ``pos += dpos`` host-side
     and (optionally) iterate — a geometric non-penetration projection, no force, no Hessian."""
+    # NOTE: dpos must be zeroed by the caller (dpos.zero_()) BEFORE this launch — the corrections are
+    # accumulated with atomic_add (a node pushes itself out AND pushes the contact face's 3 vertices
+    # in), so a per-node self-zero here would race the reactions written by other nodes.
     ni = wp.tid()
     z = wp.float64(0.0)
-    dpos[ni] = wp.vec3d(z, z, z)
     c1 = cof[ni]
     if c1 < wp.int32(0):
         return
@@ -371,7 +373,8 @@ def nearest_face_project_kernel(
                 best_i = fj
     if best_i < wp.int32(0):
         return
-    a = pos[faces[best_i, 0]]; b = pos[faces[best_i, 1]]; c = pos[faces[best_i, 2]]
+    ia = faces[best_i, 0]; ib = faces[best_i, 1]; ic = faces[best_i, 2]
+    a = pos[ia]; b = pos[ib]; c = pos[ic]
     bary = closest_bary(p, a, b, c)
     cpa = a * bary[0] + b * bary[1] + c * bary[2]
     r_vec = p - cpa
@@ -380,6 +383,9 @@ def nearest_face_project_kernel(
     nrm = wp.length(fnv)
     if nrm <= z or min_d <= z:
         return
+    # Project along the closest-FEATURE direction (r_vec), the gradient of the node-triangle distance
+    # — valid for interior/edge/vertex closest points alike (review's fnv-normal alternative is only
+    # correct for face-interior contacts, so we keep r_vec, which the self-test proves penetration-free).
     sign = wp.dot(r_vec, fnv) / nrm
     move = z
     nout = r_vec * (wp.float64(1.0) / min_d)               # outward when OUTSIDE
@@ -390,7 +396,15 @@ def nearest_face_project_kernel(
         nout = r_vec * (-wp.float64(1.0) / min_d)
         move = min_d + proj_gap
     if move != z:
-        dpos[ni] = nout * (omega * move)
+        # MOMENTUM-CONSERVING 50/50 split (Newton's 3rd law): node moves OUT by half, the contact
+        # face's 3 vertices move IN by the barycentric-weighted half. Σdpos = 0 ⇒ no spurious linear
+        # momentum / COM drift (the one-sided-shove the adversarial review flagged as critical). The
+        # relative clearance still closes by ~move/sweep, so non-penetration converges as before.
+        dn = nout * (wp.float64(0.5) * omega * move)
+        wp.atomic_add(dpos, ni, dn)
+        wp.atomic_add(dpos, ia, -bary[0] * dn)
+        wp.atomic_add(dpos, ib, -bary[1] * dn)
+        wp.atomic_add(dpos, ic, -bary[2] * dn)
 
 
 def project_contacts(grid, qpts, pos_d, cof_d, faces_d, fcell_d, radius, dpos_d, *,
@@ -405,6 +419,7 @@ def project_contacts(grid, qpts, pos_d, cof_d, faces_d, fcell_d, radius, dpos_d,
     N = pos_d.shape[0]
     last_max = 0.0
     for _ in range(n_iter):
+        dpos_d.zero_()                          # atomic_add accumulates node + face-reaction → zero first
         wp.launch(nearest_face_project_kernel, dim=N,
                   inputs=[grid, qpts, pos_d, cof_d, faces_d, fcell_d, wp.float32(radius),
                           wp.float64(proj_gap), wp.float64(omega), dpos_d], device=device)

@@ -226,7 +226,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
                    use_grid: bool = True, save_frames: str | None = None,
                    ipc: bool = False, ipc_eta: float = 0.9,
-                   project: bool = False, proj_omega: float = 0.7, proj_iter: int = 4,
+                   project: bool = False, proj_omega: float = 0.7, proj_iter: int = 8,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
