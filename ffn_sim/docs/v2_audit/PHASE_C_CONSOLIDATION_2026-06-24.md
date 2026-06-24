@@ -53,9 +53,11 @@ frontier (n100, full cad×40/ecm×167 bundle): figure `figs/m1_contact_method_fr
   critical #1 (face-normal direction) was NOT applied — judgment over deference (the closest-feature
   r_vec direction is correct for edge/vertex contacts; self-test-proven).
 - **Stability ceiling = the timestep, not the gap.** A near-zero gap still diverged at accel_dt 8e-4;
-  the cause is the large implicit timestep (Δx/dt blows up). Diagnostic bracket: stable at **8e-5 (10×
-  base) and 2e-4 (25× base)**, diverges at 8e-4 (100× base). So the projection is penetration-free at
-  **~4× the production wall-time** (accel_dt ~2e-4), not the 100× initially feared.
+  the cause is the large implicit timestep (Δx/dt blows up). Diagnostic bracket: **stable at 8e-5 (10×
+  base, held past step 2400 — through the divergence point of the larger steps), diverges at 2e-4 (25×
+  base, V/V0→7.5 by step 1826) and at 8e-4 (100× base, V/V0→1329).** So the stability ceiling sits in
+  [8e-5, 2e-4): the projection is penetration-free at **accel_dt 8e-5 ≈ 10× the production wall-time**
+  (not the 100× of the base dt, and not as low as 2e-4 which diverges).
 
 **→ PI decision (fork, low-stakes):** accept **IPC penalty-only (pen 1.5)** as the production contact
 (de-cohesion runs are A/A0-hull-robust at this pen), with the **projection at accel_dt ~2e-4** as the
