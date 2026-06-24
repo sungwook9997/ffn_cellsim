@@ -92,6 +92,14 @@ def main():
                          "ON automatically under --ula (cell-cell junction formation).")
     ap.add_argument("--lamellipodium", action="store_true",
                     help="per-cell advancing-anchor lamellipodium crawl. ON automatically under --ula.")
+    ap.add_argument("--division", action="store_true",
+                    help="C7 rim-cell proliferation ON. Pair with --div-real-hours for TIME-CONSISTENT "
+                         "division (cells divide at the MCF7 cycle rate over the run's represented real time).")
+    ap.add_argument("--div-real-hours", type=float, default=0.0, dest="div_real_hours",
+                    help="real biological hours this run REPRESENTS (e.g. 24). >0 => time-consistent division: "
+                         "p_div = S*dt*div_every/T_cycle so cells divide ~div_real_hours/T_cycle times. 0 = bare div_rate.")
+    ap.add_argument("--div-t-cycle", type=float, default=24.0, dest="div_t_cycle_h",
+                    help="cell-cycle / doubling time in HOURS (MCF7 ~24h). Used by time-consistent division.")
     ap.add_argument("--ula", action="store_true",
                     help="ULA spheroid formation: U-bottom bowl ON, flat substrate well + wetting + ECM "
                          "clutch OFF (non-adhesive surface), cadherin + filopodia + lamellipodium ON "
@@ -132,6 +140,7 @@ def main():
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
+        division=a.division, div_real_hours=a.div_real_hours, div_t_cycle_h=a.div_t_cycle_h,
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         proj_gap_factor=a.proj_gap_factor,

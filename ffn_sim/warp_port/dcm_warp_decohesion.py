@@ -222,6 +222,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    polarize: bool = False, w_cs_polarize: float = 2.85e-3,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
+                   div_real_hours: float = 0.0, div_t_cycle_h: float = 24.0,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
@@ -504,10 +505,27 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     div = None
     if division:
         verts0 = icosphere_mesh(R, subdiv)[0]
+        p_div_use = div_rate
+        if div_real_hours > 0.0:
+            # TIME-CONSISTENT division (PI 2026-06-24): the run REPRESENTS `div_real_hours` of real
+            # biological time. We cannot integrate the mechanics for real hours (10^7-10^9 steps), so
+            # we accelerate by S such that S·dt·steps = div_real_hours (real seconds); the physical
+            # per-check division probability is then p_div = (S·dt·div_every)/T_cycle (sim_realtime,
+            # no free knob). This SYNCHRONISES division with the (accelerated) mechanical clock —
+            # cells divide ~div_real_hours/T_cycle times over the run, matching MCF7 (~24 h cycle).
+            from ffn_sim.common.sim_realtime import division_probability
+            _dt = accel_dt if accel_dt else dt
+            _S = (div_real_hours * 3600.0) / (_dt * max(steps, 1))
+            _anchor = division_probability(steps=steps, dt_s=_dt, t_cycle_h=div_t_cycle_h,
+                                           div_every=DivisionParams().batch_steps,
+                                           n_rim_est=max(1, n_active // 3), accel=_S)
+            p_div_use = float(min(1.0, _anchor.p_div))
+            print(f"  [division] TIME-CONSISTENT: run≈{div_real_hours:.1f}h real · T_cycle={div_t_cycle_h:.0f}h "
+                  f"· S={_S:.2e} → p_div={p_div_use:.3e} (vs bare {div_rate})", flush=True)
         div = DivisionHost(verts0=verts0, npc=npc, n_total=n_cells, n_active0=n_active,
-                           R=R, z0=z0, params=DivisionParams(p_div=div_rate))
+                           R=R, z0=z0, params=DivisionParams(p_div=p_div_use))
         print(f"  [division] n_active={n_active} + parked pool={n_parked} (n_total={n_cells})  "
-              f"p_div={div_rate}  batch={div.batch_steps}  rim-cell proliferation", flush=True)
+              f"p_div={p_div_use:.3e}  batch={div.batch_steps}  rim-cell proliferation", flush=True)
 
     # C6 explicit integrin-ECM catch-slip clutch (replaces the wetting proxy). Basal nodes grip
     # the dish; Pereverzev catch-slip governs hold/release → traction-limited mechanistic spread.
