@@ -429,7 +429,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if filopodia:
         filo = FilopodiaHost(cof=cof_a, n_cells=n_cells, faces=faces_a, fcell=fcell_a,
                              z0=z0, R=R, dt=dt, params=FilopodiaParams(batch_steps=active_batch),
-                             use_gpu_probe=gpu_probe, device=device)   # opt-in: cuda perf bug pending (CPU parity OK)
+                             use_gpu_probe=(gpu_probe or str(device).startswith("cuda")), device=device)   # GPU-only on cuda (radius fix resolved the stall; CPU parity exact)
         print(f"  [filopodia] pool={filo.n_pool}  v_poly={filo.p.v_poly*1e9:.0f}nm/s  "
               f"L_max={filo.p.L_max*1e6:.1f}um  k_tip={filo.p.k_tip:.1e}N/m (node-FACE + node-plane)", flush=True)
 

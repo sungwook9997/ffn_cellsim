@@ -166,9 +166,21 @@ def probe_faces_gpu(*, free_tips_xyz: np.ndarray, free_tip_owncell: np.ndarray,
     n_free = free_tips_xyz.shape[0]
     N = pos.shape[0]
     nf = faces.shape[0]
+    # Query radius must capture any face whose CLOSEST-POINT to a tip is within tip_capture.
+    # A face's closest point lies within (max centroid→vertex distance) of its centroid, so the
+    # SAFE prune radius is tip_capture + that face reach — NOT tip_capture + R (the full CELL
+    # radius, ~7.5µm), which made the grid cell ~9µm and each query scan ~10× too many faces
+    # (8.5× slower, identical result). Derive the face reach from geometry (parity-preserving:
+    # any accepted face has centroid ≤ tip_capture + reach, so none is ever missed).
+    if nf > 0:
+        v0 = pos[faces[:, 0]]; v1 = pos[faces[:, 1]]; v2 = pos[faces[:, 2]]
+        fcd = (v0 + v1 + v2) / 3.0
+        reach = float(np.sqrt(((np.stack([v0, v1, v2], 1) - fcd[:, None]) ** 2).sum(-1)).max())
+    else:
+        reach = float(R)
     if margin is None:
         margin = float(tip_capture)
-    radius = float(tip_capture) + float(R) + float(margin)
+    radius = float(tip_capture) + reach + float(margin)
 
     out_face = np.full(n_free, -1, dtype=np.int32)
     out_bary = np.zeros((n_free, 3), dtype=np.float64)

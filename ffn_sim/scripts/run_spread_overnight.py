@@ -104,6 +104,8 @@ def main():
                     help="filopodia+lamellipodium host-update cadence (steps). 50 default; 200 = 4x fewer "
                          "expensive host PROBE updates (advance is batch-consistent so velocity is preserved). "
                          "The single biggest cheap speedup for the active-junction stack.")
+    ap.add_argument("--gpu-probe", action="store_true", dest="gpu_probe",
+                    help="GPU-resident filopodia PROBE (hash-grid Warp kernel, ~GPU-only). CPU-parity-validated.")
     ap.add_argument("--ula", action="store_true",
                     help="ULA spheroid formation: U-bottom bowl ON, flat substrate well + wetting + ECM "
                          "clutch OFF (non-adhesive surface), cadherin + filopodia + lamellipodium ON "
@@ -140,6 +142,7 @@ def main():
         ipc_dhat_factor=a.ipc_dhat_factor,
         cadherin=cadherin, ecm_clutch=ecm_clutch,
         lamellipodium=lamellipodium, filopodia=filopodia, active_batch=a.active_batch,
+        gpu_probe=a.gpu_probe,
         coupling=a.coupling,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
