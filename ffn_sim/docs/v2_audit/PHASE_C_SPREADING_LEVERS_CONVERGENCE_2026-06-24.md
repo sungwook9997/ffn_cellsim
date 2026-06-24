@@ -256,3 +256,43 @@ real, 3 critical.** This was not ceremony — it caught a RUN-BREAKING bug the e
 **Decisive re-test in flight** (`n100_project_momfix`, proj_iter=8, momentum-conserving, full bundle):
 does the fix carry the run past the old kernel's step-2527 divergence to a stable pen→~0 at 8000 steps?
 Divergence-guarded poll armed (flags V/V0>5 / cfl-blow / nan). This is the real M1-lever#3 verdict.
+
+## M1 lever#3 FINAL VERDICT — projection is penetration-free at base dt, diverges at the 100× timestep
+
+Isolated the divergence cause with two concurrent diagnostics (n100, full bundle, momentum-conserving kernel):
+
+| run | accel_dt | proj_gap | result |
+|---|---|---|---|
+| `n100_proj_smalldt` | **8e-6 (base)** | c_rep | **STABLE through 5000 steps — A/A0 0.999, V/V0 1.000, pen 0.000, cfl 0, drift 0** |
+| `n100_proj_smallgap` | 8e-4 (100×) | 0.05·c_rep (near-zero) | DIVERGED (V/V0 358, cfl 1.7e11 @step 3984) |
+
+**The divergence cause is the LARGE TIMESTEP, not the clearance shell.** A near-zero gap (pure
+non-penetration, not fighting adhesion) still diverged at accel_dt 8e-4; the base timestep 8e-6 is
+perfectly stable with the FULL c_rep gap. Mechanism: the post-step geometric projection applies a
+position correction Δx each step; the implied velocity Δx/dt blows up at the 100× timestep, and the
+projection↔implicit-force feedback diverges. At the base dt the corrections are small and consistent
+with the force balance.
+
+**So lever#3 is a SUCCESS with a hard caveat — the speed/accuracy frontier for M1 contact:**
+- **Projection hard-constraint = the most accurate contact: pen→0 (TRUE penetration-free)**, V/V0 1.000,
+  cfl 0, zero drift — *but only at the base timestep 8e-6* (100× slower than the accelerated runs).
+  Figure: `figs/n100_projection_pen0_nucleus_montage.png` (clean round all-touching n100 spheroid, pen 0).
+- **It is numerically INCOMPATIBLE with the 100× accelerated implicit timestep (8e-4)** that the
+  rigid-cell penalty runs use — it diverges (V/V0 blows up) regardless of gap.
+- The proper way to get penetration-free contact AT the large timestep is to couple the constraint
+  INTO the implicit solve (constraint-aware Newton), not bolt a geometric projection on post-step —
+  which is exactly what the **IPC barrier already does** (its analytic Hessian goes into the CG; stable
+  at 8e-4, pen 2.6). The post-step projection is the "naive" hard constraint; the IPC barrier is the
+  "solver-coupled" one.
+
+**M1 contact — consolidated recommendation across all three methods + the projection:**
+- **Fast production (accel_dt 8e-4):** force-based **IPC penalty-only** (pen 1.5, stable, the
+  reconsider's good-enough-honest) — cohesion/de-cohesion runs are A/A0-hull-robust at this pen.
+- **Penetration-free reference (base dt 8e-6):** the **projection hard-constraint** (pen→0) — for a
+  decisive contact-fidelity check or any run where penetration honesty must be exact, at 100× wall-time.
+- **Not viable:** post-step projection at the accelerated timestep (diverges).
+
+This closes M1-lever#3: a true hard constraint IS achievable and penetration-free (answering the
+directive), the cost is the base timestep, and the production contact stays the solver-coupled IPC.
+The adversarial review was load-bearing — it caught the one-sided-shove divergence before the headline
+pen→0 could be mis-reported as "projection works in production."
