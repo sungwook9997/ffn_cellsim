@@ -268,7 +268,8 @@ class FilopodiaHost:
         # fancy-index gathers, the dominant per-batch host cost at large pools). Cell-independent, so
         # hoisting is exact (each tip just indexes fc_all[cand]). ~free× fewer gathers, no physics change.
         fc_all = (P[self.faces[:, 0]] + P[self.faces[:, 1]] + P[self.faces[:, 2]]) / 3.0
-        free = np.flatnonzero(self.alive & (self.state == 0))
+        _cand_cache = {}                              # PERF: other-cell face set is the SAME for all
+        free = np.flatnonzero(self.alive & (self.state == 0))   # tips of a cell → cache per base-cell
         for i in free:
             tip = self.tip[i]
             # (a) substrate: tip reached the dish band
@@ -281,9 +282,10 @@ class FilopodiaHost:
             # (b) nearest OTHER-cell face within tip_capture (node-FACE closest point)
             b = self.base_idx[i]
             cb = cof[b]
-            other = self.fcell != cb
-            other &= self.fcell >= 0
-            cand = np.flatnonzero(other)
+            cand = _cand_cache.get(cb)
+            if cand is None:
+                cand = np.flatnonzero((self.fcell != cb) & (self.fcell >= 0))
+                _cand_cache[cb] = cand
             if cand.size == 0:
                 continue
             # cheap pre-prune by face-centroid distance (precomputed fc_all), then exact closest-point

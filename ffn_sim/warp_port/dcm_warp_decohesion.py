@@ -44,7 +44,7 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     gather_lead_pos, lamellipodium_tether_multicell)
 from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
 from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost, EcmClutchParams
-from ffn_sim.warp_port.dcm_filopodia_host import FilopodiaHost
+from ffn_sim.warp_port.dcm_filopodia_host import FilopodiaHost, FilopodiaParams
 from ffn_sim.warp_port.dcm_filopodia_warp import (
     filopodia_tip_face_force_kernel, filopodia_tip_plane_force_kernel)
 from ffn_sim.warp_port.dcm_division_host import DivisionHost, DivisionParams
@@ -230,7 +230,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    ipc: bool = False, ipc_eta: float = 0.9,
                    project: bool = False, proj_omega: float = 0.7, proj_iter: int = 8,
                    proj_gap_factor: float = 1.0,
-                   lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False, junction_switch: bool = False) -> dict:
+                   lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False,
+                   active_batch: int = 50, junction_switch: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
 
@@ -418,7 +419,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     lam = None
     if lamellipodium:
         lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt,
-                                params=LamelParams(substrate_clutch=lamel_clutch))
+                                params=LamelParams(substrate_clutch=lamel_clutch, batch_steps=active_batch))
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
 
@@ -427,7 +428,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     filo = None
     if filopodia:
         filo = FilopodiaHost(cof=cof_a, n_cells=n_cells, faces=faces_a, fcell=fcell_a,
-                             z0=z0, R=R, dt=dt)
+                             z0=z0, R=R, dt=dt, params=FilopodiaParams(batch_steps=active_batch))
         print(f"  [filopodia] pool={filo.n_pool}  v_poly={filo.p.v_poly*1e9:.0f}nm/s  "
               f"L_max={filo.p.L_max*1e6:.1f}um  k_tip={filo.p.k_tip:.1e}N/m (node-FACE + node-plane)", flush=True)
 

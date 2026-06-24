@@ -100,6 +100,10 @@ def main():
                          "p_div = S*dt*div_every/T_cycle so cells divide ~div_real_hours/T_cycle times. 0 = bare div_rate.")
     ap.add_argument("--div-t-cycle", type=float, default=24.0, dest="div_t_cycle_h",
                     help="cell-cycle / doubling time in HOURS (MCF7 ~24h). Used by time-consistent division.")
+    ap.add_argument("--active-batch", type=int, default=50, dest="active_batch",
+                    help="filopodia+lamellipodium host-update cadence (steps). 50 default; 200 = 4x fewer "
+                         "expensive host PROBE updates (advance is batch-consistent so velocity is preserved). "
+                         "The single biggest cheap speedup for the active-junction stack.")
     ap.add_argument("--ula", action="store_true",
                     help="ULA spheroid formation: U-bottom bowl ON, flat substrate well + wetting + ECM "
                          "clutch OFF (non-adhesive surface), cadherin + filopodia + lamellipodium ON "
@@ -135,7 +139,7 @@ def main():
         polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
         ipc_dhat_factor=a.ipc_dhat_factor,
         cadherin=cadherin, ecm_clutch=ecm_clutch,
-        lamellipodium=lamellipodium, filopodia=filopodia,
+        lamellipodium=lamellipodium, filopodia=filopodia, active_batch=a.active_batch,
         coupling=a.coupling,
         cad_bundle=40.0, ecm_bundle=167.0,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
