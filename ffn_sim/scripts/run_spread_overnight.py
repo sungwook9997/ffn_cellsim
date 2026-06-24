@@ -84,7 +84,38 @@ def main():
                     help="node-FACE CONTINUOUS adhesion ON (coh_adh=adh_strength) — the flat-interface "
                          "adhesion that, with surface tension, facets cells into space-filling polyhedra "
                          "(vs sparse node-node point cohesion). Physiological-baseline: should be ON in production.")
+    ap.add_argument("--ubottom", action="store_true",
+                    help="ULA U-bottom confinement: cells are held in a non-adhesive hemispherical bowl "
+                         "(geometric confinement only; the surface never grips). Independent of --well.")
+    ap.add_argument("--filopodia", action="store_true",
+                    help="explicit filopodia finger protrusions (node-FACE + node-plane tip adhesions). "
+                         "ON automatically under --ula (cell-cell junction formation).")
+    ap.add_argument("--lamellipodium", action="store_true",
+                    help="per-cell advancing-anchor lamellipodium crawl. ON automatically under --ula.")
+    ap.add_argument("--ula", action="store_true",
+                    help="ULA spheroid formation: U-bottom bowl ON, flat substrate well + wetting + ECM "
+                         "clutch OFF (non-adhesive surface), cadherin + filopodia + lamellipodium ON "
+                         "(cell-cell adhesion is the ONLY adhesion). Post-centrifuge pellet → spheroid.")
     a = ap.parse_args()
+    # --ula is the convenience preset; individual flags OR with it so they also work standalone.
+    ula = a.ula
+    ubottom = a.ubottom or ula
+    filopodia = a.filopodia or ula
+    lamellipodium = a.lamellipodium or ula
+    if ula:
+        # ULA = cell-cell adhesion ONLY (no ECM / no substrate grip); bowl confines geometrically.
+        use_substrate_well = False
+        substrate_wetting = False
+        ecm_clutch = False
+        cadherin = True
+    else:
+        # unchanged legacy behavior (proxy-free mechanistic stack)
+        use_substrate_well = a.well
+        substrate_wetting = False
+        ecm_clutch = not a.no_bundle
+        cadherin = not a.no_bundle
+        # legacy stack drives lamellipodium off --no-bundle unless explicitly requested above
+        lamellipodium = lamellipodium or (not a.no_bundle)
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
     out = run_decohesion(
@@ -95,10 +126,12 @@ def main():
         surface_tension=True, gamma_surf=a.gamma_surf, bending=True, edge_edge=True, nucleus=True,
         polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
         ipc_dhat_factor=a.ipc_dhat_factor,
-        cadherin=not a.no_bundle, ecm_clutch=not a.no_bundle, lamellipodium=not a.no_bundle,
+        cadherin=cadherin, ecm_clutch=ecm_clutch,
+        lamellipodium=lamellipodium, filopodia=filopodia,
         coupling=a.coupling,
         cad_bundle=40.0, ecm_bundle=167.0,
-        substrate_wetting=False, use_substrate_well=a.well,   # well = the spreading BOUND (single-cell fried-egg had it)
+        substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
+        ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         proj_gap_factor=a.proj_gap_factor,

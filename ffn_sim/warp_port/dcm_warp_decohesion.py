@@ -33,7 +33,7 @@ from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.warp_port.dcm_substrate_warp import (
     dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel,
-    dcm_wetting_scatter_integrin_kernel)
+    dcm_wetting_scatter_integrin_kernel, dcm_ubottom_well_kernel)
 from ffn_sim.warp_port.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
@@ -206,6 +206,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    adh_strength: float = 1.0e7, w_cs_jm2: float = 2.85e-3,
                    adh_range: float = 0.5e-6, k_floor: float = 1.0, gap: float = 2.05,
                    substrate_wetting: bool = True, use_substrate_well: bool = True,
+                   ubottom: bool = False, ubottom_r_factor: float = 1.35, ubottom_k: float = 0.0,
                    force_cap: float = 5.0e-8, z0: float = 0.0, warmup: int = 1000,
                    settle_steps: int = 0, settle_frames: int = 0,
                    remesh_period: int = 0, pool_factor: float = 0.5,
@@ -284,6 +285,29 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # z-well depth from the adhesion energy density × node area (derived, not tuned)
     W_cs_well = w_cs_jm2 * area_per_node
     k_well = 2.0 * W_cs_well / (adh_range ** 2)
+
+    # ── U-bottom ULA confinement geometry (opt-in via ubottom=True; independent of the flat
+    # z-well). Computed ONCE from the just-built cluster: a hemispherical bowl whose floor sits at
+    # z=z0 (the cluster's resting plane) and whose radius is ubottom_r_factor× the cluster radius,
+    # so the dense pellet drops into the bowl bottom and is confined (non-adhesive, repulsive-only).
+    ub_cx = ub_cy = ub_cz = ub_rwell = ub_kwall = 0.0
+    if ubottom:
+        act_mask = cof_a >= 0                       # active nodes only (parked/pool = −1)
+        cl = pos_a[act_mask]
+        ub_cx = float(cl[:, 0].mean())
+        ub_cy = float(cl[:, 1].mean())
+        # robust 3D cluster radius (99th pct of node distance from the cluster centroid)
+        cen = cl.mean(axis=0)
+        d3 = np.linalg.norm(cl - cen, axis=1)
+        cluster_radius = float(np.percentile(d3, 99.0))
+        ub_rwell = float(ubottom_r_factor) * cluster_radius
+        # bowl centre z so the bowl FLOOR (z = cz − r_well) sits at z0 (= 0, cluster rest plane)
+        ub_cz = z0 + ub_rwell
+        # auto stiffness: reuse the rigid-dish floor scale (a rigid, repulsive wall) unless given
+        ub_kwall = float(ubottom_k) if ubottom_k > 0.0 else float(k_floor)
+        print(f"  [ubottom] bowl r_well={ub_rwell*1e6:.2f}um center=({ub_cx*1e6:.2f},"
+              f"{ub_cy*1e6:.2f},{ub_cz*1e6:.2f})um k={ub_kwall:.3e} "
+              f"(cluster_radius={cluster_radius*1e6:.2f}um, r_factor={ubottom_r_factor})", flush=True)
 
     # PHYSIOLOGICAL per-node drag (physiological-baseline HARD rule) — derived from the
     # MCF7 cytoplasm viscosity exactly as the HOOMD driver (dcm_gpu_build.py:576): the
@@ -596,6 +620,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if use_substrate_well:
             wp.launch(dcm_substrate_well_accum_kernel, dim=N, inputs=[pos_buf, wp.float64(z0),
                       wp.float64(k_well), wp.float64(adh_range), wp.float64(k_floor), out_d], device=device)
+        if ubottom:                                  # U-bottom ULA confinement (own-row ADD; sibling of the flat well)
+            wp.launch(dcm_ubottom_well_kernel, dim=N, inputs=[pos_buf, wp.float64(ub_cx),
+                      wp.float64(ub_cy), wp.float64(ub_cz), wp.float64(ub_rwell),
+                      wp.float64(ub_kwall), out_d], device=device)
         if nucleus:
             csum_d.zero_(); ccnt_d.zero_()
             wp.launch(cell_centroid_accum_kernel, dim=N, inputs=[pos_buf, cof_d, csum_d, ccnt_d], device=device)
@@ -742,6 +770,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(dcm_substrate_well_accum_kernel, dim=N,
                       inputs=[pos_d, wp.float64(z0), wp.float64(k_well), wp.float64(adh_range),
                               wp.float64(k_floor), force_d], device=device)
+        # U-bottom ULA confinement (own-row ADD; sibling of the flat well — INDEPENDENT, so a ULA
+        # run has use_substrate_well=False and ubottom=True: bowl confines, surface is non-adhesive)
+        if ubottom:
+            wp.launch(dcm_ubottom_well_kernel, dim=N,
+                      inputs=[pos_d, wp.float64(ub_cx), wp.float64(ub_cy), wp.float64(ub_cz),
+                              wp.float64(ub_rwell), wp.float64(ub_kwall), force_d], device=device)
         # substrate in-plane wetting: scatter into wbuf -> cap -> add (mechanistic spread).
         # In C6 ecm-clutch mode the wetting PROXY is OFF — the explicit integrin clutch provides
         # the (traction-limited) substrate coupling instead.
@@ -1068,6 +1102,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "steps": steps, "warmup": warmup, "settle_steps": settle_steps,
         "truncated_at": truncated_at, "steps_per_s": (truncated_at or steps) / elapsed,
         "substrate_wetting": substrate_wetting, "use_substrate_well": use_substrate_well,
+        "ubottom": ubottom, "ubottom_r_well_um": (ub_rwell * 1e6 if ubottom else None),
         "lamellipodium": lamellipodium, "junction_switch": junction_switch,
         "A0_rested_um2": A0, "compaction_x": (m_init["A_um2"] / A0) if A0 else 0.0,
         "aa0_peak": max(spread_aa), "aa0_final": spread_aa[-1],
@@ -1209,6 +1244,9 @@ def main():
     ap.add_argument("--cg-maxiter", type=int, default=80, help="I-opt: max CG iterations per implicit step")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
+    ap.add_argument("--ubottom", action="store_true", help="ULA U-bottom: confine cells in a non-adhesive hemispherical bowl (independent of the flat well)")
+    ap.add_argument("--ubottom-r-factor", type=float, default=1.35, dest="ubottom_r_factor", help="bowl radius = factor × cluster radius (default 1.35)")
+    ap.add_argument("--ubottom-k", type=float, default=0.0, dest="ubottom_k", help="bowl wall stiffness; 0 ⇒ auto (= k_floor rigid-dish scale)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
     ap.add_argument("--save-frames", default=None, help="npz path to save per-frame mesh geometry (pos+faces+cof) for surface viz")
     args = ap.parse_args()
@@ -1231,6 +1269,7 @@ def main():
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
+        ubottom=args.ubottom, ubottom_r_factor=args.ubottom_r_factor, ubottom_k=args.ubottom_k,
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames,
         ipc=args.ipc, ipc_eta=args.ipc_eta)
