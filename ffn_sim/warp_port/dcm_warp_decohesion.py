@@ -419,7 +419,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     lam = None
     if lamellipodium:
         lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt,
-                                params=LamelParams(substrate_clutch=lamel_clutch, batch_steps=active_batch))
+                                params=LamelParams(substrate_clutch=lamel_clutch, batch_steps=active_batch),
+                                use_gpu_ratchet=str(device).startswith("cuda"), device=device)
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
 
@@ -1018,8 +1019,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # M2: ratchet the lamellipodial front on the host at low cadence, then refresh
         # the device anchor + leading-node geometry (the tether reads them every step)
         if lam is not None and (s == 1 or s % lam.batch_steps == 0):
-            wp.synchronize_device(device)
-            lam.update(pos_d.numpy().astype(np.float64))
+            if getattr(lam, "use_gpu_ratchet", False):
+                lam.update(pos_d=pos_d)               # GPU-resident geometry; no full position pull
+            else:
+                wp.synchronize_device(device)
+                lam.update(pos_d.numpy().astype(np.float64))
             lam.upload(device)
         # B3: extend/probe filopodia + refresh tip-adhesion device arrays at low cadence
         if filo is not None and (s == 1 or s % filo.batch_steps == 0):

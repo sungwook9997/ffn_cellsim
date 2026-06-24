@@ -87,13 +87,23 @@ class LamellipodiumHost:
     """
 
     def __init__(self, *, pos0: np.ndarray, cof: np.ndarray, n_cells: int,
-                 z0: float, R: float, dt: float, params: LamelParams | None = None):
+                 z0: float, R: float, dt: float, params: LamelParams | None = None,
+                 use_gpu_ratchet: bool = False, device: str = "cpu"):
         self.p = params or LamelParams()
         self.cof = np.asarray(cof, dtype=np.int64)
         self.n_cells = int(n_cells)
         self.z0 = float(z0)
         self.R = float(R)
         self.batch_steps = self.p.batch_steps
+        # Opt-in GPU geometry path (additive; default OFF → the host path below is
+        # byte-identical to before this change). When ON, the deterministic geometry
+        # (per-cell centroid, rim set, spheroid centroid, per-leading-node out/proj/rp)
+        # is computed by the Warp kernels in :mod:`dcm_lamellipodium_ratchet_warp` reading
+        # the LIVE device positions — no per-batch ``pos_d.numpy()`` of all N nodes — and
+        # the SAME host ratchet (:meth:`_ratchet_from_geo`) consumes it, so the seed/advance
+        # RNG stream and the device anchor arrays are identical to the host path.
+        self.use_gpu_ratchet = bool(use_gpu_ratchet)
+        self.device = str(device)
 
         centers = self._cell_centroids(np.asarray(pos0, dtype=np.float64))
         self.rim_cells = detect_rim_cells(centers, z0, R, self.p.rim_contact_band)
@@ -132,32 +142,51 @@ class LamellipodiumHost:
         return c / cnt[:, None]
 
     # -- the ratchet + geometry rebuild (HOOMD GpuLamellipodiumAdvance.act + tether geo) --
-    def update(self, P: np.ndarray) -> None:
+    def update(self, P: np.ndarray | None = None, *, pos_d=None) -> None:
         """One ratchet tick: SEED/ADVANCE the front, then rebuild leading-node geometry.
 
-        ``P`` is the current node positions (device → host, shape (N,3))."""
-        P = np.asarray(P, dtype=np.float64)
+        Host path (default): pass ``P`` = current node positions (device → host, (N,3));
+        the deterministic geometry is built in numpy here and the ratchet runs on it.
+
+        GPU path (``use_gpu_ratchet=True``): the deterministic geometry is built by the
+        Warp kernels in :mod:`dcm_lamellipodium_ratchet_warp` reading the LIVE device
+        positions — pass ``pos_d`` (a ``wp.array(vec3d)`` of positions on device) so no
+        per-batch ``pos_d.numpy()`` of all N nodes happens; only the O(rim) geometry
+        crosses the bus. The SAME host ratchet (:meth:`_ratchet_from_geo`) then consumes
+        it, so the RNG seed/advance stream and the device anchor arrays are identical.
+        ``P`` may still be passed (and is ignored) for a drop-in call signature."""
+        if self.use_gpu_ratchet:
+            geo = self._geometry_gpu(P=P, pos_d=pos_d)
+        else:
+            geo = self._geometry_host(np.asarray(P, dtype=np.float64))
+        # ``self.rim_cells`` is refreshed inside the geometry builder (byte-matching the
+        # original update, which assigned it before the empty-mask early-return).
+        if geo is None:
+            self._lead = _empty_lead()
+            return
+        self._ratchet_from_geo(geo)
+
+    # -- deterministic geometry: host numpy reference --------------------------------
+    def _geometry_host(self, P: np.ndarray):
+        """Build the per-leading-node geometry in numpy (the reference path). Returns the
+        SAME dict shape as :meth:`_geometry_gpu` so :meth:`_ratchet_from_geo` is shared."""
         cof = self.cof
         # Recompute rim from the LIVE geometry each tick (review fix #5): rim was frozen at init,
         # so division daughters (new cof ids the driver sets in self.cof) never crawled. Live
         # detection is ~identical when there is no division (centroids stable) and lets daughters
         # join the rim. (Actin pool stays sized from the initial n_rim; it caps gracefully if rim grows.)
-        self.rim_cells = detect_rim_cells(self._cell_centroids(P), self.z0, self.R,
-                                          self.p.rim_contact_band)
-
-        # spheroid in-plane centroid from rim-cell nodes
-        rim_node_mask = np.isin(cof, self.rim_cells)
+        rim_cells = detect_rim_cells(self._cell_centroids(P), self.z0, self.R,
+                                     self.p.rim_contact_band)
+        self.rim_cells = rim_cells           # refresh before any early-return (orig order)
+        rim_node_mask = np.isin(cof, rim_cells)
         if not rim_node_mask.any():
-            self._lead = _empty_lead()
-            return
+            return None
         sph = P[rim_node_mask].mean(axis=0)
         sx, sy = float(sph[0]), float(sph[1])
 
-        lead_idx_all, lead_ccx, lead_ccy, lead_ox, lead_oy, lead_proj, lead_cell = (
-            [], [], [], [], [], [], [])
-
-        pool_full = self.n_used >= self.n_pool
-        for c in self.rim_cells:
+        lead_node_id, lead_cc, lead_out, lead_proj, lead_rp, lead_cell = (
+            [], [], [], [], [], [])
+        for c in rim_cells:
             c = int(c)
             cnodes = np.where(cof == c)[0]
             if cnodes.size == 0:
@@ -175,23 +204,81 @@ class LamellipodiumHost:
             basal = np.abs(npos[:, 2] - self.z_basal) <= self.basal_band
             lead = basal & (proj >= self.p.lead_frac * np.maximum(rel_xy, 1e-18))
             lead_local = np.where(lead)[0]
-            if lead_local.size == 0:
-                continue
-            lead_nodes = cnodes[lead_local]
-            node_proj_c = proj[lead_local]
+            for ki in lead_local:
+                ln = int(cnodes[ki])
+                lead_node_id.append(ln)
+                lead_cc.append((cc[0], cc[1]))
+                lead_out.append((out[0], out[1]))
+                lead_proj.append(float(proj[ki]))
+                lead_rp.append(P[ln].copy())
+                lead_cell.append(c)
+        return {
+            "rim_cells": rim_cells,
+            "lead_node_id": np.asarray(lead_node_id, dtype=np.int64),
+            "lead_ccx": np.asarray([p[0] for p in lead_cc], dtype=np.float64),
+            "lead_ccy": np.asarray([p[1] for p in lead_cc], dtype=np.float64),
+            "lead_ox": np.asarray([p[0] for p in lead_out], dtype=np.float64),
+            "lead_oy": np.asarray([p[1] for p in lead_out], dtype=np.float64),
+            "lead_proj": np.asarray(lead_proj, dtype=np.float64),
+            "lead_rp": (np.asarray(lead_rp, dtype=np.float64).reshape(-1, 3)
+                        if lead_rp else np.empty((0, 3))),
+            "lead_cell": np.asarray(lead_cell, dtype=np.int64),
+        }
 
+    # -- deterministic geometry: GPU Warp kernels ------------------------------------
+    def _geometry_gpu(self, *, P=None, pos_d=None):
+        """Build the same geometry on the GPU via
+        :func:`dcm_lamellipodium_ratchet_warp.compute_lamellipodium_geometry_gpu`,
+        reading device positions (no full ``pos_d.numpy()``)."""
+        from ffn_sim.warp_port.dcm_lamellipodium_ratchet_warp import (
+            compute_lamellipodium_geometry_gpu)
+        g = compute_lamellipodium_geometry_gpu(
+            pos=(np.asarray(P, dtype=np.float64) if pos_d is None else None),
+            cof=self.cof, n_cells=self.n_cells,
+            z0=self.z0, R=self.R, contact_band=self.p.rim_contact_band,
+            z_basal=self.z_basal, basal_band=self.basal_band, lead_frac=self.p.lead_frac,
+            device=self.device, pos_d=pos_d)
+        self.rim_cells = g["rim_cells"]      # refresh before any early-return (orig order)
+        if g["sph"] is None:
+            return None
+        return g  # already the shared geo dict shape (lead_node_id / lead_* / rim_cells)
+
+    # -- the RNG seed/advance ratchet (shared by host + GPU geometry) ----------------
+    def _ratchet_from_geo(self, geo: dict) -> None:
+        """SEED/ADVANCE the actin front from a per-leading-node geometry dict, then write
+        ``self._lead``. Identical logic to the original host inner loop — the only change
+        is that ``(cc, out, proj, rp)`` come PRE-COMPUTED (host numpy OR GPU kernels)
+        instead of being recomputed inline, so both paths share one RNG stream and produce
+        byte-identical anchor pools. Leading nodes MUST arrive grouped by cell (rim order),
+        node id ascending within a cell — both geometry builders guarantee this."""
+        lead_node_id = geo["lead_node_id"]
+        ccx = geo["lead_ccx"]; ccy = geo["lead_ccy"]
+        ox = geo["lead_ox"]; oy = geo["lead_oy"]
+        node_proj_all = geo["lead_proj"]
+        rp_all = geo["lead_rp"]
+        cell_all = geo["lead_cell"]
+
+        lead_idx_all, l_ccx, l_ccy, l_ox, l_oy, l_proj, l_cell = (
+            [], [], [], [], [], [], [])
+        pool_full = self.n_used >= self.n_pool
+
+        L = lead_node_id.size
+        ki = 0
+        while ki < L:
+            c = int(cell_all[ki])
+            ccc0 = float(ccx[ki]); ccc1 = float(ccy[ki])
+            out0 = float(ox[ki]); out1 = float(oy[ki])
             # this cell's active actin + its outward projection from the cell centroid
             cmask = self.actin_cell[: self.n_used] == c
             cact = self.actin_xyz[: self.n_used][cmask] if self.n_used else np.empty((0, 3))
-            proj_a = ((cact[:, 0] - cc[0]) * out[0] + (cact[:, 1] - cc[1]) * out[1]
+            proj_a = ((cact[:, 0] - ccc0) * out0 + (cact[:, 1] - ccc1) * out1
                       if cact.shape[0] else np.empty(0))
 
-            for ki in range(lead_nodes.size):
-                ln = int(lead_nodes[ki])
-                rp = P[ln]
-                node_proj = float(node_proj_c[ki])
-                # front bead = cell's actin within reach with the LARGEST outward proj
-                # (NOT strictly-outward-of-node — that re-seeds once the node catches up)
+            # consume all leading nodes of this cell (contiguous block)
+            while ki < L and int(cell_all[ki]) == c:
+                ln = int(lead_node_id[ki])
+                rp = rp_all[ki]
+                node_proj = float(node_proj_all[ki])
                 fb_proj = None
                 if cact.shape[0] > 0:
                     dist = np.linalg.norm(cact - rp, axis=1)
@@ -201,39 +288,38 @@ class LamellipodiumHost:
 
                 if not pool_full:
                     if fb_proj is None:
-                        site = np.array([rp[0] + self.seed_off * out[0],
-                                         rp[1] + self.seed_off * out[1], self.z_basal])
+                        site = np.array([rp[0] + self.seed_off * out0,
+                                         rp[1] + self.seed_off * out1, self.z_basal])
                         self._activate(c, site)
                         self.n_seeded += 1
-                        # refresh this cell's actin view so subsequent nodes see the seed
                         cmask = self.actin_cell[: self.n_used] == c
                         cact = self.actin_xyz[: self.n_used][cmask]
-                        proj_a = ((cact[:, 0] - cc[0]) * out[0] + (cact[:, 1] - cc[1]) * out[1])
+                        proj_a = ((cact[:, 0] - ccc0) * out0 + (cact[:, 1] - ccc1) * out1)
                     elif (fb_proj - node_proj) < self.catch and self._rng.uniform() < self.p_advance:
-                        site = np.array([cc[0] + (fb_proj + self.p.l0) * out[0],
-                                         cc[1] + (fb_proj + self.p.l0) * out[1], self.z_basal])
+                        site = np.array([ccc0 + (fb_proj + self.p.l0) * out0,
+                                         ccc1 + (fb_proj + self.p.l0) * out1, self.z_basal])
                         self._activate(c, site)
                         self.n_advanced += 1
                         cmask = self.actin_cell[: self.n_used] == c
                         cact = self.actin_xyz[: self.n_used][cmask]
-                        proj_a = ((cact[:, 0] - cc[0]) * out[0] + (cact[:, 1] - cc[1]) * out[1])
+                        proj_a = ((cact[:, 0] - ccc0) * out0 + (cact[:, 1] - ccc1) * out1)
                     if self.n_used >= self.n_pool:
                         pool_full = True
 
-                # geometry for the device tether (every leading node, regardless of seed)
                 lead_idx_all.append(ln)
-                lead_ccx.append(cc[0]); lead_ccy.append(cc[1])
-                lead_ox.append(out[0]); lead_oy.append(out[1])
-                lead_proj.append(node_proj); lead_cell.append(c)
+                l_ccx.append(ccc0); l_ccy.append(ccc1)
+                l_ox.append(out0); l_oy.append(out1)
+                l_proj.append(node_proj); l_cell.append(c)
+                ki += 1
 
         self._lead = {
             "idx": np.asarray(lead_idx_all, dtype=np.int32),
-            "ccx": np.asarray(lead_ccx, dtype=np.float64),
-            "ccy": np.asarray(lead_ccy, dtype=np.float64),
-            "ox": np.asarray(lead_ox, dtype=np.float64),
-            "oy": np.asarray(lead_oy, dtype=np.float64),
-            "proj": np.asarray(lead_proj, dtype=np.float64),
-            "cell": np.asarray(lead_cell, dtype=np.int32),
+            "ccx": np.asarray(l_ccx, dtype=np.float64),
+            "ccy": np.asarray(l_ccy, dtype=np.float64),
+            "ox": np.asarray(l_ox, dtype=np.float64),
+            "oy": np.asarray(l_oy, dtype=np.float64),
+            "proj": np.asarray(l_proj, dtype=np.float64),
+            "cell": np.asarray(l_cell, dtype=np.int32),
         }
 
     def _activate(self, cell: int, site: np.ndarray) -> None:
