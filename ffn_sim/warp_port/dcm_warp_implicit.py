@@ -135,7 +135,7 @@ def _operator(out: wp.array(dtype=wp.vec3d), a: wp.float64, v: wp.array(dtype=wp
 
 
 def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e-9, device="cpu",
-              hess_apply=None):
+              hess_apply=None, precond_apply=None):
     """All-device matrix-free CG for (a·I + K)Δx = b. Big vectors stay on the GPU; only the CG
     scalars (dot products) cross to host. ``stiff_into(pos_d, out_d)`` writes F(pos) on device;
     K·v via a perturbed stiff eval. ``scratch`` = dict of pre-allocated device vec3d buffers.
@@ -145,9 +145,20 @@ def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e
     finite-difference JVP is gated/C0 and would be thrown away by the ``pAp_diag`` floor below
     (leaving the contact effectively explicit). With the analytic Hessian in ``Ap`` the implicit
     solve genuinely ABSORBS the contact stiffness (frozen at xₙ, like the grid). See
-    ``dcm_contact_implicit_warp``."""
+    ``dcm_contact_implicit_warp``.
+
+    ``precond_apply(r_d, z_d)`` (optional, default None → unchanged unpreconditioned CG): applies a
+    left preconditioner ``z = M⁻¹ r`` each iteration (e.g. the analytic-diagonal Jacobi M⁻¹=1/diagA
+    from ``dcm_warp_frozen.make_diag_precond``). It changes ONLY the iteration count, never the
+    converged Δx (so dx is the same within ``tol``). When None the original ``z=r`` path runs
+    byte-identically (the preconditioned recurrences reduce to the plain ones)."""
     N = x_d.shape[0]
     r, p, Ap, dx, Fx, Fp, xp, sca = (scratch[k] for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp", "sca"))
+    # Preconditioner scratch z = M⁻¹ r (only when precond_apply is given; allocate lazily so the
+    # default path keeps the exact original buffer set + behaviour).
+    zpc = scratch.get("zpc") if precond_apply is not None else None
+    if precond_apply is not None and zpc is None:
+        zpc = wp.zeros(N, dtype=wp.vec3d, device=device); scratch["zpc"] = zpc
 
     def dot(u, v):
         sca.zero_(); wp.launch(_vdot, dim=N, inputs=[u, v, sca], device=device)
@@ -158,14 +169,23 @@ def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e
 
     dx.zero_()
     wp.launch(_vcopy, dim=N, inputs=[r, b_d], device=device)     # r = b - A·0 = b
-    wp.launch(_vcopy, dim=N, inputs=[p, r], device=device)
-    rs = dot(r, r); bnorm = max(dot(b_d, b_d) ** 0.5, 1e-30); rs0 = rs; it = 0
+    # PCG: p₀ = z₀ = M⁻¹ r₀ (= r₀ when unpreconditioned → original path). rr tracks ‖r‖² (the TRUE
+    # residual, for the convergence + divergence tests); rz tracks ⟨r, z⟩ (drives α and β). With
+    # M=I, z≡r so rz≡rr and every recurrence reduces exactly to the committed unpreconditioned CG.
+    if precond_apply is not None:
+        precond_apply(r, zpc)
+        wp.launch(_vcopy, dim=N, inputs=[p, zpc], device=device)
+    else:
+        wp.launch(_vcopy, dim=N, inputs=[p, r], device=device)
+    rr = dot(r, r)
+    rs = dot(r, zpc) if precond_apply is not None else rr     # rs = ⟨r,z⟩ (= rr when unpreconditioned)
+    bnorm = max(dot(b_d, b_d) ** 0.5, 1e-30); rs0 = rr; it = 0
     if _dbg:
-        print(f"    [cg-dbg] N={N} a={a:.3e} bnorm={bnorm:.3e} rs0={rs:.3e}", flush=True)
+        print(f"    [cg-dbg] N={N} a={a:.3e} bnorm={bnorm:.3e} rs0={rr:.3e}", flush=True)
     # Already at (or below) tolerance — F(x)≈0 ⇒ Δx≈0. Skip CG; a zero step is correct and
     # avoids the forward-difference JVP catastrophically cancelling on Fp−Fx≈0 (a near-equilibrium
     # configuration is exactly where that noise turns the matrix-free operator non-SPD).
-    if rs ** 0.5 <= tol * bnorm or not math.isfinite(rs):
+    if rr ** 0.5 <= tol * bnorm or not math.isfinite(rr):
         return dx, 0
     for it in range(1, maxiter + 1):
         # JVP perturbation scale from the current search direction. Guard a degenerate/diverged
@@ -198,24 +218,33 @@ def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e
         alpha = rs / pAp
         wp.launch(_vaxpy, dim=N, inputs=[dx, wp.float64(alpha), p], device=device)    # x += α p
         wp.launch(_vaxpy, dim=N, inputs=[r, wp.float64(-alpha), Ap], device=device)   # r -= α Ap
-        rs_new = dot(r, r)
+        rr_new = dot(r, r)                                # TRUE residual ‖r‖² (checks)
         if _dbg:
-            print(f"    [cg-dbg] it={it} rs={rs:.3e} pAp={pAp:.3e} -> rs_new={rs_new:.3e}", flush=True)
+            print(f"    [cg-dbg] it={it} rs={rs:.3e} pAp={pAp:.3e} -> rr_new={rr_new:.3e}", flush=True)
         # Divergence guard. For this non-symmetric, K-dominated operator (large dt ⇒ a=γ/dt ≪‖K‖),
         # diagonal-floored CG can diverge — the residual grows monotonically and ran away to ~1e128
         # within a single solve. Stop at the first runaway (4× the initial residual) and return the
         # current iterate. A diverging solve here is the SIGNAL that this dt exceeds the stable
         # ceiling for this stack — the caller's V/V0 will then flag it, instead of an opaque NaN.
-        if not math.isfinite(rs_new) or rs_new > 4.0 * rs0:
+        if not math.isfinite(rr_new) or rr_new > 4.0 * rs0:
             if _dbg:
-                print(f"    [cg-dbg] it={it} DIVERGING rs_new={rs_new:.3e} > 4·rs0={4 * rs0:.3e} — break", flush=True)
+                print(f"    [cg-dbg] it={it} DIVERGING rr_new={rr_new:.3e} > 4·rs0={4 * rs0:.3e} — break", flush=True)
             break
-        if (rs_new ** 0.5) < tol * bnorm:
+        if (rr_new ** 0.5) < tol * bnorm:
+            break
+        # β from the (preconditioned) inner products: z_new = M⁻¹ r_new, rs_new = ⟨r_new, z_new⟩,
+        # β = rs_new/rs, p = z_new + β p. With M=I this is z_new≡r_new, rs_new≡rr_new → the original
+        # β = rr_new/rr and p = r_new + β p (byte-identical to the committed path).
+        if precond_apply is not None:
+            precond_apply(r, zpc)
+            rs_new = dot(r, zpc)
+            beta = rs_new / rs
+            wp.launch(_vxpby, dim=N, inputs=[p, zpc, wp.float64(beta), p], device=device)  # p = z + β p
             rs = rs_new
-            break
-        beta = rs_new / rs
-        wp.launch(_vxpby, dim=N, inputs=[p, r, wp.float64(beta), p], device=device)   # p = r + β p
-        rs = rs_new
+        else:
+            beta = rr_new / rs
+            wp.launch(_vxpby, dim=N, inputs=[p, r, wp.float64(beta), p], device=device)   # p = r + β p
+            rs = rr_new
     return dx, it
 
 

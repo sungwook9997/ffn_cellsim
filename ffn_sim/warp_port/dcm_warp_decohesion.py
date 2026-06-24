@@ -55,6 +55,8 @@ from ffn_sim.cell.dcm_remesh import remesh_pass
 from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 from ffn_sim.warp_port.dcm_contact_implicit_warp import (
     nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha, project_contacts)
+from ffn_sim.warp_port.dcm_warp_frozen import (
+    FrozenNeighborCache, build_diagA, make_diag_precond)
 
 wp.init()
 
@@ -227,6 +229,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
                    integrator: str = "baoab", accel_dt: float | None = None, cg_maxiter: int = 80,
+                   frozen_neighbors: bool = False, precond_diag: bool = False,
                    use_grid: bool = True, save_frames: str | None = None,
                    ipc: bool = False, ipc_eta: float = 0.9,
                    project: bool = False, proj_omega: float = 0.7, proj_iter: int = 8,
@@ -396,6 +399,22 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp", "Fb")} if implicit else None)
     if implicit:
         cg_scratch["sca"] = wp.zeros(1, dtype=wp.float64, device=device)
+    # I-opt #2 (frozen-neighbour cache) + #1 (analytic-diagonal Jacobi PCG): opt-in, default OFF →
+    # the implicit path is byte-identical when both are False. The cache snapshots the cohesion +
+    # contact candidate lists once per step (at xₙ, after the grids are built) so the CG matvec
+    # re-uses them WITHOUT re-querying the hash-grid each iteration (the per-iter query is the
+    # query-bound matvec cost). The diagonal is rebuilt once per step for the Jacobi M⁻¹=1/diagA.
+    frozen_cache = (FrozenNeighborCache(N, device=device)
+                    if (implicit and frozen_neighbors and use_grid) else None)
+    diagA_d = (wp.zeros(N, dtype=wp.float64, device=device)
+               if (implicit and precond_diag) else None)
+    precond_apply = make_diag_precond(diagA_d, device=device) if diagA_d is not None else None
+    if implicit and frozen_neighbors and use_grid:
+        print(f"  [I-opt] frozen-neighbour cache ON — CG matvec reuses the xₙ cohesion/contact "
+              f"candidate lists (no per-iter hash-grid query)", flush=True)
+    if implicit and precond_diag:
+        print(f"  [I-opt] analytic-diagonal Jacobi preconditioner ON (z=r/diagA each CG iter; "
+              f"diagA = γ/dt + k_edge + rep·area + turgor-vol)", flush=True)
     # M1 IPC node-face contact (opt-in): barrier force RHS + analytic barrier Hessian (frozen at xₙ)
     # in the implicit operator + a CCD-filtered step. d̂ = c_rep (derived activation gap), κ = rep.
     ipc_cn_k = wp.zeros(N, dtype=wp.float64, device=device) if ipc else None
@@ -637,7 +656,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         Hessian; pos_buf supplies the force math."""
         wp.launch(_zero_vec, dim=N, inputs=[out_d], device=device)
         if use_grid:
-            if js is not None:
+            if frozen_cache is not None:
+                # I-opt #2: replay the xₙ-cached cohesion candidates (no grid query); same force law.
+                frozen_cache.cohesion_into(pos_buf, cof_d, r_contact=r_contact, c_adh=c_adh,
+                                           rep=rep_strength, omega=coh_adh, A=area_per_node,
+                                           force_cap=force_cap, out_d=out_d,
+                                           cad_d=(cad_d if js is not None else None))
+            elif js is not None:
                 wp.launch(cohesion_grid_cad_kernel, dim=N,
                           inputs=[node_grid.id, node_f32, pos_buf, cof_d, cad_d, wp.float32(coh_q),
                                   wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
@@ -658,7 +683,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # to device_cg via hess_apply (NOT here) — so the FD operator excludes it (its C0 JVP was
         # being discarded by the pAp floor); adhesion-only (rep=0) stays if coh_adh>0.
         if use_grid and not ipc:
-            if js is not None:
+            if frozen_cache is not None:
+                # I-opt #2: replay the xₙ-cached contact faces (no grid query); same penalty law.
+                frozen_cache.contact_into(pos_buf, cof_d, faces_d, fcell_d, rep=rep_strength,
+                                          adh=coh_adh, c_rep=c_rep, c_adh=c_adh, out_d=out_d,
+                                          cad_d=(cad_d if js is not None else None))
+            elif js is not None:
                 wp.launch(contact_grid_cad_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d, cad_d,
                                   wp.float32(con_q), wp.float64(rep_strength), wp.float64(coh_adh),
@@ -669,10 +699,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                   wp.float32(con_q), wp.float64(rep_strength), wp.float64(coh_adh),
                                   wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
         elif use_grid and ipc and coh_adh > 0.0:                # IPC: adhesion-only (rep=0), barrier owns repulsion
-            wp.launch(contact_grid_kernel, dim=N,
-                      inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
-                              wp.float32(con_q), wp.float64(0.0), wp.float64(coh_adh),
-                              wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
+            if frozen_cache is not None:
+                frozen_cache.contact_into(pos_buf, cof_d, faces_d, fcell_d, rep=0.0,
+                                          adh=coh_adh, c_rep=c_rep, c_adh=c_adh, out_d=out_d)
+            else:
+                wp.launch(contact_grid_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
+                                  wp.float32(con_q), wp.float64(0.0), wp.float64(coh_adh),
+                                  wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
         if use_substrate_well:
             wp.launch(dcm_substrate_well_accum_kernel, dim=N, inputs=[pos_buf, wp.float64(z0),
@@ -884,8 +918,24 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             # Grids/node_f32 were just built on xₙ above → frozen-neighbour operator. Soft drivers
             # (wetting/lamellipodium/cadherin/clutch) are already in force_d (explicit RHS).
             a_imp = (1.0 / inv_gamma) / dt_step          # γ_node / dt
+            # I-opt #2: snapshot the cohesion + contact candidate lists ONCE here (the grids are on
+            # xₙ) so every CG matvec replays them without a hash-grid query. Built at the SAME radii
+            # the live kernels use (coh_q / con_q) → byte-identical candidate set, identical force.
+            if frozen_cache is not None:
+                frozen_cache.rebuild(node_grid_id=node_grid.id, face_grid_id=face_grid.id,
+                                     node_f32=node_f32, cof_d=cof_d, fcell_d=fcell_d,
+                                     coh_q=coh_q, con_q=con_q,
+                                     do_cohesion=True, do_contact=(not ipc) or (coh_adh > 0.0))
+            # I-opt #1: rebuild the analytic Jacobi diagonal once per step (a + edges + turgor +
+            # contact). Contact stiffness reuses the IPC per-node cn_k when available (penalty mode
+            # has no cheap per-node normal stiffness → that term is omitted, documented).
+            if diagA_d is not None:
+                build_diagA(diagA_d, a=a_imp, cof_d=cof_d, edges_d=edges_d, k_edge=p.k_edge,
+                            faces_d=faces_d, fcell_d=fcell_d, pos_d=pos_d, k_vol=k_vol, V0=V0,
+                            cn_k=(ipc_cn_k if ipc else None), device=device)
             dx_d, _ = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
-                                maxiter=cg_maxiter, device=device, hess_apply=ipc_hess)
+                                maxiter=cg_maxiter, device=device, hess_apply=ipc_hess,
+                                precond_apply=precond_apply)
             # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
             # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
             if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
@@ -1315,6 +1365,14 @@ def main():
     ap.add_argument("--integrator", default="baoab", choices=["baoab", "implicit"], help="I-opt: time integrator (implicit = IMEX linearly-implicit, unlocks larger accel-dt)")
     ap.add_argument("--accel-dt", type=float, default=None, help="I-opt: larger dt for --integrator implicit (accuracy-bound; e.g. 100× the explicit dt)")
     ap.add_argument("--cg-maxiter", type=int, default=80, help="I-opt: max CG iterations per implicit step")
+    ap.add_argument("--frozen-neighbors", action="store_true", dest="frozen_neighbors",
+                    help="I-opt #2: cache the cohesion/contact neighbour set once per step and reuse it "
+                         "in every CG matvec (removes the per-iteration hash-grid query). Parity-safe: "
+                         "neighbours are frozen across a solve, so the implicit dx is byte-identical.")
+    ap.add_argument("--precond-diag", action="store_true", dest="precond_diag",
+                    help="I-opt #1: analytic-diagonal Jacobi preconditioner (z=r/diagA each CG iter, "
+                         "diagA = γ/dt + k_edge + rep·area + turgor-vol). Same converged dx; helps only "
+                         "when the operator diagonal is heterogeneous (a-dominated DCM regimes see no win).")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--ubottom", action="store_true", help="ULA U-bottom: confine cells in a non-adhesive hemispherical bowl (independent of the flat well)")
@@ -1341,6 +1399,7 @@ def main():
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
         integrator=args.integrator, accel_dt=args.accel_dt, cg_maxiter=args.cg_maxiter,
+        frozen_neighbors=args.frozen_neighbors, precond_diag=args.precond_diag,
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         ubottom=args.ubottom, ubottom_r_factor=args.ubottom_r_factor, ubottom_k=args.ubottom_k,
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,

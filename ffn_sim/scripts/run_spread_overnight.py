@@ -117,6 +117,13 @@ def main():
                          "The single biggest cheap speedup for the active-junction stack.")
     ap.add_argument("--gpu-probe", action="store_true", dest="gpu_probe",
                     help="GPU-resident filopodia PROBE (hash-grid Warp kernel, ~GPU-only). CPU-parity-validated.")
+    ap.add_argument("--frozen-neighbors", action="store_true", dest="frozen_neighbors",
+                    help="I-opt #2: cache the cohesion/contact neighbour set once per step + reuse it "
+                         "in every implicit-CG matvec (no per-iter hash-grid query). Parity-safe (the "
+                         "neighbours are frozen across a solve); removes the query-bound matvec cost.")
+    ap.add_argument("--precond-diag", action="store_true", dest="precond_diag",
+                    help="I-opt #1: analytic-diagonal Jacobi preconditioner for the implicit CG. Same "
+                         "converged dx; helps only in heterogeneous-diagonal regimes.")
     ap.add_argument("--ula", action="store_true",
                     help="ULA spheroid formation: U-bottom bowl ON, flat substrate well + wetting + ECM "
                          "clutch OFF (non-adhesive surface), cadherin + filopodia + lamellipodium ON "
@@ -162,6 +169,7 @@ def main():
         accel_real_hours=a.accel_real_hours,
         necrosis=a.necrosis,
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
+        frozen_neighbors=a.frozen_neighbors, precond_diag=a.precond_diag,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         proj_gap_factor=a.proj_gap_factor,
         save_frames=npz)
