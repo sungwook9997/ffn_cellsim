@@ -264,6 +264,10 @@ class FilopodiaHost:
             self.n_extended += 1
 
         # --- 3. PROBE + ADHERE free tips (substrate first, then nearest other-cell face) ---
+        # PERF: precompute ALL face centroids ONCE (was recomputed per free tip → O(free·n_faces)
+        # fancy-index gathers, the dominant per-batch host cost at large pools). Cell-independent, so
+        # hoisting is exact (each tip just indexes fc_all[cand]). ~free× fewer gathers, no physics change.
+        fc_all = (P[self.faces[:, 0]] + P[self.faces[:, 1]] + P[self.faces[:, 2]]) / 3.0
         free = np.flatnonzero(self.alive & (self.state == 0))
         for i in free:
             tip = self.tip[i]
@@ -282,10 +286,8 @@ class FilopodiaHost:
             cand = np.flatnonzero(other)
             if cand.size == 0:
                 continue
-            # cheap pre-prune by face-centroid distance, then exact closest-point
-            tri = self.faces[cand]
-            fc = (P[tri[:, 0]] + P[tri[:, 1]] + P[tri[:, 2]]) / 3.0
-            dcent = np.linalg.norm(fc - tip, axis=1)
+            # cheap pre-prune by face-centroid distance (precomputed fc_all), then exact closest-point
+            dcent = np.linalg.norm(fc_all[cand] - tip, axis=1)
             near = cand[dcent <= (self.p.tip_capture + self.R)]
             best_d = np.inf; best_f = -1; best_bary = None
             for fj in near:
