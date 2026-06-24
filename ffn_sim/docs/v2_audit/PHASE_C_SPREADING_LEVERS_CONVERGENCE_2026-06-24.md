@@ -175,3 +175,31 @@ runaway, exactly the peeling/ejection failure mode the peeling-aware `spread_eva
   the C6 substrate/contact-line model) is what converts the ejection runaway into a clean bounded
   fried-egg. This is the precise, sharpened statement of the C6 backlog item — not "a substrate model"
   generically, but specifically a **contact-line equilibrium** to bound the wetting drive.
+
+## DECISIVE — at PHYSIOLOGICAL cortical tension (γ=1e-2) even a SINGLE cell does NOT spread (non-wetting)
+
+Followed up the single-cell test at the **physiological MCF7 cortical tension** γ=1e-2 N/m (the
+physiological-baseline rule: don't test at a convenient sub-physiological value). Here
+`γ_basal = γ − w_cs = 1e-2 − 2.85e-3 = +7.15e-3 > 0` (positive, bounded — no ejection possible).
+
+**Result: A/A0 = 1.019 — NO spread. The cell stays ROUND** (maxZ drop 5.3%, Ψ 0.996→0.992, peel_idx 0,
+0 ejected nodes, V/V0 1.000, cfl 0). The 28.5% basal/apical tension differential is far too weak to
+overcome the physiological cortical tension → the single cell is **non-wetting (Douezan S<0) and does
+not passively spread**, exactly as Douezan predicts at physiological values.
+
+**This closes the single-cell spreading question physiologically and ties the whole investigation together:**
+- The γ=1e-4 "spread" (bulk 2.3×) only appeared because γ was pushed **100× below physiological** into
+  the artificial S>0 wetting regime — and even there it was a node-ejection artifact, not a clean
+  fried-egg. At the **real physiological γ, neither the single cell NOR the spheroid spreads.**
+- **Passive differential-tension polarization is NOT the spreading mechanism at physiological values.**
+  The PI's experimental A/A0=7–10 must come from **ACTIVE protrusion (lamellipodium/precursor-monolayer
+  spreading, Aslemarz/Gupta 2024)** — a fundamentally different, active mechanism — not passive wetting.
+  This independently re-confirms the PI-ratified Layer-2 §F conclusion (active, not passive, spreading)
+  now at the single-cell force-kernel level and grounded in the physiological cortical tension.
+- Figure: `figs/n1_polarization_physio_vs_subphysio.png` (physiological round/no-spread vs
+  sub-physiological ejection-artifact, side by side).
+
+**Net for the loop:** the spreading investigation is exhausted AND physiologically grounded on both
+scales — single cell (non-wetting at physiological γ) and spheroid (collective structural limit). The
+only routes to the A/A0=7–10 magnitude are PI-scoped: an **active** spreading mechanism (lamellipodium
+as the driver, not a modulator) and/or the C6 contact-line substrate model — not any passive lever.
