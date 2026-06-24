@@ -99,6 +99,57 @@ def run_dcm_substrate_well_warp(
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# 1b. U-bottom ULA well — hemispherical bowl + cylindrical side, RIGID + NON-ADHESIVE
+# (the round-bottom ultra-low-attachment plate: cells are CONFINED geometrically, never
+#  grip the surface — no ECM, no wetting. The only adhesion in a ULA spheroid is cell-cell.)
+# ──────────────────────────────────────────────────────────────────────────
+@wp.kernel
+def dcm_ubottom_well_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    cx: wp.float64, cy: wp.float64, cz: wp.float64,   # bowl centre (bowl floor sits at cz − r_well)
+    r_well: wp.float64,                               # bowl radius
+    k_wall: wp.float64,                               # confinement stiffness (repulsive only)
+    force: wp.array(dtype=wp.vec3d),                  # (N,) ADD own-row (no atomics)
+):
+    """Confine each node to the U-well: a hemispherical bowl below the centre plane (z<cz) and a
+    cylindrical wall above it (z≥cz, open top). Force is REPULSIVE-only (pushes a node back inside
+    when it leaves the wall) — the ULA surface is non-adhesive, so there is NO inward pull / grip."""
+    i = wp.tid()
+    p = pos[i]
+    z0v = wp.float64(0.0)
+    fx = z0v; fy = z0v; fz = z0v
+    rx = p[0] - cx
+    ry = p[1] - cy
+    if p[2] < cz:                                     # lower hemisphere → spherical confinement
+        rz = p[2] - cz
+        d = wp.sqrt(rx * rx + ry * ry + rz * rz)
+        if d > r_well and d > z0v:
+            f = -k_wall * (d - r_well) / d            # inward, magnitude k·overshoot
+            fx = f * rx; fy = f * ry; fz = f * rz
+    else:                                             # upper region → cylindrical wall (xy only)
+        dxy = wp.sqrt(rx * rx + ry * ry)
+        if dxy > r_well and dxy > z0v:
+            f = -k_wall * (dxy - r_well) / dxy
+            fx = f * rx; fy = f * ry
+    force[i] = force[i] + wp.vec3d(fx, fy, fz)         # ADD (composes with other substrate terms)
+
+
+def run_dcm_ubottom_well_warp(*, pos: np.ndarray, center, r_well: float, k_wall: float,
+                              device: str = "cpu") -> dict:
+    """U-bottom ULA confinement force (N,3). center=(cx,cy,cz); repulsive-only, non-adhesive."""
+    pos = np.ascontiguousarray(pos, dtype=np.float64)
+    N = pos.shape[0]
+    cx, cy, cz = float(center[0]), float(center[1]), float(center[2])
+    pos_d = wp.array(pos, dtype=wp.vec3d, device=device)
+    force_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    wp.launch(dcm_ubottom_well_kernel, dim=N,
+              inputs=[pos_d, wp.float64(cx), wp.float64(cy), wp.float64(cz),
+                      wp.float64(r_well), wp.float64(k_wall), force_d], device=device)
+    wp.synchronize_device(device)
+    return {"force": force_d.numpy().astype(np.float64)}
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # 2. in-plane wetting (DcmSubstrateWettingGPU)
 # ──────────────────────────────────────────────────────────────────────────
 @wp.func
