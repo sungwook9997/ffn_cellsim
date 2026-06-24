@@ -72,14 +72,22 @@ def main():
     ap.add_argument("--cfl-limit", type=float, default=0.0, dest="cfl_limit",
                     help="A3 adaptive substepping: cap per-step node displacement < cfl_limit*c_rep "
                          "(0.3 stabilizes the deformable+polarized regime that diverges at fixed accel_dt)")
+    ap.add_argument("--rep", type=float, default=2e8, dest="rep_strength",
+                    help="node-face repulsion (default 2e8 stiff). 4e7 = lit-anchored SOFT for physiological "
+                         "AGGREGATION (cells deform-pack instead of staying rigid round spheres)")
+    ap.add_argument("--adh", type=float, default=5e7, dest="adh_strength",
+                    help="node-face adhesion / cohesion (default 5e7 lit-anchored)")
+    ap.add_argument("--gap", type=float, default=2.05, dest="gap",
+                    help="initial inter-cell center spacing factor (2.05 default; 2.3 = gapped start, "
+                         "lets turgor+cohesion compact rather than starting pre-overlapped)")
     a = ap.parse_args()
     npz = f"{a.out}/{a.tag}.npz"
     t0 = time.time()
     out = run_decohesion(
         n_cells=a.n, subdiv=2, steps=a.steps, frames=a.frames, device=a.device,
-        dt=8e-6, warmup=200, settle_steps=a.settle, gap=2.05,
+        dt=8e-6, warmup=200, settle_steps=a.settle, gap=a.gap,
         k_vol=a.k_vol,
-        rep_strength=2e8, adh_strength=5e7,
+        rep_strength=a.rep_strength, adh_strength=a.adh_strength,
         surface_tension=True, gamma_surf=a.gamma_surf, bending=True, edge_edge=True, nucleus=True,
         polarize=a.polarize, w_cs_polarize=a.w_cs_polarize, cfl_limit=a.cfl_limit,
         ipc_dhat_factor=a.ipc_dhat_factor,
