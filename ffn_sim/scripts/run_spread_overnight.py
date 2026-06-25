@@ -87,6 +87,13 @@ def main():
     ap.add_argument("--ubottom", action="store_true",
                     help="ULA U-bottom confinement: cells are held in a non-adhesive hemispherical bowl "
                          "(geometric confinement only; the surface never grips). Independent of --well.")
+    ap.add_argument("--no-ubottom", action="store_true",
+                    help="Override: force the U-bottom rigid bowl OFF even under --ula (free-floating "
+                         "hanging-drop-style aggregate held by cohesion alone, no rigid confinement).")
+    ap.add_argument("--init-npz", default=None,
+                    help="Restart from a saved aggregate npz (load its final frame as the initial state, "
+                         "dropped onto the substrate) instead of building a fresh ball — for 'spread from "
+                         "the aggregate' continuation runs (pair with --well, no --ula/--division).")
     ap.add_argument("--filopodia", action="store_true",
                     help="explicit filopodia finger protrusions (node-FACE + node-plane tip adhesions). "
                          "ON automatically under --ula (cell-cell junction formation).")
@@ -131,7 +138,7 @@ def main():
     a = ap.parse_args()
     # --ula is the convenience preset; individual flags OR with it so they also work standalone.
     ula = a.ula
-    ubottom = a.ubottom or ula
+    ubottom = (a.ubottom or ula) and not a.no_ubottom        # --no-ubottom overrides the bowl off
     filopodia = a.filopodia or ula
     lamellipodium = a.lamellipodium or ula
     if ula:
@@ -166,6 +173,7 @@ def main():
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
         division=a.division, div_real_hours=a.div_real_hours, div_t_cycle_h=a.div_t_cycle_h,
+        init_npz=a.init_npz,
         accel_real_hours=a.accel_real_hours,
         necrosis=a.necrosis,
         builder="fcc", integrator="implicit", accel_dt=a.accel_dt,

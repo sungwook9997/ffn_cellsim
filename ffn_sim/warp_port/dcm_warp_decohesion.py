@@ -26,7 +26,7 @@ import warp as wp
 
 from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
 from ffn_sim.warp_port.dcm_warp_hybrid_multicell import (
-    build_multicell, _dp_from_vol, _zero_vec, _edges_from_faces)
+    build_multicell, _dp_from_vol, _dp_from_vol_pc, _zero_vec, _edges_from_faces)
 from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate, _bd_step
 from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
 from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
@@ -225,6 +225,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
                    div_real_hours: float = 0.0, div_t_cycle_h: float = 24.0,
+                   force_divide_step: int = -1, force_divide_cell: int = 0,
+                   init_npz: str | None = None,
                    accel_real_hours: float = 0.0,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
@@ -278,15 +280,43 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         remesh_period = 0
     n_active = n_cells                              # requested live cells (C7 adds a parked pool)
     n_parked = int(div_pool_factor * n_cells) if division else 0
-    pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
-        n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0),
-        n_parked_cells=n_parked, builder=builder)
-    print(f"  [builder] {builder} pack: {n_active} active + {n_parked} parked, gap={gap}·R", flush=True)
-    n_cells = n_active + n_parked                   # per-cell arrays size to the FULL pool
+    if init_npz:
+        # RESTART from a saved aggregate (PI 2026-06-25 "aggregate 한걸로 스프레딩까지"): load the final
+        # frame of a prior run as the initial state instead of building a fresh ball, and DROP it onto
+        # the substrate floor (min active-node z → z0) so the basal cells engage the dish/ECM clutch.
+        # Topology (faces) + cell map (cof) are reused; edges are re-derived; r0 takes the current edge
+        # length (the aggregate is near-round, so the locked-in rest config error is small). The parked
+        # pool (cof<0, if any) is loaded as-is (dormant; spreading runs typically pass division=False).
+        dd = np.load(init_npz, allow_pickle=True)
+        pos_a = np.ascontiguousarray(dd["frames"][-1].astype(np.float64))
+        faces_a = dd["faces"].astype(np.int64)
+        cof_a = dd["cof"].astype(np.int64)
+        npc = int(icosphere_mesh(R, subdiv)[0].shape[0])
+        fcell_a = cof_a[faces_a[:, 0]].astype(np.int64)
+        edges_a = _edges_from_faces(faces_a).astype(np.int64)
+        actm = cof_a >= 0
+        pos_a[:, 2] += (z0 - float(pos_a[actm][:, 2].min()))   # rest the aggregate on the substrate
+        n_cells = pos_a.shape[0] // npc
+        n_active = int(np.unique(cof_a[actm]).size)
+        n_parked = n_cells - n_active
+        print(f"  [restart] loaded {n_active} active cells ({pos_a.shape[0]} nodes) from {init_npz} "
+              f"→ dropped onto substrate z0={z0:.3g}", flush=True)
+    else:
+        pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
+            n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0),
+            n_parked_cells=n_parked, builder=builder)
+        print(f"  [builder] {builder} pack: {n_active} active + {n_parked} parked, gap={gap}·R", flush=True)
+        n_cells = n_active + n_parked               # per-cell arrays size to the FULL pool
     N = pos_a.shape[0]
     mean_edge = float(np.linalg.norm(pos_a[edges_a[:, 0]] - pos_a[edges_a[:, 1]], axis=1).mean())
     R0 = float(np.linalg.norm(icosphere_mesh(R, subdiv)[0], axis=1).mean())
     V0 = (4.0 / 3.0) * np.pi * R0 ** 3
+    # PER-CELL rest volume (osmotic setpoint). All cells start at the full V0; CELL DIVISION halves
+    # the mother+daughter setpoint (volume-conserving cytokinesis) and a time-consistent regrowth
+    # ramp re-inflates each back to V0 over the cell cycle — turgor chases this per-cell setpoint, so
+    # a freshly-born daughter inflates GRADUALLY instead of a full-size cold insert (the prior
+    # outward-dump ejection). Host-mirrored (V0_cell) + device (V0_cell_d); kept in sync on division.
+    V0_cell = np.full(n_cells, V0, dtype=np.float64)
     area_per_node = 4.0 * np.pi * R0 ** 2 / npc
     # z-well depth from the adhesion energy density × node area (derived, not tuned)
     W_cs_well = w_cs_jm2 * area_per_node
@@ -342,6 +372,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     wbuf_d = wp.zeros(N, dtype=wp.vec3d, device=device)
     Vc_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
     dP_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
+    V0_cell_d = wp.array(V0_cell, dtype=wp.float64, device=device)   # per-cell osmotic setpoint (division/regrowth)
     cad_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     integrin_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     # E2 nucleus: per-cell centroid reduction buffers + the bilinear chromatin/lamin stiffnesses
@@ -564,6 +595,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if division:
         verts0 = icosphere_mesh(R, subdiv)[0]
         p_div_use = div_rate
+        # division check CADENCE in STEP units. The default 2000 was tuned for the 8e-5/25000-step
+        # regime (~12 checks/run). Under a larger accel_dt the run has FEWER steps for the same real
+        # time, so a fixed 2000-step cadence would fire only ~once — under-dividing. Scale the cadence
+        # so there are ~12 division rounds REGARDLESS of dt (a TIME-proportional cadence, dt-agnostic),
+        # capped to the default and floored so it never gets pathologically small.
+        div_batch = int(min(DivisionParams().batch_steps, max(50, steps // 12)))
         if div_real_hours > 0.0:
             # TIME-CONSISTENT division (PI 2026-06-24): the run REPRESENTS `div_real_hours` of real
             # biological time. We cannot integrate the mechanics for real hours (10^7-10^9 steps), so
@@ -575,15 +612,29 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             _dt = accel_dt if accel_dt else dt
             _S = (div_real_hours * 3600.0) / (_dt * max(steps, 1))
             _anchor = division_probability(steps=steps, dt_s=_dt, t_cycle_h=div_t_cycle_h,
-                                           div_every=DivisionParams().batch_steps,
+                                           div_every=div_batch,
                                            n_rim_est=max(1, n_active // 3), accel=_S)
             p_div_use = float(min(1.0, _anchor.p_div))
             print(f"  [division] TIME-CONSISTENT: run≈{div_real_hours:.1f}h real · T_cycle={div_t_cycle_h:.0f}h "
-                  f"· S={_S:.2e} → p_div={p_div_use:.3e} (vs bare {div_rate})", flush=True)
+                  f"· S={_S:.2e} · div_every={div_batch} (~{steps//div_batch} rounds) → p_div={p_div_use:.3e} "
+                  f"(vs bare {div_rate})", flush=True)
         div = DivisionHost(verts0=verts0, npc=npc, n_total=n_cells, n_active0=n_active,
-                           R=R, z0=z0, params=DivisionParams(p_div=p_div_use))
+                           R=R, z0=z0, V0_full=V0,
+                           params=DivisionParams(p_div=p_div_use, batch_steps=div_batch))
+        # time-consistent post-mitotic REGROWTH increment (derived, not tuned): a daughter born at
+        # V0/2 re-inflates to V0 over ONE cell cycle. steps_per_cycle maps the cell-cycle time onto
+        # the (time-accelerated) sim clock — under time-accel the run represents div_real_hours over
+        # `steps`, so a cycle of div_t_cycle_h occupies steps·(t_cycle/real_hours) steps; per batch
+        # V0_cell climbs by (V0/2)·(batch/steps_per_cycle). No time-accel → regrow over the run.
+        if div_real_hours > 0.0:
+            steps_per_cycle = max(1.0, steps * (div_t_cycle_h / max(div_real_hours, 1e-9)))
+        else:
+            steps_per_cycle = float(max(steps, 1))
+        div_dV0_batch = (0.5 * V0) * (div.batch_steps / steps_per_cycle)
         print(f"  [division] n_active={n_active} + parked pool={n_parked} (n_total={n_cells})  "
-              f"p_div={p_div_use:.3e}  batch={div.batch_steps}  rim-cell proliferation", flush=True)
+              f"p_div={p_div_use:.3e}  batch={div.batch_steps}  rim-cell proliferation "
+              f"(mitotic-round split, V0/2→V0 over {steps_per_cycle:.0f} steps, "
+              f"dV0/batch={div_dV0_batch:.2e})", flush=True)
 
     # C6 explicit integrin-ECM catch-slip clutch (replaces the wetting proxy). Basal nodes grip
     # the dish; Pereverzev catch-slip governs hold/release → traction-limited mechanistic spread.
@@ -674,14 +725,17 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                   wp.float64(coh_adh), wp.float64(area_per_node), wp.float64(force_cap), out_d], device=device)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, Vc_d], device=device)
-        wp.launch(_dp_from_vol, dim=n_cells, inputs=[Vc_d, wp.float64(V0), wp.float64(p.turgor_dP0),
+        wp.launch(_dp_from_vol_pc, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
                   wp.float64(k_vol), dP_d], device=device)
         if necro is not None:
             wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, dP_d, out_d], device=device)
-        # node-FACE contact. With --ipc the excluded volume is the analytic barrier Hessian fed
-        # to device_cg via hess_apply (NOT here) — so the FD operator excludes it (its C0 JVP was
-        # being discarded by the pAp floor); adhesion-only (rep=0) stays if coh_adh>0.
+        # node-FACE contact. With --ipc BOTH the excluded-volume barrier AND the node-FACE adhesion
+        # are fed to device_cg as analytic Hessians via hess_apply (cn_k/cn_nrm from
+        # nearest_face_ipc_kernel, built once per step) — so the FD operator here EXCLUDES them (the
+        # adhesion is a linear spring → PSD-projected analytic stiffness; its exact multi-face FORCE
+        # is in the RHS). This removes the per-CG-iter node-FACE query from the matvec (the ~3×
+        # coupling cost). Only the non-IPC path keeps the contact in the FD matvec.
         if use_grid and not ipc:
             if frozen_cache is not None:
                 # I-opt #2: replay the xₙ-cached contact faces (no grid query); same penalty law.
@@ -697,15 +751,6 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 wp.launch(contact_grid_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
                                   wp.float32(con_q), wp.float64(rep_strength), wp.float64(coh_adh),
-                                  wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
-        elif use_grid and ipc and coh_adh > 0.0:                # IPC: adhesion-only (rep=0), barrier owns repulsion
-            if frozen_cache is not None:
-                frozen_cache.contact_into(pos_buf, cof_d, faces_d, fcell_d, rep=0.0,
-                                          adh=coh_adh, c_rep=c_rep, c_adh=c_adh, out_d=out_d)
-            else:
-                wp.launch(contact_grid_kernel, dim=N,
-                          inputs=[face_grid.id, node_f32, pos_buf, cof_d, faces_d, fcell_d,
-                                  wp.float32(con_q), wp.float64(0.0), wp.float64(coh_adh),
                                   wp.float64(c_rep), wp.float64(c_adh), out_d], device=device)
         wp.launch(_bond_accumulate, dim=n_edges, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
         if use_substrate_well:
@@ -763,8 +808,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               wp.float64(force_cap), force_d], device=device)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_d, faces_d, fcell_d, Vc_d], device=device)
-        wp.launch(_dp_from_vol, dim=n_cells,
-                  inputs=[Vc_d, wp.float64(V0), wp.float64(p.turgor_dP0),
+        wp.launch(_dp_from_vol_pc, dim=n_cells,
+                  inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
                           wp.float64(k_vol), dP_d], device=device)
         if necro is not None:           # C8: necrotic core loses turgor regulation (dP *= mult)
             wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
@@ -777,6 +822,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(nearest_face_ipc_kernel, dim=N,
                       inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
                               wp.float32(ipc_repel_q), wp.float64(rep_strength), wp.float64(ipc_dhat),
+                              wp.float64(coh_adh), wp.float64(c_adh),
                               force_d, ipc_cn_k, ipc_cn_nrm], device=device)
             if coh_adh > 0.0:                                   # node-face adhesion stays (multi-face), rep=0
                 wp.launch(contact_grid_kernel, dim=N,
@@ -932,10 +978,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             if diagA_d is not None:
                 build_diagA(diagA_d, a=a_imp, cof_d=cof_d, edges_d=edges_d, k_edge=p.k_edge,
                             faces_d=faces_d, fcell_d=fcell_d, pos_d=pos_d, k_vol=k_vol, V0=V0,
-                            cn_k=(ipc_cn_k if ipc else None), device=device)
-            dx_d, _ = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
+                            V0_arr=V0_cell_d, cn_k=(ipc_cn_k if ipc else None), device=device)
+            dx_d, _cgi = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
                                 maxiter=cg_maxiter, device=device, hess_apply=ipc_hess,
                                 precond_apply=precond_apply)
+            if (s == 80 or s % 500 == 0) and isinstance(_cgi, dict):   # CG-iter telemetry (analytic-matvec verification)
+                print(f"  [cg] step {s}: cg_iters={_cgi.get('cg_iters','?')}", flush=True)
             # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
             # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
             if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
@@ -1149,13 +1197,18 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             if cnt["necrotic"] > 0:
                 print(f"  [necrosis] step {s}: prolif={cnt['prolif']} quiescent={cnt['quiescent']} "
                       f"necrotic={cnt['necrotic']}", flush=True)
-        # C7: cell division (rim-cell proliferation) — activate parked daughters, resync cof
-        if div is not None and s % div.batch_steps == 0:
+        # C7: cell division (rim-cell proliferation) — mitotic-round split + regrowth, resync cof+V0_cell
+        _div_now = div is not None and (s % div.batch_steps == 0
+                                        or (force_divide_step >= 0 and s == force_divide_step))
+        if _div_now:
             wp.synchronize_device(device)
             P = pos_d.numpy().astype(np.float64)
-            if div.update(P, cof_a, can_divide=(necro.can_divide if necro is not None else None)):
+            _force = force_divide_cell if (force_divide_step >= 0 and s == force_divide_step) else None
+            if div.update(P, cof_a, V0_cell, force_cell=_force,
+                          can_divide=(necro.can_divide if necro is not None else None)):
                 pos_d.assign(np.ascontiguousarray(P))
                 cof_d.assign(cof_a.astype(np.int32))
+                V0_cell_d.assign(V0_cell)                 # daughters' halved rest volume → device
                 if lam is not None: lam.cof = cof_a
                 if js is not None: js.cof = cof_a
                 if cad is not None: cad.cof = cof_a
@@ -1175,6 +1228,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                     filo.fcell = fcell_a
                 print(f"  [division] step {s}: {div.n_divisions} total divisions "
                       f"({int((cof_a[np.arange(n_cells)*npc]>=0).sum())} active cells)", flush=True)
+        # post-mitotic REGROWTH (every batch, division or not): freshly-born half-cells ramp their
+        # rest volume V0_cell back toward V0 over a cell cycle; turgor chases it → gradual inflation.
+        if div is not None and s % div.batch_steps == 0 and div_dV0_batch > 0.0:
+            div.grow(V0_cell, div_dV0_batch, cof_a)
+            V0_cell_d.assign(V0_cell)
         stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)

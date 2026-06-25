@@ -393,6 +393,13 @@ class FrozenNeighborCache:
         """Snapshot the candidate lists at the current (xₙ) grids. ``coh_q``/``con_q`` are the SAME
         query radii the live kernels use. Grows the cap + retries if any node overflowed."""
         N = self.N
+        # int32 CEILING on the flat (N·cap) candidate arrays: warp array shapes must fit a signed
+        # int32, so cap·N < 2^31. At N≥1000 (≥324k nodes) an over-grown cap (a transiently-degenerate
+        # node reporting ~9k neighbours) blew past this and crashed the run. We cap `cap` at the
+        # int32-safe max and CLIP excess candidates there — a node needing > max_cap face/node
+        # neighbours is non-physical (real packs are ≤ ~10²); normal nodes (need ≪ max_cap) are
+        # unaffected, so the frozen replay stays parity-exact for the physical regime.
+        max_cap = max(64, (2**31 - 1) // max(N, 1) - 16)
         if do_cohesion:
             while True:
                 self._of.zero_()
@@ -404,7 +411,10 @@ class FrozenNeighborCache:
                 need = int(self._of.numpy()[0])
                 if need <= self.coh_cap:
                     break
-                self.coh_cap = int(need * 1.25) + 4
+                new_cap = min(int(need * 1.25) + 4, max_cap)
+                if new_cap <= self.coh_cap:                  # at the int32 ceiling → clip + stop growing
+                    break
+                self.coh_cap = new_cap
                 self.coh_ids = wp.zeros(N * self.coh_cap, dtype=wp.int32, device=self.device)
         if do_contact:
             while True:
@@ -417,7 +427,10 @@ class FrozenNeighborCache:
                 need = int(self._of.numpy()[0])
                 if need <= self.con_cap:
                     break
-                self.con_cap = int(need * 1.25) + 4
+                new_cap = min(int(need * 1.25) + 4, max_cap)
+                if new_cap <= self.con_cap:                  # at the int32 ceiling → clip + stop growing
+                    break
+                self.con_cap = new_cap
                 self.con_ids = wp.zeros(N * self.con_cap, dtype=wp.int32, device=self.device)
 
     def cohesion_into(self, pos_buf, cof_d, *, r_contact, c_adh, rep, omega, A, force_cap, out_d,
@@ -515,6 +528,31 @@ def turgor_diag_kernel(
 
 
 @wp.kernel
+def turgor_diag_kernel_pc(
+    pos: wp.array(dtype=wp.vec3d), faces: wp.array(dtype=wp.int32, ndim=2),
+    fcell: wp.array(dtype=wp.int32), k_vol: wp.float64, V0: wp.array(dtype=wp.float64),
+    diagA: wp.array(dtype=wp.float64),
+):
+    """Per-cell rest-volume variant of :func:`turgor_diag_kernel` — the volume-lock diagonal uses
+    each face's OWN cell rest volume ``V0[fcell[f]]`` so the analytic Hessian stays CONSISTENT with
+    the per-cell turgor force (:func:`_dp_from_vol_pc`) once cells carry distinct V0 (division)."""
+    f = wp.tid()
+    ia = faces[f, 0]
+    ib = faces[f, 1]
+    ic = faces[f, 2]
+    a = pos[ia]
+    b = pos[ib]
+    c = pos[ic]
+    nrm = wp.cross(b - a, c - a)
+    g = nrm / wp.float64(6.0)
+    g2 = wp.dot(g, g)
+    s = (k_vol / V0[fcell[f]]) * g2
+    wp.atomic_add(diagA, ia, s)
+    wp.atomic_add(diagA, ib, s)
+    wp.atomic_add(diagA, ic, s)
+
+
+@wp.kernel
 def _precond_apply_kernel(r: wp.array(dtype=wp.vec3d), diagA: wp.array(dtype=wp.float64),
                           z: wp.array(dtype=wp.vec3d)):
     """z = M⁻¹ r = r / diagA (diagonal/Jacobi preconditioner)."""
@@ -537,19 +575,26 @@ def make_diag_precond(diagA, device="cpu"):
 
 
 def build_diagA(diagA, *, a, cof_d, edges_d, k_edge, faces_d, fcell_d, pos_d, k_vol, V0,
-                cn_k=None, do_edges=True, do_turgor=True, device="cpu"):
+                V0_arr=None, cn_k=None, do_edges=True, do_turgor=True, device="cpu"):
     """Assemble the analytic diagonal a·I + diag(K) into ``diagA`` (a (N,) f64 buffer).
     ``cn_k`` (optional) is the per-node contact normal stiffness (from the IPC/repel pass); when the
-    penalty contact is used instead it is computed separately by the caller and passed here."""
+    penalty contact is used instead it is computed separately by the caller and passed here.
+    ``V0_arr`` (optional, a (n_cells,) f64 device array) selects the PER-CELL turgor diagonal so the
+    Hessian matches the per-cell turgor force under division; when None the scalar ``V0`` is used."""
     N = diagA.shape[0]
     wp.launch(diag_init_kernel, dim=N, inputs=[wp.float64(a), cof_d, diagA], device=device)
     if do_edges:
         wp.launch(edge_diag_kernel, dim=edges_d.shape[0], inputs=[edges_d, wp.float64(k_edge), diagA],
                   device=device)
     if do_turgor:
-        wp.launch(turgor_diag_kernel, dim=faces_d.shape[0],
-                  inputs=[pos_d, faces_d, fcell_d, wp.float64(k_vol), wp.float64(V0), diagA],
-                  device=device)
+        if V0_arr is not None:
+            wp.launch(turgor_diag_kernel_pc, dim=faces_d.shape[0],
+                      inputs=[pos_d, faces_d, fcell_d, wp.float64(k_vol), V0_arr, diagA],
+                      device=device)
+        else:
+            wp.launch(turgor_diag_kernel, dim=faces_d.shape[0],
+                      inputs=[pos_d, faces_d, fcell_d, wp.float64(k_vol), wp.float64(V0), diagA],
+                      device=device)
     if cn_k is not None:
         wp.launch(contact_diag_kernel, dim=N, inputs=[cn_k, diagA], device=device)
 

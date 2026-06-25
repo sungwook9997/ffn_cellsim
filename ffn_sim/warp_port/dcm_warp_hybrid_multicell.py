@@ -50,6 +50,19 @@ def _dp_from_vol(Vc: wp.array(dtype=wp.float64), V0: wp.float64,
 
 
 @wp.kernel
+def _dp_from_vol_pc(Vc: wp.array(dtype=wp.float64), V0: wp.array(dtype=wp.float64),
+                    dP0: wp.float64, K_vol: wp.float64,
+                    dP_cell: wp.array(dtype=wp.float64)):
+    """Per-cell rest-volume turgor: dP_c = dP0 + K_vol·(V0_c − Vc_c)/V0_c.
+
+    Identical to :func:`_dp_from_vol` but each cell carries its OWN rest volume ``V0[c]`` — needed
+    for cell division (a daughter is born at half rest-volume and re-grows its osmotic setpoint to
+    V0 over the cell cycle, so turgor inflates it gradually instead of a full-size cold insert)."""
+    c = wp.tid()
+    dP_cell[c] = dP0 + K_vol * (V0[c] - Vc[c]) / V0[c]
+
+
+@wp.kernel
 def _zero_vec(force: wp.array(dtype=wp.vec3d)):
     force[wp.tid()] = wp.vec3d(wp.float64(0.0), wp.float64(0.0), wp.float64(0.0))
 

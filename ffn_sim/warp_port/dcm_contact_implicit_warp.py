@@ -162,8 +162,10 @@ def nearest_face_ipc_kernel(
     radius: wp.float32,
     rep: wp.float64,                          # κ (barrier stiffness density) = derived rep
     d_hat: wp.float64,                         # activation gap d̂ (= c_rep)
+    adh: wp.float64,                           # node-FACE adhesion strength (0 = barrier-only)
+    c_adh: wp.float64,                         # adhesion range (analytic stiffness adh·area for d<c_adh)
     force: wp.array(dtype=wp.vec3d),
-    cn_k: wp.array(dtype=wp.float64),          # OUT: per-node barrier stiffness κ·area·b''(d)  (PSD)
+    cn_k: wp.array(dtype=wp.float64),          # OUT: per-node barrier/adhesion stiffness (PSD)
     cn_nrm: wp.array(dtype=wp.vec3d),          # OUT: outward unit contact normal
 ):
     """IPC barrier on the single nearest other-cell face (Option B localization), with a linear
@@ -221,6 +223,15 @@ def nearest_face_ipc_kernel(
         if d < d_hat:
             fmag = rep * area * (-_ipc_bp(d, d_hat))    # >0, -> +inf as d->0 (repulsive)
             kk = rep * area * _ipc_bpp(d, d_hat)        # barrier normal stiffness (PSD)
+        elif adh > z and d < c_adh:
+            # node-FACE ADHESION analytic stiffness. The adhesion is a linear spring
+            # |F|=adh·area·(c_adh−d) → constant normal stiffness adh·area. Its TRUE Jacobian is
+            # indefinite (attractive), so we feed the PSD-PROJECTED magnitude |adh·area| to the
+            # implicit operator (quasi-Newton; the EXACT multi-face adhesion FORCE is added to the
+            # RHS separately by the contact_grid kernel). This removes the adhesion from the per-CG-
+            # iter FD matvec → big speedup, and the PSD projection is MORE stable than the FD
+            # indefinite Hessian. fmag stays 0 here (no force from this kernel for adhesion).
+            kk = adh * area
     else:                                      # INSIDE (gap<0) - linear FEASIBILIZATION out, prop. depth
         nout = r_vec * (-wp.float64(1.0) / min_d)
         fmag = rep * area * min_d
@@ -232,6 +243,7 @@ def nearest_face_ipc_kernel(
         wp.atomic_add(force, ia, -bary[0] * fvec)       # momentum-conserving barycentric reaction
         wp.atomic_add(force, ib, -bary[1] * fvec)
         wp.atomic_add(force, ic, -bary[2] * fvec)
+    if kk != z:                                        # analytic normal stiffness (barrier OR adhesion)
         cn_k[ni] = kk
         cn_nrm[ni] = nout
 
