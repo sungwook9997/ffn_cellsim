@@ -90,6 +90,19 @@ def main():
     ap.add_argument("--no-ubottom", action="store_true",
                     help="Override: force the U-bottom rigid bowl OFF even under --ula (free-floating "
                          "hanging-drop-style aggregate held by cohesion alone, no rigid confinement).")
+    ap.add_argument("--osmotic", action="store_true",
+                    help="osmotic water-flux volume regulation (KB-3.9): per-cell rest volume relaxes "
+                         "toward Vc ∝ media-exposed face fraction + concentration feedback → stable volume "
+                         "equilibrium (fixes the faceting over-compression strain that stalled the CG).")
+    ap.add_argument("--cleave", action="store_true",
+                    help="C7 division by SimuCell3D IN-PLACE MESH CLEAVAGE: carve the mother shell into "
+                         "mother+daughter along the Hertwig plane (union=mother → zero neighbour "
+                         "displacement, no contact spike). Replaces the parked-icosphere mitotic-round "
+                         "insert. Pair with --division. Needs a dormant node pool (div pool sized auto).")
+    ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi", "sphere"],
+                    help="initial cell-centre packing (D10). fcc=close-pack but cuboctahedral-faceted "
+                         "ENVELOPE (angular spheroid); sphere=random-close-pack inside a BALL -> SMOOTH "
+                         "spherical envelope (hull-psi 0.99 vs fcc 0.96). Use 'sphere' for a round spheroid.")
     ap.add_argument("--init-npz", default=None,
                     help="Restart from a saved aggregate npz (load its final frame as the initial state, "
                          "dropped onto the substrate) instead of building a fresh ball — for 'spread from "
@@ -173,10 +186,12 @@ def main():
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
         division=a.division, div_real_hours=a.div_real_hours, div_t_cycle_h=a.div_t_cycle_h,
+        cleave=a.cleave,
         init_npz=a.init_npz,
+        osmotic=a.osmotic,
         accel_real_hours=a.accel_real_hours,
         necrosis=a.necrosis,
-        builder="fcc", integrator="implicit", accel_dt=a.accel_dt,
+        builder=a.builder, integrator="implicit", accel_dt=a.accel_dt,
         frozen_neighbors=a.frozen_neighbors, precond_diag=a.precond_diag,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         proj_gap_factor=a.proj_gap_factor,

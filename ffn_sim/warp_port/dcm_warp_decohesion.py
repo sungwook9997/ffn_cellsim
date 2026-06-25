@@ -26,7 +26,9 @@ import warp as wp
 
 from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
 from ffn_sim.warp_port.dcm_warp_hybrid_multicell import (
-    build_multicell, _dp_from_vol, _dp_from_vol_pc, _zero_vec, _edges_from_faces)
+    build_multicell, _dp_from_vol, _dp_from_vol_pc, _dp_from_vol_osm, osmotic_relax_kernel,
+    _zero_vec, _edges_from_faces)
+from ffn_sim.warp_port.dcm_neighbor_warp import face_contact_count_kernel
 from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate, _bd_step
 from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
 from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
@@ -52,6 +54,7 @@ from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
+from ffn_sim.cell.dcm_cleave import cleave_cell
 from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 from ffn_sim.warp_port.dcm_contact_implicit_warp import (
     nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha, project_contacts)
@@ -140,7 +143,8 @@ PARK_POS = np.array([1.0e-2, 1.0e-2, 1.0e-2])   # dormant pool node home (≫ ce
 
 def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
                                  gap: float = 2.05, pool_factor: float = 0.0,
-                                 n_parked_cells: int = 0, builder: str = "fcc"):
+                                 n_parked_cells: int = 0, builder: str = "fcc",
+                                 cleave_pool: bool = False):
     """SPHERICAL cluster of cells RESTING on the substrate plane z0 (lowest node at z0).
 
     Cells are icospheres placed at :func:`_spherical_centers` (a rounded cluster, NOT the
@@ -164,11 +168,17 @@ def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float 
     park_centers = [PARK_POS + np.array([3.0 * R * (k + 1), 0.0, 0.0]) for k in range(n_parked_cells)]
     all_centers = list(centers) + park_centers
     pos = np.concatenate([verts1 + c for c in all_centers], axis=0)
-    faces = np.concatenate([tris1 + ci * npc for ci in range(n_total_cells)], axis=0)
-    edges = np.concatenate([edges1 + ci * npc for ci in range(n_total_cells)], axis=0)
+    # cleave_pool: CLEAVAGE carves daughters out of the mother shell — it never activates a whole
+    # parked icosphere — so the parked cells supply DORMANT NODES + reserved ids ONLY. Emit faces/edges
+    # for the ACTIVE cells alone (range(n_cells)); this drops ~n_parked·320 parked faces from every
+    # per-step turgor/contact/volume kernel (the dominant per-step cost) → the cleave speed-up. The
+    # mitotic path (cleave_pool=False) keeps the parked faces — it activates the parked icosphere whole.
+    n_face_cells = n_cells if cleave_pool else n_total_cells
+    faces = np.concatenate([tris1 + ci * npc for ci in range(n_face_cells)], axis=0)
+    edges = np.concatenate([edges1 + ci * npc for ci in range(n_face_cells)], axis=0)
     cof = np.repeat(np.arange(n_total_cells), npc).astype(np.int64)
     cof[n_cells * npc:] = -1                      # parked cells start dormant (nodes cof=−1)
-    face_cell = np.repeat(np.arange(n_total_cells), tris1.shape[0]).astype(np.int64)
+    face_cell = np.repeat(np.arange(n_face_cells), tris1.shape[0]).astype(np.int64)
     # rest the ACTIVE cluster on the dish (z0 = lowest active node); parked cells stay far
     act = np.zeros(pos.shape[0], dtype=bool); act[:n_cells * npc] = True
     pos[:, 2] += (z0 - pos[act, 2].min())
@@ -225,6 +235,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
                    div_real_hours: float = 0.0, div_t_cycle_h: float = 24.0,
+                   div_relax_steps: int = 20, div_relax_factor: float = 0.1,
+                   osmotic: bool = False, osm_relax: float = 0.05, osm_batch: int = 50,
                    force_divide_step: int = -1, force_divide_cell: int = 0,
                    init_npz: str | None = None,
                    accel_real_hours: float = 0.0,
@@ -237,7 +249,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    project: bool = False, proj_omega: float = 0.7, proj_iter: int = 8,
                    proj_gap_factor: float = 1.0,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False,
-                   active_batch: int = 50, gpu_probe: bool = False, junction_switch: bool = False) -> dict:
+                   active_batch: int = 50, gpu_probe: bool = False, junction_switch: bool = False,
+                   cleave: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
 
@@ -279,7 +292,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
               "(FilopodiaHost caches cof/faces/fcell + device state; remesh would leave them stale).", flush=True)
         remesh_period = 0
     n_active = n_cells                              # requested live cells (C7 adds a parked pool)
-    n_parked = int(div_pool_factor * n_cells) if division else 0
+    # mitotic-round reserves a full parked icosphere per potential daughter (div_pool_factor·n).
+    # CLEAVE only needs reserved cell IDS + a dormant NODE pool, and it has NO parked faces (cleave_pool),
+    # so a tighter reserve suffices: ~35% of n covers the ~14%/24h division fraction with 2.5× headroom
+    # (a short pool just skips a division, graceful) while cutting the parked-NODE overhead from 100%→35%.
+    n_parked = int((0.35 if cleave else div_pool_factor) * n_cells) if division else 0
     if init_npz:
         # RESTART from a saved aggregate (PI 2026-06-25 "aggregate 한걸로 스프레딩까지"): load the final
         # frame of a prior run as the initial state instead of building a fresh ball, and DROP it onto
@@ -304,7 +321,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     else:
         pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
             n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0),
-            n_parked_cells=n_parked, builder=builder)
+            n_parked_cells=n_parked, builder=builder, cleave_pool=cleave)
         print(f"  [builder] {builder} pack: {n_active} active + {n_parked} parked, gap={gap}·R", flush=True)
         n_cells = n_active + n_parked               # per-cell arrays size to the FULL pool
     N = pos_a.shape[0]
@@ -373,6 +390,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     Vc_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
     dP_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
     V0_cell_d = wp.array(V0_cell, dtype=wp.float64, device=device)   # per-cell osmotic setpoint (division/regrowth)
+    faces_per_cell = int(faces_a.shape[0] // max(n_cells, 1))         # icosphere faces per cell (constant)
+    contact_cnt_d = wp.zeros(n_cells, dtype=wp.int32, device=device)  # OSMOTIC: per-cell #faces apposed to other cells
     cad_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     integrin_d = wp.ones(n_cells, dtype=wp.float64, device=device)
     # E2 nucleus: per-cell centroid reduction buffers + the bilinear chromatin/lamin stiffnesses
@@ -630,7 +649,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             steps_per_cycle = max(1.0, steps * (div_t_cycle_h / max(div_real_hours, 1e-9)))
         else:
             steps_per_cycle = float(max(steps, 1))
-        div_dV0_batch = (0.5 * V0) * (div.batch_steps / steps_per_cycle)
+        div_dV0_batch = V0 * (div.batch_steps / steps_per_cycle)   # daughter grows tiny→V0 (full) over one cycle
         print(f"  [division] n_active={n_active} + parked pool={n_parked} (n_total={n_cells})  "
               f"p_div={p_div_use:.3e}  batch={div.batch_steps}  rim-cell proliferation "
               f"(mitotic-round split, V0/2→V0 over {steps_per_cycle:.0f} steps, "
@@ -699,6 +718,68 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if ecm is not None:
             ecm.cof = cof_a
 
+    def do_division_cleave(force_cell=None):
+        """C7 division by IN-PLACE MESH CLEAVAGE (SimuCell3D cytokinesis): carve each rim mother's
+        shell into mother(−)+daughter(+) along its Hertwig plane. The two daughters' UNION equals the
+        mother at the division instant ⇒ the footprint is unchanged and NO neighbour is displaced
+        (zero contact spike — the fix for the mitotic-round/parked-insert collision). Resizes faces
+        exactly like :func:`do_remesh`; the septum ring/cap nodes come from the dormant pool; the
+        daughter takes a free (parked) cell id whose pre-made parked faces are dropped first. Returns
+        the number of cells that divided this tick."""
+        nonlocal faces_a, fcell_a, cof_a, edges_a, n_faces, n_edges
+        nonlocal faces_d, fcell_d, edges_d, r0_d, cent_f32, edge_cell_d, emid_f32
+        P = pos_d.numpy().astype(np.float64)
+        plan = div.cleave_plan(P, cof_a, force_cell=force_cell,
+                               can_divide=(necro.can_divide if necro is not None else None))
+        if not plan:
+            return 0
+        pos_w, faces_w, fcell_w, cof_w = P, faces_a, fcell_a, cof_a
+        done = 0
+        for (mother, daughter, p0, nrm) in plan:
+            keep = fcell_w != daughter               # drop the parked daughter's pre-made faces
+            try:
+                pos_w, faces_w, fcell_w, cof_w, _info = cleave_cell(
+                    pos_w, faces_w[keep], fcell_w[keep], cof_w,
+                    cell_id=int(mother), daughter_id=int(daughter), p0=p0, n=nrm,
+                    sep=0.6 * mean_edge, park=PARK_POS)
+            except (RuntimeError, ValueError):
+                continue                             # pool short / degenerate plane → skip this one
+            vm = float(V0_cell[mother])              # split the rest-volume setpoint in half; regrow ramp lifts both
+            V0_cell[mother] = 0.5 * vm
+            V0_cell[daughter] = 0.5 * vm
+            done += 1
+        if done == 0:
+            return 0
+        # NB septum-region mesh quality: a plane cut clips body triangles near their vertices → small
+        # SLIVER sub-triangles at the cut interface (q~0.04; the body mesh stays pristine q~0.98). They
+        # are SMALL-AREA + internal (the cell–cell septum) so the node-FACE contact stays bounded — the
+        # N=400 cleave run held pen~3.9 / cfl~0.5 to the end with them present (no blow-up). A single
+        # remesh_pass made quality WORSE (the high-valence/cut config defeats the conservative COLLAPSE),
+        # so polishing the septum to bulk quality is left to a robust local refiner (follow-up), not a
+        # churning per-division pass. The Delaunay cap already removes the worst case (the fan's
+        # valence-≈n_ring centre node).
+        faces_a = faces_w.astype(np.int64); fcell_a = fcell_w.astype(np.int64); cof_a = cof_w.astype(np.int64)
+        edges_a = _edges_from_faces(faces_a).astype(np.int64)
+        n_faces = faces_a.shape[0]; n_edges = edges_a.shape[0]
+        r0_new = np.linalg.norm(pos_w[edges_a[:, 0]] - pos_w[edges_a[:, 1]], axis=1)
+        pos_d.assign(np.ascontiguousarray(pos_w))
+        cof_d.assign(cof_a.astype(np.int32))
+        faces_d = wp.array(faces_a.astype(np.int32), dtype=wp.int32, device=device)
+        fcell_d = wp.array(fcell_a.astype(np.int32), dtype=wp.int32, device=device)
+        edges_d = wp.array(edges_a.astype(np.int32), dtype=wp.int32, device=device)
+        r0_d = wp.array(r0_new, dtype=wp.float64, device=device)
+        cent_f32 = wp.zeros(n_faces, dtype=wp.vec3, device=device)
+        edge_cell_d = wp.array(cof_a[edges_a[:, 0]].astype(np.int32), dtype=wp.int32, device=device)
+        emid_f32 = wp.zeros(n_edges, dtype=wp.vec3, device=device)
+        V0_cell_d.assign(V0_cell)
+        if lam is not None: lam.cof = cof_a
+        if js is not None: js.cof = cof_a
+        if cad is not None: cad.cof = cof_a
+        if ecm is not None: ecm.cof = cof_a
+        if filo is not None:
+            filo.cof = cof_a; filo.faces = faces_a; filo.fcell = fcell_a
+        return done
+
     def stiff_force_into(pos_buf, out_d):
         """I-opt: the STIFF (CFL-setting + structural) force on an arbitrary position buffer, with
         FROZEN neighbour grids (built on x_n by step_once) → the implicit operator's force eval.
@@ -725,8 +806,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                   wp.float64(coh_adh), wp.float64(area_per_node), wp.float64(force_cap), out_d], device=device)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, Vc_d], device=device)
-        wp.launch(_dp_from_vol_pc, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
-                  wp.float64(k_vol), dP_d], device=device)
+        if osmotic:
+            wp.launch(_dp_from_vol_osm, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(V0),
+                      wp.float64(p.turgor_dP0), wp.float64(k_vol), dP_d], device=device)
+        else:
+            wp.launch(_dp_from_vol_pc, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
+                      wp.float64(k_vol), dP_d], device=device)
         if necro is not None:
             wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, dP_d, out_d], device=device)
@@ -808,9 +893,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               wp.float64(force_cap), force_d], device=device)
         Vc_d.zero_()
         wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_d, faces_d, fcell_d, Vc_d], device=device)
-        wp.launch(_dp_from_vol_pc, dim=n_cells,
-                  inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
-                          wp.float64(k_vol), dP_d], device=device)
+        if osmotic:
+            wp.launch(_dp_from_vol_osm, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(V0),
+                      wp.float64(p.turgor_dP0), wp.float64(k_vol), dP_d], device=device)
+        else:
+            wp.launch(_dp_from_vol_pc, dim=n_cells,
+                      inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
+                              wp.float64(k_vol), dP_d], device=device)
         if necro is not None:           # C8: necrotic core loses turgor regulation (dP *= mult)
             wp.launch(scale_per_cell_kernel, dim=n_cells, inputs=[dP_d, turgor_mult_d], device=device)
         wp.launch(dcm_turgor_force_kernel, dim=n_faces,
@@ -1200,12 +1289,25 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # C7: cell division (rim-cell proliferation) — mitotic-round split + regrowth, resync cof+V0_cell
         _div_now = div is not None and (s % div.batch_steps == 0
                                         or (force_divide_step >= 0 and s == force_divide_step))
+        _divided = False
         if _div_now:
             wp.synchronize_device(device)
-            P = pos_d.numpy().astype(np.float64)
             _force = force_divide_cell if (force_divide_step >= 0 and s == force_divide_step) else None
-            if div.update(P, cof_a, V0_cell, force_cell=_force,
-                          can_divide=(necro.can_divide if necro is not None else None)):
+            if cleave:
+                # SimuCell3D in-place mesh cleavage: carve mother→mother+daughter, union=mother → no
+                # neighbour displacement (zero contact spike). Resizes faces + resyncs device itself.
+                _n_cleaved = do_division_cleave(force_cell=_force)
+                _divided = _n_cleaved > 0
+                if _divided:
+                    n_active_now = int(np.unique(cof_a[cof_a >= 0]).size)
+                    print(f"  [division/cleave] step {s}: +{_n_cleaved} cleaved "
+                          f"({div.n_divisions} total, {n_active_now} active cells, n_faces={n_faces})",
+                          flush=True)
+            else:
+                P = pos_d.numpy().astype(np.float64)
+                _divided = div.update(P, cof_a, V0_cell, force_cell=_force,
+                                      can_divide=(necro.can_divide if necro is not None else None))
+            if (not cleave) and _divided:
                 pos_d.assign(np.ascontiguousarray(P))
                 cof_d.assign(cof_a.astype(np.int32))
                 V0_cell_d.assign(V0_cell)                 # daughters' halved rest volume → device
@@ -1231,8 +1333,42 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # post-mitotic REGROWTH (every batch, division or not): freshly-born half-cells ramp their
         # rest volume V0_cell back toward V0 over a cell cycle; turgor chases it → gradual inflation.
         if div is not None and s % div.batch_steps == 0 and div_dV0_batch > 0.0:
-            div.grow(V0_cell, div_dV0_batch, cof_a)
+            # cof=None under --cleave: _cell_active's npc-block scan is invalid once cleavage has
+            # relabelled the mesh; growing all cells with V0_cell<V0_full is equivalent (parked cells
+            # sit at V0_full so are untouched; only the half-volume daughters climb).
+            div.grow(V0_cell, div_dV0_batch, None if cleave else cof_a)
             V0_cell_d.assign(V0_cell)
+        # DIVISION-PERTURBATION ABSORPTION (PI 2026-06-25): a mitotic split injects a sudden geometric
+        # + rest-volume change (two overlapping half-cells) in ONE step → a cfl spike. On a stiff
+        # (e.g. faceting-over-compressed) state that spike can tip the implicit CG into non-convergence
+        # (a stall). Relax the new cells QUASI-STATICALLY at a small dt (mechanics only, no spread/biology
+        # → no biological-clock advance, so S/real-time sync is untouched) BEFORE the main step resumes,
+        # so the transient dissipates gradually instead of in one large step.
+        if _divided and div_relax_steps > 0:
+            for _ in range(div_relax_steps):
+                step_once(s, dt * div_relax_factor, do_spread=False)
+        # OSMOTIC VOLUME REGULATION (PI 2026-06-25; KB-3.9 water flux): each cell's osmotic setpoint
+        # V0_cell relaxes toward its CURRENT measured volume Vc at a rate ∝ its MEDIA-EXPOSED face
+        # fraction f_media = 1 − (faces apposed to other cells)/faces_per_cell. So a rim cell (large
+        # free surface) sheds water + adapts its rest volume quickly; an interior cell (mostly cell–cell
+        # junctions) is buffered (f_media≈0 → barely relaxes). The concentration feedback in
+        # _dp_from_vol_osm then sets a STABLE equilibrium — replacing the elastic V0−Vc strain that
+        # accumulated stiffness (the faceting-over-compression stall). Mechanics only → S/real-time
+        # sync untouched.
+        if osmotic:
+            # GPU-ONLY (PI 2026-06-26): refresh the per-cell media-exposed contact count on-device every
+            # osm_batch (the f_media changes slowly — face grid already built by step_once), then relax
+            # V0_cell_d toward Vc_d by a TINY per-step amount (osm_relax/osm_batch) — smooth, no host sync,
+            # no periodic bulk jump (the jump was injecting cfl spikes). Vc_d is current from stepped().
+            if s % osm_batch == 0:
+                contact_cnt_d.zero_()
+                wp.launch(face_contact_count_kernel, dim=n_faces,
+                          inputs=[face_grid.id, cent_f32, fcell_d, wp.float32(con_q), contact_cnt_d],
+                          device=device)
+            wp.launch(osmotic_relax_kernel, dim=n_cells,
+                      inputs=[V0_cell_d, Vc_d, contact_cnt_d, cof_d, wp.int32(npc),
+                              wp.float64(float(faces_per_cell)), wp.float64(osm_relax / max(osm_batch, 1))],
+                      device=device)
         stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)

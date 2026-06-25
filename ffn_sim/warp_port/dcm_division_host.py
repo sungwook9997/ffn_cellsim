@@ -96,6 +96,66 @@ class DivisionHost:
             n = self._rng.standard_normal(3); nn = float(np.linalg.norm(n))
         return n / nn
 
+    def cleave_plan(self, P: np.ndarray, cof: np.ndarray,
+                    can_divide: np.ndarray | None = None,
+                    force_cell: int | None = None) -> list:
+        """Non-mutating plan for IN-PLACE CLEAVAGE division: ``[(mother, daughter, p0, normal), …]``.
+
+        Mirrors :meth:`update`'s rim + probability + Hertwig gate but is TOPOLOGY-AGNOSTIC — cell
+        centroids and the long axis are computed from ``cof`` (nodes with cof==cell), NOT fixed
+        npc-blocks — so it stays correct after a prior cleave has resized/relabelled the mesh. The
+        returned plane (centroid ``p0``, Hertwig long axis ``normal``) is where :func:`cleave_cell`
+        carves the mother shell into mother(−side)+daughter(+side); no node is placed here."""
+        P = np.asarray(P, float)
+        cof = np.asarray(cof)
+        live = cof >= 0
+        has = np.zeros(self.n_total, dtype=bool)
+        has[cof[live]] = True
+        active_ids = np.flatnonzero(has)
+        free_ids = list(np.flatnonzero(~has))
+        if not free_ids or active_ids.size < 4:
+            return []
+        cent = np.zeros((self.n_total, 3)); cnt = np.zeros(self.n_total)
+        np.add.at(cent, cof[live], P[live]); np.add.at(cnt, cof[live], 1.0)
+        cent_active = cent[active_ids] / cnt[active_ids][:, None]
+        if force_cell is not None:
+            candidates = [int(force_cell)] if has[int(force_cell)] else []
+        else:
+            rim = np.zeros(active_ids.size, dtype=bool)
+            try:
+                from scipy.spatial import ConvexHull
+                rim[np.unique(ConvexHull(cent_active, qhull_options="QJ").vertices)] = True
+            except Exception:
+                rim[:] = True
+            candidates = []
+            for k in np.where(rim)[0]:
+                cid = int(active_ids[k])
+                if can_divide is not None and not can_divide[cid]:
+                    continue
+                if self._rng.random() >= self.p.p_div:
+                    continue
+                candidates.append(cid)
+        plan = []
+        min_cell_nodes = 0.5 * self.npc        # don't divide a cell that is itself a small fragment
+        for mother in candidates:
+            if not free_ids:
+                break
+            Pm = P[cof == mother]
+            if Pm.shape[0] < min_cell_nodes:   # recent un-grown daughter / degenerate → not yet divisible
+                continue
+            c0 = Pm.mean(0); nrm = self._long_axis(Pm)
+            # BALANCE GUARD: the Hertwig plane through the centroid should split ~50/50, but an irregular
+            # cell can have most nodes on one side → the thin side carves a near-zero degenerate daughter
+            # (the min/med~0.002 cell seen at N=1000). Require each side ≥30% of the nodes, else skip.
+            s = (Pm - c0) @ nrm
+            n_plus = int((s > 0).sum())
+            if min(n_plus, Pm.shape[0] - n_plus) < 0.3 * Pm.shape[0]:
+                continue
+            daughter = int(free_ids.pop(0))
+            plan.append((mother, daughter, c0, nrm))
+            self.n_divisions += 1
+        return plan
+
     def update(self, P: np.ndarray, cof: np.ndarray, V0_cell: np.ndarray,
                can_divide: np.ndarray | None = None,
                force_cell: int | None = None) -> bool:

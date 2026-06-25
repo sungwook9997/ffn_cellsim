@@ -779,3 +779,30 @@ def lamellipodium_tether_multicell(
             fvy = fvy * s
             fvz = fvz * s
         wp.atomic_add(force, lead_idx[t], wp.vec3d(fvx, fvy, fvz))
+
+
+@wp.kernel
+def face_contact_count_kernel(
+    grid: wp.uint64,                          # hash grid over FACE centroids
+    fcent: wp.array(dtype=wp.vec3),           # (M,) f32 face centroids (query points)
+    fcell: wp.array(dtype=wp.int32),          # (M,) owner cell of each face
+    radius: wp.float32,                       # contact range (≈ c_adh + face_reach)
+    contact_cnt: wp.array(dtype=wp.int32),    # OUT (n_cells,): # of this cell's faces apposed to ANOTHER cell
+):
+    """Per face: is it apposed to a DIFFERENT cell's face within ``radius``? If so it is a cell–cell
+    (junction) face, not media-exposed; atomic-increment its owner cell's contact count. The host then
+    forms the media-exposed fraction f_media[c] = 1 − contact_cnt[c]/faces_per_cell — the membrane area
+    that exchanges water with the bulk medium (osmotic volume regulation, KB-3.9). Interior cells →
+    contact_cnt ≈ all faces → f_media ≈ 0 (buffered); rim cells → large free face → f_media high."""
+    fi = wp.tid()
+    c1 = fcell[fi]
+    if c1 < wp.int32(0):
+        return
+    found = wp.int32(0)
+    q = wp.hash_grid_query(grid, fcent[fi], radius)
+    fj = wp.int32(0)
+    while wp.hash_grid_query_next(q, fj):
+        if fcell[fj] != c1 and fcell[fj] >= wp.int32(0):
+            found = wp.int32(1)
+    if found == wp.int32(1):
+        wp.atomic_add(contact_cnt, c1, wp.int32(1))

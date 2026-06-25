@@ -63,6 +63,22 @@ def _dp_from_vol_pc(Vc: wp.array(dtype=wp.float64), V0: wp.array(dtype=wp.float6
 
 
 @wp.kernel
+def _dp_from_vol_osm(Vc: wp.array(dtype=wp.float64), V0: wp.array(dtype=wp.float64),
+                     V0_ref: wp.float64, dP0: wp.float64, K_vol: wp.float64,
+                     dP_cell: wp.array(dtype=wp.float64)):
+    """OSMOTIC turgor with concentration feedback (PI 2026-06-25; KB-3.9 water-flux volume regulation).
+    The resting osmotic excess ``dP0`` is the van't-Hoff pressure at the reference volume ``V0_ref``;
+    when the cell's osmotic setpoint ``V0[c]`` relaxes DOWN (water efflux at the media-exposed surface,
+    handled by the host osmotic relaxation), the impermeant solute concentrates → the resting pressure
+    rises as ``dP0·V0_ref/V0[c]``. This gives a STABLE volume equilibrium (the concentration resists
+    further efflux) instead of the elastic spring holding a permanent V0−Vc strain (which accumulated
+    stiffness → the faceting-over-compression CG stall). The fast K_vol term (minute-scale
+    incompressibility) is retained; the slow osmotic adaptation is the V0[c] relaxation."""
+    c = wp.tid()
+    dP_cell[c] = dP0 * (V0_ref / V0[c]) + K_vol * (V0[c] - Vc[c]) / V0[c]
+
+
+@wp.kernel
 def _zero_vec(force: wp.array(dtype=wp.vec3d)):
     force[wp.tid()] = wp.vec3d(wp.float64(0.0), wp.float64(0.0), wp.float64(0.0))
 
@@ -332,3 +348,21 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+@wp.kernel
+def osmotic_relax_kernel(V0: wp.array(dtype=wp.float64), Vc: wp.array(dtype=wp.float64),
+                         contact_cnt: wp.array(dtype=wp.int32), cof: wp.array(dtype=wp.int32),
+                         npc: wp.int32, faces_per_cell: wp.float64, rate: wp.float64):
+    """GPU per-step osmotic volume relaxation (PI 2026-06-26: GPU-only, no host sync). Each ACTIVE
+    cell's osmotic setpoint V0[c] relaxes toward its current volume Vc[c] by a TINY per-step amount
+    ``rate·f_media·(Vc−V0)``, where f_media = 1 − contact_cnt[c]/faces_per_cell is the media-exposed
+    face fraction (rim cells shed water fast, interior buffered). A small per-step rate (vs a periodic
+    bulk jump) keeps the setpoint change smooth → no cfl spike from the relaxation itself."""
+    c = wp.tid()
+    if cof[c * npc] < wp.int32(0):
+        return                                  # parked/dormant cell
+    fm = wp.float64(1.0) - wp.float64(contact_cnt[c]) / faces_per_cell
+    if fm < wp.float64(0.0):
+        fm = wp.float64(0.0)
+    V0[c] = V0[c] + rate * fm * (Vc[c] - V0[c])
