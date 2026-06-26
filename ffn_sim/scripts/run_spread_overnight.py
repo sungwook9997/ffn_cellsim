@@ -112,6 +112,15 @@ def main():
                          "ON automatically under --ula (cell-cell junction formation).")
     ap.add_argument("--lamellipodium", action="store_true",
                     help="per-cell advancing-anchor lamellipodium crawl. ON automatically under --ula.")
+    ap.add_argument("--lamel-clutch", action="store_true", dest="lamel_clutch",
+                    help="lamellipodial SUBSTRATE clutch: the advancing actin anchor grips the dish (z0) so "
+                         "the protrusion transmits traction to the substrate (node-to-plane), not a floating "
+                         "bead. The spreading-traction path (pair with --lamellipodium).")
+    ap.add_argument("--lamel-all-cell", action="store_true", dest="lamel_all_cell",
+                    help="cryptic-FOLLOWER mode: EVERY active cell (not just the substrate rim) grows a "
+                         "basal-outward lamellipodial leading edge at the UNCHANGED Gil-Redondo physiological "
+                         "per-node force (Farooqui-Fenteany KB-4.6). Fixes the rim-only peeling; spreading "
+                         "diagnostic. Forces the host ratchet path (all-cell geometry is host-only).")
     ap.add_argument("--division", action="store_true",
                     help="C7 rim-cell proliferation ON. Pair with --div-real-hours for TIME-CONSISTENT "
                          "division (cells divide at the MCF7 cycle rate over the run's represented real time).")
@@ -180,6 +189,7 @@ def main():
         ipc_dhat_factor=a.ipc_dhat_factor,
         cadherin=cadherin, ecm_clutch=ecm_clutch,
         lamellipodium=lamellipodium, filopodia=filopodia, active_batch=a.active_batch,
+        lamel_clutch=a.lamel_clutch, lamel_all_cell=a.lamel_all_cell,
         gpu_probe=a.gpu_probe,
         coupling=a.coupling,
         cad_bundle=40.0, ecm_bundle=167.0,

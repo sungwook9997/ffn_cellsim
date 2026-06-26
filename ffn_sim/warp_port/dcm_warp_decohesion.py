@@ -250,7 +250,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    proj_gap_factor: float = 1.0,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False,
                    active_batch: int = 50, gpu_probe: bool = False, junction_switch: bool = False,
-                   cleave: bool = False) -> dict:
+                   cleave: bool = False, lamel_all_cell: bool = False) -> dict:
     """Cleanball de-cohesion spread on the Warp loop with substrate drivers (M1) plus
     the optional per-cell lamellipodium crawl (M2, ``lamellipodium=True``).
 
@@ -509,8 +509,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if lamellipodium:
         lam = LamellipodiumHost(pos0=pos_a, cof=cof_a, n_cells=n_cells, z0=z0, R=R, dt=dt,
                                 params=LamelParams(substrate_clutch=lamel_clutch, batch_steps=active_batch,
-                                                   S_kinetic=S_accel),
-                                use_gpu_ratchet=str(device).startswith("cuda"), device=device)
+                                                   S_kinetic=S_accel, all_cell_protrusion=lamel_all_cell),
+                                # all-cell geometry lives only in the host path → force it when ON
+                                use_gpu_ratchet=(str(device).startswith("cuda") and not lamel_all_cell),
+                                device=device)
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
 

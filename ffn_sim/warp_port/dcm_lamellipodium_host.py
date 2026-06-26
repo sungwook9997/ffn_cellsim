@@ -52,6 +52,17 @@ class LamelParams:
     # traction is transmitted to the rigid substrate (node-to-plane) instead of a floating bead.
     # (Full Pereverzev catch-slip on the lamellipodial clutch is a documented follow-up.)
     substrate_clutch: bool = False
+    # ALL-CELL cryptic-follower protrusion (PI spreading diagnostic 2026-06-26). Default OFF =
+    # rim-only (legacy, byte-identical). ON: EVERY active cell grows a basal-OUTWARD leading edge,
+    # not just the substrate-touching rim — the literature (Farooqui & Fenteany 2005 JCS cryptic
+    # lamellipodia KB-4.6; Trepat 2009; Aslemarz/Gupta 2024 EMBO) is decisive that interior FOLLOWER
+    # cells actively protrude + sustain traction into the sheet, so treating them as passive cargo
+    # is the mechanistic error behind the rim-only "peeling" (7 rim move, 93 frozen). Per-node force
+    # is UNCHANGED (tether_cap below stays the Gil-Redondo physiological value) — only the ENGAGEMENT
+    # SET widens (a wiring-correctness fix, NOT a magnitude knob). The leading edge for an interior
+    # cell = its own basal HALF (z ≤ cell centroid) facing outward (proj·out > 0), the AJ-anchored
+    # cryptic-lamellipodium geometry; the substrate clutch still only grips once a node reaches z0.
+    all_cell_protrusion: bool = False
     k_tether: float = 4.0e-3            # N/m
     tether_cap: float = 5.0e-9          # N (5·60Pa·area_node, Gil-Redondo 2023)
     tether_radius: float = 3.0e-6       # m
@@ -61,13 +72,15 @@ class LamelParams:
 
 
 def detect_rim_cells(centers: np.ndarray, z0: float, R: float,
-                     contact_band: float) -> np.ndarray:
-    """Rim cells = those whose centroid z is within ``contact_band·R`` of the dish z0
-    (``dcm_lamellipodium_gpu.py:272``). A substrate-touching ball's bottom cells crawl;
-    periphery-vs-centre then self-selects via the outward-radial dir (a central contact
-    cell's outward dir is ill-defined so it grows few leading nodes). Falls back to the
-    lowest third by z if none are within the band."""
+                     contact_band: float, all_cell: bool = False) -> np.ndarray:
+    """Active (crawling) cells. Default = RIM: centroid z within ``contact_band·R`` of the dish z0
+    (``dcm_lamellipodium_gpu.py:272``) — a substrate-touching ball's bottom cells crawl; periphery-
+    vs-centre self-selects via the outward-radial dir. Falls back to the lowest third by z if none
+    are within the band. ``all_cell=True`` (cryptic-follower mode) returns EVERY cell id — interior
+    followers also protrude; cells with no live nodes are skipped by the geometry loop."""
     n = centers.shape[0]
+    if all_cell:
+        return np.arange(n, dtype=np.int64)
     basal = np.flatnonzero((centers[:, 2] - z0) <= contact_band * R)
     if basal.size == 0:
         return np.argsort(centers[:, 2])[: max(1, n // 3)].astype(np.int64)
@@ -106,7 +119,8 @@ class LamellipodiumHost:
         self.device = str(device)
 
         centers = self._cell_centroids(np.asarray(pos0, dtype=np.float64))
-        self.rim_cells = detect_rim_cells(centers, z0, R, self.p.rim_contact_band)
+        self.rim_cells = detect_rim_cells(centers, z0, R, self.p.rim_contact_band,
+                                          all_cell=self.p.all_cell_protrusion)
         self.n_rim = int(self.rim_cells.size)
         self.n_pool = self.n_rim * self.p.pool_per_cell
 
@@ -176,7 +190,8 @@ class LamellipodiumHost:
         # detection is ~identical when there is no division (centroids stable) and lets daughters
         # join the rim. (Actin pool stays sized from the initial n_rim; it caps gracefully if rim grows.)
         rim_cells = detect_rim_cells(self._cell_centroids(P), self.z0, self.R,
-                                     self.p.rim_contact_band)
+                                     self.p.rim_contact_band,
+                                     all_cell=self.p.all_cell_protrusion)
         self.rim_cells = rim_cells           # refresh before any early-return (orig order)
         rim_node_mask = np.isin(cof, rim_cells)
         if not rim_node_mask.any():
@@ -201,7 +216,13 @@ class LamellipodiumHost:
             rel = npos - cc
             proj = rel[:, 0] * out[0] + rel[:, 1] * out[1]
             rel_xy = np.hypot(rel[:, 0], rel[:, 1])
-            basal = np.abs(npos[:, 2] - self.z_basal) <= self.basal_band
+            if self.p.all_cell_protrusion:
+                # cryptic-follower leading edge = the cell's OWN basal half (z ≤ its centroid), so an
+                # interior cell (far from the dish) still grows an outward leading edge; the substrate
+                # clutch only grips once such a node descends to z0 as the spheroid flattens.
+                basal = npos[:, 2] <= cc[2]
+            else:
+                basal = np.abs(npos[:, 2] - self.z_basal) <= self.basal_band
             lead = basal & (proj >= self.p.lead_frac * np.maximum(rel_xy, 1e-18))
             lead_local = np.where(lead)[0]
             for ki in lead_local:
