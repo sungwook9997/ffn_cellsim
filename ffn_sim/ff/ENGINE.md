@@ -101,9 +101,10 @@ reported as a function of it (NOT tuned to a target). See `docs/v2_audit/PARAM_A
 ## 6. Open / PI-gated before deep build
 
 - **Cytosim paper grounding:** Nédélec & Foethke 2007 is now in `references/`
-  (`nedelec_foethke_2007_cytosim_njp.pdf`, arXiv mirror 0903.5178) — ground the §2 formulae
-  (discrete bending operator + implicit scheme + Hand model) from it before any kernel coding
-  (hard rule). SE candidate written (`references/SE_REGISTRATION_CANDIDATES_2026-06-29.md`).
+  (`Nedelec_2007_New_J._Phys._9_427.pdf`, the published IOP version; arXiv 0903.5178 mirror also
+  present) — ground the §2 formulae (discrete bending operator + implicit scheme + Hand model) from
+  it before any kernel coding (hard rule). SE candidate written
+  (`references/SE_REGISTRATION_CANDIDATES_2026-06-29.md`).
 - **γ target band:** unresolved (Moazzeni vs SimuCell3D vs emergent) — sweep, don't tune.
 - **Active-driver force anchor:** still REFUTED/HALTED to PI (the SF/NMII missing motor-density datum) —
   the spreading magnitude driver remains PI-gated, not auto-tunable.

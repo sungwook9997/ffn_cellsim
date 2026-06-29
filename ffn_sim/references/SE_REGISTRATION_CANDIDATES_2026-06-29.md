@@ -17,10 +17,9 @@ before citing in any deliverable (citation-integrity rule).
 - **Why:** the going-forward physics basis of the `ff/` Filament-FEM engine — fibers as bending
   beams, motors/crosslinkers as Hands, the implicit large-timestep solver. Cytosim itself is the
   intended **independent parity oracle** for `ff/` (mirrors `dcm/` ← SimuCell3D). See `ff/ENGINE.md`.
-- **PDF status:** ✅ in `references/` (`nedelec_foethke_2007_cytosim_njp.pdf`, added 2026-06-29) —
-  fetched from the **arXiv OA mirror `0903.5178`** (title + authors verified: "Collective Langevin
-  Dynamics of Flexible Cytoskeletal Fibers", Nédélec & Foethke). IOP direct download + gbook both
-  failed (IOP bot-block; gbook offline) — `unpaywall → arXiv` worked. Grounding (Stage 6b) unblocked.
+- **PDF status:** ✅ in `references/` — **`Nedelec_2007_New_J._Phys._9_427.pdf`** (the published
+  IOP NJP version, PI-added 2026-06-29 — authoritative for citation). The arXiv preprint
+  `0903.5178` is also present as a mirror. Grounding (Stage 6b) unblocked.
 - **Suggested KB linkage:** new ModelContract for the FF fiber-mechanics engine; KnowledgeClaims for
   the discrete bending operator + the implicit integration scheme.
 
