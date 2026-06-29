@@ -157,6 +157,61 @@ def reshape(net: FiberNetwork, *, n_iter: int = 4, in_place: bool = False) -> np
     return out
 
 
+def _axial_tension_one_fiber(pos: np.ndarray, force: np.ndarray) -> np.ndarray:
+    """Per-segment axial tension of an inextensible fiber from the constraint multipliers.
+
+    At mechanical equilibrium the constraint (internal) force exactly balances the external force:
+    ``f̂ = −F_ext`` with ``f̂ = Jᵀλ`` and ``λ = (JJᵀ)⁻¹ J F_ext`` (NF2007 §5.3). The segment-``k``
+    constraint contributes ``−2 λ_k g_k`` to node ``k`` and ``+2 λ_k g_k`` to node ``k+1``; matching
+    this to a physical tension ``τ_k`` (which pulls node ``k`` toward ``k+1`` by ``+τ_k û_k``) gives
+
+        τ_k = −2 λ_k |g_k|        (+ = the segment is in tension)
+
+    Args:
+        pos: (n, 3) fiber model points.
+        force: (n, 3) external force on those points (bending + link + myosin) at equilibrium.
+
+    Returns:
+        (n−1,) signed axial tension per segment (+ tension, − compression).
+    """
+    n = pos.shape[0]
+    if n < 2:
+        return np.zeros(0)
+    g = pos[1:] - pos[:-1]
+    p = g.shape[0]
+    Jf = 2.0 * np.einsum("kd,kd->k", g, force[1:] - force[:-1])
+    diag = 8.0 * np.einsum("kd,kd->k", g, g)
+    JJt = np.diag(diag)
+    if p > 1:
+        off = -4.0 * np.einsum("kd,kd->k", g[:-1], g[1:])
+        JJt += np.diag(off, 1) + np.diag(off, -1)
+    # NF2007 writes λ = −(JJᵀ)⁻¹ J f and constraint reaction f̂ = Jᵀλ; we solve for ``lam`` WITHOUT
+    # the leading minus, so the constraint REACTION (the tension that resists the external load) is
+    # −Jᵀ·lam and the physical axial tension is τ_k = +2 λ_k |g_k| (validated: pure stretch → +T).
+    lam = np.linalg.solve(JJt, Jf)
+    seg_len = np.linalg.norm(g, axis=1)
+    return 2.0 * lam * seg_len
+
+
+def segment_axial_tension(net: FiberNetwork, force: np.ndarray) -> np.ndarray:
+    """Per-segment axial tension (S,) [force] for every segment, from the constraint multipliers.
+
+    ``force`` is the (N, 3) external force field at the (reshaped) equilibrium configuration. The
+    sign convention is + tension / − compression. Used by the γ method-of-planes estimator to give
+    the inextensible actin backbone its load-path tension (the spring backbone's k·(L−r₀) analogue).
+    """
+    force = np.asarray(force, dtype=np.float64).reshape(net.n_nodes, 3)
+    out = np.zeros(net.segments.shape[0], dtype=np.float64)
+    off = net.fiber_offsets
+    seg_per_fiber = np.diff(off) - 1
+    seg_cum = np.concatenate([[0], np.cumsum(seg_per_fiber)])
+    for f in range(net.n_fibers):
+        sl = _fiber_node_slice(net, f)
+        s0, s1 = int(seg_cum[f]), int(seg_cum[f + 1])
+        out[s0:s1] = _axial_tension_one_fiber(net.pos[sl], force[sl])
+    return out
+
+
 def segment_lengths(net: FiberNetwork) -> np.ndarray:
     """Current segment lengths (S,) [length] — the constraint quantities, for diagnostics/tests."""
     s = net.segments
