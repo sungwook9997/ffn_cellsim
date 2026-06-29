@@ -35,7 +35,7 @@ def _load() -> dict:
 def test_dcm_cohesion_warp_parity():
     """Warp node-node cohesion force matches HOOMD DcmTentContact."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_cohesion_warp import run_dcm_cohesion_warp
+    from ffn_sim.dcm.dcm_cohesion_warp import run_dcm_cohesion_warp
 
     fx = _load()
     got = run_dcm_cohesion_warp(

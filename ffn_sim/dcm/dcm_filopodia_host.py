@@ -288,7 +288,7 @@ class FilopodiaHost:
         if self.use_gpu_probe and probe_idx:
             # GPU PROBE: one hash-grid kernel over ALL free non-substrate tips, replacing the
             # per-tip O(n_faces) numpy scan. Same acceptance + transitions as the host branch.
-            from ffn_sim.warp_port.dcm_filopodia_probe_warp import probe_faces_gpu
+            from ffn_sim.dcm.dcm_filopodia_probe_warp import probe_faces_gpu
             pidx = np.asarray(probe_idx, dtype=np.int64)
             tips_xyz = self.tip[pidx]
             owncell = cof[self.base_idx[pidx]].astype(np.int32)
@@ -425,7 +425,7 @@ class FilopodiaHost:
 if __name__ == "__main__":
     import warp as wp
 
-    from ffn_sim.warp_port.dcm_filopodia_warp import (
+    from ffn_sim.dcm.dcm_filopodia_warp import (
         filopodia_tip_face_force_kernel, filopodia_tip_plane_force_kernel)
 
     wp.init()

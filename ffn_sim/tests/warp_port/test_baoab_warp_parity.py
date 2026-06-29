@@ -37,7 +37,7 @@ def _load(label: str) -> dict:
 
 def _run_warp(fx: dict) -> dict:
     # imported here so a missing warp install skips rather than errors at collect
-    from ffn_sim.warp_port.baoab_warp import run_baoab_warp
+    from ffn_sim.dcm.baoab_warp import run_baoab_warp
 
     return run_baoab_warp(
         pos0=fx["pos0"],

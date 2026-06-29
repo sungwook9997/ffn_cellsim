@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from ffn_sim.warp_port.dcm_warp_decohesion import run_decohesion
+from ffn_sim.dcm.dcm_warp_decohesion import run_decohesion
 
 OUT = "/home/sungwook/ffn_phase_c/ffn_sim/outputs/warp_decohesion"
 

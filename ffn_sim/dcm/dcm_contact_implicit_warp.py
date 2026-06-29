@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import warp as wp
 
-from ffn_sim.warp_port.dcm_contact_warp import closest_bary
+from ffn_sim.dcm.dcm_contact_warp import closest_bary
 
 wp.init()
 
@@ -489,11 +489,11 @@ def _build_two_cell(device="cpu", subdiv=1, overlap=0.55):
 
 def _selftest(device="cpu"):
     import numpy as np
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
-    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32, contact_grid_kernel
-    from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32, contact_grid_kernel
+    from ffn_sim.dcm.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 
     m = _build_two_cell(device, overlap=0.45)
     verts, faces, edges, cof, fcell = m["verts"], m["faces"], m["edges"], m["cof"], m["fcell"]
@@ -682,7 +682,7 @@ def _barrier_unittest(device="cpu"):
     cn_k = wp.zeros(N, dtype=wp.float64, device=device); cn_nrm = wp.zeros(N, dtype=wp.vec3d, device=device)
     force = wp.zeros(N, dtype=wp.vec3d, device=device)
     fg = wp.HashGrid(8, 8, 8, device=device)
-    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+    from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
 
     def eval_at(d):
         x = verts.copy(); x[0] = cen + [0, 0, d]
@@ -726,7 +726,7 @@ def _ccd_unittest(device="cpu"):
     """Phase-2 CCD correctness on 1 node vs 1 STATIC triangle: a step that would penetrate is
     filtered to α=η·d/Δ so the final gap = (1−η)·d > 0; a separating/short step gives α=1."""
     import numpy as np
-    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+    from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
     me = 2.4e-6
     a = np.array([-0.6, -0.35, 0.0]) * me
     b = np.array([0.6, -0.35, 0.0]) * me
@@ -777,11 +777,11 @@ def _ipc_full_test(device="cpu"):
     stable where OLD tunnels (pen grows past c_rep). Start state is overlapping → exercises the
     feasibilization branch (push to gap≥0) before the barrier+CCD maintain gap>0."""
     import numpy as np
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
-    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32, contact_grid_kernel
-    from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32, contact_grid_kernel
+    from ffn_sim.dcm.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 
     m = _build_two_cell(device, overlap=0.45)
     verts, faces, edges, cof, fcell = m["verts"], m["faces"], m["edges"], m["cof"], m["fcell"]
@@ -841,7 +841,7 @@ def _ipc_full_test(device="cpu"):
         wp.synchronize_device(device)
         # count only INSIDE nodes: feasibilization force = rep*area*depth, depth=|F|/(rep*area)=|F|/cn_k.
         # But barrier nodes also have cn_k>0; distinguish by sign via penetration_depth_kernel instead.
-        from ffn_sim.warp_port.dcm_neighbor_warp import penetration_depth_kernel
+        from ffn_sim.dcm.dcm_neighbor_warp import penetration_depth_kernel
         pend = wp.zeros(N, dtype=wp.float64, device=device)
         wp.launch(penetration_depth_kernel, dim=N,
                   inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q), pend], device=device)
@@ -899,7 +899,7 @@ def _projection_unittest(device="cpu"):
     drive penetration out geometrically, and a final probe sweep produces ~0 correction ⇒ the state is
     penetration-free regardless of any force balance (the constraint guarantee the penalty/barrier lack)."""
     import numpy as np
-    from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+    from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
     m = _build_two_cell(device, overlap=0.50)               # deep overlap = strongly penetrating start
     verts, faces, cof, fcell = m["verts"], m["faces"], m["cof"], m["fcell"]
     me, R = m["me"], m["R"]

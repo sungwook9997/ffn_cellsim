@@ -7,7 +7,7 @@ L-M BAOAB Action), run on the existing HOOMD path. The turgor + BAOAB Action rea
 so this is the apples-to-apples "existing production runtime" number to compare the
 Warp GPU-resident per-step throughput against.
 
-    python -m ffn_sim.warp_port.bench_dcm_baseline --device cuda:0 --steps 2000 --subdiv 3
+    python -m ffn_sim.dcm.bench_dcm_baseline --device cuda:0 --steps 2000 --subdiv 3
 """
 
 from __future__ import annotations

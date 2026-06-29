@@ -45,8 +45,8 @@ from __future__ import annotations
 import numpy as np
 import warp as wp
 
-from ffn_sim.warp_port.dcm_contact_warp import closest_bary
-from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+from ffn_sim.dcm.dcm_contact_warp import closest_bary
+from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
 
 wp.init()
 

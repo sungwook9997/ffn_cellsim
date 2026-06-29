@@ -251,7 +251,7 @@ class LamellipodiumHost:
         """Build the same geometry on the GPU via
         :func:`dcm_lamellipodium_ratchet_warp.compute_lamellipodium_geometry_gpu`,
         reading device positions (no full ``pos_d.numpy()``)."""
-        from ffn_sim.warp_port.dcm_lamellipodium_ratchet_warp import (
+        from ffn_sim.dcm.dcm_lamellipodium_ratchet_warp import (
             compute_lamellipodium_geometry_gpu)
         g = compute_lamellipodium_geometry_gpu(
             pos=(np.asarray(P, dtype=np.float64) if pos_d is None else None),

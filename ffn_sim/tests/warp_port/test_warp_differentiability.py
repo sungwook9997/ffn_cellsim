@@ -14,7 +14,7 @@ import pytest
 def test_warp_autodiff_matches_analytic():
     """Reverse-mode grad must match the closed-form analytic grad to ~machine eps."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.differentiability_b4 import run_check
+    from ffn_sim.dcm.differentiability_b4 import run_check
 
     r = run_check(device="cpu")
     assert r["rel_err_vs_analytic"] < 1e-9, (
@@ -25,7 +25,7 @@ def test_warp_autodiff_matches_analytic():
 def test_warp_autodiff_matches_finite_difference():
     """Reverse-mode grad must match a central finite-difference to FD accuracy."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.differentiability_b4 import run_check
+    from ffn_sim.dcm.differentiability_b4 import run_check
 
     r = run_check(device="cpu")
     assert r["rel_err_vs_finite_diff"] < 1e-5, (

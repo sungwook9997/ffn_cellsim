@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import numpy as np
 
-from ffn_sim.warp_port.dcm_warp_decohesion import run_decohesion
+from ffn_sim.dcm.dcm_warp_decohesion import run_decohesion
 from ffn_sim.validation.oracles.young_dupre import (
     doublet_angle_from_adhesion, fit_sphere, angle_from_doublet_geometry,
     triplet_angle)

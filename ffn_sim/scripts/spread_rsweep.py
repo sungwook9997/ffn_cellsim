@@ -39,7 +39,7 @@ import tempfile
 
 import numpy as np
 
-from ffn_sim.warp_port.dcm_warp_decohesion import run_decohesion
+from ffn_sim.dcm.dcm_warp_decohesion import run_decohesion
 
 # Derived mechanistic parameters — FIXED across every N (never tuned per-N).
 CAD_BUNDLE = 40.0          # cadherin catch-bond bundle multiplicity (derived)

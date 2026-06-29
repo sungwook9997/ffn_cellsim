@@ -4,8 +4,8 @@ import sys, time
 import numpy as np
 import warp as wp
 from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-from ffn_sim.warp_port.dcm_filopodia_probe_warp import probe_faces_gpu, filopodia_probe_kernel
-from ffn_sim.warp_port.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
+from ffn_sim.dcm.dcm_filopodia_probe_warp import probe_faces_gpu, filopodia_probe_kernel
+from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
 
 dev = sys.argv[1] if len(sys.argv) > 1 else "cuda:0"
 wp.init()

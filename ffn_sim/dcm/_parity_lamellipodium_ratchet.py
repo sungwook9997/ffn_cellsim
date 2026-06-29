@@ -14,7 +14,7 @@ Builds a small multi-cell icosphere cluster sitting on a dish, makes two identic
     pool is byte-identical too — so the advance COUNT/rate matches exactly, not just
     statistically. (We chose host-fed advance, path (a) — see the module docstring.)
 
-Run:  conda activate ffn_sim && python -m ffn_sim.warp_port._parity_lamellipodium_ratchet
+Run:  conda activate ffn_sim && python -m ffn_sim.dcm._parity_lamellipodium_ratchet
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from __future__ import annotations
 import numpy as np
 
 from ffn_sim.cell.dcm import icosphere_mesh
-from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
+from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 
 
 def _build_cluster(n_cells: int = 5, R: float = 7.5e-6, subdiv: int = 1, seed: int = 3):

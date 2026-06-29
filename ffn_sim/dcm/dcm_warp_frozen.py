@@ -52,7 +52,7 @@ from __future__ import annotations
 
 import warp as wp
 
-from ffn_sim.warp_port.dcm_contact_warp import closest_bary
+from ffn_sim.dcm.dcm_contact_warp import closest_bary
 
 wp.init()
 
@@ -609,10 +609,10 @@ def _build_stiff_cluster(n_cells=24, device="cpu", subdiv=1, k_vol=1.0e3):
     the grids, and all handles needed for the frozen cache + the analytic diagonal."""
     import numpy as np
     from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
-    from ffn_sim.warp_port.dcm_neighbor_warp import (pos_to_f32, face_centroids_f32,
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_neighbor_warp import (pos_to_f32, face_centroids_f32,
                                                      cohesion_grid_kernel, contact_grid_kernel)
 
     p = ResolvedDCM(subdivisions=subdiv); R = p.R_cell
@@ -690,9 +690,9 @@ def _build_stiff_cluster(n_cells=24, device="cpu", subdiv=1, k_vol=1.0e3):
 
 def _make_frozen_stiff(M, cache):
     """A stiff operator that uses the frozen cache for cohesion + contact (turgor/edges live)."""
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
 
     def stiff_frozen(pos_buf, out_d):
         wp.launch(_zero_vec, dim=M["N"], inputs=[out_d], device=cache.device)
@@ -718,7 +718,7 @@ def _make_frozen_stiff(M, cache):
 def _one_implicit_step(stiff_into, M, *, dt, device, precond_apply=None, maxiter=200, tol=1e-8):
     """Take one linearly-implicit Euler step (b = F(xₙ), solve (aI+K)dx=b) and return (dx_np, iters)."""
     import numpy as np
-    from ffn_sim.warp_port.dcm_warp_implicit import device_cg
+    from ffn_sim.dcm.dcm_warp_implicit import device_cg
     N = M["N"]
     scratch = {k: wp.zeros(N, dtype=wp.vec3d, device=device)
                for k in ("r", "p", "Ap", "dx", "Fx", "Fp", "xp")}
@@ -794,7 +794,7 @@ def _precond_positive_control(device="cpu", N=2000, kappa=1.0e4):
     converges in 1 iteration where plain CG needs O(√κ). Confirms the new ``precond_apply`` plumbing
     in ``device_cg`` is correct + converges to the SAME solution — isolated from the FD pathology."""
     import numpy as np
-    from ffn_sim.warp_port.dcm_warp_implicit import device_cg
+    from ffn_sim.dcm.dcm_warp_implicit import device_cg
     rng = np.random.default_rng(0)
     a = 1.0
     kdiag_np = rng.random(N) * (kappa - 1.0) * a              # k ∈ [0, a·(κ−1)] → cond(A) ≈ κ
@@ -845,7 +845,7 @@ def _precond_demo(device="cpu", n_cells=24, k_vol=7.73e5, compress=0.99, dt_mult
     M["build_grids"]()
     dt = 8e-6 * dt_mult
 
-    from ffn_sim.warp_port.dcm_contact_implicit_warp import nearest_face_repel_kernel
+    from ffn_sim.dcm.dcm_contact_implicit_warp import nearest_face_repel_kernel
     cn_k = wp.zeros(M["N"], dtype=wp.float64, device=device)
     cn_nrm = wp.zeros(M["N"], dtype=wp.vec3d, device=device)
     fz = wp.zeros(M["N"], dtype=wp.vec3d, device=device)

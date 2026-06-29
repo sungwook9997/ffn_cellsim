@@ -39,7 +39,7 @@ def _load(name: str) -> dict:
 
 
 def _run(fx: dict, reduce: str) -> dict:
-    from ffn_sim.warp_port.radial_shell_warp import run_radial_shell_warp
+    from ffn_sim.dcm.radial_shell_warp import run_radial_shell_warp
 
     return run_radial_shell_warp(
         pos=fx["pos"], tag=fx["tag"],

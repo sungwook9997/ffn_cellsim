@@ -30,7 +30,7 @@ _DEVICE = "cpu"
 
 def _baoab_parity() -> dict:
     """Run the B1 BAOAB Warp kernel against both committed fixtures."""
-    from ffn_sim.warp_port.baoab_warp import run_baoab_warp
+    from ffn_sim.dcm.baoab_warp import run_baoab_warp
 
     results = {}
     for label in ("kt0", "ktpos"):
@@ -59,7 +59,7 @@ def _radial_shell_parity() -> dict:
 
     Reports both the host-reduced force-LAW parity (gated < 1e-12) and the full
     Warp atomic-reduction parity (diagnostic, reduction-order < 1e-8)."""
-    from ffn_sim.warp_port.radial_shell_warp import run_radial_shell_warp
+    from ffn_sim.dcm.radial_shell_warp import run_radial_shell_warp
 
     out = {}
     for name in ("nucleus", "membrane", "turgor"):
@@ -86,7 +86,7 @@ def _radial_shell_parity() -> dict:
 
 def _shake_parity() -> dict:
     """M-SHAKE: Warp chain-constraint projection vs the committed Python reference."""
-    from ffn_sim.warp_port.shake_warp import run_shake_warp
+    from ffn_sim.dcm.shake_warp import run_shake_warp
 
     fx = dict(np.load(os.path.join(FIX, "shake_ref.npz")))
     got = run_shake_warp(
@@ -110,7 +110,7 @@ def _shake_parity() -> dict:
 
 def _bond_parity() -> dict:
     """Harmonic bond (cortex axial spring) vs HOOMD md.bond.Harmonic."""
-    from ffn_sim.warp_port.network_warp import run_harmonic_bond_warp
+    from ffn_sim.dcm.network_warp import run_harmonic_bond_warp
 
     fx = dict(np.load(os.path.join(FIX, "network_bond_ref.npz")))
     got = run_harmonic_bond_warp(
@@ -128,7 +128,7 @@ def _bond_parity() -> dict:
 
 def _angle_parity() -> dict:
     """Harmonic angle (cortex bending) vs HOOMD md.angle.Harmonic."""
-    from ffn_sim.warp_port.network_warp import run_harmonic_angle_warp
+    from ffn_sim.dcm.network_warp import run_harmonic_angle_warp
 
     fx = dict(np.load(os.path.join(FIX, "network_angle_ref.npz")))
     got = run_harmonic_angle_warp(
@@ -146,7 +146,7 @@ def _angle_parity() -> dict:
 
 def _lj_parity() -> dict:
     """LJ excluded volume (WCA) vs HOOMD md.pair.LJ (mode=shift, r_cut=2^(1/6)σ)."""
-    from ffn_sim.warp_port.network_warp import run_wca_pair_warp
+    from ffn_sim.dcm.network_warp import run_wca_pair_warp
 
     fx = dict(np.load(os.path.join(FIX, "network_lj_ref.npz")))
     got = run_wca_pair_warp(
@@ -164,7 +164,7 @@ def _lj_parity() -> dict:
 
 def _fixman_parity() -> dict:
     """Fixman: Warp metric pseudo-force vs the committed Python LAPACK reference."""
-    from ffn_sim.warp_port.fixman_warp import run_fixman_warp
+    from ffn_sim.dcm.fixman_warp import run_fixman_warp
 
     fx = dict(np.load(os.path.join(FIX, "fixman_ref.npz")))
     got = run_fixman_warp(
@@ -183,7 +183,7 @@ def _fixman_parity() -> dict:
 
 def _dcm_contact_parity() -> dict:
     """DCM node-face contact: Warp vs the numpy brute-force ground truth."""
-    from ffn_sim.warp_port.dcm_contact_warp import run_node_face_contact_warp
+    from ffn_sim.dcm.dcm_contact_warp import run_node_face_contact_warp
 
     fx = dict(np.load(os.path.join(FIX, "dcm_contact_ref.npz")))
     got = run_node_face_contact_warp(
@@ -201,7 +201,7 @@ def _dcm_contact_parity() -> dict:
 
 def _dcm_turgor_parity() -> dict:
     """DCM exact-volume turgor force: Warp vs the committed HOOMD DcmTurgorForce."""
-    from ffn_sim.warp_port.dcm_turgor_warp import run_dcm_turgor_warp
+    from ffn_sim.dcm.dcm_turgor_warp import run_dcm_turgor_warp
 
     fx = dict(np.load(os.path.join(FIX, "dcm_turgor_ref.npz")))
     kw = dict(
@@ -220,7 +220,7 @@ def _dcm_turgor_parity() -> dict:
 
 def _dcm_cohesion_parity() -> dict:
     """DCM node-node cohesion: Warp vs the committed HOOMD DcmTentContact."""
-    from ffn_sim.warp_port.dcm_cohesion_warp import run_dcm_cohesion_warp
+    from ffn_sim.dcm.dcm_cohesion_warp import run_dcm_cohesion_warp
 
     fx = dict(np.load(os.path.join(FIX, "dcm_cohesion_ref.npz")))
     got = run_dcm_cohesion_warp(
@@ -239,7 +239,7 @@ def _dcm_cohesion_parity() -> dict:
 
 def _dcm_substrate_parity() -> dict:
     """DCM substrate z-well + in-plane wetting: Warp vs the committed HOOMD refs."""
-    from ffn_sim.warp_port.dcm_substrate_warp import (
+    from ffn_sim.dcm.dcm_substrate_warp import (
         run_dcm_substrate_well_warp, run_dcm_substrate_wetting_warp)
 
     fx = dict(np.load(os.path.join(FIX, "dcm_substrate_ref.npz")))
@@ -264,7 +264,7 @@ def _dcm_substrate_parity() -> dict:
 
 def _lamellipodium_parity() -> dict:
     """Lamellipodial traction-tether: Warp vs committed HOOMD LamellipodialTractionTether."""
-    from ffn_sim.warp_port.lamellipodium_warp import run_lamellipodium_tether_warp
+    from ffn_sim.dcm.lamellipodium_warp import run_lamellipodium_tether_warp
 
     fx = dict(np.load(os.path.join(FIX, "lamellipodium_ref.npz")))
     got = run_lamellipodium_tether_warp(
@@ -285,7 +285,7 @@ def _lamellipodium_parity() -> dict:
 def _b4_differentiability() -> dict:
     """B4: Warp reverse-mode autodiff through the membrane force law w.r.t. γ_mem,
     vs closed-form analytic + finite-difference."""
-    from ffn_sim.warp_port.differentiability_b4 import run_check
+    from ffn_sim.dcm.differentiability_b4 import run_check
 
     return run_check(device=_DEVICE)
 

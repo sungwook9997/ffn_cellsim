@@ -40,7 +40,7 @@ def _rel(got: np.ndarray, ref: np.ndarray) -> float:
 def test_dcm_substrate_well_parity():
     """z-well (plane-well + rigid floor), own-row write: rel error < 1e-12."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_substrate_warp import run_dcm_substrate_well_warp
+    from ffn_sim.dcm.dcm_substrate_warp import run_dcm_substrate_well_warp
 
     fx = _load()
     got = run_dcm_substrate_well_warp(
@@ -56,7 +56,7 @@ def test_dcm_substrate_well_parity():
 def test_dcm_substrate_wetting_parity_host():
     """Wetting per-face force law (host scatter): rel error < 1e-12."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_substrate_warp import run_dcm_substrate_wetting_warp
+    from ffn_sim.dcm.dcm_substrate_warp import run_dcm_substrate_wetting_warp
 
     fx = _load()
     got = run_dcm_substrate_wetting_warp(
@@ -72,7 +72,7 @@ def test_dcm_substrate_wetting_parity_host():
 def test_dcm_substrate_wetting_parity_warp_reduce():
     """Wetting full Warp port (atomic scatter): rel error < 1e-8."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_substrate_warp import run_dcm_substrate_wetting_warp
+    from ffn_sim.dcm.dcm_substrate_warp import run_dcm_substrate_wetting_warp
 
     fx = _load()
     got = run_dcm_substrate_wetting_warp(

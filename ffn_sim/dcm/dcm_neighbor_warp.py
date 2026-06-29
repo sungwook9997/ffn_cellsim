@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import warp as wp
 
-from ffn_sim.warp_port.dcm_contact_warp import closest_bary
+from ffn_sim.dcm.dcm_contact_warp import closest_bary
 
 wp.init()
 

@@ -25,28 +25,28 @@ Importing this module pulls in ``warp`` (each submodule calls ``wp.init()``; ide
 from __future__ import annotations
 
 # canonical loops
-from ffn_sim.warp_port.dcm_warp_hybrid_multicell import run_multicell
-from ffn_sim.warp_port.dcm_warp_hybrid import run_hybrid
-from ffn_sim.warp_port.dcm_warp_crawl import run_crawl
-from ffn_sim.warp_port.dcm_warp_diff import run_diff
+from ffn_sim.dcm.dcm_warp_hybrid_multicell import run_multicell
+from ffn_sim.dcm.dcm_warp_hybrid import run_hybrid
+from ffn_sim.dcm.dcm_warp_crawl import run_crawl
+from ffn_sim.dcm.dcm_warp_diff import run_diff
 
 # integrator stack
-from ffn_sim.warp_port.baoab_warp import run_baoab_warp
-from ffn_sim.warp_port.shake_warp import run_shake_warp
-from ffn_sim.warp_port.fixman_warp import run_fixman_warp
+from ffn_sim.dcm.baoab_warp import run_baoab_warp
+from ffn_sim.dcm.shake_warp import run_shake_warp
+from ffn_sim.dcm.fixman_warp import run_fixman_warp
 
 # compartment / cortex forces
-from ffn_sim.warp_port.radial_shell_warp import run_radial_shell_warp
-from ffn_sim.warp_port.network_warp import (
+from ffn_sim.dcm.radial_shell_warp import run_radial_shell_warp
+from ffn_sim.dcm.network_warp import (
     run_harmonic_bond_warp, run_harmonic_angle_warp, run_wca_pair_warp)
 
 # DCM forces
-from ffn_sim.warp_port.dcm_contact_warp import run_node_face_contact_warp
-from ffn_sim.warp_port.dcm_turgor_warp import run_dcm_turgor_warp
-from ffn_sim.warp_port.dcm_cohesion_warp import run_dcm_cohesion_warp
-from ffn_sim.warp_port.dcm_substrate_warp import (
+from ffn_sim.dcm.dcm_contact_warp import run_node_face_contact_warp
+from ffn_sim.dcm.dcm_turgor_warp import run_dcm_turgor_warp
+from ffn_sim.dcm.dcm_cohesion_warp import run_dcm_cohesion_warp
+from ffn_sim.dcm.dcm_substrate_warp import (
     run_dcm_substrate_well_warp, run_dcm_substrate_wetting_warp)
-from ffn_sim.warp_port.lamellipodium_warp import run_lamellipodium_tether_warp
+from ffn_sim.dcm.lamellipodium_warp import run_lamellipodium_tether_warp
 
 #: the recommended top-level entry points, by use-case (see ENGINE.md)
 ENTRY_POINTS = {

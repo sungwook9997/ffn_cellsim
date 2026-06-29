@@ -18,8 +18,8 @@ and (b) a penetration-inducing strong-adhesion case (pen must DROP). NOT committ
 from __future__ import annotations
 import numpy as np
 import warp as wp
-import ffn_sim.warp_port.dcm_warp_decohesion as drv
-from ffn_sim.warp_port.dcm_contact_warp import closest_bary
+import ffn_sim.dcm.dcm_warp_decohesion as drv
+from ffn_sim.dcm.dcm_contact_warp import closest_bary
 from ffn_sim.scripts.twocell_overlap_diag import diagnose
 
 wp.init()

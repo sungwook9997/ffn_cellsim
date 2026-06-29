@@ -13,7 +13,7 @@ import pytest
 
 def test_lamellipodium_crawl_spreads():
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_warp_crawl import run_crawl
+    from ffn_sim.dcm.dcm_warp_crawl import run_crawl
 
     r = run_crawl(subdiv=2, steps=2000, device="cpu")
     assert r["finite"], "crawl loop went non-finite"

@@ -32,7 +32,7 @@ def _load() -> dict:
 
 
 def _run(fx: dict, reduce: str) -> dict:
-    from ffn_sim.warp_port.dcm_turgor_warp import run_dcm_turgor_warp
+    from ffn_sim.dcm.dcm_turgor_warp import run_dcm_turgor_warp
 
     return run_dcm_turgor_warp(
         pos=fx["pos"], faces=fx["faces"], face_cell=fx["face_cell"],

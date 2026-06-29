@@ -32,7 +32,7 @@ def _load() -> dict:
 def test_lamellipodium_tether_warp_parity():
     """Warp lamellipodial traction-tether force matches HOOMD LamellipodialTractionTether."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.lamellipodium_warp import run_lamellipodium_tether_warp
+    from ffn_sim.dcm.lamellipodium_warp import run_lamellipodium_tether_warp
 
     fx = _load()
     got = run_lamellipodium_tether_warp(

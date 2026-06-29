@@ -7,8 +7,8 @@ monkeypatching cohesion_grid_kernel to a rep-stripped variant — measuring the 
 from __future__ import annotations
 import numpy as np
 import warp as wp
-import ffn_sim.warp_port.dcm_warp_decohesion as drv
-from ffn_sim.warp_port.dcm_contact_warp import closest_bary  # noqa (kernel dep parity)
+import ffn_sim.dcm.dcm_warp_decohesion as drv
+from ffn_sim.dcm.dcm_contact_warp import closest_bary  # noqa (kernel dep parity)
 from ffn_sim.scripts.twocell_overlap_diag import diagnose
 
 wp.init()

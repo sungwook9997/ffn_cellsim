@@ -36,7 +36,7 @@ def _load() -> dict:
 def test_dcm_node_face_contact_warp_parity():
     """Warp node-face contact force matches the numpy brute-force ground truth."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_contact_warp import run_node_face_contact_warp
+    from ffn_sim.dcm.dcm_contact_warp import run_node_face_contact_warp
 
     fx = _load()
     got = run_node_face_contact_warp(

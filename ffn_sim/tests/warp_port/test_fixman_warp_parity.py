@@ -36,7 +36,7 @@ def _load() -> dict:
 def test_fixman_warp_parity():
     """Fixman force + U_F match the LAPACK reference; metric stays positive."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.fixman_warp import run_fixman_warp
+    from ffn_sim.dcm.fixman_warp import run_fixman_warp
 
     fx = _load()
     got = run_fixman_warp(

@@ -12,7 +12,7 @@ NO body-force proxy (settle deleted), the **conservative substrate wetting** is 
 driver, top-down silhouette A/A0 is co-tracked with maxZ + V/V0 + COM drift (never A/A0 alone),
 and a divergence guard truncates on non-finite.
 
-    python -m ffn_sim.warp_port.dcm_warp_decohesion --device cuda:0 --n-cells 100 --steps 60000
+    python -m ffn_sim.dcm.dcm_warp_decohesion --device cuda:0 --n-cells 100 --steps 60000
 """
 
 from __future__ import annotations
@@ -25,18 +25,18 @@ import numpy as np
 import warp as wp
 
 from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-from ffn_sim.warp_port.dcm_warp_hybrid_multicell import (
+from ffn_sim.dcm.dcm_warp_hybrid_multicell import (
     build_multicell, _dp_from_vol, _dp_from_vol_pc, _dp_from_vol_osm, osmotic_relax_kernel,
     _zero_vec, _edges_from_faces)
-from ffn_sim.warp_port.dcm_neighbor_warp import face_contact_count_kernel
-from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate, _bd_step
-from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
-from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
-from ffn_sim.warp_port.dcm_substrate_warp import (
+from ffn_sim.dcm.dcm_neighbor_warp import face_contact_count_kernel
+from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate, _bd_step
+from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
+from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
+from ffn_sim.dcm.dcm_substrate_warp import (
     dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel,
     dcm_wetting_scatter_integrin_kernel, dcm_ubottom_well_kernel)
-from ffn_sim.warp_port.dcm_neighbor_warp import (
+from ffn_sim.dcm.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
     edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel, gravity_body_force_kernel,
@@ -44,21 +44,21 @@ from ffn_sim.warp_port.dcm_neighbor_warp import (
     surface_tension_kernel, polarized_surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
     edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel, scale_per_cell_kernel,
     gather_lead_pos, lamellipodium_tether_multicell)
-from ffn_sim.warp_port.dcm_cadherin_host import CadherinBondHost, CadherinParams
-from ffn_sim.warp_port.dcm_ecm_clutch_host import EcmClutchHost, EcmClutchParams
-from ffn_sim.warp_port.dcm_filopodia_host import FilopodiaHost, FilopodiaParams
-from ffn_sim.warp_port.dcm_filopodia_warp import (
+from ffn_sim.dcm.dcm_cadherin_host import CadherinBondHost, CadherinParams
+from ffn_sim.dcm.dcm_ecm_clutch_host import EcmClutchHost, EcmClutchParams
+from ffn_sim.dcm.dcm_filopodia_host import FilopodiaHost, FilopodiaParams
+from ffn_sim.dcm.dcm_filopodia_warp import (
     filopodia_tip_face_force_kernel, filopodia_tip_plane_force_kernel)
-from ffn_sim.warp_port.dcm_division_host import DivisionHost, DivisionParams
-from ffn_sim.warp_port.dcm_necrosis_host import NecrosisHost, NecrosisParams
-from ffn_sim.warp_port.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
-from ffn_sim.warp_port.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
+from ffn_sim.dcm.dcm_division_host import DivisionHost, DivisionParams
+from ffn_sim.dcm.dcm_necrosis_host import NecrosisHost, NecrosisParams
+from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
+from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.cell.dcm_remesh import remesh_pass
 from ffn_sim.cell.dcm_cleave import cleave_cell
-from ffn_sim.warp_port.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
-from ffn_sim.warp_port.dcm_contact_implicit_warp import (
+from ffn_sim.dcm.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
+from ffn_sim.dcm.dcm_contact_implicit_warp import (
     nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha, project_contacts)
-from ffn_sim.warp_port.dcm_warp_frozen import (
+from ffn_sim.dcm.dcm_warp_frozen import (
     FrozenNeighborCache, build_diagA, make_diag_precond)
 
 wp.init()

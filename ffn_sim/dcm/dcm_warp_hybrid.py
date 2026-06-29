@@ -21,7 +21,7 @@ the remesh is low-cadence host code; the pool makes the GPU side static-array.
 
 Bench::
 
-    python -m ffn_sim.warp_port.dcm_warp_hybrid --device cuda:0 --steps 2000 --subdiv 2
+    python -m ffn_sim.dcm.dcm_warp_hybrid --device cuda:0 --steps 2000 --subdiv 2
 """
 
 from __future__ import annotations

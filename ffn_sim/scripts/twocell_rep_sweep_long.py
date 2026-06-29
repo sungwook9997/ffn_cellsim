@@ -7,7 +7,7 @@ diagnostic (twocell_overlap_diag) so we can SEE the junction and READ oblate/dee
 """
 from __future__ import annotations
 import numpy as np, time
-from ffn_sim.warp_port.dcm_warp_decohesion import run_decohesion
+from ffn_sim.dcm.dcm_warp_decohesion import run_decohesion
 from ffn_sim.scripts.twocell_overlap_diag import diagnose, render
 
 SETTLE = 10000

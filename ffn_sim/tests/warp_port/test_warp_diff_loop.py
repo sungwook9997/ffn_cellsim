@@ -13,7 +13,7 @@ import pytest
 
 def test_diff_loop_grads_match_finite_difference():
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.dcm_warp_diff import run_diff
+    from ffn_sim.dcm.dcm_warp_diff import run_diff
 
     r = run_diff(subdiv=1, K=40, dt=2.0e-8, device="cpu")
     assert r["rel_err_dP0"] < 1e-6, f"dP0 grad vs FD: {r['rel_err_dP0']:.3e}"

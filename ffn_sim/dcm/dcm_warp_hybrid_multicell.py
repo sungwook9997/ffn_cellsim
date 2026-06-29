@@ -17,7 +17,7 @@ edge spring), launched directly on persistent device arrays. cell_of_node uses t
 SAME convention as the contact/cohesion kernels (−1 = dormant pool slot), so the
 node-pool and the inter-cell forces compose without translation.
 
-    python -m ffn_sim.warp_port.dcm_warp_hybrid_multicell --device cuda:0 --n-cells 4 --steps 2000
+    python -m ffn_sim.dcm.dcm_warp_hybrid_multicell --device cuda:0 --n-cells 4 --steps 2000
 """
 
 from __future__ import annotations
@@ -31,11 +31,11 @@ import warp as wp
 
 from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
 from ffn_sim.cell.dcm_remesh import remesh_pass
-from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-from ffn_sim.warp_port.dcm_cohesion_warp import dcm_cohesion_kernel
-from ffn_sim.warp_port.dcm_contact_warp import node_face_contact_kernel
-from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate, _bd_step, _edges_from_faces
-from ffn_sim.warp_port.dcm_neighbor_warp import (
+from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
+from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
+from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate, _bd_step, _edges_from_faces
+from ffn_sim.dcm.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel)
 
 wp.init()

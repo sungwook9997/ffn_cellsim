@@ -313,9 +313,9 @@ def make_dcm_stiff_force(device="cpu", subdiv=2):
     validate the implicit step against the actual DCM physics (not just a toy spring)."""
     import warp as wp
     from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
 
     p = ResolvedDCM(subdivisions=subdiv)
     verts, edges, faces = icosphere_mesh(p.R_cell, subdiv)
@@ -379,9 +379,9 @@ def make_dcm_stiff_into(device="cpu", subdiv=2):
     """Device-native single-cell DCM stiff force: ``stiff_into(pos_d, out_d)`` runs turgor+edges
     on device buffers (no numpy round-trip) for the all-device CG. Returns the callable + handles."""
     from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
     p = ResolvedDCM(subdivisions=subdiv)
     verts, edges, faces = icosphere_mesh(p.R_cell, subdiv)
     N, nf, ne = verts.shape[0], faces.shape[0], edges.shape[0]
@@ -434,10 +434,10 @@ def make_two_cell_contact_stiff(device="cpu", subdiv=1):
     analytic per-node diagonal-stiffness estimator (contact rep·area + edges) for a Jacobi PCG."""
     import warp as wp
     from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-    from ffn_sim.warp_port.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
-    from ffn_sim.warp_port.dcm_warp_hybrid import _bond_accumulate
-    from ffn_sim.warp_port.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
-    from ffn_sim.warp_port.dcm_neighbor_warp import (pos_to_f32, face_centroids_f32,
+    from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+    from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
+    from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
+    from ffn_sim.dcm.dcm_neighbor_warp import (pos_to_f32, face_centroids_f32,
         cohesion_grid_kernel, contact_grid_kernel)
     p = ResolvedDCM(subdivisions=subdiv); R = p.R_cell
     v1, e1, f1 = icosphere_mesh(R, subdiv); npc = v1.shape[0]

@@ -34,7 +34,7 @@ def _load(name: str = "network_bond_ref") -> dict:
 def test_harmonic_bond_warp_parity():
     """Warp harmonic-bond force + energy match HOOMD md.bond.Harmonic."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.network_warp import run_harmonic_bond_warp
+    from ffn_sim.dcm.network_warp import run_harmonic_bond_warp
 
     fx = _load()
     got = run_harmonic_bond_warp(
@@ -52,7 +52,7 @@ def test_harmonic_bond_warp_parity():
 def test_harmonic_angle_warp_parity():
     """Warp harmonic-angle (bending) force + energy match HOOMD md.angle.Harmonic."""
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.network_warp import run_harmonic_angle_warp
+    from ffn_sim.dcm.network_warp import run_harmonic_angle_warp
 
     fx = _load("network_angle_ref")
     got = run_harmonic_angle_warp(
@@ -76,7 +76,7 @@ def test_wca_pair_warp_parity():
     the only parity gap is neighbour-summation order, gated rel < 1e-12.
     """
     pytest.importorskip("warp")
-    from ffn_sim.warp_port.network_warp import run_wca_pair_warp
+    from ffn_sim.dcm.network_warp import run_wca_pair_warp
 
     fx = _load("network_lj_ref")
     got = run_wca_pair_warp(

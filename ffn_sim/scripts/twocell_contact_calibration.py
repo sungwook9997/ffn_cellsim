@@ -1,5 +1,5 @@
 import numpy as np, tempfile, os
-from ffn_sim.warp_port.dcm_warp_decohesion import run_decohesion
+from ffn_sim.dcm.dcm_warp_decohesion import run_decohesion
 print("2-cell contact equilibrium at gap 2.05 (WITHIN adhesion range), rep sweep, adh=5e7:")
 print(f"{'rep':>8} {'NN_eq(R)':>9} {'pen_fin':>8} {'V/V0':>6} {'verdict':>12}")
 for rep in [4e7, 1e8, 2e8, 5e8, 1e9, 2e9]:
