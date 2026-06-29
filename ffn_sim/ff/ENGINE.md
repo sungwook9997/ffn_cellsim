@@ -66,10 +66,11 @@ eigenvalues of (I − τμPA) > 1 ∀τ ⇒ dt bounded by *accuracy* (O(τ²)) n
 Non-symmetric after PμA ⇒ paper uses **BiCGStab** (tol = 0.1·min Brownian). Our
 `dcm.dcm_warp_implicit.implicit_overdamped_step` is the matrix-free `(γ/dt·I + K)Δx = F` CG form —
 **one implicit step relaxes a bent fiber to ~1.4 % bending energy ✓** (the large-step payoff).
-  > ⚠️ **Scale finding (Stage 6b):** that solver's absolute thresholds (`newton_tol=1e-10`,
+  > ✅ **Scale finding RESOLVED (Stage 6c-a):** that solver's absolute thresholds (`newton_tol=1e-10`,
   > `cg_tol=1e-8`) are DCM-scale-calibrated; FF single-filament forces are ~1e-12 N (SI) → instant
-  > false convergence (Δx=0). Fix = **nondimensionalize to pN/µm** (forces O(1)) for the FF layer,
-  > done when the cortex/γ-floor assembly sets units (Stage 6c). FF-scale tolerances work meanwhile.
+  > false convergence (Δx=0). Fix = **nondimensionalize to pN·µm·s** ([`units.py`](units.py), forces
+  > O(0.1–100)). Validated: at FF scale the *unchanged* solver relaxes a bent actin fiber with its
+  > DEFAULT tolerances, while the identical SI-scale fiber false-converges (`tests/ff/test_units.py`).
 
 **Mobility (p10, §5.2).** Isotropic scalar per point (deliberately *not* anisotropic):
 `μ = log(L_h/δ) / (3π η L)`, per-point `μ_p = (p+1)μ` (L_h = min(L, hydro cutoff), δ = diameter).
