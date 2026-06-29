@@ -144,6 +144,22 @@ See `DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`: the "−2 sentinel one-lin
 with remesh relabelling). Two approaches recorded (index-range vs unified pool manager) +
 the known cleave+remesh quality caveat; validate on gbook. Deferred from the CPU loop.
 
+## Iteration 5 — perf/parity + gbook production-launch prep
+
+- **Parity verdict current:** regenerated `dcm/fixtures/warp_parity_results.json` (CPU) — byte-
+  identical to the committed one (force_rel machine-eps everywhere, autodiff-vs-analytic 2.6e-15),
+  confirming today's edits left the engine unperturbed. The iter-2 test-path fix was the real
+  hardening (27 tests now execute vs ~0).
+- **gbook launcher ready:** `ffn_sim/dcm/gbook_production.sh` (+`--dry-run`, validated) — checks
+  reachability, rsyncs the code (Syncthing syncs only outputs/), and fires the two production runs
+  under setsid: (1) **confluent faceting sweep** N=400 K=2500 cohesion-5e7 γ-ladder (tests the
+  iter-4 confinement conclusion — interior cells confined → faceting should emerge); (2) **division
+  production** N=400 subdiv2 (separation + mesh integrity at the resolution the subdiv-1 CPU smoke
+  lacked). Confirm `REMOTE_DIR` against the live gbook before the first launch.
+- **N=400 build validated on CPU:** build + mitotic division + step loop + gates all run clean at
+  N=400 (n_active 400→408, V/V₀=1.05, finite). pen 1.08 at subdiv1 is the known contact-resolution
+  artifact → subdiv2 in production.
+
 ## Next (queued; gbook OFFLINE blocks N≥400 production)
 
 - **cof-sentinel disambiguation** (parked cell = −2, remesh pool = −1; `split_edge` selects only
