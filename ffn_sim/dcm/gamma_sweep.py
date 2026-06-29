@@ -214,13 +214,16 @@ def _measure(npz_path: Path, out_json: Path, k_vol: float) -> GammaPoint | None:
 # worker launch
 # ---------------------------------------------------------------------------
 def _worker_cmd(gamma: float, *, device: str, n_cells: int, subdiv: int, steps: int,
-                gap: float, frames: int, k_vol: float, npz_path: Path) -> list[str]:
+                gap: float, frames: int, k_vol: float, adh_strength: float | None,
+                npz_path: Path) -> list[str]:
     """One free-aggregate morphology run at a fixed γ (substrate + division OFF)."""
     cmd = [sys.executable, "-m", "ffn_sim.dcm.dcm_warp_decohesion",
            "--device", device, "--n-cells", str(n_cells), "--subdiv", str(subdiv),
            "--steps", str(steps), "--frames", str(frames), "--gap", str(gap),
            "--k-vol", repr(k_vol), "--builder", "sphere", "--no-well", "--no-wetting",
            "--save-frames", str(npz_path)]
+    if adh_strength is not None:
+        cmd += ["--adh-strength", repr(adh_strength)]   # cohesion as a controlled variable
     if gamma > 0.0:
         cmd += ["--surface-tension", "--gamma-surf", repr(gamma)]
     return cmd
@@ -233,7 +236,8 @@ def _run_one(gamma: float, outdir: Path, args) -> tuple[float, int, Path, Path, 
     jout = outdir / f"agg_{tag}.out.json"
     cmd = _worker_cmd(gamma, device=args.device, n_cells=args.n_cells,
                       subdiv=args.subdiv, steps=args.steps, gap=args.gap,
-                      frames=args.frames, k_vol=args.k_vol, npz_path=npz)
+                      frames=args.frames, k_vol=args.k_vol,
+                      adh_strength=args.adh_strength, npz_path=npz)
     t0 = time.perf_counter()
     with log.open("w") as f:
         # the driver prints its out-dict json to stdout tail; capture it to jout via a wrapper
@@ -285,6 +289,10 @@ def main() -> None:
                     help="comma-separated γ ladder [N/m]; 0 = cortical tension OFF (control)")
     ap.add_argument("--k-vol", type=float, default=K_VOL_DEFAULT,
                     help="bulk modulus for the γ̃=γ/(K·ℓ) denominator (driver k_vol)")
+    ap.add_argument("--adh-strength", type=float, default=None,
+                    help="node-node cohesion [Pa] passed to the engine (controlled variable; "
+                         "lit MCF7 ~5e7). Default None = engine default (1e7). For the doublet "
+                         "faceting study cohesion must hold cells apposed as γ shrinks them.")
     ap.add_argument("--jobs", type=int, default=2, help="concurrent worker subprocesses")
     ap.add_argument("--out", default="ffn_sim/outputs/h_dcm_two_stage/gamma_sweep")
     args = ap.parse_args()

@@ -100,6 +100,32 @@ production N on gbook. Visualized: `div_smoke_n8_montage.png` / `_surface.mp4`.
   **runs 27 tests, all PASS, 0 skipped** (previously ~0 executed). This also confirms the
   `--k-vol` + comment edits did not perturb the engine.
 
+## Iteration 4 — two-cell doublet faceting study (the decisive faceting test)
+
+`outputs/h_dcm_two_stage/doublet_facet_adh{5e7,1e7}/` — N=2 free doublet, K=2500, γ ladder,
+cohesion as a controlled variable (lit MCF7 5e7 vs default 1e7). Montage:
+`doublet_facet_adh5e7/doublet_faceting_montage.png`.
+
+| γ̃ | V/V₀ | contact-area (adh 5e7) | contact-area (adh 1e7) |
+|---|---|---|---|
+| 0.000 | 1.086 | 0.064 | 0.052 |
+| 0.033 (band) | 0.981 | 0.051 | 0.039 |
+| 0.067 (band) | 0.870 | 0.035 | — |
+| 0.100 | 0.752 | 0.000 | 0.000 |
+| 0.167 | 0.507 | 0.000 | 0.000 |
+
+**Decisive finding (consistent with the iter-2 free aggregate):** a FREE doublet does **NOT
+facet** even at lit MCF7 cohesion. Rising γ **deflates** the cells (Young–Laplace: equilibrium
+V/V₀ = exp(−2γ/(R·K)) — predicts 0.81 at γ=2e-3, matches the measured 0.87) faster than node-node
+cohesion can hold them apposed, so the contact area *falls to zero* (cells separate by γ̃≈0.1).
+Higher cohesion (5e7 vs 1e7) only slightly delays separation. **Conclusion: faceting is a
+CONFINEMENT phenomenon, not a cohesion one** — flat polygonal junctions need the cells held in
+volume (tissue-interior confinement / enclosed-volume) so cortical tension flattens the interface
+instead of freely deflating the cell. → faceting will emerge only in the **N≥400 confluent**
+aggregate (interior cells confined by neighbours), the gbook production target; it is correctly
+*absent* in small free clusters at any cohesion. The γ-sweep + nondim bridge are the ready tooling
+for that run. (No magic-number: cohesion + γ are both controlled variables; the map is reported.)
+
 ## Iteration 3 — shared nondimensionalization (FF bridge)
 
 `ffn_sim/dcm/nondim.py` (+ `tests/dcm/test_nondim.py`, 7 pass): the shared dimensionless language
