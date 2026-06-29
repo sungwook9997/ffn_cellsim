@@ -144,6 +144,18 @@ See `DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`: the "−2 sentinel one-lin
 with remesh relabelling). Two approaches recorded (index-range vs unified pool manager) +
 the known cleave+remesh quality caveat; validate on gbook. Deferred from the CPU loop.
 
+## Iteration 6 — aggregate→settle→spread dynamic hand-off (goal #2)
+
+`outputs/h_dcm_two_stage/handoff/` (N=12, substrate ON, warmup 500 + settle 2500 + spread 5000):
+the full dynamic pipeline runs **stably end-to-end — `gates_all_pass=TRUE`** (finite + G2
+interpenetration + volume conservation all PASS). V/V₀ held at 1.000, maxZ 44.1µm held, pen 0.004
+(substrate settles cells gently — far below the division/no-substrate pen), drift 0, 688 steps/s.
+A/A₀ holds ~1.0 across the spread phase — the known **passive non-wetting** result (the A/A₀=7–10
+magnitude is the PI-gated active-lamellipodium driver, correctly NOT touched here). The point of
+this iteration is the *mechanics*: the settle→spread transition is dynamically stable with the mesh
+intact, so goal #2 ("spreading 동적으로 제대로 이어지게") is mechanically sound — the magnitude
+awaits the PI active-force decision. Montage/mp4: `handoff/handoff_n12_{montage.png,surface.mp4}`.
+
 ## Iteration 5 — perf/parity + gbook production-launch prep
 
 - **Parity verdict current:** regenerated `dcm/fixtures/warp_parity_results.json` (CPU) — byte-
