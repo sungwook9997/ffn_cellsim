@@ -6,6 +6,31 @@ independent variable** — vary γ, *report* the morphology that emerges, never 
 target (the magic-number rule). PI directive 2026-06-29: "코르티컬 텐션이 문제라면 …
 스윕으로 텐션 여러개 동시에 돌려보자."
 
+## LOOP SUMMARY (PI read-me — 6 iterations, all committed on `dcm/aggregation`)
+
+Built entirely CPU-side because **gbook was OFFLINE the whole session** (N≥400 GPU production blocked).
+Worktree-isolated from the FF session (which committed Cytosim γ-floor stages to `dcm/main`; disjoint dirs).
+
+1. **γ-sweep harness** (`dcm/gamma_sweep.py`) + exposed **`--k-vol`** — γ as controlled variable, faceting=f(γ̃).
+2. **K finding:** faceting group γ̃=γ/(K·ℓ); at the driver default K=7.73e5, faceting is unreachable for
+   any measured γ (needs γ~0.2-0.9 N/m); SimuCell3D faceting needs the soft K≈2.5e3 → **K reconciliation
+   surfaced for PI** (300× gap vs single-cell-spread tuning), not auto-fixed.
+3. **Parity hardening:** the 10 DCM parity tests were **silently skipping** (stale `warp_port/fixtures`
+   path post-rename) → fixed → `make warp-parity` now runs **27 tests, all PASS**.
+4. **Shared DCM/FF nondimensionalization** (`dcm/nondim.py` + 7 tests) — maps an FF-measured γ onto the
+   DCM faceting regime (the engines' shared dimensionless language).
+5. **Faceting = CONFINEMENT, not cohesion** (key result): free aggregate AND 2-cell doublet do NOT facet
+   even at lit MCF7 cohesion — rising γ deflates cells (Young-Laplace, matches) faster than cohesion holds
+   them → faceting emerges only in the **N≥400 confluent** aggregate. Ready to test on gbook.
+6. **Dynamic hand-off** aggregate→settle→spread runs **stably end-to-end** (gates_all_pass, V/V₀ held,
+   mesh intact) — goal #2 mechanically sound (A/A₀ magnitude awaits the PI active-driver decision).
+7. **gbook launcher ready** (`dcm/gbook_production.sh`, dry-run validated; N=400 build validated on CPU)
+   — fires the confluent faceting sweep + division production the instant gbook is online.
+
+**PI decisions pending:** (a) K reconciliation 7.73e5 vs 2.5e3; (b) active-lamellipodium force anchor
+(the A/A₀=7-10 magnitude, gated). **Deferred (needs gbook):** division+remesh co-run
+(`DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`); N≥400 confluent faceting + division production.
+
 ## What was built (all in `ffn_sim/dcm/`, my owned domain)
 
 1. **`ffn_sim/dcm/gamma_sweep.py`** — a concurrent γ-sweep harness. Each γ point is one run of
