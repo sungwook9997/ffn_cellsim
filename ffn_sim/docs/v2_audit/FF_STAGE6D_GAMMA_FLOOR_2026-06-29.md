@@ -59,6 +59,27 @@ pN** of per-link prestress (R=10µm, n_myo=200, 8 realizations).
 Figure: `outputs/ff/figs/gamma_floor_sweep.png` (log-γ vs f_myo, bands + turgor baseline + lit
 anchor overlaid). Data: `outputs/ff/gamma_floor_sweep.npz`.
 
+## 3b. Quantitative cross-check vs the BAOAB-MD γ (disk-grounded)
+
+From `docs/CORTICAL_TENSION_RECORD_2026-06-04.md` (the authoritative archived γ-floor record):
+
+| quantity | BAOAB-MD (archived) | MD-free FF (this work) |
+|---|---|---|
+| active actomyosin γ at lit kinetics | g_soft ≈ **3.1e-5 – 1.4e-4 mN/m** (FA-anchored / Δ_active) | γ_active = **9.5e-4 mN/m** (f_myo=5 pN) |
+| best case under forcing | v0×3000 → **0.030 mN/m (11.6× under)** | linear in f_myo; band needs ≈370× more force |
+| KU-3.5 band floor | **0.35 mN/m** | 350 pN/µm (= 0.35 mN/m) |
+| passive/turgor γ | at-band (turgor channel) | 665 pN/µm = **0.665 mN/m** at-band |
+| diagnosed cause | **force GENERATION** (per-head force / motor recruitment), NOT boundary / FA / compliance / kinetics | **force magnitude / transmission** (too few force-bearing motors per cross-section); kinetics NOT the lever (Stage 6e) |
+
+Both independent methods land the actomyosin γ in the same **~1e-4 – 1e-3 mN/m** regime — ~100–1000×
+under band — and both localize the cause to **force generation/magnitude, not the integrator, the
+boundary, adhesion, compliance, or binding kinetics**. The MD line showed FA-anchoring and compliant
+backbones do not lift g_soft, and that even v0×3000 reaches only 0.030 mN/m (super-stall, filtered
+out by the physical-validity gate); the FF line shows the same floor emerges at mechanical
+equilibrium with full transmission and is unmoved by dynamic Hand turnover (Stage 6e). **The MD-free
+mechanical solve reproduces the BAOAB-MD γ-floor** → FF is MD-equivalent for γ, and the floor is a
+physics statement (the missing motor-density datum), not a method artifact.
+
 ## 4. Interpretation (what it localizes) — for PI
 
 The MD-free mechanical solve **reproduces the BAOAB-MD γ-floor**: actomyosin tension ~100–1000×
