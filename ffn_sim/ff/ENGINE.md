@@ -34,24 +34,50 @@ disorder, and embarrassingly parallel. See the γ-floor protocol (§4).
 
 ---
 
-## 2. Cytosim physics to implement (Nédélec & Foethke 2007) — LITERATURE-GROUNDING REQUIRED
+## 2. Cytosim physics — GROUNDED (Nédélec & Foethke 2007; PDF in `references/`)
 
-⚠️ The detailed formulae below must be grounded against the paper before coding (no invented
-constants — project hard rule). The paper PDF is **not yet in `ffn_sim/references/`** → fetch +
-register a SourceEvidence row first (see §6).
+Verbatim from the paper with page refs (implemented values are inputs, never invented).
 
-1. **Fiber model.** A fiber = a chain of `n` model points joined by `n-1` segments. Bending elasticity
-   from rigidity `κ` (κ = E·I = k_B·T·L_p): `E_bend = (κ/2) ∫ (∂²r/∂s²)² ds`, discretized over
-   consecutive-node triples. Optional axial/extensional stiffness per segment (near-inextensible).
-   → **literature-ground:** the exact discrete bending operator + κ ↔ L_p mapping.
-2. **Integration — the Cytosim move.** Overdamped Langevin `γ ẋ = F(x) + ξ` solved with an **implicit**
-   (semi-implicit) scheme so `dt` is bounded by *accuracy*, not the bending CFL → large steps. This is
-   exactly the matrix-free linearly-implicit step we already have (§3).
-   → **literature-ground:** Cytosim's specific preconditioning / Brownian-term handling.
-3. **Hand binding model.** Motors and crosslinkers are **Hands** that attach/detach fiber sites
-   stochastically at force-dependent rates (Bell-Evans / catch-slip; Hill for motor stepping). This is
-   the regime-B kinetic layer.
-   → **literature-ground:** Hand attach/detach rate forms + the motor force-velocity.
+**Fiber + bending (p9, fig.6) — implemented + validated in [`forces_warp.py`](forces_warp.py) ✓.**
+A fiber = `p+1` equidistant model-points, segment length `seg = L/p`. For each interior point the
+consecutive triplet {m_{i-1}, m_i, m_{i+1}} carries the force triplet {−F, +2F, −F} with
+
+    F = α (m_{i-1} − 2 m_i + m_{i+1}),   α = κ (p/L)³ = κ / seg³            [NF2007 p9]
+
+κ = bending modulus = `k_B·T·L_p = E·I` (standard identity the paper assumes; it supplies
+κ = 20 pN·µm² for a microtubule). Discrete energy `E = (α/2) Σ |m_{i-1}−2m_i+m_{i+1}|²`; assembled
+stiffness = symmetric banded `α·E` (interior 4th-diff stencil `[−1,4,−6,4,−1]`, reduced ends,
+row/col sums 0 → internal torque only). Validation anchor: buckling threshold = Euler's `π²κ/L²`.
+Tests (`tests/ff/`): straight→0, restoring, **force = −∇E (FD)**, explicit relaxation straightens.
+
+**No axial spring (p3, §5.3).** Non-extensibility is a hard length constraint
+`C_k = (m_{k+1}−m_k)² − seg² = 0` + a "reshape" projection — NOT a penalty spring (the paper
+explicitly rejects the spring). → the constraint projector `P = I − Jᵀ(JJᵀ)⁻¹J` is Stage-6b's
+remaining piece; bending-only relaxation currently holds segment length only approximately.
+
+**Integration — Eq (2), p8 (the key contribution).** Overdamped `dx = μF dt + dB` (Eq 1), linearise
+`F = A x + G`, solve semi-implicitly:
+
+    [I − τ Pₜ μ Aₜ] (x_{t+τ} − xₜ) = Pₜ [ τ μ (Aₜ xₜ + Gₜ) + δBₜ ]          …Eq (2)
+
+A = elastic stiffness (bending + attractive links), implicit; G + Brownian explicit; P = constraint
+projector. **Unconditionally stable** (p17): A negative-semidefinite (compression→constraint) ⇒
+eigenvalues of (I − τμPA) > 1 ∀τ ⇒ dt bounded by *accuracy* (O(τ²)) not stability — a 10⁴× speed-up.
+Non-symmetric after PμA ⇒ paper uses **BiCGStab** (tol = 0.1·min Brownian). Our
+`dcm.dcm_warp_implicit.implicit_overdamped_step` is the matrix-free `(γ/dt·I + K)Δx = F` CG form —
+**one implicit step relaxes a bent fiber to ~1.4 % bending energy ✓** (the large-step payoff).
+  > ⚠️ **Scale finding (Stage 6b):** that solver's absolute thresholds (`newton_tol=1e-10`,
+  > `cg_tol=1e-8`) are DCM-scale-calibrated; FF single-filament forces are ~1e-12 N (SI) → instant
+  > false convergence (Δx=0). Fix = **nondimensionalize to pN/µm** (forces O(1)) for the FF layer,
+  > done when the cortex/γ-floor assembly sets units (Stage 6c). FF-scale tolerances work meanwhile.
+
+**Mobility (p10, §5.2).** Isotropic scalar per point (deliberately *not* anisotropic):
+`μ = log(L_h/δ) / (3π η L)`, per-point `μ_p = (p+1)μ` (L_h = min(L, hydro cutoff), δ = diameter).
+Brownian: `δB = β θ`, `θ∼N(0,1)`, `β = √(2Dτ)`, `D = μ_p k_B T` (p8, p11).
+
+**Hand binding (p20–21) — Stage 6c.** Attach prob/step = `τ k_on` to the closest site within capture
+radius ε; active step `δa = τ v_max (1 − f/f_stall)`; Bell off-rate `p_off = p₀ exp(|f|/f₀)`. Kinesin
+(p19): v_max=0.4 µm/s, f_stall=5 pN, k_on=10 s⁻¹, p₀=0.5 s⁻¹, f₀=2.5 pN, k=200 pN/µm, ε=10 nm.
 
 ---
 
