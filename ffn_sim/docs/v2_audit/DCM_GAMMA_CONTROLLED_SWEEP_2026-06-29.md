@@ -100,6 +100,17 @@ production N on gbook. Visualized: `div_smoke_n8_montage.png` / `_surface.mp4`.
   **runs 27 tests, all PASS, 0 skipped** (previously ~0 executed). This also confirms the
   `--k-vol` + comment edits did not perturb the engine.
 
+## Iteration 3 — shared nondimensionalization (FF bridge)
+
+`ffn_sim/dcm/nondim.py` (+ `tests/dcm/test_nondim.py`, 7 pass): the shared dimensionless language
+so an FF-measured γ maps onto the DCM faceting regime without re-deriving scales. `describe_gamma(γ,
+scales, K)` returns γ̃ = γ/(K·ℓ) + regime + companion balances (elastocapillary length, Young–Laplace
+turgor/capillary ratio, Douezan s, viscous-capillary time). Measured scales only (R=7.5µm Wagner
+2011, ℓ=12.09µm, η=65.9 Pa·s Dessard 2024, w_cs=2.85e-3, dP₀=133 Pa); γ stays a measured/controlled
+INPUT, never tuned. Reinforces the K finding quantitatively: **at the driver K=7.73e5, faceting
+needs γ ∈ [0.19, 0.94] N/m (~100× the MCF7 cortical tension) — unphysical**; at SimuCell3D K=2.5e3 an
+FF-style γ=1e-3 → γ̃=0.033 (in band). Prototyped in `dcm/`; promote to `common/` after FF review.
+
 ## Co-run (division+remesh) — deferred with a design note
 
 See `DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`: the "−2 sentinel one-liner" is insufficient
