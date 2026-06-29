@@ -1274,6 +1274,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             cad.update(pos_d.numpy().astype(np.float64))
             cad.upload(device)
+            if s % 500 == 0:   # T1 substrate diagnostic: are cadherin bonds actually rupturing+reforming?
+                print(f"  [cad-churn] step {s}: n_bonds={cad.n_bonds} cum_broken={cad.n_broken}", flush=True)
         # C6: integrin-ECM clutch engage/break (catch-slip) at the FA cadence
         if ecm is not None and s % ecm.fa_batch_steps == 0:
             wp.synchronize_device(device)
