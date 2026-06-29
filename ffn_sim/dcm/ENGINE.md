@@ -25,7 +25,7 @@ constraint never bites. Remesh stays on the host (the correct architecture: Simu
 CPU/OpenMP, CellSim3D is GPU-but-fixed-topology — both avoid GPU dynamic remesh). Remesh is
 <1 % of multi-cell runtime; a device-side edge-extent gate skips it entirely in equilibrium.
 
-## Entry points (`from ffn_sim.warp_port.engine import …`)
+## Entry points (`from ffn_sim.dcm.engine import …`)
 
 | function | use when | forces |
 |---|---|---|
@@ -70,3 +70,18 @@ validation belongs with the first run that needs it (route-a single-cell spreadi
 de-cohesion clean re-run), where the real force-set + parameters are known, rather than as a
 speculative merge here. Until then, use `run_crawl` for lamellipodial spreading and compose the
 substrate runners directly.
+
+## Physics references (the DCM literature basis)
+
+The DCM is a deformable-cell model — a cell is a pressurised elastic shell, not resolved
+filaments (filament physics is the `ff/` layer's job: Cytosim, Nédélec & Foethke 2007). Its
+physics is anchored to the published deformable-cell-model literature, used as reference only
+(never imported as runtime), exactly as `ff/` references Cytosim:
+
+| reference | role |
+|---|---|
+| **SimuCell3D** — Runser, Vetter & Iber 2024, *Nat. Comput. Sci.* 4:299–309 (PMC11052725) | primary physics basis: node-face contact, surface-tension faceting (γ̃ = γ/(K·l)), compressible-fluid cytoplasm `p = −K·ln(V/V₀)`, measured-value defaults. CPU/OpenMP. |
+| **CellSim3D** — Madhikar, Åström, Westerholm & Karttunen 2018, *Comput. Phys. Commun.* 232:206–213 (PII S0010465518302091) | GPU (CUDA) deformable-cell colony growth + **division** (cf. our `dcm_cleave`); elastic-shell nodes + internal pressure + intercellular forces, fixed-topology-on-GPU (cf. our node-pool, §Architecture). Cross-check + a CUDA implementation reference for the Warp port. PDF in `references/`. |
+
+Both are cell-shell models (no cytoskeletal filaments). KB registration candidates (not yet
+Notion SE rows): `references/SE_REGISTRATION_CANDIDATES_2026-06-29.md`.
