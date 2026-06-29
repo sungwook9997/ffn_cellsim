@@ -1,0 +1,108 @@
+{
+  "device": "cpu",
+  "n_cells": 12,
+  "subdiv": 2,
+  "steps": 8000,
+  "gap": 2.05,
+  "k_vol": 2500.0,
+  "faceting_band": [
+    0.02,
+    0.1
+  ],
+  "wall_s_total": 74.41122637499939,
+  "controlled_variable": "gamma_surf",
+  "note": "\u03b3 is the controlled independent variable; morphology is the read-out. NOT tuned to any target (no magic-number).",
+  "points": [
+    {
+      "gamma": 0.0,
+      "gamma_tilde": 0.0,
+      "in_band": false,
+      "n_cells": 12,
+      "vv0_mean": 1.0855434141670035,
+      "cell_asphericity": 0.0020455482504596174,
+      "cluster_asphericity": 0.22741274313401924,
+      "pen_frac": 0.012947617420169151,
+      "topdown_um2": 1803.6549719297368,
+      "wall_s": 25.420174083999882,
+      "ok": true
+    },
+    {
+      "gamma": 0.0005,
+      "gamma_tilde": 0.016733600579673085,
+      "in_band": false,
+      "n_cells": 12,
+      "vv0_mean": 1.0334186418997033,
+      "cell_asphericity": 0.0018643569402005194,
+      "cluster_asphericity": 0.22738453804899383,
+      "pen_frac": 0.0,
+      "topdown_um2": 1783.9947452630188,
+      "wall_s": 25.78571995800303,
+      "ok": true
+    },
+    {
+      "gamma": 0.001,
+      "gamma_tilde": 0.03346720115934617,
+      "in_band": true,
+      "n_cells": 12,
+      "vv0_mean": 0.9798131769298924,
+      "cell_asphericity": 0.001563851313463454,
+      "cluster_asphericity": 0.2273688636089036,
+      "pen_frac": 0.0,
+      "topdown_um2": 1763.5948099437992,
+      "wall_s": 25.31089683400205,
+      "ok": true
+    },
+    {
+      "gamma": 0.002,
+      "gamma_tilde": 0.06693440231869234,
+      "in_band": true,
+      "n_cells": 12,
+      "vv0_mean": 0.8678917715032705,
+      "cell_asphericity": 0.000684960610705368,
+      "cluster_asphericity": 0.2273092216095874,
+      "pen_frac": 0.0,
+      "topdown_um2": 1719.4128755841227,
+      "wall_s": 24.362855167000816,
+      "ok": true
+    },
+    {
+      "gamma": 0.003,
+      "gamma_tilde": 0.10040160347803852,
+      "in_band": false,
+      "n_cells": 12,
+      "vv0_mean": 0.7506660183505586,
+      "cell_asphericity": 0.00017654968310905103,
+      "cluster_asphericity": 0.2272729968119626,
+      "pen_frac": 0.0,
+      "topdown_um2": 1669.0748074021324,
+      "wall_s": 22.992241624997405,
+      "ok": true
+    },
+    {
+      "gamma": 0.005,
+      "gamma_tilde": 0.16733600579673086,
+      "in_band": false,
+      "n_cells": 12,
+      "vv0_mean": 0.5070779376788501,
+      "cell_asphericity": 6.746495606771369e-05,
+      "cluster_asphericity": 0.227263571554464,
+      "pen_frac": 0.0,
+      "topdown_um2": 1546.5561937555974,
+      "wall_s": 20.167633458000637,
+      "ok": true
+    },
+    {
+      "gamma": 0.008,
+      "gamma_tilde": 0.26773760927476936,
+      "in_band": false,
+      "n_cells": 12,
+      "vv0_mean": 0.19759377275946377,
+      "cell_asphericity": 5.423563075948362e-05,
+      "cluster_asphericity": 0.22726076328584421,
+      "pen_frac": 0.0,
+      "topdown_um2": 1322.012945659551,
+      "wall_s": 16.847111332997883,
+      "ok": true
+    }
+  ]
+}

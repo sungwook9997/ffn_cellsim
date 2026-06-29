@@ -1436,7 +1436,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
         "integrator": integrator, "accel_dt": (dt if implicit else None), "cg_maxiter": cg_maxiter,
-        "nucleus": nucleus, "surface_tension": surface_tension,
+        "nucleus": nucleus, "surface_tension": surface_tension, "k_vol": k_vol,
         "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
         "bending": bending, "k_bend": k_bend if bending else None, "necrosis": necrosis,
         "builder": builder,
@@ -1571,6 +1571,11 @@ def main():
                     help="I-opt #1: analytic-diagonal Jacobi preconditioner (z=r/diagA each CG iter, "
                          "diagA = γ/dt + k_edge + rep·area + turgor-vol). Same converged dx; helps only "
                          "when the operator diagonal is heterogeneous (a-dominated DCM regimes see no win).")
+    ap.add_argument("--k-vol", type=float, default=7.73e5, dest="k_vol",
+                    help="osmotic/bulk modulus K [Pa] (p=-K·ln(V/V0)). Sets the faceting group "
+                         "γ̃=γ/(K·ℓ): the driver default 7.73e5 (single-cell-spread tuning) keeps "
+                         "γ̃≪band; SimuCell3D faceting (Fischer-Friedrich K≈2.5e3) needs the soft K. "
+                         "Exposed for the γ controlled-variable sweep (dcm.gamma_sweep).")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--ubottom", action="store_true", help="ULA U-bottom: confine cells in a non-adhesive hemispherical bowl (independent of the flat well)")
@@ -1583,7 +1588,7 @@ def main():
     out = run_decohesion(
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
-        settle_frames=args.settle_frames, gap=args.gap,
+        settle_frames=args.settle_frames, gap=args.gap, k_vol=args.k_vol,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
