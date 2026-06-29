@@ -608,7 +608,7 @@ def _build_stiff_cluster(n_cells=24, device="cpu", subdiv=1, k_vol=1.0e3):
     cortex edges + node-node cohesion + node-FACE contact). Returns the live-query stiff operator,
     the grids, and all handles needed for the frozen cache + the analytic diagonal."""
     import numpy as np
-    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
     from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
     from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
     from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec

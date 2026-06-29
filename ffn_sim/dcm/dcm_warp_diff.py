@@ -26,7 +26,7 @@ import numpy as np
 
 import warp as wp
 
-from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
 
 wp.init()
 

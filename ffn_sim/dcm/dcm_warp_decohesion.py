@@ -24,7 +24,7 @@ import numpy as np
 
 import warp as wp
 
-from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
 from ffn_sim.dcm.dcm_warp_hybrid_multicell import (
     build_multicell, _dp_from_vol, _dp_from_vol_pc, _dp_from_vol_osm, osmotic_relax_kernel,
     _zero_vec, _edges_from_faces)
@@ -53,8 +53,8 @@ from ffn_sim.dcm.dcm_division_host import DivisionHost, DivisionParams
 from ffn_sim.dcm.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
-from ffn_sim.cell.dcm_remesh import remesh_pass
-from ffn_sim.cell.dcm_cleave import cleave_cell
+from ffn_sim.dcm.dcm_remesh import remesh_pass
+from ffn_sim.dcm.dcm_cleave import cleave_cell
 from ffn_sim.dcm.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
 from ffn_sim.dcm.dcm_contact_implicit_warp import (
     nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha, project_contacts)

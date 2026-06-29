@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from ffn_sim.cell.dcm_gpu_build import build_gpu_dcm_simulation, ResolvedGpuDCM
-from ffn_sim.cell.dcm_remesh import mesh_edges, enclosed_volume
+from ffn_sim.dcm.dcm_remesh import mesh_edges, enclosed_volume
 from ffn_sim.cell.dcm_remesh_updater import attach_remesh_updater
 
 

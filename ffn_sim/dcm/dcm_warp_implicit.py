@@ -312,7 +312,7 @@ def make_dcm_stiff_force(device="cpu", subdiv=2):
     real Warp kernels (turgor + cortex edges — the stiff terms that set the CFL). Used by I2 to
     validate the implicit step against the actual DCM physics (not just a toy spring)."""
     import warp as wp
-    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
     from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
     from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
     from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
@@ -378,7 +378,7 @@ def _dcm_stiff_demo(device="cpu"):
 def make_dcm_stiff_into(device="cpu", subdiv=2):
     """Device-native single-cell DCM stiff force: ``stiff_into(pos_d, out_d)`` runs turgor+edges
     on device buffers (no numpy round-trip) for the all-device CG. Returns the callable + handles."""
-    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
     from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
     from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
     from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec
@@ -433,7 +433,7 @@ def make_two_cell_contact_stiff(device="cpu", subdiv=1):
     stiffness (rep≈2e8) that dominates the implicit conditioning. Returns numpy force_fn +
     analytic per-node diagonal-stiffness estimator (contact rep·area + edges) for a Jacobi PCG."""
     import warp as wp
-    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
     from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
     from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate
     from ffn_sim.dcm.dcm_warp_hybrid_multicell import _dp_from_vol, _zero_vec

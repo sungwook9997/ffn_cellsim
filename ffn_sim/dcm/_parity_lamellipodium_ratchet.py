@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ffn_sim.cell.dcm import icosphere_mesh
+from ffn_sim.dcm.geometry import icosphere_mesh
 from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 
 

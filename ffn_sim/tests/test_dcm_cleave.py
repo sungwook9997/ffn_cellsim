@@ -2,8 +2,8 @@
 import sys; sys.path.insert(0, '/Users/sw1/ffn_cellsim')
 import numpy as np
 from ffn_sim.cell.dcm import icosphere_mesh
-from ffn_sim.cell.dcm_remesh import mesh_edges, enclosed_volume
-from ffn_sim.cell.dcm_cleave import cleave_cell
+from ffn_sim.dcm.dcm_remesh import mesh_edges, enclosed_volume
+from ffn_sim.dcm.dcm_cleave import cleave_cell
 
 def check_daughter(pos, faces, fc, cid, label):
     f = faces[fc == cid]

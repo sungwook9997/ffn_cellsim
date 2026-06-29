@@ -25,7 +25,7 @@ import numpy as np
 
 import warp as wp
 
-from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
 from ffn_sim.dcm.dcm_warp_hybrid import (
     _reduce_centroid, _reduce_radius, _turgor_write, _bond_accumulate, _bd_step)
 from ffn_sim.dcm.dcm_neighbor_warp import gather_lead_pos, lamellipodium_tether_accum

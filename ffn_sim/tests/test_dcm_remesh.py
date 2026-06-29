@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from ffn_sim.cell.dcm import icosphere_mesh
-from ffn_sim.cell.dcm_remesh import (
+from ffn_sim.dcm.dcm_remesh import (
     mesh_edges, edge_lengths, face_quality, classify_remesh,
     enclosed_volume, swap_edge, split_edge, collapse_edge, can_be_merged,
     remesh_pass)

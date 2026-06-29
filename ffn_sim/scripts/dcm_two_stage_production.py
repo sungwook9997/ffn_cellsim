@@ -213,7 +213,7 @@ def _remesh_aware_diag(pos, cell_of_node, turgor, V0, *, ranges=None, z0=0.0, R=
     it stays correct as SPLIT/COLLAPSE change the per-cell face set. Also carries the
     Rg/asphericity/footprint keys the surface renderer (dcm_two_stage_viz) reads,
     computed over LIVE cells."""
-    from ffn_sim.cell.dcm_remesh import mesh_edges, enclosed_volume
+    from ffn_sim.dcm.dcm_remesh import mesh_edges, enclosed_volume
     cof = np.asarray(cell_of_node)
     live = cof >= 0
     faces = np.asarray(turgor.faces)

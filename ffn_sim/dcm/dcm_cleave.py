@@ -184,7 +184,7 @@ def cleave_cell(pos, faces, face_cell, cof, *, cell_id, daughter_id, p0, n,
                              np.full(len(minus_faces), cell_id, np.int64),
                              np.full(len(plus_faces), daughter_id, np.int64)])
 
-    from ffn_sim.cell.dcm_remesh import enclosed_volume
+    from ffn_sim.dcm.dcm_remesh import enclosed_volume
     v_minus = enclosed_volume(pos, minus_faces)
     v_plus = enclosed_volume(pos, plus_faces)
     info = dict(n_ring=n_ring, ring_plus=list(ring_plus.values()),

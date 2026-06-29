@@ -33,8 +33,8 @@ import numpy as np
 
 import warp as wp
 
-from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
-from ffn_sim.cell.dcm_remesh import remesh_pass
+from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
+from ffn_sim.dcm.dcm_remesh import remesh_pass
 
 wp.init()
 

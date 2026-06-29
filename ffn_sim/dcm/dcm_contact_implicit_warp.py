@@ -474,7 +474,7 @@ def make_contact_hess_apply(cn_k, cn_nrm, *, device="cpu"):
 def _build_two_cell(device="cpu", subdiv=1, overlap=0.55):
     """Two icospheres pushed into overlap by ``overlap``·R along x (a penetrating start state)."""
     import numpy as np
-    from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+    from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
     p = ResolvedDCM(subdivisions=subdiv); R = p.R_cell
     v1, e1, f1 = icosphere_mesh(R, subdiv); npc = v1.shape[0]
     me = float(np.linalg.norm(v1[e1[:, 0]] - v1[e1[:, 1]], axis=1).mean())

@@ -34,7 +34,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.dcm_remesh import remesh_pass
+from ffn_sim.dcm.dcm_remesh import remesh_pass
 
 
 class DcmRemeshUpdater(hoomd.custom.Action):
