@@ -72,6 +72,41 @@ Interpenetration (pen ≈ 1.1–1.3) at subdiv 1 is a **contact-resolution artif
 gap 2.05), not a division defect — faithful non-penetration needs subdiv 2 + IPC/remesh at
 production N on gbook. Visualized: `div_smoke_n8_montage.png` / `_surface.mp4`.
 
+## Iteration 2 additions (2026-06-29)
+
+- **Contact-area-fraction faceting metric** added to the sweep (the direct SimuCell3D foam-like
+  signal: fraction of surface on cell–cell contact faces). Re-run (K=2500, v2):
+
+  | γ̃ | V/V₀ | contact-area frac |
+  |---|---|---|
+  | 0.000 | 1.086 | 0.078 |
+  | 0.017 | 1.033 | 0.060 |
+  | 0.033 (band) | 0.980 | 0.037 |
+  | 0.067 (band) | 0.868 | 0.002 |
+  | 0.100 | 0.751 | 0.000 |
+  | 0.268 | 0.198 | 0.000 |
+
+  **Honest finding:** in a *free aggregate at fixed centroid spacing*, rising cortical tension
+  makes cells **shrink (V/V₀↓) and LOSE contact** rather than facet — contact area *falls* to 0.
+  Faceting (contact-face flattening) needs the cells **held in apposition** (stronger cohesion or
+  confinement) so the cortex flattens the junction instead of pulling cells apart. At the engine
+  defaults the cohesion is overwhelmed by the soft-K cortex crush. → faceting emergence is a
+  gbook-scale test with the "old-physics" recipe (soft rep + gap 2.3 + turgor + γ ON + remesh +
+  long settle + N≥400; cf. [[project-phase-c-warp-migration]]), not a CPU free-aggregate.
+
+- **Parity hardening:** the 10 DCM parity tests (`tests/dcm/*_parity.py`) were **silently
+  SKIPPING** — they resolved fixtures via the pre-restructure path `warp_port/fixtures/` (the dir
+  was renamed to `dcm/fixtures/`). Fixed the path component in all 10; `make warp-parity` now
+  **runs 27 tests, all PASS, 0 skipped** (previously ~0 executed). This also confirms the
+  `--k-vol` + comment edits did not perturb the engine.
+
+## Co-run (division+remesh) — deferred with a design note
+
+See `DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`: the "−2 sentinel one-liner" is insufficient
+(parked-cell nodes double as cleave's dormant supply; mitotic uses fixed npc-blocks incompatible
+with remesh relabelling). Two approaches recorded (index-range vs unified pool manager) +
+the known cleave+remesh quality caveat; validate on gbook. Deferred from the CPU loop.
+
 ## Next (queued; gbook OFFLINE blocks N≥400 production)
 
 - **cof-sentinel disambiguation** (parked cell = −2, remesh pool = −1; `split_edge` selects only

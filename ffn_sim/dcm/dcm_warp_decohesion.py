@@ -274,12 +274,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if implicit:
         print(f"  [integrator] IMPLICIT (IMEX linearly-implicit) dt={dt:.1e}  cg_maxiter={cg_maxiter} "
               f"— stiff operator (contact/turgor/edges/well/nucleus/bending) implicit, soft drivers explicit", flush=True)
-    # A1 remesh and C7 division both draw dormant nodes from cof<0; until the cof-sentinel
-    # disambiguation lands (remesh pool == −1 vs parked cell == −2) they cannot co-run safely —
-    # remesh SPLIT would grab a parked cell's node. Guard: division wins (it owns the pool).
+    # A1 remesh and C7 division both draw dormant nodes from cof<0 and cannot co-run safely yet.
+    # NB: this is NOT a one-line "−2 sentinel" fix — parked-cell node blocks double as cleave's
+    # dormant ring-node supply (cleave_cell draws cof<0; no separate −1 pool is built when remesh
+    # is off), and the mitotic path's fixed npc-block indexing is incompatible with remesh
+    # relabelling regardless of sentinel. Design + the two viable approaches (index-range vs a
+    # unified pool manager) in docs/v2_audit/DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md.
+    # Guard: division wins (it owns the pool).
     if division and remesh_period:
         print("  [warn] division + remesh both requested — disabling remesh this run "
-              "(shared cof<0 pool; disambiguation is a follow-up).", flush=True)
+              "(shared cof<0 pool; see DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md).", flush=True)
         remesh_period = 0
     # FilopodiaHost caches self.cof / self.faces / self.fcell (host) PLUS device arrays built from the
     # mesh topology; a remesh SWAP/SPLIT/COLLAPSE reassigns faces/fcell/cof and changes the topology,

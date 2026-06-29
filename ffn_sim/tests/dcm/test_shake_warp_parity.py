@@ -1,6 +1,6 @@
 """M-SHAKE parity gate: Warp Matrix-SHAKE vs committed HOOMD reference.
 
-Reference fixture (``warp_port/fixtures/shake_ref.npz``) is the projected positions
+Reference fixture (``dcm/fixtures/shake_ref.npz``) is the projected positions
 + accumulated Lagrange multipliers from the COMMITTED Python reference
 ``integrator.constrained_baoab.shake_project_chains`` (rigid, return_lambdas=True)
 on the native-parity-test config (see ``generate_shake_fixture.py``). The Warp
@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load() -> dict:
@@ -31,7 +31,7 @@ def _load() -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_shake_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_shake_fixture.py"
         )
     return dict(np.load(path))
 

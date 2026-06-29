@@ -1,6 +1,6 @@
 """DCM node-face contact parity gate: Warp vs committed numpy GROUND TRUTH.
 
-Reference fixture (``warp_port/fixtures/dcm_contact_ref.npz``) is the per-node
+Reference fixture (``dcm/fixtures/dcm_contact_ref.npz``) is the per-node
 contact force from the brute-force numpy ground truth
 ``cell.dcm_face_contact.node_face_contact_forces`` on two interpenetrating
 icosahedral cells (see ``generate_dcm_contact_fixture.py``) — exercising both the
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load() -> dict:
@@ -28,7 +28,7 @@ def _load() -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_dcm_contact_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_dcm_contact_fixture.py"
         )
     return dict(np.load(path))
 

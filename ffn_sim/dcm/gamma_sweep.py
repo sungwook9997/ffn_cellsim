@@ -84,6 +84,53 @@ def _per_cell_asphericity(pos: np.ndarray, cof: np.ndarray) -> float:
     return float(np.mean(vals)) if vals else 0.0
 
 
+def _contact_area_fraction(pos: np.ndarray, faces: np.ndarray, cof: np.ndarray,
+                           d_contact: float) -> float:
+    """Fraction of total surface area on **cell–cell contact faces** — the direct faceting signal.
+
+    A free cell under turgor+cortical tension is a sphere (no contact faces). As γ̃ enters the
+    SimuCell3D faceting band, cohesive cells flatten into foam-like polygonal junctions, so the
+    contact-apposed area fraction rises. A face is "in contact" if its centroid lies within
+    ``d_contact`` of a node belonging to a *different* cell. Complements per-cell asphericity
+    (which measures whole-cell roundness, not junction flattening). All variables but γ are held
+    fixed in the sweep, so the *change* with γ isolates the faceting response.
+    """
+    live = cof >= 0
+    fcell = cof[faces[:, 0]]                       # owner cell of each face (node-0)
+    surf = faces[fcell >= 0]
+    if surf.shape[0] == 0:
+        return 0.0
+    cent = pos[surf].mean(axis=1)                  # face centroids
+    # face areas
+    e1 = pos[surf[:, 1]] - pos[surf[:, 0]]
+    e2 = pos[surf[:, 2]] - pos[surf[:, 0]]
+    area = 0.5 * np.linalg.norm(np.cross(e1, e2), axis=1)
+    own = cof[surf[:, 0]]
+    contact = np.zeros(surf.shape[0], dtype=bool)
+    pts = pos[live]
+    ptc = cof[live]
+    try:
+        from scipy.spatial import cKDTree
+        tree = cKDTree(pts)
+        for fi in range(surf.shape[0]):
+            idx = tree.query_ball_point(cent[fi], d_contact)
+            if any(ptc[j] != own[fi] for j in idx):
+                contact[fi] = True
+    except Exception:  # noqa: BLE001 — brute fallback
+        for fi in range(surf.shape[0]):
+            dd = np.linalg.norm(pts - cent[fi], axis=1)
+            if np.any((dd < d_contact) & (ptc != own[fi])):
+                contact[fi] = True
+    tot = float(area.sum())
+    return float(area[contact].sum() / tot) if tot > 0 else 0.0
+
+
+def _mean_edge(pos: np.ndarray, faces: np.ndarray) -> float:
+    """Mean triangle-edge length [m] (contact-band scale)."""
+    e = np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]], axis=0)
+    return float(np.linalg.norm(pos[e[:, 0]] - pos[e[:, 1]], axis=1).mean())
+
+
 def _cluster_asphericity(centroids: np.ndarray) -> float:
     """Asphericity of the cell-centroid cloud (whole-aggregate roundness)."""
     if centroids.shape[0] < 4:
@@ -103,6 +150,7 @@ class GammaPoint:
     vv0_mean: float        # turgor: mean V/V0 (1 = held; <1 = compressed)
     cell_asphericity: float  # mean per-cell shape (0 sphere → faceting)
     cluster_asphericity: float
+    contact_area_frac: float  # fraction of surface on cell-cell contact faces (direct faceting)
     pen_frac: float        # interpenetration depth / mean_edge (contact fidelity)
     topdown_um2: float
     wall_s: float
@@ -153,6 +201,8 @@ def _measure(npz_path: Path, out_json: Path, k_vol: float) -> GammaPoint | None:
         vv0_mean=float(np.mean(vrs)) if vrs else 0.0,
         cell_asphericity=_per_cell_asphericity(pos, cof),
         cluster_asphericity=_cluster_asphericity(np.array(cents)) if cents else 0.0,
+        contact_area_frac=_contact_area_fraction(
+            pos, faces, cof, d_contact=0.6 * _mean_edge(pos0, faces)),
         pen_frac=float(out.get("pen_frac_final", 0.0)),
         topdown_um2=topd,
         wall_s=float(out.get("steps", 0)) / max(float(out.get("steps_per_s", 1.0)), 1e-9),
@@ -272,7 +322,7 @@ def main() -> None:
         print(f"  γ={p.gamma:.2e}  γ̃={p.gamma_tilde:.4f} "
               f"{'IN-BAND' if p.in_band else '       '}  "
               f"V/V0={p.vv0_mean:.3f}  cell_asph={p.cell_asphericity:.3f}  "
-              f"clust_asph={p.cluster_asphericity:.3f}  pen={p.pen_frac:.2f}", flush=True)
+              f"contact_area={p.contact_area_frac:.3f}  pen={p.pen_frac:.2f}", flush=True)
 
     try:
         _plot(points, outdir / "gamma_sweep_faceting.png", args)
@@ -289,8 +339,8 @@ def _plot(points: list[GammaPoint], path: Path, args) -> None:
         return
     gt = np.array([p.gamma_tilde for p in points])
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.4))
-    series = [("cell_asphericity", "per-cell asphericity\n(0 sphere → faceting)"),
-              ("cluster_asphericity", "cluster asphericity\n(aggregate roundness)"),
+    series = [("contact_area_frac", "cell–cell contact-area fraction\n(↑ = foam-like faceting)"),
+              ("cell_asphericity", "per-cell asphericity\n(0 = round sphere)"),
               ("vv0_mean", "mean V/V₀\n(turgor held=1)")]
     for ax, (attr, label) in zip(axes, series):
         y = np.array([getattr(p, attr) for p in points])

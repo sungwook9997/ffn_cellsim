@@ -1,6 +1,6 @@
 """B2 parity gate: Warp radial-shell compartment force vs committed HOOMD reference.
 
-Reference fixtures (``warp_port/fixtures/radial_ref_{nucleus,membrane,turgor}.npz``)
+Reference fixtures (``dcm/fixtures/radial_ref_{nucleus,membrane,turgor}.npz``)
 are per-bead force + energy from the three REAL production compartment forces
 (``NucleusConfinement`` / ``MembraneSurfaceTension`` / ``EnclosedVolumePressure``)
 run in a HOOMD CPU sim (see ``generate_radial_shell_fixture.py``). The Warp kernel
@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 LAWS = ("nucleus", "membrane", "turgor")
 
@@ -33,7 +33,7 @@ def _load(name: str) -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_radial_shell_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_radial_shell_fixture.py"
         )
     return dict(np.load(path))
 

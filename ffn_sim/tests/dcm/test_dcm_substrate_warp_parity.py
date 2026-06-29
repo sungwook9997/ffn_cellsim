@@ -1,6 +1,6 @@
 """DCM substrate parity gate: Warp z-well + in-plane wetting vs committed HOOMD ref.
 
-Reference fixture (``warp_port/fixtures/dcm_substrate_ref.npz``) holds the per-node net
+Reference fixture (``dcm/fixtures/dcm_substrate_ref.npz``) holds the per-node net
 forces from the REAL ``cell.dcm_gpu_forces.DcmSubstrateForceGPU`` (z-well + rigid-dish
 floor) and ``DcmSubstrateWettingGPU`` (in-plane wetting), run on CPU on one icosahedral
 cell straddling the substrate (see ``generate_dcm_substrate_fixture.py``). The Warp
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load() -> dict:
@@ -28,7 +28,7 @@ def _load() -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_dcm_substrate_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_dcm_substrate_fixture.py"
         )
     return dict(np.load(path))
 
