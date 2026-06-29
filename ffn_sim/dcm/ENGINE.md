@@ -52,7 +52,7 @@ gate) and `reduce="warp"` (atomic scatter, reduction-order tol) — see the turg
 
 ## Parity contract & status
 
-Nothing is "done" without a committed artifact + a passing parity test (`tests/warp_port/`)
+Nothing is "done" without a committed artifact + a passing parity test (`tests/dcm/`)
 vs the **committed HOOMD reference fixture** (`fixtures/*_ref.npz`) — never a self-authored
 oracle. `parity_report.py [--device cpu|cuda:0]` emits the committed verdict JSON
 (`fixtures/warp_parity_results{,_cuda0}.json`) read by the results-integrity gate.

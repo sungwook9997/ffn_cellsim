@@ -4,7 +4,7 @@ Runs the three REAL production compartment ``md.force.Custom`` forces
 (``NucleusConfinement``, ``MembraneSurfaceTension``, ``EnclosedVolumePressure``)
 inside a HOOMD CPU sim on the SAME configs the native parity script uses
 (``scripts/h7_native_radial_force_parity.py``), and commits the per-bead force +
-energy as the bit-parity TARGET for ``tests/warp_port/test_radial_shell_warp_parity.py``.
+energy as the bit-parity TARGET for ``tests/dcm/test_radial_shell_warp_parity.py``.
 The Warp kernel is graded against THIS committed numpy-force output (guard-rail 2).
 
 Run (writes three .npz fixtures next to this file)::

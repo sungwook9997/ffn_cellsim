@@ -4,7 +4,7 @@ Builds a dense, BOND-FREE bead cluster on a cubic lattice (spacing ≈ σ so the
 repulsion is active) with small jitter, and runs HOOMD's native ``md.pair.LJ`` with
 ``mode='shift'`` and ``r_cut = 2^(1/6) σ`` (the cortex excluded-volume convention,
 see ``cortex/cortex.py``) to get the per-particle net force + energy — the
-tolerance-parity TARGET for ``tests/warp_port/test_network_warp_parity.py``.
+tolerance-parity TARGET for ``tests/dcm/test_network_warp_parity.py``.
 
 Bond-free on purpose: with no bonds the nlist has no bonded-pair exclusions, so
 "every pair within r_cut" is unambiguously what HOOMD computes and the all-pairs

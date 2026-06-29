@@ -4,7 +4,7 @@ Runs the REAL ``cell.dcm_lamellipodium.LamellipodialTractionTether`` in a HOOMD 
 sim on a minimal 2-cell basal config: each cell is a ring of membrane nodes with a
 ring of ``actin_lamel`` beads just OUTWARD of it, so each cell's leading (outward)
 basal nodes tether to a nearest outward actin bead. The per-node net force is the
-parity TARGET for ``tests/warp_port/test_lamellipodium_warp_parity.py``.
+parity TARGET for ``tests/dcm/test_lamellipodium_warp_parity.py``.
 
     python ffn_sim/warp_port/fixtures/generate_lamellipodium_fixture.py
 """

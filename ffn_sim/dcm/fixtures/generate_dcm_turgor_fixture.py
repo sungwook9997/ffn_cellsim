@@ -4,7 +4,7 @@ Runs the REAL ``cell.dcm.DcmTurgorForce`` (exact divergence-theorem volume → o
 face-normal pressure) in a HOOMD CPU sim on a 2-cell triangulated mesh (two
 icosahedra), perturbed so each cell's volume deviates from V0 → non-zero ΔP → non-
 zero force. The per-node net force is the parity TARGET for
-``tests/warp_port/test_dcm_turgor_warp_parity.py``.
+``tests/dcm/test_dcm_turgor_warp_parity.py``.
 
     python ffn_sim/warp_port/fixtures/generate_dcm_turgor_fixture.py
 """

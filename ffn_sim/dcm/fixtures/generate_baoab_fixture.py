@@ -4,7 +4,7 @@ Runs the FROZEN ``integrator.baoab.LeimkuhlerMatthewsBAOAB`` Action inside a rea
 ``hoomd.Simulation`` (CPU) driven by a position-independent ``md.force.Constant``,
 for K steps at a fixed seed, on a TRICLINIC box (non-zero xy/xz/yz) so the wrap's
 shear handling is exercised. The resulting trajectory endpoint is the committed
-bit-parity TARGET for ``tests/warp_port/test_baoab_warp_parity.py`` — the Warp
+bit-parity TARGET for ``tests/dcm/test_baoab_warp_parity.py`` — the Warp
 kernel is graded against THIS, never against a fresh self-authored oracle.
 
 Why ``md.force.Constant``: the force is position-independent, so ``net_force`` is

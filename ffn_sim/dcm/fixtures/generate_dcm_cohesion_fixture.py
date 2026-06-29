@@ -4,7 +4,7 @@ Runs the REAL ``cell.dcm_contact.DcmTentContact`` (node-node inter-cell repulsio
 adhesive tent) in a HOOMD CPU sim on two overlapping clouds of nodes (two cells)
 positioned so inter-cell node pairs span BOTH the repulsion (d < r_contact) and the
 adhesion (r_contact ≤ d < c_adh) branches. The per-node net force is the parity
-TARGET for ``tests/warp_port/test_dcm_cohesion_warp_parity.py``.
+TARGET for ``tests/dcm/test_dcm_cohesion_warp_parity.py``.
 
     python ffn_sim/warp_port/fixtures/generate_dcm_cohesion_fixture.py
 """

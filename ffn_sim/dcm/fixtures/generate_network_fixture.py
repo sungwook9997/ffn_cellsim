@@ -2,7 +2,7 @@
 
 Builds chains of beads (consecutive bonds), perturbs them off rest length, and runs
 HOOMD's native ``md.bond.Harmonic`` to get the per-bead net force + energy — the
-bit/tolerance-parity TARGET for ``tests/warp_port/test_network_warp_parity.py``.
+bit/tolerance-parity TARGET for ``tests/dcm/test_network_warp_parity.py``.
 
     python ffn_sim/warp_port/fixtures/generate_network_fixture.py
 """

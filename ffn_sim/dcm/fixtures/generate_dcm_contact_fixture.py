@@ -8,7 +8,7 @@ per-cell cadherin multiplier exercises the √(cad·cad) adhesion weighting.
 
 The per-node reference force is the COMMITTED numpy ground truth
 ``dcm_face_contact.node_face_contact_forces`` (brute-force O(N·M)) — the
-tolerance-parity TARGET for ``tests/warp_port/test_dcm_contact_warp_parity.py``
+tolerance-parity TARGET for ``tests/dcm/test_dcm_contact_warp_parity.py``
 (anti-drift guard-rail 2: grade against the committed reference, not one authored
 here). The contact force is on a FIXED mesh — no dynamic topology (Warp's
 no-dynamic-topology risk lives in the remesh, a later piece). SI units.

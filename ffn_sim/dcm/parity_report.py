@@ -1,6 +1,6 @@
 """Emit the committed Warp-vs-HOOMD parity-result JSON the results-gate checks.
 
-The pytest gate (``tests/warp_port/test_*.py``) is the real verification — it
+The pytest gate (``tests/dcm/test_*.py``) is the real verification — it
 asserts each Warp piece matches the committed HOOMD reference fixture within the
 plan's thresholds. THIS produces the lightweight, committed JSON summary that
 ``outputs/tag_kb/verify_runs.py`` (the results-integrity gate) reads on disk, so

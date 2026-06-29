@@ -5,7 +5,7 @@ oriented straight chains at rest length, perturbed off the constraint manifold,
 projected by the COMMITTED Python reference
 ``integrator.constrained_baoab.shake_project_chains`` (rigid, return_lambdas=True).
 The projected positions + accumulated Lagrange multipliers are the bit-parity
-TARGET for ``tests/warp_port/test_shake_warp_parity.py``.
+TARGET for ``tests/dcm/test_shake_warp_parity.py``.
 
     python ffn_sim/warp_port/fixtures/generate_shake_fixture.py
 """

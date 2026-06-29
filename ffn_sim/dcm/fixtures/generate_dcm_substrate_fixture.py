@@ -9,7 +9,7 @@ icosahedral cell straddling the substrate plane z0 so that ALL branches are exer
   * wetting: low (basal) faces engaged w>0, high faces w=0; non-degenerate xy areas.
 
 The per-node net force of each is the parity TARGET for
-``tests/warp_port/test_dcm_substrate_warp_parity.py`` (guard-rail 2: graded vs THIS
+``tests/dcm/test_dcm_substrate_warp_parity.py`` (guard-rail 2: graded vs THIS
 committed HOOMD output, not a re-authored oracle).
 
     python ffn_sim/warp_port/fixtures/generate_dcm_substrate_fixture.py

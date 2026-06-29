@@ -3,7 +3,7 @@
 **Adopted as the going-forward DCM engine (PI 2026-06-21).** Each module here mirrors a
 committed HOOMD reference piece (``integrator/``, ``native/ffn_hoomd_plugin/``, ``cell/``
 forces) as a ``warp.kernel``, gated by a committed bit-parity test in
-``ffn_sim/tests/warp_port/`` against a committed HOOMD reference fixture. Nothing is
+``ffn_sim/tests/dcm/`` against a committed HOOMD reference fixture. Nothing is
 "done" without a passing committed parity test.
 
 See ``ENGINE.md`` (this directory) for the engine architecture + entry points, and

@@ -30,7 +30,7 @@ kb-check:
 # Phase-C Warp DCM engine parity (CPU backend). The GPU-backend verdict is produced
 # on the gbook A5000 via parity_report.py --device cuda:0 (see warp_port/ENGINE.md).
 warp-parity:
-	@python -m pytest ffn_sim/tests/warp_port -q
+	@python -m pytest ffn_sim/tests/dcm -q
 
 kb-figs:
 	@cd $(TKB)/presentation && for f in fig*_*.py; do echo "  render $$f"; python "$$f" >/dev/null; done

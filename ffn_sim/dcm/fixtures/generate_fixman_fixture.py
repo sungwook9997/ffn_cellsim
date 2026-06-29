@@ -3,7 +3,7 @@
 Mirrors the native Fixman parity test config (``test_fixman_parity.py``): F random
 chains (varying bond lengths + directions, varying per-bead mobility), reference
 force + U_F from the COMMITTED Python ``fixman_logdet_and_force``. That is the
-parity TARGET for ``tests/warp_port/test_fixman_warp_parity.py``.
+parity TARGET for ``tests/dcm/test_fixman_warp_parity.py``.
 
     python ffn_sim/warp_port/fixtures/generate_fixman_fixture.py
 """
