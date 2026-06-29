@@ -15,8 +15,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import yaml
 
-from ffn_sim.spheroid.motility_bridge import resolve_active_traction
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.motility_bridge import resolve_active_traction
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 
 _OUT = Path(__file__).resolve().parents[1] / "outputs" / "layer2"
 _FIG = _OUT / "figs" / "fig_layer2_motility_bridge.png"

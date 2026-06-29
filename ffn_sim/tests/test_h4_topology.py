@@ -37,7 +37,7 @@ import yaml
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.bridge.fa import (
+from ffn_sim.archive.hoomd_legacy.bridge.fa import (
     BOND_TYPE_INTEGRIN,
     TYPE_INTEGRIN,
     TYPE_LIGAND,
@@ -48,7 +48,7 @@ from ffn_sim.bridge.fa import (
     build_h4_state,
     resolve_h4,
 )
-from ffn_sim.bridge.motor import (
+from ffn_sim.archive.hoomd_legacy.bridge.motor import (
     BOND_TYPE_MOTOR_BACKBONE,
     BOND_TYPE_MOTOR_HEAD_BACKBONE,
     BOND_TYPE_MOTOR_HEAD_ACTIN,

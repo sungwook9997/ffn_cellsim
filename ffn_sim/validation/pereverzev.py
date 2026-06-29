@@ -1,7 +1,7 @@
 """Pereverzev two-pathway catch-slip k_off(F) closed-form oracle (D2, KU-2.5).
 
 Validation oracle for the HOOMD-emergent integrin off-rate produced by
-``ffn_sim.bridge.integrin_bonds.IntegrinBondUpdater``. This module is
+``ffn_sim.archive.hoomd_legacy.bridge.integrin_bonds.IntegrinBondUpdater``. This module is
 ``import``-clean (pure NumPy, no HOOMD) and is meant to be called from
 ``ffn_sim/tests/validation/`` only — per CLAUDE.md hard rule, closed-form
 paper models are NEVER imported by the runtime path.

@@ -32,13 +32,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-from ffn_sim.cell.manifest import (
+from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+from ffn_sim.archive.hoomd_legacy.cell.manifest import (
     build_baseline_cell,
     load_manifest,
     resolve_baseline,
 )
-from ffn_sim.cortex.osmotic_regulation import water_flux_volume_step
+from ffn_sim.archive.hoomd_legacy.cortex.osmotic_regulation import water_flux_volume_step
 
 DELTA_C = -100.0      # mol/m3 hyperosmotic (Jung 2011 100 mM sorbitol) -> RVD
 BATCH_STEPS = 200     # finer stride for the gate (slow-mode CFL still satisfied)

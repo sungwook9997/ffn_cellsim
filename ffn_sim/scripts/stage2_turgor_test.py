@@ -40,7 +40,7 @@ from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,
 )
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 from ffn_sim.scripts.h3_ku35_tension import (
     _tension_method_of_planes,
     _tension_method_of_planes_rigid,

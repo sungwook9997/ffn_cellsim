@@ -28,8 +28,8 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived, generate_cortex_topology
-from ffn_sim.cortex.crosslinkers import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived, generate_cortex_topology
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import (
     ResolvedCrosslinkers,
     XlinkBondUpdater,
     XlinkLayout,
@@ -176,7 +176,7 @@ class TestTopologyCounts:
         assert (layout.head_tag_pairs[:, 1] == n_cortex_beads + 2 * np.arange(resolved_xl.n_xl) + 1).all()
 
     def test_extend_state_particle_count(self, resolved_cortex, resolved_xl):
-        from ffn_sim.cortex.cortex import build_cortex_state
+        from ffn_sim.archive.hoomd_legacy.cortex.cortex import build_cortex_state
 
         cortex_snap, _, _ = build_cortex_state(
             resolved_cortex, with_crosslinkers=False

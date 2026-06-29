@@ -27,7 +27,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from ffn_sim.cell.basal_surface import (
+from ffn_sim.archive.hoomd_legacy.cell.basal_surface import (
     basal_surface_report,
     build_flat_basal_surface,
     disk_area_resolution_invariance,

@@ -21,9 +21,9 @@ import numpy as np
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cell.nucleus import resolve_nucleus, NucleusConfinement
-from ffn_sim.cell.membrane_surface import resolve_membrane_surface, MembraneSurfaceTension
-from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume, EnclosedVolumePressure
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus, NucleusConfinement
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import resolve_membrane_surface, MembraneSurfaceTension
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume, EnclosedVolumePressure
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

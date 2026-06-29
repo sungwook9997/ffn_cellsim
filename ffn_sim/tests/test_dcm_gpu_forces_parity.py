@@ -19,9 +19,9 @@ import pytest
 
 import hoomd
 
-from ffn_sim.cell.dcm_contact import DcmTentContact
-from ffn_sim.cell.dcm_gpu_forces import DcmTentContactGPU, on_gpu
-from ffn_sim.cell.dcm_native_shell import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_contact import DcmTentContact
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import DcmTentContactGPU, on_gpu
+from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import (
     ResolvedNativeDCM,
     build_native_dcm_simulation,
 )
@@ -65,7 +65,7 @@ def test_cpu_path_is_cpu_not_gpu():
     assert tent_gpu._dispatch().gpu is False
     # array module is numpy, kernel module is kernels_cpu on the CPU path
     import numpy as _np
-    from ffn_sim.gpu_opt import kernels_cpu
+    from ffn_sim.archive.hoomd_legacy.gpu_opt import kernels_cpu
     assert tent_gpu._dispatch().xp is _np
     assert tent_gpu._dispatch().kernels is kernels_cpu
 

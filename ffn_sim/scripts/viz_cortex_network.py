@@ -35,7 +35,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,

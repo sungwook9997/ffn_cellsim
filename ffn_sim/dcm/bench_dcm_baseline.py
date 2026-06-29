@@ -21,8 +21,8 @@ import hoomd
 import hoomd.md as md
 
 from ffn_sim.dcm.geometry import icosphere_mesh, ResolvedDCM
-from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume, EnclosedVolumePressure
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume, EnclosedVolumePressure
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 
 def run_baseline(*, steps: int, subdiv: int = 3, device: str = "cpu",

@@ -38,14 +38,14 @@ import hoomd
 
 import hoomd as _hoomd
 
-from ffn_sim.cell.dcm_gpu_build import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
     ResolvedGpuDCM,
     build_gpu_dcm_simulation,
     build_gpu_spheroid_prolif,
     GpuProliferationUpdater,
     attach_activity_lod_prolif,
 )
-from ffn_sim.cell.dcm_gpu_lod import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_lod import (
     ResolvedLOD,
     attach_activity_lod,
 )

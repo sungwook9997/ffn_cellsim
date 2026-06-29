@@ -51,18 +51,18 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.cell import build_cortex_full_simulation
-from ffn_sim.cell.dt_reconcile import (
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cell.dt_reconcile import (
     CFLElement,
     GlobalCFLResult,
     compute_global_cfl_dt,
 )
-from ffn_sim.cell.equilibration import (
+from ffn_sim.archive.hoomd_legacy.cell.equilibration import (
     DEFAULT_N_BAOAB,
     DEFAULT_N_SOFTSTART,
     equilibrate_cell,
 )
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 
 
 CONFIG_PATH = (
@@ -88,7 +88,7 @@ class _StubStiffSubsystem:
 
     ``compute_global_cfl_dt`` reads the ERM channel solely through
     ``p_erm.k_ERM``, so this is the exact contract — no need to construct
-    the full :class:`ffn_sim.cortex.erm.ResolvedERM` dataclass.
+    the full :class:`ffn_sim.archive.hoomd_legacy.cortex.erm.ResolvedERM` dataclass.
     """
 
     def __init__(self, k_ERM: float) -> None:

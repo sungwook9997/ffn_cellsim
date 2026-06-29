@@ -31,7 +31,7 @@ try:
 except Exception as exc:  # pragma: no cover - host-dependent
     pytest.skip(f"cupy present but CUDA unavailable: {exc}", allow_module_level=True)
 
-from ffn_sim.integrator.constrained_baoab import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import (  # noqa: E402
     _min_image_orthorhombic,
     _thomas,
     _thomas_batched,

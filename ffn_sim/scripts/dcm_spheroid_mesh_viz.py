@@ -18,7 +18,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from ffn_sim.cell.dcm import icosphere_mesh
+from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh
 
 UM = 1e6
 OUT = Path("ffn_sim/outputs/h_dcm_two_stage")

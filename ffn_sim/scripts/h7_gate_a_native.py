@@ -37,7 +37,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 from ffn_sim.scripts.h3_ku35_tension import (
     _tension_method_of_planes,
     _tension_method_of_planes_rigid,

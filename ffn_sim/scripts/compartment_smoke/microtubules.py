@@ -30,7 +30,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import _smoke_common as sc
-from ffn_sim.cell.microtubules import (
+from ffn_sim.archive.hoomd_legacy.cell.microtubules import (
     GAMMA_DENYLIST_PREFIX,
     attach_microtubule_forces,
     extend_snapshot_with_microtubules,

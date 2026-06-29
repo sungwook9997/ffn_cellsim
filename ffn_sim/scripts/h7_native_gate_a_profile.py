@@ -18,7 +18,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from ffn_sim.cell.manifest import load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest
 from ffn_sim.scripts.h7_native_fullcell_go import _build_two_phase, _to_host
 from ffn_sim.scripts.h7_native_gate_a_verify import _native_integrator, _swap_compartment_forces
 

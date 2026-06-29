@@ -36,7 +36,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 
-from ffn_sim.cortex.manifold_regions import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.manifold_regions import (  # noqa: E402
     basal_ring_region,
     polarized_patch_region,
 )

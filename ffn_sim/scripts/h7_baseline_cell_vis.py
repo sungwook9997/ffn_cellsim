@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.patches import Circle  # noqa: E402
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest  # noqa: E402
 
 # Component -> (display label, colour, marker size, alpha, z-order)
 _STYLE = {

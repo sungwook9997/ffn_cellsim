@@ -104,13 +104,13 @@ def test_v4_cell_builds_with_fa_integrins():
     sim (no equilibration, no production) so it stays CI-fast: the assertion
     is purely that the FA integrins are present in the constructed state.
     """
-    from ffn_sim.cortex.cortex import resolve_h3_derived
-    from ffn_sim.cortex.myosin import resolve_cortex_myosin
-    from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-    from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume
-    from ffn_sim.cortex.turnover import resolve_turnover
-    from ffn_sim.bridge.fa import resolve_h4
-    from ffn_sim.cell.cell import build_cortex_full_simulation
+    from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+    from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+    from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume
+    from ffn_sim.archive.hoomd_legacy.cortex.turnover import resolve_turnover
+    from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4
+    from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
     cfg = yaml.safe_load(open(H3_CFG))
     cfg["cortex"]["n_filaments"] = 60

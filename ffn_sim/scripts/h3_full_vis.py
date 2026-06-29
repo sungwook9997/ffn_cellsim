@@ -1,6 +1,6 @@
 """H.3 3-way integration visualization (cortex + xlinks + myosin).
 
-Builds a demo 3-way cortex sim via :func:`ffn_sim.cell.Cell.build` with
+Builds a demo 3-way cortex sim via :func:`ffn_sim.archive.hoomd_legacy.cell.Cell.build` with
 ``with_crosslinkers=True`` + ``with_myosin=True``, runs a short BAOAB
 window with both Updaters firing, and writes 5 PNG figures into
 ``ffn_sim/outputs/h3/figs/`` covering:
@@ -36,10 +36,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
-from ffn_sim.cell import Cell, CellBuildOptions
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cell import Cell, CellBuildOptions
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
 
 
 CONFIG_PATH = (

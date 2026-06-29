@@ -22,7 +22,7 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.cell.microtubules import (
+from ffn_sim.archive.hoomd_legacy.cell.microtubules import (
     GAMMA_DENYLIST_PREFIX,
     PI_DECISIONS,
     MTDynamicInstability,
@@ -548,7 +548,7 @@ class TestModuleHygiene:
 # ---------------------------------------------------------------------------
 class TestMicrotubulesActivationWiring:
     def test_off_build_is_bit_identity(self):
-        from ffn_sim.cell.manifest import (
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import (
             build_baseline_cell, load_manifest, resolve_baseline,
         )
         rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
@@ -558,9 +558,9 @@ class TestMicrotubulesActivationWiring:
         assert cell.simulation.state.N_particles > 0
 
     def test_on_aster_assembles_without_contamination(self):
-        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-        from ffn_sim.cortex.cortical_tension import (
+        from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
             _is_adhesion_bond_type, measure_cortical_tension,
         )
 

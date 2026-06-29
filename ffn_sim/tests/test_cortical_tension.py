@@ -2,7 +2,7 @@
 
 Builds a small physiological-baseline MCF7 cell (cortex + enclosed-volume
 turgor + nucleus + membrane-surface compartments) and checks the three γ
-channels of :func:`ffn_sim.cortex.cortical_tension.measure_cortical_tension`:
+channels of :func:`ffn_sim.archive.hoomd_legacy.cortex.cortical_tension.measure_cortical_tension`:
 
 * all three channels finite;
 * ``gamma_passive`` recovers the Young-Laplace turgor analytically
@@ -23,8 +23,8 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-from ffn_sim.cortex.cortical_tension import (
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
     ADHESION_BOND_TYPES,
     CORTICAL_TENSION_BAND_N_PER_M,
     cortical_bond_typeid_mask,

@@ -49,9 +49,9 @@ import numpy as np
 import yaml
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import resolve_h5_lamellipodium
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     require_production_device,

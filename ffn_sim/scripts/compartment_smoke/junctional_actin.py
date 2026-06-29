@@ -34,7 +34,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import _smoke_common as sc
-from ffn_sim.junction.junctional_actin import (
+from ffn_sim.archive.hoomd_legacy.junction.junctional_actin import (
     catch_off_rate,
     coupling_force_magnitude,
     extend_snapshot_with_junctional_actin,

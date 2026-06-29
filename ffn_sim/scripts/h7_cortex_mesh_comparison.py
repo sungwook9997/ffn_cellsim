@@ -55,8 +55,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from ffn_sim.cell.manifest import load_manifest  # noqa: E402
-from ffn_sim.cortex.cortex import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (  # noqa: E402
     generate_bimodal_cortex_layout,
     generate_cortex_topology,
     resolve_h3_derived,

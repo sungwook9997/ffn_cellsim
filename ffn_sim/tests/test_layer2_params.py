@@ -1,4 +1,4 @@
-"""Tests for ffn_sim.spheroid.params.resolve_layer2 — the Magic-Number-Block derivations.
+"""Tests for ffn_sim.archive.hoomd_legacy.spheroid.params.resolve_layer2 — the Magic-Number-Block derivations.
 
 Loads the real runtime config (configs/layer2_cbm.yaml) and verifies every DERIVED SI
 quantity is computed correctly from the literature-anchored primaries. Pure python, no
@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 
 _CONFIG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 
@@ -58,7 +58,7 @@ def test_cortical_tension_is_config_input_not_cortex_import(resolved):
     offenders = []
     for path in spheroid_dir.glob("*.py"):
         text = path.read_text()
-        if "ffn_sim.cortex" in text:
+        if "ffn_sim.archive.hoomd_legacy.cortex" in text:
             offenders.append(path.name)
     assert offenders == []
 

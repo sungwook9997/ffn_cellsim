@@ -38,7 +38,7 @@ import gsd.hoomd
 import hoomd.md as md
 
 import _smoke_common as sc
-from ffn_sim.cell.membrane_reservoir import (
+from ffn_sim.archive.hoomd_legacy.cell.membrane_reservoir import (
     GAMMA_DENYLIST_PREFIX,
     attach_membrane_tether_force,
     build_membrane_tethers,

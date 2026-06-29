@@ -38,9 +38,9 @@ import numpy as np
 
 import hoomd
 
-import ffn_sim.cell.dcm_gpu_forces as gforces
-import ffn_sim.integrator.baoab as baoab_mod
-from ffn_sim.cell.dcm_gpu_build import (
+import ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces as gforces
+import ffn_sim.archive.hoomd_legacy.integrator.baoab as baoab_mod
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
     ResolvedGpuDCM,
     build_gpu_dcm_simulation,
 )

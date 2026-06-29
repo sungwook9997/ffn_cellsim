@@ -42,7 +42,7 @@ from ffn_sim.common.production_policy import (
     require_full_cell_physiological_baseline,
     validate_production_device_args,
 )
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 from ffn_sim.scripts.mcf7_fullcell_stage1 import _build, _cfg_for, _resolve_compartments, _tagpos
 from ffn_sim.scripts.stage2_signed_contractility import signed_cortical_stress
 

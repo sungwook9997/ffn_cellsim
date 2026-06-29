@@ -33,10 +33,10 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
-from ffn_sim.spheroid.observables import effective_radius
-from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-from ffn_sim.spheroid.proliferation import run_growth_pooled
+from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin
+from ffn_sim.archive.hoomd_legacy.spheroid.observables import effective_radius
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2, resolve_proliferation
+from ffn_sim.archive.hoomd_legacy.spheroid.proliferation import run_growth_pooled
 
 _CFG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 

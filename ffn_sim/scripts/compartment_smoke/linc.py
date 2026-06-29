@@ -36,7 +36,7 @@ import gsd.hoomd
 import hoomd.md as md
 
 import _smoke_common as sc
-from ffn_sim.cell.linc import (
+from ffn_sim.archive.hoomd_legacy.cell.linc import (
     configure_linc_bond_potential,
     extend_snapshot_with_linc,
     linc_cfl_dt_max,

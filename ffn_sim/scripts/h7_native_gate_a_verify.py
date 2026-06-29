@@ -24,13 +24,13 @@ from copy import deepcopy
 
 import numpy as np
 
-from ffn_sim.cell.nucleus import NucleusConfinement
-from ffn_sim.cell.membrane_surface import MembraneSurfaceTension
-from ffn_sim.cortex.enclosed_volume import EnclosedVolumePressure
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import NucleusConfinement
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import MembraneSurfaceTension
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import EnclosedVolumePressure
 from ffn_sim.scripts.h7_native_fullcell_go import (
     _build_two_phase, _run_arm, _to_host, _NativeLambdaAdapter,
 )
-from ffn_sim.cell.manifest import load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest
 
 
 def _swap_compartment_forces(cell):

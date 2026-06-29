@@ -24,11 +24,11 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.lamellipodium import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import (
     LamellipodiumLayout,
     resolve_h5_lamellipodium,
 )
-from ffn_sim.cell.lamellipodium_basal_ring import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium_basal_ring import (
     BasalRingGeometry,
     BasalRingLayout,
     generate_basal_ring_lamellipodium_layout,

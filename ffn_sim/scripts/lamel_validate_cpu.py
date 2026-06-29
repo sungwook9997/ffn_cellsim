@@ -24,8 +24,8 @@ import time
 import numpy as np
 from scipy.spatial import ConvexHull
 
-from ffn_sim.cell.dcm_native_shell import ResolvedNativeDCM
-from ffn_sim.cell.dcm_lamellipodium import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import ResolvedNativeDCM
+from ffn_sim.archive.hoomd_legacy.cell.dcm_lamellipodium import (
     ResolvedLamellipodiumSpheroid, build_lamellipodium_spheroid)
 
 

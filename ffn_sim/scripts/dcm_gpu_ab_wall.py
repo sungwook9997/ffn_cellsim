@@ -29,11 +29,11 @@ import numpy as np
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cell.dcm_gpu_build import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
     ResolvedGpuDCM,
     build_gpu_dcm_simulation,
 )
-from ffn_sim.cell.dcm_gpu_forces import DcmFusedForceGPU
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import DcmFusedForceGPU
 
 _OUT = Path("ffn_sim/outputs/h_dcm_gpu_lod/profile")
 _ON_GPU = False
@@ -66,8 +66,8 @@ def _pos(sim):
 
 def _build_fused(p, n_cells, device):
     """Separate bond+turgor REPLACED by one fused custom force (+ native bond)."""
-    from ffn_sim.integrator.baoab import make_baoab_updater
-    from ffn_sim.cell.dcm_gpu_build import (
+    from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
+    from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
         build_gpu_dcm_snapshot, pick_device,
     )
     b = build_gpu_dcm_snapshot(p, n_cells)

@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-from ffn_sim.spheroid.observables import core_projected_area, effective_radius
+from ffn_sim.archive.hoomd_legacy.spheroid.observables import core_projected_area, effective_radius
 
 _OUT = Path(__file__).resolve().parents[1] / "outputs" / "layer2"
 _NPZ = _OUT / "morphology_frames.npz"

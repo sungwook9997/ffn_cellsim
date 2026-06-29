@@ -34,11 +34,11 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from ffn_sim.cell.dcm_native_shell import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import (
     ResolvedNativeDCM,
     build_native_dcm_simulation,
 )
-from ffn_sim.cell.dcm_spheroid_state import CellState
+from ffn_sim.archive.hoomd_legacy.cell.dcm_spheroid_state import CellState
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "outputs", "h_dcm_native")
 FIGS = os.path.join(OUT, "figs")

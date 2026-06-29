@@ -36,8 +36,8 @@ def _proliferation_mechanism_figure() -> None:
     import numpy as np
     import yaml
 
-    from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-    from ffn_sim.spheroid.proliferation import first_shell_counts, run_growth_pooled
+    from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2, resolve_proliferation
+    from ffn_sim.archive.hoomd_legacy.spheroid.proliferation import first_shell_counts, run_growth_pooled
 
     cfg_path = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
     cfg = yaml.safe_load(cfg_path.read_text())

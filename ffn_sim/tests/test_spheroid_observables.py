@@ -5,7 +5,7 @@ math WITHOUT a simulation (pure numpy/scipy, fast, no HOOMD). Import-isolated â€
 perturb the live single-cell build. This is the "measurement protocol before the run"
 discipline: the A/A0 sweep (G3) and the stable-aggregate gate (G1) both rest on these.
 
-Cross-checks the runtime ``ffn_sim.spheroid.observables`` against the closed-form oracle
+Cross-checks the runtime ``ffn_sim.archive.hoomd_legacy.spheroid.observables`` against the closed-form oracle
 ``ffn_sim.validation.oracles.spheroid.aa0_law`` (tests may import oracles; runtime may not).
 """
 
@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.spheroid import observables as obs
+from ffn_sim.archive.hoomd_legacy.spheroid import observables as obs
 from ffn_sim.validation.oracles.spheroid import aa0_law as oracle
 
 RNG = np.random.default_rng(20260602)

@@ -71,14 +71,14 @@ import numpy.typing as npt
 import yaml
 from scipy.spatial import cKDTree
 
-from ffn_sim.spheroid.cbm import build_cbm_simulation, get_positions
-from ffn_sim.spheroid.cadherin_bonds import (
+from ffn_sim.archive.hoomd_legacy.spheroid.cbm import build_cbm_simulation, get_positions
+from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import (
     ResolvedCadherin,
     build_cbm_catch,
     catch_cohesion_force,
     resolve_cadherin,
 )
-from ffn_sim.spheroid.observables import (
+from ffn_sim.archive.hoomd_legacy.spheroid.observables import (
     connected_components,
     convex_hull_volume,
     nearest_neighbor_stats,
@@ -86,7 +86,7 @@ from ffn_sim.spheroid.observables import (
     radius_of_gyration,
     virial_pressure,
 )
-from ffn_sim.spheroid.params import ResolvedL2, resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.params import ResolvedL2, resolve_layer2
 
 # Oracle import is MEASUREMENT-only (Young-Laplace inversion + anchors); never a runtime path.
 from ffn_sim.validation.oracles.spheroid import surface_tension_bridge as br

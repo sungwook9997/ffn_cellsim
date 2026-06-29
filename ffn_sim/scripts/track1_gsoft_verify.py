@@ -47,10 +47,10 @@ import numpy as np
 import yaml
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
 # Reuse the EXACT KU-3.5 g_soft estimator from the production driver (no copy).
 from ffn_sim.scripts.h3_ku35_tension import _tension_method_of_planes

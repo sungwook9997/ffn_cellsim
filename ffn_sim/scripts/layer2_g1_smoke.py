@@ -18,8 +18,8 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.cbm import run_g1
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.cbm import run_g1
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 
 _ROOT = Path(__file__).resolve().parents[1]
 _RUNTIME_CFG = _ROOT / "configs" / "layer2_cbm.yaml"
@@ -112,7 +112,7 @@ def _make_figure(resolved, res, verdict: str) -> None:
         ax.set_xlabel("x (µm)")
         ax.set_ylabel("y (µm)")
 
-    from ffn_sim.spheroid.observables import nearest_neighbor_distances
+    from ffn_sim.archive.hoomd_legacy.spheroid.observables import nearest_neighbor_distances
 
     nn = nearest_neighbor_distances(res["pos_final"]) * 1e6
     axes[2].hist(nn, bins=30, color="steelblue", alpha=0.85)

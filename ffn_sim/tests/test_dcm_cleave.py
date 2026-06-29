@@ -1,7 +1,7 @@
 """Validate cleave_cell: manifold, volume conservation, winding, separation."""
 import sys; sys.path.insert(0, '/Users/sw1/ffn_cellsim')
 import numpy as np
-from ffn_sim.cell.dcm import icosphere_mesh
+from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh
 from ffn_sim.dcm.dcm_remesh import mesh_edges, enclosed_volume
 from ffn_sim.dcm.dcm_cleave import cleave_cell
 

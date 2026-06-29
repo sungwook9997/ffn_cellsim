@@ -70,17 +70,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import hoomd  # noqa: E402
 
-from ffn_sim.cell.dcm_active import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_active import (  # noqa: E402
     ResolvedActiveSpheroid,
     build_active_spheroid,
 )
-from ffn_sim.cell.dcm_gpu_forces import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import (  # noqa: E402
     DcmTentContactGPU,
     DcmActiveRimTractionGPU,
     DcmSubstrateForceGPU,
     on_gpu,
 )
-from ffn_sim.cell.dcm_spheroid_state import CellState  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_spheroid_state import CellState  # noqa: E402
 # Reuse the VALIDATED capstone measurement + fit helpers (does not modify them).
 from ffn_sim.scripts.dcm_native_capstone import (  # noqa: E402
     _positions,

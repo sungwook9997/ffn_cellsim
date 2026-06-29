@@ -18,7 +18,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.integrator.constrained_baoab import shake_project_chains
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import shake_project_chains
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

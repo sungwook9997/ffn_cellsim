@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.junction import cadherin as cj
+from ffn_sim.archive.hoomd_legacy.junction import cadherin as cj
 from ffn_sim.validation.cadherin_sliding_rebinding import RAKSHIT_W2A, effective_k_off
 
 # ---- shared physiological context (SI) ------------------------------------
@@ -523,8 +523,8 @@ def test_attach_on_multi_bond_type_state_runs():
 class TestCadherinDoubletActivation:
     def test_doublet_builds_engaged_AB_junction_force_free_no_contam(self):
         import numpy as np
-        from ffn_sim.cell.doublet import build_cell_doublet
-        from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
+        from ffn_sim.archive.hoomd_legacy.cell.doublet import build_cell_doublet
+        from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import _is_adhesion_bond_type
 
         d = build_cell_doublet(
             "mcf7_baseline.yaml", n_cad_per_cell=30, seed=1, run_binder_batches=0,
@@ -563,7 +563,7 @@ class TestCadherinDoubletActivation:
     def test_doublet_off_no_cadherin_bonds_in_single_cell(self):
         # Sanity: the single-cell baseline build carries NO cadherin bonds (the
         # junction is a doublet-only construct).
-        from ffn_sim.cell.manifest import build_baseline_cell
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell
         cell = build_baseline_cell("mcf7_baseline.yaml", seed=1)
         s = cell.simulation.state.get_snapshot()
         assert not any(t.startswith("cadherin_") for t in s.bonds.types)

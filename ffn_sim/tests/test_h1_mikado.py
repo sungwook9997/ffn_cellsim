@@ -27,7 +27,7 @@ import yaml
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.ecm.mikado import (
+from ffn_sim.archive.hoomd_legacy.ecm.mikado import (
     ResolvedH1,
     build_mikado_simulation,
     build_mikado_state,

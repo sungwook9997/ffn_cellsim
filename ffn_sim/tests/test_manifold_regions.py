@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cortex.manifold_regions import (
+from ffn_sim.archive.hoomd_legacy.cortex.manifold_regions import (
     ManifoldRegion,
     basal_ring_region,
     patch_polar_azimuth,
@@ -251,7 +251,7 @@ class TestLamellipodiumCoRegistration:
 
     @staticmethod
     def _resolved_h5(n_WAVE: int):
-        from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
+        from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import resolve_h5_lamellipodium
 
         cfg_path = (
             Path(__file__).resolve().parents[1] / "configs" / "phase1_h5.yaml"
@@ -264,7 +264,7 @@ class TestLamellipodiumCoRegistration:
         return resolve_h5_lamellipodium(cfg, L_box=L_box, dt=13.0e-9)
 
     def test_basal_ring_wave_home_patches_in_mask(self, manifold):
-        from ffn_sim.cell.lamellipodium_basal_ring import (
+        from ffn_sim.archive.hoomd_legacy.cell.lamellipodium_basal_ring import (
             generate_basal_ring_lamellipodium_layout,
         )
 
@@ -287,7 +287,7 @@ class TestLamellipodiumCoRegistration:
         )
 
     def test_polarized_patch_wave_home_patches_in_mask(self, manifold):
-        from ffn_sim.cell.lamellipodium_polarized_patch import (
+        from ffn_sim.archive.hoomd_legacy.cell.lamellipodium_polarized_patch import (
             generate_polarized_patch_layout,
         )
 

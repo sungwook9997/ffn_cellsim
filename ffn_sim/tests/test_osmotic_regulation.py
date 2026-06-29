@@ -13,11 +13,11 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.cortex.enclosed_volume import (
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import (
     EnclosedVolumePressure,
     resolve_enclosed_volume,
 )
-from ffn_sim.cortex.osmotic_regulation import (
+from ffn_sim.archive.hoomd_legacy.cortex.osmotic_regulation import (
     GAMMA_DENYLIST_PREFIX,
     PI_DECISIONS,
     R_GAS,
@@ -388,7 +388,7 @@ def test_attach_to_built_simulation_relaxes_setpoint():
 # ---------------------------------------------------------------------------
 def test_osmotic_off_build_is_bit_identity():
     """Baseline (osmotic absent) => p_osmotic_regulation None; build unchanged."""
-    from ffn_sim.cell.manifest import (
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import (
         build_baseline_cell, load_manifest, resolve_baseline,
     )
     rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
@@ -399,8 +399,8 @@ def test_osmotic_off_build_is_bit_identity():
 
 def test_osmotic_on_attaches_updater_without_contamination():
     """osmotic_rvd => +1 updater, tau_RVD in band, IDENTICAL bond inventory."""
-    from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-    from ffn_sim.cell.manifest import (
+    from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import (
         build_baseline_cell, load_manifest, resolve_baseline,
     )
     base = load_manifest("mcf7_baseline.yaml")

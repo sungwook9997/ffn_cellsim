@@ -53,7 +53,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,

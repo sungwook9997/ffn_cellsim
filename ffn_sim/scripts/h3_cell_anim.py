@@ -52,12 +52,12 @@ import yaml
 from matplotlib.animation import FFMpegWriter
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
-from ffn_sim.cell import Cell, CellBuildOptions
-from ffn_sim.cell.cell import build_cortex_full_simulation
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.erm import resolve_erm, attach_erm_to_simulation
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cell import Cell, CellBuildOptions
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.erm import resolve_erm, attach_erm_to_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"

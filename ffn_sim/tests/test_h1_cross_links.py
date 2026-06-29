@@ -26,7 +26,7 @@ import hoomd
 import hoomd.md as md
 import gsd.hoomd
 
-from ffn_sim.ecm.cross_links import (
+from ffn_sim.archive.hoomd_legacy.ecm.cross_links import (
     XL_BIN_WIDTH_M,
     XL_BOND_TYPE_NAME,
     XL_N_BINS,
@@ -39,7 +39,7 @@ from ffn_sim.ecm.cross_links import (
     xl_bin_rest_lengths,
     xl_bin_type_names,
 )
-from ffn_sim.ecm.mikado import (
+from ffn_sim.archive.hoomd_legacy.ecm.mikado import (
     ResolvedH1,
     build_mikado_simulation,
     build_mikado_state,
@@ -262,7 +262,7 @@ class TestEnergyOracleWithXL:
                 break
 
         # Analytical prediction from quantization: Σ ½·k·(r0_orig − r0_bin)².
-        from ffn_sim.ecm.cross_links import (
+        from ffn_sim.archive.hoomd_legacy.ecm.cross_links import (
             generate_xl_bonds, xl_bin_rest_lengths,
         )
         xl, _ = generate_xl_bonds(resolved)
@@ -280,7 +280,7 @@ class TestEnergyOracleWithXL:
 
     def test_xl_construction_energy_below_brief_simplification(self, resolved):
         """Binning reduces construction-time xl energy by ≥10× vs r0=0."""
-        from ffn_sim.ecm.cross_links import (
+        from ffn_sim.archive.hoomd_legacy.ecm.cross_links import (
             generate_xl_bonds, xl_bin_rest_lengths,
         )
         xl, _ = generate_xl_bonds(resolved)
@@ -408,7 +408,7 @@ class TestSimulationSmoke:
         ``max |F|`` reaches the thermal scale. Confirms no force blow-up,
         no NaN, no crash, no int32-image overflow at ~66k particles +
         ~8k xl bonds + ~63k ecm bonds + ~60k angles + LJ pair list."""
-        from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+        from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
 
         sim, updater, action = build_mikado_simulation(
             resolved, with_cross_links=True

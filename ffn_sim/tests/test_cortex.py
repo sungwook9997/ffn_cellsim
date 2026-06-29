@@ -42,7 +42,7 @@ from ffn_sim.common.filament_math import (
     fit_persistence_length,
     hoomd_angle_array,
 )
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     CortexTopology,
     CrosslinkerBonds,
     ResolvedH3,

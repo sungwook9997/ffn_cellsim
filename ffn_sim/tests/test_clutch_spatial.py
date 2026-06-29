@@ -12,7 +12,7 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.bridge.clutch_spatial import beta1_distribution_metrics
+from ffn_sim.archive.hoomd_legacy.bridge.clutch_spatial import beta1_distribution_metrics
 
 RNG = np.random.default_rng(20260602)
 

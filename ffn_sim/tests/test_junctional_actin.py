@@ -1,4 +1,4 @@
-"""Sanity-Gate tests for ``ffn_sim.junction.junctional_actin`` (STUB).
+"""Sanity-Gate tests for ``ffn_sim.archive.hoomd_legacy.junction.junctional_actin`` (STUB).
 
 Resolver-level + OFF-identity + sign-sense + no-γ-contamination checks. These
 run cheaply (no full Cell, no HOOMD sim). The STUB's enabled-but-un-anchored
@@ -18,7 +18,7 @@ import re
 import numpy as np
 import pytest
 
-from ffn_sim.junction import junctional_actin as ja
+from ffn_sim.archive.hoomd_legacy.junction import junctional_actin as ja
 
 
 KT = 4.28e-21    # J  (KU thermal energy at ~37 °C, the project default)
@@ -291,8 +291,8 @@ if __name__ == "__main__":  # pragma: no cover
 class TestJunctionalActinDoubletActivation:
     def test_belt_builds_same_cell_force_free_no_contam(self):
         import numpy as np
-        from ffn_sim.cell.doublet import build_cell_doublet
-        from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
+        from ffn_sim.archive.hoomd_legacy.cell.doublet import build_cell_doublet
+        from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import _is_adhesion_bond_type
 
         d = build_cell_doublet(
             "mcf7_baseline.yaml", n_cad_per_cell=40, seed=1,
@@ -332,7 +332,7 @@ class TestJunctionalActinDoubletActivation:
     def test_catch_signature_biphasic(self):
         # Anchored catch law: k_off(F) falls to a minimum (F*) then rises.
         import numpy as np
-        from ffn_sim.junction.junctional_actin import (
+        from ffn_sim.archive.hoomd_legacy.junction.junctional_actin import (
             catch_off_rate, resolve_junctional_actin,
         )
         cfg = {"junctional_actin": {

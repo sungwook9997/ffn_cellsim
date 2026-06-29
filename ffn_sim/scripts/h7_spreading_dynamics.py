@@ -50,7 +50,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,
@@ -178,7 +178,7 @@ def attach_basal_clutch(cell, *, k_adh=None):
     the lamellipodial sheet (keeps the protruded front on the substrate).
     Returns the force (None if not attached). k_adh defaults to the FA clutch
     stiffness k_int_bare."""
-    from ffn_sim.cell.spreading_drive import BasalAdhesionTether
+    from ffn_sim.archive.hoomd_legacy.cell.spreading_drive import BasalAdhesionTether
 
     handles = cell.extras["handles"]
     z_basal, band, R_cell, ell0 = _basal_z_band(cell)
@@ -229,7 +229,7 @@ def attach_leading_edge(cell, *, nucleate_every, p_advance, max_advance, seed,
                         max_spread_um=6.0):
     """Attach the membrane-tracked protrusion engine (drives the advancing front
     past the fixed WAVE ring at a band-matched rate). Returns the action."""
-    from ffn_sim.cell.spreading_drive import LeadingEdgeNucleationUpdater
+    from ffn_sim.archive.hoomd_legacy.cell.spreading_drive import LeadingEdgeNucleationUpdater
     import hoomd
 
     z_basal, band, R_cell, ell0 = _basal_z_band(cell)

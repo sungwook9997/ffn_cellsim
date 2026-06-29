@@ -13,13 +13,13 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.spheroid.cadherin_bonds import (
+from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import (
     catch_cohesion_force,
     occupancy,
     resolve_cadherin,
     run_g1_catch,
 )
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 
 _CONFIG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 
@@ -82,8 +82,8 @@ def test_yield_remodel_plateau_vs_brittle_rupture():
     import yaml
     import numpy as np
     from pathlib import Path
-    from ffn_sim.spheroid.params import resolve_layer2
-    from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin, catch_cohesion_force
+    from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
+    from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin, catch_cohesion_force
     cfg = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
     r = resolve_layer2(yaml.safe_load(cfg.read_text()))
     cad_b = resolve_cadherin(r)                        # brittle (default)

@@ -45,8 +45,8 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from scipy.spatial import ConvexHull
 
-from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 
 _OUT = _HERE.parents[1] / "outputs" / "h7" / "figs" / "morphology"
 

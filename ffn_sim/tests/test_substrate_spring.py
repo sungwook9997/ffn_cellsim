@@ -33,14 +33,14 @@ import pytest
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.ecm.substrate import (
+from ffn_sim.archive.hoomd_legacy.ecm.substrate import (
     ResolvedSubstrate,
     SubstrateAnchorSpring,
     attach_substrate_spring,
     effective_E_sub,
     resolve_substrate,
 )
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 
 # Test-fixture SI scales (NOT module constants — see module-docstring note).

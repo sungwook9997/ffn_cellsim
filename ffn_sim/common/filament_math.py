@@ -35,7 +35,7 @@ execution of any physics/numerics module."*
 3. **Conservation invariants**
    - Tangent vectors are MI-wrapped: ``t̂_i = MI(r_{i+1} - r_i) /
      |MI(r_{i+1} - r_i)|``. Box wrap convention matches
-     ``ffn_sim.integrator.baoab._wrap_into_box`` for Lees-Edwards
+     ``ffn_sim.archive.hoomd_legacy.integrator.baoab._wrap_into_box`` for Lees-Edwards
      compatibility.
    - The exponential fit is performed in log-space; numerical
      stability checked via finite-positive C(s).
@@ -114,7 +114,7 @@ def _minimum_image_3d(
 ) -> np.ndarray:
     """Wrap a (..., 3) displacement into the (possibly tilted) HOOMD box.
 
-    Mirrors `ffn_sim.integrator.baoab._wrap_into_box` convention so
+    Mirrors `ffn_sim.archive.hoomd_legacy.integrator.baoab._wrap_into_box` convention so
     tangent vectors computed here agree with the L-M Updater's wrap.
     """
     fz = delta[..., 2] / box_Lz

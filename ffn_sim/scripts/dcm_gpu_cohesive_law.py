@@ -38,8 +38,8 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
-from ffn_sim.cell.dcm_confluence import capture_positions
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
+from ffn_sim.archive.hoomd_legacy.cell.dcm_confluence import capture_positions
 from ffn_sim.common.sim_realtime import map_realtime
 from ffn_sim.scripts.dcm_native_capstone import _footprint_area, _effective_radius
 

@@ -37,10 +37,10 @@ import yaml
 import hoomd
 from hoomd import md
 
-from ffn_sim.cell import Cell, CellBuildOptions
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.cortex.erm import resolve_erm
+from ffn_sim.archive.hoomd_legacy.cell import Cell, CellBuildOptions
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cortex.erm import resolve_erm
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,

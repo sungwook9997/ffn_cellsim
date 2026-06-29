@@ -40,11 +40,11 @@ import numpy as np  # noqa: E402
 import yaml  # noqa: E402
 import hoomd  # noqa: E402
 
-from ffn_sim.cortex.cortex import resolve_h3_derived  # noqa: E402
-from ffn_sim.cortex.myosin import resolve_cortex_myosin  # noqa: E402
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers  # noqa: E402
-from ffn_sim.cell.cell import build_cortex_full_simulation  # noqa: E402
-from ffn_sim.cortex.cortical_tension import measure_cortical_tension  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import measure_cortical_tension  # noqa: E402
 from ffn_sim.scripts.track1_gsoft_verify import _bound_metrics  # noqa: E402 (reuse, no copy)
 from ffn_sim.common.production_policy import (  # noqa: E402
     add_production_device_args, validate_production_device_args,

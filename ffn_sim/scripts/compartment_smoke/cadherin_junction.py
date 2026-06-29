@@ -32,7 +32,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import _smoke_common as sc
-from ffn_sim.junction.cadherin import (
+from ffn_sim.archive.hoomd_legacy.junction.cadherin import (
     CADHERIN_TRANS_BOND,
     attach_cadherin_junction,
     extend_snapshot_with_cadherins,

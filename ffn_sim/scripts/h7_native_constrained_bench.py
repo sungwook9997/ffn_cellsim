@@ -26,10 +26,10 @@ import hoomd.md as md
 import numpy as np
 import yaml
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     resolve_h3_derived, build_cortex_state, build_cortex_simulation,
 )
-from ffn_sim.integrator.constrained_baoab import make_constrained_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import make_constrained_baoab_updater
 
 CFG = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
 
@@ -47,7 +47,7 @@ def _warm_and_state(p, n_fil, seed, warm_steps):
     n_part = F * N
     # Warm on CPU: soft-start (clipped Brownian relaxes severe construction
     # overlaps that the raw BAOAB cannot) + BAOAB settle. Phase 2 runs GPU.
-    from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+    from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
     simw, updater, action, topology, _ = build_cortex_simulation(
         p, device=hoomd.device.CPU(notice_level=0), with_baoab=True,
         with_crosslinkers=False, rng=np.random.default_rng(seed))

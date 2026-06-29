@@ -18,9 +18,9 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.observables import effective_radius
-from ffn_sim.spheroid.params import resolve_layer2
-from ffn_sim.spheroid.spreading import run_edge_spreading
+from ffn_sim.archive.hoomd_legacy.spheroid.observables import effective_radius
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.spreading import run_edge_spreading
 from ffn_sim.validation.oracles.spheroid.aa0_law import aa0_model, fit_aa0
 
 _ROOT = Path(__file__).resolve().parents[1]

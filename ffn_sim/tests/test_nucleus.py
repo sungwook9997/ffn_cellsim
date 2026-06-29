@@ -27,7 +27,7 @@ import pytest
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cell.nucleus import (
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import (
     NucleusConfinement,
     ResolvedNucleus,
     attach_nucleus_confinement,
@@ -540,7 +540,7 @@ class TestBAOABSmoke:
     def test_baoab_nucleus_confinement_no_nan(self):
         """Nucleus beads + confinement-on under L-M BAOAB runs 300 steps
         with no NaN/Inf and the cloud stays bounded near R_nuc."""
-        from ffn_sim.integrator.baoab import make_baoab_updater
+        from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
         p = _resolved()
         built = build_nucleus_beads(

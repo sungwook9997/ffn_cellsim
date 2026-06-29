@@ -9,7 +9,7 @@ adhesion branches), plus closest-point correctness and Newton-3 (Σforce = 0).
 import numpy as np
 import pytest
 
-from ffn_sim.cell.dcm_face_contact import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_face_contact import (
     closest_point_on_triangle, face_contact_pair, node_face_contact_forces,
     node_face_contact_forces_vec)
 

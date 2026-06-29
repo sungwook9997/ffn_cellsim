@@ -43,12 +43,12 @@ from pathlib import Path
 import numpy as np
 import hoomd
 
-from ffn_sim.cell.dcm import icosphere_mesh
-from ffn_sim.cell.dcm_gpu_build import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
     DcmDropConfinement, ResolvedGpuDCM, build_gpu_dcm_simulation,
     build_gpu_dcm_snapshot, pick_device)
-from ffn_sim.cell.dcm_gpu_forces import DcmActiveMotilitySPP, DcmPolarityUpdater
-from ffn_sim.cell.dcm_confluence import capture_positions
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import DcmActiveMotilitySPP, DcmPolarityUpdater
+from ffn_sim.archive.hoomd_legacy.cell.dcm_confluence import capture_positions
 from ffn_sim.common.sim_realtime import map_realtime
 from ffn_sim.scripts.dcm_native_capstone import _footprint_area, _effective_radius
 from ffn_sim.scripts.dcm_cohesion_check import _contact_fraction
@@ -267,7 +267,7 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
     # the cells can slide apart + spread (vs globally-weak cohesion = a crude proxy
     # that also disperses non-loaded cells). Keeps a coherent monolayer.
     if junction_switch:
-        from ffn_sim.cell.dcm_gpu_build import attach_junction_switch
+        from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import attach_junction_switch
         attach_junction_switch(h, cadence=500)
         print("[junction-switch] pressure-triggered de-cohesion ON (cad_mult↓ under load)",
               flush=True)
@@ -281,7 +281,7 @@ def spread(p, n_cells, *, dev, init_pos, steps, frames, R, z0, V0, tris0,
                         if type(f).__name__ == "LamellipodialTractionTetherGPU"][0]
     remesh_action = None
     if remesh:
-        from ffn_sim.cell.dcm_remesh_updater import attach_remesh_updater
+        from ffn_sim.archive.hoomd_legacy.cell.dcm_remesh_updater import attach_remesh_updater
         remesh_action, _ = attach_remesh_updater(
             h, period=remesh_period, max_ops=remesh_max_ops)
     print(f"STAGE 2 · SPREADING (from converged aggregate, active rim traction; "
@@ -587,7 +587,7 @@ def main():
     # proxy that provably contracts). Built from the lit-anchored bands.
     plam = None
     if args.lamellipodium:
-        from ffn_sim.cell.dcm_lamellipodium_gpu import ResolvedGpuLamellipodium
+        from ffn_sim.archive.hoomd_legacy.cell.dcm_lamellipodium_gpu import ResolvedGpuLamellipodium
         plam = ResolvedGpuLamellipodium(
             v_front=args.lamel_vfront_umin * 1e-6 / 60.0, S_kinetic=args.lamel_S,
             pool_per_cell=args.lamel_pool_per_cell, batch_steps=args.lamel_batch,

@@ -48,7 +48,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 # Oracle import is PREDICTION-only (published anchors); never a runtime cell-build path.
 from ffn_sim.validation.oracles.spheroid import surface_tension_bridge as br
 

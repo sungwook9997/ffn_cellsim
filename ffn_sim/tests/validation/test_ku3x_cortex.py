@@ -12,7 +12,7 @@ Per brief §Validation acceptance table:
 These gates require:
 
 * Full Cell composition: cortex + ERM + crosslinkers + myosin (all wired
-  via :class:`ffn_sim.cell.Cell.build`).
+  via :class:`ffn_sim.archive.hoomd_legacy.cell.Cell.build`).
 * Long-time simulation: 60 s simulated, ~4.6·10⁹ BAOAB steps at
   ``dt_CFL = 13 ns`` → ~hours to days wall time even at the demo
   cortex scale. Production sign-off is multi-hour and runs
@@ -46,8 +46,8 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell import Cell, CellBuildOptions
-from ffn_sim.cortex.cortex import generate_cortex_topology, resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cell import Cell, CellBuildOptions
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import generate_cortex_topology, resolve_h3_derived
 from ffn_sim.validation.oracles.common.sanity_gate import gate_nematic_order
 
 

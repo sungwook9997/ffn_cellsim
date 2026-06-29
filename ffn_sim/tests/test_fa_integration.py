@@ -4,9 +4,9 @@ Covers the FIRST vertical slice of FA wiring into
 ``build_cortex_full_simulation`` / ``Cell.build``:
 
 * S0 substrate anchor -- a fixed/immobile ligand layer at z=0
-  (``ligand`` particles held by :class:`ffn_sim.cell.cell.SubstrateLigandPin`).
+  (``ligand`` particles held by :class:`ffn_sim.archive.hoomd_legacy.cell.cell.SubstrateLigandPin`).
 * S1 integrin-ligand catch bond -- the ``integrin_ligand`` bond TYPE is
-  registered and an :class:`ffn_sim.bridge.integrin_bonds.IntegrinBondUpdater`
+  registered and an :class:`ffn_sim.archive.hoomd_legacy.bridge.integrin_bonds.IntegrinBondUpdater`
   is attached (Pereverzev catch-slip, reused as-is; the PI-gated
   Pereverzev->Kong migration is NOT done here).
 * S2 ``fa_actin_clutch`` bond -- the NEW load-path topology connecting an
@@ -68,10 +68,10 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.bridge.fa import resolve_h4
-from ffn_sim.cell.cell import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4
+from ffn_sim.archive.hoomd_legacy.cell.cell import (
     Cell,
     CellBuildOptions,
     build_cortex_full_simulation,
@@ -304,7 +304,7 @@ def test_fa_with_myosin_builds(p_cortex, p_myosin, p_fa):
 
 def _resolve_xlinks_or_skip(cortex_cfg, p_cortex):
     """Resolve the cortex crosslinker block from the h3 config (small demo)."""
-    from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
+    from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
     cfg = deepcopy(cortex_cfg)
     if "dynamic_crosslinkers" not in cfg.get("cortex", {}):
         pytest.skip("no dynamic_crosslinkers block in phase1_h3.yaml")
@@ -348,7 +348,7 @@ def _resolve_lamel_or_skip(cortex_cfg, p_cortex):
     sub-block of the cortex config), loaded the same way test_lamellipodium.py
     does. Override n_WAVE to a small demo count for a fast smoke build.
     """
-    from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
+    from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import resolve_h5_lamellipodium
     h5_path = CONFIG_DIR / "phase1_h5.yaml"
     if not h5_path.exists():
         pytest.skip("configs/phase1_h5.yaml not found")

@@ -16,8 +16,8 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.params import resolve_layer2
-from ffn_sim.spheroid.spreading import run_spreading
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.spreading import run_spreading
 
 _ROOT = Path(__file__).resolve().parents[1]
 _CFG = _ROOT / "configs" / "layer2_cbm.yaml"

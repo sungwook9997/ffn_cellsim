@@ -36,17 +36,17 @@ import gsd.hoomd
 import hoomd.md as md
 
 import _smoke_common as sc
-from ffn_sim.cell.intermediate_filaments import (
+from ffn_sim.archive.hoomd_legacy.cell.intermediate_filaments import (
     extend_snapshot_with_if_cage,
     register_if_bond_params,
     resolve_intermediate_filaments,
 )
-from ffn_sim.cell.linc import (
+from ffn_sim.archive.hoomd_legacy.cell.linc import (
     configure_linc_bond_potential,
     extend_snapshot_with_linc,
     resolve_linc,
 )
-from ffn_sim.cell.microtubules import (
+from ffn_sim.archive.hoomd_legacy.cell.microtubules import (
     extend_snapshot_with_microtubules,
     resolve_microtubules,
 )

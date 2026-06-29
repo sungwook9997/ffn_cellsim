@@ -3,7 +3,7 @@
 Seventh compartment graduated EXPERIMENTAL->LIVE under the PI ownership grant, and
 the first MULTICELL one. The explicit E-cadherin trans-dimer adherens junction is
 intrinsically TWO-cell, so its activation needs the new two-cell assembler
-:func:`ffn_sim.cell.doublet.build_cell_doublet`: two cortex shells in one box,
+:func:`ffn_sim.archive.hoomd_legacy.cell.doublet.build_cell_doublet`: two cortex shells in one box,
 facing across an interface, with cadherins seeded on each cell's facing cap and the
 trans-dimers SEEDED pre-bound (the physiological engaged-junction baseline — a bare
 junction would need ~1e3 binder batches to engage, invalid as a baseline; the
@@ -44,8 +44,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from ffn_sim.cell.doublet import build_cell_doublet
-from ffn_sim.cortex.cortical_tension import (
+from ffn_sim.archive.hoomd_legacy.cell.doublet import build_cell_doublet
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
     _is_adhesion_bond_type,
     measure_cortical_tension,
 )

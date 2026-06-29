@@ -35,7 +35,7 @@ import pytest
 
 import hoomd
 
-from ffn_sim.cell.membrane_surface import (
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import (
     DEFAULT_KAPPA_M,
     KAPPA_M_KT_BAND,
     SURFACE_TENSION_BAND,

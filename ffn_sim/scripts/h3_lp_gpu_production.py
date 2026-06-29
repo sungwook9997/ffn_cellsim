@@ -27,7 +27,7 @@ import numpy as np
 import yaml
 import hoomd
 
-from ffn_sim.cortex.cortex import build_cortex_simulation, resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import build_cortex_simulation, resolve_h3_derived
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,

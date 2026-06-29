@@ -39,13 +39,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from ffn_sim.bridge.ecm_contact import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.bridge.ecm_contact import (  # noqa: E402
     TYPE_LIGAND,
     assert_traction_within_contact,
     measure_ecm_contact_manifold,
 )
-from ffn_sim.bridge.fa import TYPE_LIGAND as FA_TYPE_LIGAND  # noqa: E402
-from ffn_sim.bridge.manifold_traction import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.bridge.fa import TYPE_LIGAND as FA_TYPE_LIGAND  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.bridge.manifold_traction import (  # noqa: E402
     measure_fa_traction_field,
 )
 from ffn_sim.common.production_policy import (  # noqa: E402

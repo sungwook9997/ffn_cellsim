@@ -33,7 +33,7 @@ import gsd.hoomd
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cell.cytoplasm import (
+from ffn_sim.archive.hoomd_legacy.cell.cytoplasm import (
     DEFAULT_IMMERSED_TYPES,
     ETA_CYTO_BY_CELLTYPE,
     ETA_WATER,
@@ -45,7 +45,7 @@ from ffn_sim.cell.cytoplasm import (
     resolve_cytoplasm,
     stokes_drag,
 )
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 # Reference cell-type viscosities (Hu 2024, PMC10929591; MRS L ≈ 3 µm).
 _ETA_MCF7 = ETA_CYTO_BY_CELLTYPE["MCF7"]        # 65.9 Pa·s

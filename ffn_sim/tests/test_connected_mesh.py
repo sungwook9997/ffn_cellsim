@@ -26,15 +26,15 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     resolve_h3_derived,
     generate_bimodal_cortex_layout,
 )
-from ffn_sim.cortex.crosslinkers import (
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import (
     resolve_crosslinkers,
     seed_connected_mesh_xlinks,
 )
-from ffn_sim.cell.cytoplasm import ETA_CYTO_BY_CELLTYPE
+from ffn_sim.archive.hoomd_legacy.cell.cytoplasm import ETA_CYTO_BY_CELLTYPE
 
 _CFG = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
 
@@ -174,7 +174,7 @@ class TestBuildConnectedCortex:
         """§4 (numerical): the HOOMD frame is valid (no exclusion overflow) and
         a short BAOAB run at the PHYSIOLOGICAL cytoplasm viscosity is STABLE
         (no construction-overlap blowup) with connectivity maintained."""
-        from ffn_sim.cortex.connected_mesh import build_connected_cortex
+        from ffn_sim.archive.hoomd_legacy.cortex.connected_mesh import build_connected_cortex
 
         n_fil = 500
         p, p_xl = _resolve(n_fil)

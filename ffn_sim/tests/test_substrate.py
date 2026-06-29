@@ -12,10 +12,10 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
-from ffn_sim.spheroid.params import resolve_layer2
-from ffn_sim.spheroid.proliferation import run_growth_pooled
-from ffn_sim.spheroid.substrate import resolve_substrate
+from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.proliferation import run_growth_pooled
+from ffn_sim.archive.hoomd_legacy.spheroid.substrate import resolve_substrate
 
 _CONFIG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 
@@ -52,13 +52,13 @@ def test_confined_growth_is_substrate_bound(resolved):
 
 
 def _prolif(resolved):
-    from ffn_sim.spheroid.params import resolve_proliferation
+    from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_proliferation
     return resolve_proliferation(yaml.safe_load(_CONFIG.read_text()), resolved)
 
 
 def test_active_traction_runs_and_spreads(resolved):
     """Active edge-traction (L2.2) composes with catch+substrate growth and increases spread."""
-    from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
+    from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin
     cad = resolve_cadherin(resolved)
     sub = resolve_substrate(resolved, adhesion_ratio=1.0)
     p = _prolif(resolved)

@@ -37,8 +37,8 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
     MyosinStepUpdater,
     cortex_myosin_attach_bin_names,
     cortex_myosin_attach_bin_rest_lengths,
@@ -219,7 +219,7 @@ def _build_rigid_fixture(stepping_mode: str, *, v0: float):
     sim.create_state_from_snapshot(snap)
 
     # custom layout: rod axis û = +x (backbone end-to-end direction).
-    from ffn_sim.cortex.myosin import CortexMyosinLayout
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import CortexMyosinLayout
     layout = CortexMyosinLayout(
         centers=np.array([[bb_center_x, rod_y, 0.0]]),
         axes=np.array([[1.0, 0.0, 0.0]]),

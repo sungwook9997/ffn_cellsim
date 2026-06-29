@@ -20,8 +20,8 @@ from copy import deepcopy
 
 import pytest
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
 
 
 def _myosin_cfg(**over):

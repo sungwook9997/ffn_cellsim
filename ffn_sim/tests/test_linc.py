@@ -26,7 +26,7 @@ import pytest
 
 import gsd.hoomd
 
-from ffn_sim.cell.linc import (
+from ffn_sim.archive.hoomd_legacy.cell.linc import (
     GAMMA_DENYLIST_PREFIX,
     LINC_BOND_NESPRIN,
     PI_DECISIONS,
@@ -466,7 +466,7 @@ def test_pi_decisions_records_unknown_k_linc() -> None:
 # ---------------------------------------------------------------------------
 class TestLINCActivationWiring:
     def test_off_build_is_bit_identity(self) -> None:
-        from ffn_sim.cell.manifest import (
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import (
             build_baseline_cell, load_manifest, resolve_baseline,
         )
         rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
@@ -476,9 +476,9 @@ class TestLINCActivationWiring:
         assert cell.simulation.state.N_particles > 0
 
     def test_on_bridges_form_without_contamination(self) -> None:
-        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-        from ffn_sim.cortex.cortical_tension import (
+        from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
             _is_adhesion_bond_type, measure_cortical_tension,
         )
 
@@ -531,7 +531,7 @@ class TestLINCActivationWiring:
         # LINC (Option A) REQUIRES the IF cage (its acceptors are if_bead).
         # Enabling linc without intermediate_filaments must raise (manifest guard).
         import pytest
-        from ffn_sim.cell.manifest import load_manifest, resolve_baseline
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest, resolve_baseline
 
         m = load_manifest("mcf7_baseline.yaml")
         m.setdefault("optional_subsystems", {})

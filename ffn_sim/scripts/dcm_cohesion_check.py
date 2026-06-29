@@ -26,7 +26,7 @@ import json
 
 import numpy as np
 
-from ffn_sim.cell.dcm_gpu_build import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
     ResolvedGpuDCM,
     build_gpu_dcm_simulation,
     build_gpu_dcm_snapshot,

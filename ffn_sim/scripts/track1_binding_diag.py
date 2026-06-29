@@ -54,13 +54,13 @@ import yaml
 import hoomd
 from scipy.spatial import cKDTree
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
     resolve_cortex_myosin,
     cortex_myosin_attach_bin_rest_lengths,
 )
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"

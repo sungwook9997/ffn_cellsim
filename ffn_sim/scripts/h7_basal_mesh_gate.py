@@ -27,13 +27,13 @@ import matplotlib.pyplot as plt
 
 import yaml
 
-from ffn_sim.cell.basal_mesh import (
+from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import (
     basal_connectivity_report,
     basal_mesh_build_report,
     connect_basal_mesh,
     generate_basal_mesh_layout,
 )
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
 
 _OUT = _HERE.parents[1] / "outputs" / "h7"
 

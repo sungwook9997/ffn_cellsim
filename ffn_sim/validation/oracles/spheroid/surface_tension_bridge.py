@@ -23,7 +23,7 @@ Provenance / discipline
 Every relation below is a PUBLISHED paper-model and therefore enters ONLY as a validation
 oracle / literature anchor — NEVER a runtime mechanism (CLAUDE.md inversion rule). No physics
 is computed in the runtime from this module; the Layer-2 CBM produces sigma *emergently* (via
-the virial-pressure observable in ``ffn_sim.spheroid.observables``), and this oracle is the
+the virial-pressure observable in ``ffn_sim.archive.hoomd_legacy.spheroid.observables``), and this oracle is the
 acceptance target it is checked against.
 
 Sources:

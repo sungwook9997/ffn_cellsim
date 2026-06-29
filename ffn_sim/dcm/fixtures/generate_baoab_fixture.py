@@ -32,7 +32,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

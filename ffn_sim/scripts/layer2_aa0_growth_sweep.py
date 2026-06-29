@@ -27,9 +27,9 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.observables import effective_radius
-from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-from ffn_sim.spheroid.proliferation import run_growth_pooled
+from ffn_sim.archive.hoomd_legacy.spheroid.observables import effective_radius
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2, resolve_proliferation
+from ffn_sim.archive.hoomd_legacy.spheroid.proliferation import run_growth_pooled
 from ffn_sim.validation.oracles.spheroid.aa0_law import aa0_model, fit_aa0, term_contributions
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     prolif = resolve_proliferation(cfg, resolved)
     cad = None
     if cohesion == "catch":
-        from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
+        from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin
         cad = resolve_cadherin(resolved)
     gates = yaml.safe_load(_OCFG.read_text())["spheroid"]["acceptance"]
     g3, g4 = gates["g3"], gates["g4"]

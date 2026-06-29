@@ -59,7 +59,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
 from ffn_sim.common.sim_realtime import map_realtime
 
 _OUT = Path("ffn_sim/outputs/h_dcm_gpu_lod")

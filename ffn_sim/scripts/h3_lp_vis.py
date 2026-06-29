@@ -25,7 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (registers 3d projection)
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 from ffn_sim.common.filament_math import fit_persistence_length, tangent_correlation
 
 PKG = Path(__file__).resolve().parents[1]

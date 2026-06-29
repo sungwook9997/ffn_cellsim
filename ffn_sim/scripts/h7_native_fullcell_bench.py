@@ -23,11 +23,11 @@ import hoomd
 import numpy as np
 import yaml
 
-from ffn_sim.cell.cell import build_cortex_full_simulation
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
 
 CFG = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
 

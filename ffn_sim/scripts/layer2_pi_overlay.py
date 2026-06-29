@@ -30,7 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.spheroid.ligand_traction import resolve_ligand_traction
+from ffn_sim.archive.hoomd_legacy.spheroid.ligand_traction import resolve_ligand_traction
 from ffn_sim.validation.oracles.spheroid.aa0_law import aa0_model, fit_aa0
 
 _ROOT = Path(__file__).resolve().parents[1]

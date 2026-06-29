@@ -51,7 +51,7 @@ def _mean_cell_volume(pos, ranges):
 
 def run(args):
     import hoomd
-    from ffn_sim.cell.dcm import ResolvedDCM, build_dcm_simulation
+    from ffn_sim.archive.hoomd_legacy.cell.dcm import ResolvedDCM, build_dcm_simulation
 
     p = ResolvedDCM(
         subdivisions=args.subdivisions, cluster=args.cluster,

@@ -32,14 +32,14 @@ import numpy as np
 import yaml
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cell.cell import build_cortex_full_simulation
-from ffn_sim.cell.nucleus import resolve_nucleus
-from ffn_sim.cell.membrane_surface import resolve_membrane_surface
-from ffn_sim.cell.cytoplasm import resolve_cytoplasm
-from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import resolve_membrane_surface
+from ffn_sim.archive.hoomd_legacy.cell.cytoplasm import resolve_cytoplasm
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume
 from ffn_sim.scripts.h3_ku35_tension import (
     _tension_method_of_planes,
     _tension_method_of_planes_rigid,

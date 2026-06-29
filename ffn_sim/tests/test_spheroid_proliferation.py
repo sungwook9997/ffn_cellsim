@@ -1,4 +1,4 @@
-"""Tests for ffn_sim.spheroid.proliferation — L2.4 contact-inhibited division.
+"""Tests for ffn_sim.archive.hoomd_legacy.spheroid.proliferation — L2.4 contact-inhibited division.
 
 Pure-geometry tests (no HOOMD): the contact-shell count, free-direction bud, the division
 gate (timer + contact inhibition), rim localisation, and the resolver derivations. Plus two
@@ -17,12 +17,12 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.spheroid.params import (
+from ffn_sim.archive.hoomd_legacy.spheroid.params import (
     ResolvedProliferation,
     resolve_layer2,
     resolve_proliferation,
 )
-from ffn_sim.spheroid.proliferation import (
+from ffn_sim.archive.hoomd_legacy.spheroid.proliferation import (
     apply_divisions,
     best_bud_direction,
     build_pool_simulation,
@@ -164,7 +164,7 @@ def test_division_is_rim_localized(resolved):
     coordination is only ≈11); the free-space gate is what produces rim localisation. We
     therefore test on a genuinely-settled blob, not a sparse synthetic cloud.
     """
-    from ffn_sim.spheroid.cbm import build_cbm_simulation, get_positions
+    from ffn_sim.archive.hoomd_legacy.spheroid.cbm import build_cbm_simulation, get_positions
 
     p = resolve_proliferation(yaml.safe_load(_CONFIG.read_text()), resolved)
     sim, _a, _u, _rc = build_cbm_simulation(resolved, 250, seed=1)
@@ -261,7 +261,7 @@ def test_pooled_no_growth_when_cycle_infinite(resolved):
 def test_pool_cluster_radius_2d_dominates_for_large_n():
     """The 2D-wetting radius (∝√N) must exceed the 3D-pack radius (∝N^⅓) for large pools, so
     the box is sized for a substrate-confined (wetting) spheroid, not just a free 3D ball."""
-    from ffn_sim.spheroid.cbm import pool_cluster_radius
+    from ffn_sim.archive.hoomd_legacy.spheroid.cbm import pool_cluster_radius
 
     r0 = 15.0e-6
     # monotone increasing in n_max
@@ -280,7 +280,7 @@ def test_pool_box_contains_worst_case_spread(resolved):
     eject-guard radius — so a fully-wetting spheroid never reaches the periodic boundary (B1)."""
     import hoomd
 
-    from ffn_sim.spheroid.cbm import pool_cluster_radius
+    from ffn_sim.archive.hoomd_legacy.spheroid.cbm import pool_cluster_radius
 
     dev = hoomd.device.CPU(notice_level=0)
     n_max = 1500

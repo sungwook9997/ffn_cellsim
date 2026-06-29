@@ -44,7 +44,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.dcm_spheroid_state import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_spheroid_state import (
     ResolvedSpheroidState, build_spheroid_simulation, lower_to_substrate, CellState,
 )
 

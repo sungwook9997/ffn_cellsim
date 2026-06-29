@@ -33,7 +33,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.integrator.constrained_baoab import shake_project_chains
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import shake_project_chains
 
 L0 = 0.5e-6  # 500 nm segment (physiological ℓ₀); units are immaterial to the projection
 BIG_BOX = np.array([1.0e3 * L0, 1.0e3 * L0, 1.0e3 * L0])  # no min-image wrap

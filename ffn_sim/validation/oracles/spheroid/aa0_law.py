@@ -6,7 +6,7 @@ VALIDATION oracle (runtime-import-forbidden). Provides:
 - ``term_contributions``: per-term magnitude / dominance at a given R (the edge-vs-bulk
                           interpretation that the b/R, c/R^2 terms encode).
 - analytic geometry references (``uniform_disk_area``, ``*_radius_of_gyration``) used to
-  check ``ffn_sim.spheroid.observables`` against known point-cloud answers.
+  check ``ffn_sim.archive.hoomd_legacy.spheroid.observables`` against known point-cloud answers.
 
 Provenance / discipline
 ------------------------
@@ -183,7 +183,7 @@ def term_contributions(
 
 # --------------------------------------------------------------------------- #
 # Analytic geometry references — closed-form answers for point clouds that fill
-# a known shape, used to validate ffn_sim.spheroid.observables (N -> inf limit).
+# a known shape, used to validate ffn_sim.archive.hoomd_legacy.spheroid.observables (N -> inf limit).
 # --------------------------------------------------------------------------- #
 
 

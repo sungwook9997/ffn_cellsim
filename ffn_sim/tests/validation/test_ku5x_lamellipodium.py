@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.lamellipodium import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import (
     build_lamellipodium_simulation,
     resolve_h5_lamellipodium,
 )

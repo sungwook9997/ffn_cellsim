@@ -24,7 +24,7 @@ import gsd.hoomd
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.integrator.baoab import (
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import (
     LeimkuhlerMatthewsBAOAB,
     _wrap_into_box,
     make_baoab_updater,

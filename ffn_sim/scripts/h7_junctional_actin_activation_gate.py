@@ -6,7 +6,7 @@ actin belt is the THIRD leg of cell–cell adhesion: cadherin trans-dimers carry
 cell-to-cell load (cadherin_junction), and this belt carries that load from the
 cadherin tail into each cell's cortical actin via an explicit α-catenin/vinculin
 CATCH clutch (Buckley 2014). Built on the two-cell doublet
-(:func:`ffn_sim.cell.doublet.build_cell_doublet` ``with_junctional_actin=True``):
+(:func:`ffn_sim.archive.hoomd_legacy.cell.doublet.build_cell_doublet` ``with_junctional_actin=True``):
 one ``junc_actin`` coupling head per interface cadherin that has a SAME-cell cortex
 bead within the catch reach, a permanent ``junc_actin_anchor`` (head↔cadherin) and a
 force-free per-r0-binned ``junc_actin_couple_b{i}`` (head↔cortex). Build-time controls:
@@ -47,9 +47,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from ffn_sim.cell.doublet import build_cell_doublet
-from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
-from ffn_sim.junction.junctional_actin import catch_off_rate
+from ffn_sim.archive.hoomd_legacy.cell.doublet import build_cell_doublet
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import _is_adhesion_bond_type
+from ffn_sim.archive.hoomd_legacy.junction.junctional_actin import catch_off_rate
 
 _OUT = _HERE.parents[1] / "outputs" / "h7"
 
@@ -89,7 +89,7 @@ def run() -> dict:
         La = np.linalg.norm(pos[anc[:, 0]] - pos[anc[:, 1]], axis=1)
         anc_strain = float(np.max(np.abs(La - p.anchor_r0) / p.anchor_r0))
     # coupling bonds force-free vs their per-bin r0.
-    from ffn_sim.junction.junctional_actin import junc_actin_couple_bin_rest_lengths
+    from ffn_sim.archive.hoomd_legacy.junction.junctional_actin import junc_actin_couple_bin_rest_lengths
     bin_r0 = junc_actin_couple_bin_rest_lengths(p.n_bins, float(p.max_couple_dist))
     couple_strain = 0.0
     couple_ids = {bn.index(nm): i for i, nm in enumerate(

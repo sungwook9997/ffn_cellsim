@@ -35,8 +35,8 @@ import gsd.hoomd
 from hoomd import md
 
 from ffn_sim.scripts.h2_single_filament import resolve_h2_derived
-from ffn_sim.integrator.baoab import make_baoab_updater
-from ffn_sim.integrator.constrained_baoab import make_constrained_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import make_constrained_baoab_updater
 from ffn_sim.common.filament_math import fit_persistence_length
 
 PKG = Path(__file__).resolve().parents[1]

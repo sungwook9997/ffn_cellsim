@@ -18,7 +18,7 @@ import numpy as np
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cell.dcm_contact import DcmTentContact
+from ffn_sim.archive.hoomd_legacy.cell.dcm_contact import DcmTentContact
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

@@ -6,7 +6,7 @@ Runtime-importable closed form (pure NumPy), placed at the ``validation/`` level
 implementation of the sliding-rebinding catch-bond model that Rakshit et al. 2012 fit to
 E-cadherin X-dimer single-molecule force spectroscopy — the PI-chosen "option B" (the
 two-pathway/Pereverzev form did NOT fit their data; the sliding-rebinding model did). The
-runtime ``ffn_sim.spheroid.cadherin_bonds.CadherinBondUpdater`` samples bond lifetimes from
+runtime ``ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds.CadherinBondUpdater`` samples bond lifetimes from
 this module's force-dependent off-rate, and it is also the closed-form right-hand side of the
 emergent-vs-oracle gate (G5).
 
@@ -103,7 +103,7 @@ __all__ = [
     "catch_peak_force",
 ]
 
-# Boltzmann constant and body temperature (match ffn_sim.bridge.ligand_species: 37 °C).
+# Boltzmann constant and body temperature (match ffn_sim.archive.hoomd_legacy.bridge.ligand_species: 37 °C).
 _KB: float = 1.380649e-23      # J/K (CODATA)
 _T_BODY: float = 310.15        # K
 _KBT: float = _KB * _T_BODY    # ≈ 4.2816e-21 J

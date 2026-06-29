@@ -35,8 +35,8 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.dcm import icosphere_mesh  # noqa: F401  (parity w/ driver imports)
-from ffn_sim.cell.dcm_gpu_build import pick_device
+from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh  # noqa: F401  (parity w/ driver imports)
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import pick_device
 from ffn_sim.scripts.dcm_two_stage_production import spread, centroids
 
 OUT = Path("ffn_sim/outputs/h_dcm_two_stage")

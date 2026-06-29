@@ -40,11 +40,11 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from ffn_sim.cell.dcm_active import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_active import (
     ResolvedActiveSpheroid,
     build_active_spheroid,
 )
-from ffn_sim.cell.dcm_spheroid_state import CellState
+from ffn_sim.archive.hoomd_legacy.cell.dcm_spheroid_state import CellState
 from ffn_sim.common.sim_realtime import map_realtime
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "outputs", "h_dcm_active")

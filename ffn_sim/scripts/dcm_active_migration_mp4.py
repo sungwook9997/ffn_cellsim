@@ -36,7 +36,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter
 
-from ffn_sim.cell.dcm_active import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_active import (
     ResolvedActiveSpheroid, build_active_spheroid, CellState,
 )
 from ffn_sim.scripts.dcm_active_spheroid import (

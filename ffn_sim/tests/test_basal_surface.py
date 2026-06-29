@@ -13,7 +13,7 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.cell.basal_surface import (
+from ffn_sim.archive.hoomd_legacy.cell.basal_surface import (
     FlatBasalSurface,
     basal_surface_report,
     build_flat_basal_surface,

@@ -24,14 +24,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest  # noqa: E402
 from ffn_sim.common.production_policy import (  # noqa: E402
     add_production_device_args, validate_production_device_args,
 )
-from ffn_sim.cortex.active_gel_seam import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.active_gel_seam import (  # noqa: E402
     BAND_N_PER_M, MCF7_INTERPHASE_GAMMA, diagnose_seam, relax_active_maxwell,
 )
-from ffn_sim.cortex.cortical_tension import measure_cortical_tension  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import measure_cortical_tension  # noqa: E402
 
 _MN = 1.0e3
 

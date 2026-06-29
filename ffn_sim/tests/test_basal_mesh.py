@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.basal_mesh import (
+from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import (
     basal_apparatus_report,
     basal_connectivity_report,
     basal_mesh_build_report,
@@ -23,8 +23,8 @@ from ffn_sim.cell.basal_mesh import (
     connect_basal_mesh,
     generate_basal_mesh_layout,
 )
-from ffn_sim.cell.basal_surface import build_flat_basal_surface
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cell.basal_surface import build_flat_basal_surface
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
 
 ELL0 = 0.5e-6
 FOOT_R = 5.0e-6
@@ -236,7 +236,7 @@ def test_apparatus_needs_enough_fa():
 def _p_sf_myosin(n_motors=40):
     import yaml
     from copy import deepcopy
-    from ffn_sim.cortex.myosin import resolve_cortex_myosin
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
     cfg = deepcopy(yaml.safe_load(open(_H3_CFG)))
     cfg["cortex"]["myosin"]["prefix"] = "sf_myosin_"
     cfg["cortex"]["myosin"]["n_motors_per_cell"] = n_motors
@@ -244,7 +244,7 @@ def _p_sf_myosin(n_motors=40):
 
 
 def test_sf_myosin_placement_gate_pass():
-    from ffn_sim.cell.basal_mesh import (
+    from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import (
         place_sf_myosin_on_apparatus, sf_myosin_placement_report,
     )
     app = _apparatus(n_cables=12, n_infill=500)
@@ -264,8 +264,8 @@ def test_sf_myosin_placement_gate_pass():
 def test_sf_myosin_requires_sf_prefix():
     import yaml
     from copy import deepcopy
-    from ffn_sim.cortex.myosin import resolve_cortex_myosin
-    from ffn_sim.cell.basal_mesh import place_sf_myosin_on_apparatus
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+    from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import place_sf_myosin_on_apparatus
     app = _apparatus()
     cfg = deepcopy(yaml.safe_load(open(_H3_CFG)))  # default prefix cortex_myosin_
     cfg["cortex"]["myosin"]["n_motors_per_cell"] = 20
@@ -275,7 +275,7 @@ def test_sf_myosin_requires_sf_prefix():
 
 
 def test_sf_myosin_types_all_sf_prefixed():
-    from ffn_sim.cortex.myosin import (
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
         myosin_attach_bin_names, myosin_backbone_bond_name,
         myosin_head_backbone_bond_name, myosin_particle_type_names,
     )
@@ -292,7 +292,7 @@ def test_sf_myosin_types_all_sf_prefixed():
 
 # --- bending EI anchor (the missing SF/basal flexural term) ---
 def test_basal_bending_resolve_scales_with_N():
-    from ffn_sim.cell.basal_mesh import resolve_basal_bending, EI_SINGLE_ACTIN
+    from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import resolve_basal_bending, EI_SINGLE_ACTIN
     b10 = resolve_basal_bending(N_filaments=10, ell0=ELL0)
     b20 = resolve_basal_bending(N_filaments=20, ell0=ELL0)
     # loose bundle: EI_cable = N·EI_single.
@@ -326,7 +326,7 @@ def test_bend_vs_stretch_ratio_is_N_independent():
     assert math.isclose(r7, r30, rel_tol=1e-9)
 
 
-from ffn_sim.cell.basal_mesh import basal_bending_report  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import basal_bending_report  # noqa: E402
 
 
 def test_jitter_spreads_cables():

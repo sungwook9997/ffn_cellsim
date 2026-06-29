@@ -37,11 +37,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import hoomd  # noqa: E402
 
-from ffn_sim.cell.dcm_native_shell import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import (  # noqa: E402
     ResolvedNativeDCM,
     build_native_dcm_simulation,
 )
-from ffn_sim.cell.dcm_gpu_forces import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import (  # noqa: E402
     DcmTentContactGPU,
     DcmSubstrateForceGPU,
     on_gpu,

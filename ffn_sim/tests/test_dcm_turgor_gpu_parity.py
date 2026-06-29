@@ -25,12 +25,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.cell.dcm import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm import (
     DcmTurgorForce,
     ResolvedDCM,
     build_dcm_simulation,
 )
-from ffn_sim.cell.dcm_gpu_forces import DcmTurgorForceGPU, on_gpu
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import DcmTurgorForceGPU, on_gpu
 
 
 def _force_of(force) -> np.ndarray:

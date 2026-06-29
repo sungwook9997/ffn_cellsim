@@ -65,8 +65,8 @@ from scipy.sparse import coo_matrix  # noqa: E402
 from scipy.sparse.csgraph import connected_components  # noqa: E402
 from scipy.spatial import cKDTree  # noqa: E402
 
-from ffn_sim.cell.manifest import load_manifest  # noqa: E402
-from ffn_sim.cortex.cortex import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (  # noqa: E402
     resolve_h3_derived,
     generate_bimodal_cortex_layout,
 )

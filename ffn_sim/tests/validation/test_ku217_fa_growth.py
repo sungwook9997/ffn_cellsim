@@ -42,8 +42,8 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.bridge.fa import resolve_h4, build_h4_simulation
-from ffn_sim.bridge.fa_growth import (
+from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4, build_h4_simulation
+from ffn_sim.archive.hoomd_legacy.bridge.fa_growth import (
     FAGrowthMonitor,
     FAGrowthSample,
     per_fa_force_sum,

@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.spheroid.params import ResolvedL2, resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.params import ResolvedL2, resolve_layer2
 from ffn_sim.validation.oracles.spheroid import surface_tension_bridge as br
 
 F0_CATCH = 29.2e-12          # N    Rakshit 2012 E-cadherin catch-bond peak force

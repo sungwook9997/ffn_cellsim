@@ -24,10 +24,10 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell import Cell, CellBuildOptions, resolve_h5_lamellipodium
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.erm import ResolvedERM, resolve_erm
+from ffn_sim.archive.hoomd_legacy.cell import Cell, CellBuildOptions, resolve_h5_lamellipodium
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.erm import ResolvedERM, resolve_erm
 
 
 CONFIG_PATH = (
@@ -312,7 +312,7 @@ class TestLamellipodiumWiring:
         single Cell.  Counts + tag ranges remain consistent."""
         # Local imports of the resolvers used only in this assembly test
         # to keep the rest of the file's import surface minimal.
-        from ffn_sim.cortex.myosin import resolve_cortex_myosin
+        from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
 
         cfg = _demo_cfg()
         cfg["cortex"]["dynamic_crosslinkers"]["n_xl"] = 10

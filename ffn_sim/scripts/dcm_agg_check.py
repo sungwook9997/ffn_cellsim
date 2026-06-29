@@ -40,7 +40,7 @@ def main():
 
     # per-cell turgor volume (divergence theorem) needs topology; use the canonical
     # icosphere tris for nv (rebuild from dcm.icosphere_mesh to match the run).
-    from ffn_sim.cell.dcm import icosphere_mesh
+    from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh
     sub = 1 if nv == 42 else 2
     _v, _e, tris0 = icosphere_mesh(R, sub)
     V0 = (4.0 / 3.0) * np.pi * R ** 3

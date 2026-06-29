@@ -18,8 +18,8 @@ import hoomd
 import hoomd.md as md
 import numpy as np
 
-from ffn_sim.cell.nucleus import resolve_nucleus
-from ffn_sim.cell.nucleus_confinement_gpu import NucleusConfinementGPU
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus
+from ffn_sim.archive.hoomd_legacy.cell.nucleus_confinement_gpu import NucleusConfinementGPU
 
 _APPLY_SRC = r'''
 extern "C" __global__ void nuc_apply(

@@ -62,7 +62,7 @@ def _scatter(ax, pos, ranges, title):
 
 def capture(dt, steps, frames):
     """Reproduce the spreading run at `dt`, return frames + diagnostics."""
-    from ffn_sim.cell.dcm_gpu_build import pick_device
+    from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import pick_device
     from ffn_sim.scripts.dcm_two_stage_production import spread, centroids
     d = pickle.load(open(OUT / "two_stage_n100.pkl", "rb"))
     R = d["R_cell"]; V0 = d["V0"]; z0 = d["z0"]; n_cells = int(d["n_cells"])

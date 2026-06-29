@@ -36,11 +36,11 @@ import numpy as np
 import yaml
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.erm import resolve_erm, attach_erm_to_simulation
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.erm import resolve_erm, attach_erm_to_simulation
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 from ffn_sim.common import checkpoint as _ckpt
 from ffn_sim.common import integrity as _integrity
 from ffn_sim.common.production_policy import (

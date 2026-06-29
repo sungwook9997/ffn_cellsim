@@ -23,7 +23,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import ResolvedGpuDCM, build_gpu_dcm_simulation
 
 _ON_GPU = False
 

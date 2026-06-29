@@ -24,7 +24,7 @@ from ffn_sim.common.production_policy import (
     require_full_cell_physiological_baseline,
     require_production_device,
 )
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 from ffn_sim.scripts.mcf7_fullcell_stage1 import _cfg_for, _resolve_compartments
 
 

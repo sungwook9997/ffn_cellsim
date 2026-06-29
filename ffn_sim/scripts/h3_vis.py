@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     build_cortex_simulation,
     generate_cortex_topology,
     resolve_h3_derived,

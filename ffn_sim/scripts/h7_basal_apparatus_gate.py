@@ -27,14 +27,14 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from ffn_sim.cell.basal_surface import build_flat_basal_surface
-from ffn_sim.cell.basal_mesh import (
+from ffn_sim.archive.hoomd_legacy.cell.basal_surface import build_flat_basal_surface
+from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import (
     basal_apparatus_report,
     basal_connectivity_report,
     build_basal_filament_network,
     connect_basal_mesh,
 )
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
 
 _OUT = _HERE.parents[1] / "outputs" / "h7"
 

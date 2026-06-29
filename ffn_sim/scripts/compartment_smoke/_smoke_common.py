@@ -36,7 +36,7 @@ import gsd.hoomd
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 # --------------------------------------------------------------------------
 # Physiological constants (cited; NOT smoke-invented)

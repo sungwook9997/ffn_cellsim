@@ -22,9 +22,9 @@ import time
 import numpy as np
 from scipy.spatial import ConvexHull
 
-from ffn_sim.cell.dcm_gpu_build import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (
     ResolvedGpuDCM, build_gpu_dcm_snapshot, build_gpu_dcm_simulation)
-from ffn_sim.cell.dcm_lamellipodium_gpu import ResolvedGpuLamellipodium
+from ffn_sim.archive.hoomd_legacy.cell.dcm_lamellipodium_gpu import ResolvedGpuLamellipodium
 
 
 def _topdown(pos_mem: np.ndarray) -> float:

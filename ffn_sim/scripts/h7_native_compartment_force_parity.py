@@ -18,12 +18,12 @@ import hoomd
 import hoomd.md as md
 import numpy as np
 
-from ffn_sim.cell.nucleus import resolve_nucleus, NucleusConfinement
-from ffn_sim.cell.nucleus_confinement_gpu import NucleusConfinementGPU
-from ffn_sim.cell.membrane_surface import resolve_membrane_surface, MembraneSurfaceTension
-from ffn_sim.cell.membrane_surface_gpu import MembraneSurfaceTensionGPU
-from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume, EnclosedVolumePressure
-from ffn_sim.cortex.enclosed_volume_gpu import EnclosedVolumePressureGPU
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus, NucleusConfinement
+from ffn_sim.archive.hoomd_legacy.cell.nucleus_confinement_gpu import NucleusConfinementGPU
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import resolve_membrane_surface, MembraneSurfaceTension
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface_gpu import MembraneSurfaceTensionGPU
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume, EnclosedVolumePressure
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume_gpu import EnclosedVolumePressureGPU
 
 
 def _cloud(n, R, spread, seed):

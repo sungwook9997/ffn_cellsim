@@ -3,7 +3,7 @@
 Validates the closed-form bridge oracle
 ``ffn_sim.validation.oracles.spheroid.surface_tension_bridge`` (Young-Laplace, DITH
 Gamma=cortical-adhesion, Fastabend R=lambda/sigma, Okuda 3D-cap, Roffay outer/interior ratio)
-and the runtime virial-pressure observable ``ffn_sim.spheroid.observables.virial_pressure``
+and the runtime virial-pressure observable ``ffn_sim.archive.hoomd_legacy.spheroid.observables.virial_pressure``
 against synthetic configurations with KNOWN closed-form answers. Pure numpy/scipy, no HOOMD.
 
 Provenance for the relations under test: ``docs/CORTICAL_TENSION_TRIAGE_2026-06-03.md``.
@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.spheroid import observables as obs
+from ffn_sim.archive.hoomd_legacy.spheroid import observables as obs
 from ffn_sim.validation.oracles.spheroid import surface_tension_bridge as br
 
 RNG = np.random.default_rng(20260603)

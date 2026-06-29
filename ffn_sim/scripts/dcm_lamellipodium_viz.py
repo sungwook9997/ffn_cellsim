@@ -49,10 +49,10 @@ from matplotlib.animation import FFMpegWriter  # noqa: E402
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 from matplotlib.colors import LightSource  # noqa: E402
 
-from ffn_sim.cell.dcm import icosphere_mesh  # noqa: E402
-from ffn_sim.cell.dcm_gpu_build import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_build import (  # noqa: E402
     ResolvedGpuDCM, build_gpu_dcm_simulation)
-from ffn_sim.cell.dcm_confluence import capture_positions  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_confluence import capture_positions  # noqa: E402
 from ffn_sim.common.sim_realtime import map_realtime  # noqa: E402
 
 for cand in ("/opt/homebrew/bin/ffmpeg", "/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"):

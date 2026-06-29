@@ -29,7 +29,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
 # Reuse the EXACT placement primitives the real cortex uses.
-from ffn_sim.cortex.cortex import _sample_sphere_surface, _tangent_plane_basis
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import _sample_sphere_surface, _tangent_plane_basis
 
 
 def place_bimodal_filaments(

@@ -33,7 +33,7 @@ import os
 import time
 from typing import Any
 
-from ffn_sim.cell.compartment_registry import REGISTRY, GpuPath, HotPathPriority
+from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, GpuPath, HotPathPriority
 
 _GPU_ENV_FLAGS = ("FFN_GPU_DEVICE_BAOAB", "FFN_GPU_DEVICE_COMPARTMENTS")
 
@@ -120,7 +120,7 @@ def microbench_live_cell(
     """
     import hoomd  # noqa: F401  (ensure HOOMD present)
 
-    from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 
     manifest = load_manifest("mcf7_baseline.yaml")
     # Shrink the cortex for a cheap profile (physics-irrelevant for *timing*).

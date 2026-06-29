@@ -75,12 +75,12 @@ if str(_HERE.parents[2]) not in sys.path:
 import numpy as np
 import yaml
 
-from ffn_sim.cell.basal_surface import build_flat_basal_surface
-from ffn_sim.cell.basal_mesh import (
+from ffn_sim.archive.hoomd_legacy.cell.basal_surface import build_flat_basal_surface
+from ffn_sim.archive.hoomd_legacy.cell.basal_mesh import (
     build_basal_filament_network,
     place_sf_myosin_on_apparatus,
 )
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
 
 _OUT = _HERE.parents[1] / "outputs" / "h7"
 

@@ -28,8 +28,8 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
     CortexMyosinLayout,
     MyosinStepUpdater,
     cortex_myosin_attach_bin_names,

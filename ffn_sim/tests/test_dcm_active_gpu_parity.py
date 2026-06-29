@@ -21,12 +21,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.cell.dcm_active import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_active import (
     ActiveRimTraction,
     ResolvedActiveSpheroid,
     build_active_spheroid,
 )
-from ffn_sim.cell.dcm_gpu_forces import DcmActiveRimTractionGPU, on_gpu
+from ffn_sim.archive.hoomd_legacy.cell.dcm_gpu_forces import DcmActiveRimTractionGPU, on_gpu
 
 
 def _force_of(force) -> np.ndarray:

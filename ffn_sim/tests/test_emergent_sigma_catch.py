@@ -18,8 +18,8 @@ from ffn_sim.scripts.layer2_emergent_sigma import (
     ik_spherical_sigma,
     measure_emergent_sigma_catch,
 )
-from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 
 _CFG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 

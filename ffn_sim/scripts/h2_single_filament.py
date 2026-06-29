@@ -59,7 +59,7 @@ import gsd.hoomd
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "phase1_h2.yaml"

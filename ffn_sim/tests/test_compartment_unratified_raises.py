@@ -20,7 +20,7 @@ _KT = 4.28e-21
 
 
 def test_stress_fibers_backbone_halts_without_mu_SF_or_k_actin():
-    from ffn_sim.cell.stress_fibers import (
+    from ffn_sim.archive.hoomd_legacy.cell.stress_fibers import (
         resolve_backbone_k_bond,
         resolve_stress_fibers,
     )
@@ -34,7 +34,7 @@ def test_stress_fibers_backbone_halts_without_mu_SF_or_k_actin():
 
 
 def test_linc_bond_potential_halts_without_k_linc():
-    from ffn_sim.cell.linc import configure_linc_bond_potential, resolve_linc
+    from ffn_sim.archive.hoomd_legacy.cell.linc import configure_linc_bond_potential, resolve_linc
 
     p = resolve_linc({"linc": {"enabled": True}}, R_cell=7.5e-6, R_nuc=3.0e-6)
     assert p.k_linc is None
@@ -43,7 +43,7 @@ def test_linc_bond_potential_halts_without_k_linc():
 
 
 def test_intermediate_filaments_nonlinear_law_not_faked():
-    from ffn_sim.cell.intermediate_filaments import (
+    from ffn_sim.archive.hoomd_legacy.cell.intermediate_filaments import (
         register_if_bond_params,
         resolve_intermediate_filaments,
     )
@@ -58,7 +58,7 @@ def test_intermediate_filaments_nonlinear_law_not_faked():
 
 
 def test_microtubules_di_updater_unimplemented():
-    from ffn_sim.cell.microtubules import MTDynamicInstability, resolve_microtubules
+    from ffn_sim.archive.hoomd_legacy.cell.microtubules import MTDynamicInstability, resolve_microtubules
 
     p = resolve_microtubules(
         {"microtubules": {"enabled": True, "n_mt": 4, "beads_per_mt": 5,
@@ -70,7 +70,7 @@ def test_microtubules_di_updater_unimplemented():
 
 
 def test_microtubules_require_L_mt_host_geometry():
-    from ffn_sim.cell.microtubules import resolve_microtubules
+    from ffn_sim.archive.hoomd_legacy.cell.microtubules import resolve_microtubules
 
     with pytest.raises(ValueError):
         resolve_microtubules(
@@ -80,7 +80,7 @@ def test_microtubules_require_L_mt_host_geometry():
 
 
 def test_membrane_reservoir_bleb_updater_unconditionally_blocked():
-    from ffn_sim.cell.membrane_reservoir import (
+    from ffn_sim.archive.hoomd_legacy.cell.membrane_reservoir import (
         MembraneTetherLayout,
         MembraneTetherUpdater,
         resolve_membrane_reservoir,
@@ -100,7 +100,7 @@ def test_membrane_reservoir_bleb_updater_unconditionally_blocked():
 
 
 def test_cadherin_junction_no_invented_cadherin_count():
-    from ffn_sim.junction.cadherin import resolve_cadherin_junction
+    from ffn_sim.archive.hoomd_legacy.junction.cadherin import resolve_cadherin_junction
 
     with pytest.raises(ValueError):
         resolve_cadherin_junction(
@@ -110,7 +110,7 @@ def test_cadherin_junction_no_invented_cadherin_count():
 
 
 def test_junctional_actin_stub_blocks_build_and_laws():
-    from ffn_sim.junction.junctional_actin import (
+    from ffn_sim.archive.hoomd_legacy.junction.junctional_actin import (
         catch_off_rate,
         coupling_force_magnitude,
         extend_snapshot_with_junctional_actin,

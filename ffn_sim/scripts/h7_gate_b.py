@@ -30,12 +30,12 @@ from copy import deepcopy
 
 import numpy as np
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,
 )
-from ffn_sim.cortex.cortical_tension import measure_cortical_tension
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import measure_cortical_tension
 
 _MN_PER_M = 1.0e3  # N/m -> mN/m
 

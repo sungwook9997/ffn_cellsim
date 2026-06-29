@@ -224,10 +224,10 @@ def _build_cortex_for_sweep(*, n_fil, n_motors, reach_scale, seed, device="gpu",
         device, allow_cpu_dev=allow_cpu_dev, hoomd_module=hoomd
     )
 
-    from ffn_sim.cortex.cortex import resolve_h3_derived
-    from ffn_sim.cortex.myosin import resolve_cortex_myosin
-    from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-    from ffn_sim.cell.cell import build_cortex_full_simulation
+    from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+    from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+    from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
     cfg = deepcopy(yaml.safe_load(open(PKG / "configs" / "phase1_h3.yaml")))
     cfg["cortex"]["R_cell"] = 7.5e-6                 # MCF7

@@ -37,11 +37,11 @@ from pathlib import Path
 
 import yaml
 
-from ffn_sim.spheroid.cadherin_bonds import resolve_cadherin
-from ffn_sim.spheroid.observables import effective_radius
-from ffn_sim.spheroid.params import resolve_layer2, resolve_proliferation
-from ffn_sim.spheroid.proliferation import run_growth_pooled
-from ffn_sim.spheroid.substrate import resolve_substrate
+from ffn_sim.archive.hoomd_legacy.spheroid.cadherin_bonds import resolve_cadherin
+from ffn_sim.archive.hoomd_legacy.spheroid.observables import effective_radius
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2, resolve_proliferation
+from ffn_sim.archive.hoomd_legacy.spheroid.proliferation import run_growth_pooled
+from ffn_sim.archive.hoomd_legacy.spheroid.substrate import resolve_substrate
 
 _CFG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 _OUT = Path(__file__).resolve().parents[1] / "outputs" / "layer2" / "wetting"
@@ -65,7 +65,7 @@ def main(argv=None):
     cad = resolve_cadherin(resolved, yield_remodel=True)
     plith = None
     if crawl_mode == "plithotaxis":
-        from ffn_sim.spheroid.plithotaxis import resolve_plithotaxis
+        from ffn_sim.archive.hoomd_legacy.spheroid.plithotaxis import resolve_plithotaxis
         plith = resolve_plithotaxis(resolved)
     total_time = 2.0 * prolif.cycle_time_mean
     device = _device(kind)

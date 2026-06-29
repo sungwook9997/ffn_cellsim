@@ -27,10 +27,10 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.connected_mesh import build_connected_cortex
-from ffn_sim.cell.cytoplasm import ETA_CYTO_BY_CELLTYPE as CYTOPLASM_ETA
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.connected_mesh import build_connected_cortex
+from ffn_sim.archive.hoomd_legacy.cell.cytoplasm import ETA_CYTO_BY_CELLTYPE as CYTOPLASM_ETA
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"

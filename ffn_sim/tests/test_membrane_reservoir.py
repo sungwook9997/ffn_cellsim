@@ -1,4 +1,4 @@
-"""Tests for ``ffn_sim.cell.membrane_reservoir`` (H.8 reservoir + bleb tethers).
+"""Tests for ``ffn_sim.archive.hoomd_legacy.cell.membrane_reservoir`` (H.8 reservoir + bleb tethers).
 
 Import-light, fast: resolver-level + a tiny synthetic gsd frame for the tether
 builder. No full Cell is built. The OFF-identity, dimensional/sign sanity, and
@@ -12,7 +12,7 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.cell.membrane_reservoir import (
+from ffn_sim.archive.hoomd_legacy.cell.membrane_reservoir import (
     DEFAULT_W_MCA,
     GAMMA_DENYLIST_PREFIX,
     MEM_TETHER_BOND,
@@ -360,7 +360,7 @@ def test_denylist_matches_cortical_tension_estimator():
 # ---------------------------------------------------------------------------
 class TestMembraneReservoirActivationWiring:
     def test_off_build_is_bit_identity(self):
-        from ffn_sim.cell.manifest import (
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import (
             build_baseline_cell, load_manifest, resolve_baseline,
         )
         rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
@@ -371,9 +371,9 @@ class TestMembraneReservoirActivationWiring:
 
     def test_on_mesh_assembles_without_contamination(self):
         import numpy as np
-        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-        from ffn_sim.cortex.cortical_tension import (
+        from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
             _is_adhesion_bond_type, measure_cortical_tension,
         )
 
@@ -423,7 +423,7 @@ class TestMembraneReservoirActivationWiring:
     def test_enabled_requires_membrane_surface(self):
         # membrane_reservoir requires membrane_surface; resolving with it OFF raises.
         import pytest
-        from ffn_sim.cell.manifest import load_manifest, resolve_baseline
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest, resolve_baseline
         m = load_manifest("mcf7_baseline.yaml")
         m.setdefault("optional_subsystems", {})
         m["optional_subsystems"]["membrane_reservoir"] = {"enabled": True}

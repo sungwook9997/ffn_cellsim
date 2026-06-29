@@ -41,16 +41,16 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from ffn_sim.bridge.ecm_contact import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.bridge.ecm_contact import (  # noqa: E402
     assert_traction_within_contact,
     measure_ecm_contact_manifold,
 )
-from ffn_sim.bridge.manifold_traction import measure_fa_traction_field  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.bridge.manifold_traction import measure_fa_traction_field  # noqa: E402
 from ffn_sim.common.production_policy import (  # noqa: E402
     add_production_device_args,
     validate_production_device_args,
 )
-from ffn_sim.cortex.manifold_regions import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.manifold_regions import (  # noqa: E402
     basal_ring_region,
     polarized_patch_region,
 )

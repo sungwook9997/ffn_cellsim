@@ -61,13 +61,13 @@ import yaml
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.ecm.equilibrate import equilibrate_no_shear
-from ffn_sim.ecm.mikado import (
+from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
+from ffn_sim.archive.hoomd_legacy.ecm.mikado import (
     ResolvedH1,
     build_mikado_simulation,
     resolve_derived,
 )
-from ffn_sim.ecm.shear_protocol import (
+from ffn_sim.archive.hoomd_legacy.ecm.shear_protocol import (
     ShearSchedule,
     attach_shear_updater,
     make_box_variant,

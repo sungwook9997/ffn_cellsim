@@ -14,8 +14,8 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.spheroid.params import resolve_layer2
-from ffn_sim.spheroid.plithotaxis import (
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.plithotaxis import (
     PolarizationField,
     ResolvedPlithotaxis,
     resolve_plithotaxis,

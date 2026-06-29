@@ -23,7 +23,7 @@ import yaml
 
 import hoomd
 
-from ffn_sim.bridge.fa import build_h4_simulation, resolve_h4
+from ffn_sim.archive.hoomd_legacy.bridge.fa import build_h4_simulation, resolve_h4
 from ffn_sim.validation.pereverzev import EXP_ARG_GUARD
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "phase1_h4.yaml"

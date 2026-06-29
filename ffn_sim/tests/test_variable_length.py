@@ -26,7 +26,7 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     ResolvedH3,
     VariableLengthCortexLayout,
     build_variable_length_cortex_simulation,

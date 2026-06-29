@@ -43,13 +43,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-from ffn_sim.cell.membrane_reservoir import (
+from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+from ffn_sim.archive.hoomd_legacy.cell.membrane_reservoir import (
     MembraneTetherUpdater,
     resolve_membrane_reservoir,
 )
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-from ffn_sim.cortex.cortical_tension import (
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
     _is_adhesion_bond_type,
     measure_cortical_tension,
 )

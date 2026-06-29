@@ -13,7 +13,7 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from ffn_sim.cell.manifest import (
+from ffn_sim.archive.hoomd_legacy.cell.manifest import (
     build_baseline_cell,
     load_manifest,
     resolve_baseline,

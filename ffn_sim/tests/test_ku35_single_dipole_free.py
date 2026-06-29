@@ -58,15 +58,15 @@ import hoomd
 import hoomd.md as md
 import yaml
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
     MyosinStepUpdater,
     CortexMyosinLayout,
     cortex_myosin_attach_bin_names,
     register_cortex_myosin_bond_params,
     resolve_cortex_myosin,
 )
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 from ffn_sim.scripts.h3_ku35_stresslet import (
     minifilament_stresslets,
     POL_ANTIPARALLEL,

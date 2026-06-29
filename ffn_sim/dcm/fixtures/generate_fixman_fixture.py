@@ -16,7 +16,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.integrator.constrained_baoab import fixman_logdet_and_force
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import fixman_logdet_and_force
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

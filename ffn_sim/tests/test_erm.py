@@ -23,11 +23,11 @@ import yaml
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     build_cortex_simulation,
     resolve_h3_derived,
 )
-from ffn_sim.cortex.erm import (
+from ffn_sim.archive.hoomd_legacy.cortex.erm import (
     ERMHarmonic,
     ResolvedERM,
     attach_erm_to_simulation,

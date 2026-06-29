@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
 
 PKG = Path(__file__).resolve().parents[1]
 CFG = PKG / "configs" / "phase1_h3.yaml"

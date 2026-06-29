@@ -24,8 +24,8 @@ import numpy as np
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.integrator.baoab import make_baoab_updater  # noqa: F401  (parity import)
-from ffn_sim.integrator.constrained_baoab import make_constrained_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater  # noqa: F401  (parity import)
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import make_constrained_baoab_updater
 
 
 def _make_device(kind: str):

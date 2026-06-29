@@ -3,7 +3,7 @@ and the effect of the query radius (tip_capture+R vs tip_capture+mean_edge)."""
 import sys, time
 import numpy as np
 import warp as wp
-from ffn_sim.cell.dcm import icosphere_mesh, ResolvedDCM
+from ffn_sim.archive.hoomd_legacy.cell.dcm import icosphere_mesh, ResolvedDCM
 from ffn_sim.dcm.dcm_filopodia_probe_warp import probe_faces_gpu, filopodia_probe_kernel
 from ffn_sim.dcm.dcm_neighbor_warp import pos_to_f32, face_centroids_f32
 

@@ -24,8 +24,8 @@ import hoomd.md as md
 import numpy as np
 import yaml
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.integrator.constrained_baoab import make_constrained_baoab_updater
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import make_constrained_baoab_updater
 from ffn_sim.scripts.h7_native_constrained_bench import _warm_and_state, _make_sim
 
 CFG = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"

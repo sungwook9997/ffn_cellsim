@@ -13,11 +13,11 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     build_cortex_state,
     resolve_h3_derived,
 )
-from ffn_sim.cortex.myosin import (
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
     BOND_TYPE_MYOSIN_BACKBONE,
     BOND_TYPE_MYOSIN_HEAD_BACKBONE,
     CortexMyosinLayout,
@@ -191,7 +191,7 @@ class TestNumerical:
 # ---------------------------------------------------------------------------
 class TestHillSignSense:
     def test_hill_v_zero_at_F_zero(self, p_myo):
-        from ffn_sim.bridge.motor import hill_velocity_clamped
+        from ffn_sim.archive.hoomd_legacy.bridge.motor import hill_velocity_clamped
         v = hill_velocity_clamped(
             0.0, v0=p_myo.v0_per_head, F_stall=p_myo.F_stall_per_head,
             a_over_F_stall=p_myo.a_over_F_stall,
@@ -200,7 +200,7 @@ class TestHillSignSense:
         assert math.isclose(float(v), p_myo.v0_per_head, rel_tol=1e-9)
 
     def test_hill_v_zero_at_F_stall(self, p_myo):
-        from ffn_sim.bridge.motor import hill_velocity_clamped
+        from ffn_sim.archive.hoomd_legacy.bridge.motor import hill_velocity_clamped
         v = hill_velocity_clamped(
             p_myo.F_stall_per_head, v0=p_myo.v0_per_head,
             F_stall=p_myo.F_stall_per_head,
@@ -209,7 +209,7 @@ class TestHillSignSense:
         assert math.isclose(float(v), 0.0, abs_tol=1e-12)
 
     def test_hill_v_clamped_above_stall(self, p_myo):
-        from ffn_sim.bridge.motor import hill_velocity_clamped
+        from ffn_sim.archive.hoomd_legacy.bridge.motor import hill_velocity_clamped
         v = hill_velocity_clamped(
             2.0 * p_myo.F_stall_per_head, v0=p_myo.v0_per_head,
             F_stall=p_myo.F_stall_per_head,

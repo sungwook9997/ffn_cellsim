@@ -16,8 +16,8 @@ import gsd.hoomd
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
-from ffn_sim.integrator.baoab_device import (
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab_device import (
     OverdampedBAOABDevice,
     make_baoab_updater_device,
 )

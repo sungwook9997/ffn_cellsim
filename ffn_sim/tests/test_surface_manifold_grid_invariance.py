@@ -19,7 +19,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ffn_sim.cell.compartment_registry import REGISTRY
+from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY
 from ffn_sim.common.surface_manifold import SurfaceManifold
 
 _R = 7.5e-6

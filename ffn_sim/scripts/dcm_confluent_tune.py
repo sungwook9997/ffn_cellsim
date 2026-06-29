@@ -41,9 +41,9 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.dcm_native_shell import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import (
     ResolvedNativeDCM, build_native_dcm_simulation)
-from ffn_sim.cell.dcm_confluence import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_confluence import (
     capture_positions, compute_confluence, per_cell_tris)
 
 OUT = Path("ffn_sim/outputs/h_dcm_active")
@@ -89,9 +89,9 @@ def metrics_for(h, pos):
 # The builder returns mesh + handles but not the raw global tris/typeids; recover
 # them from the same primitive the builder used (deterministic).
 def _global_tris_typeids(h):
-    from ffn_sim.cell.dcm_native_shell import build_native_snapshot
+    from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import build_native_snapshot
     p = h["p"]
-    from ffn_sim.cell.dcm import _cluster_centers
+    from ffn_sim.archive.hoomd_legacy.cell.dcm import _cluster_centers
     centers = _cluster_centers(h["n_cells"], p.spacing_factor * p.R_cell,
                                p.z_substrate, p.R_cell, mode=p.cluster)
     (_snap, mesh_tris, mesh_typeids, *_rest) = build_native_snapshot(

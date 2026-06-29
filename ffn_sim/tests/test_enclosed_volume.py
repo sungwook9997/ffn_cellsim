@@ -28,11 +28,11 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     build_cortex_simulation,
     resolve_h3_derived,
 )
-from ffn_sim.cortex.enclosed_volume import (
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import (
     EnclosedVolumePressure,
     ResolvedEnclosedVolume,
     attach_enclosed_volume_to_simulation,
@@ -471,7 +471,7 @@ class TestBAOABSmoke:
     def test_cell_builder_off_path_noop(self, resolved_cortex):
         """build_cortex_full_simulation with p_enclosed_volume=None attaches
         no EV force (off-path no-op) and the handle is None."""
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
         handles = build_cortex_full_simulation(
             resolved_cortex, with_baoab=True,
         )
@@ -486,7 +486,7 @@ class TestBAOABSmoke:
     def test_cell_builder_on_path_attaches(self, resolved_cortex, resolved_ev):
         """build_cortex_full_simulation with p_enclosed_volume attaches the
         EV force and a short run is stable."""
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
         handles = build_cortex_full_simulation(
             resolved_cortex, with_baoab=True,
             p_enclosed_volume=resolved_ev,

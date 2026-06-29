@@ -1,10 +1,10 @@
 """H.9 nucleus + KU-3.1 enclosed-volume INTEGRATION smoke harness.
 
 Builds a SMALL cell (n_fil≈200, the dev/CPU scale) with BOTH the H.9 nucleus
-(:class:`ffn_sim.cell.nucleus.NucleusConfinement`) and the KU-3.1 enclosed-volume
-pressure (:class:`ffn_sim.cortex.enclosed_volume.EnclosedVolumePressure`) wired
+(:class:`ffn_sim.archive.hoomd_legacy.cell.nucleus.NucleusConfinement`) and the KU-3.1 enclosed-volume
+pressure (:class:`ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume.EnclosedVolumePressure`) wired
 as additive, default-off compartments through
-:func:`ffn_sim.cell.cell.build_cortex_full_simulation`, runs a few hundred BAOAB
+:func:`ffn_sim.archive.hoomd_legacy.cell.cell.build_cortex_full_simulation`, runs a few hundred BAOAB
 steps, and reports:
 
 * crash-free finite-position run (the core integration smoke),
@@ -52,16 +52,16 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.enclosed_volume import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import (
     resolve_enclosed_volume,
     young_laplace_pressure,
 )
-from ffn_sim.cell.nucleus import (
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import (
     resolve_nucleus,
     nucleus_cross_section_area,
 )
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
 _LOG = logging.getLogger("h9_ku31_smoke")
 

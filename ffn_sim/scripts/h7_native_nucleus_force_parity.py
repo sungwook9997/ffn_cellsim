@@ -20,8 +20,8 @@ import hoomd
 import hoomd.md as md
 import numpy as np
 
-from ffn_sim.cell.nucleus import resolve_nucleus, NucleusConfinement
-from ffn_sim.cell.nucleus_confinement_gpu import NucleusConfinementGPU
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus, NucleusConfinement
+from ffn_sim.archive.hoomd_legacy.cell.nucleus_confinement_gpu import NucleusConfinementGPU
 
 
 def _cloud(n, R_nuc, d_knee, seed):

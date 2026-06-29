@@ -4,7 +4,7 @@ Wires the surface manifold (a shared cell-surface coordinate system, GEOMETRY
 ONLY) as the spatial substrate for focal-adhesion traction: it builds an
 FA-adhered MCF7 cell at the physiological operating point, attaches a
 :class:`~ffn_sim.common.surface_manifold.SurfaceManifold` icosphere at
-``R_cell``, and uses :func:`ffn_sim.bridge.manifold_traction.measure_fa_traction_field`
+``R_cell``, and uses :func:`ffn_sim.archive.hoomd_legacy.bridge.manifold_traction.measure_fa_traction_field`
 to turn the EXPLICIT integrin↔ligand bond forces into a per-contact-patch
 **traction vector field** (the design's first-class output for an adherent cell).
 
@@ -43,14 +43,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.collections import LineCollection  # noqa: E402
 
-from ffn_sim.bridge.fa import (  # cross-check the type literals against the SoT
+from ffn_sim.archive.hoomd_legacy.bridge.fa import (  # cross-check the type literals against the SoT
     BOND_TYPE_INTEGRIN as FA_BOND_INTEGRIN,
 )
-from ffn_sim.bridge.manifold_traction import (
+from ffn_sim.archive.hoomd_legacy.bridge.manifold_traction import (
     BOND_TYPE_INTEGRIN,
     measure_fa_traction_field,
 )
-from ffn_sim.cell.manifest import (
+from ffn_sim.archive.hoomd_legacy.cell.manifest import (
     build_baseline_cell,
     load_manifest,
     resolve_baseline,

@@ -5,7 +5,7 @@ closes the small gap); lowest node rests on the substrate (z=0)."""
 from __future__ import annotations
 import argparse
 import numpy as np
-from ffn_sim.cell.dcm import _cluster_centers, icosphere_mesh
+from ffn_sim.archive.hoomd_legacy.cell.dcm import _cluster_centers, icosphere_mesh
 
 
 def main():

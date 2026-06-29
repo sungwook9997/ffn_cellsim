@@ -36,7 +36,7 @@ import gsd.hoomd
 import hoomd.md as md
 
 import _smoke_common as sc
-from ffn_sim.cell.stress_fibers import (
+from ffn_sim.archive.hoomd_legacy.cell.stress_fibers import (
     extend_snapshot_with_stress_fibers,
     measure_sf_tension,
     register_stress_fiber_bond_params,

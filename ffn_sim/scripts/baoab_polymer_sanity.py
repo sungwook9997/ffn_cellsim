@@ -57,7 +57,7 @@ import hoomd
 import hoomd.md as md
 import numpy as np
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 # --- Polymer config (matches hoomd_polymer_sanity.py for continuity) -------
 N_BEADS = 100

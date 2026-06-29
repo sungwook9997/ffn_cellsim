@@ -23,7 +23,7 @@ import gsd.hoomd
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
 
 _KT = 4.28e-21
 _ETA = 65.9  # MCF7 cytoplasm (Hu 2024)
@@ -71,7 +71,7 @@ def _bare_frame(n=4, box=5.0e-5, bead="cortex_actin"):
 
 
 def test_microtubules_enabled_path_assembles_and_steps():
-    from ffn_sim.cell.microtubules import (
+    from ffn_sim.archive.hoomd_legacy.cell.microtubules import (
         attach_microtubule_forces,
         extend_snapshot_with_microtubules,
         resolve_microtubules,
@@ -105,7 +105,7 @@ def test_microtubules_enabled_path_assembles_and_steps():
 
 
 def test_intermediate_filaments_enabled_path_is_force_free_and_steps():
-    from ffn_sim.cell.intermediate_filaments import (
+    from ffn_sim.archive.hoomd_legacy.cell.intermediate_filaments import (
         attach_if_bonds_to_simulation,
         extend_snapshot_with_if_cage,
         resolve_intermediate_filaments,
@@ -139,7 +139,7 @@ def test_intermediate_filaments_enabled_path_is_force_free_and_steps():
 
 
 def test_linc_enabled_path_forms_bridges_and_steps():
-    from ffn_sim.cell.linc import (
+    from ffn_sim.archive.hoomd_legacy.cell.linc import (
         configure_linc_bond_potential,
         extend_snapshot_with_linc,
         resolve_linc,
@@ -216,11 +216,11 @@ def _shell_frame(n, R, bead):
 
 
 def test_osmotic_regulation_enabled_path_moves_setpoint_with_rvd_sign():
-    from ffn_sim.cortex.enclosed_volume import (
+    from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import (
         attach_enclosed_volume_to_simulation,
         resolve_enclosed_volume,
     )
-    from ffn_sim.cortex.osmotic_regulation import (
+    from ffn_sim.archive.hoomd_legacy.cortex.osmotic_regulation import (
         attach_osmotic_regulation_to_simulation,
         resolve_osmotic_regulation,
     )
@@ -251,7 +251,7 @@ def test_osmotic_regulation_enabled_path_moves_setpoint_with_rvd_sign():
 
 
 def test_stress_fibers_enabled_path_builds_and_steps_force_free():
-    from ffn_sim.cell.stress_fibers import (
+    from ffn_sim.archive.hoomd_legacy.cell.stress_fibers import (
         extend_snapshot_with_stress_fibers,
         register_stress_fiber_bond_params,
         resolve_stress_fibers,
@@ -296,7 +296,7 @@ def test_stress_fibers_enabled_path_builds_and_steps_force_free():
 
 
 def test_membrane_reservoir_static_mesh_builds_cross_layer_and_steps():
-    from ffn_sim.cell.membrane_reservoir import (
+    from ffn_sim.archive.hoomd_legacy.cell.membrane_reservoir import (
         attach_membrane_tether_force,
         build_membrane_tethers,
         resolve_membrane_reservoir,

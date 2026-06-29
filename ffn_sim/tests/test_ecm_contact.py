@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-from ffn_sim.bridge.ecm_contact import (
+from ffn_sim.archive.hoomd_legacy.bridge.ecm_contact import (
     TYPE_LIGAND,
     assert_traction_within_contact,
     bin_ecm_contact,
@@ -215,6 +215,6 @@ class TestTractionWithinContact:
 # Type literal agrees with the FA single-source-of-truth
 # ---------------------------------------------------------------------------
 def test_ligand_type_matches_fa():
-    from ffn_sim.bridge.fa import TYPE_LIGAND as FA_TYPE_LIGAND
+    from ffn_sim.archive.hoomd_legacy.bridge.fa import TYPE_LIGAND as FA_TYPE_LIGAND
 
     assert TYPE_LIGAND == FA_TYPE_LIGAND

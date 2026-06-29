@@ -19,7 +19,7 @@ import numpy as np
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.cell.dcm import DcmTurgorForce
+from ffn_sim.archive.hoomd_legacy.cell.dcm import DcmTurgorForce
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

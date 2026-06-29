@@ -35,11 +35,11 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     build_cortex_simulation,
     resolve_h3_derived,
 )
-from ffn_sim.cell.membrane_surface import (
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import (
     DEFAULT_GAMMA_MCA,
     DEFAULT_KAPPA_M,
     DEFAULT_K_A,
@@ -531,8 +531,8 @@ class TestDefaultOff:
         Simulation. (We do NOT reload() the module — that would mint a second
         MembraneSurfaceTension class object and break identity checks elsewhere;
         a no-op re-import of the already-loaded module is the correct probe.)"""
-        mod = importlib.import_module("ffn_sim.cell.membrane_surface")
-        assert mod is sys.modules["ffn_sim.cell.membrane_surface"]
+        mod = importlib.import_module("ffn_sim.archive.hoomd_legacy.cell.membrane_surface")
+        assert mod is sys.modules["ffn_sim.archive.hoomd_legacy.cell.membrane_surface"]
         assert hasattr(mod, "MembraneSurfaceTension")
         assert hasattr(mod, "attach_membrane_surface")
         # Importing created no Simulation / device (HOOMD has no global registry

@@ -12,8 +12,8 @@ import math
 
 import pytest
 
-from ffn_sim.bridge.ligand_species import DEFAULT_LIGAND_FOR_CONDITION, K_BT, LIGAND_REGISTRY
-from ffn_sim.spheroid.ligand_traction import (
+from ffn_sim.archive.hoomd_legacy.bridge.ligand_species import DEFAULT_LIGAND_FOR_CONDITION, K_BT, LIGAND_REGISTRY
+from ffn_sim.archive.hoomd_legacy.spheroid.ligand_traction import (
     KU_2_4_K_ON,
     LP_EDGE,
     LP_UNIFORM,

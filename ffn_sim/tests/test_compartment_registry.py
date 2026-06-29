@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import pytest
 
-from ffn_sim.cell.compartment_registry import (
+from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import (
     REGISTRY,
     BaselineDropError,
     CompartmentRegistry,
@@ -32,7 +32,7 @@ from ffn_sim.cell.compartment_registry import (
     list_recipes,
     load_recipe,
 )
-from ffn_sim.cell.manifest import load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest
 
 RECIPE_NAMES = (
     "suspended_round",
@@ -98,7 +98,7 @@ def test_gamma_contract_declared():
 def test_live_contaminating_compartments_are_actually_denylisted():
     """LIVE/CORE compartments that contaminate gamma must already be excluded by
     the cortical-tension estimator's denylist (no silent contamination today)."""
-    ct = pytest.importorskip("ffn_sim.cortex.cortical_tension")
+    ct = pytest.importorskip("ffn_sim.archive.hoomd_legacy.cortex.cortical_tension")
 
     def covered(bt: str) -> bool:
         # Use the estimator's ACTUAL non-cortical filter — now registry-driven
@@ -312,7 +312,7 @@ def test_registry_is_reconstructable():
 # --------------------------------------------------------------------------
 def test_composed_suspended_manifest_resolves():
     pytest.importorskip("hoomd")
-    from ffn_sim.cell.manifest import resolve_baseline
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import resolve_baseline
 
     base = load_manifest("mcf7_baseline.yaml")
     recipe = load_recipe("suspended_round")
@@ -326,7 +326,7 @@ def test_composed_suspended_manifest_resolves():
 
 def test_composed_adherent_manifest_resolves_with_fa():
     pytest.importorskip("hoomd")
-    from ffn_sim.cell.manifest import resolve_baseline
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import resolve_baseline
 
     base = load_manifest("mcf7_baseline.yaml")
     recipe = load_recipe("adherent_passive")
@@ -347,7 +347,7 @@ def test_cortical_tension_honours_registry_gamma_denylist():
     ``cortex_`` prefix — ``cortex_myosin_*`` IS the active-γ signal and must stay
     COUNTED (the SF-motor reuse is handled by the distinct ``sf_myosin_*`` prefix).
     """
-    from ffn_sim.cortex.cortical_tension import _is_adhesion_bond_type
+    from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import _is_adhesion_bond_type
 
     deny = REGISTRY.gamma_denylist()
     assert deny  # non-empty
@@ -365,8 +365,8 @@ def test_cortical_tension_honours_registry_gamma_denylist():
 def test_internal_live_recipe_composes_and_builds_without_contamination():
     """The 3 LIVE internal compartments (osmotic + MT + IF) compose in ONE cell
     with no mutual cortical-γ contamination (the activation integration capstone)."""
-    from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-    ct = pytest.importorskip("ffn_sim.cortex.cortical_tension")
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+    ct = pytest.importorskip("ffn_sim.archive.hoomd_legacy.cortex.cortical_tension")
 
     base = load_manifest("mcf7_baseline.yaml")
     manifest, deferred = REGISTRY.compose_manifest(

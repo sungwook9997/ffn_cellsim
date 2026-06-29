@@ -54,7 +54,7 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.bridge.fa import resolve_h4
+from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4
 from ffn_sim.validation.oracles.common.sanity_gate import (
     gate_emergent_vs_oracle,
 )

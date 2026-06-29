@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
-from ffn_sim.bridge.fa import resolve_h4, build_h4_state
-from ffn_sim.bridge.motor import (
+from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4, build_h4_state
+from ffn_sim.archive.hoomd_legacy.bridge.motor import (
     hill_velocity,
     hill_velocity_clamped,
 )

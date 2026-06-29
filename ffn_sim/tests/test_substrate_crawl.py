@@ -2,7 +2,7 @@
 from __future__ import annotations
 import numpy as np
 import pytest
-from ffn_sim.spheroid.substrate_crawl import substrate_crawl_forces
+from ffn_sim.archive.hoomd_legacy.spheroid.substrate_crawl import substrate_crawl_forces
 
 
 def test_zero_crawl_is_zero():

@@ -33,8 +33,8 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.ecm.equilibrate import equilibrate_no_shear
-from ffn_sim.ecm.mikado import build_mikado_simulation, resolve_derived
+from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
+from ffn_sim.archive.hoomd_legacy.ecm.mikado import build_mikado_simulation, resolve_derived
 
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "phase1_h1.yaml"

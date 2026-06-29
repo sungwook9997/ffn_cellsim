@@ -1,9 +1,9 @@
 """H.9 nucleus + KU-3.1 enclosed-volume INTEGRATION smoke tests.
 
 Covers the additive, default-off wiring of the H.9 nucleus
-(:class:`ffn_sim.cell.nucleus.NucleusConfinement`) and the KU-3.1
-enclosed-volume pressure (:class:`ffn_sim.cortex.enclosed_volume.EnclosedVolumePressure`)
-into :func:`ffn_sim.cell.cell.build_cortex_full_simulation`.
+(:class:`ffn_sim.archive.hoomd_legacy.cell.nucleus.NucleusConfinement`) and the KU-3.1
+enclosed-volume pressure (:class:`ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume.EnclosedVolumePressure`)
+into :func:`ffn_sim.archive.hoomd_legacy.cell.cell.build_cortex_full_simulation`.
 
 Asserted here (the SA-1 integration contract):
 
@@ -54,13 +54,13 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.enclosed_volume import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import (
     resolve_enclosed_volume,
     young_laplace_pressure,
 )
-from ffn_sim.cell.nucleus import resolve_nucleus
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
 
 CONFIG_PATH = (

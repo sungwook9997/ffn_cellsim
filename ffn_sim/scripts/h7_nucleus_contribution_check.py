@@ -23,12 +23,12 @@ from pathlib import Path
 
 import numpy as np
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,
 )
-from ffn_sim.cortex.cortical_tension import measure_cortical_tension
+from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import measure_cortical_tension
 from ffn_sim.scripts.h7_native_fullcell_go import _tagpos
 
 _OUT = Path(__file__).resolve().parents[1] / "outputs" / "h7" / "production"

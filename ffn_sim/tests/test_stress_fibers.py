@@ -20,7 +20,7 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.cell.stress_fibers import (
+from ffn_sim.archive.hoomd_legacy.cell.stress_fibers import (
     BOND_TYPE_SF_ACTIN,
     GAMMA_DENYLIST_PREFIX,
     PI_DECISIONS,
@@ -328,7 +328,7 @@ class TestSignSense:
         bt = np.asarray(out.bonds.typeid)
         types = list(out.bonds.types)
         # Construction rest length = mean sf_actin bond length at construction.
-        from ffn_sim.cell.stress_fibers import BOND_TYPE_SF_ACTIN
+        from ffn_sim.archive.hoomd_legacy.cell.stress_fibers import BOND_TYPE_SF_ACTIN
         chain_tid = types.index(BOND_TYPE_SF_ACTIN)
         sel = bg[bt == chain_tid]
         r_constr = np.linalg.norm(positions0[sel[:, 0]] - positions0[sel[:, 1]], axis=1)
@@ -390,7 +390,7 @@ def test_pi_decisions_documented():
 # ---------------------------------------------------------------------------
 class TestStressFibersActivationWiring:
     def test_off_build_is_bit_identity(self):
-        from ffn_sim.cell.manifest import (
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import (
             build_baseline_cell, load_manifest, resolve_baseline,
         )
         rb = resolve_baseline(load_manifest("mcf7_baseline.yaml"))
@@ -401,10 +401,10 @@ class TestStressFibersActivationWiring:
 
     def test_on_bundles_assemble_aligned_forcefree_no_contam(self):
         import numpy as np
-        from ffn_sim.cell.compartment_registry import REGISTRY, load_recipe
-        from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
-        from ffn_sim.cell.stress_fibers import sf_actin_backbone_bin_names
-        from ffn_sim.cortex.cortical_tension import (
+        from ffn_sim.archive.hoomd_legacy.cell.compartment_registry import REGISTRY, load_recipe
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
+        from ffn_sim.archive.hoomd_legacy.cell.stress_fibers import sf_actin_backbone_bin_names
+        from ffn_sim.archive.hoomd_legacy.cortex.cortical_tension import (
             _is_adhesion_bond_type, measure_cortical_tension,
         )
 
@@ -462,7 +462,7 @@ class TestStressFibersActivationWiring:
 
     def test_enabled_requires_fa(self):
         import pytest
-        from ffn_sim.cell.manifest import load_manifest, resolve_baseline
+        from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest, resolve_baseline
         m = load_manifest("mcf7_baseline.yaml")
         m.setdefault("optional_subsystems", {})
         m["optional_subsystems"]["ventral_stress_fibers"] = {

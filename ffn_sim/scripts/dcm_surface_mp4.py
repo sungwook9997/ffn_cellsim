@@ -37,11 +37,11 @@ from matplotlib.animation import FFMpegWriter  # noqa: E402
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection  # noqa: E402
 from matplotlib.colors import LightSource  # noqa: E402
 
-from ffn_sim.cell.dcm_native_shell import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_native_shell import (  # noqa: E402
     ResolvedNativeDCM, build_native_dcm_simulation, build_native_snapshot)
-from ffn_sim.cell.dcm_confluence import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm_confluence import (  # noqa: E402
     capture_positions, compute_confluence, per_cell_tris)
-from ffn_sim.cell.dcm import _cluster_centers  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.dcm import _cluster_centers  # noqa: E402
 from ffn_sim.common.sim_realtime import map_realtime  # noqa: E402
 
 matplotlib.rcParams["animation.ffmpeg_path"] = "/opt/homebrew/bin/ffmpeg"

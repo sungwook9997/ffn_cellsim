@@ -46,7 +46,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.membrane_surface import (
+from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import (
     SURFACE_TENSION_BAND,
     MembraneSurfaceTension,
     laplace_pressure,
@@ -200,7 +200,7 @@ def run_gate(
     γ_mem. The gate asserts (a) γ ∈ KU-3.B1.1 band 0.03–0.30 mN/m and (b)
     ``ΔP = 2γ/R`` holds (the recovered ΔP matches the analytic Laplace pressure).
     """
-    from ffn_sim.cell.membrane_surface import attach_membrane_surface
+    from ffn_sim.archive.hoomd_legacy.cell.membrane_surface import attach_membrane_surface
 
     sim, _pos = build_synthetic_membrane_sphere(n_beads, R)
     # A0 = construction (reference) area → area-elastic part is ~0 at this radius.

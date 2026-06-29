@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from ffn_sim.spheroid.motility_bridge import (
+from ffn_sim.archive.hoomd_legacy.spheroid.motility_bridge import (
     V0_MCF7_WHOLECELL,
     resolve_active_traction,
 )
-from ffn_sim.spheroid.params import resolve_layer2
+from ffn_sim.archive.hoomd_legacy.spheroid.params import resolve_layer2
 
 _CFG = Path(__file__).resolve().parents[1] / "configs" / "layer2_cbm.yaml"
 

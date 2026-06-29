@@ -59,7 +59,7 @@ def _mean_active_cell_volume(pos_g, ranges, active):
 
 def run(args):
     import hoomd
-    from ffn_sim.cell.dcm_prolif import (
+    from ffn_sim.archive.hoomd_legacy.cell.dcm_prolif import (
         ResolvedProlifDCM, build_prolif_simulation)
 
     p = ResolvedProlifDCM(

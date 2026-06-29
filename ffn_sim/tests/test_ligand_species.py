@@ -14,7 +14,7 @@ import math
 import numpy as np
 import pytest
 
-from ffn_sim.bridge.ligand_species import (
+from ffn_sim.archive.hoomd_legacy.bridge.ligand_species import (
     CATCH_DISABLED_FRACTION,
     DEFAULT_LIGAND_FOR_CONDITION,
     K_BT,

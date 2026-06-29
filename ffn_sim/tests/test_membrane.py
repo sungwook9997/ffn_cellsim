@@ -40,11 +40,11 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cell.lamellipodium import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import (
     build_lamellipodium_simulation,
     resolve_h5_lamellipodium,
 )
-from ffn_sim.cell.membrane import (
+from ffn_sim.archive.hoomd_legacy.cell.membrane import (
     MembraneLoad,
     MembraneReactionForce,
     ResolvedMembrane,
@@ -463,7 +463,7 @@ class TestNumericalCFL:
         Attaching WITHOUT the reaction force never raises, even when the
         bounded per-step drift WOULD exceed contact_range (the gate is
         irrelevant because no force acts on the integrator)."""
-        from ffn_sim.cell.membrane import _physical_span_cap
+        from ffn_sim.archive.hoomd_legacy.cell.membrane import _physical_span_cap
         sim = _minimal_sim_with_integrator(dt=1.3e-8)
         # A band-valid membrane whose λ-capped bounded load WOULD trip a
         # force-CFL gate (tiny contact_range → drift ≫ ceiling) IF it were a
@@ -605,7 +605,7 @@ class TestBAOABSmoke:
 # ---------------------------------------------------------------------------
 class TestBuilderHook:
     def _resolved_cortex(self):
-        from ffn_sim.cortex.cortex import resolve_h3_derived
+        from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
         cfg_path = (
             Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
         )
@@ -617,7 +617,7 @@ class TestBuilderHook:
     def test_builder_off_path_when_membrane_none(self):
         """build_cortex_full_simulation with p_membrane=None attaches no
         membrane (off-path no-op) and the handles are None."""
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
         handles = build_cortex_full_simulation(self._resolved_cortex(), with_baoab=True)
         assert handles["membrane_load_action"] is None
         assert handles["membrane_reaction_force"] is None
@@ -635,7 +635,7 @@ class TestBuilderHook:
         """p_membrane=None is bit-for-bit identical to not passing it at all
         (off-path no-op; in-process construction-snapshot hash compare)."""
         import hashlib
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
         p = self._resolved_cortex()
 
         def fingerprint(handles):

@@ -22,7 +22,7 @@ import os
 
 import numpy as np
 
-from ffn_sim.cell.dcm_face_contact import (
+from ffn_sim.archive.hoomd_legacy.cell.dcm_face_contact import (
     closest_point_on_triangle, node_face_contact_forces)
 
 HERE = os.path.dirname(os.path.abspath(__file__))

@@ -40,7 +40,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from ffn_sim.cortex.manifold_regions import (  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cortex.manifold_regions import (  # noqa: E402
     basal_ring_region,
     polarized_patch_region,
 )
@@ -52,7 +52,7 @@ _CONFIG = Path(__file__).resolve().parents[1] / "configs" / "phase1_h5.yaml"
 
 def _resolve_h5(R_cell: float, n_WAVE: int):
     """Resolve H.5 lamellipodium params for the MCF7 single-cell box."""
-    from ffn_sim.cell.lamellipodium import resolve_h5_lamellipodium
+    from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import resolve_h5_lamellipodium
 
     with open(_CONFIG) as f:
         cfg = yaml.safe_load(f)
@@ -178,7 +178,7 @@ def main() -> int:
     p = _resolve_h5(R_cell, int(args.n_wave))
 
     # --- basal_ring region + WAVE co-registration ---
-    from ffn_sim.cell.lamellipodium_basal_ring import (
+    from ffn_sim.archive.hoomd_legacy.cell.lamellipodium_basal_ring import (
         generate_basal_ring_lamellipodium_layout,
     )
 
@@ -194,7 +194,7 @@ def main() -> int:
     br_coreg = bool(np.all(basal.mask[br_home])) if br_home.size else True
 
     # --- polarized_patch region + WAVE co-registration ---
-    from ffn_sim.cell.lamellipodium_polarized_patch import (
+    from ffn_sim.archive.hoomd_legacy.cell.lamellipodium_polarized_patch import (
         generate_polarized_patch_layout,
     )
 

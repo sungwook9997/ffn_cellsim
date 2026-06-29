@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.lamellipodium import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import (
     ArpBranchingUpdater,
     BarbedEndElongationUpdater,
     CappingUpdater,
@@ -167,7 +167,7 @@ class TestSignSense:
         """Daughter tangent should be angle_branch_t0 (70°, Fäßler 2020)
         off the mother tangent at branching."""
         # Synthetic check: rotate -ŷ by 72° using the same algorithm.
-        from ffn_sim.cell.lamellipodium import _random_perpendicular
+        from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import _random_perpendicular
         mother = np.array([0.0, -1.0, 0.0])
         rng = np.random.default_rng(0)
         perp = _random_perpendicular(mother, rng)

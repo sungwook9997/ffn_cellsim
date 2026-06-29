@@ -35,7 +35,7 @@ from scipy.sparse import coo_matrix  # noqa: E402
 from scipy.sparse.csgraph import connected_components  # noqa: E402
 from scipy.spatial import cKDTree  # noqa: E402
 
-from ffn_sim.cell.manifest import load_manifest  # noqa: E402
+from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest  # noqa: E402
 
 _OUT = Path(__file__).resolve().parents[1] / "outputs" / "h7" / "figs" / "crosslink_2d_test.png"
 

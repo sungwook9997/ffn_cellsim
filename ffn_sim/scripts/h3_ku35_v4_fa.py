@@ -57,13 +57,13 @@ import numpy as np
 import yaml
 import hoomd
 
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.myosin import resolve_cortex_myosin
-from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume
-from ffn_sim.cortex.turnover import resolve_turnover
-from ffn_sim.bridge.fa import resolve_h4
-from ffn_sim.cell.cell import build_cortex_full_simulation
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import resolve_cortex_myosin
+from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume
+from ffn_sim.archive.hoomd_legacy.cortex.turnover import resolve_turnover
+from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4
+from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 from ffn_sim.common import checkpoint as _ckpt
 from ffn_sim.common import integrity as _integrity
 from ffn_sim.common.production_policy import (
@@ -255,7 +255,7 @@ def run(
     # the bound here via an UNCONSTRAINED compute_global_cfl_dt call (which only
     # REPORTS dt_min and never raises), then lower constrained_dt to it. No
     # frozen file is touched — only the dt scalar the driver requests.
-    from ffn_sim.cell.dt_reconcile import compute_global_cfl_dt
+    from ffn_sim.archive.hoomd_legacy.cell.dt_reconcile import compute_global_cfl_dt
     _bound = compute_global_cfl_dt(
         p, p_xlinks=p_xl, p_myosin=p_myo, p_fa=p_fa,
         p_enclosed_volume=p_ev, p_turnover=p_to,

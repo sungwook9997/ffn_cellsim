@@ -20,7 +20,7 @@ import numpy as np
 
 import hoomd
 
-from ffn_sim.cell.manifest import build_baseline_cell, load_manifest
+from ffn_sim.archive.hoomd_legacy.cell.manifest import build_baseline_cell, load_manifest
 
 
 def main() -> int:

@@ -142,12 +142,12 @@ def pinned_param_map():
     (no full build => no motor-placement failure). Replicates the exact wiring
     in cell.py:786-833 + cortex/myosin.py:733-743 for a CONSTRAINED grip_walk
     cortex with the v300full config (force_scaling ON, n_motors=1200)."""
-    from ffn_sim.cortex.cortex import resolve_h3_derived
-    from ffn_sim.cortex.myosin import (
+    from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+    from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
         resolve_cortex_myosin, cortex_myosin_attach_bin_names,
         cortex_myosin_attach_bin_rest_lengths,
         BOND_TYPE_MYOSIN_BACKBONE, BOND_TYPE_MYOSIN_HEAD_BACKBONE)
-    from ffn_sim.cortex.crosslinkers import (
+    from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import (
         resolve_crosslinkers, xlink_attach_bin_names, xlink_attach_bin_rest_lengths)
 
     cfg = yaml.safe_load(open(CFG))

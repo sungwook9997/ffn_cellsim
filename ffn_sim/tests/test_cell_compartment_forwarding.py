@@ -21,11 +21,11 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.cell import Cell
-from ffn_sim.cell.cytoplasm import resolve_cytoplasm
-from ffn_sim.cell.nucleus import resolve_nucleus
-from ffn_sim.cortex.cortex import resolve_h3_derived
-from ffn_sim.cortex.enclosed_volume import resolve_enclosed_volume
+from ffn_sim.archive.hoomd_legacy.cell.cell import Cell
+from ffn_sim.archive.hoomd_legacy.cell.cytoplasm import resolve_cytoplasm
+from ffn_sim.archive.hoomd_legacy.cell.nucleus import resolve_nucleus
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import resolve_h3_derived
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import resolve_enclosed_volume
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "phase1_h3.yaml"
 

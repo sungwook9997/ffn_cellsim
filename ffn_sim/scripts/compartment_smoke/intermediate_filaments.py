@@ -30,7 +30,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import _smoke_common as sc
-from ffn_sim.cell.intermediate_filaments import (
+from ffn_sim.archive.hoomd_legacy.cell.intermediate_filaments import (
     GAMMA_DENYLIST_PREFIX,
     attach_if_bonds_to_simulation,
     extend_snapshot_with_if_cage,

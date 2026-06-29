@@ -24,7 +24,7 @@ import yaml
 
 import gsd.hoomd
 
-from ffn_sim.cortex.myosin import (
+from ffn_sim.archive.hoomd_legacy.cortex.myosin import (
     BOND_TYPE_MYOSIN_BACKBONE,
     BOND_TYPE_MYOSIN_HEAD_BACKBONE,
     MYOSIN_DEFAULT_PREFIX,

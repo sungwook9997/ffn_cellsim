@@ -85,9 +85,9 @@ def main() -> int:
     args = ap.parse_args()
 
     import hoomd
-    from ffn_sim.cell.manifest import load_manifest
-    from ffn_sim.cell.dcm import _cluster_centers
-    from ffn_sim.cell.dcm_ecm import (
+    from ffn_sim.archive.hoomd_legacy.cell.manifest import load_manifest
+    from ffn_sim.archive.hoomd_legacy.cell.dcm import _cluster_centers
+    from ffn_sim.archive.hoomd_legacy.cell.dcm_ecm import (
         ResolvedDcmEcm, build_dcm_ecm_spheroid_simulation,
         read_positions, ecm_radial_displacement, fiber_tension_vs_r,
     )

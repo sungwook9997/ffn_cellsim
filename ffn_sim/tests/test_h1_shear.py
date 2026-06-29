@@ -24,12 +24,12 @@ import yaml
 import hoomd
 import hoomd.md as md
 
-from ffn_sim.ecm.mikado import (
+from ffn_sim.archive.hoomd_legacy.ecm.mikado import (
     ResolvedH1,
     build_mikado_simulation,
     resolve_derived,
 )
-from ffn_sim.ecm.shear_protocol import (
+from ffn_sim.archive.hoomd_legacy.ecm.shear_protocol import (
     ShearSchedule,
     attach_shear_updater,
     make_box_variant,
@@ -153,7 +153,7 @@ class TestSchedule:
 # ---------------------------------------------------------------------------
 class TestConservation:
     def test_topology_unchanged_through_ramp(self, resolved):
-        from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+        from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
 
         sim, updater, action = build_mikado_simulation(
             resolved, with_cross_links=True
@@ -239,7 +239,7 @@ class TestSimulationSmoke:
     def test_full_h1_with_shear_runs_without_nan(self, resolved):
         """Full Mikado + xl + BAOAB + Lees-Edwards shear: prelude +
         20 strain-ramp steps, confirm no NaN positions or forces."""
-        from ffn_sim.ecm.equilibrate import equilibrate_no_shear
+        from ffn_sim.archive.hoomd_legacy.ecm.equilibrate import equilibrate_no_shear
 
         sim, updater, action = build_mikado_simulation(
             resolved, with_cross_links=True

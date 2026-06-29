@@ -28,11 +28,11 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.cell.lamellipodium import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium import (
     LamellipodiumLayout,
     resolve_h5_lamellipodium,
 )  # resolve_h5_lamellipodium builds a valid ResolvedH5 in the fixture below.
-from ffn_sim.cell.lamellipodium_polarized_patch import (
+from ffn_sim.archive.hoomd_legacy.cell.lamellipodium_polarized_patch import (
     PolarizedPatchLayout,
     generate_polarized_patch_layout,
 )

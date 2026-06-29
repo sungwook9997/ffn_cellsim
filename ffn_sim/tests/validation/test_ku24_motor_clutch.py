@@ -9,7 +9,7 @@ Brief acceptance rows:
 This file ships **three gates**:
 
 1. **D6 Hill closed-form correctness** — pure NumPy validation of
-   ``ffn_sim.bridge.motor.hill_velocity`` against the analytic
+   ``ffn_sim.archive.hoomd_legacy.bridge.motor.hill_velocity`` against the analytic
    v(0) = v0, v(F_s) = 0, monotonicity properties. Runs in CI.
 
 2. **D6 Hill emergent-vs-oracle** — compares a "harness" v(F) (the same
@@ -53,8 +53,8 @@ import numpy as np
 import pytest
 import yaml
 
-from ffn_sim.bridge.fa import resolve_h4
-from ffn_sim.bridge.motor import (
+from ffn_sim.archive.hoomd_legacy.bridge.fa import resolve_h4
+from ffn_sim.archive.hoomd_legacy.bridge.motor import (
     hill_per_minifilament_velocity,
     hill_velocity,
     hill_velocity_clamped,

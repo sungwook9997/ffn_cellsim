@@ -31,7 +31,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from ffn_sim.ecm.mikado import resolve_derived
+from ffn_sim.archive.hoomd_legacy.ecm.mikado import resolve_derived
 from ffn_sim.validation.oracles.ecm.cross_links import generate_cross_links
 from ffn_sim.validation.oracles.ecm.fiber_mechanics import compute_forces
 from ffn_sim.validation.oracles.ecm.fiber_network import generate_2d_fiber_network

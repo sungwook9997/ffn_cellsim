@@ -27,10 +27,10 @@ import yaml
 import hoomd
 from hoomd import md
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     resolve_h3_derived, build_cortex_state, build_cortex_simulation,
 )
-from ffn_sim.integrator.constrained_baoab import make_constrained_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import make_constrained_baoab_updater
 from ffn_sim.common.filament_math import fit_persistence_length
 
 

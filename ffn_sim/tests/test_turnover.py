@@ -32,11 +32,11 @@ import yaml
 
 import hoomd
 
-from ffn_sim.cortex.cortex import (
+from ffn_sim.archive.hoomd_legacy.cortex.cortex import (
     build_cortex_simulation,
     resolve_h3_derived,
 )
-from ffn_sim.cortex.turnover import (
+from ffn_sim.archive.hoomd_legacy.cortex.turnover import (
     BATCH_CFL_CEILING,
     ActinTurnoverUpdater,
     ResolvedTurnover,
@@ -362,8 +362,8 @@ class TestConservation:
     def test_noncortex_bonds_preserved(self, resolved_cortex):
         """xlink bonds (a different bond type) are PRESERVED across turnover
         ticks — turnover touches cortex-bond + cortex-angle only."""
-        from ffn_sim.cortex.crosslinkers import resolve_crosslinkers
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cortex.crosslinkers import resolve_crosslinkers
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
         cfg = _demo_cortex_cfg()
         cfg["cortex"]["dynamic_crosslinkers"]["n_xl"] = 20
@@ -688,7 +688,7 @@ class TestCellBuilder:
     def test_off_path_noop(self, resolved_cortex):
         """build_cortex_full_simulation with p_turnover=None attaches no
         turnover Updater (off-path no-op) and the handle is None."""
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
         handles = build_cortex_full_simulation(
             resolved_cortex, with_baoab=True,
         )
@@ -704,7 +704,7 @@ class TestCellBuilder:
     def test_on_path_attaches_and_runs(self, resolved_cortex):
         """build_cortex_full_simulation with p_turnover attaches the Updater
         and a short run is stable + the action initialises its junction set."""
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
         p_turn = resolve_turnover(
             _turnover_cfg(), dt=resolved_cortex.dt_cfl,
             rest_length=resolved_cortex.rest_length,
@@ -735,7 +735,7 @@ class TestOffPathBuildHash:
         omitted or explicitly None — proving the default-off additive contract
         at the snapshot level (no git; in-process hash compare)."""
         import hashlib
-        from ffn_sim.cell.cell import build_cortex_full_simulation
+        from ffn_sim.archive.hoomd_legacy.cell.cell import build_cortex_full_simulation
 
         def _snap_hash(handles):
             snap = handles["sim"].state.get_snapshot()

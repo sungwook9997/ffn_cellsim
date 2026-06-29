@@ -28,8 +28,8 @@ import numpy as np
 import hoomd
 from hoomd import md
 
-from ffn_sim.integrator.baoab import make_baoab_updater
-from ffn_sim.integrator.constrained_baoab import (
+from ffn_sim.archive.hoomd_legacy.integrator.baoab import make_baoab_updater
+from ffn_sim.archive.hoomd_legacy.integrator.constrained_baoab import (
     FIXMAN_SIGN, make_constrained_baoab_updater,
 )
 

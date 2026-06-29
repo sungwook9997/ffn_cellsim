@@ -33,11 +33,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import _smoke_common as sc
-from ffn_sim.cortex.enclosed_volume import (
+from ffn_sim.archive.hoomd_legacy.cortex.enclosed_volume import (
     attach_enclosed_volume_to_simulation,
     resolve_enclosed_volume,
 )
-from ffn_sim.cortex.osmotic_regulation import (
+from ffn_sim.archive.hoomd_legacy.cortex.osmotic_regulation import (
     attach_osmotic_regulation_to_simulation,
     resolve_osmotic_regulation,
 )
