@@ -20,17 +20,18 @@ Reference bands (literature; for OVERLAY only — γ is SWEPT as a controlled va
 hit a band, per the hard rule):
   * Salbreux, Charras & Paluch 2012:  γ ∈ [0.35, 0.65] mN/m  (= [3.5e-4, 6.5e-4] N/m).
   * MCF7 interphase (Hosseini 2020):  γ IQR ≈ [0.18, 0.40] mN/m.
-In FF units γ has dimension force/length = pN/µm; 1 pN/µm = 1e-6 N/m = 1e-3 mN/m, so the Salbreux
-band is [0.35, 0.65] pN/µm.
+In FF units γ has dimension force/length = pN/µm; **1 pN/µm = 1e-6 N/m = 1e-3 mN/m**, so the
+Salbreux band [0.35, 0.65] mN/m = **[350, 650] pN/µm** (NOT 0.35–0.65 pN/µm — that 1000× slip is a
+trap; γ values are large in pN/µm).
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-# Literature cortical-tension bands, in FF units (pN/µm = 1e-3 mN/m).
-SALBREUX_BAND_PN_UM = (0.35, 0.65)     # Salbreux, Charras & Paluch 2012
-MCF7_IQR_PN_UM = (0.18, 0.40)          # MCF7 interphase, Hosseini 2020
+# Literature cortical-tension bands, in FF units (pN/µm). 1 pN/µm = 1e-3 mN/m, so 0.35 mN/m = 350.
+SALBREUX_BAND_PN_UM = (350.0, 650.0)   # Salbreux, Charras & Paluch 2012 (0.35–0.65 mN/m)
+MCF7_IQR_PN_UM = (180.0, 400.0)        # MCF7 interphase, Hosseini 2020 (0.18–0.40 mN/m)
 
 
 def fibonacci_plane_normals(n_planes: int) -> np.ndarray:

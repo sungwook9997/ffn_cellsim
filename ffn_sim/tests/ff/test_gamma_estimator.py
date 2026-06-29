@@ -83,7 +83,8 @@ def test_gamma_ignores_noncrossing_elements():
 def test_unit_conversions_and_band():
     assert gamma_to_mN_per_m(1.0) == pytest.approx(1e-3)
     assert gamma_to_N_per_m(1.0) == pytest.approx(1e-6)
-    # Salbreux band 0.35–0.65 pN/µm = 0.35–0.65 mN/m
+    # Salbreux band [350, 650] pN/µm = [0.35, 0.65] mN/m (1 pN/µm = 1e-3 mN/m)
     lo, hi = SALBREUX_BAND_PN_UM
-    assert gamma_to_mN_per_m(lo) == pytest.approx(0.35e-3)
-    assert gamma_to_mN_per_m(hi) == pytest.approx(0.65e-3)
+    assert (lo, hi) == (350.0, 650.0)
+    assert gamma_to_mN_per_m(lo) == pytest.approx(0.35)
+    assert gamma_to_mN_per_m(hi) == pytest.approx(0.65)
