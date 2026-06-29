@@ -120,10 +120,26 @@ reported as a function of it (NOT tuned to a target). See `docs/v2_audit/PARAM_A
 ## 5. Build stages
 
 - **6a** ✅ this spec + fiber-network data model scaffold.
-- **6b** WLC + Cytosim-bending Warp kernels (grounded) + wire to `implicit_overdamped_step`; relaxation
-  smoke (a bent fiber relaxes to straight at the right rate).
-- **6c** Hand KMC layer (myosin/crosslinker) + quenched-ensemble harness.
-- **6d** γ-floor prototype run + the MD-free-vs-MD-γ validation + Cytosim parity oracle.
+- **6b** ✅ Cytosim-bending Warp kernel (grounded) + wired to `implicit_overdamped_step`; relaxation
+  validated (`forces_warp.py`, `tests/ff/test_cytosim_bending.py`).
+- **6b-iv** ✅ inextensibility = constraint projector `P = I − Jᵀ(JJᵀ)⁻¹J` + exact reshape (NF2007
+  §5.3, NOT a spring) + per-segment axial tension from the multipliers (`constraints.py`).
+- **6c-a** ✅ nondimensionalize to **pN·µm·s** (`units.py`) — resolves the implicit-solver scale
+  finding (default tolerances now work at FF scale).
+- **6c-b** ✅ cortex fiber-network on the sphere, lit-anchored (`cortex_assembly.py`, `viz_cortex.py`).
+- **6c-c** ✅ Hand KMC kinetic layer (NF2007 §10.1: attach / δa=τv(1−f/f_stall) / Bell + Pereverzev
+  off-rate) with kinesin/NMIIA/α-actinin/filamin presets (`hand_kmc.py`).
+- **6d** ✅ γ-floor prototype: method-of-planes γ estimator (`gamma_estimator.py`, faithful HOOMD
+  port) + crosslinked+myosin+turgor cortex equilibrium + quenched ensemble + prestress sweep
+  (`gamma_floor.py`, `gamma_floor_sweep.py`). **Result:** the MD-free solve REPRODUCES the BAOAB-MD
+  γ-floor (actomyosin ~370× under band at the lit NMIIA prestress; turgor at-band) → the floor is
+  STRUCTURAL (force-magnitude/transmission), not a dynamic MD artifact. See
+  `docs/v2_audit/FF_STAGE6D_GAMMA_FLOOR_2026-06-29.md`. **PI decision open** (missing motor-density
+  datum — same as the SF/NMII line).
+- **next** Cytosim runnable parity oracle (the independent external check); WLC (Marko–Siggia)
+  constitutive option; implicit-accelerated equilibrium for the loaded (not just resting) shell.
+
+Full `tests/ff` suite: **43/43**.
 
 ## 6. Open / PI-gated before deep build
 
