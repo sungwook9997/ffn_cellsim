@@ -23,7 +23,7 @@ from ffn_sim.cortex.manifold_regions import (
     patch_polar_azimuth,
     polarized_patch_region,
 )
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 # Physiological MCF7 single cell (CLAUDE.md platform conventions).
 R_CELL = 7.5e-6

@@ -70,7 +70,7 @@ from ffn_sim.cortex.cortex import (  # noqa: E402
     resolve_h3_derived,
     generate_bimodal_cortex_layout,
 )
-from ffn_sim.cortex.surface_manifold import SurfaceManifold  # noqa: E402
+from ffn_sim.common.surface_manifold import SurfaceManifold  # noqa: E402
 
 _OUT = (
     Path(__file__).resolve().parents[1]

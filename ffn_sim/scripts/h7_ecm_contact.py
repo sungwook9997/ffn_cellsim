@@ -52,7 +52,7 @@ from ffn_sim.common.production_policy import (  # noqa: E402
     add_production_device_args,
     validate_production_device_args,
 )
-from ffn_sim.cortex.surface_manifold import SurfaceManifold  # noqa: E402
+from ffn_sim.common.surface_manifold import SurfaceManifold  # noqa: E402
 from ffn_sim.scripts.h7_manifold_traction import (  # noqa: E402
     _choose_subdivisions,
     _lambert_azimuthal_south,

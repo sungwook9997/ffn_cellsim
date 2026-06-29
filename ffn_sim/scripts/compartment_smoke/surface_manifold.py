@@ -35,7 +35,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import _smoke_common as sc
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 from ffn_sim.cell.compartment_registry import REGISTRY
 
 R_CELL = 7.5e-6          # m  MCF7 (Wagner 2011)

@@ -90,7 +90,7 @@ from typing import Any
 
 import numpy as np
 
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 __all__ = [
     "ManifoldRegion",

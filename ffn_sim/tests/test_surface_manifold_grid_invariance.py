@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from ffn_sim.cell.compartment_registry import REGISTRY
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 _R = 7.5e-6
 _REACH = 1.0e-6

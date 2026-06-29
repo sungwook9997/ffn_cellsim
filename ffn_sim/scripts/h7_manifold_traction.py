@@ -3,7 +3,7 @@
 Wires the surface manifold (a shared cell-surface coordinate system, GEOMETRY
 ONLY) as the spatial substrate for focal-adhesion traction: it builds an
 FA-adhered MCF7 cell at the physiological operating point, attaches a
-:class:`~ffn_sim.cortex.surface_manifold.SurfaceManifold` icosphere at
+:class:`~ffn_sim.common.surface_manifold.SurfaceManifold` icosphere at
 ``R_cell``, and uses :func:`ffn_sim.bridge.manifold_traction.measure_fa_traction_field`
 to turn the EXPLICIT integrin↔ligand bond forces into a per-contact-patch
 **traction vector field** (the design's first-class output for an adherent cell).
@@ -59,7 +59,7 @@ from ffn_sim.common.production_policy import (
     add_production_device_args,
     validate_production_device_args,
 )
-from ffn_sim.cortex.surface_manifold import (
+from ffn_sim.common.surface_manifold import (
     SurfaceManifold,
     n_tri_for_subdivisions,
 )

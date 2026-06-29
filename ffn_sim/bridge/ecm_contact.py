@@ -4,7 +4,7 @@ The (b) spatial-substrate layer beneath the FA-traction field
 (``bridge/manifold_traction.py``). Where ``manifold_traction`` bins the EXPLICIT
 integrin↔ligand bond *forces* onto cell-surface patches, this module establishes
 the underlying *geometric contact relation* between the cell's basal surface
-(the :class:`~ffn_sim.cortex.surface_manifold.SurfaceManifold` patches) and the
+(the :class:`~ffn_sim.common.surface_manifold.SurfaceManifold` patches) and the
 ECM (its substrate ligand sites): **which patches are in adhesive contact, the
 cell-surface↔ECM correspondence on the shared manifold frame, and the contact
 gap / area** — independent of whether any bond is currently engaged.
@@ -72,7 +72,7 @@ from typing import Any
 
 import numpy as np
 
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 __all__ = [
     "TYPE_LIGAND",

@@ -54,7 +54,7 @@ from ffn_sim.cortex.manifold_regions import (  # noqa: E402
     basal_ring_region,
     polarized_patch_region,
 )
-from ffn_sim.cortex.surface_manifold import SurfaceManifold  # noqa: E402
+from ffn_sim.common.surface_manifold import SurfaceManifold  # noqa: E402
 from ffn_sim.scripts.h7_ecm_contact import _derive_contact_gap  # noqa: E402
 from ffn_sim.scripts.h7_manifold_traction import (  # noqa: E402
     _choose_subdivisions,

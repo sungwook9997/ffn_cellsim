@@ -17,7 +17,7 @@ from ffn_sim.bridge.ecm_contact import (
     bin_ecm_contact,
     measure_ecm_contact_manifold,
 )
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 R_CELL = 7.5e-6
 

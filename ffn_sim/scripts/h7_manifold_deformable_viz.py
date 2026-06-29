@@ -40,7 +40,7 @@ from ffn_sim.cortex.manifold_regions import (  # noqa: E402
     basal_ring_region,
     polarized_patch_region,
 )
-from ffn_sim.cortex.surface_manifold import SurfaceManifold  # noqa: E402
+from ffn_sim.common.surface_manifold import SurfaceManifold  # noqa: E402
 
 _FIG_DIR = Path(__file__).resolve().parents[1] / "outputs" / "h7" / "figs"
 _R_CELL = 7.5e-6

@@ -37,7 +37,7 @@ import hoomd
 import hoomd.custom
 import hoomd.md as md
 
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 _KT_310 = 4.28e-21  # J at 310 K
 

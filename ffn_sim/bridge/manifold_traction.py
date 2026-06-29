@@ -7,7 +7,7 @@ patch, decomposed into the patch's local normal/tangential frame.
 
 Division of labour (HARD — CLAUDE.md / AGENTS.md / the H.7 manifold design)
 ---------------------------------------------------------------------------
-* The :class:`~ffn_sim.cortex.surface_manifold.SurfaceManifold` supplies
+* The :class:`~ffn_sim.common.surface_manifold.SurfaceManifold` supplies
   **GEOMETRY ONLY**: the contact patches (triangles), their centroids, areas,
   outward normals ``n̂`` and tangent frames ``(e1, e2)``, and the bead→patch map
   (:meth:`SurfaceManifold.nearest_patch`). It owns **no mechanics** — no force,
@@ -82,7 +82,7 @@ from typing import Any
 
 import numpy as np
 
-from ffn_sim.cortex.surface_manifold import SurfaceManifold
+from ffn_sim.common.surface_manifold import SurfaceManifold
 
 __all__ = [
     "BOND_TYPE_INTEGRIN",
