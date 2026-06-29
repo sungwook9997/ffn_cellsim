@@ -4,6 +4,19 @@
 
 이 문서는 **파일 → 역할** 매핑 인덱스. 새 세션에서 어디 무엇이 있는지 빠르게 파악할 때 사용.
 
+> ⚠️ **2026-06-29 — TWO-LAYER RESTRUCTURE.** 아래 본문(2026-05-20 작성)은 Phase C 이전이라 최상위 레이아웃 기준으로 **historical**. 현재 활성 레이아웃:
+>
+> | dir | 역할 |
+> |---|---|
+> | `ffn_sim/ff/` | **Filament-FEM 엔진** (Cytosim 물리 — Nédélec & Foethke 2007, Warp). 빌드 진행 중 (γ-floor 프로토타입). |
+> | `ffn_sim/dcm/` | **Deformable Cell Model 엔진** (SimuCell3D 물리, Warp). `warp_port/`에서 rename; hoomd-free 런타임. |
+> | `ffn_sim/common/` | engine-agnostic 공유 (surface_manifold, filament_math, gsd_traj, …). |
+> | `ffn_sim/validation/oracles/` | closed-form oracle (불변, runtime-import-forbidden). |
+> | `ffn_sim/archive/hoomd_legacy/` | **퇴역 HOOMD 런타임** — cell, cortex, bridge, ecm, junction, integrator, spheroid, gpu_opt. frozen 참조 / parity oracle. |
+> | `ffn_sim/{scripts,tests,docs,outputs,configs}/` | 최상위 유지 (hoomd 의존 항목은 archive 경로에서 import). |
+>
+> 브랜치: `dcm/main`·`ff/main`·`ffn/foundation`(보호). 과거 14개 → `archive/*` 태그. 안전 태그 `pre-restructure-2026-06-29`.
+
 ---
 
 ## 0. 최상위 (`~/ffn_cellsim/`)

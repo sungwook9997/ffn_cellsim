@@ -14,14 +14,11 @@ PI directive (2026-05-19): *"full resolution simulation 방향에 맞게 — 처
 
 ```
 ffn_cellsim/
-├── ffn_sim/                          # the active HOOMD-blue runtime
-│   ├── ecm/                          # Mikado fiber network + cross-links (H.1)
-│   ├── cell/                         # cell body composition (H.3)
-│   ├── cortex/                       # actin cortex (H.2, H.3)
-│   ├── bridge/                       # focal adhesion + motor-clutch (H.4)
-│   ├── junction/                     # E-cadherin cell-cell adhesion (H.6)
-│   ├── integrator/                   # Leimkuhler-Matthews BAOAB plugin (custom)
-│   ├── common/                       # shared utilities
+├── ffn_sim/                          # the active Warp runtime (two engine layers)
+│   ├── ff/                           # Filament-FEM engine (Cytosim physics, Warp) — build in progress
+│   ├── dcm/                          # Deformable Cell Model engine (SimuCell3D physics, Warp)
+│   ├── common/                       # engine-agnostic shared utilities
+│   ├── archive/hoomd_legacy/         # retired HOOMD runtime (cell, cortex, bridge, ecm, junction, integrator, spheroid, gpu_opt)
 │   ├── validation/
 │   │   └── oracles/                  # v1 closed-form oracles (frozen reference)
 │   │       ├── ecm/                  # WLC, Mikado geometry, cross-link energy

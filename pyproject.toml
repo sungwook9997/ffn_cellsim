@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ffn_cellsim"
 version = "0.0.1.dev0"
-description = "Full Fiber Network Cell Simulator — fine-grained, mechanistic HOOMD-blue framework"
+description = "Full Fiber Network Cell Simulator — fine-grained mechanistic Warp engines (ff/ Filament-FEM + dcm/ Deformable Cell Model); HOOMD-blue archived as reference"
 requires-python = ">=3.13"
 readme = "README.md"
 
