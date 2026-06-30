@@ -92,6 +92,36 @@ def test_relax_on_device_matches_numpy():
     assert np.allclose(segment_lengths(net), rest, rtol=1e-2)
 
 
+def test_branch_angle_kernel_parity_and_restoring():
+    """The Arp2/3 angle-harmonic branch kernel matches the numpy reference bit-level AND restores the
+    rest branch angle (a perturbed 120° branch relaxes to the 70° rest angle) — the mechanistic
+    angle-harmonic branch (CLAUDE.md: NOT a rigid constraint)."""
+    from ffn_sim.ff.network_warp import _branch_angle_force_numpy_ref, branch_angle_force_np
+
+    rng = np.random.default_rng(0)
+    pos = rng.standard_normal((12, 3))
+    triples = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]], np.int64)
+    th0 = np.deg2rad(70.0); k = 5.0
+    fw = branch_angle_force_np(pos, triples, th0, k)
+    fn = _branch_angle_force_numpy_ref(pos, triples, th0, k)
+    assert np.allclose(fw, fn, atol=1e-12)
+
+    # restoring: relax a single perturbed branch (120°) toward the 70° rest angle
+    p = np.array([[1.0, 0, 0], [0, 0, 0],
+                  [np.cos(np.deg2rad(120)), np.sin(np.deg2rad(120)), 0.0]])
+    tri = np.array([[0, 1, 2]], np.int64)
+
+    def angle(P):
+        r1 = P[0] - P[1]; r2 = P[2] - P[1]
+        return np.rad2deg(np.arccos(np.clip(np.dot(r1, r2) / (np.linalg.norm(r1) * np.linalg.norm(r2)), -1, 1)))
+
+    x = p.copy()
+    for _ in range(2000):
+        f = _branch_angle_force_numpy_ref(x, tri, th0, k); f[1] = 0.0
+        x = x + 0.01 * f
+    assert abs(angle(x) - 70.0) < 1.0
+
+
 def test_on_device_turgor_reduction_parity():
     """The on-device centroid + mean-radius reductions match the host turgor_pressure (so the GPU
     state-dependent turgor refresh is correct)."""

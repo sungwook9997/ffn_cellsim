@@ -133,6 +133,41 @@ def turgor_kernel(
 
 
 @wp.kernel
+def branch_angle_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    triples: wp.array(dtype=wp.int32, ndim=2),   # (B, 3) [i, j(center/branch node), k]
+    theta0: wp.float64,                          # rest branch angle [rad] (Arp2/3 ≈ 70° = 1.222 rad)
+    k_angle: wp.float64,                         # angular stiffness [pN·µm/rad²]
+    force: wp.array(dtype=wp.vec3d),
+):
+    """Harmonic angle force U = ½·k_angle·(θ−θ₀)² at each branch triple (one thread per branch).
+
+    The mechanistic Arp2/3 branch (CLAUDE.md: angle-harmonic with thermal fluctuation, NOT a rigid
+    72° constraint): θ is the angle at the branch node j between (i−j) and (k−j). Standard angle force
+    F_i = (k(θ−θ₀)/sinθ)·∂cosθ/∂r_i, with F_j = −(F_i+F_k)."""
+    t = wp.tid()
+    i = triples[t, 0]
+    j = triples[t, 1]
+    k = triples[t, 2]
+    r1 = pos[i] - pos[j]
+    r2 = pos[k] - pos[j]
+    d1 = wp.length(r1)
+    d2 = wp.length(r2)
+    if d1 < wp.float64(1e-12) or d2 < wp.float64(1e-12):
+        return
+    c = wp.dot(r1, r2) / (d1 * d2)
+    c = wp.clamp(c, wp.float64(-1.0), wp.float64(1.0))
+    s = wp.sqrt(wp.max(wp.float64(1.0) - c * c, wp.float64(1e-12)))
+    theta = wp.acos(c)
+    pref = k_angle * (theta - theta0) / s
+    fi = pref * (r2 / (d1 * d2) - c * r1 / (d1 * d1))
+    fk = pref * (r1 / (d1 * d2) - c * r2 / (d2 * d2))
+    wp.atomic_add(force, i, fi)
+    wp.atomic_add(force, k, fk)
+    wp.atomic_add(force, j, -(fi + fk))
+
+
+@wp.kernel
 def axpy_kernel(x: wp.array(dtype=wp.vec3d), step: wp.float64, F: wp.array(dtype=wp.vec3d)):
     """Explicit overdamped step x += step·F (step = dt/γ)."""
     i = wp.tid()
@@ -215,6 +250,37 @@ def myosin_force_np(pos, links, f_myo, device="cpu"):
                           wp.float64(f_myo), force_d], device=device)
         wp.synchronize_device(device)
     return force_d.numpy().astype(np.float64)
+
+
+def branch_angle_force_np(pos, triples, theta0, k_angle, device="cpu"):
+    """Convenience: Warp Arp2/3 branch-angle force as a numpy (N,3) array."""
+    N = pos.shape[0]
+    pos_d = wp.array(np.ascontiguousarray(pos, np.float64), dtype=wp.vec3d, device=device)
+    force_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+    if triples.shape[0]:
+        wp.launch(branch_angle_kernel, dim=triples.shape[0],
+                  inputs=[pos_d, wp.array(np.ascontiguousarray(triples, np.int32), dtype=wp.int32, device=device),
+                          wp.float64(theta0), wp.float64(k_angle), force_d], device=device)
+        wp.synchronize_device(device)
+    return force_d.numpy().astype(np.float64)
+
+
+def _branch_angle_force_numpy_ref(pos, triples, theta0, k_angle):
+    """Pure-numpy reference for the harmonic branch-angle force (parity oracle for the Warp kernel)."""
+    f = np.zeros_like(pos)
+    for (i, j, k) in triples:
+        r1 = pos[i] - pos[j]; r2 = pos[k] - pos[j]
+        d1 = np.linalg.norm(r1); d2 = np.linalg.norm(r2)
+        if d1 < 1e-12 or d2 < 1e-12:
+            continue
+        c = np.clip(np.dot(r1, r2) / (d1 * d2), -1.0, 1.0)
+        s = np.sqrt(max(1.0 - c * c, 1e-12))
+        theta = np.arccos(c)
+        pref = k_angle * (theta - theta0) / s
+        fi = pref * (r2 / (d1 * d2) - c * r1 / (d1 * d1))
+        fk = pref * (r1 / (d1 * d2) - c * r2 / (d2 * d2))
+        f[i] += fi; f[k] += fk; f[j] -= (fi + fk)
+    return f
 
 
 @wp.kernel
