@@ -146,11 +146,28 @@ reported as a function of it (NOT tuned to a target). See `docs/v2_audit/PARAM_A
   → the γ-floor SURVIVES: σ flat in connectivity z (2.98–5.29) AND in axial extensibility (EA swept
   3 decades incl. actin EA), no Ronceray amplification → buckling/connectivity/extensibility all RULED
   OUT; the floor is a force-MAGNITUDE limit. `docs/v2_audit/FF_STAGE6H_BUCKLING_NETWORK_2026-06-30.md`.
-- **next** WLC (Marko–Siggia) constitutive option; Cytosim dynamic/Hand-kinetics parity (per-frame +
-  motor reporting — needs trajectory-output config); the loaded-shell equilibrium — **all PI-roadmap-
-  gated (the γ-floor decisive experiment is now CLOSED, so the next FF unit is a PI call).**
+- **6i** ✅ Kim/MacKintosh shear modulus — floppy→rigid transition + lit-anchored absolute G (crosslink-
+  limited affine f_na·k_xl·ρ_L·ℓc; sourced-stiffness cortex-stiff). `FF_KIM_NETWORK_VALIDATION_2026-06-30.md`.
+- **6j/6k** ✅ GPU-native (Warp): all kernels + Hand-KMC turnover device-resident, A5000-validated.
+- **6l** ✅ unified actin-architecture `weave()` — cortex/filopodium/lamellipodium/stress-fiber/microvillus
+  + Arp2/3 branch + FA integrin clutch, one builder. All 5 relax-stable under perturbation.
+- **6m/6n** ✅ crosslink stiffness (Ferrer 4.6e5) + force-free-rebinding turnover baseline (the robust
+  stiff-crosslink relaxer).
+- **6q** ✅ lit-faithful MCF7-R densities (actin 100/µm² KB-3.18, NMIIA 0.625/µm² Nie) + the clean **γ_myo**
+  floor metric (γ_active is passive-residual-contaminated at native density — a density-linear crosslink-
+  network prestress, adversarially verified). Floor ~1700× vs MCF7-active — DEEPER but honest; CONFIRMS the
+  force-magnitude floor. `FF_STAGE6Q_LITFAITHFUL_DENSITY_2026-07-01.md`.
+- **6r** ✅ comprehensive GPU↔CPU bit-parity (every kernel + integrator, native scale; reshape 2e-16 →
+  loaded-shell 4e-14) + production-envelope robustness (N 1k–100k, k_xl 0.1→4.6e5, f_myo 0–40, all stable).
+  `FF_STAGE6R_GPU_PARITY_2026-07-01.md`. Consolidated map: `FF_VALIDATION_STATUS_2026-07-01.md`.
+- **next** WLC (Marko–Siggia) constitutive option; Cytosim dynamic/Hand-kinetics parity (needs the `sim`
+  binary rebuilt — offline now); the loaded-shell PRODUCTION equilibrium; Layer-2 coupling — **all PI-
+  roadmap-gated (the γ-floor decisive experiment is CLOSED; the engine is built + validated + robust, so
+  the next FF UNIT is a PI call).** Remaining validation gap: Euler π²κ/L² (needs a finite-EA general relax
+  mode; the inextensible default has no axial force threshold) — deferred, low risk.
 
-Full `tests/ff` suite: **55 passed + 3 Cytosim-parity (skip without the binary)**.
+Full `tests/ff` suite: **~98 passed + 4 skipped (3 Cytosim-parity + 1 GPU-parity, both run only with their
+external dep present)**; 102 collected across 20 files (FF_VALIDATION_STATUS matrix).
 
 ## 6. Open / PI-gated before deep build
 
