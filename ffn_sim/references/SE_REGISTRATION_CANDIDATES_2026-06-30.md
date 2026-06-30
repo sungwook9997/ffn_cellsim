@@ -89,6 +89,33 @@ uses these. The branch GEOMETRY constants are already lit-anchored + Magic-Numbe
 - Cross-check oracle (do NOT adopt): Cytosim fork:angular_stiffness 0.076 pN·µm/rad² (Akamatsu/Berro);
   our 0.173 is from the in-situ Fäßler σ=9° equipartition (both in the 0.05–0.17 decade).
 
+## 7. Stress-fiber / microvillus / FA-traction (Stage 6L increment 3) — PI-GATED
+
+- **SF sarcomere periodicity ~1.0 µm** (band 0.5–1.4): `Hotulainen2006_JCB` (J Cell Biol 173:383) /
+  `Tojkander2012_JCS` / `Peterson2004_MBoC` — NOT in references/ or KB (0 paper_chunks). The
+  alternation PATTERN (α-actinin Z-bodies @ barbed ends ↔ central NMIIA bands) IS KB-grounded
+  (`Murrell2015_NRMCB`, nrm4012.pdf). Register one primary as SE before the SF periodicity is a fixed
+  datum; `STRESS_FIBER.sarcomere_um=1.0` is a SWEPT/provisional value.
+- **SF N_filaments/cross-section 7–30** (categorical RANGE, no point value): Cramer 1997 JCB 136:1287 +
+  Tojkander 2012 (range provenance). Register as RANGE, no point count. Default 20 = swept.
+- **SF active single-fiber tension 5–6 nN**: `Kassianidou2017_PNAS` (PNAS 114:2622) — already in the
+  prior SE_REGISTRATION_CANDIDATES_2026-06-09_sf-mechanics.md (PI sign-off pending). Network total
+  10–30 nN (Kumar 2006) EMERGES, not back-solved.
+- **Microvillus constants (genuine KB gap, 0 rows)** — `DeRosier_Tilney` (brush-border paracrystal,
+  count ~20–30, ~12 nm lateral c2c), `Bartles_espin`, `Loomis2003_JCB`, `Lange` (length 1–2 µm /
+  diameter 80–100 nm / rootlet). espin/fimbrin(I-plastin)/villin bundler KINETICS un-sourced → the
+  builder uses anchored FILAMIN as a stand-in (flagged). ⚠️ resolve the 12 nm (lateral c2c, what the
+  metric measures) vs 33 nm (actin helical repeat, a different axial period) before a passing gate.
+- **FA integrin clutch**: `Kong2009_Nature` (Nature 185:1275… verify; α5β1-FN catch-slip, KB-2.5,
+  audit OK) — already registered. ⚠️ KB-CONSISTENCY FLAG: the recorded KB-2.5 params (k_catch=0.4/s
+  Fc=7pN, k_slip=0.5/s Fs=30pN) give a lifetime peak F* = ln[(k_catch·Fs)/(k_slip·Fc)]/(1/Fc+1/Fs)
+  ≈ **7 pN**, NOT the "F*≈30 pN" the claim text states — the catch-bond IS present but the peak-force
+  claim is inconsistent with its own params; surfaced to PI (used as-recorded in `INTEGRIN_A5B1`, no
+  tuning). FA clutch k_int=1 pN/nm + k_on=1/s are Phase-defaults (KB-2.4/2.18 "relation pending"),
+  PI-gate. ⚠️ Use Kong (integrin-ECM), NOT Rakshit 2012 / KU-4.2 (that is cell-cell cadherin).
+- **Gil-Redondo 2023** per-cell traction 102 nN — literature overlay only, NOT a model-validation gate
+  (H.7 SF-array HALTED).
+
 ## 4. Harvest
 
 `OPS_HARVEST_CANDIDATES_2026-06-30.md` lists 27 un-harvested RunResults (mostly prior-session H3/H7/
