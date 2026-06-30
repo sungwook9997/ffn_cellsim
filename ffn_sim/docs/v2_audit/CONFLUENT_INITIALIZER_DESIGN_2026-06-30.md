@@ -368,3 +368,17 @@ Key reads:
 existing energy maintains it. Remaining work is the two geometry/setpoint refinements above + scale to
 N≥400, all PI-gated. Diagnostic plumbing (`--init-npz`) committed; the production builder (Path B) is NOT
 built, awaiting §6 sign-off.
+
+### 8b. Scale + lower-ε confirmation (2026-07-01, geometry-only + Path-A)
+
+- **Geometry scales clean to N=400** (ε=0.02): manifold χ=2, NO penetration (ratio 1.0), contact 0.86,
+  asph 0.048 / Q 150 at init — a watertight faceted foam at spheroid scale (`confluent_init_prototype.py
+  --n 400 --eps 0.02`). (Lloyd MC sampling is O(N·nsamp); reduce nsamp/iters for N≥400.)
+- **Lower ε cuts the over-inflation, as predicted.** Cleaner maintain test at **N=200, ε=0.02** (cells
+  start ~94% of Voronoi volume): asph 0.034→**0.032**, Q 149→**147**, contact **0.84**, V/V0 **1.13** (vs
+  the N=64 ε=0.06 run's 1.28) — faceting held with less turgor over-inflation. Penetration-ratio 0.79 is a
+  steady penalty-contact overlap (not runaway). Render `viz_html/6_confluent_MAINTAIN_n200_render.png`,
+  interactive `6_confluent_MAINTAIN_n200_eps02.html`.
+- **Net:** the confluent-init path is validated, scales to N=400 geometrically, and maintains faceting at
+  N=200 under the production energy. Faceting is MILD (Q ~147–150); SimuCell3D-grade Q≈250 + the V0=Voronoi
+  setpoint fix remain PI-gated (§6) production work, NOT done autonomously.
