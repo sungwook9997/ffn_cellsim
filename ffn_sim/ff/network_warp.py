@@ -61,6 +61,63 @@ def myosin_kernel(
 
 
 @wp.kernel
+def myosin_bound_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    links: wp.array(dtype=wp.int32, ndim=2),
+    bound: wp.array(dtype=wp.int32),            # (M,) 1=engaged, 0=detached
+    f_myo: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """Myosin contractile force, but only ENGAGED (bound==1) links pull — the rest are detached
+    (Hand turnover). The engaged fraction is what the γ-floor identifies as the limiting density."""
+    t = wp.tid()
+    if bound[t] == 0:
+        return
+    i = links[t, 0]
+    j = links[t, 1]
+    d = pos[j] - pos[i]
+    L = wp.length(d)
+    if L > wp.float64(1e-12):
+        f = (f_myo / L) * d
+        wp.atomic_add(force, i, f)
+        wp.atomic_add(force, j, -f)
+
+
+@wp.kernel
+def kmc_bell_turnover_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    links: wp.array(dtype=wp.int32, ndim=2),
+    bound: wp.array(dtype=wp.int32),            # (M,) in/out engaged state
+    f_load: wp.float64,                         # contractile load per engaged hand [pN] (=f_myo)
+    p0: wp.float64,                             # Bell zero-force off-rate [1/s]
+    f0: wp.float64,                             # Bell characteristic force [pN]
+    cap_um: wp.float64,                         # capture radius for re-attachment [µm]
+    k_on: wp.float64,                           # on-rate [1/s]
+    tau: wp.float64,                            # KMC tick [s]
+    seed: wp.int32,                             # per-call RNG seed (step-dependent)
+):
+    """NF2007 §10.1 Hand turnover (one thread per link): a bound hand DETACHES with the Bell
+    force-dependent probability 1−exp(−τ·p₀·exp(|f|/f₀)); a detached hand within ``cap_um`` RE-ATTACHES
+    with 1−exp(−τ·k_on). The load on an engaged myosin is its contractile force f_load (Bell sees the
+    motor's own force). This makes the ENGAGED fraction self-limiting under load (the γ-floor mechanism)."""
+    t = wp.tid()
+    rstate = wp.rand_init(seed, t)
+    i = links[t, 0]
+    j = links[t, 1]
+    L = wp.length(pos[j] - pos[i])
+    if bound[t] == 1:
+        p_off = p0 * wp.exp(wp.abs(f_load) / f0)        # Bell slip on the motor's own load
+        p_det = wp.float64(1.0) - wp.exp(-tau * p_off)
+        if wp.float64(wp.randf(rstate)) < p_det:
+            bound[t] = wp.int32(0)
+    else:
+        if L < cap_um:
+            p_att = wp.float64(1.0) - wp.exp(-tau * k_on)
+            if wp.float64(wp.randf(rstate)) < p_att:
+                bound[t] = wp.int32(1)
+
+
+@wp.kernel
 def turgor_kernel(
     pos: wp.array(dtype=wp.vec3d),
     centre: wp.vec3d,
@@ -338,3 +395,97 @@ def simulate_loaded_shell_on_device(cortex, f_myo, *, n_steps=4000, reshape_ever
     wp.synchronize_device(d)
     net.pos = pos_d.numpy().astype(np.float64)
     return net.pos, traj
+
+
+def simulate_turnover_on_device(cortex, f_myo, *, n_steps=8000, reshape_every=25, kmc_every=50,
+                                tau_kmc=0.01, record_every=1000, dt_mu=0.0, n_reshape_iter=2,
+                                seed0=12345, device="cpu"):
+    """Evolve the resting cortex with MYOSIN HAND TURNOVER on-device (Warp): bending + crosslink
+    springs (static, ~99 % bound since k_on≫k_off) + ENGAGED myosin (bound-aware) + reshape, with
+    periodic Bell detach/re-attach KMC (``kmc_bell_turnover_kernel``) on the myosin population.
+
+    This closes the γ-floor robustness claim on the TURNOVER axis (the static buckling/connectivity/
+    extensibility ablations are in FF_STAGE6H): does load-dependent motor turnover lift the floor?
+    With Bell detachment the engaged myosin fraction self-limits under load → the floor cannot rise
+    (the engaged force-bearing density, not the network mechanism, sets γ). Returns (pos, bound_mask,
+    traj) where traj records {step, bound_frac} and bound_mask is the final engaged state.
+
+    ``tau_kmc`` is the PHYSICAL KMC tick [s] (default 0.01) — decoupled from the mechanical overdamped
+    descent pseudo-step ``dt_mu`` (regime A/B: the mechanics re-equilibrates over ``kmc_every`` descent
+    steps between ticks, then one Hand KMC tick advances physical time by ``tau_kmc``). For small
+    ``tau_kmc`` the steady engaged fraction → k_on/(k_on+p_off), τ-independent."""
+    from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
+    from ffn_sim.ff.gamma_floor import mesoscale_reach
+    from ffn_sim.ff.hand_kmc import NMIIA_MYOSIN
+
+    net = cortex.net
+    N = net.n_nodes
+    tri = np.ascontiguousarray(net.bend_triples, np.int32)
+    alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
+    fiber_off = np.ascontiguousarray(net.fiber_offsets, np.int32)
+    seg_per = np.diff(fiber_off) - 1
+    seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
+    seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    if dt_mu <= 0.0:
+        kmax = float(net.kappa.max()) / seg**3
+        if cortex.xl_i.size:
+            kmax = max(kmax, float(cortex.xl_k.max()))
+        dt_mu = 0.1 / kmax
+
+    d = device
+    pos_d = wp.array(np.ascontiguousarray(net.pos, np.float64), dtype=wp.vec3d, device=d)
+    f_d = wp.zeros(N, dtype=wp.vec3d, device=d)
+    tri_d = wp.array(tri, dtype=wp.int32, device=d)
+    alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
+    foff_d = wp.array(fiber_off, dtype=wp.int32, device=d)
+    soff_d = wp.array(seg_off, dtype=wp.int32, device=d)
+    srest_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
+    has_xl = bool(cortex.xl_i.size)
+    if has_xl:
+        xl_d = wp.array(np.ascontiguousarray(np.stack([cortex.xl_i, cortex.xl_j], 1), np.int32),
+                        dtype=wp.int32, device=d)
+        kxl_d = wp.array(np.ascontiguousarray(cortex.xl_k, np.float64), dtype=wp.float64, device=d)
+        r0_d = wp.array(np.ascontiguousarray(cortex.xl_rest, np.float64), dtype=wp.float64, device=d)
+    M = int(cortex.myo_i.size)
+    has_myo = M > 0 and f_myo != 0.0
+    if has_myo:
+        myo_d = wp.array(np.ascontiguousarray(np.stack([cortex.myo_i, cortex.myo_j], 1), np.int32),
+                         dtype=wp.int32, device=d)
+        bound_d = wp.array(np.ones(M, np.int32), dtype=wp.int32, device=d)  # start engaged
+    nT = tri.shape[0]
+    p0 = float(NMIIA_MYOSIN.p0); f0 = float(NMIIA_MYOSIN.f0); k_on = float(NMIIA_MYOSIN.k_on)
+    # Re-attach capture = the MESOSCALE reach √(A/n) the links were formed at (sanctioned ×40 dual,
+    # mesoscale_reach) — NOT the molecular ε (210 nm), which is far below the coarse link length so a
+    # detached mesoscale hand could never rebind. Slack ×1.5 lets a fluctuating partner re-bind.
+    cap = 1.5 * mesoscale_reach(cortex.R_um, net.n_fibers)
+    traj = []
+
+    def _bf(step):
+        bf = float(bound_d.numpy().mean()) if has_myo else 0.0
+        traj.append({"step": step, "bound_frac": bf})
+        return bf
+
+    for step in range(n_steps):
+        if has_myo and step % kmc_every == 0:
+            wp.launch(kmc_bell_turnover_kernel, dim=M,
+                      inputs=[pos_d, myo_d, bound_d, wp.float64(f_myo), wp.float64(p0),
+                              wp.float64(f0), wp.float64(cap), wp.float64(k_on),
+                              wp.float64(tau_kmc), wp.int32(seed0 + step)], device=d)
+            if step % record_every == 0:
+                _bf(step)
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        if nT:
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        if has_xl:
+            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_bound_kernel, dim=M, inputs=[pos_d, myo_d, bound_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+        if (step + 1) % reshape_every == 0:
+            wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+                      inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
+    _bf(n_steps)
+    wp.synchronize_device(d)
+    net.pos = pos_d.numpy().astype(np.float64)
+    bound_mask = bound_d.numpy().astype(bool) if has_myo else np.zeros(0, bool)
+    return net.pos, bound_mask, traj

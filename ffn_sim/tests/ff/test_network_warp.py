@@ -130,3 +130,38 @@ def test_loaded_shell_volume_stable_correct_cfl():
     vv0 = [t["V_over_V0"] for t in traj]
     assert all(0.95 < v < 1.05 for v in vv0)                  # stable, no blow-up
     assert abs(vv0[-1] - 1.0) < 0.01
+
+
+def test_kmc_turnover_matches_bell_steady_state():
+    """On-device Hand KMC turnover (Bell detach + Poisson re-attach) drives the engaged myosin
+    fraction to the analytic steady state k_on/(k_on+p_off(f)) — and it self-limits under load
+    (the engaged force-bearing density is what sets the γ-floor; turnover cannot raise it)."""
+    from ffn_sim.ff.gamma_floor import (
+        NMIIA_MINIFIL_STALL_PN,
+        CortexParams,
+        build_crosslinked_cortex,
+        equilibrate,
+    )
+    from ffn_sim.ff.hand_kmc import NMIIA_MYOSIN, bell_off_rate
+    from ffn_sim.ff.network_warp import simulate_turnover_on_device
+
+    def steady(f):
+        return NMIIA_MYOSIN.k_on / (NMIIA_MYOSIN.k_on + bell_off_rate(f, NMIIA_MYOSIN.p0, NMIIA_MYOSIN.f0))
+
+    # physiological stall: stays ~fully engaged (k_on ≫ p_off) → floor unchanged
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=200, n_xl=200, n_myo=100,
+                                  rng=np.random.default_rng(0))
+    equilibrate(cx, 0.0, n_steps=200, method="device", device="cpu")
+    _, bmask, _ = simulate_turnover_on_device(cx, NMIIA_MINIFIL_STALL_PN, n_steps=10000,
+                                              kmc_every=50, tau_kmc=0.01, device="cpu")
+    assert abs(bmask.mean() - steady(NMIIA_MINIFIL_STALL_PN)) < 0.05
+    assert bmask.mean() > 0.9                                  # ~fully engaged at physiological load
+
+    # high load: engaged fraction self-limits (Bell) well below 1 — turnover only LOWERS the density
+    cx2 = build_crosslinked_cortex(CortexParams(), n_filaments=200, n_xl=200, n_myo=100,
+                                   rng=np.random.default_rng(0))
+    equilibrate(cx2, 0.0, n_steps=200, method="device", device="cpu")
+    _, bmask2, _ = simulate_turnover_on_device(cx2, 30.0, n_steps=10000, kmc_every=50,
+                                               tau_kmc=0.01, device="cpu")
+    assert abs(bmask2.mean() - steady(30.0)) < 0.08
+    assert bmask2.mean() < bmask.mean()                        # higher load ⇒ fewer engaged
