@@ -41,3 +41,16 @@ def test_connectivity_scales_with_crosslinker_ratio():
     for R in (0.1, 0.3, 0.5, 1.0):
         net, xl, meta = build_box_network(151.0, box_um=1.0, R_acp=R, rng=np.random.default_rng(0))
         assert connectivity_z(net, xl) == pytest.approx(2 * R, abs=0.05)
+
+
+def test_shear_modulus_rigidity_transition():
+    """The FF cross-linked network has an elastic floppy→rigid transition with connectivity: G≈0 at
+    low crosslinking, rising steeply with R (Head/Levine/MacKintosh 2003 / Kim 2007)."""
+    from ffn_sim.ff.kim_network import shear_modulus
+    G_lo, z_lo, _ = shear_modulus(C_A_uM=300.0, R_acp=0.2, n_steps=1500)
+    G_mid, z_mid, _ = shear_modulus(C_A_uM=300.0, R_acp=1.0, n_steps=1500)
+    G_hi, z_hi, _ = shear_modulus(C_A_uM=300.0, R_acp=2.0, n_steps=1500)
+    assert G_lo < 0.05                              # floppy below threshold (z=0.4)
+    assert G_lo < G_mid < G_hi                      # stiffens with crosslinking
+    assert G_hi > 10 * max(G_mid, 1e-3)             # steep rise (rigidity transition)
+    assert z_lo < z_mid < z_hi

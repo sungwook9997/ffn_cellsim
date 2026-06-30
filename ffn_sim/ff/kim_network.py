@@ -106,3 +106,52 @@ def connectivity_z(net, xl_pairs) -> float:
     """Mean crosslinks per filament (Kim connectivity): 2·n_xl / n_fil."""
     n_fil = net.n_fibers
     return float(2.0 * xl_pairs.shape[0] / n_fil) if n_fil else 0.0
+
+
+def shear_modulus(C_A_uM: float = 300.0, *, R_acp: float = 0.5, box_um: float = 1.0,
+                  gamma: float = 0.03, k_xl: float = 10.0, n_steps: int = 3000, seed: int = 0):
+    """Athermal elastic SHEAR modulus G [pN/µm²] of the FF cross-linked actin network (Kim rheology).
+
+    Applies affine simple shear u_x = γ·z, pins the top/bottom boundary at the sheared position,
+    relaxes the interior (actin segment springs + crosslink springs + bending), and reads the shear
+    stress σ_xz = (x-reaction on the top plane)/area; G = σ_xz/γ. Cross-linked networks have an elastic
+    floppy→rigid TRANSITION with connectivity (Head/Levine/MacKintosh 2003 PRE; Kim 2007): G≈0 below
+    threshold, rising steeply above. ``k_xl`` sets the element stiffness scale (the G MAGNITUDE; the
+    transition/trend is the robust Kim comparison). Returns (G, z, meta).
+    """
+    net, xl, meta = build_box_network(C_A_uM, box_um=box_um, R_acp=R_acp,
+                                      rng=np.random.default_rng(seed))
+    from ffn_sim.ff.forces_warp import make_bending_force_fn
+    N = net.n_nodes
+    bfn = make_bending_force_fn(net)
+    kappa = float(net.kappa.max())
+    seg = float(net.seg_rest.mean())
+    pos0 = net.pos.copy()
+    x = pos0.copy()
+    x[:, 0] += gamma * x[:, 2]                                  # affine simple shear
+    margin = 0.12 * box_um
+    top = pos0[:, 2] > box_um - margin
+    pinned = (pos0[:, 2] < margin) | top
+    pinpos = x[pinned].copy()
+    sp = net.segments
+    r0 = np.linalg.norm(pos0[sp[:, 1]] - pos0[sp[:, 0]], axis=1)
+    dt_mu = 0.2 / max(16 * kappa / seg**3, k_xl)
+
+    def F(xx):
+        f = bfn(xx.reshape(-1)).reshape(N, 3).copy()
+        if len(xl):
+            d = xx[xl[:, 1]] - xx[xl[:, 0]]; f0 = k_xl * d
+            np.add.at(f, xl[:, 0], f0); np.add.at(f, xl[:, 1], -f0)
+        d = xx[sp[:, 1]] - xx[sp[:, 0]]; L = np.linalg.norm(d, axis=1) + 1e-12
+        fa = (k_xl * (L - r0))[:, None] * (d / L[:, None])
+        np.add.at(f, sp[:, 0], fa); np.add.at(f, sp[:, 1], -fa)
+        return f
+
+    for _ in range(n_steps):
+        ff = F(x); ff[pinned] = 0.0
+        if not np.isfinite(ff).all():
+            return None
+        x = x + dt_mu * ff; x[pinned] = pinpos
+    react = -F(x)[top]
+    sigma_xz = react[:, 0].sum() / (box_um * box_um)
+    return float(sigma_xz / gamma), connectivity_z(net, xl), meta

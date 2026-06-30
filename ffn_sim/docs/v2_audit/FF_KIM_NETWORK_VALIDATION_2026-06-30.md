@@ -33,9 +33,30 @@ and the linear connectivity-vs-crosslinker-ratio that Kim's BD model + the actin
 establish — validating the FF single-cell network's STRUCTURAL physics against the peer model. No
 tuning: C_A and R are controlled variables, the rise/ρ_L are lit-anchored.
 
+## Mechanics — FF reproduces the elastic floppy→rigid transition (Stage 6i, `shear_modulus`)
+
+Athermal simple-shear of the FF cross-linked box network (pin top/bottom at the affine-sheared
+position, relax interior under actin-segment + crosslink springs + bending, read σ_xz/γ):
+
+| connectivity z | G [pN/µm²] | regime |
+|---|---|---|
+| 0.2–0.6 | ~0 | FLOPPY (sub-threshold) |
+| 1.0 | 0.18 | onset |
+| 2.0 | 0.58 | rising |
+| 3.0 | 4.2 | RIGID |
+| 4.0 | 6.8 | rigid |
+
+G≈0 below a connectivity threshold then rises steeply — the cross-linked-network elastic
+**floppy→rigid transition** (Head, Levine & MacKintosh 2003 PRE 68; the regime structure Kim 2007
+builds on). FF reproduces it. (`k_xl` sets the G magnitude scale; the TRANSITION/trend is the robust
+Kim comparison — magnitude needs the matched ACP/actin stiffness.) Figure panel (C).
+
+This validates the FF single-cell network's MECHANICS (not just structure) against the peer
+cross-linked-network picture. Together: FF reproduces Kim/MacKintosh structure (ξ∝C_A^−1/2, z=2R) AND
+mechanics (rigidity transition) — the correct single-cell validation.
+
 ## Next (FF↔Kim, follow-up)
 
-- **Elastic shear modulus G vs crosslinker density** (athermal shear of the FF network) vs Kim's
-  cross-link-density stiffening — the mechanical (not just structural) comparison FF can do.
+- Match the G magnitude with lit-anchored ACP + actin axial stiffness (currently k_xl is a scale knob).
 - Cross-linking-angle distribution + bundle-vs-isotropic morphology (Kim's ACPc/ACPB) vs FF.
 - (Thermal G′/G″ would need a thermostatted FF variant — out of the current athermal scope.)
