@@ -136,10 +136,16 @@ reported as a function of it (NOT tuned to a target). See `docs/v2_audit/PARAM_A
   STRUCTURAL (force-magnitude/transmission), not a dynamic MD artifact. See
   `docs/v2_audit/FF_STAGE6D_GAMMA_FLOOR_2026-06-29.md`. **PI decision open** (missing motor-density
   datum — same as the SF/NMII line).
-- **next** Cytosim runnable parity oracle (the independent external check); WLC (Marko–Siggia)
-  constitutive option; implicit-accelerated equilibrium for the loaded (not just resting) shell.
+- **6f** ✅ Cytosim parity oracle built + bending end-correction adopted (see §6).
+- **6g** ✅ implicit-accelerated equilibrium (NF2007 Eq 2): `ff/relax.py` (`relax_implicit` /
+  `relax_explicit`) + `gamma_floor.equilibrate(method='implicit')`. Unconditionally stable — a stiff
+  bent fiber reaches a few-% bending energy in 1–3 implicit steps at dt=10³, matching the explicit
+  equilibrium to ~1e-6 µm and using ≥10× fewer force evals; reshape (not the singular-prone
+  projector-in-JVP) carries inextensibility inside the implicit loop.
+- **next** WLC (Marko–Siggia) constitutive option; Cytosim dynamic/Hand-kinetics parity (per-frame +
+  motor reporting — needs trajectory-output config); the loaded-shell equilibrium.
 
-Full `tests/ff` suite: **43/43**.
+Full `tests/ff` suite: **55 passed + 3 Cytosim-parity (skip without the binary)**.
 
 ## 6. Open / PI-gated before deep build
 

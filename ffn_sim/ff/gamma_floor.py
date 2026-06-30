@@ -237,7 +237,8 @@ def external_force(cortex: CrosslinkedCortex, pos: np.ndarray, bending_fn, f_myo
 
 
 def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int = 600,
-                reshape_every: int = 25, dt_mu: float = 0.0, turgor: bool = False) -> np.ndarray:
+                reshape_every: int = 25, dt_mu: float = 0.0, turgor: bool = False,
+                method: str = "explicit") -> np.ndarray:
     """Settle the cortex by projected overdamped descent + periodic reshape (NF2007 project-then-
     reshape, explicit; sufficient + robust for the quasi-static γ prototype).
 
@@ -248,12 +249,24 @@ def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int =
     network has NO static equilibrium against physiological turgor (it inflates/collapses); that
     instability is itself the γ-floor signature, surfaced to PI rather than tuned away.
 
+    ``method='implicit'`` uses the unconditionally-stable NF2007 Eq 2 step (``ff.relax``) on the full
+    external force — far fewer force evaluations when the configuration is stiff (the resting bending
+    settle is soft, so the default 'explicit' is already cheap there; implicit is the path for
+    stiff/loaded shells).
+
     Returns the settled positions (N, 3) [µm]; also writes them into ``cortex.net.pos``.
     """
     from ffn_sim.ff.constraints import project_constraint_forces
 
     net = cortex.net
     bending_fn = make_bending_force_fn(net)
+    if method == "implicit":
+        from ffn_sim.ff.relax import _default_gamma, relax_implicit
+        ext_fn = lambda xf: external_force(cortex, np.asarray(xf).reshape(net.n_nodes, 3),
+                                           bending_fn, f_myo, turgor=turgor).reshape(-1)
+        relax_implicit(net, ext_fn, gamma=_default_gamma(net), dt=1e3,
+                       n_steps=max(1, n_steps // 30), reshape_every=5, project=False)
+        return net.pos
     if dt_mu <= 0.0:
         seg = float(net.seg_rest.mean())
         k_bend = float(net.kappa.max()) / seg**3
