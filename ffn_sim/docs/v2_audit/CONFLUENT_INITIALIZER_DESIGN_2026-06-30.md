@@ -331,3 +331,40 @@ overdamped relaxation rather than relaxing it to round marbles. That is the deci
 and it is the legitimate one, because faceting would then be MAINTAINED from a faithful confluent
 start (as SimuCell3D does), not coaxed from round cells by tuned knobs. Awaiting PI sign-off on §6
 before running it / wiring Path B.
+
+---
+
+## 8. MAINTAIN TEST RESULT (2026-06-30) — the energy HOLDS the confluent faceting
+
+Ran the §3 Path-A diagnostic (zero physics-code change; exposed the existing restart path via a 2-line
+`--init-npz` flag): fed the N=64 confluent foam (`viz_html/proto_n64.npz`) through the EXISTING driver
+under the production energy (stiff turgor K=7.73e5 + conservative bilinear tent), suspended, 15000 steps,
+three γ variants. Measured init→final per-cell asphericity / isoperimetric Q / contact / V·V0:
+
+| variant | asph (init→final) | Q (init→final) | V/V0 | contact (final) | verdict |
+|---|---|---|---|---|---|
+| P1 uniform γ=1e-3 | 0.040 → 0.033 | 153 → 139 | 1.28 | — | faceting HELD (mild soften) |
+| P2 differential γ frac0 | 0.040 → 0.035 | 153 → 149 | 1.28 | — | faceting HELD |
+| P3 γ off | 0.040 → 0.035 | 153 → 149 | 1.28 | **0.76** | faceting HELD |
+
+**This is the first time faceting is MAINTAINED instead of collapsing.** Every prior approach (gapped
+icosphere, gap<2 overlap, uniform/differential γ from a round start) relaxed to asph ≈ 0.001 / Q ≈ 113
+(round marbles). From the confluent init the cells **retain their polyhedra** (asph holds ≈0.035, Q ≈149,
+contact rises 0.61→0.76 as cells fill space). Render `viz_html/5_confluent_MAINTAIN_render.png` (init vs
+final cross-section) + interactive `5_confluent_MAINTAIN_p3_gammaOff.html`.
+
+Key reads:
+- **γ type barely matters** (P1≈P2≈P3) — the faceting is held by GEOMETRY (confluent packing + turgor +
+  non-penetration), NOT by a tuned γ. This matches SimuCell3D (uniform γ + tent + confluent init).
+- **Two tractable refinements (NOT tuning — both physically-correct), for PI greenlight before Path B:**
+  1. **V0 over-inflation:** turgor inflated cells +28% (V/V0 1.28) because V0 = full sphere while the
+     ε-inset warped cell starts ~20% smaller; the inflation re-fills the ε gaps (intended) but mild
+     interpenetration appeared (centroid-membership 1.0→0.775). Fix: set V0 = the cell's actual confluent
+     (Voronoi) volume, or shrink ε — the physiologically-correct setpoint, not a knob.
+  2. **Init faceting is MILD** (asph 0.04, Q 149 vs SimuCell3D-grade Q≈250): sharpen with lower ε / more
+     Lloyd / more cells. Geometry quality, not energy.
+
+**Verdict:** the confluent-init path is VALIDATED end-to-end — the geometry produces a faceted foam and the
+existing energy maintains it. Remaining work is the two geometry/setpoint refinements above + scale to
+N≥400, all PI-gated. Diagnostic plumbing (`--init-npz`) committed; the production builder (Path B) is NOT
+built, awaiting §6 sign-off.

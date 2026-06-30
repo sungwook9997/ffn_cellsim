@@ -1653,6 +1653,7 @@ def main():
     ap.add_argument("--ubottom-k", type=float, default=0.0, dest="ubottom_k", help="bowl wall stiffness; 0 ⇒ auto (= k_floor rigid-dish scale)")
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
     ap.add_argument("--save-frames", default=None, help="npz path to save per-frame mesh geometry (pos+faces+cof) for surface viz")
+    ap.add_argument("--init-npz", default=None, dest="init_npz", help="restart from a saved aggregate npz (frames/faces/cof) instead of building a fresh ball (exposes the existing restart path, lines ~312)")
     args = ap.parse_args()
     import json
     out = run_decohesion(
@@ -1679,7 +1680,7 @@ def main():
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         ubottom=args.ubottom, ubottom_r_factor=args.ubottom_r_factor, ubottom_k=args.ubottom_k,
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
-        use_grid=not args.no_grid, save_frames=args.save_frames,
+        use_grid=not args.no_grid, save_frames=args.save_frames, init_npz=args.init_npz,
         ipc=args.ipc, ipc_eta=args.ipc_eta)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
