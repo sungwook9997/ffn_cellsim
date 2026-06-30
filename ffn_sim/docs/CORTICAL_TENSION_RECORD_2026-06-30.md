@@ -41,6 +41,14 @@ kb_record:
 
 # KU-3.5 cortical tension — authoritative record (2026-06-30)
 
+> **⚠️ MAGNITUDE UPDATE 2026-07-01 (native scale — see `FF_STAGE6O_NATIVE_GAMMA_2026-07-01`).** The
+> γ_active magnitudes below were measured at the ×40 mesoscale (cortex N=1000); the ×40 was a CPU
+> constraint, RETIRED now that FF is GPU-native. γ_active is N-DEPENDENT and ×40 UNDER-reported it ~5×.
+> At the native ~38000-filament cortex (A5000): **γ_active ≈ 6.2e-4 mN/m, floor ~530–570× under band**
+> (N-converged; re-verified robust to buckling/turnover/crosslink-stiffness at native). The CONCLUSION
+> (force-magnitude floor, force-generation/engaged-density limited) is UNCHANGED — the floor is real,
+> not a coarse-graining artifact; only the number updates (the gap narrows ~2500×→~530× but persists).
+
 Supersedes `CORTICAL_TENSION_RECORD_2026-06-04` (which left g_soft OPEN and made no ruling on the
 network mechanisms). This record CONFIRMS and EXTENDS the 2026-06-04 force-generation diagnosis with
 the rulings the earlier chain lacked.
