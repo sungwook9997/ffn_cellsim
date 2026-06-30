@@ -236,6 +236,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    diff_tension: bool = False, contact_tension_frac: float = -1.0,
                    conservative_contact: bool = False, rep_over_adh: float = 4.0,
+                   k_edge: float = -1.0,
                    polarize: bool = False, w_cs_polarize: float = 2.85e-3,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
@@ -268,6 +269,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     active crawl on top — and because the rim cells are cohesively bonded to the cells
     above them, the upper (non-ECM-contacting) cells are dragged along (collective spread)."""
     p = ResolvedDCM(subdivisions=subdiv)
+    if k_edge > 0.0:                                # cortex deformability override (faceting lever:
+        p.k_edge = k_edge                          # a stiff cortex resists flattening → round cells)
     R = p.R_cell
     implicit = (integrator == "implicit")          # I-opt: linearly-implicit IMEX integration
     if implicit and not use_grid:
@@ -396,10 +399,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     adh_cons = derive_adhesion_stiffness(w_cs_jm2, c_adh)
     rep_cons = rep_over_adh * adh_cons
     if conservative_contact:
-        diff_tension = False                         # the conservative tent IS the faceting drive
+        # The tent gives non-penetration + normal cohesion; it does NOT spread contacts. Whether the
+        # faceting drive (differential γ, Maître/DAH) is ALSO needed is the open question — so let
+        # --diff-tension COMPOSE with the tent rather than being force-disabled (SimuCell3D itself
+        # uses uniform γ + tent + a confluent init; the diagnosis doc found uniform γ rounds at a
+        # non-confluent gap). diff_tension stays whatever the caller requested (default False).
+        _ten = "differential γ (Maître/DAH)" if diff_tension else "uniform γ"
         print(f"  [conservative-contact] bilinear tent: adh={adh_cons:.2e}Pa/m "
               f"(=4·w_cs/c_adh², w_cs={w_cs_jm2:.2e}J/m²) rep={rep_cons:.2e}Pa/m "
-              f"(={rep_over_adh:.0f}×adh) c_adh={c_adh*1e6:.2f}um — node-node cohesion OFF, uniform γ",
+              f"(={rep_over_adh:.0f}×adh) c_adh={c_adh*1e6:.2f}um — node-node cohesion OFF, {_ten}",
               flush=True)
     r_contact = 0.30 * mean_edge
 
@@ -1603,6 +1611,10 @@ def main():
                          "+ node-node cohesion + diff-γ with ONE conservative SimuCell3D bilinear "
                          "traction-separation tent (adh=4·w_cs/c_adh² derived). Gives a true faceted "
                          "energy minimum to settle into. Use with --integrator baoab (kT=0 descent).")
+    ap.add_argument("--k-edge", type=float, default=-1.0, dest="k_edge",
+                    help="cortex edge-spring stiffness [N/m] override (default ResolvedDCM 1e-3). A "
+                         "softer cortex lets adhesion FLATTEN cells into facets; a stiff one keeps "
+                         "them round. The cell-deformability faceting lever.")
     ap.add_argument("--rep-over-adh", type=float, default=4.0, dest="rep_over_adh",
                     help="conservative-contact repulsion stiffness as a multiple of the derived adhesion "
                          "(stiffer non-penetration; ξ≥ω).")
@@ -1658,6 +1670,7 @@ def main():
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         diff_tension=args.diff_tension, contact_tension_frac=args.contact_tension_frac,
         conservative_contact=args.conservative_contact, rep_over_adh=args.rep_over_adh,
+        k_edge=args.k_edge,
         polarize=args.polarize, w_cs_polarize=args.w_cs_polarize, ipc_dhat_factor=args.ipc_dhat_factor,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
