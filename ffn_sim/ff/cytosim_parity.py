@@ -95,11 +95,13 @@ def bending_energy_parity(R_arc: float = 5.0, L: float = 2.0, kappa: float = 20.
     rows = []
     for n in n_list:
         pts = _arc_points(R_arc, L, n)
-        E_ff = bending_energy(build_fiber_network([pts], kappa=kappa))
+        net = build_fiber_network([pts], kappa=kappa)
+        E_ff = bending_energy(net)                                   # default: end-corrected
+        E_ff_raw = bending_energy(net, end_correction=False)         # paper-literal interior sum
         E_cy = cytosim_fiber_energy(pts, kappa, sim_bin=sim_bin)
-        rows.append({"n": n, "ff": E_ff, "cytosim": E_cy, "analytic": E_an,
-                     "ff_over_analytic": E_ff / E_an, "cyto_over_analytic": E_cy / E_an,
-                     "ff_end_corrected": E_ff * (n - 1) / (n - 2)})
+        rows.append({"n": n, "ff": E_ff, "ff_raw": E_ff_raw, "cytosim": E_cy, "analytic": E_an,
+                     "ff_over_analytic": E_ff / E_an, "ff_raw_over_analytic": E_ff_raw / E_an,
+                     "cyto_over_analytic": E_cy / E_an, "ff_over_cytosim": E_ff / E_cy})
     return rows
 
 
@@ -109,7 +111,8 @@ if __name__ == "__main__":
         print("Cytosim 'sim' not found — set CYTOSIM_SIM=/path/to/build/bin/sim")
         raise SystemExit
     print(f"Cytosim parity (bending energy of a circular arc), sim={sb}")
-    print(f"{'n':>4} {'FF':>10} {'Cytosim':>10} {'analytic':>10} {'FF/an':>7} {'cyto/an':>8} {'FF·(n-1)/(n-2)':>14}")
+    print(f"{'n':>4} {'FF(corr)':>10} {'FF(raw)':>10} {'Cytosim':>10} {'analytic':>10} "
+          f"{'FFc/cyto':>9} {'FFraw/an':>9}")
     for r in bending_energy_parity():
-        print(f"{r['n']:>4} {r['ff']:>10.5f} {r['cytosim']:>10.5f} {r['analytic']:>10.5f} "
-              f"{r['ff_over_analytic']:>7.4f} {r['cyto_over_analytic']:>8.4f} {r['ff_end_corrected']:>14.5f}")
+        print(f"{r['n']:>4} {r['ff']:>10.5f} {r['ff_raw']:>10.5f} {r['cytosim']:>10.5f} "
+              f"{r['analytic']:>10.5f} {r['ff_over_cytosim']:>9.4f} {r['ff_raw_over_analytic']:>9.4f}")

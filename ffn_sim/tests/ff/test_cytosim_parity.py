@@ -22,21 +22,16 @@ def test_cytosim_is_continuum_accurate():
         assert r["cyto_over_analytic"] == pytest.approx(1.0, abs=2e-3)
 
 
-def test_ff_end_factor_and_convergence():
-    """FF under-counts by the end-factor (n−2)/(n−1): FF·(n−1)/(n−2) recovers the continuum, and
-    FF/analytic rises monotonically toward 1 as n grows."""
-    rows = bending_energy_parity(n_list=(5, 9, 17, 33))
-    for r in rows:
-        assert r["ff_end_corrected"] == pytest.approx(r["analytic"], rel=3e-3)
-        assert r["ff_over_analytic"] == pytest.approx((r["n"] - 2) / (r["n"] - 1), rel=3e-3)
-    ratios = [r["ff_over_analytic"] for r in rows]
-    assert ratios == sorted(ratios)                 # monotone convergence to 1
-    assert ratios[-1] > ratios[0]
+def test_ff_endcorrected_matches_cytosim():
+    """With the end-correction ON (default, Stage 6f), FF now MATCHES the Cytosim oracle at every
+    resolution — including coarse n (the cortex regime)."""
+    for r in bending_energy_parity(n_list=(5, 9, 17, 33)):
+        assert r["ff_over_cytosim"] == pytest.approx(1.0, abs=3e-3)
+        assert r["ff_over_analytic"] == pytest.approx(1.0, abs=3e-3)
 
 
-def test_ff_approaches_cytosim_with_resolution():
-    """FF→Cytosim as the fiber is refined (the two discretisations agree in the continuum limit)."""
-    rows = bending_energy_parity(n_list=(5, 33))
-    err_coarse = abs(rows[0]["ff"] - rows[0]["cytosim"])
-    err_fine = abs(rows[1]["ff"] - rows[1]["cytosim"])
-    assert err_fine < err_coarse
+def test_ff_raw_shows_end_factor():
+    """The paper-literal interior sum (end_correction=False) is the one that under-counts by exactly
+    (n−2)/(n−1) — documenting what the correction fixes."""
+    for r in bending_energy_parity(n_list=(5, 9, 17)):
+        assert r["ff_raw_over_analytic"] == pytest.approx((r["n"] - 2) / (r["n"] - 1), rel=3e-3)

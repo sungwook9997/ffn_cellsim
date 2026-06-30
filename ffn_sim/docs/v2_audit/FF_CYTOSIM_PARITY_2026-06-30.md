@@ -36,18 +36,31 @@ end-corrects the quadrature so the coarse-mesh energy already equals the continu
 checks we had (force=−∇E, the κq⁴ dispersion) are *self-consistent within FF* and therefore could not
 see this — it took the independent oracle. This is exactly the value of building Cytosim.
 
-## Impact + decision (PI)
+## Resolution (PI-authorized 2026-06-30) — end-correction ADOPTED
 
-- **γ-floor conclusion UNAFFECTED.** Bending is sub-dominant to the myosin prestress + turgor in γ
-  (the actin axial tension that carries γ comes from the inextensibility constraint, not bending), so
-  the 6d result (actomyosin γ ~10³× under band, matching the BAOAB-MD g_soft) stands.
-- **Quantitative-fidelity choice — surfaced, NOT silently changed** (changing a force law is
-  PI-gated; hard rule). Options:
-  1. Keep FF faithful to the paper's interior sum; document the O(1/n) end-bias vs the oracle (it
-     vanishes as fibers are refined; cortex fibers are coarse at 7 beads).
-  2. Adopt Cytosim's end-corrected quadrature in the FF bending kernel (continuum-accurate at the
-     cortex's small n) — a one-line-ish change to the energy/force assembly, re-validated against the
-     oracle. Recommended if cortex-scale bending accuracy matters for a downstream observable.
+PI chose option 2: **adopt Cytosim's end-corrected quadrature** in the FF bending kernel. Grounded
+directly from the oracle's source (`chain.cc::bendingEnergy0`):
+
+```
+e *= ( lsp + 1 ) / ( fnCut * lsp );   // lsp = nPoints-2, fnCut = segmentation
+// "we only considered (nPoints-2) junctions, ... only a fraction of the total length"
+```
+
+Decoding it: Cytosim's energy = (κ/seg)·Σ(1−cosθ) × (n−1)/(n−2), and FF's `|m_{i-1}−2m_i+m_{i+1}|²`
+form equals (κ/seg)·Σ(1−cosθ) exactly (since |Δ²|²=2seg²(1−cosθ)). So the ONLY difference is the
+factor **g_f = (n−1)/(n−2) = p_f/(p_f−1)** (p_f = segments). It depends only on the point count
+(topology), so multiplying each fiber's α by g_f scales energy AND force by the same constant ⇒
+**force=−∇E preserved, q⁴ dispersion shape unchanged**. Implemented in `forces_warp._per_triple_alpha`
+(`end_correction=True` default; `=False` recovers the paper-literal interior sum).
+
+Result after adoption: **FF now matches Cytosim to FFc/cyto = 1.0000 at every resolution** (n=5→33),
+including the cortex's coarse mesh. `tests/ff/test_cytosim_parity.py` asserts the match (and that the
+raw interior sum still shows the (n−2)/(n−1) factor, documenting what the correction fixes).
+
+- **γ-floor conclusion UNAFFECTED — re-verified.** Bending is sub-dominant to myosin/turgor in γ (the
+  actin axial tension that carries γ comes from the inextensibility constraint, not bending). The
+  grounded production γ_active went 1.52e-4 → **1.51e-4 mN/m** with the correction (still ~2300× under
+  band, still on the BAOAB-MD g_soft). The conclusion is robust to the bending quadrature.
 - **Next parity targets** (same harness): single-fiber relaxation rate (μκq⁴ slowest mode),
   Euler buckling threshold π²κ/L², and the Hand (motor) stepping/detachment kinetics — to cross-check
   the §10.1 layer against Cytosim's `motor`/`couple` implementations.

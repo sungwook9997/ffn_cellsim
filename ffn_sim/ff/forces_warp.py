@@ -50,10 +50,21 @@ def cytosim_bending_kernel(
     wp.atomic_add(force, c, -f)
 
 
-def _per_triple_alpha(net: FiberNetwork) -> np.ndarray:
+def _per_triple_alpha(net: FiberNetwork, *, end_correction: bool = True) -> np.ndarray:
     """α = κ/seg³ for each bending triple (seg = mean segment length of the triple's fiber).
 
     NF2007: α = κ (p/L)³ with seg = L/p, so α = κ/seg³.
+
+    **End correction (default ON, Stage 6f).** The interior-triple discrete energy sums only the
+    ``p−1`` interior junctions of a ``p``-segment fiber, covering a fraction (p−1)/p of the contour,
+    so for finite p it under-counts the continuum (κ/2)∫c²ds by p/(p−1) — confirmed against the
+    Cytosim oracle (FF·(n−1)/(n−2) recovers the continuum at every resolution;
+    `docs/v2_audit/FF_CYTOSIM_PARITY_2026-06-30.md`). Cytosim applies exactly this factor
+    (`chain.cc::bendingEnergy0`: ``e *= (lsp+1)/(fnCut·lsp)``, lsp = nPoints−2). We adopt the same
+    end-correction: multiply each fiber's α by g_f = p_f/(p_f−1). g_f depends only on the point count
+    (topology), so energy AND force scale by the same constant ⇒ force = −∇E is preserved and the q⁴
+    dispersion is unchanged in shape (magnitude ×g_f). Set ``end_correction=False`` for the
+    paper-literal interior sum.
     """
     off = net.fiber_offsets
     seg_per_fiber = np.diff(off) - 1                       # p_f = #segments per fiber
@@ -64,26 +75,33 @@ def _per_triple_alpha(net: FiberNetwork) -> np.ndarray:
         if s1 > s0:
             seg_mean[f] = float(net.seg_rest[s0:s1].mean())
     alpha_fiber = net.kappa / seg_mean**3                  # κ/seg³  [N/m]
+    if end_correction:
+        p = seg_per_fiber.astype(np.float64)              # segments per fiber
+        g = np.where(p >= 2.0, p / np.maximum(p - 1.0, 1.0), 1.0)   # Cytosim p/(p−1) end-correction
+        alpha_fiber = alpha_fiber * g
     centers = net.bend_triples[:, 1]                       # the m_i of each triple
     fib_of_node = np.searchsorted(off, centers, side="right") - 1
     return alpha_fiber[fib_of_node].astype(np.float64)
 
 
-def bending_force(net: FiberNetwork, *, device: str = "cpu") -> np.ndarray:
+def bending_force(net: FiberNetwork, *, device: str = "cpu",
+                  end_correction: bool = True) -> np.ndarray:
     """Cytosim bending force on the model points, (N, 3) [N] (NF2007 p9).
 
     Reads ``net.pos``. For an integration loop use :func:`make_bending_force_fn` instead.
     """
-    return _launch_bending(net.pos, net, _per_triple_alpha(net), device=device)
+    return _launch_bending(net.pos, net, _per_triple_alpha(net, end_correction=end_correction),
+                           device=device)
 
 
-def make_bending_force_fn(net: FiberNetwork, *, device: str = "cpu"):
+def make_bending_force_fn(net: FiberNetwork, *, device: str = "cpu", end_correction: bool = True):
     """Return ``force_fn(pos_flat) → force_flat`` for ``dcm.dcm_warp_implicit`` / a relaxation loop.
 
     Topology + α are uploaded once; each call evaluates the bending force at the given positions.
     """
     triples = np.ascontiguousarray(net.bend_triples, dtype=np.int32)
-    alpha = np.ascontiguousarray(_per_triple_alpha(net), dtype=np.float64)
+    alpha = np.ascontiguousarray(_per_triple_alpha(net, end_correction=end_correction),
+                                 dtype=np.float64)
     triples_d = wp.array(triples, dtype=wp.int32, device=device)
     alpha_d = wp.array(alpha, dtype=wp.float64, device=device)
     N = net.n_nodes
@@ -119,11 +137,15 @@ def _launch_bending(pos: np.ndarray, net: FiberNetwork, alpha: np.ndarray,
     return force_d.numpy().astype(np.float64)
 
 
-def bending_energy(net: FiberNetwork) -> float:
-    """Discrete bending energy E = (α/2) Σ |m_{i-1} − 2 m_i + m_{i+1}|²  [J] (NF2007)."""
+def bending_energy(net: FiberNetwork, *, end_correction: bool = True) -> float:
+    """Discrete bending energy E = (α/2) Σ |m_{i-1} − 2 m_i + m_{i+1}|²  [J] (NF2007).
+
+    With ``end_correction`` (default) α carries the Cytosim p/(p−1) length-quadrature correction so
+    the coarse-mesh energy matches the continuum (and the Cytosim oracle) — see ``_per_triple_alpha``.
+    """
     tri = net.bend_triples
     if tri.shape[0] == 0:
         return 0.0
-    alpha = _per_triple_alpha(net)
+    alpha = _per_triple_alpha(net, end_correction=end_correction)
     d = net.pos[tri[:, 0]] - 2.0 * net.pos[tri[:, 1]] + net.pos[tri[:, 2]]
     return float(0.5 * np.sum(alpha * np.sum(d * d, axis=1)))

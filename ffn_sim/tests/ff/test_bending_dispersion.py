@@ -32,7 +32,9 @@ def _mode_force_density(m: int):
     q = m * np.pi / L
     nodes = np.stack([x, 1e-5 * np.sin(q * x), np.zeros(N)], axis=1)
     net = build_fiber_network([nodes], kappa=KAPPA)
-    F = bending_force(net)
+    # validate the RAW interior-triple operator (end_correction off) against the continuum κq⁴; the
+    # end-correction is a per-fiber constant (≈1.002 here) that rescales magnitude, not the q⁴ shape.
+    F = bending_force(net, end_correction=False)
     interior = slice(8, N - 8)
     eig = float(np.nanmedian(-F[interior, 1] / nodes[interior, 1]))   # = κ q⁴ seg
     return eig / SEG, KAPPA * q**4, eig, q
