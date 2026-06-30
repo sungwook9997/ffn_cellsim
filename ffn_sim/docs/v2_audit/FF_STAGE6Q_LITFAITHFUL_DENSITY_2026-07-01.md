@@ -105,6 +105,24 @@ all force-free-formed crosslinks simultaneously), NOT a constant artifact. This 
 small-N γ-floor work never saw it (at N=1000 it is 0.0115 pN/µm ≪ the myosin signal). At native density
 it dominates `γ_active`, mandating the `γ_myo` metric.
 
+**SOURCE — crosslink-network frustration, not arc geometry.** Toggling the crosslinks isolates it (A5000):
+
+```
+ N_fil   crosslinks   γ_actin(f0)
+ 20000      ON          0.2431
+ 20000      OFF         0.0000     ← bare great-circle arcs (geodesics) carry ZERO residual
+ 70686      ON          0.8541
+ 70686      OFF         0.0000
+```
+
+With crosslinks OFF the residual is EXACTLY zero — the bare filament arcs are geodesics (bending-free at
+rest), so it is NOT a discretization / arc-construction artifact. The entire residual is the **crosslink
+prestress**: force-free-at-formation crosslinks bridging different fibers become geometrically frustrated
+against the inextensible segments as the network settles → a self-stressed (tensegrity-like) equilibrium.
+This is a physically-reasonable passive cortex prestress (8.5e-4 mN/m at native density — well below the
+~0.04 mN/m measured blebbistatin-insensitive passive floor, and far below the band), and it is correctly
+EXCLUDED from the active tension by the `γ_myo` dipole channel (which is unaffected by the crosslink state).
+
 This is a **metric correction, not a gate-loosening**: switching to `γ_myo` makes the floor DEEPER (more
 conservative). `γ_myo` was already the established clean active channel (FF_STAGE6M, bit-identical under
 the link_k correction). `γ_active` is retained in the output, **flagged** as the passive-contaminated sum.
