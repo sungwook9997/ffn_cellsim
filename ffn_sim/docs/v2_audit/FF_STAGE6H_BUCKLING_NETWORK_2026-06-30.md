@@ -63,7 +63,40 @@ the current FF inextensibility structurally precludes. (b) is a concrete, testab
 instead of the hard reshape constraint, and re-run this sweep; if σ then amplifies toward band, the
 floor was an over-stiff-constraint artifact, not physics.
 
-## 5. PI decision (updated)
+## 4b. Finite-extensibility test — RUN, DEFINITIVE: extensibility does NOT close it either
+
+Replaced the hard inextensibility with axial springs (k_axial = EA/seg) and swept the axial modulus
+from soft (EA/1000) to actin-stiff (EA_actin = 4.3e-8 N, Gittes 1993), f_act=20 pN:
+
+| k_axial [pN/µm] | EA/EA_actin | σ [pN/µm] | vs band |
+|---|---|---|---|
+| 1e2 | 0.001 | 32.7 | 11× under |
+| 1e3 | 0.007 | 30.1 | 12× under |
+| 1e4 | 0.070 | 27.2 | 13× under |
+| 1.43e5 | 1.000 (actin) | 30.4 | 12× under |
+
+**σ is FLAT in axial modulus** (~30 pN/µm across 3 decades of EA) — extensibility is NOT the missing
+factor. Combined with §3/§4 (flat in buckling + connectivity): **NO network mechanism (buckling,
+connectivity/sub-isostaticity, extensibility) closes the gap.** The floor is purely
+**force-magnitude** = n_motors × f_act. At f_act=20 pN it is ~12× under; at the physiological NMIIA
+stall (5 pN) ~30–50× under. The ONLY lever is more force-bearing motor throughput.
+
+## 5. VERDICT (definitive) — the floor is REAL; it is a force-magnitude limit, not a model artifact
+
+Three independent methods (BAOAB-MD, MD-free FF, and this full network-mechanism ablation) + the only
+measured density (Nie 2015 ~0.6/µm²) all converge: single-cell mesoscale actomyosin γ is
+**~30× under band and no network mechanism rescues it**. This is a RESULT, not a blocker.
+
+**Do this:** (1) ACCEPT the floor as the verdict — cortical-tension MAGNITUDE is set by the
+force-bearing (load-engaged) motor density, which is an EXPERIMENTAL gap (imaging counts presence, not
+engagement; real cells reach band at ~70% myosin ⇒ they carry ~12–50× more engaged motors/cross-section
+than the present-density gives). The simulator reproduces everything else (form, scaling, dynamics);
+report γ as a function of motor density (controlled variable), not as a hit-the-band target. (2) The
+single experiment that could overturn it: load-engaged minifilament density per cross-section in MCF7
+(super-res + engagement readout) — predicted to confirm. (3) Move the engine to the next physics; do
+not keep tuning toward the band (magic-number violation).
+
+## 5-old. PI decision (superseded by §5)
 
 1. The active-γ floor is **robust to network connectivity + buckling in the inextensible FF model** —
    the §3.0c "buckling will rescue it" branch is **not supported by this test**.
