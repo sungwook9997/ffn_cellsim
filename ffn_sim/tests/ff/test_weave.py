@@ -40,8 +40,13 @@ def test_weave_cortex_reproduces_gamma_floor():
         measure_gamma,
     )
 
+    # weave maps spec densities → counts: n_xl=round(N·xl.density_per_fil), n_myo=round(N·motor.density_per_fil).
+    # At the lit-faithful CORTEX (actin 100/µm², α-actinin 1:1, NMIIA Nie 0.625/µm²) the small-N (1000)
+    # cortex has n_xl=1000, n_myo=round(1000·0.00625)=6 — match build_crosslinked_cortex to those for parity.
+    n_xl_s = int(round(1000 * CORTEX.crosslinker.density_per_fil))
+    n_myo_s = int(round(1000 * CORTEX.motor.density_per_fil))
     cw = weave(CORTEX_SMALL, rng=np.random.default_rng(0))
-    cb = build_crosslinked_cortex(CortexParams(), n_filaments=1000, n_xl=1000, n_myo=100,
+    cb = build_crosslinked_cortex(CortexParams(), n_filaments=1000, n_xl=n_xl_s, n_myo=n_myo_s,
                                   rng=np.random.default_rng(0))
     # structure parity
     assert cw.net.n_nodes == cb.net.n_nodes
@@ -51,7 +56,7 @@ def test_weave_cortex_reproduces_gamma_floor():
     equilibrate(cb, 0.0, n_steps=300, method="device", device="cpu")
     gw = measure_gamma(cw, NMIIA_MINIFIL_STALL_PN, turgor=False)["gamma_active"]
     gb = measure_gamma(cb, NMIIA_MINIFIL_STALL_PN, turgor=False)["gamma_active"]
-    assert abs(gw - gb) / gb < 1e-9
+    assert abs(gw - gb) <= 1e-12 + 1e-9 * abs(gb)   # bit-exact (robust to the sparse-Nie small-N gb≈0)
 
     m = cortex_metrics(cw)
     assert m["n_filaments"] == 1000

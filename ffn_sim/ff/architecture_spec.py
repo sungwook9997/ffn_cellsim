@@ -87,11 +87,12 @@ CORTEX = ArchitectureSpec(
     name="cortex",
     manifold="sphere",
     R_um=7.5,                                                   # MCF7 radius (Wagner 2011; was 10µm mislabeled)
-    filament=FilamentSpec(nucleator="formin", length_um=3.0, seg_um=0.5, n_filaments=21375,
-                          orientation="isotropic", polarity="mixed"),   # NATIVE at R=7.5 (×40 retired)
+    filament=FilamentSpec(nucleator="formin", length_um=3.0, seg_um=0.5, n_filaments=70686,
+                          orientation="isotropic", polarity="mixed"),   # actin ~100/µm² KB-3.18 at R=7.5
     crosslinker=CrosslinkerSpec(hand=ALPHA_ACTININ, bind_mode="any", density_per_fil=1.0),
-    motor=MotorSpec(hand=NMIIA_MYOSIN, mode="bipolar", density_per_fil=0.1),
-    notes="×40 mesoscale cortical shell; the γ-floor cell. α-actinin/filamin + NMIIA all lit-anchored.",
+    motor=MotorSpec(hand=NMIIA_MYOSIN, mode="bipolar", density_per_fil=0.00625),  # Nie 0.625/µm² ÷ actin 100/µm²
+    notes="MCF7-R cortical shell, lit-faithful densities: actin 100/µm² (KB-3.18), NMIIA 0.625/µm² (Nie 2015), "
+          "α-actinin 1:1. The γ-floor cell (FF_STAGE6Q).",
 )
 
 # FILOPODIUM — tight PARALLEL formin bundle (no branching, no motor in the core). The architectural

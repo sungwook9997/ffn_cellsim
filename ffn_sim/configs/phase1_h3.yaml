@@ -313,7 +313,10 @@ cortex:
 
   # ---- Cortical myosin (D5 Stam-Hocky + D6 Hill, KU-3.5 / KU-3.18) ----
   # Bipolar minifilament: 14-bead backbone (700 nm) + 10 cross-bridge heads
-  # per side. 100 minifilaments per cell (Salbreux 2012 density 3/μm²).
+  # per side (Stam-Hocky/AFINES COARSE model; structural Billington 2013 ≈ 29
+  # heads/side — see ff/gamma_floor.py, swept). Density: Nie 2015 ~0.625/µm²
+  # (HeLa) — ⚠️ NOT "Salbreux 2012 3/µm²" (that was a CONFIRMED misattribution,
+  # corrected 2026-06; no Salbreux paper states a per-µm² minifilament count).
   # Implementation in `ffn_sim/cortex/myosin.py`; runtime stepper
   # MyosinStepUpdater handles D2 Bell-Evans slip head-to-actin bonds + D6
   # Hill stepping kernel. Hill closed-form imported from H.4 motor.py

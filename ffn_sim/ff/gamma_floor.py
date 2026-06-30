@@ -38,13 +38,18 @@ from ffn_sim.ff.gamma_estimator import method_of_planes_gamma
 from ffn_sim.ff.hand_kmc import ALPHA_ACTININ, FILAMIN, NMIIA_MYOSIN
 
 
-# NMIIA minifilament stall force (lit anchor for the prestress sweep), FF units (pN).
-# F_stall_per_head=0.5 pN, n_heads_per_side=10 (configs/phase1_h3.yaml). Two sides engage against
-# the two actin tracks; a high-duty-ratio NMIIA engages a sizeable fraction under load. We take the
-# per-side stall (10 heads × 0.5 pN = 5 pN) as the grounded anchor and SWEEP around it.
-NMIIA_F_STALL_PER_HEAD = 0.5
-NMIIA_HEADS_PER_SIDE = 10
-NMIIA_MINIFIL_STALL_PN = NMIIA_F_STALL_PER_HEAD * NMIIA_HEADS_PER_SIDE   # 5.0 pN (per side)
+# NMIIA per-side contractile force — the prestress, a FORCE-MAGNITUDE lever SWEPT as a controlled
+# variable (gamma_floor_sweep; never tuned to band). F_stall_per_head=0.5 pN (Kovacs 2003). The
+# per-side head count has a lit RANGE: the Stam-Hocky/AFINES coarse model = 10 heads/side (→ 5 pN, the
+# conservative anchor below, configs/phase1_h3.yaml); the STRUCTURAL minifilament (Billington 2013 EM,
+# ~29 molecules / ~58 heads) ≈ 29 heads/side (→ ~15 pN at full engagement); the ensemble-measured
+# minifilament stall ≈ 17 pN (Stachowiak 2009). The engaged fraction (duty) sits between these. ⚠️ The
+# floor is robust across this whole range: at the MCF7 cortex (R=7.5), γ_active vs the MCF7-active
+# target is floored 216× (5 pN) → 64× (17 pN structural) → 36× (30 pN) — PERSISTS even at the structural
+# upper end (FF_STAGE6Q). The 5 pN anchor is the conservative low end; the sweep spans to 30× it.
+NMIIA_F_STALL_PER_HEAD = 0.5    # pN/head (Kovacs 2003)
+NMIIA_HEADS_PER_SIDE = 10       # Stam-Hocky/AFINES coarse model; STRUCTURAL (Billington 2013) ≈ 29 (swept)
+NMIIA_MINIFIL_STALL_PN = NMIIA_F_STALL_PER_HEAD * NMIIA_HEADS_PER_SIDE   # 5.0 pN per side (conservative anchor)
 
 # Physiological turgor — STATE-DEPENDENT osmotic closure (2026-06-30 turgor workflow; the band-implied
 # 133 Pa was a tuned circular value). FF units: 1 Pa = 1 pN/µm². Animal cells (no wall) hold no static
@@ -77,14 +82,25 @@ TURGOR_PI_IN0 = OSMOLYTE_C_MM * _RT_PN_UM2_PER_MM   # ≈ 5.15e5 pN/µm²
 # CONFIRMS the γ-floor, it does not rescue it (re-anchoring lowers γ further). n_myo here is the
 # ×40-mesoscale count; density is the controlled variable in gamma_floor_density_sweep (NOT tuned).
 # NATIVE-SCALE production (PI 2026-07-01): the ×40 mesoscale (N=1000) was a CPU/HOOMD hardware
-# constraint — RETIRED now that FF is GPU-native (the A5000 runs native ~38000 in ~5 s/realization,
-# 236 MiB of 16 GB; γ_active is N-DEPENDENT and the ×40 under-reported it ~5×). Run at the native
-# cortical filament count. Ratios preserved (n_xl=n_fil, n_myo=n_fil/10) so this isolates the
-# resolution change; the native γ_active ≈ 6.6e-4 mN/m (floor ~530×, N-converged). The myosin AREAL
-# density vs Nie 2015 (0.625/µm²) is a SEPARATE γ-floor lever (the engaged-density datum), not this switch.
-PROD_N_FIL = 21375   # native count at MCF7 R=7.5µm = 38000·(7.5/10)² (areal density ~30/µm² conserved)
-PROD_N_XL = 21375    # 1:1 crosslinkers (ratio preserved)
-PROD_N_MYO = 2137    # n_fil/10 NMIIA minifilaments (ratio preserved; Nie-density reconciliation = separate lever)
+# constraint — RETIRED now that FF is GPU-native (the A5000 runs native scale; γ_active is N-DEPENDENT).
+# LIT-FAITHFUL DENSITIES (FF_STAGE6Q, 2026-07-01): every cortical density is now set to its DIRECT
+# measured areal value at the MCF7 radius R=7.5µm (area 4πR²≈707µm²), per the physiological-baseline
+# HARD rule — NOT a convenient ratio:
+#   • actin  ~100 /µm² (KB-3.18 cortex composition) → N_fil = round(100·4πR²) = 70686. This SUPERSEDES
+#     the CLAUDE.md "~38000 native" (=30/µm² at R=10, ~3× sparser than KB-3.18). ⚠️ CLAUDE.md↔KB
+#     conflict — surfaced to PI as a citation/magic-number fix (the actin COUNT does not drive the
+#     γ-floor; γ is myosin-bound — so this is a faithfulness fix, not a floor lever).
+#   • myosin 0.625 /µm² (Nie 2015, the only direct cortical NMII minifilament datum) → N_myo = 442.
+#     This DECOUPLES myosin from the old n_fil/10 ratio (which, at the raised actin count, would put
+#     myosin at ~10/µm² = 16× Nie). Using the measured Nie density is physiological-baseline-correct
+#     and DEEPENS the floor (Nie is sparse) — the honest consequence, consistent with the density sweep.
+#   • crosslinkers 1:1 with actin (γ-irrelevant, FF_STAGE6M) → N_xl = N_fil.
+# Net: γ_active drops vs the prior ratio-based preset and the floor is DEEPER (~10³× under the MCF7-active
+# band), because the measured-sparse Nie myosin density is now the operating point. The open lever is
+# unchanged: the missing MCF7-ADHERENT load-engaged NMII density datum (engaged density, not this count).
+PROD_N_FIL = 70686   # actin ~100/µm² (KB-3.18) at MCF7 R=7.5µm = round(100·4π·7.5²)
+PROD_N_XL = 70686    # 1:1 crosslinkers (γ-irrelevant)
+PROD_N_MYO = 442     # NMIIA minifilaments at Nie 2015 0.625/µm² (= round(0.625·4π·7.5²)) — physiological baseline
 
 # Nie et al. 2015 measured cortical NMII minifilament areal density [µm⁻²] — the only direct datum.
 NIE2015_DENSITY_UM2 = 0.625
@@ -472,18 +488,33 @@ def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int
     defaults (e.g. a small-N smoke test). ``method='device'`` + ``device='cuda:0'`` runs the ensemble
     GPU-resident on the gbook A5000 — REQUIRED at native scale (the CPU path is impractical).
     """
-    from ffn_sim.ff.gamma_estimator import SALBREUX_BAND_PN_UM
+    from ffn_sim.ff.gamma_estimator import MCF7_IQR_PN_UM, SALBREUX_BAND_PN_UM, active_band_pn_um
     ens = gamma_floor_ensemble(f_myo, n_real=n_real, n_filaments=n_filaments, n_xl=n_xl,
                                n_myo=n_myo, n_steps=n_steps, base_seed=base_seed,
                                parallel=parallel, method=method, device=device)
-    g = np.array([r["gamma_active"] for r in ens["runs"]])
-    band_lo = SALBREUX_BAND_PN_UM[0]
-    return {"gamma_active_mean": float(g.mean()), "gamma_active_std": float(g.std()),
-            "gamma_active_mN_per_m": float(g.mean()) * 1e-3,
+    # FLOOR METRIC = γ_myo, the CLEAN myosin-induced channel (FF_STAGE6Q, 2026-07-01). At the native
+    # lit-faithful density the γ_active SUM is contaminated by a STRUCTURAL passive actin-network
+    # residual (γ_actin(f_myo=0) ≈ 0.84 pN/µm, plateaus 1000–8000 steps — crosslinked-geodesic
+    # frustration on the curved shell, NOT under-relaxation); myosin contraction RELAXES that residual
+    # so γ_active(f5) < γ_active(f0) and γ_active is NOT a usable myosin metric at native density. The
+    # γ_myo channel is artifact-free: linear in f_myo, zero-intercept (γ_myo = 0.0199·f_myo) → the
+    # honest active cortical tension. Floor is reported on γ_myo; γ_active is kept (flagged) for continuity.
+    g_myo = np.array([r["gamma_myo"] for r in ens["runs"]])
+    g_act = np.array([r["gamma_active"] for r in ens["runs"]])
+    gm = g_myo.mean()
+    mcf7_active_lo = active_band_pn_um(MCF7_IQR_PN_UM)[0]      # 70% of the MCF7 suspended IQR
+    salbreux_active_lo = active_band_pn_um(SALBREUX_BAND_PN_UM)[0]
+    f = lambda lo: float(lo / gm) if gm > 0 else float("inf")
+    return {"gamma_myo_mean": float(gm), "gamma_myo_std": float(g_myo.std()),
+            "gamma_myo_mN_per_m": float(gm) * 1e-3,
+            "gamma_active_mean": float(g_act.mean()),          # passive-contaminated SUM (flagged, not the floor metric)
+            "gamma_active_mN_per_m": float(g_act.mean()) * 1e-3,
             "gamma_passive": ens["runs"][0]["gamma_passive"],
-            "floor_factor_under_band": float(band_lo / g.mean()) if g.mean() > 0 else float("inf"),
+            "floor_vs_mcf7_active": f(mcf7_active_lo),          # PRIMARY: clean γ_myo vs MCF7-faithful active target
+            "floor_vs_salbreux_active": f(salbreux_active_lo),  # clean γ_myo vs generic active fraction
+            "floor_factor_under_band": f(SALBREUX_BAND_PN_UM[0]),  # legacy: clean γ_myo vs generic TOTAL band
             "f_myo": f_myo, "n_fil": n_filaments, "n_xl": n_xl, "n_myo": n_myo,
-            "gamma_samples": g.tolist()}
+            "gamma_myo_samples": g_myo.tolist()}
 
 
 def gamma_floor_ensemble(f_myo: float, *, n_real: int = 8, n_filaments: int = 100,

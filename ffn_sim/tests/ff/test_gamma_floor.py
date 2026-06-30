@@ -105,14 +105,16 @@ def test_gamma_floor_reproduced_at_lit_prestress():
 
 def test_production_operating_point_floored():
     """The production function returns a deeply-floored actomyosin γ. SMOKE test at small N on CPU
-    (the native ~38000 default is GPU-only / impractical on CPU); the native magnitude (~6.6e-4 mN/m,
-    floor ~530×) is validated on the A5000 in the re-verification, not here. The floor is N-dependent
-    (the ×40 under-reported it ~5×) so this asserts floored + finite, not the native magnitude."""
+    (the native lit-faithful default — actin 70686 @100/µm², myosin 442 @Nie 0.625/µm² — is GPU-only /
+    impractical on CPU); the native magnitude (clean γ_myo ≈ 7.4e-5 mN/m, floor ~1700× vs MCF7-active)
+    is validated on the A5000 in the re-verification (FF_STAGE6Q), not here. The floor metric is now the
+    CLEAN γ_myo channel (γ_active is passive-residual-contaminated at native density); this asserts
+    floored + finite via γ_myo, not the native magnitude."""
     from ffn_sim.ff.gamma_floor import gamma_floor_production
     r = gamma_floor_production(n_real=1, n_steps=150, parallel=False,
                               n_filaments=300, n_xl=300, n_myo=30)   # small-N smoke (CPU-fast)
-    assert 1e-5 < r["gamma_active_mN_per_m"] < 5e-4      # floored (MD g_soft regime, small-N end)
-    assert r["floor_factor_under_band"] > 100.0          # deeply floored
+    assert 1e-6 < r["gamma_myo_mN_per_m"] < 5e-4         # clean myosin channel, floored (small-N end)
+    assert r["floor_factor_under_band"] > 100.0          # deeply floored (on γ_myo)
     assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 7.5)   # 40 Pa state-dependent turgor
 
 

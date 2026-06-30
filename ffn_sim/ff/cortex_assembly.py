@@ -45,8 +45,9 @@ class CortexParams:
 
     R_um: float = 7.5                       # MCF7 cell radius [µm] (Wagner 2011; PI 2026-07-01 — was 10µm
                                             # generic, mislabeled "MCF7"; corrected to the real MCF7 value)
-    n_filaments: int = 21375                # NATIVE count at MCF7 R=7.5µm = 38000·(7.5/10)² (areal density
-                                            # conserved ~30/µm²; ×40 mesoscale RETIRED, FF GPU-native)
+    n_filaments: int = 70686                # actin areal density ~100/µm² (KB-3.18; = 100·4πR²) — supersedes
+                                            # the CLAUDE.md ~38000 (=30/µm², 3× sparse vs KB; ⚠️CLAUDE.md↔KB
+                                            # conflict surfaced to PI). ×40 mesoscale RETIRED, FF GPU-native
     beads_per_filament: int = 7             # mean (H.3 v3.1)
     seg_um: float = 0.5                     # ℓ₀ segment rest length [µm]
     kappa: float = U.KAPPA_ACTIN            # bending modulus [pN·µm²] = k_B·T·ℓ_p
