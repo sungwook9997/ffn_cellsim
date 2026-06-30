@@ -82,6 +82,56 @@ def axpy_kernel(x: wp.array(dtype=wp.vec3d), step: wp.float64, F: wp.array(dtype
     x[i] = x[i] + step * F[i]
 
 
+@wp.kernel
+def reshape_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    fiber_off: wp.array(dtype=wp.int32),        # (F+1,) node range [off[f], off[f+1]) per fiber
+    seg_off: wp.array(dtype=wp.int32),          # (F+1,) segment range start per fiber
+    seg_rest: wp.array(dtype=wp.float64),       # (S,) segment rest lengths
+    n_iter: wp.int32,
+):
+    """NF2007 §5.3 reshape (one thread per fiber): restore |m_{k+1}−m_k|=seg_rest, conserving COG.
+
+    Fibers own disjoint node ranges → no inter-thread races. Sequential over segments per the paper;
+    ``n_iter`` passes converge the residual coupling."""
+    f = wp.tid()
+    a = fiber_off[f]
+    b = fiber_off[f + 1]
+    p = b - a - 1                                # segments
+    s0 = seg_off[f]
+    for _it in range(n_iter):
+        for k in range(p):
+            g = pos[a + k + 1] - pos[a + k]
+            d = wp.length(g)
+            if d > wp.float64(1e-300):
+                u = g / d
+                e = d - seg_rest[s0 + k]
+                n_a = wp.float64(k + 1)
+                n_b = wp.float64(p - k)
+                tot = n_a + n_b
+                d_a = e * n_b / tot
+                d_b = e * n_a / tot
+                for m in range(a, a + k + 1):
+                    pos[m] = pos[m] + d_a * u
+                for m in range(a + k + 1, b):
+                    pos[m] = pos[m] - d_b * u
+
+
+def reshape_np(pos, fiber_off, seg_rest, n_iter=4, device="cpu"):
+    """Convenience: Warp reshape on a numpy (N,3) pos → reshaped numpy (for parity / numpy callers)."""
+    fiber_off = np.ascontiguousarray(fiber_off, np.int32)
+    seg_per = np.diff(fiber_off) - 1
+    seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
+    pos_d = wp.array(np.ascontiguousarray(pos, np.float64), dtype=wp.vec3d, device=device)
+    wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+              inputs=[pos_d, wp.array(fiber_off, dtype=wp.int32, device=device),
+                      wp.array(seg_off, dtype=wp.int32, device=device),
+                      wp.array(np.ascontiguousarray(seg_rest, np.float64), dtype=wp.float64, device=device),
+                      wp.int32(n_iter)], device=device)
+    wp.synchronize_device(device)
+    return pos_d.numpy().astype(np.float64)
+
+
 def link_spring_force_np(pos, links, k, r0, device="cpu"):
     """Convenience: Warp link-spring force as a numpy (N,3) array (for parity tests / numpy callers)."""
     N = pos.shape[0]
@@ -108,3 +158,67 @@ def myosin_force_np(pos, links, f_myo, device="cpu"):
                           wp.float64(f_myo), force_d], device=device)
         wp.synchronize_device(device)
     return force_d.numpy().astype(np.float64)
+
+
+@wp.kernel
+def _zero(f: wp.array(dtype=wp.vec3d)):
+    f[wp.tid()] = wp.vec3d(wp.float64(0.0), wp.float64(0.0), wp.float64(0.0))
+
+
+def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None, f_myo=0.0,
+                    n_steps=600, reshape_every=25, dt_mu=0.0, n_reshape_iter=2, device="cpu"):
+    """Fully on-device FF cortex relaxation: bending (+ optional crosslink/myosin) forces + reshape,
+    all Warp — NO per-step numpy round-trip. Runs on CPU (Mac) or CUDA (gbook A5000) via ``device``.
+
+    Returns the relaxed positions (N,3) numpy. Inextensibility via periodic reshape (the robust path;
+    no singular-prone projector). ``links``/``k_xl``/``xl_rest`` optional crosslinker springs;
+    ``myo_links``/``f_myo`` optional myosin. Default (none) = resting-shell bending settle.
+    """
+    from ffn_sim.ff.forces_warp import _per_triple_alpha
+    N = net.n_nodes
+    tri = np.ascontiguousarray(net.bend_triples, np.int32)
+    alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
+    fiber_off = np.ascontiguousarray(net.fiber_offsets, np.int32)
+    seg_per = np.diff(fiber_off) - 1
+    seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
+    seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    if dt_mu <= 0.0:
+        kmax = float(net.kappa.max()) / seg**3
+        if k_xl is not None and len(k_xl):
+            kmax = max(kmax, float(np.max(k_xl)))
+        dt_mu = 0.1 / kmax
+
+    from ffn_sim.ff.forces_warp import cytosim_bending_kernel
+    d = device
+    pos_d = wp.array(np.ascontiguousarray(net.pos, np.float64), dtype=wp.vec3d, device=d)
+    f_d = wp.zeros(N, dtype=wp.vec3d, device=d)
+    tri_d = wp.array(tri, dtype=wp.int32, device=d)
+    alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
+    foff_d = wp.array(fiber_off, dtype=wp.int32, device=d)
+    soff_d = wp.array(seg_off, dtype=wp.int32, device=d)
+    srest_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
+    has_xl = links is not None and len(links)
+    if has_xl:
+        xl_d = wp.array(np.ascontiguousarray(links, np.int32), dtype=wp.int32, device=d)
+        kxl_d = wp.array(np.ascontiguousarray(k_xl, np.float64), dtype=wp.float64, device=d)
+        r0_d = wp.array(np.ascontiguousarray(xl_rest, np.float64), dtype=wp.float64, device=d)
+    has_myo = myo_links is not None and len(myo_links) and f_myo != 0.0
+    if has_myo:
+        myo_d = wp.array(np.ascontiguousarray(myo_links, np.int32), dtype=wp.int32, device=d)
+    nT = tri.shape[0]
+    for step in range(n_steps):
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        if nT:
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        if has_xl:
+            wp.launch(link_spring_kernel, dim=len(links), inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_kernel, dim=len(myo_links), inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+        if (step + 1) % reshape_every == 0:
+            wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+                      inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
+    wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+              inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(4)], device=d)
+    wp.synchronize_device(d)
+    return pos_d.numpy().astype(np.float64)
