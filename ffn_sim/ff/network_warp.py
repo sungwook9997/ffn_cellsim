@@ -301,13 +301,15 @@ def _rsum(pos: wp.array(dtype=wp.vec3d), centre: wp.vec3d, acc: wp.array(dtype=w
 
 
 def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None, f_myo=0.0,
+                    branch_triples=None, branch_theta0=0.0, branch_k=0.0,
                     n_steps=600, reshape_every=25, dt_mu=0.0, n_reshape_iter=2, device="cpu"):
-    """Fully on-device FF cortex relaxation: bending (+ optional crosslink/myosin) forces + reshape,
-    all Warp — NO per-step numpy round-trip. Runs on CPU (Mac) or CUDA (gbook A5000) via ``device``.
+    """Fully on-device FF cortex relaxation: bending (+ optional crosslink/myosin/Arp2/3-branch) forces +
+    reshape, all Warp — NO per-step numpy round-trip. Runs on CPU (Mac) or CUDA (gbook A5000) via ``device``.
 
     Returns the relaxed positions (N,3) numpy. Inextensibility via periodic reshape (the robust path;
     no singular-prone projector). ``links``/``k_xl``/``xl_rest`` optional crosslinker springs;
-    ``myo_links``/``f_myo`` optional myosin. Default (none) = resting-shell bending settle.
+    ``myo_links``/``f_myo`` optional myosin; ``branch_triples``/``branch_theta0``/``branch_k`` optional
+    angle-harmonic Arp2/3 branches (lamellipodium). Default (none) = resting-shell bending settle.
     """
     from ffn_sim.ff.forces_warp import _per_triple_alpha
     N = net.n_nodes
@@ -317,10 +319,13 @@ def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None,
     seg_per = np.diff(fiber_off) - 1
     seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
     seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    has_branch = branch_triples is not None and len(branch_triples) and branch_k > 0.0
     if dt_mu <= 0.0:
         kmax = float(net.kappa.max()) / seg**3
         if k_xl is not None and len(k_xl):
             kmax = max(kmax, float(np.max(k_xl)))
+        if has_branch:                                         # CFL: branch angular spring k_eff ≈ k_angle/ℓ²
+            kmax = max(kmax, branch_k / seg**2)
         dt_mu = 0.1 / kmax
 
     from ffn_sim.ff.forces_warp import cytosim_bending_kernel
@@ -340,6 +345,8 @@ def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None,
     has_myo = myo_links is not None and len(myo_links) and f_myo != 0.0
     if has_myo:
         myo_d = wp.array(np.ascontiguousarray(myo_links, np.int32), dtype=wp.int32, device=d)
+    if has_branch:
+        br_d = wp.array(np.ascontiguousarray(branch_triples, np.int32), dtype=wp.int32, device=d)
     nT = tri.shape[0]
     for step in range(n_steps):
         wp.launch(_zero, dim=N, inputs=[f_d], device=d)
@@ -349,6 +356,9 @@ def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None,
             wp.launch(link_spring_kernel, dim=len(links), inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
         if has_myo:
             wp.launch(myosin_kernel, dim=len(myo_links), inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        if has_branch:
+            wp.launch(branch_angle_kernel, dim=len(branch_triples),
+                      inputs=[pos_d, br_d, wp.float64(branch_theta0), wp.float64(branch_k), f_d], device=d)
         wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
         if (step + 1) % reshape_every == 0:
             wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,

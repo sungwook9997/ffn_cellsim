@@ -25,7 +25,7 @@ pN). That stall force is the per-link prestress f_myo; we sweep it and mark the 
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -100,6 +100,9 @@ class CrosslinkedCortex:
     R0_mean: float = 0.0        # rest mean node radius about centroid [µm] — the self-consistent
                                 # turgor volume reference (NOT R_um; the huge osmotic Π_in0 makes any
                                 # V0-vs-V reference mismatch blow up, so V0 = (4/3)π·R0_mean³).
+    branch_triples: np.ndarray = field(default_factory=lambda: np.zeros((0, 3), np.int64))
+    # (Nbr, 3) Arp2/3 branch triples [mother_after, branch_node, daughter] for the angle-harmonic
+    # kernel (lamellipodium / branched structures; empty for cortex/filopodium).
 
 
 def mesoscale_reach(R_um: float, n_filaments: int) -> float:

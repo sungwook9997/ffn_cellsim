@@ -78,6 +78,59 @@ def _build_bundle(spec: ArchitectureSpec, rng: np.random.Generator):
     return net
 
 
+def _build_lamellipodium_patch(spec: ArchitectureSpec, rng: np.random.Generator):
+    """Arp2/3 DENDRITIC ±35° two-mode array on a flat patch (protrusion axis = +y, patch in x–y, z≈0).
+
+    Mothers seeded at ±35° about +y; each spawns Arp2/3 daughters at the rest branch angle θ₀=70° toward
+    the OTHER ∓35° mode (so every filament sits at ±35° two-mode AND every junction is at 70°). Returns
+    (net, branch_triples (Nbr,3) [mother_after, branch_node, daughter_node1], anchor_pairs (Nbr,2)
+    [daughter_node0, branch_node], fiber_angle (F,) signed orientation about +y)."""
+    from ffn_sim.ff import units as U
+    fs = spec.filament
+    nb = max(3, int(round(fs.length_um / fs.seg_um)) + 1)
+    seg, R = fs.seg_um, spec.R_um
+    th0 = fs.branch_angle_rad
+    sig = np.deg2rad(fs.branch_sigma_deg or 9.0)
+    mode = np.deg2rad(fs.mode_axis_deg or 35.0)
+    n = fs.n_filaments
+    n_mothers = max(1, n // 2)
+
+    def dir_of(phi):                                            # in-plane unit dir at angle φ from +y
+        return np.array([np.sin(phi), np.cos(phi), 0.0])
+
+    fibers, fiber_angle = [], []
+    mothers = []                                               # (fiber_idx, phi)
+    for m in range(n_mothers):
+        s = 1.0 if rng.random() < 0.5 else -1.0
+        phi = s * mode + sig * rng.standard_normal()
+        base = np.array([rng.uniform(-R, R), rng.uniform(-R, R), 0.0])
+        fibers.append(base[None, :] + np.arange(nb)[:, None] * seg * dir_of(phi)[None, :])
+        fiber_angle.append(phi); mothers.append((m, s, phi))
+
+    # daughters: branch off a random mother at a random interior bead, rotated by ∓θ₀ into the other mode
+    dgt = []                                                   # (daughter_fiber_idx, mother_idx, branch_bead)
+    for d in range(n - n_mothers):
+        mi, s, mphi = mothers[rng.integers(n_mothers)]
+        b = int(rng.integers(1, nb - 1))                       # interior branch bead on the mother
+        dphi = mphi - s * th0 + sig * rng.standard_normal()    # → the other ∓35° mode; junction = θ₀
+        branch_pos = fibers[mi][b]
+        fibers.append(branch_pos[None, :] + np.arange(nb)[:, None] * seg * dir_of(dphi)[None, :])
+        fiber_angle.append(dphi); dgt.append((n_mothers + d, mi, b))
+
+    net = build_fiber_network(fibers, kappa=U.KAPPA_ACTIN)
+    off = net.fiber_offsets
+    triples, anchors = [], []
+    for (di, mi, b) in dgt:
+        ma = int(off[mi]) + min(b + 1, nb - 1)                 # mother node just past the branch
+        bn = int(off[mi]) + b                                  # branch node (on mother)
+        d0 = int(off[di])                                      # daughter base (co-located with bn)
+        d1 = int(off[di]) + 1                                  # daughter first segment node
+        triples.append([ma, bn, d1]); anchors.append([d0, bn])
+    triples = np.array(triples, np.int64) if triples else np.zeros((0, 3), np.int64)
+    anchors = np.array(anchors, np.int64) if anchors else np.zeros((0, 2), np.int64)
+    return net, triples, anchors, np.array(fiber_angle)
+
+
 def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
           alpha_fraction: float = 0.30) -> CrosslinkedCortex:
     """Build the woven network for ``spec`` → a CrosslinkedCortex (net + crosslinks + motors)."""
@@ -87,6 +140,8 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
     n_xl = int(round(fs.n_filaments * spec.crosslinker.density_per_fil))
     n_myo = int(round(fs.n_filaments * spec.motor.density_per_fil)) if spec.motor.hand else 0
 
+    branch_triples = np.zeros((0, 3), np.int64)
+    anchors = np.zeros((0, 2), np.int64)
     if spec.manifold == "sphere":
         # mirror gamma_floor.build_crosslinked_cortex (RNG order preserved → γ-floor parity)
         params = CortexParams(R_um=spec.R_um, n_filaments=fs.n_filaments,
@@ -96,8 +151,11 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
     elif spec.manifold == "bundle":
         net = _build_bundle(spec, rng)
         reach = 1.6 * 0.008                                    # ~2× the 8 nm bundle spacing
+    elif spec.manifold == "patch":                            # lamellipodium dendritic array (Arp2/3)
+        net, branch_triples, anchors, _ = _build_lamellipodium_patch(spec, rng)
+        reach = 0.6                                            # lamellipodial mesh ξ ~0.6 µm (Sakamoto 2024)
     else:
-        raise ValueError(f"manifold {spec.manifold!r} not in increment-1 scope (sphere|bundle)")
+        raise ValueError(f"manifold {spec.manifold!r} not supported (sphere|bundle|patch)")
 
     # crosslinkers: KDTree near cross-fiber pairs, filtered by bind mode
     xl_pairs = _cross_fiber_pairs(net, reach, n_xl, rng)
@@ -106,10 +164,17 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
     if spec.manifold == "sphere":                              # cortex α-actinin/filamin split (parity)
         is_alpha = rng.random(nxl) < alpha_fraction
         xl_k = np.where(is_alpha, ALPHA_ACTININ.link_k, FILAMIN.link_k)
-    else:                                                      # bundle: single crosslinker (spec.hand)
+    else:                                                      # bundle/patch: single crosslinker (spec.hand)
         xl_k = np.full(nxl, spec.crosslinker.hand.link_k)
-    xl_rest = (np.linalg.norm(net.pos[xl_pairs[:, 1]] - net.pos[xl_pairs[:, 0]], axis=1)
-               if nxl else np.zeros(0))
+    xl_i, xl_j = (xl_pairs[:, 0], xl_pairs[:, 1]) if nxl else (np.zeros(0, np.int64), np.zeros(0, np.int64))
+    xl_rest = np.linalg.norm(net.pos[xl_j] - net.pos[xl_i], axis=1) if nxl else np.zeros(0)
+
+    if anchors.shape[0]:                                       # Arp2/3 branch ANCHORS (daughter base ↔ branch
+        a_i, a_j = anchors[:, 0], anchors[:, 1]               # node): stiff, force-free at the branch geometry
+        a_rest = np.linalg.norm(net.pos[a_j] - net.pos[a_i], axis=1)
+        xl_i = np.concatenate([xl_i, a_i]); xl_j = np.concatenate([xl_j, a_j])
+        xl_k = np.concatenate([xl_k, np.full(anchors.shape[0], ALPHA_ACTININ.link_k)])
+        xl_rest = np.concatenate([xl_rest, a_rest])
 
     # motors
     if n_myo:
@@ -120,5 +185,6 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
 
     r0_mean = float(np.linalg.norm(net.pos - net.pos.mean(axis=0), axis=1).mean())
     return CrosslinkedCortex(
-        net=net, xl_i=xl_pairs[:, 0], xl_j=xl_pairs[:, 1], xl_k=xl_k, xl_rest=xl_rest,
-        myo_i=myo_pairs[:, 0], myo_j=myo_pairs[:, 1], R_um=spec.R_um, R0_mean=r0_mean)
+        net=net, xl_i=xl_i, xl_j=xl_j, xl_k=xl_k, xl_rest=xl_rest,
+        myo_i=myo_pairs[:, 0], myo_j=myo_pairs[:, 1], R_um=spec.R_um, R0_mean=r0_mean,
+        branch_triples=branch_triples)

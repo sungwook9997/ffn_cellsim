@@ -46,15 +46,35 @@ Modules: `ff/architecture_spec.py` (the table in code), `ff/weave.py` (the build
 `network_warp` (the GPU relax/forces are structure-agnostic flat arrays — any woven structure runs on
 the A5000 via the same path).
 
-## Full per-structure table — FOR PI SIGN-OFF (increments 2+)
+## Increment 2 — LAMELLIPODIUM + Arp2/3 angle-harmonic branch kernel (built, 2026-06-30, PI "둘 다")
 
-Built only after PI ratifies the mapping + authorizes the unsourced constants below.
+Third structure from the SAME `weave()`, `manifold="patch"`: an Arp2/3 DENDRITIC array. Mothers seeded
+at ±35° about the protrusion axis; each spawns daughters at the rest branch angle θ₀=70° toward the
+OTHER ∓35° mode (so all filaments sit at ±35° two-mode AND every junction is at 70°). The branch angle
+is maintained by a NEW Warp kernel `network_warp.branch_angle_kernel` — the MECHANISTIC angle-harmonic
+Arp2/3 branch (CLAUDE.md: U=½·k_angle·(θ−θ₀)² with thermal fluctuation, NOT a rigid 72° constraint).
+
+- **Lit-anchored constants** (Magic-Number-Blocked, `configs/phase1_h5.yaml`): θ₀ = **70°** (Fäßler 2020
+  in-cell cryo-ET 68±9°); k_angle = **0.173 pN·µm/rad²** = kT/Var(θ), σ_θ=9° equipartition; ±35° two-mode
+  (Mueller 2017, protrusion-axis-relative); branch density 1.25/µm (Vinzenz 2012, PI-gated cite).
+- **Built metrics**: branch junctions **69.1±9.6°** (target Fäßler 70±9), orientation **+33.3/−35.0°**
+  two-mode (target Mueller ±35), 78 % in the ±20–50° band. Kernel bit-parity vs numpy 1.3e-15; a
+  perturbed 120° branch relaxes to exactly 70°. The lamellipodium relaxes STABLY on the A5000 with the
+  branch kernel (2000 steps, 1.5 s, finite; CFL includes k_angle's k_eff=k_angle/ℓ²).
+- New: `ff/architecture_spec.LAMELLIPODIUM` + `FilamentSpec` two-mode/branch fields + ARP23 constants;
+  `weave._build_lamellipodium_patch` (dendritic generator, emits branch triples + Arp2/3 anchors);
+  `network_warp.branch_angle_kernel` + relax_on_device branch support; `architecture_metrics`
+  branch_angle_distribution + two_mode_orientation; `CrosslinkedCortex.branch_triples`. Tests +3.
+
+## Full per-structure table — increments 3+ FOR PI SIGN-OFF
+
+Built only after PI ratifies + authorizes the unsourced constants below.
 
 | structure | manifold | filament (nucleator) | crosslinker (mode) | motor | metric + lit band |
 |---|---|---|---|---|---|
 | cortex ✅ | sphere | bimodal Arp2/3 + formin | filamin/α-actinin (any) | NMIIA bipolar | mesh/z/ρ (done) |
 | filopodium ✅ | bundle | formin parallel | fascin (parallel) | none | count 10–30, spacing 7–8 nm (done) |
-| lamellipodium | patch | Arp2/3 ±35° dendritic | filamin (any) sparse | none/sparse | branch-angle 70°, two-mode ±35° |
+| lamellipodium ✅ | patch | Arp2/3 ±35° dendritic | filamin (any) sparse | none/sparse | branch 70°, two-mode ±35° (done) |
 | stress-fiber | FA–FA | formin antiparallel | α-actinin parallel periodic | NMIIA sarcomeric | sarcomeric period 0.5–1 µm |
 | microvilli | finger | formin parallel ~20–30 | espin/fimbrin/villin (parallel) | none (myosin-1a shaft) | count 20–30, spacing ~33 nm |
 | traction/FA | cortex/SF + substrate | = SF/cortex | + clutch catch-bond | SF retrograde flow | traction ~102 nN (Gil-Redondo 2023) |

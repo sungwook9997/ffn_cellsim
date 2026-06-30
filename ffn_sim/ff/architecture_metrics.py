@@ -46,6 +46,38 @@ def inter_filament_spacing_nm(net) -> float:
     return float(np.median(d[:, 1]) * 1e3)                     # µm → nm
 
 
+def branch_angle_distribution(cortex) -> dict:
+    """Arp2/3 branch-angle statistics over the cortex's branch triples [i, j(apex), k] — mean + SD [deg]
+    (lit anchor: Fäßler 2020 in-cell cryo-ET 68 ± 9°; rest θ₀ = 70°)."""
+    net = cortex.net
+    tri = cortex.branch_triples
+    if tri.shape[0] == 0:
+        return {"n_branches": 0, "mean_deg": float("nan"), "std_deg": float("nan")}
+    r1 = net.pos[tri[:, 0]] - net.pos[tri[:, 1]]
+    r2 = net.pos[tri[:, 2]] - net.pos[tri[:, 1]]
+    c = np.einsum("ij,ij->i", r1, r2) / (np.linalg.norm(r1, axis=1) * np.linalg.norm(r2, axis=1) + 1e-12)
+    ang = np.rad2deg(np.arccos(np.clip(c, -1, 1)))
+    return {"n_branches": int(tri.shape[0]), "mean_deg": float(ang.mean()), "std_deg": float(ang.std())}
+
+
+def two_mode_orientation(cortex, axis=(0.0, 1.0, 0.0)) -> dict:
+    """Lamellipodium two-mode filament orientation about the protrusion ``axis`` (default +y): the ±mode
+    peak means [deg] + the fraction in the ±20–50° two-mode band (Mueller 2017 ±35° dendritic signature).
+    Uses the in-plane signed angle (x vs y for the default axis)."""
+    net = cortex.net
+    off = net.fiber_offsets
+    phis = []
+    for f in range(net.n_fibers):
+        a, b = int(off[f]), int(off[f + 1])
+        d = net.pos[b - 1] - net.pos[a]
+        phis.append(np.rad2deg(np.arctan2(d[0], d[1])))        # signed angle from +y in the x–y plane
+    phis = np.array(phis)
+    pos = phis[phis > 0]; neg = phis[phis < 0]
+    return {"plus_mode_deg": float(pos.mean()) if pos.size else float("nan"),
+            "minus_mode_deg": float(neg.mean()) if neg.size else float("nan"),
+            "two_mode_frac": float(np.mean((np.abs(phis) > 20) & (np.abs(phis) < 50)))}
+
+
 def cortex_metrics(cortex) -> dict:
     """Cortex architectural metrics — areal density + connectivity z + giant-component fraction."""
     from ffn_sim.ff.kim_network import connectivity_z

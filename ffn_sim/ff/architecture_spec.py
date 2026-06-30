@@ -19,6 +19,12 @@ from dataclasses import dataclass, field
 
 from ffn_sim.ff.hand_kmc import ALPHA_ACTININ, FILAMIN, NMIIA_MYOSIN, HandParams
 
+# Arp2/3 branch geometry — lit-anchored, Magic-Number-Blocked (configs/phase1_h5.yaml, audit C5
+# 2026-05-30; Fäßler et al. 2020 EMBO J 39:e104254 in-cell cryo-ET branch junction 68 ± 9°).
+ARP23_BRANCH_ANGLE_RAD = 1.2217304764     # rad = 70.0° rest branch angle θ₀
+ARP23_BRANCH_SIGMA_DEG = 9.0              # thermal angular spread σ_θ (Fäßler 2020)
+ARP23_BRANCH_K = 0.173                    # pN·µm/rad² = 1.73e-19 J/rad² = kT/Var(θ), σ_θ=9° (equipartition)
+
 
 @dataclass(frozen=True, slots=True)
 class FilamentSpec:
@@ -28,8 +34,13 @@ class FilamentSpec:
     length_um: float        # filament contour length L
     seg_um: float           # segment rest length ℓ₀
     n_filaments: int        # ×40-mesoscale count
-    orientation: str        # "isotropic" | "parallel" | "branched"
+    orientation: str        # "isotropic" | "parallel" | "branched_twomode"
     polarity: str = "mixed" # "mixed" | "uniform"
+    # increment-2 additions (used only for orientation == "branched_twomode"; additive, default None)
+    branch_angle_rad: float | None = None      # Arp2/3 mother-daughter rest angle θ₀ (70°, Fäßler 2020)
+    branch_sigma_deg: float | None = None       # thermal angular width σ_θ (9°, Fäßler 2020)
+    mode_axis_deg: float | None = None          # ±mode peak about the protrusion axis (35° = θ₀/2; Mueller 2017)
+    branch_per_um: float | None = None          # linear Arp2/3 branch density (1.25/µm; Vinzenz 2012, PI-gated cite)
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,4 +105,26 @@ FILOPODIUM = ArchitectureSpec(
     notes="Parallel formin bundle (10–30 filaments, ~7–8 nm crosslink spacing). fascin = PI-gated.",
 )
 
-TABLE = {s.name: s for s in (CORTEX, FILOPODIUM)}
+# LAMELLIPODIUM — Arp2/3 DENDRITIC ±35° two-mode array on a flat protrusion patch. Mothers seeded at
+# ±35° about the protrusion axis; Arp2/3 daughters branch at θ₀=70° (flipping to the other ∓35° mode,
+# so all filaments sit at ±35° two-mode AND every junction is at 70°). The branch angle is maintained
+# by the angle-harmonic Arp2/3 kernel (network_warp.branch_angle_kernel, NOT a rigid constraint). Sparse
+# filamin (the lamellipodial mesh is loosely bound vs the cortex shell); no contractile motor in the core.
+LAMELLIPODIUM = ArchitectureSpec(
+    name="lamellipodium",
+    manifold="patch",
+    R_um=8.0,                                                   # patch half-extent [µm]
+    filament=FilamentSpec(nucleator="arp23", length_um=1.0, seg_um=0.5, n_filaments=200,
+                          orientation="branched_twomode", polarity="uniform",
+                          branch_angle_rad=ARP23_BRANCH_ANGLE_RAD,   # 70° (Fäßler 2020) [GROUNDED]
+                          branch_sigma_deg=ARP23_BRANCH_SIGMA_DEG,    # σ_θ=9° (Fäßler 2020) [PI-gated SD]
+                          mode_axis_deg=35.0,                         # ±35° = θ₀/2 (Mueller 2017) [GROUNDED]
+                          branch_per_um=1.25),                        # Vinzenz 2012 1/0.80µm [PI-gated cite]
+    crosslinker=CrosslinkerSpec(hand=FILAMIN, bind_mode="any", density_per_fil=0.3),  # SPARSE vs cortex 1.0
+    motor=MotorSpec(hand=None, mode="none"),
+    notes=("Arp2/3 dendritic ±35° two-mode patch; branch angle 70° (k_angle=0.173 pN·µm/rad²) via "
+           "branch_angle_kernel. σ_θ=9° SD + Vinzenz branch density = PI-gated (KB/SE). fascin/espin "
+           "bundlers PI-gated; uses anchored filamin as the sparse crosslinker stand-in."),
+)
+
+TABLE = {s.name: s for s in (CORTEX, FILOPODIUM, LAMELLIPODIUM)}

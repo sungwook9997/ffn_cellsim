@@ -64,3 +64,42 @@ def test_weave_one_builder_two_architectures():
     filo = weave(FILOPODIUM, rng=np.random.default_rng(0))
     assert parallel_order_parameter(cortex.net) < 0.3      # cortex ≈ isotropic
     assert parallel_order_parameter(filo.net) > 0.95       # filopodium ≈ parallel
+
+
+def test_weave_lamellipodium_dendritic_metrics():
+    """weave(LAMELLIPODIUM) — the SAME builder, manifold='patch' — produces an Arp2/3 dendritic array
+    with the literature architecture: branch junctions at θ₀=70° (Fäßler 2020 68±9°) AND a ±35°
+    two-mode filament orientation about the protrusion axis (Mueller 2017)."""
+    from ffn_sim.ff.architecture_metrics import branch_angle_distribution, two_mode_orientation
+    from ffn_sim.ff.architecture_spec import LAMELLIPODIUM
+
+    cx = weave(LAMELLIPODIUM, rng=np.random.default_rng(0))
+    assert cx.branch_triples.shape[0] > 0                   # Arp2/3 branch junctions emitted
+    ba = branch_angle_distribution(cx)
+    assert abs(ba["mean_deg"] - 70.0) < 5.0                 # branch junctions at ~70° (Fäßler 2020)
+    tm = two_mode_orientation(cx)
+    assert abs(tm["plus_mode_deg"] - 35.0) < 8.0           # +35° mode
+    assert abs(tm["minus_mode_deg"] + 35.0) < 8.0          # −35° mode (Mueller 2017 ±35°)
+    assert tm["two_mode_frac"] > 0.6                        # dendritic two-mode signature
+
+
+def test_weave_lamellipodium_relax_stable_with_branch_kernel():
+    """The lamellipodium relaxes STABLY on-device with the Arp2/3 angle-harmonic branch kernel wired in
+    (bending + crosslink/anchor springs + branch kernel + reshape): finite, and the branch junctions
+    stay near θ₀=70° (within the soft k_angle spread)."""
+    from ffn_sim.ff.architecture_metrics import branch_angle_distribution
+    from ffn_sim.ff.architecture_spec import (
+        ARP23_BRANCH_ANGLE_RAD,
+        ARP23_BRANCH_K,
+        LAMELLIPODIUM,
+    )
+    from ffn_sim.ff.network_warp import relax_on_device
+
+    cx = weave(LAMELLIPODIUM, rng=np.random.default_rng(0))
+    links = np.stack([cx.xl_i, cx.xl_j], 1).astype(np.int64) if cx.xl_i.size else None
+    cx.net.pos = relax_on_device(cx.net, links=links, k_xl=cx.xl_k, xl_rest=cx.xl_rest,
+                                 branch_triples=cx.branch_triples, branch_theta0=ARP23_BRANCH_ANGLE_RAD,
+                                 branch_k=ARP23_BRANCH_K, n_steps=800, device="cpu")
+    assert np.isfinite(cx.net.pos).all()                    # stable (CFL incl branch k_eff)
+    ba = branch_angle_distribution(cx)
+    assert 55.0 < ba["mean_deg"] < 85.0                    # branches held near 70° by the kernel
