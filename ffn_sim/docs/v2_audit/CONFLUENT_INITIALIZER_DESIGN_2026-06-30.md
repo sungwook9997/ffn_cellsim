@@ -382,3 +382,22 @@ built, awaiting §6 sign-off.
 - **Net:** the confluent-init path is validated, scales to N=400 geometrically, and maintains faceting at
   N=200 under the production energy. Faceting is MILD (Q ~147–150); SimuCell3D-grade Q≈250 + the V0=Voronoi
   setpoint fix remain PI-gated (§6) production work, NOT done autonomously.
+
+### 8c. N=400 capstone (spheroid scale, 2026-07-01) — faceting holds; V0 fix now empirically required
+
+Ran the maintain diagnostic at the real target scale **N=400** (ε=0.02 confluent init, existing driver,
+stiff turgor + conservative tent, γ-off): asph 0.048→**0.047**, **Q 150→157** (faceting held, even slightly
+sharpened), contact 0.67. Render `viz_html/7_confluent_MAINTAIN_n400_render.png`, interactive
+`7_confluent_MAINTAIN_n400_eps02.html`.
+
+**Honest caveat (motivates the V0 fix):** V/V0 reached **1.37** and the penetration-ratio dropped to
+**0.192** — at N=400 confinement the turgor (V0 = full sphere) over-inflates every cell with nowhere to go,
+so interior cells significantly interpenetrate. So the path **validates at spheroid scale (faceting is
+maintained)** BUT a clean N=400 foam **requires the §6 V0 = Voronoi-cell-volume setpoint fix** (and/or a
+softer/again-stiffer K co-set) — now empirically demonstrated, not just anticipated. This is the first
+PI-gated production task.
+
+**Session conclusion:** the confluent-init hypothesis is confirmed end-to-end (geometry → energy maintains
+→ scales to N=400). Remaining = PI-gated production (V0 setpoint fix, sharper init / faceting energy for
+SimuCell3D-grade Q≈250, the Path-B `--builder confluent` wiring). Halting autonomous building here per the
+no-speculative-build rule; awaiting PI sign-off on §6.
