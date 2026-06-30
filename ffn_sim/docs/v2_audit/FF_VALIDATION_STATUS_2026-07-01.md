@@ -79,3 +79,10 @@ longer the blocker.
 
 Related: [[project-ff-gpu-native]], [[project-gamma-floor-likely-deficit]], [[feedback-oracle-is-crosscheck-not-truth]],
 [[feedback-no-param-tuning-to-outcome]]. Docs: FF_STAGE6Q, FF_STAGE6R, FF_KIM_NETWORK_VALIDATION, ENGINE.md.
+
+## Figure
+
+`outputs/ff/figs/validation_sprint_6qr.png` — 4-panel sprint summary: (A) GPU↔CPU bit-parity per
+kernel/integrator (all ≤ 2e-11), (B) production-envelope robustness (γ_myo vs N; stable across
+k_xl 0.1→4.6e5 and f_myo 0–40), (C) κL/2R² bending-energy anchor (corrected <0.5%; raw under-counts
+exactly (n−2)/(n−1)), (D) unified-architecture relax stability (all 5 finite + restoring under a 30 nm kick).
