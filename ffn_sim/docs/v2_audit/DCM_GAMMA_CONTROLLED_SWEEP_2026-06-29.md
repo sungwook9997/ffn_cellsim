@@ -27,7 +27,12 @@ Worktree-isolated from the FF session (which committed Cytosim γ-floor stages t
 7. **gbook launcher ready** (`dcm/gbook_production.sh`, dry-run validated; N=400 build validated on CPU)
    — fires the confluent faceting sweep + division production the instant gbook is online.
 
-**PI decisions pending:** (a) K reconciliation 7.73e5 vs 2.5e3; (b) active-lamellipodium force anchor
+8. **FF→DCM bridge realized (iter 7):** FF's measured γ_passive (turgor) 6.65e-4 N/m → DCM γ̃=0.022
+   = **faceting-band ONSET** at K=2.5e3 (the engines agree the aggregate sits at the faceting threshold);
+   FF's active γ (1.5e-7 N/m) is ~4400× too weak to facet (active-γ-floor). FF's data favours K≈2.5e3.
+
+**PI decisions pending:** (a) K reconciliation 7.73e5 vs 2.5e3 — **now FF's measured γ also points to
+2.5e3**; (b) active-lamellipodium force anchor
 (the A/A₀=7-10 magnitude, gated). **Deferred (needs gbook):** division+remesh co-run
 (`DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`); N≥400 confluent faceting + division production.
 
@@ -168,6 +173,32 @@ See `DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md`: the "−2 sentinel one-lin
 (parked-cell nodes double as cleave's dormant supply; mitotic uses fixed npc-blocks incompatible
 with remesh relabelling). Two approaches recorded (index-range vs unified pool manager) +
 the known cleave+remesh quality caveat; validate on gbook. Deferred from the CPU loop.
+
+## Iteration 7 — FF→DCM bridge realized with real FF data (cross-engine synthesis)
+
+FF committed its grounded production γ-floor point (`dcm/main` ec7879d, `FF_STAGE6D_GAMMA_FLOOR`):
+**γ_passive (turgor) = 0.665 mN/m = 6.65e-4 N/m** (at-band) and **γ_active (actomyosin, grounded
+N=1000/n_myo=100) = 1.5e-4 mN/m = 1.5e-7 N/m** (~2300× under the Salbreux band; on the archived
+BAOAB-MD g_soft). Fed through `dcm/nondim.py` (the shared nondimensionalization):
+
+| FF γ | at K=2.5e3 (SimuCell3D) γ̃ | regime | at driver K=7.73e5 γ̃ | regime |
+|---|---|---|---|---|
+| **γ_passive 6.65e-4 N/m** | **0.022** | **FACETING band (onset)** | 7.1e-5 | rounded |
+| γ_active 1.5e-7 N/m | 5.0e-6 | rounded | 1.6e-8 | rounded |
+
+**Cross-engine result:** FF's *independently-measured* turgor-cortical tension lands **right at the
+faceting-band onset (γ̃=0.022)** at the SimuCell3D K — the two engines agree that the DCM aggregate
+sits at the *threshold* of faceting. Companion balances at γ_passive: Douezan s = +1.14 (>0,
+wetting-favourable), Young–Laplace turgor/capillary = 0.75 (cortex marginally wins). Implications:
+- DCM faceting, if it occurs, is driven by the **passive/turgor cortical tension**, NOT active
+  actomyosin — FF's active γ (1.5e-7 N/m) is ~4400× too weak to facet (γ̃=5e-6), the same
+  active-γ-floor (missing motor-density datum) seen across the project.
+- **K-reconciliation, now from the FF side:** at the driver K=7.73e5 even FF's measured γ_passive
+  cannot facet (γ̃=7e-5); faceting is reachable only at K≈2.5e3. FF's measured γ + the requirement
+  that faceting be physical jointly favour the **SimuCell3D K≈2.5e3**, not the spread-tuned 7.73e5.
+
+This is the shared-nondimensionalization payoff: a γ measured by the fine-grained FF engine maps,
+with no refit, onto the DCM faceting regime — the engines now speak one dimensionless language.
 
 ## Iteration 6 — aggregate→settle→spread dynamic hand-off (goal #2)
 
