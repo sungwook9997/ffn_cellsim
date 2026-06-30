@@ -65,6 +65,20 @@ raw interior sum still shows the (n−2)/(n−1) factor, documenting what the co
   Euler buckling threshold π²κ/L², and the Hand (motor) stepping/detachment kinetics — to cross-check
   the §10.1 layer against Cytosim's `motor`/`couple` implementations.
 
+### Dynamic relaxation-rate parity — ATTEMPTED, DEFERRED (2026-06-30)
+
+Tried the single-fiber relaxation-rate cross-check (per-frame energy via Cytosim's `repeat{ run;
+report }` block — that mechanism works). It is **not a clean parity target**: the absolute decay rate
+depends on Cytosim's drag MODEL (`drag_radius` / `drag_length` / `surface_effect` cylinder drag),
+which differs from FF's `units.fiber_mobility` (μ=log(L_h/δ)/3πηL) by an O(1)–O(10) factor, and
+Cytosim integrates *implicitly* (its own NF2007 Eq 2) so it relaxes stiff bending almost instantly —
+even the convention-independent normalized E(t)/E0-vs-(t/τ) curves did not overlay cleanly in the
+sampled window (Cytosim under-relaxed at matched wall-time; FF followed a clean exponential).
+**Conclusion:** matching dynamic rates needs deep Cytosim drag-model calibration whose validation
+value is low given the static energy + functional parity already pins the bending convention
+(convention-independent). Deferred to a focused session that first calibrates the drag model. The
+Hand/motor-kinetics parity (higher value for the γ result) similarly needs a dedicated setup.
+
 ## Reproduce
 
 ```
