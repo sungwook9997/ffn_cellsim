@@ -1,10 +1,10 @@
 {
  "source": "Notion Contract-Graph (ffn_cellsim KB) — single source of truth",
  "notion_version": "2022-06-28",
- "built_at": "2026-06-21",
+ "built_at": "2026-07-01",
  "note": "Flattened snapshot for durability + diff. Regenerate with dump_notion_snapshot.py; git history is the dated archive.",
  "row_counts": {
-  "SourceEvidence": 332,
+  "SourceEvidence": 336,
   "KnowledgeClaim": 158,
   "ModelContract": 11,
   "Parameter": 21,
@@ -1181,7 +1181,7 @@
     ],
     "Source Type": "Direct measurement",
     "Short Source": "Ferrer, Lee, Chen, Pelz, Nakamura, Kamm, Lang 2008, PNAS 105:9221 (single-molecule alpha-actinin/actin rupture forces)",
-    "Notes": "[2026-06-02 hallucination audit] Replaced fabricated 'Yao2011_NatCommun' (no such Nat Commun alpha-actinin paper exists). Single-molecule anchor = Ferrer 2008 PNAS; lifetime companion = Miyata 1996 BBA 10.1016/0304-4165(96)00003-7. Supports KB-3.18/KB-3.19.",
+    "Notes": "[2026-06-02 hallucination audit] Replaced fabricated 'Yao2011_NatCommun'. Single-molecule anchor = Ferrer 2008 PNAS; lifetime companion = Miyata 1996 BBA 10.1016/0304-4165(96)00003-7. Supports KB-3.18/KB-3.19. | [2026-06-30 FF Stage 6N] SAME paper also measures the crosslink JUNCTION STIFFNESS (the load-bearing kappa_m): alpha-actinin/actin = 455 +/- 215 pN/nm = 4.6e5 pN/um; filamin/actin = 820 +/- 551 pN/nm = 8.2e5 pN/um. FF hand_kmc.link_k corrected 0.1 -> 4.6e5 (alpha-actinin) / 8.2e5 (filamin) pN/um, PI-approved; the old 0.1 was a ~4.5e6x unit-slip (pN/um-vs-pN/nm + AFINES soft-surrogate). Active gamma-floor UNCHANGED (force-magnitude-limited, robust to crosslink stiffness). Applied via crosslink_turnover relaxer (FF_STAGE6N).",
     "Anchor Status": "alpha-actinin/actin single-molecule: k_off0=0.066+/-0.028 s^-1 (Bell-Evans), rupture 40-80 pN. WARNING prior '0.4 s^-1' is a BULK no-load value, NOT single-molecule - KB-3.19 value pending PI.",
     "Citation Key": "Ferrer2008_PNAS"
    },
@@ -2803,7 +2803,7 @@
     ],
     "Source Type": "Direct measurement",
     "Short Source": "Mueller et al 2017, Cell 171:188",
-    "Notes": "Used by KB-3.6/3.7. H5-LP-2 force-velocity.",
+    "Notes": "Used by KB-3.6/3.7. H5-LP-2 force-velocity. | [2026-06-30 FF Stage 6L inc2] Lamellipodium +/-35 deg TWO-MODE filament orientation about the protrusion axis (cryo-ET; reproduces Maly-Borisy 2001). FF LAMELLIPODIUM ArchitectureSpec mode_axis_deg=35; the dendritic builder seeds mothers +/-35 deg and Arp2/3 daughters branch 70 deg to the other mode so all filaments sit at +/-35 two-mode AND junctions at 70 deg.",
     "Anchor Status": "lamellipodium force-velocity (Hill), structure",
     "Citation Key": "Mueller2017_Cell"
    },
@@ -4437,6 +4437,50 @@
     "Notes": "Paper: Transient mechanical interactions between cells and viscoelastic ECM (Slater, Li, Indana, Xie, Chaudhuri, T.Kim, Soft Matter 2021 17:10274). Discrete agent-based cell+ECM model; transient cross-linkers (density + Bell-Evans unbinding k_ub,0/x_ub) → stress generation/propagation/relaxation; validated vs fibroblast-in-collagen. Source Type=Simulation method. Claims: KB-1.15 (transient crosslinker dynamics) + KB-1.6 (ECM viscoelasticity stress relaxation) — the paper's core. Related (not hard-linked): KB-1.28 (crosslink Hamiltonian/kinetics), KB-3.19 (Bell-Evans). Modeling paper, not primary data. Ingested from references/ TAG corpus 2026-06-11 (file d0sm01911a.pdf).",
     "Anchor Status": "auto-ingest 2026-06-11; Source Type + Claims AI-curated 2026-06-11 (PI-delegated) — review recommended",
     "Citation Key": "Slater2021_SoftMatter"
+   },
+   {
+    "_id": "38f120daec5d815ba6a4d1390bff3fd5",
+    "DOI": "https://doi.org/10.1073/pnas.91.26.12962",
+    "UID": "SE334",
+    "Claims": [],
+    "Source Type": "Direct measurement",
+    "Short Source": "Kojima, Ishijima & Yanagida 1994, PNAS 91(26):12962",
+    "Notes": "Actin filament AXIAL stretching modulus EA. Direct glass-needle stretch: 43.7 +/- 4.6 pN/nm over a 1 um segment => EA = 4.4e-8 N = 4.4e4 pN (FF unit, kim_network.EA_ACTIN_PN). 1000x trap: EA=4.4e4 pN NOT 4.4e7. Used to set the actin segment axial spring k_axial=EA/L_seg in the FF<->Kim shear-modulus measurement (FF_KIM_NETWORK_VALIDATION sec c). DOI to confirm at audit.",
+    "Anchor Status": "registered 2026-06-30 (FF Stage 6c)",
+    "Citation Key": "Kojima1994_PNAS"
+   },
+   {
+    "_id": "38f120daec5d81ab8965c5906ecb0273",
+    "DOI": "",
+    "UID": "SE336",
+    "Claims": [],
+    "Source Type": "Direct measurement",
+    "Short Source": "Vinzenz, Nemethova, Schur et al. 2012, J Cell Sci 125:2775 (correlated EM)",
+    "Notes": "Arp2/3 branch DENSITY in lamellipodia: ~1 branch / 0.80 um filament contour (=1.25/um); inter-branch contour quantized at 36.7 +/- 4.7 nm (1 helical repeat) / 71.2 +/- 4.6 nm (2 repeats); junction->plus-end a CONTINUUM to ~800 nm (not front-concentrated). 654 junctions measured. Used in FF LAMELLIPODIUM spec branch_per_um=1.25. DOI NEEDS-VERIFY (JCS 125:2775; candidate 10.1242/jcs.107623 unconfirmed) - left blank to avoid a hallucinated DOI; verify_sources.py audit to resolve.",
+    "Anchor Status": "registered 2026-06-30 (FF Stage 6L inc2) - DOI NEEDS-VERIFY",
+    "Citation Key": "Vinzenz2012_JCS"
+   },
+   {
+    "_id": "38f120daec5d81bab099c05f899140bc",
+    "DOI": "https://doi.org/10.1002/cm.21207",
+    "UID": "SE337",
+    "Claims": [],
+    "Source Type": "Direct measurement",
+    "Short Source": "Nie et al. 2015, Cytoskeleton 72(1):29-46 (intensity-calibrated super-res)",
+    "Notes": "Cortical NMII minifilament areal density ~0.625/um^2 (40 +/- 20 foci per 8x8 um HeLa medial cortex; range 0.31-0.94; 1 focus = 1 minifilament, intensity-calibrated). FF gamma_floor.NIE2015_DENSITY_UM2. Supersedes the runtime '3.0/um^2 = Salbreux 2012' misattribution (CONFIRMED, H7_CORTICAL_MYOSIN_DENSITY_DATUM). The only DIRECT cortical NMII density datum; the load-engaged (force-bearing) density is the open gamma-floor lever (>> this resting density). HeLa (non-MCF7). DOI to confirm at audit.",
+    "Anchor Status": "registered 2026-06-30 (gamma-floor; PI-approved Decision 2)",
+    "Citation Key": "Nie2015_Cytoskeleton"
+   },
+   {
+    "_id": "38f120daec5d81c1bb98ca07aab2ec8b",
+    "DOI": "https://doi.org/10.15252/embj.2019104254",
+    "UID": "SE335",
+    "Claims": [],
+    "Source Type": "Direct measurement",
+    "Short Source": "Faessler, Dimchev, Schur et al. 2020, EMBO J 39:e104254 (in-cell cryo-ET)",
+    "Notes": "Arp2/3 branch junction angle IN CELLS by cryo-electron tomography = 68 +/- 9 deg. FF lamellipodium angle-harmonic branch kernel: rest angle theta0=70 deg (1.2217 rad), angular stiffness k_angle=0.173 pN.um/rad^2 = kT/Var(theta) with sigma_theta=9 deg (equipartition). Magic-Number-Blocked in configs/phase1_h5.yaml (audit C5 2026-05-30). The SD=9 deg is the load-bearing datum (a KnowledgeClaim carrying the SD should link here; the KB has the ~70 deg mean as a bare scalar only). DOI to confirm at audit.",
+    "Anchor Status": "registered 2026-06-30 (FF Stage 6L inc2)",
+    "Citation Key": "Fassler2020_EMBOJ"
    }
   ],
   "KnowledgeClaim": [
