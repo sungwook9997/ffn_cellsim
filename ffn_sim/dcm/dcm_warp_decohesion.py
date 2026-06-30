@@ -34,6 +34,8 @@ from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kern
 from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.dcm.dcm_interfacial_tension_warp import differential_surface_tension_kernel, douezan_spreading
+from ffn_sim.dcm.dcm_contact_conservative_warp import (
+    contact_grid_conservative_kernel, derive_adhesion_stiffness)
 from ffn_sim.dcm.dcm_substrate_warp import (
     dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel,
     dcm_wetting_scatter_integrin_kernel, dcm_ubottom_well_kernel)
@@ -233,6 +235,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    diff_tension: bool = False, contact_tension_frac: float = -1.0,
+                   conservative_contact: bool = False, rep_over_adh: float = 4.0,
                    polarize: bool = False, w_cs_polarize: float = 2.85e-3,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
@@ -387,6 +390,17 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
               f"(sedimentation toward dish; gravity−buoyancy, derived)", flush=True)
     c_rep = 0.30 * mean_edge
     c_adh = 0.80 * mean_edge
+    # CONSERVATIVE bilinear-tent contact (the energy fix): adhesion stiffness DERIVED from the
+    # measured adhesion energy density w_cs (adh = 4·w_cs/c_adh², grid-invariant); repulsion a
+    # multiple of it (stiffer non-penetration). Units Pa/m (vs the old constant-force Pa).
+    adh_cons = derive_adhesion_stiffness(w_cs_jm2, c_adh)
+    rep_cons = rep_over_adh * adh_cons
+    if conservative_contact:
+        diff_tension = False                         # the conservative tent IS the faceting drive
+        print(f"  [conservative-contact] bilinear tent: adh={adh_cons:.2e}Pa/m "
+              f"(=4·w_cs/c_adh², w_cs={w_cs_jm2:.2e}J/m²) rep={rep_cons:.2e}Pa/m "
+              f"(={rep_over_adh:.0f}×adh) c_adh={c_adh*1e6:.2f}um — node-node cohesion OFF, uniform γ",
+              flush=True)
     r_contact = 0.30 * mean_edge
 
     pos_d = wp.array(np.ascontiguousarray(pos_a), dtype=wp.vec3d, device=device)
@@ -887,7 +901,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                   wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
                                   wp.float64(coh_adh), wp.float64(area_per_node),
                                   wp.float64(force_cap), force_d], device=device)
-            else:
+            elif not conservative_contact:        # conservative tent replaces node-node cohesion
                 wp.launch(cohesion_grid_kernel, dim=N,
                           inputs=[node_grid.id, node_f32, pos_d, cof_d, wp.float32(coh_q),
                                   wp.float64(r_contact), wp.float64(c_adh), wp.float64(rep_strength),
@@ -933,6 +947,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                   wp.float32(con_q), wp.float64(rep_strength),
                                   wp.float64(coh_adh), wp.float64(c_rep), wp.float64(c_adh),
                                   force_d], device=device)
+            elif conservative_contact:
+                # the energy fix: conservative bilinear traction-separation tent (SimuCell3D),
+                # derived adh=4·w_cs/c_adh². Provides excluded volume + adhesion + the faceting
+                # drive in ONE conservative force (replaces the non-conservative constant-force
+                # node-face contact + the constant-area node-node cohesion + the diff-γ patch).
+                wp.launch(contact_grid_conservative_kernel, dim=N,
+                          inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
+                                  wp.float32(con_q), wp.float64(rep_cons), wp.float64(adh_cons),
+                                  wp.float64(c_adh), force_d], device=device)
             else:
                 wp.launch(contact_grid_kernel, dim=N,
                           inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
@@ -1575,6 +1598,14 @@ def main():
                     help="foam/DAH DIFFERENTIAL interfacial tension: cell-cell contact faces get the "
                          "reduced tension γ−w_adh/2 (w_adh=w_cs lit) so contacts SPREAD → cells facet. "
                          "The faceting mechanism (uniform γ never spreads contacts). Needs --surface-tension.")
+    ap.add_argument("--conservative-contact", action="store_true", dest="conservative_contact",
+                    help="THE ENERGY FIX: replace the non-conservative constant-force node-face contact "
+                         "+ node-node cohesion + diff-γ with ONE conservative SimuCell3D bilinear "
+                         "traction-separation tent (adh=4·w_cs/c_adh² derived). Gives a true faceted "
+                         "energy minimum to settle into. Use with --integrator baoab (kT=0 descent).")
+    ap.add_argument("--rep-over-adh", type=float, default=4.0, dest="rep_over_adh",
+                    help="conservative-contact repulsion stiffness as a multiple of the derived adhesion "
+                         "(stiffer non-penetration; ξ≥ω).")
     ap.add_argument("--contact-tension-frac", type=float, default=-1.0, dest="contact_tension_frac",
                     help="Maître cortex-dissolution limit: contact-face tension = frac·γ_free (cadherin "
                          "engagement disassembles the cortex at contacts; 0=full dissolution). Overrides "
@@ -1626,6 +1657,7 @@ def main():
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         diff_tension=args.diff_tension, contact_tension_frac=args.contact_tension_frac,
+        conservative_contact=args.conservative_contact, rep_over_adh=args.rep_over_adh,
         polarize=args.polarize, w_cs_polarize=args.w_cs_polarize, ipc_dhat_factor=args.ipc_dhat_factor,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,
