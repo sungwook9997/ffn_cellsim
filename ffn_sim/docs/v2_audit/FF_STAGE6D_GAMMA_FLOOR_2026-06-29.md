@@ -52,6 +52,33 @@ N-scan 0.94→3.15 pN/µm as N:100→1000 with n_myo∝N). **The exact floor fac
 density per cross-section — which is precisely the ungrounded "missing motor-density datum"; at the
 grounded Salbreux count it is ~2300× under band.**
 
+## 3.0b The motor-density datum is NOT missing — it EXISTS and CONFIRMS the floor (2026-06-30, ultracode)
+
+An ultracode 31-agent literature hunt (6 search angles → 24 adversarial verifications → synthesis)
+re-examined the "missing motor-density datum". Corrected conclusion (cross-checked against the
+project's own `H7_CORTICAL_MYOSIN_DENSITY_DATUM_2026-06-07.md`):
+
+- **A direct measurement EXISTS:** Nie et al. 2015 *Cytoskeleton* 72(1):29-46 (PMID 25641802) —
+  intensity-calibrated super-res of cortical NMII minifilaments: **~0.625 minifilaments/µm²** (HeLa
+  medial cortex; range 0.31-0.94; 1 focus ≈ 1 minifilament; LOW-MEDIUM confidence; **non-MCF7**).
+- **It makes the floor WORSE, not better.** γ_active ∝ density, and the measured ~0.6/µm² is **~26-35×
+  BELOW** the ~16-21/µm² the active-γ ceiling needs (and ~5× below the code's mis-cited 3/µm²). The
+  real datum drives the ceiling to ~0.02 mN/m — *deeper* under the 0.35 band. **The floor is confirmed
+  by the measured density, not opened by a missing one.**
+- **What is genuinely missing** is narrower than "nobody measured it": (a) an MCF7/breast value; (b) a
+  *force-bearing* (load-engaged) vs merely-present discrimination — imaging counts presence, not
+  engagement; (c) a true stress-fiber cross-section minifilament count (SFs are imaged en-face). None
+  of these can plausibly close a ~30× gap (Nie's HeLa cortex would need ~30× more force-bearing
+  minifilaments than measured to lift γ to band — biophysically implausible).
+- **Citation fix:** the runtime's "3/µm² = Salbreux 2012" (which this FF module had propagated) is a
+  CONFIRMED misattribution; re-anchored to Nie 2015 + flagged (`gamma_floor.py` const + note). Density
+  is the controlled variable (swept), never tuned to the band.
+
+This converts the §4 PI option-2 ("source a datum and re-run at the derived value") into a CLOSED
+question: the datum exists, and using it reinforces option-1 (accept the floor as a structural limit;
+route magnitude to the fine-grained single-cell line). Consistent with the SF/NMII REFUTE and the
+Layer-2 magnitude-as-structural-limit findings.
+
 ## 3. Result — the floor is REPRODUCED MD-free (prototype-scale sweep)
 
 γ_active is linear in the myosin prestress f_myo (the swept controlled variable): **≈0.19 pN/µm per

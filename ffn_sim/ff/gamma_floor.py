@@ -53,11 +53,24 @@ TURGOR_DP0 = 133.0          # pN/µm²  (= 133 Pa)
 TURGOR_K_VOL = 1.0e3        # pN/µm²  (ΔP per ΔV/V)
 
 # GROUNDED production operating point (configs/phase1_h3.yaml — the ×40 mesoscale cell, NOT a
-# prototype). n_fil=1000 (Plan v2 §3 H.3), n_xl=1000 (KU-3.19), n_myo=100 (Salbreux
-# n_motors_per_cell, 3/µm²). At this point γ_active matches the archived BAOAB-MD g_soft.
+# prototype). n_fil=1000 (Plan v2 §3 H.3), n_xl=1000 (KU-3.19).
+#
+# ⚠️ CITATION FIX (2026-06-30): the myosin count's "Salbreux 2012, 3/µm²" attribution is a CONFIRMED
+# MISATTRIBUTION (project audit docs/v2_audit/H7_CORTICAL_MYOSIN_DENSITY_DATUM_2026-06-07.md — no
+# Salbreux paper states a per-µm² minifilament count). The ONLY direct measurement of cortical NMII
+# minifilament AREAL DENSITY is Nie et al. 2015 Cytoskeleton 72(1):29-46 (PMID 25641802): ~0.625
+# minifil/µm² (HeLa medial cortex, intensity-calibrated 1 focus≈1 minifilament; range 0.31-0.94;
+# LOW-MEDIUM confidence; non-MCF7 — a breast/MCF7 value does NOT exist in the literature). DECISIVE:
+# the measured ~0.6/µm² is ~26-35× BELOW the ~16-21/µm² the active-γ ceiling needs, so the real datum
+# CONFIRMS the γ-floor, it does not rescue it (re-anchoring lowers γ further). n_myo here is the
+# ×40-mesoscale count; density is the controlled variable in gamma_floor_density_sweep (NOT tuned).
 PROD_N_FIL = 1000
 PROD_N_XL = 1000
-PROD_N_MYO = 100
+PROD_N_MYO = 100   # ×40-mesoscale minifilament count (provenance per the citation-fix note above)
+
+# Nie et al. 2015 measured cortical NMII minifilament areal density [µm⁻²] — the only direct datum.
+NIE2015_DENSITY_UM2 = 0.625
+NIE2015_DENSITY_RANGE = (0.31, 0.94)
 
 
 @dataclass(slots=True)
