@@ -129,24 +129,23 @@ NMIIA_MYOSIN = HandParams(            # non-muscle myosin IIA head (configs/phas
 ALPHA_ACTININ = HandParams(          # α-actinin crosslinker Hand (Ferrer 2008)
     name="alpha_actinin", k_on=10.0, capture_radius_um=0.060,
     p0=0.066, f0=bell_f0_from_x_beta(0.4e-3),           # k_off0=0.066/s, x_β=0.4nm (→ f0≈10.7pN)
-    v_max_um_s=0.0, link_k=0.1)          # k_xl [pN/µm] — see ⚠️ below
-# ⚠️ CROSSLINK STIFFNESS (link_k) — the lit-anchored value is Ferrer 2008 PNAS AFM: α-actinin 455 pN/nm
-# = 4.6e5 pN/µm, filamin 820 pN/nm = 8.2e5 (the SAME paper as the α-actinin k_off0 above). The 0.1
-# here is the broken AFINES soft-surrogate (~4.5e6× too soft; FF_KIM_NETWORK_VALIDATION §c). PI
-# approved the correction (2026-06-30), BUT applying the stiff value to the production cortex relaxation
-# introduces a NUMERICAL artifact: stiff crosslinks amplify any residual relaxation stretch into a large
-# SPURIOUS PASSIVE γ_total (γ_xl), and the explicit/implicit relaxers occasionally over-stretch/blow up.
-# Crucially the ACTIVE channel γ_myo is FLOORED at ~0.15 pN/µm regardless of link_k (0.1 ↔ 4.6e5) — so
-# the γ-floor is force-magnitude-limited, robust to crosslink stiffness (the last root-cause candidate,
-# CLOSED). The stiff value is therefore kept OUT of this production preset until a robust stiff-crosslink
-# relaxation exists (treat crosslinks as near-rigid constraints, or stretch-controlled implicit); the
-# correct value IS used in ff/kim_network.shear_modulus (its own solver). Surfaced to PI — see
-# FF_STAGE6M_CROSSLINK_STIFFNESS_2026-06-30.md + SE_REGISTRATION_CANDIDATES_2026-06-30.md §5.
+    v_max_um_s=0.0, link_k=4.6e5)        # k_xl=455 pN/nm (Ferrer 2008 PNAS AFM; PI-approved 2026-06-30)
+# CROSSLINK STIFFNESS (link_k) — lit-anchored: Ferrer 2008 PNAS AFM α-actinin 455 pN/nm = 4.6e5 pN/µm,
+# filamin 820 pN/nm = 8.2e5 (SAME paper as the α-actinin k_off0 above). The old 0.1 was the broken
+# AFINES soft-surrogate (~4.5e6× too soft; FF_KIM §c). The stiff value is now SAFE in production via the
+# crosslink-turnover resting baseline (Stage 6N, gamma_floor.equilibrate(crosslink_turnover=True)):
+# settle the shell bending-only (stiff crosslinks excluded → no CFL/overshoot) then bind crosslinks
+# force-free (Hand §10.1 attach). The ACTIVE γ (myosin) is identical to the soft value — the γ-floor is
+# force-magnitude-limited, robust to crosslink stiffness (last root-cause CLOSED, 6M). SE rows pending
+# (Ferrer stiffness, SE_REGISTRATION_CANDIDATES §5). ⚠️ explicit/implicit relaxers WITHOUT
+# crosslink_turnover still over-stretch at this stiffness — use crosslink_turnover (or kim_network's
+# own solver). FF_STAGE6M/6N docs.
 
 FILAMIN = HandParams(                 # filamin crosslinker Hand (Pereverzev catch–slip)
     name="filamin", k_on=10.0, capture_radius_um=0.060,
     catch_slip=True, cs_k_catch0=0.1, cs_x_catch_um=0.8e-3,
-    cs_k_slip0=0.02, cs_x_slip_um=0.3e-3, v_max_um_s=0.0, link_k=0.1)  # lit 8.2e5 — same ⚠️ as α-actinin
+    cs_k_slip0=0.02, cs_x_slip_um=0.3e-3, v_max_um_s=0.0,
+    link_k=8.2e5)                        # k_xl=820 pN/nm (Ferrer 2008 PNAS AFM, companion; PI-approved)
 
 PRESETS = {h.name: h for h in (KINESIN, NMIIA_MYOSIN, ALPHA_ACTININ, FILAMIN)}
 

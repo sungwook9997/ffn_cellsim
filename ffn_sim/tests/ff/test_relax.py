@@ -115,15 +115,23 @@ def test_relaxation_rate_matches_analytic_continuum():
     assert rates[2] / rates[1] == pytest.approx((3 / 2) ** 4, rel=0.05)
 
 
-def test_gamma_floor_equilibrate_implicit_matches_explicit():
-    """The implicit method wired into gamma_floor.equilibrate reaches the same resting-shell state +
-    γ as the explicit default (consistency of the NF2007 Eq 2 path in the cortex)."""
+def test_gamma_floor_crosslink_turnover_robust_baseline():
+    """With the lit-anchored STIFF crosslinks (Ferrer 2008, ~4.6e5 pN/µm) the robust resting baseline is
+    crosslink_turnover (Stage 6N): settle the shell bending-only then bind crosslinks force-free. It must
+    give a CLEAN floored γ — γ_xl≈0 (force-free resting crosslinks, no spurious passive tension) and the
+    ACTIVE γ floored ~10³× under band — NOT the spurious large γ_xl that a naive stiff-crosslink settle
+    produces. (The old explicit↔implicit consistency check is obsolete here: at stiff crosslinks explicit
+    is CFL-throttled and implicit over-stretches; crosslink_turnover is the production-correct path.)"""
     from ffn_sim.ff.gamma_floor import build_crosslinked_cortex, equilibrate, measure_gamma
 
-    ge = []
-    for method in ("explicit", "implicit"):
-        cx = build_crosslinked_cortex(n_filaments=50, n_xl=150, n_myo=70,
-                                      rng=np.random.default_rng(0))
-        equilibrate(cx, 0.0, n_steps=300, turgor=False, method=method)
-        ge.append(measure_gamma(cx, 5.0, turgor=True)["gamma_active"])
-    assert ge[0] == pytest.approx(ge[1], rel=0.15)   # same γ within stochastic/relaxation spread
+    g_act, g_xl = [], []
+    for seed in range(3):
+        cx = build_crosslinked_cortex(n_filaments=100, n_xl=300, n_myo=70,
+                                      rng=np.random.default_rng(seed))
+        equilibrate(cx, 0.0, n_steps=400, turgor=False, crosslink_turnover=True)
+        out = measure_gamma(cx, 5.0, turgor=True)
+        g_act.append(out["gamma_active"]); g_xl.append(out["gamma_xl"])
+    g_act, g_xl = np.array(g_act), np.array(g_xl)
+    assert np.allclose(g_xl, 0.0, atol=1e-6)            # force-free resting crosslinks (no spurious passive γ)
+    assert np.all(g_act < 5.0) and np.all(g_act > 1e-3) # active γ present + deeply floored (band ~350+ pN/µm)
+    assert g_act.std() / g_act.mean() < 0.6            # robust across seeds (no blow-up outliers)

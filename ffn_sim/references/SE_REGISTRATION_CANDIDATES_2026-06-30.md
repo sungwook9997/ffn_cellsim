@@ -44,18 +44,20 @@ The FF↔Kim absolute-shear-modulus work (FF_KIM_NETWORK_VALIDATION §mechanics;
 **unsourced code constants / placeholders** — register SE rows BEFORE correcting the live runtime
 values (a magic-number/contract trigger). NONE are in the KB yet.
 
-- **`Ferrer2008_PNAS` — crosslinker JUNCTION stiffness** (the paper already cited in `hand_kmc.py` for
-  the α-actinin off-rate k_off0=0.066/s; its STIFFNESS datum was skipped). Ferrer, Lee, Chen, Pelz,
-  Nakamura, Kamm & Lang 2008, PNAS 105(27):9221–9226, DOI 10.1073/pnas.0706124105. **Values:**
-  α-actinin/actin junction **κm = 455 ± 215 pN/nm = 4.6e5 pN/µm**; filamin/actin **820 ± 551 pN/nm =
-  8.2e5 pN/µm** (κm = bond-well curvature from Dudko–Hummer–Szabo, i.e. the load-bearing junction
-  stiffness = exactly what `link_k` is). PDF NOT in references/ — fetch + DOI-verify at registration.
-  **CONFIRMED UNIT-SLIP CORRECTION (PI-gated):** `hand_kmc.ALPHA_ACTININ.link_k` and `FILAMIN.link_k`
-  are both **0.1 pN/µm** = ~4.5e6× too soft (a 1000× pN/µm-vs-pN/nm slip COMPOUNDED with adopting the
-  AFINES soft surrogate ~0.1 as if physical). Correct to 4.6e5 (α-actinin) / 8.2e5 (filamin) — but
-  this changes a LIVE production constant feeding the γ-floor cortex (and the CFL: stiffer links ⇒
-  smaller dt), so **surface to PI before editing**. Note: filamin has a SECOND regime (entropic WLC
-  ~2 pN/µm, Broedersz–Storm–MacKintosh 2009) — the Ferrer κm is the load-bearing one for `link_k`.
+- **`Ferrer2008_PNAS` — crosslinker JUNCTION stiffness** ✅ **PI-APPROVED + APPLIED 2026-06-30** (the
+  paper already cited in `hand_kmc.py` for the α-actinin off-rate k_off0=0.066/s; its STIFFNESS datum
+  was skipped). Ferrer, Lee, Chen, Pelz, Nakamura, Kamm & Lang 2008, PNAS 105(27):9221–9226, DOI
+  10.1073/pnas.0706124105. **Values applied:** `ALPHA_ACTININ.link_k` = **4.6e5 pN/µm** (455 pN/nm),
+  `FILAMIN.link_k` = **8.2e5 pN/µm** (820 pN/nm) (κm = bond-well curvature from Dudko–Hummer–Szabo, the
+  load-bearing junction stiffness = exactly what `link_k` is). Was 0.1 = ~4.5e6× too soft (1000×
+  pN/µm-vs-pN/nm slip + AFINES soft-surrogate). The stiff value is SAFE in production via the
+  crosslink-turnover resting baseline (Stage 6N, `equilibrate(crosslink_turnover=True)`): the active γ
+  is identical (floored 1.46e-4 mN/m), γ_xl clean (force-free crosslinks). **STILL TODO:** create the
+  Notion SourceEvidence row for the Ferrer stiffness datum + (optionally) a `params_manifest` entry so
+  kb-check tracks it (currently link_k is a code constant, not a tracked YAML param → no drift flagged).
+  PDF NOT in references/ — fetch + DOI-verify at SE creation. Note: filamin has a SECOND regime
+  (entropic WLC ~2 pN/µm, Broedersz–Storm–MacKintosh 2009); the Ferrer κm is the load-bearing one for
+  `link_k`.
 - **`Kojima1994_PNAS` — actin axial stretching modulus EA.** Kojima, Ishijima & Yanagida 1994, PNAS
   91(26):12962, DOI 10.1073/pnas.91.26.12962. Direct glass-needle stretch 43.7 ± 4.6 pN/nm over 1 µm ⇒
   **EA = 4.4e-8 N = 4.4e4 pN** (⚠️ 1000× trap: 4.4e4 pN, not 4.4e7). Used in `kim_network.EA_ACTIN_PN`

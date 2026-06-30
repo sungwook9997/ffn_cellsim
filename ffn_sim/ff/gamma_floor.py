@@ -272,7 +272,8 @@ def external_force(cortex: CrosslinkedCortex, pos: np.ndarray, bending_fn, f_myo
 
 def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int = 600,
                 reshape_every: int = 25, dt_mu: float = 0.0, turgor: bool = False,
-                method: str = "explicit", device: str = "cpu") -> np.ndarray:
+                method: str = "explicit", device: str = "cpu",
+                crosslink_turnover: bool = False) -> np.ndarray:
     """Settle the cortex by projected overdamped descent + periodic reshape (NF2007 project-then-
     reshape, explicit; sufficient + robust for the quasi-static γ prototype).
 
@@ -288,11 +289,26 @@ def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int =
     settle is soft, so the default 'explicit' is already cheap there; implicit is the path for
     stiff/loaded shells).
 
+    ``crosslink_turnover=True`` is the ROBUST resting baseline for STIFF (lit-anchored, ~4.6e5 pN/µm)
+    crosslinks (Stage 6M/6N): settle the resting SHELL **bending-only** (crosslink force excluded → the
+    stiff crosslinks never enter the step, so no CFL throttle / overshoot), then bind the crosslinks
+    FORCE-FREE at the settled geometry (``xl_rest`` ← settled lengths; Hand §10.1 attach, the
+    quasi-static / instantaneous-turnover limit of real crosslink rebinding). Without this, stiff
+    crosslinks amplify the bending-settle residual stretch into a large SPURIOUS passive γ_xl (and the
+    explicit/implicit settle can over-stretch). The active γ (myosin) is identical with or without it.
+
     Returns the settled positions (N, 3) [µm]; also writes them into ``cortex.net.pos``.
     """
     from ffn_sim.ff.constraints import project_constraint_forces
 
     net = cortex.net
+    if crosslink_turnover:
+        from ffn_sim.ff.network_warp import relax_on_device
+        net.pos = relax_on_device(net, links=None, n_steps=n_steps, reshape_every=reshape_every,
+                                  dt_mu=dt_mu, device=device)
+        if cortex.xl_i.size:                                  # crosslinks rebind force-free (Hand attach)
+            cortex.xl_rest = np.linalg.norm(net.pos[cortex.xl_j] - net.pos[cortex.xl_i], axis=1)
+        return net.pos
     bending_fn = make_bending_force_fn(net)
     if method == "device":
         # Fully on-device (Warp) settle — bending + crosslink springs (+ myosin), reshape, all on the
@@ -410,17 +426,19 @@ def measure_gamma(cortex: CrosslinkedCortex, f_myo: float, *, n_planes: int = 50
 
 def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_myo: int = 100,
                     seed: int = 0, n_steps: int = 600, method: str = "explicit",
-                    device: str = "cpu") -> dict:
+                    device: str = "cpu", crosslink_turnover: bool = True) -> dict:
     """One quenched realization → γ at prestress ``f_myo``, measured at the resting physiological
     geometry (physiological-baseline rule: settle the resting passive shell, then add myosin as the
     modulator and measure). Returns the actomyosin γ channels + the passive turgor γ + meta.
 
     ``method='device'`` + ``device='cuda:0'`` runs the resting-shell settle fully on the GPU (Warp,
-    gbook A5000) — the production GPU-resident path."""
+    gbook A5000) — the production GPU-resident path. ``crosslink_turnover=True`` (default) uses the
+    robust force-free-rebinding resting baseline (Stage 6N) so the lit-anchored STIFF crosslink
+    stiffness gives a clean γ (no spurious passive γ_xl); the active γ is identical either way."""
     rng = np.random.default_rng(seed)
     cortex = build_crosslinked_cortex(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, rng=rng)
     equilibrate(cortex, 0.0, n_steps=n_steps, turgor=False,   # settle resting passive shell
-                method=method, device=device)
+                method=method, device=device, crosslink_turnover=crosslink_turnover)
     out = measure_gamma(cortex, f_myo, turgor=True)
     out.update(f_myo=f_myo, seed=seed, n_xl=int(cortex.xl_i.size), n_myo=int(cortex.myo_i.size))
     return out
