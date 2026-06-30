@@ -154,6 +154,12 @@ sparse) — exactly the [[project-gamma-floor-likely-deficit]] conclusion. The o
 the missing experimental **MCF7-adherent load-engaged NMII density** datum (engaged density > Nie presence),
 the SF/NMII twin. EXPERIMENTAL gap, not a model mechanism.
 
+**Lit re-check (2026-07-01, focused PubMed):** "myosin minifilament density" → 4 hits, NONE a cortical/SF
+areal density above Nie 2015 (van Loon 2021 *Mol Biol Cell* doi:10.1091/mbc.E21-05-0258 images individual
+apical-cortex NMII minifilaments LIVE but reports no density — the closest methodology if a wet-lab
+measurement is commissioned; the rest are qualitative / structural / RBC). The documented absence STANDS
+(spot re-check, not exhaustive; Consensus quota was exhausted).
+
 ---
 
 ## Sanity gate
