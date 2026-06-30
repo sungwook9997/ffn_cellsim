@@ -35,7 +35,24 @@ or does it localize where in-time load-coupling is load-bearing?*
 > **Units trap caught:** 1 pN/µm = 1e-3 mN/m, so the Salbreux band 0.35–0.65 mN/m = **[350, 650]
 > pN/µm** (not 0.35–0.65). An early 1000× slip had inverted the conclusion; fixed.
 
-## 3. Result — the floor is REPRODUCED MD-free
+## 3.0 GROUNDED production operating point (the defensible number)
+
+Run at the ×40-mesoscale config values (NOT a prototype downscale): **N=1000 filaments (Plan v2 §3
+H.3), n_xl=1000 (KU-3.19), n_myo=100 (Salbreux `n_motors_per_cell`, 3/µm²), f_myo=5 pN (NMIIA
+per-side stall)** — `gamma_floor.gamma_floor_production`:
+
+> **γ_active = 0.152 ± 0.007 pN/µm = 1.5e-4 mN/m  →  ~2300× under the Salbreux band.**
+> γ_passive (turgor) = 665 pN/µm = 0.665 mN/m (at-band).
+
+This **lands on the archived BAOAB-MD g_soft (3.1e-5–1.4e-4 mN/m)** — quantitative agreement, not just
+same-order. The prototype-scale numbers in §3 below (γ_active≈0.95 pN/µm at N=100) over-stated γ
+because they used too many myosin links per filament (n_myo=200 at N=100 ≫ the Salbreux density); the
+floor MAGNITUDE scales with the modelled motor density (γ_active ∝ n_myo at fixed R — confirmed by an
+N-scan 0.94→3.15 pN/µm as N:100→1000 with n_myo∝N). **The exact floor factor is set by the motor
+density per cross-section — which is precisely the ungrounded "missing motor-density datum"; at the
+grounded Salbreux count it is ~2300× under band.**
+
+## 3. Result — the floor is REPRODUCED MD-free (prototype-scale sweep)
 
 γ_active is linear in the myosin prestress f_myo (the swept controlled variable): **≈0.19 pN/µm per
 pN** of per-link prestress (R=10µm, n_myo=200, 8 realizations).
@@ -65,7 +82,7 @@ From `docs/CORTICAL_TENSION_RECORD_2026-06-04.md` (the authoritative archived γ
 
 | quantity | BAOAB-MD (archived) | MD-free FF (this work) |
 |---|---|---|
-| active actomyosin γ at lit kinetics | g_soft ≈ **3.1e-5 – 1.4e-4 mN/m** (FA-anchored / Δ_active) | γ_active = **9.5e-4 mN/m** (f_myo=5 pN) |
+| active actomyosin γ at lit kinetics | g_soft ≈ **3.1e-5 – 1.4e-4 mN/m** (FA-anchored / Δ_active) | γ_active = **1.5e-4 mN/m** at the grounded point (§3.0); 9.5e-4 at the over-dense prototype |
 | best case under forcing | v0×3000 → **0.030 mN/m (11.6× under)** | linear in f_myo; band needs ≈370× more force |
 | KU-3.5 band floor | **0.35 mN/m** | 350 pN/µm (= 0.35 mN/m) |
 | passive/turgor γ | at-band (turgor channel) | 665 pN/µm = **0.665 mN/m** at-band |

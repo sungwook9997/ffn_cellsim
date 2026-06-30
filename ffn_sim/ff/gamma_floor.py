@@ -52,6 +52,13 @@ NMIIA_MINIFIL_STALL_PN = NMIIA_F_STALL_PER_HEAD * NMIIA_HEADS_PER_SIDE   # 5.0 p
 TURGOR_DP0 = 133.0          # pN/µm²  (= 133 Pa)
 TURGOR_K_VOL = 1.0e3        # pN/µm²  (ΔP per ΔV/V)
 
+# GROUNDED production operating point (configs/phase1_h3.yaml — the ×40 mesoscale cell, NOT a
+# prototype). n_fil=1000 (Plan v2 §3 H.3), n_xl=1000 (KU-3.19), n_myo=100 (Salbreux
+# n_motors_per_cell, 3/µm²). At this point γ_active matches the archived BAOAB-MD g_soft.
+PROD_N_FIL = 1000
+PROD_N_XL = 1000
+PROD_N_MYO = 100
+
 
 @dataclass(slots=True)
 class CrosslinkedCortex:
@@ -337,6 +344,28 @@ def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_
     out = measure_gamma(cortex, f_myo, turgor=True)
     out.update(f_myo=f_myo, seed=seed, n_xl=int(cortex.xl_i.size), n_myo=int(cortex.myo_i.size))
     return out
+
+
+def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int = 4,
+                           n_steps: int = 400, base_seed: int = 0, parallel: bool = True) -> dict:
+    """γ at the GROUNDED production operating point (N=1000 / n_xl=1000 / n_myo=100), ensemble.
+
+    All counts from configs/phase1_h3.yaml (the ×40 mesoscale cell) — no prototype downscaling. This
+    is the defensible single-cell γ-floor number; at this point the MD-free γ_active lands on the
+    archived BAOAB-MD g_soft (~1.4e-4 mN/m). Returns the γ distribution + the floor factor vs band.
+    """
+    from ffn_sim.ff.gamma_estimator import SALBREUX_BAND_PN_UM
+    ens = gamma_floor_ensemble(f_myo, n_real=n_real, n_filaments=PROD_N_FIL, n_xl=PROD_N_XL,
+                               n_myo=PROD_N_MYO, n_steps=n_steps, base_seed=base_seed,
+                               parallel=parallel)
+    g = np.array([r["gamma_active"] for r in ens["runs"]])
+    band_lo = SALBREUX_BAND_PN_UM[0]
+    return {"gamma_active_mean": float(g.mean()), "gamma_active_std": float(g.std()),
+            "gamma_active_mN_per_m": float(g.mean()) * 1e-3,
+            "gamma_passive": ens["runs"][0]["gamma_passive"],
+            "floor_factor_under_band": float(band_lo / g.mean()) if g.mean() > 0 else float("inf"),
+            "f_myo": f_myo, "n_fil": PROD_N_FIL, "n_xl": PROD_N_XL, "n_myo": PROD_N_MYO,
+            "gamma_samples": g.tolist()}
 
 
 def gamma_floor_ensemble(f_myo: float, *, n_real: int = 8, n_filaments: int = 100,

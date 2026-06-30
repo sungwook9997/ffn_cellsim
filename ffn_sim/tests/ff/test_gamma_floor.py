@@ -100,6 +100,16 @@ def test_gamma_floor_reproduced_at_lit_prestress():
     assert r["gamma_passive"] / r["gamma_active"] > 100.0
 
 
+def test_production_operating_point_floored():
+    """At the GROUNDED production point (N=1000/n_xl=1000/n_myo=100) the actomyosin γ is ~1e-4 mN/m
+    — on the archived BAOAB-MD g_soft (~1.4e-4) and thousands-of-× under band. (1 realization, fast.)"""
+    from ffn_sim.ff.gamma_floor import gamma_floor_production
+    r = gamma_floor_production(n_real=1, n_steps=150, parallel=False)
+    assert 5e-5 < r["gamma_active_mN_per_m"] < 5e-4      # the MD g_soft regime
+    assert r["floor_factor_under_band"] > 500.0          # deeply floored at the grounded point
+    assert r["gamma_passive"] == pytest.approx(665.0)
+
+
 def test_measure_gamma_channels_finite():
     rng = np.random.default_rng(6)
     cx = build_crosslinked_cortex(n_filaments=40, n_xl=120, n_myo=50, rng=rng)
