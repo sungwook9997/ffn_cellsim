@@ -143,13 +143,15 @@ Full `tests/ff` suite: **43/43**.
 
 ## 6. Open / PI-gated before deep build
 
-- **Cytosim runnable parity oracle — BLOCKED → PI.** The external Cytosim C++ binary is not
-  installed/buildable offline (no `sim`/`play`; gbook offline), so the independent runnable-Cytosim
-  parity check is deferred. Meanwhile the kernels are validated against the paper's ANALYTIC anchors:
-  force=−∇E (test_cytosim_bending), the **bending dispersion −F_y/(y·seg)=κq⁴ + q⁴ scaling**
-  (`tests/ff/test_bending_dispersion.py`, the semiflexible oracle), inextensibility (constraints
-  tests), and the HOOMD-ported γ instrument. Building/installing Cytosim is the remaining external
-  validation gap (PI).
+- **Cytosim runnable parity oracle — BUILT (Stage 6f).** Cytosim C++ cloned + `sim` built
+  (user-authorized; macOS Accelerate, no GUI). Harness `cytosim_parity.py` (+ skip-if-absent test).
+  Config units = s·µm·pN = the FF units → direct compare. **First finding:** Cytosim is
+  continuum-accurate at every resolution; FF's interior-triple bending energy under-counts by
+  (n−2)/(n−1) (~17 % at cortex n=7), converging as n→∞ — a quantitative-fidelity choice surfaced to
+  PI (`docs/v2_audit/FF_CYTOSIM_PARITY_2026-06-30.md`; γ-floor unaffected, bending sub-dominant).
+  Analytic anchors also stand: force=−∇E, the κq⁴ dispersion (`test_bending_dispersion.py`),
+  inextensibility, the HOOMD-ported γ instrument. Next parity targets: relaxation rate, Euler
+  buckling, Hand kinetics.
 - **Cytosim paper grounding:** Nédélec & Foethke 2007 is now in `references/`
   (`Nedelec_2007_New_J._Phys._9_427.pdf`, the published IOP version; arXiv 0903.5178 mirror also
   present) — ground the §2 formulae (discrete bending operator + implicit scheme + Hand model) from
