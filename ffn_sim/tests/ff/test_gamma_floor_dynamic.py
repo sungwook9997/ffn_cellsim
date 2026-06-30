@@ -67,4 +67,4 @@ def test_passive_channel_present():
     r = run_dynamic(5.0, n_filaments=60, n_xl_cand=250, n_myo_cand=120, n_ticks=12, tau=0.05,
                     settle_steps=60, seed=2, burn_in=4)
     from ffn_sim.ff.gamma_floor import TURGOR_DP0
-    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)   # 40 Pa state-dependent turgor (was 133)
+    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 7.5)   # 40 Pa state-dependent turgor (was 133)

@@ -82,9 +82,9 @@ TURGOR_PI_IN0 = OSMOLYTE_C_MM * _RT_PN_UM2_PER_MM   # ≈ 5.15e5 pN/µm²
 # cortical filament count. Ratios preserved (n_xl=n_fil, n_myo=n_fil/10) so this isolates the
 # resolution change; the native γ_active ≈ 6.6e-4 mN/m (floor ~530×, N-converged). The myosin AREAL
 # density vs Nie 2015 (0.625/µm²) is a SEPARATE γ-floor lever (the engaged-density datum), not this switch.
-PROD_N_FIL = 38000   # native cortical actin filament count (CLAUDE.md ~38,000; ×40 mesoscale RETIRED)
-PROD_N_XL = 38000    # 1:1 crosslinkers (ratio preserved from the ×40 production)
-PROD_N_MYO = 3800    # n_fil/10 NMIIA minifilaments (ratio preserved; Nie-density reconciliation = separate lever)
+PROD_N_FIL = 21375   # native count at MCF7 R=7.5µm = 38000·(7.5/10)² (areal density ~30/µm² conserved)
+PROD_N_XL = 21375    # 1:1 crosslinkers (ratio preserved)
+PROD_N_MYO = 2137    # n_fil/10 NMIIA minifilaments (ratio preserved; Nie-density reconciliation = separate lever)
 
 # Nie et al. 2015 measured cortical NMII minifilament areal density [µm⁻²] — the only direct datum.
 NIE2015_DENSITY_UM2 = 0.625

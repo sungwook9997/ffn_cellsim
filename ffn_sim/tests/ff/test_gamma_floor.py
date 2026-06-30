@@ -85,7 +85,7 @@ def test_passive_gamma_is_young_laplace():
     """The passive turgor channel = ΔP·R/2 (Young-Laplace), at the resting dP0=40 Pa → 200 pN/µm."""
     assert gamma_passive_young_laplace(TURGOR_DP0, 10.0) == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
     r = gamma_floor_run(5.0, n_filaments=50, n_xl=150, n_myo=80, seed=2, n_steps=200)
-    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
+    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 7.5)
 
 
 def test_gamma_floor_reproduced_at_lit_prestress():
@@ -99,7 +99,7 @@ def test_gamma_floor_reproduced_at_lit_prestress():
     assert r["gamma_active"] < band_lo / 50.0     # actomyosin floored ≥50× under band
     # passive turgor γ = ΔP·R/2 at 40 Pa ≈ 200 pN/µm = 0.2 mN/m — sub-band (a diagnostic, not
     # "passive carries the band"; the genuine blebbistatin-insensitive passive floor is ~0.04 mN/m)
-    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
+    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 7.5)
     assert r["gamma_passive"] < band_lo            # corrected turgor is sub-band, NOT at-band
 
 
@@ -113,7 +113,7 @@ def test_production_operating_point_floored():
                               n_filaments=300, n_xl=300, n_myo=30)   # small-N smoke (CPU-fast)
     assert 1e-5 < r["gamma_active_mN_per_m"] < 5e-4      # floored (MD g_soft regime, small-N end)
     assert r["floor_factor_under_band"] > 100.0          # deeply floored
-    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)   # 40 Pa state-dependent turgor
+    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 7.5)   # 40 Pa state-dependent turgor
 
 
 def test_measure_gamma_channels_finite():

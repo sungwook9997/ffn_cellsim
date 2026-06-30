@@ -55,7 +55,7 @@ def test_weave_cortex_reproduces_gamma_floor():
 
     m = cortex_metrics(cw)
     assert m["n_filaments"] == 1000
-    assert 0.7 < m["areal_density_um2"] < 0.9              # ≈ 0.8/µm² (H.3 cortex)
+    assert 1.2 < m["areal_density_um2"] < 1.6              # 1000/(4π·7.5²) ≈ 1.41/µm² (small-N test at MCF7 R)
     assert m["connectivity_z"] > 1.0
 
 
