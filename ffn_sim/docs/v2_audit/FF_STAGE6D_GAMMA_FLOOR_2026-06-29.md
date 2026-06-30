@@ -79,6 +79,51 @@ question: the datum exists, and using it reinforces option-1 (accept the floor a
 route magnitude to the fine-grained single-cell line). Consistent with the SF/NMII REFUTE and the
 Layer-2 magnitude-as-structural-limit findings.
 
+## 3.0c Is the floor CORRECT or a MODEL DEFICIT? (2026-06-30, ultracode + Codex) — leaning DEFICIT
+
+A second ultracode hunt (26 agents, 14 FLOOR_DEFICIT vs 0 FLOOR_CORRECT votes) + a Codex cross-check
+attacked the crux: *is the measured cortical-tension band predominantly myosin-generated?* Both
+verdicts (each cross-checked against the project's own files) converge:
+
+- **The band is ~50-90 % MYOSIN-dependent (central ~70 %).** Blebbistatin reduces measured cortical
+  tension by **68 %** (Fischer-Friedrich 2016, mitotic HeLa, parallel-plate AFM, CONFIRMED), >50 %
+  (Tinevez 2009), ~75 % (Fischer-Friedrich 2014), ~91 % (Warmt 2021, MCF-10A). The genuine
+  blebbistatin-INSENSITIVE (bare-membrane) passive floor is only **~0.04 mN/m (~9-12 % of band)**. So
+  the "band is mostly passive" reading is **REJECTED** — the active actomyosin floor is the REAL gap.
+- **The g_rigid / γ_passive "passive carries the band" story is a turgor double-book.** ΔP·R/2 is the
+  pressure's *partner*, and dP0=133 Pa is band-implied/tuned (PARAM_AUDIT 2026-06-25) → reclassified
+  (§ code caveat). The project's g_rigid ≈ 0.57 mN/m "myosin-independent" is the same artifact; the
+  real passive floor is ~10× smaller.
+- **Network amplification (Ronceray/Broedersz/Lenz 2016) is NECESSARY but not sufficient alone.**
+  Verified amplification ≈ **7-10×**; the grounded gap is ~370× (prototype) to ~2300× (Nie density),
+  so buckling alone lifts γ_active only toward the ~0.10 mN/m dipole ceiling (~3.5× still under band).
+  And amplification is **buckling-GATED**: the project's own H7_SIGMA_A / H7_GATE_B_BUCKLING docs
+  found M-SHAKE forbids buckling (r/r0=1.000; ~73 % of load-bearing spans are single rigid rods) — so
+  the floor was **measured with the suspect mechanism turned OFF**, and the deficit-vs-floor question
+  has **never actually been tested with buckling ON**.
+- **Verdict: GENUINELY UNRESOLVED, leaning model-deficit.** Internally the floor is real *given the
+  current constraints*; the literature says the band is active-dominated; the two reconcile only if
+  buckling-gated amplification **plus** a true force-bearing (load-engaged) motor density + penetration
+  /overlap (Truong-Quang 2021) together supply the missing factor.
+
+**Decisive FF test (concrete, the one experiment that settles it).** Run the cortex
+buckling-CAPABLE + percolating + with clustered motor foci + pre-equilibrated binding, and ablate
+buckling ON vs OFF, reading the Hill-bounded γ_active only:
+  1. relax the constraint so compression-side spans can buckle (r/r0<1) — thin anchor density to ≥2-seg
+     spans, OR finite-stiffness inextensibility **(needs PI integrator-freeze sign-off to relax M-SHAKE)**;
+  2. cluster motors into minifilament foci so per-span load > F_crit (probe: F_crit≈2.76 pN at 1-seg,
+     0.69 pN at 2-seg) — the nonlinear regime;
+  3. pre-equilibrate occupancy + run to s_grip→ℓ₀ so heads walk (current s_grip≈0 is the aggregation wall).
+  CONFIRM (deficit): γ_active climbs above the ~0.10 mN/m ceiling toward the 0.2-0.4 mN/m active band.
+  REFUTE (floor correct): γ_active stays floored even with buckling/percolation/walking ON.
+  The buckling ON−OFF difference *is* the amplification factor → compare to Ronceray's ~7×.
+
+**PI actions (in order):** (1) **fix the bookkeeping** (done here — γ_passive reclassified; surface the
+g_rigid double-book to PI); (2) **run the buckling-enabled FF test** (PI integrator-freeze sign-off,
+scoped); (3) **commission the force-bearing density datum** (the legit non-magic-number lever); (4)
+do NOT tune n_myo/f_myo to band (magic-number violation). Full: the ultracode synthesis +
+H7_SIGMA_A_NETWORK_INVESTIGATION_2026-06-07 + H7_GATE_B_BUCKLING_INVESTIGATION_2026-06-08.
+
 ## 3. Result — the floor is REPRODUCED MD-free (prototype-scale sweep)
 
 γ_active is linear in the myosin prestress f_myo (the swept controlled variable): **≈0.19 pN/µm per
@@ -93,9 +138,11 @@ pN** of per-link prestress (R=10µm, n_myo=200, 8 realizations).
 | 50 | 9.5 | 9.5e-3 | ~37× under |
 | 150 | 28.5 | 2.85e-2 | ~12× under |
 
-- **γ_passive (turgor) = 665 pN/µm = 0.665 mN/m — at the top of the Salbreux band** (by construction:
-  dP0=133 Pa was band-implied via Young-Laplace; this also validates the estimator's Young-Laplace
-  channel analytically).
+- **γ_passive (turgor) = 665 pN/µm = 0.665 mN/m** ⚠️ **NOT independent evidence — see §3.0c.** This is
+  CIRCULAR (dP0=133 Pa is band-implied/tuned, so ΔP·R/2 "hitting band" is by construction) AND a
+  double-book (Young-Laplace tension is the pressure's partner, not an independent passive channel).
+  The genuine passive floor is ~0.04 mN/m; the band is ~70% myosin. Kept only as a numeric check that
+  the method-of-planes reproduces ΔP·R/2, NOT as a "passive carries the band" result.
 - **At the lit-anchored NMIIA prestress, actomyosin γ is ~370× UNDER band**, while turgor γ is
   at-band. To reach band-level cortical tension via this transmission the per-link prestress would
   need ≈1840 pN ≈ **370× the physiological NMIIA per-side stall (5 pN)**.

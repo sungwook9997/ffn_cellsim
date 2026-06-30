@@ -299,8 +299,21 @@ def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int =
 
 
 def gamma_passive_young_laplace(dP: float, R_mean: float) -> float:
-    """Passive turgor cortical tension γ = ΔP·R/2 (Young-Laplace) [pN/µm]. Kept SEPARATE from the
-    actomyosin (method-of-planes) channel — never folded in (archived cortical_tension.py rule)."""
+    """Young-Laplace pressure-balance tension γ = ΔP·R/2 [pN/µm] of the turgor-pressurised shell.
+
+    ⚠️ BOOKKEEPING CAVEAT (2026-06-30, ultracode cortical-tension-active-fraction review). This is
+    NOT independent evidence that "the cortex is mostly passive / at band". Two reasons:
+      1. ``TURGOR_DP0`` (133 Pa) is **band-implied / tuned, no sourced row** (PARAM_AUDIT_SIMUCELL3D
+         2026-06-25), so ΔP·R/2 "reproducing the band" is CIRCULAR (the turgor was set to make it so).
+      2. Young-Laplace ΔP·R/2 is the in-plane tension that BALANCES the osmotic pressure (Stewart 2011:
+         ΔP = γ·2/R) — it is the pressure's *partner*, not an independent passive cortical-tension
+         channel; reporting both the turgor pressure and this tension double-books.
+    The genuine blebbistatin-INSENSITIVE passive cortical floor is only ~0.04 mN/m (~9-12 % of band;
+    Fischer-Friedrich 2014/2016) — and the band is ~50-90 % MYOSIN-dependent (central ~70 %). So the
+    active actomyosin floor is the REAL gap, not a benign "passive carries it". Kept as a diagnostic
+    (never folded into the actomyosin γ), but do not cite it as a passive-cortex result.
+    See docs/v2_audit/FF_STAGE6D_GAMMA_FLOOR_2026-06-29.md §3.0c.
+    """
     return 0.5 * dP * R_mean
 
 
