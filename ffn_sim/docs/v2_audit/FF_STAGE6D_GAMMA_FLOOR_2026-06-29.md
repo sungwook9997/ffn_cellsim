@@ -124,7 +124,17 @@ scoped); (3) **commission the force-bearing density datum** (the legit non-magic
 do NOT tune n_myo/f_myo to band (magic-number violation). Full: the ultracode synthesis +
 H7_SIGMA_A_NETWORK_INVESTIGATION_2026-06-07 + H7_GATE_B_BUCKLING_INVESTIGATION_2026-06-08.
 
-**Test status (2026-06-30): the ENABLER is verified, the network measurement needs a robust solver.**
+**Test status — DONE (Stage 6h, FF_STAGE6H_BUCKLING_NETWORK_2026-06-30): floor SURVIVES with buckling
+ON.** The network measurement was built (`network_contractility.py`, robust connected inextensible
+contractile solver) and run: contractile σ = 10-90 pN/µm, ~25-100× UNDER band at physiological NMIIA
+stall, **FLAT in connectivity z (2.98-5.29, incl. sub-isostatic)**, amplification σ/σ_dipole 0.2-0.6
+(<1, screening) across f/F_crit=1.4-145 — **no Ronceray amplification; the "buckling rescues it"
+branch is NOT supported in the inextensible model.** Key: Ronceray's ~7× is an EXTENSIBLE-network
+effect; FF/Cytosim hard inextensibility structurally precludes it. So the floor is a force-MAGNITUDE
+limit (motor force×density), not a connectivity/buckling artifact; the remaining lever is the
+uncommissioned force-bearing motor-density datum (orthogonal). Cleanest next FF lever: finite axial
+modulus (actin EA, Gittes 1993) instead of the hard constraint — see §6h doc. [historical note: the
+first 3 prototype attempts hit projector-singularity / explicit-CFL / seeding issues, since fixed.]
 The single-fiber buckling enabler is confirmed (`test_buckling.py`: FF buckles, ~0.3 µm bow at 15 %
 compression — unlike the DCM M-SHAKE), so the test is NOT PI-integrator-freeze-gated *for FF*. But
 three prototype attempts at the full network-amplification measurement (triangular-lattice contractile
