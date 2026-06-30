@@ -25,8 +25,9 @@
 set -euo pipefail
 
 GBOOK_HOST="${GBOOK_HOST:-gbook}"
-REMOTE_DIR="${REMOTE_DIR:-/home/sungwook/ffn_cellsim}"   # confirm gbook's actual repo path
+REMOTE_DIR="${REMOTE_DIR:-/home/sungwook/ffn_dcm_run}"   # fresh dir (gbook's repos are pre-restructure); rsync target
 CONDA_ENV="${CONDA_ENV:-ffn_sim}"
+CONDA_SH="${CONDA_SH:-/home/sungwook/miniconda3/etc/profile.d/conda.sh}"
 LOCAL_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"        # the worktree root (…/dcm-aggregation)
 OUTBASE="ffn_sim/outputs/h_dcm_two_stage"
 DRY=0
