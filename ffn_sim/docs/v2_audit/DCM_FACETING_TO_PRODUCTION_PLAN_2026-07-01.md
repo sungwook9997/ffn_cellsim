@@ -43,13 +43,17 @@ N=400 faceted foam at V/V0=1. Render `viz_html/8_V0FIX_n400_render.png`, `8_V0FI
 - **Gate:** `--builder confluent` reproduces the prototype geometry (manifold, no-pen, contact, asph/Q
   within tolerance) and runs end-to-end into the maintain energy with the Phase-1 V0 setpoint.
 
-### Phase 3 — sharpen faceting toward SimuCell3D grade (geometry quality + real energy only)
-- **Levers (all legitimate):** (a) init quality — lower ε, more Lloyd iterations, finer subdiv (geometry
-  faithfulness, not physics tuning); (b) if needed, a REAL faceting energy = differential interfacial
-  tension at the DERIVED w_cs value (Maître/DAH, already in-tree) — a real force at its lit value.
-- **Measure:** emergent init Q and maintained Q. Do NOT tune physics to hit Q≈250. Report whatever
-  emerges; if it plateaus below SimuCell3D, surface as a structural finding.
-- **Gate:** faceting emergent + stable under the energy, manifold preserved, no magic-number.
+### Phase 3 — sharpen faceting  ✅ CONCLUDED (2026-07-01): Q~150 is a structural ceiling
+Swept the legitimate levers at N=200 `--builder confluent`: baseline subdiv2 **Q 150** (asph 0.049);
+S2 = REAL differential-γ faceting energy (`--diff-tension --contact-tension-frac 0` at derived w_cs)
+**Q 148** (asph 0.030, V/V0 1.000, pen 0.990 — holds faceting clean but does NOT sharpen); S1 = finer
+subdiv 3 init **Q 157→161** (modest +7%, 4× heavier). **None reaches SimuCell3D's Q≈250.** Each cell is
+a smooth RADIAL deformation of an icosphere filling its Voronoi region — mildly faceted, not razor-sharp
+flat-faced polyhedra. Reaching Q≈250 needs a flat-faced cell representation (clip the icosphere to the
+Voronoi half-planes, or a different mesh) = a structural change, NOT parameter tuning. **Conclusion (to
+PI):** the baseline foam (Q~150, clean, V/V0 1, no-penetration, faceting-held, space-filling) IS a genuine
+compact faceted tissue = the production result; razor-sharp Q≈250 is an optional later mesh upgrade.
+Production uses subdiv 2 (Q150, clean, fast). No magic-number tuning was used.
 
 ### Phase 4 — clean N=400 production aggregation + validation + viz
 - **Run:** full N=400 confluent foam, V0-fix, `--builder confluent`, physiological energy, long settle.
