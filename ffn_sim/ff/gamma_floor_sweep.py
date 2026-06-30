@@ -89,6 +89,63 @@ def render(rows, outdir: str = OUTDIR) -> str:
     return path
 
 
+def run_density_sweep(n_myo_values=None, *, n_filaments: int = 38000, n_steps: int = 600,
+                      device: str = "cuda:0", seed: int = 0):
+    """γ_active vs MYOSIN AREAL DENSITY (the controlled variable — NOT tuned to band) at native cortex.
+
+    The γ-floor's last lever: does raising the engaged motor density reach the band? Density is swept as
+    a controlled variable (Nie-2015 0.625/µm² → far beyond) and γ(density) reported with the Nie datum +
+    the band; the band-reaching density is read off, NOT fitted. GPU-resident (A5000)."""
+    from ffn_sim.ff.gamma_floor import (
+        NMIIA_MINIFIL_STALL_PN,
+        CortexParams,
+        build_crosslinked_cortex,
+        equilibrate,
+        measure_gamma,
+    )
+    area = 4.0 * np.pi * CortexParams().R_um**2
+    if n_myo_values is None:
+        n_myo_values = [785, 2000, 3800, 10000, 26000, 50000]   # 0.62 → 40 /µm² (Nie → ≫ band-needed)
+    f = NMIIA_MINIFIL_STALL_PN
+    rows = []
+    for nmyo in n_myo_values:
+        cx = build_crosslinked_cortex(CortexParams(), n_filaments=n_filaments, n_xl=n_filaments,
+                                      n_myo=int(nmyo), rng=np.random.default_rng(seed))
+        equilibrate(cx, 0.0, n_steps=n_steps, method="device", device=device, crosslink_turnover=True)
+        g = measure_gamma(cx, f, turgor=False)["gamma_active"]
+        rows.append({"n_myo": int(nmyo), "rho_um2": nmyo / area, "gamma_active": float(g)})
+        print(f"  ρ={nmyo/area:6.2f}/µm² (n_myo={nmyo}): γ_active={g:.3f} pN/µm = {g*1e-3:.2e} mN/m",
+              flush=True)
+    return rows
+
+
+def render_density(rows, outdir: str = OUTDIR) -> str:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    os.makedirs(os.path.join(outdir, "figs"), exist_ok=True)
+    rho = np.array([r["rho_um2"] for r in rows]); g = np.array([r["gamma_active"] for r in rows])
+    fig, ax = plt.subplots(figsize=(9, 6.5))
+    ax.axhspan(*SALBREUX_BAND_PN_UM, color="tab:green", alpha=0.15, label="Salbreux band 350–650 pN/µm")
+    ax.loglog(rho, g, "o-", color="navy", lw=2, ms=8, label="FF γ_active (native cortex)")
+    # linear extrapolation to the band-reaching density
+    slope = float(np.median(g / rho))
+    rho_band = SALBREUX_BAND_PN_UM[0] / slope
+    rr = np.array([rho.min(), rho_band]); ax.loglog(rr, slope * rr, "--", color="grey", alpha=0.7,
+                                                    label=f"γ ∝ ρ (band at ρ≈{rho_band:.0f}/µm²)")
+    ax.axvline(0.625, color="crimson", ls=":", lw=1.5, label="Nie 2015 measured 0.625/µm²")
+    ax.axvline(20.0, color="darkorange", ls=":", lw=1.5, label="active-gel envelope ~16–21/µm²")
+    ax.set_xlabel("myosin areal density ρ  [µm⁻²]"); ax.set_ylabel("γ_active  [pN/µm]")
+    ax.set_title("γ-floor density lever — γ ∝ ρ but band needs ρ≈%d/µm² (%.0f× Nie, geometrically\n"
+                 "impossible); even 40/µm² (64× Nie) is ~50× under band → density alone cannot close it"
+                 % (rho_band, rho_band / 0.625))
+    ax.legend(fontsize=8.5, loc="upper left"); ax.grid(True, which="both", alpha=0.25)
+    fig.tight_layout()
+    path = os.path.join(outdir, "figs", "gamma_floor_density_sweep.png")
+    fig.savefig(path, dpi=130); plt.close(fig)
+    return path
+
+
 def main():
     print("γ-floor prestress sweep (MD-free FF mechanical solve)...", flush=True)
     rows = run_sweep()
