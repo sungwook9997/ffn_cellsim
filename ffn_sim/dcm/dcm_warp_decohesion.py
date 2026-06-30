@@ -244,7 +244,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    div_relax_steps: int = 20, div_relax_factor: float = 0.1,
                    osmotic: bool = False, osm_relax: float = 0.05, osm_batch: int = 50,
                    force_divide_step: int = -1, force_divide_cell: int = 0,
-                   init_npz: str | None = None,
+                   init_npz: str | None = None, v0_from_init: bool = False,
                    accel_real_hours: float = 0.0,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
@@ -345,7 +345,25 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # ramp re-inflates each back to V0 over the cell cycle — turgor chases this per-cell setpoint, so
     # a freshly-born daughter inflates GRADUALLY instead of a full-size cold insert (the prior
     # outward-dump ejection). Host-mirrored (V0_cell) + device (V0_cell_d); kept in sync on division.
-    V0_cell = np.full(n_cells, V0, dtype=np.float64)
+    if v0_from_init and init_npz:
+        # Physiological setpoint for a CONFLUENT cell = its actual resting (Voronoi-cell) volume in the
+        # tissue, NOT the full free-sphere V0 (which over-inflates a space-filling cell — the N=400
+        # confluent capstone hit V/V0 1.37 + interpenetration because every cell tried to reach the
+        # free-sphere volume it cannot occupy). Derive per-cell V0 from the LOADED init mesh via the
+        # divergence-theorem volume (1/6·Σ(a×b)·c over its faces; winding-consistent icosphere topology).
+        # Derived from the init geometry, NOT tuned. (physiological-baseline rule: confluent rest volume.)
+        _a = pos_a[faces_a[:, 0]]; _b = pos_a[faces_a[:, 1]]; _c = pos_a[faces_a[:, 2]]
+        _ftv = (np.cross(_a, _b) * _c).sum(axis=1) / 6.0
+        V0_cell = np.zeros(n_cells, dtype=np.float64)
+        _valid = fcell_a >= 0
+        np.add.at(V0_cell, fcell_a[_valid], _ftv[_valid])
+        V0_cell = np.abs(V0_cell)
+        V0_cell[V0_cell < 1e-30] = V0                       # parked/empty cells → free-sphere fallback
+        print(f"  [v0-from-init] per-cell V0 from confluent mesh: mean={V0_cell.mean():.3e}m³ "
+              f"(free-sphere V0={V0:.3e}, ratio {V0_cell.mean()/V0:.3f}) — confluent rest-volume setpoint",
+              flush=True)
+    else:
+        V0_cell = np.full(n_cells, V0, dtype=np.float64)
     area_per_node = 4.0 * np.pi * R0 ** 2 / npc
     # z-well depth from the adhesion energy density × node area (derived, not tuned)
     W_cs_well = w_cs_jm2 * area_per_node
@@ -1654,6 +1672,7 @@ def main():
     ap.add_argument("--no-grid", action="store_true", help="brute-force kernels (parity ref; slow at scale)")
     ap.add_argument("--save-frames", default=None, help="npz path to save per-frame mesh geometry (pos+faces+cof) for surface viz")
     ap.add_argument("--init-npz", default=None, dest="init_npz", help="restart from a saved aggregate npz (frames/faces/cof) instead of building a fresh ball (exposes the existing restart path, lines ~312)")
+    ap.add_argument("--v0-from-init", action="store_true", dest="v0_from_init", help="set each cell's osmotic rest volume V0 to its ACTUAL volume in the loaded --init-npz mesh (confluent Voronoi-cell rest volume) instead of the free-sphere V0; removes the confluent over-inflation. Derived from geometry, not tuned.")
     args = ap.parse_args()
     import json
     out = run_decohesion(
@@ -1680,7 +1699,7 @@ def main():
         substrate_wetting=not args.no_wetting, use_substrate_well=not args.no_well,
         ubottom=args.ubottom, ubottom_r_factor=args.ubottom_r_factor, ubottom_k=args.ubottom_k,
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
-        use_grid=not args.no_grid, save_frames=args.save_frames, init_npz=args.init_npz,
+        use_grid=not args.no_grid, save_frames=args.save_frames, init_npz=args.init_npz, v0_from_init=args.v0_from_init,
         ipc=args.ipc, ipc_eta=args.ipc_eta)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
