@@ -86,6 +86,25 @@ gamma_active(f_myo=0) vs relaxation steps (A5000, N=70686):
    (0.0, 0.0199, 0.0496, 0.0993, 0.1986 at f = 0, 1, 2.5, 5, 10). This is the honest myosin-induced
    cortical tension. **The floor is now reported on `γ_myo`.**
 
+**ADVERSARIAL CHECK — physical, not a measure_gamma bug.** A measurement bug would give a constant
+offset independent of N; a physical density-frustration must vanish as density → 0. The residual scales
+LINEARLY with filament areal density (A5000, settle 600 steps), carried by `γ_actin` not `γ_xl`:
+
+```
+ N_fil   areal   γ_active(f0)  γ_actin(f0)  γ_xl(f0)   γ_active/density
+   300     0.4      0.0033       0.0035      0.0006      0.00781
+  1000     1.4      0.0115       0.0115      0.0006      0.00810
+  5000     7.1      0.0595       0.0594      0.0007      0.00841
+ 20000    28.3      0.2431       0.2431      0.0011      0.00859
+ 70686   100.0      0.8542       0.8541      0.0014      0.00854
+```
+
+`γ_active(f0)/density ≈ 0.0085 pN/µm per (fil/µm²)` is constant over a 235× density range → a genuine
+density-linear network frustration (inextensible crosslinked filaments on the curved shell cannot relax
+all force-free-formed crosslinks simultaneously), NOT a constant artifact. This is also WHY the ×40 /
+small-N γ-floor work never saw it (at N=1000 it is 0.0115 pN/µm ≪ the myosin signal). At native density
+it dominates `γ_active`, mandating the `γ_myo` metric.
+
 This is a **metric correction, not a gate-loosening**: switching to `γ_myo` makes the floor DEEPER (more
 conservative). `γ_myo` was already the established clean active channel (FF_STAGE6M, bit-identical under
 the link_k correction). `γ_active` is retained in the output, **flagged** as the passive-contaminated sum.

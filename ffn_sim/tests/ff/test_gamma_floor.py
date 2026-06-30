@@ -81,6 +81,24 @@ def test_actomyosin_gamma_rises_with_prestress():
     assert g[0] < 1e-3                            # no prestress → no actomyosin tension
 
 
+def test_gamma_myo_is_clean_linear_zero_intercept_channel():
+    """The FLOOR METRIC guarantee (FF_STAGE6Q): γ_myo — the myosin dipole channel — is the CLEAN
+    active measure (γ_active is contaminated by a density-linear passive actin-network residual at
+    native scale). γ_myo must be ZERO at f_myo=0 and LINEAR in f_myo (γ_myo = c·f_myo), so it is the
+    artifact-free actomyosin cortical tension the floor is reported on — NOT tuned to anything."""
+    # one quenched cortex, sweep ONLY the prestress (the myosin link geometry is fixed → γ_myo ∝ f_myo)
+    rng = np.random.default_rng(4)
+    cx = build_crosslinked_cortex(n_filaments=120, n_xl=360, n_myo=200, rng=rng)
+    equilibrate(cx, 0.0, n_steps=300, turgor=False)
+    fs = np.array([0.0, 1.0, 2.0, 4.0, 8.0])
+    gm = np.array([measure_gamma(cx, f, turgor=False)["gamma_myo"] for f in fs])
+    assert gm[0] == pytest.approx(0.0, abs=1e-12)          # zero-intercept: no motor → no active γ
+    nz = fs > 0
+    c = gm[nz] / fs[nz]
+    assert np.allclose(c, c[0], rtol=1e-6)                 # exactly linear (γ_myo = c·f_myo)
+    assert (gm[1:] > 0).all()                              # contractile prestress → positive tension
+
+
 def test_passive_gamma_is_young_laplace():
     """The passive turgor channel = ΔP·R/2 (Young-Laplace), at the resting dP0=40 Pa → 200 pN/µm."""
     assert gamma_passive_young_laplace(TURGOR_DP0, 10.0) == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
