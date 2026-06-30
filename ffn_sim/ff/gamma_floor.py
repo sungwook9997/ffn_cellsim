@@ -272,7 +272,7 @@ def external_force(cortex: CrosslinkedCortex, pos: np.ndarray, bending_fn, f_myo
 
 def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int = 600,
                 reshape_every: int = 25, dt_mu: float = 0.0, turgor: bool = False,
-                method: str = "explicit") -> np.ndarray:
+                method: str = "explicit", device: str = "cpu") -> np.ndarray:
     """Settle the cortex by projected overdamped descent + periodic reshape (NF2007 project-then-
     reshape, explicit; sufficient + robust for the quasi-static γ prototype).
 
@@ -294,6 +294,21 @@ def equilibrate(cortex: CrosslinkedCortex, f_myo: float = 0.0, *, n_steps: int =
 
     net = cortex.net
     bending_fn = make_bending_force_fn(net)
+    if method == "device":
+        # Fully on-device (Warp) settle — bending + crosslink springs (+ myosin), reshape, all on the
+        # GPU (device="cuda:0" on gbook A5000). No turgor in the device loop (the resting baseline is
+        # turgor-free per the physiological-baseline rule; loaded shells use the implicit path).
+        from ffn_sim.ff.network_warp import relax_on_device
+        links = (np.stack([cortex.xl_i, cortex.xl_j], axis=1).astype(np.int64)
+                 if cortex.xl_i.size else None)
+        myo = (np.stack([cortex.myo_i, cortex.myo_j], axis=1).astype(np.int64)
+               if (cortex.myo_i.size and f_myo) else None)
+        net.pos = relax_on_device(
+            net, links=links, k_xl=(cortex.xl_k if links is not None else None),
+            xl_rest=(cortex.xl_rest if links is not None else None),
+            myo_links=myo, f_myo=f_myo, n_steps=n_steps, reshape_every=reshape_every,
+            dt_mu=dt_mu, device=device)
+        return net.pos
     if method == "implicit":
         from ffn_sim.ff.relax import _default_gamma, relax_implicit
         ext_fn = lambda xf: external_force(cortex, np.asarray(xf).reshape(net.n_nodes, 3),
@@ -394,13 +409,18 @@ def measure_gamma(cortex: CrosslinkedCortex, f_myo: float, *, n_planes: int = 50
 
 
 def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_myo: int = 100,
-                    seed: int = 0, n_steps: int = 600) -> dict:
+                    seed: int = 0, n_steps: int = 600, method: str = "explicit",
+                    device: str = "cpu") -> dict:
     """One quenched realization → γ at prestress ``f_myo``, measured at the resting physiological
     geometry (physiological-baseline rule: settle the resting passive shell, then add myosin as the
-    modulator and measure). Returns the actomyosin γ channels + the passive turgor γ + meta."""
+    modulator and measure). Returns the actomyosin γ channels + the passive turgor γ + meta.
+
+    ``method='device'`` + ``device='cuda:0'`` runs the resting-shell settle fully on the GPU (Warp,
+    gbook A5000) — the production GPU-resident path."""
     rng = np.random.default_rng(seed)
     cortex = build_crosslinked_cortex(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, rng=rng)
-    equilibrate(cortex, 0.0, n_steps=n_steps, turgor=False)   # settle resting passive shell
+    equilibrate(cortex, 0.0, n_steps=n_steps, turgor=False,   # settle resting passive shell
+                method=method, device=device)
     out = measure_gamma(cortex, f_myo, turgor=True)
     out.update(f_myo=f_myo, seed=seed, n_xl=int(cortex.xl_i.size), n_myo=int(cortex.myo_i.size))
     return out
