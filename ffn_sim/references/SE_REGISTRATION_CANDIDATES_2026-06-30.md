@@ -71,6 +71,24 @@ Also fix (clean 1000× slip): `configs/phase1_h3.yaml` actin intra-filament `k_x
 in-code "KU-3.19 (Furuike 2001)" attribution is wrong (KB-3.19 is a Bell off-rate; Furuike has 0 KB
 hits) — fix the comment.
 
+## 6. Lamellipodium / Arp2/3 (Stage 6L increment 2, task B) — PI-GATED cites
+
+The dendritic-array builder (`ff/architecture_spec.LAMELLIPODIUM`, `weave._build_lamellipodium_patch`)
+uses these. The branch GEOMETRY constants are already lit-anchored + Magic-Number-Blocked in
+`configs/phase1_h5.yaml` (Fäßler 2020); the others need SE rows before a deliverable cite.
+
+- **`Fassler2020_EMBOJ`** — Arp2/3 in-cell cryo-ET branch angle **68 ± 9°** (→ θ₀=70°, k_angle=0.173
+  pN·µm/rad² via kT/Var(θ)). EMBO J 39:e104254. ALREADY in configs/phase1_h5.yaml (audit C5); the SD=9°
+  should be a KnowledgeClaim (the KB has the 70° MEAN as a bare scalar, KB-3.7/3.18, but NOT the SD —
+  the SD is the load-bearing datum for the angle-harmonic kernel). PI-gated KB change.
+- **`Mueller2017_Cell`** — lamellipodium **±35° two-mode** filament orientation (protrusion-axis-relative;
+  reproduces Maly-Borisy 2001). In `references/downloaded/Mueller2017_Cell.pdf`. SE row to cite.
+- **`Vinzenz2012_JCS`** — Arp2/3 branch **density 1.25/µm** (1 branch / 0.80 µm contour), inter-branch
+  36.7/71.2 nm helical-repeat quantization. JCS 125:2775, DOI 10.1242/jcs.107623. NOT in references/ —
+  fetch + SE before cite.
+- Cross-check oracle (do NOT adopt): Cytosim fork:angular_stiffness 0.076 pN·µm/rad² (Akamatsu/Berro);
+  our 0.173 is from the in-situ Fäßler σ=9° equipartition (both in the 0.05–0.17 decade).
+
 ## 4. Harvest
 
 `OPS_HARVEST_CANDIDATES_2026-06-30.md` lists 27 un-harvested RunResults (mostly prior-session H3/H7/
