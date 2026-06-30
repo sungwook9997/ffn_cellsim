@@ -116,6 +116,23 @@ uses these. The branch GEOMETRY constants are already lit-anchored + Magic-Numbe
 - **Gil-Redondo 2023** per-cell traction 102 nN — literature overlay only, NOT a model-validation gate
   (H.7 SF-array HALTED).
 
+## 8. Cortical-tension DEFINITION / framing (FF_STAGE6P, 2026-07-01) — PI-gated
+
+The cortical-tension framing audit (4 workflows) found the band provenance + cell-type were mis-labeled.
+Register/correct:
+- **`Chugh2017_NatCellBiol`** (Nat Cell Biol 19:689, DOI 10.1038/ncb3525) — the REAL anchor of the
+  working 0.35–0.65 band (HeLa, interphase, AFM, T₀=230 pN/µm). "Salbreux band" is a MISNOMER (Salbreux
+  2012 is a review, broad 0.1–1). Likely already in KB paper_chunks; ensure an SE row + fix the label.
+- **`Hosseini2020_AdvSci`** (Adv Sci 7:2001276, DOI 10.1002/advs.202001276) — MCF7 interphase SUSPENDED
+  cortical tension 0.27 mN/m (IQR 0.18–0.40). Already KB (audit OK). The MCF7-faithful overlay; adherent
+  MCF7 γ = documented ABSENCE.
+- **`Bohec2025_Jour`** — interphase basal T₀=0.47 mN/m (the genuine interphase mN/m anchor for the
+  decomposition). Verify citation.
+- **`Wagner2011`** — MCF7 R_cell = 7.5 µm (the FF cortex uses 10 µm, mislabeled "MCF7 Wagner 2011" — PI
+  decision to correct R; γ ∝ 1/R).
+- Band is TOTAL (~70% active); the active-only FF γ must compare to ACTIVE_FRACTION·band (~0.245–0.455
+  mN/m), now in `gamma_estimator.active_band_pn_um()`. Turgor ΔP·R/2 stays OUT (double-book, confirmed).
+
 ## 4. Harvest
 
 `OPS_HARVEST_CANDIDATES_2026-06-30.md` lists 27 un-harvested RunResults (mostly prior-session H3/H7/
