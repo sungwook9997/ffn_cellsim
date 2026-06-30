@@ -122,10 +122,13 @@ def _node_fiber_map(net: FiberNetwork) -> np.ndarray:
 
 
 def _cross_fiber_pairs(net: FiberNetwork, capture_um: float, n_links: int,
-                       rng: np.random.Generator, exclude: set | None = None) -> np.ndarray:
+                       rng: np.random.Generator, exclude: set | None = None,
+                       node_mask: np.ndarray | None = None) -> np.ndarray:
     """Sample up to ``n_links`` node pairs on DIFFERENT fibers within ``capture_um`` of each other.
 
-    Returns (M, 2) node-index pairs (M ≤ n_links). Uses a KD-tree pair query.
+    Returns (M, 2) node-index pairs (M ≤ n_links). Uses a KD-tree pair query. ``node_mask`` (optional
+    (N,) bool) restricts BOTH endpoints to the masked nodes — e.g. the stress-fiber periodic Z-body /
+    band-centre planes, so crosslinks/motors land only at the sarcomeric nodes.
     """
     from scipy.spatial import cKDTree
 
@@ -136,6 +139,8 @@ def _cross_fiber_pairs(net: FiberNetwork, capture_um: float, n_links: int,
         return np.zeros((0, 2), np.int64)
     diff = fib[pairs[:, 0]] != fib[pairs[:, 1]]        # keep only cross-fiber pairs
     pairs = pairs[diff]
+    if node_mask is not None and pairs.shape[0]:       # restrict both endpoints to the masked planes
+        pairs = pairs[node_mask[pairs[:, 0]] & node_mask[pairs[:, 1]]]
     if exclude:
         keep = np.array([(int(a), int(b)) not in exclude for a, b in pairs], bool)
         pairs = pairs[keep]

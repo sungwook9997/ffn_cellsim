@@ -147,7 +147,20 @@ FILAMIN = HandParams(                 # filamin crosslinker Hand (Pereverzev cat
     cs_k_slip0=0.02, cs_x_slip_um=0.3e-3, v_max_um_s=0.0,
     link_k=8.2e5)                        # k_xl=820 pN/nm (Ferrer 2008 PNAS AFM, companion; PI-approved)
 
-PRESETS = {h.name: h for h in (KINESIN, NMIIA_MYOSIN, ALPHA_ACTININ, FILAMIN)}
+INTEGRIN_A5B1 = HandParams(           # integrin α5β1–fibronectin FA clutch (Kong 2009, KB-2.5) — PI-gated
+    name="integrin_a5b1", k_on=1.0, capture_radius_um=0.300,   # h_c=300 nm FA gap (Kim 2012; PI-gated k_on)
+    catch_slip=True,
+    cs_k_catch0=0.4, cs_x_catch_um=U.KBT / 7.0,    # k_catch=0.4/s, Fc=7 pN  → catch term k_catch·e^(−F/Fc)
+    cs_k_slip0=0.5, cs_x_slip_um=U.KBT / 30.0,     # k_slip=0.5/s, Fs=30 pN → slip term k_slip·e^(+F/Fs)
+    v_max_um_s=0.0, link_k=1.0e3)                  # k_int=1 pN/nm = 1e3 pN/µm FA clutch spring (PI-gated)
+# ⚠️ FA clutch = INTEGRIN-ECM (Kong 2009 α5β1-fibronectin catch-slip), NOT Rakshit 2012 / KU-4.2 (that
+# is cell-cell E-CADHERIN). Same two-pathway pereverzev_off_rate FORM, KB-2.5 numbers (k_slip=0.5/s,
+# Fs=30pN, k_catch=0.4/s, Fc=7pN). ⚠️ KB-CONSISTENCY FLAG (→PI): these recorded params give an interior
+# lifetime peak F* = ln[(k_catch·Fs)/(k_slip·Fc)]/(1/Fc+1/Fs) ≈ 7 pN, NOT the "F*≈30 pN" the KB-2.5
+# claim text states — the catch-bond (catch→slip) IS present, but the peak-force claim is inconsistent
+# with its own params; used AS-RECORDED (no tuning). k_on, k_int = Phase-default (KB-2.4/2.18) → PI-gated.
+
+PRESETS = {h.name: h for h in (KINESIN, NMIIA_MYOSIN, ALPHA_ACTININ, FILAMIN, INTEGRIN_A5B1)}
 
 
 # ── Per-tick probabilities (Poisson) ──────────────────────────────────────────────────────────────

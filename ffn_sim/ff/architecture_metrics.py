@@ -78,6 +78,51 @@ def two_mode_orientation(cortex, axis=(0.0, 1.0, 0.0)) -> dict:
             "two_mode_frac": float(np.mean((np.abs(phis) > 20) & (np.abs(phis) < 50)))}
 
 
+def sarcomeric_period_um(cortex, axis=2) -> dict:
+    """Stress-fiber sarcomeric period: the dominant spacing of the α-actinin (crosslink) Z-bodies along
+    the fiber ``axis`` (default z), via FFT of the crosslink-node density. Lit band 0.5–1.4 µm
+    (Hotulainen-Lappalainen 2006). Also returns the NMIIA-band anti-registration phase offset (≈ half a
+    period = anti-registered, Murrell 2015)."""
+    net = cortex.net
+    if cortex.xl_i.size == 0:
+        return {"period_um": float("nan"), "n_zbody_planes": 0, "anti_registered": False}
+    zc = np.concatenate([net.pos[cortex.xl_i, axis], net.pos[cortex.xl_j, axis]])
+    lo, hi = zc.min(), zc.max()
+    if hi - lo < 1e-6:
+        return {"period_um": float("nan"), "n_zbody_planes": 0, "anti_registered": False}
+    nbin = 256
+    dens, edges = np.histogram(zc, bins=nbin, range=(lo, hi))
+    dz = (hi - lo) / nbin
+    spec = np.abs(np.fft.rfft(dens - dens.mean()))
+    freqs = np.fft.rfftfreq(nbin, d=dz)                         # cycles per µm
+    k = 1 + int(np.argmax(spec[1:]))                            # skip DC
+    period = 1.0 / freqs[k] if freqs[k] > 0 else float("nan")
+    # NMIIA anti-registration: phase offset between myosin-band z and Z-body z (≈ period/2)
+    anti = False
+    if cortex.myo_i.size:
+        zm = np.concatenate([net.pos[cortex.myo_i, axis], net.pos[cortex.myo_j, axis]])
+        offset = abs((np.median(zm) - np.median(zc))) % period if np.isfinite(period) else 0.0
+        anti = bool(0.25 * period < offset < 0.75 * period) if np.isfinite(period) else False
+    return {"period_um": float(period), "n_zbody_planes": int(np.round((hi - lo) / period)) if np.isfinite(period) else 0,
+            "anti_registered": anti}
+
+
+def bundle_dimensions(cortex) -> dict:
+    """Bundle axial length + cross-section diameter [µm] (microvillus/SF). Length = axial extent along
+    the dominant axis; diameter = 2× the mean in-plane radius of the filament mid-points."""
+    net = cortex.net
+    off = net.fiber_offsets
+    mids = np.array([net.pos[(int(off[f]) + int(off[f + 1])) // 2] for f in range(net.n_fibers)])
+    # principal axis (PCA) of the node cloud — robust to GRADED polarity (mean fiber axis ≈ 0 for an
+    # antiparallel SF bundle, so use the largest-variance direction instead).
+    p = net.pos - net.pos.mean(axis=0)
+    ax = np.linalg.eigh(p.T @ p)[1][:, -1]
+    axial = net.pos @ ax
+    perp = mids - np.outer(mids @ ax, ax)
+    return {"length_um": float(axial.max() - axial.min()),
+            "diameter_um": float(2.0 * np.linalg.norm(perp - perp.mean(axis=0), axis=1).mean())}
+
+
 def cortex_metrics(cortex) -> dict:
     """Cortex architectural metrics — areal density + connectivity z + giant-component fraction."""
     from ffn_sim.ff.kim_network import connectivity_z

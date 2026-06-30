@@ -103,3 +103,43 @@ def test_weave_lamellipodium_relax_stable_with_branch_kernel():
     assert np.isfinite(cx.net.pos).all()                    # stable (CFL incl branch k_eff)
     ba = branch_angle_distribution(cx)
     assert 55.0 < ba["mean_deg"] < 85.0                    # branches held near 70° by the kernel
+
+
+def test_weave_stress_fiber_sarcomeric():
+    """weave(STRESS_FIBER) — manifold='bundle' — produces a SARCOMERIC FA–FA bundle: α-actinin Z-bodies
+    periodic at ~1 µm (Hotulainen 2006) with NMIIA bands ANTI-registered (Murrell 2015), from the SAME
+    builder (periodic node mask, no new kernel)."""
+    from ffn_sim.ff.architecture_metrics import sarcomeric_period_um
+    from ffn_sim.ff.architecture_spec import STRESS_FIBER
+
+    sf = weave(STRESS_FIBER, rng=np.random.default_rng(0))
+    assert sf.myo_i.size > 0 and sf.xl_i.size > 0
+    sp = sarcomeric_period_um(sf)
+    assert abs(sp["period_um"] - 1.0) < 0.25                # sarcomere period ~1 µm (band 0.5–1.4)
+    assert sp["anti_registered"]                            # NMIIA bands anti-registered to Z-bodies
+
+
+def test_weave_microvillus_bundle_metrics():
+    """weave(MICROVILLUS) — manifold='bundle' — a tight parallel finger bundle: count 20–30, ~12 nm
+    packing, nematic S≈1 (no core motor)."""
+    from ffn_sim.ff.architecture_metrics import bundle_count, inter_filament_spacing_nm
+    from ffn_sim.ff.architecture_spec import MICROVILLUS
+
+    mv = weave(MICROVILLUS, rng=np.random.default_rng(0))
+    assert 20 <= bundle_count(mv.net) <= 30
+    assert 9.0 <= inter_filament_spacing_nm(mv.net) <= 15.0  # ~12 nm lateral c2c (PI-gated)
+    assert parallel_order_parameter(mv.net) > 0.95
+    assert mv.myo_i.size == 0                                # microvillus core has no contractile motor
+
+
+def test_weave_all_five_architectures_distinct():
+    """The full unified table: ONE weave() spans 5 distinct architectures by orientation order S +
+    branch + sarcomere — cortex(isotropic) / filopodium+microvillus(parallel) / lamellipodium(branched)
+    / stress-fiber(sarcomeric)."""
+    from ffn_sim.ff.architecture_metrics import sarcomeric_period_um
+    from ffn_sim.ff.architecture_spec import LAMELLIPODIUM, MICROVILLUS, STRESS_FIBER
+
+    assert parallel_order_parameter(weave(CORTEX, rng=np.random.default_rng(0)).net) < 0.3
+    assert parallel_order_parameter(weave(MICROVILLUS, rng=np.random.default_rng(0)).net) > 0.95
+    assert weave(LAMELLIPODIUM, rng=np.random.default_rng(0)).branch_triples.shape[0] > 0
+    assert np.isfinite(sarcomeric_period_um(weave(STRESS_FIBER, rng=np.random.default_rng(0)))["period_um"])

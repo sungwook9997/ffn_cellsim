@@ -61,7 +61,7 @@ def _build_bundle(spec: ArchitectureSpec, rng: np.random.Generator):
     on a 2D hexagonal-ish cross-section at the lit crosslinker spacing, uniform polarity."""
     fs = spec.filament
     nb = int(round(fs.length_um / fs.seg_um)) + 1
-    spacing_um = 0.008                                          # ~8 nm inter-filament (fascin geometry; PI-gated)
+    spacing_um = fs.bundle_spacing_um if fs.bundle_spacing_um is not None else 0.008  # ~8 nm fascin / ~12 nm SF-MV
     n = fs.n_filaments
     # hexagonal-ish packing of n points in a 2D disk cross-section
     k = int(np.ceil(np.sqrt(n)))
@@ -72,7 +72,14 @@ def _build_bundle(spec: ArchitectureSpec, rng: np.random.Generator):
     xs, ys = np.array(xs[:n]), np.array(ys[:n])
     xs -= xs.mean(); ys -= ys.mean()
     z = (np.arange(nb) - (nb - 1) / 2.0) * fs.seg_um
-    fibers = [np.column_stack([np.full(nb, xs[f]), np.full(nb, ys[f]), z]) for f in range(n)]
+    # GRADED antiparallel polarity for "mixed" (stress fiber): half the filaments run +z, half −z, so
+    # barbed/+ ends cluster at the two ends and pointed/− ends at the centre (Hotulainen-Lappalainen
+    # 2006 — required for the sarcomeric motor to rectify; "uniform" = all +z, e.g. filopodium/microvillus).
+    graded = (fs.polarity == "mixed")
+    fibers = []
+    for f in range(n):
+        zf = z[::-1] if (graded and f >= n // 2) else z
+        fibers.append(np.column_stack([np.full(nb, xs[f]), np.full(nb, ys[f]), zf]))
     from ffn_sim.ff import units as U
     net = build_fiber_network(fibers, kappa=U.KAPPA_ACTIN)
     return net
@@ -142,6 +149,7 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
 
     branch_triples = np.zeros((0, 3), np.int64)
     anchors = np.zeros((0, 2), np.int64)
+    xl_mask = myo_mask = None                                  # SF sarcomeric periodic node masks (set below)
     if spec.manifold == "sphere":
         # mirror gamma_floor.build_crosslinked_cortex (RNG order preserved → γ-floor parity)
         params = CortexParams(R_um=spec.R_um, n_filaments=fs.n_filaments,
@@ -150,15 +158,20 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
         reach = mesoscale_reach(spec.R_um, fs.n_filaments)
     elif spec.manifold == "bundle":
         net = _build_bundle(spec, rng)
-        reach = 1.6 * 0.008                                    # ~2× the 8 nm bundle spacing
+        spacing = fs.bundle_spacing_um if fs.bundle_spacing_um is not None else 0.008
+        reach = 1.6 * spacing                                  # ~2× the bundle inter-filament spacing
+        if fs.sarcomere_um:                                    # SF: periodic Z-body / anti-registered band planes
+            z = net.pos[:, 2]; p = fs.sarcomere_um; w = 0.5 * fs.seg_um
+            xl_mask = np.abs((z + p / 2) % p - p / 2) < w      # α-actinin Z-bodies @ k·period
+            myo_mask = np.abs(z % p - p / 2) < w               # NMIIA bands @ (k+½)·period (anti-registered)
     elif spec.manifold == "patch":                            # lamellipodium dendritic array (Arp2/3)
         net, branch_triples, anchors, _ = _build_lamellipodium_patch(spec, rng)
         reach = 0.6                                            # lamellipodial mesh ξ ~0.6 µm (Sakamoto 2024)
     else:
         raise ValueError(f"manifold {spec.manifold!r} not supported (sphere|bundle|patch)")
 
-    # crosslinkers: KDTree near cross-fiber pairs, filtered by bind mode
-    xl_pairs = _cross_fiber_pairs(net, reach, n_xl, rng)
+    # crosslinkers: KDTree near cross-fiber pairs, filtered by bind mode (+ SF Z-body periodic mask)
+    xl_pairs = _cross_fiber_pairs(net, reach, n_xl, rng, node_mask=xl_mask)
     xl_pairs = _filter_bind_mode(net, xl_pairs, spec.crosslinker.bind_mode)
     nxl = xl_pairs.shape[0]
     if spec.manifold == "sphere":                              # cortex α-actinin/filamin split (parity)
@@ -176,10 +189,10 @@ def weave(spec: ArchitectureSpec, *, rng: np.random.Generator | None = None,
         xl_k = np.concatenate([xl_k, np.full(anchors.shape[0], ALPHA_ACTININ.link_k)])
         xl_rest = np.concatenate([xl_rest, a_rest])
 
-    # motors
+    # motors (SF: anti-registered band-centre periodic mask → sarcomeric placement)
     if n_myo:
         used = {(int(a), int(b)) for a, b in xl_pairs}
-        myo_pairs = _cross_fiber_pairs(net, reach, n_myo, rng, exclude=used)
+        myo_pairs = _cross_fiber_pairs(net, reach, n_myo, rng, exclude=used, node_mask=myo_mask)
     else:
         myo_pairs = np.zeros((0, 2), np.int64)
 
