@@ -43,6 +43,24 @@ on-demand cross-check ([[feedback-oracle-is-crosscheck-not-truth]]). Consolidate
 4. **Turgor Guo-closure + no-magic-K_vol anchor** — the bulk modulus is DERIVED, supporting the
    no-magic-number hard rule.
 
+## Production-envelope robustness (A5000 stress sweep, 2026-07-01)
+
+The engine stays FINITE + stable across the full production envelope (no NaN / inf / blow-up):
+
+| sweep | range | result |
+|---|---|---|
+| filament count N | 1 000 → 100 000 | all finite; γ_myo linear & zero-intercept at every N |
+| crosslink stiffness k_xl | **0.1 → 4.6e5 pN/µm (Ferrer, 4.6e6×)** | all stable; R_mean holds at rest 7.499 µm |
+| myosin prestress f_myo | 0 → 40 pN | γ_myo finite & exactly linear (γ_myo = c·f_myo) |
+| loaded-shell at native N=70686 | 6000 steps | V/V0 = 1.00001, no blow-up (CFL incl. turgor breathing-mode) |
+
+**Stiff-crosslink finding:** `equilibrate(crosslink_turnover=True)` relaxes the lit-anchored stiff Ferrer
+`k_xl = 4.6e5 pN/µm` STABLY (R_mean held, no blow-up) — so the "robust stiff-crosslink relaxer" the Kim
+doc (FF_KIM_NETWORK_VALIDATION §mechanics-magnitude) flagged as pending DOES exist (it is the force-free-
+rebinding turnover baseline, Stage 6N). Promoting the production `link_k` 0.1 → 4.6e5 remains PI-gated
+(it feeds the CFL + the γ-floor cortex, and the Ferrer datum needs KB registration), but the relaxer is no
+longer the blocker.
+
 ## Remaining gaps (PI-roadmap or future)
 
 - **Euler buckling π²κ/L²** — only qualitative (amplitude grows with compression); a quantitative
