@@ -3,9 +3,11 @@ kb_record:
   topic: KU-3.5-cortical-tension
   claim: KB-3.5
   gate: VG-H3-KU35-cortex-tension
-  status: authoritative
-  primary: true
+  status: superseded
+  primary: false
   authoritative_as_of: 2026-06-04
+  superseded_by:
+    - CORTICAL_TENSION_RECORD_2026-06-30
   aliases: [KU-3.5, KU3.5, cortical tension, cortical-tension floor, g_soft, gamma-floor]
   supersedes:
     - KU35_FLOOR_ROOT_CAUSE_2026-05-31

@@ -142,8 +142,13 @@ reported as a function of it (NOT tuned to a target). See `docs/v2_audit/PARAM_A
   bent fiber reaches a few-% bending energy in 1–3 implicit steps at dt=10³, matching the explicit
   equilibrium to ~1e-6 µm and using ≥10× fewer force evals; reshape (not the singular-prone
   projector-in-JVP) carries inextensibility inside the implicit loop.
+- **6h** ✅ buckling-enabled contractile-network test (`network_contractility.py`, `test_buckling.py`)
+  → the γ-floor SURVIVES: σ flat in connectivity z (2.98–5.29) AND in axial extensibility (EA swept
+  3 decades incl. actin EA), no Ronceray amplification → buckling/connectivity/extensibility all RULED
+  OUT; the floor is a force-MAGNITUDE limit. `docs/v2_audit/FF_STAGE6H_BUCKLING_NETWORK_2026-06-30.md`.
 - **next** WLC (Marko–Siggia) constitutive option; Cytosim dynamic/Hand-kinetics parity (per-frame +
-  motor reporting — needs trajectory-output config); the loaded-shell equilibrium.
+  motor reporting — needs trajectory-output config); the loaded-shell equilibrium — **all PI-roadmap-
+  gated (the γ-floor decisive experiment is now CLOSED, so the next FF unit is a PI call).**
 
 Full `tests/ff` suite: **55 passed + 3 Cytosim-parity (skip without the binary)**.
 
@@ -163,6 +168,15 @@ Full `tests/ff` suite: **55 passed + 3 Cytosim-parity (skip without the binary)*
   present) — ground the §2 formulae (discrete bending operator + implicit scheme + Hand model) from
   it before any kernel coding (hard rule). SE candidate written
   (`references/SE_REGISTRATION_CANDIDATES_2026-06-29.md`).
-- **γ target band:** unresolved (Moazzeni vs SimuCell3D vs emergent) — sweep, don't tune.
-- **Active-driver force anchor:** still REFUTED/HALTED to PI (the SF/NMII missing motor-density datum) —
-  the spreading magnitude driver remains PI-gated, not auto-tunable.
+- **γ-floor — CLOSED as a RESULT (2026-06-30, authoritative `CORTICAL_TENSION_RECORD_2026-06-30`).**
+  Active actomyosin γ is a force-MAGNITUDE floor (~100–2300× under band), robust to buckling /
+  connectivity / extensibility / kinetics (all ruled out, Stage 6h). Magnitude is set by the
+  force-bearing (load-engaged) motor density = an EXPERIMENTAL gap. γ is reported vs motor density
+  (controlled variable), never tuned to a band. NOT a blocker anymore.
+- **PI decisions now pending** (see `docs/v2_audit/PI_DECISIONS_2026-06-30.md`): (1) gate-track the
+  untracked magic-numbers `turgor_dP0`=133 Pa + the cortex myosin density (would flag UNSOURCED;
+  shared gate + the live /loop dcm session ⇒ coordinate); (2) promote the KU-3.5 verdict into the
+  Notion Contract-Graph SoT + harvest the FF 6d–6h runs; (3) pick the next FF unit (the engine is
+  built + validated; WLC / Cytosim dynamic parity / loaded-shell / Layer-2 coupling — roadmap call);
+  (4) optional wet-lab: commission the force-bearing minifilament density (the only floor-overturning
+  measurement).
