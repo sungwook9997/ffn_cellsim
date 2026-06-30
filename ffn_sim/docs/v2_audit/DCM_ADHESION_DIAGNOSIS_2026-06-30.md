@@ -96,6 +96,28 @@ Tested in order; contact_area_frac (a real metric, not pen_frac) + per-cell asph
 → The mechanism (the missing physics) is now in place and visibly faceting cells; the remaining
 question is whether N≥400 confinement closes it into a space-filling foam, and the K-anchor.
 
+## VERDICT (N=400 confinement run, the decisive test)
+
+`n400_facet/N400_facet_mcf7` (N=400, MCF7 γ=1e-2, contact-cortex dissolved, K=5e4, 40k steps,
+V/V0 held 1.035): **contact = 0.237** (up from 0.168 at N=48 — confinement helped +40%), cellAsph
+0.075. Visualized (`_view_N400.png`): a **compact aggregate of somewhat-angular cells**, but each
+cell keeps its rounded-polyhedral identity with visible gaps — **NOT a space-filling wet foam**
+(which needs contact ~0.5–0.9 with large flat shared faces).
+
+**Conclusion — the patching approach has hit its ceiling.** Confinement + the Maître + stiff-turgor
++ differential-tension stack gets partial deformation (angular cells, contact 0.24) but does NOT
+faithfully reproduce SimuCell3D-quality faceting, and getting even this required co-setting several
+non-independently-anchored knobs (contact-cortex→0, K 20× to 5e4, MCF7 γ) — edging toward
+outcome-tuning, which is not faithful physics.
+
+**RECOMMENDATION (= PI's "전부 다 갈아엎어"):** stop patching the force-superposition model. Do a
+**faithful SimuCell3D port** — define the actual ENERGY functional (per-cell volume constraint
+`p=−K·ln(V/V0)` + per-face interfacial tension γ_ij that is LOW on cell-cell faces, HIGH on free
+faces) and minimize it with their integrator + remesh, so faceting EMERGES rather than being coaxed
+by tuned knobs. Salvageable building blocks: this diagnosis, `dcm_interfacial_tension_warp.py` (the
+per-face γ_ij idea), the contact-detection + turgor + remesh kernels. PI decision pending on
+committing to the energy-based rewrite.
+
 Source: 12-agent workflow `wf_2088b933-005` (code diag + biology research + adversarial verify +
 synthesis). Citations: Steinberg DAH; Manning et al. PNAS 2010; Maître & Heisenberg 2015 (Science
 2012); SimuCell3D Runser/Vetter/Iber 2024; CellSim3D Madhikar 2018; T47D EM PMC10212087;
