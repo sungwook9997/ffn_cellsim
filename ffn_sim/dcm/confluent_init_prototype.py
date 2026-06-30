@@ -10,8 +10,9 @@ Outputs an npz in the {frames,faces,cof} format the driver's --init-npz path + t
 consume, plus a printed validation report.
 """
 from __future__ import annotations
-import sys, numpy as np
-sys.path.insert(0, "/Users/sw1/ffn_cellsim")
+import os, sys, numpy as np
+if __name__ == "__main__":                      # standalone: make ffn_sim importable (repo root = 3 up)
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from ffn_sim.dcm.geometry import icosphere_mesh
 
 
@@ -35,19 +36,21 @@ def fcc_seeds_in_ball(n_cells, R):
 
 def lloyd_relax(seeds, R_ball, iters=8, nsamp=60000, rng=None):
     """Centroidal-Voronoi relaxation: move each seed to the centroid of its region (MC-sampled in
-    the bounding ball) → equiaxed, gap-free packing. Pure numpy."""
+    the bounding ball) → equiaxed, gap-free packing. cKDTree nearest-seed + vectorised np.add.at
+    accumulation (O(nsamp·logN), not the O(nsamp·N) distance matrix) — fast at N≥400."""
+    from scipy.spatial import cKDTree
     rng = rng or np.random.default_rng(0)
     s = seeds.copy()
     for _ in range(iters):
         p = rng.normal(size=(nsamp, 3))
         p /= np.linalg.norm(p, axis=1, keepdims=True)
         p *= R_ball * rng.uniform(0, 1, nsamp)[:, None] ** (1.0 / 3.0)   # uniform in ball
-        d = ((p[:, None, :] - s[None, :, :]) ** 2).sum(-1)
-        owner = d.argmin(1)
-        for c in range(len(s)):
-            m = owner == c
-            if m.any():
-                s[c] = p[m].mean(0)
+        owner = cKDTree(s).query(p, workers=-1)[1]
+        sums = np.zeros_like(s)
+        np.add.at(sums, owner, p)
+        cnt = np.bincount(owner, minlength=len(s))
+        nz = cnt > 0
+        s[nz] = sums[nz] / cnt[nz, None]
     return s
 
 

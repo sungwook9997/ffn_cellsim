@@ -34,6 +34,7 @@ from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kern
 from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.dcm.dcm_interfacial_tension_warp import differential_surface_tension_kernel, douezan_spreading
+from ffn_sim.dcm.confluent_init_prototype import build_confluent as _build_confluent_geom
 from ffn_sim.dcm.dcm_contact_conservative_warp import (
     contact_grid_conservative_kernel, derive_adhesion_stiffness)
 from ffn_sim.dcm.dcm_substrate_warp import (
@@ -195,6 +196,38 @@ def build_cleanball_on_substrate(n_cells: int, subdiv: int, R: float, z0: float 
     return pos, edges.astype(np.int64), faces.astype(np.int64), cof, face_cell, npc
 
 
+def build_confluent_cluster(n_cells: int, subdiv: int, R: float, z0: float = 0.0,
+                            pool_factor: float = 0.0, n_parked_cells: int = 0,
+                            eps: float = 0.04, lloyd_iters: int = 8):
+    """CONFLUENT space-filling builder (Path B): each cell's fixed-topology icosphere is radially
+    warped into its Voronoi region (``confluent_init_prototype.build_confluent``) so the aggregate
+    STARTS as a watertight, non-penetrating, already-faceted foam — the validated faceting init.
+    Returns the same tuple as :func:`build_cleanball_on_substrate` (pos, edges, faces, cof,
+    face_cell, npc) with constant ``npc`` preserved, so it drops into the run_decohesion dispatch.
+    Use with ``--v0-from-init``-equivalent per-cell V0 (set automatically below)."""
+    pos_a, faces_a, cof_a, npc, nf, _seeds, _R, _Rb = _build_confluent_geom(n_cells, subdiv, eps, R, lloyd_iters)
+    _v, edges1, _t = icosphere_mesh(R, subdiv)                       # per-cell edge topology (constant)
+    verts1, _e, tris1 = icosphere_mesh(R, subdiv)                    # for parked (undeformed) cells
+    n_total = n_cells + n_parked_cells
+    if n_parked_cells > 0:
+        park = [PARK_POS + np.array([3.0 * R * (k + 1), 0.0, 0.0]) for k in range(n_parked_cells)]
+        pos = np.concatenate([pos_a] + [verts1 + c for c in park], axis=0)
+        faces = np.concatenate([faces_a] + [tris1 + (n_cells + k) * npc for k in range(n_parked_cells)], axis=0)
+    else:
+        pos, faces = pos_a, faces_a
+    edges = np.concatenate([edges1 + ci * npc for ci in range(n_total)], axis=0)
+    cof = np.repeat(np.arange(n_total), npc).astype(np.int64)
+    cof[n_cells * npc:] = -1                                         # parked cells dormant
+    face_cell = np.repeat(np.arange(n_total), nf).astype(np.int64)
+    act = np.zeros(pos.shape[0], dtype=bool); act[:n_cells * npc] = True
+    pos[:, 2] += (z0 - pos[act, 2].min())                           # rest the foam on the substrate
+    n_pool = int(pool_factor * (n_cells * npc))
+    if n_pool > 0:
+        pos = np.concatenate([pos, np.tile(PARK_POS, (n_pool, 1))], axis=0)
+        cof = np.concatenate([cof, np.full(n_pool, -1, dtype=np.int64)])
+    return pos, edges.astype(np.int64), faces.astype(np.int64), cof, face_cell, npc
+
+
 def _topdown_area_um2(pos_xy_um: np.ndarray) -> float:
     """Top-down silhouette area [µm²] = 2D convex hull of all live nodes (PI rule:
     NEVER basal contact area). Degenerate (<3 pts / collinear) → 0."""
@@ -245,6 +278,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    osmotic: bool = False, osm_relax: float = 0.05, osm_batch: int = 50,
                    force_divide_step: int = -1, force_divide_cell: int = 0,
                    init_npz: str | None = None, v0_from_init: bool = False,
+                   inset: float = 0.04, lloyd_iters: int = 8,
                    accel_real_hours: float = 0.0,
                    bending: bool = False, k_bend: float = 1.0e-5,
                    necrosis: bool = False, builder: str = "fcc",
@@ -330,6 +364,13 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         n_parked = n_cells - n_active
         print(f"  [restart] loaded {n_active} active cells ({pos_a.shape[0]} nodes) from {init_npz} "
               f"→ dropped onto substrate z0={z0:.3g}", flush=True)
+    elif builder == "confluent":
+        pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_confluent_cluster(
+            n_cells, subdiv, R, z0, pool_factor=(pool_factor if remesh_period else 0.0),
+            n_parked_cells=n_parked, eps=inset, lloyd_iters=lloyd_iters)
+        v0_from_init = True                         # confluent cells rest at their Voronoi volume, not the free sphere
+        print(f"  [builder] confluent Voronoi-warp foam: {n_active} active + {n_parked} parked", flush=True)
+        n_cells = n_active + n_parked
     else:
         pos_a, edges_a, faces_a, cof_a, fcell_a, npc = build_cleanball_on_substrate(
             n_cells, subdiv, R, z0, gap=gap, pool_factor=(pool_factor if remesh_period else 0.0),
@@ -345,11 +386,12 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # ramp re-inflates each back to V0 over the cell cycle — turgor chases this per-cell setpoint, so
     # a freshly-born daughter inflates GRADUALLY instead of a full-size cold insert (the prior
     # outward-dump ejection). Host-mirrored (V0_cell) + device (V0_cell_d); kept in sync on division.
-    if v0_from_init and init_npz:
+    if v0_from_init:
         # Physiological setpoint for a CONFLUENT cell = its actual resting (Voronoi-cell) volume in the
         # tissue, NOT the full free-sphere V0 (which over-inflates a space-filling cell — the N=400
         # confluent capstone hit V/V0 1.37 + interpenetration because every cell tried to reach the
-        # free-sphere volume it cannot occupy). Derive per-cell V0 from the LOADED init mesh via the
+        # free-sphere volume it cannot occupy). Auto-on for --builder confluent and --init-npz
+        # --v0-from-init. Derive per-cell V0 from the built/loaded mesh via the
         # divergence-theorem volume (1/6·Σ(a×b)·c over its faces; winding-consistent icosphere topology).
         # Derived from the init geometry, NOT tuned. (physiological-baseline rule: confluent rest volume.)
         _a = pos_a[faces_a[:, 0]]; _b = pos_a[faces_a[:, 1]]; _c = pos_a[faces_a[:, 2]]
@@ -1647,7 +1689,7 @@ def main():
     ap.add_argument("--bending", action="store_true", help="B5: thin-plate biharmonic membrane bending (Helfrich-like)")
     ap.add_argument("--k-bend", type=float, default=1.0e-5, help="B5 discrete bending stiffness [N/m]")
     ap.add_argument("--necrosis", action="store_true", help="C8: 3-zone depth necrosis (O2-proxy; softens core turgor, gates division to the rim)")
-    ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi", "sphere"], help="D10: spheroid cell-centre packing (fcc=isotropic close-pack; voronoi=Lloyd CVT)")
+    ap.add_argument("--builder", default="fcc", choices=["cubic", "fcc", "voronoi", "sphere", "confluent"], help="D10: spheroid cell packing. fcc=isotropic close-pack of free icospheres; voronoi=Lloyd CVT centres; confluent=Voronoi-warped space-filling faceted foam (Path B, auto --v0-from-init)")
     ap.add_argument("--integrator", default="baoab", choices=["baoab", "implicit"], help="I-opt: time integrator (implicit = IMEX linearly-implicit, unlocks larger accel-dt)")
     ap.add_argument("--accel-dt", type=float, default=None, help="I-opt: larger dt for --integrator implicit (accuracy-bound; e.g. 100× the explicit dt)")
     ap.add_argument("--cg-maxiter", type=int, default=80, help="I-opt: max CG iterations per implicit step")
@@ -1673,6 +1715,8 @@ def main():
     ap.add_argument("--save-frames", default=None, help="npz path to save per-frame mesh geometry (pos+faces+cof) for surface viz")
     ap.add_argument("--init-npz", default=None, dest="init_npz", help="restart from a saved aggregate npz (frames/faces/cof) instead of building a fresh ball (exposes the existing restart path, lines ~312)")
     ap.add_argument("--v0-from-init", action="store_true", dest="v0_from_init", help="set each cell's osmotic rest volume V0 to its ACTUAL volume in the loaded --init-npz mesh (confluent Voronoi-cell rest volume) instead of the free-sphere V0; removes the confluent over-inflation. Derived from geometry, not tuned.")
+    ap.add_argument("--inset", type=float, default=0.04, dest="inset", help="--builder confluent: radial inset ε of each warped cell from its Voronoi boundary (lower = tighter/sharper foam, less gap). Geometry-quality knob, not physics.")
+    ap.add_argument("--lloyd-iters", type=int, default=8, dest="lloyd_iters", help="--builder confluent: Lloyd CVT relaxation iterations for the seed points (more = more equiaxed/regular cells).")
     args = ap.parse_args()
     import json
     out = run_decohesion(
@@ -1700,6 +1744,7 @@ def main():
         ubottom=args.ubottom, ubottom_r_factor=args.ubottom_r_factor, ubottom_k=args.ubottom_k,
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames, init_npz=args.init_npz, v0_from_init=args.v0_from_init,
+        inset=args.inset, lloyd_iters=args.lloyd_iters,
         ipc=args.ipc, ipc_eta=args.ipc_eta)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
