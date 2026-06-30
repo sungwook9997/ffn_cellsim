@@ -130,9 +130,51 @@ def render(n_filaments: int = 800, seed: int = 0, outdir: str = OUTDIR) -> str:
     return path
 
 
+def render_turntable(n_filaments: int = 600, seed: int = 0, n_frames: int = 36,
+                     outdir: str = OUTDIR) -> str:
+    """360° turntable of the assembled cell → an mp4 (ffmpeg) or gif fallback, to view it in 3D."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib import animation
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+    params = CortexParams()
+    cx = build_crosslinked_cortex(params, n_filaments=n_filaments, n_xl=n_filaments,
+                                  n_myo=max(1, n_filaments // 10), rng=np.random.default_rng(seed))
+    R = params.R_um
+    os.makedirs(outdir, exist_ok=True)
+    fig = plt.figure(figsize=(7, 7))
+    ax = fig.add_subplot(111, projection="3d")
+    _draw(ax, cx, lw_actin=0.5, alpha_actin=0.5)
+    ax.set_xlim(-R, R); ax.set_ylim(-R, R); ax.set_zlim(-R, R)
+    ax.set_axis_off()
+    ax.set_title(f"FF assembled cell — {n_filaments} actin fibers + crosslinkers + myosin")
+
+    def _upd(i):
+        ax.view_init(elev=18, azim=i * 360.0 / n_frames)
+        return ()
+
+    anim = animation.FuncAnimation(fig, _upd, frames=n_frames, interval=120, blit=False)
+    mp4 = os.path.join(outdir, "assembled_cell_turntable.mp4")
+    gif = os.path.join(outdir, "assembled_cell_turntable.gif")
+    try:
+        anim.save(mp4, writer=animation.FFMpegWriter(fps=12, bitrate=2400), dpi=110)
+        out = mp4
+    except Exception:
+        anim.save(gif, writer=animation.PillowWriter(fps=12), dpi=90)
+        out = gif
+    plt.close(fig)
+    print(f"wrote {out}")
+    return out
+
+
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=800, help="actin fibers to render")
+    ap.add_argument("--turntable", action="store_true", help="also render a 360° rotation movie")
     a = ap.parse_args()
     render(n_filaments=a.n)
+    if a.turntable:
+        render_turntable(n_filaments=min(a.n, 600))
