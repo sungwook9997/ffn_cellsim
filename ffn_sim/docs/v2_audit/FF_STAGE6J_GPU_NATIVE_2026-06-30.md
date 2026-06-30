@@ -63,6 +63,31 @@ Production point (N=1000 / n_xl=1000 / n_myo=100, f_myo = NMIIA minifilament sta
 So the GPU path is not just fast — it lands on the same physics number the CPU/MD path established
 (γ-floor RESOLVED, `FF_STAGE6D_GAMMA_FLOOR`). The "numpy-not-GPU" gap is closed **end-to-end**.
 
+## Dynamic loaded shell on-device (state-dependent turgor)
+
+`simulate_loaded_shell_on_device` is the dynamic complement to `relax_on_device`: it evolves the
+ACTIVELY-LOADED cortex — bending + crosslink springs + myosin contraction + **state-dependent osmotic
+turgor** (Guo-2017 closure) + reshape — fully GPU-resident. On-device reductions (`_csum`/`_rsum`,
+atomic-add) give the centroid + mean radius; only ~4 scalars cross the bus every `turgor_every` steps
+to refresh ΔP(V), so the position array never leaves the GPU. Reduction parity vs the host
+`turgor_pressure`: **2.3e-14**.
+
+**CFL (numerical-sanity gate, not a tuned knob).** The explicit overdamped step must include the
+**stiff turgor breathing-mode** `k_turgor = (K_vol/V0)·(4πR0²)²/N` with `K_vol = Π_in0/(1−vmin_frac)
+≈ 7.4e5 pN/µm²`. Omitting it (using only the bending/crosslink stiffness for dt) blows the shell up
+to **V/V0 → 2×10³** — a pure CFL artifact, NOT physics. Including it (lever #3, fix-a-real-bug; the
+shell stiffness is *derived*, not chosen to make a band pass) gives the honest result:
+
+> the turgor-pressurised shell is **VOLUME-STABLE** — V/V0 ≈ 1.0001, ΔP self-relieves 40→0 (a 0.01 %
+> expansion relieves the resting osmotic excess against the enormous K_vol), R holds ~10 µm. The cell
+> is an incompressible osmotic shell; myosin at the minifilament stall does not collapse it. The
+> γ-floor is a **tension-magnitude** result (method-of-planes), *not* a volume instability.
+
+A5000 (cuda:0): N=1000, 40 000 steps with state-dependent turgor in **4.3 s** (~9 300 steps/s) — a full
+dynamic GPU-resident FF cell run. Figure: `outputs/ff/figs/loaded_shell_gpu.png` (V/V0 + ΔP/R
+trajectory + the settled 3D actin shell). Tests: `test_on_device_turgor_reduction_parity`,
+`test_loaded_shell_volume_stable_correct_cfl`.
+
 ## Notes / scope
 
 - `relax_on_device` uses **periodic reshape** for inextensibility (the robust path), not the
