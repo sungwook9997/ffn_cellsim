@@ -30,8 +30,22 @@ from __future__ import annotations
 import numpy as np
 
 # Literature cortical-tension bands, in FF units (pN/µm). 1 pN/µm = 1e-3 mN/m, so 0.35 mN/m = 350.
-SALBREUX_BAND_PN_UM = (350.0, 650.0)   # Salbreux, Charras & Paluch 2012 (0.35–0.65 mN/m)
-MCF7_IQR_PN_UM = (180.0, 400.0)        # MCF7 interphase, Hosseini 2020 (0.18–0.40 mN/m)
+# ⚠️ FRAMING (FF_STAGE6P, 2026-07-01): these bands are the TOTAL apparent cortical tension (AFM/Laplace),
+# which is ~70% myosin-DEPENDENT (blebbistatin −68% Fischer-Friedrich 2016) + ~0.04 mN/m passive floor +
+# a turgor Young-Laplace PARTNER (NOT additive — double-book) + minor membrane. The FF γ_active (method-
+# of-planes, actomyosin only) must be compared against the ACTIVE FRACTION of the band (ACTIVE_FRACTION ·
+# band ≈ 0.245–0.455 mN/m), NOT the full total band. Provenance NOTE: the (350,650) "Salbreux band" is a
+# MISNOMER — its real empirical anchor is Chugh et al. 2017 Nat Cell Biol 19:689 (HeLa, interphase, AFM,
+# T₀=230 pN/µm × peak ~1.6 ⇒ ~0.37 mN/m floor); Salbreux 2012 is a REVIEW carrying the broad 0.1–1 mN/m.
+SALBREUX_BAND_PN_UM = (350.0, 650.0)   # TOTAL cortical tension band — Chugh 2017 (HeLa interphase AFM); not Salbreux
+MCF7_IQR_PN_UM = (180.0, 400.0)        # MCF7 interphase SUSPENDED, Hosseini 2020 (0.18–0.40 mN/m); adherent = absent
+ACTIVE_FRACTION = 0.70                  # myosin-dependent fraction of the total band (blebbistatin; FF_STAGE6P)
+
+
+def active_band_pn_um(band=SALBREUX_BAND_PN_UM):
+    """The myosin-ACTIVE target = ACTIVE_FRACTION · total band [pN/µm] — what FF γ_active is compared to
+    (not the full total band; FF_STAGE6P). e.g. (350,650) → (245,455)."""
+    return (ACTIVE_FRACTION * band[0], ACTIVE_FRACTION * band[1])
 
 
 def fibonacci_plane_normals(n_planes: int) -> np.ndarray:
