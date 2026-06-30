@@ -33,6 +33,7 @@ from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate, _bd_step
 from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
 from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
+from ffn_sim.dcm.dcm_interfacial_tension_warp import differential_surface_tension_kernel, douezan_spreading
 from ffn_sim.dcm.dcm_substrate_warp import (
     dcm_substrate_well_accum_kernel, dcm_wetting_scatter_kernel, dcm_wetting_cap_add_kernel,
     dcm_wetting_scatter_integrin_kernel, dcm_ubottom_well_kernel)
@@ -231,6 +232,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    nucleus: bool = False, E_nuc: float = 3.0e3, ratio_lamin: float = 3.0,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
+                   diff_tension: bool = False, contact_tension_frac: float = -1.0,
                    polarize: bool = False, w_cs_polarize: float = 2.85e-3,
                    ipc_dhat_factor: float = 1.0,
                    division: bool = False, div_pool_factor: float = 1.0, div_rate: float = 0.04,
@@ -970,6 +972,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(polarized_surface_tension_kernel, dim=n_faces,
                       inputs=[pos_d, faces_d, wp.float64(gamma_surf), wp.float64(w_cs_polarize),
                               wp.float64(z0), wp.float64(adh_range), force_d], device=device)
+        elif surface_tension and diff_tension and use_grid:
+            # DIFFERENTIAL interfacial tension (foam / DAH): cell-cell CONTACT faces get the reduced
+            # tension γ_free − w_adh/2 (w_adh = w_cs lit), free faces keep γ_free. The differential is
+            # the spreading drive that flattens cells into a faceted tissue (the missing faceting
+            # mechanism; uniform γ never spreads contacts). Reuses the face_grid built this step.
+            # contact-face tension: derived foam/DAH (γ_free − w_adh/2), OR — when
+            # --contact-tension-frac f≥0 is set — the Maître cortex-dissolution limit γ_contact = f·γ_free
+            # (cadherin engagement locally disassembles the actomyosin cortex; f→0 = full dissolution).
+            _wadh_half = (1.0 - contact_tension_frac) * gamma_surf if contact_tension_frac >= 0.0 \
+                else 0.5 * w_cs_jm2
+            wp.launch(differential_surface_tension_kernel, dim=n_faces,
+                      inputs=[face_grid.id, cent_f32, pos_d, faces_d, fcell_d, wp.float32(con_q),
+                              wp.float64(gamma_surf), wp.float64(_wadh_half), force_d], device=device)
         elif surface_tension:
             wp.launch(surface_tension_kernel, dim=n_faces,
                       inputs=[pos_d, faces_d, wp.float64(gamma_surf), force_d], device=device)
@@ -1556,6 +1571,14 @@ def main():
     ap.add_argument("--polarize", action="store_true", help="apico-basal DIFFERENTIAL surface tension (Young-Dupre): basal faces wet (gamma - w*w_cs), apical keep gamma. Needs --surface-tension. The directional-spread lever.")
     ap.add_argument("--w-cs-polarize", type=float, default=2.85e-3, dest="w_cs_polarize", help="basal substrate-adhesion energy J/m2 for --polarize (lit MCF7 2.85e-3 -> S<0 non-wetting; >2*gamma -> S>0 spreads)")
     ap.add_argument("--gamma-surf", type=float, default=1.0e-4, help="B4 surface tension coefficient [N/m]")
+    ap.add_argument("--diff-tension", action="store_true", dest="diff_tension",
+                    help="foam/DAH DIFFERENTIAL interfacial tension: cell-cell contact faces get the "
+                         "reduced tension γ−w_adh/2 (w_adh=w_cs lit) so contacts SPREAD → cells facet. "
+                         "The faceting mechanism (uniform γ never spreads contacts). Needs --surface-tension.")
+    ap.add_argument("--contact-tension-frac", type=float, default=-1.0, dest="contact_tension_frac",
+                    help="Maître cortex-dissolution limit: contact-face tension = frac·γ_free (cadherin "
+                         "engagement disassembles the cortex at contacts; 0=full dissolution). Overrides "
+                         "the w_adh/2 reduction. <0 = use the derived w_adh/2. Needs --diff-tension.")
     ap.add_argument("--k-area", type=float, default=0.0, help="B4 global area-constraint stiffness [N/m] (0=off)")
     ap.add_argument("--division", action="store_true", help="C7: rim-cell proliferation (parked cell pool → daughters)")
     ap.add_argument("--div-pool-factor", type=float, default=1.0, help="C7 parked cell pool size as a fraction of n-cells")
@@ -1602,6 +1625,7 @@ def main():
         adh_strength=args.adh_strength, rep_strength=args.rep_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
+        diff_tension=args.diff_tension, contact_tension_frac=args.contact_tension_frac,
         polarize=args.polarize, w_cs_polarize=args.w_cs_polarize, ipc_dhat_factor=args.ipc_dhat_factor,
         division=args.division, div_pool_factor=args.div_pool_factor, div_rate=args.div_rate,
         bending=args.bending, k_bend=args.k_bend, necrosis=args.necrosis, builder=args.builder,

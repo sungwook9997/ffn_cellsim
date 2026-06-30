@@ -66,6 +66,36 @@ Our "Ψ≈0.99 bag of marbles / contact 0.13-0.20" is the **opposite** — stuck
   γ off) vs C adh-dominant+coupling+cadherin. If B/C contact ≫ A(0.13) → the fix is a balance/wiring
   change (not a from-scratch rebuild); if not → deeper. Results pending.
 
+## Resolution attempts (N=48 tests, gbook)
+
+Tested in order; contact_area_frac (a real metric, not pen_frac) + per-cell asphericity + V/V0:
+
+| lever | contact | cellAsph | V/V0 | verdict |
+|---|---|---|---|---|
+| baseline (rep2e8 adh5e7 γ1e-3 uniform) | 0.105 | 0.018 | 0.99 | round marbles |
+| balance (rep=adh, γ off) | 0.165 | 0.015 | 1.09 | still round |
+| adhesion 10× (adh5e8, ω̃≈2.4) | 0.190 | 0.028 | 1.09 | **STILL round — adhesion strength is NOT the lever** |
+| differential tension (γ_contact=γ−w_adh/2) | 0.11–0.18 | 0.01–0.05 | 0.4–1.1 | high γ → cells SHRINK apart (S=w_cs−2γ<0) |
+| **Maître + stiff turgor** (γ1e-2 + contact cortex dissolved frac0 + K5e4) | 0.168 | **0.105** | **1.03** | **cells become angular POLYHEDRA (asph 6× baseline), volume held** |
+
+**Findings:**
+1. **Adhesion strength is NOT the lever** — even 10× lit adhesion (ω̃≈2.4) leaves cells round (contact
+   saturates ~0.19). Confirmed visually.
+2. **Plain differential tension is insufficient** — at MCF7 γ (~1e-2), the Douezan S = w_cs − 2γ < 0
+   (non-wetting), and soft turgor lets γ SHRINK the cell instead of flattening it.
+3. **The working mechanism = Maître contact-cortex-dissolution + volume conservation**: high γ_free
+   (penalises free area) + γ_contact → 0 (cadherin dissolves the cortex at contacts) + STIFF turgor K
+   (holds V/V0 ≈ 1 so the cell cannot shrink → must deform). → cells become **angular polyhedra**
+   (cellAsph 0.018 → 0.105) at MCF7 physiological γ. Implemented: `--diff-tension --contact-tension-frac`.
+   K must scale with γ to hold volume (K≈5e4 balances the 2γ/R≈2.7kPa Laplace at γ=1e-2 — a derived
+   dependency, NOT a free knob; whether MCF7 cytoplasm K is really ~5e4 is a PI/lit anchor question).
+4. **Still PARTIAL at N=48** — contact only 0.168 (cells faceted in SHAPE but not yet space-filling;
+   the free aggregate has gaps + a free boundary). Full foam (contact → 0.5-0.9) needs **N≥400
+   confinement** (interior cells jammed) — validation run launched (`n400_facet/N400_facet_mcf7`).
+
+→ The mechanism (the missing physics) is now in place and visibly faceting cells; the remaining
+question is whether N≥400 confinement closes it into a space-filling foam, and the K-anchor.
+
 Source: 12-agent workflow `wf_2088b933-005` (code diag + biology research + adversarial verify +
 synthesis). Citations: Steinberg DAH; Manning et al. PNAS 2010; Maître & Heisenberg 2015 (Science
 2012); SimuCell3D Runser/Vetter/Iber 2024; CellSim3D Madhikar 2018; T47D EM PMC10212087;
