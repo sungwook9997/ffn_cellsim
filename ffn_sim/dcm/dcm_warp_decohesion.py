@@ -274,12 +274,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if implicit:
         print(f"  [integrator] IMPLICIT (IMEX linearly-implicit) dt={dt:.1e}  cg_maxiter={cg_maxiter} "
               f"— stiff operator (contact/turgor/edges/well/nucleus/bending) implicit, soft drivers explicit", flush=True)
-    # A1 remesh and C7 division both draw dormant nodes from cof<0; until the cof-sentinel
-    # disambiguation lands (remesh pool == −1 vs parked cell == −2) they cannot co-run safely —
-    # remesh SPLIT would grab a parked cell's node. Guard: division wins (it owns the pool).
+    # A1 remesh and C7 division both draw dormant nodes from cof<0 and cannot co-run safely yet.
+    # NB: this is NOT a one-line "−2 sentinel" fix — parked-cell node blocks double as cleave's
+    # dormant ring-node supply (cleave_cell draws cof<0; no separate −1 pool is built when remesh
+    # is off), and the mitotic path's fixed npc-block indexing is incompatible with remesh
+    # relabelling regardless of sentinel. Design + the two viable approaches (index-range vs a
+    # unified pool manager) in docs/v2_audit/DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md.
+    # Guard: division wins (it owns the pool).
     if division and remesh_period:
         print("  [warn] division + remesh both requested — disabling remesh this run "
-              "(shared cof<0 pool; disambiguation is a follow-up).", flush=True)
+              "(shared cof<0 pool; see DCM_DIVISION_REMESH_CORUN_DESIGN_2026-06-29.md).", flush=True)
         remesh_period = 0
     # FilopodiaHost caches self.cof / self.faces / self.fcell (host) PLUS device arrays built from the
     # mesh topology; a remesh SWAP/SPLIT/COLLAPSE reassigns faces/fcell/cof and changes the topology,
@@ -1436,7 +1440,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         "remesh_period": remesh_period, "remesh": remesh_stats if remesh_period else None,
         "edge_edge": edge_edge, "cadherin": cadherin, "ecm_clutch": ecm_clutch,
         "integrator": integrator, "accel_dt": (dt if implicit else None), "cg_maxiter": cg_maxiter,
-        "nucleus": nucleus, "surface_tension": surface_tension,
+        "nucleus": nucleus, "surface_tension": surface_tension, "k_vol": k_vol,
         "gamma_surf": gamma_surf if surface_tension else None, "k_area": k_area,
         "bending": bending, "k_bend": k_bend if bending else None, "necrosis": necrosis,
         "builder": builder,
@@ -1571,6 +1575,11 @@ def main():
                     help="I-opt #1: analytic-diagonal Jacobi preconditioner (z=r/diagA each CG iter, "
                          "diagA = γ/dt + k_edge + rep·area + turgor-vol). Same converged dx; helps only "
                          "when the operator diagonal is heterogeneous (a-dominated DCM regimes see no win).")
+    ap.add_argument("--k-vol", type=float, default=7.73e5, dest="k_vol",
+                    help="osmotic/bulk modulus K [Pa] (p=-K·ln(V/V0)). Sets the faceting group "
+                         "γ̃=γ/(K·ℓ): the driver default 7.73e5 (single-cell-spread tuning) keeps "
+                         "γ̃≪band; SimuCell3D faceting (Fischer-Friedrich K≈2.5e3) needs the soft K. "
+                         "Exposed for the γ controlled-variable sweep (dcm.gamma_sweep).")
     ap.add_argument("--no-wetting", action="store_true", help="disable substrate wetting (control)")
     ap.add_argument("--no-well", action="store_true", help="disable substrate z-well (control)")
     ap.add_argument("--ubottom", action="store_true", help="ULA U-bottom: confine cells in a non-adhesive hemispherical bowl (independent of the flat well)")
@@ -1583,7 +1592,7 @@ def main():
     out = run_decohesion(
         n_cells=args.n_cells, subdiv=args.subdiv, steps=args.steps, frames=args.frames,
         device=args.device, dt=args.dt, warmup=args.warmup, settle_steps=args.settle_steps,
-        settle_frames=args.settle_frames, gap=args.gap,
+        settle_frames=args.settle_frames, gap=args.gap, k_vol=args.k_vol,
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,

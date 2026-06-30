@@ -1,6 +1,6 @@
 """B1 bit-parity gate: Warp overdamped L-M BAOAB vs the committed HOOMD reference.
 
-The reference fixtures (``warp_port/fixtures/baoab_ref_{kt0,ktpos}.npz``) are the
+The reference fixtures (``dcm/fixtures/baoab_ref_{kt0,ktpos}.npz``) are the
 trajectory endpoint of the FROZEN ``integrator.baoab.LeimkuhlerMatthewsBAOAB``
 Action run inside a real HOOMD CPU simulation (see ``generate_baoab_fixture.py``).
 This test grades the Warp kernel against THAT committed output — never against a
@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load(label: str) -> dict:
@@ -30,7 +30,7 @@ def _load(label: str) -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_baoab_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_baoab_fixture.py"
         )
     return dict(np.load(path))
 

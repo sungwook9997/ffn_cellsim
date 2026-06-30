@@ -1,6 +1,6 @@
 """Lamellipodium parity gate: Warp traction-tether vs committed HOOMD reference.
 
-Reference fixture (``warp_port/fixtures/lamellipodium_ref.npz``) is the per-node net
+Reference fixture (``dcm/fixtures/lamellipodium_ref.npz``) is the per-node net
 force from the REAL ``cell.dcm_lamellipodium.LamellipodialTractionTether`` run in a
 HOOMD CPU sim on a 2-cell basal config (membrane rings + outward actin rings; see
 ``generate_lamellipodium_fixture.py``). The Warp port (host per-cell geometry +
@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load() -> dict:
@@ -24,7 +24,7 @@ def _load() -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_lamellipodium_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_lamellipodium_fixture.py"
         )
     return dict(np.load(path))
 

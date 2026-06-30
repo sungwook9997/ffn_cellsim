@@ -1,6 +1,6 @@
 """Fixman parity gate: Warp metric pseudo-force vs committed HOOMD reference.
 
-Reference fixture (``warp_port/fixtures/fixman_ref.npz``) is the force + U_F from
+Reference fixture (``dcm/fixtures/fixman_ref.npz``) is the force + U_F from
 the COMMITTED Python ``integrator.constrained_baoab.fixman_logdet_and_force`` on
 the native-parity-test config (see ``generate_fixman_fixture.py``). The Warp
 kernel is graded against THAT committed output (guard-rail 2).
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load() -> dict:
@@ -28,7 +28,7 @@ def _load() -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_fixman_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_fixman_fixture.py"
         )
     return dict(np.load(path))
 

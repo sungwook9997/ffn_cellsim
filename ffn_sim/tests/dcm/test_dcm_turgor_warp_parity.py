@@ -1,6 +1,6 @@
 """DCM turgor parity gate: Warp exact-volume osmotic force vs committed HOOMD ref.
 
-Reference fixture (``warp_port/fixtures/dcm_turgor_ref.npz``) is the per-node net
+Reference fixture (``dcm/fixtures/dcm_turgor_ref.npz``) is the per-node net
 force from the REAL ``cell.dcm.DcmTurgorForce`` run in a HOOMD CPU sim on a 2-cell
 icosahedral mesh (see ``generate_dcm_turgor_fixture.py``). The Warp kernel is graded
 against THAT committed HOOMD output (guard-rail 2).
@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load() -> dict:
@@ -26,7 +26,7 @@ def _load() -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run "
-            "ffn_sim/warp_port/fixtures/generate_dcm_turgor_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_dcm_turgor_fixture.py"
         )
     return dict(np.load(path))
 

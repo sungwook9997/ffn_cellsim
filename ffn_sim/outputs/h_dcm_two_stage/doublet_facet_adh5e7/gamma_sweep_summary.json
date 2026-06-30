@@ -1,0 +1,101 @@
+{
+  "device": "cpu",
+  "n_cells": 2,
+  "subdiv": 2,
+  "steps": 8000,
+  "gap": 2.0,
+  "k_vol": 2500.0,
+  "faceting_band": [
+    0.02,
+    0.1
+  ],
+  "wall_s_total": 10.551373124999373,
+  "controlled_variable": "gamma_surf",
+  "note": "\u03b3 is the controlled independent variable; morphology is the read-out. NOT tuned to any target (no magic-number).",
+  "points": [
+    {
+      "gamma": 0.0,
+      "gamma_tilde": 0.0,
+      "in_band": false,
+      "n_cells": 2,
+      "vv0_mean": 1.085639563007386,
+      "cell_asphericity": 0.0072041398937034914,
+      "cluster_asphericity": 0.0,
+      "contact_area_frac": 0.06357118949060005,
+      "pen_frac": 0.02106852935812076,
+      "topdown_um2": 410.27168053451254,
+      "wall_s": 3.816310665999481,
+      "ok": true
+    },
+    {
+      "gamma": 0.0005,
+      "gamma_tilde": 0.016733600669974962,
+      "in_band": false,
+      "n_cells": 2,
+      "vv0_mean": 1.0338235042636363,
+      "cell_asphericity": 0.00756915389211023,
+      "cluster_asphericity": 0.0,
+      "contact_area_frac": 0.05104374381493012,
+      "pen_frac": 0.05056830052568865,
+      "topdown_um2": 400.1461836502616,
+      "wall_s": 4.036952791000658,
+      "ok": true
+    },
+    {
+      "gamma": 0.001,
+      "gamma_tilde": 0.033467201339949924,
+      "in_band": true,
+      "n_cells": 2,
+      "vv0_mean": 0.9812243332934492,
+      "cell_asphericity": 0.008728407885119485,
+      "cluster_asphericity": 0.0,
+      "contact_area_frac": 0.05087341862345539,
+      "pen_frac": 0.05537456764614631,
+      "topdown_um2": 389.7049333964097,
+      "wall_s": 4.055953374998353,
+      "ok": true
+    },
+    {
+      "gamma": 0.002,
+      "gamma_tilde": 0.06693440267989985,
+      "in_band": true,
+      "n_cells": 2,
+      "vv0_mean": 0.8699861422942832,
+      "cell_asphericity": 0.007044927019886625,
+      "cluster_asphericity": 0.0,
+      "contact_area_frac": 0.03532613793551085,
+      "pen_frac": 0.0,
+      "topdown_um2": 368.0633743518064,
+      "wall_s": 4.008838833000482,
+      "ok": true
+    },
+    {
+      "gamma": 0.003,
+      "gamma_tilde": 0.10040160401984977,
+      "in_band": false,
+      "n_cells": 2,
+      "vv0_mean": 0.7522174101401703,
+      "cell_asphericity": 0.004265826402452351,
+      "cluster_asphericity": 0.0,
+      "contact_area_frac": 0.0,
+      "pen_frac": 0.0,
+      "topdown_um2": 344.0684104442623,
+      "wall_s": 3.9235267080002814,
+      "ok": true
+    },
+    {
+      "gamma": 0.005,
+      "gamma_tilde": 0.1673360066997496,
+      "in_band": false,
+      "n_cells": 2,
+      "vv0_mean": 0.5071905941906136,
+      "cell_asphericity": 0.0007742610435546593,
+      "cluster_asphericity": 0.0,
+      "contact_area_frac": 0.0,
+      "pen_frac": 0.0,
+      "topdown_um2": 287.1136615679258,
+      "wall_s": 3.7787047919991887,
+      "ok": true
+    }
+  ]
+}

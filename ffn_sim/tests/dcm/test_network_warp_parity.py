@@ -1,6 +1,6 @@
 """Compartment/network parity gate: Warp harmonic bond vs HOOMD md.bond.Harmonic.
 
-Reference fixture (``warp_port/fixtures/network_bond_ref.npz``) is the per-bead net
+Reference fixture (``dcm/fixtures/network_bond_ref.npz``) is the per-bead net
 force + energy from HOOMD's native ``md.bond.Harmonic`` (see
 ``generate_network_fixture.py``) — the cortex axial-spring network force. The Warp
 kernel is graded against THAT committed HOOMD output (guard-rail 2).
@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "warp_port", "fixtures")
+    os.path.abspath(__file__)))), "dcm", "fixtures")
 
 
 def _load(name: str = "network_bond_ref") -> dict:
@@ -26,7 +26,7 @@ def _load(name: str = "network_bond_ref") -> dict:
     if not os.path.exists(path):
         pytest.skip(
             f"fixture {path} missing — run the matching "
-            "ffn_sim/warp_port/fixtures/generate_*_fixture.py"
+            "ffn_sim/dcm/fixtures/generate_*_fixture.py"
         )
     return dict(np.load(path))
 
