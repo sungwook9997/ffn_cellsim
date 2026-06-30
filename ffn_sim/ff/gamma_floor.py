@@ -427,17 +427,21 @@ def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_
 
 
 def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int = 4,
-                           n_steps: int = 400, base_seed: int = 0, parallel: bool = True) -> dict:
+                           n_steps: int = 400, base_seed: int = 0, parallel: bool = True,
+                           method: str = "explicit", device: str = "cpu") -> dict:
     """γ at the GROUNDED production operating point (N=1000 / n_xl=1000 / n_myo=100), ensemble.
 
     All counts from configs/phase1_h3.yaml (the ×40 mesoscale cell) — no prototype downscaling. This
     is the defensible single-cell γ-floor number; at this point the MD-free γ_active lands on the
     archived BAOAB-MD g_soft (~1.4e-4 mN/m). Returns the γ distribution + the floor factor vs band.
+
+    ``method='device'`` + ``device='cuda:0'`` runs the whole ensemble GPU-resident on the gbook A5000
+    (serial on the GPU — fast enough that the ProcessPool CPU path is unnecessary; CUDA+fork is unsafe).
     """
     from ffn_sim.ff.gamma_estimator import SALBREUX_BAND_PN_UM
     ens = gamma_floor_ensemble(f_myo, n_real=n_real, n_filaments=PROD_N_FIL, n_xl=PROD_N_XL,
                                n_myo=PROD_N_MYO, n_steps=n_steps, base_seed=base_seed,
-                               parallel=parallel)
+                               parallel=parallel, method=method, device=device)
     g = np.array([r["gamma_active"] for r in ens["runs"]])
     band_lo = SALBREUX_BAND_PN_UM[0]
     return {"gamma_active_mean": float(g.mean()), "gamma_active_std": float(g.std()),
@@ -450,11 +454,17 @@ def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int
 
 def gamma_floor_ensemble(f_myo: float, *, n_real: int = 8, n_filaments: int = 100,
                          n_xl: int = 300, n_myo: int = 100, n_steps: int = 4000,
-                         base_seed: int = 0, parallel: bool = True) -> dict:
-    """Run ``n_real`` quenched realizations → γ distribution at prestress ``f_myo``."""
+                         base_seed: int = 0, parallel: bool = True,
+                         method: str = "explicit", device: str = "cpu") -> dict:
+    """Run ``n_real`` quenched realizations → γ distribution at prestress ``f_myo``.
+
+    ``method='device'`` forces SERIAL execution (the realizations run GPU-resident on ``device``; a
+    ProcessPool would fork CUDA, which is unsafe — and the GPU is fast enough not to need it)."""
     seeds = [base_seed + r for r in range(n_real)]
     args = dict(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, n_steps=n_steps)
-    if parallel and n_real > 1:
+    if method == "device":
+        runs = [gamma_floor_run(f_myo, seed=s, method="device", device=device, **args) for s in seeds]
+    elif parallel and n_real > 1:
         from concurrent.futures import ProcessPoolExecutor
         with ProcessPoolExecutor() as ex:
             runs = list(ex.map(_run_one, [(f_myo, s, args) for s in seeds]))
