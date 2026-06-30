@@ -159,3 +159,34 @@ def test_weave_all_five_architectures_distinct():
     assert parallel_order_parameter(weave(MICROVILLUS, rng=np.random.default_rng(0)).net) > 0.95
     assert weave(LAMELLIPODIUM, rng=np.random.default_rng(0)).branch_triples.shape[0] > 0
     assert np.isfinite(sarcomeric_period_um(weave(STRESS_FIBER, rng=np.random.default_rng(0)))["period_um"])
+
+
+@pytest.mark.parametrize("spec_name,metric", [("FILOPODIUM", "parallel"),
+                                              ("STRESS_FIBER", "sarcomere"),
+                                              ("MICROVILLUS", "parallel")])
+def test_weave_architecture_relaxes_stably_under_perturbation(spec_name, metric):
+    """Each unified architecture relaxes STABLY on-device under a thermal-scale perturbation: finite
+    (no blow-up) AND restoring (the structural metric recovers). Completes the relax-stability coverage
+    (the lamellipodium + cortex are tested separately); A5000 confirms the same at native bundle scale."""
+    import dataclasses
+
+    from ffn_sim.ff import architecture_spec as A
+    from ffn_sim.ff.architecture_metrics import parallel_order_parameter, sarcomeric_period_um
+    from ffn_sim.ff.network_warp import relax_on_device
+
+    spec = getattr(A, spec_name)
+    rng = np.random.default_rng(0)
+    cx = weave(spec, rng=rng)
+    _metric = (lambda c: parallel_order_parameter(c.net)) if metric == "parallel" \
+        else (lambda c: sarcomeric_period_um(c)["period_um"])
+    m0 = _metric(cx)
+    cx.net.pos = cx.net.pos + rng.normal(0, 0.03, cx.net.pos.shape)   # 30 nm thermal-scale kick
+    links = np.stack([cx.xl_i, cx.xl_j], 1).astype(np.int64) if cx.xl_i.size else None
+    kw = dict(links=links, k_xl=cx.xl_k if links is not None else None,
+              xl_rest=cx.xl_rest if links is not None else None, n_steps=1500, device="cpu")
+    if cx.myo_i.size:
+        kw.update(myo_links=np.stack([cx.myo_i, cx.myo_j], 1).astype(np.int64), f_myo=0.0)
+    cx.net.pos = relax_on_device(cx.net, **kw)
+    assert np.isfinite(cx.net.pos).all()                              # stable, no blow-up
+    m1 = _metric(cx)
+    assert abs(m1 - m0) < 0.15 * max(abs(m0), 0.1)                    # structure recovered
