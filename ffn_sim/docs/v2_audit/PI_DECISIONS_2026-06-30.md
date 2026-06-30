@@ -17,7 +17,18 @@ relevant) the exact change drafted so approval is one step.
 
 ---
 
-## DECISION 1 — gate-track the untracked magic-numbers (turgor_dP0, cortex myosin density)
+## ✅ UPDATE on Decision 1 (turgor) — RESOLVED for FF; was the wrong framing
+
+The 2026-06-30 turgor workflow (PI's "turgor must be state-dependent" point — confirmed) **superseded
+the "register 133 Pa as tuned" plan below.** Turgor is now a STATE-DEPENDENT osmotic law (Guo 2017
+entropic closure), resting-anchored to the MEASURED 40 Pa (Fischer-Friedrich 2014), which DERIVES the
+bulk modulus (kills BOTH turgor_dP0=133 and the magic K_vol). Applied in FF (`gamma_floor.py`,
+committed). See `FF_TURGOR_AND_ENGAGEMENT_2026-06-30.md`. **Remaining PI item:** apply the same fix to
+the DCM side (`geometry.py` ResolvedDCM + `dcm_warp` osmotic kernels) — DCM territory + /loop dcm live
+→ coordinate. So the manifest-registration below is now only relevant for the DCM constant if you keep
+a fixed turgor there instead of the osmotic law.
+
+## DECISION 1 (original framing — now DCM-only) — gate-track / fix the turgor constant
 
 **What.** `verify_params` only audits constants registered in `outputs/tag_kb/params_manifest.yaml`.
 `turgor_dP0 = 133 Pa` is **not in the manifest at all** (`grep -c turgor` = 0) — so a band-implied /
