@@ -90,3 +90,43 @@ def test_relax_on_device_matches_numpy():
     net.pos = xw
     assert bending_energy(net) < 0.05 * e0                    # relaxed
     assert np.allclose(segment_lengths(net), rest, rtol=1e-2)
+
+
+def test_on_device_turgor_reduction_parity():
+    """The on-device centroid + mean-radius reductions match the host turgor_pressure (so the GPU
+    state-dependent turgor refresh is correct)."""
+    import warp as wp
+
+    from ffn_sim.ff.gamma_floor import CortexParams, build_crosslinked_cortex, turgor_pressure
+    from ffn_sim.ff.network_warp import _csum, _rsum
+
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=100, n_xl=100, n_myo=10,
+                                  rng=np.random.default_rng(0))
+    _, R_host = turgor_pressure(cx, cx.net.pos)
+    N = cx.net.n_nodes
+    pos_d = wp.array(np.ascontiguousarray(cx.net.pos), dtype=wp.vec3d, device="cpu")
+    cacc = wp.zeros(1, dtype=wp.vec3d, device="cpu")
+    wp.launch(_csum, dim=N, inputs=[pos_d, cacc], device="cpu")
+    c = cacc.numpy()[0] / N
+    centre = wp.vec3d(float(c[0]), float(c[1]), float(c[2]))
+    racc = wp.zeros(1, dtype=wp.float64, device="cpu")
+    wp.launch(_rsum, dim=N, inputs=[pos_d, centre, racc], device="cpu")
+    R_dev = float(racc.numpy()[0]) / N
+    assert abs(R_host - R_dev) < 1e-10
+
+
+def test_loaded_shell_volume_stable_correct_cfl():
+    """The on-device loaded shell (bending + crosslink + myosin + state-dependent turgor) is
+    VOLUME-STABLE when the CFL includes the stiff turgor breathing-mode: V/V0 stays ≈1 (the tiny
+    expansion self-relieves the resting osmotic excess to ΔP≈0) — NOT the CFL-artifact runaway that
+    omitting the turgor stiffness produces."""
+    from ffn_sim.ff.gamma_floor import CortexParams, NMIIA_MINIFIL_STALL_PN, build_crosslinked_cortex
+    from ffn_sim.ff.network_warp import simulate_loaded_shell_on_device
+
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=120, n_xl=120, n_myo=12,
+                                  rng=np.random.default_rng(0))
+    _, traj = simulate_loaded_shell_on_device(cx, NMIIA_MINIFIL_STALL_PN, n_steps=8000,
+                                              record_every=4000, device="cpu")
+    vv0 = [t["V_over_V0"] for t in traj]
+    assert all(0.95 < v < 1.05 for v in vv0)                  # stable, no blow-up
+    assert abs(vv0[-1] - 1.0) < 0.01

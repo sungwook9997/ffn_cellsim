@@ -165,6 +165,18 @@ def _zero(f: wp.array(dtype=wp.vec3d)):
     f[wp.tid()] = wp.vec3d(wp.float64(0.0), wp.float64(0.0), wp.float64(0.0))
 
 
+@wp.kernel
+def _csum(pos: wp.array(dtype=wp.vec3d), acc: wp.array(dtype=wp.vec3d)):
+    """Sum all node positions into acc[0] (→ centroid after /N). On-device reduction."""
+    wp.atomic_add(acc, 0, pos[wp.tid()])
+
+
+@wp.kernel
+def _rsum(pos: wp.array(dtype=wp.vec3d), centre: wp.vec3d, acc: wp.array(dtype=wp.float64)):
+    """Sum |pos − centre| into acc[0] (→ mean shell radius after /N). On-device reduction."""
+    wp.atomic_add(acc, 0, wp.length(pos[wp.tid()] - centre))
+
+
 def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None, f_myo=0.0,
                     n_steps=600, reshape_every=25, dt_mu=0.0, n_reshape_iter=2, device="cpu"):
     """Fully on-device FF cortex relaxation: bending (+ optional crosslink/myosin) forces + reshape,
@@ -222,3 +234,107 @@ def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None,
               inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(4)], device=d)
     wp.synchronize_device(d)
     return pos_d.numpy().astype(np.float64)
+
+
+def simulate_loaded_shell_on_device(cortex, f_myo, *, n_steps=4000, reshape_every=25,
+                                    turgor_every=20, record_every=100, dt_mu=0.0,
+                                    n_reshape_iter=2, device="cpu"):
+    """Evolve the ACTIVELY-LOADED cortex shell fully on-device (Warp): bending + crosslink springs +
+    myosin contraction + STATE-DEPENDENT osmotic turgor + reshape, on the GPU (gbook A5000 via
+    ``device="cuda:0"``). The position array stays device-resident; only ~4 scalars (centroid +
+    mean-radius reductions) cross the bus every ``turgor_every`` steps to refresh ΔP via the Guo-2017
+    closure (``gamma_floor.turgor_pressure``).
+
+    This is the dynamic complement to ``relax_on_device``: where that settles the turgor-free resting
+    shell, this runs the loaded shell — whose trajectory (V/V0, ΔP, R_mean) is the γ-floor signature
+    (the floored actomyosin network has no static equilibrium against physiological turgor; it
+    inflates/collapses rather than holding a tension at band). Returns (pos (N,3), traj) where traj is
+    a list of dicts {step, R_mean, dP, V_over_V0}.
+    """
+    from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
+    from ffn_sim.ff.gamma_floor import (
+        TURGOR_DP0, TURGOR_PI_IN0, VMIN_FRAC,
+    )
+    N = cortex.net.n_nodes
+    net = cortex.net
+    tri = np.ascontiguousarray(net.bend_triples, np.int32)
+    alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
+    fiber_off = np.ascontiguousarray(net.fiber_offsets, np.int32)
+    seg_per = np.diff(fiber_off) - 1
+    seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
+    seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    # Guo closure params (host, computed once)
+    R0 = cortex.R0_mean if cortex.R0_mean > 0.0 else cortex.R_um
+    V0 = (4.0 / 3.0) * np.pi * R0**3
+    vmin = VMIN_FRAC * V0
+    if dt_mu <= 0.0:
+        kmax = float(net.kappa.max()) / seg**3
+        if cortex.xl_i.size:
+            kmax = max(kmax, float(cortex.xl_k.max()))
+        # CFL must include the STIFF turgor breathing-mode (else the shell numerically blows up):
+        # K_vol = Π_in0/(1−vmin_frac); the collective radial stiffness per node for a uniform δr is
+        # k_turgor = (K_vol/V0)·(4πR0²)²/N (δV=4πR²δr, δP=−(K_vol/V)δV, force=ΔP·area). This dominates.
+        K_vol = TURGOR_PI_IN0 / (1.0 - VMIN_FRAC)
+        k_turgor = (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / N
+        kmax = max(kmax, k_turgor)
+        dt_mu = 0.1 / kmax
+
+    d = device
+    pos_d = wp.array(np.ascontiguousarray(net.pos, np.float64), dtype=wp.vec3d, device=d)
+    f_d = wp.zeros(N, dtype=wp.vec3d, device=d)
+    cacc = wp.zeros(1, dtype=wp.vec3d, device=d)
+    racc = wp.zeros(1, dtype=wp.float64, device=d)
+    tri_d = wp.array(tri, dtype=wp.int32, device=d)
+    alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
+    foff_d = wp.array(fiber_off, dtype=wp.int32, device=d)
+    soff_d = wp.array(seg_off, dtype=wp.int32, device=d)
+    srest_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
+    has_xl = bool(cortex.xl_i.size)
+    if has_xl:
+        xl_d = wp.array(np.ascontiguousarray(np.stack([cortex.xl_i, cortex.xl_j], 1), np.int32),
+                        dtype=wp.int32, device=d)
+        kxl_d = wp.array(np.ascontiguousarray(cortex.xl_k, np.float64), dtype=wp.float64, device=d)
+        r0_d = wp.array(np.ascontiguousarray(cortex.xl_rest, np.float64), dtype=wp.float64, device=d)
+    has_myo = bool(cortex.myo_i.size) and f_myo != 0.0
+    if has_myo:
+        myo_d = wp.array(np.ascontiguousarray(np.stack([cortex.myo_i, cortex.myo_j], 1), np.int32),
+                         dtype=wp.int32, device=d)
+    nT = tri.shape[0]
+    centre = wp.vec3d(0.0, 0.0, 0.0)
+    dP_area = 0.0
+    traj = []
+
+    def _refresh_turgor():
+        nonlocal centre, dP_area
+        cacc.zero_(); wp.launch(_csum, dim=N, inputs=[pos_d, cacc], device=d)
+        c = cacc.numpy()[0] / N
+        centre = wp.vec3d(float(c[0]), float(c[1]), float(c[2]))
+        racc.zero_(); wp.launch(_rsum, dim=N, inputs=[pos_d, centre, racc], device=d)
+        R_mean = float(racc.numpy()[0]) / N
+        V = (4.0 / 3.0) * np.pi * R_mean**3
+        dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
+        dP_area = dP * 4.0 * np.pi * R_mean**2 / N
+        return R_mean, dP, V / V0
+
+    for step in range(n_steps):
+        if step % turgor_every == 0:
+            R_mean, dP, vv0 = _refresh_turgor()
+            if step % record_every == 0:
+                traj.append({"step": step, "R_mean": R_mean, "dP": dP, "V_over_V0": vv0})
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        if nT:
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        if has_xl:
+            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(turgor_kernel, dim=N, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)
+        wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+        if (step + 1) % reshape_every == 0:
+            wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+                      inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
+    R_mean, dP, vv0 = _refresh_turgor()
+    traj.append({"step": n_steps, "R_mean": R_mean, "dP": dP, "V_over_V0": vv0})
+    wp.synchronize_device(d)
+    net.pos = pos_d.numpy().astype(np.float64)
+    return net.pos, traj
