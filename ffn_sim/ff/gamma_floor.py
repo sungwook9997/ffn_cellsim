@@ -46,11 +46,23 @@ NMIIA_F_STALL_PER_HEAD = 0.5
 NMIIA_HEADS_PER_SIDE = 10
 NMIIA_MINIFIL_STALL_PN = NMIIA_F_STALL_PER_HEAD * NMIIA_HEADS_PER_SIDE   # 5.0 pN (per side)
 
-# Physiological turgor (the passive counter-force; physiological-baseline HARD rule). FF units:
-# 1 Pa = 1 pN/µm². Grounded: turgor_dP0=133 Pa (SOLID, registry LIVE — band-implied MCF7 baseline),
-# K_vol=1e3 Pa osmotic bulk modulus (ResolvedDCM). Young-Laplace passive γ = ΔP·R/2.
-TURGOR_DP0 = 133.0          # pN/µm²  (= 133 Pa)
-TURGOR_K_VOL = 1.0e3        # pN/µm²  (ΔP per ΔV/V)
+# Physiological turgor — STATE-DEPENDENT osmotic closure (2026-06-30 turgor workflow; the band-implied
+# 133 Pa was a tuned circular value). FF units: 1 Pa = 1 pN/µm². Animal cells (no wall) hold no static
+# turgor; the net excess is the sub-mM osmotic difference balanced by/coupled to cortical tension
+# (Stewart 2011; Kay & Blaustein 2019 pump-leak). Resting baseline re-anchored to the MEASURED
+# interphase value (Fischer-Friedrich 2014 Sci Rep 4:6213, HeLa interphase ΔP=40±30 Pa — HeLa proxy,
+# no MCF7-specific datum exists, flagged to PI). The volume response uses Guo et al. 2017 (PNAS
+# 114:E8618) entropic excluded-volume closure Π(V)=N·kB·T/(V−Vmin), which DERIVES the bulk modulus
+# (no magic K_vol) from lit-anchored inputs: c_osm≈200 mM cytoplasmic osmolytes (cross-validated vs
+# cytoplasmic salt) and Vmin≈0.30·V0 (Venkova 2022 eLife / Adar 2025 Ponder fit). Young-Laplace
+# ΔP=2γ/R is now an OUTPUT/consistency-check, not the input defining ΔP0 (correct causal direction).
+TURGOR_DP0 = 40.0          # pN/µm² (=40 Pa) resting interphase net turgor (Fischer-Friedrich 2014; HeLa proxy)
+OSMOLYTE_C_MM = 200.0      # mM internal impermeant osmolytes (Guo 2017; ~cytoplasmic salt)
+VMIN_FRAC = 0.30           # Vmin/V0 osmotically-inactive volume fraction (Venkova 2022 / Adar 2025 / Guo 2017)
+_RT_PN_UM2_PER_MM = 8.314 * 310.0  # R·T at 310 K, per (mol/m³); 1 mM=1 mol/m³, 1 Pa=1 pN/µm² → ×1 in FF units
+# Internal osmotic pressure at rest Π_in0 = c·R·T [pN/µm²] (the huge matched value; only the net
+# excess vs the medium = TURGOR_DP0 is the turgor). Drives the Guo stiffness, replacing the magic K_vol.
+TURGOR_PI_IN0 = OSMOLYTE_C_MM * _RT_PN_UM2_PER_MM   # ≈ 5.15e5 pN/µm²
 
 # GROUNDED production operating point (configs/phase1_h3.yaml — the ×40 mesoscale cell, NOT a
 # prototype). n_fil=1000 (Plan v2 §3 H.3), n_xl=1000 (KU-3.19).
@@ -85,6 +97,9 @@ class CrosslinkedCortex:
     myo_i: np.ndarray           # (Nmyo,) node index endpoint A
     myo_j: np.ndarray           # (Nmyo,) node index endpoint B (different fiber)
     R_um: float
+    R0_mean: float = 0.0        # rest mean node radius about centroid [µm] — the self-consistent
+                                # turgor volume reference (NOT R_um; the huge osmotic Π_in0 makes any
+                                # V0-vs-V reference mismatch blow up, so V0 = (4/3)π·R0_mean³).
 
 
 def mesoscale_reach(R_um: float, n_filaments: int) -> float:
@@ -166,9 +181,10 @@ def build_crosslinked_cortex(params: CortexParams | None = None, *, n_filaments:
     used = {(int(a), int(b)) for a, b in xl_pairs}
     myo_pairs = _cross_fiber_pairs(net, reach, n_myo, rng, exclude=used)
 
+    r0_mean = float(np.linalg.norm(net.pos - net.pos.mean(axis=0), axis=1).mean())
     return CrosslinkedCortex(
         net=net, xl_i=xl_pairs[:, 0], xl_j=xl_pairs[:, 1], xl_k=xl_k, xl_rest=xl_rest,
-        myo_i=myo_pairs[:, 0], myo_j=myo_pairs[:, 1], R_um=params.R_um)
+        myo_i=myo_pairs[:, 0], myo_j=myo_pairs[:, 1], R_um=params.R_um, R0_mean=r0_mean)
 
 
 def _link_spring_force(pos: np.ndarray, i: np.ndarray, j: np.ndarray, k: np.ndarray,
@@ -200,19 +216,25 @@ def _myosin_force(pos: np.ndarray, i: np.ndarray, j: np.ndarray, f_myo: float,
 
 
 def turgor_pressure(cortex: CrosslinkedCortex, pos: np.ndarray, *, dP0: float = TURGOR_DP0,
-                    K_vol: float = TURGOR_K_VOL) -> tuple[float, float]:
-    """Enclosed-volume turgor ΔP [pN/µm²] and mean radius [µm] at ``pos`` (sphere-proxy volume).
+                    pi_in0: float = TURGOR_PI_IN0, vmin_frac: float = VMIN_FRAC) -> tuple[float, float]:
+    """State-dependent osmotic turgor ΔP(V) [pN/µm²] + mean radius [µm] (Guo 2017 entropic closure).
 
-    ΔP = dP0 + K_vol·(V0−V)/V0 with V = 4/3·π·R_mean³ (R_mean = mean node radius), V0 from the rest
-    radius. Contraction (R↓ ⇒ V↓) raises ΔP → the radial counter-force that lets the actively
-    contracted shell reach a Young-Laplace equilibrium. ΔP floored at 0 (a deflated shell exerts no
-    inward suction here).
+    Π_in(V) = N·kB·T/(V − Vmin) with Vmin = vmin_frac·V0 and N·kB·T = Π_in0·(V0−Vmin) (so Π_in(V0)=
+    Π_in0); the medium balances all but the net resting excess, Π_out = Π_in0 − dP0, giving
+
+        ΔP(V) = Π_in0·(V0−Vmin)/(V−Vmin) − (Π_in0 − dP0),   ΔP(V0) = dP0.
+
+    This DERIVES the bulk modulus K_vol = −V·dΔP/dV|_{V0} = Π_in0/(1−vmin_frac) (≈7e5 pN/µm² at the
+    lit inputs — no magic K_vol), and ΔP rises steeply as the shell is compressed (V↓), the
+    physiological osmotic counter-force. ΔP floored at 0 (a deflated shell exerts no inward suction).
     """
     centre = pos.mean(axis=0)
     R_mean = float(np.linalg.norm(pos - centre, axis=1).mean())
     V = (4.0 / 3.0) * np.pi * R_mean**3
-    V0 = (4.0 / 3.0) * np.pi * cortex.R_um**3
-    dP = dP0 + K_vol * (V0 - V) / V0
+    R0 = cortex.R0_mean if cortex.R0_mean > 0.0 else cortex.R_um   # self-consistent rest reference
+    V0 = (4.0 / 3.0) * np.pi * R0**3
+    vmin = vmin_frac * V0
+    dP = pi_in0 * (V0 - vmin) / max(V - vmin, 1e-12 * V0) - (pi_in0 - dP0)
     return max(dP, 0.0), R_mean
 
 
@@ -231,8 +253,7 @@ def _turgor_force(cortex: CrosslinkedCortex, pos: np.ndarray, dP: float, R_mean:
 
 
 def external_force(cortex: CrosslinkedCortex, pos: np.ndarray, bending_fn, f_myo: float,
-                   *, turgor: bool = True, dP0: float = TURGOR_DP0,
-                   K_vol: float = TURGOR_K_VOL) -> np.ndarray:
+                   *, turgor: bool = True, dP0: float = TURGOR_DP0) -> np.ndarray:
     """Total external force (bending + crosslinker springs + myosin + turgor) on all nodes (N,3) [pN].
 
     Turgor is ON by default (physiological-baseline HARD rule): the resting cell is turgor-
@@ -244,7 +265,7 @@ def external_force(cortex: CrosslinkedCortex, pos: np.ndarray, bending_fn, f_myo
     _link_spring_force(pos, cortex.xl_i, cortex.xl_j, cortex.xl_k, cortex.xl_rest, F)
     _myosin_force(pos, cortex.myo_i, cortex.myo_j, f_myo, F)
     if turgor:
-        dP, R_mean = turgor_pressure(cortex, pos, dP0=dP0, K_vol=K_vol)
+        dP, R_mean = turgor_pressure(cortex, pos, dP0=dP0)
         _turgor_force(cortex, pos, dP, R_mean, F)
     return F
 

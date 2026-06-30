@@ -4,9 +4,10 @@ Anchors: mesoscale reach; crosslinker/myosin links connect DIFFERENT fibers with
 force-free at formation; passive bending-only settle holds segment length (inextensible) and lowers
 the projected-force residual; the actomyosin γ rises monotonically with the myosin prestress (the
 swept controlled variable); a single stretched crosslinker yields the correct Hookean force; the
-passive turgor channel reproduces Young-Laplace ΔP·R/2; and — the KEY 6d finding — at the
-lit-anchored NMIIA prestress the actomyosin γ is hundreds-of-× UNDER the Salbreux band (the γ-floor,
-reproduced MD-free), while the passive turgor γ sits at-band.
+passive turgor channel = state-dependent osmotic ΔP·R/2 (Guo 2017, re-anchored 40 Pa, 2026-06-30);
+and — the KEY 6d finding — at the lit-anchored NMIIA prestress the actomyosin γ is hundreds-of-× UNDER
+the Salbreux band (the γ-floor, reproduced MD-free); the corrected passive turgor γ is itself sub-band
+(band is myosin-dominated, not passive).
 """
 
 import numpy as np
@@ -81,7 +82,7 @@ def test_actomyosin_gamma_rises_with_prestress():
 
 
 def test_passive_gamma_is_young_laplace():
-    """The passive turgor channel = ΔP·R/2 (Young-Laplace), at the resting dP0/R0 → ≈665 pN/µm."""
+    """The passive turgor channel = ΔP·R/2 (Young-Laplace), at the resting dP0=40 Pa → 200 pN/µm."""
     assert gamma_passive_young_laplace(TURGOR_DP0, 10.0) == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
     r = gamma_floor_run(5.0, n_filaments=50, n_xl=150, n_myo=80, seed=2, n_steps=200)
     assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
@@ -89,15 +90,17 @@ def test_passive_gamma_is_young_laplace():
 
 def test_gamma_floor_reproduced_at_lit_prestress():
     """KEY 6d finding: at the lit-anchored NMIIA prestress the MD-free actomyosin γ is far UNDER the
-    Salbreux band (the γ-floor), while the passive turgor γ is at-band — reproducing the BAOAB-MD
-    γ-floor finding independently. (Order-of-magnitude assertion; not a tuned target.)"""
+    Salbreux band (the γ-floor), reproducing the BAOAB-MD finding. The passive turgor channel (now
+    re-anchored to the MEASURED ~40 Pa, state-dependent, 2026-06-30 turgor workflow) is itself
+    sub-band — consistent with the corrected verdict that the band is myosin-dominated, not passive."""
     r = gamma_floor_run(NMIIA_MINIFIL_STALL_PN, n_filaments=100, n_xl=400, n_myo=200,
                         seed=1, n_steps=300)
     band_lo = SALBREUX_BAND_PN_UM[0]
     assert r["gamma_active"] < band_lo / 50.0     # actomyosin floored ≥50× under band
-    assert r["gamma_passive"] > band_lo            # turgor (band-implied) at/above band
-    # the floor is large: passive/active ratio is hundreds-to-thousands ×
-    assert r["gamma_passive"] / r["gamma_active"] > 100.0
+    # passive turgor γ = ΔP·R/2 at 40 Pa ≈ 200 pN/µm = 0.2 mN/m — sub-band (a diagnostic, not
+    # "passive carries the band"; the genuine blebbistatin-insensitive passive floor is ~0.04 mN/m)
+    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)
+    assert r["gamma_passive"] < band_lo            # corrected turgor is sub-band, NOT at-band
 
 
 def test_production_operating_point_floored():
@@ -107,7 +110,7 @@ def test_production_operating_point_floored():
     r = gamma_floor_production(n_real=1, n_steps=150, parallel=False)
     assert 5e-5 < r["gamma_active_mN_per_m"] < 5e-4      # the MD g_soft regime
     assert r["floor_factor_under_band"] > 500.0          # deeply floored at the grounded point
-    assert r["gamma_passive"] == pytest.approx(665.0)
+    assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)   # 40 Pa state-dependent turgor
 
 
 def test_measure_gamma_channels_finite():
