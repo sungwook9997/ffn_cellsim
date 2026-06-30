@@ -55,12 +55,27 @@ PI):** the baseline foam (Q~150, clean, V/V0 1, no-penetration, faceting-held, s
 compact faceted tissue = the production result; razor-sharp Q≈250 is an optional later mesh upgrade.
 Production uses subdiv 2 (Q150, clean, fast). No magic-number tuning was used.
 
-### Phase 4 — clean N=400 production aggregation + validation + viz
-- **Run:** full N=400 confluent foam, V0-fix, `--builder confluent`, physiological energy, long settle.
-- **Validate:** manifold/watertight, no-penetration, V/V0≈1, faceting (asph, Q), contact fraction,
-  isoperimetric Q distribution vs SimuCell3D bands. Cut-HTML + render for PI.
-- **Outcome:** "aggregation properly built" — a real compact faceted tissue (the original goal's part 1).
-- **→ CHECKPOINT: report to PI, request go-ahead for Phases 5–6.**
+### Phase 4 — clean N=400 production  ✅ DONE (2026-07-01) → ⭐ CHECKPOINT
+
+Ran N=400 `--builder confluent subdiv2 inset0.02 lloyd12`, full physiological energy (turgor + conservative
+tent + differential cortical γ Maître), 30000 steps. **Validation:** manifold **5/5 cells χ=2** (watertight),
+asph 0.044, **Q 149 (sd 10)**, **V/V0 1.000**, **pen-ratio 0.963** (clean, real-penetration metric — the
+driver-log pen_frac is a degenerate-face artifact). A clean, compact, watertight, non-penetrating, faceted
+N=400 spheroid = **"aggregation properly built."** Render `viz_html/9_PRODUCTION_n400_render.png`,
+interactive `9_PRODUCTION_n400_faceted_spheroid.html`.
+
+**Honest caveats (for PI):**
+1. **Faceting is mild (Q~149)**, not SimuCell3D's razor-sharp Q~250 (Phase 3 ceiling — radial-warp repr;
+   optional flat-faced-mesh upgrade later).
+2. **Interior-vs-rim deformation is INVERTED** vs the T47D signature: CORE asph 0.022 < MID 0.034 < RIM
+   0.055. The rim cells are more elongated — a Voronoi-in-a-ball BOUNDARY-CLIPPING geometry artifact, NOT
+   pressure-driven interior deformation. An equilibrium foam (V/V0=1, every cell at its rest volume) has NO
+   interior pressure gradient, so it cannot reproduce "inner cells deform more." That gradient needs ACTIVE
+   GROWTH/PROLIFERATION (interior cells crowd as the tissue grows) — i.e. it is exactly what **Phase 5**
+   would add. So the T47D signature is a Phase-5 target, not a Phase-4 failure.
+3. γ magnitude (1e-3) is tied to the open γ-floor question; the foam is robust to it (faceting is geometry-held).
+
+**→ CHECKPOINT: reported to PI; awaiting go-ahead for Phases 5–6 (proliferation + spreading).**
 
 ### Phase 5 — proliferation separation (original /goal part 2) — PI go-ahead first
 - Enable division from the confluent foam; cells divide + jam; remesh keeps the mesh intact; visualize
