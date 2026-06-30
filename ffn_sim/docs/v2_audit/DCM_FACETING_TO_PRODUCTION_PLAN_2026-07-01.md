@@ -22,7 +22,13 @@ flaw was turgor over-inflation (V/V0 1.37 + interpenetration) from V0=free-spher
 
 ## Phases (each: code → gbook run → measure → gate)
 
-### Phase 1 — V0 = confluent rest-volume setpoint  ⟵ IN PROGRESS
+### Phase 1 — V0 = confluent rest-volume setpoint  ✅ GATE 1 PASSED (2026-07-01)
+
+**Result (N=400, `--v0-from-init`):** V/V0 **1.000** (was 1.37), pen-ratio **0.928** (was 0.192), asph
+0.048→**0.048** (faceting perfectly held), Q 150→**150**, contact **0.857**. The V0=Voronoi-cell-volume
+setpoint was exactly the fix — over-inflation + interpenetration eliminated; the energy maintains a clean
+N=400 faceted foam at V/V0=1. Render `viz_html/8_V0FIX_n400_render.png`, `8_V0FIX_n400_clean.html`.
+
 - **Change:** `--v0-from-init` derives each cell's osmotic V0 from its ACTUAL volume in the loaded
   confluent mesh (divergence-theorem volume), not the free-sphere V0. Physiological confluent rest volume;
   derived from geometry, not tuned. (Implemented; mean V0 ratio 0.893 of free-sphere at ε=0.02.)
