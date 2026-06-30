@@ -34,34 +34,36 @@ def _segments_of(net, idx_pairs):
 
 
 def _draw(ax, cx, *, octant=False, lw_actin=0.5, alpha_actin=0.5):
+    """Batched 3D render (Line3DCollection) — handles thousands–tens-of-thousands of fibers fast."""
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection
     net = cx.net
     off = net.fiber_offsets
     cen = net.pos.mean(axis=0)
-    # actin fibers
-    for f in range(net.n_fibers):
-        sl = slice(int(off[f]), int(off[f + 1]))
-        seg = net.pos[sl]
-        if octant and not np.all((seg - cen >= 0).all(axis=1)):   # keep fibers fully in +++ octant
-            continue
-        ax.plot(seg[:, 0], seg[:, 1], seg[:, 2], lw=lw_actin, color="steelblue", alpha=alpha_actin)
+
+    def _keep(seg):
+        return (not octant) or np.all((seg - cen >= 0).all(axis=1))
+
+    # actin fibers (one polyline per fiber) via a single collection
+    actin = [net.pos[int(off[f]):int(off[f + 1])] for f in range(net.n_fibers)]
+    actin = [s for s in actin if _keep(s)]
+    if actin:
+        ax.add_collection3d(Line3DCollection(actin, colors="steelblue", linewidths=lw_actin,
+                                             alpha=alpha_actin))
     # crosslinker links
     xlp = np.stack([cx.xl_i, cx.xl_j], axis=1) if cx.xl_i.size else np.zeros((0, 2), int)
-    for a, b in xlp:
-        p = net.pos[[a, b]]
-        if octant and not np.all((p - cen >= 0).all(axis=1)):
-            continue
-        ax.plot(p[:, 0], p[:, 1], p[:, 2], lw=0.7, color="seagreen", alpha=0.6)
-    # myosin links
+    xl_segs = [net.pos[[a, b]] for a, b in xlp if _keep(net.pos[[a, b]])]
+    if xl_segs:
+        ax.add_collection3d(Line3DCollection(xl_segs, colors="seagreen", linewidths=0.7, alpha=0.55))
+    # myosin links (thicker + endpoint markers)
     myp = np.stack([cx.myo_i, cx.myo_j], axis=1) if cx.myo_i.size else np.zeros((0, 2), int)
-    for a, b in myp:
-        p = net.pos[[a, b]]
-        if octant and not np.all((p - cen >= 0).all(axis=1)):
-            continue
-        ax.plot(p[:, 0], p[:, 1], p[:, 2], lw=1.6, color="crimson", alpha=0.85)
-        ax.scatter(p[:, 0], p[:, 1], p[:, 2], s=6, color="crimson", alpha=0.9)
+    my_segs = [net.pos[[a, b]] for a, b in myp if _keep(net.pos[[a, b]])]
+    if my_segs:
+        ax.add_collection3d(Line3DCollection(my_segs, colors="crimson", linewidths=1.6, alpha=0.85))
+        mp = np.array(my_segs).reshape(-1, 3)
+        ax.scatter(mp[:, 0], mp[:, 1], mp[:, 2], s=5, color="crimson", alpha=0.85)
 
 
-def render(n_filaments: int = 800, seed: int = 0, outdir: str = OUTDIR) -> str:
+def render(n_filaments: int = 8000, seed: int = 0, outdir: str = OUTDIR) -> str:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -108,10 +110,14 @@ def render(n_filaments: int = 800, seed: int = 0, outdir: str = OUTDIR) -> str:
         f"    per fiber            {params.beads_per_filament} beads, L={params.L_filament_um:.1f} um,"
         f" seg={params.seg_um:.1f} um\n"
         f"    kappa (Lp=17um)      {params.kappa:.3f} pN.um^2\n"
-        f"    areal density        {params.areal_density_um2:.2f} µm⁻²\n"
+        f"    areal density        {n_filaments / params.surface_area_um2:.2f} µm⁻² (rendered)\n"
         f"  crosslinkers           {cx.xl_i.size}  (α-actinin/filamin, KU-3.19)\n"
         f"  myosin minifilaments   {cx.myo_i.size}  (NMIIA; Salbreux density)\n"
+        f"  mesh size ξ (2D)       {params.surface_area_um2 / (n_filaments * params.L_filament_um) * 1e3:.0f} nm"
+        f"  (rendered; native ~50-100 nm)\n"
         f"  mesoscale bind reach   {reach:.2f} µm  (√(A/n_fil) — ×40 dual)\n"
+        f"  NOTE model RUNS at ×40 mesoscale (1000 fib); this render is\n"
+        f"    denser toward native — density-mesh validated vs Kim (ξ∝C_A^-1/2)\n"
         "\nTURGOR (state-dependent osmotic, Guo 2017)\n"
         f"  resting ΔP             {dP:.0f} pN/µm² (=40 Pa, Fischer-Friedrich 2014)\n"
         f"  Young-Laplace γ=ΔP·R/2 {0.5 * dP * R:.0f} pN/µm = {0.5 * dP * R * 1e-3:.2f} mN/m\n"
@@ -130,7 +136,7 @@ def render(n_filaments: int = 800, seed: int = 0, outdir: str = OUTDIR) -> str:
     return path
 
 
-def render_turntable(n_filaments: int = 600, seed: int = 0, n_frames: int = 36,
+def render_turntable(n_filaments: int = 4000, seed: int = 0, n_frames: int = 36,
                      outdir: str = OUTDIR) -> str:
     """360° turntable of the assembled cell → an mp4 (ffmpeg) or gif fallback, to view it in 3D."""
     import matplotlib
@@ -172,9 +178,9 @@ def render_turntable(n_filaments: int = 600, seed: int = 0, n_frames: int = 36,
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=800, help="actin fibers to render")
+    ap.add_argument("--n", type=int, default=8000, help="actin fibers to render")
     ap.add_argument("--turntable", action="store_true", help="also render a 360° rotation movie")
     a = ap.parse_args()
     render(n_filaments=a.n)
     if a.turntable:
-        render_turntable(n_filaments=min(a.n, 600))
+        render_turntable(n_filaments=min(a.n, 4000))
