@@ -55,8 +55,54 @@ This validates the FF single-cell network's MECHANICS (not just structure) again
 cross-linked-network picture. Together: FF reproduces Kim/MacKintosh structure (ξ∝C_A^−1/2, z=2R) AND
 mechanics (rigidity transition) — the correct single-cell validation.
 
+## Mechanics MAGNITUDE — absolute G, lit-anchored stiffness (Stage 6c, task c — 2026-06-30)
+
+The Stage-6i `shear_modulus` used a SINGLE knob `k_xl` for BOTH the actin backbone and the crosslink
+junction (conflating them), so the absolute G was uncalibrated. Stage 6c separates them, each
+SEPARATELY SOURCED (no tuning to outcome), and resolves the magnitude. Figure
+`outputs/ff/figs/kim_shear_modulus.png`.
+
+**Two stiffnesses, both lit-anchored:**
+- **Actin backbone** — INEXTENSIBLE (FF-native NF2007 §5.3 reshape) by default, justified by the
+  sourced axial modulus EA = 4.4e4 pN (Kojima, Ishijima & Yanagida 1994 PNAS 91:12962; ⇒ k_axial =
+  EA/L_seg ≈ 1.8e5 pN/µm). A finite-EA spring mode is available for the sourced-stiffness regime.
+- **Crosslink junction** `k_xl` — α-actinin **4.6e5 pN/µm** (455 pN/nm), filamin **8.2e5 pN/µm**
+  (Ferrer 2008 PNAS 105:9221, AFM).
+
+**Result (1 pN/µm² = 1 Pa exactly):**
+1. **Crosslink-limited regime (k_xl ≪ EA/L_seg):** G is **LINEAR in k_xl** over 5 decades (G/k_xl
+   constant) and matches the analytic affine form **G ≈ f_na·k_xl·ρ_L·ℓc** with a STABLE non-affine
+   factor **f_na = 0.024** (< 1; the affine estimate is the upper bound, the network relaxes
+   non-affinely — Head/Levine/MacKintosh). This is the robust, no-tuning analytic cross-check
+   (analytic is primary per the oracle-is-crosscheck rule). Tests:
+   `test_shear_modulus_crosslink_limited_linear`, `test_shear_modulus_rises_with_connectivity`.
+2. **Sourced-stiffness regime (k_xl ~ EA/L_seg, finite EA):** at C_A=150–300 µM, z=3, the FF athermal
+   **enthalpic** G is **~0.1–0.9 MPa** — cortex-stiff (the precise value is density- and
+   non-affinity-dependent; reshape gives the rigid-actin upper bound, finite-EA ~½).
+3. **The crosslinker-stiffness UNIT-SLIP (the headline):** the repo's `ALPHA_ACTININ.link_k =
+   FILAMIN.link_k = 0.1 pN/µm` is ~**4.5e6× too soft** vs Ferrer (a 1000× pN/µm-vs-pN/nm slip
+   COMPOUNDED with adopting the AFINES soft surrogate ~0.1 as physical). At the broken value G ≈
+   0.19 Pa (≈10⁶× softer than the cortex); the sourced value lands in the cortex-stiff range. So the
+   crosslinker stiffness spanned the *entire* physiological range — the elastic cortex was ~10⁶× too
+   soft. (NOTE: this is the ELASTIC modulus axis; it does NOT change the active-γ floor, which is
+   force-magnitude limited — [[project-gamma-floor-likely-deficit]].)
+
+**Comparison branches.** FF athermal = the ENTHALPIC branch (in-vivo cortex ~0.1–1 kPa; Kim high-f
+enthalpic 100–300 Pa). The dilute in-vitro Kim/Gardel low-f G' (0.07–1000 Pa) is the THERMAL/entropic
+branch FF does not target. FF's sourced enthalpic G (~kPa–MPa, dense) is in the right enthalpic regime;
+an exact matched absolute needs a finite-EA implicit solve at matched (C_A, R, prestress) — the follow-up.
+
+**PI-gated (do NOT edit live constants unilaterally):** correcting `hand_kmc` `link_k` 0.1 → 4.6e5
+(α-actinin) / 8.2e5 (filamin) changes a production runtime constant (feeds the γ-floor cortex + the
+CFL) and the Ferrer stiffness datum is not yet in the KB → surface to PI + register SE rows first
+(`references/SE_REGISTRATION_CANDIDATES_2026-06-30.md` §5). The `configs/phase1_h3.yaml` actin
+intra-filament `k_xl=1e-7 N/m` is a separate clean 1000× slip → 1e-4 N/m, and its KU-3.19/Furuike
+attribution is wrong (comment fix).
+
 ## Next (FF↔Kim, follow-up)
 
-- Match the G magnitude with lit-anchored ACP + actin axial stiffness (currently k_xl is a scale knob).
+- Finite-EA IMPLICIT solver for the exact sourced-stiffness absolute G at matched (C_A, R, prestress)
+  vs Kim's enthalpic high-f branch (the explicit solver converges at sourced stiffness only when
+  k_xl ~ k_axial; the crosslink-limited absolute uses reshape).
 - Cross-linking-angle distribution + bundle-vs-isotropic morphology (Kim's ACPc/ACPB) vs FF.
 - (Thermal G′/G″ would need a thermostatted FF variant — out of the current athermal scope.)

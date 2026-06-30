@@ -26,6 +26,14 @@ from ffn_sim.ff.fiber_network import build_fiber_network
 N_AVOGADRO = 6.02214076e23
 ACTIN_RISE_UM = 2.7e-3          # µm per monomer (≈370 monomers/µm; standard F-actin)
 
+# Actin filament AXIAL stretching modulus EA (extensional rigidity). Kojima, Ishijima & Yanagida
+# 1994, PNAS 91(26):12962 — direct glass-needle stretch, 43.7 ± 4.6 pN/nm over a 1 µm segment ⇒
+# EA = k·L = 4.4e-8 N = 4.4e4 pN. (⚠️ 1000× trap: EA = 4.4e4 pN, NOT 4.4e7.) Used ONLY in the
+# shear_modulus measurement to set the actin segment axial spring k_axial = EA/L_seg — it is NOT a
+# production runtime constant. PI/SE: Kojima 1994 is not yet a SourceEvidence row (see
+# references/SE_REGISTRATION_CANDIDATES_2026-06-30.md); register before any LIVE config use.
+EA_ACTIN_PN = 4.4e4            # pN  (Kojima 1994; actin axial stretching modulus)
+
 
 def length_density_per_um2(C_A_uM: float) -> float:
     """Actin contour-length density ρ_L [µm/µm³ = µm⁻²] from monomer concentration C_A [µM]."""
@@ -108,50 +116,86 @@ def connectivity_z(net, xl_pairs) -> float:
     return float(2.0 * xl_pairs.shape[0] / n_fil) if n_fil else 0.0
 
 
-def shear_modulus(C_A_uM: float = 300.0, *, R_acp: float = 0.5, box_um: float = 1.0,
-                  gamma: float = 0.03, k_xl: float = 10.0, n_steps: int = 3000, seed: int = 0):
-    """Athermal elastic SHEAR modulus G [pN/µm²] of the FF cross-linked actin network (Kim rheology).
+def shear_modulus(C_A_uM: float = 300.0, *, R_acp: float = 1.5, box_um: float = 1.0,
+                  gamma: float = 0.03, k_xl: float = 10.0, k_axial: float | None = None,
+                  n_steps: int = 4000, reshape_every: int = 20, seed: int = 0):
+    """Athermal elastic SHEAR modulus G [pN/µm² = Pa] of the FF cross-linked actin network (Kim rheology).
 
     Applies affine simple shear u_x = γ·z, pins the top/bottom boundary at the sheared position,
-    relaxes the interior (actin segment springs + crosslink springs + bending), and reads the shear
-    stress σ_xz = (x-reaction on the top plane)/area; G = σ_xz/γ. Cross-linked networks have an elastic
-    floppy→rigid TRANSITION with connectivity (Head/Levine/MacKintosh 2003 PRE; Kim 2007): G≈0 below
-    threshold, rising steeply above. ``k_xl`` sets the element stiffness scale (the G MAGNITUDE; the
-    transition/trend is the robust Kim comparison). Returns (G, z, meta).
+    relaxes the interior, and reads σ_xz = (x-reaction on the top plane)/area; G = σ_xz/γ.
+    (1 pN/µm² = 1 Pa exactly.) Cross-linked networks have an elastic floppy→rigid TRANSITION with
+    connectivity (Head/Levine/MacKintosh 2003 PRE; Kim 2007).
+
+    DEFORMABLE ELEMENTS (Stage-6c fix — previously a single ``k_xl`` was — wrongly — used for BOTH the
+    actin backbone and the crosslink, conflating them; and at the broken value the backbone was as soft
+    as a crosslink):
+      * **Actin backbone** — two modes. ``k_axial=None`` (DEFAULT) ⇒ INEXTENSIBLE (FF-native NF2007
+        §5.3 reshape, like the rest of the engine): the correct stiff limit AND tractable for dense
+        networks (a 1.8e5 pN/µm explicit spring needs ~1e6 steps). Valid in the crosslink-limited
+        regime k_xl ≪ EA/L_seg. ``k_axial=<float>`` ⇒ a FINITE axial spring (= EA/L_seg, Kojima 1994
+        EA = ``EA_ACTIN_PN`` = 4.4e4 pN) — needed in the sourced-stiffness regime where k_xl ~ EA/L_seg
+        (α-actinin), so actin compliance co-determines G; tractable only for small (dilute, Kim-matched)
+        networks (few nodes) because the stiff spring forces a tiny step.
+      * ``k_xl`` — crosslink JUNCTION stiffness [pN/µm], the soft deformable element. Lit anchors
+        (Ferrer 2008 PNAS, AFM): α-actinin 455 pN/nm = 4.6e5 pN/µm, filamin 820 pN/nm = 8.2e5 pN/µm.
+        ⚠️ The default 10.0 and the ``hand_kmc`` crosslinker ``link_k=0.1`` are UNSOURCED magnitude
+        knobs (a confirmed pN/µm-vs-pN/nm slip compounded with an AFINES soft surrogate) — correcting
+        the LIVE production constant is PI-gated (register a Ferrer-stiffness SourceEvidence row first).
+
+    Regimes (the robust Kim/analytic comparison — assert the TRANSITION + LINEARITY, NOT an absolute):
+      * crosslink-limited (k_xl ≪ bending stiffness κ/seg³): G is LINEAR in k_xl (the junction is the
+        soft series element). Analytic cross-check G ≈ k_xl·ρ_L·ℓc (primary ground-truth).
+      * backbone-limited (k_xl ≫ κ/seg³): G SATURATES at the bending/inextensibility-set enthalpic
+        value. FF is athermal ⇒ the enthalpic branch; the dilute in-vitro Kim/Gardel G' (0.1–1000 Pa
+        low-f) is the THERMAL branch FF does not target.
+
+    Returns (G [Pa], connectivity z, meta) with meta += rho_L_per_um2, lc_um, k_xl, G_analytic_crosslink.
     """
+    from ffn_sim.ff.constraints import reshape
+    from ffn_sim.ff.forces_warp import make_bending_force_fn
     net, xl, meta = build_box_network(C_A_uM, box_um=box_um, R_acp=R_acp,
                                       rng=np.random.default_rng(seed))
-    from ffn_sim.ff.forces_warp import make_bending_force_fn
     N = net.n_nodes
     bfn = make_bending_force_fn(net)
     kappa = float(net.kappa.max())
     seg = float(net.seg_rest.mean())
+    use_reshape = k_axial is None                              # rigid actin (reshape) vs finite axial spring
+    sp = net.segments
     pos0 = net.pos.copy()
+    r0 = np.linalg.norm(pos0[sp[:, 1]] - pos0[sp[:, 0]], axis=1)
     x = pos0.copy()
     x[:, 0] += gamma * x[:, 2]                                  # affine simple shear
     margin = 0.12 * box_um
     top = pos0[:, 2] > box_um - margin
     pinned = (pos0[:, 2] < margin) | top
     pinpos = x[pinned].copy()
-    sp = net.segments
-    r0 = np.linalg.norm(pos0[sp[:, 1]] - pos0[sp[:, 0]], axis=1)
-    dt_mu = 0.2 / max(16 * kappa / seg**3, k_xl)
+    dt_mu = 0.2 / max(16 * kappa / seg**3, k_xl, (k_axial or 0.0))  # CFL: stiffest spring (incl finite k_axial)
 
     def F(xx):
-        f = bfn(xx.reshape(-1)).reshape(N, 3).copy()
-        if len(xl):
+        f = bfn(xx.reshape(-1)).reshape(N, 3).copy()           # bending (actin backbone resists via κ)
+        if len(xl):                                            # crosslink junctions (k_xl) — soft element
             d = xx[xl[:, 1]] - xx[xl[:, 0]]; f0 = k_xl * d
             np.add.at(f, xl[:, 0], f0); np.add.at(f, xl[:, 1], -f0)
-        d = xx[sp[:, 1]] - xx[sp[:, 0]]; L = np.linalg.norm(d, axis=1) + 1e-12
-        fa = (k_xl * (L - r0))[:, None] * (d / L[:, None])
-        np.add.at(f, sp[:, 0], fa); np.add.at(f, sp[:, 1], -fa)
+        if not use_reshape:                                    # finite actin axial spring (sourced EA/L_seg)
+            d = xx[sp[:, 1]] - xx[sp[:, 0]]; L = np.linalg.norm(d, axis=1) + 1e-12
+            fa = (k_axial * (L - r0))[:, None] * (d / L[:, None])
+            np.add.at(f, sp[:, 0], fa); np.add.at(f, sp[:, 1], -fa)
         return f
 
-    for _ in range(n_steps):
+    for step in range(n_steps):
         ff = F(x); ff[pinned] = 0.0
         if not np.isfinite(ff).all():
             return None
         x = x + dt_mu * ff; x[pinned] = pinpos
+        if use_reshape and (step + 1) % reshape_every == 0:    # inextensible actin (NF2007 §5.3), then re-pin
+            net.pos = x; x = reshape(net, n_iter=2); x[pinned] = pinpos
     react = -F(x)[top]
     sigma_xz = react[:, 0].sum() / (box_um * box_um)
-    return float(sigma_xz / gamma), connectivity_z(net, xl), meta
+    # analytic cross-check inputs (crosslink-limited G ≈ k_xl·ρ_L·ℓc; primary ground-truth)
+    rho_L = length_density_per_um2(C_A_uM)                      # µm⁻² contour-length density
+    z = connectivity_z(net, xl)
+    # crosslink spacing ℓc = total contour length / (2·n_xl) (each crosslink = one point on each of 2 fibers)
+    lc = float(net.seg_rest.sum()) / (2.0 * xl.shape[0]) if xl.shape[0] else float("inf")
+    meta = {**meta, "rho_L_per_um2": rho_L, "lc_um": lc, "k_xl": float(k_xl),
+            "G_analytic_crosslink": float(k_xl * rho_L * (lc if np.isfinite(lc) else 0.0))}
+    return float(sigma_xz / gamma), z, meta

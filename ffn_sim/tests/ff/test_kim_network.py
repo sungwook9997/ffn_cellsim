@@ -43,14 +43,33 @@ def test_connectivity_scales_with_crosslinker_ratio():
         assert connectivity_z(net, xl) == pytest.approx(2 * R, abs=0.05)
 
 
-def test_shear_modulus_rigidity_transition():
-    """The FF cross-linked network has an elastic floppy→rigid transition with connectivity: G≈0 at
-    low crosslinking, rising steeply with R (Head/Levine/MacKintosh 2003 / Kim 2007)."""
+def test_shear_modulus_rises_with_connectivity():
+    """The FF cross-linked network stiffens monotonically with connectivity (floppy→rigid trend,
+    Head/Levine/MacKintosh 2003 / Kim 2007). NOTE: with FF-native INEXTENSIBLE actin (reshape) +
+    bending, there is no sharp G≈0 floppy phase — bending gives a finite small modulus below the
+    central-force threshold (the bending-dominated regime), so we assert the monotone RISE, not G≈0."""
     from ffn_sim.ff.kim_network import shear_modulus
-    G_lo, z_lo, _ = shear_modulus(C_A_uM=300.0, R_acp=0.2, n_steps=1500)
-    G_mid, z_mid, _ = shear_modulus(C_A_uM=300.0, R_acp=1.0, n_steps=1500)
-    G_hi, z_hi, _ = shear_modulus(C_A_uM=300.0, R_acp=2.0, n_steps=1500)
-    assert G_lo < 0.05                              # floppy below threshold (z=0.4)
-    assert G_lo < G_mid < G_hi                      # stiffens with crosslinking
-    assert G_hi > 10 * max(G_mid, 1e-3)             # steep rise (rigidity transition)
+    G_lo, z_lo, _ = shear_modulus(C_A_uM=300.0, R_acp=0.2, k_xl=10.0, n_steps=4000)
+    G_mid, z_mid, _ = shear_modulus(C_A_uM=300.0, R_acp=1.0, k_xl=10.0, n_steps=4000)
+    G_hi, z_hi, _ = shear_modulus(C_A_uM=300.0, R_acp=2.0, k_xl=10.0, n_steps=4000)
     assert z_lo < z_mid < z_hi
+    assert G_lo < G_mid < G_hi                      # stiffens with crosslinking
+    assert G_hi > 3.0 * G_lo                        # substantial rise across the transition window
+
+
+def test_shear_modulus_crosslink_limited_linear():
+    """In the crosslink-limited regime (k_xl ≪ EA/L_seg, so actin is the rigid reshape backbone) the
+    shear modulus is LINEAR in the crosslink junction stiffness k_xl, and matches the analytic affine
+    form G ≈ (non-affine factor)·k_xl·ρ_L·ℓc with a STABLE non-affine factor < 1. This is the robust,
+    no-tuning Kim/analytic comparison (assert the linearity + the analytic FORM, not a calibrated
+    absolute — the absolute at sourced α-actinin stiffness, where k_xl ~ EA/L_seg, needs finite-EA)."""
+    import numpy as np
+
+    from ffn_sim.ff.kim_network import shear_modulus
+    res = [shear_modulus(C_A_uM=300.0, R_acp=1.5, k_xl=k, n_steps=6000, seed=0) for k in (3.0, 30.0)]
+    (G1, _, m1), (G2, _, m2) = res
+    assert 8.0 < G2 / G1 < 12.0                                  # ×10 in k_xl → ~×10 in G (linear)
+    # analytic affine form is an UPPER bound; the non-affine factor is stable across k_xl
+    f1, f2 = G1 / m1["G_analytic_crosslink"], G2 / m2["G_analytic_crosslink"]
+    assert 0.0 < f1 < 1.0 and 0.0 < f2 < 1.0                     # G < affine bound (non-affine softening)
+    assert abs(f1 - f2) / f1 < 0.1                               # factor stable → the FORM G∝k_xl·ρ_L·ℓc holds

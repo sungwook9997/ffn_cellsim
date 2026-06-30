@@ -37,6 +37,38 @@ These support the 2026-06-30 authoritative record (band is myosin-dominated; gen
   double-book (Young-Laplace ΔP·R/2 is the pressure's partner, not an independent passive channel).
   The genuine blebbistatin-insensitive passive floor is ~0.04 mN/m.
 
+## 5. FF↔Kim shear-modulus (Stage 6c, task c) — crosslinker + actin axial stiffness (PI-GATED)
+
+The FF↔Kim absolute-shear-modulus work (FF_KIM_NETWORK_VALIDATION §mechanics; viz
+`outputs/ff/figs/kim_shear_modulus.png`) needs these LIT-ANCHORED stiffnesses. They are currently
+**unsourced code constants / placeholders** — register SE rows BEFORE correcting the live runtime
+values (a magic-number/contract trigger). NONE are in the KB yet.
+
+- **`Ferrer2008_PNAS` — crosslinker JUNCTION stiffness** (the paper already cited in `hand_kmc.py` for
+  the α-actinin off-rate k_off0=0.066/s; its STIFFNESS datum was skipped). Ferrer, Lee, Chen, Pelz,
+  Nakamura, Kamm & Lang 2008, PNAS 105(27):9221–9226, DOI 10.1073/pnas.0706124105. **Values:**
+  α-actinin/actin junction **κm = 455 ± 215 pN/nm = 4.6e5 pN/µm**; filamin/actin **820 ± 551 pN/nm =
+  8.2e5 pN/µm** (κm = bond-well curvature from Dudko–Hummer–Szabo, i.e. the load-bearing junction
+  stiffness = exactly what `link_k` is). PDF NOT in references/ — fetch + DOI-verify at registration.
+  **CONFIRMED UNIT-SLIP CORRECTION (PI-gated):** `hand_kmc.ALPHA_ACTININ.link_k` and `FILAMIN.link_k`
+  are both **0.1 pN/µm** = ~4.5e6× too soft (a 1000× pN/µm-vs-pN/nm slip COMPOUNDED with adopting the
+  AFINES soft surrogate ~0.1 as if physical). Correct to 4.6e5 (α-actinin) / 8.2e5 (filamin) — but
+  this changes a LIVE production constant feeding the γ-floor cortex (and the CFL: stiffer links ⇒
+  smaller dt), so **surface to PI before editing**. Note: filamin has a SECOND regime (entropic WLC
+  ~2 pN/µm, Broedersz–Storm–MacKintosh 2009) — the Ferrer κm is the load-bearing one for `link_k`.
+- **`Kojima1994_PNAS` — actin axial stretching modulus EA.** Kojima, Ishijima & Yanagida 1994, PNAS
+  91(26):12962, DOI 10.1073/pnas.91.26.12962. Direct glass-needle stretch 43.7 ± 4.6 pN/nm over 1 µm ⇒
+  **EA = 4.4e-8 N = 4.4e4 pN** (⚠️ 1000× trap: 4.4e4 pN, not 4.4e7). Used in `kim_network.EA_ACTIN_PN`
+  to set k_axial = EA/L_seg (measurement only, not yet a live config constant). No Kojima SE row exists.
+- **Gardel/MacKintosh absolute cross-linked-actin G' band 0.1–1000 Pa** — MEDIUM confidence, canonical
+  but NOT KB-anchored; Gardel 2004 Science PDF is cited-only (not in references/). Obtain PDF + DOI
+  before any SE. Used only as an on-demand comparison band, never a live constant.
+
+Also fix (clean 1000× slip): `configs/phase1_h3.yaml` actin intra-filament `k_xl/k_intra = 1.0e-7 N/m
+(= 0.1 pN/µm)` → **0.1 pN/nm = 1e-4 N/m = 100 pN/µm** (lands at the registered PARAM-k_xl floor); its
+in-code "KU-3.19 (Furuike 2001)" attribution is wrong (KB-3.19 is a Bell off-rate; Furuike has 0 KB
+hits) — fix the comment.
+
 ## 4. Harvest
 
 `OPS_HARVEST_CANDIDATES_2026-06-30.md` lists 27 un-harvested RunResults (mostly prior-session H3/H7/
