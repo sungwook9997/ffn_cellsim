@@ -124,6 +124,20 @@ scoped); (3) **commission the force-bearing density datum** (the legit non-magic
 do NOT tune n_myo/f_myo to band (magic-number violation). Full: the ultracode synthesis +
 H7_SIGMA_A_NETWORK_INVESTIGATION_2026-06-07 + H7_GATE_B_BUCKLING_INVESTIGATION_2026-06-08.
 
+**Test status (2026-06-30): the ENABLER is verified, the network measurement needs a robust solver.**
+The single-fiber buckling enabler is confirmed (`test_buckling.py`: FF buckles, ~0.3 µm bow at 15 %
+compression — unlike the DCM M-SHAKE), so the test is NOT PI-integrator-freeze-gated *for FF*. But
+three prototype attempts at the full network-amplification measurement (triangular-lattice contractile
+patch, σ_buckle/σ_stiff) hit a genuine numerical obstacle: the explicit-projected / reshape relaxation
+is FRAGILE on a *contractile, connected, buckling* network — the per-fiber constraint projector goes
+SINGULAR under contraction (degenerate segment), and reshape divides by zero when a bend-stiff fiber's
+segment collapses; the bucklable patch also did not reliably enter the out-of-plane buckled branch
+(needs proper instability seeding). No reliable amplification number was obtained — and a fragile/NaN
+number is worse than none (integrity). **Prerequisite for the decisive measurement = a robust
+contractile-connected-network equilibrium solver** (regularized projector or finite-stiffness
+inextensibility + a buckling-mode seed + virial/Kirkwood stress with sign conventions, all
+lit-anchored connectivity/foci). That is a scoped dedicated build, flagged here rather than forced.
+
 ## 3. Result — the floor is REPRODUCED MD-free (prototype-scale sweep)
 
 γ_active is linear in the myosin prestress f_myo (the swept controlled variable): **≈0.19 pN/µm per
