@@ -18,14 +18,14 @@ from ffn_sim.ff.forces_warp import bending_energy, bending_force
 def test_default_params_match_h3_config():
     p = CortexParams()
     assert p.R_um == 10.0
-    assert p.n_filaments == 1000
+    assert p.n_filaments == 38000              # NATIVE cortical count (×40 mesoscale retired 2026-07-01)
     assert p.beads_per_filament == 7
     assert p.seg_um == 0.5
     assert p.L_filament_um == pytest.approx(3.0)
     assert p.persistence_length_um == 17.0
     assert p.kappa == pytest.approx(U.KAPPA_ACTIN)
-    assert p.areal_density_um2 == pytest.approx(1000 / (4 * np.pi * 100), rel=1e-9)
-    assert 0.7 < p.areal_density_um2 < 0.85       # cortex.py coverage ≈ 0.8 µm⁻²
+    assert p.areal_density_um2 == pytest.approx(38000 / (4 * np.pi * 100), rel=1e-9)
+    assert 25.0 < p.areal_density_um2 < 35.0      # NATIVE cortex ≈ 30 µm⁻² (38000/4πR²; ×40 retired)
 
 
 def test_small_cortex_geometry():

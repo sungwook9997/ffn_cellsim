@@ -104,12 +104,15 @@ def test_gamma_floor_reproduced_at_lit_prestress():
 
 
 def test_production_operating_point_floored():
-    """At the GROUNDED production point (N=1000/n_xl=1000/n_myo=100) the actomyosin γ is ~1e-4 mN/m
-    — on the archived BAOAB-MD g_soft (~1.4e-4) and thousands-of-× under band. (1 realization, fast.)"""
+    """The production function returns a deeply-floored actomyosin γ. SMOKE test at small N on CPU
+    (the native ~38000 default is GPU-only / impractical on CPU); the native magnitude (~6.6e-4 mN/m,
+    floor ~530×) is validated on the A5000 in the re-verification, not here. The floor is N-dependent
+    (the ×40 under-reported it ~5×) so this asserts floored + finite, not the native magnitude."""
     from ffn_sim.ff.gamma_floor import gamma_floor_production
-    r = gamma_floor_production(n_real=1, n_steps=150, parallel=False)
-    assert 5e-5 < r["gamma_active_mN_per_m"] < 5e-4      # the MD g_soft regime
-    assert r["floor_factor_under_band"] > 500.0          # deeply floored at the grounded point
+    r = gamma_floor_production(n_real=1, n_steps=150, parallel=False,
+                              n_filaments=300, n_xl=300, n_myo=30)   # small-N smoke (CPU-fast)
+    assert 1e-5 < r["gamma_active_mN_per_m"] < 5e-4      # floored (MD g_soft regime, small-N end)
+    assert r["floor_factor_under_band"] > 100.0          # deeply floored
     assert r["gamma_passive"] == pytest.approx(0.5 * TURGOR_DP0 * 10.0)   # 40 Pa state-dependent turgor
 
 

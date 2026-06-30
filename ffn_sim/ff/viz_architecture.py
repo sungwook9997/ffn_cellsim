@@ -45,9 +45,13 @@ def render(outdir: str = OUTDIR) -> str:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
+    import dataclasses
     from ffn_sim.ff.architecture_metrics import bundle_dimensions, sarcomeric_period_um
     from ffn_sim.ff.architecture_spec import MICROVILLUS, STRESS_FIBER
-    cortex = weave(CORTEX, rng=np.random.default_rng(0))
+    # display-only downsample of the now-native (~38000) cortex — the figure is illustrative; production
+    # runs native on the A5000 (rendering 38000 polylines is slow + visually saturated).
+    cortex_disp = dataclasses.replace(CORTEX, filament=dataclasses.replace(CORTEX.filament, n_filaments=1500))
+    cortex = weave(cortex_disp, rng=np.random.default_rng(0))
     filo = weave(FILOPODIUM, rng=np.random.default_rng(0))
     lam = weave(LAMELLIPODIUM, rng=np.random.default_rng(0))
     sf = weave(STRESS_FIBER, rng=np.random.default_rng(0))

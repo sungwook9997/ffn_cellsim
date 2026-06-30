@@ -5,6 +5,8 @@ parallel bundle (FILOPODIUM) from a spec, with NO structure-specific branch beyo
 mode. CORTEX must reproduce the H.3 γ-floor cortex; FILOPODIUM must hit the bundle architectural metrics.
 """
 
+import dataclasses
+
 import numpy as np
 import pytest
 
@@ -18,6 +20,15 @@ from ffn_sim.ff.architecture_spec import CORTEX, FILOPODIUM
 from ffn_sim.ff.weave import weave
 
 
+def _small(spec, n):
+    """A small-N copy of an ArchitectureSpec for fast CPU unit tests (production CORTEX is now native
+    ~38000; these tests validate the unification MECHANISM, not scale)."""
+    return dataclasses.replace(spec, filament=dataclasses.replace(spec.filament, n_filaments=n))
+
+
+CORTEX_SMALL = _small(CORTEX, 1000)
+
+
 def test_weave_cortex_reproduces_gamma_floor():
     """weave(CORTEX) reproduces gamma_floor.build_crosslinked_cortex (same RNG order ⇒ bit-exact γ) —
     so routing the cortex through the unified builder does NOT regress the γ-floor production number."""
@@ -29,7 +40,7 @@ def test_weave_cortex_reproduces_gamma_floor():
         measure_gamma,
     )
 
-    cw = weave(CORTEX, rng=np.random.default_rng(0))
+    cw = weave(CORTEX_SMALL, rng=np.random.default_rng(0))
     cb = build_crosslinked_cortex(CortexParams(), n_filaments=1000, n_xl=1000, n_myo=100,
                                   rng=np.random.default_rng(0))
     # structure parity
@@ -60,7 +71,7 @@ def test_weave_filopodium_bundle_metrics():
 
 def test_weave_one_builder_two_architectures():
     """The unification claim: the same weave() gives DISTINCT architectures (isotropic vs parallel)."""
-    cortex = weave(CORTEX, rng=np.random.default_rng(0))
+    cortex = weave(CORTEX_SMALL, rng=np.random.default_rng(0))
     filo = weave(FILOPODIUM, rng=np.random.default_rng(0))
     assert parallel_order_parameter(cortex.net) < 0.3      # cortex ≈ isotropic
     assert parallel_order_parameter(filo.net) > 0.95       # filopodium ≈ parallel
@@ -139,7 +150,7 @@ def test_weave_all_five_architectures_distinct():
     from ffn_sim.ff.architecture_metrics import sarcomeric_period_um
     from ffn_sim.ff.architecture_spec import LAMELLIPODIUM, MICROVILLUS, STRESS_FIBER
 
-    assert parallel_order_parameter(weave(CORTEX, rng=np.random.default_rng(0)).net) < 0.3
+    assert parallel_order_parameter(weave(CORTEX_SMALL, rng=np.random.default_rng(0)).net) < 0.3
     assert parallel_order_parameter(weave(MICROVILLUS, rng=np.random.default_rng(0)).net) > 0.95
     assert weave(LAMELLIPODIUM, rng=np.random.default_rng(0)).branch_triples.shape[0] > 0
     assert np.isfinite(sarcomeric_period_um(weave(STRESS_FIBER, rng=np.random.default_rng(0)))["period_um"])

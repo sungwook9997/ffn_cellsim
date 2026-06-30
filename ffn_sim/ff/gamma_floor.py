@@ -76,9 +76,15 @@ TURGOR_PI_IN0 = OSMOLYTE_C_MM * _RT_PN_UM2_PER_MM   # ≈ 5.15e5 pN/µm²
 # the measured ~0.6/µm² is ~26-35× BELOW the ~16-21/µm² the active-γ ceiling needs, so the real datum
 # CONFIRMS the γ-floor, it does not rescue it (re-anchoring lowers γ further). n_myo here is the
 # ×40-mesoscale count; density is the controlled variable in gamma_floor_density_sweep (NOT tuned).
-PROD_N_FIL = 1000
-PROD_N_XL = 1000
-PROD_N_MYO = 100   # ×40-mesoscale minifilament count (provenance per the citation-fix note above)
+# NATIVE-SCALE production (PI 2026-07-01): the ×40 mesoscale (N=1000) was a CPU/HOOMD hardware
+# constraint — RETIRED now that FF is GPU-native (the A5000 runs native ~38000 in ~5 s/realization,
+# 236 MiB of 16 GB; γ_active is N-DEPENDENT and the ×40 under-reported it ~5×). Run at the native
+# cortical filament count. Ratios preserved (n_xl=n_fil, n_myo=n_fil/10) so this isolates the
+# resolution change; the native γ_active ≈ 6.6e-4 mN/m (floor ~530×, N-converged). The myosin AREAL
+# density vs Nie 2015 (0.625/µm²) is a SEPARATE γ-floor lever (the engaged-density datum), not this switch.
+PROD_N_FIL = 38000   # native cortical actin filament count (CLAUDE.md ~38,000; ×40 mesoscale RETIRED)
+PROD_N_XL = 38000    # 1:1 crosslinkers (ratio preserved from the ×40 production)
+PROD_N_MYO = 3800    # n_fil/10 NMIIA minifilaments (ratio preserved; Nie-density reconciliation = separate lever)
 
 # Nie et al. 2015 measured cortical NMII minifilament areal density [µm⁻²] — the only direct datum.
 NIE2015_DENSITY_UM2 = 0.625
@@ -454,19 +460,21 @@ def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_
 
 def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int = 4,
                            n_steps: int = 400, base_seed: int = 0, parallel: bool = True,
-                           method: str = "explicit", device: str = "cpu") -> dict:
-    """γ at the GROUNDED production operating point (N=1000 / n_xl=1000 / n_myo=100), ensemble.
+                           method: str = "explicit", device: str = "cpu",
+                           n_filaments: int = PROD_N_FIL, n_xl: int = PROD_N_XL,
+                           n_myo: int = PROD_N_MYO) -> dict:
+    """γ at the GROUNDED production operating point — NATIVE ~38000 filaments (PI 2026-07-01; the ×40
+    mesoscale 1000 is RETIRED, was a CPU constraint). ensemble.
 
-    All counts from configs/phase1_h3.yaml (the ×40 mesoscale cell) — no prototype downscaling. This
-    is the defensible single-cell γ-floor number; at this point the MD-free γ_active lands on the
-    archived BAOAB-MD g_soft (~1.4e-4 mN/m). Returns the γ distribution + the floor factor vs band.
-
-    ``method='device'`` + ``device='cuda:0'`` runs the whole ensemble GPU-resident on the gbook A5000
-    (serial on the GPU — fast enough that the ProcessPool CPU path is unnecessary; CUDA+fork is unsafe).
+    The defensible single-cell γ-floor number; at native the MD-free γ_active ≈ 6.6e-4 mN/m (floor
+    ~530×, N-converged) — the ×40 (1000) under-reported it ~5× (γ is N-dependent). Returns the γ
+    distribution + the floor factor vs band. ``n_filaments``/``n_xl``/``n_myo`` override the native
+    defaults (e.g. a small-N smoke test). ``method='device'`` + ``device='cuda:0'`` runs the ensemble
+    GPU-resident on the gbook A5000 — REQUIRED at native scale (the CPU path is impractical).
     """
     from ffn_sim.ff.gamma_estimator import SALBREUX_BAND_PN_UM
-    ens = gamma_floor_ensemble(f_myo, n_real=n_real, n_filaments=PROD_N_FIL, n_xl=PROD_N_XL,
-                               n_myo=PROD_N_MYO, n_steps=n_steps, base_seed=base_seed,
+    ens = gamma_floor_ensemble(f_myo, n_real=n_real, n_filaments=n_filaments, n_xl=n_xl,
+                               n_myo=n_myo, n_steps=n_steps, base_seed=base_seed,
                                parallel=parallel, method=method, device=device)
     g = np.array([r["gamma_active"] for r in ens["runs"]])
     band_lo = SALBREUX_BAND_PN_UM[0]
@@ -474,7 +482,7 @@ def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int
             "gamma_active_mN_per_m": float(g.mean()) * 1e-3,
             "gamma_passive": ens["runs"][0]["gamma_passive"],
             "floor_factor_under_band": float(band_lo / g.mean()) if g.mean() > 0 else float("inf"),
-            "f_myo": f_myo, "n_fil": PROD_N_FIL, "n_xl": PROD_N_XL, "n_myo": PROD_N_MYO,
+            "f_myo": f_myo, "n_fil": n_filaments, "n_xl": n_xl, "n_myo": n_myo,
             "gamma_samples": g.tolist()}
 
 

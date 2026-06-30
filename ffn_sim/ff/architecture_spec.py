@@ -87,8 +87,8 @@ CORTEX = ArchitectureSpec(
     name="cortex",
     manifold="sphere",
     R_um=10.0,                                                  # MCF7, Wagner 2011 (KU-3.17)
-    filament=FilamentSpec(nucleator="formin", length_um=3.0, seg_um=0.5, n_filaments=1000,
-                          orientation="isotropic", polarity="mixed"),
+    filament=FilamentSpec(nucleator="formin", length_um=3.0, seg_um=0.5, n_filaments=38000,
+                          orientation="isotropic", polarity="mixed"),                 # NATIVE (×40 retired)
     crosslinker=CrosslinkerSpec(hand=ALPHA_ACTININ, bind_mode="any", density_per_fil=1.0),
     motor=MotorSpec(hand=NMIIA_MYOSIN, mode="bipolar", density_per_fil=0.1),
     notes="×40 mesoscale cortical shell; the γ-floor cell. α-actinin/filamin + NMIIA all lit-anchored.",

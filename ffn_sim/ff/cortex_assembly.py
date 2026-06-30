@@ -44,7 +44,8 @@ class CortexParams:
     """
 
     R_um: float = 10.0                      # cell radius [µm] (KU-3.17)
-    n_filaments: int = 1000                 # ×40 mesoscopic count (Plan v2 §3 H.3)
+    n_filaments: int = 38000                # NATIVE cortical filament count (PI 2026-07-01; ×40 mesoscale
+                                            # RETIRED — was a CPU constraint, FF is GPU-native on the A5000)
     beads_per_filament: int = 7             # mean (H.3 v3.1)
     seg_um: float = 0.5                     # ℓ₀ segment rest length [µm]
     kappa: float = U.KAPPA_ACTIN            # bending modulus [pN·µm²] = k_B·T·ℓ_p
