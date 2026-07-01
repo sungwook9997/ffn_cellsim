@@ -65,10 +65,13 @@ confinement-independence. The floor is real *for γ_myo* but γ_myo is not the c
 
 ## Remaining honest model gaps (not bugs; PI-roadmap)
 
-1. **Cortex mechanically over-stiff:** even in the regulated case the plate force is ~6–54 µN (~10³× the
-   real nN-scale) — the inextensible reshape makes the shell resist area-change too strongly; the real
-   cortex is soft / liquid-drop (actin turnover). So our cortex is not a clean liquid drop and a
-   force-derived γ (the experiment's actual extraction) would disagree with the turgor-Laplace γ.
+1. **Cortex mechanically over-stiff:** ~~even in the regulated case the plate force is ~6–54 µN (~10³× the
+   real nN-scale)~~ **⚠️ CORRECTED (FF_STAGE6Z, 2026-07-02): the ~10³× plate force was largely a SOFT-PLATE
+   MEASUREMENT ARTIFACT** — the soft penalty let the cortex float through the plate (15–75% of nodes above),
+   and Σ(k_plate·penetration) over those nodes inflated the force. A RIGID plate (hard z-clamp) confines the
+   cell exactly and gives realistic F = 3–39 nN over 15–55% strain. A residual over-stiff-cortex tail remains
+   (~6–10× turgor at high strain), so the cortex is still not a clean liquid drop, but the ~10³× figure was
+   the plate bug, not the cortex. A force-derived γ is now feasible (real nN F). See FF_STAGE6Z.
 2. **Osmoregulation as an explicit dynamic driver** (finite Lp + ion-pump ΔP setpoint), co-regulated with
    myosin — currently the setpoint is imposed.
 3. **Myosin containment role** is masked by (1); needs the soft-cortex regime to surface.

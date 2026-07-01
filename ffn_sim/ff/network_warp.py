@@ -380,7 +380,7 @@ def _seed_nucleus_cloud(centre, R_nuc, n_beads, rng):
 def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucleus=None, membrane=None,
                                               n_steps=4000, reshape_every=25, turgor_every=20, dt_mu=0.0,
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
-                                              nucleus_seed=0, device="cpu"):
+                                              rigid_plate=False, nucleus_seed=0, device="cpu"):
     """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
     :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
     ``common/compartments`` law-0 radial shell) PLUS an optional plasma-membrane surface (law-1). Two
@@ -527,17 +527,40 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                       inputs=[pos_d, wp.int32(Nc), centre, wp.float64(nucleus.R_nuc_um),
                               wp.float64(nucleus.k_chrom), wp.float64(nucleus.k_lamin),
                               wp.float64(nucleus.d_knee_um), wp.float64(nucleus.F_knee_pN), f_d], device=d)
-        wp.launch(plate_kernel, dim=N,     # plate acts on ALL nodes (cortex + nucleus)
-                  inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
-        wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+        if rigid_plate:                     # RIGID: step + hard-clamp |z|≤half_gap (exact confinement)
+            wp.launch(rigid_plate_step_kernel, dim=N,
+                      inputs=[pos_d, wp.float64(dt_mu), f_d, wp.float64(cz), wp.float64(half_gap), react_d], device=d)
+        else:                               # SOFT penalty (historical): may under-confine a stiff cortex
+            wp.launch(plate_kernel, dim=N, inputs=[pos_d, wp.float64(cz), wp.float64(half_gap),
+                      wp.float64(k_plate), f_d, react_d], device=d)
+            wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
         if (step + 1) % reshape_every == 0:
             wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
                       inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
 
     V, V_cyto, area, dP = _refresh_turgor()
     react_d.zero_()
-    wp.launch(plate_kernel, dim=N,
-              inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
+    if rigid_plate:                          # one more step to read the steady reaction (removed-disp / dt)
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        if nT:
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        if has_xl:
+            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)
+        if membrane is not None:
+            wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
+        if n_nuc:
+            wp.launch(nucleus_shell_kernel, dim=n_nuc,
+                      inputs=[pos_d, wp.int32(Nc), centre, wp.float64(nucleus.R_nuc_um),
+                              wp.float64(nucleus.k_chrom), wp.float64(nucleus.k_lamin),
+                              wp.float64(nucleus.d_knee_um), wp.float64(nucleus.F_knee_pN), f_d], device=d)
+        wp.launch(rigid_plate_step_kernel, dim=N,
+                  inputs=[pos_d, wp.float64(dt_mu), f_d, wp.float64(cz), wp.float64(half_gap), react_d], device=d)
+    else:
+        wp.launch(plate_kernel, dim=N,
+                  inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
     wp.synchronize_device(d)
     react = react_d.numpy()
     F_plate = float(react[0])
@@ -568,6 +591,31 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                "dP_mem_Pa": dP_mem, "area_um2": area, "A0_mem_um2": A0_mem,
                "k_plate": k_plate}
     return pos_all, metrics
+
+
+@wp.kernel
+def rigid_plate_step_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    step: wp.float64,                    # overdamped step dt/γ
+    F: wp.array(dtype=wp.vec3d),
+    cz: wp.float64,
+    half_gap: wp.float64,
+    reaction: wp.array(dtype=wp.float64),   # [0]=top-plate force (AFM), [1]=top contact count
+):
+    """RIGID parallel-plate = overdamped step x+=step·F, then HARD-clamp |z−cz| ≤ half_gap (a geometric
+    CONSTRAINT, not a stiff penalty → no CFL throttle). The clamp removes the outward motion the plate
+    resists; the AFM reaction is that removed displacement / step (= the force holding the node), summed on
+    the top plate. This confines the cell EXACTLY to the gap (no penetration), unlike the soft penalty."""
+    i = wp.tid()
+    p = pos[i] + step * F[i]
+    z = p[2] - cz
+    if z > half_gap:
+        wp.atomic_add(reaction, 0, (z - half_gap) / step)      # force = removed_disp / step
+        wp.atomic_add(reaction, 1, wp.float64(1.0))
+        p = wp.vec3d(p[0], p[1], cz + half_gap)
+    if z < -half_gap:
+        p = wp.vec3d(p[0], p[1], cz - half_gap)
+    pos[i] = p
 
 
 def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None, f_myo=0.0,

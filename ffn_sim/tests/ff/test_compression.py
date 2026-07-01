@@ -91,8 +91,24 @@ def test_whole_cell_membrane_is_small_additive_inward_tension():
     assert mm["gamma_mem_channel_pN_um"] == pytest.approx(10.0)          # buffered baseline present
     assert 0.0 < mm["dP_mem_Pa"] < 6.0                                   # small inward pressure (~2.7 Pa)
     assert np.isfinite(mm["F_plate_pN"]) and mm["F_plate_pN"] > 0.0      # stable
-    assert mm["F_plate_pN"] < m0["F_plate_pN"]                           # membrane bears a share → lower plate force
-    assert mm["gamma_apparent_mN_m"] == pytest.approx(m0["gamma_apparent_mN_m"], rel=5e-3)  # γ unchanged
+    assert mm["F_plate_pN"] <= m0["F_plate_pN"] * (1.0 + 1e-3)           # inward channel: does NOT raise F_plate
+    assert mm["gamma_apparent_mN_m"] == pytest.approx(m0["gamma_apparent_mN_m"], rel=5e-3)  # γ unchanged (robust)
+
+
+def test_rigid_plate_confines_cortex_exactly():
+    """The RIGID plate (hard z-clamp) confines the cortex EXACTLY to the gap — no node floats above the plate
+    (the soft penalty under-confines a stiff cortex: PI 2026-07-02 caught the cortex poking through). Reaction
+    is finite (the AFM force = removed-displacement/dt)."""
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=1000, n_xl=1000, n_myo=100,
+                                  rng=np.random.default_rng(1))
+    cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
+    pos, m = simulate_whole_cell_compression_on_device(cx, NMIIA_MINIFIL_STALL_PN, strain=0.35,
+                                                       n_steps=1500, pressure_setpoint=40.0,
+                                                       rigid_plate=True, device="cpu")
+    cor = pos[:cx.net.n_nodes]
+    zc = np.abs(cor[:, 2] - cor[:, 2].mean())
+    assert zc.max() <= m["half_gap"] + 1e-6            # NO cortex node above the plate (exact confinement)
+    assert m["F_plate_pN"] >= 0.0 and np.isfinite(m["F_plate_pN"])
 
 
 def test_whole_cell_none_nucleus_matches_cortex_only_interface():

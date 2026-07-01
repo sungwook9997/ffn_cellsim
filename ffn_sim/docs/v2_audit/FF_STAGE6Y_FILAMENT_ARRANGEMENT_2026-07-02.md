@@ -20,21 +20,24 @@ on the fiber tangent field (`_tangent_field`), plus `nematic_order()` to measure
 bit-identical). circumferential = tangent ∥ ê_φ (filaments wrap like latitude lines); meridional = tangent ∥
 ê_θ (pole-to-pole).
 
-## Crosslink re-review — the 1:1 default sits at the percolation edge
+## Crosslink re-review — the 1:1 default is marginal (~75-80%); arrangement-INSENSITIVE at NATIVE
 
-Connectivity = giant component of (intra-filament backbone ∪ crosslinks). At the production **1:1** crosslink
-density (n_xl = n_fil), the network is **marginally connected AND strongly arrangement-sensitive**:
+Connectivity = giant component of (intra-filament backbone ∪ crosslinks). **At NATIVE N=70686** (the mesoscale
+reach √(A/n_fil) is ~4× smaller than at moderate N, so filaments are densely packed):
 
-| arrangement | align→director | node-giant % (1:1) |
-|---|---|---|
-| isotropic | 0.64 | **78** |
-| circumferential (aligned) | 1.00 | **39** |
-| meridional (aligned) | 1.00 | 68 |
+| arrangement | align→director | node-giant % (1:1) | (2:1) |
+|---|---|---|---|
+| isotropic | 0.64 | 79.5 | 98.1 |
+| circumferential (aligned) | 1.00 | 78.1 | 97.7 |
+| meridional (aligned) | 1.00 | 74.9 | 97.1 |
 
-Crosslink-density sweep (giant %): 1:1 → {78/39/68}, **2:1 → {98/97/97}**, 4:1 → ~100 all. So ≥2:1 heals every
-arrangement to a well-connected gel; 1:1 is right at the edge (only ~25% of nodes crosslinked, degree ~1.15).
-→ **Surface to PI: is the 1:1 (γ-irrelevant, FF_STAGE6M) crosslink density the right connectivity choice, or
-should production use ≥2:1?** (Real cortex is a well-connected gel.)
+At native the 1:1 network is **marginally connected (~75-80%) but arrangement-INSENSITIVE** — dense packing
+gives even aligned filaments many near-neighbours to crosslink to. ≥2:1 → ~97-98% (robust gel) for all.
+**⚠️ CORRECTION (2026-07-02, PI forced native):** an earlier N=4000 probe reported a dramatic arrangement
+effect (78%→**39%** for circ-aligned) — that was a **moderate-scale artifact** (sparse mesoscale reach makes
+alignment matter for crossings); it does NOT hold at native. The lesson: connectivity must be measured at
+native density. **Still surface to PI:** 1:1 (~75-80%, FF_STAGE6M "γ-irrelevant") vs ≥2:1 (robust gel) — real
+cortex is a well-connected gel; only ~25% of nodes are crosslinked at 1:1.
 
 ## γ across arrangements (native N=70686, f_myo=5 pN, 3 seeds, mean±std)
 
