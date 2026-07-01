@@ -56,6 +56,14 @@ A parallel session **SOLVED spheroid compaction** — aggregate-level Foty-Stein
 line had identified (loose→compact needs aggregate σ, not per-cell junction levers). This reconstruction is
 complementary (compartments + contact + GPU-native + viz); the driver is owned by that session (untouched here).
 
+**Capstone attempted (full-compartment × compaction) — INTEGRATION UNSTABLE (honest negative).** Tried the
+concurrent session's stable compaction config (loose voronoi gap 2.4, N=100, cadherin bundle-10, reach
+cad_rbind=3.5 µm, contraction, aggregate σ=5 mN/m, conservative + implicit) PLUS my full compartments
+(nucleus + membrane tension). Bonds form (reach fixed — `cad_rbind` is in µm, an audit-caught unit bug), but
+the run **diverges: V/V0→148, cfl→9.6e8 (numerical blowup)**. The compaction stiff-force stack + the
+compartment stiff-force stack destabilise TOGETHER (each is stable alone). So integrating the two workstreams
+is NOT a trivial flag-combine — it needs dedicated stabilisation (a future task), not claimed as done.
+
 ## Verdict
 
 The three violations are corrected: **GPU-native ✅, full VISIBLE compartment stack ✅, contact improved
