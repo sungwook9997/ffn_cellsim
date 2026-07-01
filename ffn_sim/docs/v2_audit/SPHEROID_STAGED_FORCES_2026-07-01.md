@@ -71,10 +71,37 @@ junction harder **locally interpenetrates** instead of densifying the aggregate.
 bundle-40 + explicit integrator already fails the interpenetration gate at 0 nN — a known pre-existing
 issue needing the implicit integrator, NOT the motor; the Rg-flat compaction verdict is independent of it.)
 
-**Verdict:** building the correct motor proved compaction is **structurally turgor-blocked**, not merely
-motor-missing — the same force-magnitude pattern as the γ-floor / SF-force lines. The real missing piece
-for compaction is **volume accommodation** (cells reducing volume / porosity closing), which turgor
-currently prevents — not the junction motor.
+**Verdict:** building the correct motor showed the aggregate doesn't compact — but the reason was
+initially mis-attributed. See §2c.
+
+## 2c. Volume-accommodation lever tested and REFUTED — compaction is REACH-limited, not turgor-volume-blocked
+
+Hypothesis: turgor fixes cell volume, so compaction needs **volume accommodation** — turned ON `--osmotic`
+(regulatory volume decrease / water flux, V0 relaxes toward current V; PI 2026-06-25, KB-3.9). Test
+(`staged_osmotic_volume.png`, N=32 gap 2.2, motor × osmotic): **REFUTED.** Osmotic ON tracks OFF exactly
+(Rg −0.17 % both); cell volume is **flat/inflated (+3.6 %) in every condition, not reduced.** Osmotic
+regulation only accommodates *compression* (V<V0), but here the cells are **not compressed — they inflate
+into the ε-gap** and sit at turgor equilibrium, so there is nothing to accommodate.
+
+**Corrected reading:** compaction is **NOT cell-volume reduction** (cells are ~volume-incompressible) — it
+is **void elimination by cell shape deformation at ~constant volume** (porosity 12 %→2 %, T47D). At gap 2.2
+there is only a tiny void, so the motor gives only −0.17 %. The binding constraint is **REACH**: cadherin
+bonds only form within ~1.8 µm, so cells must start near-touching (small void) — a genuinely loose,
+high-porosity aggregate (big voids) can't be bridged at all (Stage-1 `bonds=0`). So the decisive missing
+piece is the **long-range Stage-1 junction reach**, not volume accommodation. (Supersedes the §2b
+turgor-volume framing.)
+
+## 2d. Reach lever CONFIRMED (directional) — long reach bridges a loose start + starts compaction
+
+De-risk proxy for the Stage-1 reach (added `cad_rbind`, an ECM-tether µm-reach override — fibronectin
+fibres are µm-scale): loose start **gap 2.4 (void ~3 µm)**, short (~1.8 µm) vs long (3.5 µm) reach + lit
+contraction (`staged_reach_lever.png`). **Result: reach is the lever.** Short reach → `bonds≈0`, Rg +0.08 %
+(no compaction, as the void exceeds cadherin range). Long reach → bonds form robustly (262, churn 1643) and
+the aggregate **compacts, Rg −0.27 %** (vs +0.08 %) — the first loose-start compaction in this whole series.
+**Caveats (why it's directional, not production):** magnitude still small (−0.27 %); the strong bundle-40 +
+explicit integrator fails the interpenetration gate (pen 3.2) — cells partly yank into overlap rather than
+cleanly densify. Clean compaction needs (a) a *mechanistic* ECM/fibronectin reach module (not a cadherin
+`r_bind` hack), (b) the implicit integrator for the strong bundle, (c) a genuinely loose high-porosity start.
 
 ---
 
@@ -130,7 +157,9 @@ production test, not piecemeal.
 - `staged_faceting_junction_mechanism.png` — **the money figure**: differential *junction* tension facets,
   uniform bulk tension rounds → faceting is junction-mediated.
 - `staged_contraction_motor.png` — the BUILT active junction contraction motor: closes gaps but Rg −0.2 %
-  even at 6 nN ≫ lit → compaction is turgor-blocked, not motor-missing.
+  even at 6 nN ≫ lit → compaction is not motor-limited.
+- `staged_osmotic_volume.png` — volume-accommodation (osmotic RVD) REFUTED: osmotic ON == OFF, cells inflate
+  not compress → compaction is reach-limited void elimination, not turgor-volume-blocked.
 
 ---
 
@@ -138,11 +167,12 @@ production test, not piecemeal.
 
 1. The two missing junction properties — **long-range reach** and **active contraction** — are new
    mechanistic builds (active mechanobiology), PI-gated; the second is FF-territory grafted onto the junction.
-2. **Compaction is structurally turgor-blocked** — the active contraction motor was BUILT (§2b) and,
-   even at 6 nN ≫ lit, gives Rg −0.2 % (no compaction); it closes gaps but turgor's volume-fixing prevents
-   densification. So the round→compact trajectory the PI asked to see is missing NOT for lack of a motor but
-   because **volume accommodation** is absent. Candidate next lever (PI): allow osmotic volume regulation /
-   turgor relaxation during compaction (a real cell process), then re-test the motor.
+2. **Compaction is REACH-limited (not turgor-volume-blocked).** The active contraction motor was BUILT (§2b)
+   and closes gaps but gives Rg −0.2 % (no compaction). The volume-accommodation hypothesis was TESTED
+   (`--osmotic`) and **REFUTED** (§2c) — cells inflate, not compress. Compaction is **void elimination**, and
+   the binding constraint is the **missing long-range Stage-1 junction reach**: short (~1.8 µm) bonds can't
+   bridge a loose high-porosity aggregate. Decisive next build (PI): a mechanistic ECM/fibronectin µm-scale
+   junction-reach precursor, then test dynamic aggregation+compaction from a genuinely loose start.
 3. **Faceting IS reachable** mechanistically via differential junction tension (asph 0.033 at MCF7 γ) — a
    candidate to replace/validate the geometric confluent-init faceting.
 4. No parameter was tuned to outcome; γ swept as a controlled variable; forces at lit-anchored values.

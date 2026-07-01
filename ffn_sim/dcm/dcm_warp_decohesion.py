@@ -260,7 +260,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
-                   cad_bundle: float = 1.0, cad_contract: float = 0.0, ecm_bundle: float = 1.0,
+                   cad_bundle: float = 1.0, cad_contract: float = 0.0, cad_rbind: float = 0.0,
+                   ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
                    pen_cap: bool = True, pen_cap_frac: float = 1.0,
@@ -646,7 +647,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # rupture (slip) under the spreading traction → emergent de-cohesion.
         f0 = 29.2e-12
         r0_meso = c_rep
-        rbind_meso = c_adh
+        rbind_meso = cad_rbind if cad_rbind > 0.0 else c_adh   # Stage-1 ECM-tether reach proxy (fibronectin µm-scale) when set
         k_meso = f0 / max(rbind_meso - r0_meso, 1e-12)
         cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
