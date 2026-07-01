@@ -75,6 +75,74 @@ def _random_unit_vectors(n: int, rng: np.random.Generator) -> np.ndarray:
     return v / np.linalg.norm(v, axis=1, keepdims=True)
 
 
+def _local_tangent_frame(com_dirs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Per-COM orthonormal tangent frame on S²: (ê_φ azimuthal/circumferential, ê_θ meridional/polar).
+
+    ê_φ = ẑ × ĉ (points along lines of latitude); ê_θ = ĉ × ê_φ (points pole-to-pole). At the poles
+    (ĉ ∥ ẑ) ê_φ is degenerate → filled with an arbitrary but consistent tangent so the frame stays finite.
+    """
+    n = com_dirs.shape[0]
+    z = np.array([0.0, 0.0, 1.0])
+    ephi = np.cross(np.broadcast_to(z, (n, 3)), com_dirs)
+    nrm = np.linalg.norm(ephi, axis=1, keepdims=True)
+    fallback = np.cross(np.broadcast_to(np.array([1.0, 0.0, 0.0]), (n, 3)), com_dirs)
+    ephi = np.where(nrm > 1e-9, ephi / np.maximum(nrm, 1e-12),
+                    fallback / np.maximum(np.linalg.norm(fallback, axis=1, keepdims=True), 1e-12))
+    etheta = np.cross(com_dirs, ephi)
+    etheta = etheta / np.maximum(np.linalg.norm(etheta, axis=1, keepdims=True), 1e-12)
+    return ephi, etheta
+
+
+def _tangent_field(com_dirs: np.ndarray, rng: np.random.Generator, orientation: str,
+                   nematic_S: float) -> np.ndarray:
+    """Fiber tangent directions for a chosen cortex ARRANGEMENT (the 'filament alignment' axis).
+
+    orientation:
+      'isotropic'       — random tangent (nematic order S≈0; the default / historical cortex).
+      'circumferential' — director = ê_φ (azimuthal; filaments wrap like lines of latitude).
+      'meridional'      — director = ê_θ (polar; filaments run pole-to-pole).
+    ``nematic_S`` ∈ [0,1] sets the alignment strength for the non-isotropic cases (S=1 fully aligned to the
+    director, S=0 recovers isotropic): t = normalize(S·director + (1−S)·random_tangent).
+    """
+    rand = _random_unit_vectors(com_dirs.shape[0], rng)
+    if orientation == "isotropic":
+        return rand
+    ephi, etheta = _local_tangent_frame(com_dirs)
+    if orientation == "circumferential":
+        director = ephi
+    elif orientation == "meridional":
+        director = etheta
+    else:
+        raise ValueError(f"orientation must be isotropic/circumferential/meridional, got {orientation!r}")
+    S = float(np.clip(nematic_S, 0.0, 1.0))
+    t = S * director + (1.0 - S) * rand
+    return t / np.maximum(np.linalg.norm(t, axis=1, keepdims=True), 1e-12)
+
+
+def nematic_order(net: FiberNetwork, orientation: str = "circumferential") -> dict:
+    """Measure the cortex filament ALIGNMENT: mean |t̂·director̂| per fiber (1=aligned, isotropic≈0.5-0.64)
+    plus the global Q-tensor scalar order S (largest eigenvalue of ⟨(3/2)t⊗t − ½I⟩). Diagnostic only."""
+    off = net.fiber_offsets
+    tans = []
+    coms = []
+    for f in range(len(off) - 1):
+        seg = net.pos[off[f]:off[f + 1]]
+        if seg.shape[0] < 2:
+            continue
+        t = seg[-1] - seg[0]
+        t = t / max(np.linalg.norm(t), 1e-12)
+        tans.append(t)
+        coms.append(seg.mean(0) / max(np.linalg.norm(seg.mean(0)), 1e-12))
+    tans = np.asarray(tans)
+    coms = np.asarray(coms)
+    Q = (1.5 * np.einsum("fi,fj->ij", tans, tans) / len(tans)) - 0.5 * np.eye(3)
+    S_global = float(np.linalg.eigvalsh(Q).max())
+    ephi, etheta = _local_tangent_frame(coms)
+    director = ephi if orientation == "circumferential" else etheta
+    align = float(np.mean(np.abs(np.einsum("fi,fi->f", tans, director))))
+    return {"align_to_director": align, "S_global_Q": S_global, "n_fibers": len(tans)}
+
+
 def _great_circle_arc(com_dir: np.ndarray, tangent: np.ndarray, R: float, n_beads: int,
                       seg: float) -> np.ndarray:
     """Lay ``n_beads`` model-points as a centred great-circle arc on the sphere of radius ``R``.
@@ -93,7 +161,9 @@ def _great_circle_arc(com_dir: np.ndarray, tangent: np.ndarray, R: float, n_bead
 
 def build_cortex_network(params: CortexParams | None = None, *,
                          rng: np.random.Generator | None = None,
-                         n_filaments: int | None = None) -> tuple[FiberNetwork, dict]:
+                         n_filaments: int | None = None,
+                         orientation: str = "isotropic",
+                         nematic_S: float = 1.0) -> tuple[FiberNetwork, dict]:
     """Assemble the cortex fiber network on the sphere (FF units, µm).
 
     Args:
@@ -113,8 +183,8 @@ def build_cortex_network(params: CortexParams | None = None, *,
     R, nb, seg = params.R_um, params.beads_per_filament, params.seg_um
 
     com_dirs = _random_unit_vectors(F, rng)
-    rand_tan = _random_unit_vectors(F, rng)         # random direction, projected onto tangent plane
-    fibers = [_great_circle_arc(com_dirs[f], rand_tan[f], R, nb, seg) for f in range(F)]
+    tangents = _tangent_field(com_dirs, rng, orientation, nematic_S)   # ARRANGEMENT (alignment) axis
+    fibers = [_great_circle_arc(com_dirs[f], tangents[f], R, nb, seg) for f in range(F)]
 
     net = build_fiber_network(fibers, kappa=params.kappa)
 
@@ -130,6 +200,8 @@ def build_cortex_network(params: CortexParams | None = None, *,
         "seg_len_std_um": float(net.seg_rest.std()),
         "on_shell_residual_um": float(np.max(np.abs(radii - R))),
         "kappa_pN_um2": params.kappa,
+        "orientation": orientation,
+        "nematic_S": float(nematic_S) if orientation != "isotropic" else 0.0,
     }
     return net, meta
 

@@ -11,7 +11,12 @@ import numpy as np
 import pytest
 
 from ffn_sim.ff import units as U
-from ffn_sim.ff.cortex_assembly import CortexParams, build_cortex_network, equatorial_circumference_um
+from ffn_sim.ff.cortex_assembly import (
+    CortexParams,
+    build_cortex_network,
+    equatorial_circumference_um,
+    nematic_order,
+)
 from ffn_sim.ff.forces_warp import bending_energy, bending_force
 
 
@@ -57,3 +62,28 @@ def test_bending_force_finite_and_curved():
 
 def test_equatorial_circumference():
     assert equatorial_circumference_um(CortexParams()) == pytest.approx(2 * np.pi * 7.5)
+
+
+def test_orientation_default_is_isotropic_bit_identical():
+    """The orientation control is additive: default (orientation='isotropic') reproduces the historical
+    random-tangent cortex bit-for-bit (no regression)."""
+    net_a, _ = build_cortex_network(n_filaments=50, rng=np.random.default_rng(3))
+    net_b, _ = build_cortex_network(n_filaments=50, rng=np.random.default_rng(3),
+                                    orientation="isotropic")
+    assert np.array_equal(net_a.pos, net_b.pos)
+
+
+def test_arrangement_alignment_order_parameter():
+    """Filament ARRANGEMENT (alignment) is controllable: aligned cortices reach align→1 to their director,
+    isotropic stays low; the nematic_S knob interpolates."""
+    iso, _ = build_cortex_network(n_filaments=400, rng=np.random.default_rng(4), orientation="isotropic")
+    circ, _ = build_cortex_network(n_filaments=400, rng=np.random.default_rng(4),
+                                   orientation="circumferential", nematic_S=1.0)
+    half, _ = build_cortex_network(n_filaments=400, rng=np.random.default_rng(4),
+                                   orientation="circumferential", nematic_S=0.5)
+    a_iso = nematic_order(iso, "circumferential")["align_to_director"]
+    a_circ = nematic_order(circ, "circumferential")["align_to_director"]
+    a_half = nematic_order(half, "circumferential")["align_to_director"]
+    assert a_circ > 0.98                       # fully aligned to ê_φ
+    assert a_iso < 0.75                         # isotropic in-plane baseline
+    assert a_iso < a_half < a_circ             # S interpolates alignment

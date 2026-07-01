@@ -190,6 +190,7 @@ def _cross_fiber_pairs(net: FiberNetwork, capture_um: float, n_links: int,
 def build_crosslinked_cortex(params: CortexParams | None = None, *, n_filaments: int = 100,
                              n_xl: int = 300, n_myo: int = 100,
                              alpha_fraction: float = 0.30,
+                             orientation: str = "isotropic", nematic_S: float = 1.0,
                              rng: np.random.Generator | None = None) -> CrosslinkedCortex:
     """Assemble one quenched cortex realization: fibers + crosslinker links + myosin links.
 
@@ -202,7 +203,8 @@ def build_crosslinked_cortex(params: CortexParams | None = None, *, n_filaments:
         params = CortexParams()
     if rng is None:
         rng = np.random.default_rng(0)
-    net, _ = build_cortex_network(params, rng=rng, n_filaments=n_filaments)
+    net, _ = build_cortex_network(params, rng=rng, n_filaments=n_filaments,
+                                  orientation=orientation, nematic_S=nematic_S)
 
     # Mesoscale bind reach (sanctioned ×40 coarse-graining dual) — the molecular ε (60 nm / 210 nm)
     # cannot connect the sparse coarse-grained filaments; widen to √(A/n_fil) as the archived cortex.
@@ -478,6 +480,7 @@ def measure_gamma(cortex: CrosslinkedCortex, f_myo: float, *, n_planes: int = 50
 def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_myo: int = 100,
                     seed: int = 0, n_steps: int = 600, method: str = "explicit",
                     device: str = "cpu", crosslink_turnover: bool = True,
+                    orientation: str = "isotropic", nematic_S: float = 1.0,
                     engaged_fraction: float = 1.0) -> dict:
     """One quenched realization → γ at prestress ``f_myo``, measured at the resting physiological
     geometry (physiological-baseline rule: settle the resting passive shell, then add myosin as the
@@ -488,11 +491,13 @@ def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_
     robust force-free-rebinding resting baseline (Stage 6N) so the lit-anchored STIFF crosslink
     stiffness gives a clean γ (no spurious passive γ_xl); the active γ is identical either way."""
     rng = np.random.default_rng(seed)
-    cortex = build_crosslinked_cortex(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, rng=rng)
+    cortex = build_crosslinked_cortex(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, rng=rng,
+                                      orientation=orientation, nematic_S=nematic_S)
     equilibrate(cortex, 0.0, n_steps=n_steps, turgor=False,   # settle resting passive shell
                 method=method, device=device, crosslink_turnover=crosslink_turnover)
     out = measure_gamma(cortex, f_myo, turgor=True, engaged_fraction=engaged_fraction)
-    out.update(f_myo=f_myo, seed=seed, n_xl=int(cortex.xl_i.size), n_myo=int(cortex.myo_i.size))
+    out.update(f_myo=f_myo, seed=seed, n_xl=int(cortex.xl_i.size), n_myo=int(cortex.myo_i.size),
+               orientation=orientation, nematic_S=(nematic_S if orientation != "isotropic" else 0.0))
     return out
 
 
