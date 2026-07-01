@@ -502,7 +502,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
             # ONLY once the reservoir is exhausted (areal strain > f_excess) — PI-blocked (f_excess unknown
             # for MCF7) → deferred. (A bare fixed-A0 K_A law is knife-edge: slack the instant area<A0 — which
             # is ALWAYS true here since our regulated turgor lets the cell shed area under compression — and
-            # explosively stiff above; it cannot hold the physiological baseline. Verified empirically.)
+            # explosively stiff above; cannot hold the baseline. Native run: area < A0 at every strain.)
             gamma_mem_tot = min(membrane.gamma_mem, membrane.tau_lysis)   # buffered plateau = γ_mem
             dP_mem = 2.0 * gamma_mem_tot / max(R_mean, 1e-9)
             dP_mem_area = -dP_mem * area / Nc          # inward (negative → turgor_kernel pushes toward centre)

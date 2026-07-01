@@ -222,8 +222,9 @@ def resolve_membrane(*, gamma_mem_pN_um: float = 10.0, K_A_pN_um: float = 2.35e5
     normal deformations (the area reservoir keeps in-plane tension ~constant; Raucher & Sheetz 1999). This is
     the physiological-baseline state. The steep K_A elastic upturn engages only past the reservoir capacity
     (areal strain > f_excess) — PI-blocked (f_excess unknown for MCF7) → deferred. (A bare fixed-A0 K_A law is
-    knife-edge — slack the instant area<A0, explosively stiff above — and cannot hold the baseline; verified
-    empirically, so we wire the buffered plateau, not bare-K_A.)
+    knife-edge — slack the instant area<A0, explosively stiff above — and cannot hold the baseline: in the
+    regulated-compression regime the cell area is < A0 at every strain, so bare-K_A would be permanently slack;
+    we wire the buffered plateau, not bare-K_A.)
 
     Defaults (lit-anchored, band-guarded):
     - γ_mem = 10 pN/µm = 10 µN/m — the PURE bilayer in-plane tension (Diz-Muñoz 2013; KB-3.B1.1). Band 3–40
