@@ -377,13 +377,14 @@ def _seed_nucleus_cloud(centre, R_nuc, n_beads, rng):
     return (np.asarray(centre, dtype=np.float64) + R_nuc * u + jitter).astype(np.float64)
 
 
-def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucleus=None,
+def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucleus=None, membrane=None,
                                               n_steps=4000, reshape_every=25, turgor_every=20, dt_mu=0.0,
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
                                               nucleus_seed=0, device="cpu"):
     """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
     :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
-    ``common/compartments`` law-0 radial shell). Two physical cortex↔nucleus couplings are modelled:
+    ``common/compartments`` law-0 radial shell) PLUS an optional plasma-membrane surface (law-1). Two
+    physical cortex↔nucleus couplings are modelled:
 
       1. **incompressible-cytoplasm displacement** — the nucleus occupies volume, so the compressible
          cytoplasm is V_cyto = V_hull − V_nuc; compressing the cell squeezes a smaller cytoplasm →
@@ -392,10 +393,14 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
          ≈67% for R_nuc/R_cell≈1/3) the plates press on the nucleus beads directly and its stiff
          strain-stiffening law dominates the force response.
 
-    ``nucleus`` is a ``common.compartments.ResolvedNucleus`` (or None → cortex-only, reproducing the
-    non-nucleus AFM path). Returns (pos_all, metrics). To measure the nucleus contribution, run twice
-    (nucleus=None vs a ResolvedNucleus) and diff F_plate. Validated on the A5000; the CPU path is for
-    small-N interface tests."""
+    ``nucleus`` is a ``common.compartments.ResolvedNucleus`` (or None → no nucleus). ``membrane`` is a
+    ``common.compartments.ResolvedMembrane`` (or None → no membrane): a distinct plasma-membrane surface
+    tension applied INWARD (Young-Laplace ΔP_mem=2γ_mem/R) on the cortex nodes — an ADDITIVE lipid channel the
+    FF cortex lacks (the cortex has no area-elastic term; reshape fixes segment length only). Wired as the
+    **reservoir-buffered CONSTANT baseline tension γ_mem** (physiological state, Raucher-Sheetz plateau); the
+    steep K_A elastic upturn past reservoir capacity is deferred (PI-blocked f_excess). γ_mem is a separate
+    force channel; ΔP·R/2 is NOT re-reported as passive tension. Returns (pos_all, metrics). Validated on the
+    A5000; the CPU path is for small-N interface tests."""
     from scipy.spatial import ConvexHull
 
     from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
@@ -430,6 +435,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     vmin = VMIN_FRAC * V0
     half_gap = R0 * (1.0 - strain)
     K_vol = TURGOR_PI_IN0 / (1.0 - VMIN_FRAC)
+    A0_mem = float(ConvexHull(net.pos).area)                # resting cortex area → membrane baseline = γ_mem
     if k_plate is None:
         k_plate = 10.0 * (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc
     if dt_mu <= 0.0:
@@ -439,6 +445,8 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         kmax = max(kmax, (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc, k_plate)
         if nucleus is not None:
             kmax = max(kmax, nucleus.k_chrom + nucleus.k_lamin)     # nucleus stiffness sets the CFL too
+        # membrane (buffered-plateau γ_mem) is a soft ~few-Pa inward tension → no CFL term needed; the K_A
+        # elastic upturn is deferred (reservoir PI-blocked) and would set the CFL if/when it is wired.
         dt_mu = 0.1 / kmax
 
     d = device
@@ -464,25 +472,40 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     centre = wp.vec3d(0.0, 0.0, 0.0)
     cz = 0.0
     dP_area = 0.0
+    dP_mem_area = 0.0
+    gamma_mem_tot = 0.0
+    dP_mem = 0.0
 
     def _refresh_turgor():
-        nonlocal centre, cz, dP_area
+        nonlocal centre, cz, dP_area, dP_mem_area, gamma_mem_tot, dP_mem
         p = pos_d.numpy().astype(np.float64)
         pcx = p[:Nc]                                  # cortex nodes define the cell surface + centroid
         c = pcx.mean(axis=0)
         centre = wp.vec3d(float(c[0]), float(c[1]), float(c[2]))
         cz = float(c[2])
+        R_mean = float(np.linalg.norm(pcx - c, axis=1).mean())
         try:
             hull = ConvexHull(pcx)
             V, area = float(hull.volume), float(hull.area)
         except Exception:
-            R_mean = float(np.linalg.norm(pcx - c, axis=1).mean()); V = (4/3)*np.pi*R_mean**3; area = 4*np.pi*R_mean**2
+            V = (4/3)*np.pi*R_mean**3; area = 4*np.pi*R_mean**2
         V_cyto = V - V_nuc                            # incompressible-nucleus displacement coupling
         if pressure_setpoint is not None:
             dP = float(pressure_setpoint)
         else:
             dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V_cyto - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
         dP_area = dP * area / Nc
+        if membrane is not None:
+            # RESERVOIR-BUFFERED PLATEAU: the plasma membrane holds ~CONSTANT baseline tension γ_mem over
+            # normal deformations, because the area reservoir (folds/microvilli/caveolae) unfolds to keep
+            # in-plane tension near-constant (Raucher & Sheetz 1999). The steep K_A elastic upturn engages
+            # ONLY once the reservoir is exhausted (areal strain > f_excess) — PI-blocked (f_excess unknown
+            # for MCF7) → deferred. (A bare fixed-A0 K_A law is knife-edge: slack the instant area<A0 — which
+            # is ALWAYS true here since our regulated turgor lets the cell shed area under compression — and
+            # explosively stiff above; it cannot hold the physiological baseline. Verified empirically.)
+            gamma_mem_tot = min(membrane.gamma_mem, membrane.tau_lysis)   # buffered plateau = γ_mem
+            dP_mem = 2.0 * gamma_mem_tot / max(R_mean, 1e-9)
+            dP_mem_area = -dP_mem * area / Nc          # inward (negative → turgor_kernel pushes toward centre)
         return V, V_cyto, area, dP
 
     for step in range(n_steps):
@@ -496,6 +519,9 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         if has_myo:
             wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)  # cortex only
+        if membrane is not None:
+            # membrane inward surface tension = turgor_kernel with a NEGATIVE (inward) dP·area/N, cortex nodes only
+            wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
         if n_nuc:
             wp.launch(nucleus_shell_kernel, dim=n_nuc,
                       inputs=[pos_d, wp.int32(Nc), centre, wp.float64(nucleus.R_nuc_um),
@@ -538,6 +564,8 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                "dP_from_force_Pa": dP_force, "V_over_V0": V_cyto / V0, "V_hull_um3": V, "V_nuc_um3": V_nuc,
                "gamma_apparent_pN_um": gamma_laplace, "gamma_apparent_mN_m": gamma_laplace * 1e-3,
                "R_nuc_eq_um": R_nuc_eq, "nucleus_contact": nucleus_contact, "n_nuc": n_nuc,
+               "has_membrane": membrane is not None, "gamma_mem_channel_pN_um": gamma_mem_tot,
+               "dP_mem_Pa": dP_mem, "area_um2": area, "A0_mem_um2": A0_mem,
                "k_plate": k_plate}
     return pos_all, metrics
 

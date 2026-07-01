@@ -15,7 +15,7 @@ from ffn_sim.ff.network_warp import (
     simulate_compressed_shell_on_device,
     simulate_whole_cell_compression_on_device,
 )
-from ffn_sim.common.compartments import resolve_nucleus
+from ffn_sim.common.compartments import resolve_membrane, resolve_nucleus
 
 
 def test_compressed_shell_runs_and_returns_finite_metrics():
@@ -69,6 +69,30 @@ def test_whole_cell_nucleus_engagement_geometry():
     _, m_hi = simulate_whole_cell_compression_on_device(cx2, NMIIA_MINIFIL_STALL_PN, strain=0.7,
                                                         nucleus=nuc, n_steps=300, device="cpu")
     assert m_hi["nucleus_contact"] is True
+
+
+def test_whole_cell_membrane_is_small_additive_inward_tension():
+    """The plasma-membrane channel (buffered-plateau γ_mem) adds a small INWARD tension: it holds γ_mem at the
+    operating point, lowers F_plate by a few % (bears a share of the surface tension), and leaves the
+    turgor-Laplace γ_apparent unchanged — i.e. the membrane, like the nucleus, does not change the cortical-
+    tension measurement. Stable (no divergence)."""
+    mem = resolve_membrane()
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=900, n_xl=900, n_myo=90,
+                                  rng=np.random.default_rng(1))
+    cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
+    _, m0 = simulate_whole_cell_compression_on_device(cx, NMIIA_MINIFIL_STALL_PN, strain=0.1, membrane=None,
+                                                      n_steps=400, pressure_setpoint=40.0, device="cpu")
+    cx2 = build_crosslinked_cortex(CortexParams(), n_filaments=900, n_xl=900, n_myo=90,
+                                   rng=np.random.default_rng(1))
+    cx2.R0_mean = float(np.linalg.norm(cx2.net.pos - cx2.net.pos.mean(0), axis=1).mean())
+    _, mm = simulate_whole_cell_compression_on_device(cx2, NMIIA_MINIFIL_STALL_PN, strain=0.1, membrane=mem,
+                                                      n_steps=400, pressure_setpoint=40.0, device="cpu")
+    assert mm["has_membrane"] is True and m0["has_membrane"] is False
+    assert mm["gamma_mem_channel_pN_um"] == pytest.approx(10.0)          # buffered baseline present
+    assert 0.0 < mm["dP_mem_Pa"] < 6.0                                   # small inward pressure (~2.7 Pa)
+    assert np.isfinite(mm["F_plate_pN"]) and mm["F_plate_pN"] > 0.0      # stable
+    assert mm["F_plate_pN"] < m0["F_plate_pN"]                           # membrane bears a share → lower plate force
+    assert mm["gamma_apparent_mN_m"] == pytest.approx(m0["gamma_apparent_mN_m"], rel=5e-3)  # γ unchanged
 
 
 def test_whole_cell_none_nucleus_matches_cortex_only_interface():

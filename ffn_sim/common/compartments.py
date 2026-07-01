@@ -198,3 +198,47 @@ def resolve_nucleus(*, R_nuc_um: float, n_beads: int, E_nuc_Pa: float = 5.0e3,
     d_knee = knee_strain * R_nuc_um
     return ResolvedNucleus(R_nuc_um=R_nuc_um, n_beads=n_beads, k_chrom=k_chrom, k_lamin=k_lamin,
                            d_knee_um=d_knee, F_knee_pN=k_chrom * d_knee)
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedMembrane:
+    """Plasma-membrane surface params in FF units (pN, µm). Wired as a reservoir-buffered constant baseline
+    tension γ_mem (Raucher-Sheetz plateau); K_A/κ recorded for the PI-gated reservoir-elastic extension."""
+    gamma_mem: float    # pN/µm   bilayer-only in-plane tension (the buffered baseline)
+    K_A: float          # pN/µm   area-expansion (stretch) modulus (deferred: reservoir extension)
+    kappa: float        # pN·µm   bending rigidity (recorded; not used by the surface term)
+    tau_lysis: float    # pN/µm   lysis-tension cap
+
+
+def resolve_membrane(*, gamma_mem_pN_um: float = 10.0, K_A_pN_um: float = 2.35e5,
+                     kappa_pN_um: float = 0.0828, tau_lysis_pN_um: float = 5.0e3) -> ResolvedMembrane:
+    """Resolve the plasma-membrane params (KB-3.B1 / Rawicz 2000; archive membrane_surface.py bridge).
+
+    **Units (FF pN·µm·s), verified against the cortex ground truth** γ_cortex=½ΔP·R=½·40 Pa·7.5 µm=150 pN/µm
+    ≡ 0.15 mN/m:  **1 N/m = 1e6 pN/µm, 1 µN/m = 1 pN/µm, 1 mN/m = 1e3 pN/µm**; energy **1 J = 1e18 pN·µm**,
+    kBT@300K = 4.14e-3 pN·µm. (An earlier draft used a wrong 1 N/m = 1e3 pN/µm — do NOT.)
+
+    Wiring (whole-cell AFM): the membrane holds a **reservoir-buffered CONSTANT baseline tension γ_mem** over
+    normal deformations (the area reservoir keeps in-plane tension ~constant; Raucher & Sheetz 1999). This is
+    the physiological-baseline state. The steep K_A elastic upturn engages only past the reservoir capacity
+    (areal strain > f_excess) — PI-blocked (f_excess unknown for MCF7) → deferred. (A bare fixed-A0 K_A law is
+    knife-edge — slack the instant area<A0, explosively stiff above — and cannot hold the baseline; verified
+    empirically, so we wire the buffered plateau, not bare-K_A.)
+
+    Defaults (lit-anchored, band-guarded):
+    - γ_mem = 10 pN/µm = 10 µN/m — the PURE bilayer in-plane tension (Diz-Muñoz 2013; KB-3.B1.1). Band 3–40
+      pN/µm. NOT the apparent 30–300 µN/m (that includes membrane-cortex adhesion γ_MCA already carried by the
+      cortex — using it would double-count the cortex). γ_mem is a distinct additive lipid channel; do NOT also
+      re-report the turgor Laplace partner ΔP·R/2 as a passive tension.
+    - K_A = 2.35e5 pN/µm = 0.235 N/m — lipid-bilayer area-expansion modulus (Rawicz 2000, SOPC; KB-3.B1.3).
+      Band 2e5–3e5. Recorded for the deferred reservoir-elastic extension.
+    - κ = 0.0828 pN·µm = 20 kBT (Rawicz 2000; KB-3.B1.2) — recorded; the surface term does not use bending.
+    """
+    if not (3.0 <= gamma_mem_pN_um <= 40.0):
+        raise ValueError(f"gamma_mem {gamma_mem_pN_um} pN/µm outside KB-3.B1.1 bilayer band [3,40]")
+    if not (2.0e5 <= K_A_pN_um <= 3.0e5):
+        raise ValueError(f"K_A {K_A_pN_um} pN/µm outside Rawicz band [2e5,3e5] (0.2-0.3 N/m)")
+    if not (0.041 <= kappa_pN_um <= 0.124):
+        raise ValueError(f"kappa {kappa_pN_um} pN·µm outside band [0.041,0.124] (10-30 kBT)")
+    return ResolvedMembrane(gamma_mem=gamma_mem_pN_um, K_A=K_A_pN_um, kappa=kappa_pN_um,
+                            tau_lysis=tau_lysis_pN_um)

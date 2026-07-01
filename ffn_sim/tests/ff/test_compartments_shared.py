@@ -8,7 +8,7 @@ implementation, PI 2026-07-01) and that resolve_nucleus honors the KU-3.B2 bands
 import numpy as np
 import pytest
 
-from ffn_sim.common.compartments import resolve_nucleus, run_radial_shell_warp
+from ffn_sim.common.compartments import resolve_membrane, resolve_nucleus, run_radial_shell_warp
 
 
 def _nucleus_cloud(n=60, R=2.5, seed=0):
@@ -44,6 +44,18 @@ def test_resolve_nucleus_bridge_and_bands():
         resolve_nucleus(R_nuc_um=2.5, n_beads=60, ratio_lamin=10.0)   # isolated value rejected
     with pytest.raises(ValueError):
         resolve_nucleus(R_nuc_um=2.5, n_beads=60, E_nuc_Pa=1.0e5)     # out of KU band
+
+
+def test_resolve_membrane_bands_and_units():
+    """KB-3.B1 / Rawicz 2000 lit values in FF units (1 µN/m = 1 pN/µm; verified vs cortex 0.15 mN/m=150 pN/µm)."""
+    m = resolve_membrane()
+    assert m.gamma_mem == pytest.approx(10.0)        # 10 µN/m bilayer in-plane tension (Diz-Muñoz)
+    assert m.K_A == pytest.approx(2.35e5)            # 0.235 N/m (Rawicz 2000)
+    assert m.kappa == pytest.approx(0.0828)          # 20 kBT (1 J = 1e18 pN·µm)
+    with pytest.raises(ValueError):
+        resolve_membrane(gamma_mem_pN_um=300.0)      # apparent tension (incl. cortex adhesion) rejected
+    with pytest.raises(ValueError):
+        resolve_membrane(K_A_pN_um=235.0)            # the wrong-unit (1e3) value is out of the Rawicz band
 
 
 def test_nucleus_strain_stiffens_past_knee():
