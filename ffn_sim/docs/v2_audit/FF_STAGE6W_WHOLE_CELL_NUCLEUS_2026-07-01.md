@@ -147,8 +147,30 @@ force-fit), and the soft-cortex corollary is an *untested extrapolation* — are
   band overlaid). Panel C: xz cross-sections at strain 0.15/0.60/0.78 — cortex shell squashed between plates,
   nucleus untouched at 0.15/0.60, **compressed only at 0.78**.
 
+## Next steps — the two remaining compartments are PI-gated (documented, not piecemeal-built)
+
+- **Membrane (H.8, law 1) — BLOCKED on two PI decisions, do not autonomously wire:**
+  1. **No lit-anchored params in the KB.** `tag_query` for the membrane mechanical constants returns only
+     KB-3.2 (Helfrich bilayer, SensPlastino/Helfrich1973) with **unpopulated** γ_mem / K_A / κ values. Wiring
+     the shared law-1 shell at physiological values would require inventing magic numbers (violates the hard
+     rule) — the params must be **PI-registered as Parameter rows** (γ_mem, K_A, κ with KU→source links) first.
+  2. **K_A double-counting design fork.** The law-1 area term (γ_tot = γ_mem + K_A·(S−A0)/A0, K_A≈0.24 N/m ~
+     10³× resting tension) makes the surface nearly inextensible — but the FF cortex is *already* ~inextensible
+     via the reshape kernel. Applying K_A to the same cortex nodes double-counts area-stiffness. A physically
+     correct membrane needs a **separate area/reservoir DOF** (cf. archive `membrane_reservoir.py`) so membrane
+     area-incompressibility and cortex inextensibility are distinct (bleb/tether mechanics). This is a
+     mechanistic design decision → PI sign-off. The small baseline γ_mem term *is* additive/non-double-counting
+     but, like the nucleus, is numerically invisible in the current over-stiff-cortex regime (γ_mem~0.03 ≪
+     cortex-borne 0.15 mN/m).
+- **Soft-cortex counterfactual (test the Claim-D hypothesis) = FF_STAGE6V gap #1 (PI-roadmap).** Whether the
+  nucleus/membrane matter mechanically requires the realistic soft (turnover/liquid-drop, nN-scale) cortex —
+  the compression must allow area change/turnover *during* indentation, not the inextensible reshape. Non-
+  trivial gap-#1 work, not a quick probe.
+
 ## Files
 - `common/compartments.py` — shared radial-shell kernel (bit-identical port) + `resolve_nucleus` (KU-3.B2).
+  The `resolve_membrane` (law 1) resolver is intentionally NOT added yet — pending PI param registration + the
+  K_A/reservoir design decision above.
 - `ff/network_warp.py` — `simulate_whole_cell_compression_on_device` + `nucleus_shell_kernel` +
   `_seed_nucleus_cloud` (commit 8e34b39).
 - `tests/ff/test_compartments_shared.py`, `tests/ff/test_compression.py` (whole-cell engagement + reduction).
