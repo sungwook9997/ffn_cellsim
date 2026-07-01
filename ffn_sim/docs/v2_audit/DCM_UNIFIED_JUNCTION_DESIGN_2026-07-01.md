@@ -56,3 +56,44 @@ forces and are validated). The clean path:
 the session just validated. Under the 8h mandate I will START step 1 (the unified junction force-law
 design) which is non-destructive; the destructive swap (steps 2-3, replacing the working kernels) is the
 point to confirm. No magic-number; the unified law's constants are the same lit KU-4.2 / w_cs / γ values.
+
+## The unified junction force law (non-destructive design, drafted 2026-07-01)
+
+State that defines the interface = the local **bond areal density** ρ_b(x) [bonds/µm²] on each apposed
+cell-cell face, from the existing `CadherinBondHost` (Rakshit catch-slip, KU-4.2). Everything derives
+from ρ_b and the node-face separation d:
+
+**(a) Adhesion** — each bond is a trans-dimer spring with the Rakshit catch-slip off-rate. Per-area
+adhesive traction σ_adh = ρ_b · f_bond(d, load), f_bond = k_trans·(d − r0) for d > r0 (pull toward
+contact). This IS the current cadherin force — unchanged, it just also drives (b) and (c).
+
+**(b) Steric floor (non-penetration)** — the SAME interface's excluded-volume core below the bond rest
+length: σ_rep = k_steric·(r0 − d) for d < r0. One law with (a): a single traction curve σ(d) that is
+repulsive for d<r0 and adhesive for d>r0 — replacing the separate `contact_grid_conservative` tent (whose
+rep/adh split is exactly this, but decoupled from ρ_b). k_steric from the cortex compressibility (derived).
+
+**(c) Interfacial tension γ_ij — EMERGES from ρ_b (this is the key unification)** — the junction's energy
+per unit area is γ_ij = γ_cortex − w_adh(ρ_b), with the adhesion energy density w_adh(ρ_b) = ρ_b · ε_bond
+(ε_bond = the trans-dimer binding energy, ~w_cs at saturating density). So:
+  - **free surface** (ρ_b = 0): γ_ij = γ_cortex (HIGH) → the face rounds (area-minimising).
+  - **bonded contact** (ρ_b high): γ_ij = γ_cortex − ρ_b·ε_bond (LOW) → the contact WETS/flattens
+    (Young-Dupré / Manning) → a flat facet.
+The force is the usual area-gradient f = −γ_ij·∂A/∂r, but γ_ij is now **per-face from the local bond
+density**, NOT a separate `differential_surface_tension` field. **Faceting emerges** from the γ_ij
+contrast between bonded (low) and free (high) faces — the exact thing the separate differential-tension
+kernel imposed by hand is now a CONSEQUENCE of where bonds are.
+
+**(d) Stages = ρ_b dynamics only** — aggregation: bonds form (ρ_b: 0→); compaction/maturation: ρ_b
+ramps up (γ_ij drops further, facets sharpen, Q rises); de-cohesion: load ruptures bonds (ρ_b↓, γ_ij↑,
+contact opens). No new forces per stage — only the junction STATE ρ_b evolves. This is precisely the PI
+principle: one mechanism, stage-modulated.
+
+**One kernel** `junction_force_kernel(pos, faces, cof, bond_density, params) → force` replaces the four.
+Inputs: the CadherinBondHost per-face bond density + the node-face geometry. Outputs: σ(d) traction
+(rep+adh) scattered barycentrically + the γ_ij(ρ_b) area-gradient. Parity target: at the physiological
+saturating ρ_b the confluent foam must reproduce Q~149 / V/V0 1 / pen-clean before the swap.
+
+**Testable prediction that distinguishes it from the separate-force model:** faceting Q should scale
+CONTINUOUSLY with bond density (a maturation sweep ρ_b: low→high gives Q: 113→~150), because γ_ij is
+ρ_b-derived — a single knob (junction maturation) spans aggregation→compaction. That sweep is the
+clean validation once the kernel exists (still PI-scope-gated for the destructive swap).
