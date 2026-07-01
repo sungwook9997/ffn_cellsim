@@ -27,6 +27,7 @@ r = run_decohesion(
     conservative_contact=True, integrator=INTEG,  # pressing contact (energy min at d~0); implicit = stable
     nucleus=True, E_nuc=4700.0, R_nuc_factor=0.25, ratio_lamin=1.4,   # nucleus compartment
     surface_tension=True, gamma_surf=5.0e-4,      # plasma-membrane tension
+    diff_tension=(os.environ.get("DIFF", "1") == "1"),  # DAH: contact faces lower tension -> apposition
     warmup=1500, save_frames=npz)
 
 d = np.load(npz); fr = d["frames"]; cof = d["cof"]; nc = int(cof.max()) + 1
