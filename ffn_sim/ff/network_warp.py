@@ -527,7 +527,11 @@ def simulate_compressed_shell_on_device(cortex, f_myo, *, strain=0.0, n_steps=40
     seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
     seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
     R0 = cortex.R0_mean if cortex.R0_mean > 0.0 else cortex.R_um
-    V0 = (4.0 / 3.0) * np.pi * R0**3
+    # V0 MUST use the SAME volume convention as the running V (convex hull of the actual points), NOT the
+    # sphere (4/3)πR0³: a ~few-% V0-vs-hull mismatch × the huge osmotic modulus (K_vol~7e5 Pa) makes ΔP a
+    # pure volume-reference ARTIFACT (frustrated cortex → hull<sphere → ΔP huge; relaxed → hull>sphere → ΔP=0).
+    # Reference to the RESTING (uncompressed) hull so V/V0=1 at strain 0 → ΔP=dP0.
+    V0 = float(ConvexHull(net.pos).volume)
     vmin = VMIN_FRAC * V0
     half_gap = R0 * (1.0 - strain)                       # plate half-separation
     K_vol = TURGOR_PI_IN0 / (1.0 - VMIN_FRAC)
