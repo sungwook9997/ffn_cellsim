@@ -44,14 +44,22 @@ physiological params (GPU-native, confluent full-compartment):
 So the honest state: **the floating GAP is largely fixed, but the INTERPENETRATION is NOT** — two separate
 problems, and only the first is addressed. (1) Gap: the cortex no longer grossly floats (0.67 → **0.156 µm**,
 ~2 % of R = a physiological inter-cell cleft, 4.3× tighter), driven by the correct physics (conservative
-contact + differential interfacial tension + lit adhesion w_cs=2.85e-3). (2) **Interpenetration: `pen_frac_peak`
-≈ 2.1 at N=400 = ~7× the G2 gate (0.3·mean_edge) — a SIGNIFICANT, UNRESOLVED overlap** (some cells genuinely
-penetrate neighbours; the fit is heterogeneous — closest ~0.04 µm apposed, others overlapping). This is NOT
-clean pressing. `--integrator implicit` is NOT a reliable fix (pen 0.16 at N=200 mid-run but 1.3 at N=100,
-variable, and slow CG/step). The real fix is **true log-barrier IPC**, whose flag (`--ipc`) is currently
-broken in the conservative-contact combo (concurrent-session finding). So: **the "pressing contact" claim is
+contact + differential interfacial tension + lit adhesion w_cs=2.85e-3). (2) **Interpenetration: G2 FAIL, and it
+is PERSISTENT not transient.** The N=400 explicit run settles at pen_frac **2.1–2.3** (final step 10000 =
+**2.227**) with peak **3.24** (step 5000) = **7–11× the G2 gate (0.3·mean_edge)**. `pen_frac = max_node_penetration
+/ mean_edge` is a worst-single-node metric, but it holds ~2.2 across the whole 10k-step trajectory, so it is a
+genuine *equilibrium* overlap, not an outlier spike. Critically the run is otherwise HEALTHY — **V/V0=1.000,
+A/A0=0.999, drift=0, cfl~0** — so this is NOT a numerical blowup; it is the penalty/tent contact reaching an
+equilibrium where turgor pushes some nodes *through* a neighbour face and the finite-stiffness contact can't
+expel them. `--integrator implicit` REDUCES it (N=100: pen **1.321** stable, 4.4× gate — better than explicit's
+2.2) but does NOT pass G2. Raising `--rep-strength` makes it WORSE (stiffer penalty → the fastest node tunnels
+deeper per step before the shell catches it — line 1679). The real fix is **true log-barrier IPC** (non-tunneling
+by construction), whose flag (`--ipc`) is currently broken in the conservative-contact combo (concurrent-session
+finding, pen=73). **That file (`dcm_warp_decohesion.py`) is the concurrent session's active workspace, so the IPC
+fix is THEIR territory — I do not touch it (shared-tree-collision rule).** So: **the "pressing contact" claim is
 PARTIAL — floating fixed, overlap NOT — and must not be over-stated as clean apposition** (audit#3 caught the
-"faceted-tissue-good" over-claim; the peel render looks faceted but hides real interpenetration inside).
+"faceted-tissue-good" over-claim; the exterior peel render looks faceted but HIDES the interior interpenetration
+— an honest cross-section viewer that SHOWS it is committed alongside this doc).
 
 ## Concurrent work (dcm/main)
 

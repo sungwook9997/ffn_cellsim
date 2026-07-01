@@ -436,7 +436,23 @@ elFpsv.textContent=fps;
 // (stencil-capped true clip) or slab (single-cell layer) from the dropdown.
 elClipOn.checked=true;
 elMode.value='peel';
-setFrame(0);
+// deep-link overrides so a specific cross-section is shareable / headless-renderable:
+//   ?section=cut|peel|slab|off  &axis=0|1|2  &pos=0..1  &flip=0|1  &thick=0..1  &frame=N|last
+let _f0=0;
+try{
+  const q=new URLSearchParams(location.search);
+  if(q.has('section')){const s=q.get('section');
+    if(s==='off'){elClipOn.checked=false;}
+    else{elClipOn.checked=true; if(['peel','slab','cut'].includes(s)) elMode.value=s;}}
+  if(q.has('axis')){const a=+q.get('axis'); if(a>=0&&a<=2) elAxis.value=String(a);}
+  if(q.has('pos')){elClip.value=String(Math.round(Math.max(0,Math.min(1,+q.get('pos')))*1000));}
+  if(q.has('flip')){elFlip.checked=(q.get('flip')==='1'||q.get('flip')==='true');}
+  if(q.has('thick')){elThick.value=String(Math.round(Math.max(0,Math.min(1,+q.get('thick')))*1000));
+    elThickv.textContent=(elThick.value/10).toFixed(0)+'%';}
+  const fr=q.get('frame');
+  if(fr==='last') _f0=F-1; else if(fr!==null && !isNaN(+fr)) _f0=+fr;
+}catch(e){}
+setFrame(_f0);
 updMode();
 
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();
