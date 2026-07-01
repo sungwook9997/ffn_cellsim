@@ -11,7 +11,11 @@ import numpy as np
 import pytest
 
 from ffn_sim.ff.gamma_floor import CortexParams, NMIIA_MINIFIL_STALL_PN, build_crosslinked_cortex
-from ffn_sim.ff.network_warp import simulate_compressed_shell_on_device
+from ffn_sim.ff.network_warp import (
+    simulate_compressed_shell_on_device,
+    simulate_whole_cell_compression_on_device,
+)
+from ffn_sim.common.compartments import resolve_nucleus
 
 
 def test_compressed_shell_runs_and_returns_finite_metrics():
@@ -41,6 +45,42 @@ def test_pressure_setpoint_regulation_holds_dP():
                                                n_steps=300, pressure_setpoint=400.0, device="cpu")
     assert abs(m["dP_turgor_Pa"] - 400.0) < 1e-6            # ΔP regulated to the setpoint
     assert m["gamma_apparent_mN_m"] == pytest.approx(0.5 * 400.0 * m["R_eq_um"] * 1e-3, rel=1e-6)
+
+
+def test_whole_cell_nucleus_engagement_geometry():
+    """Whole-cell AFM (cortex+turgor+shared nucleus): the plate reaches the nucleus only at strain
+    > 1−R_nuc/R_cell (≈67% for R_nuc/R_cell=1/3), so the nucleus is mechanically absent from the
+    cortical-tension regime (<50% strain) and engages only under deep compression — the geometric
+    finding behind 'the nucleus does not change the cortical-tension AFM' (FF whole-cell wiring)."""
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=900, n_xl=900, n_myo=90,
+                                  rng=np.random.default_rng(1))
+    R0 = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
+    cx.R0_mean = R0
+    nuc = resolve_nucleus(R_nuc_um=R0 / 3.0, n_beads=60)      # R_nuc/R_cell = 1/3 → contact at ~67% strain
+    # low strain (cortical-tension regime): plate does NOT reach the nucleus
+    _, m_lo = simulate_whole_cell_compression_on_device(cx, NMIIA_MINIFIL_STALL_PN, strain=0.1,
+                                                        nucleus=nuc, n_steps=300, device="cpu")
+    assert m_lo["n_nuc"] == 60
+    assert m_lo["nucleus_contact"] is False
+    # deep strain (past 1−R_nuc/R_cell=0.667): the plate compresses the nucleus directly
+    cx2 = build_crosslinked_cortex(CortexParams(), n_filaments=900, n_xl=900, n_myo=90,
+                                   rng=np.random.default_rng(1))
+    cx2.R0_mean = float(np.linalg.norm(cx2.net.pos - cx2.net.pos.mean(0), axis=1).mean())
+    _, m_hi = simulate_whole_cell_compression_on_device(cx2, NMIIA_MINIFIL_STALL_PN, strain=0.7,
+                                                        nucleus=nuc, n_steps=300, device="cpu")
+    assert m_hi["nucleus_contact"] is True
+
+
+def test_whole_cell_none_nucleus_matches_cortex_only_interface():
+    """With nucleus=None the whole-cell path reduces to the cortex-only AFM (same metric keys, n_nuc=0)."""
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=800, n_xl=800, n_myo=80,
+                                  rng=np.random.default_rng(2))
+    cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
+    _, m = simulate_whole_cell_compression_on_device(cx, NMIIA_MINIFIL_STALL_PN, strain=0.1,
+                                                     nucleus=None, n_steps=200, device="cpu")
+    assert m["n_nuc"] == 0 and m["nucleus_contact"] is False
+    for k in ("F_plate_pN", "gamma_apparent_mN_m", "dP_turgor_Pa", "V_over_V0"):
+        assert np.isfinite(m[k])
 
 
 def test_compression_half_gap_scales_with_strain():

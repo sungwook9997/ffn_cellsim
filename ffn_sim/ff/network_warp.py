@@ -324,6 +324,224 @@ def plate_kernel(
         wp.atomic_add(force, i, wp.vec3d(wp.float64(0.0), wp.float64(0.0), pen))
 
 
+@wp.kernel
+def nucleus_shell_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    off: wp.int32,                  # nucleus beads occupy indices [off, off+n_nuc)
+    centre: wp.vec3d,               # cell centroid (nucleus concentric with the cell)
+    R0: wp.float64,                 # rest nuclear radius R_nuc [µm]
+    k_chrom: wp.float64,            # inner (chromatin) slope [pN/µm]
+    k_lamin: wp.float64,            # extra outer (lamina) slope past the knee [pN/µm]
+    d_knee: wp.float64,             # lamin-engagement knee displacement [µm]
+    F_knee: wp.float64,             # force at the knee [pN]
+    force: wp.array(dtype=wp.vec3d),
+):
+    """Bilinear radial-shell (nucleus law 0) restoring force per nucleus bead — VERBATIM law-0 math from
+    ``common/compartments.rsf_apply`` (chromatin slope inside the knee, +lamin slope past it: strain-
+    stiffening). Accumulating (atomic_add) so it composes with the plate penalty on the same beads."""
+    j = wp.tid()
+    i = off + j
+    p = pos[i]
+    dx = p[0] - centre[0]; dy = p[1] - centre[1]; dz = p[2] - centre[2]
+    r = wp.sqrt(dx * dx + dy * dy + dz * dz)
+    rs = r
+    if r <= wp.float64(0.0):
+        rs = wp.float64(1.0)
+    nx = dx / rs; ny = dy / rs; nz = dz / rs
+    if r <= wp.float64(0.0):
+        nx = wp.float64(0.0); ny = wp.float64(0.0); nz = wp.float64(0.0)
+    dd = r - R0
+    ad = wp.abs(dd)
+    sgn = wp.float64(0.0)
+    if dd > wp.float64(0.0):
+        sgn = wp.float64(1.0)
+    if dd < wp.float64(0.0):
+        sgn = wp.float64(-1.0)
+    Fmag = wp.float64(0.0)
+    if ad <= d_knee:
+        Fmag = -k_chrom * dd
+    else:
+        e = ad - d_knee
+        Fmag = -sgn * (F_knee + (k_chrom + k_lamin) * e)
+    wp.atomic_add(force, i, wp.vec3d(Fmag * nx, Fmag * ny, Fmag * nz))
+
+
+def _seed_nucleus_cloud(centre, R_nuc, n_beads, rng):
+    """Fibonacci-sphere nucleus bead cloud of radius R_nuc about ``centre`` (near-uniform, deterministic
+    up to a small rng jitter so no two beads coincide). Returns (n_beads, 3) float64."""
+    k = np.arange(n_beads) + 0.5
+    phi = np.arccos(1.0 - 2.0 * k / n_beads)
+    theta = np.pi * (1.0 + 5.0 ** 0.5) * k
+    u = np.stack([np.sin(phi) * np.cos(theta), np.sin(phi) * np.sin(theta), np.cos(phi)], axis=1)
+    jitter = 1e-3 * R_nuc * rng.standard_normal((n_beads, 3))
+    return (np.asarray(centre, dtype=np.float64) + R_nuc * u + jitter).astype(np.float64)
+
+
+def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucleus=None,
+                                              n_steps=4000, reshape_every=25, turgor_every=20, dt_mu=0.0,
+                                              n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
+                                              nucleus_seed=0, device="cpu"):
+    """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
+    :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
+    ``common/compartments`` law-0 radial shell). Two physical cortex↔nucleus couplings are modelled:
+
+      1. **incompressible-cytoplasm displacement** — the nucleus occupies volume, so the compressible
+         cytoplasm is V_cyto = V_hull − V_nuc; compressing the cell squeezes a smaller cytoplasm →
+         ΔP rises faster (the nucleus is felt hydrostatically before any contact), and
+      2. **direct compression** — once the plate half-gap drops below R_nuc (strain > 1−R_nuc/R_cell,
+         ≈67% for R_nuc/R_cell≈1/3) the plates press on the nucleus beads directly and its stiff
+         strain-stiffening law dominates the force response.
+
+    ``nucleus`` is a ``common.compartments.ResolvedNucleus`` (or None → cortex-only, reproducing the
+    non-nucleus AFM path). Returns (pos_all, metrics). To measure the nucleus contribution, run twice
+    (nucleus=None vs a ResolvedNucleus) and diff F_plate. Validated on the A5000; the CPU path is for
+    small-N interface tests."""
+    from scipy.spatial import ConvexHull
+
+    from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
+    from ffn_sim.ff.gamma_floor import TURGOR_DP0, TURGOR_PI_IN0, VMIN_FRAC
+
+    net = cortex.net
+    Nc = net.n_nodes
+    tri = np.ascontiguousarray(net.bend_triples, np.int32)
+    alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
+    fiber_off = np.ascontiguousarray(net.fiber_offsets, np.int32)
+    seg_per = np.diff(fiber_off) - 1
+    seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
+    seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    R0 = cortex.R0_mean if cortex.R0_mean > 0.0 else cortex.R_um
+
+    # ---- seed the nucleus bead cloud concentric with the resting cortex ----
+    c0 = net.pos.mean(axis=0)
+    if nucleus is not None:
+        rng = np.random.default_rng(nucleus_seed)
+        nuc_pos = _seed_nucleus_cloud(c0, nucleus.R_nuc_um, nucleus.n_beads, rng)
+        V_nuc = (4.0 / 3.0) * np.pi * nucleus.R_nuc_um ** 3      # incompressible nucleus displacement [µm³]
+    else:
+        nuc_pos = np.zeros((0, 3), dtype=np.float64)
+        V_nuc = 0.0
+    n_nuc = nuc_pos.shape[0]
+    N = Nc + n_nuc
+    pos0 = np.concatenate([net.pos, nuc_pos], axis=0)
+
+    # V0 = RESTING compressible-cytoplasm volume (hull of the cortex minus the nucleus it displaces), so
+    # V_cyto/V0 = 1 at strain 0 → ΔP = dP0 (same convention as simulate_compressed_shell_on_device).
+    V0 = float(ConvexHull(net.pos).volume) - V_nuc
+    vmin = VMIN_FRAC * V0
+    half_gap = R0 * (1.0 - strain)
+    K_vol = TURGOR_PI_IN0 / (1.0 - VMIN_FRAC)
+    if k_plate is None:
+        k_plate = 10.0 * (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc
+    if dt_mu <= 0.0:
+        kmax = float(net.kappa.max()) / seg**3
+        if cortex.xl_i.size:
+            kmax = max(kmax, float(cortex.xl_k.max()))
+        kmax = max(kmax, (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc, k_plate)
+        if nucleus is not None:
+            kmax = max(kmax, nucleus.k_chrom + nucleus.k_lamin)     # nucleus stiffness sets the CFL too
+        dt_mu = 0.1 / kmax
+
+    d = device
+    pos_d = wp.array(np.ascontiguousarray(pos0, np.float64), dtype=wp.vec3d, device=d)
+    f_d = wp.zeros(N, dtype=wp.vec3d, device=d)
+    react_d = wp.zeros(3, dtype=wp.float64, device=d)          # [0]=top force, [1]=cortex contacts, [2]=unused
+    tri_d = wp.array(tri, dtype=wp.int32, device=d)
+    alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
+    foff_d = wp.array(fiber_off, dtype=wp.int32, device=d)
+    soff_d = wp.array(seg_off, dtype=wp.int32, device=d)
+    srest_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
+    has_xl = bool(cortex.xl_i.size)
+    if has_xl:
+        xl_d = wp.array(np.ascontiguousarray(np.stack([cortex.xl_i, cortex.xl_j], 1), np.int32),
+                        dtype=wp.int32, device=d)
+        kxl_d = wp.array(np.ascontiguousarray(cortex.xl_k, np.float64), dtype=wp.float64, device=d)
+        r0_d = wp.array(np.ascontiguousarray(cortex.xl_rest, np.float64), dtype=wp.float64, device=d)
+    has_myo = bool(cortex.myo_i.size) and f_myo != 0.0
+    if has_myo:
+        myo_d = wp.array(np.ascontiguousarray(np.stack([cortex.myo_i, cortex.myo_j], 1), np.int32),
+                         dtype=wp.int32, device=d)
+    nT = tri.shape[0]
+    centre = wp.vec3d(0.0, 0.0, 0.0)
+    cz = 0.0
+    dP_area = 0.0
+
+    def _refresh_turgor():
+        nonlocal centre, cz, dP_area
+        p = pos_d.numpy().astype(np.float64)
+        pcx = p[:Nc]                                  # cortex nodes define the cell surface + centroid
+        c = pcx.mean(axis=0)
+        centre = wp.vec3d(float(c[0]), float(c[1]), float(c[2]))
+        cz = float(c[2])
+        try:
+            hull = ConvexHull(pcx)
+            V, area = float(hull.volume), float(hull.area)
+        except Exception:
+            R_mean = float(np.linalg.norm(pcx - c, axis=1).mean()); V = (4/3)*np.pi*R_mean**3; area = 4*np.pi*R_mean**2
+        V_cyto = V - V_nuc                            # incompressible-nucleus displacement coupling
+        if pressure_setpoint is not None:
+            dP = float(pressure_setpoint)
+        else:
+            dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V_cyto - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
+        dP_area = dP * area / Nc
+        return V, V_cyto, area, dP
+
+    for step in range(n_steps):
+        if step % turgor_every == 0:
+            _refresh_turgor()
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        if nT:
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        if has_xl:
+            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)  # cortex only
+        if n_nuc:
+            wp.launch(nucleus_shell_kernel, dim=n_nuc,
+                      inputs=[pos_d, wp.int32(Nc), centre, wp.float64(nucleus.R_nuc_um),
+                              wp.float64(nucleus.k_chrom), wp.float64(nucleus.k_lamin),
+                              wp.float64(nucleus.d_knee_um), wp.float64(nucleus.F_knee_pN), f_d], device=d)
+        wp.launch(plate_kernel, dim=N,     # plate acts on ALL nodes (cortex + nucleus)
+                  inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
+        wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+        if (step + 1) % reshape_every == 0:
+            wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+                      inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
+
+    V, V_cyto, area, dP = _refresh_turgor()
+    react_d.zero_()
+    wp.launch(plate_kernel, dim=N,
+              inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
+    wp.synchronize_device(d)
+    react = react_d.numpy()
+    F_plate = float(react[0])
+    pos_all = pos_d.numpy().astype(np.float64)
+    net.pos = pos_all[:Nc]
+    p = net.pos; c = p.mean(axis=0)
+    rxy = np.hypot(p[:, 0] - c[0], p[:, 1] - c[1])
+    R_eq = float(rxy.max())
+    zc = p[:, 2] - c[2]
+    contact = np.abs(np.abs(zc) - half_gap) < 0.15 * seg + 0.05
+    contact_radius = float(rxy[contact].max()) if contact.any() else 0.0
+    gamma_laplace = 0.5 * dP * R_eq
+    dP_force = F_plate / (np.pi * contact_radius**2) if contact_radius > 1e-6 else 0.0
+    # nucleus geometry: equatorial radius + whether the plate reached the nucleus (direct compression)
+    if n_nuc:
+        pn = pos_all[Nc:]
+        R_nuc_eq = float(np.hypot(pn[:, 0] - c[0], pn[:, 1] - c[1]).max())
+        nucleus_contact = bool((np.abs(pn[:, 2] - cz) > half_gap).any())
+    else:
+        R_nuc_eq = 0.0
+        nucleus_contact = False
+    metrics = {"strain": strain, "half_gap": half_gap, "F_plate_pN": F_plate,
+               "R_eq_um": R_eq, "contact_radius_um": contact_radius, "dP_turgor_Pa": dP,
+               "dP_from_force_Pa": dP_force, "V_over_V0": V_cyto / V0, "V_hull_um3": V, "V_nuc_um3": V_nuc,
+               "gamma_apparent_pN_um": gamma_laplace, "gamma_apparent_mN_m": gamma_laplace * 1e-3,
+               "R_nuc_eq_um": R_nuc_eq, "nucleus_contact": nucleus_contact, "n_nuc": n_nuc,
+               "k_plate": k_plate}
+    return pos_all, metrics
+
+
 def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None, f_myo=0.0,
                     branch_triples=None, branch_theta0=0.0, branch_k=0.0,
                     n_steps=600, reshape_every=25, dt_mu=0.0, n_reshape_iter=2, device="cpu"):
