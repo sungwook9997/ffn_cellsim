@@ -22,7 +22,7 @@ Worked examples of this rule:
 | Integrator | Euler-Maruyama | **Leimkuhler-Matthews BAOAB-limit plugin** |
 | Excluded volume | EV-off | **LJ repulsive on from Phase 1** |
 
-The **only** sanctioned coarse-graining is the ×40 mesoscopic filament scale (~1000 effective filaments per cell instead of ~38,000 native) — explicitly ratified in Plan v2 §3 H.3 (2026-05-19 v3.1) as a hardware constraint.
+The **only** sanctioned coarse-graining is the ×40 mesoscopic filament scale (~1000 effective filaments per cell instead of ~38,000 native) — explicitly ratified in Plan v2 §3 H.3 (2026-05-19 v3.1) as a hardware constraint. (The "~38,000 native" is the ratified ×40 *coarse-graining anchor* (≈30–54/µm² by R), a modeling convention — NOT the lit cortical actin areal density. The FF GPU-native cortex uses the KB-3.18 density ~100/µm² (→ N≈70,686 at MCF7 R=7.5µm); the actin count is γ-floor-irrelevant (myosin-bound). The 38,000↔100/µm² reconciliation + the KB-3.18 internal-inconsistency fix are in `ffn_sim/docs/v2_audit/ACTIN_DENSITY_RECONCILIATION_2026-07-01.md`.)
 
 When in doubt, write down the option's Plan reference, the abstraction it introduces, and ask: *does this replace a mechanistic process with a lumped one?* If yes, prefer the mechanistic alternative.
 
