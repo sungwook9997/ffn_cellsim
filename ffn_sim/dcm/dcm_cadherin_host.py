@@ -55,6 +55,12 @@ class CadherinParams:
     # Rakshit SHAPE + f0 stay molecular). bundle_n=1 → legacy single-molecule force (back-compat).
     # Set so a typical junction lands in KB-4.11's audited 1–10 nN/junction (LeDuc2010, Buckley2014).
     bundle_n: float = 1.0
+    # Active actomyosin junctional CONTRACTION [N per single trans-dimer, bundle-scaled at launch] —
+    # the Stage-2 compaction motor the passive catch-bond lacks (RhoA/ROCK-gated junctional NMII that
+    # actively pulls bonded cells together). 0 = off (passive-only, legacy). SWEEP as a controlled
+    # variable anchored to junctional actomyosin tension (per-motor ~5-15 pN × engaged motors); never
+    # tune to a compaction target. Applied as f_contract·bundle_n along each bond (always contracting).
+    f_contract: float = 0.0
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 

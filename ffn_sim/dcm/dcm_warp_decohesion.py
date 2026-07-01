@@ -260,7 +260,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
-                   cad_bundle: float = 1.0, ecm_bundle: float = 1.0,
+                   cad_bundle: float = 1.0, cad_contract: float = 0.0, ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
                    pen_cap: bool = True, pen_cap_frac: float = 1.0,
@@ -651,7 +651,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
                                                      r_bind=rbind_meso, batch_steps=cad_batch,
-                                                     bundle_n=cad_bundle))
+                                                     bundle_n=cad_bundle, f_contract=cad_contract))
         # Accelerate the bond KINETICS by S (NOT the FORCE): the on-rate k_on and the entire
         # force-dependent off-rate k_off(F) lookup table are multiplied by S, so bonds form and
         # rupture S× faster while the trans-dimer FORCE constant k_trans (catch-slip f0=29.2pN,
@@ -1101,6 +1101,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(cadherin_bond_force_kernel, dim=cad._dev["n"],
                       inputs=[cad._dev["bonds"], wp.int32(cad._dev["n"]), pos_d,
                               wp.float64(cad.p.k_trans * cad.p.bundle_n), wp.float64(cad.p.r0_trans),
+                              wp.float64(cad.p.f_contract * cad.p.bundle_n),
                               force_d],
                       device=device)
         # substrate z-well (own-row accumulate) — pins basal nodes at z0
@@ -1644,6 +1645,7 @@ def main():
     ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
     ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
+    ap.add_argument("--cad-contract", type=float, default=0.0, help="Stage-2 compaction motor: active actomyosin junctional CONTRACTION [N per single trans-dimer, bundle-scaled]. Always pulls bonded cells together (RhoA/ROCK-gated NMII the passive catch-bond lacks). SWEEP as a controlled variable (per-motor ~5-15pN × engaged); 0=off. NEVER tune to a compaction target.")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
     ap.add_argument("--ligand-density", type=float, default=1.0, help="C4: substrate ECM ligand-coating density (Bare/Pre/Lam4) — scales the clutch engagement on-rate (more ligand → more engaged FAs → more traction). 1=baseline(Bare); set per-condition to the Lam4>Pre>Bare experimental ordering (NOT tuned)")
     ap.add_argument("--no-pen-cap", dest="pen_cap", action="store_false", help="D8: disable the implicit per-node displacement cap (= the contact-shell clamp that stops frozen-grid tunneling/interpenetration). On by default")
@@ -1726,7 +1728,7 @@ def main():
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
-        cad_bundle=args.cad_bundle, ecm_bundle=args.ecm_bundle,
+        cad_bundle=args.cad_bundle, cad_contract=args.cad_contract, ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,
         pen_cap=args.pen_cap, pen_cap_frac=args.pen_cap_frac,
         adh_strength=args.adh_strength, rep_strength=args.rep_strength, ecm_ligand=args.ligand_density,

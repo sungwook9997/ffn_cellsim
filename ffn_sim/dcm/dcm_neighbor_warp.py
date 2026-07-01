@@ -440,14 +440,20 @@ def cadherin_bond_force_kernel(
     n_bonds: wp.int32,
     pos: wp.array(dtype=wp.vec3d),
     k_trans: wp.float64, r0_trans: wp.float64,
+    f_contract: wp.float64,                  # active actomyosin junctional contraction [N] (bundle-scaled)
     force: wp.array(dtype=wp.vec3d),
 ):
-    """E1 explicit cadherin trans-dimer force: ATTRACTIVE-only harmonic tether. For a
-    stretched bond (L > r0_trans) the ectodomain bridge pulls its two membrane nodes
-    together with ``F = k_trans·(L − r0_trans)``; a slack bond (L ≤ r0) is force-free (a
-    floppy tether doesn't push). Excluded-volume repulsion is the cohesion/contact kernels'
-    job (run adhesion-OFF in cadherin mode), so this is the SOLE cell-cell adhesion — and
-    de-cohesion is emergent: the host breaks each bond at the Rakshit catch-slip rate."""
+    """E1 explicit cadherin trans-dimer force: ATTRACTIVE-only harmonic tether PLUS an optional
+    active actomyosin junctional contraction (the Stage-2 compaction motor). Passive: for a
+    stretched bond (L > r0_trans) the ectodomain bridge pulls its two membrane nodes together
+    with ``F = k_trans·(L − r0_trans)``; a slack bond (L ≤ r0) is force-free (a floppy tether
+    doesn't push). Active (``f_contract`` > 0): RhoA/ROCK-gated junctional actomyosin ACTIVELY
+    contracts the bonded junction with a constant force ``f_contract`` along the bond, ALWAYS
+    pulling the two cells together (independent of ectodomain slack) — this is the motor that
+    the passive catch-bond lacks. It is a PROPERTY OF THE SAME junction, not a separate force
+    (memory: cell-cell contact is one junction). Excluded-volume repulsion stays in the
+    cohesion/contact kernels (adhesion-OFF in cadherin mode). De-cohesion stays emergent: the
+    host breaks each bond at the Rakshit catch-slip rate."""
     t = wp.tid()
     if t >= n_bonds:
         return
@@ -456,11 +462,18 @@ def cadherin_bond_force_kernel(
     j = e[1]
     rij = pos[j] - pos[i]
     L = wp.length(rij)
-    if L > r0_trans and L > wp.float64(1.0e-30):
-        amp = k_trans * (L - r0_trans) / L
-        fvec = rij * amp                          # on i toward j (pull together)
-        wp.atomic_add(force, i, fvec)
-        wp.atomic_add(force, j, -fvec)
+    if L > wp.float64(1.0e-30):
+        inv = wp.float64(1.0) / L
+        # passive ectodomain tether (attractive-only, stretched)
+        if L > r0_trans:
+            fvec = rij * (k_trans * (L - r0_trans) * inv)   # on i toward j (pull together)
+            wp.atomic_add(force, i, fvec)
+            wp.atomic_add(force, j, -fvec)
+        # active actomyosin junctional contraction (always contracts the bonded junction)
+        if f_contract > wp.float64(0.0):
+            fa = rij * (f_contract * inv)
+            wp.atomic_add(force, i, fa)
+            wp.atomic_add(force, j, -fa)
 
 
 @wp.kernel
