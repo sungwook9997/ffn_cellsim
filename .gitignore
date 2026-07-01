@@ -145,3 +145,8 @@ ffn_sim/outputs/**/_lamel_cache_*.pkl
 # two-stage / dt-sweep / blow-up-capture data pickles (regenerable; large gbook
 # outputs — frames behind the committed figures, not source).
 ffn_sim/outputs/h_dcm_two_stage/*.pkl
+
+# stray sim scratch (Cytosim/force dumps) — never commit
+force.txt
+messages.cmo
+*.cmo
