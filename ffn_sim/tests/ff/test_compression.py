@@ -8,6 +8,7 @@ too heavy for a CPU unit test; this guards the interface + sign conventions at s
 """
 
 import numpy as np
+import pytest
 
 from ffn_sim.ff.gamma_floor import CortexParams, NMIIA_MINIFIL_STALL_PN, build_crosslinked_cortex
 from ffn_sim.ff.network_warp import simulate_compressed_shell_on_device
@@ -26,6 +27,20 @@ def test_compressed_shell_runs_and_returns_finite_metrics():
     assert m["gamma_apparent_mN_m"] >= 0.0
     assert m["half_gap"] == cx.R0_mean * (1.0 - 0.1)     # plate follows the imposed strain
     assert 0.5 < m["V_over_V0"] < 1.5                     # volume stays physical (turgor holds)
+
+
+def test_pressure_setpoint_regulation_holds_dP():
+    """Volume-regulation mode (pressure_setpoint) holds ΔP at the setpoint (perfect water-flux limit),
+    giving a confinement-INDEPENDENT γ_apparent = ΔP_setpoint·R_eq/2 — matching the experimental
+    Fischer-Friedrich confinement-independence (FF_STAGE6V). Here just guard that the setpoint is honored."""
+    import numpy as np
+    cx = build_crosslinked_cortex(CortexParams(), n_filaments=800, n_xl=800, n_myo=80,
+                                  rng=np.random.default_rng(1))
+    cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
+    _, m = simulate_compressed_shell_on_device(cx, NMIIA_MINIFIL_STALL_PN, strain=0.1,
+                                               n_steps=300, pressure_setpoint=400.0, device="cpu")
+    assert abs(m["dP_turgor_Pa"] - 400.0) < 1e-6            # ΔP regulated to the setpoint
+    assert m["gamma_apparent_mN_m"] == pytest.approx(0.5 * 400.0 * m["R_eq_um"] * 1e-3, rel=1e-6)
 
 
 def test_compression_half_gap_scales_with_strain():

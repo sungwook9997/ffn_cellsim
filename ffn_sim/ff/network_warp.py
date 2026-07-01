@@ -499,7 +499,7 @@ def simulate_loaded_shell_on_device(cortex, f_myo, *, n_steps=4000, reshape_ever
 
 def simulate_compressed_shell_on_device(cortex, f_myo, *, strain=0.0, n_steps=4000, reshape_every=25,
                                         turgor_every=20, dt_mu=0.0, n_reshape_iter=2, k_plate=None,
-                                        device="cpu"):
+                                        pressure_setpoint=None, device="cpu"):
     """VIRTUAL PARALLEL-PLATE (AFM / Fischer-Friedrich) compression of the loaded cortex shell.
 
     Replicates the EXPERIMENTAL cortical-tension PROTOCOL (measurement-protocol-consistency sanity gate):
@@ -579,7 +579,15 @@ def simulate_compressed_shell_on_device(cortex, f_myo, *, strain=0.0, n_steps=40
             V, area = float(hull.volume), float(hull.area)
         except Exception:
             R_mean = float(np.linalg.norm(p - c, axis=1).mean()); V = (4/3)*np.pi*R_mean**3; area = 4*np.pi*R_mean**2
-        dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
+        if pressure_setpoint is not None:
+            # VOLUME REGULATION (water flux / osmoregulation) — the cell holds ΔP at a setpoint by letting
+            # water/ions cross under excess pressure (Kedem-Katchalsky pump-leak). This is the perfect-
+            # regulation limit (fast Lp); the real cell (finite Lp) is between this and the fixed-osmolyte
+            # closure. A regulated cell behaves as a liquid drop of confinement-INDEPENDENT surface tension
+            # (γ_apparent = ΔP_setpoint·R_eq/2), matching Fischer-Friedrich's confinement-independent γ.
+            dP = float(pressure_setpoint)
+        else:
+            dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
         dP_area = dP * area / N
         return V, area, dP
 
