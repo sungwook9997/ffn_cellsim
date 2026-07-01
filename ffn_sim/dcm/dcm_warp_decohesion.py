@@ -34,6 +34,7 @@ from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kern
 from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.dcm.dcm_interfacial_tension_warp import differential_surface_tension_kernel, douezan_spreading
+from ffn_sim.dcm.dcm_aggregate_tension_warp import aggregate_laplace_kernel, aggregate_centroid_radius
 from ffn_sim.dcm.confluent_init_prototype import build_confluent as _build_confluent_geom
 from ffn_sim.dcm.dcm_contact_conservative_warp import (
     contact_grid_conservative_kernel, derive_adhesion_stiffness)
@@ -269,6 +270,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    knee_strain: float = 0.10, R_nuc_factor: float = 0.33,
                    surface_tension: bool = False, gamma_surf: float = 1.0e-4, k_area: float = 0.0,
                    diff_tension: bool = False, contact_tension_frac: float = -1.0,
+                   aggregate_tension: bool = False, sigma_agg: float = 5.0e-3, agg_every: int = 25,
                    conservative_contact: bool = False, rep_over_adh: float = 4.0,
                    k_edge: float = -1.0,
                    polarize: bool = False, w_cs_polarize: float = 2.85e-3,
@@ -950,8 +952,17 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(umbrella_kernel, dim=N, inputs=[lap_d, nsum_d, ncnt_d, bilap_d], device=device)
             wp.launch(bending_apply_kernel, dim=N, inputs=[bilap_d, cof_d, wp.float64(k_bend), out_d], device=device)
 
+    _agg = [wp.vec3d(0.0, 0.0, 0.0), 0.0]     # [aggregate centroid, ΔP_agg=2σ/R_agg in Pa], refreshed periodically
+
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
+        if aggregate_tension and (s % agg_every == 0):
+            # Foty-Steinberg aggregate liquid-drop: refresh the global centroid + ΔP=2σ/R_agg (σ in N/m,
+            # R_agg in µm → Pa = 2e6·σ/R). Host read is cheap at this cadence; c_agg/R_agg drift slowly.
+            _ph = pos_d.numpy()
+            _c, _R = aggregate_centroid_radius(_ph)
+            _agg[0] = wp.vec3d(float(_c[0]), float(_c[1]), float(_c[2]))
+            _agg[1] = 2.0e6 * sigma_agg / _R
         if gravity:                       # D7: constant sedimentation body force (RHS only)
             wp.launch(gravity_body_force_kernel, dim=N,
                       inputs=[cof_d, wp.float64(fz_node), force_d], device=device)
@@ -1080,6 +1091,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         elif surface_tension:
             wp.launch(surface_tension_kernel, dim=n_faces,
                       inputs=[pos_d, faces_d, wp.float64(gamma_surf), force_d], device=device)
+        if aggregate_tension and use_grid:
+            # AGGREGATE-level Foty-Steinberg liquid-drop tension: inward Laplace ΔP=2σ/R_agg on the FREE
+            # (media-exposed) envelope faces, toward the GLOBAL aggregate centroid → contracts + densifies
+            # a loose aggregate (the global densification driver per-cell γ cannot supply). Reuses the
+            # face_grid + cent_f32 built this step. Composes with turgor (incompressible cells) + IPC.
+            wp.launch(aggregate_laplace_kernel, dim=n_faces,
+                      inputs=[face_grid.id, cent_f32, pos_d, faces_d, fcell_d, wp.float32(con_q),
+                              _agg[0], wp.float64(_agg[1]), force_d], device=device)
+        if surface_tension and not (polarize or diff_tension):
             if k_area > 0.0:
                 acell_d.zero_()
                 wp.launch(face_area_accum_kernel, dim=n_faces,
@@ -1647,6 +1667,7 @@ def main():
     ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
     ap.add_argument("--cad-contract", type=float, default=0.0, help="Stage-2 compaction motor: active actomyosin junctional CONTRACTION [N per single trans-dimer, bundle-scaled]. Always pulls bonded cells together (RhoA/ROCK-gated NMII the passive catch-bond lacks). SWEEP as a controlled variable (per-motor ~5-15pN × engaged); 0=off. NEVER tune to a compaction target.")
+    ap.add_argument("--cad-rbind", type=float, default=0.0, help="Stage-1 long-range reach: ECM-tether (fibronectin, µm-scale) cadherin bond capture radius [µm] override; bridges a LOOSE aggregate (bonds=0 at cadherin's ~1.8µm range otherwise). 0=use c_adh.")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
     ap.add_argument("--ligand-density", type=float, default=1.0, help="C4: substrate ECM ligand-coating density (Bare/Pre/Lam4) — scales the clutch engagement on-rate (more ligand → more engaged FAs → more traction). 1=baseline(Bare); set per-condition to the Lam4>Pre>Bare experimental ordering (NOT tuned)")
     ap.add_argument("--no-pen-cap", dest="pen_cap", action="store_false", help="D8: disable the implicit per-node displacement cap (= the contact-shell clamp that stops frozen-grid tunneling/interpenetration). On by default")
@@ -1665,6 +1686,15 @@ def main():
     ap.add_argument("--polarize", action="store_true", help="apico-basal DIFFERENTIAL surface tension (Young-Dupre): basal faces wet (gamma - w*w_cs), apical keep gamma. Needs --surface-tension. The directional-spread lever.")
     ap.add_argument("--w-cs-polarize", type=float, default=2.85e-3, dest="w_cs_polarize", help="basal substrate-adhesion energy J/m2 for --polarize (lit MCF7 2.85e-3 -> S<0 non-wetting; >2*gamma -> S>0 spreads)")
     ap.add_argument("--gamma-surf", type=float, default=1.0e-4, help="B4 surface tension coefficient [N/m]")
+    ap.add_argument("--aggregate-tension", action="store_true", dest="aggregate_tension",
+                    help="AGGREGATE-level Foty-Steinberg liquid-drop surface tension: inward Laplace "
+                         "ΔP=2σ/R_agg on the free (media) envelope → contracts + densifies a LOOSE aggregate "
+                         "(the global compaction driver per-cell γ cannot supply). σ = --sigma-agg.")
+    ap.add_argument("--sigma-agg", type=float, default=5.0e-3,
+                    help="tissue surface tension σ [N/m] for --aggregate-tension (Foty-Steinberg ~1-20 mN/m; "
+                         "swept as a controlled variable, not tuned). Default 5e-3 = 5 mN/m.")
+    ap.add_argument("--agg-every", type=int, default=25,
+                    help="refresh the aggregate centroid + R_agg every N steps (host read; drifts slowly)")
     ap.add_argument("--diff-tension", action="store_true", dest="diff_tension",
                     help="foam/DAH DIFFERENTIAL interfacial tension: cell-cell contact faces get the "
                          "reduced tension γ−w_adh/2 (w_adh=w_cs lit) so contacts SPREAD → cells facet. "
@@ -1729,13 +1759,15 @@ def main():
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
-        cad_bundle=args.cad_bundle, cad_contract=args.cad_contract, ecm_bundle=args.ecm_bundle,
+        cad_bundle=args.cad_bundle, cad_contract=args.cad_contract, cad_rbind=args.cad_rbind,
+        ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,
         pen_cap=args.pen_cap, pen_cap_frac=args.pen_cap_frac,
         adh_strength=args.adh_strength, rep_strength=args.rep_strength, ecm_ligand=args.ligand_density,
         nucleus=args.nucleus, E_nuc=args.e_nuc,
         surface_tension=args.surface_tension, gamma_surf=args.gamma_surf, k_area=args.k_area,
         diff_tension=args.diff_tension, contact_tension_frac=args.contact_tension_frac,
+        aggregate_tension=args.aggregate_tension, sigma_agg=args.sigma_agg, agg_every=args.agg_every,
         conservative_contact=args.conservative_contact, rep_over_adh=args.rep_over_adh,
         k_edge=args.k_edge,
         polarize=args.polarize, w_cs_polarize=args.w_cs_polarize, ipc_dhat_factor=args.ipc_dhat_factor,
