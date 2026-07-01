@@ -15,9 +15,17 @@ top-down xy-silhouette convex-hull (the PI rule, NOT contact area), init→final
 | ecm-clutch, weak (Phase 6) | bundle 1 = 0.03 nN/FA | 1.000 | 1.00 | NO |
 | ecm-clutch, PHYSIOLOGICAL (6b) | bundle 167 = **5.01 nN/FA** (167×, KB-2.12 lit) | 1.000 | 1.00 | NO |
 | lamellipodium + clutch (6d) | active protrusion motor | 1.000 | 1.00 | NO |
+| cadherin DE-COHESION + lamellipodium (6e) | 3422 bonds ruptured (emergent) | **1.003** | 1.00 | NO |
 
 The spheroid stayed exactly balled (maxZ unchanged, basal footprint 139→138 nodes) in every case.
 **It is NOT under-powered traction** — 167× the traction, and an active protrusion motor, changed nothing.
+**It is NOT cohesion holding the bonds shut, either:** enabling explicit cadherin catch-bonds with
+emergent de-cohesion, **3422 bonds ruptured** over the run — yet A/A0 stayed **1.003** (no dispersal).
+The bonds break and RE-FORM (n_bonds 10973) in a dynamic equilibrium, and turgor + the bulk hold each
+cell in place, so even active de-cohesion does not let cells crawl out. **Spreading is fundamentally a
+single-cell-scale phenomenon in this model — a whole cohesive spheroid does not disperse.** All FIVE
+mechanisms tried (weak clutch, physiological 5 nN clutch, lamellipodium, cadherin-de-cohesion +
+lamellipodium) give A/A0 ≈ 1.0. Thread CLOSED as a robust structural conclusion.
 
 ## Mechanism: why a cohesive spheroid cannot spread
 
