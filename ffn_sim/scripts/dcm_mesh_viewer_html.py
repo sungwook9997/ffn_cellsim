@@ -48,6 +48,10 @@ def main() -> None:
     ap.add_argument("--out", required=True)
     ap.add_argument("--title", default="DCM mesh viewer")
     ap.add_argument("--fps", type=int, default=6)
+    ap.add_argument("--r-nuc-factor", type=float, default=0.0, dest="r_nuc_factor",
+                    help="if >0, render a NUCLEUS sphere per cell at its per-frame centroid, radius = "
+                         "factor*cell_radius (0.25 = physiological MCF7). Cortex/membrane shells become "
+                         "translucent so the nucleus (and cytoplasm interior) are visible inside.")
     args = ap.parse_args()
 
     d = np.load(args.npz, allow_pickle=True)
@@ -96,6 +100,7 @@ def main() -> None:
         "F": int(F), "N": int(N), "M": int(M), "C": C,
         "lo": lo.tolist(), "span": span.tolist(),
         "fps": int(args.fps), "title": args.title,
+        "rNuc": float(args.r_nuc_factor),
     }
     payload = {
         "meta": meta,
@@ -103,6 +108,7 @@ def main() -> None:
         "facecell_b64": _b64(face_cell),                 # (M,)  int32  compact cell per face
         "nodecell_b64": _b64(node_cell),                 # (N,)  int32  compact cell per node
         "colors_b64": _b64(colors),                      # (N,3) uint8, constant
+        "palette_b64": _b64(palette),                    # (C,3) uint8 per-cell colour (nucleus tint)
         "q_b64": _b64(q),                                # (F,N,3) uint16
     }
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
@@ -209,7 +215,18 @@ const clipArr=[];   // empty when section OFF or in peel/slab; [clipPlane] only 
 // (1) visible cell surface — the normal look. Reads clipArr (only populated in cut mode).
 const mat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide,
   clippingPlanes:clipArr, clipShadows:true});
+if(m.rNuc>0){ mat.transparent=true; mat.opacity=0.30; mat.depthWrite=false; } // translucent membrane/cortex → nucleus + cytoplasm interior visible
 const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
+
+// ---------- NUCLEUS compartment: one instanced sphere per cell at its centroid, radius R_nuc ----------
+const palette = (m.rNuc>0) ? dec(P.palette_b64, Uint8Array) : null;   // (C,3) uint8
+let nucMesh=null;
+if(m.rNuc>0){
+  const nucMat=new THREE.MeshLambertMaterial({clippingPlanes:clipArr, clipShadows:true});
+  nucMesh=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,2), nucMat, C);
+  nucMesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(C*3),3);
+  scene.add(nucMesh);
+}
 
 // ---------- STENCIL CAPPING (single whole-scene pass) for "cut" mode ----------
 // We use ONE whole-scene stencil pass + ONE neutral cap plane, NOT 400 per-cell groups.
@@ -280,6 +297,31 @@ function computeCentroids(pos){
   }
   for(let c=0;c<C;c++){ const k=cnt[c]||1; cent[c*3]/=k; cent[c*3+1]/=k; cent[c*3+2]/=k; }
 }
+// per-cell radius (mean node distance to centroid) → nucleus size = rNuc·radius
+const cellR=new Float32Array(C);
+function computeCellR(pos){
+  cellR.fill(0); const k=new Float32Array(C);
+  for(let n=0;n<N;n++){ const ci=nodeCell[n]; if(ci<0) continue;
+    const dx=pos[n*3]-cent[ci*3], dy=pos[n*3+1]-cent[ci*3+1], dz=pos[n*3+2]-cent[ci*3+2];
+    cellR[ci]+=Math.sqrt(dx*dx+dy*dy+dz*dz); k[ci]++; }
+  for(let c=0;c<C;c++) cellR[c]/=(k[c]||1);
+}
+const _nm=new THREE.Matrix4(), _nc=new THREE.Color();
+function updateNucleus(){
+  if(!nucMesh) return;
+  computeCentroids(curPos); computeCellR(curPos);
+  const on=elClipOn.checked, mode=elMode.value;
+  for(let c=0;c<C;c++){
+    let rn=m.rNuc*cellR[c];
+    if(on && (mode==='peel'||mode==='slab') && !keep[c]) rn=0;  // hide nuclei of peeled/hidden cells
+    _nm.makeScale(rn,rn,rn); _nm.setPosition(cent[c*3],cent[c*3+1],cent[c*3+2]);
+    nucMesh.setMatrixAt(c,_nm);
+    _nc.setRGB(palette[c*3]/255*0.5, palette[c*3+1]/255*0.5, palette[c*3+2]/255*0.5);  // darker tint
+    nucMesh.setColorAt(c,_nc);
+  }
+  nucMesh.instanceMatrix.needsUpdate=true;
+  if(nucMesh.instanceColor) nucMesh.instanceColor.needsUpdate=true;
+}
 // per-cell keep flag for peel/slab
 const keep=new Uint8Array(C);
 function rebuildIndex(){
@@ -328,6 +370,7 @@ function setFrame(f){
   geo.computeVertexNormals();
   elFrame.value=cur; elFnum.textContent='frame '+cur+'/'+(F-1);
   applySection();   // peel/slab depend on the (moved) positions
+  updateNucleus();  // nucleus spheres track the (moved) centroids
 }
 
 function applySection(){
@@ -373,14 +416,15 @@ function applySection(){
 function updMode(){
   elSlabRow.style.display = (elMode.value==='slab') ? '' : 'none';
   elModeHint.textContent = elClipOn.checked ? HINTS[elMode.value] : '';
-  applySection();
+  applySection(); updateNucleus();
 }
 
 elFrame.oninput=()=>{playing=false;elPlay.textContent='▶ play';setFrame(+elFrame.value);};
 elPlay.onclick=()=>{playing=!playing;elPlay.textContent=playing?'❚❚ pause':'▶ play';};
 elFps.oninput=()=>{fps=+elFps.value;elFpsv.textContent=fps;};
-elThick.oninput=()=>{elThickv.textContent=(elThick.value/10).toFixed(0)+'%';applySection();};
-[elClipOn,elClip,elAxis,elFlip].forEach(e=>{e.oninput=applySection;e.onchange=applySection;});
+const secRefresh=()=>{applySection();updateNucleus();};
+elThick.oninput=()=>{elThickv.textContent=(elThick.value/10).toFixed(0)+'%';secRefresh();};
+[elClipOn,elClip,elAxis,elFlip].forEach(e=>{e.oninput=secRefresh;e.onchange=secRefresh;});
 elClipOn.addEventListener('change',updMode);
 elMode.onchange=updMode;
 
