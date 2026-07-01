@@ -100,8 +100,26 @@ contraction (`staged_reach_lever.png`). **Result: reach is the lever.** Short re
 the aggregate **compacts, Rg −0.27 %** (vs +0.08 %) — the first loose-start compaction in this whole series.
 **Caveats (why it's directional, not production):** magnitude still small (−0.27 %); the strong bundle-40 +
 explicit integrator fails the interpenetration gate (pen 3.2) — cells partly yank into overlap rather than
-cleanly densify. Clean compaction needs (a) a *mechanistic* ECM/fibronectin reach module (not a cadherin
-`r_bind` hack), (b) the implicit integrator for the strong bundle, (c) a genuinely loose high-porosity start.
+cleanly densify.
+
+## 2e. Clean-compaction attempt (implicit integrator) — FAILED; loose→compact needs GLOBAL reorganization
+
+Tested the implicit integrator (the code's stated fix for strong-bundle interpenetration) on the loose start
++ reach + contraction (`staged_clean_compaction_attempt.png`). **Result: no clean compaction.** Implicit ==
+explicit (Rg −0.25 % vs −0.27 %); the interpenetration gate STILL fails (pen 3.2 — implicit fixes stiffness,
+not the contact-resolution the strong bond needs → wants IPC, not just implicit); and critically **porosity
+RISES 63.3→64.3 % (no densification)** — the pairwise bonds pull cells locally (small Rg drop) but do NOT
+drive the *global* void-elimination that compaction is.
+
+**Honest meta-conclusion:** dynamic loose→compact does NOT emerge from any junction lever or their
+coordinated pairwise combination (reach + contraction + implicit). Global densification needs **aggregate-level
+surface tension** (Foty-Steinberg liquid-drop: the aggregate minimises its surface → rounds + densifies) **+ a
+proper contact method (IPC)** so cells fill voids instead of interpenetrating — i.e. all of {reach, contraction,
+aggregate surface tension, IPC, loose start} built and tested TOGETHER (the "build ALL of A then test" rule),
+not piecemeal. This **confirms the PI's own early intuition** that dynamic self-assembly is a different, harder
+problem (FF-mature territory), and **validates the confluent-init shortcut** (draw the assembled state) as the
+pragmatic path until that coordinated build exists. Testing halted here per surface-to-PI (a lever hitting a
+wall at reasonable values → PI decision, not endless sweeps).
 
 ---
 
