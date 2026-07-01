@@ -103,13 +103,16 @@ function showScene(name){
   const layers=P.scenes[name]; const leg=[];
   for(const L of layers){
     if(L.kind==='plates'){
+      // plates are PERPENDICULAR to the compression axis (data-z); PlaneGeometry's default normal is +z,
+      // so place the plane in the xy-plane at z=z_plate (NO rotation). (Earlier bug: rotated to xz + put at
+      // y=z_plate → plates faced the wrong axis / floated off the cell.)
       for(const z of L.z){
         const g=new THREE.PlaneGeometry(L.half_xy*2,L.half_xy*2);
-        const m=new THREE.MeshBasicMaterial({color:L.color,transparent:true,opacity:0.18,side:THREE.DoubleSide});
-        const mesh=new THREE.Mesh(g,m); mesh.rotation.x=Math.PI/2; mesh.position.set(cx,z,cz);
+        const m=new THREE.MeshBasicMaterial({color:L.color,transparent:true,opacity:0.2,side:THREE.DoubleSide});
+        const mesh=new THREE.Mesh(g,m); mesh.position.set(cx,cy,z);
         scene.add(mesh); current.push(mesh);
       }
-      leg.push(['#888888','rigid plate']); continue;
+      leg.push(['#888888','rigid plate (⊥ compression axis)']); continue;
     }
     const v=dec(L.b64); const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.BufferAttribute(v,3));
