@@ -99,6 +99,25 @@ def test_gamma_myo_is_clean_linear_zero_intercept_channel():
     assert (gm[1:] > 0).all()                              # contractile prestress → positive tension
 
 
+def test_engaged_fraction_scales_gamma_myo_truong_quang():
+    """Engaged (myosin-actin overlap) fraction is the mechanistic determinant of cortical tension
+    (Truong-Quang 2021): only the engaged fraction transmits, so γ_myo = engaged_fraction × (raw γ_myo).
+    Because γ_myo is exactly linear in the contributing-dipole count, the scalar is exact. The
+    interphase→mitotic engagement (0.65→1.0) is a ~1.5× lever — it does NOT close the ~10³× floor."""
+    from ffn_sim.ff.gamma_floor import ENGAGED_FRACTION_INTERPHASE, ENGAGED_FRACTION_MITOTIC
+    rng = np.random.default_rng(4)
+    cx = build_crosslinked_cortex(n_filaments=120, n_xl=360, n_myo=200, rng=rng)
+    equilibrate(cx, 0.0, n_steps=300, turgor=False)
+    full = measure_gamma(cx, 5.0, turgor=False, engaged_fraction=ENGAGED_FRACTION_MITOTIC)
+    inter = measure_gamma(cx, 5.0, turgor=False, engaged_fraction=ENGAGED_FRACTION_INTERPHASE)
+    # raw all-placed γ_myo is engagement-independent; the reported γ_myo scales exactly by the fraction
+    assert inter["gamma_myo_all"] == pytest.approx(full["gamma_myo_all"])
+    assert inter["gamma_myo"] == pytest.approx(ENGAGED_FRACTION_INTERPHASE * full["gamma_myo_all"])
+    assert full["gamma_myo"] == pytest.approx(full["gamma_myo_all"])          # mitotic = fully engaged
+    # engagement is only a ~1.5× lever (0.65→1.0), far short of closing the floor
+    assert 1.4 < full["gamma_myo"] / inter["gamma_myo"] < 1.6
+
+
 def test_passive_gamma_is_young_laplace():
     """The passive turgor channel = ΔP·R/2 (Young-Laplace), at the resting dP0=40 Pa → 200 pN/µm."""
     assert gamma_passive_young_laplace(TURGOR_DP0, 10.0) == pytest.approx(0.5 * TURGOR_DP0 * 10.0)

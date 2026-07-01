@@ -51,6 +51,19 @@ NMIIA_F_STALL_PER_HEAD = 0.5    # pN/head (Kovacs 2003)
 NMIIA_HEADS_PER_SIDE = 10       # Stam-Hocky/AFINES coarse model; STRUCTURAL (Billington 2013) ≈ 29 (swept)
 NMIIA_MINIFIL_STALL_PN = NMIIA_F_STALL_PER_HEAD * NMIIA_HEADS_PER_SIDE   # 5.0 pN per side (conservative anchor)
 
+# ENGAGED (load-bearing overlap) FRACTION — the mechanistically-correct determinant of cortical tension
+# (Truong-Quang et al. 2021, PMC8586027): cortical tension is set by the myosin-actin OVERLAP, NOT the
+# total minifilament count. In low-tension INTERPHASE ~35% of cortical NMII lies OUTSIDE the actin cortex
+# (bound by one end → does NOT transmit contractile stress → NON-engaged); this overhang → ~0 in high-
+# tension MITOSIS (full overlap). So the force-bearing (engaged) fraction ≈ 0.65 interphase → 1.0 mitotic,
+# and the interphase→mitosis ~3× tension rise is driven by engagement at ~constant myosin amount. FF's
+# 2D cortical shell does not resolve the RADIAL overhang geometrically, so engagement enters as this
+# measured scalar on the force-bearing count; because γ_myo is exactly LINEAR in the contributing-dipole
+# count (verified, FF_STAGE6Q), the scalar is exact, not a fudge. ⚠️ This is a ~1.5× lever (0.65→1.0) —
+# it makes the model faithful and DEEPENS the interphase floor, it does NOT close the ~30× gap.
+ENGAGED_FRACTION_INTERPHASE = 0.65   # Truong-Quang 2021 (~35% overhang, resting/adherent baseline)
+ENGAGED_FRACTION_MITOTIC = 1.0       # full actin-cortex overlap (rounded/mitotic)
+
 # Physiological turgor — STATE-DEPENDENT osmotic closure (2026-06-30 turgor workflow; the band-implied
 # 133 Pa was a tuned circular value). FF units: 1 Pa = 1 pN/µm². Animal cells (no wall) hold no static
 # turgor; the net excess is the sub-mM osmotic difference balanced by/coupled to cortical tension
@@ -400,7 +413,7 @@ def gamma_passive_young_laplace(dP: float, R_mean: float) -> float:
 
 
 def measure_gamma(cortex: CrosslinkedCortex, f_myo: float, *, n_planes: int = 50,
-                  turgor: bool = True) -> dict:
+                  turgor: bool = True, engaged_fraction: float = 1.0) -> dict:
     """Measure γ at the current ``cortex.net.pos``.
 
     Two channels, kept SEPARATE (archived rule — turgor is NOT actomyosin tension):
@@ -409,6 +422,12 @@ def measure_gamma(cortex: CrosslinkedCortex, f_myo: float, *, n_planes: int = 50
         (contractile tension +f_myo).
       * γ_passive — Young-Laplace ΔP·R/2 of the turgor-pressurised shell.
     Returns both + the actomyosin sub-channels [pN/µm].
+
+    ``engaged_fraction`` (Truong-Quang 2021): the load-bearing myosin-actin OVERLAP fraction. Only this
+    fraction of placed minifilaments transmits contractile stress (the rest overhang, one-end-bound);
+    since γ_myo is exactly linear in the contributing-dipole count, the reported ``gamma_myo`` = raw
+    method-of-planes γ_myo × engaged_fraction (``gamma_myo_all`` keeps the raw all-placed value).
+    Default 1.0 = the raw measurement; production uses the physiological interphase 0.65.
     """
     net = cortex.net
     pos = net.pos
@@ -450,13 +469,16 @@ def measure_gamma(cortex: CrosslinkedCortex, f_myo: float, *, n_planes: int = 50
     # the bending-only settle shrinks the shell slightly (great-circle arcs straighten toward
     # chords), which is a dynamics artifact, not the resting turgor.
     g_passive = gamma_passive_young_laplace(TURGOR_DP0, R) if turgor else 0.0
+    g_myo_engaged = g_myo * engaged_fraction        # Truong-Quang overlap: only the engaged fraction transmits
     return {"gamma_total": g_all, "gamma_active": g_all, "gamma_passive": g_passive,
-            "gamma_actin": g_actin, "gamma_xl": g_xl, "gamma_myo": g_myo}
+            "gamma_actin": g_actin, "gamma_xl": g_xl, "gamma_myo": g_myo_engaged,
+            "gamma_myo_all": g_myo, "engaged_fraction": engaged_fraction}
 
 
 def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_myo: int = 100,
                     seed: int = 0, n_steps: int = 600, method: str = "explicit",
-                    device: str = "cpu", crosslink_turnover: bool = True) -> dict:
+                    device: str = "cpu", crosslink_turnover: bool = True,
+                    engaged_fraction: float = 1.0) -> dict:
     """One quenched realization → γ at prestress ``f_myo``, measured at the resting physiological
     geometry (physiological-baseline rule: settle the resting passive shell, then add myosin as the
     modulator and measure). Returns the actomyosin γ channels + the passive turgor γ + meta.
@@ -469,7 +491,7 @@ def gamma_floor_run(f_myo: float, *, n_filaments: int = 100, n_xl: int = 300, n_
     cortex = build_crosslinked_cortex(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, rng=rng)
     equilibrate(cortex, 0.0, n_steps=n_steps, turgor=False,   # settle resting passive shell
                 method=method, device=device, crosslink_turnover=crosslink_turnover)
-    out = measure_gamma(cortex, f_myo, turgor=True)
+    out = measure_gamma(cortex, f_myo, turgor=True, engaged_fraction=engaged_fraction)
     out.update(f_myo=f_myo, seed=seed, n_xl=int(cortex.xl_i.size), n_myo=int(cortex.myo_i.size))
     return out
 
@@ -478,7 +500,8 @@ def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int
                            n_steps: int = 400, base_seed: int = 0, parallel: bool = True,
                            method: str = "explicit", device: str = "cpu",
                            n_filaments: int = PROD_N_FIL, n_xl: int = PROD_N_XL,
-                           n_myo: int = PROD_N_MYO) -> dict:
+                           n_myo: int = PROD_N_MYO,
+                           engaged_fraction: float = ENGAGED_FRACTION_INTERPHASE) -> dict:
     """γ at the GROUNDED production operating point — NATIVE ~38000 filaments (PI 2026-07-01; the ×40
     mesoscale 1000 is RETIRED, was a CPU constraint). ensemble.
 
@@ -491,7 +514,8 @@ def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int
     from ffn_sim.ff.gamma_estimator import MCF7_IQR_PN_UM, SALBREUX_BAND_PN_UM, active_band_pn_um
     ens = gamma_floor_ensemble(f_myo, n_real=n_real, n_filaments=n_filaments, n_xl=n_xl,
                                n_myo=n_myo, n_steps=n_steps, base_seed=base_seed,
-                               parallel=parallel, method=method, device=device)
+                               parallel=parallel, method=method, device=device,
+                               engaged_fraction=engaged_fraction)
     # FLOOR METRIC = γ_myo, the CLEAN myosin-induced channel (FF_STAGE6Q, 2026-07-01). At the native
     # lit-faithful density the γ_active SUM is contaminated by a STRUCTURAL passive actin-network
     # residual (γ_actin(f_myo=0) ≈ 0.84 pN/µm, plateaus 1000–8000 steps — crosslinked-geodesic
@@ -514,19 +538,22 @@ def gamma_floor_production(*, f_myo: float = NMIIA_MINIFIL_STALL_PN, n_real: int
             "floor_vs_salbreux_active": f(salbreux_active_lo),  # clean γ_myo vs generic active fraction
             "floor_factor_under_band": f(SALBREUX_BAND_PN_UM[0]),  # legacy: clean γ_myo vs generic TOTAL band
             "f_myo": f_myo, "n_fil": n_filaments, "n_xl": n_xl, "n_myo": n_myo,
+            "engaged_fraction": engaged_fraction,   # Truong-Quang overlap (0.65 interphase / 1.0 mitotic)
             "gamma_myo_samples": g_myo.tolist()}
 
 
 def gamma_floor_ensemble(f_myo: float, *, n_real: int = 8, n_filaments: int = 100,
                          n_xl: int = 300, n_myo: int = 100, n_steps: int = 4000,
                          base_seed: int = 0, parallel: bool = True,
-                         method: str = "explicit", device: str = "cpu") -> dict:
+                         method: str = "explicit", device: str = "cpu",
+                         engaged_fraction: float = 1.0) -> dict:
     """Run ``n_real`` quenched realizations → γ distribution at prestress ``f_myo``.
 
     ``method='device'`` forces SERIAL execution (the realizations run GPU-resident on ``device``; a
     ProcessPool would fork CUDA, which is unsafe — and the GPU is fast enough not to need it)."""
     seeds = [base_seed + r for r in range(n_real)]
-    args = dict(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, n_steps=n_steps)
+    args = dict(n_filaments=n_filaments, n_xl=n_xl, n_myo=n_myo, n_steps=n_steps,
+                engaged_fraction=engaged_fraction)
     if method == "device":
         runs = [gamma_floor_run(f_myo, seed=s, method="device", device=device, **args) for s in seeds]
     elif parallel and n_real > 1:
