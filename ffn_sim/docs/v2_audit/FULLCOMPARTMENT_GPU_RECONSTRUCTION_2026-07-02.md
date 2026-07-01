@@ -41,13 +41,17 @@ physiological params (GPU-native, confluent full-compartment):
 | conservative tent | 0.234 µm | energy-minimum-at-contact tent; ~3× tighter |
 | conservative + **differential tension** (DAH), N=200 final | **0.167 µm** | contact-face tension ↓ (Maître/DAH) → apposition; the mechanistically-correct driver. Distribution also TIGHTENS (min 0.09, p90 0.27 vs 0.04/0.39) = more uniform apposition |
 
-So the honest state: the cortex no longer grossly floats (0.67 → **0.167 µm**, ~2 % of R = a physiological
-inter-cell cleft, 4× tighter), driven by the correct physics (conservative contact + differential interfacial tension
-+ lit adhesion w_cs=2.85e-3). BUT `G2_interpenetration` still FAILs — the confluent-init + turgor gives a
-HETEROGENEOUS fit (closest cells ~0.04 µm apposed, others ~0.39 µm, some overlap). Perfect uniform
-apposition is not achievable in the separate-shell DCM at physiological params — a known limitation (the
-separate shells cannot share a face; the equilibrium is turgor-vs-contact-vs-membrane-tension). The
-`--integrator implicit` did not fix the interpenetration (pen rose 0.066→0.166) and is slow (CG/step).
+So the honest state: **the floating GAP is largely fixed, but the INTERPENETRATION is NOT** — two separate
+problems, and only the first is addressed. (1) Gap: the cortex no longer grossly floats (0.67 → **0.156 µm**,
+~2 % of R = a physiological inter-cell cleft, 4.3× tighter), driven by the correct physics (conservative
+contact + differential interfacial tension + lit adhesion w_cs=2.85e-3). (2) **Interpenetration: `pen_frac_peak`
+≈ 2.1 at N=400 = ~7× the G2 gate (0.3·mean_edge) — a SIGNIFICANT, UNRESOLVED overlap** (some cells genuinely
+penetrate neighbours; the fit is heterogeneous — closest ~0.04 µm apposed, others overlapping). This is NOT
+clean pressing. `--integrator implicit` is NOT a reliable fix (pen 0.16 at N=200 mid-run but 1.3 at N=100,
+variable, and slow CG/step). The real fix is **true log-barrier IPC**, whose flag (`--ipc`) is currently
+broken in the conservative-contact combo (concurrent-session finding). So: **the "pressing contact" claim is
+PARTIAL — floating fixed, overlap NOT — and must not be over-stated as clean apposition** (audit#3 caught the
+"faceted-tissue-good" over-claim; the peel render looks faceted but hides real interpenetration inside).
 
 ## Concurrent work (dcm/main)
 
@@ -66,6 +70,11 @@ is NOT a trivial flag-combine — it needs dedicated stabilisation (a future tas
 
 ## Verdict
 
-The three violations are corrected: **GPU-native ✅, full VISIBLE compartment stack ✅, contact improved
-0.67→0.19 µm ✅ (residual physiological cleft + heterogeneous fit documented honestly)**, all shown as
-interactive HTML cell morphology. Hourly adversarial self-audit active (cron `c3a5d4fb`).
+Two of the three violations are corrected; the third is PARTIAL: **GPU-native ✅ (A5000, verified no CPU
+regression), full VISIBLE compartment stack ✅ (nucleus spheres + membrane/cortex shells + cytoplasm interior,
+Chrome-headless render-verified), contact ⚠️ PARTIAL — floating fixed (0.67→0.156 µm) but interpenetration
+NOT (pen ≈ 2.1 = 7× the G2 gate, unresolved; needs true IPC which is broken)**. All shown as interactive HTML
+cell morphology (render-proof PNGs committed). Hourly adversarial self-audit active (cron `c3a5d4fb`) — audit#3
+caught + corrected the over-claim that the contact was clean/faceted-good. HONEST bottom line: the cells are
+faceted and compartmented and GPU-native, but they still INTERPENETRATE (not clean apposition) — the true
+pressing contact needs an IPC fix that is a defined future task, not done here.
