@@ -8,6 +8,20 @@ that Nie is a DENSITY (imaging) measurement, not a tension (pressing) measuremen
 This is the CLAUDE.md **measurement-protocol-consistency sanity gate**, which the γ-floor comparison had
 been violating: we compared a RESTING method-of-planes γ_myo to a band measured by DEFORMING the cell.
 
+> ⚠️ **CORRECTION (2026-07-01, post-debug — supersedes the γ numbers below).** The first pass had TWO
+> errors, both caught by the PI: (1) it ran at MODERATE cortex (N=2000-3000), not NATIVE — native is
+> ~10× stiffer (FEM mesh + hull accuracy). (2) A **V0-convention bug**: the compressed volume V is the
+> convex hull but V0 was the sphere (4/3)πR0³ — a ~few-% mismatch × the huge osmotic modulus made ΔP (and
+> γ_apparent) a **pure volume-reference ARTIFACT** (frustrated cortex → hull<sphere → ΔP huge; relaxed →
+> hull>sphere → ΔP=0, a spurious "assembly dependence"). Fixed (commit 5e37b12): V0 = ConvexHull(resting).
+> **Corrected NATIVE result:** at strain 0, γ_apparent = **0.14 mN/m ≈ experimental interphase 0.17**
+> (Fischer-Friedrich 2014); frustrated vs turnover-relaxed now AGREE (16.3 vs 17.1 @10%) → the crosslink
+> frustration is NOT the confound (the V0 bug was). BUT γ_apparent still EXPLODES with compression
+> (0.14→4.4→16.3→35.6 over 0-15% strain) — NOT confinement-independent like the real cortex. That is a
+> REAL model gap (fixed-osmolyte turgor is volume-sensitive; the real cortex γ is a confinement-independent
+> material/myosin surface tension). The "turgor-borne, myosin ON≈OFF" reversal below STANDS; the specific
+> moderate γ numbers in the table below are V0-bugged and superseded by this corrected native set.
+
 ## Two axes, not to be conflated (PI clarification)
 
 | axis | quantity | method (does it press?) | sources |
