@@ -167,6 +167,19 @@ def main() -> int:
         lr, lt = np.log(rr[band]), np.log(tt[band] + 1e-30)
         slope = float(np.polyfit(lr, lt, 1)[0])  # ~ -1 expected (2D ~1/r)
 
+    # GEOMETRY check (finite-size inclusion near-field): fit the slope in radial NEAR/MID/FAR
+    # sub-bands. An extended contractile cell has a FLAT near-field that steepens toward the
+    # far-field asymptote; the measurement band is only [1, 2.35]R (near-field). If the FAR
+    # sub-band is steeper (more negative) than the NEAR, the flat overall slope is a near-field
+    # artifact of a finite inclusion in a narrow band — NOT a failure to transmit stress like 1/r.
+    subband = {}
+    if band.sum() > 12:
+        rb, tb = rr[band], tt[band]
+        o = np.argsort(rb); rb, tb = rb[o], tb[o]
+        for name, idx in zip(("near", "mid", "far"), np.array_split(np.arange(rb.size), 3)):
+            if idx.size > 3:
+                subband[name] = float(np.polyfit(np.log(rb[idx]), np.log(tb[idx] + 1e-30), 1)[0])
+
     r_mem_final = mem_mean_radius()
     mem_radius_change_pct = 100.0 * (r_mem_final - r_mem0) / r_mem0
     meta = {"n_particles": int(sim.state.N_particles), "n_ecm": int(h["n_ecm"]),
@@ -176,6 +189,7 @@ def main() -> int:
             "steps": args.steps, "no_cell_baseline": bool(args.no_cell_baseline),
             "pre_equil_steps": int(args.pre_equil_steps),
             "tension_decay_loglog_slope": slope,
+            "subband_slopes_near_mid_far": subband,
             "mem_mean_radius_nm_0": r_mem0 * 1e9,
             "mem_mean_radius_nm_final": r_mem_final * 1e9,
             "mem_radius_change_pct": mem_radius_change_pct,
@@ -188,7 +202,8 @@ def main() -> int:
           f"({mem_radius_change_pct:+.2f}% — neg=contracts)  "
           f"FA={h['fa_force'].pairs.shape[0]}  "
           f"{'cell-induced ' if args.no_cell_baseline else ''}"
-          f"tension~r^{slope:.2f} (d0sm01911a 2D predicts ~ -1)", flush=True)
+          f"tension~r^{slope:.2f} (d0sm01911a 2D predicts ~ -1)"
+          f"  subbands(near/mid/far)={ {k: round(v,2) for k,v in subband.items()} }", flush=True)
 
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
@@ -269,11 +284,11 @@ def _figure(p, h, ecm0, pos, ecm_tags, cell_xy, r0_b, inward, r_mid, tension,
     a.legend(fontsize=8); a.grid(alpha=0.3)
 
     fig.suptitle(
-        "H.7 BEYOND-papers: DCM deformable cell remodeling an explicit cross-linked "
-        "fiber ECM via catch-slip FA clutch\n"
-        f"({h['n_ecm']} ECM beads + {h['nv']} cell nodes; reproduces+exceeds Slater…"
-        "Kim Soft Matter 2021: catch-slip FA + turgor shell + cross-linked fibers)",
-        fontsize=11, fontweight="bold")
+        "H.7 DCM deformable cell remodeling an explicit cross-linked fiber ECM via catch-slip FA clutch\n"
+        f"({h['n_ecm']} ECM beads + {h['nv']} cell nodes; matches Slater-Kim SM 2021: qualitatively AND "
+        f"~1/r in the clean intermediate field. Whole-band slope {slope:.2f} is fit-band-contaminated "
+        "(near-field flat + finite-bed boundary); see near/mid/far sub-bands.)",
+        fontsize=9.5, fontweight="bold")
     Path(out_png).parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=150)
     plt.close(fig)

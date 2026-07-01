@@ -12,6 +12,11 @@
     "no_cell_baseline": true,
     "pre_equil_steps": 0,
     "tension_decay_loglog_slope": -0.19341407652800502,
+    "subband_slopes_near_mid_far": {
+      "near": -0.633693206072187,
+      "mid": -1.2092567006053954,
+      "far": 3.279248551527979
+    },
     "mem_mean_radius_nm_0": 7500.000000000001,
     "mem_mean_radius_nm_final": 7346.280046315646,
     "mem_radius_change_pct": -2.0495993824580654,
