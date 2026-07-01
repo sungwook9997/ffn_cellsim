@@ -300,6 +300,30 @@ def _rsum(pos: wp.array(dtype=wp.vec3d), centre: wp.vec3d, acc: wp.array(dtype=w
     wp.atomic_add(acc, 0, wp.length(pos[wp.tid()] - centre))
 
 
+@wp.kernel
+def plate_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    cz: wp.float64,                 # centroid z (plates are symmetric about it)
+    half_gap: wp.float64,           # plate half-separation h/2 [µm]
+    k_plate: wp.float64,            # plate stiffness [pN/µm]
+    force: wp.array(dtype=wp.vec3d),
+    reaction: wp.array(dtype=wp.float64),   # [0]=top-plate force (AFM force), [1]=contact node count (top)
+):
+    """Two rigid parallel plates at z = cz ± half_gap; stiff one-sided penalty on nodes beyond them
+    (the virtual-AFM / Fischer-Friedrich parallel-plate compression). Accumulates the TOP-plate reaction
+    force reaction[0] = Σ k_plate·penetration (= the force the cell exerts on the plate, what AFM reads)."""
+    i = wp.tid()
+    z = pos[i][2] - cz
+    if z > half_gap:
+        pen = k_plate * (z - half_gap)
+        wp.atomic_add(force, i, wp.vec3d(wp.float64(0.0), wp.float64(0.0), -pen))
+        wp.atomic_add(reaction, 0, pen)
+        wp.atomic_add(reaction, 1, wp.float64(1.0))
+    elif z < -half_gap:
+        pen = k_plate * (-half_gap - z)
+        wp.atomic_add(force, i, wp.vec3d(wp.float64(0.0), wp.float64(0.0), pen))
+
+
 def relax_on_device(net, *, links=None, k_xl=None, xl_rest=None, myo_links=None, f_myo=0.0,
                     branch_triples=None, branch_theta0=0.0, branch_k=0.0,
                     n_steps=600, reshape_every=25, dt_mu=0.0, n_reshape_iter=2, device="cpu"):
@@ -471,6 +495,132 @@ def simulate_loaded_shell_on_device(cortex, f_myo, *, n_steps=4000, reshape_ever
     wp.synchronize_device(d)
     net.pos = pos_d.numpy().astype(np.float64)
     return net.pos, traj
+
+
+def simulate_compressed_shell_on_device(cortex, f_myo, *, strain=0.0, n_steps=4000, reshape_every=25,
+                                        turgor_every=20, dt_mu=0.0, n_reshape_iter=2, k_plate=None,
+                                        device="cpu"):
+    """VIRTUAL PARALLEL-PLATE (AFM / Fischer-Friedrich) compression of the loaded cortex shell.
+
+    Replicates the EXPERIMENTAL cortical-tension PROTOCOL (measurement-protocol-consistency sanity gate):
+    the band papers (Chugh, Fischer-Friedrich, Hosseini) measure γ by DEFORMING the cell (AFM /
+    parallel-plate / aspiration), not on a resting cortex. Here two rigid plates at z = centroid ±
+    R0·(1−strain) compress the turgor-pressurised cortex; we read the plate reaction force and extract the
+    apparent surface tension the SAME way the experiment does (liquid-drop Young-Laplace), so it can be
+    compared apples-to-apples with the band — unlike the resting method-of-planes γ_myo.
+
+    The compressed shape is NON-spherical, so the turgor closure uses the true enclosed volume (convex
+    hull) instead of the spherical R_mean³. Returns (pos, metrics) where metrics has the plate force,
+    contact/equatorial geometry, ΔP, V/V0, and the extracted γ_apparent [pN/µm].
+    """
+    from scipy.spatial import ConvexHull
+
+    from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
+    from ffn_sim.ff.gamma_floor import TURGOR_DP0, TURGOR_PI_IN0, VMIN_FRAC
+
+    net = cortex.net
+    N = net.n_nodes
+    tri = np.ascontiguousarray(net.bend_triples, np.int32)
+    alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
+    fiber_off = np.ascontiguousarray(net.fiber_offsets, np.int32)
+    seg_per = np.diff(fiber_off) - 1
+    seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
+    seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    R0 = cortex.R0_mean if cortex.R0_mean > 0.0 else cortex.R_um
+    V0 = (4.0 / 3.0) * np.pi * R0**3
+    vmin = VMIN_FRAC * V0
+    half_gap = R0 * (1.0 - strain)                       # plate half-separation
+    K_vol = TURGOR_PI_IN0 / (1.0 - VMIN_FRAC)
+    if k_plate is None:
+        k_plate = 10.0 * (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / N   # 10× the turgor breathing mode → rigid plate
+    if dt_mu <= 0.0:
+        kmax = float(net.kappa.max()) / seg**3
+        if cortex.xl_i.size:
+            kmax = max(kmax, float(cortex.xl_k.max()))
+        kmax = max(kmax, (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / N, k_plate)
+        dt_mu = 0.1 / kmax
+
+    d = device
+    pos_d = wp.array(np.ascontiguousarray(net.pos, np.float64), dtype=wp.vec3d, device=d)
+    f_d = wp.zeros(N, dtype=wp.vec3d, device=d)
+    react_d = wp.zeros(2, dtype=wp.float64, device=d)
+    tri_d = wp.array(tri, dtype=wp.int32, device=d)
+    alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
+    foff_d = wp.array(fiber_off, dtype=wp.int32, device=d)
+    soff_d = wp.array(seg_off, dtype=wp.int32, device=d)
+    srest_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
+    has_xl = bool(cortex.xl_i.size)
+    if has_xl:
+        xl_d = wp.array(np.ascontiguousarray(np.stack([cortex.xl_i, cortex.xl_j], 1), np.int32),
+                        dtype=wp.int32, device=d)
+        kxl_d = wp.array(np.ascontiguousarray(cortex.xl_k, np.float64), dtype=wp.float64, device=d)
+        r0_d = wp.array(np.ascontiguousarray(cortex.xl_rest, np.float64), dtype=wp.float64, device=d)
+    has_myo = bool(cortex.myo_i.size) and f_myo != 0.0
+    if has_myo:
+        myo_d = wp.array(np.ascontiguousarray(np.stack([cortex.myo_i, cortex.myo_j], 1), np.int32),
+                         dtype=wp.int32, device=d)
+    nT = tri.shape[0]
+    centre = wp.vec3d(0.0, 0.0, 0.0)
+    cz = 0.0
+    dP_area = 0.0
+
+    def _refresh_turgor():
+        nonlocal centre, cz, dP_area
+        p = pos_d.numpy().astype(np.float64)
+        c = p.mean(axis=0)
+        centre = wp.vec3d(float(c[0]), float(c[1]), float(c[2]))
+        cz = float(c[2])
+        try:
+            hull = ConvexHull(p)
+            V, area = float(hull.volume), float(hull.area)
+        except Exception:
+            R_mean = float(np.linalg.norm(p - c, axis=1).mean()); V = (4/3)*np.pi*R_mean**3; area = 4*np.pi*R_mean**2
+        dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
+        dP_area = dP * area / N
+        return V, area, dP
+
+    for step in range(n_steps):
+        if step % turgor_every == 0:
+            _refresh_turgor()
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        if nT:
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        if has_xl:
+            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(turgor_kernel, dim=N, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)
+        wp.launch(plate_kernel, dim=N,
+                  inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
+        wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+        if (step + 1) % reshape_every == 0:
+            wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
+                      inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
+
+    # final measurement: plate reaction force + shape, on the equilibrated compressed shell
+    V, area, dP = _refresh_turgor()
+    react_d.zero_()
+    wp.launch(plate_kernel, dim=N,
+              inputs=[pos_d, wp.float64(cz), wp.float64(half_gap), wp.float64(k_plate), f_d, react_d], device=d)
+    wp.synchronize_device(d)
+    react = react_d.numpy()
+    F_plate = float(react[0])                       # top-plate force = AFM force [pN]
+    n_contact = float(react[1])
+    net.pos = pos_d.numpy().astype(np.float64)
+    p = net.pos; c = p.mean(axis=0)
+    rxy = np.hypot(p[:, 0] - c[0], p[:, 1] - c[1])
+    R_eq = float(rxy.max())                          # equatorial (bulge) radius [µm]
+    zc = p[:, 2] - c[2]
+    contact = np.abs(np.abs(zc) - half_gap) < 0.15 * seg + 0.05
+    contact_radius = float(rxy[contact].max()) if contact.any() else 0.0
+    gamma_laplace = 0.5 * dP * R_eq                  # liquid-drop Young-Laplace apparent tension [pN/µm]
+    dP_force = F_plate / (np.pi * contact_radius**2) if contact_radius > 1e-6 else 0.0  # pressure from AFM force
+    metrics = {"strain": strain, "half_gap": half_gap, "F_plate_pN": F_plate, "n_contact": n_contact,
+               "R_eq_um": R_eq, "contact_radius_um": contact_radius, "dP_turgor_Pa": dP,
+               "dP_from_force_Pa": dP_force, "V_over_V0": V / V0,
+               "gamma_apparent_pN_um": gamma_laplace, "gamma_apparent_mN_m": gamma_laplace * 1e-3,
+               "k_plate": k_plate}
+    return net.pos, metrics
 
 
 def simulate_turnover_on_device(cortex, f_myo, *, n_steps=8000, reshape_every=25, kmc_every=50,
