@@ -57,6 +57,12 @@ In the UI: tick **section**, pick the **mode** dropdown, drag **cut pos**. `cut`
 - `FULLCOMPARTMENT_n400_CONTROL_explicit_vs_implicit.png` — matched-N=400 control, explicit (baoab) vs implicit
   (IMEX) mid-plane cuts side by side: visually + numerically identical (pen 2.23≈2.11, gap 0.156≈0.158, asph
   0.0543==0.0543) → the residual pen is robust to the integrator = it is geometry.
+- `FULLCOMPARTMENT_n400_NUCLEUS_proportional_vs_simfaithful.png` — **(audit#9)** the viewer nucleus: PROPORTIONAL
+  `0.25·cellR` (left, misleading — interior nuclei shrink because interior CELLS are smaller) vs SIM-FAITHFUL fixed
+  1.88 µm (right, `--r-nuc-abs` — uniform, what the sim actually computes). The sim uses ONE fixed R_nuc for every
+  cell → **no nuclear compression**; the "shrinking nucleus" was a render artifact that exposed the real issue — a
+  3.68× cell-SIZE gradient from the confluent-Voronoi init (documented in the reconstruction write-up). The flagship
+  viewer now uses the sim-faithful mode.
 - `FULLCOMPARTMENT_n400_CONTACT_penalty_vs_ipc.png` — penalty tent (pen 2.23, gap 0.156 µm) vs `--ipc` Li-2020
   log-barrier (pen 1.51, gap 0.419 µm) on the SAME confluent full-compartment: `--ipc` lowers the pen ~30 % but
   widens the gap — neither cleans it (both FAIL G2, both V/V0=1.0). The pen is a geometric floor (the confluent

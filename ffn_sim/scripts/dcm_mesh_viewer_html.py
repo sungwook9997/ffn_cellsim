@@ -50,8 +50,15 @@ def main() -> None:
     ap.add_argument("--fps", type=int, default=6)
     ap.add_argument("--r-nuc-factor", type=float, default=0.0, dest="r_nuc_factor",
                     help="if >0, render a NUCLEUS sphere per cell at its per-frame centroid, radius = "
-                         "factor*cell_radius (0.25 = physiological MCF7). Cortex/membrane shells become "
-                         "translucent so the nucleus (and cytoplasm interior) are visible inside.")
+                         "factor*cell_radius (PROPORTIONAL / N-C-ratio look). Cortex/membrane shells become "
+                         "translucent so the nucleus (and cytoplasm interior) are visible inside. WARNING: "
+                         "proportional drawing makes a real cell-SIZE gradient look like nuclear compression — "
+                         "prefer --r-nuc-abs to match the sim (which uses ONE fixed R_nuc for every cell).")
+    ap.add_argument("--r-nuc-abs", type=float, default=0.0, dest="r_nuc_abs",
+                    help="if >0, render every nucleus at this FIXED absolute radius [µm] (e.g. 1.88 = the sim's "
+                         "R_nuc = 0.25*7.5µm). Faithful to the sim (uniform R_nuc for all cells); overrides "
+                         "--r-nuc-factor for sizing. Use this for honest morphology; the proportional mode is a "
+                         "display convention only.")
     args = ap.parse_args()
 
     d = np.load(args.npz, allow_pickle=True)
@@ -101,6 +108,7 @@ def main() -> None:
         "lo": lo.tolist(), "span": span.tolist(),
         "fps": int(args.fps), "title": args.title,
         "rNuc": float(args.r_nuc_factor),
+        "rNucAbs": float(args.r_nuc_abs),
     }
     payload = {
         "meta": meta,
@@ -215,13 +223,14 @@ const clipArr=[];   // empty when section OFF or in peel/slab; [clipPlane] only 
 // (1) visible cell surface — the normal look. Reads clipArr (only populated in cut mode).
 const mat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide,
   clippingPlanes:clipArr, clipShadows:true});
-if(m.rNuc>0){ mat.transparent=true; mat.opacity=0.30; mat.depthWrite=false; } // translucent membrane/cortex → nucleus + cytoplasm interior visible
+const nucOn = (m.rNuc>0 || m.rNucAbs>0);
+if(nucOn){ mat.transparent=true; mat.opacity=0.30; mat.depthWrite=false; } // translucent membrane/cortex → nucleus + cytoplasm interior visible
 const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
 
 // ---------- NUCLEUS compartment: one instanced sphere per cell at its centroid, radius R_nuc ----------
-const palette = (m.rNuc>0) ? dec(P.palette_b64, Uint8Array) : null;   // (C,3) uint8
+const palette = nucOn ? dec(P.palette_b64, Uint8Array) : null;   // (C,3) uint8
 let nucMesh=null;
-if(m.rNuc>0){
+if(nucOn){
   const nucMat=new THREE.MeshLambertMaterial({clippingPlanes:clipArr, clipShadows:true});
   nucMesh=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,2), nucMat, C);
   nucMesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(C*3),3);
@@ -297,7 +306,10 @@ function computeCentroids(pos){
   }
   for(let c=0;c<C;c++){ const k=cnt[c]||1; cent[c*3]/=k; cent[c*3+1]/=k; cent[c*3+2]/=k; }
 }
-// per-cell radius (mean node distance to centroid) → nucleus size = rNuc·radius
+// per-cell radius (mean node distance to centroid). Nucleus size is EITHER a fixed absolute
+// radius rNucAbs [µm] (faithful to the sim, which uses ONE global R_nuc for every cell) OR the
+// legacy per-cell rNuc·cellR proportional render (N/C-ratio look — do NOT read it as the sim's
+// nucleus; proportional drawing makes a real cell-SIZE gradient look like nuclear compression).
 const cellR=new Float32Array(C);
 function computeCellR(pos){
   cellR.fill(0); const k=new Float32Array(C);
@@ -312,7 +324,7 @@ function updateNucleus(){
   computeCentroids(curPos); computeCellR(curPos);
   const on=elClipOn.checked, mode=elMode.value;
   for(let c=0;c<C;c++){
-    let rn=m.rNuc*cellR[c];
+    let rn = (m.rNucAbs>0.0) ? m.rNucAbs : m.rNuc*cellR[c];   // absolute (sim-faithful) vs proportional
     if(on && (mode==='peel'||mode==='slab') && !keep[c]) rn=0;  // hide nuclei of peeled/hidden cells
     _nm.makeScale(rn,rn,rn); _nm.setPosition(cent[c*3],cent[c*3+1],cent[c*3+2]);
     nucMesh.setMatrixAt(c,_nm);

@@ -73,6 +73,28 @@ this reading:
   the concurrent session's porosity ~0.10 on my own data. A few sharp-Voronoi-vertex nodes poke (that is what the
   worst-node `pen_frac` reports); the bulk is space-filling with A/A0=0.999, faceted (asph 0.054).
 
+> **⚠️ REAL MODEL ARTIFACT (PI-caught, audit#9) — the "healthy space-filling" claim was INCOMPLETE.** The volume
+> test above verifies *total* volume + no-overlap, but NOT per-cell size **uniformity** — and there the model is
+> unphysical. Measured per-cell volume vs radial position: **surface cells are 3.68× the volume of interior cells**
+> (INTERIOR 701 µm³ / MID 1557 / SURFACE 2581; cell-volume CV = 0.50; correlation of cell radius with radial
+> position = +0.979). This gradient is **present at frame 0, identical to final, identical for penalty and `--ipc`**
+> → it is baked into the **confluent-Voronoi init**: boundary Voronoi cells balloon outward into the medium
+> (bounded only by the outer surface) while interior cells are bounded on all sides. `v0_from_init` then sets each
+> cell's rest volume to its Voronoi volume, and turgor holds the gradient. **Real MCF7 cells are ~uniform (~7.5 µm,
+> ~1767 µm³); a 3.68× interior/surface split is a tessellation artifact, not biology.** `V/V0=1.000` is *deceptive*
+> here — every cell sits at its rest volume, but the rest volumes themselves are unphysically graded. The PI caught
+> this via the viewer's *nucleus* (see below); my audits #4–#8 missed it because they never checked size uniformity.
+>
+> **Fix — two parts.** (1) *Viewer (done, non-colliding):* the nucleus was drawn *proportional* (`0.25·cellR`),
+> which made the cell-size gradient masquerade as **nuclear compression**. The sim uses ONE fixed `R_nuc`=1.88 µm
+> for every cell (`dcm_warp_decohesion.py:504`, scalar into `nucleus_force_kernel`) — there is **no nuclear
+> compression**. Added `--r-nuc-abs` to draw the uniform sim-faithful nucleus; the flagship viewer now uses it, and
+> `FULLCOMPARTMENT_n400_NUCLEUS_proportional_vs_simfaithful.png` shows the difference. (2) *Init (FLAGGED, needs
+> coordination):* the real remedy is a **uniform-volume confluent init** — bound the boundary Voronoi cells
+> (ghost-seed ring outside the surface, or Laguerre/power-weighted cells tuned for equal volume) in
+> `dcm/confluent_init_prototype.py`. That module is used by BOTH sessions' runs (incl. the concurrent `2df86bb`),
+> so it is a shared-physics change to make with the PI, not unilaterally.
+
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
 explicitly accepts pen~2.6 at V/V0=1.0 as *known healthy equilibrium overlap*. The pressing contact is therefore
