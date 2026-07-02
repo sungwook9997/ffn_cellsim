@@ -1,4 +1,16 @@
-# DCM spheroid compaction SOLVED — aggregate-level Foty-Steinberg surface tension (2026-07-02)
+# DCM spheroid compaction — aggregate Foty-Steinberg σ is the driver, but native needs true IPC (2026-07-02)
+
+> **⚠️ CORRECTION (native N=400):** the "SOLVED" headline (from N=100) was PREMATURE. At native N=400 the
+> aggregate σ run **blows up** — V/V0=0.39 (cells collapse), pen=123 (massive interpenetration), maxZ explodes.
+> The Rg −19% at N=400 is partly cell-collapse/overlap, NOT clean densification (porosity "0.96" = the collapse
+> signature). **Verdict:** the aggregate σ IS the correct global compaction DRIVER (Rg drops, the mechanism the
+> junction levers lacked), BUT it is not clean without a proper contact method — exactly §2e's conclusion that
+> it needs **aggregate σ AND true IPC (log-barrier), built together.** The penalty contact fails under the
+> compaction load at native density (pen 3.8 @N=100 → 123 @N=400). Next: build true log-barrier IPC. The N=100
+> result below is real (V/V0 stable there) but is NOT a scale-valid claim on its own.
+
+## (original N=100 finding — driver works, but see the correction above)
+
 
 **Date:** 2026-07-02  **Engine:** DCM (Warp, A5000)  **Branch:** dcm/main
 **PI directive (8h goal):** "dcm에서 현재 spheroid 조립 관련하여서 문제가 생기는 건데, 그것 해결할 방법 절대
