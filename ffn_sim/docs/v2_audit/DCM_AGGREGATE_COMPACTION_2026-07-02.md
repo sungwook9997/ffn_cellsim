@@ -17,7 +17,35 @@
 > **CORRECTION #1 (superseded by #2):** the "SOLVED" from N=100 was premature; native N=400 blew up. (This
 > attributed it to contact fidelity — the audit shows the 10⁶× force was the real root cause.)
 
-## (original N=100 finding — driver works, but see the correction above)
+## FINAL conclusion (after the unit fix + physical σ-sweep) — dynamic compaction is NOT force-achievable
+
+Corrected `dP_agg = 2σ/R` (physical, ~330 Pa at σ=5mN/m). Re-run at N=100, `--ipc` (log-barrier), bundle-10,
+loose gap-2.4, 8000 steps, sweeping σ over the **full physical Foty-Steinberg range**:
+
+| σ [mN/m] | ΔRg | porosity | V/V0 | pen | vs baseline |
+|---|---|---|---|---|---|
+| baseline (no σ) | +0.03% | 0.746→0.738 | 1.002 | 0.30 | — |
+| 1 | +0.03% | →0.738 | 1.003 | 0.30 | identical |
+| 5 | +0.01% | →0.738 | 1.002 | 0.33 | identical |
+| 20 (top of lit range) | −0.08% | →0.737 | 1.002 | 0.31 | identical |
+
+**Across the entire physical σ range the aggregate tension is indistinguishable from baseline — NO compaction
+(Rg flat ±0.1%, porosity unchanged), all stable (V/V0≈1.0, pen≈0.3 clean).** The corrected contact (--ipc
+log-barrier) is now clean at physical loads (pen 0.3 vs the 123 of the buggy crush). So:
+
+- **Dynamic loose→compact compaction is NOT achievable at physical force magnitudes** — not by the junction
+  levers (§2e: reach/adhesion/contraction/differential-γ) NOR by the aggregate Foty-Steinberg σ (this work,
+  1–20 mN/m). All are too weak vs the turgor-incompressible cells to force the cell REARRANGEMENT that void
+  elimination requires. Amplifying σ beyond the lit range to force it would be magic-number tuning (hard-rule
+  forbidden) — and even the 10⁶× crush "compacted" by cell-collapse/overlap, not clean densification.
+- **The confluent-init (draw the assembled faceted spheroid) is the validated pragmatic answer** for producing
+  production spheroids (CONFLUENT_INITIALIZER_DESIGN; stable faceted spheroid, V/V0=1, watertight). Dynamic
+  self-assembly is a genuinely harder open problem (FF-mature territory), independent of any single force lever.
+- **The aggregate σ machinery is kept** (correctly scaled now) as an available, stable, lit-anchored force for
+  future use (e.g. combined with growth/proliferation, or as a mild maturation tension) — it just does not, on
+  its own at physical magnitude, solve dynamic compaction.
+
+## (original N=100 finding — was a 10⁶× crush artifact; RETRACTED, see corrections + final conclusion above)
 
 
 **Date:** 2026-07-02  **Engine:** DCM (Warp, A5000)  **Branch:** dcm/main
