@@ -4,9 +4,11 @@ PI /goal 2026-07-02: symmetry-breaking = the front-rear axis a cell must pick be
 Mechanism A (chosen in FF_POLARIZATION_LITERATURE_2026-07-02 over Rho wave-pinning, per the mechanistic-not-lumped
 rule): a uniform contractile actomyosin cortex is linearly UNSTABLE. Myosin generates active stress → stress
 gradients drive cortical flow v → flow ADVECTS myosin → local density ↑ → active stress ↑ (positive feedback);
-myosin diffusion + turnover oppose it. Above a contractility threshold ζ_c a single high-myosin cap (= the rear)
-forms with steady cortical flow → polarity. (Bois, Jülicher & Grill 2011, PRL 106:028103; Mayer et al. 2010,
-Nature 467:617.)
+myosin diffusion + turnover oppose it. Just above the contractility threshold ζ_c — where ONLY the cell-perimeter
+mode k1 is unstable — a single high-myosin cap (= the rear) forms with steady cortical flow → polarity, robustly
+for every random seed. (Far above ζ_c shorter modes also go unstable, giving transient MULTI-cap states that
+coarsen slowly + seed-dependently — so a robust single cap is claimed only in the near-threshold polarization
+regime; see single_cap_fraction.) (Bois, Jülicher & Grill 2011, PRL 106:028103; Mayer et al. 2010, Nature 467:617.)
 
 This is the active-gel reduction (1-D periodic cortex ring, arclength x∈[0,L=2πR)) — the mechanistic
 hydrodynamic theory of the same explicit myosin the engine already carries. The coupled fields:
@@ -112,6 +114,28 @@ def make_grid(p: ActiveGelParams, N=256):
     dx = p.L / N
     k_grid = 2.0 * np.pi * np.fft.rfftfreq(N, d=dx)
     return x, dx, k_grid
+
+
+def evolve(p: ActiveGelParams, *, seed=0, N=256, n_steps=120000, eps=1e-3, dt=None):
+    """Evolve from small random noise to the nonlinear steady state. Returns (c_final, dominant_mode, contrast)."""
+    x, dx, k_grid = make_grid(p, N)
+    if dt is None:
+        dt = 0.05 * min(dx ** 2 / max(p.D, 1e-9), 1.0 / max(p.k_off, 1e-9))
+    c = p.c0 + eps * np.random.default_rng(seed).standard_normal(N)
+    for _ in range(n_steps):
+        c, _ = step(c, p, dx, dt, k_grid)
+    ch = np.abs(np.fft.rfft(c - c.mean()))
+    dom = int(np.argmax(ch[1:]) + 1) if ch[1:].size else 0
+    contrast = (c.max() - c.min()) / c.mean()
+    return c, dom, contrast
+
+
+def single_cap_fraction(p: ActiveGelParams, *, seeds=range(8), N=256, n_steps=120000):
+    """Fraction of random-noise realizations that reach a SINGLE cap (dominant mode 1) — the ensemble honesty
+    metric. Robust (→1.0) only near threshold where the cell-perimeter mode k1 is the sole unstable mode; far
+    above threshold shorter modes are unstable too → transient multi-cap states → fraction < 1."""
+    doms = [evolve(p, seed=s, N=N, n_steps=n_steps)[1] for s in seeds]
+    return float(np.mean([d == 1 for d in doms])), doms
 
 
 def measure_growth_rate(p: ActiveGelParams, mode: int, *, N=256, eps=1e-4, n_steps=200, dt=None):

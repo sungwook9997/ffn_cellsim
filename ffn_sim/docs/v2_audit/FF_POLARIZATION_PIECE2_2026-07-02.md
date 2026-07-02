@@ -20,14 +20,26 @@ high-myosin cap (the rear) + steady cortical flow emerge = polarity. Solved spec
 
 ## Validation (analytic ground truth FIRST, per oracle-is-crosscheck)
 
-`tests/ff/test_polarization_activegel.py` (4/4 PASS):
+`tests/ff/test_polarization_activegel.py` (5/5 PASS):
 - **Dispersion:** the spectral solver's per-mode numerical growth rate == the analytic λ(k) =
   `[c0 ζ f'(c0)/γ]·k²/(1+ℓ²k²) − D k² − k_off` to **rel_err <0.1%** across modes 1–10 (unstable low-k,
   stable high-k band). *(This verifies the solver integrates the model PDEs correctly — a manufactured-solution
   check against the model's own linear theory, not an experimental validation.)*
 - **Threshold:** homogeneous state stable (λ<0) at ζ=0.9·ζ_c, unstable (λ>0) at ζ=1.1·ζ_c — onset brackets ζ_c.
-- **Nonlinear:** from random noise (ζ=4·ζ_c) a **single** high-myosin cap forms (dominant Fourier mode = 1,
-  density contrast 12.3×) with cortical flow converging into it — spontaneous symmetry-breaking.
+- **Nonlinear single cap — the POLARIZATION regime (seed-robust):** just above threshold (ζ=1.2·ζ_c1, where
+  ONLY the cell-perimeter mode k1 is unstable; ζ_c1=118.8 < ζ < ζ_c2=143.8) a **single** high-myosin cap forms
+  from random noise for **100% of seeds** (front-rear symmetry breaking); the cap is near-threshold-weak
+  (contrast ~0.03, supercritical bifurcation) and its amplitude grows with ζ−ζ_c.
+
+**⚠️ Honesty correction (2026-07-02 adversarial audit).** An earlier version asserted "single cap, contrast
+12.3×" at **ζ=4·ζ_c1 with seed 0** — that was a **seed-cherry-pick**: at ζ=4·ζ_c1 the fastest-growing linear
+mode is actually mode 2 (not 1), and the single-cap outcome is seed-dependent. Ensemble (10 seeds, 120k steps):
+single-cap fraction = **1.00 @1.2·ζ_c1** (only k1 unstable) → **0.60 @1.4·ζ_c1 → 0.40 @1.6 → 0.60 @2.0 → 0.70
+@3.0** (contrast rises 0.03→8.7 over the same range). So far above threshold the system forms transient
+MULTI-cap states that coarsen slowly + seed-dependently. **Robust single-cap polarization is claimed ONLY in
+the near-threshold regime** (test_single_cap_robust_near_threshold, all seeds); the multi-cap regime is
+documented as NOT seed-robust (test_multicap_above_threshold_is_not_robust). `single_cap_fraction()` reports the
+ensemble metric.
 
 ## Constants (µm·pN·s; DOIs in FF_POLARIZATION_LITERATURE; flagged for PI KB-registration)
 

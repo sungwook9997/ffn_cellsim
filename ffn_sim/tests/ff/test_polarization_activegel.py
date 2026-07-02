@@ -11,6 +11,7 @@ import pytest
 
 from ffn_sim.ff.polarization_activegel import (
     dispersion,
+    evolve,
     make_grid,
     measure_growth_rate,
     resolve_activegel,
@@ -52,18 +53,31 @@ def test_threshold_brackets_zeta_c():
     assert lo < 0 < hi
 
 
-def test_nonlinear_single_cap_polarization():
-    """Above threshold, random IC → a SINGLE high-myosin cap (spontaneous front-rear symmetry-breaking)."""
+def test_single_cap_robust_near_threshold():
+    """In the POLARIZATION regime — ζ just above ζ_c1 where ONLY the cell-perimeter mode k1 is unstable — a
+    single myosin cap forms for EVERY random seed (seed-independent spontaneous front-rear symmetry-breaking).
+
+    (This is the honest robust regime. NOT ζ≫ζ_c: far above threshold shorter modes are unstable too and the
+    system forms transient MULTI-cap states whose coarsening to one cap is slow + seed-dependent — see
+    test_multicap_above_threshold_is_not_robust. The earlier single-seed dom==1 at ζ=4·ζ_c1 was a
+    seed-cherry-pick, corrected 2026-07-02 audit.)"""
+    p0 = resolve_activegel(R_um=7.5, zeta=1.0)
+    k1 = 2 * np.pi / p0.L
+    zc1, zc2 = zeta_critical(p0, k1), zeta_critical(p0, 2 * k1)
+    zeta = 1.2 * zc1
+    assert zc1 < zeta < zc2                               # ONLY mode 1 linearly unstable
+    p = resolve_activegel(R_um=7.5, zeta=zeta)
+    assert dispersion(k1, p) > 0 and dispersion(2 * k1, p) < 0
+    for seed in range(4):
+        _, dom, contrast = evolve(p, seed=seed, N=256, n_steps=90000)
+        assert dom == 1 and contrast > 0.0               # single cap, polarized, EVERY seed
+
+
+def test_multicap_above_threshold_is_not_robust():
+    """Honesty guard: far above threshold (ζ=4·ζ_c1, several modes unstable) the single-cap outcome is NOT
+    seed-robust — some seeds settle on 2–3 caps. We must therefore NOT claim a robust single cap there."""
     p0 = resolve_activegel(R_um=7.5, zeta=1.0)
     zc1 = zeta_critical(p0, 2 * np.pi / p0.L)
     p = resolve_activegel(R_um=7.5, zeta=4.0 * zc1)
-    x, dx, kg = make_grid(p, N=256)
-    rng = np.random.default_rng(0)
-    c = p.c0 + 1e-3 * rng.standard_normal(x.size)
-    dt = 0.05 * min(dx ** 2 / p.D, 1.0 / p.k_off)
-    for _ in range(60000):
-        c, _ = step(c, p, dx, dt, kg)
-    assert np.isfinite(c).all()
-    dom = int(np.argmax(np.abs(np.fft.rfft(c - c.mean()))[1:]) + 1)
-    contrast = (c.max() - c.min()) / c.mean()
-    assert dom == 1 and contrast > 0.1                    # one cap, strongly polarized
+    doms = [evolve(p, seed=s, N=256, n_steps=60000)[1] for s in range(6)]
+    assert any(d != 1 for d in doms)                     # multi-cap for at least one seed (seed-dependent)

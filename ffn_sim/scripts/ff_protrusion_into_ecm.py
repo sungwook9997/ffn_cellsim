@@ -11,7 +11,11 @@ Compartments (all at physiological setpoints — CLAUDE.md hard rule):
   • turgor   — osmotic ΔP (regulated), physiological baseline.
   • membrane — plasma-membrane inward surface tension γ_mem (Raucher-Sheetz buffered plateau).
   • nucleus  — stiff bilinear shell bead cloud (compartments.resolve_nucleus, 0.25R).
-  • cytoplasm— implicit viscous relaxation (dt_mu mobility; η=65.9 Pa·s sets the timescale).
+  • cytoplasm— QUASI-STATIC overdamped relaxation to mechanical equilibrium between polymerization growth
+               steps (dt_mu = 0.05/k_max is a stiffness-scaled numerical pseudo-time, NOT the physical MCF7
+               cytoplasm drag). ⚠️ η=65.9 Pa·s is NOT yet wired as the per-node viscous drag in this driver;
+               the reported observables (tip advance, emergent load, γ) are quasi-static equilibrium quantities
+               (unaffected), but true η-set viscous dynamics is a refinement. (audit 2026-07-02.)
   • filopodium — a parallel formin bundle grafted onto the cortex surface (base crosslinked to the cortex),
                barbed tips at the front; polymerization (polymerization_warp) grows the tips.
   • ECM      — a 3D Mikado collagen network (ecm_mikado) in front, far face pinned; the filopodium tips make
