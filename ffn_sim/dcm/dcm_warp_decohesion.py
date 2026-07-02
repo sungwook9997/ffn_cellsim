@@ -649,7 +649,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # rupture (slip) under the spreading traction → emergent de-cohesion.
         f0 = 29.2e-12
         r0_meso = c_rep
-        rbind_meso = cad_rbind if cad_rbind > 0.0 else c_adh   # Stage-1 ECM-tether reach proxy (fibronectin µm-scale) when set
+        rbind_meso = cad_rbind * 1e-6 if cad_rbind > 0.0 else c_adh   # Stage-1 reach [µm]→m (c_adh is in m); fibronectin µm-scale
         k_meso = f0 / max(rbind_meso - r0_meso, 1e-12)
         cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
@@ -957,12 +957,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
         if aggregate_tension and (s % agg_every == 0):
-            # Foty-Steinberg aggregate liquid-drop: refresh the global centroid + ΔP=2σ/R_agg (σ in N/m,
-            # R_agg in µm → Pa = 2e6·σ/R). Host read is cheap at this cadence; c_agg/R_agg drift slowly.
+            # Foty-Steinberg aggregate liquid-drop: refresh the global centroid + ΔP=2σ/R_agg. DCM positions
+            # are in METERS (R_cell=7.5e-6 m), so _R is in meters and ΔP = 2·σ[N/m]/R[m] = Pa directly (SI),
+            # matching the turgor kernel's Pa convention — NO 1e6 factor (that was a 10⁶× unit bug, fixed
+            # 2026-07-02 per the adversarial audit; the crush it caused faked the earlier "compaction").
             _ph = pos_d.numpy()
             _c, _R = aggregate_centroid_radius(_ph)
             _agg[0] = wp.vec3d(float(_c[0]), float(_c[1]), float(_c[2]))
-            _agg[1] = 2.0e6 * sigma_agg / _R
+            _agg[1] = 2.0 * sigma_agg / _R
         if gravity:                       # D7: constant sedimentation body force (RHS only)
             wp.launch(gravity_body_force_kernel, dim=N,
                       inputs=[cof_d, wp.float64(fz_node), force_d], device=device)

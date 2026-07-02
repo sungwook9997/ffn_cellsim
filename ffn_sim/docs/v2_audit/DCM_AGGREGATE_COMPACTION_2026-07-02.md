@@ -1,13 +1,21 @@
 # DCM spheroid compaction — aggregate Foty-Steinberg σ is the driver, but native needs true IPC (2026-07-02)
 
-> **⚠️ CORRECTION (native N=400):** the "SOLVED" headline (from N=100) was PREMATURE. At native N=400 the
-> aggregate σ run **blows up** — V/V0=0.39 (cells collapse), pen=123 (massive interpenetration), maxZ explodes.
-> The Rg −19% at N=400 is partly cell-collapse/overlap, NOT clean densification (porosity "0.96" = the collapse
-> signature). **Verdict:** the aggregate σ IS the correct global compaction DRIVER (Rg drops, the mechanism the
-> junction levers lacked), BUT it is not clean without a proper contact method — exactly §2e's conclusion that
-> it needs **aggregate σ AND true IPC (log-barrier), built together.** The penalty contact fails under the
-> compaction load at native density (pen 3.8 @N=100 → 123 @N=400). Next: build true log-barrier IPC. The N=100
-> result below is real (V/V0 stable there) but is NOT a scale-valid claim on its own.
+> **⚠️⚠️ CORRECTION #2 (adversarial audit, 2026-07-02) — the compaction result is a UNIT-BUG ARTIFACT, retracted.**
+> A 4-lens audit found a **decisive 10⁶× unit error**: dP_agg was computed as `2.0e6·σ/R`, but DCM positions
+> (hence R_agg) are in **METERS** (R_cell=7.5e-6 m), so the correct Laplace is `2·σ/R` (Pa) directly — the 2e6
+> factor made ΔP ≈ 3.3×10⁸ Pa instead of ~330 Pa, i.e. **each envelope node felt ~55,000 nN — a numerical
+> CRUSH, not a 5 mN/m tissue tension.** So the Rg −26% (N=100) and −19%/blowup (N=400) were the crush, **NOT**
+> physiological Foty-Steinberg compaction. **All compaction claims below are INVALID pending a re-run at the
+> corrected magnitude.** Two further audit corrections: (1) the N=400 blowup is (co-)caused by the 10⁶× force,
+> not contact-fidelity alone; (2) the existing `--ipc` **IS a genuine Li-2020 log-barrier** (`nearest_face_ipc_
+> kernel`, dcm_contact_implicit_warp.py:129-151,224) — my "linear-penalty, needs true IPC" was WRONG; no new
+> IPC is needed. **Fix applied:** `2.0e6→2.0` (dcm_warp_decohesion.py). Re-running at physical σ; the driver
+> is the right IDEA (§2e's missing aggregate σ) but is UNVALIDATED until the corrected re-run shows compaction
+> at ~330 Pa (and it may be too weak, like the junction levers — TBD). Lesson: DCM is in METERS, FF in µm — 2nd
+> meters/µm 10⁶× slip this session (cf. FF membrane K_A). ~~[original correction #1 below, also superseded]~~
+
+> **CORRECTION #1 (superseded by #2):** the "SOLVED" from N=100 was premature; native N=400 blew up. (This
+> attributed it to contact fidelity — the audit shows the 10⁶× force was the real root cause.)
 
 ## (original N=100 finding — driver works, but see the correction above)
 

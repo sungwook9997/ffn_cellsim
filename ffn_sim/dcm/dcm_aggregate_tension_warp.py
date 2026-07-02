@@ -79,9 +79,9 @@ def aggregate_laplace_kernel(
 
 
 def aggregate_centroid_radius(pos_np: np.ndarray, fcell_np: np.ndarray | None = None) -> tuple[np.ndarray, float]:
-    """Global aggregate centroid + effective radius R_agg (mean node distance from the centroid) [µm].
-
-    Uses ALL live nodes (the whole drop). R_agg is the Laplace-pressure length scale ΔP=2σ/R_agg.
+    """Global aggregate centroid + effective radius R_agg (mean node distance from the centroid), in the
+    SAME unit as ``pos_np`` — which in the DCM is METERS (R_cell=7.5e-6 m). So the caller forms the Laplace
+    pressure as ΔP = 2·σ[N/m]/R_agg[m] = Pa (SI, no unit factor). Uses ALL live nodes (the whole drop).
     """
     c = pos_np.mean(axis=0)
     R = float(np.linalg.norm(pos_np - c, axis=1).mean())
