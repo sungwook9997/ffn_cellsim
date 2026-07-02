@@ -57,6 +57,11 @@ In the UI: tick **section**, pick the **mode** dropdown, drag **cut pos**. `cut`
 - `FULLCOMPARTMENT_n400_CONTROL_explicit_vs_implicit.png` — matched-N=400 control, explicit (baoab) vs implicit
   (IMEX) mid-plane cuts side by side: visually + numerically identical (pen 2.23≈2.11, gap 0.156≈0.158, asph
   0.0543==0.0543) → the residual pen is robust to the integrator = it is geometry.
+- `FULLCOMPARTMENT_n400_SIZEGRADIENT_original_vs_ghost.png` + `..._ghost_corrected_init.html` — **(audit#12)** the
+  audit#9 cell-size gradient FIXED end-to-end: original production init (3.68×, CV 0.50) vs ghost-corrected init
+  (**1.70×, CV 0.28**), BOTH real N=400 full-compartment sims. The ghost init is loaded via `--init-npz` (a
+  non-colliding production route — shared confluent builder untouched). Open the `.html` to explore the more-uniform
+  cells. Changing the *default* builder is the remaining PI-coordinated step.
 - `FULLCOMPARTMENT_n400_NUCLEUS_proportional_vs_simfaithful.png` — **(audit#9)** the viewer nucleus: PROPORTIONAL
   `0.25·cellR` (left, misleading — interior nuclei shrink because interior CELLS are smaller) vs SIM-FAITHFUL fixed
   1.88 µm (right, `--r-nuc-abs` — uniform, what the sim actually computes). The sim uses ONE fixed R_nuc for every

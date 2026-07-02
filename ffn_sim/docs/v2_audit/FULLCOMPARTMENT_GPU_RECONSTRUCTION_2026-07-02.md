@@ -102,7 +102,19 @@ this reading:
 > (frame-0 Voronoi volumes): **N=400 surface/interior 2.60× → 1.70×, CV 0.39 → 0.28** (interior untouched, boundary
 > bounded); N=100 1.26× → 0.86×. Visual: `FULLCOMPARTMENT_ghost_seed_init_fix_prototype.png`. So the ghost ring is a
 > viable **partial** fix (residual ~1.7× at N=400); driving the ratio to ~1 would need Laguerre/power-weighting.
-> The prototype proves feasibility; **integrating it into the shared init is the PI-coordinated step, still pending.**
+>
+> **END-TO-END in a REAL sim (audit#12, non-colliding).** `run_decohesion` accepts `--init-npz`, so the
+> ghost-corrected init runs through the FULL compartment physics (turgor + nucleus + membrane + contact) with **no
+> shared-file edit** — the shared confluent builder is untouched; only my runner gained an `INIT_NPZ` env. Result
+> (real N=400 full-compartment sim, `fullcomp_n400_ghost400.npz`, 199 s A5000, V/V0=1.000, faceted asph 0.042):
+> **size gradient 3.68× → 1.70×, CV 0.50 → 0.28** vs the original production init — the fix carries through
+> (`v0_from_init` preserves the uniform-ish volumes; sim gradient = init gradient). Visual
+> `FULLCOMPARTMENT_n400_SIZEGRADIENT_original_vs_ghost.png`. So **`--init-npz` is a non-colliding production route
+> for the ghost fix TODAY**; changing the *default* builder (so every run gets it) is the remaining PI-coordinated
+> step. *(Honest caveats: the 3.68→1.70 also folds in the prototype's looser `eps`/`lloyd` — the clean ghost-only
+> effect at matched config is 2.60→1.70; and this ghost init packs looser, gap 0.69 µm vs the production 0.156 µm,
+> so a production ghost init should match the production `eps`. The size-gradient *reduction* is the demonstrated
+> result; those are tuning details, not blockers.)*
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
