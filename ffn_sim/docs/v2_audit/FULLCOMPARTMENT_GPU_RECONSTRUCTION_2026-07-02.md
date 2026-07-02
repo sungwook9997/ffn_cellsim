@@ -115,6 +115,16 @@ this reading:
 > effect at matched config is 2.60→1.70; and this ghost init packs looser, gap 0.69 µm vs the production 0.156 µm,
 > so a production ghost init should match the production `eps`. The size-gradient *reduction* is the demonstrated
 > result; those are tuning details, not blockers.)*
+>
+> **TIGHT ghost — pressing regression fixed (audit#13).** Audit#13 caught that the loose-`eps` ghost above
+> regressed the contact (gap 0.69 µm). Rebuilt the ghost init at `eps=0.01` (production tightness) and re-ran
+> (`fullcomp_n400_ghostTIGHT.npz`, 238 s A5000): **gap 0.154 µm (tight, = production 0.156), size ratio 1.70×
+> (uniform), and G2_interpenetration PASS** — the `build_confluent` Voronoi-warp keeps cells strictly inside their
+> regions, so a *tight* ghost init is uniform AND non-overlapping (pen < 0.3), which the production `build_multicell`
+> init is not (pen 2.1, G2 FAIL). Trade-off: porosity 0.182 (thin clefts) vs production 0.078 (overlap). So the
+> ghost-corrected init at production `eps` is arguably a *better* spheroid than the current default on three axes
+> (uniformity, no-overlap, equal tightness); viewer `FULLCOMPARTMENT_n400_ghost_tight_uniform.html`. Adopting it as
+> the default remains the PI-coordinated step; `--init-npz` delivers it non-collidingly today.
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
