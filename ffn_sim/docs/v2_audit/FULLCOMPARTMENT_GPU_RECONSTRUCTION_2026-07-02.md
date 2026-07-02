@@ -66,12 +66,22 @@ PARTIAL — floating fixed, overlap NOT — and must not be over-stated as clean
 "faceted-tissue-good" over-claim; the exterior peel render looks faceted but HIDES the interior interpenetration
 — an honest cross-section viewer that SHOWS it is committed alongside this doc).
 
-## Concurrent work (dcm/main)
+## Concurrent work (dcm/main) — and a shared root cause (updated per commit `88bd2c8`)
 
-A parallel session **SOLVED spheroid compaction** — aggregate-level Foty-Steinberg surface tension
-(`dcm_aggregate_tension_warp.aggregate_laplace_kernel`, commit `1c1f011`), the exact missing driver this
-line had identified (loose→compact needs aggregate σ, not per-cell junction levers). This reconstruction is
-complementary (compartments + contact + GPU-native + viz); the driver is owned by that session (untouched here).
+A parallel session found the correct **compaction DRIVER** — aggregate-level Foty-Steinberg surface tension
+(`dcm_aggregate_tension_warp.aggregate_laplace_kernel`, commit `1c1f011`), the missing global densifier this
+line had identified (loose→compact needs aggregate σ, not per-cell junction levers). **⚠️ Their "SOLVED" headline
+was retracted (`88bd2c8`): it held at N=100 but at native N=400 the aggregate-σ run BLOWS UP — V/V0=0.39 (cell
+collapse), pen=123 (massive interpenetration).** So compaction is *not* solved; the σ driver is right but the
+penalty contact fails under the compaction load at native density (pen 3.8@N=100 → 123@N=400).
+
+**This CONVERGES with my finding.** Their compaction (pen 123) and my full-compartment confluent spheroid (pen
+2.1) are the *same* contact-formulation failure — the penalty/tent contact cannot prevent interpenetration under
+turgor/compaction load at native density. Both need the *same* fix: **true log-barrier IPC**. Mine is milder
+(pen 2.1, not fighting a compaction load; confluent-init is already dense) but the root cause is identical. The
+IPC build is owned by that session (untouched here); when it lands it fixes BOTH the compaction blow-up and this
+reconstruction's interpenetration in one stroke → the natural next milestone is to regenerate the clean-contact
+flagship on top of it.
 
 **Capstone attempted (full-compartment × compaction) — INTEGRATION UNSTABLE (honest negative).** Tried the
 concurrent session's stable compaction config (loose voronoi gap 2.4, N=100, cadherin bundle-10, reach
