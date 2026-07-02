@@ -45,6 +45,9 @@ In the UI: tick **section**, pick the **mode** dropdown, drag **cut pos**. `cut`
   nucleus in every cell.
 - `FULLCOMPARTMENT_n400_CROSSSECTION_slab_layer_overlap.png` — one-cell **slab**: shows the cell volumes
   crossing toward the dense-nuclei core (the interpenetration, shown honestly not hidden).
+- `FULLCOMPARTMENT_n400_CONTROL_explicit_vs_implicit.png` — matched-N=400 control, explicit (baoab) vs implicit
+  (IMEX) mid-plane cuts side by side: visually + numerically identical (pen 2.23≈2.11, gap 0.156≈0.158, asph
+  0.0543==0.0543) → the integrator is NOT the interpenetration lever (needs IPC, not better integration).
 
 ## Honest contact state
 
