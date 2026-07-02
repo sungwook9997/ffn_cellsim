@@ -94,6 +94,15 @@ this reading:
 > (ghost-seed ring outside the surface, or Laguerre/power-weighted cells tuned for equal volume) in
 > `dcm/confluent_init_prototype.py`. That module is used by BOTH sessions' runs (incl. the concurrent `2df86bb`),
 > so it is a shared-physics change to make with the PI, not unilaterally.
+>
+> **Root cause + ISOLATED prototype (audit#10, geometry only, shared init UNCHANGED).** In
+> `warp_icosphere_to_voronoi` a boundary cell's outward extent is bounded only by `R_ball = R·N^(1/3)` (the whole
+> spheroid) because there are no neighbour seeds outward — so it balloons. A **ghost-seed ring** outside the surface
+> (`scripts/dcm_ghost_seed_init_prototype.py`, standalone) bisector-bounds those cells like interior ones. Measured
+> (frame-0 Voronoi volumes): **N=400 surface/interior 2.60× → 1.70×, CV 0.39 → 0.28** (interior untouched, boundary
+> bounded); N=100 1.26× → 0.86×. Visual: `FULLCOMPARTMENT_ghost_seed_init_fix_prototype.png`. So the ghost ring is a
+> viable **partial** fix (residual ~1.7× at N=400); driving the ratio to ~1 would need Laguerre/power-weighting.
+> The prototype proves feasibility; **integrating it into the shared init is the PI-coordinated step, still pending.**
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
