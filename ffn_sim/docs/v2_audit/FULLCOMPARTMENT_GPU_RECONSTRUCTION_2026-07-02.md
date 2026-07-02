@@ -51,11 +51,16 @@ is PERSISTENT not transient.** The N=400 explicit run settles at pen_frac **2.1�
 genuine *equilibrium* overlap, not an outlier spike. Critically the run is otherwise HEALTHY — **V/V0=1.000,
 A/A0=0.999, drift=0, cfl~0** — so this is NOT a numerical blowup; it is the penalty/tent contact reaching an
 equilibrium where turgor pushes some nodes *through* a neighbour face and the finite-stiffness contact can't
-expel them. `--integrator implicit` REDUCES it (N=100: pen **1.321** stable, 4.4× gate — better than explicit's
-2.2) but does NOT pass G2. Raising `--rep-strength` makes it WORSE (stiffer penalty → the fastest node tunnels
-deeper per step before the shell catches it — line 1679). The real fix is **true log-barrier IPC** (non-tunneling
-by construction), whose flag (`--ipc`) is currently broken in the conservative-contact combo (concurrent-session
-finding, pen=73). **That file (`dcm_warp_decohesion.py`) is the concurrent session's active workspace, so the IPC
+expel them. **The integrator is NOT the lever** — a matched-N control settles it: at N=400,
+explicit gives pen final **2.227** and `--integrator implicit` gives **2.107** (both peak 3.24, both FAIL 7–11×) —
+essentially identical. (An earlier N=100 implicit run gave pen 1.321, which *looked* like an integrator win but
+is a **size effect**: pen_frac is a max-over-nodes metric that rises with cell count, so the N=100 number is lower
+because there are fewer contacts, not because implicit helps. The controlled explicit-vs-implicit comparison must
+be at *fixed* N, and there it's a wash.) So the overlap is robust to the integration method — confirming it is a
+genuine *contact-formulation* limitation, not an integration-accuracy one. Raising `--rep-strength` makes it WORSE
+(stiffer penalty → the fastest node tunnels deeper per step before the shell catches it — line 1679). The real fix
+is **true log-barrier IPC** (non-tunneling by construction), whose flag (`--ipc`) is currently broken in the
+conservative-contact combo (concurrent-session finding, pen=73). **That file (`dcm_warp_decohesion.py`) is the concurrent session's active workspace, so the IPC
 fix is THEIR territory — I do not touch it (shared-tree-collision rule).** So: **the "pressing contact" claim is
 PARTIAL — floating fixed, overlap NOT — and must not be over-stated as clean apposition** (audit#3 caught the
 "faceted-tissue-good" over-claim; the exterior peel render looks faceted but HIDES the interior interpenetration
