@@ -150,6 +150,16 @@ this reading:
 > real nucleus nearly filling each cell). **NOT changed unilaterally** — it is a ratified value, a ~3× mechanical
 > change, and shared with the other session → PI decision. Recommend re-anchoring `R_nuc_factor` to **~0.6–0.77**
 > (Moore 2016) with a KB SourceEvidence row, then re-baselining the full-compartment stiffness.
+>
+> **DEMONSTRATION (audit#16, non-colliding via runner `RNUC` env — default unchanged).** Ran the *corrected*
+> R_nuc=0.7 on the tight-ghost (uniform) init = both physiological-value fixes together (`fullcomp_n400_rnuc07.npz`,
+> 238 s A5000, R_nuc=5.25 µm, k_chrom ~3× stiffer). **Stable** (V/V0=1.000, cfl~0, gap 0.177 µm tight, size ratio
+> 1.70×), and the realistic nucleus **does real mechanical work**: pen rose **0 → 0.94** (the tiny 0.25 nucleus gave
+> pen=0 on the *same* init) — the big stiff nucleus resists compression and presses the membrane into neighbours,
+> and faceting rounds slightly (asph 0.042→0.039). Visual `FULLCOMPARTMENT_n400_NUCLEUS_mechanics_model_vs_lit.png`
+> + viewer `FULLCOMPARTMENT_n400_ghost_tight_realistic_nucleus.html` (nucleus fills ~half each cell = real MCF7).
+> So the corrected nucleus is *runnable and stable today* via `RNUC=0.7`; making it the default (and whether pen~0.9
+> under a realistic nucleus needs the log-barrier `--ipc`) is the PI-coordinated step.
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer

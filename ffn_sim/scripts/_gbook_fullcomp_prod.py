@@ -36,7 +36,8 @@ r = run_decohesion(
     conservative_contact=(not USE_IPC),           # penalty tent (energy min at d~0) UNLESS ipc
     ipc=USE_IPC,                                   # Li-2020 log-barrier contact (CCD, penetration-free)
     integrator=("implicit" if USE_IPC else INTEG), # --ipc needs implicit
-    nucleus=True, E_nuc=4700.0, R_nuc_factor=0.25, ratio_lamin=1.4,   # nucleus compartment
+    nucleus=True, E_nuc=4700.0, R_nuc_factor=float(os.environ.get("RNUC", "0.25")),  # RNUC=0.7 = lit MCF7 (Moore 2016, N:C 1.9); 0.25 = old ratified
+    ratio_lamin=1.4,   # nucleus compartment
     surface_tension=True, gamma_surf=5.0e-4,      # plasma-membrane tension
     diff_tension=(os.environ.get("DIFF", "1") == "1"),  # DAH: contact faces lower tension -> apposition
     warmup=1500, save_frames=npz)
