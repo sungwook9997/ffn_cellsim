@@ -51,7 +51,10 @@ barbed tip by v(f)·dt_phys and positions propagate from the FIXED pointed-end b
 propagation — no COG-reshape artifact). Result: the bundle tip advances **free +1.84 µm (v=0.623=v0 exactly) vs
 loaded +0.68 µm at the e-fold load 3.17 pN (v=0.229=v0/e exactly)**, both matching the analytic ∫v(f)dt to
 rtol 0.02. This is a genuine µm-scale VISIBLE protrusion with the exact Mogilner-Oster force-velocity — the same
-validated kernel, now in the architecture that actually protrudes.
+validated kernel, now in the architecture that actually protrudes. **The tip load is IMPOSED here** (0 vs the
+e-fold 3.17 pN) to exercise the force-velocity cleanly; the *emergent* membrane counter-load (protrusion pushes
+membrane, membrane resists, velocity settles self-consistently) is the piece-4 retrograde-flow↔clutch closed
+loop — not claimed yet.
 
 *(An earlier filopodium attempt re-anchored the base AFTER a COG-conserving reshape, injecting a strain load so
 v_med≠v0; that version was correctly NOT committed. The fix is base-anchored propagation, above.)*
