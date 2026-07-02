@@ -121,10 +121,16 @@ this reading:
 > (`fullcomp_n400_ghostTIGHT.npz`, 238 s A5000): **gap 0.154 µm (tight, = production 0.156), size ratio 1.70×
 > (uniform), and G2_interpenetration PASS** — the `build_confluent` Voronoi-warp keeps cells strictly inside their
 > regions, so a *tight* ghost init is uniform AND non-overlapping (pen < 0.3), which the production `build_multicell`
-> init is not (pen 2.1, G2 FAIL). Trade-off: porosity 0.182 (thin clefts) vs production 0.078 (overlap). So the
-> ghost-corrected init at production `eps` is arguably a *better* spheroid than the current default on three axes
-> (uniformity, no-overlap, equal tightness); viewer `FULLCOMPARTMENT_n400_ghost_tight_uniform.html`. Adopting it as
-> the default remains the PI-coordinated step; `--init-npz` delivers it non-collidingly today.
+> init is not (pen 2.1, G2 FAIL). **It is a genuine TRADE-OFF, not strictly better (audit#14 corrected an
+> over-optimistic "better on 3 axes" phrasing here):** the tight ghost wins on *uniformity* (1.70× vs 3.68×) and
+> *no-overlap* (G2 PASS vs FAIL) at equal tightness (gap 0.154 vs 0.156 µm), but **production wins on density** —
+> porosity 0.078 (dense, closer to real confluent tissue) vs the ghost's 0.182 (looser, thin clefts). Real
+> confluent tissue is *both* dense AND non-overlapping (cells share interfaces), which the **separate-shell DCM
+> cannot represent** (each cell is its own icosphere; no shared interface vertices — cf.
+> [[project-dcm-faceting-confluent-init]]), so every init trades overlap ↔ gap at the seam. Which side to prefer
+> (uniform+clean vs dense) is a physical-modeling call for the PI. Viewer
+> `FULLCOMPARTMENT_n400_ghost_tight_uniform.html`. `--init-npz` delivers the ghost variant non-collidingly today;
+> adopting it as default is the PI-coordinated step.
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
