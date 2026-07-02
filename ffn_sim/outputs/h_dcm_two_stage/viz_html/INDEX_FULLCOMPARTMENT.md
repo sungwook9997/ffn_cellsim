@@ -6,6 +6,15 @@ deformable mesh; with nuclei on, a nucleus sphere shows inside each translucent 
 cytoplasm interior + nucleus = the full compartment stack). Reconstruction write-up:
 `docs/v2_audit/FULLCOMPARTMENT_GPU_RECONSTRUCTION_2026-07-02.md`.
 
+**What is mechanically real vs a render aid (real-vs-drawn honesty):** the cell mesh (membrane/cortex), turgor
+(Π₀=133 Pa), cytoplasm drag (η=65.9 Pa·s), membrane surface tension (γ=5e-4), contact, and the nucleus are all
+*mechanically active force kernels launched every step* (verified: `nucleus_force_kernel`, `surface_tension_kernel`,
+`dcm_turgor_force_kernel` all `wp.launch` in the step loop). The nucleus specifically is a **radial elastic force
+field** (E_nuc=4700 Pa, chromatin→lamin bilinear) that pushes the cell-mesh nodes to sustain a core of radius
+R_nuc=0.25R — it is *not* a separately-meshed deforming nuclear envelope. The **sphere you see in the viewer is a
+render aid** marking that compartment's centre + extent, not a simulated nuclear surface. So the nucleus is real
+mechanics, drawn as an idealized sphere.
+
 ## Viewers (open in a browser)
 
 | File | N | What it shows |
