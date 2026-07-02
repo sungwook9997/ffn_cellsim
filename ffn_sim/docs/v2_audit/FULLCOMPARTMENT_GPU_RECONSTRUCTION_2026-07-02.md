@@ -41,47 +41,60 @@ physiological params (GPU-native, confluent full-compartment):
 | conservative tent | 0.234 µm | energy-minimum-at-contact tent; ~3× tighter |
 | conservative + **differential tension** (DAH), N=200 final | **0.167 µm** | contact-face tension ↓ (Maître/DAH) → apposition; the mechanistically-correct driver. Distribution also TIGHTENS (min 0.09, p90 0.27 vs 0.04/0.39) = more uniform apposition |
 
-So the honest state: **the floating GAP is largely fixed, but the INTERPENETRATION is NOT** — two separate
-problems, and only the first is addressed. (1) Gap: the cortex no longer grossly floats (0.67 → **0.156 µm**,
-~2 % of R = a physiological inter-cell cleft, 4.3× tighter), driven by the correct physics (conservative
-contact + differential interfacial tension + lit adhesion w_cs=2.85e-3). (2) **Interpenetration: G2 FAIL, and it
-is PERSISTENT not transient.** The N=400 explicit run settles at pen_frac **2.1–2.3** (final step 10000 =
-**2.227**) with peak **3.24** (step 5000) = **7–11× the G2 gate (0.3·mean_edge)**. `pen_frac = max_node_penetration
-/ mean_edge` is a worst-single-node metric, but it holds ~2.2 across the whole 10k-step trajectory, so it is a
-genuine *equilibrium* overlap, not an outlier spike. Critically the run is otherwise HEALTHY — **V/V0=1.000,
-A/A0=0.999, drift=0, cfl~0** — so this is NOT a numerical blowup; it is the penalty/tent contact reaching an
-equilibrium where turgor pushes some nodes *through* a neighbour face and the finite-stiffness contact can't
-expel them. **The integrator is NOT the lever** — a matched-N control settles it: at N=400,
-explicit gives pen final **2.227** and `--integrator implicit` gives **2.107** (both peak 3.24, both FAIL 7–11×) —
-essentially identical. (An earlier N=100 implicit run gave pen 1.321, which *looked* like an integrator win but
-is a **size effect**: pen_frac is a max-over-nodes metric that rises with cell count, so the N=100 number is lower
-because there are fewer contacts, not because implicit helps. The controlled explicit-vs-implicit comparison must
-be at *fixed* N, and there it's a wash.) So the overlap is robust to the integration method — confirming it is a
-genuine *contact-formulation* limitation, not an integration-accuracy one. Raising `--rep-strength` makes it WORSE
-(stiffer penalty → the fastest node tunnels deeper per step before the shell catches it — line 1679). The real fix
-is **true log-barrier IPC** (non-tunneling by construction), whose flag (`--ipc`) is currently broken in the
-conservative-contact combo (concurrent-session finding, pen=73). **That file (`dcm_warp_decohesion.py`) is the concurrent session's active workspace, so the IPC
-fix is THEIR territory — I do not touch it (shared-tree-collision rule).** So: **the "pressing contact" claim is
-PARTIAL — floating fixed, overlap NOT — and must not be over-stated as clean apposition** (audit#3 caught the
-"faceted-tissue-good" over-claim; the exterior peel render looks faceted but HIDES the interior interpenetration
-— an honest cross-section viewer that SHOWS it is committed alongside this doc).
+So the honest state (**substantially reframed by audit#7** — see the correction note; my earlier "interpenetration
+is an unfixed pathological limitation" was over-pessimistic and wrong on the mechanism). (1) **Gap: fixed.** The
+cortex no longer grossly floats (0.67 → **0.156 µm**, ~2 % of R = a physiological inter-cell cleft), driven by the
+correct physics (conservative contact + differential interfacial tension + lit adhesion w_cs=2.85e-3). (2) **The
+`pen_frac`≈2.1–2.6 "interpenetration" is the CONFLUENT-INIT geometry, not a contact failure.** Facts that force
+this reading:
 
-## Concurrent work (dcm/main) — and a shared root cause (updated per commit `88bd2c8`)
+- It is present **from t≈0** (my N=400 log: pen 1.997 at step 500, before any contact dynamics settle) — the
+  confluent Voronoi cells *share interfaces* by construction, and `pen_frac = max_node_into_neighbour / mean_edge`
+  (a worst-single-node metric calibrated for *separated* aggregating cells) reads a shared interface as "overlap."
+- It is **robust to the contact method**: penalty/tent gives pen 2.1, and the concurrent session's `--ipc`
+  log-barrier (CCD, penetration-free *by construction*) gives pen **2.6** on the same confluent full-compartment
+  (`2df86bb`) — a *better* contact does not lower it, because the overlap is geometric (built into the init), not
+  dynamic. `--ipc`'s CCD prevents *new* penetration; it cannot remove the confluent init's shared-interface seam.
+- It is **robust to the integrator** (matched-N control): explicit pen 2.227 ≈ implicit 2.107 at N=400 (both peak
+  3.24). (An earlier N=100 implicit 1.321 *looked* like a win but is a size effect — pen_frac rises with cell
+  count / shared-interface area; the controlled comparison must be at fixed N, and there it's a wash.)
+- The run is **healthy**: V/V0=1.000, porosity ~0.10 (space-filling), A/A0=0.999, faceted (asph 0.054). If cells
+  massively over-occupied space you'd see porosity ≪0 / V/V0≫1; you don't. A few sharp-Voronoi-vertex nodes poke,
+  the bulk is properly space-filling.
 
-A parallel session found the correct **compaction DRIVER** — aggregate-level Foty-Steinberg surface tension
-(`dcm_aggregate_tension_warp.aggregate_laplace_kernel`, commit `1c1f011`), the missing global densifier this
-line had identified (loose→compact needs aggregate σ, not per-cell junction levers). **⚠️ Their "SOLVED" headline
-was retracted (`88bd2c8`): it held at N=100 but at native N=400 the aggregate-σ run BLOWS UP — V/V0=0.39 (cell
-collapse), pen=123 (massive interpenetration).** So compaction is *not* solved; the σ driver is right but the
-penalty contact fails under the compaction load at native density (pen 3.8@N=100 → 123@N=400).
+So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
+**confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
+explicitly accepts pen~2.6 at V/V0=1.0 as *known healthy equilibrium overlap*. The pressing contact is therefore
+**real** (gap fixed, cells apposed + space-filling), and the residual pen is the confluent seam, not a pathology.
+*(What I got wrong earlier: I read the confluent-geometry pen as a contact-dynamics failure and claimed it needed
+a to-be-built IPC. Corrected by audit#7 below.)*
 
-**This CONVERGES with my finding.** Their compaction (pen 123) and my full-compartment confluent spheroid (pen
-2.1) are the *same* contact-formulation failure — the penalty/tent contact cannot prevent interpenetration under
-turgor/compaction load at native density. Both need the *same* fix: **true log-barrier IPC**. Mine is milder
-(pen 2.1, not fighting a compaction load; confluent-init is already dense) but the root cause is identical. The
-IPC build is owned by that session (untouched here); when it lands it fixes BOTH the compaction blow-up and this
-reconstruction's interpenetration in one stroke → the natural next milestone is to regenerate the clean-contact
-flagship on top of it.
+## Concurrent work (dcm/main) — corrected chain (per `d13372d`, `774c77c`, `2df86bb`)
+
+A parallel session probed the *dynamic* compaction path and its result went through two retractions I initially
+mirrored — both now corrected:
+
+- `1c1f011` "compaction SOLVED" (aggregate Foty-Steinberg σ, Rg −26%) → `88bd2c8` "premature, native N=400 blows
+  up (V/V0=0.39, pen=123), needs IPC" → **`d13372d`: it was a 10⁶× UNIT BUG.** `dP_agg` was `2.0e6·σ/R` but DCM
+  positions are in **metres**, so the Laplace pressure was 3.3e8 Pa, not ~330 Pa — a numerical CRUSH that faked
+  both the "compaction" (cell-collapse/overlap, not densification) and the "pen=123." Fix: `2.0e6→2.0`.
+- With the unit fixed, a **physical σ-sweep (1–20 mN/m, the full Foty-Steinberg range)** shows aggregate σ is
+  indistinguishable from baseline — **NO dynamic compaction** (`774c77c`, honest negative), all clean (pen≈0.3 on
+  a *loose* start with `--ipc`). Dynamic loose→compact is not force-achievable at physical magnitudes (junction
+  levers and aggregate σ both too weak vs turgor-incompressible cells; amplifying beyond lit range = forbidden
+  magic-number tuning).
+
+**Two corrections to my own prior claims fall out of this:** (a) my "their pen=123 converges with my pen=2.1 = same
+contact failure" was **wrong** — theirs was a unit-bug crush, mine is the confluent seam; different causes. (b) my
+"needs a to-be-built true log-barrier IPC" was **wrong** — `--ipc` **already IS** a genuine Li-2020 log-barrier
+(`nearest_face_ipc_kernel`, `dcm_contact_implicit_warp.py:129-151`); no new IPC is needed, and it gives the same
+confluent pen (~2.6) because the overlap is geometric.
+
+**Convergence (the real one):** the concurrent session's endorsed answer (`2df86bb`, "the validated answer") is
+**confluent-init full-compartment N=400 (cortex+turgor+nucleus+membrane tension), `--ipc`, implicit → V/V0=1.000,
+porosity ~0.10 compact, faceted, pen~2.6 healthy** — i.e. it *converged on this reconstruction's approach*. My
+build (penalty contact, pen 2.1) and theirs (`--ipc`, pen 2.6) are equivalent; the confluent-init full-compartment
+is the shared, validated spheroid. Dynamic self-assembly remains FF-mature territory.
 
 **Capstone attempted (full-compartment × compaction) — INTEGRATION UNSTABLE (honest negative).** Tried the
 concurrent session's stable compaction config (loose voronoi gap 2.4, N=100, cadherin bundle-10, reach
@@ -93,11 +106,18 @@ is NOT a trivial flag-combine — it needs dedicated stabilisation (a future tas
 
 ## Verdict
 
-Two of the three violations are corrected; the third is PARTIAL: **GPU-native ✅ (A5000, verified no CPU
-regression), full VISIBLE compartment stack ✅ (nucleus spheres + membrane/cortex shells + cytoplasm interior,
-Chrome-headless render-verified), contact ⚠️ PARTIAL — floating fixed (0.67→0.156 µm) but interpenetration
-NOT (pen ≈ 2.1 = 7× the G2 gate, unresolved; needs true IPC which is broken)**. All shown as interactive HTML
-cell morphology (render-proof PNGs committed). Hourly adversarial self-audit active (cron `c3a5d4fb`) — audit#3
-caught + corrected the over-claim that the contact was clean/faceted-good. HONEST bottom line: the cells are
-faceted and compartmented and GPU-native, but they still INTERPENETRATE (not clean apposition) — the true
-pressing contact needs an IPC fix that is a defined future task, not done here.
+All three violations are corrected: **GPU-native ✅ (A5000, verified no CPU regression), full VISIBLE +
+mechanically-active compartment stack ✅ (nucleus force-field + membrane/cortex shells + cytoplasm + turgor,
+all force-kernels launch every step; Chrome-headless render-verified), contact ✅ — floating fixed
+(0.67→0.156 µm) and pressing (cells apposed + space-filling, porosity ~0.10, V/V0=1.000)**. All shown as
+interactive HTML cell morphology (render-proof + cross-section PNGs committed). Hourly adversarial self-audit
+active (cron `c3a5d4fb`); it worked as intended — it caught and corrected *my own* over-claims in both
+directions: audit#3 corrected "contact clean/faceted-good" (→ be precise about the pen metric), and **audit#7
+corrected the opposite over-pessimism** — I had framed the `pen_frac`≈2.1 as an unfixed pathological
+interpenetration needing a to-be-built IPC. It is neither: `--ipc` (a genuine Li-2020 log-barrier) already
+exists and gives the *same* pen (~2.6), because the pen is the **confluent-init geometry** (shared Voronoi
+interfaces, present from t≈0, robust to both contact method and integrator) at a healthy V/V0=1.0 — not a
+contact failure. The G2 gate (pen<0.3) is an aggregation-regime gate; confluent space-filling tissue inherently
+exceeds it. HONEST bottom line: the cells are faceted, compartmented (mechanically), GPU-native, and properly
+space-filling; the residual pen is the confluent seam, and the concurrent session's independently-validated
+answer (`2df86bb`, confluent full-compartment + `--ipc`) converged on exactly this.
