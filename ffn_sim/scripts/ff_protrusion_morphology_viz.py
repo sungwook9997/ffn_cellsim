@@ -15,7 +15,7 @@ from ffn_sim.scripts.ff_viewer_html import build_viewer
 from ffn_sim.scripts.ff_cell_morphology import uv_sphere, finger_tube, merge
 
 
-def _finger_meshes(filo_nodes, finger_of_fiber, nb_filo, c, R, radius=0.16):
+def _finger_meshes(filo_nodes, finger_of_fiber, nb_filo, c, R, radius=0.18):
     """From this frame's filo nodes (F,nb,3) + finger grouping → one merged finger-tube mesh (verts, faces)."""
     F = filo_nodes.shape[0]
     meshes = []

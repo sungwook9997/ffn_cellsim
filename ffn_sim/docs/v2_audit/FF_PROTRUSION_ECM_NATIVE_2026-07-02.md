@@ -54,6 +54,18 @@ load — not the analytic being fed back.
   PI-gated, NOT tuned to an outcome — the emergent load emerges from geometry + collagen stiffness, and the
   free-vs-ECM comparison is the controlled test.
 
+## Morphology render (PI 2026-07-02 "이건 필로포디움이 아니라 그냥 작대기")
+
+The first render showed bare actin filament centerlines (24 hairlines in a 0.12 µm cross-section) → read as one
+stick. Fixed: filopodia now render as **membrane FINGER tubes** on a cell morphology (`ff_cell_morphology.py`,
+`ff_viewer_html` mesh support, `ff_protrusion_morphology_viz.py`), and the driver grows a **fan of N filopodia**
+(`--n-fingers`), not one. A native **7-filopodia** run (protrusion_ecm_native7, N≈500k, A5000, 33 min) gives the
+full array: **7 fingers 2.66–3.63 µm long** fanning from the +x leading edge into the collagen ECM (mean tip
++1.17 µm ECM vs +1.30 µm free; mean load 1.09 pN — lower than the single-finger 8 pN because the fan spreads the
+tips, most still exploring). `protrusion_ecm_native7_morph.{png,html}` = semi-transparent plasma membrane +
+nucleus + 7 filopodia fingers (growing, animated 70 frames) + actin cores + collagen ECM. Finger radius 0.18 µm
+(filopodium diameter ~0.1–0.3 µm, Mattila-Lappalainen 2008).
+
 ## Files
 - `scripts/ff_protrusion_into_ecm.py`, `scripts/ff_protrusion_ecm_viz.py`, `ff/ecm_mikado.py`.
 - `outputs/ff/figs/protrusion_ecm_native.{png,html}` — (a) free vs ECM tip advance, (b) emergent load throttles
