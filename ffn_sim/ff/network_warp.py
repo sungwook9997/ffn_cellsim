@@ -61,6 +61,37 @@ def myosin_kernel(
 
 
 @wp.kernel
+def soft_contact_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    pairs: wp.array(dtype=wp.int32, ndim=2),    # (C, 2) contact pairs (i on structure A, j on structure B)
+    r_contact: wp.float64,                       # contact radius [µm] (excluded-volume shell)
+    k_contact: wp.float64,                       # contact stiffness [pN/µm]
+    force: wp.array(dtype=wp.vec3d),
+):
+    """One-sided REPULSIVE (excluded-volume) contact: if |pos_j − pos_i| < r_contact, push the two nodes
+    apart with k·(r_contact − L)·û. No attraction. Models steric contact (a growing filopodium tip pushing
+    into an ECM fiber) — the ECM then supplies the protrusion's load EMERGENTLY, not as an imposed number."""
+    t = wp.tid()
+    i = pairs[t, 0]
+    j = pairs[t, 1]
+    d = pos[j] - pos[i]
+    L = wp.length(d)
+    if L > wp.float64(1e-12) and L < r_contact:
+        f = (k_contact * (r_contact - L) / L) * d
+        wp.atomic_add(force, i, -f)              # i pushed away from j
+        wp.atomic_add(force, j, f)               # j pushed away from i
+
+
+@wp.kernel
+def freeze_kernel(force: wp.array(dtype=wp.vec3d), pinned: wp.array(dtype=wp.int32)):
+    """Zero the net force on pinned (Dirichlet-BC) nodes so the integrator leaves them fixed — e.g. the far
+    boundary of the ECM Mikado network (embedded in bulk matrix) or a clamped filopodium base."""
+    t = wp.tid()
+    if pinned[t] == 1:
+        force[t] = wp.vec3d(0.0, 0.0, 0.0)
+
+
+@wp.kernel
 def myosin_bound_kernel(
     pos: wp.array(dtype=wp.vec3d),
     links: wp.array(dtype=wp.int32, ndim=2),
