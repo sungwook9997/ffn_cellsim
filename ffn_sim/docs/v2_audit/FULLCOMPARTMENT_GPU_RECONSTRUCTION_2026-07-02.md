@@ -22,7 +22,7 @@ N=400 "slowness" was the CPU-side confluent Voronoi build, ~18 min, not the GPU 
 |---|---|---|
 | plasma membrane / cortex | icosphere shell + membrane surface tension | γ = 5e-4 N/m (band-centre; Π₀=2γ/R) |
 | cytoplasm | turgor + volume feedback + viscous drag | Π₀ = 133 Pa, K_vol, η = 65.9 Pa·s (Dessard/Hu) |
-| nucleus | deformable chromatin→lamin core (bilinear) | E_nuc = 4700 Pa, R_nuc = 0.25R, ratio_lamin = 1.4 |
+| nucleus | deformable chromatin→lamin core (bilinear) | E_nuc = 4700 Pa, **R_nuc = 0.25R ⚠️ audit#15: too small, see below**, ratio_lamin = 1.4 |
 
 **3. Interactive HTML compartment viewer** (`dcm_mesh_viewer_html.py --r-nuc-factor 0.25`): renders the
 NUCLEUS as an instanced sphere per cell at its per-frame centroid, with the membrane/cortex shells made
@@ -131,6 +131,25 @@ this reading:
 > (uniform+clean vs dense) is a physical-modeling call for the PI. Viewer
 > `FULLCOMPARTMENT_n400_ghost_tight_uniform.html`. `--init-npz` delivers the ghost variant non-collidingly today;
 > adopting it as default is the PI-coordinated step.
+
+> **⚠️⚠️ REAL FINDING #2 — the NUCLEUS is ~3× too small (audit#15, verified against literature). SURFACED to PI.**
+> Questioning the *ratified* value `R_nuc_factor = 0.25` (not just confirming it is present) — the same methodology
+> that caught the size gradient — against measured MCF7 data:
+>
+> | | R_nuc / R_cell | nucleus Ø | nucleus vol fraction |
+> |---|---|---|---|
+> | **model** (`R_nuc_factor=0.25`) | 0.25 | 3.75 µm | **1.6 %** |
+> | **real MCF7** (Moore 2016, US/photoacoustic) | **~0.77** | **12 µm** (±1.3) | **~50 %** (N:C 1.9±1.0) |
+>
+> Measured MCF7: nuclear Ø **12.0 µm**, cell Ø 15.5 µm (R≈7.75 µm — matches the model's R_cell=7.5), **N:C ≈ 1.9**
+> → the nucleus is **~half the cell volume**. The model's `R_nuc=0.25R` (1.88 µm, 1.6 % volume) is **~3× too small
+> linearly, ~30× too small by volume.** Since the nucleus is the **stiffest organelle**, this makes the modeled
+> cell drastically *too soft* — and it affects **every full-compartment run, mine and the concurrent `2df86bb`**.
+> The value is also **unsourced** (code default is 0.33, my runs used 0.25, neither carries an MCF7 citation, unlike
+> R_cell/turgor/η). Visual proof `FULLCOMPARTMENT_n400_NUCLEUS_size_model_vs_lit.png` (current tiny dot vs the
+> real nucleus nearly filling each cell). **NOT changed unilaterally** — it is a ratified value, a ~3× mechanical
+> change, and shared with the other session → PI decision. Recommend re-anchoring `R_nuc_factor` to **~0.6–0.77**
+> (Moore 2016) with a KB SourceEvidence row, then re-baselining the full-compartment stiffness.
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
