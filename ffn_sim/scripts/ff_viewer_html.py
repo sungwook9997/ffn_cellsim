@@ -52,6 +52,9 @@ def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
             entry = {"name": L["name"], "kind": kind, "color": L.get("color", "#4aa3ff"),
                      "size": float(L.get("size", 2.0)), "n": int(v.shape[0]),
                      "b64": _b64(v, np.float32)}
+            if kind == "mesh":                                    # triangle surface: verts + faces + opacity
+                entry["faces_b64"] = _b64(np.asarray(L["faces"], np.uint32).reshape(-1, 3), np.uint32)
+                entry["opacity"] = float(L.get("opacity", 1.0))
             if L.get("frames") is not None:                       # animated layer: swap positions per timestep
                 fr = [np.asarray(f, dtype=np.float32).reshape(-1, 3) for f in L["frames"]]
                 entry["frames"] = [_b64(f, np.float32) for f in fr]
@@ -96,6 +99,8 @@ const P = /*__PAYLOAD__*/;
 document.getElementById('title').textContent = P.title;
 function dec(b64){const s=atob(b64);const u=new Uint8Array(s.length);
   for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return new Float32Array(u.buffer);}
+function dec32(b64){const s=atob(b64);const u=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return new Uint32Array(u.buffer);}
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(devicePixelRatio);
@@ -119,6 +124,7 @@ function setFrame(i){
     if(i>=a.frames.length) continue;
     const v=dec(a.frames[i]); a.obj.geometry.setAttribute('position',new THREE.BufferAttribute(v,3));
     a.obj.geometry.attributes.position.needsUpdate=true; a.obj.geometry.computeBoundingSphere();
+    if(a.obj.type==='Mesh') a.obj.geometry.computeVertexNormals();
   }
   document.getElementById('frame').value=i;
   document.getElementById('fnum').textContent=`${i}/${P.n_frames-1}`;
@@ -146,6 +152,12 @@ function showScene(name){
     if(L.kind==='lines'){
       const mat=new THREE.LineBasicMaterial({color:L.color,transparent:true,opacity:0.75});
       o=new THREE.LineSegments(geo,mat); scene.add(o); current.push(o);
+    }else if(L.kind==='mesh'){
+      const idx=dec32(L.faces_b64); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.computeVertexNormals();
+      const op=(L.opacity===undefined)?1.0:L.opacity;
+      const mat=new THREE.MeshStandardMaterial({color:L.color,transparent:op<1.0,opacity:op,
+        side:THREE.DoubleSide,roughness:0.55,metalness:0.0,flatShading:false});
+      o=new THREE.Mesh(geo,mat); scene.add(o); current.push(o);
     }else{
       const mat=new THREE.PointsMaterial({color:L.color,size:parseFloat(document.getElementById('psize').value),sizeAttenuation:true});
       o=new THREE.Points(geo,mat); o.userData.pts=true; scene.add(o); current.push(o);

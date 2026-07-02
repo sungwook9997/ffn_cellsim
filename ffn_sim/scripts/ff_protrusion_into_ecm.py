@@ -82,7 +82,18 @@ def graft_filopodium(cortex, *, axis=np.array([1.0, 0, 0]), n_fil=24, length_um=
     return fibers, np.array(base_pts)
 
 
-def build_system(n_cortex_fil=600, ecm_fibers=1200, ecm_depth=6.0, seed=7, filo_n=24, filo_len=1.5):
+def leading_edge_axes(n, *, lead=np.array([1.0, 0, 0]), spread_deg=32.0, rng=None):
+    """N outward directions fanned about ``lead`` (a filopodial leading edge) — cells extend several filopodia."""
+    rng = rng or np.random.default_rng(0)
+    lead = lead / np.linalg.norm(lead)
+    axes = []
+    for _ in range(n):
+        d = lead + np.tan(np.deg2rad(spread_deg)) * rng.standard_normal(3)
+        axes.append(d / np.linalg.norm(d))
+    return axes
+
+
+def build_system(n_cortex_fil=600, ecm_fibers=1200, ecm_depth=6.0, seed=7, filo_n=20, filo_len=1.5, n_fingers=7):
     """Assemble cortex + nucleus + membrane + grafted filopodium + ECM Mikado into one combined system."""
     rng = np.random.default_rng(seed)
     # ---- cortex (full-fidelity γ-floor shell) ----
@@ -93,9 +104,13 @@ def build_system(n_cortex_fil=600, ecm_fibers=1200, ecm_depth=6.0, seed=7, filo_
     Nc = cx.net.n_nodes
     cortex_fibers = _fibers_of(cx.net)
 
-    # ---- filopodium graft at +x ----
-    axis = np.array([1.0, 0.0, 0.0])
-    filo_fibers, base_pts = graft_filopodium(cx, axis=axis, n_fil=filo_n, length_um=filo_len)
+    # ---- filopodia graft: a leading-edge FAN of N fingers (each a formin bundle) ----
+    axes = leading_edge_axes(n_fingers, rng=np.random.default_rng(seed + 5))
+    filo_fibers, finger_of_fiber = [], []
+    for fi, ax in enumerate(axes):
+        fibs, _ = graft_filopodium(cx, axis=ax, n_fil=filo_n, length_um=filo_len)
+        filo_fibers += fibs; finger_of_fiber += [fi] * len(fibs)
+    finger_of_fiber = np.array(finger_of_fiber, np.int32)
     nfib_c = len(cortex_fibers)
     nb_filo = filo_fibers[0].shape[0]
 
@@ -186,7 +201,8 @@ def build_system(n_cortex_fil=600, ecm_fibers=1200, ecm_depth=6.0, seed=7, filo_
         barbed=barbed, prev=prev, bseg=bseg, filo_tip=filo_tip_nodes, filo_base=filo_base_nodes,
         seg_off=seg_off.astype(np.int32), pinned=pinned,
         ecm_base_gid=ecm_base_gid, filo_base_gid=filo_base_gid, R=R, c=c, ecm=ecm,
-        nfib_c=nfib_c, n_filo_fib=len(filo_fibers), nb_filo=nb_filo,
+        nfib_c=nfib_c, n_filo_fib=len(filo_fibers), nb_filo=nb_filo, finger_of_fiber=finger_of_fiber,
+        n_fingers=n_fingers,
         viz_idx=viz_idx, n_cortex_sub=cortex_sub.size, n_ecm_fib=int(ecm.net.n_fibers), nb_ecm=int(nb_ecm))
 
 
@@ -292,6 +308,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cortex-fil", type=int, default=600)
     ap.add_argument("--ecm-fibers", type=int, default=1200)
+    ap.add_argument("--n-fingers", type=int, default=7)
+    ap.add_argument("--filo-n", type=int, default=20)
     ap.add_argument("--macro", type=int, default=50)
     ap.add_argument("--relax", type=int, default=120)
     ap.add_argument("--device", default="cpu")
@@ -300,7 +318,8 @@ def main():
     args = ap.parse_args()
     wp.init()
     t0 = time.time()
-    S = build_system(n_cortex_fil=args.cortex_fil, ecm_fibers=args.ecm_fibers)
+    S = build_system(n_cortex_fil=args.cortex_fil, ecm_fibers=args.ecm_fibers,
+                     n_fingers=args.n_fingers, filo_n=args.filo_n)
     print(f"[build] N={S['N']} (cortex {S['Nc']} + fibers {S['Nfib_nodes']-S['Nc']} + nucleus {S['n_nuc']}); "
           f"filo {S['n_filo_fib']}×{S['nb_filo']}; ECM {S['ecm'].net.n_fibers} fibers "
           f"mesh {S['ecm'].mesh_size_um:.2f}µm; {S['xl'].shape[0]} crosslinks  ({time.time()-t0:.0f}s)")
@@ -315,7 +334,8 @@ def main():
                         vmed_ecm=r_ecm["vmed"], vmed_free=r_free["vmed"], v0=r_ecm["v0"], dt_phys=r_ecm["dt_phys"],
                         frames_ecm=np.array(r_ecm["frames"]), frames_free=np.array(r_free["frames"]),
                         viz_idx=S["viz_idx"], n_cortex_sub=S["n_cortex_sub"], n_filo_fib=S["n_filo_fib"],
-                        nb_filo=S["nb_filo"], n_ecm_fib=S["n_ecm_fib"], nb_ecm=S["nb_ecm"], R=S["R"], c=S["c"])
+                        nb_filo=S["nb_filo"], n_ecm_fib=S["n_ecm_fib"], nb_ecm=S["nb_ecm"], R=S["R"], c=S["c"],
+                        finger_of_fiber=S["finger_of_fiber"], n_fingers=S["n_fingers"])
     json.dump(dict(N=int(S["N"]), Nc=int(S["Nc"]), ecm_fibers=int(S["ecm"].net.n_fibers),
                    mesh_um=float(S["ecm"].mesh_size_um), v0=float(r_ecm["v0"]), dt_phys=float(r_ecm["dt_phys"]),
                    d_tip_ecm=float(r_ecm["tip_x"][-1] - r_ecm["tip_x"][0]),
