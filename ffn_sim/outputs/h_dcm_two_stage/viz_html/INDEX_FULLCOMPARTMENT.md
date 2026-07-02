@@ -56,7 +56,11 @@ In the UI: tick **section**, pick the **mode** dropdown, drag **cut pos**. `cut`
   toward the dense-nuclei core (the confluent Voronoi seam — cells share interfaces; healthy, not pathological).
 - `FULLCOMPARTMENT_n400_CONTROL_explicit_vs_implicit.png` — matched-N=400 control, explicit (baoab) vs implicit
   (IMEX) mid-plane cuts side by side: visually + numerically identical (pen 2.23≈2.11, gap 0.156≈0.158, asph
-  0.0543==0.0543) → the residual pen is robust to the integrator (and to the contact method) = it is geometry.
+  0.0543==0.0543) → the residual pen is robust to the integrator = it is geometry.
+- `FULLCOMPARTMENT_n400_CONTACT_penalty_vs_ipc.png` — penalty tent (pen 2.23, gap 0.156 µm) vs `--ipc` Li-2020
+  log-barrier (pen 1.51, gap 0.419 µm) on the SAME confluent full-compartment: `--ipc` lowers the pen ~30 % but
+  widens the gap — neither cleans it (both FAIL G2, both V/V0=1.0). The pen is a geometric floor (the confluent
+  seam), independently verified on our own runner (not just the concurrent session's number).
 
 ## Honest contact state (reframed by audit#7)
 

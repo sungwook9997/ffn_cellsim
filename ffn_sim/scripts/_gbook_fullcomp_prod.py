@@ -16,15 +16,21 @@ OUT = os.path.expanduser("~/ff_scratch/_prod_out")
 os.makedirs(OUT, exist_ok=True)
 N = int(os.environ.get("NCELLS", "400"))
 STEPS = int(os.environ.get("STEPS", "30000"))
-INTEG = os.environ.get("INTEG", "baoab")          # 'implicit' = stable stiff contact (no interpenetration)
+INTEG = os.environ.get("INTEG", "baoab")          # 'implicit' = stable stiff contact
 TAG = os.environ.get("TAG", "")
+# CONTACT: 'penalty' (conservative tent, default) or 'ipc' (Li-2020 log-barrier, penetration-free by CCD).
+# --ipc must NOT be combined with conservative_contact (pen=73 broken combo) and needs the implicit integrator.
+CONTACT = os.environ.get("CONTACT", "penalty")
+USE_IPC = CONTACT == "ipc"
 npz = f"{OUT}/fullcomp_n{N}{TAG}.npz"
 
 t0 = time.time()
 r = run_decohesion(
     n_cells=N, subdiv=2, steps=STEPS, frames=20, device="cuda:0",
     builder="confluent", inset=0.01, v0_from_init=True, lloyd_iters=6,
-    conservative_contact=True, integrator=INTEG,  # pressing contact (energy min at d~0); implicit = stable
+    conservative_contact=(not USE_IPC),           # penalty tent (energy min at d~0) UNLESS ipc
+    ipc=USE_IPC,                                   # Li-2020 log-barrier contact (CCD, penetration-free)
+    integrator=("implicit" if USE_IPC else INTEG), # --ipc needs implicit
     nucleus=True, E_nuc=4700.0, R_nuc_factor=0.25, ratio_lamin=1.4,   # nucleus compartment
     surface_tension=True, gamma_surf=5.0e-4,      # plasma-membrane tension
     diff_tension=(os.environ.get("DIFF", "1") == "1"),  # DAH: contact faces lower tension -> apposition

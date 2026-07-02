@@ -51,10 +51,15 @@ this reading:
 - It is present **from t≈0** (my N=400 log: pen 1.997 at step 500, before any contact dynamics settle) — the
   confluent Voronoi cells *share interfaces* by construction, and `pen_frac = max_node_into_neighbour / mean_edge`
   (a worst-single-node metric calibrated for *separated* aggregating cells) reads a shared interface as "overlap."
-- It is **robust to the contact method**: penalty/tent gives pen 2.1, and the concurrent session's `--ipc`
-  log-barrier (CCD, penetration-free *by construction*) gives pen **2.6** on the same confluent full-compartment
-  (`2df86bb`) — a *better* contact does not lower it, because the overlap is geometric (built into the init), not
-  dynamic. `--ipc`'s CCD prevents *new* penetration; it cannot remove the confluent init's shared-interface seam.
+- It has a **geometric floor no contact method beats** (I verified this on my own runner, not just their number).
+  Penalty/tent → pen 2.227 (gap 0.156 µm); `--ipc` Li-2020 log-barrier (CCD) → pen **1.512** (gap 0.419 µm); the
+  concurrent session's `--ipc` (`2df86bb`, different tension config) → ~2.6. So `--ipc` *does* lower the pen ~30 %
+  vs the penalty — but at the cost of a **wider inter-cell gap** (0.156→0.419 µm): the log-barrier trades
+  apposition-tightness for less overlap. Crucially **none of them clean it** — all still FAIL G2 (>0.3) at
+  V/V0=1.0, and the value is config-sensitive (seam depth ∝ packing tightness). That is the signature of a
+  *geometric* seam (built into the confluent init), not a contact-dynamics failure a better solver removes.
+  *(Earlier I wrote "a better contact doesn't lower it / penalty≈--ipc 2.6" — an overstatement asserted on their
+  number; my own `--ipc` run corrected it: it lowers pen but widens the gap and never cleans it.)*
 - It is **robust to the integrator** (matched-N control): explicit pen 2.227 ≈ implicit 2.107 at N=400 (both peak
   3.24). (An earlier N=100 implicit 1.321 *looked* like a win but is a size effect — pen_frac rises with cell
   count / shared-interface area; the controlled comparison must be at fixed N, and there it's a wash.)
