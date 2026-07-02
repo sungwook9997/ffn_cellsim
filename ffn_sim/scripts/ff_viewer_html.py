@@ -15,6 +15,12 @@ Use programmatically::
 where each ``layer`` is ``{"name", "kind": "lines"|"points", "verts": np.ndarray, "color": "#rrggbb",
 "size": float}``; ``lines`` verts are segment endpoint PAIRS shaped (Nseg, 2, 3) (or flat 6·Nseg); ``points``
 verts are (Npts, 3). Pass ``plates=[z0, z1]`` per scene via a ``"plates"`` layer with kind ``"plates"``.
+
+ANIMATION (PI 2026-07-02: "dcm 엔진처럼" — the DCM viewer plays frames): a ``lines`` / ``points`` layer may
+carry ``"frames"``: a list of vert arrays (same shape as ``verts``), one per timestep. When any layer in the
+vault has frames, a ▶ play button + frame slider appear and the geometry positions swap per frame — e.g. a
+filopodium bundle visibly ELONGATING over the polymerization steps. ``verts`` (frame 0) is still required for
+the bounding box.
 """
 from __future__ import annotations
 
@@ -43,13 +49,19 @@ def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
                 continue
             v = np.asarray(L["verts"], dtype=np.float32).reshape(-1, 3)
             all_pts.append(v)
-            pl.append({"name": L["name"], "kind": kind, "color": L.get("color", "#4aa3ff"),
-                       "size": float(L.get("size", 2.0)), "n": int(v.shape[0]),
-                       "b64": _b64(v, np.float32)})
+            entry = {"name": L["name"], "kind": kind, "color": L.get("color", "#4aa3ff"),
+                     "size": float(L.get("size", 2.0)), "n": int(v.shape[0]),
+                     "b64": _b64(v, np.float32)}
+            if L.get("frames") is not None:                       # animated layer: swap positions per timestep
+                fr = [np.asarray(f, dtype=np.float32).reshape(-1, 3) for f in L["frames"]]
+                entry["frames"] = [_b64(f, np.float32) for f in fr]
+                all_pts.append(fr[-1])                            # last frame bounds the box (elongated tip)
+            pl.append(entry)
         payload_scenes[sname] = pl
     allp = np.concatenate(all_pts, axis=0) if all_pts else np.zeros((1, 3), np.float32)
     lo = allp.min(0).tolist(); hi = allp.max(0).tolist()
-    payload = {"title": title, "scenes": payload_scenes,
+    n_frames = max([len(L.get("frames", [])) for ls in payload_scenes.values() for L in ls] + [0])
+    payload = {"title": title, "scenes": payload_scenes, "n_frames": int(n_frames),
                "lo": lo, "hi": hi, "scene_names": list(scenes.keys())}
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
     with open(out, "w") as f:
@@ -71,6 +83,9 @@ _HTML = r"""<!doctype html><html><head><meta charset="utf-8"><title>FF viewer</t
   <div id="title"></div>
   <div class="row"><label>scene</label><select id="scene"></select></div>
   <div class="row"><label>points</label><input id="psize" type="range" min="1" max="8" value="3" step="0.5"></div>
+  <div class="row" id="animrow" style="display:none"><label>frame</label>
+    <button id="play">▶</button><input id="frame" type="range" min="0" max="0" value="0" step="1" style="width:120px">
+    <span id="fnum" class="hint"></span></div>
   <div class="row hint">drag = rotate · scroll = zoom · right-drag = pan</div>
 </div>
 <div id="leg"></div>
@@ -96,7 +111,18 @@ scene.add(new THREE.AmbientLight(0xffffff,0.7));
 const dl=new THREE.DirectionalLight(0xffffff,0.6); dl.position.set(1,1.5,2); scene.add(dl);
 
 let current=[];   // three objects for the current scene
-function clearScene(){ for(const o of current){ scene.remove(o); if(o.geometry)o.geometry.dispose(); if(o.material)o.material.dispose(); } current=[]; }
+let animated=[];  // {obj, frames:[b64]} for layers that play over time
+function clearScene(){ for(const o of current){ scene.remove(o); if(o.geometry)o.geometry.dispose(); if(o.material)o.material.dispose(); } current=[]; animated=[]; }
+
+function setFrame(i){
+  for(const a of animated){
+    if(i>=a.frames.length) continue;
+    const v=dec(a.frames[i]); a.obj.geometry.setAttribute('position',new THREE.BufferAttribute(v,3));
+    a.obj.geometry.attributes.position.needsUpdate=true; a.obj.geometry.computeBoundingSphere();
+  }
+  document.getElementById('frame').value=i;
+  document.getElementById('fnum').textContent=`${i}/${P.n_frames-1}`;
+}
 
 function showScene(name){
   clearScene();
@@ -116,23 +142,38 @@ function showScene(name){
     }
     const v=dec(L.b64); const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.BufferAttribute(v,3));
+    let o;
     if(L.kind==='lines'){
       const mat=new THREE.LineBasicMaterial({color:L.color,transparent:true,opacity:0.75});
-      const o=new THREE.LineSegments(geo,mat); scene.add(o); current.push(o);
+      o=new THREE.LineSegments(geo,mat); scene.add(o); current.push(o);
     }else{
       const mat=new THREE.PointsMaterial({color:L.color,size:parseFloat(document.getElementById('psize').value),sizeAttenuation:true});
       o=new THREE.Points(geo,mat); o.userData.pts=true; scene.add(o); current.push(o);
     }
+    if(L.frames){ animated.push({obj:o, frames:L.frames}); }
     leg.push([L.color,L.name]);
   }
+  const hasAnim = animated.length>0;
+  document.getElementById('animrow').style.display = hasAnim ? 'flex' : 'none';
+  if(hasAnim){ const nf=Math.max(...animated.map(a=>a.frames.length)); document.getElementById('frame').max=nf-1; setFrame(0); }
   document.getElementById('leg').innerHTML=leg.map(([c,n])=>`<div><span class="sw" style="background:${c}"></span>${n}</div>`).join('');
 }
 const sel=document.getElementById('scene');
 for(const n of P.scene_names){ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); }
 sel.onchange=()=>showScene(sel.value);
 document.getElementById('psize').oninput=e=>{ for(const o of current) if(o.userData.pts) o.material.size=parseFloat(e.target.value); };
+
+let playing=false, tacc=0;
+document.getElementById('play').onclick=()=>{ playing=!playing; document.getElementById('play').textContent=playing?'⏸':'▶'; };
+document.getElementById('frame').oninput=e=>{ playing=false; document.getElementById('play').textContent='▶'; setFrame(parseInt(e.target.value)); };
 showScene(P.scene_names[0]);
 
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-(function loop(){requestAnimationFrame(loop);ctr.update();renderer.render(scene,cam);})();
+let last=performance.now();
+(function loop(){requestAnimationFrame(loop);ctr.update();
+  const now=performance.now(); const dt=(now-last)/1000; last=now;
+  if(playing && animated.length){ tacc+=dt; if(tacc>0.06){ tacc=0;
+    let i=(parseInt(document.getElementById('frame').value)+1); const nf=parseInt(document.getElementById('frame').max);
+    if(i>nf) i=0; setFrame(i); } }
+  renderer.render(scene,cam);})();
 </script></body></html>"""

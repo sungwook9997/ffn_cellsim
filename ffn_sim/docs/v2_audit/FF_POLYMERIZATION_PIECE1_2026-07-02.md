@@ -37,21 +37,33 @@ f=1; barbed segment elongates by v·dt. All the always-on analytic checks pass e
 - Analytic ground truth (kBT/δ, Pollard v0) is the runtime check; Footer/M-O stall values are cross-checks, not
   hard-coded (oracle-is-crosscheck rule).
 
-## Piece-1 coupled into the full-compartment cell (protrusion demo)
+## Piece-1 coupled into a cell (two demos — cortex vs the natural protrusion structure)
 
-Wired the kernel into a full-compartment cortex (turgor + membrane, no plates), polymerizing a +x leading-edge
-patch (1231 barbed ends), physical-time-stepped (grow v(f)·dt_phys, relax between). Result
-(`outputs/ff/figs/protrusion_piece1.png`): the leading edge advances **+15.5 nm with polymerization vs +0.1 nm
-control** over 2 s — piece-1 DOES couple and protrude. But small, because the **crosslinked cortex network +
-reshape (COG-conserving) absorb most of the ~1.2 µm of segment growth** — physically correct: **the cortex is
-not a protrusion structure.** Real protrusion uses the specialized dendritic (lamellipodium) / bundled
-(filopodium) architecture. A quick anchored-bundle filopodium demo hit a base-anchoring artifact (v_med≠v0) and
-is NOT committed. **No over-claim: piece-1 is validated (force-velocity) + couples (small cortex protrusion);
-a dramatic visible protrusion needs clean anchoring + the dendritic/bundle arch = future pieces (2-5).**
+**(1) Cortex patch (protrusion_piece1.png).** Wired the kernel into a full-compartment cortex (turgor +
+membrane, no plates), polymerizing a +x leading-edge patch (1231 barbed ends), physical-time-stepped (grow
+v(f)·dt_phys, relax between). The leading edge advances **+15.5 nm with polymerization vs +0.1 nm control** over
+2 s — piece-1 DOES couple. But small, because the **crosslinked cortex network + reshape (COG-conserving) absorb
+most of the ~1.2 µm of segment growth** — physically correct: **the cortex is not a protrusion structure.**
+
+**(2) Filopodium bundle (filopodium_protrusion.png + .html) — the VISIBLE protrusion.** A base-anchored parallel
+actin bundle (NF=24, 30 nm hex spacing) is the natural filopodial architecture: the poly kernel grows each
+barbed tip by v(f)·dt_phys and positions propagate from the FIXED pointed-end base (clean base-anchored
+propagation — no COG-reshape artifact). Result: the bundle tip advances **free +1.84 µm (v=0.623=v0 exactly) vs
+loaded +0.68 µm at the e-fold load 3.17 pN (v=0.229=v0/e exactly)**, both matching the analytic ∫v(f)dt to
+rtol 0.02. This is a genuine µm-scale VISIBLE protrusion with the exact Mogilner-Oster force-velocity — the same
+validated kernel, now in the architecture that actually protrudes.
+
+*(An earlier filopodium attempt re-anchored the base AFTER a COG-conserving reshape, injecting a strain load so
+v_med≠v0; that version was correctly NOT committed. The fix is base-anchored propagation, above.)*
 
 ## Files
 - `ff/polymerization_warp.py` — `resolve_polymerization`, `polymerization_kernel`, `ratchet_velocity_np`.
 - `tests/ff/test_polymerization.py`.
 - `outputs/ff/figs/protrusion_piece1.png` — leading-edge advance (poly vs control) in the full-compartment cortex.
+- `outputs/ff/figs/filopodium_protrusion.png` — filopodium bundle: tip-advance curves + force-velocity (sim ON
+  the analytic) + bundle side-view elongation (free vs loaded).
+- `outputs/ff/figs/filopodium_protrusion.html` — **interactive animated** viewer (▶ play / frame slider,
+  OrbitControls): the actin bundle visibly ELONGATING over the 60 polymerization steps, free vs loaded scenes.
+- `scripts/ff_viewer_html.py` — extended with frame playback (▶ + slider) for animated FF line/point layers.
 
 Related: FF_ACTIVE_MOVEMENT_ASSESSMENT_2026-07-02 (the 5-piece plan), FF_STAGE6L (unified architecture).
