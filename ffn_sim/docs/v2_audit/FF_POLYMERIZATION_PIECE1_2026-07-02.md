@@ -37,8 +37,21 @@ f=1; barbed segment elongates by v·dt. All the always-on analytic checks pass e
 - Analytic ground truth (kBT/δ, Pollard v0) is the runtime check; Footer/M-O stall values are cross-checks, not
   hard-coded (oracle-is-crosscheck rule).
 
+## Piece-1 coupled into the full-compartment cell (protrusion demo)
+
+Wired the kernel into a full-compartment cortex (turgor + membrane, no plates), polymerizing a +x leading-edge
+patch (1231 barbed ends), physical-time-stepped (grow v(f)·dt_phys, relax between). Result
+(`outputs/ff/figs/protrusion_piece1.png`): the leading edge advances **+15.5 nm with polymerization vs +0.1 nm
+control** over 2 s — piece-1 DOES couple and protrude. But small, because the **crosslinked cortex network +
+reshape (COG-conserving) absorb most of the ~1.2 µm of segment growth** — physically correct: **the cortex is
+not a protrusion structure.** Real protrusion uses the specialized dendritic (lamellipodium) / bundled
+(filopodium) architecture. A quick anchored-bundle filopodium demo hit a base-anchoring artifact (v_med≠v0) and
+is NOT committed. **No over-claim: piece-1 is validated (force-velocity) + couples (small cortex protrusion);
+a dramatic visible protrusion needs clean anchoring + the dendritic/bundle arch = future pieces (2-5).**
+
 ## Files
 - `ff/polymerization_warp.py` — `resolve_polymerization`, `polymerization_kernel`, `ratchet_velocity_np`.
 - `tests/ff/test_polymerization.py`.
+- `outputs/ff/figs/protrusion_piece1.png` — leading-edge advance (poly vs control) in the full-compartment cortex.
 
 Related: FF_ACTIVE_MOVEMENT_ASSESSMENT_2026-07-02 (the 5-piece plan), FF_STAGE6L (unified architecture).
