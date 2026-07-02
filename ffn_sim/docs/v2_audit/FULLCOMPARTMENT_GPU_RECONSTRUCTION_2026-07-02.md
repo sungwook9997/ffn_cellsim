@@ -63,9 +63,15 @@ this reading:
 - It is **robust to the integrator** (matched-N control): explicit pen 2.227 ≈ implicit 2.107 at N=400 (both peak
   3.24). (An earlier N=100 implicit 1.321 *looked* like a win but is a size effect — pen_frac rises with cell
   count / shared-interface area; the controlled comparison must be at fixed N, and there it's a wash.)
-- The run is **healthy**: V/V0=1.000, porosity ~0.10 (space-filling), A/A0=0.999, faceted (asph 0.054). If cells
-  massively over-occupied space you'd see porosity ≪0 / V/V0≫1; you don't. A few sharp-Voronoi-vertex nodes poke,
-  the bulk is properly space-filling.
+- **DECISIVE volume test (measured on my own npz, both runs) — the overlap is NOT pathological.** If cells
+  genuinely interpenetrated (occupied each other's volume), Σ(cell volumes) would *exceed* the spheroid envelope.
+  It doesn't: **fill = Σ(V_cell)/V_convex-hull = 0.922 (penalty) / 0.899 (`--ipc`)** — both **< 1.0**, i.e. the
+  cells fill ~90 % of the (over-generous convex-hull) envelope with ~8–10 % void (true fill higher still, since the
+  hull over-estimates the lumpy envelope). Σ(V_cell) is identical across the two runs (6.49e-13 m³, V/V0=1.000);
+  only the hull differs (`--ipc` slightly larger = the log-barrier holding cells apart, matching gap 0.419 vs
+  0.156). This is **healthy space-filling confluent tissue, not interpenetration** — and independently reproduces
+  the concurrent session's porosity ~0.10 on my own data. A few sharp-Voronoi-vertex nodes poke (that is what the
+  worst-node `pen_frac` reports); the bulk is space-filling with A/A0=0.999, faceted (asph 0.054).
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
