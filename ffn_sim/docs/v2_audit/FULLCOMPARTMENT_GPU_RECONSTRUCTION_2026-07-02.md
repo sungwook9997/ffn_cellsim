@@ -192,11 +192,18 @@ this reading:
 > **Broader (audit#18): the WHOLE nucleus block has a provenance/consistency problem, not just R_nuc.** All three
 > nucleus params differ between the `run_decohesion` code default and the production runner, and none carries a
 > source comment (unlike R_cell=Wagner2011, turgor=Young-Laplace, η=Dessard): **E_nuc** 3000 Pa (default) vs 4700
-> (runner); **ratio_lamin** 3.0 vs 1.4; **R_nuc_factor** 0.33 vs 0.25 (both wrong vs Moore's ~0.77). E_nuc≈3–5 kPa
-> and a lamin stiffening of 1.4–3× are both *in* the literature band, but which is the MCF7 value is undocumented,
-> and the default≠runner split means "the physiological value" is ambiguous. Recommend a **dedicated nucleus
-> SourceEvidence pass** (E_nuc, ratio_lamin, R_nuc_factor → one sourced MCF7 set, reconcile default=runner) — a
-> PI-gated KB task, flagged here, not resolved unilaterally.
+> (runner); **ratio_lamin** 3.0 vs 1.4; **R_nuc_factor** 0.33 vs 0.25 (both wrong vs Moore's ~0.77).
+>
+> **E_nuc verified too (audit#19, WebSearch):** a MCF7-specific in-situ AFM measurement gives nuclear
+> **E_nuc ≈ 399 ± 117 Pa** (Kim/Frontiers 2020; MCF7 nucleus is *softer* than non-malignant MCF-10A) — **~8–12×
+> softer than the model's 3000–4700 Pa.** ⚠️ Caveat (not a clean "wrong" like R_nuc): nuclear modulus is strongly
+> *method-dependent* — isolated-nucleus AFM / micropipette read ~1–5 kPa (where the model's value sits), in-situ
+> whole-cell AFM reads ~0.4 kPa. So the model is at/above the **stiff** end and the MCF7-specific in-situ value
+> points much softer; which to adopt is a *measurement-protocol* decision. `ratio_lamin` (1.4 vs 3.0) got no clean
+> single MCF7 number. **Net: R_nuc is unambiguously wrong; E_nuc is protocol-ambiguous but likely too stiff; lamin
+> unresolved.** Recommend a **dedicated nucleus SourceEvidence pass** (R_nuc→~0.77 Moore2016; E_nuc→pick protocol,
+> ~0.4 kPa in-situ vs ~kPa isolated; lamin→source; reconcile default=runner) — a PI-gated KB task, flagged not
+> resolved unilaterally.
 
 So the **G2 gate (pen<0.3) is an aggregation-regime gate** (built for separate cells that must not touch);
 **confluent space-filling tissue inherently has pen>0.3**, and the concurrent session's validated answer
