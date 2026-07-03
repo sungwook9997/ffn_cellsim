@@ -10,6 +10,34 @@ PI (angry) flagged three HARD-rule violations in the prior DCM work and mandated
 Plus a viz standard (PI): visualization = the actual 3D CELL MORPHOLOGY in an interactive HTML viewer to
 explore, NOT matplotlib data charts. Memory: `feedback-viz-interactive-html-cell-shapes`.
 
+## Executive summary (final state, after the hourly adversarial audit — read this first)
+
+**The 3 violations are corrected + verified** (GPU-native RTX A5000 cuda:0; full membrane/cortex + cytoplasm
+(turgor 133 Pa, η 65.9) + nucleus (mechanically active, force-kernels launch every step); contact floating fixed
+0.67 → 0.154–0.177 µm, pressing). N=400 production, all shown as interactive HTML cell morphology. The `pen`≈2.1
+"interpenetration" was reframed (audit#7–8, *proven* via a fill<1 volume test) to the **confluent-init geometry**
+(shared Voronoi interfaces), not a contact failure — `--ipc` (a real Li-2020 log-barrier that already exists)
+gives the same pen because it is geometric.
+
+**Then the adversarial audit (and the PI) found deeper issues the first pass missed — 3 findings, all committed,
+all runnable non-collidingly TODAY, all with the *default* unchanged (adoption is PI-gated):**
+
+| # | finding | status | non-colliding lever |
+|---|---|---|---|
+| 1 | confluent-init **cell-size gradient** 3.68× (surface/interior vol; boundary Voronoi cells balloon) | **fixed** — ghost-seed ring → tight+uniform+no-overlap (ratio 1.70×, gap 0.154 µm, G2 PASS) | `--init-npz` |
+| 2 | **nucleus 3× too small** (R_nuc=0.25 → 1.6 % vol; lit MCF7 Moore2016 ~50 %, N:C 1.9) | **demonstrated** — R_nuc=0.7 stable, realistic nucleus does real mechanics (pen 0→0.94) | runner `RNUC` env |
+| 3 | **whole nucleus block unsourced** + code-default ≠ runner (E_nuc 3000/4700, lamin 3.0/1.4, R_nuc 0.33/0.25) | **flagged** — needs a dedicated MCF7 SourceEvidence pass | (PI-gated KB task) |
+
+**The audit also corrected several of MY OWN over/under-claims** (both directions): "contact clean" (audit#3),
+"compaction converges / needs new IPC" (audit#7, was a 10⁶× unit bug + IPC already exists), "implicit reduces pen"
+(matched-N control), "ghost strictly better" (audit#14, it's a trade-off). Method lesson: an audit checklist that
+*lists* a physiological value only means "confirm it is present" — whether it is *correct* needs literature
+verification; two ratified DCM values were wrong this way (size gradient, R_nuc).
+
+**Pending PI decisions:** adopt ghost-init + R_nuc=0.7 as defaults? · nucleus SourceEvidence pass (reconcile
+default=runner, source E_nuc/lamin/R_nuc)? · Laguerre for full uniformity (1.70×→1.0)? · `--ipc` for the
+realistic-nucleus pen~0.9? · `build_confluent` (no-overlap) vs `build_multicell` (overlap seam) as canonical?
+
 ## What was rebuilt (all on gbook A5000, Warp `cuda:0`)
 
 **1. GPU-native.** Every run is on the A5000 (`cuda:0`, 16 GiB, sm_86). Confirmed nucleus + membrane
