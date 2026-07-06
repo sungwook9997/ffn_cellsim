@@ -14,6 +14,9 @@
 ![Commits](https://img.shields.io/badge/commits-1233%20in%2010%20weeks-success)
 ![Tests](https://img.shields.io/badge/validation-148%20test%20files-blueviolet)
 
+### ▶ [**Explore the interactive 3D gallery →**](https://sungwook9997.github.io/ffn_cellsim/)
+<sub>rotate the cells, cut the spheroids, walk through the DCM & FF engines and the validation foundation</sub>
+
 </div>
 
 ---
