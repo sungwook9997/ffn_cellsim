@@ -311,12 +311,14 @@ function computeCentroids(pos){
 // legacy per-cell rNuc·cellR proportional render (N/C-ratio look — do NOT read it as the sim's
 // nucleus; proportional drawing makes a real cell-SIZE gradient look like nuclear compression).
 const cellR=new Float32Array(C);
+const cellRmin=new Float32Array(C);   // per-cell inradius (min node→centroid) — the nucleus can't exceed it
 function computeCellR(pos){
-  cellR.fill(0); const k=new Float32Array(C);
+  cellR.fill(0); cellRmin.fill(1e30); const k=new Float32Array(C);
   for(let n=0;n<N;n++){ const ci=nodeCell[n]; if(ci<0) continue;
     const dx=pos[n*3]-cent[ci*3], dy=pos[n*3+1]-cent[ci*3+1], dz=pos[n*3+2]-cent[ci*3+2];
-    cellR[ci]+=Math.sqrt(dx*dx+dy*dy+dz*dz); k[ci]++; }
-  for(let c=0;c<C;c++) cellR[c]/=(k[c]||1);
+    const dr=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    cellR[ci]+=dr; if(dr<cellRmin[ci]) cellRmin[ci]=dr; k[ci]++; }
+  for(let c=0;c<C;c++){ cellR[c]/=(k[c]||1); if(cellRmin[c]>1e29) cellRmin[c]=cellR[c]; }
 }
 const _nm=new THREE.Matrix4(), _nc=new THREE.Color();
 function updateNucleus(){
@@ -325,6 +327,10 @@ function updateNucleus(){
   const on=elClipOn.checked, mode=elMode.value;
   for(let c=0;c<C;c++){
     let rn = (m.rNucAbs>0.0) ? m.rNucAbs : m.rNuc*cellR[c];   // absolute (sim-faithful) vs proportional
+    // The DCM nucleus is a SOFT radial force field (not a rigid body); under confluent compression the
+    // membrane sits inside R_nuc. Draw the soft nucleus BOUNDED BY the membrane (its true squeezed extent),
+    // never a rigid sphere poking through: clamp to the cell inradius so the nucleus stays inside the cell.
+    if(rn > cellRmin[c]*0.99) rn = cellRmin[c]*0.99;
     if(on && (mode==='peel'||mode==='slab') && !keep[c]) rn=0;  // hide nuclei of peeled/hidden cells
     _nm.makeScale(rn,rn,rn); _nm.setPosition(cent[c*3],cent[c*3+1],cent[c*3+2]);
     nucMesh.setMatrixAt(c,_nm);
