@@ -150,3 +150,14 @@ ffn_sim/outputs/h_dcm_two_stage/*.pkl
 force.txt
 messages.cmo
 *.cmo
+
+# --- 2026-07-06 outputs cleanup (PI: "모두 정리 + github 새로 정리") ---
+# Raw run-output frame data under outputs/ (regenerable; NOT source). Parity-oracle
+# fixtures under ffn_sim/dcm/fixtures/*.npz and already-tracked curated outputs npz
+# stay tracked (git keeps tracked files); this only stops NEW multi-GB raw dumps.
+ffn_sim/outputs/**/*.npz
+# Oversized full-frame HTML viewers (>80MB — exceed GitHub's 100MB hard file limit;
+# regenerable from npz). The lightweight INTERACTIVE / curated viewers ARE committed.
+ffn_sim/outputs/warp_decohesion/figs/n1000_divfix_ipc_24h.html
+ffn_sim/outputs/warp_decohesion/figs/n100_divfix_24h.html
+ffn_sim/outputs/warp_decohesion/figs/n100_realistic_24h.html
