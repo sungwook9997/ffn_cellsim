@@ -187,5 +187,67 @@ def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *,
     return x, info
 
 
-__all__ = ["assemble_elastic_stiffness", "FFImplicitStepper",
-           "assemble_K_current", "implicit_step_current"]
+
+# ------------------------------------------------------------------------------------------------------
+# GPU-RESIDENT version (cupy sparse + CG) — the PI's GPU-only mandate. Same math as the host path, but K is
+# assembled and CG-solved ON THE DEVICE (cupy), and the force / positions stay device-resident (Warp ↔ cupy via
+# the CUDA array interface, no host round-trip). This is what makes native (≈495k nodes) + large dt feasible.
+# ------------------------------------------------------------------------------------------------------
+
+def assemble_K_current_cupy(pos, bend_triples, alpha, xl_ij, k_xl, N):
+    """Analytic elastic stiffness K (bending 4th-diff + crosslink k·ûûᵀ) assembled ON THE GPU from cupy arrays.
+    ``pos`` (N,3), ``bend_triples`` (T,3), ``xl_ij`` (E,2), ``alpha`` (T,), ``k_xl`` (E,) are all cupy. Returns a
+    cupy CSR (3N×3N)."""
+    import cupy as cp
+    import cupyx.scipy.sparse as csp
+    n3 = 3 * N
+    tri = bend_triples; al = alpha; T = tri.shape[0]
+    ridx, cidx = cp.meshgrid(cp.arange(3), cp.arange(3), indexing="ij")
+    ridx = ridx.ravel(); cidx = cidx.ravel()
+    bval = cp.asarray(_BEND_BLOCK).ravel()
+    nr = tri[:, ridx]; nc = tri[:, cidx]
+    v9 = al[:, None] * bval[None, :]
+    coord = cp.arange(3)
+    rows_b = (3 * nr[:, :, None] + coord[None, None, :]).ravel()
+    cols_b = (3 * nc[:, :, None] + coord[None, None, :]).ravel()
+    vals_b = cp.broadcast_to(v9[:, :, None], (T, 9, 3)).ravel()
+    i = xl_ij[:, 0]; j = xl_ij[:, 1]
+    r = pos[j] - pos[i]; L = cp.linalg.norm(r, axis=1)
+    good = L > 1e-9
+    i = i[good]; j = j[good]; u = (r[good] / L[good, None]); kx = k_xl[good]
+    P = kx[:, None, None] * u[:, :, None] * u[:, None, :]
+    d1, d2 = cp.meshgrid(cp.arange(3), cp.arange(3), indexing="ij"); d1 = d1.ravel(); d2 = d2.ravel()
+    Pf = P.reshape(-1, 9)
+    ri = 3 * i[:, None] + d1[None, :]; rj = 3 * j[:, None] + d1[None, :]
+    ci = 3 * i[:, None] + d2[None, :]; cj = 3 * j[:, None] + d2[None, :]
+    rows_x = cp.concatenate([ri.ravel(), ri.ravel(), rj.ravel(), rj.ravel()])
+    cols_x = cp.concatenate([ci.ravel(), cj.ravel(), cj.ravel(), ci.ravel()])
+    vals_x = cp.concatenate([Pf.ravel(), -Pf.ravel(), Pf.ravel(), -Pf.ravel()])
+    rows = cp.concatenate([rows_b, rows_x]); cols = cp.concatenate([cols_b, cols_x])
+    vals = cp.concatenate([vals_b, vals_x])
+    return csp.coo_matrix((vals, (rows, cols)), shape=(n3, n3)).tocsr()
+
+
+def ff_implicit_step_gpu(x, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma, dt,
+                         vol_g=None, k_vol=0.0, cg_tol=1e-6, cg_maxiter=400):
+    """One GPU-resident NF2007 implicit overdamped step. All arrays cupy, device-resident. ``force_fn(x_cp)``
+    returns the full force as a cupy (3N,) array (Warp kernels → cupy view, no host). Solves
+    (γ/dt·I + K(x) + k_vol·g·gᵀ)·Δx = F(x) with cupy CG. Returns x+Δx (cupy)."""
+    import cupy as cp
+    import cupyx.scipy.sparse as csp
+    from cupyx.scipy.sparse.linalg import cg, LinearOperator
+    N = x.size // 3; n3 = 3 * N; a = gamma / dt
+    K = assemble_K_current_cupy(x.reshape(N, 3), bend_triples, alpha, xl_ij, k_xl, N)
+    M = (a * csp.identity(n3, format="csr", dtype=cp.float64) + K).tocsr()
+    F = force_fn(x)
+    if vol_g is not None and k_vol > 0.0:
+        g = vol_g
+        op = LinearOperator((n3, n3), matvec=lambda v: M @ v + k_vol * float(g @ v) * g, dtype=cp.float64)
+    else:
+        op = M
+    dx, _ = cg(op, F, rtol=cg_tol, maxiter=cg_maxiter)
+    return x + dx
+
+
+__all__ = ["assemble_elastic_stiffness", "FFImplicitStepper", "assemble_K_current", "implicit_step_current",
+           "assemble_K_current_cupy", "ff_implicit_step_gpu"]
