@@ -102,4 +102,79 @@ class FFImplicitStepper:
         return x_flat + dx
 
 
-__all__ = ["assemble_elastic_stiffness", "FFImplicitStepper"]
+
+# ------------------------------------------------------------------------------------------------------
+# CURRENT-config solver (the full NF2007 stability: A assembled at x_n each step ⇒ NSD ⇒ unconditionally
+# stable). Vectorised assembly (fast enough to re-do each step) + CG on the ASSEMBLED SPD matrix (reliable,
+# unlike the FD Jacobian-vector product). Optional Newton iterations + rigid-mode-safe.
+# ------------------------------------------------------------------------------------------------------
+
+_BEND_BLOCK = np.array([[1.0, -2.0, 1.0], [-2.0, 4.0, -2.0], [1.0, -2.0, 1.0]])   # α·DᵀD pattern
+
+
+def assemble_K_current(pos: np.ndarray, bend_triples: np.ndarray, alpha: np.ndarray,
+                       xl_ij: np.ndarray, k_xl: np.ndarray, N: int) -> sp.csr_matrix:
+    """Analytic elastic stiffness K = −∂F_elastic/∂x at the CURRENT config ``pos`` (vectorised). Bending =
+    α·DᵀD (config-independent); crosslinks = k·ûûᵀ from the current bond directions. PSD."""
+    n3 = 3 * N
+    # ---- bending (vectorised): T triples × 9 (r,c) × 3 coords ----
+    tri = np.ascontiguousarray(bend_triples, np.int64)
+    al = np.ascontiguousarray(alpha, np.float64)
+    T = tri.shape[0]
+    ridx, cidx = np.meshgrid(np.arange(3), np.arange(3), indexing="ij")
+    ridx = ridx.ravel(); cidx = cidx.ravel(); bval = _BEND_BLOCK.ravel()               # (9,)
+    nr = tri[:, ridx]; nc = tri[:, cidx]                                                 # (T,9)
+    v9 = al[:, None] * bval[None, :]                                                     # (T,9)
+    coord = np.arange(3)
+    rows_b = (3 * nr[:, :, None] + coord[None, None, :]).ravel()
+    cols_b = (3 * nc[:, :, None] + coord[None, None, :]).ravel()
+    vals_b = np.broadcast_to(v9[:, :, None], (T, 9, 3)).ravel()
+    # ---- crosslinks (vectorised): E bonds × 9 (d1,d2) × 4 blocks ----
+    xl = np.ascontiguousarray(xl_ij, np.int64)
+    i = xl[:, 0]; j = xl[:, 1]
+    r = pos[j] - pos[i]
+    L = np.linalg.norm(r, axis=1)
+    good = L > 1e-9
+    i, j, r, L = i[good], j[good], r[good], L[good]
+    kx = np.ascontiguousarray(k_xl, np.float64)[good]
+    u = r / L[:, None]                                                                   # (E,3)
+    P = kx[:, None, None] * u[:, :, None] * u[:, None, :]                                # (E,3,3) = k·ûûᵀ
+    d1, d2 = np.meshgrid(np.arange(3), np.arange(3), indexing="ij")
+    d1 = d1.ravel(); d2 = d2.ravel()                                                     # (9,)
+    Pf = P.reshape(-1, 9)                                                                # (E,9)
+    ri, rj = 3 * i[:, None] + d1[None, :], 3 * j[:, None] + d1[None, :]                  # (E,9)
+    ci, cj = 3 * i[:, None] + d2[None, :], 3 * j[:, None] + d2[None, :]
+    rows_x = np.concatenate([ri.ravel(), ri.ravel(), rj.ravel(), rj.ravel()])
+    cols_x = np.concatenate([ci.ravel(), cj.ravel(), cj.ravel(), ci.ravel()])
+    vals_x = np.concatenate([Pf.ravel(), -Pf.ravel(), Pf.ravel(), -Pf.ravel()])
+    rows = np.concatenate([rows_b, rows_x]); cols = np.concatenate([cols_b, cols_x])
+    vals = np.concatenate([vals_b, vals_x])
+    return sp.coo_matrix((vals, (rows, cols)), shape=(n3, n3)).tocsr()
+
+
+def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma, dt,
+                          n_newton=1, cg_tol=1e-6, cg_maxiter=300):
+    """One NF2007 implicit overdamped step with the CURRENT-config Jacobian (unconditionally stable). Solves
+    (γ/dt·I + K(x))·Δx = F_total(x) via CG on the assembled SPD matrix — no finite-difference JVP. ``force_fn``
+    returns the FULL force (elastic + active) at a given x. Newton (n_newton>1) re-linearises for big steps."""
+    from scipy.sparse.linalg import cg
+    N = x_flat.size // 3
+    a = gamma / dt
+    x = np.ascontiguousarray(x_flat, np.float64).copy()
+    x0 = x.copy()
+    info = {"cg_iters": 0, "newton": 0}
+    for _ in range(n_newton):
+        pos = x.reshape(N, 3)
+        K = assemble_K_current(pos, bend_triples, alpha, xl_ij, k_xl, N)
+        M = (a * sp.identity(3 * N, format="csr") + K).tocsr()
+        F = np.asarray(force_fn(x), dtype=np.float64).reshape(-1)
+        rhs = F - a * (x - x0)                              # residual RHS (0 net at x0 for n_newton=1)
+        it = [0]
+        dx, _ = cg(M, rhs, rtol=cg_tol, maxiter=cg_maxiter, callback=lambda *_a: it.__setitem__(0, it[0] + 1))
+        x = x + dx
+        info["cg_iters"] += it[0]; info["newton"] += 1
+    return x, info
+
+
+__all__ = ["assemble_elastic_stiffness", "FFImplicitStepper",
+           "assemble_K_current", "implicit_step_current"]
