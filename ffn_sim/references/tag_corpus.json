@@ -1,5 +1,17 @@
 [
   {
+    "citation_key": "collective-langevin-dynamics-of-flexible-fb216a",
+    "title": "Collective Langevin Dynamics of Flexible",
+    "doi": "",
+    "path": "0903.5178v1.pdf",
+    "n_pages": 27,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 44,
+    "linked_to_source_evidence": false
+  },
+  {
     "citation_key": "Li2022_BiophysicalJournal",
     "title": "Network dynamics of the nonlinear power-law",
     "doi": "10.1016/j.bpj.2022.09.035",
@@ -10,6 +22,18 @@
     "se_citation_key": "Li2022_BiophysicalJournal",
     "n_chunks": 26,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "computer-physics-communications-232-2018-3148a5",
+    "title": "Computer Physics Communications 232 (2018) 206–213",
+    "doi": "10.17632/9ffxhfdtzm.1",
+    "path": "1-s2.0-S0010465518302091-main.pdf",
+    "n_pages": 8,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 27,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Betorz2023_JournalOfTheMechanicsAnd",
@@ -93,6 +117,18 @@
     "se_uid": "SE303",
     "se_citation_key": "Samarage2015_DevelopmentalCell",
     "n_chunks": 43,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Jo2025_ActaBiomaterialia",
+    "title": "Full length article",
+    "doi": "10.1016/j.actbio.2025.05.069",
+    "path": "1-s2.0-S1742706125004039-main.pdf",
+    "n_pages": 12,
+    "source": "new",
+    "se_uid": "SE331",
+    "se_citation_key": "Jo2025_ActaBiomaterialia",
+    "n_chunks": 42,
     "linked_to_source_evidence": true
   },
   {
@@ -408,16 +444,16 @@
     "linked_to_source_evidence": true
   },
   {
-    "citation_key": "cell-sized-spherical-con-nement-induces--151952",
+    "citation_key": "Miyazaki2015_NatCellBiol",
     "title": "Cell-sized spherical conﬁnement induces the",
     "doi": "10.1038/ncb3142",
     "path": "Miyazaki2015_NatCellBiol_ContractileRing_confinement.pdf",
     "n_pages": 22,
     "source": "new",
-    "se_uid": "",
-    "se_citation_key": "",
+    "se_uid": "SE332",
+    "se_citation_key": "Miyazaki2015_NatCellBiol",
     "n_chunks": 66,
-    "linked_to_source_evidence": false
+    "linked_to_source_evidence": true
   },
   {
     "citation_key": "Dessard2024_NanoscaleAdv",
@@ -430,6 +466,18 @@
     "se_citation_key": "Dessard2024_NanoscaleAdv",
     "n_chunks": 38,
     "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "collective-langevin-dynamics-of-flexible-91d298",
+    "title": "Collective Langevin dynamics of flexible",
+    "doi": "10.1088/1367-2630/9/11/427",
+    "path": "Nedelec_2007_New_J._Phys._9_427.pdf",
+    "n_pages": 25,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 49,
+    "linked_to_source_evidence": false
   },
   {
     "citation_key": "Fang2016_PhysRevE",
@@ -465,6 +513,18 @@
     "se_uid": "",
     "se_citation_key": "",
     "n_chunks": 30,
+    "linked_to_source_evidence": false
+  },
+  {
+    "citation_key": "computational-study-of-biophysical-mecha-13d096",
+    "title": "COMPUTATIONAL STUDY OF BIOPHYSICAL MECHANISMS OF",
+    "doi": "",
+    "path": "REVDissertation_Donghyun Yim.pdf",
+    "n_pages": 94,
+    "source": "new",
+    "se_uid": "",
+    "se_citation_key": "",
+    "n_chunks": 151,
     "linked_to_source_evidence": false
   },
   {
@@ -597,6 +657,18 @@
     "se_uid": "SE270",
     "se_citation_key": "Shah2025_Cells",
     "n_chunks": 106,
+    "linked_to_source_evidence": true
+  },
+  {
+    "citation_key": "Slater2021_SoftMatter",
+    "title": "10274 |  Soft Matter, 2021, 17, 10274–10285",
+    "doi": "10.1039/d0sm01911a",
+    "path": "d0sm01911a.pdf",
+    "n_pages": 12,
+    "source": "new",
+    "se_uid": "SE333",
+    "se_citation_key": "Slater2021_SoftMatter",
+    "n_chunks": 37,
     "linked_to_source_evidence": true
   },
   {
