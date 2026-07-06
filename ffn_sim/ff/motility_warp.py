@@ -88,6 +88,31 @@ def protrusion_reaction_kernel(phat: wp.vec3d, total: wp.array(dtype=wp.float64)
 
 
 @wp.kernel
+def actin_assembly_kernel(pos: wp.array(dtype=wp.vec3d), fiber_off: wp.array(dtype=wp.int32),
+                          seg_off: wp.array(dtype=wp.int32), seg_rest: wp.array(dtype=wp.float64),
+                          frac: wp.float64):
+    """Dynamic cortex AREA GROWTH by actin assembly (one thread per fiber). A cortex segment that is under
+    TENSION (current length L > rest) has new actin polymerised into it, so its rest length grows toward L:
+    ``rest ← rest + frac·(L−rest)`` (frac = 1−e^{−k_assembly·Δt}), TENSION-GATED (only stretched segments grow).
+    This lets the cortex surface AREA increase as the cell spreads — a flat adherent cell needs ~2× the area of
+    the equal-volume sphere. Combined with the implicit volume constraint (V≈const), the growing base area forces
+    the apex DOWN ⇒ the cell FLATTENS instead of inflating. Mechanistic: actin assembles where the cortex is
+    stretched (the spreading edge), relieving tension and supplying membrane/cortex area (reservoir + assembly)."""
+    f = wp.tid()
+    a = fiber_off[f]
+    b = fiber_off[f + 1]
+    s0 = seg_off[f]
+    nseg = b - a - 1
+    for k in range(nseg):
+        n = a + k
+        L = wp.length(pos[n + 1] - pos[n])
+        s = s0 + k
+        r = seg_rest[s]
+        if L > r:
+            seg_rest[s] = r + frac * (L - r)
+
+
+@wp.kernel
 def gravity_kernel(fz_node: wp.float64, force: wp.array(dtype=wp.vec3d)):
     """Net sedimentation body force (gravity − buoyancy): every cortex node gets a downward z-force
     ``fz_node = −Δρ·g·v_node`` (Δρ = ρ_cell − ρ_medium > 0 ⇒ the cell sinks toward the dish). This is REAL
@@ -217,4 +242,4 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
-           "xl_turnover_kernel", "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]
+           "xl_turnover_kernel", "actin_assembly_kernel", "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]

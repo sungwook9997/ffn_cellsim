@@ -36,8 +36,8 @@ from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_kmc_kernel, resolve_clutch)
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
-                                      cortex_volume_kernel, xl_turnover_kernel, volume_gradient,
-                                      physical_node_gammas, crawl_cfl_dt)
+                                      cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
+                                      volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
@@ -76,7 +76,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
-        refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, record_every=2500, device="cpu"):
+        assembly=False, k_assembly=0.4, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50,
+        assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -147,6 +148,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     h_basal = 0.6                                              # basal-cap height for the spreading push [µm]
     dP_area = dP_mem_area = 0.0
     frac_xl = 1.0 - np.exp(-koff_xl * dt * xl_turn_every)      # crosslink turnover fraction per turnover tick
+    frac_asm = 1.0 - np.exp(-k_assembly * dt * assembly_every) if assembly else 0.0   # actin-assembly area growth
 
     vs = {"dP": 0.0, "g": np.zeros((Nc, 3))}                   # osmotic ΔP + exact volume gradient (set by the loop)
 
@@ -184,7 +186,13 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
         wp.synchronize_device(d)
         F = f_d.numpy().reshape(-1)
-        F[:3 * Nc] += (vs["dP"] * vs["g"]).reshape(-1)         # EXACT cortex osmotic/turgor force  f = ΔP·g
+        # EXACT cortex osmotic/turgor force f = ΔP·g, computed from the CURRENT x (consistent across Newton iters)
+        pcx = np.ascontiguousarray(x_np, np.float64).reshape(N, 3)[:Nc]; cen = pcx.mean(0)
+        aa = pcx[faces[:, 0]] - cen; bb = pcx[faces[:, 1]] - cen; ccf = pcx[faces[:, 2]] - cen
+        Vc = abs(float((aa * np.cross(bb, ccf)).sum() / 6.0))
+        dPv = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
+        dPv = min(max(dPv, -TURGOR_PI_IN0), TURGOR_PI_IN0)
+        F[:3 * Nc] += (dPv * volume_gradient(pcx, faces, cen)).reshape(-1)
         return F
 
     frames, com_traj, times, vol_traj, diverged = [], [], [], [], False
@@ -257,6 +265,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(reshape_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d, wp.int32(2)], device=d)
         if step % xl_turn_every == 0 and step > 0:             # crosslink turnover (on-device Maxwell relax)
             wp.launch(xl_turnover_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, r0_d, wp.float64(frac_xl)], device=d)
+        if assembly and step % assembly_every == 0 and step > 0:   # dynamic cortex AREA GROWTH (actin assembly, tension-gated)
+            wp.launch(actin_assembly_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d, wp.float64(frac_asm)], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind
             wp.launch(clutch_catchslip_kmc_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), wp.float64(cp.kc0), wp.float64(cp.xc_um), wp.float64(cp.ks0),
@@ -315,6 +325,7 @@ def main():
     ap.add_argument("--spread", action="store_true", help="EMERGENT spreading: peripheral polymerization + clutch (no wetting)")
     ap.add_argument("--mature", action="store_true", help="mature (stable, non-rupturing) basal FA — firm adhesion")
     ap.add_argument("--implicit", action="store_true", help="NF2007 implicit stepping (large dt, unconditionally stable)")
+    ap.add_argument("--assembly", action="store_true", help="dynamic cortex area growth (actin assembly) → cell can flatten")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
     args = ap.parse_args()
@@ -325,7 +336,7 @@ def main():
           f"({time.time()-t0:.0f}s)")
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
             protrude=(not args.static and not args.spread), spread=args.spread,
-            rupture=not args.mature, implicit=args.implicit, device=args.device)
+            rupture=not args.mature, implicit=args.implicit, assembly=args.assembly, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
