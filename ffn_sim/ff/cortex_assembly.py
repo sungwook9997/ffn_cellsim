@@ -163,13 +163,24 @@ def build_cortex_network(params: CortexParams | None = None, *,
                          rng: np.random.Generator | None = None,
                          n_filaments: int | None = None,
                          orientation: str = "isotropic",
-                         nematic_S: float = 1.0) -> tuple[FiberNetwork, dict]:
+                         nematic_S: float = 1.0,
+                         length_dist: str = "mono") -> tuple[FiberNetwork, dict]:
     """Assemble the cortex fiber network on the sphere (FF units, µm).
 
     Args:
         params: cortex parameters (defaults = H.3 production cortex).
         rng: random generator (default seed 0 for reproducibility).
         n_filaments: optional override of ``params.n_filaments`` (e.g. a small prototype).
+        length_dist: per-filament contour-length model.
+            ``"mono"`` (default) — every filament is exactly ``L_filament_um`` (the historical,
+            γ-validated cortex; kept as the default so validation is untouched).
+            ``"exponential"`` — draw each filament length from an exponential of the SAME mean,
+            clipped to the KB-3.18 cortical range 1–10 µm. Rationale: real cortical F-actin is
+            length-DISTRIBUTED, not monodisperse (KB-3.18: linear F-actin 1–10 µm; Fritzsche 2013:
+            two sub-populations of different mean length), and the steady-state length distribution
+            of filaments under stochastic capping/severing IS exponential (Edelstein-Keshet;
+            Mogilner-Oster). Mean-preserving → the γ calibrated at the mean length is unchanged in
+            expectation; only the physical spread is added.
 
     Returns:
         ``(net, meta)`` — the assembled :class:`FiberNetwork` (κ per fiber set from ``params``) and
@@ -184,14 +195,27 @@ def build_cortex_network(params: CortexParams | None = None, *,
 
     com_dirs = _random_unit_vectors(F, rng)
     tangents = _tangent_field(com_dirs, rng, orientation, nematic_S)   # ARRANGEMENT (alignment) axis
-    fibers = [_great_circle_arc(com_dirs[f], tangents[f], R, nb, seg) for f in range(F)]
+    if length_dist == "exponential":
+        # KB-3.18: cortical F-actin length is DISTRIBUTED (1–10 µm), not a single value.
+        L_f = np.clip(rng.exponential(params.L_filament_um, F), seg, 10.0)  # mean-preserving
+        nb_f = np.maximum(2, np.rint(L_f / seg).astype(int) + 1)            # beads = L/ℓ₀ + 1, ≥2
+    elif length_dist == "mono":
+        nb_f = np.full(F, nb, dtype=int)
+    else:
+        raise ValueError(f"length_dist must be 'mono' or 'exponential', got {length_dist!r}")
+    fibers = [_great_circle_arc(com_dirs[f], tangents[f], R, int(nb_f[f]), seg) for f in range(F)]
 
     net = build_fiber_network(fibers, kappa=params.kappa)
 
     radii = np.linalg.norm(net.pos, axis=1)
+    beads_f = np.diff(net.fiber_offsets)                       # actual beads per fiber
+    Lf = (beads_f - 1) * seg                                    # per-fiber contour length [µm]
     meta = {
         "n_filaments": F,
         "n_nodes": net.n_nodes,
+        "length_dist": length_dist,
+        "L_fil_mean_um": float(Lf.mean()), "L_fil_std_um": float(Lf.std()),
+        "L_fil_min_um": float(Lf.min()), "L_fil_max_um": float(Lf.max()),
         "beads_per_filament": nb,
         "R_um": R,
         "L_filament_um": params.L_filament_um,

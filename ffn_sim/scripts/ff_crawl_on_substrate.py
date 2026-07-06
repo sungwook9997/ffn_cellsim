@@ -37,8 +37,8 @@ from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_km
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
-                                      sum_pos_kernel, sum_radius_kernel, volume_gradient,
-                                      physical_node_gammas, crawl_cfl_dt)
+                                      barbed_end_growth_kernel, sum_pos_kernel, sum_radius_kernel,
+                                      volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
@@ -48,12 +48,17 @@ FIL_AREAL_DENSITY_PER_UM2 = 100.0      # cortical/lamellipodial actin areal dens
 F_STALL_ACTIN_PN = 4.0                  # per-filament Brownian-ratchet stall force [pN] (KB-3.6: 2–5 pN)
 
 
-def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.0, 0.0)):
+def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.0, 0.0),
+          length_dist="mono"):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
-    FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion."""
+    FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
+
+    ``length_dist`` — cortex filament contour-length model: ``"mono"`` (every filament = L_filament_um, the
+    γ-validated default) or ``"exponential"`` (KB-3.18-distributed 1–10 µm, mean-preserving; real cortical
+    F-actin is length-distributed, not identical)."""
     rng = np.random.default_rng(seed)
     cx = build_crosslinked_cortex(CortexParams(), n_filaments=n_cortex_fil, n_xl=n_cortex_fil,
-                                  n_myo=max(1, n_cortex_fil // 160), rng=rng)
+                                  n_myo=max(1, n_cortex_fil // 160), length_dist=length_dist, rng=rng)
     cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
     c = cx.net.pos.mean(0); R = cx.R0_mean
     Nc = cx.net.n_nodes
@@ -78,8 +83,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
-        assembly=False, k_assembly=0.4, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50,
-        assembly_every=20, record_every=2500, device="cpu"):
+        assembly=False, k_assembly=0.4, growth=False, refresh_every=50, reshape_every=20, kmc_every=2000,
+        xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -153,6 +158,15 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     dP_area = dP_mem_area = 0.0
     frac_xl = 1.0 - np.exp(-koff_xl * dt * xl_turn_every)      # crosslink turnover fraction per turnover tick
     frac_asm = 1.0 - np.exp(-k_assembly * dt * assembly_every) if assembly else 0.0   # actin-assembly area growth
+    # Per-filament BARBED-END growth (KB-3.6/Pollard ratchet): tip segment elongates at v0·dt·e^{−load·δ/kT}.
+    # RATE-LIMIT the per-tick increment to ≤0.1·ℓ₀: at large implicit dt the raw v0·dt (≈0.6 µm) would jump many
+    # tips to the cap in ONE step and shock the hard volume constraint (apex over-corrects → collapse). Capping the
+    # increment approaches seg_max GRADUALLY over several ticks — same bounded total growth, numerically stable
+    # ("growth CFL", not a physical rate change). Load-gating (ratchet) still stalls the loaded (interior) tips.
+    _seg0 = CortexParams().seg_um
+    v0_dt = min(poly.v0_um_s * dt * assembly_every, 0.1 * _seg0)   # ≤0.05 µm elongation per growth tick
+    seg_max = 2.0 * _seg0                                      # tip-segment cap [µm]; sustained growth past 2ℓ₀ ⇒ bead insertion (staged)
+    grown_d = wp.zeros(1, dtype=wp.float64, device=d)          # Σ Δlength this tick (G-actin-pool budget diagnostic, KB-3.21)
 
     vs = {"dP": 0.0, "g": np.zeros((Nc, 3))}                   # osmotic ΔP + exact volume gradient (set by the loop)
 
@@ -351,6 +365,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(xl_turnover_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, r0_d, wp.float64(frac_xl)], device=d)
         if assembly and step % assembly_every == 0 and step > 0:   # dynamic cortex AREA GROWTH (actin assembly, tension-gated)
             wp.launch(actin_assembly_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d, wp.float64(frac_asm)], device=d)
+        if growth and step % assembly_every == 0 and step > 0:   # per-filament BARBED-END polymerization (KB-3.6 ratchet; reads tip load in f_d)
+            wp.launch(barbed_end_growth_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d,
+                      wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max), grown_d], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind
             wp.launch(clutch_catchslip_kmc_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), wp.float64(cp.kc0), wp.float64(cp.xc_um), wp.float64(cp.ks0),
@@ -407,18 +424,23 @@ def main():
     ap.add_argument("--spread", action="store_true", help="EMERGENT spreading: peripheral polymerization + clutch (no wetting)")
     ap.add_argument("--mature", action="store_true", help="mature (stable, non-rupturing) basal FA — firm adhesion")
     ap.add_argument("--implicit", action="store_true", help="NF2007 implicit stepping (large dt, unconditionally stable)")
+    ap.add_argument("--dt-impl", type=float, default=1.0e-2, help="implicit timestep [s] (clutch-in-K allows up to ~0.2)")
     ap.add_argument("--assembly", action="store_true", help="dynamic cortex area growth (actin assembly) → cell can flatten")
+    ap.add_argument("--growth", action="store_true", help="per-filament barbed-end polymerization (KB-3.6 ratchet) → filaments elongate individually")
+    ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
+                    help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
     args = ap.parse_args()
     wp.init(); t0 = time.time()
-    S = build(n_cortex_fil=args.cortex_fil)
+    S = build(n_cortex_fil=args.cortex_fil, length_dist=args.fil_length_dist)
     print(f"[build] cortex {S['Nc']} + nucleus {S['n_nuc']}; basal FA clutches {S['basal'].size}; "
           f"front-cap nodes {S['front'].size}; f_pro {S['f_pro']:.1f} pN/node; z_sub {S['z_sub']:.2f}  "
           f"({time.time()-t0:.0f}s)")
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
             protrude=(not args.static and not args.spread), spread=args.spread,
-            rupture=not args.mature, implicit=args.implicit, assembly=args.assembly, device=args.device)
+            rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
+            assembly=args.assembly, growth=args.growth, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "

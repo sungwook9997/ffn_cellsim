@@ -130,6 +130,41 @@ def actin_assembly_kernel(pos: wp.array(dtype=wp.vec3d), fiber_off: wp.array(dty
 
 
 @wp.kernel
+def barbed_end_growth_kernel(pos: wp.array(dtype=wp.vec3d), fiber_off: wp.array(dtype=wp.int32),
+                             seg_off: wp.array(dtype=wp.int32), seg_rest: wp.array(dtype=wp.float64),
+                             v0_dt: wp.float64, delta: wp.float64, kT: wp.float64,
+                             force: wp.array(dtype=wp.vec3d), seg_max: wp.float64,
+                             grown: wp.array(dtype=wp.float64)):
+    """Per-filament BARBED-END polymerization (KB-3.6 Brownian ratchet — the SAME Mogilner-Oster law as the
+    leading-edge/spreading push, applied to filament ELONGATION instead of a body force). One thread per fiber:
+    the barbed end (last node) grows its tip segment's rest length at ``v_p = v0·e^{−f_load·δ/kT}``, where
+    ``f_load = −(network force at the tip)·(outward tip tangent)`` is the EMERGENT opposing load. A load-free tip
+    grows at the full KB-3.6 rate (~30 nm/s single filament); a tip pushing against the cortex/membrane STALLS.
+    Filaments therefore grow INDIVIDUALLY at rates set by their own local load — no two stay the same length
+    (this, with the exponential construction distribution, is why lengths are no longer identical). Contour length
+    is drawn at the tip and capped at ``seg_max`` (sustained growth past the cap needs bead INSERTION — a dynamic
+    topology change, staged next; ``grown[0]`` accumulates total Δlength for the G-actin-pool budget, KB-3.21)."""
+    f = wp.tid()
+    a = fiber_off[f]
+    b = fiber_off[f + 1]
+    if b - a < 2:
+        return
+    tip = b - 1                                       # barbed-end node
+    t = pos[tip] - pos[tip - 1]
+    L = wp.length(t)
+    if L < wp.float64(1.0e-9):
+        return
+    that = t / L                                      # outward tip tangent (unit)
+    f_load = wp.max(-wp.dot(force[tip], that), wp.float64(0.0))   # emergent opposing load at the barbed end
+    vp = v0_dt * wp.exp(-f_load * delta / kT)         # ratchet: 0 load → v0, high load → stalled
+    stip = seg_off[f] + (b - a - 2)                   # tip segment index
+    r = seg_rest[stip]
+    nr = wp.min(r + vp, seg_max)
+    seg_rest[stip] = nr
+    wp.atomic_add(grown, 0, nr - r)
+
+
+@wp.kernel
 def gravity_kernel(fz_node: wp.float64, force: wp.array(dtype=wp.vec3d)):
     """Net sedimentation body force (gravity − buoyancy): every cortex node gets a downward z-force
     ``fz_node = −Δρ·g·v_node`` (Δρ = ρ_cell − ρ_medium > 0 ⇒ the cell sinks toward the dish). This is REAL
@@ -259,4 +294,5 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
-           "xl_turnover_kernel", "actin_assembly_kernel", "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]
+           "xl_turnover_kernel", "actin_assembly_kernel", "barbed_end_growth_kernel",
+           "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]

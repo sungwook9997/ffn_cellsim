@@ -191,6 +191,7 @@ def build_crosslinked_cortex(params: CortexParams | None = None, *, n_filaments:
                              n_xl: int = 300, n_myo: int = 100,
                              alpha_fraction: float = 0.30,
                              orientation: str = "isotropic", nematic_S: float = 1.0,
+                             length_dist: str = "mono",
                              rng: np.random.Generator | None = None) -> CrosslinkedCortex:
     """Assemble one quenched cortex realization: fibers + crosslinker links + myosin links.
 
@@ -204,7 +205,8 @@ def build_crosslinked_cortex(params: CortexParams | None = None, *, n_filaments:
     if rng is None:
         rng = np.random.default_rng(0)
     net, _ = build_cortex_network(params, rng=rng, n_filaments=n_filaments,
-                                  orientation=orientation, nematic_S=nematic_S)
+                                  orientation=orientation, nematic_S=nematic_S,
+                                  length_dist=length_dist)
 
     # Mesoscale bind reach (sanctioned ×40 coarse-graining dual) — the molecular ε (60 nm / 210 nm)
     # cannot connect the sparse coarse-grained filaments; widen to √(A/n_fil) as the archived cortex.
