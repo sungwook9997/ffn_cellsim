@@ -199,6 +199,56 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         F[:3 * Nc] += (dPv * volume_gradient(pcx, faces, cen)).reshape(-1)
         return F
 
+    # ---- GPU-RESIDENT implicit path (cupy) — the GPU-only fast solver for native runs ----
+    gpu_impl = implicit and str(device).startswith("cuda")
+    if gpu_impl:
+        import cupy as cpx
+        from ffn_sim.ff.implicit_ff import ff_implicit_step_gpu
+        bt_cp = cpx.asarray(np.ascontiguousarray(net.bend_triples, np.int64))
+        al_cp = cpx.asarray(alpha); xlij_cp = cpx.asarray(xl_ij_np); kxl_cp = cpx.asarray(kxl_np)
+        faces_cp = cpx.asarray(faces.astype(np.int64))
+
+        def gpu_force_fn(x_cp):
+            """Full FF force at x as a device-resident cupy array (no host round-trip). Warp force kernels write
+            f_d; the exact osmotic force ΔP·g is added in cupy."""
+            pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(N, 3)), dtype=wp.vec3d, device=d))
+            wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+            wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+            wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+            if has_myo:
+                wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+            wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
+            if fz_node != 0.0:
+                wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
+            if n_nuc:
+                wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Nc), centre,
+                          wp.float64(nuc.R_nuc_um), wp.float64(nuc.k_chrom), wp.float64(nuc.k_lamin),
+                          wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
+            wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
+            if clutches:
+                wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
+                          wp.float64(cp.rest_um), f_d], device=d)
+            if spread:
+                spread_total_d.zero_()
+                wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
+                          wp.float64(z_sub), wp.float64(h_basal), wp.float64(0.1), wp.float64(S["f_pro"]),
+                          wp.float64(poly.delta_um), wp.float64(kT), f_d, spread_total_d], device=d)
+                wp.launch(spreading_reaction_kernel, dim=Nc, inputs=[spread_total_d, wp.float64(Nc), f_d], device=d)
+            wp.synchronize_device(d)
+            F = cpx.asarray(f_d).reshape(-1).copy()
+            # exact osmotic force ΔP·g in cupy (g = ∂V/∂x from the fixed face triangulation)
+            pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
+            a3 = pc[faces_cp[:, 0]] - ce; b3 = pc[faces_cp[:, 1]] - ce; c3 = pc[faces_cp[:, 2]] - ce
+            Vg = float(cpx.abs((a3 * cpx.cross(b3, c3)).sum() / 6.0))
+            g = cpx.zeros((Nc, 3))
+            cpx.add.at(g, faces_cp[:, 0], cpx.cross(b3, c3) / 6.0)
+            cpx.add.at(g, faces_cp[:, 1], cpx.cross(c3, a3) / 6.0)
+            cpx.add.at(g, faces_cp[:, 2], cpx.cross(a3, b3) / 6.0)
+            dPg = TURGOR_PI_IN0 * (V0 - vmin) / max(Vg - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
+            dPg = min(max(dPg, -TURGOR_PI_IN0), TURGOR_PI_IN0)
+            F[:3 * Nc] += (dPg * g).reshape(-1)
+            return F
+
     frames, com_traj, times, vol_traj, diverged = [], [], [], [], False
     t0 = time.time()
     for step in range(steps):
@@ -248,7 +298,21 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
                       wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
-        if implicit:                                           # NF2007 implicit step (unconditionally stable → large dt)
+        if gpu_impl:                                           # GPU-RESIDENT implicit (cupy) — GPU-only, native-scale
+            x_cp = cpx.asarray(pos_d).reshape(-1).copy()
+            pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
+            a3 = pc[faces_cp[:, 0]] - ce; b3 = pc[faces_cp[:, 1]] - ce; c3 = pc[faces_cp[:, 2]] - ce
+            Vc = float(cpx.abs((a3 * cpx.cross(b3, c3)).sum() / 6.0))
+            g = cpx.zeros((Nc, 3))
+            cpx.add.at(g, faces_cp[:, 0], cpx.cross(b3, c3) / 6.0)
+            cpx.add.at(g, faces_cp[:, 1], cpx.cross(c3, a3) / 6.0)
+            cpx.add.at(g, faces_cp[:, 2], cpx.cross(a3, b3) / 6.0)
+            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-9) ** 2
+            vol_g = cpx.zeros(3 * N); vol_g[:3 * Nc] = g.reshape(-1)
+            x_cp = ff_implicit_step_gpu(x_cp, gpu_force_fn, bt_cp, al_cp, xlij_cp, kxl_cp,
+                                        gamma=gamma_rep, dt=dt, vol_g=vol_g, k_vol=k_vol)
+            pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(N, 3)), dtype=wp.vec3d, device=d))
+        elif implicit:                                         # host implicit (CPU dev fallback)
             xv = pos_d.numpy().reshape(-1)
             pcx2 = xv.reshape(N, 3)[:Nc]; cen2 = pcx2.mean(0)
             aa = pcx2[faces[:, 0]] - cen2; bb = pcx2[faces[:, 1]] - cen2; ccf = pcx2[faces[:, 2]] - cen2
