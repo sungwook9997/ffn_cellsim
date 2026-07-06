@@ -1,0 +1,13 @@
+{
+  "tag": "noubottom_n4000_24h",
+  "n": 4000,
+  "steps": 2500,
+  "elapsed_s": 20224.4,
+  "aa0_final": 1.0261378848309477,
+  "aa0_peak": 1.0261378848309477,
+  "vv0_final": 0.9753966025349248,
+  "pen_final": 71.3832330671266,
+  "pen_peak": 71.58269661443883,
+  "drift_um": 0.23097843727529235,
+  "npz": "/home/sungwook/ffn_phase_c/ffn_sim/outputs/warp_decohesion/noubottom_n4000_24h.npz"
+}

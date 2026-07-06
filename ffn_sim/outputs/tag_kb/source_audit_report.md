@@ -1,24 +1,25 @@
 # SourceEvidence hallucination audit (CrossRef)
 
-Audited **332** SourceEvidence rows.
+Audited **355** SourceEvidence rows.
 
 ## Summary
 
 | verdict | n | meaning |
 |---|---|---|
-| DOI_DEAD | 6 | DOI does not resolve — likely fabricated/wrong |
+| DOI_DEAD | 7 | DOI does not resolve — likely fabricated/wrong |
 | DOI_MISMATCH | 7 | DOI resolves to a DIFFERENT paper (author+year both off) |
 | CHECK | 96 | partial match (author XOR year) — review |
-| NO_DOI_FOUND | 46 | real paper found — just missing DOI (suggested) |
-| OK | 177 | DOI resolves, author+year match — verified |
+| NO_DOI_FOUND | 48 | real paper found — just missing DOI (suggested) |
+| OK | 197 | DOI resolves, author+year match — verified |
 
-**13 high-suspicion rows** (top of list).
+**14 high-suspicion rows** (top of list).
 
 ## All rows (suspicion-ranked)
 
 | verdict | citation_key | DOI | suggested | CrossRef note |
 |---|---|---|---|---|
 | DOI_DEAD | 2023-published-by-the-company-of-biologi-8c227c | https://doi.org/10.1242/dev.201099: |  | DOI did not resolve on CrossRef |
+| DOI_DEAD | Fassler2020_EMBOJ | https://doi.org/10.15252/embj.2019104254 |  | DOI did not resolve on CrossRef |
 | DOI_DEAD | Funk2021_eLife | https://doi.org/10.7554/eLife.72860 |  | DOI did not resolve on CrossRef |
 | DOI_DEAD | NishitaniMiura2025_arXiv | https://doi.org/10.48550/arxiv.2504.1488 |  | DOI did not resolve on CrossRef |
 | DOI_DEAD | Runser2023_bioRxiv | https://doi.org/10.3929/ethz-b-000653764 |  | DOI did not resolve on CrossRef |
@@ -138,7 +139,7 @@ Audited **332** SourceEvidence rows.
 | NO_DOI_FOUND | CavalcantiAdam2007_BiophysJ |  | 10.1039/b614008d | candidate: girard 2007 — Cellular chemomechanics at interfaces: sensing, integration  |
 | NO_DOI_FOUND | Conklin2011 |  | 10.1515/9781575066288 | candidate: conklin 2011 — Oath Formulas in Biblical Hebrew |
 | NO_DOI_FOUND | Doss2020_PNAS |  | 10.1201/9780429344206 | candidate: ramamoorthy 2020 — Biology, Chemistry, and Applications of Apocarotenoids |
-| NO_DOI_FOUND | EloseguiArtola2016_NatMater |  | 10.1016/j.bpj.2017.05.020 | candidate: elosegui-artola 2017 — Amoebae as Mechanosensitive Tanks |
+| NO_DOI_FOUND | EloseguiArtola2016_NatMater |  | 10.1038/ncb3336 | candidate: elosegui-artola 2016 — Mechanical regulation of a molecular clutch defines force tr |
 | NO_DOI_FOUND | Fritzsche2013_MBC |  | 10.1007/978-3-642-37495-1_2 | candidate: fritzsche 2013 — Lebesgue-Theorie |
 | NO_DOI_FOUND | Fu2024_PNAS |  | 10.20944/preprints202406.1065.v2 | candidate: fu 2024 — An Introduction to Cosmos Thermodynamics |
 | NO_DOI_FOUND | Guo2017_PNAS |  | 10.1145/3145690.3145698 | candidate: guo 2017 — Importance sampling measured BRDFs based on second order sph |
@@ -146,15 +147,16 @@ Audited **332** SourceEvidence rows.
 | NO_DOI_FOUND | Han2021_eLife |  | 10.4211/hs.7c5e032bdc7648a4a8c863a2c175e5b6 | candidate: han 2021 — DataShare for Han et al., 2021 Ecological Indicators |
 | NO_DOI_FOUND | Helfrich1973 |  | 10.1515/znc-1973-11-1209 | candidate: helfrich 1973 — Elastic Properties of Lipid Bilayers: Theory and Possible Ex |
 | NO_DOI_FOUND | Jansen2018_BiophysJ |  | 10.1016/j.jas.2018.02.016 | candidate: jansen 2018 — On the use of Cu isotope signatures in archaeometallurgy: A  |
-| NO_DOI_FOUND | Kim2021_PNAS |  | 10.1145/3450507.3457434 | candidate: lee 2021 — Isle of reflections |
+| NO_DOI_FOUND | Kim2021_PNAS |  | 10.1145/3508259.3508271 | candidate: kim 2021 — Color Separated Restoration for Lightweight Single Image Sup |
 | NO_DOI_FOUND | Kothari2018_JApplMech |  | 10.2514/6.2018-0530 | candidate: rustagi 2018 — Gyroscopic Stabilization of Flying Wing Aircraft |
+| NO_DOI_FOUND | Lee2010_OncolRep |  | 10.3892/or_00000872 | candidate: lee 2010 — Time-dependently expressed markers and the characterization  |
 | NO_DOI_FOUND | Lindstrom2013_SoftMatter |  | 10.1093/obo/9780199766567-0108 | candidate: lindstrom 2013 — Cargo Cults |
 | NO_DOI_FOUND | Liu2019_ProstateMech |  | 10.1007/978-981-13-6962-9 | candidate: liu 2019 — Deuteride Materials |
 | NO_DOI_FOUND | Liu2025_NatPhysics |  | 10.22541/au.176275808.84444425/v1 | candidate: liu 2025 — Comment on Bandyopadhyay et al. |
 | NO_DOI_FOUND | Maitre2012_Nature |  | 10.3917/lav.daler.2012.01.0096 | candidate: bubrovszky 2012 — Pathologies schizophréniques |
 | NO_DOI_FOUND | Maitre2015_NCB |  | 10.1051/shsconf/20152000001 | candidate: colón de carvajal 2015 — Préface |
 | NO_DOI_FOUND | Malinova2021_NatCommun |  | 10.34076/20713797_2021_2_29 | candidate: malinova 2021 — «Interest» as a legal concept: problems of doctrinal definit |
-| NO_DOI_FOUND | MarantanMahadevan2018_AmJPhys |  | 10.1119/1.5003376 | candidate: marantan 2018 — Mechanics and statistics of the worm-like chain |
+| NO_DOI_FOUND | MarantanMahadevan2018_AmJPhys |  | 10.32470/ccn.2018.1107-0 | candidate: magri 2018 — A mathematical model of real-world object shape predicts hum |
 | NO_DOI_FOUND | Mogilner2002_2003 |  | 10.1002/3527601503.ch14 | candidate: scholey 2002 — Mitotic Spindle Motors |
 | NO_DOI_FOUND | Munster2013_PNAS |  | 10.7551/mitpress/8982.001.0001 | candidate: munster 2013 — An Aesthesia of Networks |
 | NO_DOI_FOUND | Odijk1995 |  | 10.1037/e493132004-001 | candidate: odijk 1995 — A syntactic condition on definite descriptions |
@@ -169,6 +171,7 @@ Audited **332** SourceEvidence rows.
 | NO_DOI_FOUND | Varma2016_BiophysJ |  | 10.4135/9781526429629 | candidate: varma 2016 — Swiss Roll |
 | NO_DOI_FOUND | Vassalli2023_Cancers |  | 10.3917/mem.086.0017 | candidate: vassalli 2023 — L’hospitalité citoyenne : bien plus qu’un hébergement |
 | NO_DOI_FOUND | Venturini2020_Science |  | 10.32614/cran.package.dmbc | candidate: venturini 2020 — dmbc: Model Based Clustering of Binary Dissimilarity Measure |
+| NO_DOI_FOUND | Vinzenz2012_JCS |  | 10.1242/jcs.107623 | candidate: vinzenz 2012 — Actin branching in the initiation and maintenance of lamelli |
 | NO_DOI_FOUND | Wang1997_BiophysJ |  | 10.1115/97-aa-050 | candidate: wang 1997 — Vibration of Skew Sandwich Plates With Laminated Facings |
 | NO_DOI_FOUND | Wei2024_ActaBiomater |  | 10.26434/chemrxiv-2023-8c9vh-v2 | candidate: wei 2024 — Persistent Topological Laplacians  -- a Survey |
 | NO_DOI_FOUND | Wenger2007 |  | 10.1097/mlr.0b013e31815b97bf | candidate: wenger 2007 — Comorbidity and Quality of Care: Clarification From Author |
@@ -203,18 +206,21 @@ Audited **332** SourceEvidence rows.
 | OK | Chaudhuri2015_NatCommun | https://doi.org/10.1038/ncomms7365 |  | CrossRef: chaudhuri 2015 — Substrate stress relaxation regulates cell spreading |
 | OK | Chaudhuri2015_NatMater | https://doi.org/10.1038/nmat4489 |  | CrossRef: chaudhuri 2015 — Hydrogels with tunable stress relaxation regulate stem cell fate and a |
 | OK | Chen2020_BeilsteinJNanotechnol | https://doi.org/10.3762/bjnano.11.45 |  | CrossRef: chen 2020 — Examination of the relationship between viscoelastic properties and th |
+| OK | Cheng2009_PLoSOne | https://doi.org/10.1371/journal.pone.000 |  | CrossRef: cheng 2009 — Micro-Environmental Mechanical Stress Controls Tumor Spheroid Size and |
 | OK | ChughPaluch2018_JCS | https://doi.org/10.1242/jcs.186254 |  | CrossRef: chugh 2018 — The actin cortex at a glance |
 | OK | ChughPaluch2018_JCS | https://doi.org/10.1242/jcs.186254 |  | CrossRef: chugh 2018 — The actin cortex at a glance |
 | OK | Coceano2016_Nanotechnology | https://doi.org/10.1088/0957-4484/27/6/0 |  | CrossRef: coceano 2015 — Investigation into local cell mechanics by atomic force microscopy map |
 | OK | Conklin2011_AmJPathol | https://doi.org/10.1016/j.ajpath.2010.11 |  | CrossRef: conklin 2011 — Aligned Collagen Is a Prognostic Signature for Survival in Human Breas |
 | OK | Darling2008_JBiomech | https://doi.org/10.1016/j.jbiomech.2007. |  | CrossRef: darling 2008 — Viscoelastic properties of human mesenchymally-derived stem cells and  |
 | OK | DelRio2009_Science | https://doi.org/10.1126/science.1162912 |  | CrossRef: del rio 2009 — Stretching Single Talin Rod Molecules Activates Vinculin Binding |
+| OK | Delarue2014_BiophysJ | https://doi.org/10.1016/j.bpj.2014.08.03 |  | CrossRef: delarue 2014 — Compressive Stress Inhibits Proliferation in Tumor Spheroids through a |
 | OK | DenaisRaab2016_Science | https://doi.org/10.1126/science.aad7297 |  | CrossRef: denais 2016 — Nuclear envelope rupture and repair during cancer cell migration |
 | OK | Derenyi2002_PRL | https://doi.org/10.1103/PhysRevLett.88.2 |  | CrossRef: derényi 2002 — Formation and Interaction of Membrane Tubes |
 | OK | Dessard2024_NanoscaleAdv | https://doi.org/10.1039/D4NA00003J |  | CrossRef: dessard 2024 — Cytoplasmic viscosity is a potential biomarker for metastatic breast c |
 | OK | Dimova2014_ACIS | https://doi.org/10.1016/j.cis.2014.03.00 |  | CrossRef: dimova 2014 — Recent developments in the field of bending rigidity measurements on m |
 | OK | Discher2005_Science | https://doi.org/10.1126/science.1116995 |  | CrossRef: discher 2005 — Tissue Cells Feel and Respond to the Stiffness of Their Substrate |
 | OK | DizMunoz2013_TCB | https://doi.org/10.1016/j.tcb.2012.09.00 |  | CrossRef: diz-muñoz 2013 — Use the force: membrane tension as an organizer of cell shape and moti |
+| OK | Dolega2017_NatCommun | https://doi.org/10.1038/ncomms14056 |  | CrossRef: dolega 2017 — Cell-like pressure sensors reveal increase of mechanical stress toward |
 | OK | Douezan2011_PNAS | https://doi.org/10.1073/pnas.1018057108 |  | CrossRef: douezan 2011 — Spreading dynamics and wetting transition of cellular aggregates |
 | OK | DoyleYamada2009_JCB | https://doi.org/10.1083/jcb.200810041 |  | CrossRef: doyle 2009 — One-dimensional topography underlies three-dimensional fibrillar cell  |
 | OK | Dupont2011_Nature | https://doi.org/10.1038/nature10137 |  | CrossRef: dupont 2011 — Role of YAP/TAZ in mechanotransduction |
@@ -233,13 +239,18 @@ Audited **332** SourceEvidence rows.
 | OK | Gittes1993_JCB | https://doi.org/10.1083/jcb.120.4.923 |  | CrossRef: gittes 1993 — Flexural rigidity of microtubules and actin filaments measured from th |
 | OK | Goldmann2002 | https://doi.org/10.1006/cbir.2002.0900 |  | CrossRef: goldmann 2002 — p56<sup>lck</sup> CONTROLS PHOSPHORYLATION OF FILAMIN (ABP‐280) AND RE |
 | OK | GonzalezRodriguez2012_Science | https://doi.org/10.1126/science.1226418 |  | CrossRef: gonzalez-rodriguez 2012 — Soft Matter Models of Developing Tissues and Tumors |
+| OK | Greenspan1972_StudApplMath | https://doi.org/10.1002/sapm1972514317 |  | CrossRef: greenspan 1972 — Models for the Growth of a Solid Tumor by Diffusion |
+| OK | Grimes2014_JRSocInterface | https://doi.org/10.1098/rsif.2013.1124 |  | CrossRef: grimes 2014 — A method for estimating the oxygen consumption rate in multicellular t |
+| OK | Grimes2016_PLoSOne | https://doi.org/10.1371/journal.pone.015 |  | CrossRef: grimes 2016 — The Role of Oxygen in Avascular Tumor Growth |
 | OK | Guilak2000_BBRC | https://doi.org/10.1006/bbrc.2000.2360 |  | CrossRef: guilak 2000 — Viscoelastic Properties of the Cell Nucleus |
 | OK | Guo2020_CellRegen | https://doi.org/10.1186/s13619-020-00054 |  | CrossRef: guo 2020 — Consistent apparent Young’s modulus of human embryonic stem cells and  |
+| OK | Hadjigeorgiou2023_BiomechModelMechanobiol | https://doi.org/10.1007/s10237-023-01716 |  | CrossRef: hadjigeorgiou 2023 — Evaluation of growth-induced, mechanical stress in solid tumors and sp |
 | OK | Hammerick2010_TissueEngA | https://doi.org/10.1089/ten.tea.2010.021 |  | CrossRef: hammerick 2011 — Elastic Properties of Induced Pluripotent Stem Cells |
 | OK | Hannezo2014_PNAS | https://doi.org/10.1073/pnas.1312076111 |  | CrossRef: hannezo 2013 — Theory of epithelial sheet morphology in three dimensions |
 | OK | Harada2014_JCB | https://doi.org/10.1083/jcb.201308029 |  | CrossRef: harada 2014 — Nuclear lamin stiffness is a barrier to 3D migration, but softness can |
 | OK | HeadLevineMacKintosh2003_PRE | https://doi.org/10.1103/physrevlett.91.1 |  | CrossRef: head 2003 — Deformation of Cross-Linked Semiflexible Polymer Networks |
 | OK | HeadLevineMacKintosh2003_PRL | https://doi.org/10.1103/physrevlett.91.1 |  | CrossRef: head 2003 — Deformation of Cross-Linked Semiflexible Polymer Networks |
+| OK | Helmlinger1997_NatBiotechnol | https://doi.org/10.1038/nbt0897-778 |  | CrossRef: helmlinger 1997 — Solid stress inhibits the growth of multicellular tumor spheroids |
 | OK | Hochmuth1996_BiophysJ | https://doi.org/10.1016/S0006-3495(96)79 |  | CrossRef: hochmuth 1996 — Deformation and flow of membrane into tethers extracted from neuronal  |
 | OK | Hosseini2020_AdvSci | https://doi.org/10.1002/advs.202001276 |  | CrossRef: hosseini 2020 — EMT‐Induced Cell‐Mechanical Changes Enhance Mitotic Rounding Strength |
 | OK | Hosseini2021_BiophysJ | https://doi.org/10.1016/j.bpj.2021.05.00 |  | CrossRef: hosseini 2021 — EMT changes actin cortex rheology in a cell-cycle-dependent manner |
@@ -247,8 +258,10 @@ Audited **332** SourceEvidence rows.
 | OK | Isambert1995_JBC | https://doi.org/10.1074/jbc.270.19.11437 |  | CrossRef: isambert 1995 — Flexibility of Actin Filaments Derived from Thermal Fluctuations |
 | OK | Janmey2019_PhysiolRev | https://doi.org/10.1152/physrev.00013.20 |  | CrossRef: janmey 2020 — Stiffness Sensing by Cells |
 | OK | Jetta2023_FCDB | https://doi.org/10.3389/fcell.2023.11981 |  | CrossRef: jetta 2023 — Epithelial cells sense local stiffness via Piezo1 mediated cytoskeleta |
+| OK | Jiang2005_BiophysJ | https://doi.org/10.1529/biophysj.105.060 |  | CrossRef: jiang 2005 — A Multiscale Model for Avascular Tumor Growth |
 | OK | Kage2017_NatCommun | https://doi.org/10.1038/ncomms14832 |  | CrossRef: kage 2017 — FMNL formins boost lamellipodial force generation |
 | OK | Kanchanawong2010_Nature | https://doi.org/10.1038/nature09621 |  | CrossRef: kanchanawong 2010 — Nanoscale architecture of integrin-based cell adhesions |
+| OK | Kojima1994_PNAS | https://doi.org/10.1073/pnas.91.26.12962 |  | CrossRef: kojima 1994 — Direct measurement of stiffness of single actin filaments with and wit |
 | OK | Kong2009_Nature | https://doi.org/10.1083/jcb.200810002 |  | CrossRef: kong 2009 — Demonstration of catch bonds between an integrin and its ligand |
 | OK | KraningRush2012_PLoSOne | https://doi.org/10.1371/journal.pone.003 |  | CrossRef: kraning-rush 2012 — Cellular Traction Stresses Increase with Increasing Metastatic Potenti |
 | OK | Krause2014_NRMCB | https://doi.org/10.1038/nrm3861 |  | CrossRef: krause 2014 — Steering cell migration: lamellipodium dynamics and the regulation of  |
@@ -272,19 +285,26 @@ Audited **332** SourceEvidence rows.
 | OK | MarkoSiggia1995_Macromolecules | https://doi.org/10.1021/ma00130a008 |  | CrossRef: marko 1995 — Stretching DNA |
 | OK | Masud2025_SciRep | https://doi.org/10.1038/s41598-025-04841 |  | CrossRef: masud 2025 — Exploring the heterogeneity in glioblastoma cellular mechanics using i |
 | OK | MattilaLappalainen2008_NRMCB | https://doi.org/10.1038/nrm2406 |  | CrossRef: mattila 2008 — Filopodia: molecular architecture and cellular functions |
+| OK | Mazloomi2025_SciRep | https://doi.org/10.1038/s41598-025-25202 |  | CrossRef: mazloomi 2025 — SpheroidSync as edge cutting transfer strategy for uniform and robust  |
+| OK | McGrail2015_BiophysJ | https://doi.org/10.1016/j.bpj.2015.07.04 |  | CrossRef: mcgrail 2015 — Osmotic Regulation Is Required for Cancer Cell Survival under Solid St |
 | OK | McKenzie2018_SciRep | https://doi.org/10.1038/s41598-018-25589 |  | CrossRef: mckenzie 2018 — The mechanical microenvironment regulates ovarian cancer cell morpholo |
 | OK | Moeendarbary2013_NatMater | https://doi.org/10.1038/nmat3517 |  | CrossRef: moeendarbary 2013 — The cytoplasm of living cells behaves as a poroelastic material |
 | OK | Mogilner2005_BiophysJ | https://doi.org/10.1529/biophysj.104.056 |  | CrossRef: mogilner 2005 — The Physics of Filopodial Protrusion |
 | OK | MogilnerOster1996_BiophysJ | https://doi.org/10.1016/S0006-3495(96)79 |  | CrossRef: mogilner 1996 — Cell motility driven by actin polymerization |
 | OK | MogilnerOster2003_BJ | https://doi.org/10.1016/s0006-3495(03)74 |  | CrossRef: mogilner 2003 — Force Generation by Actin Polymerization II: The Elastic Ratchet and T |
 | OK | Molter2022_FCDB | https://doi.org/10.3389/fcell.2022.93251 |  | CrossRef: molter 2022 — Prostate cancer cells of increasing metastatic potential exhibit diver |
+| OK | Montel2011_PhysRevLett | https://doi.org/10.1103/PhysRevLett.107. |  | CrossRef: montel 2011 — Stress Clamp Experiments on Multicellular Tumor Spheroids |
 | OK | MotteKaufman2013_Biopolymers | https://doi.org/10.1002/bip.22133 |  | CrossRef: motte 2012 — Strain stiffening in collagen I networks |
 | OK | Mueller2017_Cell | https://doi.org/10.1016/j.cell.2017.07.0 |  | CrossRef: mueller 2017 — Load Adaptation of Lamellipodial Actin Networks |
+| OK | MuellerKlieser1997_AmJPhysiol | https://doi.org/10.1152/ajpcell.1997.273 |  | CrossRef: mueller-klieser 1997 — Three-dimensional cell cultures: from molecular mechanisms to clinical |
 | OK | Mui2016_PNAS | https://doi.org/10.1242/jcs.183699 |  | CrossRef: mui 2016 — The mechanical regulation of integrin–cadherin crosstalk organizes cel |
+| OK | Mukomoto2020_Analyst | https://doi.org/10.1039/d0an00979b |  | CrossRef: mukomoto 2020 — Oxygen consumption rate of tumour spheroids during necrotic-like core  |
 | OK | Murrell2015_NRMCB | https://doi.org/10.1038/nrm4012 |  | CrossRef: murrell 2015 — Forcing cells into shape: the mechanics of actomyosin contractility |
 | OK | Murrell2015_NRMCB | https://doi.org/10.1038/nrm4012 |  | CrossRef: murrell 2015 — Forcing cells into shape: the mechanics of actomyosin contractility |
 | OK | Nakamura2007 | https://doi.org/10.1083/jcb.200707073 |  | CrossRef: nakamura 2007 — Structural basis of filamin A functions |
 | OK | Nam2016_PNAS | https://doi.org/10.1073/pnas.1523906113 |  | CrossRef: nam 2016 — Strain-enhanced stress relaxation impacts nonlinear elasticity in coll |
+| OK | Nia2017_NatBiomedEng | https://doi.org/10.1038/s41551-016-0004 |  | CrossRef: nia 2016 — Solid stress and elastic energy as measures of tumour mechanopathology |
+| OK | Nie2015_Cytoskeleton | https://doi.org/10.1002/cm.21207 |  | CrossRef: nie 2015 — Formation of contractile networks and fibers in the medial cell cortex |
 | OK | Notbohm2016_BiophysJ | https://doi.org/10.1016/j.bpj.2016.05.01 |  | CrossRef: notbohm 2016 — Cellular Contraction and Polarization Drive Collective Cellular Motion |
 | OK | Ofek2009_JBiomech | https://doi.org/10.1016/j.jbiomech.2009. |  | CrossRef: ofek 2009 — In situ mechanical properties of the chondrocyte cytoplasm and nucleus |
 | OK | Omidvar2014_JBiomech | https://doi.org/10.1016/j.jbiomech.2014. |  | CrossRef: omidvar 2014 — Atomic force microscope-based single cell force spectroscopy of breast |
@@ -292,6 +312,7 @@ Audited **332** SourceEvidence rows.
 | OK | Otto2015_NatMethods | https://doi.org/10.1038/nmeth.3281 |  | CrossRef: otto 2015 — Real-time deformability cytometry: on-the-fly cell mechanical phenotyp |
 | OK | Pajerowski2007_PNAS | https://doi.org/10.1073/pnas.0702576104 |  | CrossRef: pajerowski 2007 — Physical plasticity of the nucleus in stem cell differentiation |
 | OK | Palchesko2012_PLoSOne | https://doi.org/10.1371/journal.pone.005 |  | CrossRef: palchesko 2012 — Development of Polydimethylsiloxane Substrates with Tunable Elastic Mo |
+| OK | Palma2016_FrontOncol | https://doi.org/10.3389/fonc.2016.00105 |  | CrossRef: palma 2016 — Metabolic Study of Breast MCF-7 Tumor Spheroids after Gamma Irradiatio |
 | OK | Panzetta2019_PNAS | https://doi.org/10.1073/pnas.1904660116 |  | CrossRef: panzetta 2019 — Cell mechanosensing is regulated by substrate strain energy rather tha |
 | OK | Park2015_NatMater | https://doi.org/10.1038/nmat4357 |  | CrossRef: park 2015 — Unjamming and cell shape in the asthmatic airway epithelium |
 | OK | Park2015_NatMater | https://doi.org/10.1038/nmat4357 |  | CrossRef: park 2015 — Unjamming and cell shape in the asthmatic airway epithelium |
@@ -327,10 +348,12 @@ Audited **332** SourceEvidence rows.
 | OK | Storm2005_Nature | https://doi.org/10.1038/nature03521 |  | CrossRef: storm 2005 — Nonlinear elasticity in biological gels |
 | OK | Stroka2014_Cell | https://doi.org/10.1016/j.cell.2014.02.0 |  | CrossRef: stroka 2014 — Water Permeation Drives Tumor Cell Migration in Confined Microenvironm |
 | OK | Stylianopoulos2012_PNAS | https://doi.org/10.1073/pnas.1213353109 |  | CrossRef: stylianopoulos 2012 — Causes, consequences, and remedies for growth-induced solid stress in  |
+| OK | Sutherland1988_Science | https://doi.org/10.1126/science.2451290 |  | CrossRef: sutherland 1988 — Cell and Environment Interactions in Tumor Microregions: The Multicell |
 | OK | Swaminathan2011_CancerRes | https://doi.org/10.1158/0008-5472.CAN-11 |  | CrossRef: swaminathan 2011 — Mechanical Stiffness Grades Metastatic Potential in Patient Tumor Cell |
 | OK | Swift2013_Science | https://doi.org/10.1126/science.1240104 |  | CrossRef: swift 2013 — Nuclear Lamin-A Scales with Tissue Stiffness and Enhances Matrix-Direc |
 | OK | Tambe2011_NatMater | https://doi.org/10.1038/nmat3025 |  | CrossRef: tambe 2011 — Collective cell guidance by cooperative intercellular forces |
 | OK | Thiery2009_Cell | https://doi.org/10.1016/j.cell.2009.11.0 |  | CrossRef: thiery 2009 — Epithelial-Mesenchymal Transitions in Development and Disease |
+| OK | Thomlinson1955_BrJCancer | https://doi.org/10.1038/bjc.1955.55 |  | CrossRef: thomlinson 1955 — The Histological Structure of Some Human Lung Cancers and the Possible |
 | OK | Tinevez2009_PNAS | https://doi.org/10.1073/pnas.0903353106 |  | CrossRef: tinevez 2009 — Role of cortical tension in bleb growth |
 | OK | TitushkinCho2007_BiophysJ | https://doi.org/10.1529/biophysj.107.107 |  | CrossRef: titushkin 2007 — Modulation of Cellular Mechanics during Osteogenic Differentiation of  |
 | OK | Trepat2009_NatPhys | https://doi.org/10.1038/nphys1269 |  | CrossRef: trepat 2009 — Physical forces during collective cell migration |

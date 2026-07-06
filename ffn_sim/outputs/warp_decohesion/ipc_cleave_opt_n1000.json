@@ -1,0 +1,13 @@
+{
+  "tag": "ipc_cleave_opt_n1000",
+  "n": 1000,
+  "steps": 2500,
+  "elapsed_s": 833.9,
+  "aa0_final": 1.002626453835944,
+  "aa0_peak": 1.002626453835944,
+  "vv0_final": 0.9889565217479065,
+  "pen_final": 4.220138248901021,
+  "pen_peak": 71.54222307257616,
+  "drift_um": 0.3368216010017098,
+  "npz": "/home/sungwook/ffn_phase_c/ffn_sim/outputs/warp_decohesion/ipc_cleave_opt_n1000.npz"
+}

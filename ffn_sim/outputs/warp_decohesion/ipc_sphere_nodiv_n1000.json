@@ -1,0 +1,13 @@
+{
+  "tag": "ipc_sphere_nodiv_n1000",
+  "n": 1000,
+  "steps": 2500,
+  "elapsed_s": 650.6,
+  "aa0_final": 1.0143043447172821,
+  "aa0_peak": 1.0143043447172821,
+  "vv0_final": 1.02872355101757,
+  "pen_final": 0.6302017069091623,
+  "pen_peak": 71.54222307257616,
+  "drift_um": 0.00315135146644945,
+  "npz": "/home/sungwook/ffn_phase_c/ffn_sim/outputs/warp_decohesion/ipc_sphere_nodiv_n1000.npz"
+}

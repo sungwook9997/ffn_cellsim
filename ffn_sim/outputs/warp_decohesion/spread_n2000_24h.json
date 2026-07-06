@@ -1,0 +1,13 @@
+{
+  "tag": "spread_n2000_24h",
+  "n": 2000,
+  "steps": 2500,
+  "elapsed_s": 17549.7,
+  "aa0_final": 0.9993781977693381,
+  "aa0_peak": 1.0,
+  "vv0_final": 0.9995560024935699,
+  "pen_final": 145.05194391397472,
+  "pen_peak": 146.01598909801316,
+  "drift_um": 3.0714128706124855e-06,
+  "npz": "/home/sungwook/ffn_phase_c/ffn_sim/outputs/warp_decohesion/spread_n2000_24h.npz"
+}

@@ -83,6 +83,21 @@ def soft_contact_kernel(
 
 
 @wp.kernel
+def substrate_plane_kernel(
+    pos: wp.array(dtype=wp.vec3d),
+    z_sub: wp.float64,                          # substrate plane height [µm]
+    k_plane: wp.float64,                        # plane stiffness [pN/µm]
+    force: wp.array(dtype=wp.vec3d),
+):
+    """One-sided excluded-volume substrate: a node below the plane (z<z_sub) is pushed UP with
+    k_plane·(z_sub−z). The cell rests ON the substrate (does not sink through it); adhesion is the separate
+    FA-clutch layer. Node index range is set by the launch dim (cortex nodes only)."""
+    i = wp.tid()
+    if pos[i][2] < z_sub:
+        wp.atomic_add(force, i, wp.vec3d(0.0, 0.0, k_plane * (z_sub - pos[i][2])))
+
+
+@wp.kernel
 def freeze_kernel(force: wp.array(dtype=wp.vec3d), pinned: wp.array(dtype=wp.int32)):
     """Zero the net force on pinned (Dirichlet-BC) nodes so the integrator leaves them fixed — e.g. the far
     boundary of the ECM Mikado network (embedded in bulk matrix) or a clamped filopodium base."""
