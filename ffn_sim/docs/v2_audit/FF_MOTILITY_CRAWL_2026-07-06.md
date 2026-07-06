@@ -1,101 +1,64 @@
-# FF motility — a polarized cell CRAWLS on a substrate in real η-dynamics (piece-4 + B) · 2026-07-06
+# FF motility — adhesion/contact FOUNDATION for a substrate-migrating cell (2026-07-06)
 
-**PI ask (2026-07-06):** "protrusion이 세포를 변형시키며 움직이는 것은 보지 못함 … 막이랑 필라멘트 다같이
-모양 변형되는 것도 못 봤음." The prior piece-1 "✅" was for the force-velocity *kernel* + a thin filopodial
-*appendage* — not a whole cell deforming + moving with membrane and filaments co-moving. PI chose **C + B**:
-build the piece-4 closed loop (C) with **real η-dynamics** (B), done properly.
+**Goal (PI 2026-07-06):** a cell that behaves like a real one — **adheres, generates traction, and MOVES**.
+Not "flattening" for its own sake; realism is the target. This doc is the **foundation** toward that:
+mechanistic, **no magic numbers**, verified incrementally. It also records what the PI's skeptical review
+caught and what was corrected — because several first-pass claims did NOT hold up.
 
-**Result:** a polarized whole cell on a substrate CRAWLS — the leading edge protrudes, the cell body deforms,
-and the COM translocates — in real physical time, membrane + cortex + filaments + nucleus co-moving. The motion
-is **traction-driven** (verified by the decisive no-clutch control), the crawl **speed is physiological**, and
-the protrusion is **Newton-conserving** (an adversarial audit caught and fixed a spurious-external-force bug
-before any claim).
-
-Engine: FF (Warp, µm·pN·s). New: `ff/motility_warp.py` (physical-γ overdamped step + Newton-conserving
-leading-edge protrusion + on-device crosslink turnover), driver `scripts/ff_crawl_on_substrate.py`
-(+ no-clutch audit), viewer `scripts/ff_crawl_viewer.py`. GPU-native (A5000 `cuda:0`, confirmed).
+Engine: FF (Warp, µm·pN·s). Code: `ff/motility_warp.py` (kernels), `scripts/ff_crawl_on_substrate.py`
+(driver: `--static` / `--spread` / crawl, `--mature` FA, `--audit`), `scripts/ff_crawl_viewer.py` (clean
+morphology viewer — nested surfaces, not point clouds).
 
 ---
 
-## What was built
+## VERIFIED (mechanistic, no magic numbers)
 
-### B — real η-dynamics (replaces the pseudo-time step)
-The existing GPU whole-cell path steps positions with `x += (0.1/kmax)·F` — a **numerical gradient-descent
-step** (γ≡1, dt chosen for stability, NOT physical seconds). B replaces it with the physical overdamped law
-
-    x_i ← x_i + (dt/γ_i)·F_i,   γ_i = units.fiber_point_drag(η = 65.9 Pa·s)   [NF2007 §5.2]
-
-so trajectory time and the crawl SPEED are physical, measurable observables. `γ_i` is the per-node cytoplasm
-drag from the single physiological viscosity — no free drag parameter (`ff/motility_warp.physical_node_gammas`).
-
-### C — piece-4 closed loop (protrusion ↔ membrane counter-load ↔ traction → motion)
-Single explicit physical-time loop; every force ticks at the same `dt`:
-
-    F = bending + crosslink + myosin + turgor + membrane(inward γ_mem) + nucleus + substrate + FA-clutch
-        + leading-edge protrusion
-
-- **Leading-edge protrusion** = a lamellipodial Brownian-ratchet STRESS on the FRONT cortex/membrane nodes
-  (not a grafted appendage — it deforms the cell BODY). Magnitude derived, not tuned:
-  `f_pro = ρ_fil · (area/node) · F_stall` with ρ_fil = 100/µm² (KB-3.18), F_stall = 4 pN/filament (KB-3.6);
-  grid-invariant total (~67 nN over the front). The Mogilner-Oster factor `v = e^{−f_comp·δ/kT}` (KU-3.6)
-  throttles the push by the EMERGENT opposing load `f_comp = −F·p̂` (membrane tension + elastic resistance) →
-  the piece-4 emergent counter-load closed loop.
-- **Protrusion is INTERNAL (Newton's 3rd law).** Polymerization pushes the front membrane forward AND pushes
-  the actin network backward (retrograde flow). Implemented as a force PAIR: `+f` on the front cap, `−Σf/N_c`
-  uniformly on all cortex nodes (net = 0). ⇒ protrusion alone cannot move the COM; only when the retrograde
-  reaction on the basal network is resisted by substrate clutches (TRACTION) does the cell translocate.
-- **Adhesion** = basal FA integrin catch-slip clutches (KU-2.5, `fa_clutch_warp`): springs to fixed substrate
-  anchors; over-loaded clutches rupture, detached ones re-bind force-free at the new contact (nascent
-  adhesion) → a clutch treadmill.
-- **Cortical crosslink turnover** (the enabler): a Ferrer-stiff cortex (α-actinin 8×10⁵ pN/µm) is too rigid to
-  protrude. Real crawling cortex is an **active-gel VISCOELASTIC material that flows** (KB-3.13: crosslinker
-  k_off ~1 s⁻¹, Maxwell τ_cortex ~30 s, "fluid on t≫τ"). Modeled as on-device Maxwell rest-length relaxation
-  `rest ← rest + (1−e^{−k_off·Δt})(L−rest)`, k_off = 0.4 s⁻¹ (conservative within KB-3.13 ~1 s⁻¹ / KB-3.19
-  α-actinin Ferrer2008 0.066 s⁻¹). Mechanistic: crosslinks are dynamic bonds, not permanent springs.
-
-### Integration — explicit (CFL-stable), NOT implicit
-The stiff α-actinin crosslinks (8×10⁵ pN/µm) set the explicit CFL `dt = 0.1·γ_min/kmax ≈ 5.5 µs`. The NF2007
-Eq-2 **implicit** step (unconditionally stable, would allow large dt) was tried and **does not work at FF
-scale**: its DCM-calibrated CG tolerance (`cg_tol=1e-8` absolute) is met after ONE iteration when FF forces are
-~1e4–1e5 pN, so the "implicit" step degenerates to explicit and overshoots at large dt (diverges). Recalibrating
-the solver for FF is a separate task (already flagged in `ff/ENGINE.md`). So this uses the **robust explicit
-scheme** (CFL-bound, cannot diverge) — many small steps, built for the GPU.
-
----
-
-## Validation (CPU, N=150-filament cortex + 3000-bead nucleus; A5000 GPU-native production separately)
-
-| check | result | verdict |
+| piece | mechanism | verification |
 |---|---|---|
-| **no-clutch audit** (protrusion is internal → net COM drift must be ≈0) | clutch-ON disp∥ = +0.003 µm vs clutch-OFF +0.000 µm; ratio **9.4×** | **PASS — traction-driven, not artifact** |
-| **crawl speed** (physiological? KU-3.12 retrograde 10–100 nm/s; single-cell crawl ~1–100 nm/s) | **v_crawl = 14.9 nm/s** | **PASS — physiological, no unit slip** |
-| **traction** (KB-2.12 per-clutch 5–20 pN, per-cell 10–100 nN) | 1.33 nN over 58 clutches ≈ 23 pN/clutch | in range |
-| **Newton conservation** (protrusion force-pair sums to 0) | clutch-OFF drift ~1.6 nm ≈ 0 | PASS |
+| **Volume conservation** | incompressible cytoplasm: **per-step, on-device** osmotic ΔP (Guo closure, physiological Π_in0) computed from the enclosed volume every step (`cortex_volume_kernel`, oriented-face divergence theorem — matches ConvexHull to 1e-4) | static **V/V0 = 1.003**; under protrusion **V/V0 = 1.026** (was **ballooning to 4.06** before the fix). No balloon, no collapse. |
+| **Gravity − buoyancy** | real body force `−Δρ·g·v_node` (Δρ = 55 kg/m³, ≈ 1 pN/cell), ported from DCM `gravity_body_force_kernel` — DERIVED, not tuned | rests the cell on the dish |
+| **Stable adhesion** | basal integrin FA clutches; mature (stable) FA hold, nascent catch-slip cycle | **bound = 1.0**, basal flat contact (gap 0.023 µm), STABLE ADHERED |
+| **Emergent spreading** | peripheral (basal-rim) actin-polymerization ratchet (`spreading_push_kernel`, Newton-conserving) + basal clutches — the cell widens its footprint from actin + adhesion, **NO wetting energy** | contact radius **3.1 → 5.2 µm** at constant volume |
+| **Traction** | clutch springs to substrate anchors, load from cortex/protrusion | **1.25 nN**, and the no-clutch audit confirms motion is **traction-driven** (Newton-conserving protrusion) |
+| **Real η-dynamics (B)** | `x += (dt/γ)·F`, γ = `units.fiber_point_drag` (η = 65.9 Pa·s) — physical time, not pseudo-time | crawl speed is a measurable observable (~15–21 nm/s, physiological) |
 
-**Adversarial-audit catch (before any claim, per the project's audit-first rule):** the first implementation
-applied the protrusion as a one-sided force on the front nodes only → a spurious NET EXTERNAL force that moved
-the COM at **915 nm/s even with no adhesion** (unphysical). Fixed by making protrusion an internal force pair
-(retrograde reaction); the speed dropped into the physiological 15 nm/s band AND the no-clutch drift went to ~0.
+## What the PI's review CAUGHT and what was corrected (honest record)
 
----
+- **Ballooning (PI-caught):** the first "crawl works" claim ran on a foundation whose volume was **not
+  conserved** (one-sided turgor) — over ~16 s it inflated to V/V0 = 4. Root cause: no inward restoring when
+  V>V0, and the membrane K_A was deferred (a physiological-baseline violation). **Fixed** by the per-step
+  bidirectional osmotic volume constraint above.
+- **Wetting REJECTED (PI-caught):** reusing DCM's substrate-wetting to spread the cell = **magic-number
+  tuning** (a dialed adhesion-energy `W_cs` proxy) — it violates the fine-grained-over-lumped HARD rule.
+  Wetting is a DCM (coarse-mesh) mechanism; the FF (fine-grained) engine must get spreading **emergently**
+  from actin polymerization + clutches, which is what `spreading_push_kernel` does.
+- **Contact was not proper (PI-caught):** early runs showed a floating/inflating ball. Fixed by gravity
+  (settling) + volume conservation (no inflation) + stable adhesion.
+- **Adversarial-audit catch (self):** the protrusion was first a one-sided force on the front nodes → a
+  spurious NET external force that moved the COM even with no adhesion (915 nm/s, unphysical). Fixed to an
+  internal force pair (retrograde reaction); speed dropped into the physiological band and the no-clutch
+  drift went to ~0.
 
-## Honest scope / limits (v1)
+## HONEST limits — what is NOT done yet
 
-- **Polarity axis is IMPOSED** (+x). piece-2 (`polarization_activegel`) confirms +x is a valid single-cap
-  polarization mode, but wiring piece-2's emergent front/rear axis into the crawl is a follow-on.
-- **Nucleus tracks the cortex centroid** (rigid follow, no lag) — a simplification; a lagging/deforming nucleus
-  (LINC piece-5) is future.
-- **Mesoscale cortex** (150–250 filaments), not native 70,686. GPU-native confirmed on the A5000; native-N is a
-  scale-up, not a model change.
-- **Membrane** = the inward surface-tension law on cortex nodes (Young-Laplace `2γ_mem/R`) + a convex-hull
-  surface for rendering — not a separately-meshed bilayer.
-- **Crawl magnitude depends on k_off** (cortex fluidity). k_off=0.4 s⁻¹ is literature-grounded (KB-3.13) and the
-  resulting speed is physiological, but the exact magnitude is turnover-sensitive — PI-reviewable.
-- **Implicit integrator at FF scale is unresolved** (CG-tolerance recalibration) — would give a large-dt
-  speed-up; not required for correctness.
+- **The cell does not fully FLATTEN into a spread pancake.** A flat disk needs ~2× the surface area of the
+  equal-volume sphere; the FF cortex area is ~fixed (segment inextensibility + limited crosslink turnover), so
+  it cannot flatten without **membrane/cortex AREA GROWTH** (reservoir unfold + actin assembly) — not yet
+  modelled. The cell stays domed with a widened base.
+- **No SUSTAINED migration yet.** Traction + initial movement are shown, but translocating µm-scale over a
+  real migration (minutes) needs (a) a working clutch **treadmill** (front engage / rear release) and (b) a
+  **timescale** unreachable by explicit stepping (dt = 5.5 µs, set by the stiff α-actinin crosslinks).
+
+## NEXT — FF-specific implicit solver (the real unlock; verified diagnosis)
+
+Sustained migration needs large physical dt. **DCM's implicit step does NOT transfer to FF scale** — verified:
+its matrix-free finite-difference-Jacobian CG **blows up at large dt regardless of the FD step ε** (1e-9→1e-2
+all identical: CG bails at 1 iteration, |x|→1.8e6). The FD JVP is unreliable at FF force scales (~1e6 pN). The
+FF-implicit must use the **NF2007 approach — assemble the ANALYTIC elastic stiffness** (banded bending 4th-diff
+`[−1,4,−6,4,−1]` + crosslink-spring + volume Jacobian) and solve — the "key contribution" / Stage-6b piece
+ENGINE.md already flags. A substantial, careful numerical build; do it as a focused effort, not a calibration.
 
 ## Figures
-- `outputs/ff/figs/crawl_prod_morph.html` — **interactive morphology viewer**: the cell CRAWLING (membrane
-  deforming surface + actin cortex + highlighted leading edge + nucleus co-moving + substrate + COM path), ▶
-  play / frame slider, rotate/zoom. This is the deliverable the PI asked to SEE.
-- `outputs/ff/figs/crawl_prod.json` — crawl metrics (clutch-on) + the no-clutch audit verdict.
+- `outputs/ff/figs/found_spread_morph.html` — interactive morphology (membrane surface + nucleus + substrate,
+  ▶ play): the cell adhered on the substrate with volume conserved, footprint spreading 3.1→5.2 µm. This is the
+  verified foundation state (a domed adherent cell, not yet a flat pancake, not yet sustained migration).
