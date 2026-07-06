@@ -191,6 +191,22 @@ def physical_node_gammas(net, n_cortex: int, n_nuc: int, *, eta: float = ETA_CYT
     return g
 
 
+def volume_gradient(pcx: np.ndarray, faces: np.ndarray, centre: np.ndarray) -> np.ndarray:
+    """∂V/∂x for the enclosed volume V = (1/6)·Σ_faces (a−c₀)·((b−c₀)×(c−c₀)) over the oriented surface
+    triangulation ``faces`` (a,b,c = the 3 vertex ids, c₀ = ``centre``). Returns (Nc,3). This is the EXACT
+    turgor-force direction (``f_i = ΔP·g_i``): net-zero over rigid translation (internal), outward for ΔP>0.
+    Used so the osmotic volume constraint can be treated IMPLICITLY as the rank-1 stiffness ``k_vol·g·gᵀ``
+    (g = flattened this) — the piece that lets the implicit crawl run at large dt without the volume blowing up."""
+    g = np.zeros_like(pcx)
+    a = pcx[faces[:, 0]] - centre
+    b = pcx[faces[:, 1]] - centre
+    c = pcx[faces[:, 2]] - centre
+    np.add.at(g, faces[:, 0], np.cross(b, c) / 6.0)
+    np.add.at(g, faces[:, 1], np.cross(c, a) / 6.0)
+    np.add.at(g, faces[:, 2], np.cross(a, b) / 6.0)
+    return g
+
+
 def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> float:
     """Stable explicit-overdamped timestep: ``dt = safety·min_i(γ_i)/kmax`` so that ``(dt/γ)·k < safety`` for
     the stiffest force constant ``kmax`` (bending κ/seg³, crosslink, nucleus, clutch, substrate). The slow
@@ -201,4 +217,4 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
-           "xl_turnover_kernel", "physical_node_gammas", "crawl_cfl_dt"]
+           "xl_turnover_kernel", "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]

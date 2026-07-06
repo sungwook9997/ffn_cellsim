@@ -36,7 +36,8 @@ from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_kmc_kernel, resolve_clutch)
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
-                                      cortex_volume_kernel, xl_turnover_kernel, physical_node_gammas, crawl_cfl_dt)
+                                      cortex_volume_kernel, xl_turnover_kernel, volume_gradient,
+                                      physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
@@ -147,21 +148,18 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     dP_area = dP_mem_area = 0.0
     frac_xl = 1.0 - np.exp(-koff_xl * dt * xl_turn_every)      # crosslink turnover fraction per turnover tick
 
+    vs = {"dP": 0.0, "g": np.zeros((Nc, 3))}                   # osmotic ΔP + exact volume gradient (set by the loop)
+
     def full_force(x_np):
-        """Full FF force (elastic + active) at x — the implicit solver's RHS. Same assembly as the explicit
-        loop; per-step enclosed volume + osmotic ΔP inside (so the stiff volume constraint stays stable)."""
+        """Full FF force (elastic + active) at x — the implicit solver's RHS. The cortex osmotic/turgor force is
+        the EXACT volume-gradient force ``ΔP·g`` (added host-side from ``vs``), so its stiffness is the clean
+        rank-1 ``k_vol·g·gᵀ`` the implicit solve treats implicitly; the membrane inward tension stays a kernel."""
         pos_d.assign(np.ascontiguousarray(x_np, np.float64).reshape(N, 3))
-        vol_d.zero_()
-        wp.launch(cortex_volume_kernel, dim=faces.shape[0], inputs=[pos_d, faces_d, centre, vol_d], device=d)
-        vv = abs(float(vol_d.numpy()[0]))
-        dPl = TURGOR_PI_IN0 * (V0 - vmin) / max(vv - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
-        dP_al = min(max(dPl, -TURGOR_PI_IN0), TURGOR_PI_IN0) * area / Nc
         wp.launch(_zero, dim=N, inputs=[f_d], device=d)
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
         if has_myo:
             wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
-        wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_al), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
         if fz_node != 0.0:
             wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
@@ -185,7 +183,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
         wp.synchronize_device(d)
-        return f_d.numpy().reshape(-1)
+        F = f_d.numpy().reshape(-1)
+        F[:3 * Nc] += (vs["dP"] * vs["g"]).reshape(-1)         # EXACT cortex osmotic/turgor force  f = ΔP·g
+        return F
 
     frames, com_traj, times, vol_traj, diverged = [], [], [], [], False
     t0 = time.time()
@@ -240,8 +240,16 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
         if implicit:                                           # NF2007 implicit step (unconditionally stable → large dt)
             xv = pos_d.numpy().reshape(-1)
+            pcx2 = xv.reshape(N, 3)[:Nc]; cen2 = pcx2.mean(0)
+            aa = pcx2[faces[:, 0]] - cen2; bb = pcx2[faces[:, 1]] - cen2; ccf = pcx2[faces[:, 2]] - cen2
+            Vc = abs(float((aa * np.cross(bb, ccf)).sum() / 6.0))
+            gN = volume_gradient(pcx2, faces, cen2)            # ∂V/∂x (Nc,3) — exact osmotic force direction
+            dP = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
+            vs["dP"] = min(max(dP, -TURGOR_PI_IN0), TURGOR_PI_IN0); vs["g"] = gN
+            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-9) ** 2    # = −∂ΔP/∂V > 0 (osmotic stiffness)
+            vol_g = np.zeros(3 * N); vol_g[:3 * Nc] = gN.reshape(-1)
             xv, _info = implicit_step_current(xv, full_force, bend_triples_np, alpha, xl_ij_np, kxl_np,
-                                              gamma=gamma_rep, dt=dt, n_newton=1)
+                                              gamma=gamma_rep, dt=dt, n_newton=1, vol_g=vol_g, k_vol=k_vol)
             pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(N, 3))
         else:                                                  # explicit physical-γ step (CFL-bound)
             wp.launch(axpy_physical_kernel, dim=N, inputs=[pos_d, wp.float64(dt), gamma_d, f_d], device=d)

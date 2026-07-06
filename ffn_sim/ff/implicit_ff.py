@@ -153,12 +153,18 @@ def assemble_K_current(pos: np.ndarray, bend_triples: np.ndarray, alpha: np.ndar
 
 
 def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma, dt,
-                          n_newton=1, cg_tol=1e-6, cg_maxiter=300):
+                          n_newton=1, cg_tol=1e-6, cg_maxiter=300, vol_g=None, k_vol=0.0):
     """One NF2007 implicit overdamped step with the CURRENT-config Jacobian (unconditionally stable). Solves
     (γ/dt·I + K(x))·Δx = F_total(x) via CG on the assembled SPD matrix — no finite-difference JVP. ``force_fn``
-    returns the FULL force (elastic + active) at a given x. Newton (n_newton>1) re-linearises for big steps."""
-    from scipy.sparse.linalg import cg
+    returns the FULL force (elastic + active) at a given x. Newton (n_newton>1) re-linearises for big steps.
+
+    ``vol_g`` (3N,) + ``k_vol``>0: also treat the OSMOTIC VOLUME constraint implicitly as the rank-1 stiffness
+    ``k_vol·g·gᵀ`` (g = ∂V/∂x). Without this the stiff osmotic (Π_in0≈5e5) caps the stable dt; with it, the
+    implicit step is stable at large dt → the real wall-fast, minutes-scale speed-up. The operator stays SPD
+    (k_vol>0), so CG converges."""
+    from scipy.sparse.linalg import cg, LinearOperator
     N = x_flat.size // 3
+    n3 = 3 * N
     a = gamma / dt
     x = np.ascontiguousarray(x_flat, np.float64).copy()
     x0 = x.copy()
@@ -166,11 +172,16 @@ def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *,
     for _ in range(n_newton):
         pos = x.reshape(N, 3)
         K = assemble_K_current(pos, bend_triples, alpha, xl_ij, k_xl, N)
-        M = (a * sp.identity(3 * N, format="csr") + K).tocsr()
+        M = (a * sp.identity(n3, format="csr") + K).tocsr()
         F = np.asarray(force_fn(x), dtype=np.float64).reshape(-1)
         rhs = F - a * (x - x0)                              # residual RHS (0 net at x0 for n_newton=1)
+        if vol_g is not None and k_vol > 0.0:              # M + k_vol·g·gᵀ  (osmotic volume, implicit rank-1)
+            g = np.ascontiguousarray(vol_g, np.float64).reshape(-1)
+            op = LinearOperator((n3, n3), matvec=lambda v: M @ v + k_vol * (g @ v) * g, dtype=np.float64)
+        else:
+            op = M
         it = [0]
-        dx, _ = cg(M, rhs, rtol=cg_tol, maxiter=cg_maxiter, callback=lambda *_a: it.__setitem__(0, it[0] + 1))
+        dx, _ = cg(op, rhs, rtol=cg_tol, maxiter=cg_maxiter, callback=lambda *_a: it.__setitem__(0, it[0] + 1))
         x = x + dx
         info["cg_iters"] += it[0]; info["newton"] += 1
     return x, info
