@@ -161,3 +161,18 @@ ffn_sim/outputs/**/*.npz
 ffn_sim/outputs/warp_decohesion/figs/n1000_divfix_ipc_24h.html
 ffn_sim/outputs/warp_decohesion/figs/n100_divfix_24h.html
 ffn_sim/outputs/warp_decohesion/figs/n100_realistic_24h.html
+
+# --- 2026-07-06 secret hardening (repo is public) — never commit credentials ---
+*.env
+.env.*
+**/.notion_token
+*.notion_token
+*_token
+*.key
+*.pem
+*.p12
+id_rsa
+id_ed25519
+secrets.*
+credentials.*
+*.secret
