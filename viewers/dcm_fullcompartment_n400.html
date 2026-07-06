@@ -95,7 +95,7 @@ const clipArr=[];   // empty when section OFF or in peel/slab; [clipPlane] only 
 const mat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide,
   clippingPlanes:clipArr, clipShadows:true});
 const nucOn = (m.rNuc>0 || m.rNucAbs>0);
-if(nucOn){ mat.transparent=true; mat.opacity=0.30; mat.depthWrite=false; } // translucent membrane/cortex → nucleus + cytoplasm interior visible
+if(nucOn){ mat.transparent=true; mat.opacity=0.42; mat.depthWrite=false; } // translucent membrane/cortex → nucleus + cytoplasm interior visible
 const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
 
 // ---------- NUCLEUS compartment: one instanced sphere per cell at its centroid, radius R_nuc ----------
@@ -199,7 +199,7 @@ function updateNucleus(){
     if(on && (mode==='peel'||mode==='slab') && !keep[c]) rn=0;  // hide nuclei of peeled/hidden cells
     _nm.makeScale(rn,rn,rn); _nm.setPosition(cent[c*3],cent[c*3+1],cent[c*3+2]);
     nucMesh.setMatrixAt(c,_nm);
-    _nc.setRGB(palette[c*3]/255*0.5, palette[c*3+1]/255*0.5, palette[c*3+2]/255*0.5);  // darker tint
+    _nc.setRGB(0.16,0.34,0.88);  // darker tint
     nucMesh.setColorAt(c,_nc);
   }
   nucMesh.instanceMatrix.needsUpdate=true;
