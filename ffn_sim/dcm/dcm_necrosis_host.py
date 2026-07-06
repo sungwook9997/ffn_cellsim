@@ -13,6 +13,12 @@ Schaller-Meyer-Hermann field is the future oracle). Each tick assigns every live
 Outputs per cell: a zone code, a turgor multiplier (necrotic core softens → ``turgor_necrotic``),
 and a ``can_divide`` mask (proliferating only) the DivisionHost respects. Inert at small N (no
 cell is >150µm deep until the spheroid is large), which is physically correct.
+
+KB / contract (Contract-Graph, registered 2026-07-06): implements MC-U5-necrosis-3zone,
+adopting KB-5.17 (viable rim ~150µm, Greenspan invariant), KB-5.18 (proliferative rim ~40µm),
+KB-5.19 (compressive-stress channel 1/5/10 kPa), KB-5.20 (MCF-7 size landmarks, overlay-only).
+Gates: VG-U5-viable-rim, VG-U5-necrotic-fraction. This module is the route-A (geometric depth)
+nutrient channel; the mechanical (KB-5.19) channel is the pending SYNTHESIS §1b/2 extension.
 """
 
 from __future__ import annotations
