@@ -221,10 +221,10 @@ The previous 4-role split (Main / Sub / Orchestrator + PI-as-relay) is **retired
 ### State stores (read on session boot)
 
 - `ffn_sim/docs/briefs/H*.md` — **immutable unit specs** (contracts). Not edited.
-- Notion [Development Logs & Reviews](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) — **Phase 1 status board** (Status / Owner / Start / End / Log) + per-unit milestone Day-logs + **Open items**. The authoritative project record.
+- Notion **Development Logs & Reviews** (internal workspace) — **Phase 1 status board** (Status / Owner / Start / End / Log) + per-unit milestone Day-logs + **Open items**. The authoritative project record.
 - On disk — latest commit on `phase1/h{N}-*`, `ffn_sim/outputs/h{X}/REPORT.md`, working tree.
 - **Knowledge base** — Notion Contract-Graph (SoT) + the Obsidian graph mirror and TAG/DuckDB query layer under `ffn_sim/outputs/{obsidian_rag_full,tag_kb}/`. See the *Knowledge base — RAG + TAG + Obsidian* section above for which layer to query and how. Ask KB questions via `tag_kb/tag_query.py`, not by guessing from memory.
-- The Notion [Session Handoff Board](https://www.notion.so/366120daec5d815da389c38bc3bfbbe1) is **retired for relay** (banner at its top). No more next-prompt drafts, stale-markers, cross-session signal-routing, or PI pre-dispatch checklist.
+- The Notion **Session Handoff Board** (internal workspace) is **retired for relay** (banner at its top). No more next-prompt drafts, stale-markers, cross-session signal-routing, or PI pre-dispatch checklist.
 
 ### Session boot protocol (minute 0)
 
@@ -256,7 +256,7 @@ At session end or any freeze-point (e.g. BAOAB sign-off), **before** the final u
 
 1. **Session Handoff Board** — write the closeout block to your role's section (template pinned at the bottom of the board) AND draft the role's next `[ready]` prompt below it.
 2. **Phase 1 status board (Dev Logs)** — update your unit's row: Status / Owner / Start / End / Log.
-3. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page under [Dev Logs](https://www.notion.so/365120daec5d81969e74ffbb757d55c8). Head with start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference. (Format pinned in Dev Logs §작성 규칙.)
+3. **Dev Logs milestone page** — create or append the `Phase {N} — Unit H.{X} {milestone}` child page under **Dev Logs** (internal Notion). Head with start/end commit hashes, sanity gate PASS/FAIL, next-unit dependency check, KU cross-reference. (Format pinned in Dev Logs §작성 규칙.)
 
 The final user-facing message MUST end with the literal line **`Notion 업데이트 완료`** so PI can confirm the loop closed. Without it, the session is treated as still open.
 
@@ -269,5 +269,5 @@ Per-prompt §Closeout sections in worker Next prompts only carry *unit-specific*
 - Read `ffn_sim/docs/PHASE_0_CLOSEOUT.md` for current state.
 - Read `ffn_sim/docs/PHASE_0_3_DECISIONS.md` for the ratified design vocabulary.
 - Read the relevant `ffn_sim/docs/briefs/H*.md` for the unit you're touching.
-- Read the Notion [Development Logs status board](https://www.notion.so/365120daec5d81969e74ffbb757d55c8) + Open items for the current task.
+- Read the Notion **Development Logs status board** (internal workspace) + Open items for the current task.
 - Ask the PI before deviating from any principle in this file.
