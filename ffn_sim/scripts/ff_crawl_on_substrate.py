@@ -37,6 +37,7 @@ from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_km
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, physical_node_gammas, crawl_cfl_dt)
+from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
 
@@ -73,8 +74,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
-        spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, refresh_every=50, reshape_every=20,
-        kmc_every=2000, xl_turn_every=50, record_every=2500, device="cpu"):
+        spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
+        refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -101,7 +102,13 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     kmax = max(float(net.kappa.max()) / seg**3, float(cx.xl_k.max()),
                S["nuc"].k_chrom + S["nuc"].k_lamin, cp.k_int, k_plane)
     if dt is None:
-        dt = crawl_cfl_dt(gammas, kmax, safety=safety)         # CFL-stable (stiff crosslink sets it)
+        dt = crawl_cfl_dt(gammas, kmax, safety=safety)         # explicit CFL-stable (stiff crosslink sets it)
+    if implicit:
+        dt = dt_impl                                           # NF2007 implicit: dt bounded by accuracy, not the CFL
+    gamma_rep = float(np.median(gammas[:Nc]))                  # cortex-representative scalar drag (implicit solver)
+    bend_triples_np = np.ascontiguousarray(net.bend_triples, np.int64)
+    xl_ij_np = np.ascontiguousarray(np.stack([cx.xl_i, cx.xl_j], 1), np.int64)
+    kxl_np = np.ascontiguousarray(cx.xl_k, np.float64)
     mem = S["mem"]; z_sub = S["z_sub"]; adh_h = 0.4; phat = S["phat"]
     front_cos_R = S["front_frac"] * S["R"]
     ph = wp.vec3d(float(phat[0]), float(phat[1]), float(phat[2])); kT = float(cp.kT)
@@ -139,6 +146,46 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     h_basal = 0.6                                              # basal-cap height for the spreading push [µm]
     dP_area = dP_mem_area = 0.0
     frac_xl = 1.0 - np.exp(-koff_xl * dt * xl_turn_every)      # crosslink turnover fraction per turnover tick
+
+    def full_force(x_np):
+        """Full FF force (elastic + active) at x — the implicit solver's RHS. Same assembly as the explicit
+        loop; per-step enclosed volume + osmotic ΔP inside (so the stiff volume constraint stays stable)."""
+        pos_d.assign(np.ascontiguousarray(x_np, np.float64).reshape(N, 3))
+        vol_d.zero_()
+        wp.launch(cortex_volume_kernel, dim=faces.shape[0], inputs=[pos_d, faces_d, centre, vol_d], device=d)
+        vv = abs(float(vol_d.numpy()[0]))
+        dPl = TURGOR_PI_IN0 * (V0 - vmin) / max(vv - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
+        dP_al = min(max(dPl, -TURGOR_PI_IN0), TURGOR_PI_IN0) * area / Nc
+        wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+        wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+        wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if has_myo:
+            wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+        wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_al), f_d], device=d)
+        wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
+        if fz_node != 0.0:
+            wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
+        if n_nuc:
+            wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Nc), centre,
+                      wp.float64(nuc.R_nuc_um), wp.float64(nuc.k_chrom), wp.float64(nuc.k_lamin),
+                      wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
+        wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
+        if clutches:
+            wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
+                      wp.float64(cp.rest_um), f_d], device=d)
+        if spread:
+            spread_total_d.zero_()
+            wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
+                      wp.float64(z_sub), wp.float64(h_basal), wp.float64(0.1), wp.float64(S["f_pro"]),
+                      wp.float64(poly.delta_um), wp.float64(kT), f_d, spread_total_d], device=d)
+            wp.launch(spreading_reaction_kernel, dim=Nc, inputs=[spread_total_d, wp.float64(Nc), f_d], device=d)
+        elif protrude:
+            total_d.zero_()
+            wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
+                      wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
+            wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
+        wp.synchronize_device(d)
+        return f_d.numpy().reshape(-1)
 
     frames, com_traj, times, vol_traj, diverged = [], [], [], [], False
     t0 = time.time()
@@ -191,7 +238,13 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
                       wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
-        wp.launch(axpy_physical_kernel, dim=N, inputs=[pos_d, wp.float64(dt), gamma_d, f_d], device=d)
+        if implicit:                                           # NF2007 implicit step (unconditionally stable → large dt)
+            xv = pos_d.numpy().reshape(-1)
+            xv, _info = implicit_step_current(xv, full_force, bend_triples_np, alpha, xl_ij_np, kxl_np,
+                                              gamma=gamma_rep, dt=dt, n_newton=1)
+            pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(N, 3))
+        else:                                                  # explicit physical-γ step (CFL-bound)
+            wp.launch(axpy_physical_kernel, dim=N, inputs=[pos_d, wp.float64(dt), gamma_d, f_d], device=d)
         if step % reshape_every == 0:                          # inextensibility (NF2007 §5.3)
             wp.launch(reshape_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d, wp.int32(2)], device=d)
         if step % xl_turn_every == 0 and step > 0:             # crosslink turnover (on-device Maxwell relax)
@@ -253,6 +306,7 @@ def main():
     ap.add_argument("--static", action="store_true", help="FOUNDATION mode: no protrusion — just adhere + contact")
     ap.add_argument("--spread", action="store_true", help="EMERGENT spreading: peripheral polymerization + clutch (no wetting)")
     ap.add_argument("--mature", action="store_true", help="mature (stable, non-rupturing) basal FA — firm adhesion")
+    ap.add_argument("--implicit", action="store_true", help="NF2007 implicit stepping (large dt, unconditionally stable)")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
     args = ap.parse_args()
@@ -263,7 +317,7 @@ def main():
           f"({time.time()-t0:.0f}s)")
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
             protrude=(not args.static and not args.spread), spread=args.spread,
-            rupture=not args.mature, device=args.device)
+            rupture=not args.mature, implicit=args.implicit, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
