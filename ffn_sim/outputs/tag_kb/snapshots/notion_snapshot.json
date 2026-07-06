@@ -1,16 +1,16 @@
 {
  "source": "Notion Contract-Graph (ffn_cellsim KB) — single source of truth",
  "notion_version": "2022-06-28",
- "built_at": "2026-07-01",
+ "built_at": "2026-07-06",
  "note": "Flattened snapshot for durability + diff. Regenerate with dump_notion_snapshot.py; git history is the dated archive.",
  "row_counts": {
-  "SourceEvidence": 336,
-  "KnowledgeClaim": 158,
-  "ModelContract": 11,
+  "SourceEvidence": 355,
+  "KnowledgeClaim": 162,
+  "ModelContract": 12,
   "Parameter": 21,
-  "ValidationGate": 27,
-  "CodeMapping": 46,
-  "RunResult": 63,
+  "ValidationGate": 29,
+  "CodeMapping": 49,
+  "RunResult": 91,
   "DecisionLedger": 4
  },
  "databases": {
@@ -3021,7 +3021,8 @@
     "DOI": "https://doi.org/10.1073/pnas.1213353109",
     "UID": "SE172",
     "Claims": [
-     "372120daec5d81e5bd1ff676f6296687"
+     "372120daec5d81e5bd1ff676f6296687",
+     "395120daec5d818eb3c9fc1cfe317331"
     ],
     "Source Type": "Direct measurement",
     "Short Source": "Stylianopoulos et al 2012, PNAS 109:15101",
@@ -3374,7 +3375,8 @@
     "DOI": "https://doi.org/10.1080/23746149.2021.1978316",
     "UID": "SE258",
     "Claims": [
-     "372120daec5d816f94acc5e3e1813ed9"
+     "372120daec5d816f94acc5e3e1813ed9",
+     "395120daec5d81259982caa5d97e027a"
     ],
     "Source Type": "",
     "Short Source": "",
@@ -3853,7 +3855,8 @@
     "DOI": "https://doi.org/10.1016/j.ejps.2025.107370",
     "UID": "SE247",
     "Claims": [
-     "372120daec5d815ebfb3d7562eae7cb1"
+     "372120daec5d815ebfb3d7562eae7cb1",
+     "395120daec5d81acaf04eab948688890"
     ],
     "Source Type": "",
     "Short Source": "",
@@ -4481,6 +4484,256 @@
     "Notes": "Arp2/3 branch junction angle IN CELLS by cryo-electron tomography = 68 +/- 9 deg. FF lamellipodium angle-harmonic branch kernel: rest angle theta0=70 deg (1.2217 rad), angular stiffness k_angle=0.173 pN.um/rad^2 = kT/Var(theta) with sigma_theta=9 deg (equipartition). Magic-Number-Blocked in configs/phase1_h5.yaml (audit C5 2026-05-30). The SD=9 deg is the load-bearing datum (a KnowledgeClaim carrying the SD should link here; the KB has the ~70 deg mean as a bare scalar only). DOI to confirm at audit.",
     "Anchor Status": "registered 2026-06-30 (FF Stage 6L inc2)",
     "Citation Key": "Fassler2020_EMBOJ"
+   },
+   {
+    "_id": "395120daec5d8127abd1f65f21e32473",
+    "DOI": "https://doi.org/10.1529/biophysj.105.060640",
+    "UID": "SE343",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Jiang et al 2005, Biophys J 89:3884 (A Multiscale Model for Avascular Tumor Growth)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). Necrosis thresholds O2 <0.02 mM, glucose <0.06 mM, lactate >8 mM. route-B death thresholds.",
+    "Anchor Status": "necrosis thresholds O2/glucose/lactate; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Jiang2005_BiophysJ"
+   },
+   {
+    "_id": "395120daec5d81348f35eb5c076eb14e",
+    "DOI": "https://doi.org/10.1038/s41598-025-25202-1",
+    "UID": "SE345",
+    "Claims": [
+     "395120daec5d81acaf04eab948688890"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Mazloomi, Hamishehkar, Jahanban-Esfahlan 2025, Sci Rep 15 (PMC12638756)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). CITATION-INTEGRITY FLAG: SYNTHESIS section 5 mis-labeled this as 'Sajjadi et al 2025'; CrossRef first author is Mazloomi (SpheroidSync..., Sci Rep 2025), PMC12638756 confirms this DOI. Claimed MCF-7 viability 95->92->75->50pct (d2/7/10/14); necrotic layer ~day 6 (5000-cell). VERIFY the exact viability numbers against the PDF before citing (overlay-only).",
+    "Anchor Status": "FLAG author-mismatch; MCF-7 viability time-course; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Mazloomi2025_SciRep"
+   },
+   {
+    "_id": "395120daec5d8148aad7f0724a0ec63c",
+    "DOI": "https://doi.org/10.1002/sapm1972514317",
+    "UID": "SE339",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Greenspan 1972, Stud Appl Math 51(4):317",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). Three-radius moving-boundary model: constant viable rim, expanding necrotic core. Anchors the R_nec = R_cluster - L_viable radial invariant used in dcm_necrosis_host.py.",
+    "Anchor Status": "constant-rim/expanding-core invariant; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Greenspan1972_StudApplMath"
+   },
+   {
+    "_id": "395120daec5d814fb2a8f58ca2d449a9",
+    "DOI": "https://doi.org/10.1103/PhysRevLett.107.188102",
+    "UID": "SE350",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Montel et al 2011, Phys Rev Lett 107(18):188102 (PMID 22107677)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Stress-clamp: ~10 kPa drastically reduces growth (loss mainly in the CORE); 5 kPa measurable. Anchors sigma_q_full / sigma_death.",
+    "Anchor Status": "sigma ~10 kPa growth arrest, core-localized; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Montel2011_PhysRevLett"
+   },
+   {
+    "_id": "395120daec5d81508ac7c20a5f747730",
+    "DOI": "https://doi.org/10.1038/s41551-016-0004",
+    "UID": "SE356",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Nia et al 2017, Nat Biomed Eng 1:0004 (PMID 28966873)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Solid stress and elastic energy as measures of tumour mechanopathology: solid stress increases with tumor size; confinement a major contributor.",
+    "Anchor Status": "solid stress rises with tumor size, confinement; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Nia2017_NatBiomedEng"
+   },
+   {
+    "_id": "395120daec5d81559073c9dbaf266b6c",
+    "DOI": "https://doi.org/10.1371/journal.pone.0153692",
+    "UID": "SE342",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a",
+     "395120daec5d81598b6cc2b64107033a"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Grimes et al 2016, PLoS One 11(4):e0153692",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). D = 2e-9 m2/s; mitotic O2 cutoff p_m ~0.5 mmHg (std glucose) / ~5 mmHg (low glucose). route-B O2 field boundary.",
+    "Anchor Status": "D_O2, mitotic O2 cutoff p_m; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Grimes2016_PLoSOne"
+   },
+   {
+    "_id": "395120daec5d8165bc95cf5783cd839a",
+    "DOI": "https://doi.org/10.1152/ajpcell.1997.273.4.C1109",
+    "UID": "SE340",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a",
+     "395120daec5d81598b6cc2b64107033a"
+    ],
+    "Source Type": "Review consensus",
+    "Short Source": "Mueller-Klieser 1997, Am J Physiol 273(4):C1109 (PMID 9357753)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). Review: viable rim ~100-200 um; rim ~constant as core grows. NOTE distinct from Mueller2017_Cell already in KB - this is Mueller-Klieser W.",
+    "Anchor Status": "viable rim ~100-200 um, rim-constant/core-grows; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "MuellerKlieser1997_AmJPhysiol"
+   },
+   {
+    "_id": "395120daec5d8169ae46e0d3d586b7ba",
+    "DOI": "https://doi.org/10.1038/nbt0897-778",
+    "UID": "SE349",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Helmlinger et al 1997, Nat Biotechnol 15(8):778 (PMID 9255794)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS_dcm_necrosis_criterion 2026-06-11 section 5, mechanical channel). Inhibiting stress 45-120 mmHg = 6-16 kPa, line-independent. Anchors sigma_death band. Line-independence is why the band transfers to MCF-7 (no MCF-7-specific kPa datum exists).",
+    "Anchor Status": "solid-stress growth inhibition 6-16 kPa (line-indep); CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Helmlinger1997_NatBiotechnol"
+   },
+   {
+    "_id": "395120daec5d8187ba2fca99f327f9ee",
+    "DOI": "https://doi.org/10.1126/science.2451290",
+    "UID": "SE346",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a"
+    ],
+    "Source Type": "Review consensus",
+    "Short Source": "Sutherland 1988, Science 240:177",
+    "Notes": "Necrosis 3-zone track (necrosis_3zone.md). Canonical multicell tumor spheroid (MCTS) three-zone model reference (cell-environment interactions in tumor microregions).",
+    "Anchor Status": "canonical MCTS three-zone reference; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Sutherland1988_Science"
+   },
+   {
+    "_id": "395120daec5d819faab2f0400fea8068",
+    "DOI": "https://doi.org/10.1038/bjc.1955.55",
+    "UID": "SE338",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a",
+     "395120daec5d81598b6cc2b64107033a"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Thomlinson & Gray 1955, Br J Cancer 9(4):539",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS_dcm_necrosis_criterion 2026-06-11 section 5, nutrient/O2 channel). Cord radius ~200 um necrosis onset; none <100 um; viable rim <=180 um; O2 diffusion ~150 um. Origin of the constant-viable-rim picture. Anchors L_pen=150 um.",
+    "Anchor Status": "necrotic-rim geometry (L_pen); CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Thomlinson1955_BrJCancer"
+   },
+   {
+    "_id": "395120daec5d81aaa9cbe777fb9eca50",
+    "DOI": "https://doi.org/10.1038/ncomms14056",
+    "UID": "SE353",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Dolega et al 2017, Nat Commun 8:14056 (PMID 28128198)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Cell-like pressure sensors: internal pressure RISES toward the core from radial cell anisotropy alone. Justifies letting sigma EMERGE (contact_normal_stress read each step), not imposing sigma(r) - the no-abstraction rule.",
+    "Anchor Status": "core stress rises from radial anisotropy (let sigma emerge); CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Dolega2017_NatCommun"
+   },
+   {
+    "_id": "395120daec5d81b78cfef955481303ed",
+    "DOI": "https://doi.org/10.1371/journal.pone.0004632",
+    "UID": "SE352",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Cheng et al 2009, PLoS ONE 4(2):e4632 (PMID 19247489)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Micro-environmental mechanical stress controls spheroid size/morphology: high-stress regions suppress proliferation + induce mitochondrial apoptosis (dormancy).",
+    "Anchor Status": "high-stress proliferation suppression + apoptosis/dormancy; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Cheng2009_PLoSOne"
+   },
+   {
+    "_id": "395120daec5d81bda4a0d6b220b4347c",
+    "DOI": "https://doi.org/10.1098/rsif.2013.1124",
+    "UID": "SE341",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Grimes et al 2014, J R Soc Interface 11:20131124 (PMID 24430128)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). Diffusion limit 232+-22 um; OCR 7.29+-1.4e-7 m3/kg/s; D_O2 ~3.8e-9 m2/s; r_l 233 / r_n 155 um (HCT116). Anchors L_pen.",
+    "Anchor Status": "O2 diffusion limit 232 um, OCR, L_pen; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Grimes2014_JRSocInterface"
+   },
+   {
+    "_id": "395120daec5d81de90d9e7be8d51084b",
+    "DOI": "https://doi.org/10.1016/j.bpj.2014.08.031",
+    "UID": "SE351",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Delarue et al 2014, Biophys J 107(8):1821 (PMID 25418163)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Compression -> ~5pct cell-volume drop at 5 kPa in ~30 min -> p27Kip1 -> late-G1 arrest; conserved across 5 lines; reversible (the volume checkpoint, dV/V0 read-out). Anchors the preferred volume-checkpoint variant.",
+    "Anchor Status": "volume checkpoint -5pct at 5 kPa, reversible p27 arrest; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Delarue2014_BiophysJ"
+   },
+   {
+    "_id": "395120daec5d81e29e4bd018d4c6963f",
+    "DOI": "",
+    "UID": "SE344",
+    "Claims": [
+     "395120daec5d81acaf04eab948688890"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Lee et al 2010, Oncol Rep 24(1):73 (PMID 20514446) - NO DOI",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). MCF-7 ~700 um / day 8 necrotic core; none at day 6; three-zone zonation. MCF-7 size landmark (overlay-only, semi-quantitative). No DOI issued; PMID 20514446 verified via PubMed 2026-07-06 (Oncol Rep 24:73-9).",
+    "Anchor Status": "NO_DOI (PMID 20514446 verified); MCF-7 700um/day8 core; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Lee2010_OncolRep"
+   },
+   {
+    "_id": "395120daec5d81e7a846c9984d6ccc1e",
+    "DOI": "https://doi.org/10.1007/s10237-023-01716-3",
+    "UID": "SE355",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Hadjigeorgiou & Stylianopoulos 2023, Biomech Model Mechanobiol 22:1625 (PMID 37129689)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Growth-induced mechanical stress in solid tumors/spheroids: real-tumor residual stress 3.31-10.88 kPa. Sanity band confirming the in-vitro 1/5/10 kPa thresholds are physiological.",
+    "Anchor Status": "real-tumor residual stress 3.3-10.9 kPa (sanity band); CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Hadjigeorgiou2023_BiomechModelMechanobiol"
+   },
+   {
+    "_id": "395120daec5d81f59993c875794e5b55",
+    "DOI": "https://doi.org/10.3389/fonc.2016.00105",
+    "UID": "SE347",
+    "Claims": [
+     "395120daec5d81acaf04eab948688890"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Palma et al 2016, Front Oncol 6:105",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). MCF-7 <0.5 mm no necrosis, 1.8 mm clear core. onset-diameter landmark (metabolic study of MCF-7 spheroids after gamma irradiation).",
+    "Anchor Status": "MCF-7 necrotic-core onset diameter; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Palma2016_FrontOncol"
+   },
+   {
+    "_id": "395120daec5d81f698ced2b06af999dd",
+    "DOI": "https://doi.org/10.1039/d0an00979b",
+    "UID": "SE348",
+    "Claims": [
+     "395120daec5d81259982caa5d97e027a"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Mukomoto et al 2020, Analyst 145:6342",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, nutrient/O2 channel). MCF-7 OCR-per-volume falls with radius (consumption-limited diffusion), during necrotic-like core formation.",
+    "Anchor Status": "MCF-7 OCR-per-volume vs radius; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "Mukomoto2020_Analyst"
+   },
+   {
+    "_id": "395120daec5d81fa81a7dce7acdbe516",
+    "DOI": "https://doi.org/10.1016/j.bpj.2015.07.046",
+    "UID": "SE354",
+    "Claims": [
+     "395120daec5d818eb3c9fc1cfe317331"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "McGrail, Dawson et al 2015, Biophys J 109(7):1334 (PMID 26445434)",
+    "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Survival under solid stress = active Na+/NHE1 osmoregulation; BREAST lineage validated; death = osmoregulation failure. Mechanistic basis for the mechanical death channel (relevant to MCF-7).",
+    "Anchor Status": "survival = Na+/NHE1 osmoregulation, breast lineage; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
+    "Citation Key": "McGrail2015_BiophysJ"
    }
   ],
   "KnowledgeClaim": [
@@ -7672,6 +7925,107 @@
     "KB ID": "KB-1.4",
     "Confidence": "High",
     "Claim": "Storm-MacKintosh strain stiffening G(gamma)"
+   },
+   {
+    "_id": "395120daec5d81259982caa5d97e027a",
+    "Citations (text)": "Thomlinson&Gray1955; Greenspan1972; Mueller-Klieser1997; Grimes2014/2016; Jiang2005; Sutherland1988; Mukomoto2020; Boot2021",
+    "Adopted by": [
+     "395120daec5d81cfaed6c5aba49ca1e8"
+    ],
+    "Aliases": "",
+    "Unit": "Unit 5 Collective",
+    "Value Range SI": "L_pen = L_viable = 150 um (lit 100-200); necrotic core when depth d = R_cluster - r_cell >= L_viable, i.e. R_nec = max(0, R_cluster - 150um). O2 diffusion length ~150-232 um (D_O2 ~2e-9 m2/s).",
+    "Parameters": [],
+    "Status": "draft",
+    "Evidence": [
+     "395120daec5d819faab2f0400fea8068",
+     "395120daec5d8148aad7f0724a0ec63c",
+     "395120daec5d8165bc95cf5783cd839a",
+     "395120daec5d81bda4a0d6b220b4347c",
+     "395120daec5d81559073c9dbaf266b6c",
+     "395120daec5d8127abd1f65f21e32473",
+     "395120daec5d8187ba2fca99f327f9ee",
+     "395120daec5d81f698ced2b06af999dd",
+     "373120daec5d81358ee3ec88e0a9748e"
+    ],
+    "Assumptions": "Consumption-limited O2 diffusion from a well-mixed medium surface; viable-rim thickness ~constant as core grows (route-A geometric depth rule in dcm_necrosis_host.py; route-B swaps in an explicit O2/glucose field). Necrosis 3-zone track, SYNTHESIS_dcm_necrosis_criterion 2026-06-11.",
+    "Subtopic": "spheroid 3-zone necrosis / nutrient-O2 diffusion",
+    "KB ID": "KB-5.17",
+    "Confidence": "High",
+    "Claim": "Spheroid nutrient/O2 diffusion sets a ~constant viable rim (~150 um) with an expanding necrotic core (Greenspan invariant)"
+   },
+   {
+    "_id": "395120daec5d81598b6cc2b64107033a",
+    "Citations (text)": "Thomlinson&Gray1955; Mueller-Klieser1997; Grimes2016",
+    "Adopted by": [
+     "395120daec5d81cfaed6c5aba49ca1e8"
+    ],
+    "Aliases": "",
+    "Unit": "Unit 5 Collective",
+    "Value Range SI": "d_prolif = 40 um (lit 20-50; Ki-67+ outer 2-3 cell layers). Quiescent shell d_prolif <= d < L_viable = 40-150 um. Cell diameter (MCF-7) ~15 um.",
+    "Parameters": [],
+    "Status": "draft",
+    "Evidence": [
+     "395120daec5d819faab2f0400fea8068",
+     "395120daec5d8165bc95cf5783cd839a",
+     "395120daec5d81559073c9dbaf266b6c"
+    ],
+    "Assumptions": "Division fires only when the cell is in the outer rim AND low-stress (worst-of-two verdict). Necrosis 3-zone track, SYNTHESIS section 1a/2.",
+    "Subtopic": "spheroid 3-zone necrosis / proliferative rim",
+    "KB ID": "KB-5.18",
+    "Confidence": "High",
+    "Claim": "Proliferation is confined to the outer ~40 um rim; a viable quiescent shell fills 40-150 um depth"
+   },
+   {
+    "_id": "395120daec5d818eb3c9fc1cfe317331",
+    "Citations (text)": "Helmlinger1997; Montel2011; Delarue2014; Cheng2009; Dolega2017; McGrail2015; Hadjigeorgiou2023; Nia2017; Stylianopoulos2012",
+    "Adopted by": [
+     "395120daec5d81cfaed6c5aba49ca1e8"
+    ],
+    "Aliases": "",
+    "Unit": "Unit 5 Collective",
+    "Value Range SI": "sigma_q_onset = 1 kPa (0.5-1); sigma_q_full = 5 kPa; sigma_death = 10 kPa (full inhibition 6-16 kPa). Volume-checkpoint proxy: dV/V0 ~ -5% at 5 kPa in ~30 min. Real-tumor residual stress 3.3-10.9 kPa (physiological sanity band).",
+    "Parameters": [],
+    "Status": "draft",
+    "Evidence": [
+     "395120daec5d8169ae46e0d3d586b7ba",
+     "395120daec5d814fb2a8f58ca2d449a9",
+     "395120daec5d81de90d9e7be8d51084b",
+     "395120daec5d81b78cfef955481303ed",
+     "395120daec5d81aaa9cbe777fb9eca50",
+     "395120daec5d81fa81a7dce7acdbe516",
+     "395120daec5d81e7a846c9984d6ccc1e",
+     "395120daec5d81508ac7c20a5f747730",
+     "372120daec5d81ee855fd5850a457ec1"
+    ],
+    "Assumptions": "sigma is the EMERGENT contact-normal/virial stress (Dolega: core stress rises from radial anisotropy, not imposed sigma(r)); thresholds are cell-line-independent so transfer to MCF-7 (no MCF-7-specific kPa datum). Quiescence reversible on decompression; death irreversible after residence time. Necrosis 3-zone track, SYNTHESIS section 1b/2.",
+    "Subtopic": "spheroid 3-zone necrosis / mechanical compression channel",
+    "KB ID": "KB-5.19",
+    "Confidence": "High",
+    "Claim": "Compressive solid stress arrests proliferation (~1 kPa onset, ~5 kPa full) then kills on sustained load (~10 kPa; 6-16 kPa line-independent)"
+   },
+   {
+    "_id": "395120daec5d81acaf04eab948688890",
+    "Citations (text)": "Lee2010; Palma2016; Mazloomi2025; Nieto2026 (BT-474 curve)",
+    "Adopted by": [
+     "395120daec5d81cfaed6c5aba49ca1e8"
+    ],
+    "Aliases": "",
+    "Unit": "Unit 5 Collective",
+    "Value Range SI": "all-viable <= 300 um dia; necrotic-core onset 400-500 um; prominent core ~700 um / MCF-7 day 8 (none day 6). Necrotic-fraction-vs-dia tracks the BT-474 sibling curve 0.20 (0.50mm) -> 0.29 (0.84mm) -> 0.61 (0.86mm).",
+    "Parameters": [],
+    "Status": "draft",
+    "Evidence": [
+     "395120daec5d81e29e4bd018d4c6963f",
+     "395120daec5d81f59993c875794e5b55",
+     "395120daec5d81348f35eb5c076eb14e",
+     "373120daec5d81ff8793da83452a6663"
+    ],
+    "Assumptions": "OVERLAY-ONLY calibration target, never fit (project hard rule). MCF-7 necrotic-fraction is semi-quantitative; the quantitative curve is BT-474 (HER2+ sibling). Mazloomi2025 viability numbers pending PDF verification. Necrosis 3-zone track, SYNTHESIS section 1c/4.",
+    "Subtopic": "spheroid 3-zone necrosis / MCF-7 size landmarks (overlay-only)",
+    "KB ID": "KB-5.20",
+    "Confidence": "Medium",
+    "Claim": "MCF-7 spheroids are all-viable below ~300 um diameter; necrotic-core onset ~400-500 um; prominent core ~700 um (day 8)"
    }
   ],
   "ModelContract": [
@@ -7930,6 +8284,28 @@
     "Interpretation": "The ECM is an explicit Mikado network of WLC fibers with discrete cross-links (no continuum/lumped modulus). Linear shear modulus G0, force propagation sigma(r) decay, and the strain-stiffening exponent EMERGE from the fiber+crosslink mechanics, validated against the U1 gates. Mechanistic per the architectural principle (WLC Hamiltonian, not a paper-model wrapper).",
     "Parameters": [],
     "Contract": "Fine-grained cross-linked ECM network — Mikado topology + WLC fibers + strain-stiffening (KU-1.1/1.24/1.27/1.28/1.30)"
+   },
+   {
+    "_id": "395120daec5d81cfaed6c5aba49ca1e8",
+    "MC ID": "MC-U5-necrosis-3zone",
+    "Decisions": [],
+    "Status": "draft",
+    "Adopts": [
+     "395120daec5d81259982caa5d97e027a",
+     "395120daec5d81598b6cc2b64107033a",
+     "395120daec5d818eb3c9fc1cfe317331",
+     "395120daec5d81acaf04eab948688890"
+    ],
+    "Gates": [
+     "395120daec5d81959108c4b4cc1d259f",
+     "395120daec5d81c4924eef75b6a4045c"
+    ],
+    "Code": [],
+    "Phase": "Phase 1",
+    "Caveat": "sigma must EMERGE from contact mechanics (Dolega 2017), never be imposed as sigma(r). kPa thresholds are cell-line-independent (no MCF-7-specific datum). Size landmarks (KB-5.20) and BT-474 fraction curve are OVERLAY-ONLY, never fit (VG-U5-viable-rim, VG-U5-necrotic-fraction). Physiological baseline required: resting turgor/cytoplasm viscosity from t=0 so stress genuinely builds. Claims are Status=draft (PI-ratify to promote).",
+    "Interpretation": "Per-cell fate updater for the DCM spheroid layer. Each cell takes the WORST verdict of two co-located channels: (a) nutrient/O2 access = rim-depth d = R_cluster - r_cell vs L_viable=150um and d_prolif=40um (KB-5.17/5.18); (b) mechanical compression = emergent contact-normal stress vs 1/5/10 kPa (KB-5.19). PROLIFERATES only if BOTH channels say rim AND low-stress; QUIESCENT (reversible) if either channel quiescent; NECROSES (irreversible) if either channel necrotic. Reproduces the canonical proliferating-rim -> quiescent-shell -> necrotic-core architecture with a ~constant viable rim and a growing core. Implemented route-A (geometric depth) in dcm/dcm_necrosis_host.py; route-B hook swaps in an explicit O2/glucose field.",
+    "Parameters": [],
+    "Contract": "DCM 3-zone necrosis / quiescence per-cell state updater (worst-of-two: nutrient-depth OR mechanical-compression)"
    }
   ],
   "Parameter": [
@@ -8790,7 +9166,8 @@
      "379120daec5d814fbd95e6c0e87ba5ac",
      "379120daec5d8145b3ceea9a68b76e80",
      "379120daec5d816797e2efa0a1a32e1e",
-     "379120daec5d8158994dedc57b96ad40"
+     "379120daec5d8158994dedc57b96ad40",
+     "395120daec5d81359662fa540b58d3ff"
     ],
     "Code": [],
     "Status": "failing",
@@ -8821,7 +9198,12 @@
      "379120daec5d81e5b1f7ed8025a704d7",
      "379120daec5d816797e2efa0a1a32e1e",
      "379120daec5d8158994dedc57b96ad40",
-     "379120daec5d8185aa65cfc19fdf73c2"
+     "379120daec5d8185aa65cfc19fdf73c2",
+     "395120daec5d81359662fa540b58d3ff",
+     "395120daec5d817f9512e1288f0372a7",
+     "395120daec5d81bbb13bce3f0b8402d8",
+     "395120daec5d81019b67d1930b318ed9",
+     "395120daec5d81c98882e69ac4afc8a2"
     ],
     "Code": [],
     "Status": "blocked",
@@ -8830,6 +9212,38 @@
      "372120daec5d8160be1dc6019c22620c"
     ],
     "Gate": "H.7 Gate-B — relaxed-M-SHAKE buckling/condensation transmission lever"
+   },
+   {
+    "_id": "395120daec5d81959108c4b4cc1d259f",
+    "VG ID": "VG-U5-viable-rim",
+    "Observable": "Viable-rim thickness (proliferating + quiescent shell, live cells) vs cluster radius, over a growing MCF-7 cluster.",
+    "Notes": "OVERLAY-ONLY, never fit (project hard rule). If it fails, surface to PI for a contract change - do NOT tune L_viable outside 100-200 um and do NOT fit to a PI CSV. Necrosis 3-zone track, SYNTHESIS section 4 target 3. Tests MC-U5-necrosis-3zone; observable emitted by dcm_necrosis_host.py.",
+    "Type": "Validation",
+    "Decisions": [],
+    "Runs": [],
+    "Code": [],
+    "Status": "not-started",
+    "Band Expected": "Viable rim ~150 um (100-200), ~CONSTANT as the cluster grows; only the necrotic core R_nec = R_cluster - L_viable expands. Necrotic core first appears when diameter > 300 um, robust by 400-500 um.",
+    "Tests Contract": [
+     "395120daec5d81cfaed6c5aba49ca1e8"
+    ],
+    "Gate": "Viable rim stays ~150 um constant as the necrotic core grows (Greenspan invariant)"
+   },
+   {
+    "_id": "395120daec5d81c4924eef75b6a4045c",
+    "VG ID": "VG-U5-necrotic-fraction",
+    "Observable": "Necrotic-core volume fraction vs spheroid diameter for a growing cluster (and viability time course).",
+    "Notes": "OVERLAY-ONLY, never fit. MCF-7 necrotic-fraction is semi-quantitative; quantitative curve is BT-474 (Nieto2026). Mazloomi2025 viability numbers pending PDF verification. Necrosis 3-zone track, SYNTHESIS section 4 targets 1/2/4/5. Tests MC-U5-necrosis-3zone.",
+    "Type": "Validation",
+    "Decisions": [],
+    "Runs": [],
+    "Code": [],
+    "Status": "not-started",
+    "Band Expected": "All-viable <= 300 um dia; onset 400-500 um; prominent ~700 um (MCF-7 day 8). Necrotic fraction tracks the BT-474 sibling curve 0.20 (0.50mm) -> 0.29 (0.84mm) -> 0.61 (0.86mm).",
+    "Tests Contract": [
+     "395120daec5d81cfaed6c5aba49ca1e8"
+    ],
+    "Gate": "Necrotic-core fraction vs diameter tracks the BT-474 overlay curve"
    }
   ],
   "CodeMapping": [
@@ -9325,7 +9739,7 @@
     "Gate": [],
     "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P2); git is SSOT",
     "Implements Contract": [],
-    "Status": "draft",
+    "Status": "implemented",
     "Path": "ffn_sim/common/integrity.py",
     "Code Ref": "common/integrity.py"
    },
@@ -9374,6 +9788,36 @@
     "Status": "implemented",
     "Path": "ffn_sim/ecm/shear_protocol.py",
     "Code Ref": "ecm/shear_protocol.py"
+   },
+   {
+    "_id": "395120daec5d8126adcff77469feb9ca",
+    "CM ID": "CM-common-surface_manifold",
+    "Gate": [],
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P2); git is SSOT",
+    "Implements Contract": [],
+    "Status": "implemented",
+    "Path": "ffn_sim/common/surface_manifold.py",
+    "Code Ref": "common/surface_manifold.py"
+   },
+   {
+    "_id": "395120daec5d81b589dafa7df7d35731",
+    "CM ID": "CM-common-compartments",
+    "Gate": [],
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P2); git is SSOT",
+    "Implements Contract": [],
+    "Status": "implemented",
+    "Path": "ffn_sim/common/compartments.py",
+    "Code Ref": "common/compartments.py"
+   },
+   {
+    "_id": "395120daec5d81ed902be87b340d4005",
+    "CM ID": "CM-common-sim_realtime",
+    "Gate": [],
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P2); git is SSOT",
+    "Implements Contract": [],
+    "Status": "draft",
+    "Path": "ffn_sim/common/sim_realtime.py",
+    "Code Ref": "common/sim_realtime.py"
    }
   ],
   "RunResult": [
@@ -9396,7 +9840,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-gpu-probe-v50",
     "Result Snapshot": "samples.gamma_soft_mN_per_m=1.9e-05; samples.gamma_rigid_mN_per_m=0.000723; samples.gamma_total_mN_per_m=0.000742; samples.gamma_soft_mN_per_m=3e-05; samples.gamma_rigid_mN_per_m=0.000634; samples.gamma_total_mN_per_m=0.000663",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/gpu_probe_v50.json",
     "Date": "2026-06-05",
@@ -9408,7 +9852,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h7-h7-gate-a-native-smoke-nativecomp",
     "Result Snapshot": "verdict=INCONCLUSIVE: s_grip did not develop enough (s_grip/ℓ0=0.00) — extend --ticks.; rows.g_soft_mN_m=0.0; rows.s_grip_m=0.0; rows.s_grip_over_l0=0.0; rows.nonconv=0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_gate_a_native_smoke_nativecomp.json",
     "Date": "2026-06-08",
@@ -9422,7 +9866,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-emergent-sigma",
     "Result Snapshot": "cohesive.gamma_cortical_mN_m=0.57; cohesive.sigma_over_gamma=0.048268; cohesive.beta_over_gamma=5.19873; cohesive.beta_over_gamma_in_roffay=False; cohesive.beta_over_gamma_above_roffay=True; control_repulsive.gamma_cortical_mN_m=0.57",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "0ffee04",
     "Artifact Path": "ffn_sim/outputs/layer2/emergent_sigma.json",
     "Date": "2026-06-03",
@@ -9436,7 +9880,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-traction-axis",
     "Result Snapshot": "",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "dfc6cac",
     "Artifact Path": "ffn_sim/outputs/layer2/traction_axis.json",
     "Date": "2026-06-03",
@@ -9450,7 +9894,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h7-h7-gate-a-native-smoke",
     "Result Snapshot": "verdict=INCONCLUSIVE: s_grip did not develop enough (s_grip/ℓ0=0.00) — extend --ticks.; rows.g_soft_mN_m=0.0; rows.s_grip_m=0.0; rows.s_grip_over_l0=0.0; rows.nonconv=0; rows.g_soft_mN_m=0.0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_gate_a_native_smoke.json",
     "Date": "2026-06-08",
@@ -9464,7 +9908,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-cortex-network",
     "Result Snapshot": "verdict=FRAGMENTED / NOT a spanning mesh",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "9524ab2",
     "Artifact Path": "ffn_sim/outputs/h3/production/cortex_network.json",
     "Date": "2026-06-04",
@@ -9478,7 +9922,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-gripwalk-tier1-scaled",
     "Result Snapshot": "verdict.gamma_total_10x_off_floor=False; verdict.binned_r0_gamma_total_floor_mN_per_m=0.000258; verdict.grip_walk_gamma_total_final_mN_per_m=0.000209; verdict.grip_walk_final_s_grip_nm=159.494039; arm_binned_r0.samples.gamma_soft_mN_per_m=5e-05; arm_binned_r0.samples.gamma_rigid_mN_per_m=0.000192",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "eafbae2",
     "Artifact Path": "ffn_sim/outputs/h3/production/gripwalk_tier1_scaled.json",
     "Date": "2026-05-31",
@@ -9492,7 +9936,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-surface-tension-bridge",
     "Result Snapshot": "anchors.gamma_cortical_mN_m=0.57; sigma_in_band=True; beta_over_gamma_overlaps_roffay=False",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "07afea1",
     "Artifact Path": "ffn_sim/outputs/layer2/surface_tension_bridge.json",
     "Date": "2026-06-03",
@@ -9506,7 +9950,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-stage2-compliant-backbone",
     "Result Snapshot": "motors_off.g_soft_mean_mN_m=0.000139; motors_on.g_soft_mean_mN_m=0.000282; verdict=RELABEL artifact (Δ_active floored; any g_soft rise is structural, not active)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "48ea696",
     "Artifact Path": "ffn_sim/outputs/h3/production/stage2_compliant_backbone.json",
     "Date": "2026-06-04",
@@ -9520,7 +9964,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-native-fullcell-go",
     "Result Snapshot": "cupy.steps_per_s=82.81468; cupy.g_soft_mN_m=0.0; cupy.g_soft_std_mN_m=0.0; native.steps_per_s=201.448002; native.nonconverged_count=0; native.g_soft_mN_m=0.0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_native_fullcell_go.json",
     "Date": "2026-06-08",
@@ -9532,7 +9976,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-force-stack-profile",
     "Result Snapshot": "results.subset_rows.steps_per_s=7966.033805; results.subset_rows.steps_per_s=5665.576251; results.subset_rows.steps_per_s=3840.864745; results.breakdown.full_steps_per_s=1683.902364; results.rbuff_sweep.steps_per_s=1694.306488; results.rbuff_sweep.status=failed",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/force_stack_profile.json",
     "Date": "2026-06-08",
@@ -9544,7 +9988,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h7-gate-b-probe-seed2",
     "Result Snapshot": "",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "eaa245c",
     "Artifact Path": "ffn_sim/outputs/h7/production/gate_b_probe_seed2.json",
     "Date": "2026-06-08",
@@ -9558,7 +10002,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-gate-a-native-diag-gpu-plain",
     "Result Snapshot": "verdict=INCONCLUSIVE: s_grip did not develop enough (s_grip/ℓ0=0.00) — extend --ticks.; rows.g_soft_mN_m=0.0; rows.s_grip_m=0.0; rows.s_grip_over_l0=0.0; rows.nonconv=-1; rows.g_soft_mN_m=0.0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_gate_a_native_diag_gpu_plain.json",
     "Date": "2026-06-08",
@@ -9572,7 +10016,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-ku35-degcap-verify",
     "Result Snapshot": "dt_speedup_vs_cfl=0.5; cfl_result=GlobalCFLResult(dt_min=6.515349004279873e-09, safety=0.1, binding=CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), elements=[CFLElement(subsystem='cortex', label='tau_bend', k=0.003, gamma=3.909209402567923e-10, tau=0.0006980731076014148, dt_bound=6.980731076014147e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='cortex', label='tau_stretch', k=0.003, gamma=3.909209402567923e-10, tau=1.3030698008559743e-07, dt_bound=1.3030698008559743e-08, is_constraint_removed=True, is_informational=False), CFLElement(subsystem='xlinks', label='k_intra', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='xlinks', label='k_attach', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_head_spring', k=1e-06, gamma=3.909209402567923e-10, tau=0.0003909209402567923, dt_bound=3.9092094025679235e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_backbone', k=9.999999999999999e-06, gamma=3.909209402567923e-10, tau=3.9092094025679235e-05, dt_bound=3.9092094025679235e-06, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='enclosed_volume', label='k_eff', k=8.548551438339575e-06, gamma=3.909209402567923e-10, tau=4.572949499999999e-05, dt_bound=4.5729494999999994e-06",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_degcap_verify.json",
     "Date": "2026-06-05",
@@ -9614,7 +10058,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-pi-overlay-summary",
     "Result Snapshot": "",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "507beb5",
     "Artifact Path": "ffn_sim/outputs/layer2/pi_overlay_summary.json",
     "Date": "2026-06-03",
@@ -9643,7 +10087,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h7-hotloop-scaling-smoke",
     "Result Snapshot": "rows.steps_per_s=1699.821317",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/hotloop_scaling_smoke.json",
     "Date": "2026-06-08",
@@ -9655,7 +10099,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-ku35-v4-smoke",
     "Result Snapshot": "dt_speedup_vs_cfl=0.5; cfl_result=GlobalCFLResult(dt_min=6.515349004279873e-09, safety=0.1, binding=CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), elements=[CFLElement(subsystem='cortex', label='tau_bend', k=0.003, gamma=3.909209402567923e-10, tau=0.0006980731076014148, dt_bound=6.980731076014147e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='cortex', label='tau_stretch', k=0.003, gamma=3.909209402567923e-10, tau=1.3030698008559743e-07, dt_bound=1.3030698008559743e-08, is_constraint_removed=True, is_informational=False), CFLElement(subsystem='xlinks', label='k_intra', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='xlinks', label='k_attach', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_head_spring', k=1e-06, gamma=3.909209402567923e-10, tau=0.0003909209402567923, dt_bound=3.9092094025679235e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_backbone', k=9.999999999999999e-06, gamma=3.909209402567923e-10, tau=3.9092094025679235e-05, dt_bound=3.9092094025679235e-06, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='enclosed_volume', label='k_eff', k=8.548551438339575e-06, gamma=3.909209402567923e-10, tau=4.572949499999999e-05, dt_bound=4.5729494999999994e-06",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_v4_smoke.json",
     "Date": "2026-06-05",
@@ -9669,7 +10113,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-round4-2026-06-07",
     "Result Snapshot": "H.7 round-4 (gbook A5000, full ×40) — 2026-06-07",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "44c2fe2",
     "Artifact Path": "ffn_sim/outputs/h7/production/H7_ROUND4_2026-06-07.md",
     "Date": "2026-06-07",
@@ -9684,7 +10128,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-compartment-gpu-port",
     "Result Snapshot": "arms.cupy_cpucomp.steps_per_s=83.676895; arms.cupy_cpucomp.g_soft_mN_m=0.0; arms.cupy_gpucomp.steps_per_s=111.776308; arms.cupy_gpucomp.g_soft_mN_m=0.0; arms.native_gpucomp.steps_per_s=490.679763; arms.native_gpucomp.g_soft_mN_m=0.0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_compartment_gpu_port.json",
     "Date": "2026-06-08",
@@ -9696,7 +10140,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-ku35-v4-smoke-postfix",
     "Result Snapshot": "dt_speedup_vs_cfl=0.5; cfl_result=GlobalCFLResult(dt_min=6.515349004279873e-09, safety=0.1, binding=CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), elements=[CFLElement(subsystem='cortex', label='tau_bend', k=0.003, gamma=3.909209402567923e-10, tau=0.0006980731076014148, dt_bound=6.980731076014147e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='cortex', label='tau_stretch', k=0.003, gamma=3.909209402567923e-10, tau=1.3030698008559743e-07, dt_bound=1.3030698008559743e-08, is_constraint_removed=True, is_informational=False), CFLElement(subsystem='xlinks', label='k_intra', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='xlinks', label='k_attach', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_head_spring', k=1e-06, gamma=3.909209402567923e-10, tau=0.0003909209402567923, dt_bound=3.9092094025679235e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_backbone', k=9.999999999999999e-06, gamma=3.909209402567923e-10, tau=3.9092094025679235e-05, dt_bound=3.9092094025679235e-06, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='enclosed_volume', label='k_eff', k=8.548551438339575e-06, gamma=3.909209402567923e-10, tau=4.572949499999999e-05, dt_bound=4.5729494999999994e-06",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_v4_smoke_postfix.json",
     "Date": "2026-06-05",
@@ -9725,7 +10169,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-ku35-smoke-seed1-fanin",
     "Result Snapshot": "dt_speedup_vs_cfl=0.5; cfl_result=GlobalCFLResult(dt_min=6.515349004279873e-09, safety=0.1, binding=CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), elements=[CFLElement(subsystem='cortex', label='tau_bend', k=0.003, gamma=3.909209402567923e-10, tau=0.0006980731076014148, dt_bound=6.980731076014147e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='cortex', label='tau_stretch', k=0.003, gamma=3.909209402567923e-10, tau=1.3030698008559743e-07, dt_bound=1.3030698008559743e-08, is_constraint_removed=True, is_informational=False), CFLElement(subsystem='xlinks', label='k_intra', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='xlinks', label='k_attach', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_head_spring', k=1e-06, gamma=3.909209402567923e-10, tau=0.0003909209402567923, dt_bound=3.9092094025679235e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_backbone', k=9.999999999999999e-06, gamma=3.909209402567923e-10, tau=3.9092094025679235e-05, dt_bound=3.9092094025679235e-06, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='enclosed_volume', label='k_eff', k=8.548551438339575e-06, gamma=3.909209402567923e-10, tau=4.572949499999999e-05, dt_bound=4.5729494999999994e-06",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_smoke_seed1_fanin.json",
     "Date": "2026-06-05",
@@ -9737,7 +10181,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-ku35-v4-fa-onoff",
     "Result Snapshot": "dt_speedup_vs_cfl=0.5; cfl_result=GlobalCFLResult(dt_min=6.515349004279873e-09, safety=0.1, binding=CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), elements=[CFLElement(subsystem='cortex', label='tau_bend', k=0.003, gamma=3.909209402567923e-10, tau=0.0006980731076014148, dt_bound=6.980731076014147e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='cortex', label='tau_stretch', k=0.003, gamma=3.909209402567923e-10, tau=1.3030698008559743e-07, dt_bound=1.3030698008559743e-08, is_constraint_removed=True, is_informational=False), CFLElement(subsystem='xlinks', label='k_intra', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='xlinks', label='k_attach', k=1e-07, gamma=3.909209402567923e-10, tau=0.003909209402567923, dt_bound=0.0003909209402567923, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_head_spring', k=1e-06, gamma=3.909209402567923e-10, tau=0.0003909209402567923, dt_bound=3.9092094025679235e-05, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='myosin', label='k_backbone', k=9.999999999999999e-06, gamma=3.909209402567923e-10, tau=3.9092094025679235e-05, dt_bound=3.9092094025679235e-06, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='fa', label='k_int_bare', k=0.001, gamma=6.515349004279873e-11, tau=6.515349004279873e-08, dt_bound=6.515349004279873e-09, is_constraint_removed=False, is_informational=False), CFLElement(subsystem='enclosed_volume', label='k_eff', k=2.1371378595848937e-06, gamma=3.909209402567923e-10, tau=0.00018291797999999996, dt_bound=1.8291797999999998e-",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "07067b1",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_v4_fa_ONOFF.json",
     "Date": "2026-06-04",
@@ -9751,7 +10195,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h1-ku130-g0-production",
     "Result Snapshot": "gamma=0.01",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "785c3e1",
     "Artifact Path": "ffn_sim/outputs/h1/ku130_g0_production.json",
     "Date": "2026-05-21",
@@ -9765,7 +10209,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-winklbauer-bridge",
     "Result Snapshot": "in_band=True; comparisons.warmt_single_cell_gamma_cst_mN_m=0.0129",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "aa0845f",
     "Artifact Path": "ffn_sim/outputs/layer2/winklbauer_bridge.json",
     "Date": "2026-06-04",
@@ -9779,7 +10223,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h2-closeout",
     "Result Snapshot": "H.2 single-filament L_p — strict-PASS follow-up (PI 2026-05-25)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "9beb60a",
     "Artifact Path": "ffn_sim/outputs/h2/REPORT.md",
     "Date": "2026-05-25",
@@ -9793,7 +10237,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h7-h7-gate-a-native-smoke-check",
     "Result Snapshot": "verdict=INCONCLUSIVE: s_grip did not develop enough (s_grip/ℓ0=0.00) — extend --ticks.; rows.g_soft_mN_m=0.0; rows.s_grip_m=0.0; rows.s_grip_over_l0=0.0; rows.nonconv=0; rows.g_soft_mN_m=0.0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_gate_a_native_smoke_check.json",
     "Date": "2026-06-08",
@@ -9807,7 +10251,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-ku35-tension-diag-smoke-cpu",
     "Result Snapshot": "",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_tension_diag_smoke_cpu.json",
     "Date": "2026-06-05",
@@ -9849,7 +10293,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-gate-a-native-prod",
     "Result Snapshot": "g_soft_mN_m=0.000197; s_grip_m=0.0; s_grip_over_l0=0.023507; nonconv=0; g_soft_mN_m=0.000199; s_grip_m=0.0",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "ff00520",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_gate_a_native_prod.json",
     "Date": "2026-06-08",
@@ -9863,7 +10307,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-round2-2026-06-07",
     "Result Snapshot": "H.7 round-2 (gbook A5000, full ×40) — 2026-06-07",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "55ca482",
     "Artifact Path": "ffn_sim/outputs/h7/production/H7_ROUND2_2026-06-07.md",
     "Date": "2026-06-07",
@@ -9877,7 +10321,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h_0_2-closeout",
     "Result Snapshot": "Phase 0.2 — HOOMD-blue environment verification",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "359482a",
     "Artifact Path": "ffn_sim/outputs/h_0_2/REPORT.md",
     "Date": "2026-05-20",
@@ -9889,7 +10333,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h5-closeout",
     "Result Snapshot": "H.5 — Lamellipodium (Bieling/Funk greenfield) closeout report",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "4a84ab7",
     "Artifact Path": "ffn_sim/outputs/h5/REPORT.md",
     "Date": "2026-05-30",
@@ -9903,7 +10347,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-autonomous-log-2026-05-31",
     "Result Snapshot": "Autonomous run log — 2026-05-31 (12h unsupervised)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "39dc663",
     "Artifact Path": "ffn_sim/outputs/h3/production/AUTONOMOUS_LOG_2026-05-31.md",
     "Date": "2026-05-31",
@@ -9917,7 +10361,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-lp-smoke-gpu-result",
     "Result Snapshot": "in_band=False",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/lp_smoke_gpu_result.json",
     "Date": "2026-06-05",
@@ -9931,7 +10375,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-emergent-sigma-catch",
     "Result Snapshot": "catch_bond.gamma_cortical_mN_m=0.57; catch_bond.sigma_over_gamma=-0.000962; ensemble.runs.sigma_over_gamma=-0.000413; ensemble.runs.sigma_over_gamma=-0.000962; ensemble.runs.sigma_over_gamma=0.042754; ensemble.sigma_over_gamma_mean=0.004185",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "7f18b66",
     "Artifact Path": "ffn_sim/outputs/layer2/emergent_sigma_catch.json",
     "Date": "2026-06-04",
@@ -9945,7 +10389,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-force-stack-profile-sweep",
     "Result Snapshot": "results.subset_rows.steps_per_s=7717.590516; results.subset_rows.steps_per_s=5688.223457; results.subset_rows.steps_per_s=3842.381261; results.breakdown.full_steps_per_s=1680.142854; results.rbuff_sweep.steps_per_s=1684.346472; results.rbuff_sweep.steps_per_s=1676.548687",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/force_stack_profile_sweep.json",
     "Date": "2026-06-08",
@@ -9957,7 +10401,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-lp-full-gpu-result",
     "Result Snapshot": "in_band=True",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "cb481c2",
     "Artifact Path": "ffn_sim/outputs/h3/production/lp_full_gpu_result.json",
     "Date": "2026-05-29",
@@ -9971,7 +10415,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-stage2-turgor-test",
     "Result Snapshot": "conditions.g_soft_mN_m=0.0; conditions.g_soft_mN_m=0.0; conditions.g_soft_mN_m=0.0; verdict=PARTIAL — turgor lifts tension but BELOW Young-Laplace (g_total/YL ≈ 0.12); the shell partly inflates/relaxes rather than holding the full hoop tension (check r/r0).",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "1b465e3",
     "Artifact Path": "ffn_sim/outputs/h3/production/stage2_turgor_test.json",
     "Date": "2026-06-04",
@@ -9985,7 +10429,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h1-closeout",
     "Result Snapshot": "H.1 ECM Mikado — Main Session closeout (M2-rest)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f71e89d",
     "Artifact Path": "ffn_sim/outputs/h1/REPORT.md",
     "Date": "2026-05-21",
@@ -9999,7 +10443,7 @@
     "Outcome": "",
     "RUN ID": "RUN-layer2-closeout",
     "Result Snapshot": "Layer-2 multicellular spheroid line — REPORT (L2.0 + L2.1)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "942dc8a",
     "Artifact Path": "ffn_sim/outputs/layer2/REPORT.md",
     "Date": "2026-06-05",
@@ -10013,7 +10457,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-gateb-round1-2026-06-07",
     "Result Snapshot": "H.7 GATE-B + A/A0 — first full-scale GPU production (round 1, 2026-06-07)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "df81fb7",
     "Artifact Path": "ffn_sim/outputs/h7/production/H7_GATEB_ROUND1_2026-06-07.md",
     "Date": "2026-06-07",
@@ -10028,7 +10472,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-gripwalk-tier1",
     "Result Snapshot": "verdict.gamma_total_10x_off_floor=False; verdict.binned_r0_gamma_total_floor_mN_per_m=4.8e-05; verdict.grip_walk_gamma_total_final_mN_per_m=4.2e-05; verdict.grip_walk_final_s_grip_nm=329.604746; arm_binned_r0.samples.gamma_soft_mN_per_m=2e-06; arm_binned_r0.samples.gamma_rigid_mN_per_m=3.1e-05",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "42d7c54",
     "Artifact Path": "ffn_sim/outputs/h3/production/gripwalk_tier1.json",
     "Date": "2026-05-31",
@@ -10042,7 +10486,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h7-gate-b-probe",
     "Result Snapshot": "",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "eaa245c",
     "Artifact Path": "ffn_sim/outputs/h7/production/gate_b_probe.json",
     "Date": "2026-06-08",
@@ -10056,7 +10500,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h1_baoab_freeze-closeout",
     "Result Snapshot": "H.1 BAOAB freeze point — Main Session closeout",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "2157cc0",
     "Artifact Path": "ffn_sim/outputs/h1_baoab_freeze/REPORT.md",
     "Date": "2026-05-20",
@@ -10068,7 +10512,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-stage2-forcebudget-sweep",
     "Result Snapshot": "conditions.signed_gamma_mN_m=0.0002; verdict=inconclusive",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "99d8b4f",
     "Artifact Path": "ffn_sim/outputs/h3/production/stage2_forcebudget_sweep.json",
     "Date": "2026-06-04",
@@ -10082,7 +10526,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-cortex-connected-mesh",
     "Result Snapshot": "verdict=CONNECTED SPANNING MESH",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/cortex_connected_mesh.json",
     "Date": "2026-06-05",
@@ -10096,7 +10540,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-gpu-native38k-feas",
     "Result Snapshot": "samples.gamma_soft_mN_per_m=2e-06; samples.gamma_rigid_mN_per_m=0.00332; samples.gamma_total_mN_per_m=0.003322; samples.gamma_soft_mN_per_m=5e-06; samples.gamma_rigid_mN_per_m=0.00385; samples.gamma_total_mN_per_m=0.003855",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/gpu_native38k_feas.json",
     "Date": "2026-06-05",
@@ -10108,7 +10552,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-lp-medium-gpu-result",
     "Result Snapshot": "in_band=True",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/lp_medium_gpu_result.json",
     "Date": "2026-06-05",
@@ -10122,7 +10566,7 @@
     "Outcome": "smoke",
     "RUN ID": "RUN-h3-gpu-pilot-principled",
     "Result Snapshot": "samples.gamma_soft_mN_per_m=1.9e-05; samples.gamma_rigid_mN_per_m=0.00025; samples.gamma_total_mN_per_m=0.00027; samples.gamma_soft_mN_per_m=1.5e-05; samples.gamma_rigid_mN_per_m=0.000425; samples.gamma_total_mN_per_m=0.000439",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/gpu_pilot_principled.json",
     "Date": "2026-06-05",
@@ -10134,7 +10578,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-gate-a",
     "Result Snapshot": "rows.gamma_soft=4e-06; rows.gamma_soft_ik=3e-06; rows.s_grip_m=0.0; rows.s_grip_over_l0=0.0; rows.gamma_soft=0.000153; rows.gamma_soft_ik=3.9e-05",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "f3ea5fa",
     "Artifact Path": "ffn_sim/outputs/h7/production/h7_gate_a.json",
     "Date": "2026-06-08",
@@ -10148,7 +10592,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-stage2-signed-contractility",
     "Result Snapshot": "verdict=CONTRACTILE (myosin adds net tensile hoop stress)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "38c8bd2",
     "Artifact Path": "ffn_sim/outputs/h3/production/stage2_signed_contractility.json",
     "Date": "2026-06-04",
@@ -10162,7 +10606,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-overnight-summary-2026-06-07",
     "Result Snapshot": "H.7 overnight autonomous run — morning summary (2026-06-07)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "d0a526c",
     "Artifact Path": "ffn_sim/outputs/h7/production/H7_OVERNIGHT_SUMMARY_2026-06-07.md",
     "Date": "2026-06-07",
@@ -10177,7 +10621,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-closeout",
     "Result Snapshot": "H.3 — Cortex multi-filament topology generator (closeout report)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "4eafe6e",
     "Artifact Path": "ffn_sim/outputs/h3/REPORT.md",
     "Date": "2026-06-04",
@@ -10191,7 +10635,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h4-closeout",
     "Result Snapshot": "H.4 — FA + motor-clutch (Sub Session closeout)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "6eddb11",
     "Artifact Path": "ffn_sim/outputs/h4/REPORT.md",
     "Date": "2026-05-25",
@@ -10219,7 +10663,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h3-ku35-v4-smoke-diagnosis",
     "Result Snapshot": "KU-3.5 v4 FA-anchored smoke — diagnosis (2026-05-30)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "a50ee24",
     "Artifact Path": "ffn_sim/outputs/h3/production/ku35_v4_smoke_diagnosis.md",
     "Date": "2026-06-05",
@@ -10233,7 +10677,7 @@
     "Outcome": "",
     "RUN ID": "RUN-h7-h7-gateb-findings-2026-06-07",
     "Result Snapshot": "H.7 GATE-B — consolidated findings (overnight 2026-06-07)",
-    "Notes": "machine-harvested 2026-06-08 by harvest_ops.py (P1); artifact is SSOT",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
     "Commit": "837e1ec",
     "Artifact Path": "ffn_sim/outputs/h7/production/H7_GATEB_FINDINGS_2026-06-07.md",
     "Date": "2026-06-07",
@@ -10242,6 +10686,353 @@
      "379120daec5d81bb91a1df65d3b3e12a"
     ],
     "Run": "H7 GATEB FINDINGS 2026-06-07"
+   },
+   {
+    "_id": "395120daec5d81019b67d1930b318ed9",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-gateb-cm-rigid-myooff.cond",
+    "Result Snapshot": "rows.g_soft_mN_m=1e-06; rows.s_grip_over_l0=0.0; rows.nonconv=0; rows.g_soft_mN_m=1e-06; rows.s_grip_over_l0=0.0; rows.nonconv=0",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_gateB_cm_rigid_myoOFF.cond.json",
+    "Date": "2026-06-09",
+    "Gate": [
+     "379120daec5d81bb91a1df65d3b3e12a"
+    ],
+    "Run": "h7 gateB cm rigid myoOFF.cond"
+   },
+   {
+    "_id": "395120daec5d8102861df72597c6de4b",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-membrane-reservoir-activation-gate",
+    "Result Snapshot": "verdict=PASS; controls.no_contamination.gamma_soft_off_N_per_m=0.0; controls.no_contamination.gamma_soft_on_N_per_m=0.0; controls.no_contamination.gamma_identical=True",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "c548ada",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_membrane_reservoir_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 membrane reservoir activation gate"
+   },
+   {
+    "_id": "395120daec5d8114917ac7813a601d4d",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-basal-mesh-gate",
+    "Result Snapshot": "verdict=PASS; params.band_thickness_m=0.0; b2_connectivity.verdict=PASS",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "78eb25e",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_basal_mesh_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 basal mesh gate"
+   },
+   {
+    "_id": "395120daec5d8118b432e017ef7bc662",
+    "Outcome": "FAIL",
+    "RUN ID": "RUN-h7-h7-basal-sf-force-budget",
+    "Result Snapshot": "verdict=REFUTE; budget.in_kumar_band_raw=False; budget.gap_to_band_lo=2014.0; budget.mesoscale_force_factor_needed_to_band_centre=4028.0; decomposition.cross_sectional_nmii_count_to_band_centre=359.642857; decomposition.cross_sectional_nmii_count_to_band_lo=179.821429",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "a3a0b2f",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_basal_sf_force_budget.json",
+    "Date": "2026-06-10",
+    "Gate": [],
+    "Run": "h7 basal sf force budget"
+   },
+   {
+    "_id": "395120daec5d8130999fde0e7ef55c0f",
+    "Outcome": "",
+    "RUN ID": "RUN-h_dcm_active-closeout",
+    "Result Snapshot": "DCM ACTIVE-spreading spheroid — active traction + junction switch + live division",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "69f0d91",
+    "Artifact Path": "ffn_sim/outputs/h_dcm_active/REPORT.md",
+    "Date": "2026-06-19",
+    "Gate": [],
+    "Run": "h_dcm_active closeout (REPORT.md)"
+   },
+   {
+    "_id": "395120daec5d81359662fa540b58d3ff",
+    "Outcome": "FAIL",
+    "RUN ID": "RUN-h7-h7-gateb-cm-summary",
+    "Result Snapshot": "gamma_active_rigid_mN_m=-0.003579; gamma_active_relaxed_mN_m=-0.002654; verdict=REFUTE: γ_active=-0.0027 < 0.03 — buckling NOT the lever.; conditions.rigid_myoON.s_grip_plateau=0.370456; conditions.rigid_myoOFF.s_grip_plateau=0.0; conditions.relaxed_myoON.s_grip_plateau=0.373491",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_gateB_cm_SUMMARY.json",
+    "Date": "2026-06-09",
+    "Gate": [
+     "379120daec5d81bb91a1df65d3b3e12a",
+     "379120daec5d814a94a7c80f05482933"
+    ],
+    "Run": "h7 gateB cm SUMMARY"
+   },
+   {
+    "_id": "395120daec5d814087beceb8388719c4",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-basal-apparatus-gate",
+    "Result Snapshot": "verdict=PASS; controls.in_slab.band=0.0; connectivity.verdict=PASS",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "910b9a5",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_basal_apparatus_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 basal apparatus gate"
+   },
+   {
+    "_id": "395120daec5d8151bc8ee6dbca78325b",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-linc-activation-gate",
+    "Result Snapshot": "verdict=PASS; controls.no_contamination.gamma_soft_off_N_per_m=0.0; controls.no_contamination.gamma_soft_on_N_per_m=0.0; controls.no_contamination.gamma_identical=True; controls.cfl_headroom.gamma_bead_Nspm=6e-06; deferred.resting_tension_oracle_pN=[2,10] pN (Déjardin 2020) — needs an equilibrated actomyosin run; full-cell raw run trips the BAOAB guard (equilibration prelude required), same as the other compartments.",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "d8d6770",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_linc_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 linc activation gate"
+   },
+   {
+    "_id": "395120daec5d81528bcbc5de275b037c",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-nucleus-contribution",
+    "Result Snapshot": "rows.gamma_soft=0.0; rows.gamma_rigid=0.0602; rows.gamma_structural=0.0602; rows.gamma_passive=0.49875; rows.gamma_soft=0.0; rows.gamma_rigid=0.0602",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_nucleus_contribution.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 nucleus contribution"
+   },
+   {
+    "_id": "395120daec5d8152ab7fff31913ec847",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-basal-nmii-gate",
+    "Result Snapshot": "verdict=PASS",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2da83fe",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_basal_nmii_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 basal nmii gate"
+   },
+   {
+    "_id": "395120daec5d8153b313e89748c416de",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-stress-fibers-activation-gate",
+    "Result Snapshot": "verdict=PASS; controls.no_contamination.gamma_soft_off_N_per_m=0.0; controls.no_contamination.gamma_soft_on_N_per_m=0.0; controls.no_contamination.gamma_identical=True; deferred.active_nmii_kumar_tension=Kumar 2006 10-30 nN single-SF band — needs NMII via the sf_myosin_* prefix split (cortex/myosin.py) + the equilibration prelude. DEFERRED (passive backbone only here).",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "990e51c",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_stress_fibers_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 stress fibers activation gate"
+   },
+   {
+    "_id": "395120daec5d8154a7c9c2c34ee6f6cd",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-dt-push-test",
+    "Result Snapshot": "rows.gamma_struct=0.044399; rows.dgamma_frac=0.0",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_dt_push_test.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 dt push test"
+   },
+   {
+    "_id": "395120daec5d815bb5ace91639d6e5bd",
+    "Outcome": "",
+    "RUN ID": "RUN-h_dcm_two_stage-closeout",
+    "Result Snapshot": "Two-stage DCM spheroid — BIOLOGICAL aggregation → spreading (2026-06-12)",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "69f0d91",
+    "Artifact Path": "ffn_sim/outputs/h_dcm_two_stage/REPORT.md",
+    "Date": "2026-06-19",
+    "Gate": [],
+    "Run": "h_dcm_two_stage closeout (REPORT.md)"
+   },
+   {
+    "_id": "395120daec5d81639e1ec94a346498b5",
+    "Outcome": "",
+    "RUN ID": "RUN-h_dcm_gpu_lod-closeout",
+    "Result Snapshot": "GPU DCM spheroid — K1-turgor + activity-LOD, and the a+b/R+c/R² law on the A5000",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "69f0d91",
+    "Artifact Path": "ffn_sim/outputs/h_dcm_gpu_lod/REPORT.md",
+    "Date": "2026-06-19",
+    "Gate": [],
+    "Run": "h_dcm_gpu_lod closeout (REPORT.md)"
+   },
+   {
+    "_id": "395120daec5d8164b58af4b49e156e8a",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-basal-surface-gate",
+    "Result Snapshot": "verdict=PASS",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "d8bce22",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_basal_surface_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 basal surface gate"
+   },
+   {
+    "_id": "395120daec5d81668d4bf5c01116045a",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-intermediate-filaments-activation-gate",
+    "Result Snapshot": "verdict=PASS; controls.no_contamination.gamma_soft_off_N_per_m=0.0; controls.no_contamination.gamma_soft_on_N_per_m=0.0; controls.no_contamination.gamma_identical=True",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "70f8238",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_intermediate_filaments_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 intermediate filaments activation gate"
+   },
+   {
+    "_id": "395120daec5d816db12de6ffe9147b1a",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-microtubules-activation-gate",
+    "Result Snapshot": "verdict=PASS; params.gamma_b_cytoplasm_Nspm=1.6e-05; controls.no_contamination.gamma_soft_off_N_per_m=0.0; controls.no_contamination.gamma_soft_on_N_per_m=0.0; controls.no_contamination.gamma_identical=True; PRIMARY_persistence.in_band=True",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "44ea125",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_microtubules_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 microtubules activation gate"
+   },
+   {
+    "_id": "395120daec5d817d84c9fc7956c13a60",
+    "Outcome": "",
+    "RUN ID": "RUN-h_dcm_gpu-closeout",
+    "Result Snapshot": "DCM GPU — device-dispatch wiring + active+necrosis law sweep (gbook-ready)",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "69f0d91",
+    "Artifact Path": "ffn_sim/outputs/h_dcm_gpu/REPORT.md",
+    "Date": "2026-06-19",
+    "Gate": [],
+    "Run": "h_dcm_gpu closeout (REPORT.md)"
+   },
+   {
+    "_id": "395120daec5d817e9dabe099a1951dee",
+    "Outcome": "",
+    "RUN ID": "RUN-h_dcm_native-closeout",
+    "Result Snapshot": "DCM SimuCell3D upgrades — native mesh shell + bilinear-tent contact",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "574197a",
+    "Artifact Path": "ffn_sim/outputs/h_dcm_native/REPORT.md",
+    "Date": "2026-06-11",
+    "Gate": [],
+    "Run": "h_dcm_native closeout (REPORT.md)"
+   },
+   {
+    "_id": "395120daec5d817f9512e1288f0372a7",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-gateb-cm-relaxed-myooff.cond",
+    "Result Snapshot": "rows.g_soft_mN_m=1e-06; rows.s_grip_over_l0=0.0; rows.nonconv=0; rows.g_soft_mN_m=1e-06; rows.s_grip_over_l0=0.0; rows.nonconv=0",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_gateB_cm_relaxed_myoOFF.cond.json",
+    "Date": "2026-06-09",
+    "Gate": [
+     "379120daec5d81bb91a1df65d3b3e12a"
+    ],
+    "Run": "h7 gateB cm relaxed myoOFF.cond"
+   },
+   {
+    "_id": "395120daec5d81bbb13bce3f0b8402d8",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-gateb-cm-relaxed-myoon.cond",
+    "Result Snapshot": "rows.g_soft_mN_m=0.00016; rows.s_grip_over_l0=0.004767; rows.nonconv=0; rows.g_soft_mN_m=0.00018; rows.s_grip_over_l0=0.010741; rows.nonconv=0",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_gateB_cm_relaxed_myoON.cond.json",
+    "Date": "2026-06-09",
+    "Gate": [
+     "379120daec5d81bb91a1df65d3b3e12a"
+    ],
+    "Run": "h7 gateB cm relaxed myoON.cond"
+   },
+   {
+    "_id": "395120daec5d81c4b645cec1a766b9b8",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-closeout",
+    "Result Snapshot": "DCM tier — Deformable-Cell-Model multicellular spreading + cell–ECM coupling",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "69f0d91",
+    "Artifact Path": "ffn_sim/outputs/h7/dcm/REPORT.md",
+    "Date": "2026-06-19",
+    "Gate": [],
+    "Run": "h7 closeout (REPORT.md)"
+   },
+   {
+    "_id": "395120daec5d81c98882e69ac4afc8a2",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-gateb-cm-rigid-myoon.cond",
+    "Result Snapshot": "rows.g_soft_mN_m=0.000162; rows.s_grip_over_l0=0.004742; rows.nonconv=0; rows.g_soft_mN_m=0.000179; rows.s_grip_over_l0=0.010742; rows.nonconv=0",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_gateB_cm_rigid_myoON.cond.json",
+    "Date": "2026-06-09",
+    "Gate": [
+     "379120daec5d81bb91a1df65d3b3e12a"
+    ],
+    "Run": "h7 gateB cm rigid myoON.cond"
+   },
+   {
+    "_id": "395120daec5d81d7be96c57b9dc00af8",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-no-nucleus-dt",
+    "Result Snapshot": "gamma_on.gamma_soft=0.0; gamma_on.gamma_rigid=0.038095; gamma_on.gamma_structural=0.038095; gamma_on.gamma_passive=0.49875; gamma_off.gamma_soft=0.0; gamma_off.gamma_rigid=0.034046",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "2ebf437",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_no_nucleus_dt.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 no nucleus dt"
+   },
+   {
+    "_id": "395120daec5d81dca711ffcc3893d7eb",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-cadherin-junction-activation-gate",
+    "Result Snapshot": "verdict=PASS; controls.no_contamination.gamma_soft_N_per_m=1.2e-05",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "ab70525",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_cadherin_junction_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 cadherin junction activation gate"
+   },
+   {
+    "_id": "395120daec5d81deac31f1d2e0192c5a",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-junctional-actin-activation-gate",
+    "Result Snapshot": "verdict=PASS",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "306bb95",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_junctional_actin_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 junctional actin activation gate"
+   },
+   {
+    "_id": "395120daec5d81e6a071f0fff7db7786",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-h7-osmotic-activation-gate",
+    "Result Snapshot": "verdict=PASS; PRIMARY_tau.in_band=True",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "67f65a3",
+    "Artifact Path": "ffn_sim/outputs/h7/production/h7_osmotic_activation_gate.json",
+    "Date": "2026-06-09",
+    "Gate": [],
+    "Run": "h7 osmotic activation gate"
+   },
+   {
+    "_id": "395120daec5d81e8b336dded04ec1d1d",
+    "Outcome": "",
+    "RUN ID": "RUN-h7-closeout",
+    "Result Snapshot": "H.7 — Dynamic single-cell spreading (real BAOAB drivers)",
+    "Notes": "machine-harvested 2026-07-06 by harvest_ops.py (P1); artifact is SSOT",
+    "Commit": "f654531",
+    "Artifact Path": "ffn_sim/outputs/h7/spreading/REPORT.md",
+    "Date": "2026-06-11",
+    "Gate": [],
+    "Run": "h7 closeout (REPORT.md)"
    }
   ],
   "DecisionLedger": [
