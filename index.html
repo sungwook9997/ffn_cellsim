@@ -1,0 +1,124 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ffn_cellsim — mechanistic single-cell mechanobiology</title>
+<style>
+:root{--bg:#0b0e14;--panel:#141a24;--line:#232c3b;--fg:#e6edf3;--mut:#9aa7b8;--acc:#5ac8fa;--grn:#76e0a0}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a{color:var(--acc);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{text-align:center;padding:54px 20px 20px}
+header h1{font-size:2.5rem;margin:0 0 6px;letter-spacing:-.5px}
+header p.tag{color:var(--mut);font-size:1.12rem;max-width:760px;margin:0 auto 18px}
+.badges img{height:22px;margin:3px}
+.hero img{width:100%;border-radius:14px;border:1px solid var(--line);margin:14px 0 6px}
+.hero small{color:var(--mut)}
+h2.sec{font-size:1.5rem;margin:46px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
+h2.sec .k{color:var(--grn);font-weight:600}
+p.lead{color:var(--mut);margin:.2rem 0 18px;max-width:820px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+figure img{width:100%;display:block;background:#000}
+figcaption{padding:10px 12px;color:var(--mut);font-size:.9rem}
+.viewers{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.vcard{display:flex;flex-direction:column;justify-content:flex-end;min-height:150px;padding:16px;
+background:linear-gradient(160deg,#182234,#0e141d);border:1px solid var(--line);border-radius:12px;transition:.15s}
+.vcard:hover{border-color:var(--acc);transform:translateY(-2px)}
+.vplay{align-self:flex-start;font-size:.8rem;color:#031;background:var(--grn);padding:3px 10px;border-radius:20px;font-weight:700}
+.vmeta{margin-top:auto;padding-top:14px} .vmeta b{display:block;color:var(--fg);font-size:1.05rem}
+.vmeta span{color:var(--mut);font-size:.88rem}
+footer{text-align:center;color:var(--mut);padding:44px 20px 60px;border-top:1px solid var(--line);margin-top:50px}
+.stat{display:inline-block;margin:0 14px} .stat b{color:var(--fg);font-size:1.35rem}
+</style></head><body><div class="wrap">
+<header>
+  <h1>ffn_cellsim</h1>
+  <p class="tag">A fine-grained, mechanistic simulator of single-cell mechanobiology — every filament,
+  motor, adhesion, and cross-link is an explicit particle, not a lumped model.</p>
+  <div class="badges">
+    <img src="https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white">
+    <img src="https://img.shields.io/badge/GPU-NVIDIA%20Warp-76B900?logo=nvidia&logoColor=white">
+    <img src="https://img.shields.io/badge/code-177k%20LOC-informational">
+    <img src="https://img.shields.io/badge/commits-1233%20in%2010%20weeks-success">
+  </div>
+  <p style="margin-top:14px"><a href="https://github.com/sungwook9997/ffn_cellsim">↗ source on GitHub</a></p>
+</header>
+
+<div class="hero"><img src="img/hero.png" alt="Emergent tumor spheroid, N=1138 deformable cells">
+<small>Emergent multicellular spheroid — 1,138 deformable cells, each with its own cortex, cytoplasm and nucleus, GPU-native.</small></div>
+
+<h2 class="sec"><span class="k">핵심</span> · Interactive 3D — rotate, cut, explore</h2>
+<p class="lead">These open the real Three.js / Plotly morphology viewers in your browser. Drag to rotate, scroll to zoom.</p>
+<div class="viewers">
+<a class="vcard" href="viewers/dcm_fullcompartment_n400.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Full-compartment spheroid (N=400)</b><span>Every cell has a membrane, cortex, cytoplasm (turgor + viscosity) and a nucleus. Rotate, cut, peel.</span></div></a>
+<a class="vcard" href="viewers/dcm_faceted_spheroid_n400.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Faceted confluent spheroid (N=400)</b><span>Cells facet into space-filling polyhedra from differential cortical tension.</span></div></a>
+<a class="vcard" href="viewers/dcm_division_n400.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Cell division in a spheroid (N=400)</b><span>Physically-anchored division; the spheroid grows cell-by-cell.</span></div></a>
+<a class="vcard" href="viewers/dcm_aggregation_n100.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Aggregation &amp; de-cohesion (N=100)</b><span>Cadherin catch-bonds hold the cluster; junction rupture drives de-cohesion.</span></div></a>
+<a class="vcard" href="viewers/ff_filopodium.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Filopodium protrusion (FF engine)</b><span>Explicit actin bundle ratcheting a membrane protrusion forward.</span></div></a>
+<a class="vcard" href="viewers/ff_ecm_protrusion.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Filopodium into a collagen ECM (FF engine)</b><span>Native-resolution filament bundle pushing into an explicit Mikado ECM network.</span></div></a>
+<a class="vcard" href="viewers/ff_architecture.html"><div class="vplay">▶ open 3D</div><div class="vmeta"><b>Filament architectures (FF engine)</b><span>Cortex / filopodium / lamellipodium woven from one unified filament builder.</span></div></a>
+</div>
+
+<h2 class="sec">Flagship results</h2>
+<p class="lead">Emergent from microscopic physics, then cross-checked against published closed-form oracles — validated, not fitted.</p>
+<div class="grid">
+<figure><img loading="lazy" src="img/hi_0.png" alt="Emergent spreading law A/A₀ = a + b/R + c/R² — r² = 0.998, not fitted"><figcaption>Emergent spreading law A/A₀ = a + b/R + c/R² — r² = 0.998, not fitted</figcaption></figure>
+<figure><img loading="lazy" src="img/hi_1.png" alt="Cortical tension &amp; contact angle validated vs Young–Dupré / Laplace oracles"><figcaption>Cortical tension &amp; contact angle validated vs Young–Dupré / Laplace oracles</figcaption></figure>
+<figure><img loading="lazy" src="img/hi_2.png" alt="Native-resolution multicellular assemblies on a single RTX A5000"><figcaption>Native-resolution multicellular assemblies on a single RTX A5000</figcaption></figure>
+</div>
+
+<h2 class="sec">Emergent dynamics</h2>
+<div class="grid">
+<figure><img loading="lazy" src="img/mov_0.gif" alt="Aggregation (N=400)"><figcaption>Aggregation (N=400)</figcaption></figure>
+<figure><img loading="lazy" src="img/mov_1.gif" alt="Spread &amp; compaction (N=800)"><figcaption>Spread &amp; compaction (N=800)</figcaption></figure>
+<figure><img loading="lazy" src="img/mov_2.gif" alt="3-zone necrosis"><figcaption>3-zone necrosis</figcaption></figure>
+<figure><img loading="lazy" src="img/mov_3.gif" alt="De-cohesion junction switch"><figcaption>De-cohesion junction switch</figcaption></figure>
+</div>
+
+<h2 class="sec">DCM engine · deformable cells &amp; spheroids</h2>
+<p class="lead">SimuCell3D physics on NVIDIA Warp: membrane + cortex + cytoplasm (turgor, viscosity) + nucleus, scaled to thousand-cell spheroids with aggregation, compaction, faceting, division and necrosis.</p>
+<div class="grid">
+<figure><img loading="lazy" src="img/dcm_0.png" alt="3-zone spheroid: proliferating rim → quiescent shell → necrotic core"><figcaption>3-zone spheroid: proliferating rim → quiescent shell → necrotic core</figcaption></figure>
+<figure><img loading="lazy" src="img/dcm_1.png" alt="Uniform γ rounds the cells; differential γ facets them"><figcaption>Uniform γ rounds the cells; differential γ facets them</figcaption></figure>
+<figure><img loading="lazy" src="img/dcm_2.png" alt="Cross-section: surface vs core packing"><figcaption>Cross-section: surface vs core packing</figcaption></figure>
+<figure><img loading="lazy" src="img/dcm_3.png" alt="DCM engine validation battery (native resolution)"><figcaption>DCM engine validation battery (native resolution)</figcaption></figure>
+<figure><img loading="lazy" src="img/dcm_4.png" alt="Two-stage aggregation → compaction storyboard (N=400)"><figcaption>Two-stage aggregation → compaction storyboard (N=400)</figcaption></figure>
+<figure><img loading="lazy" src="img/dcm_5.png" alt="Traction-driven behavior on substrate"><figcaption>Traction-driven behavior on substrate</figcaption></figure>
+</div>
+
+<h2 class="sec">FF engine · explicit filament networks</h2>
+<p class="lead">Cytosim physics on NVIDIA Warp: individual actin filaments, myosin motors and cross-linkers woven into cortex, filopodium and lamellipodium — validated against Taeyoon-Kim fiber-network mechanics.</p>
+<div class="grid">
+<figure><img loading="lazy" src="img/ff_0.png" alt="Actin cortex assembled from explicit filaments"><figcaption>Actin cortex assembled from explicit filaments</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_1.png" alt="Fiber-network mechanics vs Taeyoon-Kim oracle"><figcaption>Fiber-network mechanics vs Taeyoon-Kim oracle</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_2.png" alt="Shear modulus scaling with cross-link density"><figcaption>Shear modulus scaling with cross-link density</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_3.png" alt="Myosin-driven network contractility"><figcaption>Myosin-driven network contractility</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_4.png" alt="Active cortical-tension γ study"><figcaption>Active cortical-tension γ study</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_5.png" alt="AFM-style compression of the filament cell"><figcaption>AFM-style compression of the filament cell</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_6.png" alt="Full assembled filament cell"><figcaption>Full assembled filament cell</figcaption></figure>
+<figure><img loading="lazy" src="img/ff_7.png" alt="Active-gel polarization (Bois 2011)"><figcaption>Active-gel polarization (Bois 2011)</figcaption></figure>
+</div>
+
+<h2 class="sec">Foundation · validation-first Phase 0 / 1</h2>
+<p class="lead">Before any production run, every physics module passes literature-anchored sanity gates. ECM Mikado (H.1), single filament (H.2), actin cortex &amp; cortical tension (H.3, KU-3.5), and the A/A₀ spreading law all cross-checked against oracles.</p>
+<div class="grid">
+<figure><img loading="lazy" src="img/found_0.png" alt="H.1 ECM Mikado: strain-stiffening (KU-1.30)"><figcaption>H.1 ECM Mikado: strain-stiffening (KU-1.30)</figcaption></figure>
+<figure><img loading="lazy" src="img/found_1.png" alt="H.1 ECM: dipole radial force propagation"><figcaption>H.1 ECM: dipole radial force propagation</figcaption></figure>
+<figure><img loading="lazy" src="img/found_2.png" alt="H.2 single filament: sanity gates PASS"><figcaption>H.2 single filament: sanity gates PASS</figcaption></figure>
+<figure><img loading="lazy" src="img/found_3.png" alt="H.3 cortex: evidence montage"><figcaption>H.3 cortex: evidence montage</figcaption></figure>
+<figure><img loading="lazy" src="img/found_4.png" alt="H.3 cortex: full pipeline summary"><figcaption>H.3 cortex: full pipeline summary</figcaption></figure>
+<figure><img loading="lazy" src="img/found_5.png" alt="H.3 KU-3.5 cortical tension sweep"><figcaption>H.3 KU-3.5 cortical tension sweep</figcaption></figure>
+<figure><img loading="lazy" src="img/found_6.png" alt="Layer-2: A/A₀ spreading-law origin"><figcaption>Layer-2: A/A₀ spreading-law origin</figcaption></figure>
+<figure><img loading="lazy" src="img/found_7.png" alt="Overlay vs PI&#x27;s MCF-7 experiment"><figcaption>Overlay vs PI&#x27;s MCF-7 experiment</figcaption></figure>
+</div>
+
+<footer>
+  <div>
+    <span class="stat"><b>1,233</b><br>commits / 10 wks</span>
+    <span class="stat"><b>177k</b><br>lines of Python</span>
+    <span class="stat"><b>148</b><br>test files</span>
+    <span class="stat"><b>2</b><br>GPU engines</span>
+  </div>
+  <p style="margin-top:20px">Sungwook Yoon · Shin Lab, Dept. of Mechanical Engineering, KAIST<br>
+  <a href="https://github.com/sungwook9997/ffn_cellsim">github.com/sungwook9997/ffn_cellsim</a></p>
+</footer>
+</div></body></html>
