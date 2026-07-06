@@ -4,9 +4,9 @@
 
 ### A fine-grained, mechanistic simulator of single-cell mechanobiology — where every filament, motor, adhesion, and cross-link is an explicit particle.
 
-<img src="ffn_sim/outputs/deck_assets/curated/slide01_hero_spheroid_n1138.png" alt="Emergent tumor spheroid, N=1138 deformable cells" width="82%">
+<img src="ffn_sim/outputs/deck_assets/curated/movie_aggregation_n400.gif" alt="400 deformable cells aggregating into a cohesive spheroid" width="60%">
 
-<sub><i>Emergent multicellular spheroid — 1,138 deformable cells, each with its own cortex, cytoplasm, and nucleus, GPU-native.</i></sub>
+<sub><i>Emergent aggregation — 400 deformable cells self-assembling into a cohesive spheroid via explicit cadherin catch-bonds. GPU-native.</i></sub>
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![Engine](https://img.shields.io/badge/GPU-NVIDIA%20Warp-76B900?logo=nvidia&logoColor=white)
@@ -35,23 +35,13 @@ This is the hard way to build a cell simulator. It is also the only way to get b
 
 ## It works — emergent, not scripted
 
-Each clip below is behavior that **emerged** from microscopic physics, then was cross-checked against a literature oracle. Nothing here is hand-animated or curve-fit.
+Behavior here **emerges** from microscopic physics — nothing is hand-animated or curve-fit. The strongest demonstrations are the **interactive 3-D morphology viewers**: rotate the cells, cut the spheroids, and inspect membrane / cortex / cytoplasm / nucleus yourself.
 
-| Multicellular aggregation | Compaction & spreading | 3-zone necrosis |
-|:---:|:---:|:---:|
-| <img src="ffn_sim/outputs/deck_assets/curated/movie_aggregation_n400.gif" width="260"> | <img src="ffn_sim/outputs/deck_assets/curated/movie_spread_compaction_n800.gif" width="260"> | <img src="ffn_sim/outputs/deck_assets/curated/movie_necrosis_3zone.gif" width="260"> |
-| 400 cells self-assemble into a cohesive spheroid via explicit cadherin catch-bonds | 800-cell spheroid wets and compacts on a substrate | proliferating rim → quiescent shell → necrotic core, from diffusion + mechanical stress |
+### ▶ [**Open the interactive gallery →**](https://sungwook9997.github.io/ffn_cellsim/)
 
-**Validated against the literature, not fitted to it:**
+Full-compartment and faceted spheroids (N=400), cell division, emergent aggregation, and the filament (FF) engine's cortex and ECM protrusions — all live, GPU-native renders.
 
-<div align="center">
-<img src="ffn_sim/outputs/deck_assets/curated/slide09_rlaw_r2_0998.png" width="46%">
-&nbsp;&nbsp;
-<img src="ffn_sim/outputs/deck_assets/curated/slide07-08_cortex_validation_montage.png" width="46%">
-</div>
-
-- **Spreading law** — the emergent cell-spreading area reproduces the published `A/A₀ = a + b/R + c/R²` form with **r² = 0.998**, *and* recovers the correct ligand-density ordering — without fitting to it.
-- **Cortical tension, contact angle, and ECM remodeling** are cross-checked against Young–Dupré, Laplace, and Taeyoon-Kim fiber-network oracles (the ~1/r strain field is recovered in the clean intermediate regime).
+**Cross-checked against the literature, not fitted to it:** contact angle vs Young–Dupré, spheroid geometry vs Laplace, and ECM fiber-network remodeling vs the Taeyoon-Kim oracle (the ~1/r strain field recovered in the clean intermediate regime); single-filament and ECM sanity gates pass before any production run. Where the model falls short of a target — the active-cortical-tension magnitude, or single-cell spreading against the lab's collective-spheroid data — **that gap is reported honestly, not hidden.** Validation figures live in the gallery's *Quantitative validation* section.
 
 ---
 
@@ -96,10 +86,7 @@ This has been a single, sustained build. The commit history is the honest record
 | **156 design docs** | every non-trivial decision recorded with its literature anchor |
 | **2 physics engines** | GPU-native Warp, parity-gated against an archived HOOMD reference |
 
-<div align="center">
-<img src="ffn_sim/outputs/deck_assets/curated/slide16_engine_scale_n1128.png" width="70%">
-<br><sub><i>Engine scaling — native-resolution multicellular assemblies on a single RTX A5000.</i></sub>
-</div>
+Native-resolution multicellular assemblies (10²–10³ deformable cells, each ~42 nodes) run on a single RTX A5000 — see the interactive spheroids in the [gallery](https://sungwook9997.github.io/ffn_cellsim/).
 
 ---
 
