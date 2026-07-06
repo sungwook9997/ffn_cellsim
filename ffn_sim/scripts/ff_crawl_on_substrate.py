@@ -318,11 +318,13 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
             a3 = pc[faces_cp[:, 0]] - ce; b3 = pc[faces_cp[:, 1]] - ce; c3 = pc[faces_cp[:, 2]] - ce
             Vc = float(cpx.abs((a3 * cpx.cross(b3, c3)).sum() / 6.0))
+            if not np.isfinite(Vc) or Vc <= 1.02 * vmin:       # volume collapsed toward vmin (implicit overshoot at too-large dt)
+                print(f"  [!] volume collapse at step {step} (Vc={Vc:.1f} ≤ vmin={vmin:.1f}) — truncating"); diverged = True; break
             g = cpx.zeros((Nc, 3))
             cpx.add.at(g, faces_cp[:, 0], cpx.cross(b3, c3) / 6.0)
             cpx.add.at(g, faces_cp[:, 1], cpx.cross(c3, a3) / 6.0)
             cpx.add.at(g, faces_cp[:, 2], cpx.cross(a3, b3) / 6.0)
-            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-9) ** 2
+            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-3 * V0) ** 2   # floor 1e-3·V0 (not 1e-9→overflow when squared)
             vol_g = cpx.zeros(3 * N); vol_g[:3 * Nc] = g.reshape(-1)
             # CLUTCH + SUBSTRATE stiffness → implicit K diagonal (so dt is not capped by their explicit CFL)
             diag = cpx.zeros(3 * N)
@@ -341,7 +343,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             gN = volume_gradient(pcx2, faces, cen2)            # ∂V/∂x (Nc,3) — exact osmotic force direction
             dP = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
             vs["dP"] = min(max(dP, -TURGOR_PI_IN0), TURGOR_PI_IN0); vs["g"] = gN
-            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-9) ** 2    # = −∂ΔP/∂V > 0 (osmotic stiffness)
+            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-3 * V0) ** 2    # floor 1e-3·V0 (osmotic stiffness; not 1e-9→overflow)
             vol_g = np.zeros(3 * N); vol_g[:3 * Nc] = gN.reshape(-1)
             xv, _info = implicit_step_current(xv, full_force, bend_triples_np, alpha, xl_ij_np, kxl_np,
                                               gamma=gamma_rep, dt=dt, n_newton=1, vol_g=vol_g, k_vol=k_vol)
