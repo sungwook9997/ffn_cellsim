@@ -88,6 +88,23 @@ def protrusion_reaction_kernel(phat: wp.vec3d, total: wp.array(dtype=wp.float64)
 
 
 @wp.kernel
+def sum_pos_kernel(pos: wp.array(dtype=wp.vec3d), out: wp.array(dtype=wp.float64)):
+    """Σ cortex node positions → out[0:3] (÷N on host = centroid). GPU-resident reduction (a few scalars cross
+    the bus, never the whole array) — the GPU-only pattern instead of a host ``pos.mean(0)``/ConvexHull."""
+    i = wp.tid()
+    p = pos[i]
+    wp.atomic_add(out, 0, p[0]); wp.atomic_add(out, 1, p[1]); wp.atomic_add(out, 2, p[2])
+
+
+@wp.kernel
+def sum_radius_kernel(pos: wp.array(dtype=wp.vec3d), centre: wp.vec3d, out: wp.array(dtype=wp.float64)):
+    """Σ |pos − centre| → out[0] (÷N on host = mean radius). Device reduction; area ≈ 4πR_mean² avoids the host
+    ConvexHull. out must be zeroed before launch."""
+    i = wp.tid()
+    wp.atomic_add(out, 0, wp.length(pos[i] - centre))
+
+
+@wp.kernel
 def actin_assembly_kernel(pos: wp.array(dtype=wp.vec3d), fiber_off: wp.array(dtype=wp.int32),
                           seg_off: wp.array(dtype=wp.int32), seg_rest: wp.array(dtype=wp.float64),
                           frac: wp.float64):

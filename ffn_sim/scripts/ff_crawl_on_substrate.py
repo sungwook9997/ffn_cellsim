@@ -37,7 +37,8 @@ from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_km
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
-                                      volume_gradient, physical_node_gammas, crawl_cfl_dt)
+                                      sum_pos_kernel, sum_radius_kernel, volume_gradient,
+                                      physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
@@ -61,7 +62,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     zc = cx.net.pos[:, 2]
     basal = np.where(zc < z_sub + contact_h)[0]
     anchors = cx.net.pos[basal].copy(); anchors[:, 2] = z_sub
-    nuc = resolve_nucleus(R_nuc_um=0.25 * R, n_beads=3000)     # 0.25R = sim value (MCF7 nuc larger, audit#15)
+    nuc = resolve_nucleus(R_nuc_um=0.65 * R, n_beads=3000)     # 0.65R: realistic MCF7 nucleus (audit#15/Moore2016,
+    #                                                            Ø~12µm ≈ 0.8R, N:C 1.9 ~50% cell vol) — was 0.25R (~3× too small)
     nuc_pos = _seed_nucleus_cloud(c, nuc.R_nuc_um, nuc.n_beads, np.random.default_rng(seed + 2))
     pos_all = np.concatenate([cx.net.pos, nuc_pos], 0)
     # front cap membership (for reporting) + derived per-node protrusive force
@@ -127,6 +129,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     total_d = wp.zeros(1, dtype=wp.float64, device=d)          # leading-edge push total (for the retrograde reaction)
     spread_total_d = wp.zeros(2, dtype=wp.float64, device=d)   # spreading push (x,y) total for the retrograde reaction
     vol_d = wp.zeros(1, dtype=wp.float64, device=d)            # per-step enclosed volume (no refresh lag)
+    csum_d = wp.zeros(3, dtype=wp.float64, device=d)           # device centroid reduction (GPU-only, no host ConvexHull)
+    rsum_d = wp.zeros(1, dtype=wp.float64, device=d)           # device mean-radius reduction
     faces_d = wp.array(faces, dtype=wp.int32, ndim=2, device=d)
     gamma_d = wp.array(gammas, dtype=wp.float64, device=d)
     tri_d = wp.array(tri, dtype=wp.int32, device=d); alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
@@ -198,17 +202,15 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     frames, com_traj, times, vol_traj, diverged = [], [], [], [], False
     t0 = time.time()
     for step in range(steps):
-        if step % refresh_every == 0:                          # slow modes: centroid, area, membrane ΔP (host)
-            p = pos_d.numpy(); pcx = p[:Nc]; cc = pcx.mean(0)
-            centre = wp.vec3d(float(cc[0]), float(cc[1]), float(cc[2]))
-            cx_c, cy_c = float(cc[0]), float(cc[1])
-            Rm = float(np.linalg.norm(pcx - cc, axis=1).mean())
-            try:
-                area = float(ConvexHull(pcx).area)
-            except Exception:
-                area = 4 * np.pi * Rm**2
+        if step % refresh_every == 0:                          # slow modes via DEVICE reductions (GPU-only, no host ConvexHull)
+            csum_d.zero_(); wp.launch(sum_pos_kernel, dim=Nc, inputs=[pos_d, csum_d], device=d)
+            cc = csum_d.numpy() / Nc                            # centroid — 3 scalars cross the bus
+            centre = wp.vec3d(float(cc[0]), float(cc[1]), float(cc[2])); cx_c, cy_c = float(cc[0]), float(cc[1])
+            rsum_d.zero_(); wp.launch(sum_radius_kernel, dim=Nc, inputs=[pos_d, centre, rsum_d], device=d)
+            Rm = float(rsum_d.numpy()[0]) / Nc                  # mean radius — 1 scalar; area ≈ 4πR² (no ConvexHull)
+            area = 4.0 * np.pi * Rm**2
             dP_mem_area = -2.0 * min(mem.gamma_mem, mem.tau_lysis) / max(Rm, 1e-9) * area / Nc
-            if not np.isfinite(p).all() or np.abs(p).max() > 50.0 * S["R"]:
+            if not np.isfinite(Rm) or Rm > 50.0 * S["R"]:
                 print(f"  [!] divergence at step {step} — truncating"); diverged = True; break
         # PER-STEP enclosed volume (on-device, NO refresh lag) → BIDIRECTIONAL osmotic ΔP (incompressible cytoplasm:
         # outward when V<V0, INWARD when V>V0). No lag ⇒ the stiff osmotic constraint is stable (no balloon, no collapse).
@@ -258,6 +260,17 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             vol_g = np.zeros(3 * N); vol_g[:3 * Nc] = gN.reshape(-1)
             xv, _info = implicit_step_current(xv, full_force, bend_triples_np, alpha, xl_ij_np, kxl_np,
                                               gamma=gamma_rep, dt=dt, n_newton=1, vol_g=vol_g, k_vol=k_vol)
+            # HARD incompressibility: project the cortex to V=V0 exactly (Newton on the volume constraint along
+            # g=∂V/∂x). The basal cap is held by the clutches, so the inward correction drops the free APEX ⇒ as
+            # the base area grows (assembly) the cell FLATTENS at constant volume instead of inflating.
+            xr = xv.reshape(N, 3); pcx3 = xr[:Nc].copy(); cen3 = pcx3.mean(0)
+            for _ in range(3):
+                a3 = pcx3[faces[:, 0]] - cen3; b3 = pcx3[faces[:, 1]] - cen3; c3 = pcx3[faces[:, 2]] - cen3
+                Vp = abs(float((a3 * np.cross(b3, c3)).sum() / 6.0))
+                gp = volume_gradient(pcx3, faces, cen3); den = float((gp * gp).sum())
+                if den > 1e-9:
+                    pcx3 = pcx3 - ((Vp - V0) / den) * gp
+            xr[:Nc] = pcx3; xv = xr.reshape(-1)
             pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(N, 3))
         else:                                                  # explicit physical-γ step (CFL-bound)
             wp.launch(axpy_physical_kernel, dim=N, inputs=[pos_d, wp.float64(dt), gamma_d, f_d], device=d)
@@ -280,12 +293,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 anchors[reb, 2] = z_sub; bd[reb] = 1
                 anch_d.assign(anchors); bd_d.assign(bd)
         if step % record_every == 0:
-            p = pos_d.numpy(); cc = p[:Nc].mean(0)
+            p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)
             frames.append(p.astype(np.float32)); com_traj.append(cc.copy()); times.append(step * dt)
-            try:
-                vol_traj.append(float(ConvexHull(p[:Nc]).volume) / V0)
-            except Exception:
-                vol_traj.append(np.nan)
+            ar = pcxr[faces[:, 0]] - cc; br = pcxr[faces[:, 1]] - cc; cr = pcxr[faces[:, 2]] - cc
+            vol_traj.append(abs(float((ar * np.cross(br, cr)).sum() / 6.0)) / V0)   # face-based volume (no ConvexHull)
     wp.synchronize_device(d)
     p = pos_d.numpy(); cc_final = p[:Nc].mean(0)
     frames.append(p.astype(np.float32)); com_traj.append(cc_final.copy()); times.append(step * dt)

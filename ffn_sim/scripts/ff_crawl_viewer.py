@@ -28,20 +28,26 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     nuc = frames[:, Nc:, :] if n_nuc > 0 else None
     T = cortex.shape[0]
 
-    # CLEAN cell morphology: nested SURFACES (membrane + nucleus), not point clouds. The membrane/cortex is the
-    # frame-0 convex-hull triangulation (fixed faces, animated vertices → the surface DEFORMS with the nodes);
-    # the nucleus is the hull of its bead cloud (reads as a sphere). Translucent membrane so the nucleus shows
-    # inside = the compartment stack the PI wants to see.
+    # The FF cortex IS a WOVEN FILAMENT NETWORK — render the actual filaments (line segments along each fiber),
+    # not a smooth convex-hull blob (PI 2026-07-06: "필라멘트 직조 한걸로 보이는게 아니라 이상하게 보인다").
+    # The membrane hull is kept only as a FAINT translucent envelope so you can read the cell outline; the
+    # nucleus is its bead hull; substrate + COM path as before.
+    foff = np.asarray(d["foff"], np.int64) if "foff" in d else np.array([0, Nc], np.int64)
+    seg_idx = np.array([(n, n + 1) for f in range(len(foff) - 1) for n in range(int(foff[f]), int(foff[f + 1]) - 1)],
+                       dtype=np.int64)                       # (Nseg,2) consecutive-node pairs = the woven filaments
+    fil_fr = [cortex[t][seg_idx] for t in range(T)]          # (Nseg,2,3) per frame
     faces = ConvexHull(cortex[0]).simplices
     cortex_fr = [cortex[t] for t in range(T)]
     layers = [
-        {"name": "membrane / cortex", "kind": "mesh", "verts": cortex[0], "faces": faces,
-         "color": "#6fa8dc", "opacity": 0.45, "frames": cortex_fr},
+        {"name": "cortex filaments (woven actin)", "kind": "lines", "verts": fil_fr[0], "color": "#8fbff0",
+         "size": 1.5, "frames": fil_fr},
+        {"name": "cell outline (membrane)", "kind": "mesh", "verts": cortex[0], "faces": faces,
+         "color": "#3a5878", "opacity": 0.12, "frames": cortex_fr},
     ]
     if nuc is not None:
         nfaces = ConvexHull(nuc[0]).simplices
         layers.append({"name": "nucleus", "kind": "mesh", "verts": nuc[0], "faces": nfaces,
-                       "color": "#b07fd6", "opacity": 0.85, "frames": [nuc[t] for t in range(T)]})
+                       "color": "#b07fd6", "opacity": 0.8, "frames": [nuc[t] for t in range(T)]})
     layers.append({"name": "substrate", "kind": "plates", "verts": [z_sub], "half_xy": R * 1.6, "color": "#3a3f47"})
     if len(com) >= 2:                                          # faint COM path (the crawl track)
         seg = np.stack([com[:-1], com[1:]], axis=1).astype(np.float32)
