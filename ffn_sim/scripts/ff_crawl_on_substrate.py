@@ -207,6 +207,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         bt_cp = cpx.asarray(np.ascontiguousarray(net.bend_triples, np.int64))
         al_cp = cpx.asarray(alpha); xlij_cp = cpx.asarray(xl_ij_np); kxl_cp = cpx.asarray(kxl_np)
         faces_cp = cpx.asarray(faces.astype(np.int64))
+        bas_cp = cpx.asarray(S["basal"].astype(np.int64))     # basal clutch/contact node indices (for diag_extra)
 
         def gpu_force_fn(x_cp):
             """Full FF force at x as a device-resident cupy array (no host round-trip). Warp force kernels write
@@ -309,8 +310,14 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             cpx.add.at(g, faces_cp[:, 2], cpx.cross(a3, b3) / 6.0)
             k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-9) ** 2
             vol_g = cpx.zeros(3 * N); vol_g[:3 * Nc] = g.reshape(-1)
+            # CLUTCH + SUBSTRATE stiffness → implicit K diagonal (so dt is not capped by their explicit CFL)
+            diag = cpx.zeros(3 * N)
+            if clutches:
+                bset = bas_cp[cpx.asarray(bd_d) > 0]           # bound basal actin nodes → k_int·I (spring-to-anchor ≈ pin)
+                diag[3 * bset] += cp.k_int; diag[3 * bset + 1] += cp.k_int; diag[3 * bset + 2] += cp.k_int
+            diag[3 * bas_cp + 2] += k_plane                    # substrate excluded-volume on basal z
             x_cp = ff_implicit_step_gpu(x_cp, gpu_force_fn, bt_cp, al_cp, xlij_cp, kxl_cp,
-                                        gamma=gamma_rep, dt=dt, vol_g=vol_g, k_vol=k_vol)
+                                        gamma=gamma_rep, dt=dt, vol_g=vol_g, k_vol=k_vol, diag_extra=diag)
             pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(N, 3)), dtype=wp.vec3d, device=d))
         elif implicit:                                         # host implicit (CPU dev fallback)
             xv = pos_d.numpy().reshape(-1)

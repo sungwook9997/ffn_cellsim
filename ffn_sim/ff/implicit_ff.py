@@ -194,10 +194,12 @@ def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *,
 # the CUDA array interface, no host round-trip). This is what makes native (≈495k nodes) + large dt feasible.
 # ------------------------------------------------------------------------------------------------------
 
-def assemble_K_current_cupy(pos, bend_triples, alpha, xl_ij, k_xl, N):
+def assemble_K_current_cupy(pos, bend_triples, alpha, xl_ij, k_xl, N, diag_extra=None):
     """Analytic elastic stiffness K (bending 4th-diff + crosslink k·ûûᵀ) assembled ON THE GPU from cupy arrays.
     ``pos`` (N,3), ``bend_triples`` (T,3), ``xl_ij`` (E,2), ``alpha`` (T,), ``k_xl`` (E,) are all cupy. Returns a
-    cupy CSR (3N×3N)."""
+    cupy CSR (3N×3N). ``diag_extra`` (3N,) optionally adds a per-DOF diagonal stiffness — used to make the CLUTCH
+    (k_int·I on bound basal nodes) and SUBSTRATE (k_plane on basal z) IMPLICIT too, so dt is no longer capped by
+    their explicit CFL (it rises to the next-softest force ≈ the nucleus)."""
     import cupy as cp
     import cupyx.scipy.sparse as csp
     n3 = 3 * N
@@ -225,11 +227,14 @@ def assemble_K_current_cupy(pos, bend_triples, alpha, xl_ij, k_xl, N):
     vals_x = cp.concatenate([Pf.ravel(), -Pf.ravel(), Pf.ravel(), -Pf.ravel()])
     rows = cp.concatenate([rows_b, rows_x]); cols = cp.concatenate([cols_b, cols_x])
     vals = cp.concatenate([vals_b, vals_x])
-    return csp.coo_matrix((vals, (rows, cols)), shape=(n3, n3)).tocsr()
+    K = csp.coo_matrix((vals, (rows, cols)), shape=(n3, n3)).tocsr()
+    if diag_extra is not None:
+        K = K + csp.diags(cp.asarray(diag_extra, cp.float64), format="csr")
+    return K
 
 
 def ff_implicit_step_gpu(x, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma, dt,
-                         vol_g=None, k_vol=0.0, cg_tol=1e-6, cg_maxiter=400):
+                         vol_g=None, k_vol=0.0, diag_extra=None, cg_tol=1e-6, cg_maxiter=400):
     """One GPU-resident NF2007 implicit overdamped step. All arrays cupy, device-resident. ``force_fn(x_cp)``
     returns the full force as a cupy (3N,) array (Warp kernels → cupy view, no host). Solves
     (γ/dt·I + K(x) + k_vol·g·gᵀ)·Δx = F(x) with cupy CG. Returns x+Δx (cupy)."""
@@ -237,7 +242,7 @@ def ff_implicit_step_gpu(x, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma
     import cupyx.scipy.sparse as csp
     from cupyx.scipy.sparse.linalg import cg, LinearOperator
     N = x.size // 3; n3 = 3 * N; a = gamma / dt
-    K = assemble_K_current_cupy(x.reshape(N, 3), bend_triples, alpha, xl_ij, k_xl, N)
+    K = assemble_K_current_cupy(x.reshape(N, 3), bend_triples, alpha, xl_ij, k_xl, N, diag_extra=diag_extra)
     M = (a * csp.identity(n3, format="csr", dtype=cp.float64) + K).tocsr()
     F = force_fn(x)
     if vol_g is not None and k_vol > 0.0:
