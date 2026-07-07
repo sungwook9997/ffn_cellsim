@@ -59,12 +59,28 @@ def main() -> None:
                          "R_nuc = 0.25*7.5µm). Faithful to the sim (uniform R_nuc for all cells); overrides "
                          "--r-nuc-factor for sizing. Use this for honest morphology; the proportional mode is a "
                          "display convention only.")
+    ap.add_argument("--frame-stride", type=int, default=1, dest="frame_stride",
+                    help="keep every Nth trajectory frame (default 1 = all). Use >1 for large-N runs to "
+                         "bound the embedded HTML size (e.g. N=2000 has ~320k nodes → stride 3 keeps ~8 frames).")
+    ap.add_argument("--max-frames", type=int, default=0, dest="max_frames",
+                    help="if >0, cap the number of kept frames to this many (evenly spaced across the "
+                         "trajectory, always including the last). Applied after --frame-stride.")
     args = ap.parse_args()
 
     d = np.load(args.npz, allow_pickle=True)
     frames = np.asarray(d["frames"], dtype=np.float64) * 1e6   # → µm
     faces = np.asarray(d["faces"], dtype=np.int64)
     cof = np.asarray(d["cof"], dtype=np.int64)
+    F0 = frames.shape[0]
+    # frame subsampling (bounds embedded HTML size for large-N runs). `keep` indexes the ORIGINAL
+    # trajectory; every per-frame array (frames + mech overlays + bondpairs) is indexed through it so
+    # the animation stays self-consistent. Always keep the last frame (the settled/endpoint state).
+    keep = np.arange(0, F0, max(1, int(args.frame_stride)))
+    if args.max_frames and len(keep) > args.max_frames:
+        keep = np.unique(np.linspace(0, F0 - 1, int(args.max_frames)).round().astype(int))
+    if keep[-1] != F0 - 1:
+        keep = np.append(keep, F0 - 1)
+    frames = frames[keep]
     F, N, _ = frames.shape
 
     # only render faces whose nodes are live (cof>=0); drop dormant
@@ -139,16 +155,17 @@ def main() -> None:
 
     have_mech = "fmag" in d.files and "nbond" in d.files
     if have_mech:
-        stress = _norm_pctl(np.asarray(d["fmag"]))            # (F,N) → [0,1]
-        junctionN = _norm_pctl(np.asarray(d["nbond"]))         # (F,N) → [0,1]
+        stress = _norm_pctl(np.asarray(d["fmag"])[keep])       # (F,N) → [0,1], subsampled
+        junctionN = _norm_pctl(np.asarray(d["nbond"])[keep])   # (F,N) → [0,1], subsampled
     else:                                                      # legacy npz (no mech): flat overlays
         stress = np.zeros((F, N), np.float32)
         junctionN = np.zeros((F, N), np.float32)
     # bond pairs → concatenated index array + per-frame offsets (for LineSegments)
     bond_idx_list, bond_off = [], [0]
     if "bondpairs" in d.files:
-        for fi in range(F):
-            bp = np.asarray(d["bondpairs"][fi], dtype=np.int32).reshape(-1, 2)
+        bp_all = d["bondpairs"]
+        for fi in keep:
+            bp = np.asarray(bp_all[fi], dtype=np.int32).reshape(-1, 2)
             bond_idx_list.append(bp)
             bond_off.append(bond_off[-1] + bp.shape[0])
         bond_idx = (np.concatenate(bond_idx_list, axis=0) if bond_idx_list else
