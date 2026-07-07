@@ -34,6 +34,7 @@ from ffn_sim.ff.network_warp import (_zero, link_spring_kernel, myosin_kernel, t
                                      substrate_plane_kernel)
 from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.microtubule import build_microtubule_aster, merge_aster_into_cortex
+from ffn_sim.ff.ff_virial_stress import cortex_node_stress, cortex_node_areal_strain, face_areas
 from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_kmc_kernel, resolve_clutch)
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
@@ -329,6 +330,12 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             return F
 
     frames, com_traj, times, vol_traj, diverged = [], [], [], [], False
+    # FEM-field (per recorded frame) + FA-junction recording (cortex stress topology = cortex xl + myosin only)
+    _area0 = face_areas(net.pos[:Nc], faces)                  # rest cortex face areas (frame-0)
+    _xl_st = np.stack([cx.xl_i, cx.xl_j], 1).astype(np.int64)
+    _kxl_st = np.ascontiguousarray(cx.xl_k, np.float64); _r0_st = np.ascontiguousarray(cx.xl_rest, np.float64)
+    _myo_st = np.stack([cx.myo_i, cx.myo_j], 1).astype(np.int64) if cx.myo_i.size else np.zeros((0, 2), np.int64)
+    svm_frames, strain_frames, bound_frames, anch_frames = [], [], [], []
     t0 = time.time()
     for step in range(steps):
         if step % refresh_every == 0:                          # slow modes via DEVICE reductions (GPU-only, no host ConvexHull)
@@ -464,9 +471,20 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             frames.append(p.astype(np.float32)); com_traj.append(cc.copy()); times.append(step * dt)
             ar = pcxr[faces[:, 0]] - cc; br = pcxr[faces[:, 1]] - cc; cr = pcxr[faces[:, 2]] - cc
             vol_traj.append(abs(float((ar * np.cross(br, cr)).sum() / 6.0)) / V0)   # face-based volume (no ConvexHull)
+            # FEM fields on the cortex (virial σ_vm + areal strain) + FA-junction snapshot (bound clutch↔anchor)
+            svmf, _pf = cortex_node_stress(pcxr, np.full(Nc, V0 / Nc), xl_ij=_xl_st, k_xl=_kxl_st, r0_xl=_r0_st,
+                                           myo_ij=_myo_st, f_myo=f_myo, dP=dP)
+            svm_frames.append(svmf.astype(np.float32))
+            strain_frames.append(cortex_node_areal_strain(pcxr, faces, _area0).astype(np.float32))
+            bound_frames.append(bd_d.numpy().astype(np.int8)); anch_frames.append(anch_d.numpy().astype(np.float32))
     wp.synchronize_device(d)
     p = pos_d.numpy(); cc_final = p[:Nc].mean(0)
     frames.append(p.astype(np.float32)); com_traj.append(cc_final.copy()); times.append(step * dt)
+    svmf, _pf = cortex_node_stress(p[:Nc], np.full(Nc, V0 / Nc), xl_ij=_xl_st, k_xl=_kxl_st, r0_xl=_r0_st,
+                                   myo_ij=_myo_st, f_myo=f_myo, dP=dP)
+    svm_frames.append(svmf.astype(np.float32))
+    strain_frames.append(cortex_node_areal_strain(p[:Nc], faces, _area0).astype(np.float32))
+    bound_frames.append(bd_d.numpy().astype(np.int8)); anch_frames.append(anch_d.numpy().astype(np.float32))
     xp = p
     com_traj = np.array(com_traj); times = np.array(times)
     disp_along = float((com_traj[-1] - com_traj[0]) @ phat)        # net COM displacement along crawl axis [µm]
@@ -489,7 +507,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 n_contact=int(in_contact.sum()), contact_radius_um=contact_r, basal_gap_um=basal_gap,
                 cell_height_um=cell_h, R_um=S["R"], vol_final=float(vol_traj[-1]) if vol_traj else np.nan,
                 f_pro_pN=S["f_pro"], gamma_min=float(gammas.min()), gamma_max=float(gammas.max()),
-                F_star_pN=cp.F_star_pN, kmax=float(kmax))
+                F_star_pN=cp.F_star_pN, kmax=float(kmax),
+                svm=np.array(svm_frames), cstrain=np.array(strain_frames), faces=faces.astype(np.int32),
+                bound_frames=np.array(bound_frames), anch_frames=np.array(anch_frames), basal=S["basal"],
+                k_int=float(cp.k_int), clutch_rest_um=float(cp.rest_um))
 
 
 def main():
@@ -550,7 +571,9 @@ def main():
     np.savez_compressed(f"{args.out}/figs/{args.tag}_on.npz", frames=np.array(r["frames"]), com=r["com"],
                         times=r["times"], vol=r["vol"], Nc=S["Nc"], Ne=S["Ne"], basal=S["basal"], z_sub=S["z_sub"],
                         R=S["R"], phat=S["phat"], foff=S["net"].fiber_offsets, n_nuc=S["n_nuc"],
-                        n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"])
+                        n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"],
+                        svm=r["svm"], cstrain=r["cstrain"], faces=r["faces"], bound_frames=r["bound_frames"],
+                        anch_frames=r["anch_frames"], k_int=r["k_int"], clutch_rest_um=r["clutch_rest_um"])
     if args.audit:
         rc = run(S, steps=args.steps, record_every=args.record_every, clutches=False, device=args.device)
         print(f"[AUDIT clutch OFF] disp∥={rc['disp_along_um']:+.3f} µm  disp⊥={rc['disp_perp_um']:.3f} µm  "

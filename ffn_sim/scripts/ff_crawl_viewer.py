@@ -42,7 +42,7 @@ def _turbo_colors(scalar_frames, lo, hi):
 
 
 def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None = None,
-          max_fibers: int = 0) -> dict:
+          max_fibers: int = 0, max_frames: int = 10) -> dict:
     d = np.load(npz_path)
     frames = np.asarray(d["frames"], np.float32)              # (T, N, 3)  [cortex(Nc) ; MT_arms ; MTOC ; nucleus]
     Nc = int(d["Nc"]); n_nuc = int(d["n_nuc"]); z_sub = float(d["z_sub"]); R = float(d["R"])
@@ -51,6 +51,12 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     mtoc_idx = int(d["mtoc_idx"]) if "mtoc_idx" in d else -1
     has_mt = n_mt > 0 and Ne > Nc
     phat = np.asarray(d["phat"], np.float64); com = np.asarray(d["com"], np.float64)
+    # TEMPORAL subsample of frames only (NOT spatial/fiber downsampling — PI rule): keeps the full native
+    # cortex per frame but caps the timepoints so the all-fibers HTML stays loadable (>~500 MB won't open).
+    T0 = frames.shape[0]
+    fidx = (np.unique(np.linspace(0, T0 - 1, max_frames).round().astype(int)) if max_frames and T0 > max_frames
+            else np.arange(T0))
+    frames = frames[fidx]; com = com[fidx] if com.shape[0] == T0 else com
     cortex = frames[:, :Nc, :]                                # (T, Nc, 3)
     nuc = frames[:, Ne:, :] if n_nuc > 0 else None            # nucleus beads live AFTER the elastic block
     T = cortex.shape[0]
@@ -79,8 +85,8 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     faces = np.asarray(d["faces"], np.int64) if "faces" in d else ConvexHull(cortex[0]).simplices
     cortex_fr = [cortex[t] for t in range(T)]
     # FEM-style per-node fields (if the sim saved them): von-Mises stress σ_vm [Pa] + areal strain over the cortex
-    svm = np.asarray(d["svm"], np.float64) if "svm" in d else None          # (T, Nc)
-    cstrain = np.asarray(d["cstrain"], np.float64) if "cstrain" in d else None
+    svm = np.asarray(d["svm"], np.float64)[fidx] if "svm" in d else None     # (T, Nc), subsampled to fidx
+    cstrain = np.asarray(d["cstrain"], np.float64)[fidx] if "cstrain" in d else None
     layers = [
         {"name": fib_label, "kind": "lines", "verts": fil_fr[0], "color": "#8fbff0",
          "size": 1.5, "frames": fil_fr, "clip": True},
@@ -107,6 +113,19 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
                        "faces": nfaces, "color": "#d17fe0", "opacity": 0.97,
                        "frames": [nuc[t] for t in range(T)]})
     layers.append({"name": "substrate", "kind": "plates", "verts": [z_sub], "half_xy": R * 1.6, "color": "#3a3f47"})
+    if "bound_frames" in d.files and "basal" in d.files:      # FA integrin clutch junctions (cell↔substrate)
+        basal_i = np.asarray(d["basal"], np.int64)
+        bfr = np.asarray(d["bound_frames"])[fidx]; afr = np.asarray(d["anch_frames"], np.float32)[fidx]
+        M = basal_i.shape[0]; TF = min(T, bfr.shape[0])
+        fa_fr = []
+        for t in range(TF):
+            anc = afr[t]; bnd = bfr[t]; seg = np.stack([frames[t][basal_i], anc], 1).astype(np.float32)   # (M,2,3)
+            if (bnd == 0).any(): seg[bnd == 0] = np.stack([anc[bnd == 0], anc[bnd == 0]], 1)   # unbound → zero-length (hidden)
+            fa_fr.append(seg.reshape(-1, 3))
+        nb = int(bfr[TF - 1].sum())
+        layers.append({"name": f"FA integrin clutches ({nb}/{M} bound → rigid substrate; no fiber-ECM in this driver)",
+                       "kind": "lines", "verts": fa_fr[0], "color": "#39ff14", "size": 2.2, "opacity": 0.95,
+                       "on_top": True, "frames": fa_fr})
     if len(com) >= 2:                                          # faint COM path (the crawl track)
         seg = np.stack([com[:-1], com[1:]], axis=1).astype(np.float32)
         layers.append({"name": "COM path", "kind": "lines", "verts": seg, "color": "#3ddc84", "size": 2.0})
