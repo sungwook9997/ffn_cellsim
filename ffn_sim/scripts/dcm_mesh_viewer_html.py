@@ -145,21 +145,32 @@ def main() -> None:
             rnuc_cell[i] = min(rnuc_abs, rmin * 0.99)
 
     # Per-NODE overlays the viewer colours by (REAL sim mechanics when the run saved them):
-    #   stress   = |net force| per node [N]  (fmag)  → FEM-style stress heatmap
-    #   junction = cadherin bond count per node      (nbond)
+    #   stress   = virial/Cauchy von-Mises σ_vm per node [Pa] (svm) → the REAL stress heatmap
+    #   pressure = hydrostatic pressure per node [Pa] (spress, turgor-dominated)
+    #   residual = |net residual force| per node [N] (fmag; ∝ velocity, NOT a stress — kept, honest name)
+    #   junction = cadherin bond count per node (nbond)
     # plus the actual bond node-pairs per frame (bondpairs) → draw the JUNCTIONS as line segments.
     def _norm_pctl(A, hi=99.0):
         A = A.astype(np.float32)
         top = float(np.percentile(A, hi)) if A.size else 1.0
-        return (np.clip(A / top, 0.0, 1.0) if top > 0 else A)
+        return (np.clip(A / top, 0.0, 1.0) if top > 0 else A), top
 
     have_mech = "fmag" in d.files and "nbond" in d.files
+    have_stress = "svm" in d.files                          # real virial stress (new runs); else fall back to fmag
     if have_mech:
-        stress = _norm_pctl(np.asarray(d["fmag"])[keep])       # (F,N) → [0,1], subsampled
-        junctionN = _norm_pctl(np.asarray(d["nbond"])[keep])   # (F,N) → [0,1], subsampled
+        if have_stress:
+            stress, stress_pk = _norm_pctl(np.asarray(d["svm"])[keep])     # von-Mises σ_vm [Pa]
+        else:
+            stress, stress_pk = _norm_pctl(np.asarray(d["fmag"])[keep])    # legacy: residual as "stress"
+        residual, resid_pk = _norm_pctl(np.asarray(d["fmag"])[keep])       # |net residual force| [N]
+        junctionN, _ = _norm_pctl(np.asarray(d["nbond"])[keep])
+        if "spress" in d.files:
+            pressure, press_pk = _norm_pctl(np.abs(np.asarray(d["spress"]))[keep])
+        else:
+            pressure, press_pk = np.zeros((F, N), np.float32), 0.0
     else:                                                      # legacy npz (no mech): flat overlays
-        stress = np.zeros((F, N), np.float32)
-        junctionN = np.zeros((F, N), np.float32)
+        stress = residual = junctionN = pressure = np.zeros((F, N), np.float32)
+        stress_pk = resid_pk = press_pk = 0.0
     # bond pairs → concatenated index array + per-frame offsets (for LineSegments)
     bond_idx_list, bond_off = [], [0]
     if "bondpairs" in d.files:
@@ -190,11 +201,15 @@ def main() -> None:
         "colors_b64": _b64(colors),                      # (N,3) uint8, constant
         "palette_b64": _b64(palette),                    # (C,3) uint8 per-cell colour (nucleus tint)
         "rnuc_b64": _b64(rnuc_cell),                      # (C,) float32 per-cell FIXED nucleus radius [µm]
-        "stress_b64": _b64(stress),                      # (F,N) float32 per-node STRESS |force| [0,1]
+        "stress_b64": _b64(stress),                      # (F,N) float32 per-node virial von-Mises STRESS [0,1]
+        "residual_b64": _b64(residual),                  # (F,N) float32 per-node RESIDUAL force [0,1]
+        "pressure_b64": _b64(pressure),                  # (F,N) float32 per-node hydrostatic pressure |·| [0,1]
         "junctionN_b64": _b64(junctionN),                # (F,N) float32 per-node cadherin bond count [0,1]
         "bondidx_b64": _b64(bond_idx.astype(np.int32)),  # (Btot,2) int32 bonded node pairs, all frames
         "bondoff_b64": _b64(bond_off.astype(np.int32)),  # (F+1,) int32 per-frame slice offsets
         "hasmech": 1 if have_mech else 0,
+        "hasstress": 1 if have_stress else 0,            # 1 = real virial σ_vm; 0 = fmag fallback in the stress slot
+        "stress_pk": float(stress_pk), "resid_pk": float(resid_pk), "press_pk": float(press_pk),
         "q_b64": _b64(q),                                # (F,N,3) uint16
     }
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
@@ -229,7 +244,9 @@ _HTML = r"""<!DOCTYPE html><html><head><meta charset="utf-8">
      <span class="hint" style="margin-left:8px">off → cells opaque (see stress + contacts)</span></div>
   <div class="row"><label>colour</label>
      <select id="cmode">
-        <option value="stress" selected>stress (|force|, FEM)</option>
+        <option value="stress" selected>stress (virial σ_vm)</option>
+        <option value="pressure">pressure (hydrostatic)</option>
+        <option value="residual">residual force</option>
         <option value="junction">junction density</option>
         <option value="cell">cell id</option>
      </select></div>
@@ -303,18 +320,22 @@ geo.setIndex(new THREE.BufferAttribute(idxBuf,1));
 geo.setAttribute('position',new THREE.BufferAttribute(framePos(0),3));
 geo.setAttribute('color',new THREE.BufferAttribute(colF,3));
 
-// ---- per-NODE overlays: cell-id | stress (|force|, FEM-style) | junction (cadherin bond count) ----
-const stressArr   = dec(P.stress_b64, Float32Array);     // F*N in [0,1]
+// ---- per-NODE overlays: cell-id | stress (virial σ_vm) | pressure | residual force | junction ----
+const stressArr   = dec(P.stress_b64, Float32Array);     // F*N in [0,1] (virial von Mises, or fmag fallback)
+const residualArr = P.residual_b64 ? dec(P.residual_b64, Float32Array) : stressArr;
+const pressureArr = P.pressure_b64 ? dec(P.pressure_b64, Float32Array) : stressArr;
 const junctionArr = dec(P.junctionN_b64, Float32Array);  // F*N in [0,1]
 function heat(t){ t=Math.max(0,Math.min(1,t));           // blue→cyan→green→yellow→red
   return [Math.max(0,Math.min(1,1.5-Math.abs(4*t-3))),
           Math.max(0,Math.min(1,1.5-Math.abs(4*t-2))),
           Math.max(0,Math.min(1,1.5-Math.abs(4*t-1)))]; }
+function overlayArr(mode){ return mode==='pressure'?pressureArr : mode==='residual'?residualArr
+  : mode==='junction'?junctionArr : stressArr; }
 function applyColors(f){
   const mode=document.getElementById('cmode').value;
   if(mode==='cell'){ for(let i=0;i<N*3;i++) colF[i]=colU[i]/255; }
   else {
-    const arr=(mode==='stress')?stressArr:junctionArr, base=f*N;
+    const arr=overlayArr(mode), base=f*N;
     for(let n=0;n<N;n++){
       if(nodeCell[n]<0){ colF[n*3]=colF[n*3+1]=colF[n*3+2]=0.47; continue; }
       const g=heat(arr[base+n]); colF[n*3]=g[0]; colF[n*3+1]=g[1]; colF[n*3+2]=g[2]; }
@@ -604,15 +625,19 @@ applyNuc();
 
 // ---- colour-overlay selector (cell id / junction contact / deformation load) ----
 const elCMode=document.getElementById('cmode'), elCHint=document.getElementById('cmodehint');
+const _sp=(P.hasstress?('virial von-Mises σ_vm, peak '+(P.stress_pk||0).toPrecision(2)+' Pa')
+                       :'⚠ residual-force fallback (this npz has no virial stress) — re-run for σ_vm');
 const CHINTS={cell:'each cell a distinct colour',
-  stress:'blue→red = |net mechanical force| per node (the DCM stress field, FEM-style)',
+  stress:'blue→red = REAL '+_sp+' — concentrates at load-bearing junctions',
+  pressure:'blue→red = |hydrostatic pressure| per node (turgor-dominated), peak '+(P.press_pk||0).toPrecision(2)+' Pa',
+  residual:'blue→red = |net RESIDUAL force| per node (∝ velocity, →0 at convergence — NOT a stress)',
   junction:'blue→red = number of active cadherin bonds per node'};
 elCMode.onchange=()=>{ elCHint.textContent=CHINTS[elCMode.value]||''; applyColors(cur); };
 elCHint.textContent=CHINTS[elCMode.value]||'';
 const elJunOn=document.getElementById('junon');
 if(!P.hasmech){ const jr=document.getElementById('junrow'); if(jr) jr.style.display='none';
-  const so=elCMode.querySelector('option[value=stress]'); if(so) so.remove();
-  const jo=elCMode.querySelector('option[value=junction]'); if(jo) jo.remove(); }
+  ['stress','pressure','residual','junction'].forEach(v=>{
+    const o=elCMode.querySelector('option[value='+v+']'); if(o) o.remove(); }); }
 if(elJunOn) elJunOn.onchange=()=>applyJunctions(cur);
 
 elThickv.textContent=(elThick.value/10).toFixed(0)+'%';
