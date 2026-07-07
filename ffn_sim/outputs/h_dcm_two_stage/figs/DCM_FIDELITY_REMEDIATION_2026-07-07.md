@@ -18,7 +18,7 @@ Trust the pipeline; do not quote its numbers as measured MCF7 mechanobiology yet
 | 1 | `fmag` "stress" is a **solver residual** (∝ v, →0 at convergence), does NOT concentrate at junctions | compute real **virial/Cauchy σ=(1/V)Σf⊗r** (cadherin+cortex+turgor+nucleus+contact); rename fmag "residual force" | ▶ DEMO'd (cadherin tension concentrates at junctions ∞× vs fmag 0.65×); save-hook TODO |
 | 2 | Physical time **0.12 s** = mechanics, not mechanobiology (5 orders short of min-hr) | implicit large-dt + long run + active remodeling | TODO (deep) |
 | 3 | A/A0=V/V0=1.000 is a **construction tautology** (confluent asserts confluence) | run from **dispersed** init → measure emergent compaction | TODO |
-| 4 | **G2 interpenetration** 19%R median (membranes cross) | non-overlapping **INSET** + **IPC** log-barrier contact | ✅ env knobs wired (INSET, IPC=1) |
+| 4 | **G2 interpenetration** 19%R median (membranes cross) | non-overlapping **INSET** + **IPC** log-barrier contact | ✅ knobs wired **+ VALIDATED**: N=200 INSET=0.05+IPC → deep-overlap 37.6%→**2.4%** (15×), median 19%→**6.2%R**, stable |
 | 5 | Not converged: residual v 0.82 µm/s ≈ 50× real cell speed | run to residual ≪ 1 bond force, v→0 | TODO (ties to #2) |
 | 6 | Cortex γ 10-20× soft (contested) **+** nucleus E_nuc 8-12× stiff | **E_nuc 4700→399 Pa** (audit#19); **γ = SWEEP** (PI 2026-07-07) | ✅ env knobs wired (ENUC=399, GAMMA sweep) |
 | 7 | Junction force budget ~1-2 orders low (single-molecule, not bundled) | **bundle_n = N_cad = 100** (ρ_cad·A_junction, KB-4.1/4.11/4.17) (PI 2026-07-07) | ✅ env knob wired (BUNDLE=100) |
