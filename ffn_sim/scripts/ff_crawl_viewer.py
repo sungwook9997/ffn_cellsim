@@ -58,9 +58,9 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     cortex_fr = [cortex[t] for t in range(T)]
     layers = [
         {"name": fib_label, "kind": "lines", "verts": fil_fr[0], "color": "#8fbff0",
-         "size": 1.5, "frames": fil_fr},
-        {"name": "cell outline (membrane)", "kind": "mesh", "verts": cortex[0], "faces": faces,
-         "color": "#3a5878", "opacity": 0.12, "frames": cortex_fr},
+         "size": 1.5, "frames": fil_fr, "clip": True},
+        {"name": "cortex hull (no explicit membrane until Stage 2)", "kind": "mesh", "verts": cortex[0],
+         "faces": faces, "color": "#3a5878", "opacity": 0.10, "frames": cortex_fr, "clip": True},
     ]
     if has_mt:                                                # MT aster arms + MTOC↔arm-base hub spokes (drawn ON TOP
         mt_fr = [frames[t][mt_seg] for t in range(T)]         # so the stiff interior aster is visible through the cortex)
@@ -78,8 +78,9 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
                            "size": 7.0, "frames": mtoc_fr})
     if nuc is not None:
         nfaces = ConvexHull(nuc[0]).simplices
-        layers.append({"name": "nucleus", "kind": "mesh", "verts": nuc[0], "faces": nfaces,
-                       "color": "#b07fd6", "opacity": 0.8, "frames": [nuc[t] for t in range(T)]})
+        layers.append({"name": f"nucleus ({nuc.shape[1]} beads, R_nuc=0.70R)", "kind": "mesh", "verts": nuc[0],
+                       "faces": nfaces, "color": "#d17fe0", "opacity": 0.97,
+                       "frames": [nuc[t] for t in range(T)]})
     layers.append({"name": "substrate", "kind": "plates", "verts": [z_sub], "half_xy": R * 1.6, "color": "#3a3f47"})
     if len(com) >= 2:                                          # faint COM path (the crawl track)
         seg = np.stack([com[:-1], com[1:]], axis=1).astype(np.float32)

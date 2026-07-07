@@ -53,7 +53,8 @@ def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
                      "size": float(L.get("size", 2.0)), "n": int(v.shape[0]),
                      "b64": _b64(v, np.float32),
                      "opacity": float(L.get("opacity", 0.75 if kind == "lines" else 1.0)),
-                     "on_top": bool(L.get("on_top", False))}   # on_top: depthTest off → draws through occluders
+                     "on_top": bool(L.get("on_top", False)),   # on_top: depthTest off → draws through occluders
+                     "clip": bool(L.get("clip", False))}       # clip: this layer is cut by the CUT plane
             if kind == "mesh":                                    # triangle surface: verts + faces + opacity
                 entry["faces_b64"] = _b64(np.asarray(L["faces"], np.uint32).reshape(-1, 3), np.uint32)
                 entry["opacity"] = float(L.get("opacity", 1.0))
@@ -88,6 +89,7 @@ _HTML = r"""<!doctype html><html><head><meta charset="utf-8"><title>FF viewer</t
   <div id="title"></div>
   <div class="row"><label>scene</label><select id="scene"></select></div>
   <div class="row"><label>points</label><input id="psize" type="range" min="1" max="8" value="3" step="0.5"></div>
+  <div class="row"><label>cut</label><input type="checkbox" id="cut"><select id="cutax"><option>x</option><option>y</option><option>z</option></select><input id="cutpos" type="range" min="-1" max="1" value="0" step="0.02" style="width:90px"><span class="hint">reveal nucleus/aster inside</span></div>
   <div class="row" id="animrow" style="display:none"><label>frame</label>
     <button id="play">▶</button><input id="frame" type="range" min="0" max="0" value="0" step="1" style="width:120px">
     <span id="fnum" class="hint"></span></div>
@@ -106,7 +108,20 @@ function dec32(b64){const s=atob(b64);const u=new Uint8Array(s.length);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(devicePixelRatio);
+renderer.localClippingEnabled=true;                 // CUT view: reveal interior compartments (nucleus/aster)
 document.body.appendChild(renderer.domElement);
+const clipPlane=new THREE.Plane(new THREE.Vector3(-1,0,0),0);   // normal set by the cut slider
+let clipMats=[];                                    // materials of clip-tagged layers (cortex/outline)
+function applyClip(){ const on=document.getElementById('cut').checked;
+  for(const m of clipMats){ m.clippingPlanes = on ? [clipPlane] : []; m.needsUpdate=true; } }  // needsUpdate: recompile shader for clipping
+function updateClip(){ const ax=document.getElementById('cutax').value;
+  // normal points toward the camera-near +axis half, so THAT half is clipped away → interior (nucleus/aster) revealed
+  const nrm = ax==='x'? new THREE.Vector3(-1,0,0) : ax==='y'? new THREE.Vector3(0,-1,0) : new THREE.Vector3(0,0,-1);
+  const t=parseFloat(document.getElementById('cutpos').value);  // -1..1: slide the cut plane across the cell
+  const pt=new THREE.Vector3(cx,cy,cz);
+  if(ax==='x') pt.x=cx+t*R*0.5; else if(ax==='y') pt.y=cy+t*R*0.5; else pt.z=cz+t*R*0.5;
+  clipPlane.normal.copy(nrm); clipPlane.constant=-pt.dot(nrm);   // plane through pt with normal nrm
+  applyClip(); }
 const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0e1117);
 const cam=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.05,5000);
 const lo=P.lo, hi=P.hi;
@@ -119,7 +134,7 @@ const dl=new THREE.DirectionalLight(0xffffff,0.6); dl.position.set(1,1.5,2); sce
 
 let current=[];   // three objects for the current scene
 let animated=[];  // {obj, frames:[b64]} for layers that play over time
-function clearScene(){ for(const o of current){ scene.remove(o); if(o.geometry)o.geometry.dispose(); if(o.material)o.material.dispose(); } current=[]; animated=[]; }
+function clearScene(){ for(const o of current){ scene.remove(o); if(o.geometry)o.geometry.dispose(); if(o.material)o.material.dispose(); } current=[]; animated=[]; clipMats=[]; }
 
 function setFrame(i){
   for(const a of animated){
@@ -160,15 +175,18 @@ function showScene(name){
       const idx=dec32(L.faces_b64); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.computeVertexNormals();
       const op=(L.opacity===undefined)?1.0:L.opacity;
       const mat=new THREE.MeshStandardMaterial({color:L.color,transparent:op<1.0,opacity:op,
-        side:THREE.DoubleSide,roughness:0.55,metalness:0.0,flatShading:false});
+        side:THREE.DoubleSide,roughness:0.55,metalness:0.0,flatShading:false,
+        depthWrite:(op>=0.5)});   // faint envelopes (cortex hull) don't write depth → don't occlude the nucleus inside
       o=new THREE.Mesh(geo,mat); scene.add(o); current.push(o);
     }else{
       const mat=new THREE.PointsMaterial({color:L.color,size:parseFloat(document.getElementById('psize').value),sizeAttenuation:true});
       o=new THREE.Points(geo,mat); o.userData.pts=true; scene.add(o); current.push(o);
     }
+    if(L.clip){ clipMats.push(o.material); }   // cortex/outline get cut; nucleus/aster stay whole
     if(L.frames){ animated.push({obj:o, frames:L.frames}); }
     leg.push([L.color,L.name]);
   }
+  applyClip();
   const hasAnim = animated.length>0;
   document.getElementById('animrow').style.display = hasAnim ? 'flex' : 'none';
   if(hasAnim){ const nf=Math.max(...animated.map(a=>a.frames.length)); document.getElementById('frame').max=nf-1; setFrame(0); }
@@ -178,11 +196,14 @@ const sel=document.getElementById('scene');
 for(const n of P.scene_names){ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); }
 sel.onchange=()=>showScene(sel.value);
 document.getElementById('psize').oninput=e=>{ for(const o of current) if(o.userData.pts) o.material.size=parseFloat(e.target.value); };
+document.getElementById('cut').onchange=updateClip;
+document.getElementById('cutax').onchange=updateClip;
+document.getElementById('cutpos').oninput=updateClip;
 
 let playing=false, tacc=0;
 document.getElementById('play').onclick=()=>{ playing=!playing; document.getElementById('play').textContent=playing?'⏸':'▶'; };
 document.getElementById('frame').oninput=e=>{ playing=false; document.getElementById('play').textContent='▶'; setFrame(parseInt(e.target.value)); };
-showScene(P.scene_names[0]);
+showScene(P.scene_names[0]); updateClip();
 
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 let last=performance.now();
