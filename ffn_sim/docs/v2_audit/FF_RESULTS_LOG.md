@@ -72,3 +72,54 @@ measured MCF7 AFM curve has been done** — the comparison is order-of-magnitude
 
 **Crawl (mt_native_stress, Nc=483,000)**: does NOT translocate (disp = 0 vs real 10–100 nm/s) — traction piece +
 GPU-implicit-path protrusion gap. Cortex coherent (V/V0=1.0), 19,545/19,545 FA integrin clutches bound.
+
+---
+
+## 2026-07-07 (refinement) — "is cytoplasm alone enough to fix the overshoot?" → NO (measured + adversarially verified)
+
+PI pushed on the compression-overshoot cause (lateral bulge?) and on my "missing cytoplasm piece" line above.
+That single-cause line is **overstated** — corrected here by (a) a direct drained-vs-undrained measurement
+(`scripts/ff_bulge_probe.py`) and (b) a 12-agent adversarial diagnosis (workflow `wf_214b6be0-391`).
+
+**Direct measurement** (N_fil=2000 cortex, R0=7.50 µm, CPU; absolute F scales with N — the ratios are the point):
+
+| mode | strain | R_eq/R0 (model) | R_eq/R0 (const-vol) | V/V0 | F [nN] | ΔP [Pa] | γ_app [mN/m] |
+|---|---|---|---|---|---|---|---|
+| undrained | 12% | +1.7% | +6.6% | 0.998 | 78.9 | 1342 | 5.1 |
+| undrained | 27% | **+4.9%** | **+17.0%** | 0.989 | 910 | 8300 | 32.6 |
+| drained@40Pa | 12% | +1.0% | +6.6% | 0.979 | **2.0** | 40 | **0.15** |
+| drained@40Pa | 27% | +1.0% | +17.0% | 0.903 | **4.0** | 40 | **0.15** |
+
+Three findings: **(1)** the cortex **under-bulges** — reaches only +4.9% lateral expansion at 27% vs the +17.0%
+a constant-volume oblate needs (PI's "가로로 안 늘어난다" confirmed); the shortfall is exactly the volume it sheds
+into the osmotic ΔP. **(2)** switching to the **drained limit collapses the plate force 39–228×** → the overshoot
+(gap B) is dominantly the **sealed/undrained van't Hoff osmotic turgor**, not cortex/cytoskeleton stiffness.
+**(3)** drained, γ_app = 0.15 mN/m (= Young–Laplace ΔP·R/2 at the γ-floor) → the drained response is
+**too SOFT** → draining alone swings the model past the target toward too-soft (the "drained-load-carrier" trap).
+
+**Corrected diagnosis** (supersedes the "missing cytoplasm piece" framing above):
+- **Two gaps live in different tensor channels.** Gap A (resting γ, ~70× low) is **in-plane/deviatoric** (actomyosin,
+  Young–Laplace γ=ΔP·R/2) — **no isotropic pore-fluid/cytoplasm DOF can ever populate it**; needs the myosin fix
+  (missing MCF7-adherent load-*engaged* NMII density datum — surface to PI). Gap B (compression) is **normal/hydrostatic**.
+- **Gap B root cause is a constitutive misapplication, not "correct undrained physics":** an *equilibrium osmotic
+  P–V law* (Guo 2017) is evaluated on a *no-flux (undrained) geometric volume trajectory* `V_cyto=V_hull−V_nuc` —
+  no Lp/Darcy/aquaporin DOF. That manufactures the 1/(V−vmin) pole (40→100530 Pa). ⚠️ My earlier "K_vol=736 kPa
+  is the correct undrained modulus, do not retune" was **wrong** — that canonizes the bug. Fix = **replace the closure
+  with a biphasic poroelastic cytoplasm (fluid transport + a distributed *solid* drained matrix ~10²–10³ Pa,
+  Moeendarbary 2013)**, NOT soften K_vol (that would be gate-tuning), and NOT a viscous filler behind the seal.
+- **The overshoot "grows with indentation" is largely a PROTOCOL/category error:** large-strain nominal σ=F/πR²
+  divided by a small-strain fixed-E Hertz (E=249 Pa, Zbiral 10µm colloidal). Any strain-stiffening material overshoots
+  a fixed-E Hertz. **Must run FIRST**: extract E_eff by the *same* Hertz inversion at 2–3% strain, matched colloidal
+  geometry, rate-matched — to size the genuine residual before adding physics. Code emits no Hertz E / no time DOF.
+- **Whether the cortex must ALSO be lifted for B is rate-gated and open:** Zbiral's E=249 Pa (10µm bead) may itself be a
+  poroelastic bulk readout; a well-calibrated biphasic cytoplasm could carry B on its own solid matrix. Depends on the
+  (unmeasured) Zbiral loading rate vs τ_p≈0.5–1.4 s.
+
+**Ranked what it takes** (adversarially-verified): (1) rate-matched small-strain Hertz-inverted validation **first**;
+(2) biphasic poroelastic cytoplasm = drainage **+ solid load-bearing matrix** (dominant for B); (3) cortex γ-floor
+lift via engaged-NMII density (dominant for A, orthogonal, missing datum → PI); (4) membrane K_A reservoir-exhaustion
+upturn (secondary, large-strain, PI-blocked f_excess); (5) resting ΔP=2γ/R co-fixes automatically once cortex lifts;
+(6) nucleus stays honest (~45%). **Verdict: cytoplasm is necessary but NOT sufficient — B needs biphasic cytoplasm
+(+ possibly cortex) and A is entirely orthogonal.** Membrane is a separate compartment (reservoir area supply), not
+"cytoplasm." FF uses the turgor osmotic law (soft, physical), NOT DCM's explicit K_vol·(V−V0)² penalty; water efflux
+belongs in that turgor/volume-regulation term, and the drained limit is already available as `pressure_setpoint`.
