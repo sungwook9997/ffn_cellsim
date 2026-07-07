@@ -33,6 +33,7 @@ from ffn_sim.ff.network_warp import (_zero, link_spring_kernel, myosin_kernel, t
                                      reshape_kernel, nucleus_shell_kernel, _seed_nucleus_cloud,
                                      substrate_plane_kernel)
 from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
+from ffn_sim.ff.microtubule import build_microtubule_aster, merge_aster_into_cortex
 from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_kmc_kernel, resolve_clutch)
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
@@ -54,13 +55,20 @@ F_STALL_ACTIN_PN = 4.0                  # per-filament Brownian-ratchet stall fo
 
 
 def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.0, 0.0),
-          length_dist="mono"):
+          length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
     ``length_dist`` — cortex filament contour-length model: ``"mono"`` (every filament = L_filament_um, the
     γ-validated default) or ``"exponential"`` (KB-3.18-distributed 1–10 µm, mean-preserving; real cortical
-    F-actin is length-distributed, not identical)."""
+    F-actin is length-distributed, not identical).
+
+    ``microtubules`` (Thread-C Stage 1) — merge an MT aster (``n_mt`` stiff κ=KAPPA_MT tubes of contour length
+    ``L_mt_um`` radiating from one MTOC at the centroid) into the cortex fiber network, so MT bending rides the
+    SAME implicit K as the cortex at 300× the bending stiffness. Node layout becomes
+    ``[cortex(Nc) ; MT_arms(Nmt) ; MTOC(1) ; nucleus(n_nuc)]`` with ``Ne = Nc+Nmt+1`` elastic nodes; the cortex
+    block ``[:Nc]`` keeps ALL surface physics. ``microtubules=False`` → no-op passthrough (Ne==Nc, empty hub) so
+    the OFF path is bit-identical (needs the ``--implicit`` GPU solver; explicit is dev-only)."""
     rng = np.random.default_rng(seed)
     cx = build_crosslinked_cortex(CortexParams(), n_filaments=n_cortex_fil, n_xl=n_cortex_fil,
                                   n_myo=max(1, n_cortex_fil // 160), length_dist=length_dist, rng=rng)
@@ -75,15 +83,23 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     nuc = resolve_nucleus(R_nuc_um=0.70 * R, n_beads=3000)     # 0.70R: MCF7 nucleus (Moore2016 0.68-0.77, PI-ratified 2026-07-07;
     #                                                            Ø~12µm ≈ 0.8R, N:C 1.9 ~50% cell vol) — was 0.25R (~3× too small)
     nuc_pos = _seed_nucleus_cloud(c, nuc.R_nuc_um, nuc.n_beads, np.random.default_rng(seed + 2))
-    pos_all = np.concatenate([cx.net.pos, nuc_pos], 0)
-    # front cap membership (for reporting) + derived per-node protrusive force
+    # --- Thread-C Stage 1: MT aster merges into the cortex elastic network (one shared implicit K) ---
+    aster = build_microtubule_aster(centre=c, n_mt=n_mt, L_mt_um=L_mt_um) if microtubules else None
+    m = merge_aster_into_cortex(cx.net, aster, k_hub_pn_um=float(cx.xl_k.max()))
+    merged = m["net"]                                          # [cortex(Nc) ; MT_arms(Nmt)]; MTOC appended below
+    Ne = m["Ne"]                                               # elastic node count Nc+Nmt+1 (MTOC); == Nc when OFF
+    # node layout [cortex(Nc) ; MT_arms(Nmt) ; MTOC(1) ; nucleus(n_nuc)] — mtoc_pos empty ⇒ OFF pos_all unchanged
+    pos_all = np.concatenate([merged.pos, m["mtoc_pos"], nuc_pos], 0)
+    # front cap membership (for reporting) + derived per-node protrusive force (cortex nodes only)
     proj = (cx.net.pos - c) @ phat
     front = np.where(proj > front_frac * R)[0]
     node_area = 4.0 * np.pi * R**2 / Nc                       # mean cortex area per node [µm²]
     f_pro = FIL_AREAL_DENSITY_PER_UM2 * node_area * F_STALL_ACTIN_PN   # per front-node protrusive force [pN]
-    return dict(cx=cx, Nc=Nc, n_nuc=nuc_pos.shape[0], pos_all=pos_all, nuc=nuc, mem=resolve_membrane(),
-                basal=basal.astype(np.int32), anchors=anchors, z_sub=z_sub, R=R, c=c, phat=phat,
-                front=front.astype(np.int32), front_frac=front_frac, f_pro=f_pro)
+    return dict(cx=cx, net=merged, Nc=Nc, Ne=Ne, n_nuc=nuc_pos.shape[0], pos_all=pos_all, nuc=nuc,
+                mem=resolve_membrane(), basal=basal.astype(np.int32), anchors=anchors, z_sub=z_sub, R=R, c=c,
+                phat=phat, front=front.astype(np.int32), front_frac=front_frac, f_pro=f_pro,
+                mtoc_idx=m["mtoc_idx"], hub_i=m["hub_i"], hub_j=m["hub_j"], hub_k=m["hub_k"],
+                hub_rest=m["hub_rest"], n_mt=int(m.get("n_mt", 0)))
 
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
@@ -104,17 +120,26 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     cortex flows). ``clutches=False`` = the no-traction audit (protrusion is internal → net COM drift ≈ 0).
 
     Explicit + tiny dt ⇒ many steps ⇒ built for the GPU (A5000). Returns frames, COM trajectory, crawl metrics."""
-    cx = S["cx"]; net = cx.net; Nc = S["Nc"]; n_nuc = S["n_nuc"]; N = Nc + n_nuc; d = device
+    cx = S["cx"]; net = S["net"]; Nc = S["Nc"]; Ne = S["Ne"]; n_nuc = S["n_nuc"]; N = Ne + n_nuc; d = device
     cp = resolve_clutch(); poly = resolve_polymerization()
     tri = np.ascontiguousarray(net.bend_triples, np.int32); nT = tri.shape[0]
     alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
     foff = np.ascontiguousarray(net.fiber_offsets, np.int32)
     seg_per = np.diff(net.fiber_offsets) - 1
     soff = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
-    seg = float(net.seg_rest.mean()); V0 = float(ConvexHull(net.pos).volume); vmin = VMIN_FRAC * V0
+    n_cortex_fib = int(cx.net.fiber_offsets.shape[0] - 1)      # cortex fibers only (assembly/growth must skip MT arms)
+    seg = float(net.seg_rest.mean()); V0 = float(ConvexHull(net.pos[:Nc]).volume); vmin = VMIN_FRAC * V0
     k_plane = 1.0e3                                             # substrate excluded-volume stiffness [pN/µm]
-    gammas = physical_node_gammas(net, Nc, n_nuc)              # per-node drag from η
-    kmax = max(float(net.kappa.max()) / seg**3, float(cx.xl_k.max()),
+    n_fib_nodes = int(net.fiber_offsets[-1])                   # Nc (MT off) or Nc+Nmt (MT on); MTOC+nucleus are beads
+    gammas = physical_node_gammas(net, n_fib_nodes, N - n_fib_nodes)   # per-node drag from η (fiber log-drag + Stokes beads)
+    # hub crosslinks (MTOC↔arm-base, finite rest seg_um) appended to cortex crosslinks → same link force + same K
+    xl_i = np.concatenate([cx.xl_i, S["hub_i"]]).astype(np.int64)
+    xl_j = np.concatenate([cx.xl_j, S["hub_j"]]).astype(np.int64)
+    xl_k_all = np.concatenate([cx.xl_k, S["hub_k"]]).astype(np.float64)
+    xl_rest_all = np.concatenate([cx.xl_rest, S["hub_rest"]]).astype(np.float64)
+    n_xl = int(xl_i.size)                                       # cortex + hub bonds (link force + K assembly)
+    n_xl_cortex = int(cx.xl_i.size)                             # cortex-only (crosslink turnover EXCLUDES the stiff hub)
+    kmax = max(float(net.kappa.max()) / seg**3, float(xl_k_all.max()),
                S["nuc"].k_chrom + S["nuc"].k_lamin, cp.k_int, k_plane)
     if dt is None:
         dt = crawl_cfl_dt(gammas, kmax, safety=safety)         # explicit CFL-stable (stiff crosslink sets it)
@@ -122,13 +147,13 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         dt = dt_impl                                           # NF2007 implicit: dt bounded by accuracy, not the CFL
     gamma_rep = float(np.median(gammas[:Nc]))                  # cortex-representative scalar drag (implicit solver)
     bend_triples_np = np.ascontiguousarray(net.bend_triples, np.int64)
-    xl_ij_np = np.ascontiguousarray(np.stack([cx.xl_i, cx.xl_j], 1), np.int64)
-    kxl_np = np.ascontiguousarray(cx.xl_k, np.float64)
+    xl_ij_np = np.ascontiguousarray(np.stack([xl_i, xl_j], 1), np.int64)
+    kxl_np = np.ascontiguousarray(xl_k_all, np.float64)
     mem = S["mem"]; z_sub = S["z_sub"]; adh_h = 0.4; phat = S["phat"]
     front_cos_R = S["front_frac"] * S["R"]
     ph = wp.vec3d(float(phat[0]), float(phat[1]), float(phat[2])); kT = float(cp.kT)
-    _tri = ConvexHull(net.pos).simplices.copy()                # fixed surface triangulation (per-step volume)
-    _v = net.pos; _cen = _v.mean(0)                            # orient every face OUTWARD (scipy hull isn't consistent)
+    _tri = ConvexHull(net.pos[:Nc]).simplices.copy()           # fixed CORTEX surface triangulation (per-step volume)
+    _v = net.pos[:Nc]; _cen = _v.mean(0)                       # orient every face OUTWARD (scipy hull isn't consistent)
     _n = np.cross(_v[_tri[:, 1]] - _v[_tri[:, 0]], _v[_tri[:, 2]] - _v[_tri[:, 0]])
     _flip = (_n * (_v[_tri[:, 0]] - _cen)).sum(1) < 0
     _tri[_flip] = _tri[_flip][:, [0, 2, 1]]                    # swap last two verts → consistent outward normal
@@ -147,10 +172,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     tri_d = wp.array(tri, dtype=wp.int32, device=d); alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
     foff_d = wp.array(foff, dtype=wp.int32, device=d); soff_d = wp.array(soff, dtype=wp.int32, device=d)
     sr_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
-    xl_ij = np.ascontiguousarray(np.stack([cx.xl_i, cx.xl_j], 1), np.int32)
+    xl_ij = np.ascontiguousarray(np.stack([xl_i, xl_j], 1), np.int32)
     xl_d = wp.array(xl_ij, dtype=wp.int32, ndim=2, device=d)
-    kxl_d = wp.array(cx.xl_k, dtype=wp.float64, device=d)
-    r0_d = wp.array(np.ascontiguousarray(cx.xl_rest, np.float64), dtype=wp.float64, device=d)
+    kxl_d = wp.array(xl_k_all, dtype=wp.float64, device=d)
+    r0_d = wp.array(np.ascontiguousarray(xl_rest_all, np.float64), dtype=wp.float64, device=d)
     has_myo = cx.myo_i.size > 0
     if has_myo:
         myo_d = wp.array(np.ascontiguousarray(np.stack([cx.myo_i, cx.myo_j], 1), np.int32), dtype=wp.int32, ndim=2, device=d)
@@ -200,7 +225,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         pos_d.assign(np.ascontiguousarray(x_np, np.float64).reshape(N, 3))
         wp.launch(_zero, dim=N, inputs=[f_d], device=d)
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
-        wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
         if has_myo:
             if myosin_linear:
                 wp.launch(minifilament_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, vslide_d, wp.float64(f_myo), wp.float64(myo_lin.v0_um_s), f_d], device=d)
@@ -210,7 +235,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if fz_node != 0.0:
             wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
         if n_nuc:
-            wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Nc), centre,
+            wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Ne), centre,
                       wp.float64(nuc.R_nuc_um), wp.float64(nuc.k_chrom), wp.float64(nuc.k_lamin),
                       wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
         wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
@@ -248,6 +273,16 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         al_cp = cpx.asarray(alpha); xlij_cp = cpx.asarray(xl_ij_np); kxl_cp = cpx.asarray(kxl_np)
         faces_cp = cpx.asarray(faces.astype(np.int64))
         bas_cp = cpx.asarray(S["basal"].astype(np.int64))     # basal clutch/contact node indices (for diag_extra)
+        # MT-node drag correction (R-γ / R7): the solver's diagonal is a scalar gamma_rep/dt, so the added MT arms +
+        # MTOC (nodes [Nc,Ne)) would get the wrong overdamped timescale. Fix ONLY those nodes via the K diagonal:
+        # diag[3i(+1,+2)] += (γ_i − γ_rep)/dt (constant → precomputed). Cortex + nucleus are untouched ⇒ their
+        # bit-identity holds and the pre-existing scalar-γ nucleus mismatch is left for a separate PI decision.
+        _diag_mt = np.zeros(3 * N)
+        if Ne > Nc:
+            _mt = np.arange(Nc, Ne)
+            _c = (gammas[_mt] - gamma_rep) / dt
+            _diag_mt[3 * _mt] = _c; _diag_mt[3 * _mt + 1] = _c; _diag_mt[3 * _mt + 2] = _c
+        diag_base_cp = cpx.asarray(_diag_mt)                   # zeros when MT OFF ⇒ diag == the pre-change cpx.zeros(3N)
 
         def gpu_force_fn(x_cp):
             """Full FF force at x as a device-resident cupy array (no host round-trip). Warp force kernels write
@@ -255,7 +290,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(N, 3)), dtype=wp.vec3d, device=d))
             wp.launch(_zero, dim=N, inputs=[f_d], device=d)
             wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
-            wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+            wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
             if has_myo:
                 if myosin_linear:
                     wp.launch(minifilament_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, vslide_d, wp.float64(f_myo), wp.float64(myo_lin.v0_um_s), f_d], device=d)
@@ -265,7 +300,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             if fz_node != 0.0:
                 wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
             if n_nuc:
-                wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Nc), centre,
+                wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Ne), centre,
                           wp.float64(nuc.R_nuc_um), wp.float64(nuc.k_chrom), wp.float64(nuc.k_lamin),
                           wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
             wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
@@ -316,7 +351,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         dP_area = dP * area / Nc
         wp.launch(_zero, dim=N, inputs=[f_d], device=d)
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
-        wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
         if has_myo:
             if myosin_linear:
                 wp.launch(minifilament_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, vslide_d, wp.float64(f_myo), wp.float64(myo_lin.v0_um_s), f_d], device=d)
@@ -327,7 +362,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if fz_node != 0.0:                                     # gravity − buoyancy (real body force, ≈1 pN/cell)
             wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
         if n_nuc:
-            wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Nc), centre,
+            wp.launch(nucleus_shell_kernel, dim=n_nuc, inputs=[pos_d, wp.int32(Ne), centre,
                       wp.float64(nuc.R_nuc_um), wp.float64(nuc.k_chrom), wp.float64(nuc.k_lamin),
                       wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
         wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
@@ -358,8 +393,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             cpx.add.at(g, faces_cp[:, 2], cpx.cross(a3, b3) / 6.0)
             k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-3 * V0) ** 2   # floor 1e-3·V0 (not 1e-9→overflow when squared)
             vol_g = cpx.zeros(3 * N); vol_g[:3 * Nc] = g.reshape(-1)
-            # CLUTCH + SUBSTRATE stiffness → implicit K diagonal (so dt is not capped by their explicit CFL)
-            diag = cpx.zeros(3 * N)
+            # CLUTCH + SUBSTRATE stiffness → implicit K diagonal (so dt is not capped by their explicit CFL);
+            # start from the constant MT-γ correction (zeros when MT OFF ⇒ bit-identical to the pre-change zeros)
+            diag = diag_base_cp.copy()
             if clutches:
                 bset = bas_cp[cpx.asarray(bd_d) > 0]           # bound basal actin nodes → k_int·I (spring-to-anchor ≈ pin)
                 diag[3 * bset] += cp.k_int; diag[3 * bset + 1] += cp.k_int; diag[3 * bset + 2] += cp.k_int
@@ -398,12 +434,12 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(cp.k_int), wp.float64(substrate.k_sub)], device=d)
         if step % reshape_every == 0:                          # inextensibility (NF2007 §5.3)
             wp.launch(reshape_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d, wp.int32(2)], device=d)
-        if step % xl_turn_every == 0 and step > 0:             # crosslink turnover (on-device Maxwell relax)
-            wp.launch(xl_turnover_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, r0_d, wp.float64(frac_xl)], device=d)
+        if step % xl_turn_every == 0 and step > 0:             # crosslink turnover (on-device Maxwell relax; cortex xl only, NOT the hub)
+            wp.launch(xl_turnover_kernel, dim=n_xl_cortex, inputs=[pos_d, xl_d, r0_d, wp.float64(frac_xl)], device=d)
         if assembly and step % assembly_every == 0 and step > 0:   # dynamic cortex AREA GROWTH (actin assembly, tension-gated)
-            wp.launch(actin_assembly_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d, wp.float64(frac_asm)], device=d)
+            wp.launch(actin_assembly_kernel, dim=n_cortex_fib, inputs=[pos_d, foff_d, soff_d, sr_d, wp.float64(frac_asm)], device=d)
         if growth and step % assembly_every == 0 and step > 0:   # per-filament BARBED-END polymerization (KB-3.6 ratchet; reads tip load in f_d)
-            wp.launch(barbed_end_growth_kernel, dim=foff.shape[0] - 1, inputs=[pos_d, foff_d, soff_d, sr_d,
+            wp.launch(barbed_end_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, foff_d, soff_d, sr_d,
                       wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max), grown_d], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind
             wp.launch(clutch_catchslip_kmc_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
@@ -476,12 +512,20 @@ def main():
     ap.add_argument("--piezo", action="store_true", help="Piezo1 tension-gated open-probability reporter (KB-3.10; diagnostic)")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
+    ap.add_argument("--microtubules", action="store_true",
+                    help="Thread-C: merge an MT aster (κ=KAPPA_MT) into the shared implicit K — needs --implicit")
+    ap.add_argument("--n-mt", type=int, default=40, help="number of MT tubes radiating from the MTOC (aster size — flag to PI)")
+    ap.add_argument("--l-mt", type=float, default=6.0, help="MT arm contour length [µm] (reach toward the R≈7.5µm cortex — flag to PI)")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
     args = ap.parse_args()
     wp.init(); t0 = time.time()
-    S = build(n_cortex_fil=args.cortex_fil, length_dist=args.fil_length_dist)
-    print(f"[build] cortex {S['Nc']} + nucleus {S['n_nuc']}; basal FA clutches {S['basal'].size}; "
+    if args.microtubules and not args.implicit:
+        print("[!] --microtubules needs the implicit solver (MT bending rides K); add --implicit for production.")
+    S = build(n_cortex_fil=args.cortex_fil, length_dist=args.fil_length_dist,
+              microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt)
+    mt_note = (f"; MT aster {S['n_mt']} tubes → Ne {S['Ne']} (Nmt+MTOC {S['Ne']-S['Nc']})" if args.microtubules else "")
+    print(f"[build] cortex {S['Nc']} + nucleus {S['n_nuc']}{mt_note}; basal FA clutches {S['basal'].size}; "
           f"front-cap nodes {S['front'].size}; f_pro {S['f_pro']:.1f} pN/node; z_sub {S['z_sub']:.2f}  "
           f"({time.time()-t0:.0f}s)")
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
@@ -504,8 +548,9 @@ def main():
                                     "bound_frac", "n_clutch", "f_pro_pN", "gamma_min", "gamma_max",
                                     "F_star_pN", "kmax", "wall_s")}}
     np.savez_compressed(f"{args.out}/figs/{args.tag}_on.npz", frames=np.array(r["frames"]), com=r["com"],
-                        times=r["times"], vol=r["vol"], Nc=S["Nc"], basal=S["basal"], z_sub=S["z_sub"],
-                        R=S["R"], phat=S["phat"], foff=S["cx"].net.fiber_offsets, n_nuc=S["n_nuc"])
+                        times=r["times"], vol=r["vol"], Nc=S["Nc"], Ne=S["Ne"], basal=S["basal"], z_sub=S["z_sub"],
+                        R=S["R"], phat=S["phat"], foff=S["net"].fiber_offsets, n_nuc=S["n_nuc"],
+                        n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"])
     if args.audit:
         rc = run(S, steps=args.steps, record_every=args.record_every, clutches=False, device=args.device)
         print(f"[AUDIT clutch OFF] disp∥={rc['disp_along_um']:+.3f} µm  disp⊥={rc['disp_perp_um']:.3f} µm  "
@@ -516,8 +561,8 @@ def main():
         out["clutch_off"] = {k: rc[k] for k in ("disp_along_um", "disp_perp_um", "v_crawl_nm_s")}
         out["audit_verdict"] = verdict
         np.savez_compressed(f"{args.out}/figs/{args.tag}_off.npz", frames=np.array(rc["frames"]),
-                            com=rc["com"], times=rc["times"], Nc=S["Nc"], z_sub=S["z_sub"], phat=S["phat"],
-                            foff=S["cx"].net.fiber_offsets, n_nuc=S["n_nuc"])
+                            com=rc["com"], times=rc["times"], Nc=S["Nc"], Ne=S["Ne"], z_sub=S["z_sub"], phat=S["phat"],
+                            foff=S["net"].fiber_offsets, n_nuc=S["n_nuc"], n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"])
     json.dump(out, open(f"{args.out}/figs/{args.tag}.json", "w"), indent=2)
     print(f"wrote {args.tag}_on.npz + {args.tag}.json  (total {time.time()-t0:.0f}s)")
 

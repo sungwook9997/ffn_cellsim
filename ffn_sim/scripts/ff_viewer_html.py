@@ -51,7 +51,9 @@ def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
             all_pts.append(v)
             entry = {"name": L["name"], "kind": kind, "color": L.get("color", "#4aa3ff"),
                      "size": float(L.get("size", 2.0)), "n": int(v.shape[0]),
-                     "b64": _b64(v, np.float32)}
+                     "b64": _b64(v, np.float32),
+                     "opacity": float(L.get("opacity", 0.75 if kind == "lines" else 1.0)),
+                     "on_top": bool(L.get("on_top", False))}   # on_top: depthTest off → draws through occluders
             if kind == "mesh":                                    # triangle surface: verts + faces + opacity
                 entry["faces_b64"] = _b64(np.asarray(L["faces"], np.uint32).reshape(-1, 3), np.uint32)
                 entry["opacity"] = float(L.get("opacity", 1.0))
@@ -150,8 +152,10 @@ function showScene(name){
     geo.setAttribute('position',new THREE.BufferAttribute(v,3));
     let o;
     if(L.kind==='lines'){
-      const mat=new THREE.LineBasicMaterial({color:L.color,transparent:true,opacity:0.75});
-      o=new THREE.LineSegments(geo,mat); scene.add(o); current.push(o);
+      const op=(L.opacity===undefined)?0.75:L.opacity;
+      const mat=new THREE.LineBasicMaterial({color:L.color,transparent:true,opacity:op,
+        depthTest:!L.on_top});
+      o=new THREE.LineSegments(geo,mat); if(L.on_top){o.renderOrder=999;} scene.add(o); current.push(o);
     }else if(L.kind==='mesh'){
       const idx=dec32(L.faces_b64); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.computeVertexNormals();
       const op=(L.opacity===undefined)?1.0:L.opacity;

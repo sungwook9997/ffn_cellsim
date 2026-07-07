@@ -237,7 +237,13 @@ def ff_implicit_step_gpu(x, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma
                          vol_g=None, k_vol=0.0, diag_extra=None, cg_tol=1e-6, cg_maxiter=400):
     """One GPU-resident NF2007 implicit overdamped step. All arrays cupy, device-resident. ``force_fn(x_cp)``
     returns the full force as a cupy (3N,) array (Warp kernels → cupy view, no host). Solves
-    (γ/dt·I + K(x) + k_vol·g·gᵀ)·Δx = F(x) with cupy CG. Returns x+Δx (cupy)."""
+    (γ/dt·I + K(x) + k_vol·g·gᵀ)·Δx = F(x) with cupy CG. Returns x+Δx (cupy).
+
+    Un-preconditioned CG is used deliberately: a diagonal (Jacobi) preconditioner was measured to INFLATE
+    iterations here (K is dominated by the rank-1 crosslink blocks k·ûûᵀ with k_xl≈4.6e5, which are not
+    diagonally dominant, so 1/diag mis-scales them — Thread-C R-CG, 2026-07-07). Merging the MT aster costs a
+    bounded ~1.5× iters (native 486k: 113→171, well under maxiter); a block-Jacobi / IC(0) preconditioner is the
+    flagged follow-up if native CG throughput becomes a production bottleneck."""
     import cupy as cp
     import cupyx.scipy.sparse as csp
     from cupyx.scipy.sparse.linalg import cg, LinearOperator
