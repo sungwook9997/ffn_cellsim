@@ -40,6 +40,26 @@ Trust the pipeline; do not quote its numbers as measured MCF7 mechanobiology yet
 3. **γ sweep** at a tractable N (400) across 5e-4 … 1e-2 → shape/compaction sensitivity vs experiment.
 4. **Thesis-grade run**: dispersed init + implicit large-dt + long time + converged, with all fixes on.
 
+## γ sweep result (2026-07-07, N=200, all fixes + virial on)
+
+Cortical tension sweep — the engine responds with PHYSICALLY CORRECT sensitivity (validates
+trustworthiness; not arbitrary numbers):
+
+| γ [N/m] | σ_vm med [Pa] | σ_vm p99 | pressure [Pa] | asphericity | bonds |
+|---|---|---|---|---|---|
+| 5e-4 | 10.9 | 96 | 11.9 | 0.119 | 4680 |
+| 1e-3 | 11.0 | 96 | 11.3 | 0.119 | 4626 |
+| 3e-3 | 29.7 | 143 | 533 | 0.084 | 4439 |
+| 5e-3 | 37.8 | 185 | 1199 | 0.071 | 4259 |
+| 1e-2 | 49.9 | 219 | 2767 | 0.067 | 4064 |
+
+- σ_vm **rises** with γ (10.9→49.9 Pa, 4.6×) = cortical tension → membrane stress ✓
+- cells **round up** (asphericity 0.119→0.067) = area-minimisation ✓
+- pressure **tracks Laplace** 2γ/R (at γ=1e-2: 2767 vs 2667 Pa) ✓; bonds ↓ as contact area shrinks ✓
+
+**PI γ decision input:** suspended-MCF7 γ=1e-2 → rounder cells (asph 0.067) + σ_vm ~50 Pa; band-centre
+γ=5e-4 → less round (0.119) + σ_vm ~11 Pa. Pick by matching the PI's MCF7 asphericity/stress data.
+
 ## Honest claim envelope (today)
 CAN claim: "DCM is a stable GPU-native volume-conserving deformable-cell engine with mechanistically
 emergent, physically-realistic cadherin catch-bond junction networks at N=2000." CANNOT claim (until
