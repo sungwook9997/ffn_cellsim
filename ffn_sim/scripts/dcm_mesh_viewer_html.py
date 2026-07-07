@@ -225,15 +225,15 @@ _HTML = r"""<!DOCTYPE html><html><head><meta charset="utf-8">
      <span id="fnum"></span></div>
   <div class="row"><label>frame</label><input id="frame" type="range" min="0" value="0"></div>
   <div class="row"><label>fps</label><input id="fps" type="range" min="1" max="30" value="6"><span id="fpsv"></span></div>
-  <div class="row" id="nucrow"><label><input id="nucon" type="checkbox" checked> nucleus</label>
-     <span class="hint" style="margin-left:8px">off → cells opaque (see contacts)</span></div>
+  <div class="row" id="nucrow"><label><input id="nucon" type="checkbox"> nucleus</label>
+     <span class="hint" style="margin-left:8px">off → cells opaque (see stress + contacts)</span></div>
   <div class="row"><label>colour</label>
      <select id="cmode">
-        <option value="cell" selected>cell id</option>
-        <option value="stress">stress (|force|, FEM)</option>
+        <option value="stress" selected>stress (|force|, FEM)</option>
         <option value="junction">junction density</option>
+        <option value="cell">cell id</option>
      </select></div>
-  <div class="row" id="junrow"><label><input id="junon" type="checkbox"> show cadherin bonds</label></div>
+  <div class="row" id="junrow"><label><input id="junon" type="checkbox" checked> show cadherin bonds</label></div>
   <div class="row hint" id="cmodehint"></div>
   <hr style="border-color:#333">
   <div class="row"><label><input id="clipon" type="checkbox"> section</label>
@@ -618,14 +618,15 @@ if(elJunOn) elJunOn.onchange=()=>applyJunctions(cur);
 elThickv.textContent=(elThick.value/10).toFixed(0)+'%';
 elFpsv.textContent=fps;
 
-// DEFAULT: section ON, peel mode — immediately shows PI a clean SOLID cross-section
-// (peel never slices a shell, so there is no hollow interior). PI can switch to cut
-// (stencil-capped true clip) or slab (single-cell layer) from the dropdown.
-elClipOn.checked=true;
+// DEFAULT: section OFF — show the WHOLE spheroid surface first, coloured by the FEM stress
+// field with cadherin bonds overlaid (the clearest "deformation/stress + junctions" view the
+// user asked for). Peel is preselected so turning section ON gives a clean SOLID cross-section
+// (peel never slices a shell → no hollow interior); cut/slab available from the dropdown.
+elClipOn.checked=false;
 elMode.value='peel';
 // deep-link overrides so a specific cross-section is shareable / headless-renderable:
 //   ?section=cut|peel|slab|off  &axis=0|1|2  &pos=0..1  &flip=0|1  &thick=0..1  &frame=N|last
-let _f0=0;
+let _f0=F-1;   // open on the SETTLED last frame (full stress + all cadherin bonds); scrub back to watch assembly
 try{
   const q=new URLSearchParams(location.search);
   if(q.has('section')){const s=q.get('section');
