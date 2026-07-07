@@ -1216,6 +1216,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
                 alpha = ccd_alpha(face_grid.id, node_f32, pos_d, dx_d, cof_d, faces_d, fcell_d,
                                   ipc_repel_q, ipc_t, eta=ipc_eta, device=device)
+                # #1 Step-0 telemetry: realized CCD step fraction. α≪1 = the single-linearized-step
+                # stall (CCD clamps the un-line-searched Newton direction; no re-linearization to recover).
+                if os.environ.get("IPC_TELEM") == "1" and (s == 80 or s % 500 == 0):
+                    print(f"  [ipc-telem] step {s}: ccd_alpha={float(alpha):.4f} cg_iters="
+                          f"{_cgi.get('cg_iters','?') if isinstance(_cgi, dict) else '?'}", flush=True)
                 wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(alpha), dx_d, cof_d], device=device)
             elif pen_cap:      # D8: clamp each node's implicit step to the contact-shell scale
                 wp.launch(_vaxpy_active_capped, dim=N,
