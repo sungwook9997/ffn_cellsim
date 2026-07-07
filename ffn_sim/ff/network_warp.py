@@ -424,6 +424,7 @@ def _seed_nucleus_cloud(centre, R_nuc, n_beads, rng):
 
 
 def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucleus=None, membrane=None,
+                                              microtubule=None, k_mt_contact=None,
                                               n_steps=4000, reshape_every=25, turgor_every=20, dt_mu=0.0,
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
                                               rigid_plate=False, nucleus_seed=0, device="cpu"):
@@ -452,14 +453,25 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
     from ffn_sim.ff.gamma_floor import TURGOR_DP0, TURGOR_PI_IN0, VMIN_FRAC
 
-    net = cortex.net
+    net = cortex.net                                  # cortex net (surface/turgor/hull always use THIS)
     Nc = net.n_nodes
-    tri = np.ascontiguousarray(net.bend_triples, np.int32)
-    alpha = np.ascontiguousarray(_per_triple_alpha(net), np.float64)
-    fiber_off = np.ascontiguousarray(net.fiber_offsets, np.int32)
+    # ---- Thread-C: MERGE the MT aster into the elastic network (additive; microtubule=None → bit-identical) ----
+    # enet = [cortex(Nc) ; MT_arms(Nmt)] with the MTOC appended as node Ne-1; the elastic arrays (bending
+    # triples, per-fiber κ, fiber offsets, reshape, seg_rest) come from enet so MT bending/inextensibility ride
+    # the same loop, while all CORTEX surface physics (turgor/membrane/hull/centroid) stay on net[:Nc].
+    from ffn_sim.ff.microtubule import merge_aster_into_cortex
+    _khub = float(cortex.xl_k.max()) if cortex.xl_i.size else 1.0e4
+    _m = merge_aster_into_cortex(net, microtubule, k_hub_pn_um=_khub)
+    enet = _m["net"]; Ne = _m["Ne"]                   # Ne == Nc when MT off
+    mtoc_pos = _m["mtoc_pos"]                          # (1,3) MTOC, or (0,3) when off
+    hub_i = _m["hub_i"].astype(np.int64); hub_j = _m["hub_j"].astype(np.int64)
+    hub_k = np.asarray(_m["hub_k"], np.float64); hub_rest = np.asarray(_m["hub_rest"], np.float64)
+    tri = np.ascontiguousarray(enet.bend_triples, np.int32)
+    alpha = np.ascontiguousarray(_per_triple_alpha(enet), np.float64)
+    fiber_off = np.ascontiguousarray(enet.fiber_offsets, np.int32)
     seg_per = np.diff(fiber_off) - 1
     seg_off = np.concatenate([[0], np.cumsum(seg_per)]).astype(np.int32)
-    seg = float(net.seg_rest.mean()) if net.seg_rest.size else 1.0
+    seg = float(enet.seg_rest.mean()) if enet.seg_rest.size else 1.0
     R0 = cortex.R0_mean if cortex.R0_mean > 0.0 else cortex.R_um
 
     # ---- seed the nucleus bead cloud concentric with the resting cortex ----
@@ -472,8 +484,11 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         nuc_pos = np.zeros((0, 3), dtype=np.float64)
         V_nuc = 0.0
     n_nuc = nuc_pos.shape[0]
-    N = Nc + n_nuc
-    pos0 = np.concatenate([net.pos, nuc_pos], axis=0)
+    N = Ne + n_nuc                                     # cortex + MT_arms + MTOC + nucleus (== Nc+n_nuc when MT off)
+    pos0 = np.concatenate([enet.pos, mtoc_pos, nuc_pos], axis=0)   # [cortex ; MT_arms ; MTOC ; nucleus]
+    # MT tip nodes (outermost bead of each MT arm, merged indexing) for the tip↔cortex contact
+    _mt_tips = np.array([int(fiber_off[f + 1]) - 1 for f in range(fiber_off.shape[0] - 1)
+                         if int(fiber_off[f]) >= Nc], dtype=np.int64) if microtubule is not None else np.zeros(0, np.int64)
 
     # V0 = RESTING compressible-cytoplasm volume (hull of the cortex minus the nucleus it displaces), so
     # V_cyto/V0 = 1 at strain 0 → ΔP = dP0 (same convention as simulate_compressed_shell_on_device).
@@ -503,13 +518,27 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     alpha_d = wp.array(alpha, dtype=wp.float64, device=d)
     foff_d = wp.array(fiber_off, dtype=wp.int32, device=d)
     soff_d = wp.array(seg_off, dtype=wp.int32, device=d)
-    srest_d = wp.array(np.ascontiguousarray(net.seg_rest, np.float64), dtype=wp.float64, device=d)
-    has_xl = bool(cortex.xl_i.size)
+    srest_d = wp.array(np.ascontiguousarray(enet.seg_rest, np.float64), dtype=wp.float64, device=d)  # merged (incl MT arms)
+    # crosslinks = cortex α-actinin/filamin + MTOC↔arm-base hub (both enter the same link_spring)
+    xl_i_all = np.concatenate([cortex.xl_i, hub_i]).astype(np.int32)
+    xl_j_all = np.concatenate([cortex.xl_j, hub_j]).astype(np.int32)
+    xl_k_all = np.concatenate([cortex.xl_k, hub_k]).astype(np.float64)
+    xl_r_all = np.concatenate([cortex.xl_rest, hub_rest]).astype(np.float64)
+    n_xl = int(xl_i_all.size)
+    has_xl = n_xl > 0
     if has_xl:
-        xl_d = wp.array(np.ascontiguousarray(np.stack([cortex.xl_i, cortex.xl_j], 1), np.int32),
-                        dtype=wp.int32, device=d)
-        kxl_d = wp.array(np.ascontiguousarray(cortex.xl_k, np.float64), dtype=wp.float64, device=d)
-        r0_d = wp.array(np.ascontiguousarray(cortex.xl_rest, np.float64), dtype=wp.float64, device=d)
+        xl_d = wp.array(np.ascontiguousarray(np.stack([xl_i_all, xl_j_all], 1), np.int32), dtype=wp.int32, device=d)
+        kxl_d = wp.array(np.ascontiguousarray(xl_k_all), dtype=wp.float64, device=d)
+        r0_d = wp.array(np.ascontiguousarray(xl_r_all), dtype=wp.float64, device=d)
+    # MT tip↔cortex soft contact: each MT tip ↔ nearest cortex node (excluded-volume prop under confinement)
+    mtp_d = None
+    if _mt_tips.size:
+        from scipy.spatial import cKDTree
+        _tip_cortex = cKDTree(net.pos).query(enet.pos[_mt_tips])[1].astype(np.int64)
+        mtp_d = wp.array(np.ascontiguousarray(np.stack([_mt_tips, _tip_cortex], 1).astype(np.int32)),
+                         dtype=wp.int32, ndim=2, device=d)
+        k_mt_c = float(k_mt_contact) if k_mt_contact is not None else _khub
+        r_mt_c = 0.5                                  # contact shell [µm]: engages when cortex reaches within 0.5µm of a tip
     has_myo = bool(cortex.myo_i.size) and f_myo != 0.0
     if has_myo:
         myo_d = wp.array(np.ascontiguousarray(np.stack([cortex.myo_i, cortex.myo_j], 1), np.int32),
@@ -561,7 +590,9 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         if nT:
             wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         if has_xl:
-            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+            wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if mtp_d is not None:                 # MT tip ↔ cortex excluded-volume prop (Thread-C, engages under confinement)
+            wp.launch(soft_contact_kernel, dim=mtp_d.shape[0], inputs=[pos_d, mtp_d, wp.float64(r_mt_c), wp.float64(k_mt_c), f_d], device=d)
         if has_myo:
             wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)  # cortex only
@@ -570,7 +601,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
             wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
         if n_nuc:
             wp.launch(nucleus_shell_kernel, dim=n_nuc,
-                      inputs=[pos_d, wp.int32(Nc), centre, wp.float64(nucleus.R_nuc_um),
+                      inputs=[pos_d, wp.int32(Ne), centre, wp.float64(nucleus.R_nuc_um),
                               wp.float64(nucleus.k_chrom), wp.float64(nucleus.k_lamin),
                               wp.float64(nucleus.d_knee_um), wp.float64(nucleus.F_knee_pN), f_d], device=d)
         if rigid_plate:                     # RIGID: step + hard-clamp |z|≤half_gap (exact confinement)
@@ -591,7 +622,9 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         if nT:
             wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         if has_xl:
-            wp.launch(link_spring_kernel, dim=cortex.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+            wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
+        if mtp_d is not None:
+            wp.launch(soft_contact_kernel, dim=mtp_d.shape[0], inputs=[pos_d, mtp_d, wp.float64(r_mt_c), wp.float64(k_mt_c), f_d], device=d)
         if has_myo:
             wp.launch(myosin_kernel, dim=cortex.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)
@@ -599,7 +632,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
             wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
         if n_nuc:
             wp.launch(nucleus_shell_kernel, dim=n_nuc,
-                      inputs=[pos_d, wp.int32(Nc), centre, wp.float64(nucleus.R_nuc_um),
+                      inputs=[pos_d, wp.int32(Ne), centre, wp.float64(nucleus.R_nuc_um),
                               wp.float64(nucleus.k_chrom), wp.float64(nucleus.k_lamin),
                               wp.float64(nucleus.d_knee_um), wp.float64(nucleus.F_knee_pN), f_d], device=d)
         wp.launch(rigid_plate_step_kernel, dim=N,
@@ -622,7 +655,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     dP_force = F_plate / (np.pi * contact_radius**2) if contact_radius > 1e-6 else 0.0
     # nucleus geometry: equatorial radius + whether the plate reached the nucleus (direct compression)
     if n_nuc:
-        pn = pos_all[Nc:]
+        pn = pos_all[Ne:]                            # nucleus beads live AFTER the elastic block [cortex;MT;MTOC]
         R_nuc_eq = float(np.hypot(pn[:, 0] - c[0], pn[:, 1] - c[1]).max())
         nucleus_contact = bool((np.abs(pn[:, 2] - cz) > half_gap).any())
     else:
@@ -635,7 +668,8 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                "R_nuc_eq_um": R_nuc_eq, "nucleus_contact": nucleus_contact, "n_nuc": n_nuc,
                "has_membrane": membrane is not None, "gamma_mem_channel_pN_um": gamma_mem_tot,
                "dP_mem_Pa": dP_mem, "area_um2": area, "A0_mem_um2": A0_mem,
-               "k_plate": k_plate}
+               "k_plate": k_plate, "has_mt": microtubule is not None, "Nc": Nc, "Ne": Ne,
+               "n_mt": int(_m.get("n_mt", 0)), "mtoc_idx": int(_m.get("mtoc_idx", -1))}
     return pos_all, metrics
 
 
