@@ -41,6 +41,7 @@ from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_ke
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
+from ffn_sim.ff.myosin_linear import minifilament_kernel, resolve_myosin
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
 
 # leading-edge protrusion magnitude — DERIVED, not tuned (KU-3.6 / KU-3.18):
@@ -83,8 +84,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
-        assembly=False, k_assembly=0.4, growth=False, refresh_every=50, reshape_every=20, kmc_every=2000,
-        xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
+        assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, refresh_every=50, reshape_every=20,
+        kmc_every=2000, xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -148,6 +149,12 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     has_myo = cx.myo_i.size > 0
     if has_myo:
         myo_d = wp.array(np.ascontiguousarray(np.stack([cx.myo_i, cx.myo_j], 1), np.int32), dtype=wp.int32, ndim=2, device=d)
+    # Myosin-LINEAR (PI-ratified): explicit Stam-Hocky minifilament, DERIVED stall + linear force-velocity,
+    # replacing the swept constant f_myo. Quasi-static ⇒ v_slide≈0 ⇒ full stall prestress (the γ source).
+    myo_lin = resolve_myosin() if myosin_linear else None
+    if has_myo and myosin_linear:
+        vslide_d = wp.zeros(cx.myo_i.size, dtype=wp.float64, device=d)   # inter-anchor sliding rate (0 in quasi-static)
+        f_myo = myo_lin.f_stall_pn                                       # 60 pN derived stall (KB-3.18), not swept
     ac_d = wp.array(S["basal"], dtype=wp.int32, device=d)
     anch_d = wp.array(S["anchors"], dtype=wp.vec3d, device=d)
     bd_d = wp.array(np.ones(S["basal"].size, np.int32), dtype=wp.int32, device=d)
@@ -179,7 +186,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
         if has_myo:
-            wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+            if myosin_linear:
+                wp.launch(minifilament_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, vslide_d, wp.float64(f_myo), wp.float64(myo_lin.v0_um_s), f_d], device=d)
+            else:
+                wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
         if fz_node != 0.0:
             wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
@@ -231,7 +241,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
             wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
             if has_myo:
-                wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+                if myosin_linear:
+                    wp.launch(minifilament_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, vslide_d, wp.float64(f_myo), wp.float64(myo_lin.v0_um_s), f_d], device=d)
+                else:
+                    wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
             wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
             if fz_node != 0.0:
                 wp.launch(gravity_kernel, dim=Nc, inputs=[wp.float64(fz_node), f_d], device=d)
@@ -289,7 +302,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
         if has_myo:
-            wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
+            if myosin_linear:
+                wp.launch(minifilament_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, vslide_d, wp.float64(f_myo), wp.float64(myo_lin.v0_um_s), f_d], device=d)
+            else:
+                wp.launch(myosin_kernel, dim=cx.myo_i.size, inputs=[pos_d, myo_d, wp.float64(f_myo), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_area), f_d], device=d)
         wp.launch(turgor_kernel, dim=Nc, inputs=[pos_d, centre, wp.float64(dP_mem_area), f_d], device=d)
         if fz_node != 0.0:                                     # gravity − buoyancy (real body force, ≈1 pN/cell)
@@ -429,6 +445,7 @@ def main():
     ap.add_argument("--dt-impl", type=float, default=1.0e-2, help="implicit timestep [s] (clutch-in-K allows up to ~0.2)")
     ap.add_argument("--assembly", action="store_true", help="dynamic cortex area growth (actin assembly) → cell can flatten")
     ap.add_argument("--growth", action="store_true", help="per-filament barbed-end polymerization (KB-3.6 ratchet) → filaments elongate individually")
+    ap.add_argument("--myosin-linear", action="store_true", help="explicit Stam-Hocky minifilament (derived 60pN stall + linear force-velocity) instead of swept f_myo")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
     ap.add_argument("--tag", default="crawl")
@@ -442,7 +459,7 @@ def main():
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
             protrude=(not args.static and not args.spread), spread=args.spread,
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
-            assembly=args.assembly, growth=args.growth, device=args.device)
+            assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
