@@ -103,6 +103,31 @@ def main() -> None:
         ci = int(node_cell[n])
         colors[n] = palette[ci] if ci >= 0 else (120, 120, 120)
 
+    # Per-cell FIXED nucleus radius [µm]: the tightest cell inradius over the WHOLE trajectory,
+    # clamped to R_nuc. A stiff nucleus is ~constant — the old PER-FRAME clamp made the drawn
+    # nucleus GROW as cells relaxed. Bake ONE radius per cell so it stays constant across the
+    # animation AND never pokes through the (compressed) membrane in any frame.
+    rnuc_abs = float(args.r_nuc_abs)
+    rnuc_cell = np.full(C, rnuc_abs, np.float32)
+    if rnuc_abs > 0.0:
+        cell_nodes = [[] for _ in range(C)]
+        for n in range(N):
+            ci = int(node_cell[n])
+            if ci >= 0:
+                cell_nodes[ci].append(n)
+        for i in range(C):
+            nb = cell_nodes[i]
+            if len(nb) < 4:
+                continue
+            nb = np.asarray(nb)
+            rmin = 1.0e30
+            for fi in range(F):
+                p = frames[fi, nb]
+                dr = float(np.linalg.norm(p - p.mean(0), axis=1).min())
+                if dr < rmin:
+                    rmin = dr
+            rnuc_cell[i] = min(rnuc_abs, rmin * 0.99)
+
     meta = {
         "F": int(F), "N": int(N), "M": int(M), "C": C,
         "lo": lo.tolist(), "span": span.tolist(),
@@ -117,6 +142,7 @@ def main() -> None:
         "nodecell_b64": _b64(node_cell),                 # (N,)  int32  compact cell per node
         "colors_b64": _b64(colors),                      # (N,3) uint8, constant
         "palette_b64": _b64(palette),                    # (C,3) uint8 per-cell colour (nucleus tint)
+        "rnuc_b64": _b64(rnuc_cell),                      # (C,) float32 per-cell FIXED nucleus radius [µm]
         "q_b64": _b64(q),                                # (F,N,3) uint16
     }
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
@@ -229,6 +255,7 @@ const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
 
 // ---------- NUCLEUS compartment: one instanced sphere per cell at its centroid, radius R_nuc ----------
 const palette = nucOn ? dec(P.palette_b64, Uint8Array) : null;   // (C,3) uint8
+const rnucFixed = nucOn ? dec(P.rnuc_b64, Float32Array) : null;  // (C,) per-cell FIXED nucleus radius [µm] — constant across frames
 let nucMesh=null;
 if(nucOn){
   const nucMat=new THREE.MeshLambertMaterial({clippingPlanes:clipArr, clipShadows:true});
@@ -326,11 +353,10 @@ function updateNucleus(){
   computeCentroids(curPos); computeCellR(curPos);
   const on=elClipOn.checked, mode=elMode.value;
   for(let c=0;c<C;c++){
-    let rn = (m.rNucAbs>0.0) ? m.rNucAbs : m.rNuc*cellR[c];   // absolute (sim-faithful) vs proportional
-    // The DCM nucleus is a SOFT radial force field (not a rigid body); under confluent compression the
-    // membrane sits inside R_nuc. Draw the soft nucleus BOUNDED BY the membrane (its true squeezed extent),
-    // never a rigid sphere poking through: clamp to the cell inradius so the nucleus stays inside the cell.
-    if(rn > cellRmin[c]*0.99) rn = cellRmin[c]*0.99;
+    // The nucleus is a stiff ~constant body. Use the BAKED per-cell fixed radius (tightest inradius
+    // over the whole trajectory) so it never grows/pulses across frames and never pokes through the
+    // (compressed) membrane. Proportional legacy path unchanged.
+    let rn = (m.rNucAbs>0.0) ? rnucFixed[c] : m.rNuc*cellR[c];
     if(on && (mode==='peel'||mode==='slab') && !keep[c]) rn=0;  // hide nuclei of peeled/hidden cells
     _nm.makeScale(rn,rn,rn); _nm.setPosition(cent[c*3],cent[c*3+1],cent[c*3+2]);
     nucMesh.setMatrixAt(c,_nm);
