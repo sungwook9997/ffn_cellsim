@@ -120,6 +120,24 @@ def run(S, *, steps=200, device="cpu", straggle=True, seed=1):
         wp.launch(membrane_containment_kernel, dim=Nc, inputs=[pos_d, centre, rmin_d, wp.float64(k_wall), fc_d], device=d)
         return fc_d.numpy().reshape(-1).copy()
 
+    gpu = str(d).startswith("cuda")
+    if gpu:
+        import cupy as cpx
+        from ffn_sim.ff.implicit_ff import ff_implicit_step_gpu
+        bt_cp = cpx.asarray(tri64); al_cp = cpx.asarray(np.ascontiguousarray(alpha, np.float64))
+        xlij_cp = cpx.asarray(xl_ij); kxl_cp = cpx.asarray(kxl_np)
+
+        def gpu_force_fn(x_cp):
+            """Cortex FULL force at x as device-resident cupy (no host round-trip): bending + crosslinks +
+            membrane containment. No cortex turgor — the membrane is the osmotic envelope."""
+            pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(Nc, 3)), dtype=wp.vec3d, device=d))
+            wp.launch(_zero, dim=Nc, inputs=[fc_d], device=d)
+            wp.launch(cytosim_bending_kernel, dim=tri.shape[0], inputs=[pos_d, tri_d, alpha_d, fc_d], device=d)
+            wp.launch(link_spring_kernel, dim=cx.xl_i.size, inputs=[pos_d, xl_d, kxl_d, r0_d, fc_d], device=d)
+            wp.launch(membrane_containment_kernel, dim=Nc, inputs=[pos_d, centre, rmin_d, wp.float64(k_wall), fc_d], device=d)
+            wp.synchronize_device(d)
+            return cpx.asarray(fc_d).reshape(-1).copy()
+
     frames_c = [pos.copy()]; frames_m = [mm.verts.copy()]
     esc0 = int((np.linalg.norm(pos - S["c"], axis=1) > mm.R_mem).sum())
     xv = pos.reshape(-1).copy()
@@ -132,9 +150,14 @@ def run(S, *, steps=200, device="cpu", straggle=True, seed=1):
         # network held OUT by its ERM tethers to the pressurised membrane. So the cortex solve is bending +
         # crosslinks + containment only (st["dP_area"]=0, no volume constraint).
         # ---- CORTEX implicit step (unconditionally stable at large dt) ----
-        xv, _info = implicit_step_current(xv, force_fn, tri64, alpha, xl_ij, kxl_np,
-                                          gamma=gamma_rep, dt=dt, n_newton=1)
-        pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(Nc, 3))
+        if gpu:
+            x_cp = cpx.asarray(pos_d).reshape(-1).copy()
+            x_cp = ff_implicit_step_gpu(x_cp, gpu_force_fn, bt_cp, al_cp, xlij_cp, kxl_cp, gamma=gamma_rep, dt=dt)
+            pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(Nc, 3)), dtype=wp.vec3d, device=d))
+        else:
+            xv, _info = implicit_step_current(xv, force_fn, tri64, alpha, xl_ij, kxl_np,
+                                              gamma=gamma_rep, dt=dt, n_newton=1)
+            pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(Nc, 3))
         # ---- MEMBRANE sub-step (soft, explicit): area tension + Laplace turgor + ERM (rides the cortex, blebs) ----
         wp.launch(_zero, dim=Nm, inputs=[mf_d], device=d)
         marea_d.zero_(); wp.launch(membrane_area_reduce_kernel, dim=mm.faces.shape[0], inputs=[mpos_d, mfc_d, marea_d], device=d)
@@ -145,8 +168,8 @@ def run(S, *, steps=200, device="cpu", straggle=True, seed=1):
                   wp.float64(k_erm), erm_rest_d, wp.float64(f_rupt), mf_d, fc_d], device=d)
         wp.launch(_step_scalar_gamma, dim=Nm, inputs=[mpos_d, wp.float64(dt), wp.float64(m_gamma), mf_d], device=d)
         if step % max(1, steps // 12) == 0:
-            frames_c.append(xv.reshape(Nc, 3).copy()); frames_m.append(mpos_d.numpy().copy())
-    posf = xv.reshape(Nc, 3)
+            frames_c.append(pos_d.numpy().copy()); frames_m.append(mpos_d.numpy().copy())
+    posf = pos_d.numpy()
     esc1 = int((np.linalg.norm(posf - S["c"], axis=1) > renv).sum())
     nbleb = int(Nm - bound_d.numpy().sum())
     return dict(frames_c=frames_c, frames_m=frames_m, faces_m=mm.faces, Nc=Nc, Nm=Nm,
