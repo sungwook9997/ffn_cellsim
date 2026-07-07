@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>FF cell playground</title>
 <style>
- :root{--bg:#0b0e14;--panel:#141a24cc;--line:#232c3b;--fg:#e6edf3;--mut:#9aa7b8;--acc:#5ac8fa;--grn:#76e0a0}
+ :root{--bg:#0b0e14;--panel:#141a24f2;--line:#232c3b;--fg:#e6edf3;--mut:#9aa7b8;--acc:#5ac8fa;--grn:#76e0a0}
  body{margin:0;overflow:hidden;background:var(--bg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--fg)}
  #ui{position:absolute;top:12px;left:12px;background:var(--panel);padding:12px 14px;border-radius:10px;
-     border:1px solid var(--line);backdrop-filter:blur(6px);width:250px}
+     border:1px solid var(--line);width:250px}
  #ui h1{font-size:15px;margin:0 0 2px} #ui .sub{color:var(--mut);font-size:11.5px;margin-bottom:10px}
  #ui .row{margin:9px 0;display:flex;align-items:center;gap:8px}
  #ui label{min-width:74px;color:var(--mut);font-size:12px}
@@ -15,10 +15,10 @@
  button:hover{border-color:var(--acc)} button.on{background:var(--acc);color:#04121e;border-color:var(--acc);font-weight:600}
  .toggles{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
  #hint{position:absolute;bottom:12px;left:12px;background:var(--panel);border:1px solid var(--line);
-       border-radius:10px;padding:9px 12px;color:var(--mut);font-size:12px;max-width:300px;backdrop-filter:blur(6px)}
+       border-radius:10px;padding:9px 12px;color:var(--mut);font-size:12px;max-width:300px}
  #hint b{color:var(--fg)} .k{color:var(--grn)}
  #leg{position:absolute;bottom:12px;right:12px;background:var(--panel);border:1px solid var(--line);
-      border-radius:10px;padding:9px 12px;font-size:11.5px;backdrop-filter:blur(6px)}
+      border-radius:10px;padding:9px 12px;font-size:11.5px}
  #leg .bar{height:9px;width:150px;border-radius:5px;margin:5px 0 3px;
    background:linear-gradient(90deg,#4a86ff,#8fb6ff,#ffcc66,#ff8a3d,#ff3b3b)}
  #leg .lab{display:flex;justify-content:space-between;color:var(--mut)}
@@ -62,8 +62,9 @@ const MEM_DIR=decF32(P.membrane.verts_b64), MEM_FACE=decU32(P.membrane.faces_b64
 const NUC_DIR=decF32(P.nucleus.verts_b64), NUC_FACE=decU32(P.nucleus.faces_b64), NUC_NV=P.nucleus.nv, NUC_SCALE=P.nucleus.scale;
 
 // ---- three.js scene -------------------------------------------------------------------------
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const isMobile=/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&Math.min(innerWidth,innerHeight)<820);
+const renderer=new THREE.WebGLRenderer({antialias:!isMobile,powerPreference:"high-performance"});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.5:2));
 document.body.appendChild(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0b0e14);
 const cam=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.05,5000);
@@ -125,7 +126,7 @@ function loadTier(idx){
     side:THREE.DoubleSide,depthWrite:false,roughness:0.5,metalness:0.0}));
   nucMesh.frustumCulled=false;nucMesh.renderOrder=2;nucMesh.visible=U.showNuc;scene.add(nucMesh);
 
-  iters=5;updateBuffers();               // prime geometry so the first frame is correct
+  iters=5;frameN=0;updateBuffers();      // prime geometry so the first frame is correct
 }
 
 // ---- UI -------------------------------------------------------------------------------------
@@ -166,7 +167,7 @@ function release(){if(grabbed<0)return;grabbed=-1;neighbours=[];ctr.enabled=true
 addEventListener('pointerup',release);
 
 // ---- PBD solver (turgor once/frame; iters adapts to frame cost) ------------------------------
-let iters=5;
+let iters=5,frameN=0;const compEvery=isMobile?2:1;   // compartments (visual) update at half-rate on mobile
 function step(){
   const damp=U.damp;
   for(let i=0;i<N;i++){if(i===grabbed)continue;for(let c=0;c<3;c++){const k=3*i+c;const cur=pos[k];const v=(cur-prev[k])*damp;prev[k]=cur;pos[k]=cur+v;}}
@@ -211,18 +212,24 @@ function updateBuffers(){
   if(U.showXl){for(let n=0;n<nXl;n++){const s=xlIdx[n];const a=si[s],b=sj[s];const o=6*n;
     xpos[o]=pos[3*a];xpos[o+1]=pos[3*a+1];xpos[o+2]=pos[3*a+2];xpos[o+3]=pos[3*b];xpos[o+4]=pos[3*b+1];xpos[o+5]=pos[3*b+2];}xgeo.attributes.position.needsUpdate=true;}
   if(U.showNodes){npos.set(pos);ngeo.attributes.position.needsUpdate=true;}
-  if(U.showMem){skinInto(memPos,MEM_NV,memIdx,memW,MEM_INFLATE);memGeo.attributes.position.needsUpdate=true;memGeo.computeVertexNormals();}
-  if(U.showNuc){skinInto(nucPos,NUC_NV,nucIdx,nucW,NUC_SCALE);nucGeo.attributes.position.needsUpdate=true;nucGeo.computeVertexNormals();}
+  if((frameN%compEvery)===0){                    // compartments are visual; half-rate on mobile
+    if(U.showMem){skinInto(memPos,MEM_NV,memIdx,memW,MEM_INFLATE);memGeo.attributes.position.needsUpdate=true;memGeo.computeVertexNormals();}
+    if(U.showNuc){skinInto(nucPos,NUC_NV,nucIdx,nucW,NUC_SCALE);nucGeo.attributes.position.needsUpdate=true;nucGeo.computeVertexNormals();}
+  }
   if(grabbed>=0)grabDot.position.set(pos[3*grabbed],pos[3*grabbed+1],pos[3*grabbed+2]);
 }
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-let workEwma=8,fpsEwma=60,tPrev=performance.now();
-function tick(now){requestAnimationFrame(tick);
+let workEwma=8,dtEwma=16,dtMax=16,dprLow=false,tPrev=performance.now();
+const statEl=document.getElementById('stat');
+function tick(now){requestAnimationFrame(tick);frameN++;
   const t0=performance.now();step();updateBuffers();const work=performance.now()-t0;workEwma=0.92*workEwma+0.08*work;
-  if(workEwma>13 && iters>3) iters--; else if(workEwma<7 && iters<7) iters++;
-  const dt=now-tPrev;tPrev=now;if(dt>0)fpsEwma=0.9*fpsEwma+0.1*(1000/dt);
   ctr.update();renderer.render(scene,cam);
-  document.getElementById('stat').innerHTML=`<b>${N.toLocaleString()}</b> nodes · <b>${nSeg.toLocaleString()}</b> fibers · <b>${nXl.toLocaleString()}</b> xlinks<br><b>${fpsEwma.toFixed(0)}</b> fps · solve ${workEwma.toFixed(1)} ms · ${iters} iter`;
+  // adapt on the ACTUAL frame interval — captures GPU/compositor cost (overdraw, DOM), not just CPU solve
+  const dt=now-tPrev;tPrev=now;dtEwma=0.9*dtEwma+0.1*Math.min(dt,100);dtMax=Math.max(dt,dtMax*0.94);
+  if(dtEwma>22 && iters>3) iters--; else if(dtEwma<15 && iters<7) iters++;
+  if(!dprLow && dtEwma>30 && iters<=3){dprLow=true;renderer.setPixelRatio(Math.max(1,renderer.getPixelRatio()*0.7));}
+  if((frameN%20)===0)                            // throttle DOM writes: per-frame innerHTML is a real mobile cost
+    statEl.innerHTML=`<b>${N.toLocaleString()}</b> nodes · <b>${nSeg.toLocaleString()}</b> fibers<br><b>${(1000/dtEwma).toFixed(0)}</b> fps · <b>${(1000/dtMax).toFixed(0)}</b> min · ${workEwma.toFixed(1)} ms · ${iters} it${dprLow?" · dpr↓":""}`;
 }
 loadTier(curTier);requestAnimationFrame(tick);
 </script></body></html>
