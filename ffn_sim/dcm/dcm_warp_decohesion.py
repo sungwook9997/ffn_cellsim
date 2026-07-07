@@ -32,6 +32,7 @@ from ffn_sim.dcm.dcm_warp_hybrid_multicell import (
 from ffn_sim.dcm.dcm_neighbor_warp import face_contact_count_kernel
 from ffn_sim.dcm.dcm_warp_hybrid import _bond_accumulate, _bd_step
 from ffn_sim.dcm.dcm_turgor_warp import dcm_volume_kernel, dcm_turgor_force_kernel
+from ffn_sim.dcm.dcm_virial_stress import node_virial_stress
 from ffn_sim.dcm.dcm_cohesion_warp import dcm_cohesion_kernel
 from ffn_sim.dcm.dcm_contact_warp import node_face_contact_kernel
 from ffn_sim.dcm.dcm_interfacial_tension_warp import differential_surface_tension_kernel, douezan_spreading
@@ -1317,7 +1318,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     cad_list = [] if save_frames else None
     faces_list = [] if save_frames else None     # per-frame topology (remesh changes it)
     cof_list = [] if save_frames else None
-    fmag_list = [] if save_frames else None      # per-node net force magnitude [N] — mechanical STRESS
+    fmag_list = [] if save_frames else None      # per-node net RESIDUAL force magnitude [N] (∝ velocity, →0 at conv.)
+    svm_list = [] if save_frames else None       # per-node virial von-Mises STRESS [Pa] — the REAL stress (audit fix #1)
+    spress_list = [] if save_frames else None    # per-node hydrostatic pressure [Pa] (turgor-dominated)
     nbond_list = [] if save_frames else None     # per-node cadherin bond count — active JUNCTION
     bondpair_list = [] if save_frames else None  # per-frame (M,2) bonded node pairs — draw the JUNCTIONS as lines
     recs = []   # {gstep, phase, area, maxZ, Vsum, com}
@@ -1348,6 +1351,29 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 bp = _cb.astype(np.int32).copy()
             nbond_list.append(nb)
             bondpair_list.append(bp)
+            # REAL stress (audit fix #1): virial/Cauchy von-Mises + hydrostatic pressure from the
+            # actual force laws (cadherin deviatoric + cortex-edge deviatoric + turgor hydrostatic).
+            # fmag above is the |net residual force| (∝ velocity), NOT a stress — this is.
+            try:
+                _Pm = pos_d.numpy().astype(np.float64)
+                _Vc = np.abs(_cell_volumes(_Pm, faces_a, fcell_a, n_cells))
+                _nvol = np.zeros(N)
+                _lv = cof_a >= 0
+                _nvol[_lv] = _Vc[cof_a[_lv]] / npc
+                _keff = (cad.p.k_trans * cad.p.bundle_n) if cad is not None else 0.0
+                _r0c = cad.p.r0_trans if cad is not None else 0.0
+                _r0e = r0_d.numpy()
+                _edges = edges_a if _r0e.shape[0] == edges_a.shape[0] else None   # remesh may desync r0_d
+                _svm, _spr, _ = node_virial_stress(
+                    _Pm, cof_a, _nvol,
+                    bonds=(bp if bp.shape[0] else None), k_trans_eff=_keff, r0_cad=_r0c,
+                    edges=_edges, k_edge=p.k_edge, r0_edge=(_r0e if _edges is not None else None),
+                    dP_cell=dP_d.numpy())
+                svm_list.append(_svm.astype(np.float32))
+                spress_list.append(_spr.astype(np.float32))
+            except Exception:
+                svm_list.append(np.zeros(N, np.float32))
+                spress_list.append(np.zeros(N, np.float32))
 
     record(0, 0, m_init)   # as-built ball
 
@@ -1564,7 +1590,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             extra["faces_seq"] = np.array(faces_list, dtype=object)
             extra["cof_seq"] = np.array(cof_list, dtype=object)
         if fmag_list is not None:
-            extra["fmag"] = np.array(fmag_list, dtype=np.float32)          # (F,N) per-node stress
+            extra["fmag"] = np.array(fmag_list, dtype=np.float32)          # (F,N) per-node RESIDUAL force [N]
+            extra["svm"] = np.array(svm_list, dtype=np.float32)            # (F,N) per-node virial von-Mises STRESS [Pa]
+            extra["spress"] = np.array(spress_list, dtype=np.float32)      # (F,N) per-node hydrostatic pressure [Pa]
             extra["nbond"] = np.array(nbond_list, dtype=np.float32)        # (F,N) per-node junction count
             extra["bondpairs"] = np.array(bondpair_list, dtype=object)     # per-frame (M,2) bonded node pairs
         np.savez_compressed(
