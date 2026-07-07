@@ -102,13 +102,26 @@ derived from existing sourced constants. dP0 stays an explicit physiological pre
   energy monotone, residual→tol; Newton iters 3.0→4.6→7.4 as dt scales (loop earns its keep at big dt).
   Note: deep penetrating-START recovery is slow (only OUTSIDE barrier diverges) → **production must start
   feasible/watertight** (the Voronoi-confluent/dispersed init — matches the init strategy).
-- **Step 3 🔜 NEXT** — wire the Newton loop into `run_decohesion` (replace the single-step block
-  ~1189-1224), ADDITIVELY behind a new flag so the working `ipc=True` single-step path is untouched
-  (no regression risk). **Design resolved:** per this plan cadherin/cohesion/wetting are LAGGED SOFT
-  drivers (constant over the step, linear energy) — so the stiff line-search set = barrier+edge+turgor,
-  which the existing energy kernels already cover; nucleus/bending energies only needed if those stiff
-  forces are ON in the target aggregate config (they can be off for the first Gate-3). Then **Gate 3**
-  (penalty-parity at dt=8e-6, N=2/12; PI-visible; Fail→HALT) → **Step 4** dt ramp 8e-4→8e-2.
+- **Step 3 ✅ (baee34f)** — wired the Newton loop into `run_decohesion` additively (`--ipc-newton`,
+  needs `--ipc`); working `ipc=True` single-step path untouched (else-branch, no regression). RHS split
+  once/step: F_soft = F_all(xₙ) − stiff{turgor,edges,barrier}(xₙ), lagged; the loop re-linearises the
+  stiff set. Added `turgor_energy_pc_kernel` (per-cell dP0, matches pc + osmotic) + a "stalled → converged"
+  early-exit (the relative |G|/|G0| test is noisy near equilibrium). **Gate 3 (dt=8e-6, N=2/12): PASS** —
+  Newton-vs-single V/V0 Δ=3.8e-5 (N2) / 5.6e-5 (N12), pen=0, all gates PASS; no regression on single/penalty.
+- **Step 4 ✅ (dt ramp, `tests/test_ipc_newton_gate4.py`) — split into two contracts:**
+  - **4a STABILITY + NON-PENETRATION invariance = PASS (the IPC payoff).** Newton stays finite +
+    penetration-free at 1×…10000× dt; at 8e-2 (10000×) Newton pen_peak=0.000 while the single linearised
+    step **DIVERGES** (pen_peak=3.45, V/V0 collapses 0.917). This is exactly what finishing IPC buys.
+  - **4b FULL-PHYSICS V/V0 invariance = FAILS by ~2% at ≥100× → SOFT-FORCE LAG ceiling (SURFACE TO PI).**
+    V/V0 drifts 1.0204(base)→1.0000(≥100×). Verified NOT fixable by more Newton iters / tighter tol
+    (stiff solve already converged) and NOT a wiring bug (the single-step drifts identically). It's the
+    LAGGED soft/cadherin forces being under-counted over a huge step — the compaction driver. **Did NOT
+    loosen the V/V0 contract.** The honest conclusion: mechanics takes large dt STABLY, but accurate
+    large-dt physics for the 24–48h aggregate needs the soft/cadherin drivers SUB-CYCLED at their own
+    (~36 ms) timescale — the multiscale layer the memory + this plan's honest-cost note anticipated.
+- **Step 5 🔜 (PI decision)** — cadherin/soft sub-cycling (mechanics large-dt + soft micro-steps), OR
+  accept mechanics-only large-dt with the documented soft-lag caveat, THEN the Voronoi-confluent aggregate
+  run on gbook GPU. PI picks the path.
 
 ---
 *Full workflow transcript (XPBD + IPC designs + synthesis): run wf_056df109-3dd. The adversarial-reviewer
