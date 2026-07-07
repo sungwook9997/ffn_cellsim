@@ -123,3 +123,58 @@ upturn (secondary, large-strain, PI-blocked f_excess); (5) resting ΔP=2γ/R co-
 (+ possibly cortex) and A is entirely orthogonal.** Membrane is a separate compartment (reservoir area supply), not
 "cytoplasm." FF uses the turgor osmotic law (soft, physical), NOT DCM's explicit K_vol·(V−V0)² penalty; water efflux
 belongs in that turgor/volume-regulation term, and the drained limit is already available as `pressure_setpoint`.
+
+---
+
+## 2026-07-08 — IMPLEMENTED the fix ("전부 진행"): biphasic cytoplasm + membrane reservoir + Hertz harness
+
+Grounded by a 4-agent literature workflow (`wf_4561ab1a-253`; all values cited, no-magic-number). New code is
+additive/backward-compat (all-off → bit-identical; 7 sanity gates in `tests/ff/test_poroelastic_cytoplasm.py`,
+42 existing compression/membrane tests still pass).
+
+**Piece #1 — Hertz-inversion harness** (`scripts/ff_hertz_validation.py`): extract E_eff at small strain (2–3%)
+by the SAME Sneddon-parabolic inversion Zbiral used (F=(4/3)(E/(1−ν²))√R·δ₁^1.5, ν=0.5, R_cell=7.5µm, δ₁=R·strain,
+slope fit), so we compare **modulus-to-modulus** vs 249 Pa. **This immediately corrected the headline:** the honest
+undrained residual is **16.5×** (E_fit≈4114 Pa), *flat* with strain (Hertzian) — **NOT** the 857× artifact (which
+was large-strain σ ÷ small-strain E, exactly as diagnosed).
+
+**Piece #2 — biphasic poroelastic cytoplasm** (`network_warp.py`, additive params `Lp_um_s_Pa`, `K_drained_Pa`,
+`load_time_s`):
+- (A) DRAINAGE — Kedem-Katchalsky (σ≈1): osmotic reference `V0_eff` drains toward `V_cyto`, relaxing the van't Hoff
+  turgor to dP0. **Analytic exp-relaxation**, clock **τ_osm=(V0_eff−vmin)/(Lp·A·Π_in)** — the MEMBRANE drainage
+  time (~34 s at Lp=1e-7; ~212 s exosmotic default 1.6e-8), *not* the poroelastic τ_p≈1.4 s. Lp=1e-7 µm/(s·Pa)
+  (COS-7+airway Pf; PMC3161049). **No MCF7 Lp datum → proxy, flag PI.**
+- (B) DRAINED SOLID — Terzaghi effective stress `dP_solid=K_drained·max(0,(V0−V_cyto)/V0)` on the **FIXED** rest
+  volume V0 (bug-fixed: the draining reference would vanish exactly at the drained limit). K_drained≈300 Pa
+  (Moeendarbary MDCK/HT1080 soft-epithelial 0.4 kPa, ν≈0.25–0.3). **No MCF7 drained modulus → borrowed, flag PI.**
+
+**Piece #4 — membrane reservoir K_A upturn** (`compartments.py` `f_excess`): γ_mem plateau until area>A0·(1+f_excess),
+then K_A=0.235 N/m upturn (Rawicz 2000) capped at lysis. f_excess=0.25 controlled variable (0.10–0.40 band, Raucher-
+Sheetz/Figard). **No MCF7 f_excess → controlled variable, flag PI.** f_excess=0 recovers the prior plateau.
+
+**Piece #3 — cortex γ-floor (gap A):** the engaged-fraction (0.65, Truong-Quang) and density controlled-variable
+(`gamma_floor_density_sweep`, PROD_N_MYO=442 @ Nie-2015 0.625/µm²) **already exist**; the only lever is the **missing
+MCF7-adherent load-engaged NMII density datum**. Tuning it to the band would violate the no-magic-number rule →
+**left as a flagged controlled variable, surfaced to PI.** Cytoplasm/drainage cannot touch gap A (different channel).
+
+### Validation (Hertz E_eff, N_fil=2000, small strain; figure `outputs/ff/figs/ff_poroelastic_validation.png`)
+| regime | E_fit [Pa] | ×MCF7 | note |
+|---|---|---|---|
+| undrained (= Zbiral fast rate 5 µm/s) | 4114 | **16.5×** | flat E_pt (Hertzian) ✓ |
+| drained: setpoint 40 Pa + K_drained | 1548 | 6.2× | osmotic relaxed |
+| drained: Lp + slow ramp + K_drained | 1167 | **4.7×** | fully drained (drained_frac=1) |
+| **real MCF7 (Zbiral)** | **249** (224–279) | 1× | target |
+
+**Honest result:** the biphasic cytoplasm cuts the overshoot **16.5× → ~5×** — a real ~3× improvement, and it
+confirms the diagnosis quantitatively (drainage removes the osmotic contribution). **But it is NOT sufficient, and
+the reason sharpens the PI's insight:** at Zbiral's measured rate (5 µm/s, τ_load≈0.1 s ≪ τ_osm≈30–200 s) **the cell
+physically cannot drain** → the model stays ~undrained (16.5×). The residual ~5× (even fully drained) is the **CORTEX
+indentation stiffness** — the lateral-bulge / crosslinker-stiffness lever (the cortex can't cheaply gain surface area
+to accommodate at constant volume). So the **dominant remaining lever for matching a fast AFM is the cortex, not more
+cytoplasm** — which is exactly the "가로로 코르텍스가 늘어나야 한다" point. Gap A (resting tension, ~70× low) is still
+orthogonal and datum-limited.
+
+**Next (PI-gated):** the residual is a cortex-area-accommodation problem — the cortex crosslink turnover / area
+remodeling under load (so the inextensible fixed-connectivity network can increase apparent area and bulge at
+constant volume). That is a cortex-remodeling change, distinct from the cytoplasm just added. **PI-flag data still
+missing:** MCF7 Lp, MCF7 drained cytoplasm modulus, MCF7 f_excess, MCF7-adherent engaged-NMII density.

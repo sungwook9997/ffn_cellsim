@@ -427,6 +427,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                                               microtubule=None, k_mt_contact=None,
                                               n_steps=4000, reshape_every=25, turgor_every=20, dt_mu=0.0,
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
+                                              Lp_um_s_Pa=None, K_drained_Pa=None, load_time_s=None,
                                               rigid_plate=False, nucleus_seed=0, device="cpu"):
     """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
     :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
@@ -497,6 +498,22 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     half_gap = R0 * (1.0 - strain)
     K_vol = TURGOR_PI_IN0 / (1.0 - VMIN_FRAC)
     A0_mem = float(ConvexHull(net.pos).area)                # resting cortex area → membrane baseline = γ_mem
+    # ---- Piece #2: biphasic poroelastic cytoplasm (additive; Lp/K_drained/load_time all None → bit-identical) ----
+    # (A) DRAINAGE (Kedem-Katchalsky, σ≈1): the osmotic reference (water) volume V0_eff drains toward the geometric
+    #     cytoplasm V_cyto so the van't Hoff turgor relaxes to dP0. Relaxation is the MEMBRANE clock
+    #     τ_osm=(V0_eff−vmin)/(Lp·A·Π_in) (~30–200 s), NOT the poroelastic τ_p(~1 s); integrated by analytic
+    #     exp-relaxation over the physical load time (unconditionally stable at any Lp). Lp default 1.6e-8 µm/(s·Pa)
+    #     (COS-7 exosmotic/efflux, PMC3161049); AFM at v≫R/τ_osm stays ~undrained (correct fast-ramp behaviour).
+    # (B) DRAINED SOLID (Terzaghi effective stress): dP_solid=K_drained·max(0,(V0−V_cyto)/V0) on the FIXED solid rest
+    #     volume V0 (NOT the draining V0_eff — else it vanishes at the drained limit where it must carry the load).
+    #     K_drained≈300 Pa (Moeendarbary 2013 soft-epithelial branch; ν≈0.25–0.3). Full anchors: FF_RESULTS_LOG.
+    V0_eff = V0
+    _drain_on = (Lp_um_s_Pa is not None and load_time_s is not None and pressure_setpoint is None)
+    _n_refresh = max(1, n_steps // max(turgor_every, 1))
+    _dt_refresh = (float(load_time_s) / _n_refresh) if _drain_on else 0.0
+    _K_drained = float(K_drained_Pa) if K_drained_Pa is not None else 0.0
+    dP_osm = dP_solid = 0.0
+    tau_osm = float("inf")
     if k_plate is None:
         k_plate = 10.0 * (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc
     if dt_mu <= 0.0:
@@ -552,7 +569,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     dP_mem = 0.0
 
     def _refresh_turgor():
-        nonlocal centre, cz, dP_area, dP_mem_area, gamma_mem_tot, dP_mem
+        nonlocal centre, cz, dP_area, dP_mem_area, gamma_mem_tot, dP_mem, V0_eff, dP_osm, dP_solid, tau_osm
         p = pos_d.numpy().astype(np.float64)
         pcx = p[:Nc]                                  # cortex nodes define the cell surface + centroid
         c = pcx.mean(axis=0)
@@ -565,20 +582,34 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         except Exception:
             V = (4/3)*np.pi*R_mean**3; area = 4*np.pi*R_mean**2
         V_cyto = V - V_nuc                            # incompressible-nucleus displacement coupling
+        # (B) drained solid skeleton (Terzaghi effective stress), referenced to the FIXED rest volume V0 — always
+        #     present (total = pore pressure + effective stress); K_drained=0 → bit-identical to the pure-turgor prior.
+        dP_solid = _K_drained * max(0.0, (V0 - V_cyto) / V0)
         if pressure_setpoint is not None:
-            dP = float(pressure_setpoint)
+            dP_osm = float(pressure_setpoint)          # perfect-water-flux (drained) pore-pressure limit
         else:
-            dP = max(TURGOR_PI_IN0 * (V0 - vmin) / max(V_cyto - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
+            # (A) van't Hoff osmotic turgor on the (draining) water reference V0_eff
+            dP_osm = max(TURGOR_PI_IN0 * (V0_eff - vmin) / max(V_cyto - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0), 0.0)
+            # drain the osmotic reference toward V_cyto over the physical step time (analytic exp-relaxation)
+            if _drain_on:
+                tau_osm = max(V0_eff - vmin, 1e-6 * V0) / (Lp_um_s_Pa * area * TURGOR_PI_IN0)
+                V0_eff += (V_cyto - V0_eff) * (1.0 - np.exp(-_dt_refresh / tau_osm))
+                V0_eff = min(max(V0_eff, vmin + 1e-6 * V0), V0)
+        dP = dP_osm + dP_solid
         dP_area = dP * area / Nc
         if membrane is not None:
-            # RESERVOIR-BUFFERED PLATEAU: the plasma membrane holds ~CONSTANT baseline tension γ_mem over
-            # normal deformations, because the area reservoir (folds/microvilli/caveolae) unfolds to keep
-            # in-plane tension near-constant (Raucher & Sheetz 1999). The steep K_A elastic upturn engages
-            # ONLY once the reservoir is exhausted (areal strain > f_excess) — PI-blocked (f_excess unknown
-            # for MCF7) → deferred. (A bare fixed-A0 K_A law is knife-edge: slack the instant area<A0 — which
-            # is ALWAYS true here since our regulated turgor lets the cell shed area under compression — and
-            # explosively stiff above; cannot hold the baseline. Native run: area < A0 at every strain.)
-            gamma_mem_tot = min(membrane.gamma_mem, membrane.tau_lysis)   # buffered plateau = γ_mem
+            # Piece #4: RESERVOIR PLATEAU + K_A UPTURN. The area reservoir (folds/microvilli/caveolae, Raucher &
+            # Sheetz 1999) unfolds at ~constant baseline tension γ_mem until the APPARENT area exceeds
+            # A0·(1+f_excess); past that the bilayer itself stretches → steep K_A elastic upturn (Rawicz 2000),
+            # capped at the lysis tension. f_excess is a controlled variable (0.25 default; no MCF7 datum — see
+            # FF_RESULTS_LOG PI-flag). f_excess=0 recovers the pure buffered plateau (bit-identical to prior).
+            f_exc = float(getattr(membrane, "f_excess", 0.0) or 0.0)
+            A_thresh = A0_mem * (1.0 + f_exc)
+            if f_exc > 0.0 and area > A_thresh:
+                eps_bil = (area - A_thresh) / A_thresh
+                gamma_mem_tot = min(membrane.gamma_mem + membrane.K_A * eps_bil, membrane.tau_lysis)
+            else:
+                gamma_mem_tot = min(membrane.gamma_mem, membrane.tau_lysis)   # buffered plateau = γ_mem
             dP_mem = 2.0 * gamma_mem_tot / max(R_mean, 1e-9)
             dP_mem_area = -dP_mem * area / Nc          # inward (negative → turgor_kernel pushes toward centre)
         return V, V_cyto, area, dP
@@ -669,7 +700,13 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                "has_membrane": membrane is not None, "gamma_mem_channel_pN_um": gamma_mem_tot,
                "dP_mem_Pa": dP_mem, "area_um2": area, "A0_mem_um2": A0_mem,
                "k_plate": k_plate, "has_mt": microtubule is not None, "Nc": Nc, "Ne": Ne,
-               "n_mt": int(_m.get("n_mt", 0)), "mtoc_idx": int(_m.get("mtoc_idx", -1))}
+               "n_mt": int(_m.get("n_mt", 0)), "mtoc_idx": int(_m.get("mtoc_idx", -1)),
+               # Piece #2 biphasic cytoplasm channels (dP_osm + dP_solid = dP_turgor when no setpoint)
+               "dP_osm_Pa": dP_osm, "dP_solid_Pa": dP_solid, "K_drained_Pa": _K_drained,
+               # fraction of the AVAILABLE drainage done: 0=undrained (V0_eff=V0), 1=fully drained (V0_eff=V_cyto)
+               "drained_frac": float(np.clip((V0 - V0_eff) / max(V0 - V_cyto, 1e-9 * V0), 0.0, 1.0)),
+               "V0_eff_over_V0": float(V0_eff / V0), "tau_osm_s": float(tau_osm), "load_time_s": load_time_s,
+               "Lp_um_s_Pa": Lp_um_s_Pa, "f_excess": float(getattr(membrane, "f_excess", 0.0) or 0.0) if membrane is not None else 0.0}
     return pos_all, metrics
 
 

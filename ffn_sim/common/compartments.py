@@ -208,13 +208,15 @@ class ResolvedMembrane:
     """Plasma-membrane surface params in FF units (pN, µm). Wired as a reservoir-buffered constant baseline
     tension γ_mem (Raucher-Sheetz plateau); K_A/κ recorded for the PI-gated reservoir-elastic extension."""
     gamma_mem: float    # pN/µm   bilayer-only in-plane tension (the buffered baseline)
-    K_A: float          # pN/µm   area-expansion (stretch) modulus (deferred: reservoir extension)
+    K_A: float          # pN/µm   area-expansion (stretch) modulus (reservoir-exhaustion upturn branch)
     kappa: float        # pN·µm   bending rigidity (recorded; not used by the surface term)
     tau_lysis: float    # pN/µm   lysis-tension cap
+    f_excess: float = 0.0  # —     area-reservoir capacity: γ_mem plateau until area > A0·(1+f_excess), then K_A upturn
 
 
 def resolve_membrane(*, gamma_mem_pN_um: float = 10.0, K_A_pN_um: float = 2.35e5,
-                     kappa_pN_um: float = 0.0828, tau_lysis_pN_um: float = 5.0e3) -> ResolvedMembrane:
+                     kappa_pN_um: float = 0.0828, tau_lysis_pN_um: float = 5.0e3,
+                     f_excess: float = 0.0) -> ResolvedMembrane:
     """Resolve the plasma-membrane params (KB-3.B1 / Rawicz 2000; archive membrane_surface.py bridge).
 
     **Units (FF pN·µm·s), verified against the cortex ground truth** γ_cortex=½ΔP·R=½·40 Pa·7.5 µm=150 pN/µm
@@ -244,5 +246,7 @@ def resolve_membrane(*, gamma_mem_pN_um: float = 10.0, K_A_pN_um: float = 2.35e5
         raise ValueError(f"K_A {K_A_pN_um} pN/µm outside Rawicz band [2e5,3e5] (0.2-0.3 N/m)")
     if not (0.041 <= kappa_pN_um <= 0.124):
         raise ValueError(f"kappa {kappa_pN_um} pN·µm outside band [0.041,0.124] (10-30 kBT)")
+    if not (0.0 <= f_excess <= 0.40):
+        raise ValueError(f"f_excess {f_excess} outside [0,0.40] (Raucher-Sheetz/Figard reservoir band; 0=plateau-only)")
     return ResolvedMembrane(gamma_mem=gamma_mem_pN_um, K_A=K_A_pN_um, kappa=kappa_pN_um,
-                            tau_lysis=tau_lysis_pN_um)
+                            tau_lysis=tau_lysis_pN_um, f_excess=f_excess)
