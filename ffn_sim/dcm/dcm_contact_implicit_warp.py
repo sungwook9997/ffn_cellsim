@@ -217,12 +217,14 @@ def nearest_face_ipc_kernel(
     # inside -> -r_vec/|r_vec|. Consistent in both branches so the node force always points OUT.
     fmag = z
     kk = z
+    earea = z                                  # dE/d(area): coefficient of the in-plane area-gradient force
     nout = r_vec * (wp.float64(1.0) / min_d)
     if sign > z:                               # OUTSIDE - IPC barrier, active inside the d_hat cushion
         d = min_d
         if d < d_hat:
             fmag = rep * area * (-_ipc_bp(d, d_hat))    # >0, -> +inf as d->0 (repulsive)
             kk = rep * area * _ipc_bpp(d, d_hat)        # barrier normal stiffness (PSD)
+            earea = rep * _ipc_b(d, d_hat)              # E = (rep·b(d))·area  -> dE/darea = rep·b(d)
         elif adh > z and d < c_adh:
             # node-FACE ADHESION analytic stiffness. The adhesion is a linear spring
             # |F|=adh·area·(c_adh−d) → constant normal stiffness adh·area. Its TRUE Jacobian is
@@ -236,13 +238,19 @@ def nearest_face_ipc_kernel(
         nout = r_vec * (-wp.float64(1.0) / min_d)
         fmag = rep * area * min_d
         kk = rep * area
+        earea = wp.float64(0.5) * rep * min_d * min_d   # E = ½·rep·d²·area  -> dE/darea = ½·rep·d²
 
     if fmag != z:
         fvec = nout * fmag                              # on node, OUTWARD
         wp.atomic_add(force, ni, fvec)
-        wp.atomic_add(force, ia, -bary[0] * fvec)       # momentum-conserving barycentric reaction
+        wp.atomic_add(force, ia, -bary[0] * fvec)       # momentum-conserving barycentric reaction (d-gradient)
         wp.atomic_add(force, ib, -bary[1] * fvec)
         wp.atomic_add(force, ic, -bary[2] * fvec)
+    if earea != z:                                     # exact IPC gradient: in-plane area term  F = −dE/darea·∇area
+        nhat = fnv * (wp.float64(1.0) / nrm)           # face unit normal (∇area ⟂ nhat, in-plane, Σ=0)
+        wp.atomic_add(force, ia, wp.cross(nhat, c - b) * (-wp.float64(0.5) * earea))
+        wp.atomic_add(force, ib, wp.cross(nhat, a - c) * (-wp.float64(0.5) * earea))
+        wp.atomic_add(force, ic, wp.cross(nhat, b - a) * (-wp.float64(0.5) * earea))
     if kk != z:                                        # analytic normal stiffness (barrier OR adhesion)
         cn_k[ni] = kk
         cn_nrm[ni] = nout
@@ -693,7 +701,8 @@ def _barrier_unittest(device="cpu"):
         force.zero_()
         wp.launch(nearest_face_ipc_kernel, dim=N,
                   inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q),
-                          wp.float64(rep), wp.float64(d_hat), force, cn_k, cn_nrm], device=device)
+                          wp.float64(rep), wp.float64(d_hat), wp.float64(0.0), wp.float64(0.0),
+                          force, cn_k, cn_nrm], device=device)
         wp.synchronize_device(device)
         return force.numpy()[0], float(cn_k.numpy()[0])
 
@@ -837,7 +846,8 @@ def _ipc_full_test(device="cpu"):
         build_grid(x); fz = wp.zeros(N, dtype=wp.vec3d, device=device)
         wp.launch(nearest_face_ipc_kernel, dim=N,
                   inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q),
-                          wp.float64(rep), wp.float64(d_hat), fz, cn_k, cn_nrm], device=device)
+                          wp.float64(rep), wp.float64(d_hat), wp.float64(0.0), wp.float64(0.0),
+                          fz, cn_k, cn_nrm], device=device)
         wp.synchronize_device(device)
         # count only INSIDE nodes: feasibilization force = rep*area*depth, depth=|F|/(rep*area)=|F|/cn_k.
         # But barrier nodes also have cn_k>0; distinguish by sign via penetration_depth_kernel instead.
@@ -871,7 +881,8 @@ def _ipc_full_test(device="cpu"):
                 smooth_into(pos_d, force_d)
                 wp.launch(nearest_face_ipc_kernel, dim=N,
                           inputs=[fg.id, nf32, pos_d, cof_d, faces_d, fcell_d, wp.float32(repel_q),
-                                  wp.float64(rep), wp.float64(d_hat), force_d, cn_k, cn_nrm], device=device)
+                                  wp.float64(rep), wp.float64(d_hat), wp.float64(0.0), wp.float64(0.0),
+                                  force_d, cn_k, cn_nrm], device=device)
                 hess = make_contact_hess_apply(cn_k, cn_nrm, device=device)
                 dx_d, _ = device_cg(smooth_into, pos_d, a_imp, force_d, scratch, device=device, hess_apply=hess)
                 al = ccd_alpha(fg.id, nf32, pos_d, dx_d, cof_d, faces_d, fcell_d, repel_q, t_ccd, eta=0.9, device=device)
