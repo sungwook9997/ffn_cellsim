@@ -41,6 +41,13 @@ def _turbo_colors(scalar_frames, lo, hi):
     return [(turbo(np.clip((np.asarray(s) - lo) / rng, 0.0, 1.0))[:, :3] * 255).astype(np.uint8) for s in scalar_frames]
 
 
+def _turbo_gradient(n=16):
+    """n hex stops sampling the turbo colormap 0→1 — for the viewer's colorbar (must match _turbo_colors)."""
+    import matplotlib.cm as cm
+    turbo = cm.get_cmap("turbo")
+    return ["#%02x%02x%02x" % tuple((np.asarray(turbo(t)[:3]) * 255).astype(int)) for t in np.linspace(0, 1, n)]
+
+
 def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None = None,
           max_fibers: int = 0, max_frames: int = 10) -> dict:
     d = np.load(npz_path)
@@ -136,26 +143,27 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     v = along / T_s * 1e3 if T_s > 0 else 0.0
     ttl = title or f"FF crawl — disp∥={along:+.3f} µm, v={v:+.1f} nm/s over {T_s:.1f} s (real η-dynamics)"
 
-    scenes = {"shape": layers}
+    scenes = {"shape": layers}; cbars = {}
     # FEM-style field scenes: the cortex surface (hull) colored per-node by the SIM's von-Mises stress / areal
-    # strain, animated per frame. Reuses the scene dropdown. Context (MT/nucleus/substrate/COM) kept; the faint
-    # shape hull + filaments are replaced by the opaque colored surface (CUT still reveals the interior).
+    # strain, animated per frame, WITH a turbo colorbar (colour↔value scale, like a paper figure). Reuses the
+    # scene dropdown. Context (MT/nucleus/substrate/COM) kept; faint shape hull+filaments → opaque colored surface.
     if svm is not None:
         context = [L for L in layers if L["name"] != fib_label and not L["name"].startswith("cortex hull")]
+        grad = _turbo_gradient()
 
-        def field_scene(field, unit, label):
+        def field_scene(name, field, unit, label):
             sm = [_smooth_field(field[t], np.asarray(faces), Nc) for t in range(T)]   # readable FEM-style surface field
             lo, hi = float(np.percentile(sm, 2)), float(np.percentile(sm, 98))
-            cols = _turbo_colors(sm, lo, hi)
-            hull = {"name": f"{label}  [{lo:.3g}–{hi:.3g} {unit}, turbo blue→red]", "kind": "mesh",
+            hull = {"name": f"{label}  [{lo:.3g}–{hi:.3g} {unit}, turbo]", "kind": "mesh",
                     "verts": cortex[0], "faces": faces, "color": "#ffffff", "opacity": 0.97,
-                    "frames": cortex_fr, "color_frames": cols, "clip": True}
-            return [hull] + context
-        scenes["σ_vm stress"] = field_scene(svm, "Pa", "cortex von-Mises σ_vm (virial: xl+myosin+turgor)")
+                    "frames": cortex_fr, "color_frames": _turbo_colors(sm, lo, hi), "clip": True}
+            scenes[name] = [hull] + context
+            cbars[name] = {"grad": grad, "lo": lo, "hi": hi, "unit": unit, "label": label}
+        field_scene("σ_vm stress", svm, "Pa", "cortex von-Mises σ_vm (virial: xl+myosin+turgor)")
         if cstrain is not None:
-            scenes["areal strain"] = field_scene(cstrain, "", "cortex areal strain (vs rest)")
+            field_scene("areal strain", cstrain, "", "cortex areal strain (vs rest)")
 
-    build_viewer(scenes=scenes, out=out, title=ttl)
+    build_viewer(scenes=scenes, out=out, title=ttl, cbars=cbars)
     return {"out": out, "frames": T, "disp_along_um": along, "v_nm_s": v, "T_s": T_s,
             "n_front": int(front_idx.size), "faces": int(len(faces)), "scenes": list(scenes.keys())}
 

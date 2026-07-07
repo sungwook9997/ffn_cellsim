@@ -34,7 +34,7 @@ def _b64(arr: np.ndarray, dtype) -> str:
     return base64.b64encode(np.ascontiguousarray(arr, dtype=dtype).tobytes()).decode("ascii")
 
 
-def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
+def build_viewer(scenes: dict, out: str, title: str = "FF viewer", cbars: dict | None = None) -> str:
     """Write a self-contained interactive HTML viewer; returns the out path."""
     all_pts = []
     payload_scenes = {}
@@ -71,7 +71,7 @@ def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
     lo = allp.min(0).tolist(); hi = allp.max(0).tolist()
     n_frames = max([len(L.get("frames", [])) for ls in payload_scenes.values() for L in ls] + [0])
     payload = {"title": title, "scenes": payload_scenes, "n_frames": int(n_frames),
-               "lo": lo, "hi": hi, "scene_names": list(scenes.keys())}
+               "lo": lo, "hi": hi, "scene_names": list(scenes.keys()), "cbars": cbars or {}}
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
     with open(out, "w") as f:
         f.write(html)
@@ -87,6 +87,12 @@ _HTML = r"""<!doctype html><html><head><meta charset="utf-8"><title>FF viewer</t
  .hint{color:#6e7681;font-size:11px} #title{font-weight:600;margin-bottom:6px}
  #leg{position:absolute;bottom:10px;left:10px;background:#161b22cc;padding:8px 10px;border-radius:8px;font-size:12px}
  .sw{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:middle}
+ #cbar{position:absolute;bottom:16px;right:16px;background:#161b22dd;padding:8px 12px 8px 10px;border-radius:8px;font-size:11px;display:none}
+ #cbartitle{margin-bottom:6px;max-width:180px;color:#c9d1d9;font-weight:600}
+ #cbarbar{width:16px;height:170px;border-radius:3px;display:inline-block;vertical-align:top;border:1px solid #30363d}
+ #cbarticks{display:inline-block;height:170px;vertical-align:top;position:relative;margin-left:6px;width:64px}
+ #cbarticks span{position:absolute;left:0;color:#c9d1d9;white-space:nowrap}
+ #cbarticks span:before{content:"– ";color:#6e7681}
 </style></head><body>
 <div id="ui">
   <div id="title"></div>
@@ -99,6 +105,7 @@ _HTML = r"""<!doctype html><html><head><meta charset="utf-8"><title>FF viewer</t
   <div class="row hint">drag = rotate · scroll = zoom · right-drag = pan</div>
 </div>
 <div id="leg"></div>
+<div id="cbar"><div id="cbartitle"></div><div id="cbarbar"></div><div id="cbarticks"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
@@ -140,6 +147,17 @@ const dl=new THREE.DirectionalLight(0xffffff,0.6); dl.position.set(1,1.5,2); sce
 let current=[];   // three objects for the current scene
 let animated=[];  // {obj, frames:[b64]} for layers that play over time
 function clearScene(){ for(const o of current){ scene.remove(o); if(o.geometry)o.geometry.dispose(); if(o.material)o.material.dispose(); } current=[]; animated=[]; clipMats=[]; }
+function _fmt(v){ const a=Math.abs(v); return (a>=1000||(a>0&&a<0.01))? v.toExponential(1) : (a>=10? v.toFixed(0) : v.toPrecision(3)); }
+function updateCbar(name){   // paper-style colorbar: turbo gradient + value ticks for the active FEM field scene
+  const cb=(P.cbars||{})[name]; const el=document.getElementById('cbar');
+  if(!cb){ el.style.display='none'; return; }
+  el.style.display='block';
+  document.getElementById('cbartitle').textContent = cb.label + (cb.unit? '  ['+cb.unit+']' : '');
+  document.getElementById('cbarbar').style.background = 'linear-gradient(to top,'+cb.grad.join(',')+')';
+  const t=document.getElementById('cbarticks'); t.innerHTML=''; const H=170;
+  for(let f=0; f<=5; f++){ const v=cb.lo+(cb.hi-cb.lo)*f/5; const s=document.createElement('span');
+    s.style.bottom=(f/5*(H-2))+'px'; s.textContent=_fmt(v); t.appendChild(s); }
+}
 
 function setFrame(i){
   for(const a of animated){
@@ -199,6 +217,7 @@ function showScene(name){
     leg.push([L.color,L.name]);
   }
   applyClip();
+  updateCbar(name);
   const hasAnim = animated.length>0;
   document.getElementById('animrow').style.display = hasAnim ? 'flex' : 'none';
   if(hasAnim){ const nf=Math.max(...animated.map(a=>a.frames.length)); document.getElementById('frame').max=nf-1; setFrame(0); }
