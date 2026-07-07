@@ -157,6 +157,8 @@ class CadherinBondHost:
 
     @property
     def n_bonds(self) -> int:
+        if getattr(self, "_n_gpu", None) is not None:   # GPU-native path: device bond count
+            return int(self._n_gpu)
         return int(self.bonds.shape[0])
 
     def upload(self, device):
@@ -171,3 +173,71 @@ class CadherinBondHost:
             self._dev["bonds"].assign(self.bonds.astype(np.int32))
         self._dev["n"] = M
         return self._dev
+
+    # ---------------------------------------------------------------- GPU-native path -----
+    def _ensure_gpu(self, N: int, device):
+        """Allocate the device buffers for the GPU break/form path (bonds ping-pong + scratch)."""
+        import warp as wp
+        from ffn_sim.dcm.dcm_cadherin_gpu import build_koff_device
+        cap = int(N)                                   # ≤1 bond/node → ≤N/2 bonds; N is a safe cap
+        if self._dev is None or self._dev.get("cap", 0) < cap or "bondsA" not in self._dev:
+            koff_d, fs0, df, nk = build_koff_device(self._fs, self._koff, device)
+            n0 = int(self._dev["n"]) if self._dev else 0
+            bA = wp.zeros(cap, dtype=wp.vec2i, device=device)
+            if self._dev is not None and self._dev.get("n"):    # carry any existing bonds over
+                bA.assign(np.resize(self.bonds.astype(np.int32), (cap, 2)))
+            self._dev = {
+                "cap": cap, "n": n0,
+                "bondsA": bA, "bondsB": wp.zeros(cap, dtype=wp.vec2i, device=device),
+                "which": "A", "bonds": bA,
+                "count": wp.zeros(1, dtype=wp.int32, device=device),
+                "bonded": wp.zeros(N, dtype=wp.int32, device=device),
+                "partner": wp.zeros(N, dtype=wp.int32, device=device),
+                "koff_d": koff_d, "fs0": fs0, "df": df, "nk": nk,
+                "grid": wp.HashGrid(48, 48, 48, device=device),   # OWN grid, built at r_bind
+            }
+        return self._dev
+
+    def update_gpu(self, pos_d, cof_d, node_f32, N: int, batch_index: int, device) -> None:
+        """One GPU-native binder tick — break + mutual-nearest form entirely on the device.
+        ``node_f32`` = current float32 node positions (this builds its own r_bind grid on them)."""
+        import warp as wp
+        from ffn_sim.dcm.dcm_cadherin_gpu import (cad_break_kernel, cad_partner_kernel, cad_form_kernel)
+        d = self._ensure_gpu(N, device)
+        d["grid"].build(points=node_f32, radius=float(self.p.r_bind))   # r_bind cell size → valid r_bind query
+        cur = d["bondsA"] if d["which"] == "A" else d["bondsB"]
+        other = d["bondsB"] if d["which"] == "A" else d["bondsA"]
+        n = int(d["n"])
+        d["count"].zero_(); d["bonded"].zero_()
+        p_on = float(self.p.k_on) * float(self.dt_batch)
+        p_on = 1.0 - np.exp(-p_on)
+        sb = wp.int32(((2 * batch_index) * N) % 2000000000)      # disjoint RNG salt ranges: break vs form
+        sf = wp.int32(((2 * batch_index + 1) * N) % 2000000000)
+        wp.launch(cad_break_kernel, dim=max(n, 1), inputs=[
+            cur, wp.int32(n), pos_d, cof_d,
+            wp.float64(self.p.k_trans), wp.float64(self.p.r0_trans), wp.float64(self.dt_batch),
+            d["koff_d"], wp.float64(d["fs0"]), wp.float64(d["df"]), wp.int32(d["nk"]),
+            wp.int32(self.p.seed), sb, other, d["count"], d["bonded"]], device=device)
+        wp.launch(cad_partner_kernel, dim=N, inputs=[
+            d["grid"].id, node_f32, pos_d, cof_d, d["bonded"], wp.float64(self.p.r_bind),
+            d["partner"]], device=device)
+        wp.launch(cad_form_kernel, dim=N, inputs=[
+            d["partner"], wp.int32(N), wp.float64(p_on), wp.int32(self.p.seed), sf,
+            wp.int32(d["cap"]), other, d["count"]], device=device)
+        new_n = min(int(d["count"].numpy()[0]), d["cap"])   # tiny scalar sync (per batch, not per step)
+        # bond churn bookkeeping (approx: net change split into formed/broken for logging parity)
+        self.n_broken += max(0, n - new_n)
+        self.n_formed += max(0, new_n - n)
+        d["which"] = "B" if d["which"] == "A" else "A"
+        d["bonds"] = other
+        d["n"] = new_n
+        self._n_gpu = new_n
+
+    def bonds_now(self) -> np.ndarray:
+        """Current (M,2) bond node-pairs — device download in GPU mode, else the host array."""
+        if getattr(self, "_n_gpu", None) is not None and self._dev is not None:
+            n = int(self._n_gpu)
+            if n <= 0:
+                return np.zeros((0, 2), np.int64)
+            return self._dev["bonds"].numpy()[:n].astype(np.int64)
+        return self.bonds

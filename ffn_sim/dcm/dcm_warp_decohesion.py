@@ -18,6 +18,7 @@ and a divergence guard truncates on non-finite.
 from __future__ import annotations
 
 import argparse
+import os
 import time
 
 import numpy as np
@@ -1316,6 +1317,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     cad_list = [] if save_frames else None
     faces_list = [] if save_frames else None     # per-frame topology (remesh changes it)
     cof_list = [] if save_frames else None
+    fmag_list = [] if save_frames else None      # per-node net force magnitude [N] — mechanical STRESS
+    nbond_list = [] if save_frames else None     # per-node cadherin bond count — active JUNCTION
+    bondpair_list = [] if save_frames else None  # per-frame (M,2) bonded node pairs — draw the JUNCTIONS as lines
     recs = []   # {gstep, phase, area, maxZ, Vsum, com}
 
     def cad_now():
@@ -1330,6 +1334,20 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             cad_list.append(cad_now().astype(np.float32))
             faces_list.append(faces_a.astype(np.int32))   # snapshot — remesh mutates faces_a
             cof_list.append(cof_a.astype(np.int32))
+            # MECH overlays for the viewer: real per-node stress (|net force|) + active cadherin junctions
+            try:
+                fmag_list.append(np.linalg.norm(force_d.numpy(), axis=1).astype(np.float32))
+            except Exception:
+                fmag_list.append(np.zeros(N, np.float32))
+            nb = np.zeros(N, np.float32)
+            bp = np.zeros((0, 2), np.int32)
+            _cb = cad.bonds_now() if cad is not None else None
+            if _cb is not None and _cb.shape[0]:
+                np.add.at(nb, _cb[:, 0], 1.0)
+                np.add.at(nb, _cb[:, 1], 1.0)
+                bp = _cb.astype(np.int32).copy()
+            nbond_list.append(nb)
+            bondpair_list.append(bp)
 
     record(0, 0, m_init)   # as-built ball
 
@@ -1350,8 +1368,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             do_remesh()
         if cad is not None and s % cad.batch_steps == 0:   # E1 bond break/form (aggregate too)
             wp.synchronize_device(device)
-            cad.update(pos_d.numpy().astype(np.float64))
-            cad.upload(device)
+            if str(device) != "cpu" and os.environ.get("CAD_GPU", "1") != "0":  # GPU-native break/form (no host round-trip)
+                wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
+                cad.update_gpu(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
+            else:
+                cad.update(pos_d.numpy().astype(np.float64)); cad.upload(device)
         stepped(s, dt, do_spread=False)
         if s % every_s == 0:
             wp.synchronize_device(device)
@@ -1406,8 +1427,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # E1: cadherin bond break/form at the binder cadence (de-cohesion emerges here)
         if cad is not None and s % cad.batch_steps == 0:
             wp.synchronize_device(device)
-            cad.update(pos_d.numpy().astype(np.float64))
-            cad.upload(device)
+            if str(device) != "cpu" and os.environ.get("CAD_GPU", "1") != "0":  # GPU-native break/form (no host round-trip)
+                wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
+                cad.update_gpu(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
+            else:
+                cad.update(pos_d.numpy().astype(np.float64)); cad.upload(device)
             if s % 500 == 0:   # T1 substrate diagnostic: are cadherin bonds actually rupturing+reforming?
                 print(f"  [cad-churn] step {s}: n_bonds={cad.n_bonds} cum_broken={cad.n_broken}", flush=True)
         # C6: integrin-ECM clutch engage/break (catch-slip) at the FA cadence
@@ -1539,6 +1563,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             # topology varies across frames → save per-frame faces/cof as object sequences
             extra["faces_seq"] = np.array(faces_list, dtype=object)
             extra["cof_seq"] = np.array(cof_list, dtype=object)
+        if fmag_list is not None:
+            extra["fmag"] = np.array(fmag_list, dtype=np.float32)          # (F,N) per-node stress
+            extra["nbond"] = np.array(nbond_list, dtype=np.float32)        # (F,N) per-node junction count
+            extra["bondpairs"] = np.array(bondpair_list, dtype=object)     # per-frame (M,2) bonded node pairs
         np.savez_compressed(
             save_frames, frames=np.array(frame_list, dtype=np.float32),
             faces=faces_a.astype(np.int32), cof=cof_a.astype(np.int32),
