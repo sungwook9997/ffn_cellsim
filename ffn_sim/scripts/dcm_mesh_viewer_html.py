@@ -326,7 +326,7 @@ function applyColors(f){
 const bondIdx = dec(P.bondidx_b64, Int32Array);          // (Btot*2)
 const bondOff = dec(P.bondoff_b64, Int32Array);          // (F+1)
 let jLine=null;
-if(m.hasmech && bondOff.length > 1){
+if(P.hasmech && bondOff.length > 1){
   const maxSeg = (bondOff[F]||0);
   const jpos=new Float32Array(Math.max(maxSeg,1)*2*3);
   const jgeo=new THREE.BufferGeometry();
@@ -610,7 +610,7 @@ const CHINTS={cell:'each cell a distinct colour',
 elCMode.onchange=()=>{ elCHint.textContent=CHINTS[elCMode.value]||''; applyColors(cur); };
 elCHint.textContent=CHINTS[elCMode.value]||'';
 const elJunOn=document.getElementById('junon');
-if(!m.hasmech){ const jr=document.getElementById('junrow'); if(jr) jr.style.display='none';
+if(!P.hasmech){ const jr=document.getElementById('junrow'); if(jr) jr.style.display='none';
   const so=elCMode.querySelector('option[value=stress]'); if(so) so.remove();
   const jo=elCMode.querySelector('option[value=junction]'); if(jo) jo.remove(); }
 if(elJunOn) elJunOn.onchange=()=>applyJunctions(cur);
