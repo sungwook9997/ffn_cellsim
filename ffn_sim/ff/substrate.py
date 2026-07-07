@@ -59,16 +59,49 @@ def resolve_substrate(E_pa: float = E_SUB_DEFAULT_PA, nu: float = NU_SUB_DEFAULT
 def substrate_anchor_relax_kernel(anchor: wp.array(dtype=wp.vec3d), rest: wp.array(dtype=wp.vec3d),
                                   bound: wp.array(dtype=wp.int32), clutch_force: wp.array(dtype=wp.vec3d),
                                   k_sub: wp.float64, dt_over_gamma: wp.float64):
-    """Overdamped relaxation of each movable substrate anchor: the anchor is pulled by the clutch reaction
-    ``clutch_force[k]`` and restored to its dish rest point ``rest[k]`` by the Winkler spring k_sub. Equilibrium
-    displacement = F_clutch / k_sub — the substrate compliance the clutch feels. Rigid limit k_sub→∞ pins the
-    anchor at rest (byte-identical to the fixed-anchor path). Bound anchors only (unbound relax to rest)."""
+    """Overdamped relaxation of each movable substrate anchor (legacy; prefer the closed-form equilibrium below):
+    anchor pulled by the clutch reaction ``clutch_force[k]``, restored to ``rest[k]`` by the Winkler spring
+    k_sub. Explicit — CFL-bound; can be unstable if the clutch is stiff → use the equilibrium kernel instead."""
     k = wp.tid()
     d = anchor[k] - rest[k]
-    f = clutch_force[k] - k_sub * d                       # net force on the anchor DOF
+    f = clutch_force[k] - k_sub * d
     if bound[k] == 0:
-        f = -k_sub * d                                    # unbound: just relax to rest
+        f = -k_sub * d
     anchor[k] = anchor[k] + dt_over_gamma * f
+
+
+@wp.kernel
+def substrate_anchor_equilibrium_kernel(pos: wp.array(dtype=wp.vec3d), ac_idx: wp.array(dtype=wp.int32),
+                                        anchor: wp.array(dtype=wp.vec3d), rest: wp.array(dtype=wp.vec3d),
+                                        bound: wp.array(dtype=wp.int32), k_int: wp.float64, k_sub: wp.float64):
+    """Set each movable anchor to the clutch↔substrate SERIES equilibrium (no explicit iteration → stable):
+    ``anch = (k_int·p_actin + k_sub·p_rest)/(k_int + k_sub)``, i.e. the anchor where the clutch spring force
+    balances the substrate spring force. The actin then feels the series stiffness k_int·k_sub/(k_int+k_sub) —
+    the Bangasser-Odde compliant-substrate physics, quasi-static (the substrate equilibrates within a step).
+    Rigid limit k_sub→∞ ⇒ anch→rest (fixed-pin path recovered). Unbound anchors relax to rest."""
+    k = wp.tid()
+    if bound[k] == 0:
+        anchor[k] = rest[k]
+        return
+    anchor[k] = (k_int * pos[ac_idx[k]] + k_sub * rest[k]) / (k_int + k_sub)
+
+
+@wp.kernel
+def clutch_anchor_reaction_kernel(pos: wp.array(dtype=wp.vec3d), ac_idx: wp.array(dtype=wp.int32),
+                                  anchor: wp.array(dtype=wp.vec3d), bound: wp.array(dtype=wp.int32),
+                                  k_int: wp.float64, rest: wp.float64, out: wp.array(dtype=wp.vec3d)):
+    """The clutch-spring reaction ON each substrate anchor = k_int·(L−rest)·(actin−anchor)/L (Newton pair of the
+    force the clutch exerts on the actin node). Drives the movable-anchor relaxation. Unbound → 0."""
+    k = wp.tid()
+    if bound[k] == 0:
+        out[k] = wp.vec3d(0.0, 0.0, 0.0)
+        return
+    d = pos[ac_idx[k]] - anchor[k]
+    L = wp.length(d)
+    if L < wp.float64(1e-12):
+        out[k] = wp.vec3d(0.0, 0.0, 0.0)
+        return
+    out[k] = (k_int * (L - rest) / L) * d                 # pulls the anchor toward the loaded actin
 
 
 def substrate_cfl_dt(k_sub: float, gamma: float, safety: float = 0.1) -> float:
@@ -76,5 +109,6 @@ def substrate_cfl_dt(k_sub: float, gamma: float, safety: float = 0.1) -> float:
     return float(safety * gamma / max(k_sub, 1e-30))
 
 
-__all__ = ["SubstrateParams", "resolve_substrate", "substrate_anchor_relax_kernel", "substrate_cfl_dt",
+__all__ = ["SubstrateParams", "resolve_substrate", "substrate_anchor_relax_kernel",
+           "substrate_anchor_equilibrium_kernel", "clutch_anchor_reaction_kernel", "substrate_cfl_dt",
            "E_SUB_DEFAULT_PA", "NU_SUB_DEFAULT", "A_ADHESION_UM_DEFAULT"]
