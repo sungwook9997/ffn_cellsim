@@ -26,13 +26,20 @@ INTEG = os.environ.get("INTEG", "baoab")
 BUILDER  = os.environ.get("BUILDER", "fcc")            # 'fcc' dispersed cluster | 'confluent' Voronoi space-filling spheroid
 INIT_NPZ = os.environ.get("INIT_NPZ", "") or None      # for confluent: a pre-built Voronoi init mesh (ghost_TIGHT)
 TAG   = os.environ.get("TAG", "")
+# --- fidelity-audit fixes (PI-ratified 2026-07-07), all env-overridable ---
+ENUC   = float(os.environ.get("ENUC", "399"))      # MCF7 nucleus in-situ ~399 Pa (audit#19); was 4700 (8-12x too stiff)
+BUNDLE = float(os.environ.get("BUNDLE", "100"))    # N_cad per contact = rho_cad*A_junction (KB-4.1/4.11/4.17, Buckley2014);
+                                                   # bundles the single-molecule catch bond → interface force 1-10nN (was 1)
+GAMMA  = float(os.environ.get("GAMMA", "5.0e-4"))  # cortical/surface tension [N/m] — SWEEP variable (band 0.1-1 mN/m ↔ MCF7 1e-2)
+INSET  = float(os.environ.get("INSET", "0.01" if os.environ.get("BUILDER", "fcc") == "confluent" else "0.0"))  # >0.01 → cells start non-overlapping (G2 fix)
+IPC    = os.environ.get("IPC", "0") == "1"         # log-barrier contact → guarantees non-penetration (G2 fix)
 npz   = f"{OUT}/fullcomp_assembly_n{N}{TAG}.npz"
 
 t0 = time.time()
 r = run_decohesion(
     n_cells=N, subdiv=2, steps=STEPS, frames=24, device="cuda:0",
     builder=BUILDER, gap=GAP, init_npz=INIT_NPZ,
-    inset=(0.01 if BUILDER == "confluent" else 0.0),
+    inset=INSET,
     v0_from_init=(BUILDER == "confluent"), lloyd_iters=6,   # confluent → Voronoi space-filling spheroid
     substrate_wetting=False, use_substrate_well=False,  # no flat floor
     # U-BOTTOM ULA WELL + GRAVITY = the real spheroid-formation route: cells sediment (Δρ) into a
@@ -43,12 +50,12 @@ r = run_decohesion(
     ubottom_r_factor=float(os.environ.get("UBR", "1.05")),  # tight bowl → funnels cells inward as they sediment
     ubottom_k=float(os.environ.get("UBK", "5.0")),          # bowl-wall stiffness
     delta_rho=55.0,                                         # MCF7 − medium (SimuCell3D)
-    cadherin=True, cad_bundle=1.0,                      # E1 explicit cadherin catch-bonds (de-cohesion emergent)
-    conservative_contact=False, ipc=False,             # penalty repulsion-only (cadherin supplies all adhesion)
+    cadherin=True, cad_bundle=BUNDLE,                  # E1 explicit cadherin catch-bonds, N_cad-bundled (de-cohesion emergent)
+    conservative_contact=False, ipc=IPC,               # IPC=1 → log-barrier non-penetration; else penalty repulsion-only
     integrator=INTEG,
     accel_dt=(float(os.environ["ACCEL_DT"]) if os.environ.get("ACCEL_DT") else None),  # implicit-only: larger dt → fewer steps
-    nucleus=True, E_nuc=4700.0, R_nuc_factor=RNUC, ratio_lamin=1.4,
-    surface_tension=True, gamma_surf=5.0e-4, diff_tension=True,
+    nucleus=True, E_nuc=ENUC, R_nuc_factor=RNUC, ratio_lamin=1.4,
+    surface_tension=True, gamma_surf=GAMMA, diff_tension=True,
     warmup=2000, save_frames=npz)
 
 d = np.load(npz); fr = d["frames"]; cof = d["cof"]; nc = int(cof.max()) + 1
