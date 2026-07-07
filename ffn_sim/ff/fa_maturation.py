@@ -89,6 +89,30 @@ def talin_vinculin_kernel(load: wp.array(dtype=wp.float64), p_unf: wp.array(dtyp
 
 
 @wp.kernel
+def clutch_load_kernel(pos: wp.array(dtype=wp.vec3d), ac_idx: wp.array(dtype=wp.int32),
+                       anchor: wp.array(dtype=wp.vec3d), bound: wp.array(dtype=wp.int32),
+                       k_int: wp.float64, rest: wp.float64, load: wp.array(dtype=wp.float64)):
+    """Per-clutch tension magnitude ``F = k_int·|L − rest|`` [pN] — the mechanosensor input for talin/FA growth.
+    Unbound → 0."""
+    k = wp.tid()
+    if bound[k] == 0:
+        load[k] = wp.float64(0.0)
+        return
+    L = wp.length(pos[ac_idx[k]] - anchor[k])
+    load[k] = k_int * wp.abs(L - rest)
+
+
+@wp.kernel
+def fa_disassemble_kernel(area: wp.array(dtype=wp.float64), bound: wp.array(dtype=wp.int32), a_min: wp.float64):
+    """Load-dependent adhesion: an FA whose area has shrunk below ``a_min`` (sustained sub-threshold force,
+    KB-2.17) DISASSEMBLES — its clutch unbinds. The mechanosensor that makes adhesion force-gated."""
+    k = wp.tid()
+    if bound[k] == 1 and area[k] < a_min:
+        bound[k] = 0
+        area[k] = wp.float64(1.0)                          # reset for a future nascent re-bind
+
+
+@wp.kernel
 def fa_growth_kernel(load: wp.array(dtype=wp.float64), area: wp.array(dtype=wp.float64),
                      kg0: wp.float64, kd: wp.float64, n_hill: wp.float64, fth: wp.float64, dt: wp.float64):
     """Hill FA-area growth (KB-2.17): ``dA/dt = (k_g0·Fⁿ/(Fⁿ+F_thⁿ) − k_d)·A``; grows above F_th, disassembles
@@ -107,4 +131,4 @@ def k_int_effective(k_int_bare: float, n_vin, p: MaturationParams | None = None)
 
 
 __all__ = ["MaturationParams", "talin_unfold_rate", "fa_growth_rate", "talin_vinculin_kernel",
-           "fa_growth_kernel", "k_int_effective"]
+           "fa_growth_kernel", "clutch_load_kernel", "fa_disassemble_kernel", "k_int_effective"]

@@ -43,6 +43,9 @@ from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.ff.myosin_linear import minifilament_kernel, resolve_myosin
 from ffn_sim.ff.substrate import resolve_substrate, substrate_anchor_equilibrium_kernel
+from ffn_sim.ff.fa_maturation import (MaturationParams, talin_vinculin_kernel, fa_growth_kernel,
+                                      clutch_load_kernel, fa_disassemble_kernel)
+from ffn_sim.ff.piezo import resolve_piezo, p_open
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
 
 # leading-edge protrusion magnitude — DERIVED, not tuned (KU-3.6 / KU-3.18):
@@ -85,7 +88,7 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
-        assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0,
+        assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
         refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
         record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
@@ -165,6 +168,12 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     substrate = resolve_substrate(E_pa=substrate_E) if substrate_E > 0 else None
     if substrate is not None:
         anch_rest_d = wp.array(np.ascontiguousarray(S["anchors"], np.float64), dtype=wp.vec3d, device=d)  # fixed dish points
+    # FA MATURATION (KB-2.x): per-clutch talin unfolding → vinculin → force-gated FA growth/disassembly (mechanosensor)
+    mp = MaturationParams() if fa_maturation else None
+    if fa_maturation:
+        Mb = S["basal"].size
+        pu_d = wp.zeros(Mb, dtype=wp.float64, device=d); nv_d = wp.zeros(Mb, dtype=wp.float64, device=d)
+        area_d = wp.array(np.ones(Mb), dtype=wp.float64, device=d); load_d = wp.zeros(Mb, dtype=wp.float64, device=d)
     M = S["basal"].size; nuc = S["nuc"]
     centre = wp.vec3d(float(S["c"][0]), float(S["c"][1]), float(S["c"][2]))
     cx_c, cy_c = float(S["c"][0]), float(S["c"][1])            # cell xy-centre (for radial spreading)
@@ -408,6 +417,12 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 anchors[reb, 0] = p[S["basal"][reb], 0]; anchors[reb, 1] = p[S["basal"][reb], 1]
                 anchors[reb, 2] = z_sub; bd[reb] = 1
                 anch_d.assign(anchors); bd_d.assign(bd)
+        if fa_maturation and clutches and step % kmc_every == 0 and step > 0:   # FA MATURATION mechanosensor (KB-2.x)
+            wp.launch(clutch_load_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int), wp.float64(cp.rest_um), load_d], device=d)
+            wp.launch(talin_vinculin_kernel, dim=M, inputs=[load_d, pu_d, nv_d, bd_d, wp.float64(mp.ku0), wp.float64(mp.dx_um),
+                      wp.float64(mp.kT), wp.float64(mp.k_refold), wp.float64(mp.k_rec), wp.float64(mp.k_diss), wp.float64(mp.n_max), wp.float64(dt * kmc_every)], device=d)
+            wp.launch(fa_growth_kernel, dim=M, inputs=[load_d, area_d, wp.float64(mp.kg0), wp.float64(mp.kd), wp.float64(mp.n_hill), wp.float64(mp.fth), wp.float64(dt * kmc_every)], device=d)
+            wp.launch(fa_disassemble_kernel, dim=M, inputs=[area_d, bd_d, wp.float64(0.1)], device=d)   # sub-threshold FAs unbind (force-gated adhesion)
         if step % record_every == 0:
             p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)
             frames.append(p.astype(np.float32)); com_traj.append(cc.copy()); times.append(step * dt)
@@ -457,6 +472,8 @@ def main():
     ap.add_argument("--growth", action="store_true", help="per-filament barbed-end polymerization (KB-3.6 ratchet) → filaments elongate individually")
     ap.add_argument("--myosin-linear", action="store_true", help="explicit Stam-Hocky minifilament (derived 60pN stall + linear force-velocity) instead of swept f_myo")
     ap.add_argument("--substrate-E", type=float, default=0.0, help="compliant substrate Young's modulus [Pa] (movable FA anchors, k_sub∝E; 0=rigid pins; KB-1.5 5000)")
+    ap.add_argument("--fa-maturation", action="store_true", help="per-clutch talin unfolding → vinculin → force-gated FA growth/disassembly (KB-2.x mechanosensor)")
+    ap.add_argument("--piezo", action="store_true", help="Piezo1 tension-gated open-probability reporter (KB-3.10; diagnostic)")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
     ap.add_argument("--tag", default="crawl")
@@ -470,7 +487,7 @@ def main():
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
             protrude=(not args.static and not args.spread), spread=args.spread,
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
-            assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E, device=args.device)
+            assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E, fa_maturation=args.fa_maturation, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
@@ -479,6 +496,9 @@ def main():
           f"contact-radius={r['contact_radius_um']:.2f} µm  n-contact={r['n_contact']}  "
           f"cell-height={r['cell_height_um']:.2f} µm (R={r['R_um']:.1f})  → "
           f"{'STABLE ADHERED' if 0.8 < r['vol_final'] < 1.25 and r['basal_gap_um'] < 0.4 and r['bound_frac'] > 0.5 else 'NOT STABLE/ADHERED'}")
+    if args.piezo:                                             # Piezo1 tension reporter (KB-3.10, diagnostic; feedback OFF)
+        pz = resolve_piezo(); g_mem = S["mem"].gamma_mem
+        print(f"[Piezo] membrane tension {g_mem:.1f} pN/µm → P_open={float(p_open(g_mem, pz)):.4f} (rest≈closed; opens as tension→γ_half=5000; feedback gain=0)")
     out = {"clutch_on": {k: (r[k] if not isinstance(r[k], np.ndarray) else None)
                           for k in ("dt", "disp_along_um", "disp_perp_um", "v_crawl_nm_s", "traction_nN",
                                     "bound_frac", "n_clutch", "f_pro_pN", "gamma_min", "gamma_max",
