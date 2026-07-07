@@ -83,6 +83,34 @@ derived from existing sourced constants. dP0 stays an explicit physiological pre
    tighten tol; do NOT touch κ or K_vol.
 
 ---
+
+## PROGRESS LOG
+
+- **Step 0 ✅ (d6fa1d6)** — IPC_TELEM telemetry. Found: single-step stable to dt=8e-2 but cadherin
+  kinetics (36ms) vs step (80ms) is the real multiscale bottleneck; σ_vm 2× error at 8e-2 → Newton needed.
+- **Step 1 ✅ (8053b33 energy kernels + Gate-1 flag; 5e30c0d COMPLETE)** — barrier energy↔force match.
+  **PI decision A** (add the exact ∇area term, not freeze-area — full variational IPC gradient per the
+  fine-grained rule). `nearest_face_ipc_kernel` gained `F=−dE/darea·∇area` on the 3 neighbour face
+  vertices (∂A/∂a=½ n̂_f×(c−b) cyclic, Σ=0 momentum-conserving), both barrier + inside-feasibilization
+  branches. **Gate 1 FD ∇E==−F: barrier 12%→1.97e-9 PASS** (edge/turgor machine-precision). Node normal
+  force unchanged (2.2e-16), momentum conserved (2.18e-16), IPC-vs-penalty parity harness un-regressed.
+- **Step 2 ✅ (this commit)** — device projected-Newton driver `ipc_newton_step` in `dcm_warp_implicit.py`
+  (wraps `device_cg`; residual G=a(x−xn)−F_total; CCD-filtered Armijo energy line-search on
+  Φ=½a|x−xn|²+U). Energy kernels for the merit: barrier+edge+turgor (Step 1) + new inertial +
+  soft-linear (lagged drivers) in `dcm_ipc_energy.py`. **Gate 2 (`tests/test_ipc_newton_gate2.py`, CPU):
+  PASS** — feasible-start + 4·Fcap pull, 30-step trajectory: worst_pen=0.00 at dt 1×/100×/1000×,
+  energy monotone, residual→tol; Newton iters 3.0→4.6→7.4 as dt scales (loop earns its keep at big dt).
+  Note: deep penetrating-START recovery is slow (only OUTSIDE barrier diverges) → **production must start
+  feasible/watertight** (the Voronoi-confluent/dispersed init — matches the init strategy).
+- **Step 3 🔜 NEXT** — wire the Newton loop into `run_decohesion` (replace the single-step block
+  ~1189-1224), ADDITIVELY behind a new flag so the working `ipc=True` single-step path is untouched
+  (no regression risk). **Design resolved:** per this plan cadherin/cohesion/wetting are LAGGED SOFT
+  drivers (constant over the step, linear energy) — so the stiff line-search set = barrier+edge+turgor,
+  which the existing energy kernels already cover; nucleus/bending energies only needed if those stiff
+  forces are ON in the target aggregate config (they can be off for the first Gate-3). Then **Gate 3**
+  (penalty-parity at dt=8e-6, N=2/12; PI-visible; Fail→HALT) → **Step 4** dt ramp 8e-4→8e-2.
+
+---
 *Full workflow transcript (XPBD + IPC designs + synthesis): run wf_056df109-3dd. The adversarial-reviewer
 agent hit the StructuredOutput retry cap; its concerns were internalized by the synthesis (energy–gradient
 trap, dt-dependent-compliance magic-number risk, incompressibility error of a hard V=V0 constraint).*

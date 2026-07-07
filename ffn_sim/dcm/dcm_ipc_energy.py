@@ -115,3 +115,38 @@ def turgor_energy_kernel(
         return
     u = Vc[c] - v0
     wp.atomic_add(e_out, 0, (K_vol / (wp.float64(2.0) * v0)) * u * u - dP0 * u)
+
+
+@wp.kernel
+def inertial_energy_kernel(
+    x: wp.array(dtype=wp.vec3d),
+    xn: wp.array(dtype=wp.vec3d),
+    a: wp.float64,                             # a = γ_node/dt (implicit-Euler regulariser)
+    cof: wp.array(dtype=wp.int32),
+    e_out: wp.array(dtype=wp.float64),
+):
+    """½·a·|x−xn|² per LIVE node — the implicit-Euler inertial term of the incremental potential
+    Φ(x)=½a|x−xn|²+U(x). ∇=a(x−xn), so ∇Φ = a(x−xn)−F = G (the Newton residual)."""
+    i = wp.tid()
+    if cof[i] < wp.int32(0):
+        return
+    d = x[i] - xn[i]
+    wp.atomic_add(e_out, 0, wp.float64(0.5) * a * wp.dot(d, d))
+
+
+@wp.kernel
+def soft_linear_energy_kernel(
+    x: wp.array(dtype=wp.vec3d),
+    xn: wp.array(dtype=wp.vec3d),
+    fsoft: wp.array(dtype=wp.vec3d),           # lagged soft force F_soft(xn), frozen over the step
+    cof: wp.array(dtype=wp.int32),
+    e_out: wp.array(dtype=wp.float64),
+):
+    """−F_soft(xn)·(x−xn) per LIVE node — the linear potential of the LAGGED soft/explicit drivers
+    (cadherin, wetting, ECM, gravity). ∇=−F_soft(xn) (constant force), so its gradient reproduces
+    the explicit RHS force exactly, keeping Φ's gradient == the full residual for the line-search."""
+    i = wp.tid()
+    if cof[i] < wp.int32(0):
+        return
+    d = x[i] - xn[i]
+    wp.atomic_add(e_out, 0, -wp.dot(fsoft[i], d))

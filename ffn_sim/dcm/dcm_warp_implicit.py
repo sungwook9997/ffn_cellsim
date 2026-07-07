@@ -248,6 +248,93 @@ def device_cg(stiff_into, x_d, a, b_d, scratch, *, tol=1e-8, maxiter=200, eps=1e
     return dx, it
 
 
+@wp.kernel
+def _resid_into(rhs: wp.array(dtype=wp.vec3d), Ft: wp.array(dtype=wp.vec3d),
+                x: wp.array(dtype=wp.vec3d), xn: wp.array(dtype=wp.vec3d),
+                a: wp.float64, cof: wp.array(dtype=wp.int32)):
+    """RHS of the Newton linear solve = −G(x) = F_total(x) − a(x−xn), for LIVE nodes only.
+    (aI+K)δ = −G moves x toward the implicit-Euler solution a(x−xn)=F_total(x); at x=xn this is
+    F_total(xn) → the linearly-implicit single step. Zeroed on dormant nodes (cof<0)."""
+    i = wp.tid()
+    z = wp.float64(0.0)
+    if cof[i] < wp.int32(0):
+        rhs[i] = wp.vec3d(z, z, z)
+        return
+    rhs[i] = Ft[i] - a * (x[i] - xn[i])
+
+
+def ipc_newton_step(x_d, xn_d, a, *, force_total_into, stiff_force_into, energy_fn,
+                    ccd_alpha_fn, cof_d, scratch, device="cpu",
+                    max_newton=8, newton_tol=1e-4, c1=1e-4, beta=0.5, ls_max=16,
+                    hess_apply=None, precond_apply=None, cg_maxiter=200, relin=None,
+                    min_alpha=1e-6, verbose=False):
+    """Projected-Newton IPC step (#1 Step 2). Minimises the incremental potential
+    Φ(x)=½·a·|x−xn|²+U(x) subject to non-penetration, by Newton on the residual
+    G(x)=a(x−xn)−F_total(x) with a CCD-filtered Armijo energy line-search.
+
+    Each iterate: (1) re-linearise (``relin(x)`` rebuilds barrier cn_k/cn_nrm + diagA at x),
+    (2) form RHS=−G=F_total(x)−a(x−xn), (3) solve (aI+K)δ=RHS with ``device_cg`` (matrix-free FD
+    matvec of the stiff force + analytic contact ``hess_apply``), (4) α₀=``ccd_alpha_fn`` (max
+    feasible fraction, keeps every iterate penetration-free), (5) Armijo backtrack α₀·βᵏ until
+    Φ(x+αδ) ≤ Φ(x)+c1·α·∇Φ·δ. Because ∇Φ·δ = G·δ = −RHS·δ = −δᵀ(aI+K)δ ≤ 0 the CG step is a descent
+    direction; if CG noise makes it non-descent we fall back to steepest descent (δ=RHS). The
+    log-barrier in Φ → +∞ at contact so the line-search *also* rejects any penetrating step (the
+    non-penetration guarantee, redundant with CCD but exact).
+
+    x_d is updated IN PLACE (caller sets x_d = copy of xn_d before the call). All callables take/
+    return device buffers; ``energy_fn(buf)->float`` returns the scalar Φ. At the base dt=8e-6 this
+    converges in ~1–3 iters (the aI regulariser dominates) → reduces to the current single step;
+    the loop earns its keep only when dt is ramped (Step 4). Returns an info dict."""
+    N = x_d.shape[0]
+    Ft = scratch["nt_Ft"]; rhs = scratch["nt_rhs"]; xtr = scratch["nt_xtr"]; sca = scratch["sca"]
+
+    def dot(u, v):
+        sca.zero_(); wp.launch(_vdot, dim=N, inputs=[u, v, sca], device=device)
+        wp.synchronize_device(device); return float(sca.numpy()[0])
+
+    E_cur = energy_fn(x_d)
+    E_hist = [E_cur]; a_hist = []; ls_hist = []
+    tot_cg = 0; gnorm = float("inf"); g0 = None; converged = False; k = 0
+    for k in range(1, max_newton + 1):
+        if relin is not None:
+            relin(x_d)
+        force_total_into(x_d, Ft)
+        wp.launch(_resid_into, dim=N, inputs=[rhs, Ft, x_d, xn_d, wp.float64(a), cof_d], device=device)
+        gnorm = dot(rhs, rhs) ** 0.5
+        if g0 is None:
+            g0 = max(gnorm, 1e-30)
+        if gnorm <= newton_tol * g0:
+            converged = True
+            break
+        dx_d, cgi = device_cg(stiff_force_into, x_d, a, rhs, scratch, maxiter=cg_maxiter,
+                              device=device, hess_apply=hess_apply, precond_apply=precond_apply)
+        tot_cg += cgi if isinstance(cgi, int) else int(cgi.get("cg_iters", 0))
+        gTd = -dot(rhs, dx_d)                     # ∇Φ·δ = G·δ = −RHS·δ ; <0 ⇒ descent
+        if not (gTd < 0.0) or not math.isfinite(gTd):
+            wp.launch(_vcopy, dim=N, inputs=[dx_d, rhs], device=device)   # steepest-descent fallback
+            gTd = -dot(rhs, rhs)
+        alpha = float(ccd_alpha_fn(x_d, dx_d))    # CCD feasibility cap in (0,1]
+        accepted = False
+        for _ls in range(ls_max):
+            wp.launch(_vcopy, dim=N, inputs=[xtr, x_d], device=device)
+            wp.launch(_vaxpy_active, dim=N, inputs=[xtr, wp.float64(alpha), dx_d, cof_d], device=device)
+            E_try = energy_fn(xtr)
+            if math.isfinite(E_try) and E_try <= E_cur + c1 * alpha * gTd:
+                accepted = True
+                break
+            alpha *= beta
+            if alpha < min_alpha:
+                break
+        wp.launch(_vaxpy_active, dim=N, inputs=[x_d, wp.float64(alpha), dx_d, cof_d], device=device)
+        E_cur = energy_fn(x_d)
+        E_hist.append(E_cur); a_hist.append(alpha); ls_hist.append(_ls + 1)
+        if verbose:
+            print(f"    [newton] it={k} |G|={gnorm:.3e} cg={tot_cg} α={alpha:.4f} "
+                  f"ls={_ls + 1} E={E_cur:.6e} gTd={gTd:.3e}", flush=True)
+    return {"newton_iters": k, "cg_iters": tot_cg, "g_norm": gnorm, "g0": g0,
+            "alphas": a_hist, "energies": E_hist, "ls_evals": ls_hist, "converged": converged}
+
+
 def explicit_overdamped_step(pos: np.ndarray, force_fn, gamma: float, dt: float):
     """One explicit overdamped Euler step xₙ₊₁ = xₙ + (dt/γ) F(xₙ) — the CFL-capped reference."""
     x0 = np.ascontiguousarray(pos, dtype=np.float64)
