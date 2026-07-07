@@ -118,6 +118,41 @@ def turgor_energy_kernel(
 
 
 @wp.kernel
+def turgor_energy_pc_kernel(
+    Vc: wp.array(dtype=wp.float64),            # per-cell current volume
+    V0: wp.array(dtype=wp.float64),            # per-cell rest/setpoint volume V0[c]
+    dP0_eff: wp.array(dtype=wp.float64),       # per-cell constant osmotic-excess term (see below)
+    K_vol: wp.float64,
+    e_out: wp.array(dtype=wp.float64),
+):
+    """(K_vol/2V0_c)(V_c−V0_c)² − dP0_eff_c·(V_c−V0_c) per cell — the PER-CELL-dP0 turgor energy that
+    matches BOTH production dP kernels (V0_c held constant over the step):
+      pressure-clamp  (_dp_from_vol_pc):  dP0_eff_c = dP0                → −dE/dV = dP0 + K_vol(V0−V)/V0
+      osmotic         (_dp_from_vol_osm): dP0_eff_c = dP0·V0_ref/V0_c    → −dE/dV = dP0·V0_ref/V0_c + K_vol(V0_c−V)/V0_c
+    So the same energy pairs with either force when fed the right dP0_eff (from turgor_dp0eff_kernel)."""
+    c = wp.tid()
+    v0 = V0[c]
+    if v0 <= wp.float64(0.0):
+        return
+    u = Vc[c] - v0
+    wp.atomic_add(e_out, 0, (K_vol / (wp.float64(2.0) * v0)) * u * u - dP0_eff[c] * u)
+
+
+@wp.kernel
+def turgor_dp0eff_kernel(
+    V0_cell: wp.array(dtype=wp.float64), V0_ref: wp.float64, dP0: wp.float64,
+    use_osm: wp.int32, out: wp.array(dtype=wp.float64),
+):
+    """Per-cell constant osmotic-excess dP0_eff for turgor_energy_pc_kernel. osmotic ⇒ dP0·V0_ref/V0_c
+    (concentration feedback, matches _dp_from_vol_osm); pressure-clamp ⇒ dP0. V0_c frozen over the step."""
+    c = wp.tid()
+    if use_osm != wp.int32(0):
+        out[c] = dP0 * (V0_ref / V0_cell[c])
+    else:
+        out[c] = dP0
+
+
+@wp.kernel
 def inertial_energy_kernel(
     x: wp.array(dtype=wp.vec3d),
     xn: wp.array(dtype=wp.vec3d),

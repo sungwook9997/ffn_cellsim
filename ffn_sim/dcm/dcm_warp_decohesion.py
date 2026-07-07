@@ -62,9 +62,12 @@ from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.dcm.dcm_remesh import remesh_pass
 from ffn_sim.dcm.dcm_cleave import cleave_cell
-from ffn_sim.dcm.dcm_warp_implicit import device_cg, _vaxpy_active, _vaxpy_active_capped
+from ffn_sim.dcm.dcm_warp_implicit import (device_cg, ipc_newton_step, _vaxpy_active,
+                                           _vaxpy_active_capped, _vaxpy, _vcopy)
 from ffn_sim.dcm.dcm_contact_implicit_warp import (
     nearest_face_ipc_kernel, make_contact_hess_apply, ccd_alpha, project_contacts)
+from ffn_sim.dcm.dcm_ipc_energy import (ipc_barrier_energy_kernel, edge_energy_kernel,
+    turgor_energy_pc_kernel, turgor_dp0eff_kernel, inertial_energy_kernel, soft_linear_energy_kernel)
 from ffn_sim.dcm.dcm_warp_frozen import (
     FrozenNeighborCache, build_diagA, make_diag_precond)
 
@@ -291,6 +294,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    frozen_neighbors: bool = False, precond_diag: bool = False,
                    use_grid: bool = True, save_frames: str | None = None,
                    ipc: bool = False, ipc_eta: float = 0.9,
+                   ipc_newton: bool = False, ipc_newton_max: int = 8, ipc_newton_tol: float = 1e-4,
                    project: bool = False, proj_omega: float = 0.7, proj_iter: int = 8,
                    proj_gap_factor: float = 1.0,
                    lamellipodium: bool = False, lamel_clutch: bool = False, filopodia: bool = False,
@@ -564,6 +568,21 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     ipc_cn_nrm = wp.zeros(N, dtype=wp.vec3d, device=device) if ipc else None
     ipc_t = wp.zeros(N, dtype=wp.float64, device=device) if ipc else None
     ipc_hess = make_contact_hess_apply(ipc_cn_k, ipc_cn_nrm, device=device) if ipc else None
+    # #1 Step 3: projected-Newton IPC buffers (opt-in --ipc-newton; requires --ipc). xn = frozen
+    # step-start copy; fsoft = the LAGGED soft-driver force (F_all(xn) − stiff{turgor,edges,barrier});
+    # dp0eff = per-cell osmotic-excess for the turgor line-search energy.
+    if ipc_newton and ipc and implicit:
+        xn_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+        fsoft_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+        nt_Fb = wp.zeros(N, dtype=wp.vec3d, device=device)
+        dp0eff_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
+        nt_e_d = wp.zeros(1, dtype=wp.float64, device=device)
+        _nt_a = [0.0]                                    # a=γ/dt for the current step (nt_energy inertial)
+        for _k in ("nt_Ft", "nt_rhs", "nt_xtr"):
+            cg_scratch[_k] = wp.zeros(N, dtype=wp.vec3d, device=device)
+        print(f"  [ipc-newton] projected-Newton IPC ON (max_newton={ipc_newton_max}, "
+              f"tol={ipc_newton_tol:.0e}) — stiff{{turgor,edges,barrier}} re-linearised + energy "
+              f"line-search; all other drivers lagged-soft at xₙ", flush=True)
     # M1 PROJECTION (opt-in): post-step geometric non-penetration constraint (SimuCell3D hard-constraint
     # method). Buffer for the per-node positional correction; applied after the integrator's pos update.
     proj_dpos = wp.zeros(N, dtype=wp.vec3d, device=device) if project else None
@@ -954,6 +973,62 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.launch(umbrella_kernel, dim=N, inputs=[lap_d, nsum_d, ncnt_d, bilap_d], device=device)
             wp.launch(bending_apply_kernel, dim=N, inputs=[bilap_d, cof_d, wp.float64(k_bend), out_d], device=device)
 
+    # ---- #1 Step 3: projected-Newton IPC closures (called ONLY under --ipc-newton) --------------
+    # The Newton loop re-linearises the CFL-setting STIFF set {turgor, cortex edges, IPC barrier} and
+    # runs an energy line-search on Φ=½a|x−xn|²+U_stiff(x)−F_soft(xn)·(x−xn); every OTHER driver
+    # (cohesion, node-face adhesion, wetting, well/ubottom, nucleus, bending, ECM, lamellipodium,
+    # filopodia, gravity) is LAGGED at xn as F_soft (linear potential) — the plan's soft/explicit set.
+    def _nt_rebuild(pos_buf):
+        wp.launch(pos_to_f32, dim=N, inputs=[pos_buf, node_f32], device=device)
+        wp.launch(face_centroids_f32, dim=n_faces, inputs=[pos_buf, faces_d, cent_f32], device=device)
+        face_grid.build(points=cent_f32, radius=grid_q)
+
+    def _nt_turgor_into(pos_buf, out_d):
+        Vc_d.zero_()
+        wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, Vc_d], device=device)
+        if osmotic:
+            wp.launch(_dp_from_vol_osm, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(V0),
+                      wp.float64(p.turgor_dP0), wp.float64(k_vol), dP_d], device=device)
+        else:
+            wp.launch(_dp_from_vol_pc, dim=n_cells, inputs=[Vc_d, V0_cell_d, wp.float64(p.turgor_dP0),
+                      wp.float64(k_vol), dP_d], device=device)
+        wp.launch(dcm_turgor_force_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, dP_d, out_d], device=device)
+
+    def nt_stiff_into(pos_buf, out_d):
+        """FD-matvec operand for device_cg: turgor + cortex edges ONLY (barrier stiffness is the
+        analytic ipc_hess; every other force is lagged) — mirrors the Gate-2 stiff_force_into."""
+        wp.launch(_zero_vec, dim=N, inputs=[out_d], device=device)
+        _nt_turgor_into(pos_buf, out_d)
+        wp.launch(_bond_accumulate, dim=n_edges, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, out_d], device=device)
+
+    def nt_force_total_into(pos_buf, out_d):
+        """F_total(x) = turgor(x) + edges(x) + IPC barrier(x, adh=0) + lagged F_soft(xn). Rebuilds the
+        broad-phase on x and RE-LINEARISES the barrier (nearest_face_ipc_kernel fills ipc_cn_k/nrm)."""
+        _nt_rebuild(pos_buf)
+        nt_stiff_into(pos_buf, out_d)
+        wp.launch(nearest_face_ipc_kernel, dim=N, inputs=[face_grid.id, node_f32, pos_buf, cof_d,
+                  faces_d, fcell_d, wp.float32(ipc_repel_q), wp.float64(rep_strength), wp.float64(ipc_dhat),
+                  wp.float64(0.0), wp.float64(0.0), out_d, ipc_cn_k, ipc_cn_nrm], device=device)
+        wp.launch(_vaxpy, dim=N, inputs=[out_d, wp.float64(1.0), fsoft_d], device=device)
+
+    def nt_energy(pos_buf):
+        """Scalar Φ(x) merit for the Armijo line-search; ∇Φ == −(a(x−xn)−F_total) by the Gate-1 match."""
+        nt_e_d.zero_(); _nt_rebuild(pos_buf)
+        wp.launch(ipc_barrier_energy_kernel, dim=N, inputs=[face_grid.id, node_f32, pos_buf, cof_d,
+                  faces_d, fcell_d, wp.float32(ipc_repel_q), wp.float64(rep_strength), wp.float64(ipc_dhat),
+                  nt_e_d], device=device)
+        wp.launch(edge_energy_kernel, dim=n_edges, inputs=[pos_buf, edges_d, wp.float64(p.k_edge), r0_d, nt_e_d], device=device)
+        Vc_d.zero_()
+        wp.launch(dcm_volume_kernel, dim=n_faces, inputs=[pos_buf, faces_d, fcell_d, Vc_d], device=device)
+        wp.launch(turgor_energy_pc_kernel, dim=n_cells, inputs=[Vc_d, V0_cell_d, dp0eff_d, wp.float64(k_vol), nt_e_d], device=device)
+        wp.launch(inertial_energy_kernel, dim=N, inputs=[pos_buf, xn_d, wp.float64(_nt_a[0]), cof_d, nt_e_d], device=device)
+        wp.launch(soft_linear_energy_kernel, dim=N, inputs=[pos_buf, xn_d, fsoft_d, cof_d, nt_e_d], device=device)
+        wp.synchronize_device(device); return float(nt_e_d.numpy()[0])
+
+    def nt_ccd(pos_buf, dpos_buf):
+        return ccd_alpha(face_grid.id, node_f32, pos_buf, dpos_buf, cof_d, faces_d, fcell_d,
+                         ipc_repel_q, ipc_t, eta=ipc_eta, device=device)
+
     _agg = [wp.vec3d(0.0, 0.0, 0.0), 0.0]     # [aggregate centroid, ΔP_agg=2σ/R_agg in Pa], refreshed periodically
 
     def step_once(s, dt_step, do_spread=True):
@@ -1191,42 +1266,69 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             # Grids/node_f32 were just built on xₙ above → frozen-neighbour operator. Soft drivers
             # (wetting/lamellipodium/cadherin/clutch) are already in force_d (explicit RHS).
             a_imp = (1.0 / inv_gamma) / dt_step          # γ_node / dt
-            # I-opt #2: snapshot the cohesion + contact candidate lists ONCE here (the grids are on
-            # xₙ) so every CG matvec replays them without a hash-grid query. Built at the SAME radii
-            # the live kernels use (coh_q / con_q) → byte-identical candidate set, identical force.
-            if frozen_cache is not None:
-                frozen_cache.rebuild(node_grid_id=node_grid.id, face_grid_id=face_grid.id,
-                                     node_f32=node_f32, cof_d=cof_d, fcell_d=fcell_d,
-                                     coh_q=coh_q, con_q=con_q,
-                                     do_cohesion=True, do_contact=(not ipc) or (coh_adh > 0.0))
-            # I-opt #1: rebuild the analytic Jacobi diagonal once per step (a + edges + turgor +
-            # contact). Contact stiffness reuses the IPC per-node cn_k when available (penalty mode
-            # has no cheap per-node normal stiffness → that term is omitted, documented).
-            if diagA_d is not None:
-                build_diagA(diagA_d, a=a_imp, cof_d=cof_d, edges_d=edges_d, k_edge=p.k_edge,
-                            faces_d=faces_d, fcell_d=fcell_d, pos_d=pos_d, k_vol=k_vol, V0=V0,
-                            V0_arr=V0_cell_d, cn_k=(ipc_cn_k if ipc else None), device=device)
-            dx_d, _cgi = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
-                                maxiter=cg_maxiter, device=device, hess_apply=ipc_hess,
-                                precond_apply=precond_apply)
-            if (s == 80 or s % 500 == 0) and isinstance(_cgi, dict):   # CG-iter telemetry (analytic-matvec verification)
-                print(f"  [cg] step {s}: cg_iters={_cgi.get('cg_iters','?')}", flush=True)
-            # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
-            # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
-            if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
-                alpha = ccd_alpha(face_grid.id, node_f32, pos_d, dx_d, cof_d, faces_d, fcell_d,
-                                  ipc_repel_q, ipc_t, eta=ipc_eta, device=device)
-                # #1 Step-0 telemetry: realized CCD step fraction. α≪1 = the single-linearized-step
-                # stall (CCD clamps the un-line-searched Newton direction; no re-linearization to recover).
-                if os.environ.get("IPC_TELEM") == "1" and (s == 80 or s % 500 == 0):
-                    print(f"  [ipc-telem] step {s}: ccd_alpha={float(alpha):.4f} cg_iters="
-                          f"{_cgi.get('cg_iters','?') if isinstance(_cgi, dict) else '?'}", flush=True)
-                wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(alpha), dx_d, cof_d], device=device)
-            elif pen_cap:      # D8: clamp each node's implicit step to the contact-shell scale
-                wp.launch(_vaxpy_active_capped, dim=N,
-                          inputs=[pos_d, dx_d, cof_d, wp.float64(pen_cap_frac * c_rep)], device=device)
+            if ipc and ipc_newton:
+                # #1 Step 3: PROJECTED-NEWTON IPC step (replaces the single linearised solve + one-shot
+                # CCD). Split the RHS: F_soft = F_all(xₙ) − stiff{turgor,edges,barrier}(xₙ), held LAGGED
+                # over the step; the Newton loop re-linearises the stiff set + CCD-Armijo energy line-search.
+                _nt_rebuild(pos_d)                                        # broad-phase on xₙ
+                nt_stiff_into(pos_d, nt_Fb)                               # turgor + edges (zeros nt_Fb)
+                wp.launch(nearest_face_ipc_kernel, dim=N, inputs=[face_grid.id, node_f32, pos_d, cof_d,
+                          faces_d, fcell_d, wp.float32(ipc_repel_q), wp.float64(rep_strength),
+                          wp.float64(ipc_dhat), wp.float64(0.0), wp.float64(0.0), nt_Fb, ipc_cn_k,
+                          ipc_cn_nrm], device=device)                     # + barrier(xₙ); cn_k/nrm @ xₙ
+                wp.launch(_vcopy, dim=N, inputs=[fsoft_d, force_d], device=device)                    # F_all(xₙ)
+                wp.launch(_vaxpy, dim=N, inputs=[fsoft_d, wp.float64(-1.0), nt_Fb], device=device)    # − stiff
+                wp.launch(turgor_dp0eff_kernel, dim=n_cells, inputs=[V0_cell_d, wp.float64(V0),
+                          wp.float64(p.turgor_dP0), wp.int32(1 if osmotic else 0), dp0eff_d], device=device)
+                wp.launch(_vcopy, dim=N, inputs=[xn_d, pos_d], device=device)                         # freeze xₙ
+                _nt_a[0] = a_imp
+                nt_info = ipc_newton_step(pos_d, xn_d, a_imp, force_total_into=nt_force_total_into,
+                          stiff_force_into=nt_stiff_into, energy_fn=nt_energy, ccd_alpha_fn=nt_ccd,
+                          cof_d=cof_d, scratch=cg_scratch, device=device, max_newton=ipc_newton_max,
+                          newton_tol=ipc_newton_tol, hess_apply=ipc_hess, precond_apply=None,
+                          cg_maxiter=cg_maxiter)
+                if s == 80 or s % 500 == 0:
+                    _g = nt_info["g_norm"] / max(nt_info["g0"], 1e-30)
+                    print(f"  [ipc-newton] step {s}: newton={nt_info['newton_iters']} "
+                          f"cg={nt_info['cg_iters']} |G|/|G0|={_g:.2e} conv={nt_info['converged']} "
+                          f"α={','.join(f'{a:.2f}' for a in nt_info['alphas'][:4])}", flush=True)
             else:
-                wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d, cof_d], device=device)
+                # I-opt #2: snapshot the cohesion + contact candidate lists ONCE here (the grids are on
+                # xₙ) so every CG matvec replays them without a hash-grid query. Built at the SAME radii
+                # the live kernels use (coh_q / con_q) → byte-identical candidate set, identical force.
+                if frozen_cache is not None:
+                    frozen_cache.rebuild(node_grid_id=node_grid.id, face_grid_id=face_grid.id,
+                                         node_f32=node_f32, cof_d=cof_d, fcell_d=fcell_d,
+                                         coh_q=coh_q, con_q=con_q,
+                                         do_cohesion=True, do_contact=(not ipc) or (coh_adh > 0.0))
+                # I-opt #1: rebuild the analytic Jacobi diagonal once per step (a + edges + turgor +
+                # contact). Contact stiffness reuses the IPC per-node cn_k when available (penalty mode
+                # has no cheap per-node normal stiffness → that term is omitted, documented).
+                if diagA_d is not None:
+                    build_diagA(diagA_d, a=a_imp, cof_d=cof_d, edges_d=edges_d, k_edge=p.k_edge,
+                                faces_d=faces_d, fcell_d=fcell_d, pos_d=pos_d, k_vol=k_vol, V0=V0,
+                                V0_arr=V0_cell_d, cn_k=(ipc_cn_k if ipc else None), device=device)
+                dx_d, _cgi = device_cg(stiff_force_into, pos_d, a_imp, force_d, cg_scratch,
+                                    maxiter=cg_maxiter, device=device, hess_apply=ipc_hess,
+                                    precond_apply=precond_apply)
+                if (s == 80 or s % 500 == 0) and isinstance(_cgi, dict):   # CG-iter telemetry (analytic-matvec verification)
+                    print(f"  [cg] step {s}: cg_iters={_cgi.get('cg_iters','?')}", flush=True)
+                # x += Δx for LIVE nodes only — dormant pool / parked daughters (cof<0) must stay
+                # frozen at PARK_POS, exactly as the explicit _bd_step skips cof<0 (review fix #1).
+                if ipc:            # M1 IPC: CCD-filtered step — α∈(0,1] keeps every node penetration-free
+                    alpha = ccd_alpha(face_grid.id, node_f32, pos_d, dx_d, cof_d, faces_d, fcell_d,
+                                      ipc_repel_q, ipc_t, eta=ipc_eta, device=device)
+                    # #1 Step-0 telemetry: realized CCD step fraction. α≪1 = the single-linearized-step
+                    # stall (CCD clamps the un-line-searched Newton direction; no re-linearization to recover).
+                    if os.environ.get("IPC_TELEM") == "1" and (s == 80 or s % 500 == 0):
+                        print(f"  [ipc-telem] step {s}: ccd_alpha={float(alpha):.4f} cg_iters="
+                              f"{_cgi.get('cg_iters','?') if isinstance(_cgi, dict) else '?'}", flush=True)
+                    wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(alpha), dx_d, cof_d], device=device)
+                elif pen_cap:      # D8: clamp each node's implicit step to the contact-shell scale
+                    wp.launch(_vaxpy_active_capped, dim=N,
+                              inputs=[pos_d, dx_d, cof_d, wp.float64(pen_cap_frac * c_rep)], device=device)
+                else:
+                    wp.launch(_vaxpy_active, dim=N, inputs=[pos_d, wp.float64(1.0), dx_d, cof_d], device=device)
         else:
             wp.launch(_bd_step, dim=N,
                       inputs=[pos_d, force_d, cof_d, wp.float64(inv_gamma), wp.float64(0.0),
@@ -1710,6 +1812,15 @@ def main():
                          "operator + CCD-filtered step) instead of the capped penalty — guarantees "
                          "non-penetration under the strong cadherin bundle (needs --integrator implicit)")
     ap.add_argument("--ipc-eta", type=float, default=0.9, help="CCD safety fraction (gap stays >= (1-eta)*d)")
+    ap.add_argument("--ipc-newton", action="store_true", dest="ipc_newton",
+                    help="#1: finish IPC as a PROJECTED-NEWTON incremental-potential step (re-linearise "
+                         "stiff{turgor,edges,barrier} + CCD-Armijo energy line-search each step) instead of "
+                         "the single linearised solve + one-shot CCD — unlocks large dt (needs --ipc). Every "
+                         "other driver (cohesion/cadherin/wetting/well/nucleus/bending/...) is lagged-soft at xₙ.")
+    ap.add_argument("--ipc-newton-max", type=int, default=8, dest="ipc_newton_max",
+                    help="max Newton iterations per step (projected-Newton IPC)")
+    ap.add_argument("--ipc-newton-tol", type=float, default=1e-4, dest="ipc_newton_tol",
+                    help="Newton residual tolerance |G|/|G0| (projected-Newton IPC)")
     ap.add_argument("--warmup", type=int, default=1000, help="soft-start steps at 0.1x dt")
     ap.add_argument("--settle-steps", type=int, default=0,
                     help="aggregation/settle steps at full dt with NO spread drivers (rest the spheroid at z0 before the measured spread; baseline A0 is taken AFTER this)")
@@ -1843,7 +1954,8 @@ def main():
         lamellipodium=args.lamellipodium, lamel_clutch=args.lamel_clutch, filopodia=args.filopodia, junction_switch=args.junction_switch,
         use_grid=not args.no_grid, save_frames=args.save_frames, init_npz=args.init_npz, v0_from_init=args.v0_from_init,
         inset=args.inset, lloyd_iters=args.lloyd_iters,
-        ipc=args.ipc, ipc_eta=args.ipc_eta)
+        ipc=args.ipc, ipc_eta=args.ipc_eta,
+        ipc_newton=args.ipc_newton, ipc_newton_max=args.ipc_newton_max, ipc_newton_tol=args.ipc_newton_tol)
     print(json.dumps({k: v for k, v in out.items() if k != "trajectory"}, indent=2))
 
 

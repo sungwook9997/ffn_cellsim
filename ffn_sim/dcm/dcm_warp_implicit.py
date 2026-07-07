@@ -294,7 +294,7 @@ def ipc_newton_step(x_d, xn_d, a, *, force_total_into, stiff_force_into, energy_
 
     E_cur = energy_fn(x_d)
     E_hist = [E_cur]; a_hist = []; ls_hist = []
-    tot_cg = 0; gnorm = float("inf"); g0 = None; converged = False; k = 0
+    tot_cg = 0; gnorm = float("inf"); g0 = None; converged = False; stalled = False; k = 0
     for k in range(1, max_newton + 1):
         if relin is not None:
             relin(x_d)
@@ -325,13 +325,22 @@ def ipc_newton_step(x_d, xn_d, a, *, force_total_into, stiff_force_into, energy_
             alpha *= beta
             if alpha < min_alpha:
                 break
+        if not accepted:
+            # The line-search cannot reduce Φ along a descent direction ⇒ we are AT the constrained
+            # minimiser to numerical precision (near equilibrium the relative |G|/|G0| test is noisy —
+            # both are tiny — so it never trips even though the step is already optimal). Stop here and
+            # report converged; do NOT apply the rejected step. Prevents burning max_newton iters/step
+            # doing nothing once the doublet/spheroid has equilibrated.
+            stalled = True
+            converged = True
+            break
         wp.launch(_vaxpy_active, dim=N, inputs=[x_d, wp.float64(alpha), dx_d, cof_d], device=device)
         E_cur = energy_fn(x_d)
         E_hist.append(E_cur); a_hist.append(alpha); ls_hist.append(_ls + 1)
         if verbose:
             print(f"    [newton] it={k} |G|={gnorm:.3e} cg={tot_cg} α={alpha:.4f} "
                   f"ls={_ls + 1} E={E_cur:.6e} gTd={gTd:.3e}", flush=True)
-    return {"newton_iters": k, "cg_iters": tot_cg, "g_norm": gnorm, "g0": g0,
+    return {"newton_iters": k, "cg_iters": tot_cg, "g_norm": gnorm, "g0": g0, "stalled": stalled,
             "alphas": a_hist, "energies": E_hist, "ls_evals": ls_hist, "converged": converged}
 
 
