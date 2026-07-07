@@ -128,36 +128,35 @@ def main() -> None:
                     rmin = dr
             rnuc_cell[i] = min(rnuc_abs, rmin * 0.99)
 
-    # Per-frame per-cell overlays the viewer can colour by (derived from geometry — no sim re-run):
-    #   junction = fraction of the cell's surface nodes apposed (<0.6µm) to ANOTHER cell → how much
-    #              cell-cell junction/contact each cell has (cadherin bonds form on apposed faces).
-    #   load     = per-cell asphericity (shape deformation) → a proxy for the mechanical load it bears.
-    from scipy.spatial import cKDTree as _KDT
-    junction = np.zeros((F, C), np.float32)
-    load = np.zeros((F, C), np.float32)
-    _cellnodes = [np.where(cof == c)[0] for c in cells]
-    for fi in range(F):
-        P = frames[fi]                                  # (N,3) µm
-        tree = _KDT(P)
-        for i, idx in enumerate(_cellnodes):
-            if idx.size < 4:
-                continue
-            # nearest neighbour that is NOT in this cell → apposition test
-            dists, nbrs = tree.query(P[idx], k=6)
-            apposed = np.zeros(idx.size, bool)
-            for k in range(1, 6):
-                other = node_cell[nbrs[:, k]] != i
-                apposed |= other & (dists[:, k] < 0.6)
-            junction[fi, i] = apposed.mean()
-            dd = P[idx] - P[idx].mean(0)
-            ev = np.sort(np.linalg.eigvalsh(dd.T @ dd))[::-1]
-            s = ev.sum()
-            load[fi, i] = (ev[0] - 0.5 * (ev[1] + ev[2])) / s if s > 0 else 0.0
-    # normalise each overlay to [0,1] for a stable colour map
-    for A in (junction, load):
-        mn, mx = float(A.min()), float(A.max())
-        if mx > mn:
-            A[:] = (A - mn) / (mx - mn)
+    # Per-NODE overlays the viewer colours by (REAL sim mechanics when the run saved them):
+    #   stress   = |net force| per node [N]  (fmag)  → FEM-style stress heatmap
+    #   junction = cadherin bond count per node      (nbond)
+    # plus the actual bond node-pairs per frame (bondpairs) → draw the JUNCTIONS as line segments.
+    def _norm_pctl(A, hi=99.0):
+        A = A.astype(np.float32)
+        top = float(np.percentile(A, hi)) if A.size else 1.0
+        return (np.clip(A / top, 0.0, 1.0) if top > 0 else A)
+
+    have_mech = "fmag" in d.files and "nbond" in d.files
+    if have_mech:
+        stress = _norm_pctl(np.asarray(d["fmag"]))            # (F,N) → [0,1]
+        junctionN = _norm_pctl(np.asarray(d["nbond"]))         # (F,N) → [0,1]
+    else:                                                      # legacy npz (no mech): flat overlays
+        stress = np.zeros((F, N), np.float32)
+        junctionN = np.zeros((F, N), np.float32)
+    # bond pairs → concatenated index array + per-frame offsets (for LineSegments)
+    bond_idx_list, bond_off = [], [0]
+    if "bondpairs" in d.files:
+        for fi in range(F):
+            bp = np.asarray(d["bondpairs"][fi], dtype=np.int32).reshape(-1, 2)
+            bond_idx_list.append(bp)
+            bond_off.append(bond_off[-1] + bp.shape[0])
+        bond_idx = (np.concatenate(bond_idx_list, axis=0) if bond_idx_list else
+                    np.zeros((0, 2), np.int32))
+    else:
+        bond_idx = np.zeros((0, 2), np.int32)
+        bond_off = [0] * (F + 1)
+    bond_off = np.asarray(bond_off, np.int32)
 
     meta = {
         "F": int(F), "N": int(N), "M": int(M), "C": C,
@@ -174,8 +173,11 @@ def main() -> None:
         "colors_b64": _b64(colors),                      # (N,3) uint8, constant
         "palette_b64": _b64(palette),                    # (C,3) uint8 per-cell colour (nucleus tint)
         "rnuc_b64": _b64(rnuc_cell),                      # (C,) float32 per-cell FIXED nucleus radius [µm]
-        "junction_b64": _b64(junction),                  # (F,C) float32 per-cell junction/contact [0,1]
-        "load_b64": _b64(load),                          # (F,C) float32 per-cell deformation/load [0,1]
+        "stress_b64": _b64(stress),                      # (F,N) float32 per-node STRESS |force| [0,1]
+        "junctionN_b64": _b64(junctionN),                # (F,N) float32 per-node cadherin bond count [0,1]
+        "bondidx_b64": _b64(bond_idx.astype(np.int32)),  # (Btot,2) int32 bonded node pairs, all frames
+        "bondoff_b64": _b64(bond_off.astype(np.int32)),  # (F+1,) int32 per-frame slice offsets
+        "hasmech": 1 if have_mech else 0,
         "q_b64": _b64(q),                                # (F,N,3) uint16
     }
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
@@ -211,9 +213,10 @@ _HTML = r"""<!DOCTYPE html><html><head><meta charset="utf-8">
   <div class="row"><label>colour</label>
      <select id="cmode">
         <option value="cell" selected>cell id</option>
-        <option value="junction">junction (cell-cell contact)</option>
-        <option value="load">deformation / load</option>
+        <option value="stress">stress (|force|, FEM)</option>
+        <option value="junction">junction density</option>
      </select></div>
+  <div class="row" id="junrow"><label><input id="junon" type="checkbox"> show cadherin bonds</label></div>
   <div class="row hint" id="cmodehint"></div>
   <hr style="border-color:#333">
   <div class="row"><label><input id="clipon" type="checkbox"> section</label>
@@ -222,11 +225,11 @@ _HTML = r"""<!DOCTYPE html><html><head><meta charset="utf-8">
         <option value="slab">slab (layer)</option>
         <option value="cut">cut (capped)</option>
      </select></div>
-  <div class="row"><label>axis</label>
+  <div class="row" id="axisrow" style="display:none"><label>axis</label>
      <select id="axis"><option value="0">x</option><option value="1">y</option>
         <option value="2">z</option></select>
      <label style="min-width:auto"> flip</label><input id="flip" type="checkbox"></div>
-  <div class="row"><label>cut pos</label><input id="clip" type="range" min="0" max="1000" value="500"></div>
+  <div class="row" id="cutrow" style="display:none"><label>cut pos</label><input id="clip" type="range" min="0" max="1000" value="500"></div>
   <div class="row" id="slabrow" style="display:none"><label>thickness</label>
      <input id="thick" type="range" min="1" max="500" value="120"><span id="thickv"></span></div>
   <div class="row hint">drag=rotate · scroll=zoom · right-drag=pan</div>
@@ -283,9 +286,9 @@ geo.setIndex(new THREE.BufferAttribute(idxBuf,1));
 geo.setAttribute('position',new THREE.BufferAttribute(framePos(0),3));
 geo.setAttribute('color',new THREE.BufferAttribute(colF,3));
 
-// ---- per-cell OVERLAY colouring: cell-id | junction (cell-cell contact) | deformation/load ----
-const junctionArr = dec(P.junction_b64, Float32Array);   // F*C in [0,1]
-const loadArr     = dec(P.load_b64, Float32Array);       // F*C in [0,1]
+// ---- per-NODE overlays: cell-id | stress (|force|, FEM-style) | junction (cadherin bond count) ----
+const stressArr   = dec(P.stress_b64, Float32Array);     // F*N in [0,1]
+const junctionArr = dec(P.junctionN_b64, Float32Array);  // F*N in [0,1]
 function heat(t){ t=Math.max(0,Math.min(1,t));           // blue→cyan→green→yellow→red
   return [Math.max(0,Math.min(1,1.5-Math.abs(4*t-3))),
           Math.max(0,Math.min(1,1.5-Math.abs(4*t-2))),
@@ -294,12 +297,40 @@ function applyColors(f){
   const mode=document.getElementById('cmode').value;
   if(mode==='cell'){ for(let i=0;i<N*3;i++) colF[i]=colU[i]/255; }
   else {
-    const arr=(mode==='junction')?junctionArr:loadArr, base=f*C;
-    for(let n=0;n<N;n++){ const c=nodeCell[n];
-      if(c<0){ colF[n*3]=colF[n*3+1]=colF[n*3+2]=0.47; continue; }
-      const g=heat(arr[base+c]); colF[n*3]=g[0]; colF[n*3+1]=g[1]; colF[n*3+2]=g[2]; }
+    const arr=(mode==='stress')?stressArr:junctionArr, base=f*N;
+    for(let n=0;n<N;n++){
+      if(nodeCell[n]<0){ colF[n*3]=colF[n*3+1]=colF[n*3+2]=0.47; continue; }
+      const g=heat(arr[base+n]); colF[n*3]=g[0]; colF[n*3+1]=g[1]; colF[n*3+2]=g[2]; }
   }
   geo.attributes.color.array.set(colF); geo.attributes.color.needsUpdate=true;
+}
+
+// ---- cadherin JUNCTION lines: draw each active bond as a segment between its two nodes ----
+const bondIdx = dec(P.bondidx_b64, Int32Array);          // (Btot*2)
+const bondOff = dec(P.bondoff_b64, Int32Array);          // (F+1)
+let jLine=null;
+if(m.hasmech && bondOff.length > 1){
+  const maxSeg = (bondOff[F]||0);
+  const jpos=new Float32Array(Math.max(maxSeg,1)*2*3);
+  const jgeo=new THREE.BufferGeometry();
+  jgeo.setAttribute('position', new THREE.BufferAttribute(jpos,3));
+  const jmat=new THREE.LineBasicMaterial({color:0xffe64d});   // bright yellow bonds
+  jLine=new THREE.LineSegments(jgeo, jmat); jLine.visible=false; scene.add(jLine);
+}
+function applyJunctions(f){
+  if(!jLine) return;
+  const on=document.getElementById('junon').checked;
+  jLine.visible=on;
+  if(!on) return;
+  const a=bondOff[f], b=bondOff[f+1], jpos=jLine.geometry.attributes.position.array;
+  let w=0;
+  for(let k=a;k<b;k++){
+    const i=bondIdx[k*2], j=bondIdx[k*2+1];
+    jpos[w++]=curPos[i*3]; jpos[w++]=curPos[i*3+1]; jpos[w++]=curPos[i*3+2];
+    jpos[w++]=curPos[j*3]; jpos[w++]=curPos[j*3+1]; jpos[w++]=curPos[j*3+2];
+  }
+  jLine.geometry.setDrawRange(0, (b-a)*2);
+  jLine.geometry.attributes.position.needsUpdate=true;
 }
 geo.computeVertexNormals();
 
@@ -476,7 +507,8 @@ function setFrame(f){
   elFrame.value=cur; elFnum.textContent='frame '+cur+'/'+(F-1);
   applySection();   // peel/slab depend on the (moved) positions
   updateNucleus();  // nucleus spheres track the (moved) centroids
-  applyColors(cur); // recolour by the current overlay (cell / junction / load)
+  applyColors(cur); // recolour by the current overlay (cell / stress / junction)
+  applyJunctions(cur); // redraw the active cadherin bonds for this frame
 }
 
 function applySection(){
@@ -520,8 +552,11 @@ function applySection(){
 }
 
 function updMode(){
-  elSlabRow.style.display = (elMode.value==='slab') ? '' : 'none';
-  elModeHint.textContent = elClipOn.checked ? HINTS[elMode.value] : '';
+  const on=elClipOn.checked;
+  document.getElementById('axisrow').style.display = on ? '' : 'none';   // section detail only when ON
+  document.getElementById('cutrow').style.display  = on ? '' : 'none';
+  elSlabRow.style.display = (on && elMode.value==='slab') ? '' : 'none';
+  elModeHint.textContent = on ? HINTS[elMode.value] : '';
   applySection(); updateNucleus();
 }
 
@@ -553,10 +588,15 @@ applyNuc();
 // ---- colour-overlay selector (cell id / junction contact / deformation load) ----
 const elCMode=document.getElementById('cmode'), elCHint=document.getElementById('cmodehint');
 const CHINTS={cell:'each cell a distinct colour',
-  junction:'blue→red = fraction of the cell apposed to neighbours (where cadherin junctions form)',
-  load:'blue→red = cell shape deformation (a proxy for the mechanical load it bears)'};
-elCMode.onchange=()=>{ elCHint.textContent=CHINTS[elCMode.value]; applyColors(cur); };
-elCHint.textContent=CHINTS[elCMode.value];
+  stress:'blue→red = |net mechanical force| per node (the DCM stress field, FEM-style)',
+  junction:'blue→red = number of active cadherin bonds per node'};
+elCMode.onchange=()=>{ elCHint.textContent=CHINTS[elCMode.value]||''; applyColors(cur); };
+elCHint.textContent=CHINTS[elCMode.value]||'';
+const elJunOn=document.getElementById('junon');
+if(!m.hasmech){ const jr=document.getElementById('junrow'); if(jr) jr.style.display='none';
+  const so=elCMode.querySelector('option[value=stress]'); if(so) so.remove();
+  const jo=elCMode.querySelector('option[value=junction]'); if(jo) jo.remove(); }
+if(elJunOn) elJunOn.onchange=()=>applyJunctions(cur);
 
 elThickv.textContent=(elThick.value/10).toFixed(0)+'%';
 elFpsv.textContent=fps;
