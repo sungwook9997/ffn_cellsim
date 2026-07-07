@@ -95,3 +95,32 @@ def build_fiber_network(fibers: list[np.ndarray], kappa: float | np.ndarray) -> 
     return FiberNetwork(pos=pos, fiber_offsets=np.array(offsets, dtype=np.int64),
                         segments=segments, bend_triples=bend_triples,
                         seg_rest=seg_rest, kappa=kappa_arr)
+
+
+def concat_fiber_networks(nets: list[FiberNetwork]) -> tuple[FiberNetwork, np.ndarray]:
+    """Stack several :class:`FiberNetwork` into one (nodes/segments/bend_triples/fiber_offsets/seg_rest/kappa
+    concatenated with index offsets) — so a merged network enters the SAME implicit bending K, each sub-net at
+    its own per-fiber κ (Thread-C: MT arms κ=KAPPA_MT ride the cortex's implicit solve at 300× stiffness).
+
+    Returns ``(merged, node_off)`` where sub-net ``k`` owns ``merged.pos[node_off[k]:node_off[k+1])``. Single-net
+    input round-trips identically (the compartment-OFF bit-identity guarantee)."""
+    pos_blocks, seg_blocks, tri_blocks, sr_blocks, kap_blocks = [], [], [], [], []
+    foff = [0]; node_off = [0]; nbase = 0
+    for net in nets:
+        n = net.pos.shape[0]
+        pos_blocks.append(net.pos)
+        if net.segments.size:
+            seg_blocks.append(net.segments + nbase)
+        if net.bend_triples.size:
+            tri_blocks.append(net.bend_triples + nbase)
+        sr_blocks.append(net.seg_rest); kap_blocks.append(np.atleast_1d(net.kappa))
+        foff.extend((np.asarray(net.fiber_offsets[1:]) + nbase).tolist())   # drop leading 0, offset by nbase
+        nbase += n; node_off.append(nbase)
+    merged = FiberNetwork(
+        pos=np.ascontiguousarray(np.concatenate(pos_blocks, 0)),
+        fiber_offsets=np.asarray(foff, np.int64),
+        segments=np.concatenate(seg_blocks, 0) if seg_blocks else np.zeros((0, 2), np.int64),
+        bend_triples=np.concatenate(tri_blocks, 0) if tri_blocks else np.zeros((0, 3), np.int64),
+        seg_rest=np.concatenate(sr_blocks, 0) if sr_blocks else np.zeros(0, np.float64),
+        kappa=np.concatenate(kap_blocks, 0))
+    return merged, np.asarray(node_off, np.int64)

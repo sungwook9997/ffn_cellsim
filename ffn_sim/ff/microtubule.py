@@ -31,7 +31,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ffn_sim.ff.fiber_network import build_fiber_network, FiberNetwork
+from ffn_sim.ff.fiber_network import build_fiber_network, concat_fiber_networks, FiberNetwork
 from ffn_sim.ff.units import KAPPA_MT, KBT
 
 
@@ -42,7 +42,7 @@ class MicrotubuleAster:
     mtoc: np.ndarray             # (3,) MTOC / centrosome position [µm]
     n_mt: int                    # number of tubes
     L_mt_um: float               # arm contour length [µm]
-    arm_base: np.ndarray         # (n_mt,) node index of each arm's innermost (MTOC-side) bead
+    arm_base: np.ndarray         # (n_mt,) node index of each arm's innermost (near-MTOC) bead
 
 
 def _fibonacci_directions(n: int) -> np.ndarray:
@@ -65,12 +65,43 @@ def build_microtubule_aster(centre=(0.0, 0.0, 0.0), *, n_mt: int = 40, L_mt_um: 
     if n_mt < 1 or L_mt_um <= 0 or seg_um <= 0:
         raise ValueError(f"n_mt={n_mt}, L_mt_um={L_mt_um}, seg_um={seg_um} must be positive")
     c = np.asarray(centre, np.float64)
-    n_beads = max(2, int(round(L_mt_um / seg_um)) + 1)     # includes the MTOC-side base bead
+    n_beads = max(2, int(round(L_mt_um / seg_um)))         # arm beads (the MTOC is a SEPARATE node, added at merge)
     dirs = _fibonacci_directions(n_mt)
-    fibers = [c[None, :] + np.arange(n_beads)[:, None] * seg_um * dirs[a][None, :] for a in range(n_mt)]
+    # arms run from ONE segment out (bead 0 at seg_um from the MTOC) → the MTOC↔base hub bond has finite rest seg_um
+    fibers = [c[None, :] + (1 + np.arange(n_beads))[:, None] * seg_um * dirs[a][None, :] for a in range(n_mt)]
     net = build_fiber_network(fibers, kappa=KAPPA_MT)
-    arm_base = (np.arange(n_mt) * n_beads).astype(np.int64)  # first bead index of each arm
+    arm_base = (np.arange(n_mt) * n_beads).astype(np.int64)  # innermost (near-MTOC) bead index of each arm
     return MicrotubuleAster(net=net, mtoc=c, n_mt=n_mt, L_mt_um=float(L_mt_um), arm_base=arm_base)
+
+
+def merge_aster_into_cortex(cortex_net: FiberNetwork, aster: MicrotubuleAster | None, *,
+                            k_hub_pn_um: float, seg_um: float = 0.5) -> dict:
+    """Merge the MT aster into the cortex fiber network for the SHARED implicit solve (Thread-C stage 1).
+
+    Returns a dict with the merged elastic network + the layout + the MTOC-hub crosslinks + MT node drag. The
+    merged bending K carries cortex (κ_actin) and MT (κ=KAPPA_MT) triples in one solve. The MTOC is a SEPARATE
+    node (index ``mtoc_idx``) held by finite-rest (``seg_um``) stiff crosslinks to each arm's innermost bead —
+    NOT a zero-length weld (which ``implicit_ff`` drops at L<1e-9). Node layout the driver assembles:
+    ``pos_all = [cortex(Nc) ; MT_arms(Nmt) ; MTOC(1) ; nucleus(n_nuc)]`` ⇒ ``Ne = Nc + Nmt + 1``.
+
+    ``aster is None`` → no-op passthrough (Nc==Ne, empty hub) → the --microtubules-OFF path is bit-identical."""
+    Nc = cortex_net.n_nodes
+    if aster is None:
+        return {"net": cortex_net, "Nc": Nc, "Ne": Nc, "mtoc_pos": np.zeros((0, 3)), "mtoc_idx": -1,
+                "hub_i": np.zeros(0, np.int64), "hub_j": np.zeros(0, np.int64),
+                "hub_k": np.zeros(0), "hub_rest": np.zeros(0), "mt_gammas": np.zeros(0)}
+    merged, node_off = concat_fiber_networks([cortex_net, aster.net])   # [cortex ; MT arms]
+    Nmt = aster.net.n_nodes
+    mtoc_idx = Nc + Nmt                                     # the MTOC node is appended after the MT arms
+    Ne = mtoc_idx + 1
+    base_idx = node_off[1] + aster.arm_base                 # arm innermost beads in the merged indexing
+    hub_i = np.full(aster.n_mt, mtoc_idx, np.int64)
+    hub_j = base_idx.astype(np.int64)
+    hub_k = np.full(aster.n_mt, float(k_hub_pn_um))
+    hub_rest = np.full(aster.n_mt, float(seg_um))          # finite rest = one segment (arms start at seg_um)
+    return {"net": merged, "Nc": Nc, "Ne": Ne, "mtoc_pos": aster.mtoc.reshape(1, 3), "mtoc_idx": mtoc_idx,
+            "hub_i": hub_i, "hub_j": hub_j, "hub_k": hub_k, "hub_rest": hub_rest,
+            "Nmt": Nmt, "n_mt": aster.n_mt}
 
 
 def euler_buckling_load(kappa_pn_um2: float = KAPPA_MT, L_um: float = 5.0) -> float:
@@ -86,5 +117,5 @@ def persistence_length_um(kappa_pn_um2: float = KAPPA_MT, kbt_pn_um: float = KBT
     return float(kappa_pn_um2 / kbt_pn_um)
 
 
-__all__ = ["MicrotubuleAster", "build_microtubule_aster", "euler_buckling_load", "persistence_length_um",
+__all__ = ["MicrotubuleAster", "build_microtubule_aster", "euler_buckling_load", "persistence_length_um", "merge_aster_into_cortex",
            "_fibonacci_directions"]
