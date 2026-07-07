@@ -173,6 +173,8 @@ _HTML = r"""<!DOCTYPE html><html><head><meta charset="utf-8">
      <span id="fnum"></span></div>
   <div class="row"><label>frame</label><input id="frame" type="range" min="0" value="0"></div>
   <div class="row"><label>fps</label><input id="fps" type="range" min="1" max="30" value="6"><span id="fpsv"></span></div>
+  <div class="row" id="nucrow"><label><input id="nucon" type="checkbox" checked> nucleus</label>
+     <span class="hint" style="margin-left:8px">off → cells opaque (see contacts)</span></div>
   <hr style="border-color:#333">
   <div class="row"><label><input id="clipon" type="checkbox"> section</label>
      <select id="mode">
@@ -471,6 +473,22 @@ elThick.oninput=()=>{elThickv.textContent=(elThick.value/10).toFixed(0)+'%';secR
 [elClipOn,elClip,elAxis,elFlip].forEach(e=>{e.oninput=secRefresh;e.onchange=secRefresh;});
 elClipOn.addEventListener('change',updMode);
 elMode.onchange=updMode;
+
+// ---- nucleus on/off toggle: nucleus ON → translucent membrane (see the nucleus inside);
+//      nucleus OFF → OPAQUE cells so the cell-cell CONTACT regions read clearly ----
+const elNucOn=document.getElementById('nucon');
+function applyNuc(){
+  if(nucMesh) nucMesh.visible = (nucOn && elNucOn.checked);
+  if(nucOn){
+    mat.transparent = elNucOn.checked;
+    mat.opacity     = elNucOn.checked ? 0.42 : 1.0;
+    mat.depthWrite  = !elNucOn.checked;
+    mat.needsUpdate = true;
+  }
+}
+if(!nucOn){ const nr=document.getElementById('nucrow'); if(nr) nr.style.display='none'; }
+elNucOn.onchange=applyNuc;
+applyNuc();
 
 elThickv.textContent=(elThick.value/10).toFixed(0)+'%';
 elFpsv.textContent=fps;
