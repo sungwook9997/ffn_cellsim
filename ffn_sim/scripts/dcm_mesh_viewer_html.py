@@ -128,6 +128,37 @@ def main() -> None:
                     rmin = dr
             rnuc_cell[i] = min(rnuc_abs, rmin * 0.99)
 
+    # Per-frame per-cell overlays the viewer can colour by (derived from geometry — no sim re-run):
+    #   junction = fraction of the cell's surface nodes apposed (<0.6µm) to ANOTHER cell → how much
+    #              cell-cell junction/contact each cell has (cadherin bonds form on apposed faces).
+    #   load     = per-cell asphericity (shape deformation) → a proxy for the mechanical load it bears.
+    from scipy.spatial import cKDTree as _KDT
+    junction = np.zeros((F, C), np.float32)
+    load = np.zeros((F, C), np.float32)
+    _cellnodes = [np.where(cof == c)[0] for c in cells]
+    for fi in range(F):
+        P = frames[fi]                                  # (N,3) µm
+        tree = _KDT(P)
+        for i, idx in enumerate(_cellnodes):
+            if idx.size < 4:
+                continue
+            # nearest neighbour that is NOT in this cell → apposition test
+            dists, nbrs = tree.query(P[idx], k=6)
+            apposed = np.zeros(idx.size, bool)
+            for k in range(1, 6):
+                other = node_cell[nbrs[:, k]] != i
+                apposed |= other & (dists[:, k] < 0.6)
+            junction[fi, i] = apposed.mean()
+            dd = P[idx] - P[idx].mean(0)
+            ev = np.sort(np.linalg.eigvalsh(dd.T @ dd))[::-1]
+            s = ev.sum()
+            load[fi, i] = (ev[0] - 0.5 * (ev[1] + ev[2])) / s if s > 0 else 0.0
+    # normalise each overlay to [0,1] for a stable colour map
+    for A in (junction, load):
+        mn, mx = float(A.min()), float(A.max())
+        if mx > mn:
+            A[:] = (A - mn) / (mx - mn)
+
     meta = {
         "F": int(F), "N": int(N), "M": int(M), "C": C,
         "lo": lo.tolist(), "span": span.tolist(),
@@ -143,6 +174,8 @@ def main() -> None:
         "colors_b64": _b64(colors),                      # (N,3) uint8, constant
         "palette_b64": _b64(palette),                    # (C,3) uint8 per-cell colour (nucleus tint)
         "rnuc_b64": _b64(rnuc_cell),                      # (C,) float32 per-cell FIXED nucleus radius [µm]
+        "junction_b64": _b64(junction),                  # (F,C) float32 per-cell junction/contact [0,1]
+        "load_b64": _b64(load),                          # (F,C) float32 per-cell deformation/load [0,1]
         "q_b64": _b64(q),                                # (F,N,3) uint16
     }
     html = _HTML.replace("/*__PAYLOAD__*/", json.dumps(payload))
@@ -175,6 +208,13 @@ _HTML = r"""<!DOCTYPE html><html><head><meta charset="utf-8">
   <div class="row"><label>fps</label><input id="fps" type="range" min="1" max="30" value="6"><span id="fpsv"></span></div>
   <div class="row" id="nucrow"><label><input id="nucon" type="checkbox" checked> nucleus</label>
      <span class="hint" style="margin-left:8px">off → cells opaque (see contacts)</span></div>
+  <div class="row"><label>colour</label>
+     <select id="cmode">
+        <option value="cell" selected>cell id</option>
+        <option value="junction">junction (cell-cell contact)</option>
+        <option value="load">deformation / load</option>
+     </select></div>
+  <div class="row hint" id="cmodehint"></div>
   <hr style="border-color:#333">
   <div class="row"><label><input id="clipon" type="checkbox"> section</label>
      <select id="mode">
@@ -242,6 +282,25 @@ idxBuf.set(facesAll);
 geo.setIndex(new THREE.BufferAttribute(idxBuf,1));
 geo.setAttribute('position',new THREE.BufferAttribute(framePos(0),3));
 geo.setAttribute('color',new THREE.BufferAttribute(colF,3));
+
+// ---- per-cell OVERLAY colouring: cell-id | junction (cell-cell contact) | deformation/load ----
+const junctionArr = dec(P.junction_b64, Float32Array);   // F*C in [0,1]
+const loadArr     = dec(P.load_b64, Float32Array);       // F*C in [0,1]
+function heat(t){ t=Math.max(0,Math.min(1,t));           // blue→cyan→green→yellow→red
+  return [Math.max(0,Math.min(1,1.5-Math.abs(4*t-3))),
+          Math.max(0,Math.min(1,1.5-Math.abs(4*t-2))),
+          Math.max(0,Math.min(1,1.5-Math.abs(4*t-1)))]; }
+function applyColors(f){
+  const mode=document.getElementById('cmode').value;
+  if(mode==='cell'){ for(let i=0;i<N*3;i++) colF[i]=colU[i]/255; }
+  else {
+    const arr=(mode==='junction')?junctionArr:loadArr, base=f*C;
+    for(let n=0;n<N;n++){ const c=nodeCell[n];
+      if(c<0){ colF[n*3]=colF[n*3+1]=colF[n*3+2]=0.47; continue; }
+      const g=heat(arr[base+c]); colF[n*3]=g[0]; colF[n*3+1]=g[1]; colF[n*3+2]=g[2]; }
+  }
+  geo.attributes.color.array.set(colF); geo.attributes.color.needsUpdate=true;
+}
 geo.computeVertexNormals();
 
 // ---------- clip plane (shared by all clip-using materials) ----------
@@ -417,6 +476,7 @@ function setFrame(f){
   elFrame.value=cur; elFnum.textContent='frame '+cur+'/'+(F-1);
   applySection();   // peel/slab depend on the (moved) positions
   updateNucleus();  // nucleus spheres track the (moved) centroids
+  applyColors(cur); // recolour by the current overlay (cell / junction / load)
 }
 
 function applySection(){
@@ -489,6 +549,14 @@ function applyNuc(){
 if(!nucOn){ const nr=document.getElementById('nucrow'); if(nr) nr.style.display='none'; }
 elNucOn.onchange=applyNuc;
 applyNuc();
+
+// ---- colour-overlay selector (cell id / junction contact / deformation load) ----
+const elCMode=document.getElementById('cmode'), elCHint=document.getElementById('cmodehint');
+const CHINTS={cell:'each cell a distinct colour',
+  junction:'blue→red = fraction of the cell apposed to neighbours (where cadherin junctions form)',
+  load:'blue→red = cell shape deformation (a proxy for the mechanical load it bears)'};
+elCMode.onchange=()=>{ elCHint.textContent=CHINTS[elCMode.value]; applyColors(cur); };
+elCHint.textContent=CHINTS[elCMode.value];
 
 elThickv.textContent=(elThick.value/10).toFixed(0)+'%';
 elFpsv.textContent=fps;
