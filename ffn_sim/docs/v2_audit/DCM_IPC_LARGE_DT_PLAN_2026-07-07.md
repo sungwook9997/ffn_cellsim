@@ -119,9 +119,23 @@ derived from existing sourced constants. dP0 stays an explicit physiological pre
     loosen the V/V0 contract.** The honest conclusion: mechanics takes large dt STABLY, but accurate
     large-dt physics for the 24–48h aggregate needs the soft/cadherin drivers SUB-CYCLED at their own
     (~36 ms) timescale — the multiscale layer the memory + this plan's honest-cost note anticipated.
-- **Step 5 🔜 (PI decision)** — cadherin/soft sub-cycling (mechanics large-dt + soft micro-steps), OR
-  accept mechanics-only large-dt with the documented soft-lag caveat, THEN the Voronoi-confluent aggregate
-  run on gbook GPU. PI picks the path.
+- **Step 5 ✅ (70c1a9e; PI chose to build sub-cycling)** — cadherin KMC sub-cycling. The soft-lag
+  ceiling's compaction-driver component is the bond KMC advanced over dt_batch=batch_steps·accel_dt ≫
+  the ~36 ms lifetime: one saturated pass loses koff's force-dependence (1−exp(−koff·dt)→1), drifting
+  the steady bound fraction. Fix (operator split, mechanics-frozen): advance the KMC in
+  n_sub micro-steps of δt_cad=1/(micro_M·k_ref), k_ref=max(k_on, koff at max FORMABLE stretch) — resolve
+  the fastest *persisting*-bond rate (rupture koff→millions but those can't form → irrelevant).
+  `dcm_cadherin_host` update()/update_gpu() + a derived cadence (batch=clamp(floor(τ_cad/dt),1,cad_batch)).
+  n_sub=1 at base dt → byte-identical. **Gate 5 (`tests/test_cad_subcycle_gate5.py`): PASS** — steady
+  bound fraction vs true 0.122: no-sub drifts 0.010/0.121/**0.772** at 2×/20×/200× (saturates); sub
+  recovers 0.000/0.003/**0.021**.
+- **Step 6 🔜 (production validation + run)** — (a) gbook GPU smoke of update_gpu (mirrors update() but
+  CUDA-untested locally); (b) a cadherin-DRIVEN compaction run base-dt vs large-dt to confirm dt-invariant
+  COMPACTION (not just bond fraction); (c) the Voronoi-confluent 24–48 h aggregate run on gbook.
+  Caveat still open: if the production config also uses CONTINUOUS node-face cohesion (`--coupling`), its
+  *positional* lag (the Gate-4b cohesion-proxy drift) is separate from the KMC kinetic lag and would need
+  the continuous soft force in the residual/energy or mechanics sub-stepping — but the junction-mediated
+  design uses cadherin bonds as the adhesion, which Step 5 now resolves.
 
 ---
 *Full workflow transcript (XPBD + IPC designs + synthesis): run wf_056df109-3dd. The adversarial-reviewer
