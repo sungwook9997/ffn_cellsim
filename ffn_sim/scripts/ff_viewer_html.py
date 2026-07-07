@@ -62,6 +62,9 @@ def build_viewer(scenes: dict, out: str, title: str = "FF viewer") -> str:
                 fr = [np.asarray(f, dtype=np.float32).reshape(-1, 3) for f in L["frames"]]
                 entry["frames"] = [_b64(f, np.float32) for f in fr]
                 all_pts.append(fr[-1])                            # last frame bounds the box (elongated tip)
+            if L.get("color_frames") is not None:                 # FEM field: per-vertex per-frame colors (N,3) uint8
+                entry["color_frames"] = [_b64(np.asarray(cf, np.uint8).reshape(-1, 3), np.uint8) for cf in L["color_frames"]]
+                entry["cbar"] = L.get("cbar", "")                 # legend string for the field range
             pl.append(entry)
         payload_scenes[sname] = pl
     allp = np.concatenate(all_pts, axis=0) if all_pts else np.zeros((1, 3), np.float32)
@@ -105,6 +108,8 @@ function dec(b64){const s=atob(b64);const u=new Uint8Array(s.length);
   for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return new Float32Array(u.buffer);}
 function dec32(b64){const s=atob(b64);const u=new Uint8Array(s.length);
   for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return new Uint32Array(u.buffer);}
+function decU8(b64){const s=atob(b64);const u=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}   // (N*3,) uint8 per-vertex colors (FEM field)
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(devicePixelRatio);
@@ -138,10 +143,15 @@ function clearScene(){ for(const o of current){ scene.remove(o); if(o.geometry)o
 
 function setFrame(i){
   for(const a of animated){
-    if(i>=a.frames.length) continue;
-    const v=dec(a.frames[i]); a.obj.geometry.setAttribute('position',new THREE.BufferAttribute(v,3));
-    a.obj.geometry.attributes.position.needsUpdate=true; a.obj.geometry.computeBoundingSphere();
-    if(a.obj.type==='Mesh') a.obj.geometry.computeVertexNormals();
+    if(a.frames && i<a.frames.length){
+      const v=dec(a.frames[i]); a.obj.geometry.setAttribute('position',new THREE.BufferAttribute(v,3));
+      a.obj.geometry.attributes.position.needsUpdate=true; a.obj.geometry.computeBoundingSphere();
+      if(a.obj.type==='Mesh') a.obj.geometry.computeVertexNormals();
+    }
+    if(a.color_frames && i<a.color_frames.length){   // FEM field: swap per-vertex colors this frame
+      a.obj.geometry.setAttribute('color', new THREE.BufferAttribute(decU8(a.color_frames[i]),3,true));
+      a.obj.geometry.attributes.color.needsUpdate=true;
+    }
   }
   document.getElementById('frame').value=i;
   document.getElementById('fnum').textContent=`${i}/${P.n_frames-1}`;
@@ -174,7 +184,9 @@ function showScene(name){
     }else if(L.kind==='mesh'){
       const idx=dec32(L.faces_b64); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.computeVertexNormals();
       const op=(L.opacity===undefined)?1.0:L.opacity;
-      const mat=new THREE.MeshStandardMaterial({color:L.color,transparent:op<1.0,opacity:op,
+      const hasField=!!L.color_frames;
+      if(hasField){ geo.setAttribute('color', new THREE.BufferAttribute(decU8(L.color_frames[0]),3,true)); }  // FEM field per-vertex color
+      const mat=new THREE.MeshStandardMaterial({color:L.color,vertexColors:hasField,transparent:op<1.0,opacity:op,
         side:THREE.DoubleSide,roughness:0.55,metalness:0.0,flatShading:false,
         depthWrite:(op>=0.5)});   // faint envelopes (cortex hull) don't write depth → don't occlude the nucleus inside
       o=new THREE.Mesh(geo,mat); scene.add(o); current.push(o);
@@ -183,7 +195,7 @@ function showScene(name){
       o=new THREE.Points(geo,mat); o.userData.pts=true; scene.add(o); current.push(o);
     }
     if(L.clip){ clipMats.push(o.material); }   // cortex/outline get cut; nucleus/aster stay whole
-    if(L.frames){ animated.push({obj:o, frames:L.frames}); }
+    if(L.frames || L.color_frames){ animated.push({obj:o, frames:L.frames, color_frames:L.color_frames}); }
     leg.push([L.color,L.name]);
   }
   applyClip();

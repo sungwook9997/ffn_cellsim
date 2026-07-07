@@ -19,6 +19,28 @@ from scipy.spatial import ConvexHull
 from ffn_sim.scripts.ff_viewer_html import build_viewer
 
 
+def _smooth_field(field, faces, N, passes=3):
+    """Laplacian-smooth a per-node field over the cortex SURFACE mesh (average each node with its face-edge
+    neighbours), ``passes`` times → a readable FEM-style field instead of grainy per-node discrete virial. Pure
+    averaging (no magnitude change beyond diffusion); the raw per-node values remain the ground truth."""
+    edges = np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]], 0)
+    i = np.concatenate([edges[:, 0], edges[:, 1]]); j = np.concatenate([edges[:, 1], edges[:, 0]])
+    deg = np.maximum(np.bincount(i, minlength=N), 1)
+    out = np.asarray(field, np.float64).copy()
+    for _ in range(passes):
+        acc = np.bincount(i, weights=out[j], minlength=N)
+        out = 0.5 * out + 0.5 * (acc / deg)                  # blend self + neighbour mean (stable)
+    return out
+
+
+def _turbo_colors(scalar_frames, lo, hi):
+    """(F,N) scalar → list of (N,3) uint8 per frame via the turbo colormap, clipped to a GLOBAL [lo,hi] range
+    (so the color scale is consistent across the animation). Low=blue, high=red — the FEM stress/strain look."""
+    import matplotlib.cm as cm
+    turbo = cm.get_cmap("turbo"); rng = max(float(hi) - float(lo), 1e-12)
+    return [(turbo(np.clip((np.asarray(s) - lo) / rng, 0.0, 1.0))[:, :3] * 255).astype(np.uint8) for s in scalar_frames]
+
+
 def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None = None,
           max_fibers: int = 0) -> dict:
     d = np.load(npz_path)
@@ -54,8 +76,11 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     mt_seg = np.array([(n, n + 1) for f in range(len(foff) - 1) if int(foff[f]) >= Nc
                        for n in range(int(foff[f]), int(foff[f + 1]) - 1)], dtype=np.int64) if has_mt else np.zeros((0, 2), np.int64)
     fil_fr = [frames[t][cort_seg] for t in range(T)]         # cortex filament segments (all node ids < Nc)
-    faces = ConvexHull(cortex[0]).simplices
+    faces = np.asarray(d["faces"], np.int64) if "faces" in d else ConvexHull(cortex[0]).simplices
     cortex_fr = [cortex[t] for t in range(T)]
+    # FEM-style per-node fields (if the sim saved them): von-Mises stress σ_vm [Pa] + areal strain over the cortex
+    svm = np.asarray(d["svm"], np.float64) if "svm" in d else None          # (T, Nc)
+    cstrain = np.asarray(d["cstrain"], np.float64) if "cstrain" in d else None
     layers = [
         {"name": fib_label, "kind": "lines", "verts": fil_fr[0], "color": "#8fbff0",
          "size": 1.5, "frames": fil_fr, "clip": True},
@@ -91,9 +116,29 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     T_s = float(d["times"][-1]) if "times" in d else 0.0
     v = along / T_s * 1e3 if T_s > 0 else 0.0
     ttl = title or f"FF crawl — disp∥={along:+.3f} µm, v={v:+.1f} nm/s over {T_s:.1f} s (real η-dynamics)"
-    build_viewer(scenes={"crawl": layers}, out=out, title=ttl)
+
+    scenes = {"shape": layers}
+    # FEM-style field scenes: the cortex surface (hull) colored per-node by the SIM's von-Mises stress / areal
+    # strain, animated per frame. Reuses the scene dropdown. Context (MT/nucleus/substrate/COM) kept; the faint
+    # shape hull + filaments are replaced by the opaque colored surface (CUT still reveals the interior).
+    if svm is not None:
+        context = [L for L in layers if L["name"] != fib_label and not L["name"].startswith("cortex hull")]
+
+        def field_scene(field, unit, label):
+            sm = [_smooth_field(field[t], np.asarray(faces), Nc) for t in range(T)]   # readable FEM-style surface field
+            lo, hi = float(np.percentile(sm, 2)), float(np.percentile(sm, 98))
+            cols = _turbo_colors(sm, lo, hi)
+            hull = {"name": f"{label}  [{lo:.3g}–{hi:.3g} {unit}, turbo blue→red]", "kind": "mesh",
+                    "verts": cortex[0], "faces": faces, "color": "#ffffff", "opacity": 0.97,
+                    "frames": cortex_fr, "color_frames": cols, "clip": True}
+            return [hull] + context
+        scenes["σ_vm stress"] = field_scene(svm, "Pa", "cortex von-Mises σ_vm (virial: xl+myosin+turgor)")
+        if cstrain is not None:
+            scenes["areal strain"] = field_scene(cstrain, "", "cortex areal strain (vs rest)")
+
+    build_viewer(scenes=scenes, out=out, title=ttl)
     return {"out": out, "frames": T, "disp_along_um": along, "v_nm_s": v, "T_s": T_s,
-            "n_front": int(front_idx.size), "faces": int(len(faces))}
+            "n_front": int(front_idx.size), "faces": int(len(faces)), "scenes": list(scenes.keys())}
 
 
 def main():
