@@ -266,6 +266,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    remesh_period: int = 0, pool_factor: float = 0.5,
                    edge_edge: bool = False, cfl_limit: float = 0.0, max_substeps: int = 16,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
+                   cad_subcycle: bool = True, cad_micro_M: int = 8,
                    cad_bundle: float = 1.0, cad_contract: float = 0.0, cad_rbind: float = 0.0,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
@@ -675,6 +676,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         cad = CadherinBondHost(cof=cof_a, n_cells=n_cells, dt=dt,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
                                                      r_bind=rbind_meso, batch_steps=cad_batch,
+                                                     subcycle=cad_subcycle, micro_M=cad_micro_M,
                                                      bundle_n=cad_bundle, f_contract=cad_contract))
         # Accelerate the bond KINETICS by S (NOT the FORCE): the on-rate k_on and the entire
         # force-dependent off-rate k_off(F) lookup table are multiplied by S, so bonds form and
@@ -683,6 +685,16 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         if S_accel != 1.0:
             cad.p.k_on *= S_accel
             cad._koff *= S_accel
+        if cad_subcycle and cad.p.k_on > 0.0:
+            # #1 Step 5: at large mechanics dt the KMC must ALSO be CALLED often enough that mechanics
+            # sees FRESH bonds — at least once per cadherin timescale τ_cad=1/k_on. Derived cadence
+            # (not tuned): batch = clamp(floor(τ_cad/dt), 1, cad_batch). Combined with the in-call
+            # sub-cycling (dcm_cadherin_host.update_gpu) this resolves BOTH the intra-batch bond
+            # turnover AND the bond↔mechanics coupling at large dt. At base dt this is a no-op
+            # (floor(τ_cad/dt) ≫ cad_batch → stays cad_batch).
+            tau_cad = 1.0 / float(cad.p.k_on)
+            cad.batch_steps = max(1, min(cad.batch_steps, int(tau_cad / max(dt, 1e-30))))
+            cad.dt_batch = cad.batch_steps * cad.dt
         # A1: node-FACE coupling. By default the sparse cadherin node-NODE bonds are the sole
         # adhesion (coh_adh=0) — but they bond only the few apposed node-pairs (~6/junction,
         # mesh-density-limited) so cells touch at POINTS and stay round (Ψ≈0.99 "bag of marbles";
@@ -1839,6 +1851,12 @@ def main():
     ap.add_argument("--cadherin", action="store_true", help="E1: explicit cadherin catch-bonds (fine-grained adhesion; replaces cohesion tent + M3 switch; de-cohesion emergent)")
     ap.add_argument("--ecm-clutch", action="store_true", help="C6: explicit Pereverzev catch-slip integrin-ECM clutch (replaces the wetting proxy; traction-limited spread)")
     ap.add_argument("--cad-batch", type=int, default=50, help="E1 cadherin bond-management cadence (host-hybrid; 50 keeps the GPU↔CPU sync amortised)")
+    ap.add_argument("--no-cad-subcycle", action="store_false", dest="cad_subcycle",
+                    help="#1 Step 5: DISABLE cadherin KMC sub-cycling (default ON). With it on, the "
+                         "bond KMC is resolved at δt_cad=1/(micro_M·k_on) so large mechanics dt does not "
+                         "overshoot the ~36ms turnover; off = single saturated pass per batch (the lag).")
+    ap.add_argument("--cad-micro-M", type=int, default=8, dest="cad_micro_M",
+                    help="#1 Step 5: cadherin KMC micro-steps per timescale 1/k_on (δt_cad=1/(M·k_on))")
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
     ap.add_argument("--cad-contract", type=float, default=0.0, help="Stage-2 compaction motor: active actomyosin junctional CONTRACTION [N per single trans-dimer, bundle-scaled]. Always pulls bonded cells together (RhoA/ROCK-gated NMII the passive catch-bond lacks). SWEEP as a controlled variable (per-motor ~5-15pN × engaged); 0=off. NEVER tune to a compaction target.")
     ap.add_argument("--cad-rbind", type=float, default=0.0, help="Stage-1 long-range reach: ECM-tether (fibronectin, µm-scale) cadherin bond capture radius [µm] override; bridges a LOOSE aggregate (bonds=0 at cadherin's ~1.8µm range otherwise). 0=use c_adh.")
@@ -1933,6 +1951,7 @@ def main():
         remesh_period=args.remesh_period, pool_factor=args.pool_factor,
         edge_edge=args.edge_edge, cfl_limit=args.cfl_limit, max_substeps=args.max_substeps,
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
+        cad_subcycle=args.cad_subcycle, cad_micro_M=args.cad_micro_M,
         cad_bundle=args.cad_bundle, cad_contract=args.cad_contract, cad_rbind=args.cad_rbind,
         ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,

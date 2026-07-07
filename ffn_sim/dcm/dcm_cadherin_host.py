@@ -61,6 +61,17 @@ class CadherinParams:
     # variable anchored to junctional actomyosin tension (per-motor ~5-15 pN × engaged motors); never
     # tune to a compaction target. Applied as f_contract·bundle_n along each bond (always contracting).
     f_contract: float = 0.0
+    # #1 Step 5: multiscale KMC sub-cycling. The exact survival 1−exp(−k·Δt) needs k·Δt SMALL (k_off
+    # ~constant over the increment); at a large mechanics accel_dt, dt_batch=batch_steps·accel_dt can
+    # be ≫ the ~36 ms bond lifetime (1/k_on), so a single KMC pass overshoots the turnover (all loaded
+    # bonds break + all free nodes bind in one saturated step → wrong junction remodelling). Sub-cycle
+    # instead: advance the KMC in n_sub micro-steps of δt_cad = 1/(micro_M·k_on) — a DERIVED fraction of
+    # the physical cadherin timescale (grid-invariant, not tuned). n_sub=1 whenever dt_batch ≤ δt_cad
+    # (base dt) → byte-identical to the single-pass version. k_on here is the CURRENT (S_accel-scaled)
+    # rate, so the biology-time-acceleration wrinkle stays consistent automatically.
+    subcycle: bool = True
+    micro_M: int = 8               # micro-steps per cadherin timescale 1/k_on (δt_cad = 1/(M·k_on))
+    micro_cap: int = 512           # hard ceiling on n_sub/call (logged if hit; no silent truncation)
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 
@@ -92,6 +103,10 @@ class CadherinBondHost:
         self.dt = float(dt)
         self.batch_steps = self.p.batch_steps
         self.dt_batch = self.batch_steps * self.dt
+        self.subcycle = bool(self.p.subcycle)
+        self.micro_M = int(self.p.micro_M)
+        self.micro_cap = int(self.p.micro_cap)
+        self._subcycle_logged = False
         self._rng = np.random.default_rng(self.p.seed)
         self._fs, self._koff = _build_koff_table(self.p.catch)
         # dynamic bond set: (M,2) node-index pairs (i in cell A, j in cell B); each node ≤1 bond
@@ -103,10 +118,40 @@ class CadherinBondHost:
     def _koff_of(self, F: np.ndarray) -> np.ndarray:
         return np.interp(F, self._fs, self._koff)
 
+    def _n_subcycle(self):
+        """(n_sub, dt_sub) for advancing the KMC over dt_batch. δt_cad = 1/(micro_M·k_ref) with
+        k_ref = max(k_on, koff at the MAX FORMABLE stretch k_trans·(r_bind−r0)) — the fastest rate a
+        *persisting* bond can have (bonds beyond r_bind can't form, and koff→millions there = instant
+        rupture, irrelevant to the steady population). Resolving to k_ref keeps koff·δt ≤ 1/micro_M for
+        every formable bond, so 1−exp(−koff·δt)≈koff·δt stays linear and the steady fraction is
+        dt-invariant. n_sub=1 whenever dt_batch is already ≤ δt_cad (base dt) → byte-identical."""
+        kon = float(self.p.k_on)
+        if not (self.subcycle and self.dt_batch > 0.0 and kon > 0.0):
+            return 1, float(self.dt_batch)
+        f_maxform = float(self.p.k_trans) * max(0.0, float(self.p.r_bind) - float(self.p.r0_trans))
+        k_ref = max(kon, float(np.interp(f_maxform, self._fs, self._koff)))
+        n_sub = int(np.ceil(self.dt_batch * float(self.micro_M) * k_ref))
+        n_sub = max(1, min(n_sub, self.micro_cap))
+        dt_sub = float(self.dt_batch) / float(n_sub)
+        if n_sub > 1 and not self._subcycle_logged:
+            print(f"  [cad-subcycle] dt_batch={self.dt_batch:.2e}s → {n_sub} micro-steps @ "
+                  f"δt_cad={dt_sub*1e3:.3f}ms (k_ref={k_ref:.0f}/s = max[k_on, slip@r_bind])"
+                  f"{' (CAPPED — fastest bonds under-resolved)' if n_sub >= self.micro_cap else ''}",
+                  flush=True)
+            self._subcycle_logged = True
+        return n_sub, dt_sub
+
     def update(self, P: np.ndarray) -> None:
-        """One binder tick: force-dependent BREAK of existing bonds, then FORM new bonds on
-        apposed unbonded node pairs of different cells. ``P`` = current node positions (N,3)."""
+        """One binder update over ``dt_batch``. #1 Step 5: SUB-CYCLED at the cadherin timescale — the
+        break+form tick is applied n_sub times at δt_cad=1/(micro_M·k_on) so a large mechanics dt does
+        not overshoot the ~36ms turnover. n_sub=1 at base dt → byte-identical (same RNG draw order)."""
         P = np.asarray(P, dtype=np.float64)
+        n_sub, dt_sub = self._n_subcycle()
+        for _ in range(n_sub):
+            self._tick(P, dt_sub)
+
+    def _tick(self, P: np.ndarray, dt: float) -> None:
+        """One break+form pass advancing the KMC by ``dt`` at frozen positions ``P``."""
         cof = self.cof
         # --- BREAK (catch-slip, force-dependent) ---
         if self.bonds.shape[0]:
@@ -116,7 +161,7 @@ class CadherinBondHost:
             i, j = i[live], j[live]
             L = np.linalg.norm(P[i] - P[j], axis=1)
             F = self.p.k_trans * np.maximum(0.0, L - self.p.r0_trans)
-            p_break = 1.0 - np.exp(-self._koff_of(F) * self.dt_batch)
+            p_break = 1.0 - np.exp(-self._koff_of(F) * dt)
             keep = self._rng.random(i.size) >= p_break
             self.n_broken += int((~keep).sum())
             self.bonds = np.stack([i[keep], j[keep]], axis=1)
@@ -127,9 +172,9 @@ class CadherinBondHost:
             bonded[self.bonds[:, 1]] = True
         free = np.flatnonzero((cof >= 0) & (~bonded))
         if free.size >= 2:
-            self._form(P, free, bonded)
+            self._form(P, free, bonded, dt)
 
-    def _form(self, P, free, bonded):
+    def _form(self, P, free, bonded, dt: float):
         from scipy.spatial import cKDTree
         cof = self.cof
         pts = P[free]
@@ -142,7 +187,7 @@ class CadherinBondHost:
         a, b = a[diff], b[diff]
         if a.size == 0:
             return
-        p_on = 1.0 - np.exp(-self.p.k_on * self.dt_batch)
+        p_on = 1.0 - np.exp(-self.p.k_on * dt)
         fire = self._rng.random(a.size) < p_on
         a, b = a[fire], b[fire]
         # greedily accept pairs keeping the "≤1 trans-dimer per node" invariant
@@ -199,39 +244,44 @@ class CadherinBondHost:
         return self._dev
 
     def update_gpu(self, pos_d, cof_d, node_f32, N: int, batch_index: int, device) -> None:
-        """One GPU-native binder tick — break + mutual-nearest form entirely on the device.
-        ``node_f32`` = current float32 node positions (this builds its own r_bind grid on them)."""
+        """GPU-native binder tick — break + mutual-nearest form on the device, advancing ``dt_batch``
+        of physical time. #1 Step 5: SUB-CYCLED at the cadherin timescale — when dt_batch ≫ 1/k_on
+        (large mechanics dt) the KMC is resolved in ``n_sub`` micro-steps of δt_cad=1/(micro_M·k_on)
+        rather than one saturated pass (which would break every loaded bond + bind every free node in a
+        single 4 s jump). Positions are frozen over the sub-cycle (operator split: the fast bonds relax
+        at xₙ), so the r_bind grid is built ONCE. n_sub=1 at base dt → byte-identical (same RNG salt)."""
         import warp as wp
         from ffn_sim.dcm.dcm_cadherin_gpu import (cad_break_kernel, cad_partner_kernel, cad_form_kernel)
         d = self._ensure_gpu(N, device)
-        d["grid"].build(points=node_f32, radius=float(self.p.r_bind))   # r_bind cell size → valid r_bind query
-        cur = d["bondsA"] if d["which"] == "A" else d["bondsB"]
-        other = d["bondsB"] if d["which"] == "A" else d["bondsA"]
-        n = int(d["n"])
-        d["count"].zero_(); d["bonded"].zero_()
-        p_on = float(self.p.k_on) * float(self.dt_batch)
-        p_on = 1.0 - np.exp(-p_on)
-        sb = wp.int32(((2 * batch_index) * N) % 2000000000)      # disjoint RNG salt ranges: break vs form
-        sf = wp.int32(((2 * batch_index + 1) * N) % 2000000000)
-        wp.launch(cad_break_kernel, dim=max(n, 1), inputs=[
-            cur, wp.int32(n), pos_d, cof_d,
-            wp.float64(self.p.k_trans), wp.float64(self.p.r0_trans), wp.float64(self.dt_batch),
-            d["koff_d"], wp.float64(d["fs0"]), wp.float64(d["df"]), wp.int32(d["nk"]),
-            wp.int32(self.p.seed), sb, other, d["count"], d["bonded"]], device=device)
-        wp.launch(cad_partner_kernel, dim=N, inputs=[
-            d["grid"].id, node_f32, pos_d, cof_d, d["bonded"], wp.float64(self.p.r_bind),
-            d["partner"]], device=device)
-        wp.launch(cad_form_kernel, dim=N, inputs=[
-            d["partner"], wp.int32(N), wp.float64(p_on), wp.int32(self.p.seed), sf,
-            wp.int32(d["cap"]), other, d["count"]], device=device)
-        new_n = min(int(d["count"].numpy()[0]), d["cap"])   # tiny scalar sync (per batch, not per step)
-        # bond churn bookkeeping (approx: net change split into formed/broken for logging parity)
-        self.n_broken += max(0, n - new_n)
-        self.n_formed += max(0, new_n - n)
-        d["which"] = "B" if d["which"] == "A" else "A"
-        d["bonds"] = other
-        d["n"] = new_n
-        self._n_gpu = new_n
+        d["grid"].build(points=node_f32, radius=float(self.p.r_bind))   # positions frozen → build once
+        n_sub, dt_sub = self._n_subcycle()
+        p_on = 1.0 - np.exp(-float(self.p.k_on) * dt_sub)
+        for isub in range(n_sub):
+            cur = d["bondsA"] if d["which"] == "A" else d["bondsB"]
+            other = d["bondsB"] if d["which"] == "A" else d["bondsA"]
+            n = int(d["n"])
+            d["count"].zero_(); d["bonded"].zero_()
+            tick = batch_index if n_sub == 1 else (batch_index * self.micro_cap + isub)   # base dt: original salt
+            sb = wp.int32(((2 * tick) * N) % 2000000000)          # disjoint RNG salt ranges: break vs form
+            sf = wp.int32(((2 * tick + 1) * N) % 2000000000)
+            wp.launch(cad_break_kernel, dim=max(n, 1), inputs=[
+                cur, wp.int32(n), pos_d, cof_d,
+                wp.float64(self.p.k_trans), wp.float64(self.p.r0_trans), wp.float64(dt_sub),
+                d["koff_d"], wp.float64(d["fs0"]), wp.float64(d["df"]), wp.int32(d["nk"]),
+                wp.int32(self.p.seed), sb, other, d["count"], d["bonded"]], device=device)
+            wp.launch(cad_partner_kernel, dim=N, inputs=[
+                d["grid"].id, node_f32, pos_d, cof_d, d["bonded"], wp.float64(self.p.r_bind),
+                d["partner"]], device=device)
+            wp.launch(cad_form_kernel, dim=N, inputs=[
+                d["partner"], wp.int32(N), wp.float64(p_on), wp.int32(self.p.seed), sf,
+                wp.int32(d["cap"]), other, d["count"]], device=device)
+            new_n = min(int(d["count"].numpy()[0]), d["cap"])   # scalar sync per micro-step
+            self.n_broken += max(0, n - new_n)
+            self.n_formed += max(0, new_n - n)
+            d["which"] = "B" if d["which"] == "A" else "A"
+            d["bonds"] = other
+            d["n"] = new_n
+        self._n_gpu = int(d["n"])
 
     def bonds_now(self) -> np.ndarray:
         """Current (M,2) bond node-pairs — device download in GPU mode, else the host array."""
