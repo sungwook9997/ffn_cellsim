@@ -66,6 +66,24 @@ cortex cage (2449 scene-orange px spread 222×225, 1698 beyond the MTOC block) �
    correcting it perturbs the validated baseline, so it is deferred as a **separate** PI decision (not folded here).
 4. **Native CG cost** — un-preconditioned merge is ~1.5× CG iters; block-Jacobi/IC(0) is the follow-up if it matters.
 
+## Viewer + native-crawl note (PI feedback 2026-07-07)
+
+PI reviewed the first (toy `cortex_fil=150`) viewer and flagged it as "not native, not crawling, looks like it's
+splitting." Findings after investigation:
+- **"Splitting" = sparsity artifact, NOT physics.** A 150-filament cortex is under-crosslinked/floppy and deforms
+  irregularly under the crawl forces (end radius std 1.88, max 1.7×R₀), and the fixed-topology hull mesh distorts.
+  At **native (Nc=483k)** the cell is a near-perfect coherent sphere (radius std **0.07**, max ~R₀, V/V0=1.0001).
+- **Native full-resolution viewer** rendered (all 69k fibers, no downsampling — PI standing rule) and browser-verified.
+- **Does NOT translocate.** Over 60 s (6000 steps, 3 full clutch-treadmill/KMC cycles) at native scale, disp∥=0,
+  COM flat, `bound=1.00` throughout. The leading-edge protrusion is INTERNAL (net-zero reaction spread over all
+  cortex nodes) and acts on the upper-front cap, while the adhesion clutches sit on the *basal* cap and stay
+  uniformly bound to fixed substrate anchors → the adhesion footprint never advances → no net motion. This is the
+  **pre-existing "traction piece" (piece-3) gap** — the crawl needs a polarized adhesion mechanism (front nascent
+  adhesion ahead of the footprint + rear release) to translocate. It is **independent of this Stage-1 MT merge**
+  (MT is load-free, tip↔cortex contact deferred) and is a physics decision surfaced to PI, not a parameter tweak.
+- Viewer downsampling **removed by default** (`max_fibers=0` = show all); committed figure regenerated at a dense
+  coherent scale (Nc=14000, all fibers). The full 483k-node HTML (452 MB) is regenerable, not committed (size).
+
 ## Next (plan §2)
 
 Stage 2 (plasma membrane as a separate explicit array — area-tension + ERM + containment via `diag_extra`) and

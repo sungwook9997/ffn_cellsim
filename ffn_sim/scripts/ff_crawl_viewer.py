@@ -19,7 +19,8 @@ from scipy.spatial import ConvexHull
 from ffn_sim.scripts.ff_viewer_html import build_viewer
 
 
-def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None = None) -> dict:
+def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None = None,
+          max_fibers: int = 0) -> dict:
     d = np.load(npz_path)
     frames = np.asarray(d["frames"], np.float32)              # (T, N, 3)  [cortex(Nc) ; MT_arms ; MTOC ; nucleus]
     Nc = int(d["Nc"]); n_nuc = int(d["n_nuc"]); z_sub = float(d["z_sub"]); R = float(d["R"])
@@ -38,15 +39,25 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     # nucleus is its bead hull; substrate + COM path as before. Thread-C: the MT aster (fibers based ≥ Nc,
     # radiating from the MTOC) draws as a distinct stiff layer so the tensegrity element is visible.
     foff = np.asarray(d["foff"], np.int64) if "foff" in d else np.array([0, Nc], np.int64)
-    cort_seg = np.array([(n, n + 1) for f in range(len(foff) - 1) if int(foff[f]) < Nc
+    # Downsample cortex FIBERS for the line layer at native scale (~483k nodes → a ~400 MB HTML otherwise). Whole
+    # filaments are kept/dropped (evenly), so the woven texture is preserved; the cell OUTLINE hull below is still
+    # built from ALL Nc cortex nodes, and the MT aster is always drawn in full. Physics is native; only the line
+    # DISPLAY is thinned (noted in the layer name).
+    cort_fibers = [f for f in range(len(foff) - 1) if int(foff[f]) < Nc]
+    n_cort_fib = len(cort_fibers)
+    if max_fibers and n_cort_fib > max_fibers:
+        keep = np.unique(np.linspace(0, n_cort_fib - 1, max_fibers).round().astype(int))
+        cort_fibers = [cort_fibers[i] for i in keep]
+    cort_seg = np.array([(n, n + 1) for f in cort_fibers
                          for n in range(int(foff[f]), int(foff[f + 1]) - 1)], dtype=np.int64)
+    fib_label = "cortex filaments (woven actin)" + (f" — {len(cort_fibers)}/{n_cort_fib} shown" if len(cort_fibers) < n_cort_fib else "")
     mt_seg = np.array([(n, n + 1) for f in range(len(foff) - 1) if int(foff[f]) >= Nc
                        for n in range(int(foff[f]), int(foff[f + 1]) - 1)], dtype=np.int64) if has_mt else np.zeros((0, 2), np.int64)
     fil_fr = [frames[t][cort_seg] for t in range(T)]         # cortex filament segments (all node ids < Nc)
     faces = ConvexHull(cortex[0]).simplices
     cortex_fr = [cortex[t] for t in range(T)]
     layers = [
-        {"name": "cortex filaments (woven actin)", "kind": "lines", "verts": fil_fr[0], "color": "#8fbff0",
+        {"name": fib_label, "kind": "lines", "verts": fil_fr[0], "color": "#8fbff0",
          "size": 1.5, "frames": fil_fr},
         {"name": "cell outline (membrane)", "kind": "mesh", "verts": cortex[0], "faces": faces,
          "color": "#3a5878", "opacity": 0.12, "frames": cortex_fr},
@@ -89,9 +100,10 @@ def main():
     ap.add_argument("--npz", required=True)
     ap.add_argument("--out", default=None)
     ap.add_argument("--title", default=None)
+    ap.add_argument("--max-fibers", type=int, default=0, help="0 = show ALL fibers (default; PI: never downsample). >0 caps for a one-off.")
     args = ap.parse_args()
     out = args.out or args.npz.replace("_on.npz", "_morph.html").replace(".npz", "_morph.html")
-    info = build(args.npz, out, title=args.title)
+    info = build(args.npz, out, title=args.title, max_fibers=args.max_fibers)
     print(f"wrote {info['out']}  ({info['frames']} frames, {info['faces']} faces, {info['n_front']} front nodes; "
           f"disp∥={info['disp_along_um']:+.3f} µm, v={info['v_nm_s']:+.1f} nm/s over {info['T_s']:.1f} s)")
 
