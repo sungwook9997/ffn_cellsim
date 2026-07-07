@@ -67,7 +67,7 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     zc = cx.net.pos[:, 2]
     basal = np.where(zc < z_sub + contact_h)[0]
     anchors = cx.net.pos[basal].copy(); anchors[:, 2] = z_sub
-    nuc = resolve_nucleus(R_nuc_um=0.65 * R, n_beads=3000)     # 0.65R: realistic MCF7 nucleus (audit#15/Moore2016,
+    nuc = resolve_nucleus(R_nuc_um=0.70 * R, n_beads=3000)     # 0.70R: MCF7 nucleus (Moore2016 0.68-0.77, PI-ratified 2026-07-07;
     #                                                            Ø~12µm ≈ 0.8R, N:C 1.9 ~50% cell vol) — was 0.25R (~3× too small)
     nuc_pos = _seed_nucleus_cloud(c, nuc.R_nuc_um, nuc.n_beads, np.random.default_rng(seed + 2))
     pos_all = np.concatenate([cx.net.pos, nuc_pos], 0)

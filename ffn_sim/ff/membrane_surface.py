@@ -31,10 +31,12 @@ from ffn_sim.common.compartments import resolve_membrane, ResolvedMembrane
 # Membrane–cortex adhesion (KU-3.B1.4): γ_MCA ≈ 1e-5 J/m² = 10 pN/µm (band 1e-6–1e-4 J/m² = 1–1000 pN/µm).
 GAMMA_MCA_PN_UM = 10.0
 # Reservoir capacity: apparent-area strain the fold/microvillus reservoir absorbs at constant tension before the
-# K_A elastic upturn. The bilayer itself lyses at ~2–5% areal strain (KB-3.B1.3); the whole-cell membrane
-# RESERVOIR buffers far more apparent-area change (Raucher-Sheetz plateau) — cells spread to 2–3× footprint by
-# unfolding. Set to the spreading-relevant reservoir, NOT the bilayer lysis strain.
-RESERVOIR_STRAIN = 0.60          # apparent-area reservoir before K_A engages (fold/microvillus unfolding)
+# K_A elastic upturn (Raucher-Sheetz plateau). ⚠ MAGIC-NUMBER — SURFACED (PI 2026-07-07): MCF7 is caveolae-
+# DEFICIENT (Cav-1 negative; Lavie1998/Fiucci2002), so the reservoir here is fold/microvillus/ruffle unfolding,
+# NOT caveolae — and the 0.60 value is NOT yet sourced (no MCF7 fold-reservoir inventory registered). The
+# caveolae compartment is retained but DEFAULT-OFF for MCF7 (enableable for caveolae-competent cell types). This
+# constant must be re-derived from a registered MCF7 membrane-fold reservoir; treat runs as provisional until then.
+RESERVOIR_STRAIN = 0.60          # ⚠ placeholder — fold/microvillus reservoir before K_A engages (unsourced, see above)
 
 
 @dataclass

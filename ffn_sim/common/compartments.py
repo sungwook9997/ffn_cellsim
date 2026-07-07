@@ -177,18 +177,21 @@ class ResolvedNucleus:
     F_knee_pN: float    # pN     = k_chrom·d_knee
 
 
-def resolve_nucleus(*, R_nuc_um: float, n_beads: int, E_nuc_Pa: float = 5.0e3,
+def resolve_nucleus(*, R_nuc_um: float, n_beads: int, E_nuc_Pa: float = 399.0,
                     ratio_lamin: float = 3.0, knee_strain: float = 0.10) -> ResolvedNucleus:
     """Resolve the nucleus bilinear radial-shell stiffnesses (KU-3.B2; archive/cell/nucleus.py bridge).
 
-    E_nuc = in-situ nuclear Young's modulus 5 kPa (band 1–10 kPa, KU-3.B2.1); ratio_lamin = nucleus:
-    cytoplasm stiffness 3× (in-situ 1.4–5×, NOT the 10× isolated value); knee_strain = lamin engagement
-    ~10% radial strain. Bridge (grid-invariant: n_beads·k_chrom = 4π·E_nuc·R_nuc is intensive):
+    E_nuc = **MCF7 in-situ nuclear Young's modulus 399 Pa** (Fischer, Hayn & Mierke 2020, Front Cell Dev Biol,
+    10.3389/fcell.2020.00393 — 399.01±117.16 Pa, adherent in-situ; PI-ratified 2026-07-07 over the isolated-
+    nucleus 1–5 kPa the model previously sat at — physiological-baseline rule, audit#18/19). The band is widened
+    to the in-situ range [200 Pa, 10 kPa] (in-situ ~280–520 → isolated). ratio_lamin = nucleus:cytoplasm 3×
+    (in-situ 1.4–5×, NOT the 10× isolated value); knee_strain = lamin engagement ~10% radial strain. Bridge
+    (grid-invariant: n_beads·k_chrom = 4π·E_nuc·R_nuc is intensive):
         k_chrom = 4π·E_nuc·R_nuc/n_beads,  k_lamin = (ratio−1)·k_chrom,  d_knee = knee_strain·R_nuc,
         F_knee = k_chrom·d_knee.  (1 Pa ≡ 1 pN/µm² → E_nuc in pN/µm², lengths in µm → k in pN/µm.)
     """
-    if not (1.0e3 <= E_nuc_Pa <= 1.0e4):
-        raise ValueError(f"E_nuc {E_nuc_Pa} Pa outside KU-3.B2.1 in-situ band [1e3,1e4]")
+    if not (2.0e2 <= E_nuc_Pa <= 1.0e4):
+        raise ValueError(f"E_nuc {E_nuc_Pa} Pa outside MCF7 in-situ→isolated band [2e2,1e4] (Fischer2020 399 in-situ)")
     if not (1.4 <= ratio_lamin <= 5.0):
         raise ValueError(f"ratio_lamin {ratio_lamin} outside in-situ band [1.4,5.0] (10× is isolated)")
     if n_beads <= 0 or R_nuc_um <= 0.0:
