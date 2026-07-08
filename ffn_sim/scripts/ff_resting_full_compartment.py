@@ -12,6 +12,7 @@ from scipy.spatial import ConvexHull
 from ffn_sim.ff.gamma_floor import (CortexParams, NMIIA_MINIFIL_STALL_PN, build_crosslinked_cortex, TURGOR_DP0)
 from ffn_sim.ff.network_warp import simulate_whole_cell_compression_on_device
 from ffn_sim.ff.ff_virial_stress import cortex_node_stress
+from ffn_sim.ff.microtubule import build_microtubule_aster, merge_aster_into_cortex
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
 
 NF = int(sys.argv[1]) if len(sys.argv) > 1 else 38000
@@ -26,15 +27,19 @@ cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean(
 R0 = cx.R0_mean
 nuc = resolve_nucleus(R_nuc_um=0.70 * R0, n_beads=3000)         # R_nuc = 0.70 R (physiological)
 mem = resolve_membrane(f_excess=0.25)                          # reservoir-buffered plasma membrane
-print(f"# build NF={NF} Nc={cx.net.n_nodes} R0={R0:.3f}µm build={time.time()-t0:.1f}s", flush=True)
+c0 = cx.net.pos.mean(axis=0)
+aster = build_microtubule_aster(centre=c0, n_mt=40, L_mt_um=6.0)   # MT compartment (Thread-C): 40 tubes from MTOC
+_mrg = merge_aster_into_cortex(cx.net, aster, k_hub_pn_um=float(cx.xl_k.max()))  # same merge the sim does → get foff
+foff = np.asarray(_mrg["net"].fiber_offsets, np.int64)         # merged [cortex ; MT_arms] fiber offsets
+mtoc_idx = int(_mrg.get("mtoc_idx", -1)); n_mt = int(_mrg.get("n_mt", 0))
+print(f"# build NF={NF} Nc={cx.net.n_nodes} +MT({n_mt} tubes) R0={R0:.3f}µm build={time.time()-t0:.1f}s", flush=True)
 
 t = time.time()
 pos_all, m = simulate_whole_cell_compression_on_device(
-    cx, NMIIA_MINIFIL_STALL_PN, strain=0.0, nucleus=nuc, membrane=mem,
+    cx, NMIIA_MINIFIL_STALL_PN, strain=0.0, nucleus=nuc, membrane=mem, microtubule=aster,
     pressure_setpoint=float(TURGOR_DP0), K_drained_Pa=300.0, n_steps=N_RELAX,
-    turgor_every=50, device=DEV)                               # resting, interphase turgor set-point
+    turgor_every=50, device=DEV)                               # resting, interphase turgor set-point + MT aster
 Nc, Ne, n_nuc = int(m["Nc"]), int(m["Ne"]), int(m["n_nuc"])
-foff = np.asarray(cx.net.fiber_offsets, np.int64)             # cortex fiber offsets (MT off → Ne==Nc)
 pcx = pos_all[:Nc]
 faces = ConvexHull(pcx).simplices.astype(np.int64)
 print(f"# relaxed {N_RELAX} steps {time.time()-t:.0f}s | ΔP={m['dP_turgor_Pa']:.1f} Pa γ_app={m['gamma_apparent_mN_m']:.3f} mN/m "
@@ -49,6 +54,7 @@ svm, _p = cortex_node_stress(pcx, np.full(Nc, V0 / Nc),
 
 np.savez_compressed(OUT, frames=pos_all[None].astype(np.float32), Nc=Nc, Ne=Ne, n_nuc=n_nuc,
                     foff=foff, faces=faces, svm=svm[None].astype(np.float32), R=R0, R_nuc=nuc.R_nuc_um,
-                    dP=float(m["dP_turgor_Pa"]), gamma_mN_m=float(m["gamma_apparent_mN_m"]))
+                    dP=float(m["dP_turgor_Pa"]), gamma_mN_m=float(m["gamma_apparent_mN_m"]),
+                    mtoc_idx=mtoc_idx, n_mt=n_mt)
 print(f"# wrote {OUT}  (Nc={Nc}, n_nuc={n_nuc}, svm p95={np.percentile(svm,95):.1f} Pa)", flush=True)
 print("# done", flush=True)
