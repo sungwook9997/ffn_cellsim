@@ -58,16 +58,57 @@ pen_frac 메트릭 수정**(PI-gated gate-contract 변경)이다.
 권장: (2)+(3) 조합 — `frac(pen>0.2R)`를 임계 ~0.5%로. 이러면 IPC-newton(0.1%) PASS, baoab(2.1%) FAIL,
 물리적으로 옳음. **PI 승인 후** gate-contract 갱신 + `_penetration_frac` 수정.
 
-## 대형-dt 이득 (긴 run)
+**PI 승인 시 즉시 적용할 정확한 diff** (`dcm_warp_decohesion.py:1377`, 스코프에 `R=p.R_cell`·`edges_a`·
+`pos_d` 존재 확인됨):
 
-<!-- 긴 run(600 step, 물리시간 4.8s) 결과: 관통 시계열 안정성 + per-step wall 채움 -->
-(진행 중.)
+```python
+# 현재 (버그): 초기-build mean_edge(INSET-수축 → ~30× 작음)로 max-only 정규화
+    return float(pen_d.numpy().max()) / mean_edge
+# 제안 (권장 옵션 2+3): 현재-프레임 mean_edge + 깊은관통 분포 지표
+    pen = pen_d.numpy()                                        # per-node 관통 깊이 [m]
+    P = pos_d.numpy()
+    me_now = float(np.linalg.norm(P[edges_a[:, 0]] - P[edges_a[:, 1]], axis=1).mean())
+    frac_deep = float((pen > 0.2 * R).mean())                 # 깊은관통(>0.2R) 노드 비율
+    return frac_deep     # 게이트 임계를 0.3 → 0.005 로 (gate-contract 변경, PI 승인)
+```
+
+임계를 바꾸므로 `trajectory`의 `pen_frac` 소비처(게이트 판정 0.3)도 0.005로 동반 갱신해야 한다 —
+그래서 **인라인 수정이 아니라 gate-contract 변경(PI 승인)**이다. 옵션 1만(최소변경)이면 `return
+float(pen.max())/me_now` 한 줄이지만 max-only 문제는 남는다.
+
+## 대형-dt 관통 안정성 (긴 run, 밤샘 Phase A)
+
+N=2000 confluent INSET=0.18, accel_dt=8e-3, SIGMA=0, **STEPS=5000 (40 s 물리시간)**, 40 프레임.
+관통 시계열(`_gbook_measure_penetration.py ALL_FRAMES=1`, radius 1.5R):
+
+| 프레임 | step | 깊은관통(>0.2R) | 비율 | max | median |
+|---|---|---|---|---|---|
+| f00 (warmup 전) | 0 | 75 nodes (65 cells) | 0.023% | 1.26R | 0.28R |
+| f01 (warmup 후) | 0 | 315 nodes (207 cells) | 0.110% | 1.32R | 0.40R |
+| **f02 … f41** | 125 … 5000 | **315 nodes (207 cells) — 완전 불변** | **0.110%** | 1.32R | 0.40R |
+
+- **대형-dt IPC는 N=2000 관통을 40 s 물리시간 내내 정확히 안정 유지** — step 0→5000 동안 깊은관통이
+  315 nodes(0.11%)로 **완전 불변**(증가도 감소도 없음). 폭발/터널링 없음. V/V0=1.000, A/A0=1.000, drift=0.
+- warmup(작은 dt)에서 75→315로 늘어난 건 cadherin(bundle 10)이 이웃 막 너머 mutual-nearest 노드를 당기는
+  평형(inset-path 조사와 일치); 메인 루프에서 IPC가 그 평형을 그대로 고정.
+- **per-step ≈ 2.06 s** (5000 step + 300 warmup, 3.05 h wall). 게이트 pen은 이 내내 75.09 불변(= 실제
+  관통 flat의 메트릭 그림자).
+
+**결론: N=2000도 대형-dt로 돈다** — red-flag #2(timescale, 0.12 s→40 s)와 #4(interpenetration, 0.11%
+안정)를 동시에. 남은 건 게이트 pen_frac 메트릭 수정(PI 승인)뿐, 재-init은 불필요.
 
 ## 남은 것
 
 - 0.1% outlier(65→196 cells, 이산 icosphere warp의 국소 face 겹침)를 더 줄이려면 `lloyd_iters`↑ 또는
   `subdiv`↑(기하 정확도, outcome-튜닝 아님) — 다만 0.1%는 이미 thesis-grade(baoab 2.1-37.6% 대비). 필수 아님.
 - 게이트 수정은 PI 승인 사항.
+
+## Figures (밤샘 Phase A)
+
+- `outputs/h_dcm_two_stage/figs/agg_compaction/n2000_ovnA_largedt.html` — N=2000 대형-dt IPC 40s 형태
+  뷰어(2000 cells, 324k nodes, 42 frames, 풀 렌더 421MB; virial σ_vm peak 340 Pa). 실제 Chrome ANGLE
+  Metal WebGL 검증 통과(에러 0). 조밀한 watertight confluent foam spheroid — 대형-dt 내내 안정.
+  프리뷰: `preview_n2000_ovnA_largedt.png`. (421MB HTML은 로컬만, npz에서 재생성.)
 
 ## Files
 - `ffn_sim/scripts/_gbook_measure_penetration.py` — 엔진 커널 재사용 절대-관통 측정.

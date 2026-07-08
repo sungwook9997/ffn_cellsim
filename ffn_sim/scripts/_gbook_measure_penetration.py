@@ -62,7 +62,13 @@ def measure(pos):
 
 
 RCELL_UM = RCELL * 1e6
-for label, idx in [("INIT ", 0), ("FINAL", len(frames) - 1)]:
+ALL = os.environ.get("ALL_FRAMES", "0") == "1"       # 1 → per-frame time series (interpenetration stability)
+if ALL:
+    steps = d["step"] if "step" in d.files else np.arange(len(frames))
+    frame_list = [(f"f{t:02d}s{int(steps[t]):>6}", t) for t in range(len(frames))]
+else:
+    frame_list = [("INIT ", 0), ("FINAL", len(frames) - 1)]
+for label, idx in frame_list:
     me, pen = measure(frames[idx].astype(np.float64))
     inside = pen > 0
     deep = pen > 0.2 * RCELL_UM
