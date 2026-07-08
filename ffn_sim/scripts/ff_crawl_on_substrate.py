@@ -160,8 +160,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
-        treadmill=False, bulk_drag=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50,
-        assembly_every=20, record_every=2500, device="cpu"):
+        treadmill=False, bulk_drag=False, com_drag=False, refresh_every=50, reshape_every=20, kmc_every=2000,
+        xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -455,6 +455,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
                       wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
+        if com_drag:                                           # capture BEFORE the step: net external force + cortex COM
+            _com0 = pos_d.numpy().reshape(N, 3)[:Nc].mean(0)   # (internal forces cancel ⇒ Σf_i = the net external force)
+            _Fext = f_d.numpy().reshape(N, 3).sum(0)
         if gpu_impl:                                           # GPU-RESIDENT implicit (cupy) — GPU-only, native-scale
             x_cp = cpx.asarray(pos_d).reshape(-1).copy()
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
@@ -504,6 +507,17 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(N, 3))
         else:                                                  # explicit physical-γ step (CFL-bound)
             wp.launch(axpy_physical_kernel, dim=N, inputs=[pos_d, wp.float64(dt), gamma_d, f_d], device=d)
+        if com_drag and (gpu_impl or implicit):
+            # ⚠️ FAILED attempt (2026-07-09) — post-hoc rigid-body COM-drag override. Intent: keep the per-node γ (solver
+            # stable) but shift the whole cell so the COM translates under the physical Stokes drag 6πηR. FAILS by
+            # positive feedback: overriding the COM post-solve desynchronises it from the implicit clutch springs, so the
+            # shift stretches the clutches → the "external force" F_ext (below) grows → the next shift grows → RUNAWAY
+            # (767 µm/30 s, clutches all rip off). The grid-consistent drag must be solved WITH the clutch coupling, not
+            # patched after — an in-solver rigid-mode-regularized drag (OPEN PI item). Left as a documented dead-end.
+            _p = pos_d.numpy().reshape(N, 3)
+            _shift = (_Fext / (6.0 * np.pi * ETA_CYTOPLASM * S["R"])) * dt - (_p[:Nc].mean(0) - _com0)
+            _p += _shift
+            pos_d.assign(np.ascontiguousarray(_p, np.float64))
         if substrate is not None and clutches:                 # COMPLIANT SUBSTRATE: movable FA anchors at the clutch↔substrate series equilibrium (stable)
             wp.launch(substrate_anchor_equilibrium_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, anch_rest_d, bd_d,
                       wp.float64(cp.k_int), wp.float64(substrate.k_sub)], device=d)
@@ -603,6 +617,11 @@ def main():
                     "Nc the per-node γ=6πηR/Nc≈0.035 makes the solver diagonal γ/dt ≪ the crosslink stiffness K, so the cortex rigid-body modes go "
                     "unregularized → NaN. The grid-consistent crawl drag needs a solver-side fix (regularize rigid modes / add an inertial term) — "
                     "OPEN ITEM for PI, not a one-liner. Left as a flag documenting the diagnosis.")
+    ap.add_argument("--com-drag", action="store_true", help="EXPERIMENTAL — FAILED (2026-07-09). Post-hoc override of the cortex COM translation "
+                    "to the physical whole-cell Stokes drag 6πηR. ⚠️ RUNS AWAY: overriding the COM post-solve breaks the implicit clutch coupling → "
+                    "cell moves → clutch springs stretch → force grows → correction grows (positive feedback) → 767 µm/30 s, bound→0. So neither "
+                    "in-solve rescaling (--bulk-drag: NaN) NOR post-hoc override (--com-drag: runaway) works → the grid-consistent crawl drag must be "
+                    "done INSIDE the solver with rigid-mode regularization (OPEN PI-level numerics item). Kept to document the second dead-end.")
     ap.add_argument("--n-fa", type=int, default=0, help="cap basal clutches to N DISCRETE spatially-spread focal-adhesion sites "
                     "(0=one-per-cortex-node). Real FAs are ~10² integrin clusters; at native Nc the per-node model dilutes per-clutch "
                     "load ~100× so clutches never turn over (no crawl). ~150-300 restores physical per-clutch load → the catch-slip treadmill.")
@@ -662,7 +681,7 @@ def main():
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
             fa_maturation=args.fa_maturation, treadmill=args.treadmill, bulk_drag=args.bulk_drag,
-            kmc_every=args.kmc_every, device=args.device)
+            com_drag=args.com_drag, kmc_every=args.kmc_every, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "

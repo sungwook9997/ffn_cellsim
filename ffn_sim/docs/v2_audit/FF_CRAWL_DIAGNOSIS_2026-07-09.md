@@ -44,7 +44,15 @@ The native crawl runs but is ~500× too slow (0.12 nm/s vs the coarse 60 nm/s). 
    γ=6πηR/Nc ≈ 0.035 makes the solver diagonal γ/dt ≪ the crosslink stiffness K (~1e6) → the cortex rigid-body modes go
    unregularized → NaN. So grid-consistent crawl drag is an **OPEN solver-side item** (regularize the rigid modes, or
    add an inertial/mass term so the COM drag is decoupled from the per-node stiffness scaling) — not a safe one-liner.
-   `--bulk-drag` flag left in to document the diagnosis; not for production.
+
+   **Two fixes attempted, BOTH fail** (⇒ the drag must be fixed INSIDE the solver): **`--bulk-drag`** (in-solve
+   Σγ=6πηR) → per-node γ/dt ≪ K → rigid modes unregularized → **NaN** (coarse fil-120 + fil-500 diverge at ~T=2.5 s).
+   **`--com-drag`** (post-hoc: keep per-node γ, override the COM translation to 6πηR after each step) → **RUNAWAY**
+   (767 µm/30 s, clutches rip off): overriding the COM post-solve desynchronises it from the implicit clutch springs
+   → the shift stretches the clutches → the measured external force grows → the next shift grows = positive feedback.
+   The grid-consistent drag cannot be patched after the solve while position-dependent external forces (clutches) are
+   in the loop — it must be solved WITH the clutch coupling (an in-solver rigid-mode-regularized whole-cell drag).
+   Both flags are left in as documented dead-ends (off by default).
 
 ## Deliverable + recommendation
 
