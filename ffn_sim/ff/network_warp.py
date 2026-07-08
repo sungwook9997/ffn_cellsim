@@ -42,6 +42,30 @@ def link_spring_kernel(
 
 
 @wp.kernel
+def xl_turnover_kernel(
+    pos: wp.array(dtype=wp.vec3d),              # (N,) node positions
+    links: wp.array(dtype=wp.int32, ndim=2),    # (L, 2) crosslinker node pairs
+    k_arr: wp.array(dtype=wp.float64),          # (L,) stiffness [pN/µm]
+    r0_arr: wp.array(dtype=wp.float64),         # (L,) rest length [µm] — UPDATED IN PLACE
+    koff0_dt: wp.float64,                        # k_off0 · dt_real per turnover event [dimensionless]
+    x_beta_over_kT: wp.float64,                  # Bell-slip force scale x_β/kT [1/pN]
+):
+    """Viscoelastic crosslinker turnover (Bell slip, NF2007 §10.1 / Ferrer 2008 α-actinin): each event a
+    fraction 1−exp(−k_off(F)·dt) of the crosslinker ensemble unbinds and rebinds FORCE-FREE at the current
+    geometry, so the rest length creeps toward the current length (stress relaxation). Force-dependent
+    off-rate k_off(F)=k_off0·exp(|F|·x_β/kT). dt≪1/k_off → elastic (stiff, fast AFM); dt≫1/k_off → relaxed
+    (cortex remodels, creep). Makes each crosslinker a Maxwell element with relaxation time 1/k_off(F)."""
+    t = wp.tid()
+    i = links[t, 0]
+    j = links[t, 1]
+    L = wp.length(pos[j] - pos[i])
+    F = k_arr[t] * (L - r0_arr[t])                                  # signed crosslinker force [pN]
+    koff_dt = koff0_dt * wp.exp(wp.abs(F) * x_beta_over_kT)         # Bell slip, per-event
+    frac = wp.float64(1.0) - wp.exp(-koff_dt)                       # ensemble fraction turned over
+    r0_arr[t] = r0_arr[t] + frac * (L - r0_arr[t])                  # rebind force-free → rest length → current
+
+
+@wp.kernel
 def myosin_kernel(
     pos: wp.array(dtype=wp.vec3d),
     links: wp.array(dtype=wp.int32, ndim=2),    # (M, 2) myosin link node pairs
@@ -428,6 +452,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                                               n_steps=4000, reshape_every=25, turgor_every=20, dt_mu=0.0,
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
                                               Lp_um_s_Pa=None, K_drained_Pa=None, load_time_s=None,
+                                              xl_koff_per_s=None, xl_x_beta_um=4.0e-4,
                                               rigid_plate=False, nucleus_seed=0, device="cpu"):
     """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
     :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
@@ -514,6 +539,15 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     _K_drained = float(K_drained_Pa) if K_drained_Pa is not None else 0.0
     dP_osm = dP_solid = 0.0
     tau_osm = float("inf")
+    # ---- Cortex crosslink turnover (viscoelastic remodeling under load; Ferrer 2008 α-actinin k_off0) ----
+    # Rest lengths relax toward current lengths at the Bell-slip off-rate every `reshape_every` steps over the
+    # physical load time — so the cortex is elastic at fast AFM (dt≪1/k_off) and remodels under creep (dt≫1/k_off).
+    # xl_koff_per_s=None → no turnover (bit-identical). Needs load_time_s to map the sim loop to real seconds.
+    _KBT_PN_UM = 4.142e-3                              # kB·T at 300 K [pN·µm]
+    _turnover_on = (xl_koff_per_s is not None and load_time_s is not None)
+    _n_turn = max(1, n_steps // max(reshape_every, 1))
+    _koff0_dt = (float(xl_koff_per_s) * float(load_time_s) / _n_turn) if _turnover_on else 0.0
+    _xbeta_kT = float(xl_x_beta_um) / _KBT_PN_UM
     if k_plate is None:
         k_plate = 10.0 * (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc
     if dt_mu <= 0.0:
@@ -645,6 +679,9 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         if (step + 1) % reshape_every == 0:
             wp.launch(reshape_kernel, dim=fiber_off.shape[0] - 1,
                       inputs=[pos_d, foff_d, soff_d, srest_d, wp.int32(n_reshape_iter)], device=d)
+            if _turnover_on and has_xl:      # crosslink turnover: rest lengths relax toward current (Bell slip)
+                wp.launch(xl_turnover_kernel, dim=n_xl,
+                          inputs=[pos_d, xl_d, kxl_d, r0_d, wp.float64(_koff0_dt), wp.float64(_xbeta_kT)], device=d)
 
     V, V_cyto, area, dP = _refresh_turgor()
     react_d.zero_()
@@ -706,7 +743,8 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                # fraction of the AVAILABLE drainage done: 0=undrained (V0_eff=V0), 1=fully drained (V0_eff=V_cyto)
                "drained_frac": float(np.clip((V0 - V0_eff) / max(V0 - V_cyto, 1e-9 * V0), 0.0, 1.0)),
                "V0_eff_over_V0": float(V0_eff / V0), "tau_osm_s": float(tau_osm), "load_time_s": load_time_s,
-               "Lp_um_s_Pa": Lp_um_s_Pa, "f_excess": float(getattr(membrane, "f_excess", 0.0) or 0.0) if membrane is not None else 0.0}
+               "Lp_um_s_Pa": Lp_um_s_Pa, "f_excess": float(getattr(membrane, "f_excess", 0.0) or 0.0) if membrane is not None else 0.0,
+               "xl_turnover_on": bool(_turnover_on), "xl_koff_per_s": xl_koff_per_s}
     return pos_all, metrics
 
 

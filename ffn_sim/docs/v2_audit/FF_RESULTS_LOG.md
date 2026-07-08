@@ -178,3 +178,44 @@ orthogonal and datum-limited.
 remodeling under load (so the inextensible fixed-connectivity network can increase apparent area and bulge at
 constant volume). That is a cortex-remodeling change, distinct from the cytoplasm just added. **PI-flag data still
 missing:** MCF7 Lp, MCF7 drained cytoplasm modulus, MCF7 f_excess, MCF7-adherent engaged-NMII density.
+
+---
+
+## 2026-07-08 (cont.) — "새로운 것들 넣어서 진행": cortex crosslink turnover + rate sweep
+
+Added the flagged next-lever mechanism: **viscoelastic crosslink turnover** (`xl_turnover_kernel` in `network_warp.py`;
+params `xl_koff_per_s`, `xl_x_beta_um`). Each `reshape_every`, a fraction 1−exp(−k_off(F)·dt) of the crosslinker
+ensemble unbinds and rebinds FORCE-FREE, so rest lengths creep toward current lengths (stress relaxation) — a Maxwell
+element per crosslinker, relaxation time 1/k_off(F). Bell slip k_off(F)=k_off0·exp(|F|·x_β/kT); α-actinin
+**k_off0=0.066/s, x_β=0.4 nm (Ferrer 2008 PNAS)**. Real-time via `load_time_s`. `xl_koff_per_s=None` → bit-identical
+(2 new sanity gates: backward-compat + rate-dependent softening; all 9 poroelastic + 42 existing tests pass).
+
+### Rate sweep (full physics: drainage Lp=1e-7 + K_drained=300 + turnover koff=0.066 + f_excess=0.25)
+Figure `outputs/ff/figs/ff_rate_sweep.png`. τ_osm≈34 s (drainage), 1/k_off≈15 s (turnover).
+
+| v_load [µm/s] | load time @3% [s] | E_fit [Pa] | ×MCF7 (colloidal 249) | regime |
+|---|---|---|---|---|
+| 5 (Zbiral) | 0.09 | 4110 | 16.5× | elastic + undrained |
+| 0.5 | 0.90 | 4035 | 16.2× | elastic |
+| 0.05 | 9.0 | 3394 | 13.6× | onset of relaxation |
+| 0.005 | 90 | 1116 | 4.5× | drained + remodeled |
+| 0.0005 | 900 | 1274 | 5.1× | fully relaxed (plateau) |
+
+**Honest result:** the new turnover mechanism gives the **physically-correct rate-dependent viscoelastic/poroelastic
+softening** — the modulus drops **16.5× → ~5×** as the loading time crosses τ_osm≈34 s and 1/k_off≈15 s. Two findings:
+1. **At Zbiral's rate (5 µm/s) the model is 16.5×** — drainage and turnover cannot act (load ≈0.1 s ≪ both clocks).
+   This is a genuine PREDICTION: MCF7 probed at 5 µm/s should read stiff; the 249 Pa colloidal value is a large-contact
+   whole-cell average likely including relaxation/spreading over the fit window.
+2. **A ~5× floor remains at all rates** (E_fit plateaus ~1100–1300 Pa). This is NOT closed by drainage, drained solid,
+   or crosslink turnover — it is the cortex **segment inextensibility + bending** (the `reshape` constraint keeps
+   filaments inextensible, so the mesh resists local indentation geometrically even with fully relaxed crosslinkers)
+   plus the tension-shell-vs-Hertz-solid inversion effect. **Notably ~1100 Pa sits at the TOP of the sharp-tip MCF7
+   band (200–1000 Pa, Li 2008)** — so it is not unphysical; the ~4.5× gap is specifically to the *colloidal large-contact*
+   249 Pa (softer because large probes average over the whole soft cell).
+
+**So the residual floor is the cortex ARCHITECTURE (inextensibility/bending), not remodeling kinetics.** Closing the
+last gap to the colloidal 249 Pa would need cortex **filament-length dynamics** (treadmilling / severing so segments
+can change length and the shell can gain true area) — a deeper mechanistic change — OR accepting the model represents
+the stiffer sharp-tip/local regime. **PI decision point.** All added physics is literature-grounded, no gate-tuning;
+the rate-dependence is the honest emergent behavior. **PI-flag data still missing:** MCF7 Lp, MCF7 drained cytoplasm
+modulus, MCF7 f_excess, MCF7-adherent engaged-NMII density, MCF7 cortex crosslinker turnover rate under load.

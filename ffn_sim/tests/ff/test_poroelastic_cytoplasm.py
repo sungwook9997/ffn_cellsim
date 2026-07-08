@@ -100,3 +100,33 @@ def test_membrane_f_excess_band_guard():
     assert resolve_membrane().f_excess == 0.0                # default = pure plateau (backward-compat)
     with pytest.raises(ValueError):
         resolve_membrane(f_excess=0.6)
+
+
+# ---------- cortex crosslink turnover (viscoelastic remodeling) ----------
+
+def test_turnover_off_is_backward_compatible():
+    """xl_koff_per_s=None → no turnover → deterministic + identical to the no-turnover run."""
+    _, m0 = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.12,
+                                                      n_steps=400, device="cpu")
+    _, m1 = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.12,
+                                                      n_steps=400, device="cpu")
+    assert m0["xl_turnover_on"] is False
+    assert m1["F_plate_pN"] == pytest.approx(m0["F_plate_pN"], rel=1e-12)
+
+
+def test_turnover_is_rate_dependent_and_softens():
+    """Slow ramp (load_time ≫ 1/k_off) → cortex remodels → softer than a fast ramp (load_time ≪ 1/k_off).
+    α-actinin k_off0=0.066/s → 1/k_off≈15 s: load_time=600 s fully relaxes, 0.1 s stays elastic."""
+    koff = 0.066
+    _, m_fast = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.12,
+                                                          n_steps=400, xl_koff_per_s=koff, load_time_s=0.1,
+                                                          device="cpu")
+    _, m_slow = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.12,
+                                                          n_steps=400, xl_koff_per_s=koff, load_time_s=600.0,
+                                                          device="cpu")
+    assert m_fast["xl_turnover_on"] and m_slow["xl_turnover_on"]
+    assert m_slow["F_plate_pN"] < m_fast["F_plate_pN"]        # remodeled cortex is softer at slow rate
+    # the fast ramp barely turns over → close to the no-turnover baseline
+    _, m_base = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.12,
+                                                          n_steps=400, device="cpu")
+    assert m_fast["F_plate_pN"] == pytest.approx(m_base["F_plate_pN"], rel=0.10)
