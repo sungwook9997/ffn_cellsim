@@ -35,20 +35,54 @@ loose gap-2.4, accel_dt=8e-3, STEPS=4000 (32 s), σ ∈ {0,1,5,10,20} mN/m (통�
   압축의 sweet spot; 더 큰 σ는 더 작은 dt를 요구(CFL 유사). 
 - **함의:** 압축 production은 σ=5 mN/m @ accel_dt=8e-3 (lit-anchored + 수치 안정). σ를 키워 압축을 더
   얻으려면 dt를 낮춰야 한다(magic-number 아님 — σ는 lit 범위, dt는 안정성 유도).
+- **Morphology (browser-verified, real Chrome WebGL):** `preview_n400_sigma5_compacted.png` (σ=5, 조밀
+  cohesive spheroid) vs `preview_n400_sig10_partial.png` (σ=10, 부분 압축) vs `preview_n400_sig20_unstable.png`
+  (σ=20, 분리된 구 + void = 압축 상실) — non-monotonic을 형태로 확증. figs/agg_compaction/.
 
-## Phase C — N=400 장시간 수렴 (residual/drift→0)
+## Phase C — 장시간 수렴 + 계속 densify (red-flag #5+#2 개선) ✅
 
-<!-- STEPS=12000 (96s) 완료 시: drift 시계열 수렴 -->
-(진행 대기.)
+N=400 loose gap-2.4, σ=5 mN/m, accel_dt=8e-3, **STEPS=12000 (96 s 물리시간)**:
+
+- **porosity 0.631 → 0.285** — 32 s(Phase B σ=5: 0.408)보다 훨씬 조밀. 장시간에 압축이 계속 densify,
+  fcc 강체구 이상(0.26)에 근접(셀 변형으로 void 제거). Rg −16.6%, pen=0, V/V0=1.000 내내.
+- **drift(프레임 간 aggregate COM 이동): 0→0.14 µm(peak, step 7500)→0.04 µm(step 12000) = 감소·수렴 방향.**
+  A/A0 0.941→0.723, 후반 Δ 매우 작음(0.725→0.723) = 포화 근접. residual ≈ 0.04 µm / 4.8 s ≈ **0.008 µm/s**
+  « red-flag #5의 0.82 µm/s → **수렴 개선 입증**.
+- 초기 재배열(drift 상승)→densify→안정화(drift 하강)의 물리적 궤적. 장시간 대형-dt가 red-flag #5(non-
+  convergence)와 #2(timescale, 96 s)를 동시에 밀어냄.
+- **정직 caveat:** per-node residual force `fmag`는 3.2e-11 N 정상상태로 유지(step 900→12000 거의 불변,
+  발산 없음)이나 0으로는 안 감 — cadherin catch-bond의 동적 churn(형성/파열 평형)이 잔여 힘을 유지하기
+  때문. 즉 aggregate-level(drift)은 수렴, node-level(fmag)은 안정된 non-zero 정상상태. red-flag #5 대비
+  개선(drift 0.008 µm/s)이되 "완전 정지"는 아님.
 
 ## Phase D — confluent outlier 최소화 (geometry 스윕)
 
 <!-- lloyd×subdiv×eps 조합별 INIT 깊은관통% -->
 (진행 대기.)
 
-## 종합 (밤샘 완료 시)
+## 종합
 
-<!-- 4 Phase 종합 + PI 결정 대기 항목 -->
+밤샘 큐 4 Phase (halt-free, A5000). 핵심 성과 (C/D는 완료 시 갱신):
+
+1. **N=2000 대형-dt 작동 (Phase A)** — 관통 0.11% 40s 내내 안정, red-flag #2(timescale)+#4(interpenetration)
+   동시 해결. "N=2000 not-watertight"는 게이트 pen_frac 메트릭 버그로 규명(초기 mean_edge + max-only).
+2. **σ-sweep non-monotonic (Phase B)** — sweet spot σ=5 mN/m @ accel_dt=8e-3; σ>5는 σ-dt 결합으로
+   과충격·관통·압축 상실. 압축 production 표준 = σ=5 (lit-anchored + 안정).
+3. **장시간 수렴 + densify (Phase C)** — σ=5 @ 96s: porosity 0.631→0.285(32s의 0.408보다 조밀),
+   drift 0.14→0.04µm(수렴, residual ~0.008µm/s « 0.82), red-flag #5+#2 개선.
+4. **outlier 최소화 (Phase D)** — (완료 시).
+
+### PI 결정 대기
+
+- **게이트 pen_frac 메트릭 수정** (DCM_N2000_WATERTIGHT §수정제안, 정확한 diff 준비됨) — gate-contract
+  변경이라 PI 승인 필요. 승인 시 인라인 적용.
+- **압축 production 설정 확정**: σ=5 mN/m @ accel_dt=8e-3 (Phase B sweet spot).
+- (C/D 결과에 따른 후속.)
+
+### 드라이버 개선 항목 (밤샘 후, 밤샘 큐 일관성 위해 실행 중 미수정)
+
+- `_gbook_aggregate_compaction.py`의 inline TREND `min_gap`이 N=2000에서 셀마다 32만 노드 KDTree →
+  프레임당 수분(Phase A에서 큐 지연, 중단하고 관통은 별도 측정). 전체-tree-1회 + k-최근접 방식으로 효율화 필요.
 
 Related: DCM_N2000_WATERTIGHT_2026-07-09, DCM_AGGREGATE_COMPACTION_LARGEDT_2026-07-08,
 DCM_OVERNIGHT_PLAN_2026-07-09.
