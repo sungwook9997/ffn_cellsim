@@ -140,7 +140,7 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
-        refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
+        treadmill=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
         record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
@@ -348,7 +348,12 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                           wp.float64(z_sub), wp.float64(h_basal), wp.float64(0.1), wp.float64(S["f_pro"]),
                           wp.float64(poly.delta_um), wp.float64(kT), f_d, spread_total_d], device=d)
                 wp.launch(spreading_reaction_kernel, dim=Nc, inputs=[spread_total_d, wp.float64(Nc), f_d], device=d)
-            wp.synchronize_device(d)
+            elif protrude:                                        # C1 (2026-07-09): leading-edge push in the NATIVE
+                total_d.zero_()                                   # large-dt path — was DROPPED here (→ native disp=0);
+                wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
+                          wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
+                wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
+            wp.synchronize_device(d)                              # mirrors full_force / the explicit loop (Newton-pair)
             F = cpx.asarray(f_d).reshape(-1).copy()
             # exact osmotic force ΔP·g in cupy (g = ∂V/∂x from the fixed face triangulation)
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
@@ -489,7 +494,20 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(dt * kmc_every), wp.int32(step)], device=d)
             p = pos_d.numpy(); bd = bd_d.numpy(); anchors = anch_d.numpy(); zb = p[S["basal"], 2]
             can = (bd == 0) & (zb < z_sub + adh_h)
-            reb = can & (np.random.default_rng(step).random(M) < (1.0 - np.exp(-dt * kmc_every * cp.k_on)))
+            p_on = 1.0 - np.exp(-dt * kmc_every * cp.k_on)
+            if treadmill:
+                # C2 (2026-07-09) CLUTCH TREADMILL: nascent adhesions re-form preferentially under the LEADING edge
+                # (nascent-adhesion gradient, KU-2.4/2.5 — assemble in the lamellipodium), while rear clutches, once
+                # ruptured by the catch-slip under load, STAY detached → de-adhesion at the trailing edge. The weight
+                # is leading-edge proximity along phat (reuses front_cos_R=front_frac·R, the protrusion front scale —
+                # no new constant); s<0 (behind COM) ⇒ 0 ⇒ rear does not re-adhere. Front-rear asymmetry ⇒ the
+                # protrusion becomes NET forward translocation (validated by the clutches-OFF audit).
+                com = p[:Nc].mean(0)
+                s = (p[S["basal"]] - com) @ phat                  # signed leading(+)/trailing(−) position [µm]
+                w = np.clip(s / max(front_cos_R, 1e-9), 0.0, 1.0)
+                reb = can & (np.random.default_rng(step).random(M) < p_on * w)
+            else:
+                reb = can & (np.random.default_rng(step).random(M) < p_on)
             if reb.any():
                 anchors[reb, 0] = p[S["basal"][reb], 0]; anchors[reb, 1] = p[S["basal"][reb], 1]
                 anchors[reb, 2] = z_sub; bd[reb] = 1
@@ -565,6 +583,7 @@ def main():
     ap.add_argument("--substrate-E", type=float, default=0.0, help="compliant substrate Young's modulus [Pa] (movable FA anchors, k_sub∝E; 0=rigid pins; KB-1.5 5000)")
     ap.add_argument("--fa-maturation", action="store_true", help="per-clutch talin unfolding → vinculin → force-gated FA growth/disassembly (KB-2.x mechanosensor)")
     ap.add_argument("--piezo", action="store_true", help="Piezo1 tension-gated open-probability reporter (KB-3.10; diagnostic)")
+    ap.add_argument("--treadmill", action="store_true", help="C2: front-rear clutch treadmill — nascent adhesions re-form under the LEADING edge, rear de-adheres → protrusion becomes net translocation (KU-2.4/2.5)")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
     ap.add_argument("--microtubules", action="store_true",
@@ -597,7 +616,8 @@ def main():
     r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
             protrude=(not args.static and not args.spread), spread=args.spread,
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
-            assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E, fa_maturation=args.fa_maturation, device=args.device)
+            assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
+            fa_maturation=args.fa_maturation, treadmill=args.treadmill, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "

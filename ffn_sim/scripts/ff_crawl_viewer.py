@@ -174,9 +174,11 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--title", default=None)
     ap.add_argument("--max-fibers", type=int, default=0, help="0 = show ALL fibers (default; PI: never downsample). >0 caps for a one-off.")
+    ap.add_argument("--max-frames", type=int, default=10, help="TEMPORAL cap on animation frames (NOT spatial downsampling). "
+                    "At native Nc≈266k each frame is ~35MB → use 1-2 to stay under GitHub's 100MB file limit for a committed viewer.")
     args = ap.parse_args()
     out = args.out or args.npz.replace("_on.npz", "_morph.html").replace(".npz", "_morph.html")
-    info = build(args.npz, out, title=args.title, max_fibers=args.max_fibers)
+    info = build(args.npz, out, title=args.title, max_fibers=args.max_fibers, max_frames=args.max_frames)
     print(f"wrote {info['out']}  ({info['frames']} frames, {info['faces']} faces, {info['n_front']} front nodes; "
           f"disp∥={info['disp_along_um']:+.3f} µm, v={info['v_nm_s']:+.1f} nm/s over {info['T_s']:.1f} s)")
 
