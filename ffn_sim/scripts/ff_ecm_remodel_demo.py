@@ -95,13 +95,16 @@ def run(n_fibers=200, steps=2000, seed=1, traction=True, device="cpu"):
         if s % max(1, steps // 12) == 0:
             frames.append(pos.numpy().copy())
     posf = pos.numpy()
-    # recruitment: mean displacement of bound fiber nodes PROJECTED toward the cell centre (inward = +)
-    bnodes = ecm_node[ecm_node >= 0]
-    if bnodes.size:
-        c = np.array([cx, cy, ztop])
-        disp = posf[bnodes] - pos0[bnodes]
-        to_cell = c - pos0[bnodes]; to_cell /= (np.linalg.norm(to_cell, axis=1, keepdims=True) + 1e-12)
-        inward = float((disp * to_cell).sum(1).mean())
+    # recruitment: mean displacement of each bound fiber node PROJECTED onto the direction to ITS FA anchor —
+    # i.e. is the fiber pulled toward the adhesion it is gripped by (+ = recruited). (Projecting onto the cell
+    # CENTRE is wrong: the clutch pulls toward the basal FA point, whose direction differs from cell-centre when
+    # the adhesion sits above the slab — that geometry mismatch flipped the sign at native density.)
+    bmask = ecm_node >= 0
+    if bmask.any():
+        j = ecm_node[bmask]; anchors = fa[bmask]
+        disp = posf[j] - pos0[j]
+        to_anchor = anchors - pos0[j]; to_anchor /= (np.linalg.norm(to_anchor, axis=1, keepdims=True) + 1e-12)
+        inward = float((disp * to_anchor).sum(1).mean())
     else:
         inward = 0.0
     max_disp = float(np.linalg.norm(posf - pos0, axis=1).max())
