@@ -1,5 +1,25 @@
 # FF overnight plan — drive the adherent cell through its MOTILITY DEVELOPMENT, and VISUALIZE the development (2026-07-09)
 
+## ✅ OUTCOME (morning summary)
+
+- **S1 (C1) DONE + committed `14e2cc5`** — leading-edge protrusion wired into the native `gpu_force_fn`; NATIVE
+  (A5000, Nc=266k) reproduces the resting checkpoint (γ=0.151) → adheres flat → native disp≠0 (the disp=0 blocker
+  is fixed).
+- **C2 crawl mechanism VALIDATED + committed `6a2a54e`** — the cell CRAWLS: directed motility EMERGES from
+  protrusion + clutch turnover (no explicit treadmill needed), **traction-driven** (clutches-OFF audit PASS,
+  ratio 1e4–8e4×), **physiological ~45–60 nm/s** at coarse resolution (4.5 µm in 100 s).
+- **Native crawl SPEED = OPEN ITEM (diagnosed)** — `FF_CRAWL_DIAGNOSIS_2026-07-09.md`. Root cause: the crawl drag
+  is grid-dependent (Σγ∝Nc), so native v∝1/Nc; the physical fix Σγ=6πηR destabilizes the implicit solver → a
+  focused solver-side numerics task (rigid-mode regularization / inertial term) for PI.
+- **Development VISUALIZED** — `ff_development_storyboard.png` (resting→adhered+protruding[native]→crawling) +
+  `ff_dev_crawl_demo_morph.html` (frame-animated crawl + COM trace, browser-verified) + dev-curves + native S1
+  viewer. Native full-res HTMLs kept local (>100 MB); screenshots + curves committed.
+- **Not reached (stretch, as planned)**: S3 (emergent polarization), S4 (FA↔collagen). Hard rules kept throughout
+  (no magic numbers; F* 7 pN as-recorded; no gate loosened; physiological baseline).
+
+---
+
+
 **Starting point.** A3+A1 landed (`1106dac`): the validated resting checkpoint cell now adheres to the substrate
 (`--from-resting` → γ=0.171 mN/m @ ΔP=40 Pa → STABLE ADHERED), and the substrate/FA-maturation/Piezo modules have
 FF-native tests. The cell is ADHERENT but STATIC. This plan drives it through its **developmental program** —

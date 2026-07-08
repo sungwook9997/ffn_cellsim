@@ -17,7 +17,8 @@ re-derived.
   protrusion-directed (phat) motion emerges. **Traction-driven, decisively**: the clutches-OFF audit gives net
   displacement ≈ 0 (protrusion alone is internal, a Newton pair) while clutches-ON crawls — audit ratio 1.1e4–8.1e4×
   PASS at both native and coarse scale. At **coarse resolution the crawl is PHYSIOLOGICAL: ~60 nm/s** (1.8 µm in 30 s;
-  reality band 10–100 nm/s, KU-3.12).
+  reality band 10–100 nm/s, KU-3.12). **SEED-ROBUST** (not a single-seed artifact): seeds 7/11/17/23 all crawl
+  FORWARD (+phat) at 28–45 nm/s (28.6 / 36.3 / 32.0 / 44.9), tight cluster, mean ≈ 35 nm/s.
 
 ## The native crawl SPEED — four diagnostic steps (root cause: grid-dependent drag)
 
