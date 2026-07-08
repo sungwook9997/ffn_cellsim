@@ -153,3 +153,15 @@ def test_press_speed_viscous_transient_and_dwell_relaxes():
     assert m_fast["n_ramp"] > 0 and m_fast["dt_real_s"] > 0.0        # physical clock set from η
     assert m_fast["F_plate_pN"] > m_slow["F_plate_pN"]               # faster press → larger viscous transient
     assert m_eq["F_plate_pN"] < 0.1 * m_fast["F_plate_pN"]           # relaxation collapses the transient
+
+
+def test_bulk_eta_drag_is_lower_than_single_fiber():
+    """The bulk-η-calibrated drag γ_node=6πηR/Nc (Stokes distributed, accounts for hydrodynamic screening) is far
+    LOWER than the single-fiber NF2007 mobility drag → its physical clock dt_real is correspondingly smaller."""
+    _, m_fiber = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.02,
+                                                           v_press_um_s=200.0, dwell_steps=0, device="cpu")
+    _, m_bulk = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.02,
+                                                          v_press_um_s=200.0, dwell_steps=0, eta_bulk_Pa_s=65.9,
+                                                          device="cpu")
+    assert m_fiber["dt_real_s"] > 0.0 and m_bulk["dt_real_s"] > 0.0
+    assert m_bulk["dt_real_s"] < m_fiber["dt_real_s"]                # lower drag → smaller dt_real (more steps/second)

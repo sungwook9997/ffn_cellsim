@@ -453,7 +453,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
                                               Lp_um_s_Pa=None, K_drained_Pa=None, load_time_s=None,
                                               xl_koff_per_s=None, xl_x_beta_um=4.0e-4,
-                                              v_press_um_s=None, dwell_steps=0,
+                                              v_press_um_s=None, dwell_steps=0, eta_bulk_Pa_s=None,
                                               rigid_plate=False, nucleus_seed=0, device="cpu"):
     """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
     :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
@@ -561,8 +561,16 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     _ramp_on = v_press_um_s is not None
     _dt_real = _N_ramp = 0.0
     if _ramp_on:
-        from ffn_sim.ff.units import fiber_mobility
-        _mu_phys = fiber_mobility(max(seg, 0.05))                  # µm/(pN·s) at η=65.9 (NF2007 §5.2)
+        if eta_bulk_Pa_s is not None:
+            # BULK-cytoplasm-calibrated per-node drag: the whole-cell Stokes drag 6π·η·R distributed over the Nc
+            # cortex nodes (accounts for the hydrodynamic screening of the dense cortex that the single-fiber
+            # NF2007 mobility ignores). Grid-intensive: Σγ = 6π·η·R, independent of Nc. η=65.9 Pa·s (Dessard 2024).
+            # Validated against the analytic Newtonian ground truth σ_visc = η·ε̇ (ff_drag_calibration).
+            gamma_node = 6.0 * np.pi * float(eta_bulk_Pa_s) * R0 / max(Nc, 1)   # pN·s/µm
+            _mu_phys = 1.0 / gamma_node
+        else:
+            from ffn_sim.ff.units import fiber_mobility
+            _mu_phys = fiber_mobility(max(seg, 0.05))                  # µm/(pN·s) at η=65.9 (NF2007 §5.2)
         _dt_real = dt_mu / _mu_phys                                # physical seconds per numerical step
         _t_ramp = (R0 * strain) / float(v_press_um_s)              # time to indent one side by R0·strain
         _N_ramp = max(1, int(np.ceil(_t_ramp / _dt_real)))
