@@ -14,8 +14,15 @@
 - **Development VISUALIZED** — `ff_development_storyboard.png` (resting→adhered+protruding[native]→crawling) +
   `ff_dev_crawl_demo_morph.html` (frame-animated crawl + COM trace, browser-verified) + dev-curves + native S1
   viewer. Native full-res HTMLs kept local (>100 MB); screenshots + curves committed.
-- **Not reached (stretch, as planned)**: S3 (emergent polarization), S4 (FA↔collagen). Hard rules kept throughout
-  (no magic numbers; F* 7 pN as-recorded; no gate loosened; physiological baseline).
+- **S4 (FA↔collagen) CORE DONE + committed `58a87fd`/`ac9adc4`** — the primitive `ff/fa_ecm.py` (two-sided
+  Newton clutch actin↔live collagen node; 5 tests) + a dynamic ECM-remodel demo: FA traction RECRUITS collagen-I
+  (Mikado) fibers toward the cell (+14.4 nm inward, localized near the FA patch, ~1/r; OFF-audit ratio 1.4e7×
+  PASS = traction-driven), figure `ff_ecm_remodel.png`. Remaining S4: fold the ECM into the crawl loop as live
+  DOFs (the full cell-crawls-and-remodels-ECM integration) — a bigger step deferred (two coupled networks / two
+  integrators; needs care, not a safe unattended one-liner).
+- **Not reached (stretch, as planned)**: S3 (emergent polarization → phat), full S4 crawl+ECM integration, the
+  native-crawl in-solver drag fix. Hard rules kept throughout (no magic numbers; F* 7 pN as-recorded; no gate
+  loosened; physiological baseline; kb-check clean on every commit).
 
 ---
 
