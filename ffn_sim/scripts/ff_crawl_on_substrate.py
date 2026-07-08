@@ -31,7 +31,7 @@ from ffn_sim.ff.gamma_floor import (build_crosslinked_cortex, CortexParams, TURG
                                     VMIN_FRAC, NMIIA_MINIFIL_STALL_PN)
 from ffn_sim.ff.network_warp import (_zero, link_spring_kernel, myosin_kernel, turgor_kernel,
                                      reshape_kernel, nucleus_shell_kernel, _seed_nucleus_cloud,
-                                     substrate_plane_kernel)
+                                     substrate_plane_kernel, simulate_whole_cell_compression_on_device)
 from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.microtubule import build_microtubule_aster, merge_aster_into_cortex
 from ffn_sim.ff.ff_virial_stress import cortex_node_stress, cortex_node_areal_strain, face_areas
@@ -56,7 +56,9 @@ F_STALL_ACTIN_PN = 4.0                  # per-filament Brownian-ratchet stall fo
 
 
 def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.0, 0.0),
-          length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0):
+          length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0,
+          from_resting=False, relax_steps=6000, relax_device="cpu",
+          n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
@@ -69,38 +71,70 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     SAME implicit K as the cortex at 300× the bending stiffness. Node layout becomes
     ``[cortex(Nc) ; MT_arms(Nmt) ; MTOC(1) ; nucleus(n_nuc)]`` with ``Ne = Nc+Nmt+1`` elastic nodes; the cortex
     block ``[:Nc]`` keeps ALL surface physics. ``microtubules=False`` → no-op passthrough (Ne==Nc, empty hub) so
-    the OFF path is bit-identical (needs the ``--implicit`` GPU solver; explicit is dev-only)."""
+    the OFF path is bit-identical (needs the ``--implicit`` GPU solver; explicit is dev-only).
+
+    A3 (2026-07-08) — ``from_resting`` starts the ADHERENT run from the VALIDATED resting checkpoint cell rather
+    than a fresh un-relaxed geometry (the physiological-baseline HARD rule: adhere FROM the resting state, don't
+    let a null baseline emergently align). It matches the ``ff_resting_full_compartment.py`` recipe
+    (``n_myo_ratio``=10 dense myosin, membrane ``f_excess``=0.25 reservoir, ``turgor_every``=50) and PRE-RELAXES
+    to the resting turgor set-point (ΔP=TURGOR_DP0=40 Pa → γ=ΔP·R/2, biphasic drained solid K_drained=300 Pa) via
+    the SAME ``simulate_whole_cell_compression_on_device`` the checkpoint uses, seeding the nucleus into the
+    IDENTICAL ``[cortex ; MT_arms ; MTOC ; nucleus]`` layout, so the relaxed positions map back with no
+    reconciliation. Substrate contact (z_sub / basal cap / anchors / front) is then derived from the RELAXED
+    cortex geometry.
+
+    The MT aster is included only when ``microtubules`` is set (as in the full checkpoint); at the resting
+    set-point the MT arms are mechanically DECOUPLED from the cortex (only MTOC↔arm hub crosslinks, no MT↔cortex
+    bond, and the tip↔cortex contact is inactive since L_mt<R), so the resting cortical-mechanics baseline (ΔP,
+    γ, R_eq, V/V0) is MT-independent — ``--from-resting`` alone reproduces that baseline; the FULL checkpoint
+    compartment adds the aster. Production is native (``--cortex-fil 38000 --from-resting --microtubules
+    --implicit`` on the A5000); the CPU path is the small-N dev demo."""
     rng = np.random.default_rng(seed)
+    n_myo = max(1, n_cortex_fil // n_myo_ratio)               # from_resting → dense (//10) checkpoint myosin
     cx = build_crosslinked_cortex(CortexParams(), n_filaments=n_cortex_fil, n_xl=n_cortex_fil,
-                                  n_myo=max(1, n_cortex_fil // 160), length_dist=length_dist, rng=rng)
+                                  n_myo=n_myo, length_dist=length_dist, rng=rng)
     cx.R0_mean = float(np.linalg.norm(cx.net.pos - cx.net.pos.mean(0), axis=1).mean())
-    c = cx.net.pos.mean(0); R = cx.R0_mean
+    R = cx.R0_mean
     Nc = cx.net.n_nodes
     phat = np.asarray(phat, np.float64); phat = phat / np.linalg.norm(phat)
-    z_sub = float(cx.net.pos[:, 2].min())
-    zc = cx.net.pos[:, 2]
-    basal = np.where(zc < z_sub + contact_h)[0]
-    anchors = cx.net.pos[basal].copy(); anchors[:, 2] = z_sub
     nuc = resolve_nucleus(R_nuc_um=0.70 * R, n_beads=3000)     # 0.70R: MCF7 nucleus (Moore2016 0.68-0.77, PI-ratified 2026-07-07;
     #                                                            Ø~12µm ≈ 0.8R, N:C 1.9 ~50% cell vol) — was 0.25R (~3× too small)
-    nuc_pos = _seed_nucleus_cloud(c, nuc.R_nuc_um, nuc.n_beads, np.random.default_rng(seed + 2))
+    mem = resolve_membrane(f_excess=f_excess)                 # from_resting → 0.25 reservoir (checkpoint); else plateau
+    c0 = cx.net.pos.mean(0)
+    nuc_pos = _seed_nucleus_cloud(c0, nuc.R_nuc_um, nuc.n_beads, np.random.default_rng(seed + 2))
     # --- Thread-C Stage 1: MT aster merges into the cortex elastic network (one shared implicit K) ---
-    aster = build_microtubule_aster(centre=c, n_mt=n_mt, L_mt_um=L_mt_um) if microtubules else None
+    aster = build_microtubule_aster(centre=c0, n_mt=n_mt, L_mt_um=L_mt_um) if microtubules else None
     m = merge_aster_into_cortex(cx.net, aster, k_hub_pn_um=float(cx.xl_k.max()))
     merged = m["net"]                                          # [cortex(Nc) ; MT_arms(Nmt)]; MTOC appended below
     Ne = m["Ne"]                                               # elastic node count Nc+Nmt+1 (MTOC); == Nc when OFF
     # node layout [cortex(Nc) ; MT_arms(Nmt) ; MTOC(1) ; nucleus(n_nuc)] — mtoc_pos empty ⇒ OFF pos_all unchanged
     pos_all = np.concatenate([merged.pos, m["mtoc_pos"], nuc_pos], 0)
-    # front cap membership (for reporting) + derived per-node protrusive force (cortex nodes only)
-    proj = (cx.net.pos - c) @ phat
+    resting = None
+    if from_resting:
+        # PRE-RELAX to the validated resting checkpoint (same builder the checkpoint uses → same node layout).
+        pos_relaxed, mrelax = simulate_whole_cell_compression_on_device(
+            cx, f_myo, strain=0.0, nucleus=nuc, membrane=mem, microtubule=aster,
+            pressure_setpoint=float(TURGOR_DP0), K_drained_Pa=300.0, n_steps=relax_steps,
+            turgor_every=50, device=relax_device)                 # turgor_every=50 = exact checkpoint recipe
+        pos_all = np.ascontiguousarray(pos_relaxed, np.float64)
+        merged.pos = pos_all[:merged.pos.shape[0]].copy()     # keep net.pos consistent (run() reads it for V0 + faces)
+        resting = dict(dP_Pa=float(mrelax["dP_turgor_Pa"]), gamma_mN_m=float(mrelax["gamma_apparent_mN_m"]),
+                       V_over_V0=float(mrelax["V_over_V0"]), R_eq_um=float(mrelax["R_eq_um"]))
+    # contact + polarity from the (possibly relaxed) CORTEX geometry pos_all[:Nc]
+    cortex_pos = pos_all[:Nc]
+    c = cortex_pos.mean(0)
+    z_sub = float(cortex_pos[:, 2].min())
+    basal = np.where(cortex_pos[:, 2] < z_sub + contact_h)[0]
+    anchors = cortex_pos[basal].copy(); anchors[:, 2] = z_sub
+    proj = (cortex_pos - c) @ phat
     front = np.where(proj > front_frac * R)[0]
     node_area = 4.0 * np.pi * R**2 / Nc                       # mean cortex area per node [µm²]
     f_pro = FIL_AREAL_DENSITY_PER_UM2 * node_area * F_STALL_ACTIN_PN   # per front-node protrusive force [pN]
     return dict(cx=cx, net=merged, Nc=Nc, Ne=Ne, n_nuc=nuc_pos.shape[0], pos_all=pos_all, nuc=nuc,
-                mem=resolve_membrane(), basal=basal.astype(np.int32), anchors=anchors, z_sub=z_sub, R=R, c=c,
+                mem=mem, basal=basal.astype(np.int32), anchors=anchors, z_sub=z_sub, R=R, c=c,
                 phat=phat, front=front.astype(np.int32), front_frac=front_frac, f_pro=f_pro,
                 mtoc_idx=m["mtoc_idx"], hub_i=m["hub_i"], hub_j=m["hub_j"], hub_k=m["hub_k"],
-                hub_rest=m["hub_rest"], n_mt=int(m.get("n_mt", 0)))
+                hub_rest=m["hub_rest"], n_mt=int(m.get("n_mt", 0)), resting=resting)
 
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
@@ -537,6 +571,11 @@ def main():
                     help="Thread-C: merge an MT aster (κ=KAPPA_MT) into the shared implicit K — needs --implicit")
     ap.add_argument("--n-mt", type=int, default=40, help="number of MT tubes radiating from the MTOC (aster size — flag to PI)")
     ap.add_argument("--l-mt", type=float, default=6.0, help="MT arm contour length [µm] (reach toward the R≈7.5µm cortex — flag to PI)")
+    ap.add_argument("--from-resting", action="store_true",
+                    help="A3: start the adherent run from the VALIDATED resting checkpoint cell (dense myosin //10 + "
+                         "membrane reservoir f_excess=0.25 + pre-relax to the ΔP=40 Pa turgor set-point), not a fresh "
+                         "un-relaxed geometry — the PI's MCF7-on-substrate physiological baseline")
+    ap.add_argument("--relax-steps", type=int, default=6000, help="pre-relaxation steps to the resting set-point (--from-resting)")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
     args = ap.parse_args()
@@ -544,8 +583,14 @@ def main():
     if args.microtubules and not args.implicit:
         print("[!] --microtubules needs the implicit solver (MT bending rides K); add --implicit for production.")
     S = build(n_cortex_fil=args.cortex_fil, length_dist=args.fil_length_dist,
-              microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt)
+              microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
+              from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
+              n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0))
     mt_note = (f"; MT aster {S['n_mt']} tubes → Ne {S['Ne']} (Nmt+MTOC {S['Ne']-S['Nc']})" if args.microtubules else "")
+    if S.get("resting") is not None:
+        rr = S["resting"]
+        print(f"[from-resting] pre-relaxed to checkpoint: ΔP={rr['dP_Pa']:.1f} Pa  γ={rr['gamma_mN_m']:.3f} mN/m  "
+              f"V/V0={rr['V_over_V0']:.3f}  R_eq={rr['R_eq_um']:.2f} µm  (myosin //10, membrane f_excess=0.25)")
     print(f"[build] cortex {S['Nc']} + nucleus {S['n_nuc']}{mt_note}; basal FA clutches {S['basal'].size}; "
           f"front-cap nodes {S['front'].size}; f_pro {S['f_pro']:.1f} pN/node; z_sub {S['z_sub']:.2f}  "
           f"({time.time()-t0:.0f}s)")

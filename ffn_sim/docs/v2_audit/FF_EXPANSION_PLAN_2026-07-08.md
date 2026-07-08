@@ -87,7 +87,12 @@ migration). **No FF LINC module exists** (only archived HOOMD `linc.py`); the nu
 
 ## Recommended order
 
-1. **A3 + A1** — wire the checkpoint cell to the adherent path + add the missing FF tests (fast, unblocks a
+1. **A3 + A1** — ✅ **DONE 2026-07-08** (PI-confirmed direction). `--from-resting` wires the validated resting
+   checkpoint into the adherent driver (reproduces γ=0.171 mN/m @ ΔP=40 Pa → STABLE ADHERED); 25 FF-native tests
+   added for substrate / FA-maturation / Piezo (all analytic gates PASS). F* 7-vs-30 pN: kept as-recorded per PI,
+   flagged for later debugging. Adversarially reviewed (0 bugs). Details: `FF_ADHERENT_A3_A1_2026-07-08.md`.
+   Still PI-gated before any absolute-traction claim: FA patch radius `a`.
+   — wire the checkpoint cell to the adherent path + add the missing FF tests (fast, unblocks a
    defensible adherent baseline matching the PI's experiment).
 2. **C1** — the one-line protrusion fix in `gpu_force_fn` (unblocks native-scale motion) + C2 clutch treadmill.
 3. **B** — FA↔collagen-fiber binding (the PI's real matrix).
