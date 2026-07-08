@@ -55,10 +55,14 @@ N=400 loose gap-2.4, σ=5 mN/m, accel_dt=8e-3, **STEPS=12000 (96 s 물리시간)
   때문. 즉 aggregate-level(drift)은 수렴, node-level(fmag)은 안정된 non-zero 정상상태. red-flag #5 대비
   개선(drift 0.008 µm/s)이되 "완전 정지"는 아님.
 
-## Phase D — confluent outlier 최소화 (geometry 스윕)
+## Phase D — confluent outlier: lloyd_iters↑가 주 lever (부분 완료)
 
-<!-- lloyd×subdiv×eps 조합별 INIT 깊은관통% -->
-(진행 대기.)
+- **D1 (subdiv=2, eps=0.10, lloyd=8): INIT 깊은관통 30 nodes (22 cells).** 내 confl2000b(lloyd=6,
+  eps=0.18)의 75 nodes(65 cells) 대비 **절반 이하** → **lloyd_iters↑(6→8)가 outlier를 줄이는 주 lever**
+  (seed 균등화 → Voronoi 인접-쌍 겹침 감소). eps보다 lloyd가 지배적으로 보임.
+- ⚠️ **full sweep 미완(중단):** `confluent_init_prototype.validate()`가 N=2000에서 O(nodes²)
+  contact_frac(324k²)을 계산 → 조합당 ~44 min, subdiv=3(1.3M²)은 비실용(수 h). validate를 KDTree/
+  subsample로 효율화해야 full lloyd×subdiv×eps sweep 가능(개선 항목). outlier **방향(lloyd↑)**은 확인.
 
 ## 종합
 
@@ -70,7 +74,8 @@ N=400 loose gap-2.4, σ=5 mN/m, accel_dt=8e-3, **STEPS=12000 (96 s 물리시간)
    과충격·관통·압축 상실. 압축 production 표준 = σ=5 (lit-anchored + 안정).
 3. **장시간 수렴 + densify (Phase C)** — σ=5 @ 96s: porosity 0.631→0.285(32s의 0.408보다 조밀),
    drift 0.14→0.04µm(수렴, residual ~0.008µm/s « 0.82), red-flag #5+#2 개선.
-4. **outlier 최소화 (Phase D)** — (완료 시).
+4. **outlier 최소화 (Phase D, 부분)** — lloyd_iters↑(6→8)가 confluent outlier를 75→30 nodes로 절반 이하.
+   full sweep은 validate O(nodes²) 병목으로 중단(효율화 개선 항목). 방향(lloyd↑) 확인.
 
 ### PI 결정 대기
 
