@@ -305,3 +305,35 @@ NOT more cortex stiffness. Sanity gate added (bulk-drag < single-fiber; 12 poroe
 
 **PI-flag data still missing:** MCF7 Lp, MCF7 drained cytoplasm modulus, MCF7 f_excess, MCF7-adherent engaged-NMII
 density, MCF7 cortex crosslinker turnover-under-load rate, and Zbiral's exact δ/rate/elastic-viscous separation.
+
+---
+
+## 2026-07-08 (cont.) — NATIVE-scale (A5000) confirmation: the under-relaxation reframe HOLDS at full resolution
+
+PI: re-verify at native. Ran on the gbook A5000 (`ff_native_confirm.py`, cortex NF=38000 → **Nc=266,000**,
+`device=cuda:0`, 38.5 ms/step, turgor_every=50; figure `outputs/ff/figs/ff_native_convergence.png`). Small-strain
+(3%) undrained modulus vs relaxation steps:
+
+| n_steps | native E [Pa] | ×249 |
+|---|---|---|
+| 500 | 5,455,562 | 21900× |
+| 4000 | 216,163 | 868× |
+| 8000 | 18,080 | 72.6× |
+| 16000 | 6,588 | 26.5× |
+| 32000 | 1,417 | 5.69× |
+| 64000 | **182** | **0.73×** |
+
+**Confirmed at native.** The undrained modulus drops **monotonically through ~5 orders of magnitude** as the cell is
+allowed to finish deforming (500 → 64000 steps), crosses the MCF7 band, and reaches the **soft side (0.73×, still
+falling toward the γ-floor)** — exactly the CPU trajectory. So the small-strain "stiffness" was a fast-press /
+under-relaxation TRANSIENT at full resolution too, NOT a real elastic over-stiffness; the relaxed native elastic
+equilibrium is **soft** (heading to the γ-floor). Native equilibrates **~10× slower** than the N=2000 CPU cortex
+(64000 vs ~6400 steps to reach the soft regime) — expected from the ~130× denser mesh (more/slower soft modes),
+not a different conclusion.
+
+Caveats: (a) native drained+K_drained was only run at 8000 steps (22×) which is itself under-relaxed (per the
+undrained trajectory), so the converged native drained value is lower — not separately pinned. (b) The physical
+press-speed ramp is infeasible at native (γ_node=6πηR/Nc ∝ 1/Nc → dt_real tiny → millions of ramp steps), so the
+viscous/press-speed result stands as the CPU-scale demonstration; the elastic-equilibrium reframe is what native
+confirms. **Bottom line: the whole investigation's headline — there was never a real "too stiff" gap, only the
+γ-floor (too soft) — holds at native scale.** Code synced to gbook `~/ff_scratch` (rsync, non-repo).
