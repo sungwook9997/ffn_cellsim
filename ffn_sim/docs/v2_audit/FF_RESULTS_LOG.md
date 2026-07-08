@@ -219,3 +219,54 @@ can change length and the shell can gain true area) — a deeper mechanistic cha
 the stiffer sharp-tip/local regime. **PI decision point.** All added physics is literature-grounded, no gate-tuning;
 the rate-dependence is the honest emergent behavior. **PI-flag data still missing:** MCF7 Lp, MCF7 drained cytoplasm
 modulus, MCF7 f_excess, MCF7-adherent engaged-NMII density, MCF7 cortex crosslinker turnover rate under load.
+
+---
+
+## 2026-07-08 (cont.) — PI: "누르는 속도가 세포 변형 속도보다 빠를 수도" → CONFIRMED (the dominant artifact)
+
+PI hypothesised the pressing speed matters and we may press faster than the cell can deform. **Empirically decisive.**
+
+**Convergence test** (`converge_test.py`, undrained, strain 3%, increasing relaxation steps) — the quasi-static
+solve was **NOT converged** at the n_steps I had been using:
+
+| n_steps | undrained E [Pa] | ×249 | drained+K_drained E [Pa] |
+|---|---|---|---|
+| 1600 (used) | 4127 | 16.6× | 1333 |
+| 3200 | 262 | 1.1× | 1332 |
+| 6400 | 20 | 0.1× | 1332 |
+| 12800 | 19 | 0.1× | 1330 |
+
+The undrained force **drops by orders of magnitude** with more relaxation — **the "16.5×" I reported was an
+under-relaxed (fast-press) TRANSIENT**, not the equilibrium. The relaxed undrained equilibrium is **~17–19 Pa (0.1×,
+γ-floor, too SOFT)**. (The drained+K_drained case was already converged at ~1330 Pa — the K_drained solid does not relax.)
+
+**Physical press-speed ramp** — implemented the physiologically-correct fix (`v_press_um_s`, `dwell_steps` in
+`network_warp.py`): each numerical step = dt_real = dt_mu/μ SECONDS with μ the NF2007 cytoplasm-viscosity mobility
+(**η=65.9 Pa·s**, Dessard 2024), the plate advances v_press·dt_real per step, so relaxation-completeness is set by
+PHYSICS not an arbitrary n_steps. This also fixes a physiological-baseline violation (the loop used a numerical dt,
+not η). Result (`ff_press_speed.png`, strain 3%, read at ramp-end):
+
+| v_press [µm/s] | E [Pa] | ×249 |
+|---|---|---|
+| 5 (Zbiral) | 251255 | 1009× |
+| 1 | 50777 | 204× |
+| 0.2 | 10157 | 41× |
+| 0.05 | 2553 | 10× |
+| 5, then dwell→relax | 17 | 0.1× (equilibrium = γ-floor) |
+
+**E ∝ v_press exactly** (5→1→0.2 = 1009→204→41×) = a **VISCOUS transient** (F≈η·v_press·geometry), NOT the elastic
+modulus. So: (1) pressing speed dominates the reading; (2) the relaxed elastic equilibrium is **soft (~17 Pa = γ-floor)**
+— **all the prior "too-stiff" numbers (16.5×, the rate sweep's fast points, the original 857×) were fast-press /
+under-relaxation transients**, not a real elastic over-stiffness. The genuine elastic gap is the γ-floor (too soft),
+in the OTHER direction.
+
+⚠️ **CAVEAT (honest):** the per-node drag uses the single-fiber NF2007 mobility, which **over-estimates the BULK
+cytoplasm viscous response by ~100×** (continuum η·ε̇ ≈ 65.9·0.67 ≈ 44 Pa, vs the model's huge transient). So the
+**absolute crossover speed needs the drag calibrated to the bulk η**; the **direction and the E∝v_press scaling are
+robust**. Sanity gates added (backward-compat + viscous-transient + dwell-relaxes; 11 poroelastic tests pass).
+
+**This reframes the whole overshoot story:** the compression response must be reported as a RATE-DEPENDENT
+elastic+viscous mix at a stated, physical press speed, with the mechanics relaxed to equilibrium (or a physical
+dwell) before reading — and the drag calibrated to η. Next: calibrate the per-node drag to bulk η=65.9, then re-run
+the AFM comparison at Zbiral's 5 µm/s with a proper elastic/viscous split (as real AFM Hertz analysis does). The
+elastic-equilibrium γ-floor (too soft) is the real remaining physics gap. **PI decision point.**

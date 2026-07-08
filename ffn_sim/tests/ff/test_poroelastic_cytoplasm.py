@@ -130,3 +130,26 @@ def test_turnover_is_rate_dependent_and_softens():
     _, m_base = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.12,
                                                           n_steps=400, device="cpu")
     assert m_fast["F_plate_pN"] == pytest.approx(m_base["F_plate_pN"], rel=0.10)
+
+
+# ---------- physical press-speed ramp (η-limited deformation → viscous transient) ----------
+
+def test_press_ramp_off_is_backward_compatible():
+    """v_press_um_s=None → instant strain (legacy); n_ramp=0, deterministic."""
+    _, m = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.05,
+                                                     n_steps=300, device="cpu")
+    assert m["v_press_um_s"] is None and m["n_ramp"] == 0 and m["t_ramp_s"] == 0.0
+
+
+def test_press_speed_viscous_transient_and_dwell_relaxes():
+    """Physical drag (η=65.9): a fast press reads a NON-equilibrium viscous transient (F grows with v_press),
+    and dwelling to relax drops the force far below the ramp-end reading (the press-speed artifact, PI 2026-07-08)."""
+    _, m_fast = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.03,
+                                                          v_press_um_s=5.0, dwell_steps=0, device="cpu")
+    _, m_slow = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.03,
+                                                          v_press_um_s=0.5, dwell_steps=0, device="cpu")
+    _, m_eq = simulate_whole_cell_compression_on_device(_cortex(), NMIIA_MINIFIL_STALL_PN, strain=0.03,
+                                                        v_press_um_s=5.0, dwell_steps=4000, device="cpu")
+    assert m_fast["n_ramp"] > 0 and m_fast["dt_real_s"] > 0.0        # physical clock set from η
+    assert m_fast["F_plate_pN"] > m_slow["F_plate_pN"]               # faster press → larger viscous transient
+    assert m_eq["F_plate_pN"] < 0.1 * m_fast["F_plate_pN"]           # relaxation collapses the transient

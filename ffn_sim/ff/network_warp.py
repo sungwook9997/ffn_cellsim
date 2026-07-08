@@ -453,6 +453,7 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                                               n_reshape_iter=2, k_plate=None, pressure_setpoint=None,
                                               Lp_um_s_Pa=None, K_drained_Pa=None, load_time_s=None,
                                               xl_koff_per_s=None, xl_x_beta_um=4.0e-4,
+                                              v_press_um_s=None, dwell_steps=0,
                                               rigid_plate=False, nucleus_seed=0, device="cpu"):
     """WHOLE-CELL virtual parallel-plate (AFM) compression: the cortex shell + turgor of
     :func:`simulate_compressed_shell_on_device` PLUS a mechanistic stiff nucleus (shared
@@ -533,20 +534,10 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
     #     volume V0 (NOT the draining V0_eff — else it vanishes at the drained limit where it must carry the load).
     #     K_drained≈300 Pa (Moeendarbary 2013 soft-epithelial branch; ν≈0.25–0.3). Full anchors: FF_RESULTS_LOG.
     V0_eff = V0
-    _drain_on = (Lp_um_s_Pa is not None and load_time_s is not None and pressure_setpoint is None)
-    _n_refresh = max(1, n_steps // max(turgor_every, 1))
-    _dt_refresh = (float(load_time_s) / _n_refresh) if _drain_on else 0.0
     _K_drained = float(K_drained_Pa) if K_drained_Pa is not None else 0.0
     dP_osm = dP_solid = 0.0
     tau_osm = float("inf")
-    # ---- Cortex crosslink turnover (viscoelastic remodeling under load; Ferrer 2008 α-actinin k_off0) ----
-    # Rest lengths relax toward current lengths at the Bell-slip off-rate every `reshape_every` steps over the
-    # physical load time — so the cortex is elastic at fast AFM (dt≪1/k_off) and remodels under creep (dt≫1/k_off).
-    # xl_koff_per_s=None → no turnover (bit-identical). Needs load_time_s to map the sim loop to real seconds.
     _KBT_PN_UM = 4.142e-3                              # kB·T at 300 K [pN·µm]
-    _turnover_on = (xl_koff_per_s is not None and load_time_s is not None)
-    _n_turn = max(1, n_steps // max(reshape_every, 1))
-    _koff0_dt = (float(xl_koff_per_s) * float(load_time_s) / _n_turn) if _turnover_on else 0.0
     _xbeta_kT = float(xl_x_beta_um) / _KBT_PN_UM
     if k_plate is None:
         k_plate = 10.0 * (K_vol / V0) * (4.0 * np.pi * R0**2) ** 2 / Nc
@@ -560,6 +551,31 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
         # membrane (buffered-plateau γ_mem) is a soft ~few-Pa inward tension → no CFL term needed; the K_A
         # elastic upturn is deferred (reservoir PI-blocked) and would set the CFL if/when it is wired.
         dt_mu = 0.1 / kmax
+
+    # ---- Physical press-speed ramp (η=65.9 Pa·s cytoplasm-viscosity-limited deformation) ----
+    # Each numerical step (kernel step = dt_mu, CFL-stable) equals dt_real = dt_mu/μ SECONDS, with μ the NF2007
+    # cytoplasm mobility (μ=log(L/δ)/(3πηL)). The plate then advances v_press·dt_real per step, so relaxation
+    # completeness is set by PHYSICS (press-speed vs the η-limited deformation speed), not an arbitrary n_steps —
+    # the fix for the convergence artifact (a fast/instant press reads a NON-equilibrium transient; PI 2026-07-08).
+    # v_press_um_s=None → instant strain applied at step 0 (legacy quasi-static; converge via n_steps).
+    _ramp_on = v_press_um_s is not None
+    _dt_real = _N_ramp = 0.0
+    if _ramp_on:
+        from ffn_sim.ff.units import fiber_mobility
+        _mu_phys = fiber_mobility(max(seg, 0.05))                  # µm/(pN·s) at η=65.9 (NF2007 §5.2)
+        _dt_real = dt_mu / _mu_phys                                # physical seconds per numerical step
+        _t_ramp = (R0 * strain) / float(v_press_um_s)              # time to indent one side by R0·strain
+        _N_ramp = max(1, int(np.ceil(_t_ramp / _dt_real)))
+        n_steps = _N_ramp + max(0, int(dwell_steps))
+        load_time_s = n_steps * _dt_real                          # total real time → drives drainage + turnover
+
+    # ---- timing for drainage (A) + crosslink turnover, using the (possibly ramp-updated) n_steps / load_time_s ----
+    _drain_on = (Lp_um_s_Pa is not None and load_time_s is not None and pressure_setpoint is None)
+    _n_refresh = max(1, n_steps // max(turgor_every, 1))
+    _dt_refresh = (float(load_time_s) / _n_refresh) if _drain_on else 0.0
+    _turnover_on = (xl_koff_per_s is not None and load_time_s is not None)
+    _n_turn = max(1, n_steps // max(reshape_every, 1))
+    _koff0_dt = (float(xl_koff_per_s) * float(load_time_s) / _n_turn) if _turnover_on else 0.0
 
     d = device
     pos_d = wp.array(np.ascontiguousarray(pos0, np.float64), dtype=wp.vec3d, device=d)
@@ -669,11 +685,13 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                       inputs=[pos_d, wp.int32(Ne), centre, wp.float64(nucleus.R_nuc_um),
                               wp.float64(nucleus.k_chrom), wp.float64(nucleus.k_lamin),
                               wp.float64(nucleus.d_knee_um), wp.float64(nucleus.F_knee_pN), f_d], device=d)
+        # physical ramp: plate advances v_press·dt_real per step (half_gap → final over _N_ramp steps), else instant
+        hg = half_gap if not _ramp_on else max(half_gap, R0 - float(v_press_um_s) * (step + 1) * _dt_real)
         if rigid_plate:                     # RIGID: step + hard-clamp |z|≤half_gap (exact confinement)
             wp.launch(rigid_plate_step_kernel, dim=N,
-                      inputs=[pos_d, wp.float64(dt_mu), f_d, wp.float64(cz), wp.float64(half_gap), react_d], device=d)
+                      inputs=[pos_d, wp.float64(dt_mu), f_d, wp.float64(cz), wp.float64(hg), react_d], device=d)
         else:                               # SOFT penalty (historical): may under-confine a stiff cortex
-            wp.launch(plate_kernel, dim=N, inputs=[pos_d, wp.float64(cz), wp.float64(half_gap),
+            wp.launch(plate_kernel, dim=N, inputs=[pos_d, wp.float64(cz), wp.float64(hg),
                       wp.float64(k_plate), f_d, react_d], device=d)
             wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
         if (step + 1) % reshape_every == 0:
@@ -744,7 +762,9 @@ def simulate_whole_cell_compression_on_device(cortex, f_myo, *, strain=0.0, nucl
                "drained_frac": float(np.clip((V0 - V0_eff) / max(V0 - V_cyto, 1e-9 * V0), 0.0, 1.0)),
                "V0_eff_over_V0": float(V0_eff / V0), "tau_osm_s": float(tau_osm), "load_time_s": load_time_s,
                "Lp_um_s_Pa": Lp_um_s_Pa, "f_excess": float(getattr(membrane, "f_excess", 0.0) or 0.0) if membrane is not None else 0.0,
-               "xl_turnover_on": bool(_turnover_on), "xl_koff_per_s": xl_koff_per_s}
+               "xl_turnover_on": bool(_turnover_on), "xl_koff_per_s": xl_koff_per_s,
+               "v_press_um_s": v_press_um_s, "dt_real_s": float(_dt_real), "n_ramp": int(_N_ramp),
+               "t_ramp_s": float(_N_ramp * _dt_real) if _ramp_on else 0.0}
     return pos_all, metrics
 
 
