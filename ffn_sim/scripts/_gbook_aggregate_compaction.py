@@ -50,6 +50,9 @@ NEWTONMAX= int(os.environ.get("NEWTON_MAX", "8"))
 WARMUP   = int(os.environ.get("WARMUP", "2000"))        # soft-start steps at 0.1× dt
 FRAMES   = int(os.environ.get("FRAMES", "40"))
 NUCLEUS  = os.environ.get("NUCLEUS", "1") == "1"
+BUILDER  = os.environ.get("BUILDER", "fcc")             # 'fcc' loose | 'confluent' Voronoi space-filling (feasible)
+INSET    = float(os.environ.get("INSET", "0.0"))        # >0 → shrink cells at build so they START non-overlapping (G2 fix)
+INIT_NPZ = os.environ.get("INIT_NPZ", "") or None       # restart from a saved aggregate npz (frames/faces/cof)
 TAG      = os.environ.get("TAG", "")
 
 npz = f"{OUT}/agg_compaction_n{N}_sig{SIGMA:.0e}_adt{ACCEL_DT:g}{TAG}.npz"
@@ -61,7 +64,8 @@ print(f"[AGG-COMPACT] N={N} steps={STEPS} accel_dt={ACCEL_DT}s (phys time≈{STE
 t0 = time.time()
 r = run_decohesion(
     n_cells=N, subdiv=2, steps=STEPS, frames=FRAMES, device="cuda:0",
-    builder="fcc", gap=GAP,
+    builder=BUILDER, gap=GAP, init_npz=INIT_NPZ, inset=INSET,
+    v0_from_init=(BUILDER == "confluent" or INIT_NPZ is not None), lloyd_iters=6,
     # --- contact: finished #1 projected-Newton IPC (log-barrier, guaranteed non-penetration) ---
     conservative_contact=False, ipc=True,
     ipc_newton=True, ipc_newton_max=NEWTONMAX, ipc_newton_tol=1e-4,
