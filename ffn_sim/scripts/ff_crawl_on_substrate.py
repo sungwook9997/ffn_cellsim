@@ -41,6 +41,7 @@ from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_ke
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
                                       barbed_end_growth_kernel, sum_pos_kernel, sum_radius_kernel,
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
+from ffn_sim.ff.units import ETA_CYTOPLASM
 from ffn_sim.ff.implicit_ff import implicit_step_current
 from ffn_sim.ff.polymerization_warp import resolve_polymerization
 from ffn_sim.ff.myosin_linear import minifilament_kernel, resolve_myosin
@@ -55,10 +56,27 @@ FIL_AREAL_DENSITY_PER_UM2 = 100.0      # cortical/lamellipodial actin areal dens
 F_STALL_ACTIN_PN = 4.0                  # per-filament Brownian-ratchet stall force [pN] (KB-3.6: 2–5 pN)
 
 
+def _fps_subsample(pts: np.ndarray, k: int) -> np.ndarray:
+    """Farthest-point subsample: pick ``k`` well-spread points from ``pts`` (M,3). Deterministic (no RNG).
+    Used to place DISCRETE focal-adhesion sites — real FAs are ~10² discrete integrin clusters, NOT one clutch
+    per cortex node; at native Nc the per-node model dilutes per-clutch load ~100× → clutches never turn over →
+    symmetric pinning → no crawl. Capping to ~physiological FA count restores the per-clutch load that drives
+    the catch-slip treadmill. Returns local indices into ``pts``."""
+    n = pts.shape[0]
+    if k >= n:
+        return np.arange(n)
+    sel = [n // 2]                                            # deterministic seed point
+    d = np.full(n, np.inf)
+    for _ in range(1, k):
+        d = np.minimum(d, np.sum((pts - pts[sel[-1]]) ** 2, axis=1))
+        sel.append(int(np.argmax(d)))
+    return np.asarray(sel, dtype=np.int64)
+
+
 def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.0, 0.0),
           length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0,
           from_resting=False, relax_steps=6000, relax_device="cpu",
-          n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN):
+          n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN, n_fa=0):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
@@ -125,6 +143,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     c = cortex_pos.mean(0)
     z_sub = float(cortex_pos[:, 2].min())
     basal = np.where(cortex_pos[:, 2] < z_sub + contact_h)[0]
+    if n_fa and 0 < n_fa < basal.size:                       # DISCRETE FA sites (physiological ~10² integrin clusters,
+        basal = basal[_fps_subsample(cortex_pos[basal], n_fa)]   # not one-per-node) → physical per-clutch load → turnover
     anchors = cortex_pos[basal].copy(); anchors[:, 2] = z_sub
     proj = (cortex_pos - c) @ phat
     front = np.where(proj > front_frac * R)[0]
@@ -140,8 +160,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
-        treadmill=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
-        record_every=2500, device="cpu"):
+        treadmill=False, bulk_drag=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50,
+        assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -167,6 +187,15 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     k_plane = 1.0e3                                             # substrate excluded-volume stiffness [pN/µm]
     n_fib_nodes = int(net.fiber_offsets[-1])                   # Nc (MT off) or Nc+Nmt (MT on); MTOC+nucleus are beads
     gammas = physical_node_gammas(net, n_fib_nodes, N - n_fib_nodes)   # per-node drag from η (fiber log-drag + Stokes beads)
+    if bulk_drag:
+        # DIAGNOSIS (2026-07-09): the crawl speed is grid-dependent — the NF2007 single-fiber log-drag gives Σγ ∝ Nc,
+        # so at native Nc the COM drag is ~100-300× the physical whole-cell Stokes drag 6πηR → v ∝ 1/Nc (native crawls
+        # ~0 while the SAME physics crawls physiologically at coarse Nc; mac diag 60→13 nm/s as fil 120→500). The
+        # physically-correct drag is Σγ_cortex = 6πηR (η=65.9 Pa·s, the AFM-validated bulk-η). ⚠️ BUT setting it here
+        # DESTABILIZES the implicit solver: γ/dt (≈0.7 at native) ≪ K (crosslink stiffness ~1e6) leaves the cortex
+        # rigid-body modes unregularized → NaN. So grid-consistent crawl drag is an OPEN solver-side item (regularize
+        # rigid modes or add inertia), NOT a one-liner. Flag kept to document the diagnosis; do not use for production.
+        gammas[:Nc] = 6.0 * np.pi * ETA_CYTOPLASM * S["R"] / Nc
     # hub crosslinks (MTOC↔arm-base, finite rest seg_um) appended to cortex crosslinks → same link force + same K
     xl_i = np.concatenate([cx.xl_i, S["hub_i"]]).astype(np.int64)
     xl_j = np.concatenate([cx.xl_j, S["hub_j"]]).astype(np.int64)
@@ -496,15 +525,15 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             can = (bd == 0) & (zb < z_sub + adh_h)
             p_on = 1.0 - np.exp(-dt * kmc_every * cp.k_on)
             if treadmill:
-                # C2 (2026-07-09) CLUTCH TREADMILL: nascent adhesions re-form preferentially under the LEADING edge
-                # (nascent-adhesion gradient, KU-2.4/2.5 — assemble in the lamellipodium), while rear clutches, once
-                # ruptured by the catch-slip under load, STAY detached → de-adhesion at the trailing edge. The weight
-                # is leading-edge proximity along phat (reuses front_cos_R=front_frac·R, the protrusion front scale —
-                # no new constant); s<0 (behind COM) ⇒ 0 ⇒ rear does not re-adhere. Front-rear asymmetry ⇒ the
-                # protrusion becomes NET forward translocation (validated by the clutches-OFF audit).
+                # C2 EXPLICIT FRONT-BIAS — REJECTED DEAD-END (2026-07-09). Idea: nascent adhesions re-form only in the
+                # LEADING half (s>0), rear releases. BUT the directed crawl already EMERGES from protrusion + uniform
+                # clutch turnover (below) at physiological ~60 nm/s, traction-driven; and this explicit bias FAILS —
+                # as the COM advances, formerly-front clutches fall BEHIND it (s→<0) and stop re-forming, so the bound
+                # population runs down to ~0 → traction collapses → LESS crawl (mac diag: 46 vs 61 nm/s, bound 0.00).
+                # Left in, off by default, as a documented negative result. The working C2 is the emergent path.
                 com = p[:Nc].mean(0)
                 s = (p[S["basal"]] - com) @ phat                  # signed leading(+)/trailing(−) position [µm]
-                w = np.clip(s / max(front_cos_R, 1e-9), 0.0, 1.0)
+                w = (s > 0.0).astype(np.float64)
                 reb = can & (np.random.default_rng(step).random(M) < p_on * w)
             else:
                 reb = can & (np.random.default_rng(step).random(M) < p_on)
@@ -568,6 +597,18 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cortex-fil", type=int, default=900)
+    ap.add_argument("--seed", type=int, default=7, help="cortex/nucleus RNG seed (cross-seed ensemble: is the crawl drift seed-robust, not a single-seed artifact?)")
+    ap.add_argument("--bulk-drag", action="store_true", help="EXPERIMENTAL — grid-invariant whole-cell drag Σγ_cortex=6πηR (the physical "
+                    "Stokes drag; the crawl speed is otherwise ∝1/Nc, native crawls ~0). ⚠️ DESTABILIZES the current implicit solver: at native "
+                    "Nc the per-node γ=6πηR/Nc≈0.035 makes the solver diagonal γ/dt ≪ the crosslink stiffness K, so the cortex rigid-body modes go "
+                    "unregularized → NaN. The grid-consistent crawl drag needs a solver-side fix (regularize rigid modes / add an inertial term) — "
+                    "OPEN ITEM for PI, not a one-liner. Left as a flag documenting the diagnosis.")
+    ap.add_argument("--n-fa", type=int, default=0, help="cap basal clutches to N DISCRETE spatially-spread focal-adhesion sites "
+                    "(0=one-per-cortex-node). Real FAs are ~10² integrin clusters; at native Nc the per-node model dilutes per-clutch "
+                    "load ~100× so clutches never turn over (no crawl). ~150-300 restores physical per-clutch load → the catch-slip treadmill.")
+    ap.add_argument("--kmc-every", type=int, default=2000, help="steps between clutch catch-slip turnover + nascent rebind + FA-maturation ticks. "
+                    "MUST be << steps or the clutch treadmill never fires (default 2000 suits the explicit tiny-dt path; for the implicit "
+                    "large-dt path set so dt·kmc_every ≈ 1-2 s, e.g. ~25 at dt=0.05, to resolve the ~1 s clutch lifetime)")
     ap.add_argument("--steps", type=int, default=8000)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--record-every", type=int, default=100)
@@ -583,7 +624,10 @@ def main():
     ap.add_argument("--substrate-E", type=float, default=0.0, help="compliant substrate Young's modulus [Pa] (movable FA anchors, k_sub∝E; 0=rigid pins; KB-1.5 5000)")
     ap.add_argument("--fa-maturation", action="store_true", help="per-clutch talin unfolding → vinculin → force-gated FA growth/disassembly (KB-2.x mechanosensor)")
     ap.add_argument("--piezo", action="store_true", help="Piezo1 tension-gated open-probability reporter (KB-3.10; diagnostic)")
-    ap.add_argument("--treadmill", action="store_true", help="C2: front-rear clutch treadmill — nascent adhesions re-form under the LEADING edge, rear de-adheres → protrusion becomes net translocation (KU-2.4/2.5)")
+    ap.add_argument("--treadmill", action="store_true", help="EXPERIMENTAL/REJECTED (2026-07-09): explicit front-bias nascent rebind. "
+                    "The directed crawl already EMERGES from protrusion + uniform clutch turnover (set --kmc-every so turnover fires) at "
+                    "physiological ~60 nm/s, traction-driven (OFF-audit PASS). This explicit front-bias instead OVER-de-adheres — as the COM "
+                    "advances, clutches fall behind it and stop re-forming → bound→0 → traction collapses → LESS crawl. Kept only as a documented dead-end.")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
     ap.add_argument("--microtubules", action="store_true",
@@ -601,7 +645,7 @@ def main():
     wp.init(); t0 = time.time()
     if args.microtubules and not args.implicit:
         print("[!] --microtubules needs the implicit solver (MT bending rides K); add --implicit for production.")
-    S = build(n_cortex_fil=args.cortex_fil, length_dist=args.fil_length_dist,
+    S = build(n_cortex_fil=args.cortex_fil, seed=args.seed, n_fa=args.n_fa, length_dist=args.fil_length_dist,
               microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
               n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0))
@@ -617,7 +661,8 @@ def main():
             protrude=(not args.static and not args.spread), spread=args.spread,
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
-            fa_maturation=args.fa_maturation, treadmill=args.treadmill, device=args.device)
+            fa_maturation=args.fa_maturation, treadmill=args.treadmill, bulk_drag=args.bulk_drag,
+            kmc_every=args.kmc_every, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
