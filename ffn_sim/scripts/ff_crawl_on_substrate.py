@@ -303,6 +303,39 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     grown_d = wp.zeros(1, dtype=wp.float64, device=d)          # Σ Δlength this tick (G-actin-pool budget diagnostic, KB-3.21)
     shrunk_d = wp.zeros(1, dtype=wp.float64, device=d)         # Σ Δlength REMOVED at rear pointed ends (treadmill mass balance vs grown_d, gate G5)
 
+    # ---- S6: ECM Mikado collagen CO-SIMULATION (2026-07-09) — the cell's basal clutches grip collagen fibers and
+    #      the myosin-contracted cortex pulls them → the compliant matrix REMODELS (MCF7's real mechanobiology on
+    #      collagen-I). Implicit cell (large dt) + explicit-substepped collagen (stiff → small CFL); clutch_ecm_spring
+    #      is the two-sided coupling. Replaces the fixed-dish clutch when --ecm. ----
+    ecm_on = S.get("ecm") is not None
+    if ecm_on:
+        from ffn_sim.ff.fa_ecm import clutch_ecm_spring_kernel
+        from ffn_sim.scripts.ff_ecm_remodel_demo import _segment_pairs, K_SEG   # _per_triple_alpha already imported at module level
+        _emk = S["ecm"]; _enet = _emk.net
+        _Ep0 = np.ascontiguousarray(_enet.pos, np.float64); _En = _Ep0.shape[0]
+        _Etri = np.ascontiguousarray(_enet.bend_triples, np.int32); _EnT = _Etri.shape[0]
+        _Eal = np.ascontiguousarray(_per_triple_alpha(_enet), np.float64)
+        _Exl = np.ascontiguousarray(np.stack([_emk.xl_i, _emk.xl_j], 1), np.int32) if _emk.xl_i.size else np.zeros((0, 2), np.int32)
+        _Eseg = _segment_pairs(_enet.fiber_offsets)
+        _Esegr = np.linalg.norm(_Ep0[_Eseg[:, 0]] - _Ep0[_Eseg[:, 1]], axis=1) if _Eseg.shape[0] else np.zeros(0)
+        _Egam = np.where(_emk.pinned, 1.0e18, 1.0).astype(np.float64)      # pinned boundary immovable; bulk drag 1.0 (demo units)
+        _Ekmax = max(float(_enet.kappa.max()) / (0.5 ** 3) if _enet.kappa.size else 1.0, K_SEG,
+                     float(_emk.xl_k.max()) if _emk.xl_k.size else 1.0, float(cp.k_int))
+        _Edt = 0.1 * 1.0 / _Ekmax                                          # collagen explicit CFL-stable substep [s]
+        _Ensub = 50                                                        # collagen substeps per cell step (partial relax; remodel accumulates)
+        Ep_d = wp.array(_Ep0.copy(), dtype=wp.vec3d, device=d); Ef_d = wp.zeros(_En, dtype=wp.vec3d, device=d)
+        Etri_d = wp.array(_Etri, dtype=wp.int32, ndim=2, device=d); Eal_d = wp.array(_Eal, dtype=wp.float64, device=d)
+        Exl_d = wp.array(_Exl, dtype=wp.int32, ndim=2, device=d)
+        Exlk_d = wp.array(np.ascontiguousarray(_emk.xl_k, np.float64), dtype=wp.float64, device=d)
+        Exlr_d = wp.array(np.ascontiguousarray(_emk.xl_rest, np.float64), dtype=wp.float64, device=d)
+        Eseg_d = wp.array(np.ascontiguousarray(_Eseg, np.int32), dtype=wp.int32, ndim=2, device=d)
+        Esegk_d = wp.array(np.full(_Eseg.shape[0], K_SEG), dtype=wp.float64, device=d)
+        Esegr_d = wp.array(np.ascontiguousarray(_Esegr, np.float64), dtype=wp.float64, device=d)
+        Egam_d = wp.array(_Egam, dtype=wp.float64, device=d)
+        en_d = wp.array(np.ascontiguousarray(S["ecm_node"], np.int32), dtype=wp.int32, device=d)   # clutch → collagen node
+        Edummy = wp.zeros(N, dtype=wp.vec3d, device=d)                     # discarded cell-side out during collagen substeps
+        Ep0_host = _Ep0                                                    # frame-0 collagen (remodel reference)
+
     vs = {"dP": 0.0, "g": np.zeros((Nc, 3))}                   # osmotic ΔP + exact volume gradient (set by the loop)
 
     def full_force(x_np):
@@ -595,6 +628,17 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(mp.kT), wp.float64(mp.k_refold), wp.float64(mp.k_rec), wp.float64(mp.k_diss), wp.float64(mp.n_max), wp.float64(dt * kmc_every)], device=d)
             wp.launch(fa_growth_kernel, dim=M, inputs=[load_d, area_d, wp.float64(mp.kg0), wp.float64(mp.kd), wp.float64(mp.n_hill), wp.float64(mp.fth), wp.float64(dt * kmc_every)], device=d)
             wp.launch(fa_disassemble_kernel, dim=M, inputs=[area_d, bd_d, wp.float64(0.1)], device=d)   # sub-threshold FAs unbind (force-gated adhesion)
+        if ecm_on:                                             # S6: SUBSTEP the collagen under the cell's clutch traction → REMODEL
+            for _es in range(_Ensub):                          # (cell pos_d held; collagen is stiff → many small CFL substeps per cell step)
+                wp.launch(_zero, dim=_En, inputs=[Ef_d], device=d)
+                wp.launch(cytosim_bending_kernel, dim=_EnT, inputs=[Ep_d, Etri_d, Eal_d, Ef_d], device=d)
+                if _Exl.shape[0]:
+                    wp.launch(link_spring_kernel, dim=_Exl.shape[0], inputs=[Ep_d, Exl_d, Exlk_d, Exlr_d, Ef_d], device=d)
+                if _Eseg.shape[0]:
+                    wp.launch(link_spring_kernel, dim=_Eseg.shape[0], inputs=[Ep_d, Eseg_d, Esegk_d, Esegr_d, Ef_d], device=d)
+                wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),   # cell basal clutch
+                          wp.float64(cp.rest_um), Edummy, Ef_d], device=d)                                          # pulls the collagen fiber
+                wp.launch(axpy_physical_kernel, dim=_En, inputs=[Ep_d, wp.float64(_Edt), Egam_d, Ef_d], device=d)   # pinned bulk BC via huge γ
         if step % record_every == 0:
             p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)
             frames.append(p.astype(np.float32)); com_traj.append(cc.copy()); times.append(step * dt)
@@ -630,7 +674,11 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     contact_r = float(np.hypot(pcx[in_contact, 0] - cc_final[0], pcx[in_contact, 1] - cc_final[1]).max()) if in_contact.any() else 0.0
     basal_gap = float(xp[S["basal"], 2].mean() - z_sub)        # mean basal-node lift-off (0 = flat contact)
     cell_h = float(zc.max())                                   # apical height (spread dome should be < R)
+    ecm_pos0 = Ep0_host if ecm_on else None                    # S6: frame-0 collagen (remodel reference)
+    ecm_posf = Ep_d.numpy() if ecm_on else None                # S6: remodeled collagen
+    ecm_bound = (np.asarray(S["ecm_node"]) >= 0) if ecm_on else None
     return dict(frames=frames, com=com_traj, times=times, vol=np.array(vol_traj), dt=dt, wall_s=time.time() - t0,
+                ecm_pos0=ecm_pos0, ecm_posf=ecm_posf, ecm_node=(np.asarray(S["ecm_node"]) if ecm_on else None),
                 disp_along_um=disp_along, disp_perp_um=disp_perp, v_crawl_nm_s=v_crawl_nm_s,
                 traction_nN=float(Fclutch.sum() / 1e3), bound_frac=float(bd.mean()), n_clutch=M,
                 n_contact=int(in_contact.sum()), contact_radius_um=contact_r, basal_gap_um=basal_gap,
