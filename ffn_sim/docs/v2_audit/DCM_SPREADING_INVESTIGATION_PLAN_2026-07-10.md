@@ -125,6 +125,30 @@ which the DCM's turgid closed-surface cell lacks. → **DCM single-cell flatten-
 contact (the docs said the aggregate no-spread verdict was "gated on the M1/IPC contact fix") + the S1–S3 cadherin
 cluster de-cohesion. → Stage 2.
 
+## 6c. Stage-2 FINDING (2026-07-10) — aggregate stays CONFINED even with the new stack (visual-verified)
+
+Ran the untested post-IPC combination: N=100 spheroid on substrate + **finished IPC-newton contact** (the docs
+said the aggregate no-spread verdict was "gated on the M1/IPC fix") + **S1–S3 cadherin cluster de-cohesion**
+(`--cad-cluster --cad-mature`) + **all-cell active protrusion** (`--lamel-all-cell --lamel-clutch`) + substrate well,
+6000 steps. **Result: A/A0 = 1.001 (CONFINED, no spread)**, V/V0=1.000, pen=0, stable. The cadherin de-cohesion IS
+active (cum_broken 6223 = bonds churn) and the FA clutch engages (363), but the cells do NOT disperse (drift 0.08 µm).
+**Visual (browser-verified HTML, `dcm_spread_s2_confined_aggregate.png`)**: a compact cluster of ~100 round cells held
+by visible cadherin bonds; a few peripheral cells show high σ_vm (the protrusion tugging them) but stay attached — the
+"protrusion-too-weak / anchor-not-motor" limit made visible. So the IPC fix + de-cohesion did NOT unlock dispersal.
+
+**ROBUST VERDICT (multi-experiment + visual): the DCM cannot spread — confined-epithelial only.**
+- Single-cell FLATTEN-spread: dead (node-ejection; the turgid closed-surface cell won't pancake).
+- Aggregate DISPERSAL-spread: dead (cells stay bonded despite de-cohesion churn + protrusion + IPC).
+- This is the CORRECT epithelial result — A/A0≈1 matches MCF-7/MCF-10A non-wetting/confined (Warmt2021, Mangani2025).
+- The MESENCHYMAL spreading (MDA-MB-231 ×8, cells crawl OUT) needs cells that CRAWL — a fine-grained single-cell
+  phenomenon = the **FF engine's domain** (FF crawl works: traction-driven, 28–45 nm/s). The DCM's role is the
+  confined/mechanical multi-cell spheroid; invasion/dispersal is not a coarse-aggregate phenomenon.
+
+**Engine boundary (the honest conclusion)**: spreading/invasion = FF single-cell crawl + de-cohesion (the cadherin
+cluster is the DCM's contribution to the de-cohesion side). The DCM delivers the confined epithelial spheroid + the
+compaction mechanical end-state; it does not deliver active spreading. TAG-grounded: epithelial-confined is the
+data-matched DCM result; mesenchymal-spread is out of the DCM's structural reach.
+
 ## 7. One-line summary
 Active spheroid compaction is a confirmed dead-end (S4 + (b)S1); pivot to spreading — establish the working single-cell active
 spread (Stage 1, TAG-compared to Chaudhuri/fried-egg), then turn the S1–S3 cadherin cluster into the fine-grained de-cohesion
