@@ -1,5 +1,22 @@
 # Cadherin 성숙 + MCF7 σ 재보정 — 구현·검증됐으나 aggregate-σ 압축을 늦추지 못함 (2026-07-09)
 
+## ⭐ 모델 유효 범위 (PI 결정 2026-07-09: 여기서 멈추고 문서화)
+
+**DCM aggregate-σ 압축 모델은 MECHANICAL END-STATE까지만 유효하다.** 이 조사(3 결정테스트)로 확정된 스코프:
+
+- ✅ **유효 (쓸 수 있음):** 압축된 spheroid의 **평형 형태**(dense faceted 구), 세포/junction **응력**(virial
+  σ_vm), 접촉·packing·porosity **끝값**, 부피 보존, Foty-Steinberg **driver 방향**(σ↑→densify), 그리고
+  조건 간 **비교**(σ / N / baseline 대비 끝상태 차이). N=64/400에서 이 end-state는 실측·시각화 검증됨.
+- ❌ **무효 (인용 금지):** 압축의 **타임스케일·RATE**. 모델의 ~100 s는 **drag-limited 반경방향 σ-pull의
+  빠른 극한**이지, 실제 24–48 h(cadherin-gated T1 재배열 점도가 rate-limit)가 아니다. 궤적을 실제 시간
+  동역학으로 읽거나, "압축까지 걸리는 시간/속도"를 물리값으로 인용해선 안 된다.
+- **이유:** aggregate-σ는 실제 spheroid가 rate-limit되는 **느린 cadherin 재배열을 우회**하는 liquid-drop
+  전역 pull이다(③ junction 얼려도 압축 불변). 실제 타임스케일엔 bundle collective off-rate + rearrangement-
+  driven 압축 재설계가 필요(아래) — 이건 열려 있고, 이번엔 진행하지 않음(PI 결정 (c)).
+
+---
+
+
 **Engine:** DCM (Warp, A5000)  **Branch:** dcm/main  **Commits:** 8ec79ce (구현)
 **PI 지시:** 실제 spheroid 비교 후 — "재보정하면서 cadherin 관련도 바로 넣어서 진행."
 
