@@ -80,7 +80,7 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
           length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0,
           from_resting=False, relax_steps=6000, relax_device="cpu",
           n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN, n_fa=0,
-          ecm=False, ecm_fibers=1500, ecm_depth=4.0, ecm_capture=1.0):
+          ecm=False, ecm_fibers=1500, ecm_depth=4.0, ecm_capture=1.0, ecm_lp_um=20.0):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
@@ -160,12 +160,14 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     # the validated path is UNTOUCHED. This just makes the matrix + the nascent bonds available in S.
     ecm_net = ecm_node = None
     if ecm:
+        from ffn_sim.ff import units as U
         from ffn_sim.ff.ecm_mikado import build_mikado_network
         from ffn_sim.ff.fa_ecm import attach_clutches_to_ecm
         xy = cortex_pos[:, :2]
         lo = np.array([xy[:, 0].min() - 2.0, xy[:, 1].min() - 2.0, z_sub - ecm_depth])
         hi = np.array([xy[:, 0].max() + 2.0, xy[:, 1].max() + 2.0, z_sub + 0.5])  # slab from below z_sub to the basal cap
         ecm_net = build_mikado_network(lo, hi, n_fibers=ecm_fibers, pin_face="z_lo",  # bulk collagen below = pinned
+                                       kappa=U.KBT * float(ecm_lp_um),                 # κ=kBT·Lp; Lp is the biphasic-sweep stiffness knob (PI-gated)
                                        rng=np.random.default_rng(seed + 11))
         ecm_node = attach_clutches_to_ecm(cortex_pos[basal.astype(np.int64)], ecm_net.net.pos, capture_um=ecm_capture)
     return dict(cx=cx, net=merged, Nc=Nc, Ne=Ne, n_nuc=nuc_pos.shape[0], pos_all=pos_all, nuc=nuc,
@@ -174,6 +176,60 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
                 mtoc_idx=m["mtoc_idx"], hub_i=m["hub_i"], hub_j=m["hub_j"], hub_k=m["hub_k"],
                 hub_rest=m["hub_rest"], n_mt=int(m.get("n_mt", 0)), resting=resting,
                 ecm=ecm_net, ecm_node=ecm_node)
+
+
+def ecm_remodel_metrics(pos0, posf, ecm_node, basal, cortex_final, foff, near_um=8.0):
+    """S6 collagen-remodel decomposition — separate COHERENT physiological remodeling from passive settling.
+
+    The raw gripped-node displacement magnitude (the old "266 nm") is undirected and dominated by the cell
+    settling onto the compliant slab. This decomposes it into physiological components so the *coherent inward*
+    remodel is isolated from settling, and measures fiber reorientation toward the footprint.
+
+    Args:
+        pos0, posf: (Ne,3) collagen node positions, frame-0 and final [µm].
+        ecm_node: (M,) clutch→collagen node index (<0 = clutch not attached to any fiber).
+        basal: (M,) cortex (actin) node index each clutch grips through.
+        cortex_final: (N,3) final cortex node positions [µm].
+        foff: (F+1,) collagen fiber node offsets.
+        near_um: only fibers whose midpoint is within this horizontal distance of the footprint centroid count
+            toward the alignment index (a measurement window ≈ the cell radius, NOT a tuned parameter).
+
+    Returns:
+        dict of nm-scale components (recruit toward the bound actin, footprint-radial densification, vertical
+        settling, undirected magnitude, coherence∈[0,1]) + the radial fiber-alignment index (frame0/final/Δ).
+    """
+    ecm_node = np.asarray(ecm_node); bnd = ecm_node >= 0
+    out = {"n_grip": int(bnd.sum())}
+    if bnd.any():
+        gr = ecm_node[bnd]
+        p0 = pos0[gr]; pf = posf[gr]; d = pf - p0                         # gripped-node displacement (Ng,3) [µm]
+        act = cortex_final[np.asarray(basal)[bnd]]                        # final actin node each clutch grips through
+        tc = act - p0; tc /= (np.linalg.norm(tc, axis=1, keepdims=True) + 1e-12)
+        out["recruit_nm"] = float((d * tc).sum(1).mean()) * 1e3           # projection onto the toward-actin direction (f93683a-correct)
+        fc = p0[:, :2].mean(0)                                            # footprint centroid (xy)
+        tr = fc[None, :] - p0[:, :2]; tr /= (np.linalg.norm(tr, axis=1, keepdims=True) + 1e-12)
+        out["dens_nm"] = float((d[:, :2] * tr).sum(1).mean()) * 1e3       # centripetal (footprint-radial-inward) densification
+        out["dz_nm"] = float(d[:, 2].mean()) * 1e3                        # vertical settling component (down = −)
+        out["mag_nm"] = float(np.linalg.norm(d, axis=1).mean()) * 1e3     # undirected magnitude (the old headline number)
+        out["coh"] = float(np.linalg.norm(d.mean(0)) / (np.linalg.norm(d, axis=1).mean() + 1e-12))   # coherence [0,1]
+    else:
+        out.update(recruit_nm=0.0, dens_nm=0.0, dz_nm=0.0, mag_nm=0.0, coh=0.0)
+        fc = pos0[:, :2].mean(0)
+    foff = np.asarray(foff)
+    def _rai(pos):                                                       # radial-alignment index |t̂_xy·r̂| near the footprint
+        vals = []
+        for f in range(len(foff) - 1):
+            a, b = int(foff[f]), int(foff[f + 1])
+            if b - a < 2:
+                continue
+            t = pos[b - 1] - pos[a]; n = np.linalg.norm(t[:2])           # end-to-end tangent (xy)
+            mid = pos[(a + b) // 2, :2]; r = fc - mid; rn = np.linalg.norm(r)
+            if n < 1e-9 or rn < 1e-9 or rn > near_um:
+                continue
+            vals.append(abs(float((t[:2] @ r) / (n * rn))))
+        return float(np.mean(vals)) if vals else 0.0
+    out["rai0"] = _rai(pos0); out["raif"] = _rai(posf); out["drai"] = out["raif"] - out["rai0"]
+    return out
 
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
@@ -362,10 +418,14 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
         wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
         if clutches:
-            wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
-                      wp.float64(cp.rest_um), f_d], device=d)
-            if flow:                                           # molecular-clutch retrograde-flow traction (anchor FIXED)
-                wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+            if ecm_on:                                         # S6: collagen-I IS the substrate → the clutch pulls the LIVE fiber node (two-way; the cell FEELS the matrix)
+                wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
+                          wp.float64(cp.rest_um), f_d, Edummy_e], device=d)                  # +f traction on the cell; the −f reaction is applied in the collagen substep (partitioned/staggered)
+            else:
+                wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
+                          wp.float64(cp.rest_um), f_d], device=d)
+                if flow:                                       # molecular-clutch retrograde-flow traction (anchor FIXED)
+                    wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
         if spread:
             spread_total_d.zero_()
             wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
@@ -427,10 +487,14 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                           wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
             wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
             if clutches:
-                wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
-                          wp.float64(cp.rest_um), f_d], device=d)
-                if flow:                                       # molecular-clutch retrograde-flow traction (anchor FIXED)
-                    wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+                if ecm_on:                                       # S6: collagen-I IS the substrate → the clutch pulls the LIVE fiber node (two-way; native production path)
+                    wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
+                              wp.float64(cp.rest_um), f_d, Edummy_e], device=d)              # +f traction on the cell; −f reaction applied in the collagen substep
+                else:
+                    wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
+                              wp.float64(cp.rest_um), f_d], device=d)
+                    if flow:                                     # molecular-clutch retrograde-flow traction (anchor FIXED)
+                        wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
             if spread:
                 spread_total_d.zero_()
                 wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
@@ -463,6 +527,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     ecm_frames = []                                            # S6: collagen positions over time (the remodel/recruitment PROCESS)
     t0 = time.time()
     for step in range(steps):
+        if ecm_on and clutches:                                # S6: refresh en_d (bound-masked clutch→collagen map) at the TOP so the
+            wp.launch(mask_ecm_by_bound_kernel, dim=M, inputs=[en_base_d, bd_d, en_d], device=d)   # two-way force sites read the CURRENT bound state (not the wp.zeros init = node-0)
         if step % refresh_every == 0:                          # slow modes via DEVICE reductions (GPU-only, no host ConvexHull)
             csum_d.zero_(); wp.launch(sum_pos_kernel, dim=Nc, inputs=[pos_d, csum_d], device=d)
             cc = csum_d.numpy() / Nc                            # centroid — 3 scalars cross the bus
@@ -502,10 +568,14 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(nuc.d_knee_um), wp.float64(nuc.F_knee_pN), f_d], device=d)
         wp.launch(substrate_plane_kernel, dim=Nc, inputs=[pos_d, wp.float64(z_sub), wp.float64(k_plane), f_d], device=d)
         if clutches:
-            wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
-                      wp.float64(cp.rest_um), f_d], device=d)
-            if flow:                                           # molecular-clutch retrograde-flow traction (anchor FIXED): forward k·slip·phat
-                wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+            if ecm_on:                                         # S6: collagen-I IS the substrate → the clutch pulls the LIVE fiber node (two-way; also the tip-load the ratchet reads)
+                wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
+                          wp.float64(cp.rest_um), f_d, Edummy_e], device=d)                  # +f traction on the cell; −f reaction applied in the collagen substep
+            else:
+                wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
+                          wp.float64(cp.rest_um), f_d], device=d)
+                if flow:                                       # molecular-clutch retrograde-flow traction (anchor FIXED): forward k·slip·phat
+                    wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
         if spread:                                             # EMERGENT spreading: peripheral radial-outward ratchet
             spread_total_d.zero_()
             wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
@@ -601,6 +671,11 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(pointed_end_depoly_kernel, dim=n_cortex_fib, inputs=[pos_d, _cmv, ph, wp.float64(front_cos_R),
                       foff_d, soff_d, sr_d, wp.float64(v0_dt), wp.float64(seg_min), shrunk_d], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind
+            if ecm_on:                                         # S6: seat the catch-slip anchor at the LIVE collagen node so rupture reads the ECM-clutch
+                _eh = Ep_d.numpy(); _enb = np.asarray(S["ecm_node"]); _bh = bd_d.numpy()   # extension (actin↔collagen), NOT a stale dish pin
+                _sel = (_enb >= 0) & (_bh > 0)
+                if _sel.any():
+                    _ah = anch_d.numpy(); _ah[_sel] = _eh[_enb[_sel]]; anch_d.assign(_ah)
             wp.launch(clutch_catchslip_kmc_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), wp.float64(cp.kc0), wp.float64(cp.xc_um), wp.float64(cp.ks0),
                       wp.float64(cp.xs_um), wp.float64(cp.kT), wp.float64(cp.cap_um), wp.float64(0.0),
@@ -673,8 +748,17 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     T = times[-1] if times[-1] > 0 else 1.0
     v_crawl_nm_s = disp_along / T * 1e3                            # nm/s
     bd = bd_d.numpy(); anchors = anch_d.numpy()
-    L = np.linalg.norm(xp[S["basal"]] - anchors, axis=1)
-    Fclutch = cp.k_int * np.maximum(L - cp.rest_um, 0.0) * bd
+    ecm_pos0 = Ep0_host if ecm_on else None                    # S6: frame-0 collagen (remodel reference)
+    ecm_posf = Ep_d.numpy() if ecm_on else None                # S6: remodeled collagen
+    if ecm_on:                                                 # S6: traction = the ENGAGED clutch extension against the LIVE collagen (Option B: collagen is the substrate)
+        _enb = np.asarray(S["ecm_node"]); _be = (_enb >= 0) & (bd > 0)
+        _Le = np.linalg.norm(xp[S["basal"]][_be] - ecm_posf[_enb[_be]], axis=1) if _be.any() else np.zeros(0)
+        Fclutch = cp.k_int * np.maximum(_Le - cp.rest_um, 0.0)
+    else:
+        L = np.linalg.norm(xp[S["basal"]] - anchors, axis=1)
+        Fclutch = cp.k_int * np.maximum(L - cp.rest_um, 0.0) * bd
+    ecm_metrics = (ecm_remodel_metrics(ecm_pos0, ecm_posf, S["ecm_node"], S["basal"], xp,
+                                       S["ecm"].net.fiber_offsets) if ecm_on else None)   # S6: coherent-remodel decomposition
     # ---- CONTACT / ADHESION diagnostics (foundation state) ----
     pcx = xp[:Nc]                                              # cortex nodes only
     zc = pcx[:, 2] - z_sub                                     # cortex node height above the substrate plane
@@ -682,12 +766,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     contact_r = float(np.hypot(pcx[in_contact, 0] - cc_final[0], pcx[in_contact, 1] - cc_final[1]).max()) if in_contact.any() else 0.0
     basal_gap = float(xp[S["basal"], 2].mean() - z_sub)        # mean basal-node lift-off (0 = flat contact)
     cell_h = float(zc.max())                                   # apical height (spread dome should be < R)
-    ecm_pos0 = Ep0_host if ecm_on else None                    # S6: frame-0 collagen (remodel reference)
-    ecm_posf = Ep_d.numpy() if ecm_on else None                # S6: remodeled collagen
     ecm_bound = (np.asarray(S["ecm_node"]) >= 0) if ecm_on else None
     return dict(frames=frames, com=com_traj, times=times, vol=np.array(vol_traj), dt=dt, wall_s=time.time() - t0,
                 ecm_pos0=ecm_pos0, ecm_posf=ecm_posf, ecm_node=(np.asarray(S["ecm_node"]) if ecm_on else None),
-                ecm_frames=(np.array(ecm_frames) if ecm_on and ecm_frames else None),
+                ecm_frames=(np.array(ecm_frames) if ecm_on and ecm_frames else None), ecm_metrics=ecm_metrics,
                 disp_along_um=disp_along, disp_perp_um=disp_perp, v_crawl_nm_s=v_crawl_nm_s,
                 traction_nN=float(Fclutch.sum() / 1e3), bound_frac=float(bd.mean()), n_clutch=M,
                 n_contact=int(in_contact.sum()), contact_radius_um=contact_r, basal_gap_um=basal_gap,
@@ -718,6 +800,9 @@ def main():
                     "clutches to fiber nodes (BUILD-side; the FA↔ECM run() coupling is the next PI-overseen step — FF_S4_INTEGRATION_DESIGN). "
                     "Validated path untouched: with --ecm alone the crawl still uses the fixed-substrate clutch.")
     ap.add_argument("--ecm-fibers", type=int, default=1500, help="collagen-I fiber count for the --ecm Mikado slab")
+    ap.add_argument("--ecm-lp-um", type=float, default=20.0, help="collagen fiber persistence length Lp [µm] → κ=kBT·Lp "
+                    "(the BIPHASIC-sweep stiffness knob; default 20 = LP_COLLAGEN_UM; thin-fibril→thick-bundle range 2–2e5, PI-gated). "
+                    "Chan-Odde/Bangasser cross-check: clutch traction should peak at an intermediate effective stiffness.")
     ap.add_argument("--n-fa", type=int, default=0, help="cap basal clutches to N DISCRETE spatially-spread focal-adhesion sites "
                     "(0=one-per-cortex-node). Real FAs are ~10² integrin clusters; at native Nc the per-node model dilutes per-clutch "
                     "load ~100× so clutches never turn over (no crawl). ~150-300 restores physical per-clutch load → the catch-slip treadmill.")
@@ -770,7 +855,7 @@ def main():
               microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
               n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0),
-              ecm=args.ecm, ecm_fibers=args.ecm_fibers)
+              ecm=args.ecm, ecm_fibers=args.ecm_fibers, ecm_lp_um=args.ecm_lp_um)
     if S.get("ecm") is not None:
         _en = S["ecm_node"]
         print(f"[ecm] collagen-I Mikado slab: {len(S['ecm'].net.fiber_offsets)-1} fibers, {S['ecm'].net.pos.shape[0]} nodes, "
@@ -799,12 +884,12 @@ def main():
           f"contact-radius={r['contact_radius_um']:.2f} µm  n-contact={r['n_contact']}  "
           f"cell-height={r['cell_height_um']:.2f} µm (R={r['R_um']:.1f})  → "
           f"{'STABLE ADHERED' if 0.8 < r['vol_final'] < 1.25 and r['basal_gap_um'] < 0.4 and r['bound_frac'] > 0.5 else 'NOT STABLE/ADHERED'}")
-    if r.get("ecm_posf") is not None:                         # S6: collagen matrix REMODELING under the cell's clutch traction
-        _p0 = r["ecm_pos0"]; _pf = r["ecm_posf"]; _en = np.asarray(r["ecm_node"]); _bnd = _en >= 0
-        _disp = np.linalg.norm(_pf - _p0, axis=1); _gr = _en[_bnd]
-        _dgr = float(_disp[_gr].mean()) if _gr.size else 0.0
-        print(f"[ECM-REMODEL] collagen gripped-node disp={_dgr*1e3:.1f} nm  all={_disp.mean()*1e3:.1f} nm  "
-              f"max={_disp.max()*1e3:.1f} nm  attached={int(_bnd.sum())}/{_en.size}  (traction ON remodels; OFF audit ≈0)")
+    if r.get("ecm_metrics") is not None:                      # S6: collagen matrix REMODELING under the cell's clutch traction (DECOMPOSED)
+        _m = r["ecm_metrics"]; _en = np.asarray(r["ecm_node"])
+        print(f"[ECM-REMODEL] gripped-node |disp|={_m['mag_nm']:.1f} nm  →  COHERENT-inward: recruit(toward-actin)={_m['recruit_nm']:+.1f} nm  "
+              f"densification(footprint-radial)={_m['dens_nm']:+.1f} nm  settling(dz)={_m['dz_nm']:+.1f} nm  coherence={_m['coh']:.2f}")
+        print(f"[ECM-ALIGN]   fiber radial-alignment index (near footprint) {_m['rai0']:.3f} → {_m['raif']:.3f}  "
+              f"(Δ={_m['drai']:+.3f}; >0 = fibers reorient toward the cell)  attached={_m['n_grip']}/{_en.size}")
     if args.piezo:                                             # Piezo1 tension reporter (KB-3.10, diagnostic; feedback OFF)
         pz = resolve_piezo(); g_mem = S["mem"].gamma_mem
         print(f"[Piezo] membrane tension {g_mem:.1f} pN/µm → P_open={float(p_open(g_mem, pz)):.4f} (rest≈closed; opens as tension→γ_half=5000; feedback gain=0)")
@@ -812,6 +897,9 @@ def main():
                           for k in ("dt", "disp_along_um", "disp_perp_um", "v_crawl_nm_s", "traction_nN",
                                     "bound_frac", "n_clutch", "f_pro_pN", "gamma_min", "gamma_max",
                                     "F_star_pN", "kmax", "wall_s")}}
+    if r.get("ecm_metrics") is not None:                      # S6: the remodel decomposition (recruit/densification/alignment) for the biphasic sweep
+        out["ecm_metrics"] = {k: float(v) for k, v in r["ecm_metrics"].items()}
+        out["ecm_lp_um"] = float(args.ecm_lp_um)
     _npz = dict(frames=np.array(r["frames"]), com=r["com"], times=r["times"], vol=r["vol"], Nc=S["Nc"], Ne=S["Ne"],
                 basal=S["basal"], z_sub=S["z_sub"], R=S["R"], phat=S["phat"], foff=S["net"].fiber_offsets,
                 n_nuc=S["n_nuc"], n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"], svm=r["svm"], cstrain=r["cstrain"],
@@ -827,14 +915,26 @@ def main():
         rc = run(S, steps=args.steps, record_every=args.record_every, clutches=False, device=args.device)
         print(f"[AUDIT clutch OFF] disp∥={rc['disp_along_um']:+.3f} µm  disp⊥={rc['disp_perp_um']:.3f} µm  "
               f"v_crawl={rc['v_crawl_nm_s']:+.2f} nm/s  (must be ≈0: protrusion alone is internal)")
+        if rc.get("ecm_metrics") is not None:                  # S6: OFF control — no clutch grip → the collagen must NOT remodel (traction-driven proof)
+            _mo = rc["ecm_metrics"]; _mn = r["ecm_metrics"]
+            print(f"[ECM-REMODEL AUDIT OFF] recruit={_mo['recruit_nm']:+.1f} nm  densification={_mo['dens_nm']:+.1f} nm  "
+                  f"|disp|={_mo['mag_nm']:.1f} nm  (must be ≈0)")
+            _rr = abs(_mn['recruit_nm']) / max(abs(_mo['recruit_nm']), 1e-6)
+            _ev = "PASS" if abs(_mo['recruit_nm']) < 0.2 * abs(_mn['recruit_nm']) + 1.0 else "FAIL"
+            print(f"[ECM-REMODEL AUDIT verdict] traction-driven recruit ratio |ON/OFF|={_rr:.1f}×  → {_ev}")
+            out["ecm_remodel_verdict"] = _ev
         ratio = abs(r["disp_along_um"]) / max(abs(rc["disp_along_um"]), 1e-6)
         verdict = "PASS" if abs(rc["disp_along_um"]) < 0.2 * abs(r["disp_along_um"]) + 0.02 else "FAIL"
         print(f"[AUDIT verdict] traction-driven ratio |on/off|={ratio:.1f}×  → {verdict}")
         out["clutch_off"] = {k: rc[k] for k in ("disp_along_um", "disp_perp_um", "v_crawl_nm_s")}
         out["audit_verdict"] = verdict
-        np.savez_compressed(f"{args.out}/figs/{args.tag}_off.npz", frames=np.array(rc["frames"]),
-                            com=rc["com"], times=rc["times"], Nc=S["Nc"], Ne=S["Ne"], z_sub=S["z_sub"], phat=S["phat"],
-                            foff=S["net"].fiber_offsets, n_nuc=S["n_nuc"], n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"])
+        _offnpz = dict(frames=np.array(rc["frames"]), com=rc["com"], times=rc["times"], Nc=S["Nc"], Ne=S["Ne"],
+                       z_sub=S["z_sub"], phat=S["phat"], foff=S["net"].fiber_offsets, n_nuc=S["n_nuc"],
+                       n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"])
+        if rc.get("ecm_posf") is not None:                     # S6: OFF-control collagen (should equal frame-0 ⇒ visual proof of traction-driven)
+            _offnpz.update(ecm_pos0=rc["ecm_pos0"], ecm_posf=rc["ecm_posf"], ecm_node=np.asarray(rc["ecm_node"]),
+                           ecm_foff=S["ecm"].net.fiber_offsets)
+        np.savez_compressed(f"{args.out}/figs/{args.tag}_off.npz", **_offnpz)
     json.dump(out, open(f"{args.out}/figs/{args.tag}.json", "w"), indent=2)
     print(f"wrote {args.tag}_on.npz + {args.tag}.json  (total {time.time()-t0:.0f}s)")
 
