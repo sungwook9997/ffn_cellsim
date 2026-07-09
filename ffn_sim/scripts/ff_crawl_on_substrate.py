@@ -322,7 +322,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         _Ekmax = max(float(_enet.kappa.max()) / (0.5 ** 3) if _enet.kappa.size else 1.0, K_SEG,
                      float(_emk.xl_k.max()) if _emk.xl_k.size else 1.0, float(cp.k_int))
         _Edt = 0.1 * 1.0 / _Ekmax                                          # collagen explicit CFL-stable substep [s]
-        _Ensub = 50                                                        # collagen substeps per cell step (partial relax; remodel accumulates)
+        _Ensub = 20                                                        # collagen substeps per cell step (partial relax; remodel accumulates over steps)
         Ep_d = wp.array(_Ep0.copy(), dtype=wp.vec3d, device=d); Ef_d = wp.zeros(_En, dtype=wp.vec3d, device=d)
         Etri_d = wp.array(_Etri, dtype=wp.int32, ndim=2, device=d); Eal_d = wp.array(_Eal, dtype=wp.float64, device=d)
         Exl_d = wp.array(_Exl, dtype=wp.int32, ndim=2, device=d)
@@ -795,6 +795,12 @@ def main():
           f"contact-radius={r['contact_radius_um']:.2f} µm  n-contact={r['n_contact']}  "
           f"cell-height={r['cell_height_um']:.2f} µm (R={r['R_um']:.1f})  → "
           f"{'STABLE ADHERED' if 0.8 < r['vol_final'] < 1.25 and r['basal_gap_um'] < 0.4 and r['bound_frac'] > 0.5 else 'NOT STABLE/ADHERED'}")
+    if r.get("ecm_posf") is not None:                         # S6: collagen matrix REMODELING under the cell's clutch traction
+        _p0 = r["ecm_pos0"]; _pf = r["ecm_posf"]; _en = np.asarray(r["ecm_node"]); _bnd = _en >= 0
+        _disp = np.linalg.norm(_pf - _p0, axis=1); _gr = _en[_bnd]
+        _dgr = float(_disp[_gr].mean()) if _gr.size else 0.0
+        print(f"[ECM-REMODEL] collagen gripped-node disp={_dgr*1e3:.1f} nm  all={_disp.mean()*1e3:.1f} nm  "
+              f"max={_disp.max()*1e3:.1f} nm  attached={int(_bnd.sum())}/{_en.size}  (traction ON remodels; OFF audit ≈0)")
     if args.piezo:                                             # Piezo1 tension reporter (KB-3.10, diagnostic; feedback OFF)
         pz = resolve_piezo(); g_mem = S["mem"].gamma_mem
         print(f"[Piezo] membrane tension {g_mem:.1f} pN/µm → P_open={float(p_open(g_mem, pz)):.4f} (rest≈closed; opens as tension→γ_half=5000; feedback gain=0)")
@@ -802,12 +808,15 @@ def main():
                           for k in ("dt", "disp_along_um", "disp_perp_um", "v_crawl_nm_s", "traction_nN",
                                     "bound_frac", "n_clutch", "f_pro_pN", "gamma_min", "gamma_max",
                                     "F_star_pN", "kmax", "wall_s")}}
-    np.savez_compressed(f"{args.out}/figs/{args.tag}_on.npz", frames=np.array(r["frames"]), com=r["com"],
-                        times=r["times"], vol=r["vol"], Nc=S["Nc"], Ne=S["Ne"], basal=S["basal"], z_sub=S["z_sub"],
-                        R=S["R"], phat=S["phat"], foff=S["net"].fiber_offsets, n_nuc=S["n_nuc"],
-                        n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"],
-                        svm=r["svm"], cstrain=r["cstrain"], faces=r["faces"], bound_frames=r["bound_frames"],
-                        anch_frames=r["anch_frames"], k_int=r["k_int"], clutch_rest_um=r["clutch_rest_um"])
+    _npz = dict(frames=np.array(r["frames"]), com=r["com"], times=r["times"], vol=r["vol"], Nc=S["Nc"], Ne=S["Ne"],
+                basal=S["basal"], z_sub=S["z_sub"], R=S["R"], phat=S["phat"], foff=S["net"].fiber_offsets,
+                n_nuc=S["n_nuc"], n_mt=S["n_mt"], mtoc_idx=S["mtoc_idx"], svm=r["svm"], cstrain=r["cstrain"],
+                faces=r["faces"], bound_frames=r["bound_frames"], anch_frames=r["anch_frames"],
+                k_int=r["k_int"], clutch_rest_um=r["clutch_rest_um"])
+    if r.get("ecm_posf") is not None:                          # S6: collagen frame-0 + remodeled + attachment (for the remodel viewer)
+        _npz.update(ecm_pos0=r["ecm_pos0"], ecm_posf=r["ecm_posf"], ecm_node=np.asarray(r["ecm_node"]),
+                    ecm_foff=S["ecm"].net.fiber_offsets)
+    np.savez_compressed(f"{args.out}/figs/{args.tag}_on.npz", **_npz)
     if args.audit:
         rc = run(S, steps=args.steps, record_every=args.record_every, clutches=False, device=args.device)
         print(f"[AUDIT clutch OFF] disp∥={rc['disp_along_um']:+.3f} µm  disp⊥={rc['disp_perp_um']:.3f} µm  "
