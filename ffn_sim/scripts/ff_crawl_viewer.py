@@ -143,7 +143,23 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     v = along / T_s * 1e3 if T_s > 0 else 0.0
     ttl = title or f"FF crawl — disp∥={along:+.3f} µm, v={v:+.1f} nm/s over {T_s:.1f} s (real η-dynamics)"
 
+    ecm_cbar = None
+    if "ecm_frames" in d.files:                               # S6: collagen-I Mikado matrix, RECRUITED by the cell's traction
+        ef = np.asarray(d["ecm_frames"], np.float32); efoff = np.asarray(d["ecm_foff"], np.int64)
+        Te = ef.shape[0]; talign = [int(round(t / max(T - 1, 1) * (Te - 1))) for t in range(T)]   # align collagen↔cell frames
+        eseg = np.array([(n, n + 1) for f in range(len(efoff) - 1)
+                         for n in range(int(efoff[f]), int(efoff[f + 1]) - 1)], dtype=np.int64)    # collagen fiber segments
+        ecm_seg_fr = [ef[talign[t]][eseg].reshape(-1, 3) for t in range(T)]                        # (2·nseg,3) per frame
+        e0 = ef[0]                                                                                 # frame-0 reference
+        edisp_seg = [np.linalg.norm(ef[talign[t]] - e0, axis=1)[eseg].reshape(-1) * 1e3 for t in range(T)]   # per-endpoint nm
+        hi_e = float(max(np.percentile(np.concatenate(edisp_seg), 98), 1.0))
+        layers.append({"name": f"collagen-I matrix (traction recruitment, 0–{hi_e:.0f} nm turbo)", "kind": "lines",
+                       "verts": ecm_seg_fr[0], "color": "#c8a06a", "size": 1.0, "opacity": 0.85,
+                       "frames": ecm_seg_fr, "color_frames": _turbo_colors(edisp_seg, 0.0, hi_e)})
+        ecm_cbar = {"grad": _turbo_gradient(), "lo": 0.0, "hi": hi_e, "unit": "nm",
+                    "label": "collagen displacement (traction recruitment)"}
     scenes = {"shape": layers}; cbars = {}
+    if ecm_cbar: cbars["shape"] = ecm_cbar
     # FEM-style field scenes: the cortex surface (hull) colored per-node by the SIM's von-Mises stress / areal
     # strain, animated per frame, WITH a turbo colorbar (colour↔value scale, like a paper figure). Reuses the
     # scene dropdown. Context (MT/nucleus/substrate/COM) kept; faint shape hull+filaments → opaque colored surface.
