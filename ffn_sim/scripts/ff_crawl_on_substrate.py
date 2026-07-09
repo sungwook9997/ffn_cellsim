@@ -460,6 +460,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     _kxl_st = np.ascontiguousarray(cx.xl_k, np.float64); _r0_st = np.ascontiguousarray(cx.xl_rest, np.float64)
     _myo_st = np.stack([cx.myo_i, cx.myo_j], 1).astype(np.int64) if cx.myo_i.size else np.zeros((0, 2), np.int64)
     svm_frames, strain_frames, bound_frames, anch_frames = [], [], [], []
+    ecm_frames = []                                            # S6: collagen positions over time (the remodel/recruitment PROCESS)
     t0 = time.time()
     for step in range(steps):
         if step % refresh_every == 0:                          # slow modes via DEVICE reductions (GPU-only, no host ConvexHull)
@@ -647,6 +648,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if step % record_every == 0:
             p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)
             frames.append(p.astype(np.float32)); com_traj.append(cc.copy()); times.append(step * dt)
+            if ecm_on:                                           # S6: record the collagen positions this frame (the recruitment PROCESS)
+                ecm_frames.append(Ep_d.numpy().astype(np.float32))
             ar = pcxr[faces[:, 0]] - cc; br = pcxr[faces[:, 1]] - cc; cr = pcxr[faces[:, 2]] - cc
             vol_traj.append(abs(float((ar * np.cross(br, cr)).sum() / 6.0)) / V0)   # face-based volume (no ConvexHull)
             # FEM fields on the cortex (virial σ_vm + areal strain) + FA-junction snapshot (bound clutch↔anchor)
@@ -684,6 +687,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     ecm_bound = (np.asarray(S["ecm_node"]) >= 0) if ecm_on else None
     return dict(frames=frames, com=com_traj, times=times, vol=np.array(vol_traj), dt=dt, wall_s=time.time() - t0,
                 ecm_pos0=ecm_pos0, ecm_posf=ecm_posf, ecm_node=(np.asarray(S["ecm_node"]) if ecm_on else None),
+                ecm_frames=(np.array(ecm_frames) if ecm_on and ecm_frames else None),
                 disp_along_um=disp_along, disp_perp_um=disp_perp, v_crawl_nm_s=v_crawl_nm_s,
                 traction_nN=float(Fclutch.sum() / 1e3), bound_frac=float(bd.mean()), n_clutch=M,
                 n_contact=int(in_contact.sum()), contact_radius_um=contact_r, basal_gap_um=basal_gap,
@@ -816,6 +820,8 @@ def main():
     if r.get("ecm_posf") is not None:                          # S6: collagen frame-0 + remodeled + attachment (for the remodel viewer)
         _npz.update(ecm_pos0=r["ecm_pos0"], ecm_posf=r["ecm_posf"], ecm_node=np.asarray(r["ecm_node"]),
                     ecm_foff=S["ecm"].net.fiber_offsets)
+        if r.get("ecm_frames") is not None:
+            _npz.update(ecm_frames=r["ecm_frames"])            # the collagen recruitment PROCESS (per-frame positions)
     np.savez_compressed(f"{args.out}/figs/{args.tag}_on.npz", **_npz)
     if args.audit:
         rc = run(S, steps=args.steps, record_every=args.record_every, clutches=False, device=args.device)
