@@ -611,6 +611,34 @@ def build_ecm(material: str, box_lo, box_hi, **kw) -> ECMNetwork:
     return build_continuum_ecm(spec, box_lo, box_hi, **kw)
 
 
+def build_gradient_ecm(spec: ECMSpec, box_lo, box_hi, *, E_lo_Pa: float, E_hi_Pa: float,
+                       axis: str = "x", node_spacing_um: float = 2.5, k_per_E: float = 1.0,
+                       pin_faces=("z_lo",), pin_margin_um: float = 1.0,
+                       rng: np.random.Generator | None = None) -> ECMNetwork:
+    """Build a continuum-gel substrate with a SPATIAL stiffness GRADIENT along ``axis`` — a durotaxis
+    substrate. Each bond's stiffness is graded so the local Young's modulus runs linearly E_lo→E_hi
+    (a PAA/HA gel photopatterned or gradient-crosslinked). ``k_per_E`` [pN/µm per Pa] is the calibrated
+    bond-stiffness-per-modulus (from ``ecm_mechanics.calibrate_continuum_k`` on a uniform gel: k_ref/E_ref).
+    The gradient dE/dx is set from the in-vivo durotaxis range (KB-1.V.1.3: physiological ~1 Pa/µm,
+    pathological ~10 Pa/µm, sharp step ≥100 Pa/µm) — validated, not tuned.
+    """
+    if spec.is_fibrillar:
+        raise ValueError(f"{spec.key} is fibrillar; gradient substrate uses the continuum lattice")
+    ecm = build_continuum_ecm(spec, box_lo, box_hi, dim=3, node_spacing_um=node_spacing_um,
+                              k_bond_pN_um=1.0, pin_faces=pin_faces, pin_margin_um=pin_margin_um, rng=rng)
+    ax = {"x": 0, "y": 1, "z": 2}[axis]
+    lo = np.asarray(box_lo, float)
+    hi = np.asarray(box_hi, float)
+    pos = ecm.net.pos
+    mid = 0.5 * (pos[ecm.seg_i, ax] + pos[ecm.seg_j, ax])
+    frac = np.clip((mid - lo[ax]) / (hi[ax] - lo[ax]), 0.0, 1.0)
+    E_x = E_lo_Pa + frac * (E_hi_Pa - E_lo_Pa)
+    ecm.seg_k = (E_x * k_per_E).astype(np.float64)
+    ecm.meta.update({"gradient": True, "E_lo_Pa": E_lo_Pa, "E_hi_Pa": E_hi_Pa, "axis": axis,
+                     "grad_Pa_per_um": (E_hi_Pa - E_lo_Pa) / (hi[ax] - lo[ax])})
+    return ecm
+
+
 def build_composite(components, box_lo, box_hi, *, dim: int = 3, interlink_um: float = 0.0,
                     interlink_k: float = 100.0, pin_faces=("z_lo",), pin_margin_um: float = 1.0,
                     rng: np.random.Generator | None = None) -> ECMNetwork:
@@ -676,4 +704,4 @@ def build_composite(components, box_lo, box_hi, *, dim: int = 3, interlink_um: f
 
 __all__ = ["ECMSpec", "REGISTRY", "get_spec", "ECMNetwork", "sample_orientations",
            "build_fibrillar_ecm", "build_continuum_ecm", "build_ecm", "build_composite",
-           "fibers_for_concentration"]
+           "build_gradient_ecm", "fibers_for_concentration"]

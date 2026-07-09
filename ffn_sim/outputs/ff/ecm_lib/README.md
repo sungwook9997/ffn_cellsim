@@ -13,7 +13,8 @@ in **real Pascals** and validates every material against the literature. Built 2
 | **alignment** | nematic order S∈[0,1] about any director (isotropic → fully aligned bundle) |
 | **mixing** | interpenetrating composites (e.g. collagen + Matrigel) with inter-network crosslinks |
 | **extent** | REV cubes for modulus · native 5R×5R (75×75 µm, ~94 500 nodes) full extent |
-| **measurement** | shear G · uniaxial E (+ anisotropy) · spherical indentation E_eff — all in **Pa** |
+| **gradient** | spatially-graded durotaxis substrates (physiological 1 / pathological 10 / interface ~100 Pa/µm) |
+| **measurement** | shear G · uniaxial E (+ anisotropy) · spherical indentation E_eff (any x,y) — all in **Pa** |
 
 ## Two constitutive classes (the physics, not a convenience)
 

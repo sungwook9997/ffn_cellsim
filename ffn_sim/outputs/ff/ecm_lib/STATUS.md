@@ -66,3 +66,11 @@ Core goal COMPLETE + committed (fcd208f): 6/6 materials IN band, alignment/2D/3D
 GPU, novelty (strain-stiffening + decoupling), 6 figs + 2 viewers (browser-verified), Notion Dev-Log posted.
 **Next (this cycle): register the 5 new material SourceEvidence + KnowledgeClaim rows to the Notion
 Contract-Graph** (user authorized "없으면 신설하여 진행") — the one stated goal item still only staged.
+
+## Checkpoint 2 (2026-07-10, later loop cycles)
+- KB registration DONE (commit 25639e8): KB-1.V.4.1-4.5 in Notion SoT + duckdb (167 claims), status=verified.
+- **Extension: durotaxis stiffness-GRADIENT substrate** (new capability). `build_gradient_ecm` in
+  ecm_library.py (spatially-graded continuum bond stiffness) + `indentation_modulus(center_xy=...)` probe +
+  `ff_ecm_gradient.py` (physiological 1 / pathological 10 / sharp ~100 Pa/µm regimes vs KB-1.V.1.3, probe
+  E(x) by indenting along the gradient axis). Running on gbook A5000.
+- Note: cron fired ~8× stacked during long turns — handled as ONE check-in (no repeated work).

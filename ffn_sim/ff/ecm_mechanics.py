@@ -338,7 +338,8 @@ def _hertz_slope_E(deltas, forces, R_um, nu) -> float:
 
 def indentation_modulus(ecm, *, indenter_R_um: float = 6.0, max_depth_um: float | None = None,
                         n_depths: int = 5, k_ind: float = 2.0e3, relax_steps: int = 2500,
-                        axial_mode: str = "spring", nu: float | None = None, device: str = "cpu") -> dict:
+                        axial_mode: str = "spring", nu: float | None = None, center_xy=None,
+                        device: str = "cpu") -> dict:
     """Press a rigid sphere of radius ``indenter_R_um`` into the TOP surface of a bottom-clamped slab and
     invert Hertz → **E_eff [Pa]** (the AFM/bead "pressing" measurement).
 
@@ -361,8 +362,8 @@ def indentation_modulus(ecm, *, indenter_R_um: float = 6.0, max_depth_um: float 
     pos0 = ecm.net.pos.copy()
     fixed = pos0[:, 2] < lo[2] + m
     z_surf = float(np.percentile(pos0[:, 2], 99.0))            # effective top surface
-    cx = 0.5 * (lo[0] + hi[0])
-    cy = 0.5 * (lo[1] + hi[1])
+    cx = 0.5 * (lo[0] + hi[0]) if center_xy is None else float(center_xy[0])
+    cy = 0.5 * (lo[1] + hi[1]) if center_xy is None else float(center_xy[1])
     pairs, klink, rlink, use_reshape = _links_for(ecm, axial_mode)
     depths = np.linspace(max_depth_um / n_depths, max_depth_um, n_depths)
     forces, contacts = [], []
