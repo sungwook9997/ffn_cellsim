@@ -28,6 +28,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ffn_sim.dcm.dcm_cadherin_cluster import cluster_bd_step
 from ffn_sim.validation.cadherin_sliding_rebinding import (
     effective_k_off, RAKSHIT_W2A, CadherinCatchParams)
 
@@ -86,6 +87,15 @@ class CadherinParams:
     mature: bool = False
     tau_mature: float = 600.0      # s  maturation timescale (KB-4.11 5–30 min; mid ≈10 min)
     mature_lifetime: float = 600.0 # s  mature junction lifetime (KB-4.11) → k_off_mature = 1/this
+    # LOAD-SHARING CLUSTER (2026-07-09; default OFF, back-compat byte-identical). A junction is a
+    # cluster of ``bundle_n`` PARALLEL trans-dimers sharing the extension: every engaged molecule bears
+    # the same per-molecule load F1=k_trans·(L−r0), unbinds at eps(F1), and an empty slot rebinds at
+    # k_on; the junction is lost only when ALL molecules are simultaneously unbound (m→0). This replaces
+    # the lumped "whole bundle breaks at the single-molecule rate" (which fixed the junction lifetime at
+    # ~1/k_off and starved maturation) with the fine-grained cluster whose collective lifetime T(n_b)≫
+    # 1/eps is EMERGENT (CLAUDE.md hard rule). ``bundle_n`` IS the cluster size n_b here. See
+    # dcm_cadherin_cluster + DCM_CADHERIN_CLUSTER_REARRANGEMENT_DESIGN_2026-07-09.
+    cluster: bool = False
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 
@@ -125,6 +135,11 @@ class CadherinBondHost:
         self._fs, self._koff = _build_koff_table(self.p.catch)
         # dynamic bond set: (M,2) node-index pairs (i in cell A, j in cell B); each node ≤1 bond
         self.bonds = np.zeros((0, 2), dtype=np.int64)
+        # load-sharing cluster: per-bond engaged-molecule count m (parallel to self.bonds); a new
+        # junction nucleates full (m=n_b). n_b = bundle_n as an int cluster size (cluster mode only).
+        self.cluster = bool(self.p.cluster)
+        self.n_b = max(1, int(round(float(self.p.bundle_n))))
+        self.m = np.zeros((0,), dtype=np.int64)
         self.n_formed = 0
         self.n_broken = 0
         self._dev = None
@@ -174,11 +189,24 @@ class CadherinBondHost:
             live = (cof[i] >= 0) & (cof[j] >= 0)
             i, j = i[live], j[live]
             L = np.linalg.norm(P[i] - P[j], axis=1)
-            F = self.p.k_trans * np.maximum(0.0, L - self.p.r0_trans)
-            p_break = 1.0 - np.exp(-self._koff_of(F) * dt)
-            keep = self._rng.random(i.size) >= p_break
-            self.n_broken += int((~keep).sum())
-            self.bonds = np.stack([i[keep], j[keep]], axis=1)
+            if self.cluster:
+                # load-sharing cluster: per-molecule load F1=k_trans·(L−r0) (parallel springs at one
+                # extension) drives each molecule's catch-slip unbind; empty slots rebind at k_on; the
+                # junction dies only when all molecules are simultaneously unbound (m→0).
+                f1 = self.p.k_trans * np.maximum(0.0, L - self.p.r0_trans)
+                p_off = 1.0 - np.exp(-self._koff_of(f1) * dt)
+                p_on = 1.0 - np.exp(-self.p.k_on * dt)
+                m = cluster_bd_step(self.m[live], self.n_b, p_off, p_on, self._rng)
+                keep = m > 0
+                self.n_broken += int((~keep).sum())
+                self.bonds = np.stack([i[keep], j[keep]], axis=1)
+                self.m = m[keep]
+            else:
+                F = self.p.k_trans * np.maximum(0.0, L - self.p.r0_trans)
+                p_break = 1.0 - np.exp(-self._koff_of(F) * dt)
+                keep = self._rng.random(i.size) >= p_break
+                self.n_broken += int((~keep).sum())
+                self.bonds = np.stack([i[keep], j[keep]], axis=1)
         # --- FORM (rest-symmetric on-rate over apposed unbonded different-cell pairs) ---
         bonded = np.zeros(P.shape[0], dtype=bool)
         if self.bonds.shape[0]:
@@ -213,6 +241,9 @@ class CadherinBondHost:
         if new:
             self.n_formed += len(new)
             self.bonds = np.concatenate([self.bonds, np.array(new, dtype=np.int64)], axis=0)
+            if self.cluster:                       # a nascent junction nucleates full (m = n_b)
+                self.m = np.concatenate(
+                    [self.m, np.full(len(new), self.n_b, dtype=np.int64)])
 
     @property
     def n_bonds(self) -> int:
