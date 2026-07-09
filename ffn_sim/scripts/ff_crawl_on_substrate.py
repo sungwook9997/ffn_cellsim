@@ -309,7 +309,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     #      is the two-sided coupling. Replaces the fixed-dish clutch when --ecm. ----
     ecm_on = S.get("ecm") is not None
     if ecm_on:
-        from ffn_sim.ff.fa_ecm import clutch_ecm_spring_kernel
+        from ffn_sim.ff.fa_ecm import clutch_ecm_spring_kernel, mask_ecm_by_bound_kernel
         from ffn_sim.scripts.ff_ecm_remodel_demo import _segment_pairs, K_SEG   # _per_triple_alpha already imported at module level
         _emk = S["ecm"]; _enet = _emk.net
         _Ep0 = np.ascontiguousarray(_enet.pos, np.float64); _En = _Ep0.shape[0]
@@ -332,8 +332,10 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         Esegk_d = wp.array(np.full(_Eseg.shape[0], K_SEG), dtype=wp.float64, device=d)
         Esegr_d = wp.array(np.ascontiguousarray(_Esegr, np.float64), dtype=wp.float64, device=d)
         Egam_d = wp.array(_Egam, dtype=wp.float64, device=d)
-        en_d = wp.array(np.ascontiguousarray(S["ecm_node"], np.int32), dtype=wp.int32, device=d)   # clutch → collagen node
+        en_base_d = wp.array(np.ascontiguousarray(S["ecm_node"], np.int32), dtype=wp.int32, device=d)   # clutch → collagen node (frame-0 attach)
+        en_d = wp.zeros(S["basal"].size, dtype=wp.int32, device=d)         # per-step EFFECTIVE attach (masked by bound state below)
         Edummy = wp.zeros(N, dtype=wp.vec3d, device=d)                     # discarded cell-side out during collagen substeps
+        Edummy_e = wp.zeros(_En, dtype=wp.vec3d, device=d)                 # discarded collagen-side out during the cell force-eval
         Ep0_host = _Ep0                                                    # frame-0 collagen (remodel reference)
 
     vs = {"dP": 0.0, "g": np.zeros((Nc, 3))}                   # osmotic ΔP + exact volume gradient (set by the loop)
@@ -629,6 +631,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(fa_growth_kernel, dim=M, inputs=[load_d, area_d, wp.float64(mp.kg0), wp.float64(mp.kd), wp.float64(mp.n_hill), wp.float64(mp.fth), wp.float64(dt * kmc_every)], device=d)
             wp.launch(fa_disassemble_kernel, dim=M, inputs=[area_d, bd_d, wp.float64(0.1)], device=d)   # sub-threshold FAs unbind (force-gated adhesion)
         if ecm_on:                                             # S6: SUBSTEP the collagen under the cell's clutch traction → REMODEL
+            if clutches:                                       # only ENGAGED clutches grip the collagen (catch-slip release stops pulling;
+                wp.launch(mask_ecm_by_bound_kernel, dim=M, inputs=[en_base_d, bd_d, en_d], device=d)   # OFF control → no grip → remodel is traction-driven)
             for _es in range(_Ensub):                          # (cell pos_d held; collagen is stiff → many small CFL substeps per cell step)
                 wp.launch(_zero, dim=_En, inputs=[Ef_d], device=d)
                 wp.launch(cytosim_bending_kernel, dim=_EnT, inputs=[Ep_d, Etri_d, Eal_d, Ef_d], device=d)
@@ -636,8 +640,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                     wp.launch(link_spring_kernel, dim=_Exl.shape[0], inputs=[Ep_d, Exl_d, Exlk_d, Exlr_d, Ef_d], device=d)
                 if _Eseg.shape[0]:
                     wp.launch(link_spring_kernel, dim=_Eseg.shape[0], inputs=[Ep_d, Eseg_d, Esegk_d, Esegr_d, Ef_d], device=d)
-                wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),   # cell basal clutch
-                          wp.float64(cp.rest_um), Edummy, Ef_d], device=d)                                          # pulls the collagen fiber
+                if clutches:
+                    wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),   # BOUND cell basal
+                              wp.float64(cp.rest_um), Edummy, Ef_d], device=d)                                          # clutch pulls the fiber
                 wp.launch(axpy_physical_kernel, dim=_En, inputs=[Ep_d, wp.float64(_Edt), Egam_d, Ef_d], device=d)   # pinned bulk BC via huge γ
         if step % record_every == 0:
             p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)

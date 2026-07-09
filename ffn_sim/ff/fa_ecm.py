@@ -50,6 +50,19 @@ def clutch_ecm_spring_kernel(
         wp.atomic_add(ecm_force, j, -f)          # Newton pair: pull the collagen fiber toward the cell
 
 
+@wp.kernel
+def mask_ecm_by_bound_kernel(base: wp.array(dtype=wp.int32), bound: wp.array(dtype=wp.int32),
+                             out: wp.array(dtype=wp.int32)):
+    """``out[t] = base[t]`` if the clutch is BOUND (``bound[t]==1``) else ``-1`` — so only ENGAGED clutches grip
+    the collagen. Makes the ECM traction respect the catch-slip bound state (a released clutch stops pulling the
+    matrix), and makes the traction-OFF control (all clutches unbound) truly detach → the remodel is traction-driven."""
+    t = wp.tid()
+    if bound[t] == wp.int32(1):
+        out[t] = base[t]
+    else:
+        out[t] = wp.int32(-1)
+
+
 def attach_clutches_to_ecm(actin_pos: np.ndarray, ecm_pos: np.ndarray, capture_um: float) -> np.ndarray:
     """Form nascent FA↔collagen bonds: each clutch (at ``actin_pos[i]``) binds the NEAREST ECM node within
     ``capture_um``; returns the per-clutch ECM node index (``-1`` = no fiber in reach). Host, at attach time
@@ -62,4 +75,4 @@ def attach_clutches_to_ecm(actin_pos: np.ndarray, ecm_pos: np.ndarray, capture_u
     return np.where(dist <= float(capture_um), idx, -1).astype(np.int64)
 
 
-__all__ = ["clutch_ecm_spring_kernel", "attach_clutches_to_ecm"]
+__all__ = ["clutch_ecm_spring_kernel", "mask_ecm_by_bound_kernel", "attach_clutches_to_ecm"]
