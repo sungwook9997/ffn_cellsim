@@ -96,6 +96,16 @@ class CadherinParams:
     # 1/eps is EMERGENT (CLAUDE.md hard rule). ``bundle_n`` IS the cluster size n_b here. See
     # dcm_cadherin_cluster + DCM_CADHERIN_CLUSTER_REARRANGEMENT_DESIGN_2026-07-09.
     cluster: bool = False
+    # S2 maturation-capacity: a nascent junction NUCLEATES small (n_nascent parallel dimers, turns over
+    # fast → rearrangement-permissive) and, if it PERSISTS, RECRUITS toward the full cluster over
+    # tau_mature (E-cadherin clustering + α-catenin/vinculin reinforcement, KB-4.3): N_b(age) = n_nascent
+    # + (bundle_n − n_nascent)·(1 − exp(−age/tau_mature)). As capacity grows the empty slots refill at
+    # k_on and the cluster lifetime rises steeply → the junction LOCKS. The RATE at which junctions lock
+    # is 1/tau_mature (lit-anchored, robust) — NOT the super-exponentially-sensitive raw lifetime (see
+    # DCM_CADHERIN_CLUSTER_REARRANGEMENT_DESIGN §2). Active only when cluster AND mature are both on.
+    # n_nascent = the post-nucleation clustered dimer count (KB-4.3 nascent puncta); CONTROLLED VARIABLE,
+    # characterised in G2/G3, flagged for a firm KB anchor — never tuned to a compaction target.
+    n_nascent: int = 4
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 
@@ -138,14 +148,52 @@ class CadherinBondHost:
         # load-sharing cluster: per-bond engaged-molecule count m (parallel to self.bonds); a new
         # junction nucleates full (m=n_b). n_b = bundle_n as an int cluster size (cluster mode only).
         self.cluster = bool(self.p.cluster)
-        self.n_b = max(1, int(round(float(self.p.bundle_n))))
+        self.n_b = max(1, int(round(float(self.p.bundle_n))))   # full (mature) cluster capacity
         self.m = np.zeros((0,), dtype=np.int64)
+        # S2 maturation-capacity: maturation is a property of the sustained CONTACT (apposition), NOT a
+        # single trans-dimer's uninterrupted lifetime — a nascent junction's lifetime (~0.24 s even with
+        # load sharing) is « τ_mature, so a persisting CONTACT must accumulate maturation THROUGH bond
+        # turnover (break→reform). Track per-NODE contact_age [s] (incremented while the node is apposed
+        # to / bonded with another cell, reset when it leaves contact); N_b for a bond derives from its
+        # endpoints' contact_age. So the capacity matures over τ_mature regardless of which specific
+        # trans-dimer is currently engaged → the lock RATE is 1/τ_mature (robust).
+        self.cluster_mature = bool(self.p.cluster and self.p.mature)
+        self.n_nascent = max(1, min(int(self.p.n_nascent), self.n_b))
+        self.contact_age = np.zeros(self.cof.size, dtype=np.float64)
         self.n_formed = 0
         self.n_broken = 0
         self._dev = None
 
     def _koff_of(self, F: np.ndarray) -> np.ndarray:
         return np.interp(F, self._fs, self._koff)
+
+    def _nb_of_age(self, age: np.ndarray) -> np.ndarray:
+        """Maturing cluster capacity N_b(age) = n_nascent + (n_b − n_nascent)·(1 − exp(−age/τ_mature)),
+        rounded to an integer molecule count. Constant n_b when maturation is off (S1)."""
+        if not self.cluster_mature:
+            return np.full(np.shape(age), self.n_b, dtype=np.int64)
+        grow = 1.0 - np.exp(-np.asarray(age) / max(self.p.tau_mature, 1e-30))
+        nb = self.n_nascent + (self.n_b - self.n_nascent) * grow
+        return np.clip(np.rint(nb), self.n_nascent, self.n_b).astype(np.int64)
+
+    def _apposed_mask(self, P: np.ndarray) -> np.ndarray:
+        """(N,) bool: a node is IN CONTACT iff within r_bind of a live DIFFERENT-cell node, OR currently
+        bonded (a loaded trans-dimer can stretch past r_bind but is still an apposed contact). This is
+        the sustained-contact signal that accumulates maturation across bond turnover."""
+        from scipy.spatial import cKDTree
+        cof = self.cof
+        app = np.zeros(cof.size, dtype=bool)
+        idx = np.flatnonzero(cof >= 0)
+        if idx.size >= 2:
+            pairs = cKDTree(P[idx]).query_pairs(r=self.p.r_bind, output_type="ndarray")
+            if pairs.size:
+                a = idx[pairs[:, 0]]; b = idx[pairs[:, 1]]
+                diff = cof[a] != cof[b]                    # only across a cell-cell interface
+                a, b = a[diff], b[diff]
+                app[a] = True; app[b] = True
+        if self.bonds.shape[0]:                            # a bonded node is apposed regardless of stretch
+            app[self.bonds[:, 0]] = True; app[self.bonds[:, 1]] = True
+        return app
 
     def _n_subcycle(self):
         """(n_sub, dt_sub) for advancing the KMC over dt_batch. δt_cad = 1/(micro_M·k_ref) with
@@ -182,6 +230,11 @@ class CadherinBondHost:
     def _tick(self, P: np.ndarray, dt: float) -> None:
         """One break+form pass advancing the KMC by ``dt`` at frozen positions ``P``."""
         cof = self.cof
+        # --- MATURATION: age the sustained contacts (per node), reset those out of contact (S2) ---
+        if self.cluster_mature:
+            app = self._apposed_mask(P)
+            self.contact_age[app] += dt
+            self.contact_age[~app] = 0.0
         # --- BREAK (catch-slip, force-dependent) ---
         if self.bonds.shape[0]:
             i = self.bonds[:, 0]; j = self.bonds[:, 1]
@@ -192,11 +245,15 @@ class CadherinBondHost:
             if self.cluster:
                 # load-sharing cluster: per-molecule load F1=k_trans·(L−r0) (parallel springs at one
                 # extension) drives each molecule's catch-slip unbind; empty slots rebind at k_on; the
-                # junction dies only when all molecules are simultaneously unbound (m→0).
+                # junction dies only when all molecules are simultaneously unbound (m→0). The capacity
+                # N_b matures over τ_mature via the endpoints' CONTACT age (S2), so a persisting contact
+                # recruits + locks even across bond turnover; a fresh contact turns over at the nascent size.
                 f1 = self.p.k_trans * np.maximum(0.0, L - self.p.r0_trans)
                 p_off = 1.0 - np.exp(-self._koff_of(f1) * dt)
                 p_on = 1.0 - np.exp(-self.p.k_on * dt)
-                m = cluster_bd_step(self.m[live], self.n_b, p_off, p_on, self._rng)
+                nb = (self._nb_of_age(np.minimum(self.contact_age[i], self.contact_age[j]))
+                      if self.cluster_mature else self.n_b)
+                m = cluster_bd_step(self.m[live], nb, p_off, p_on, self._rng)
                 keep = m > 0
                 self.n_broken += int((~keep).sum())
                 self.bonds = np.stack([i[keep], j[keep]], axis=1)
@@ -240,10 +297,17 @@ class CadherinBondHost:
                 new.append((ia, ib))
         if new:
             self.n_formed += len(new)
-            self.bonds = np.concatenate([self.bonds, np.array(new, dtype=np.int64)], axis=0)
-            if self.cluster:                       # a nascent junction nucleates full (m = n_b)
-                self.m = np.concatenate(
-                    [self.m, np.full(len(new), self.n_b, dtype=np.int64)])
+            new_arr = np.array(new, dtype=np.int64)
+            self.bonds = np.concatenate([self.bonds, new_arr], axis=0)
+            if self.cluster:
+                # nucleate at the CONTACT's current capacity: a fresh contact → n_nascent; a re-forming
+                # bond on an already-matured contact → its grown N_b (the clustered cadherins re-engage).
+                if self.cluster_mature:
+                    m0 = self._nb_of_age(
+                        np.minimum(self.contact_age[new_arr[:, 0]], self.contact_age[new_arr[:, 1]]))
+                else:
+                    m0 = np.full(len(new), self.n_b, dtype=np.int64)
+                self.m = np.concatenate([self.m, m0])
 
     @property
     def n_bonds(self) -> int:

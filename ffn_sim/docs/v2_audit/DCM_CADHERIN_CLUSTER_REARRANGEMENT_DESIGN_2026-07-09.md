@@ -162,6 +162,25 @@ fast nascent population); the aggregate-σ / turgor / IPC stack. **New:** the cl
 5. **`f_contract`/`bundle_n` semantics change** (force now scales with engaged `m_b`, not fixed `bundle_n`) — audit
    every call-site that read `bundle_n` as a force multiplier (`dcm_warp_decohesion.py:1219,1254,1491,1780`).
 
+## 6b. S2 RESULT (2026-07-09) — maturation must be a CONTACT property, not a bond property
+
+Building S2 surfaced a second finding: **bond-level age does NOT make maturation engage, even with the S1
+load-sharing cluster.** A nascent cluster's lifetime (~0.24 s at rest, even load-sharing) is « τ_mature=600 s,
+so an individual trans-dimer bond ruptures long before its `age` reaches τ_mature — the capacity `N_b(age)` barely
+grows (`1−exp(−0.24/600)≈4e-4`) before the bond dies. This is the *same* `DCM_CADHERIN_MATURATION` no-engage wall,
+now shown to persist under load sharing.
+
+**Fix (implemented):** maturation is a property of the sustained **CONTACT (apposition)**, not a single bond's
+uninterrupted lifetime. Track per-**node** `contact_age` (incremented while the node is apposed to / bonded with
+another cell, reset when it leaves contact); a bond's capacity `N_b` derives from its endpoints' `contact_age`. A
+persisting contact then accumulates maturation **through bond turnover** (break→reform, which the host already does
+via mutual-nearest re-formation) → `N_b` climbs nascent→mature over τ_mature → the junction **locks**, at the robust
+rate 1/τ_mature. **Gates PASS** (`test_cadherin_cluster.py`, 29 total): G2 nascent(<1 s)/mature(≫τ) separation,
+**G3 maturation ENGAGES** (a sustained contact matures to n_mature and its turnover collapses; single-molecule
+P(survive to τ)~e⁻⁶¹≈0), G3b contact-loss resets maturation. Figure `dcm_cadherin_maturation_engages.png`
+(N_b 4→25, cluster 2 breaks vs single-molecule 141 over 10 s). This closes the "maturation never engages" problem;
+`n_nascent` remains a controlled variable flagged for a firm KB-4.3 anchor.
+
 ## 7. One-line summary
 Replace the lumped "whole cadherin bundle breaks at the single-molecule rate" with a **fine-grained load-sharing
 parallel-bond cluster** (`m` engaged molecules, birth–death, junction dies only at `m→0`) so junctions survive long

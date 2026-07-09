@@ -146,6 +146,79 @@ def test_cluster_false_is_legacy_break(seed):
     assert (host.n_bonds > 0) == expected_survive, "cluster=False must reproduce the legacy break draw"
 
 
+# ================================================================ S2: maturation-capacity =====
+def test_g2_nascent_turns_over_mature_locks():
+    """G2: at the nascent capacity the junction turns over fast (< 1 s = rearrangement-permissive);
+    at the mature capacity it locks (>> tau_mature). Analytic, at rest (F1=0)."""
+    n_nascent, n_mature, tau = 4, 25, 600.0
+    eps0 = effective_k_off(0.0)
+    t_nascent = cluster_mean_lifetime_analytic(n_nascent, eps0, K_ON)
+    t_mature = cluster_mean_lifetime_analytic(n_mature, eps0, K_ON)
+    assert t_nascent < 1.0, f"nascent (n_b={n_nascent}) must turn over < 1 s; got {t_nascent:.3g}s"
+    assert t_mature > tau, f"mature (n_b={n_mature}) must lock >> tau_mature; got {t_mature:.3g}s"
+    assert t_mature / t_nascent > 1e4, "maturation must separate the two regimes by orders of magnitude"
+
+
+def _run_contact(mature, tau_mature, steps, dt, *, n_nascent=4, n_mature=25, break_window=None, seed=1):
+    """One sustained apposed 2-node contact through CadherinBondHost; returns contact_age, matured N_b,
+    and early/late turnover counts. break_window=(a,b) yanks the nodes apart for steps [a,b) (contact lost)."""
+    L = R0 + 0.0
+    Pnear = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, L]], dtype=np.float64)
+    Pfar = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 5e-6]], dtype=np.float64)  # > r_bind → not apposed
+    cof = np.array([0, 1], dtype=np.int64)
+    p = CadherinParams(cluster=True, mature=mature, bundle_n=float(n_mature),
+                       n_nascent=n_nascent, tau_mature=tau_mature, seed=seed)
+    h = CadherinBondHost(cof=cof, n_cells=2, dt=dt, params=p)
+    h.bonds = np.array([[0, 1]], dtype=np.int64)
+    h.m = np.array([n_nascent if mature else n_mature], dtype=np.int64)
+    w = steps // 5
+    broke_early = broke_late = 0
+    for s in range(steps):
+        P = Pnear
+        if break_window and break_window[0] <= s < break_window[1]:
+            P = Pfar
+        nb0 = h.n_broken
+        h._tick(P, dt)
+        if s < w:
+            broke_early += h.n_broken - nb0
+        elif s >= steps - w:
+            broke_late += h.n_broken - nb0
+    nb_final = int(h._nb_of_age(np.array([h.contact_age[0]]))[0])
+    return dict(contact_age=float(h.contact_age[0]), nb_final=nb_final,
+                broke_early=broke_early, broke_late=broke_late, alive=h.n_bonds > 0)
+
+
+def test_g3_maturation_engages():
+    """G3 (the DCM_CADHERIN_MATURATION fix): a SUSTAINED apposed contact matures over tau_mature — its
+    capacity climbs to n_mature and its turnover collapses (locks). The single-molecule model can never
+    reach this (P(survive to tau) ~ e^-eps*tau ~ 0). tau_mature scaled to 2 s for test speed (shape-identical)."""
+    tau = 2.0
+    dt = 0.05 / K_ON
+    steps = int(5.0 * tau / dt)
+    r = _run_contact(True, tau, steps, dt)
+    assert r["contact_age"] > tau, f"sustained contact must age past tau_mature; got {r['contact_age']:.2f}s"
+    assert r["nb_final"] >= 0.9 * 25, f"contact must mature to ~n_mature; got N_b={r['nb_final']}"
+    assert r["alive"], "the matured junction must survive (locked)"
+    # turnover collapses as it matures: late-window breaks << early-window breaks
+    assert r["broke_late"] <= 0.2 * r["broke_early"] + 1, (
+        f"turnover must collapse on maturing; early={r['broke_early']} late={r['broke_late']}")
+    # single-molecule reference: a persisting junction cannot reach tau_mature uninterrupted
+    assert np.exp(-effective_k_off(0.0) * tau) < 1e-20, "single-molecule can't span tau_mature (the old bug)"
+
+
+def test_g3b_contact_loss_resets_maturation():
+    """G3b: maturation is a CONTACT property — losing apposition resets contact_age (de-maturation),
+    so a contact that is broken partway does NOT stay locked. Guards against 'age a dead bond'."""
+    tau = 2.0
+    dt = 0.05 / K_ON
+    steps = int(6.0 * tau / dt)
+    # yank apart for a long window ending near the run end → little time to re-mature after
+    r = _run_contact(True, tau, steps, dt, break_window=(steps // 2, steps - steps // 12))
+    assert r["contact_age"] < tau, (
+        f"contact_age must reset on apposition loss and not fully re-mature; got {r['contact_age']:.2f}s")
+    assert r["nb_final"] < 25, f"an interrupted contact must not stay fully locked; N_b={r['nb_final']}"
+
+
 def test_band_physiological_cluster_reaches_min_hr_regime():
     """The redesign's premise: load sharing lifts the junction from the single-molecule ~0.036 s
     into the KB-4.11 5-30 min regime at a physiological cluster size, which a single rate cannot.
