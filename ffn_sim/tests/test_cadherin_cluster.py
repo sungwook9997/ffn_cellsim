@@ -219,6 +219,56 @@ def test_g3b_contact_loss_resets_maturation():
     assert r["nb_final"] < 25, f"an interrupted contact must not stay fully locked; N_b={r['nb_final']}"
 
 
+# ================================================================ S3: GPU parity =====
+def _sheet(nx=8, ny=8, gap=0.3e-6):
+    xs = np.arange(nx) * 0.6e-6
+    ys = np.arange(ny) * 0.6e-6
+    g = np.array([[x, y, 0.0] for x in xs for y in ys], np.float64)
+    p1 = g.copy(); p1[:, 2] = gap
+    pos = np.vstack([g, p1])
+    cof = np.array([0] * (nx * ny) + [1] * (nx * ny), np.int64)
+    return pos, cof
+
+
+def _params(mature):
+    return CadherinParams(cluster=True, mature=mature, bundle_n=20.0, n_nascent=4, tau_mature=0.2,
+                          r_bind=0.5e-6, k_trans=K_TRANS, r0_trans=R0, batch_steps=1,
+                          subcycle=False, seed=1)
+
+
+@pytest.mark.parametrize("mature", [False, True])
+def test_s3_gpu_cluster_matches_host(mature):
+    """S3: the GPU (Warp cpu-device) cluster path — apposition + contact-age maturation + per-bond
+    birth-death break + mutual-nearest form — reproduces the host _tick cluster path statistically
+    (Binomial via Bernoulli sums; different RNG stream). Run to full maturation + steady state."""
+    wp = pytest.importorskip("warp")
+    pos, cof = _sheet()
+    N = pos.shape[0]
+    dt = 5e-4
+    batches = 1600                          # 0.8 s » tau_mature=0.2 → capacity fully matured, m steady
+    # host
+    hh = CadherinBondHost(cof=cof, n_cells=2, dt=dt, params=_params(mature))
+    for _ in range(batches):
+        hh.update(pos)
+    nb_h, m_h = hh.n_bonds, (hh.m.mean() if hh.m.size else 0.0)
+    # gpu (cpu device)
+    hg = CadherinBondHost(cof=cof, n_cells=2, dt=dt, params=_params(mature))
+    pos_d = wp.array(pos, dtype=wp.vec3d, device="cpu")
+    cof_d = wp.array(cof.astype(np.int32), dtype=wp.int32, device="cpu")
+    node_f32 = wp.array(pos.astype(np.float32), dtype=wp.vec3f, device="cpu")
+    for b in range(batches):
+        hg.update_gpu_cluster(pos_d, cof_d, node_f32, N, b, "cpu")
+    d = hg._dev
+    nb_g = int(d["n"])
+    m_g = float(d["m"].numpy()[:d["n"]].mean()) if d["n"] else 0.0
+    # both saturate the 64 possible pairs; steady engaged fraction at F1=0 is k_on/(k_on+eps)=0.5 of
+    # the matured capacity (n_mature=20 → ~10; S1 same since nb=20 from the start)
+    assert nb_h >= 55 and nb_g >= 55, f"both should bond most of 64 pairs; host={nb_h} gpu={nb_g}"
+    assert abs(nb_h - nb_g) <= 6, f"bond counts should agree; host={nb_h} gpu={nb_g}"
+    assert m_h == pytest.approx(m_g, abs=1.5), f"mean engaged m should agree; host={m_h:.2f} gpu={m_g:.2f}"
+    assert 7.0 <= m_g <= 13.0, f"steady m ~ 0.5*n_mature=10; got gpu {m_g:.2f}"
+
+
 def test_band_physiological_cluster_reaches_min_hr_regime():
     """The redesign's premise: load sharing lifts the junction from the single-molecule ~0.036 s
     into the KB-4.11 5-30 min regime at a physiological cluster size, which a single rate cannot.

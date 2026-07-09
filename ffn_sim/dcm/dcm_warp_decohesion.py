@@ -46,7 +46,8 @@ from ffn_sim.dcm.dcm_substrate_warp import (
 from ffn_sim.dcm.dcm_neighbor_warp import (
     pos_to_f32, face_centroids_f32, cohesion_grid_kernel, contact_grid_kernel,
     cohesion_grid_cad_kernel, contact_grid_cad_kernel, penetration_depth_kernel,
-    edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel, gravity_body_force_kernel,
+    edge_midpoints_f32, edge_edge_contact_kernel, cadherin_bond_force_kernel,
+    cadherin_bond_force_cluster_kernel, gravity_body_force_kernel,
     ecm_clutch_force_kernel, cell_centroid_accum_kernel, nucleus_force_kernel,
     surface_tension_kernel, polarized_surface_tension_kernel, face_area_accum_kernel, global_area_force_kernel,
     edge_neighbor_sum_kernel, umbrella_kernel, bending_apply_kernel, scale_per_cell_kernel,
@@ -270,6 +271,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cad_bundle: float = 1.0, cad_contract: float = 0.0, cad_rbind: float = 0.0,
                    cad_mature: bool = False, cad_tau_mature: float = 600.0,
                    cad_mature_lifetime: float = 600.0,
+                   cad_cluster: bool = False, cad_n_nascent: int = 4,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -681,7 +683,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                                      subcycle=cad_subcycle, micro_M=cad_micro_M,
                                                      bundle_n=cad_bundle, f_contract=cad_contract,
                                                      mature=cad_mature, tau_mature=cad_tau_mature,
-                                                     mature_lifetime=cad_mature_lifetime))
+                                                     mature_lifetime=cad_mature_lifetime,
+                                                     cluster=cad_cluster, n_nascent=cad_n_nascent))
         # Accelerate the bond KINETICS by S (NOT the FORCE): the on-rate k_on and the entire
         # force-dependent off-rate k_off(F) lookup table are multiplied by S, so bonds form and
         # rupture S× faster while the trans-dimer FORCE constant k_trans (catch-slip f0=29.2pN,
@@ -1214,12 +1217,21 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
         # E1 explicit cadherin trans-dimer adhesion (sole cell-cell attraction in cadherin
         # mode; bonds managed on the host at batch cadence, force applied every step)
         if cad is not None and cad._dev is not None and cad._dev["n"] > 0:
-            wp.launch(cadherin_bond_force_kernel, dim=cad._dev["n"],
-                      inputs=[cad._dev["bonds"], wp.int32(cad._dev["n"]), pos_d,
-                              wp.float64(cad.p.k_trans * cad.p.bundle_n), wp.float64(cad.p.r0_trans),
-                              wp.float64(cad.p.f_contract * cad.p.bundle_n),
-                              force_d],
-                      device=device)
+            if getattr(cad, "cluster", False):
+                # load-sharing cluster: force scales with the CURRENT engaged count m (per bond),
+                # k_trans/f_contract are the SINGLE-molecule values (m provides the multiplier).
+                wp.launch(cadherin_bond_force_cluster_kernel, dim=cad._dev["n"],
+                          inputs=[cad._dev["bonds"], wp.int32(cad._dev["n"]), cad.m_device(), pos_d,
+                                  wp.float64(cad.p.k_trans), wp.float64(cad.p.r0_trans),
+                                  wp.float64(cad.p.f_contract), force_d],
+                          device=device)
+            else:
+                wp.launch(cadherin_bond_force_kernel, dim=cad._dev["n"],
+                          inputs=[cad._dev["bonds"], wp.int32(cad._dev["n"]), pos_d,
+                                  wp.float64(cad.p.k_trans * cad.p.bundle_n), wp.float64(cad.p.r0_trans),
+                                  wp.float64(cad.p.f_contract * cad.p.bundle_n),
+                                  force_d],
+                          device=device)
         # substrate z-well (own-row accumulate) — pins basal nodes at z0
         if use_substrate_well:
             wp.launch(dcm_substrate_well_accum_kernel, dim=N,
@@ -1524,7 +1536,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             if str(device) != "cpu" and os.environ.get("CAD_GPU", "1") != "0":  # GPU-native break/form (no host round-trip)
                 wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
-                cad.update_gpu(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
+                if getattr(cad, "cluster", False):
+                    cad.update_gpu_cluster(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
+                else:
+                    cad.update_gpu(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
             else:
                 cad.update(pos_d.numpy().astype(np.float64)); cad.upload(device)
         stepped(s, dt, do_spread=False)
@@ -1583,7 +1598,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             wp.synchronize_device(device)
             if str(device) != "cpu" and os.environ.get("CAD_GPU", "1") != "0":  # GPU-native break/form (no host round-trip)
                 wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
-                cad.update_gpu(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
+                if getattr(cad, "cluster", False):
+                    cad.update_gpu_cluster(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
+                else:
+                    cad.update_gpu(pos_d, cof_d, node_f32, N, s // cad.batch_steps, device)
             else:
                 cad.update(pos_d.numpy().astype(np.float64)); cad.upload(device)
             if s % 500 == 0:   # T1 substrate diagnostic: are cadherin bonds actually rupturing+reforming?
@@ -1872,6 +1890,8 @@ def main():
     ap.add_argument("--cad-mature", action="store_true", help="Junction MATURATION: a persisting bond ages and its off-rate falls from the nascent single-molecule catch-slip toward a mature floor (junction lifetime 5-30min, KB-4.11) → raises tissue rearrangement viscosity → slow (min-hr) compaction like real spheroids. Default off (fast ~100s mechanical rounding = immature limit). Rate is MEASURED not tuned.")
     ap.add_argument("--cad-tau-mature", type=float, default=600.0, help="Junction maturation timescale [s] (KB-4.11 5-30min; default 600=10min). m=1-exp(-age/τ).")
     ap.add_argument("--cad-mature-lifetime", type=float, default=600.0, help="Mature junction lifetime [s] (KB-4.11 5-30min; default 600) → k_off_mature=1/this; blend factor r=k_off_mature/k_off_nascent_rest.")
+    ap.add_argument("--cad-cluster", action="store_true", help="LOAD-SHARING CLUSTER break (S3): a junction is bundle_n parallel trans-dimers sharing the per-molecule load; m engaged molecules do birth-death (each unbinds at eps(F1), empty slots rebind at k_on); junction dies only at m→0. Collective lifetime T(n_b)≫1/eps is EMERGENT (vs the lumped whole-bundle single-draw break). With --cad-mature, capacity N_b matures nascent→bundle_n over τ via per-node contact-age → maturation ENGAGES.")
+    ap.add_argument("--cad-n-nascent", type=int, default=4, help="Nascent cluster size (post-nucleation clustered dimers, KB-4.3; controlled var, not tuned) — a fresh contact turns over fast at this size, then recruits toward bundle_n over τ_mature.")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
     ap.add_argument("--ligand-density", type=float, default=1.0, help="C4: substrate ECM ligand-coating density (Bare/Pre/Lam4) — scales the clutch engagement on-rate (more ligand → more engaged FAs → more traction). 1=baseline(Bare); set per-condition to the Lam4>Pre>Bare experimental ordering (NOT tuned)")
     ap.add_argument("--no-pen-cap", dest="pen_cap", action="store_false", help="D8: disable the implicit per-node displacement cap (= the contact-shell clamp that stops frozen-grid tunneling/interpenetration). On by default")
@@ -1966,6 +1986,7 @@ def main():
         cad_subcycle=args.cad_subcycle, cad_micro_M=args.cad_micro_M,
         cad_bundle=args.cad_bundle, cad_contract=args.cad_contract, cad_rbind=args.cad_rbind,
         cad_mature=args.cad_mature, cad_tau_mature=args.cad_tau_mature,
+        cad_cluster=args.cad_cluster, cad_n_nascent=args.cad_n_nascent,
         cad_mature_lifetime=args.cad_mature_lifetime,
         ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,

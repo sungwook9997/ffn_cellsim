@@ -55,6 +55,9 @@ NUCLEUS  = os.environ.get("NUCLEUS", "1") == "1"
 MATURE   = os.environ.get("MATURE", "0") == "1"         # cadherin junction maturation (slow rearrangement viscosity)
 TAU_MAT  = float(os.environ.get("TAU_MATURE", "600"))   # maturation timescale [s] (KB-4.11 5-30min)
 MAT_LIFE = float(os.environ.get("MATURE_LIFETIME", "600"))  # mature junction lifetime [s] (KB-4.11)
+CLUSTER  = os.environ.get("CLUSTER", "0") == "1"        # S3 load-sharing cluster break (junction=bundle_n parallel
+                                                        # trans-dimers, m→0 death; +MATURE → contact-age maturation ENGAGES)
+NNASCENT = int(os.environ.get("N_NASCENT", "4"))        # nascent cluster size (KB-4.3 controlled var)
 BUILDER  = os.environ.get("BUILDER", "fcc")             # 'fcc' loose | 'confluent' Voronoi space-filling (feasible)
 INSET    = float(os.environ.get("INSET", "0.0"))        # >0 → shrink cells at build so they START non-overlapping (G2 fix)
 INIT_NPZ = os.environ.get("INIT_NPZ", "") or None       # restart from a saved aggregate npz (frames/faces/cof)
@@ -78,6 +81,7 @@ r = run_decohesion(
     # --- cell-cell adhesion: explicit cadherin catch-bonds, bundle-10 (de-cohesion emergent) ---
     cadherin=True, cad_bundle=BUNDLE,
     cad_mature=MATURE, cad_tau_mature=TAU_MAT, cad_mature_lifetime=MAT_LIFE,
+    cad_cluster=CLUSTER, cad_n_nascent=NNASCENT,
     # --- full compartment stack at physiological setpoints ---
     nucleus=NUCLEUS, E_nuc=ENUC, R_nuc_factor=RNUC, ratio_lamin=1.4,
     surface_tension=True, gamma_surf=GAMMA, diff_tension=True,

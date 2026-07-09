@@ -316,15 +316,23 @@ class CadherinBondHost:
         return int(self.bonds.shape[0])
 
     def upload(self, device):
-        """Push the current bond pairs to a device int32 (M,2) array (realloc as M grows)."""
+        """Push the current bond pairs to a device int32 (M,2) array (realloc as M grows). In cluster
+        mode also push the per-bond engaged count m (the CPU-device / host-update path, so the cluster
+        force kernel can read cad.m_device())."""
         import warp as wp
         M = self.n_bonds
         if self._dev is None or self._dev["cap"] < M:
             cap = max(M, 1, (self._dev["cap"] * 2 if self._dev else 0))
             self._dev = {"cap": cap,
                          "bonds": wp.zeros(cap, dtype=wp.vec2i, device=device)}
+            if self.cluster:
+                self._dev["m"] = wp.zeros(cap, dtype=wp.int32, device=device)
+        if self.cluster and "m" not in self._dev:
+            self._dev["m"] = wp.zeros(self._dev["cap"], dtype=wp.int32, device=device)
         if M:
             self._dev["bonds"].assign(self.bonds.astype(np.int32))
+            if self.cluster:
+                self._dev["m"].assign(self.m.astype(np.int32))
         self._dev["n"] = M
         return self._dev
 
@@ -402,6 +410,101 @@ class CadherinBondHost:
             d["bonds"] = other
             d["n"] = new_n
         self._n_gpu = int(d["n"])
+
+    # -------------------------------------------------- GPU-native CLUSTER path (S3) -----
+    def _ensure_gpu_cluster(self, N: int, device):
+        """Device buffers for the load-sharing cluster path: bonds + engaged-count m ping-pong, per-node
+        contact_age (persistent maturation clock) + apposed mask, partner/bonded scratch, koff table, grid."""
+        import warp as wp
+        from ffn_sim.dcm.dcm_cadherin_gpu import build_koff_device
+        cap = int(N)
+        if self._dev is None or self._dev.get("cap", 0) < cap or "mA" not in self._dev:
+            koff_d, fs0, df, nk = build_koff_device(self._fs, self._koff, device)
+            bA = wp.zeros(cap, dtype=wp.vec2i, device=device)
+            mA = wp.zeros(cap, dtype=wp.int32, device=device)
+            n0 = 0
+            if self._dev is not None and self._dev.get("n"):     # carry existing bonds/m over
+                n0 = int(self._dev["n"])
+                bA.assign(np.resize(self.bonds.astype(np.int32), (cap, 2)))
+                mA.assign(np.resize(self.m.astype(np.int32), (cap,)) if self.m.size else np.zeros(cap, np.int32))
+            self._dev = {
+                "cap": cap, "n": n0, "cluster": True,
+                "bondsA": bA, "bondsB": wp.zeros(cap, dtype=wp.vec2i, device=device),
+                "mA": mA, "mB": wp.zeros(cap, dtype=wp.int32, device=device),
+                "which": "A", "bonds": bA, "m": mA,
+                "contact_age": wp.zeros(N, dtype=wp.float64, device=device),   # persistent per-node
+                "apposed": wp.zeros(N, dtype=wp.int32, device=device),
+                "bonded": wp.zeros(N, dtype=wp.int32, device=device),
+                "partner": wp.zeros(N, dtype=wp.int32, device=device),
+                "count": wp.zeros(1, dtype=wp.int32, device=device),
+                "koff_d": koff_d, "fs0": fs0, "df": df, "nk": nk,
+                "grid": wp.HashGrid(48, 48, 48, device=device),
+            }
+        return self._dev
+
+    def update_gpu_cluster(self, pos_d, cof_d, node_f32, N: int, batch_index: int, device) -> None:
+        """GPU-native load-sharing cluster binder tick (S3): per-node contact-age maturation + per-bond
+        engaged-count birth-death break + mutual-nearest form. Statistical parity with the host
+        _tick cluster path (Binomial via per-molecule Bernoulli sums; different RNG stream)."""
+        import warp as wp
+        from ffn_sim.dcm.dcm_cadherin_gpu import (
+            cad_break_cluster_kernel, cad_form_cluster_kernel, cad_partner_kernel,
+            cad_apposition_kernel, cad_bonded_appose_kernel, contact_age_update_kernel)
+        d = self._ensure_gpu_cluster(N, device)
+        d["grid"].build(points=node_f32, radius=float(self.p.r_bind))
+        n_sub, dt_sub = self._n_subcycle()
+        p_on = 1.0 - np.exp(-float(self.p.k_on) * dt_sub)
+        mature_on = 1 if (self.p.cluster and self.p.mature) else 0
+        n_nascent = max(1, min(int(self.p.n_nascent), self.n_b))
+        for isub in range(n_sub):
+            cur_b = d["bondsA"] if d["which"] == "A" else d["bondsB"]
+            oth_b = d["bondsB"] if d["which"] == "A" else d["bondsA"]
+            cur_m = d["mA"] if d["which"] == "A" else d["mB"]
+            oth_m = d["mB"] if d["which"] == "A" else d["mA"]
+            n = int(d["n"])
+            # --- maturation: age sustained contacts (apposed OR bonded), reset the rest ---
+            if mature_on != 0:                            # contact_age is unused when maturation off
+                d["apposed"].zero_()
+                wp.launch(cad_apposition_kernel, dim=N, inputs=[
+                    d["grid"].id, node_f32, cof_d, wp.float64(self.p.r_bind), d["apposed"]], device=device)
+                if n > 0:
+                    wp.launch(cad_bonded_appose_kernel, dim=n, inputs=[cur_b, wp.int32(n), d["apposed"]],
+                              device=device)
+                wp.launch(contact_age_update_kernel, dim=N, inputs=[
+                    d["apposed"], wp.float64(dt_sub), d["contact_age"]], device=device)
+            # --- break (cluster birth-death) ---
+            d["count"].zero_(); d["bonded"].zero_()
+            tick = batch_index if n_sub == 1 else (batch_index * self.micro_cap + isub)
+            sb = wp.int32(((2 * tick) * N) % 2000000000)
+            sf = wp.int32(((2 * tick + 1) * N) % 2000000000)
+            wp.launch(cad_break_cluster_kernel, dim=max(n, 1), inputs=[
+                cur_b, wp.int32(n), cur_m, pos_d, cof_d, d["contact_age"],
+                wp.float64(self.p.k_trans), wp.float64(self.p.r0_trans), wp.float64(dt_sub),
+                d["koff_d"], wp.float64(d["fs0"]), wp.float64(d["df"]), wp.int32(d["nk"]),
+                wp.float64(self.p.k_on), wp.int32(mature_on), wp.float64(self.p.tau_mature),
+                wp.int32(n_nascent), wp.int32(self.n_b), wp.int32(self.p.seed), sb,
+                oth_b, oth_m, d["count"], d["bonded"]], device=device)
+            # --- form (mutual-nearest; nucleate at the contact's current capacity) ---
+            wp.launch(cad_partner_kernel, dim=N, inputs=[
+                d["grid"].id, node_f32, pos_d, cof_d, d["bonded"], wp.float64(self.p.r_bind),
+                d["partner"]], device=device)
+            wp.launch(cad_form_cluster_kernel, dim=N, inputs=[
+                d["partner"], wp.int32(N), d["contact_age"], wp.int32(mature_on),
+                wp.float64(self.p.tau_mature), wp.int32(n_nascent), wp.int32(self.n_b),
+                wp.float64(p_on), wp.int32(self.p.seed), sf, wp.int32(d["cap"]),
+                oth_b, d["count"], oth_m], device=device)
+            new_n = min(int(d["count"].numpy()[0]), d["cap"])
+            self.n_broken += max(0, n - new_n)
+            self.n_formed += max(0, new_n - n)
+            d["which"] = "B" if d["which"] == "A" else "A"
+            d["bonds"] = oth_b
+            d["m"] = oth_m
+            d["n"] = new_n
+        self._n_gpu = int(d["n"])
+
+    def m_device(self):
+        """Current per-bond engaged-count device array (for the cluster force kernel)."""
+        return self._dev["m"] if (self._dev is not None and "m" in self._dev) else None
 
     def bonds_now(self) -> np.ndarray:
         """Current (M,2) bond node-pairs — device download in GPU mode, else the host array."""

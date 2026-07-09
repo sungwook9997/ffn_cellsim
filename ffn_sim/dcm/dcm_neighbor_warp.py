@@ -477,6 +477,40 @@ def cadherin_bond_force_kernel(
 
 
 @wp.kernel
+def cadherin_bond_force_cluster_kernel(
+    bonds: wp.array(dtype=wp.vec2i), n_bonds: wp.int32,
+    m: wp.array(dtype=wp.int32),
+    pos: wp.array(dtype=wp.vec3d),
+    k_trans_single: wp.float64, r0_trans: wp.float64,
+    f_contract_single: wp.float64,
+    force: wp.array(dtype=wp.vec3d),
+):
+    """Load-sharing cluster force: the junction transmits ``m`` × the SINGLE-molecule force, where ``m``
+    is the CURRENTLY engaged molecule count (not a fixed bundle_n) — so a maturing/de-loading junction
+    exerts a force proportional to its live engaged population. Same attractive-tether + optional active
+    contraction as cadherin_bond_force_kernel, but scaled by m instead of bundle_n."""
+    t = wp.tid()
+    if t >= n_bonds:
+        return
+    e = bonds[t]
+    i = e[0]
+    j = e[1]
+    mm = wp.float64(m[t])
+    rij = pos[j] - pos[i]
+    L = wp.length(rij)
+    if L > wp.float64(1.0e-30):
+        inv = wp.float64(1.0) / L
+        if L > r0_trans:
+            fvec = rij * (mm * k_trans_single * (L - r0_trans) * inv)
+            wp.atomic_add(force, i, fvec)
+            wp.atomic_add(force, j, -fvec)
+        if f_contract_single > wp.float64(0.0):
+            fa = rij * (mm * f_contract_single * inv)
+            wp.atomic_add(force, i, fa)
+            wp.atomic_add(force, j, -fa)
+
+
+@wp.kernel
 def scale_per_cell_kernel(vals: wp.array(dtype=wp.float64), mult: wp.array(dtype=wp.float64)):
     """C8: in-place per-cell scale (e.g. dP *= turgor_mult so the necrotic core loses pressure)."""
     c = wp.tid()
