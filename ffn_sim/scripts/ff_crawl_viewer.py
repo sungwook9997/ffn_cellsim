@@ -131,7 +131,8 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
             if (bnd == 0).any(): seg[bnd == 0] = np.stack([anc[bnd == 0], anc[bnd == 0]], 1)   # unbound → zero-length (hidden)
             fa_fr.append(seg.reshape(-1, 3))
         nb = int(bfr[TF - 1].sum())
-        layers.append({"name": f"FA integrin clutches ({nb}/{M} bound → rigid substrate; no fiber-ECM in this driver)",
+        _fa_sub = "live collagen-I fibres (two-way)" if "ecm_frames" in d.files else "rigid substrate"
+        layers.append({"name": f"FA integrin clutches ({nb}/{M} bound → {_fa_sub})",
                        "kind": "lines", "verts": fa_fr[0], "color": "#39ff14", "size": 2.2, "opacity": 0.95,
                        "on_top": True, "frames": fa_fr})
     if len(com) >= 2:                                          # faint COM path (the crawl track)
@@ -167,6 +168,28 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
                       if L is not ecm_layer and L["name"] != "substrate"]
         scenes["collagen recruit"] = [ecm_layer] + cell_faint   # dedicated scene: the matrix deformation front-and-centre
         cbars["collagen recruit"] = ecm_cbar
+        # PI 2026-07-10 — render the ECM LIKE THE CELL: where it is STRESSED, where it STRAINS, where it REORIENTS.
+        # All fields are post-hoc from the saved collagen frames (no re-run): per-segment tensile strain |ΔL|/L₀
+        # (fibre tension/load proxy) and per-segment reorientation angle (tangent turn vs frame-0), animated with
+        # a turbo colour scale + colorbar exactly like the cortex σ_vm/strain scenes.
+        e0 = ef[0]; _si = eseg[:, 0]; _sj = eseg[:, 1]
+        seg_rest = np.linalg.norm(e0[_sj] - e0[_si], axis=1) + 1e-9
+        d0 = (e0[_sj] - e0[_si]) / seg_rest[:, None]                                  # frame-0 segment unit tangents
+        etens, ereor = [], []
+        for t in range(T):
+            p = ef[talign[t]]; vv = p[_sj] - p[_si]; Lg = np.linalg.norm(vv, axis=1) + 1e-9
+            etens.append(np.repeat(np.abs((Lg - seg_rest) / seg_rest), 2))            # |tensile strain| per endpoint
+            cosang = np.clip(np.abs((vv / Lg[:, None] * d0).sum(1)), 0.0, 1.0)
+            ereor.append(np.repeat(np.degrees(np.arccos(cosang)), 2))                 # reorientation angle [deg] per endpoint
+
+        def _ecm_field_scene(name, per_ep, unit, label, pct=98):
+            hi = float(max(np.percentile(np.concatenate(per_ep), pct), 1e-6))
+            lay = dict(ecm_layer, name=f"{label} [0–{hi:.2g} {unit}, turbo]", size=1.6, opacity=0.95,
+                       color_frames=_turbo_colors(per_ep, 0.0, hi))
+            scenes[name] = [lay] + cell_faint
+            cbars[name] = {"grad": _turbo_gradient(), "lo": 0.0, "hi": hi, "unit": unit, "label": label}
+        _ecm_field_scene("ECM tension", etens, "", "collagen fibre tensile strain |ΔL|/L₀ (where the matrix is loaded)")
+        _ecm_field_scene("ECM reorientation", ereor, "°", "collagen fibre reorientation (tangent turn vs frame-0)")
     # FEM-style field scenes: the cortex surface (hull) colored per-node by the SIM's von-Mises stress / areal
     # strain, animated per frame, WITH a turbo colorbar (colour↔value scale, like a paper figure). Reuses the
     # scene dropdown. Context (MT/nucleus/substrate/COM) kept; faint shape hull+filaments → opaque colored surface.

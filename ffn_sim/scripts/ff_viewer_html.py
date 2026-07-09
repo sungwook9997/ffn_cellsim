@@ -196,7 +196,9 @@ function showScene(name){
     let o;
     if(L.kind==='lines'){
       const op=(L.opacity===undefined)?0.75:L.opacity;
-      const mat=new THREE.LineBasicMaterial({color:L.color,transparent:true,opacity:op,
+      const hasField=!!L.color_frames;                                   // per-segment FIELD colour (ECM tension/reorientation/displacement)
+      if(hasField){ geo.setAttribute('color', new THREE.BufferAttribute(decU8(L.color_frames[0]),3,true)); }
+      const mat=new THREE.LineBasicMaterial({color:L.color,vertexColors:hasField,transparent:true,opacity:op,
         depthTest:!L.on_top});
       o=new THREE.LineSegments(geo,mat); if(L.on_top){o.renderOrder=999;} scene.add(o); current.push(o);
     }else if(L.kind==='mesh'){
@@ -234,14 +236,30 @@ document.getElementById('cutpos').oninput=updateClip;
 let playing=false, tacc=0;
 document.getElementById('play').onclick=()=>{ playing=!playing; document.getElementById('play').textContent=playing?'⏸':'▶'; };
 document.getElementById('frame').oninput=e=>{ playing=false; document.getElementById('play').textContent='▶'; setFrame(parseInt(e.target.value)); };
-showScene(P.scene_names[0]); updateClip();
+const _hp=new URLSearchParams(location.hash.slice(1));                 // #scene=NAME&frame=N|last auto-selects (for scripted per-scene/frame screenshots)
+const _hs=_hp.get('scene');
+const _init=(_hs&&P.scene_names.indexOf(_hs)>=0)?_hs:P.scene_names[0];
+sel.value=_init; showScene(_init); updateClip();
+const _hf=_hp.get('frame');
+if(_hf!==null){ const _nf=parseInt(document.getElementById('frame').max)||0;
+  const _fi=(_hf==='last')?_nf:Math.max(0,Math.min(_nf,parseInt(_hf)||0)); setFrame(_fi); }
 
-addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-let last=performance.now();
-(function loop(){requestAnimationFrame(loop);ctr.update();
+// event-driven rendering: NO rAF when idle. Was an unconditional 60fps renderer.render →
+// idle tabs pegged CPU/GPU forever, catastrophic under software-WebGL (2026-07-08).
+// The loop reschedules only while playback runs or a repaint is pending, then stops →
+// a still viewer costs zero CPU and headless capture can settle to idle.
+let dirty=true, running=false, last=performance.now();
+function wake(){ if(!running){ running=true; last=performance.now(); requestAnimationFrame(loop); } }
+function requestRender(){ dirty=true; wake(); }
+ctr.addEventListener('change', requestRender);
+for(const ev of ['input','change','click']) document.addEventListener(ev, requestRender);
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);requestRender();});
+function loop(){ ctr.update();
   const now=performance.now(); const dt=(now-last)/1000; last=now;
   if(playing && animated.length){ tacc+=dt; if(tacc>0.06){ tacc=0;
     let i=(parseInt(document.getElementById('frame').value)+1); const nf=parseInt(document.getElementById('frame').max);
-    if(i>nf) i=0; setFrame(i); } }
-  renderer.render(scene,cam);})();
+    if(i>nf) i=0; setFrame(i); dirty=true; } }
+  if(dirty){ dirty=false; renderer.render(scene,cam); }
+  if(playing || dirty){ requestAnimationFrame(loop); } else { running=false; }}
+requestRender();
 </script></body></html>"""
