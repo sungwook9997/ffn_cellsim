@@ -72,6 +72,20 @@ class CadherinParams:
     subcycle: bool = True
     micro_M: int = 8               # micro-steps per cadherin timescale 1/k_on (δt_cad = 1/(M·k_on))
     micro_cap: int = 512           # hard ceiling on n_sub/call (logged if hit; no silent truncation)
+    # Junction MATURATION (2026-07-09; default OFF, back-compat byte-identical). A nascent trans-dimer
+    # turns over at the fast single-molecule catch-slip rate (rest k_off≈k_on≈28/s, ~36 ms), but a
+    # PERSISTING junction MATURES (E-cadherin clustering + α-catenin/vinculin reinforcement, KB-4.3) and
+    # its lifetime rises to 5–30 min (KB-4.11, LeDuc2010/Buckley2014). A bond accumulates AGE; the
+    # matured fraction m=1−exp(−age/τ_mature) blends its off-rate from the nascent catch-slip toward a
+    # mature floor: k_off_eff = k_off_catchslip(F)·[1 − m·(1 − r)], r = k_off_mature/k_off_nascent_rest =
+    # (1/mature_lifetime)/k_off(0). Force-dependence is retained (a mature bond still slips under strong
+    # load). This raises tissue REARRANGEMENT viscosity over the maturation timescale → slow (min–hr)
+    # compaction matching real spheroids; the fast ~100 s mechanical rounding is the immature limit.
+    # τ_mature + mature_lifetime are LIT-ANCHORED (KB-4.11); the resulting compaction rate is MEASURED,
+    # not tuned to a target (magic-number rule).
+    mature: bool = False
+    tau_mature: float = 600.0      # s  maturation timescale (KB-4.11 5–30 min; mid ≈10 min)
+    mature_lifetime: float = 600.0 # s  mature junction lifetime (KB-4.11) → k_off_mature = 1/this
     catch: CadherinCatchParams = None   # set in __post_init__ to RAKSHIT_W2A
 
 
@@ -234,6 +248,8 @@ class CadherinBondHost:
             self._dev = {
                 "cap": cap, "n": n0,
                 "bondsA": bA, "bondsB": wp.zeros(cap, dtype=wp.vec2i, device=device),
+                "ageA": wp.zeros(cap, dtype=wp.float64, device=device),   # per-bond age [s], ping-pongs
+                "ageB": wp.zeros(cap, dtype=wp.float64, device=device),   # with bonds (maturation)
                 "which": "A", "bonds": bA,
                 "count": wp.zeros(1, dtype=wp.int32, device=device),
                 "bonded": wp.zeros(N, dtype=wp.int32, device=device),
@@ -256,9 +272,15 @@ class CadherinBondHost:
         d["grid"].build(points=node_f32, radius=float(self.p.r_bind))   # positions frozen → build once
         n_sub, dt_sub = self._n_subcycle()
         p_on = 1.0 - np.exp(-float(self.p.k_on) * dt_sub)
+        # maturation: r = k_off_mature / k_off_nascent_rest (=koff at F=0 ≈ k_on). LIT-anchored lifetimes.
+        mature_on = 1 if bool(self.p.mature) else 0
+        koff_rest = float(self._koff[0]) if self._koff[0] > 0 else float(self.p.k_on)
+        mature_factor = ((1.0 / float(self.p.mature_lifetime)) / koff_rest) if mature_on else 1.0
         for isub in range(n_sub):
             cur = d["bondsA"] if d["which"] == "A" else d["bondsB"]
             other = d["bondsB"] if d["which"] == "A" else d["bondsA"]
+            cur_age = d["ageA"] if d["which"] == "A" else d["ageB"]
+            other_age = d["ageB"] if d["which"] == "A" else d["ageA"]
             n = int(d["n"])
             d["count"].zero_(); d["bonded"].zero_()
             tick = batch_index if n_sub == 1 else (batch_index * self.micro_cap + isub)   # base dt: original salt
@@ -268,13 +290,16 @@ class CadherinBondHost:
                 cur, wp.int32(n), pos_d, cof_d,
                 wp.float64(self.p.k_trans), wp.float64(self.p.r0_trans), wp.float64(dt_sub),
                 d["koff_d"], wp.float64(d["fs0"]), wp.float64(d["df"]), wp.int32(d["nk"]),
-                wp.int32(self.p.seed), sb, other, d["count"], d["bonded"]], device=device)
+                wp.int32(self.p.seed), sb,
+                cur_age, other_age, wp.int32(mature_on),
+                wp.float64(self.p.tau_mature), wp.float64(mature_factor),
+                other, d["count"], d["bonded"]], device=device)
             wp.launch(cad_partner_kernel, dim=N, inputs=[
                 d["grid"].id, node_f32, pos_d, cof_d, d["bonded"], wp.float64(self.p.r_bind),
                 d["partner"]], device=device)
             wp.launch(cad_form_kernel, dim=N, inputs=[
                 d["partner"], wp.int32(N), wp.float64(p_on), wp.int32(self.p.seed), sf,
-                wp.int32(d["cap"]), other, d["count"]], device=device)
+                wp.int32(d["cap"]), other, d["count"], other_age], device=device)
             new_n = min(int(d["count"].numpy()[0]), d["cap"])   # scalar sync per micro-step
             self.n_broken += max(0, n - new_n)
             self.n_formed += max(0, new_n - n)

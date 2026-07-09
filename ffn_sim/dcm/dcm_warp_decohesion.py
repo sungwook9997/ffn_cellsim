@@ -268,6 +268,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cadherin: bool = False, ecm_clutch: bool = False, cad_batch: int = 50,
                    cad_subcycle: bool = True, cad_micro_M: int = 8,
                    cad_bundle: float = 1.0, cad_contract: float = 0.0, cad_rbind: float = 0.0,
+                   cad_mature: bool = False, cad_tau_mature: float = 600.0,
+                   cad_mature_lifetime: float = 600.0,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -677,7 +679,9 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                params=CadherinParams(k_trans=k_meso, r0_trans=r0_meso,
                                                      r_bind=rbind_meso, batch_steps=cad_batch,
                                                      subcycle=cad_subcycle, micro_M=cad_micro_M,
-                                                     bundle_n=cad_bundle, f_contract=cad_contract))
+                                                     bundle_n=cad_bundle, f_contract=cad_contract,
+                                                     mature=cad_mature, tau_mature=cad_tau_mature,
+                                                     mature_lifetime=cad_mature_lifetime))
         # Accelerate the bond KINETICS by S (NOT the FORCE): the on-rate k_on and the entire
         # force-dependent off-rate k_off(F) lookup table are multiplied by S, so bonds form and
         # rupture S× faster while the trans-dimer FORCE constant k_trans (catch-slip f0=29.2pN,
@@ -1865,6 +1869,9 @@ def main():
     ap.add_argument("--cad-bundle", type=float, default=1.0, help="E1 cadherin ×N mesoscale FORCE bundle (node-bond = N cadherins; force ×N, koff at molecular F/N). 40 → ~7nN/junction ∈ KB-4.11[1-10nN]. 1=legacy")
     ap.add_argument("--cad-contract", type=float, default=0.0, help="Stage-2 compaction motor: active actomyosin junctional CONTRACTION [N per single trans-dimer, bundle-scaled]. Always pulls bonded cells together (RhoA/ROCK-gated NMII the passive catch-bond lacks). SWEEP as a controlled variable (per-motor ~5-15pN × engaged); 0=off. NEVER tune to a compaction target.")
     ap.add_argument("--cad-rbind", type=float, default=0.0, help="Stage-1 long-range reach: ECM-tether (fibronectin, µm-scale) cadherin bond capture radius [µm] override; bridges a LOOSE aggregate (bonds=0 at cadherin's ~1.8µm range otherwise). 0=use c_adh.")
+    ap.add_argument("--cad-mature", action="store_true", help="Junction MATURATION: a persisting bond ages and its off-rate falls from the nascent single-molecule catch-slip toward a mature floor (junction lifetime 5-30min, KB-4.11) → raises tissue rearrangement viscosity → slow (min-hr) compaction like real spheroids. Default off (fast ~100s mechanical rounding = immature limit). Rate is MEASURED not tuned.")
+    ap.add_argument("--cad-tau-mature", type=float, default=600.0, help="Junction maturation timescale [s] (KB-4.11 5-30min; default 600=10min). m=1-exp(-age/τ).")
+    ap.add_argument("--cad-mature-lifetime", type=float, default=600.0, help="Mature junction lifetime [s] (KB-4.11 5-30min; default 600) → k_off_mature=1/this; blend factor r=k_off_mature/k_off_nascent_rest.")
     ap.add_argument("--ecm-bundle", type=float, default=1.0, help="C6 ecm-clutch ×N FA-patch FORCE bundle (node-clutch = N integrins; force ×N, koff at per-integrin F/N). 167 → ~5nN/FA ∈ KB-2.12. 1=legacy")
     ap.add_argument("--ligand-density", type=float, default=1.0, help="C4: substrate ECM ligand-coating density (Bare/Pre/Lam4) — scales the clutch engagement on-rate (more ligand → more engaged FAs → more traction). 1=baseline(Bare); set per-condition to the Lam4>Pre>Bare experimental ordering (NOT tuned)")
     ap.add_argument("--no-pen-cap", dest="pen_cap", action="store_false", help="D8: disable the implicit per-node displacement cap (= the contact-shell clamp that stops frozen-grid tunneling/interpenetration). On by default")
@@ -1958,6 +1965,8 @@ def main():
         cadherin=args.cadherin, ecm_clutch=args.ecm_clutch, cad_batch=args.cad_batch,
         cad_subcycle=args.cad_subcycle, cad_micro_M=args.cad_micro_M,
         cad_bundle=args.cad_bundle, cad_contract=args.cad_contract, cad_rbind=args.cad_rbind,
+        cad_mature=args.cad_mature, cad_tau_mature=args.cad_tau_mature,
+        cad_mature_lifetime=args.cad_mature_lifetime,
         ecm_bundle=args.ecm_bundle,
         gravity=args.gravity, delta_rho=args.delta_rho, coupling=args.coupling,
         pen_cap=args.pen_cap, pen_cap_frac=args.pen_cap_frac,

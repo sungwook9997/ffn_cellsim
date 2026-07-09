@@ -24,6 +24,12 @@ def cad_break_kernel(
     k_trans: wp.float64, r0_trans: wp.float64, dt_batch: wp.float64,
     koff: wp.array(dtype=wp.float64), fs0: wp.float64, df: wp.float64, n_koff: wp.int32,
     seed: wp.int32, salt: wp.int32,
+    # junction MATURATION (default off via mature_on=0): a bond carries AGE; maturation
+    # m=1-exp(-age/tau_mature) blends its off-rate from the nascent catch-slip toward a mature
+    # floor (factor mature_factor = k_off_mature/k_off_nascent). age is carried through the
+    # ping-pong (in_age→out_age), incremented by dt_batch for survivors.
+    age: wp.array(dtype=wp.float64), out_age: wp.array(dtype=wp.float64),
+    mature_on: wp.int32, tau_mature: wp.float64, mature_factor: wp.float64,
     out_bonds: wp.array(dtype=wp.vec2i), out_count: wp.array(dtype=wp.int32),
     bonded: wp.array(dtype=wp.int32),
 ):
@@ -45,11 +51,16 @@ def cad_break_kernel(
         k0 = n_koff - wp.int32(2)
     frac = t - wp.float64(k0)
     koff_F = koff[k0] * (wp.float64(1.0) - frac) + koff[k0 + wp.int32(1)] * frac
+    age_b = age[b]
+    if mature_on != wp.int32(0):
+        m = wp.float64(1.0) - wp.exp(-age_b / tau_mature)          # matured fraction
+        koff_F = koff_F * (wp.float64(1.0) - m * (wp.float64(1.0) - mature_factor))
     p_break = wp.float64(1.0) - wp.exp(-koff_F * dt_batch)
     state = wp.rand_init(seed, salt + b)
     if wp.randf(state) >= wp.float32(p_break):
         slot = wp.atomic_add(out_count, 0, wp.int32(1))  # survive → compact into out_bonds
         out_bonds[slot] = wp.vec2i(i, j)
+        out_age[slot] = age_b + dt_batch                 # survivor ages by this sub-step
         bonded[i] = wp.int32(1)
         bonded[j] = wp.int32(1)
 
@@ -85,6 +96,7 @@ def cad_form_kernel(
     partner: wp.array(dtype=wp.int32), n_nodes: wp.int32,
     p_on: wp.float64, seed: wp.int32, salt: wp.int32, cap: wp.int32,
     out_bonds: wp.array(dtype=wp.vec2i), out_count: wp.array(dtype=wp.int32),
+    out_age: wp.array(dtype=wp.float64),
 ):
     i = wp.tid()
     j = partner[i]
@@ -99,6 +111,7 @@ def cad_form_kernel(
         slot = wp.atomic_add(out_count, 0, wp.int32(1))
         if slot < cap:
             out_bonds[slot] = wp.vec2i(i, j)
+            out_age[slot] = wp.float64(0.0)           # nascent junction: age 0
 
 
 def build_koff_device(fs: np.ndarray, koff: np.ndarray, device):
