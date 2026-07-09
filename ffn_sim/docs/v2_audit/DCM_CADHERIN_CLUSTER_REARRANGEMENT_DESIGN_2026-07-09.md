@@ -181,6 +181,35 @@ P(survive to τ)~e⁻⁶¹≈0), G3b contact-loss resets maturation. Figure `dcm
 (N_b 4→25, cluster 2 breaks vs single-molecule 141 over 10 s). This closes the "maturation never engages" problem;
 `n_nascent` remains a controlled variable flagged for a firm KB-4.3 anchor.
 
+## 6c. S4 RESULT (2026-07-10) — G4: aggregate-σ compaction is NOT maturation-rate-limited → (b) needed
+
+Native N=400 loose-fcc, σ=5 mN/m, cluster ON, 48 s (STEPS=6000) on gbook A5000, 3 conditions sharing σ and
+differing only in maturation: **no maturation** / **τ_mature=30 s (engages within the run)** / **τ_mature=600 s
+(lit; barely engages)**. Figure `dcm_cadherin_s4_compaction_rate.png` (porosity(t) + Rg(t)).
+
+| condition | porosity 0→48 s | saturation |
+|---|---|---|
+| cluster, no maturation | 0.631 → **0.392** | saturates by ~23 s |
+| cluster + mat τ=30 s | 0.631 → **0.341** | still declining at 48 s |
+| cluster + mat τ=600 s | 0.631 → **0.351** | still declining at 48 s |
+
+**Decisive: the compaction RATE is NOT gated by τ_mature.** The τ=30 s and τ=600 s trajectories are **nearly
+identical** (0.341 vs 0.351, curves overlap) despite a **20× difference in τ_mature** — if maturation set the
+timescale, τ=600 s would compact ~20× slower; it does not. Two phases: (1) the first ~20 s is IDENTICAL across all
+three = fast **drag-limited gap-closing** (the σ liquid-drop pulling loose cells together — needs no bond breaking,
+confirming decision-test ①); (2) the maturation conditions then continue past where no-maturation saturates, but
+that extra compaction is driven by junction STRENGTH/nucleation (nascent m=4 « full m=20 → weaker, more-dynamic
+adhesion lets σ densify further), on the σ/drag timescale — NOT on τ_mature (else τ=30 s ≠ τ=600 s).
+
+**G4 VERDICT: FAIL — aggregate-σ compaction bypasses the junction rate-limiter (as decision-test ① predicted, now
+confirmed with the full cluster+maturation redesign at native scale).** The S1–S3 mechanism is correct and does
+change the junction physics (lifetime emergent, maturation engages, force ∝ engaged m), but the COMPACTION DRIVER
+(Foty liquid-drop σ) densifies by radial gap-closing on the drag timescale, so no cadherin property can make its
+RATE ~τ_mature. **→ the (b) escalation is required** (design §5 S4 decision point): to get a genuinely
+maturation-rate-limited (min–hr) compaction, the σ liquid-drop drive must be SUBORDINATED to a mechanism where
+densification REQUIRES junction rearrangement (explicit cadherin-tension → T1 neighbour-exchange), so long-lived
+matured junctions actually throttle the rate. This is a PI-scoped deeper change (surfaced with this data).
+
 ## 7. One-line summary
 Replace the lumped "whole cadherin bundle breaks at the single-molecule rate" with a **fine-grained load-sharing
 parallel-bond cluster** (`m` engaged molecules, birth–death, junction dies only at `m→0`) so junctions survive long
