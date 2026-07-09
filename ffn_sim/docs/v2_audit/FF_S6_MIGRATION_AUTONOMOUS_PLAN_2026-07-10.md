@@ -79,3 +79,25 @@ central technical task of this mandate — without it, native migration is eithe
   the plan, and **commit a backup** (nothing lost). ScheduleWakeup ~1800 s cadence.
 - **Visualisation is the deliverable surface** — every milestone lands as browsable HTML in `ff/**/figs`,
   browser-checked, ECM shown like the cell.
+
+---
+
+## Loop log (living)
+
+### Tick 0 (02:42–04:00 KST) — S6 caveat RESOLVED + ECM viz + drag-blocker breakthrough (coarse)
+- **S6 two-way (Option B) native (`adb051e`):** collagen-as-substrate → densification **+264.9 nm** (was +15.7),
+  traction-driven, STABLE. TAG cross-check OK (per-clutch 17–25 pN = KB 5–20). Caveat resolved.
+- **ECM viz (`adb051e`):** render the ECM like the cell — recruit/tension/reorientation scenes. **Direct visual
+  check found a real bug** (line layers ignored `color_frames` → fixed) — grep would never have caught it.
+- **Longer native (400 s, `c507d2d`):** remodel is PROGRESSIVE (densification +264.9 → **+391.4 nm**, not a 100 s
+  artifact); fibre reorientation genuinely slow (RAI Δ +0.001 → +0.002 — hours-scale). Frame cap ≤4–5 at native
+  (8 frames = 614 MB HTML loads blank; 4 = 360 MB OK).
+- **⭐ Drag-blocker insight (the migration unlock):** the `--com-drag` RUNAWAY was a *dish-context* artifact — there
+  the clutch anchors follow the cell, so nothing regularises the rigid COM mode. In **S6 the collagen is PINNED**,
+  so bound clutches DO resist COM translation → the rigid mode is regularised. Coarse test confirms: `--com-drag`
+  in S6 is **STABLE (no runaway, V/V0=1.000)** and ~10× faster crawl (0.89 → 9.42 nm/s). `com_gamma=6πη·R` is a
+  DERIVED physical drag (not tuned). **Native S6 `--com-drag` migration test running** — the decisive question is
+  Nc-invariance (does native stay ~9 nm/s, so the cell visibly leaves its position over a long sim?).
+- Next: read the native migration result; if stable + Nc-invariant → long migration sim + animated COM-trail viewer
+  (cell crawls across + remodels the collagen). If it runs away at native → document + fall back to the rigid-mode
+  regularisation (handle rotation modes too, not just translation).
