@@ -209,7 +209,7 @@ def directed_front_growth_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, p
     # Add a barbed-end subunit by growing the tip segment's REST LENGTH only (no kinematic node move). reshape then
     # COG-conserves the fiber ⇒ the tip advances AND the fiber flows back = the physical RETROGRADE FLOW, COM-CONSERVING.
     # This is deliberate: a kinematic tip advance would shift the COM by bookkeeping (fails the traction-driven gate G4);
-    # the ONLY thing that may move the COM is the clutch traction gripping this flow (anchor_retrograde_drift_kernel).
+    # the ONLY thing that may move the COM is the clutch traction gripping this flow (clutch_slip_traction_kernel, anchor FIXED).
     seg_rest[stip] = r + adv
     wp.atomic_add(grown, 0, adv)
 
@@ -263,7 +263,7 @@ def fiber_treadmill_kernel(pos: wp.array(dtype=wp.vec3d), phat: wp.vec3d, cos_mi
     (grow the tip rest at the Mogilner-Oster ratchet) AND remove the SAME amount at the pointed end (shrink the pointed
     rest). The fiber TREADMILLS IN PLACE — same total length, same COG (reshape-conserved), material flowing
     barbed→pointed = RETROGRADE FLOW. Every fiber conserves its own length+COG ⇒ the cortex COM is conserved ⇒ ONLY
-    the clutch traction gripping this flow (anchor_retrograde_drift_kernel) translocates the cell (G4). The barbed end
+    the clutch traction gripping this flow (clutch_slip_traction_kernel, anchor FIXED) translocates the cell (G4). The barbed end
     advances (protrusion) and the pointed end retracts (rear retraction) by EQUAL amounts. ``flux[0]`` = Σ material moved."""
     f = wp.tid()
     a = fiber_off[f]
@@ -293,21 +293,38 @@ def fiber_treadmill_kernel(pos: wp.array(dtype=wp.vec3d), phat: wp.vec3d, cos_mi
 
 
 @wp.kernel
-def anchor_retrograde_drift_kernel(anchor: wp.array(dtype=wp.vec3d), bound: wp.array(dtype=wp.int32),
-                                   phat: wp.vec3d, ds: wp.float64):
-    """Molecular-clutch RETROGRADE FLOW (treadmill S2/S3, 2026-07-09). The actin material a BOUND clutch grips
-    flows rearward at v_retro (Chan-Odde, 10–100 nm/s), so in the cortex (mesh) frame — where nodes are held by
-    the network — the substrate ANCHOR drifts FORWARD by ``ds = v_retro·dt`` each step. The unchanged
-    ``clutch_spring_kernel`` (anchor−actin) then builds a FORWARD load from the FLOW (not just deformation) →
-    forward traction on the basal network; the load reaches F*≈7 pN and ``clutch_catchslip_kmc_kernel`` releases
-    at the rear, and the nascent-rebind reseeds the anchor at the node's current position (slip reset) at the
-    front. This is the molecular clutch: retrograde flow → clutch load → forward traction → compact translocation.
-    Fine-grained + per-clutch (not a body-force smear). Only bound clutches drift; detached ones are inert."""
-    i = wp.tid()
-    if bound[i] == 0:
+def clutch_slip_accumulate_kernel(bound: wp.array(dtype=wp.int32), slip: wp.array(dtype=wp.float64),
+                                  v_retro_dt: wp.float64):
+    """Accumulate the per-clutch RETROGRADE SLIP once per step (NOT per force-eval). A bound clutch's gripped actin
+    flows rearward at v_retro, so the material receded from its FIXED anchor grows by ``v_retro·dt`` each step;
+    a detached clutch carries no slip (fresh on rebind). Paired with ``clutch_slip_traction_kernel`` (the force)."""
+    t = wp.tid()
+    if bound[t] == 0:
+        slip[t] = wp.float64(0.0)
+    else:
+        slip[t] = slip[t] + v_retro_dt
+
+
+@wp.kernel
+def clutch_slip_traction_kernel(force: wp.array(dtype=wp.vec3d), actin: wp.array(dtype=wp.int32),
+                                bound: wp.array(dtype=wp.int32), slip: wp.array(dtype=wp.float64),
+                                phat: wp.vec3d, k_int: wp.float64):
+    """Molecular-clutch RETROGRADE-FLOW TRACTION (corrected 2026-07-09 — the substrate ANCHOR STAYS FIXED; do NOT
+    move the substrate). The prior ``anchor_retrograde_drift`` was a FRAME ERROR: it slid the anchors forward, so
+    the FLOOR moved and the cell rode along — not a crawl (PI 2026-07-09). Correct physics: a bound clutch grips
+    actin that flows REARWARD relative to its FIXED anchor; the receded material (slip ``s`` from
+    ``clutch_slip_accumulate_kernel``) makes the clutch pull the basal node FORWARD by ``k_int·s·phat``. The node
+    advances relative to the FIXED anchor ⇒ the cell crawls forward relative to the fixed substrate. As the node
+    advances, the ``clutch_spring`` stretch |node−anchor| grows and ``clutch_catchslip_kmc`` releases at F*; the
+    nascent-rebind then forms a NEW adhesion at the advanced position (slip→0) — the adhesion TREADMILLS forward by
+    load-and-fail while every individual anchor stays put. Reaction is on the immovable substrate (traction).
+    Applied at EVERY force-eval (so the implicit solve sees it); the slip is accumulated once per step separately."""
+    t = wp.tid()
+    if bound[t] == 0:
         return
-    a = anchor[i]
-    anchor[i] = wp.vec3d(a[0] + ds * phat[0], a[1] + ds * phat[1], a[2] + ds * phat[2])
+    f = k_int * slip[t]
+    a = actin[t]
+    wp.atomic_add(force, a, wp.vec3d(f * phat[0], f * phat[1], f * phat[2]))
 
 
 @wp.kernel
@@ -442,5 +459,5 @@ __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_react
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
            "xl_turnover_kernel", "actin_assembly_kernel", "barbed_end_growth_kernel",
            "directed_front_growth_kernel", "pointed_end_depoly_kernel", "fiber_treadmill_kernel",
-           "anchor_retrograde_drift_kernel",
+           "clutch_slip_accumulate_kernel", "clutch_slip_traction_kernel",
            "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]

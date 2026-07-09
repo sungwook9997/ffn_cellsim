@@ -41,7 +41,8 @@ from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_ke
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
                                       barbed_end_growth_kernel, directed_front_growth_kernel,
                                       pointed_end_depoly_kernel, fiber_treadmill_kernel,
-                                      anchor_retrograde_drift_kernel, sum_pos_kernel, sum_radius_kernel,
+                                      clutch_slip_accumulate_kernel, clutch_slip_traction_kernel,
+                                      sum_pos_kernel, sum_radius_kernel,
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.units import ETA_CYTOPLASM
 from ffn_sim.ff.implicit_ff import implicit_step_current
@@ -178,8 +179,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
-        treadmill=False, rear_depoly=False, flow=False, v_retro_um_s=0.03, bulk_drag=False, com_drag=False,
-        refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
+        treadmill=False, rear_depoly=False, flow=False, cortex_treadmill=True, v_retro_um_s=0.03, bulk_drag=False,
+        com_drag=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
         record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
@@ -271,6 +272,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     ac_d = wp.array(S["basal"], dtype=wp.int32, device=d)
     anch_d = wp.array(S["anchors"], dtype=wp.vec3d, device=d)
     bd_d = wp.array(np.ones(S["basal"].size, np.int32), dtype=wp.int32, device=d)
+    slip_d = wp.zeros(S["basal"].size, dtype=wp.float64, device=d)   # per-clutch retrograde slip (molecular-clutch traction; anchor FIXED)
     # COMPLIANT SUBSTRATE (PI experimental axis): the FA anchors become movable Winkler-spring DOFs (k_sub∝E_sub)
     # instead of fixed pins → traction becomes E-dependent (Bangasser-Odde). E_sub=0 keeps the rigid-pin path.
     substrate = resolve_substrate(E_pa=substrate_E) if substrate_E > 0 else None
@@ -327,6 +329,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if clutches:
             wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), f_d], device=d)
+            if flow:                                           # molecular-clutch retrograde-flow traction (anchor FIXED)
+                wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
         if spread:
             spread_total_d.zero_()
             wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
@@ -390,6 +394,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             if clutches:
                 wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d], device=d)
+                if flow:                                       # molecular-clutch retrograde-flow traction (anchor FIXED)
+                    wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
             if spread:
                 spread_total_d.zero_()
                 wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
@@ -439,9 +445,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         dP = TURGOR_PI_IN0 * (V0 - vmin) / max(vol - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
         dP = min(max(dP, -TURGOR_PI_IN0), TURGOR_PI_IN0)
         dP_area = dP * area / Nc
-        if flow and clutches:                                  # S2/S3 RETROGRADE FLOW: material flows rearward at v_retro ⇒
-            wp.launch(anchor_retrograde_drift_kernel, dim=M,   # the substrate anchor drifts FORWARD in the mesh frame → the
-                      inputs=[anch_d, bd_d, ph, wp.float64(v_retro_um_s * dt)], device=d)   # clutch spring builds forward load
+        if flow and clutches:                                  # RETROGRADE FLOW (anchor FIXED): accumulate per-clutch slip ONCE
+            wp.launch(clutch_slip_accumulate_kernel, dim=M,    # per step (the traction force k·slip·phat is applied per force-eval
+                      inputs=[bd_d, slip_d, wp.float64(v_retro_um_s * dt)], device=d)        # with clutch_spring, below)
         wp.launch(_zero, dim=N, inputs=[f_d], device=d)
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
@@ -462,6 +468,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if clutches:
             wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), f_d], device=d)
+            if flow:                                           # molecular-clutch retrograde-flow traction (anchor FIXED): forward k·slip·phat
+                wp.launch(clutch_slip_traction_kernel, dim=M, inputs=[f_d, ac_d, bd_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
         if spread:                                             # EMERGENT spreading: peripheral radial-outward ratchet
             spread_total_d.zero_()
             wp.launch(spreading_push_kernel, dim=Nc, inputs=[pos_d, wp.float64(cx_c), wp.float64(cy_c),
@@ -539,7 +547,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if growth and step % assembly_every == 0 and step > 0:   # per-filament BARBED-END polymerization (KB-3.6 ratchet; reads tip load in f_d)
             wp.launch(barbed_end_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, foff_d, soff_d, sr_d,
                       wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max), grown_d], device=d)
-        if flow and step % assembly_every == 0 and step > 0:      # PER-FIBER ACTIN TREADMILL (COM-conserving): each forward
+        if flow and cortex_treadmill and step % assembly_every == 0 and step > 0:  # PER-FIBER ACTIN TREADMILL (COM-conserving): each forward
             wp.launch(fiber_treadmill_kernel, dim=n_cortex_fib,    # fiber grows its barbed end = shrinks its pointed end → material
                       inputs=[pos_d, ph, wp.float64(0.0), foff_d, soff_d, sr_d, wp.float64(v0_dt),   # flows barbed→pointed (retrograde),
                       wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max),           # fiber length+COG conserved ⇒ ONLY
