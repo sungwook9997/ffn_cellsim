@@ -55,8 +55,16 @@ pen_frac 메트릭 수정**(PI-gated gate-contract 변경)이다.
    게이트를 결정하지 않게.
 3. **물리 임계(µm/R)** — `max_pen`을 R 대비 절대값으로(예: median_inside < 0.05R AND frac>0.2R < 0.5%).
 
-권장: (2)+(3) 조합 — `frac(pen>0.2R)`를 임계 ~0.5%로. 이러면 IPC-newton(0.1%) PASS, baoab(2.1%) FAIL,
-물리적으로 옳음. **PI 승인 후** gate-contract 갱신 + `_penetration_frac` 수정.
+권장: (2)+(3) 조합 — `frac(pen>0.2R)`를 임계 ~0.5%로. **PI 승인 후** gate-contract 갱신 + `_penetration_frac` 수정.
+
+**⚠️ 적용 후 런타임 검증 (2026-07-09 gate-verify, 새 코드 confluent N=2000 SIGMA=0, dt 8e-3/0.1/1.0):**
+- ✅ 게이트 수정 **작동**: 로그 pen이 이제 frac_deep(0.002~0.017), 구 75(메트릭 버그) 사라짐.
+- ⚠️ **그러나 confluent N=2000은 여전히 G2 FAIL**: 게이트가 `pen_frac_peak`(궤적 max) 기준인데 confluent build의
+  **warmup 과도기 관통 peak = 1.7% > 0.5% 임계**. `pen_final`(0.3%)만 낮다. → 내 "IPC-newton(0.1%) PASS"
+  예상은 **final 기준 착오**였고, PEAK가 걸려 FAIL. (dt 무관 — build/warmup 시점 관통이라 8e-3/0.1/1.0 모두 peak 1.7%.)
+- **남은 이슈 (PI 결정):** (a) 게이트가 warmup 과도기까지 pen_peak로 잡는 게 맞나(build 초기 관통 vs 운영 중),
+  (b) confluent build의 초기 관통(outlier)을 Phase D의 lloyd_iters↑로 peak도 낮출 수 있는가. 게이트 메트릭 자체는
+  이제 실제 관통을 잰다(수정 목표 달성), 하지만 confluent N=2000이 게이트를 통과하려면 초기 관통을 더 줄여야 함.
 
 **PI 승인 시 즉시 적용할 정확한 diff** (`dcm_warp_decohesion.py:1377`, 스코프에 `R=p.R_cell`·`edges_a`·
 `pos_d` 존재 확인됨):

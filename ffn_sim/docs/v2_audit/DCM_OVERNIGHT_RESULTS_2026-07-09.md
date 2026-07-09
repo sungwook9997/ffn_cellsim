@@ -73,9 +73,13 @@ N=400 loose gap-2.4, σ=5 mN/m, accel_dt=8e-3, **STEPS=12000 (96 s 물리시간)
 **현재 dt(accel_dt=8e-3): ~515일 — 비현실적.** 48h 물리시간 = 172,800 s ÷ 8e-3 = **2.16e7 step**
 × per-step 2.06 s(N=2000, Phase A 실측) = 4.45e7 s ≈ **515일**.
 
-**dt로 못 줄임 — 8e-3이 N=2000의 사실상 상한.** dt-probe(confluent N=2000, SIGMA=0): **accel_dt=0.1에서
-발산**(pen 101, cfl 5.3e4). #1 GPU 검증의 dt ceiling ~2.0 s는 small-N(N=2)에서였고, N=2000은 수천 셀의
-lagged soft-force + Newton 결합으로 dt 상한이 **8e-3로 훨씬 낮다**. (dt=1.0/2.0 = 더 발산, 확정 대기.)
+**dt로 못 줄임(압축 기준) — 압축(SIGMA>0)은 8e-3이 상한** (Phase B: loose σ=5 안정, σ>5 발산).
+dt-probe 구 메트릭은 dt=0.1 pen 101(발산처럼)이었으나 **이는 구 max/mean_edge 메트릭 아티팩트**였다 —
+gate-verify 재측정(새 frac>0.2R): **dt=0.1/1.0 모두 pen_final 0.3% 정적 안정**(발산 아님). 즉 정적(SIGMA=0)
+confluent은 dt=1.0까지 안정. per-step(build 포함 추정): dt=0.1 ~5.3 s, **dt=1.0 ~2.7 s**, dt=2.0 ~5.6 s
+(dt=1.0이 Newton 수렴 좋아 최소).
+**⇒ 정적(SIGMA=0) confluent은 dt=1.0에서 48h ≈ 172,800×2.7 s ≈ 5.4일에 가능할 수도** 있으나, 이는 압축·
+mechanobiology가 없는 "정지 상태 5.4일"이라 무의미하다. **의미있는 압축 48h는 여전히 8e-3 상한 = ~515일.**
 
 **핵심: 48h는 mechanical compaction에 불필요하다.** Phase C에서 N=400 σ=5가 **96 s**에 porosity 0.285로
 포화(거의 완전 densify) + drift 수렴 — mechanical 압축·재배열은 ~100 s면 끝난다. 24–48h는 biological
