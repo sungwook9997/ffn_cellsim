@@ -252,6 +252,24 @@ def pointed_end_depoly_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, phat
 
 
 @wp.kernel
+def anchor_retrograde_drift_kernel(anchor: wp.array(dtype=wp.vec3d), bound: wp.array(dtype=wp.int32),
+                                   phat: wp.vec3d, ds: wp.float64):
+    """Molecular-clutch RETROGRADE FLOW (treadmill S2/S3, 2026-07-09). The actin material a BOUND clutch grips
+    flows rearward at v_retro (Chan-Odde, 10–100 nm/s), so in the cortex (mesh) frame — where nodes are held by
+    the network — the substrate ANCHOR drifts FORWARD by ``ds = v_retro·dt`` each step. The unchanged
+    ``clutch_spring_kernel`` (anchor−actin) then builds a FORWARD load from the FLOW (not just deformation) →
+    forward traction on the basal network; the load reaches F*≈7 pN and ``clutch_catchslip_kmc_kernel`` releases
+    at the rear, and the nascent-rebind reseeds the anchor at the node's current position (slip reset) at the
+    front. This is the molecular clutch: retrograde flow → clutch load → forward traction → compact translocation.
+    Fine-grained + per-clutch (not a body-force smear). Only bound clutches drift; detached ones are inert."""
+    i = wp.tid()
+    if bound[i] == 0:
+        return
+    a = anchor[i]
+    anchor[i] = wp.vec3d(a[0] + ds * phat[0], a[1] + ds * phat[1], a[2] + ds * phat[2])
+
+
+@wp.kernel
 def gravity_kernel(fz_node: wp.float64, force: wp.array(dtype=wp.vec3d)):
     """Net sedimentation body force (gravity − buoyancy): every cortex node gets a downward z-force
     ``fz_node = −Δρ·g·v_node`` (Δρ = ρ_cell − ρ_medium > 0 ⇒ the cell sinks toward the dish). This is REAL
@@ -382,5 +400,5 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
            "xl_turnover_kernel", "actin_assembly_kernel", "barbed_end_growth_kernel",
-           "directed_front_growth_kernel", "pointed_end_depoly_kernel",
+           "directed_front_growth_kernel", "pointed_end_depoly_kernel", "anchor_retrograde_drift_kernel",
            "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]

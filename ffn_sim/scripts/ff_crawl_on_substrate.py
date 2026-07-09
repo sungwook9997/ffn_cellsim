@@ -40,7 +40,8 @@ from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_ke
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
                                       barbed_end_growth_kernel, directed_front_growth_kernel,
-                                      pointed_end_depoly_kernel, sum_pos_kernel, sum_radius_kernel,
+                                      pointed_end_depoly_kernel, anchor_retrograde_drift_kernel,
+                                      sum_pos_kernel, sum_radius_kernel,
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.units import ETA_CYTOPLASM
 from ffn_sim.ff.implicit_ff import implicit_step_current
@@ -177,8 +178,9 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
-        treadmill=False, rear_depoly=False, bulk_drag=False, com_drag=False, refresh_every=50, reshape_every=20,
-        kmc_every=2000, xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
+        treadmill=False, rear_depoly=False, flow=False, v_retro_um_s=0.03, bulk_drag=False, com_drag=False,
+        refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
+        record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -437,6 +439,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         dP = TURGOR_PI_IN0 * (V0 - vmin) / max(vol - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
         dP = min(max(dP, -TURGOR_PI_IN0), TURGOR_PI_IN0)
         dP_area = dP * area / Nc
+        if flow and clutches:                                  # S2/S3 RETROGRADE FLOW: material flows rearward at v_retro ⇒
+            wp.launch(anchor_retrograde_drift_kernel, dim=M,   # the substrate anchor drifts FORWARD in the mesh frame → the
+                      inputs=[anch_d, bd_d, ph, wp.float64(v_retro_um_s * dt)], device=d)   # clutch spring builds forward load
         wp.launch(_zero, dim=N, inputs=[f_d], device=d)
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
         wp.launch(link_spring_kernel, dim=n_xl, inputs=[pos_d, xl_d, kxl_d, r0_d, f_d], device=d)
@@ -668,6 +673,12 @@ def main():
                     "The directed crawl already EMERGES from protrusion + uniform clutch turnover (set --kmc-every so turnover fires) at "
                     "physiological ~60 nm/s, traction-driven (OFF-audit PASS). This explicit front-bias instead OVER-de-adheres — as the COM "
                     "advances, clutches fall behind it and stop re-forming → bound→0 → traction collapses → LESS crawl. Kept only as a documented dead-end.")
+    ap.add_argument("--rear-depoly", action="store_true", help="TREADMILL S1: pointed-end depolymerization at the rear cap "
+                    "(mirror of directed front growth; mass-matched) — the rear half of the actin treadmill (mass-conserving).")
+    ap.add_argument("--flow", action="store_true", help="TREADMILL S2/S3: molecular-clutch RETROGRADE FLOW — bound-clutch anchors "
+                    "drift forward at v_retro in the mesh frame (= actin flows rearward), so the clutch builds forward load from FLOW "
+                    "→ traction → compact translocation; catch-slip releases at F*, nascent-rebind reseeds at the front.")
+    ap.add_argument("--v-retro", type=float, default=0.03, help="retrograde actin flow speed [µm/s] (Chan-Odde 0.01–0.10; default 0.03 mid-band)")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")
     ap.add_argument("--microtubules", action="store_true",
@@ -708,6 +719,7 @@ def main():
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
             fa_maturation=args.fa_maturation, treadmill=args.treadmill, bulk_drag=args.bulk_drag,
+            rear_depoly=args.rear_depoly, flow=args.flow, v_retro_um_s=args.v_retro,
             com_drag=args.com_drag, kmc_every=args.kmc_every, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
