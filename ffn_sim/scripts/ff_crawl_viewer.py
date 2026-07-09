@@ -119,7 +119,8 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
         layers.append({"name": f"nucleus ({nuc.shape[1]} beads, R_nuc=0.70R)", "kind": "mesh", "verts": nuc[0],
                        "faces": nfaces, "color": "#d17fe0", "opacity": 0.97,
                        "frames": [nuc[t] for t in range(T)]})
-    layers.append({"name": "substrate", "kind": "plates", "verts": [z_sub], "half_xy": R * 1.6, "color": "#3a3f47"})
+    if "ecm_frames" not in d.files:                           # with a collagen matrix, the ECM IS the substrate — no redundant rigid plate
+        layers.append({"name": "substrate", "kind": "plates", "verts": [z_sub], "half_xy": R * 1.6, "color": "#3a3f47"})
     if "bound_frames" in d.files and "basal" in d.files:      # FA integrin clutch junctions (cell↔substrate)
         basal_i = np.asarray(d["basal"], np.int64)
         bfr = np.asarray(d["bound_frames"])[fidx]; afr = np.asarray(d["anch_frames"], np.float32)[fidx]
@@ -153,13 +154,19 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
         e0 = ef[0]                                                                                 # frame-0 reference
         edisp_seg = [np.linalg.norm(ef[talign[t]] - e0, axis=1)[eseg].reshape(-1) * 1e3 for t in range(T)]   # per-endpoint nm
         hi_e = float(max(np.percentile(np.concatenate(edisp_seg), 98), 1.0))
-        layers.append({"name": f"collagen-I matrix (traction recruitment, 0–{hi_e:.0f} nm turbo)", "kind": "lines",
-                       "verts": ecm_seg_fr[0], "color": "#c8a06a", "size": 1.0, "opacity": 0.85,
-                       "frames": ecm_seg_fr, "color_frames": _turbo_colors(edisp_seg, 0.0, hi_e)})
+        ecm_layer = {"name": f"collagen-I matrix (traction recruitment, 0–{hi_e:.0f} nm turbo)", "kind": "lines",
+                     "verts": ecm_seg_fr[0], "color": "#c8a06a", "size": 1.2, "opacity": 0.9,
+                     "frames": ecm_seg_fr, "color_frames": _turbo_colors(edisp_seg, 0.0, hi_e)}
+        layers.append(ecm_layer)
         ecm_cbar = {"grad": _turbo_gradient(), "lo": 0.0, "hi": hi_e, "unit": "nm",
                     "label": "collagen displacement (traction recruitment)"}
     scenes = {"shape": layers}; cbars = {}
-    if ecm_cbar: cbars["shape"] = ecm_cbar
+    if ecm_cbar:
+        cbars["shape"] = ecm_cbar
+        cell_faint = [dict(L, opacity=(0.06 if L["kind"] == "mesh" else 0.18)) for L in layers   # cell as faint context
+                      if L is not ecm_layer and L["name"] != "substrate"]
+        scenes["collagen recruit"] = [ecm_layer] + cell_faint   # dedicated scene: the matrix deformation front-and-centre
+        cbars["collagen recruit"] = ecm_cbar
     # FEM-style field scenes: the cortex surface (hull) colored per-node by the SIM's von-Mises stress / areal
     # strain, animated per frame, WITH a turbo colorbar (colour↔value scale, like a paper figure). Reuses the
     # scene dropdown. Context (MT/nucleus/substrate/COM) kept; faint shape hull+filaments → opaque colored surface.
@@ -168,8 +175,11 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
         grad = _turbo_gradient()
 
         def field_scene(name, field, unit, label):
-            sm = [_smooth_field(field[t], np.asarray(faces), Nc) for t in range(T)]   # readable FEM-style surface field
-            lo, hi = float(np.percentile(sm, 2)), float(np.percentile(sm, 98))
+            raw = np.nan_to_num(np.asarray(field, np.float64), posinf=0.0, neginf=0.0)
+            hi = float(np.percentile(raw, 90)); lo = float(np.percentile(raw, 20))   # ROBUST range — a few degenerate
+            if hi - lo < 1e-9: hi = lo + max(abs(lo), 1e-6)                            # faces / outlier nodes don't blow the scale
+            capped = np.clip(raw, lo, hi)                                              # cap outliers so the FIELD (bulk) is visible
+            sm = [_smooth_field(capped[t], np.asarray(faces), Nc, passes=8) for t in range(T)]   # extra smoothing → readable surface
             hull = {"name": f"{label}  [{lo:.3g}–{hi:.3g} {unit}, turbo]", "kind": "mesh",
                     "verts": cortex[0], "faces": faces, "color": "#ffffff", "opacity": 0.97,
                     "frames": cortex_fr, "color_frames": _turbo_colors(sm, lo, hi), "clip": True}
