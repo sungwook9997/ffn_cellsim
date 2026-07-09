@@ -216,6 +216,42 @@ def directed_front_growth_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, p
 
 
 @wp.kernel
+def pointed_end_depoly_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, phat: wp.vec3d,
+                              rear_cos_R: wp.float64, fiber_off: wp.array(dtype=wp.int32),
+                              seg_off: wp.array(dtype=wp.int32), seg_rest: wp.array(dtype=wp.float64),
+                              v_depoly: wp.float64, seg_min: wp.float64, shrunk: wp.array(dtype=wp.float64)):
+    """Pointed-end DEPOLYMERIZATION — the REAR half of the actin treadmill (S1, 2026-07-09; mirror of
+    ``directed_front_growth_kernel``). One thread per fiber; for fibers whose POINTED end (node ``a``) is in the
+    REAR cap ((pos_a−com)·phat < −rear_cos_R), remove an actin subunit at the pointed end: retract the pointed
+    node INWARD (toward node a+1) and shrink the pointed-segment rest length to match (so reshape sees the segment
+    already at rest ⇒ the retraction PERSISTS). Floored at ``seg_min`` so a segment never inverts. Rate-matched to
+    the front polymerization so the cell TREADMILLS (front adds = rear removes) with no net length change → mass
+    conservation (gate G5). ``shrunk[0]`` accumulates total Δlength removed (rear G-actin recycling budget)."""
+    f = wp.tid()
+    a = fiber_off[f]
+    b = fiber_off[f + 1]
+    if b - a < 2:
+        return
+    d = pos[a] - com
+    if wp.dot(d, phat) > -rear_cos_R:                  # pointed end not in the rear cap → no depolymerization here
+        return
+    t = pos[a + 1] - pos[a]                            # inward tangent (pointed end → into the fiber)
+    L = wp.length(t)
+    if L < wp.float64(1.0e-9):
+        return
+    that = t / L
+    spnt = seg_off[f]                                  # pointed-end segment (first segment of the fiber)
+    r = seg_rest[spnt]
+    room = r - seg_min                                 # floor: never shrink a segment below seg_min (no inversion)
+    if room <= wp.float64(0.0):
+        return
+    dec = wp.min(v_depoly, room)
+    pos[a] = pos[a] + dec * that                       # retract the pointed end inward (subunit removed)
+    seg_rest[spnt] = r - dec
+    wp.atomic_add(shrunk, 0, dec)
+
+
+@wp.kernel
 def gravity_kernel(fz_node: wp.float64, force: wp.array(dtype=wp.vec3d)):
     """Net sedimentation body force (gravity − buoyancy): every cortex node gets a downward z-force
     ``fz_node = −Δρ·g·v_node`` (Δρ = ρ_cell − ρ_medium > 0 ⇒ the cell sinks toward the dish). This is REAL
@@ -346,5 +382,5 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
            "xl_turnover_kernel", "actin_assembly_kernel", "barbed_end_growth_kernel",
-           "directed_front_growth_kernel",
+           "directed_front_growth_kernel", "pointed_end_depoly_kernel",
            "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]

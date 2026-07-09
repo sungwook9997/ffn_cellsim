@@ -40,7 +40,7 @@ from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_ke
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
                                       barbed_end_growth_kernel, directed_front_growth_kernel,
-                                      sum_pos_kernel, sum_radius_kernel,
+                                      pointed_end_depoly_kernel, sum_pos_kernel, sum_radius_kernel,
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.units import ETA_CYTOPLASM
 from ffn_sim.ff.implicit_ff import implicit_step_current
@@ -177,8 +177,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
-        treadmill=False, bulk_drag=False, com_drag=False, refresh_every=50, reshape_every=20, kmc_every=2000,
-        xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
+        treadmill=False, rear_depoly=False, bulk_drag=False, com_drag=False, refresh_every=50, reshape_every=20,
+        kmc_every=2000, xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -295,7 +295,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     _seg0 = CortexParams().seg_um
     v0_dt = min(poly.v0_um_s * dt * assembly_every, 0.1 * _seg0)   # ≤0.05 µm elongation per growth tick
     seg_max = 2.0 * _seg0                                      # tip-segment cap [µm]; sustained growth past 2ℓ₀ ⇒ bead insertion (staged)
+    seg_min = 0.3 * _seg0                                      # pointed-end depoly floor [µm]; never shrink a segment below this (no inversion)
     grown_d = wp.zeros(1, dtype=wp.float64, device=d)          # Σ Δlength this tick (G-actin-pool budget diagnostic, KB-3.21)
+    shrunk_d = wp.zeros(1, dtype=wp.float64, device=d)         # Σ Δlength REMOVED at rear pointed ends (treadmill mass balance vs grown_d, gate G5)
 
     vs = {"dP": 0.0, "g": np.zeros((Nc, 3))}                   # osmotic ΔP + exact volume gradient (set by the loop)
 
@@ -539,6 +541,11 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(front_cos_R), wp.float64(0.0), foff_d, soff_d, sr_d,             # subunit addition; reaction is emergent
                       wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d,          # (tip→link_spring→basal clutches→traction)
                       wp.float64(seg_max), grown_d], device=d)
+        if rear_depoly and step % assembly_every == 0 and step > 0:  # S1 REAR pointed-end DEPOLYMERIZATION — the treadmill's
+            _pcm = pos_d.numpy()[:Nc].mean(0)                         # rear half (mirror of front growth); rate-matched (v_depoly=v0_dt)
+            _cmv = wp.vec3d(float(_pcm[0]), float(_pcm[1]), float(_pcm[2]))   # so front adds = rear removes → mass-conserving treadmill
+            wp.launch(pointed_end_depoly_kernel, dim=n_cortex_fib, inputs=[pos_d, _cmv, ph, wp.float64(front_cos_R),
+                      foff_d, soff_d, sr_d, wp.float64(v0_dt), wp.float64(seg_min), shrunk_d], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind
             wp.launch(clutch_catchslip_kmc_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), wp.float64(cp.kc0), wp.float64(cp.xc_um), wp.float64(cp.ks0),
@@ -612,6 +619,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 cell_height_um=cell_h, R_um=S["R"], vol_final=float(vol_traj[-1]) if vol_traj else np.nan,
                 f_pro_pN=S["f_pro"], gamma_min=float(gammas.min()), gamma_max=float(gammas.max()),
                 F_star_pN=cp.F_star_pN, kmax=float(kmax),
+                grown_um=float(grown_d.numpy()[0]), shrunk_um=float(shrunk_d.numpy()[0]),   # treadmill mass balance (gate G5)
                 svm=np.array(svm_frames), cstrain=np.array(strain_frames), faces=faces.astype(np.int32),
                 bound_frames=np.array(bound_frames), anch_frames=np.array(anch_frames), basal=S["basal"],
                 k_int=float(cp.k_int), clutch_rest_um=float(cp.rest_um))

@@ -95,6 +95,21 @@ and the equilibrium shape stay ~constant, so the frame-0 `V0`/`_area0` targets r
 - **G7 — seed-robust:** compact + forward across seeds 7/11/17/23 (ensemble, not single-seed).
 - **G8 — NATIVE:** Nc≈266k on A5000 — compact + physiological speed + stable (no NaN/divergence).
 
+## 4b. Substrate staging — ISOLATE first, THEN ECM (PI 2026-07-09)
+
+The molecular clutch generates traction *against the substrate*. Two substrate models:
+- **Fixed/rigid anchor** (current default, `anch_d` dish points): simplest; the treadmill traction still works
+  (it comes from the retrograde FLOW past the anchor, not substrate compliance). Right for **isolating** the
+  treadmill mechanism (fewest moving parts).
+- **ECM Mikado collagen** (`fa_ecm.py` clutch↔collagen two-sided Newton spring, `--ecm`, compliant + remodelable):
+  the fine-grained mechanistic substrate; adds substrate COMPLIANCE (needed for the biphasic G6) + ECM REMODELING
+  (the cell pulls collagen → traction + matrix deformation, the S4 work). Matches the PI's collagen-I experiment.
+
+**Decision (PI): isolate-validate the treadmill on the FIXED anchor first (S1–S5, gates G1–G5,G7), THEN move the
+validated mechanism onto the ECM Mikado (S6, adds G6 biphasic + remodeling).** A fixed anchor is not *wrong* (it
+is a stiff-glass substrate), but the fine-grained default is the ECM; validate the internal mechanism in isolation
+before coupling it to the compliant/remodeling matrix.
+
 ## 5. Implementation staging
 
 - **S1 — rear depolymerization** (`pointed_end_depoly_kernel`, mirror of `directed_front_growth`): shrink
