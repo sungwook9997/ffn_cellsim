@@ -39,7 +39,7 @@ def _segment_pairs(off: np.ndarray) -> np.ndarray:
     return np.asarray(pairs, np.int64) if pairs else np.zeros((0, 2), np.int64)
 
 
-def run(n_fibers=200, steps=2000, seed=1, traction=True, device="cpu"):
+def run(n_fibers=200, steps=2000, seed=1, traction=True, v_fa=0.0, reattach_every=100, capture=1.0, device="cpu"):
     d = device
     box_lo, box_hi = np.array([0.0, 0.0, 0.0]), np.array([12.0, 12.0, 6.0])
     mk = build_mikado_network(box_lo, box_hi, n_fibers=n_fibers, fiber_len_um=5.0, seg_um=0.5,
@@ -53,7 +53,7 @@ def run(n_fibers=200, steps=2000, seed=1, traction=True, device="cpu"):
     n_fa = 40
     fa = np.column_stack([cx + rng.uniform(-2, 2, n_fa), cy + rng.uniform(-2, 2, n_fa),
                           np.full(n_fa, ztop + 0.3)])                      # cell basal FA points, FIXED
-    ecm_node = attach_clutches_to_ecm(fa, pos0, capture_um=1.0) if traction else np.full(n_fa, -1, np.int64)
+    ecm_node = attach_clutches_to_ecm(fa, pos0, capture_um=capture) if traction else np.full(n_fa, -1, np.int64)
     n_bound = int((ecm_node >= 0).sum())
 
     tri = np.ascontiguousarray(net.bend_triples, np.int32); nT = tri.shape[0]
@@ -80,9 +80,16 @@ def run(n_fibers=200, steps=2000, seed=1, traction=True, device="cpu"):
     en_d = wp.array(np.ascontiguousarray(ecm_node, np.int32), dtype=wp.int32, device=d)
     fa_f = wp.zeros(n_fa, dtype=wp.vec3d, device=d)                        # (discarded — cell side is fixed)
 
-    frames = [pos0.copy()]
+    fa_np = np.ascontiguousarray(fa, np.float64).copy()
+    frames = [pos0.copy()]; fa_path = [fa_np.copy()]
     t0 = time.time()
     for s in range(steps):
+        if v_fa and traction:                                             # MOVING FA patch = a crawling cell's basal cap
+            fa_np[:, 0] += v_fa * dt                                       # translate along +x (the phat direction)
+            fa_d.assign(np.ascontiguousarray(fa_np, np.float64))
+            if reattach_every and s % reattach_every == 0 and s > 0:      # clutch treadmill: re-grip the fresh matrix underneath
+                ecm_node = attach_clutches_to_ecm(fa_np, pos.numpy(), capture_um=capture)
+                en_d.assign(np.ascontiguousarray(ecm_node, np.int32))
         wp.launch(_zero, dim=N, inputs=[f], device=d)
         wp.launch(cytosim_bending_kernel, dim=nT, inputs=[pos, tri_d, al_d, f], device=d)
         if xl.shape[0]:
@@ -93,7 +100,7 @@ def run(n_fibers=200, steps=2000, seed=1, traction=True, device="cpu"):
                   inputs=[fa_d, ac_d, pos, en_d, wp.float64(K_CLUTCH), wp.float64(0.05), fa_f, f], device=d)
         wp.launch(axpy_physical_kernel, dim=N, inputs=[pos, wp.float64(dt), gam_d, f], device=d)
         if s % max(1, steps // 12) == 0:
-            frames.append(pos.numpy().copy())
+            frames.append(pos.numpy().copy()); fa_path.append(fa_np.copy())
     posf = pos.numpy()
     # recruitment: mean displacement of each bound fiber node PROJECTED onto the direction to ITS FA anchor —
     # i.e. is the fiber pulled toward the adhesion it is gripped by (+ = recruited). (Projecting onto the cell
@@ -108,9 +115,10 @@ def run(n_fibers=200, steps=2000, seed=1, traction=True, device="cpu"):
     else:
         inward = 0.0
     max_disp = float(np.linalg.norm(posf - pos0, axis=1).max())
+    fa_travel = float(v_fa * dt * steps) if (v_fa and traction) else 0.0
     return dict(inward_um=inward, max_disp_um=max_disp, n_bound=n_bound, dt=dt, wall=time.time() - t0,
                 frames=np.array(frames), pos0=pos0, pinned=mk.pinned, fa=fa, ecm_node=ecm_node,
-                xl_i=mk.xl_i, xl_j=mk.xl_j, foff=net.fiber_offsets)
+                fa_path=np.array(fa_path), fa_travel_um=fa_travel, xl_i=mk.xl_i, xl_j=mk.xl_j, foff=net.fiber_offsets)
 
 
 def main():
@@ -119,9 +127,11 @@ def main():
     ap.add_argument("--n-fibers", type=int, default=200); ap.add_argument("--steps", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=1); ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="ffn_sim/outputs/ff/figs"); ap.add_argument("--tag", default="ff_ecm_remodel")
+    ap.add_argument("--v-fa", type=float, default=0.0, help="translate the FA patch along +x at this speed [µm/s] (a crawling "
+                    "cell's basal cap) with clutch re-attach → the ECM is remodeled ALONG the path (traction trail). 0 = static.")
     args = ap.parse_args()
-    on = run(n_fibers=args.n_fibers, steps=args.steps, seed=args.seed, traction=True, device=args.device)
-    off = run(n_fibers=args.n_fibers, steps=args.steps, seed=args.seed, traction=False, device=args.device)
+    on = run(n_fibers=args.n_fibers, steps=args.steps, seed=args.seed, traction=True, v_fa=args.v_fa, device=args.device)
+    off = run(n_fibers=args.n_fibers, steps=args.steps, seed=args.seed, traction=False, v_fa=args.v_fa, device=args.device)
     ratio = abs(on["inward_um"]) / max(abs(off["inward_um"]), 1e-9)
     verdict = "PASS" if on["inward_um"] > 0 and abs(off["inward_um"]) < 0.05 * abs(on["inward_um"]) + 1e-4 else "CHECK"
     print(f"[ECM REMODEL] traction ON : inward-recruit {on['inward_um']*1e3:+.1f} nm  max-disp {on['max_disp_um']:.3f} µm  "
@@ -129,9 +139,13 @@ def main():
     print(f"[ECM REMODEL] traction OFF: inward-recruit {off['inward_um']*1e3:+.1f} nm  max-disp {off['max_disp_um']:.3f} µm")
     print(f"[AUDIT] traction-driven remodel ratio |on/off|={ratio:.0f}× → {verdict} "
           f"(fibers recruited TOWARD the cell only under traction)")
+    if args.v_fa:
+        print(f"[MOVING FA] the FA patch travelled {on['fa_travel_um']:.2f} µm along +x → the ECM is remodeled along the "
+              f"crawl path (traction trail); clutches re-gripped fresh matrix underneath.")
     np.savez_compressed(f"{args.out}/{args.tag}_on.npz", frames=on["frames"].astype(np.float32), pos0=on["pos0"],
                         pinned=on["pinned"], fa=on["fa"], ecm_node=on["ecm_node"], xl_i=on["xl_i"], xl_j=on["xl_j"],
-                        foff=on["foff"], inward_um=on["inward_um"])
+                        foff=on["foff"], inward_um=on["inward_um"],
+                        fa_path=on["fa_path"].astype(np.float32), fa_travel_um=on["fa_travel_um"])
     print(f"wrote {args.out}/{args.tag}_on.npz")
 
 
