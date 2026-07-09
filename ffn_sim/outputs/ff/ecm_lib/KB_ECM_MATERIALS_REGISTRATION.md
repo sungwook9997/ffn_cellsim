@@ -1,10 +1,18 @@
-# KB registration draft — ECM materials (FF ECM library, 2026-07-10)
+# KB registration — ECM materials (FF ECM library, 2026-07-10)
 
-New KnowledgeClaims + SourceEvidence for the ECM materials the FF ECM library covers that were **absent
-from the KB** (collagen-I and PAA-substrate already present). Values are DOI-verified via the research
-workflow (adversarial verify stage). To register: add SourceEvidence rows + KnowledgeClaims to the Notion
-Contract-Graph (SoT), then `bash outputs/tag_kb/refresh.sh` + `verify_sources.py --check`. Proposed KB IDs
-in the Unit-1.V Microenv namespace (`KB-1.V.3.x`); **PI to ratify IDs before commit**.
+New KnowledgeClaims for the ECM materials the FF ECM library covers that were **absent from the KB**
+(collagen-I and PAA-substrate already present). Values are DOI-verified via the research workflow
+(adversarial verify stage).
+
+**✅ REGISTERED 2026-07-10** to the Notion Contract-Graph (SoT) + mirrored to `kb.duckdb` (167 claims total)
+as **KB-1.V.4.1–4.5**, `status=verified` (literature-checked; **awaiting PI ratification** — not yet
+`PI-ratified`). Note: the proposed `KB-1.V.3.x` collided with existing migration/confinement claims
+(KB-1.V.3.1–3.4), so the next free namespace **KB-1.V.4.x** was used. DOIs are in each claim's Citations
+field; standalone SourceEvidence rows + Claim→Evidence relations are a follow-up (several DOIs — Storm2005,
+Discher2005, Palchesko2012, Soofi... — already exist as SourceEvidence). PI: review IDs/values, flip to
+`PI-ratified` when adopted.
+
+Registered IDs: KB-1.V.4.1 PAA · 4.2 fibrin · 4.3 Matrigel · 4.4 agarose · 4.5 HA.
 
 ## KB-1.V.3.1 — Polyacrylamide (PAA) gel: acrylamide/bis → E calibration
 - **Value:** linear-elastic NON-fibrillar chemical gel; E tunable **0.1–40 kPa** by total acrylamide %(w/v)

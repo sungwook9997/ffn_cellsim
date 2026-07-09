@@ -60,3 +60,9 @@ FF engine = µm · pN · s. **1 pN/µm² = 1 Pa exactly** → all moduli come ou
 - Energy route primary; boundary-reaction kept as cross-check (unreliable on sparse nets).
 - axial_mode='spring' (finite EA) default; 'reshape' diverges with affine pre-strain → deprecated here.
 - Local Warp is CPU-only (CUDA not in this build); native/large runs → gbook A5000.
+
+## Checkpoint 2026-07-10 (30-min loop)
+Core goal COMPLETE + committed (fcd208f): 6/6 materials IN band, alignment/2D/3D/composite, native 5R×5R
+GPU, novelty (strain-stiffening + decoupling), 6 figs + 2 viewers (browser-verified), Notion Dev-Log posted.
+**Next (this cycle): register the 5 new material SourceEvidence + KnowledgeClaim rows to the Notion
+Contract-Graph** (user authorized "없으면 신설하여 진행") — the one stated goal item still only staged.
