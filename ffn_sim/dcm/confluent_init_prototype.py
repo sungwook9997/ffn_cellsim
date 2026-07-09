@@ -129,26 +129,31 @@ def validate(pos, faces, cof, npc, nf, seeds, R, R_ball, eps):
         r = np.linalg.norm(pos[c * npc:(c + 1) * npc] - seeds[c], axis=1)
         rmin = min(rmin, r.min())
     rep["no_fold (min node-radius>0, um)"] = round(rmin * 1e6, 4)
-    # 3. NO penetration: a node of cell A must lie OUTSIDE every other cell's Voronoi region, i.e.
-    #    closer to its own seed than to any other seed (Voronoi membership). eps>0 → strict.
+    # EFFICIENCY (2026-07-09): both checks were O(nodes²) dense distance matrices → minutes at N=2000
+    # (stalled the overnight Phase D sweep). Replaced with KDTree k-NN → O(nodes·log). Same quantities.
+    from scipy.spatial import cKDTree
+    cof = np.repeat(np.arange(n_cells), npc)
+    # 3. NO penetration: node closer to its OWN seed than to any other seed (Voronoi membership). eps>0 → strict.
+    seed_tree = cKDTree(seeds)
     worst = 1.0
     for c in range(n_cells):
         nodes = pos[c * npc:(c + 1) * npc]
         d_own = np.linalg.norm(nodes - seeds[c], axis=1)
-        d_oth = np.linalg.norm(nodes[:, None, :] - np.delete(seeds, c, 0)[None], axis=2).min(1)
-        # ratio>1 means node is strictly in its own cell (no penetration into a neighbour)
+        sd, si = seed_tree.query(nodes, k=2)                       # 2 nearest seeds
+        d_oth = np.where(si[:, 0] == c, sd[:, 1], sd[:, 0])         # nearest OTHER seed
         worst = min(worst, float((d_oth / np.maximum(d_own, 1e-30)).min()))
     rep["no_penetration (min d_other/d_own, >1 good)"] = round(worst, 3)
-    # 4. contact fraction: nodes within a small apposition distance of ANOTHER cell's surface
+    # 4. contact fraction: nodes within a small apposition distance of ANOTHER cell's surface (KDTree k-NN)
     mean_edge = np.linalg.norm(pos[faces[:, 0]] - pos[faces[:, 1]], axis=1).mean()
     cd = 0.6 * mean_edge
+    node_tree = cKDTree(pos)
+    K = min(16, len(pos))
+    dd, ii = node_tree.query(pos, k=K)
     in_contact = 0
-    allpos = pos
-    for c in range(n_cells):
-        nodes = pos[c * npc:(c + 1) * npc]
-        oth = np.delete(np.arange(len(pos)), np.arange(c * npc, (c + 1) * npc))
-        dmin = np.linalg.norm(nodes[:, None, :] - allpos[oth][None], axis=2).min(1)
-        in_contact += int((dmin < cd).sum())
+    for i in range(len(pos)):
+        mask = cof[ii[i]] != cof[i]                                # neighbours on another cell
+        if mask.any() and dd[i][mask][0] < cd:                     # nearest other-cell node within cd
+            in_contact += 1
     rep["contact_frac (gapped~0, foam~0.7+)"] = round(in_contact / len(pos), 3)
     # 5. space-filling: sum cell volumes / ball volume
     vsum = sum(cell_volume(pos, faces[c * nf:(c + 1) * nf]) for c in range(n_cells))

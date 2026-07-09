@@ -39,8 +39,10 @@ os.makedirs(OUT, exist_ok=True)
 
 N        = int(os.environ.get("NCELLS", "400"))
 STEPS    = int(os.environ.get("STEPS", "10000"))
-ACCEL_DT = float(os.environ.get("ACCEL_DT", "0.2"))     # implicit real-time dt [s] (ceiling ~2.0)
-SIGMA    = float(os.environ.get("SIGMA", "5.0e-3"))     # aggregate σ [N/m]; 0 → baseline (no agg tension)
+ACCEL_DT = float(os.environ.get("ACCEL_DT", "8e-3"))    # implicit real-time dt [s]; 8e-3 = feasible ceiling
+                                                        # for a loose start (Phase B 2026-07-09; 0.2 blows up)
+SIGMA    = float(os.environ.get("SIGMA", "5.0e-3"))     # aggregate σ [N/m]; 5 mN/m = compaction sweet spot
+                                                        # (Phase B non-monotonic; σ>5 = σ-dt over-shoot); 0 → baseline
 GAP      = float(os.environ.get("GAP", "2.4"))          # loose start: centre spacing gap·R (>2 ⇒ void to compact)
 BUNDLE   = float(os.environ.get("BUNDLE", "10"))        # cadherin N_cad bundle (~1.7 nN, lit KB-4.11; 40 diverges)
 ENUC     = float(os.environ.get("ENUC", "399"))         # MCF7 nucleus in-situ [Pa] (audit#19)
@@ -112,12 +114,26 @@ def porosity(p):
 
 
 def min_gap(p):
+    # EFFICIENT (2026-07-09): ONE global KDTree + k-NN; per cell, the nearest node on ANOTHER cell = its
+    # inter-cell gap. Was per-cell cKDTree over ~all other nodes → O(cells×nodes) (minutes at N=2000, it
+    # stalled the overnight Phase A inline TREND). k-NN + node subsample is O(nodes·log) — seconds at N=2000.
+    tree = cKDTree(p)
+    K = min(32, len(p))
     gaps = []
     for c in range(nc):
-        my = np.where(cof == c)[0]; oth = np.where(cof != c)[0]
-        if my.size < 4 or oth.size < 1:
+        my = np.where(cof == c)[0]
+        if my.size < 4:
             continue
-        gaps.append(cKDTree(p[oth]).query(p[my])[0].min())
+        if my.size > 24:                                 # subsample nodes (cell min-gap robust to it)
+            my = my[:: max(1, my.size // 24)]
+        dd, ii = tree.query(p[my], k=K)
+        best = np.inf
+        for row_d, row_i in zip(dd, ii):
+            mask = cof[row_i] != c                        # neighbours on another cell
+            if mask.any():
+                best = min(best, float(row_d[mask][0]))   # nearest other-cell node for this node
+        if np.isfinite(best):
+            gaps.append(best)
     return np.median(np.array(gaps)) * 1e6 if gaps else float("nan")
 
 

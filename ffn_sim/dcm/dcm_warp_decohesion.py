@@ -1361,9 +1361,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                              rebuild=_rebuild_proj, device=device)
 
     def _penetration_frac():
-        """max node-into-other-cell penetration depth / mean_edge (0 = no interpenetration).
+        """DEEP-penetration FRACTION = (#nodes with penetration depth > 0.2·R_cell) / N  (0 = watertight).
         Rebuilds the face grid on the CURRENT positions (measure runs after the integration
-        step, so the step's grid is stale) then reduces the diagnostic kernel on the host."""
+        step, so the step's grid is stale) then reduces the diagnostic kernel on the host.
+
+        FIX 2026-07-09 (PI-approved gate-contract, DCM_N2000_WATERTIGHT_2026-07-09): was
+        max_pen / INITIAL-build mean_edge — the INSET-shrunk build edge ~30× under-inflated the
+        denominator and max-only let a single Voronoi-vertex outlier fail the whole gate, reporting a
+        false pen_frac≈75 on an N=2000 that was 99.9% watertight. Now a real distribution metric."""
         if not use_grid:
             return 0.0
         wp.launch(pos_to_f32, dim=N, inputs=[pos_d, node_f32], device=device)
@@ -1374,7 +1379,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                   inputs=[face_grid.id, node_f32, pos_d, cof_d, faces_d, fcell_d,
                           wp.float32(con_q), pen_d], device=device)
         wp.synchronize_device(device)
-        return float(pen_d.numpy().max()) / mean_edge
+        return float((pen_d.numpy() > 0.2 * R).mean())   # deep-penetration fraction (depth > 0.2·R_cell)
 
     def measure():
         P = pos_d.numpy().astype(np.float64)
@@ -1789,7 +1794,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # single-run-checkable gates are wired here; G1 (Young-Dupre contact angle) and G3 (the
     # A/A0=a+b/R+c/R² size-law r²≥0.95 fit) are SWEEP-level — they need a multi-N batch, so they
     # are evaluated by the sweep harness, not a single run (flagged below, not silently passed).
-    PEN_GATE = 0.3            # G2: max interpenetration / mean_edge (cells must not overlap)
+    PEN_GATE = 0.005         # G2: deep-penetration(>0.2R) FRACTION (cells must not overlap; 2026-07-09 PI gate-contract, DCM_N2000_WATERTIGHT)
     VV0_TOL = 0.10            # volume conservation sanity
     gates = {}
     gates["finite"] = {"pass": truncated_at is None, "truncated_at": truncated_at}
