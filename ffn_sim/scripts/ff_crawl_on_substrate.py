@@ -40,8 +40,8 @@ from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_ke
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
                                       barbed_end_growth_kernel, directed_front_growth_kernel,
-                                      pointed_end_depoly_kernel, anchor_retrograde_drift_kernel,
-                                      sum_pos_kernel, sum_radius_kernel,
+                                      pointed_end_depoly_kernel, fiber_treadmill_kernel,
+                                      anchor_retrograde_drift_kernel, sum_pos_kernel, sum_radius_kernel,
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.units import ETA_CYTOPLASM
 from ffn_sim.ff.implicit_ff import implicit_step_current
@@ -539,16 +539,21 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if growth and step % assembly_every == 0 and step > 0:   # per-filament BARBED-END polymerization (KB-3.6 ratchet; reads tip load in f_d)
             wp.launch(barbed_end_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, foff_d, soff_d, sr_d,
                       wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max), grown_d], device=d)
-        if protrude and step % assembly_every == 0 and step > 0:  # DIRECTED FRONT barbed-end polymerization — the MECHANISTIC
-            _pcm = pos_d.numpy()[:Nc].mean(0)                      # crawl protrusion (replaces the retired body-force proxy):
-            _cmv = wp.vec3d(float(_pcm[0]), float(_pcm[1]), float(_pcm[2]))   # grow leading-cap FORWARD tips; reshape advances them →
-            wp.launch(directed_front_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, _cmv, ph,   # the front membrane protrudes by real
-                      wp.float64(front_cos_R), wp.float64(0.0), foff_d, soff_d, sr_d,             # subunit addition; reaction is emergent
-                      wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d,          # (tip→link_spring→basal clutches→traction)
+        if flow and step % assembly_every == 0 and step > 0:      # PER-FIBER ACTIN TREADMILL (COM-conserving): each forward
+            wp.launch(fiber_treadmill_kernel, dim=n_cortex_fib,    # fiber grows its barbed end = shrinks its pointed end → material
+                      inputs=[pos_d, ph, wp.float64(0.0), foff_d, soff_d, sr_d, wp.float64(v0_dt),   # flows barbed→pointed (retrograde),
+                      wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max),           # fiber length+COG conserved ⇒ ONLY
+                      wp.float64(seg_min), grown_d], device=d)                                       # the clutch traction translocates (G4)
+        if protrude and not flow and step % assembly_every == 0 and step > 0:  # (non-treadmill) DIRECTED FRONT polymerization only
+            _pcm = pos_d.numpy()[:Nc].mean(0)
+            _cmv = wp.vec3d(float(_pcm[0]), float(_pcm[1]), float(_pcm[2]))
+            wp.launch(directed_front_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, _cmv, ph,
+                      wp.float64(front_cos_R), wp.float64(0.0), foff_d, soff_d, sr_d,
+                      wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d,
                       wp.float64(seg_max), grown_d], device=d)
-        if rear_depoly and step % assembly_every == 0 and step > 0:  # S1 REAR pointed-end DEPOLYMERIZATION — the treadmill's
-            _pcm = pos_d.numpy()[:Nc].mean(0)                         # rear half (mirror of front growth); rate-matched (v_depoly=v0_dt)
-            _cmv = wp.vec3d(float(_pcm[0]), float(_pcm[1]), float(_pcm[2]))   # so front adds = rear removes → mass-conserving treadmill
+        if rear_depoly and not flow and step % assembly_every == 0 and step > 0:  # (non-treadmill) rear depoly only
+            _pcm = pos_d.numpy()[:Nc].mean(0)
+            _cmv = wp.vec3d(float(_pcm[0]), float(_pcm[1]), float(_pcm[2]))
             wp.launch(pointed_end_depoly_kernel, dim=n_cortex_fib, inputs=[pos_d, _cmv, ph, wp.float64(front_cos_R),
                       foff_d, soff_d, sr_d, wp.float64(v0_dt), wp.float64(seg_min), shrunk_d], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind

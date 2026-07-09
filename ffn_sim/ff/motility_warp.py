@@ -206,11 +206,10 @@ def directed_front_growth_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, p
     if room <= wp.float64(0.0):
         return
     adv = wp.min(vp, room)
-    # A barbed-end subunit is added AT THE TIP: advance the barbed node forward and grow the rest length to match.
-    # Unlike a rest-length-only bump (which reshape's COG-conservation would cancel by retracting the tail), moving
-    # the tip while the POINTED END stays makes reshape see the segment already at rest ⇒ the forward advance PERSISTS.
-    # The tip pushes the front membrane out; the reaction is carried by link_spring into the basal clutches (emergent).
-    pos[tip] = pos[tip] + adv * that
+    # Add a barbed-end subunit by growing the tip segment's REST LENGTH only (no kinematic node move). reshape then
+    # COG-conserves the fiber ⇒ the tip advances AND the fiber flows back = the physical RETROGRADE FLOW, COM-CONSERVING.
+    # This is deliberate: a kinematic tip advance would shift the COM by bookkeeping (fails the traction-driven gate G4);
+    # the ONLY thing that may move the COM is the clutch traction gripping this flow (anchor_retrograde_drift_kernel).
     seg_rest[stip] = r + adv
     wp.atomic_add(grown, 0, adv)
 
@@ -235,20 +234,62 @@ def pointed_end_depoly_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, phat
     d = pos[a] - com
     if wp.dot(d, phat) > -rear_cos_R:                  # pointed end not in the rear cap → no depolymerization here
         return
-    t = pos[a + 1] - pos[a]                            # inward tangent (pointed end → into the fiber)
+    t = pos[a + 1] - pos[a]                            # guard: skip a degenerate (zero-length) pointed segment
     L = wp.length(t)
     if L < wp.float64(1.0e-9):
         return
-    that = t / L
     spnt = seg_off[f]                                  # pointed-end segment (first segment of the fiber)
     r = seg_rest[spnt]
     room = r - seg_min                                 # floor: never shrink a segment below seg_min (no inversion)
     if room <= wp.float64(0.0):
         return
     dec = wp.min(v_depoly, room)
-    pos[a] = pos[a] + dec * that                       # retract the pointed end inward (subunit removed)
+    # Remove a pointed-end subunit by shrinking the REST LENGTH only (no kinematic node move) — reshape then
+    # COG-conserves so the rear retracts WITHOUT shifting the COM (traction-driven gate G4). Mirror of front growth.
     seg_rest[spnt] = r - dec
     wp.atomic_add(shrunk, 0, dec)
+
+
+@wp.kernel
+def fiber_treadmill_kernel(pos: wp.array(dtype=wp.vec3d), phat: wp.vec3d, cos_min: wp.float64,
+                           fiber_off: wp.array(dtype=wp.int32), seg_off: wp.array(dtype=wp.int32),
+                           seg_rest: wp.array(dtype=wp.float64), v0_dt: wp.float64, delta: wp.float64,
+                           kT: wp.float64, force: wp.array(dtype=wp.vec3d), seg_max: wp.float64,
+                           seg_min: wp.float64, flux: wp.array(dtype=wp.float64)):
+    """Per-fiber ACTIN TREADMILL (2026-07-09, COM-CONSERVING) — the correct retrograde-flow representation, replacing
+    the front-cap-grow / rear-cap-shrink pair (which was BETWEEN-fiber asymmetric: front fibers lengthen, rear fibers
+    shorten ⇒ the shape/COM shifts forward with NO clutch ⇒ fails the traction-driven gate G4). One thread per cortex
+    fiber: for a fiber whose BARBED end points FORWARD (tip_tangent·phat > cos_min), add a subunit at the barbed end
+    (grow the tip rest at the Mogilner-Oster ratchet) AND remove the SAME amount at the pointed end (shrink the pointed
+    rest). The fiber TREADMILLS IN PLACE — same total length, same COG (reshape-conserved), material flowing
+    barbed→pointed = RETROGRADE FLOW. Every fiber conserves its own length+COG ⇒ the cortex COM is conserved ⇒ ONLY
+    the clutch traction gripping this flow (anchor_retrograde_drift_kernel) translocates the cell (G4). The barbed end
+    advances (protrusion) and the pointed end retracts (rear retraction) by EQUAL amounts. ``flux[0]`` = Σ material moved."""
+    f = wp.tid()
+    a = fiber_off[f]
+    b = fiber_off[f + 1]
+    if b - a < 3:                                      # need ≥2 segments (one barbed + one pointed)
+        return
+    tip = b - 1
+    t = pos[tip] - pos[tip - 1]
+    L = wp.length(t)
+    if L < wp.float64(1.0e-9):
+        return
+    that = t / L
+    if wp.dot(that, phat) < cos_min:                  # barbed end not forward → this fiber does not treadmill forward
+        return
+    f_load = wp.max(-wp.dot(force[tip], that), wp.float64(0.0))
+    vp = v0_dt * wp.exp(-f_load * delta / kT)         # Mogilner-Oster ratchet at the barbed end (load-throttled)
+    stip = seg_off[f] + (b - a - 2)                   # barbed (tip) segment
+    spnt = seg_off[f]                                 # pointed segment
+    room_grow = seg_max - seg_rest[stip]
+    room_shrink = seg_rest[spnt] - seg_min
+    m = wp.min(vp, wp.min(room_grow, room_shrink))    # mass-conserving flux: barbed grows = pointed shrinks
+    if m <= wp.float64(0.0):
+        return
+    seg_rest[stip] = seg_rest[stip] + m
+    seg_rest[spnt] = seg_rest[spnt] - m
+    wp.atomic_add(flux, 0, m)
 
 
 @wp.kernel
@@ -400,5 +441,6 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
            "xl_turnover_kernel", "actin_assembly_kernel", "barbed_end_growth_kernel",
-           "directed_front_growth_kernel", "pointed_end_depoly_kernel", "anchor_retrograde_drift_kernel",
+           "directed_front_growth_kernel", "pointed_end_depoly_kernel", "fiber_treadmill_kernel",
+           "anchor_retrograde_drift_kernel",
            "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]
