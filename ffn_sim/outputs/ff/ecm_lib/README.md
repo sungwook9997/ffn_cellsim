@@ -75,6 +75,12 @@ target order within a few percent.
 2. **Shear ↔ indentation modulus-decoupling map** across connectivity ⟨z⟩ — the FF library measures both
    modes on the same network, producing the semiflexible mode-decoupling fingerprint directly.
    `figs/mode_decoupling.png`.
+3. **Emergent viscoelastic stress relaxation** (KB-1.6): crosslink turnover (Bell-slip) makes each crosslink
+   a Maxwell element, so G(t) relaxes with τ ∝ 1/k_off — the relaxation time EMERGES from crosslink lifetime,
+   spanning the ECM range (α-actinin ~12 s → weak-physical ~200 s → covalent-LOX ~1170 s). Matrix
+   viscoelasticity (Chaudhuri → cell fate). `figs/stress_relaxation.png` (`ff_ecm_viscoelastic.py`).
+4. **Durotaxis stiffness-gradient substrate** — spatially-graded local modulus (1/10/100 Pa/µm, KB-1.V.1.3),
+   probed by indenting along the gradient axis. `figs/durotaxis_gradient.png` (`ff_ecm_gradient.py`).
 
 ## Code
 

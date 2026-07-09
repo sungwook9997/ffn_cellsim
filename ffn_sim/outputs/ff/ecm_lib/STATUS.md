@@ -74,3 +74,10 @@ Contract-Graph** (user authorized "없으면 신설하여 진행") — the one s
   `ff_ecm_gradient.py` (physiological 1 / pathological 10 / sharp ~100 Pa/µm regimes vs KB-1.V.1.3, probe
   E(x) by indenting along the gradient axis). Running on gbook A5000.
 - Note: cron fired ~8× stacked during long turns — handled as ONE check-in (no repeated work).
+
+## Checkpoint 3 (2026-07-10)
+- **Extension: emergent viscoelastic stress relaxation** (KB-1.6). `stress_relaxation` in ecm_mechanics.py
+  (step shear + crosslink Bell-slip turnover → G(t); bond-virial σ_xz) + `ff_ecm_viscoelastic.py`. Result:
+  **τ ∝ 1/k_off EMERGES** (τ·k_off≈0.82 const) — α-actinin ~12s → weak-physical ~200s (KB-1.6 30-1000s ✓)
+  → covalent-LOX ~1170s; G∞/G₀≈0.14 (86% relaxation). figs/stress_relaxation.png (eye-verified).
+  Extensions this session: native GPU · strain-stiffening · mode-decoupling · durotaxis gradient · viscoelastic.

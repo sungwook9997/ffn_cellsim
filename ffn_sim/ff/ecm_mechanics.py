@@ -40,6 +40,7 @@ from dataclasses import dataclass
 import numpy as np
 import warp as wp
 
+from ffn_sim.ff import units as U
 from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.network_warp import (
     _zero, axpy_kernel, link_spring_kernel, reshape_kernel,
@@ -435,6 +436,107 @@ def strain_stiffening(ecm, *, gammas=None, n_steps=5000, axial_mode="spring", de
             "max_stiffening": float(np.max(ratio)), "gamma_c": gamma_c}
 
 
+def _bond_virial_sigma_xz(pos, i_arr, j_arr, k_arr, r0_arr, V) -> float:
+    """Shear stress σ_xz = (1/V) Σ_bonds (f/|r|)·r_x·r_z from central-force bonds (crosslinks+segments) [Pa]."""
+    if len(i_arr) == 0:
+        return 0.0
+    d = pos[j_arr] - pos[i_arr]
+    Lc = np.linalg.norm(d, axis=1) + 1e-12
+    f = k_arr * (Lc - r0_arr)                         # scalar bond tension [pN]
+    return float(np.sum(f / Lc * d[:, 0] * d[:, 2]) / V)
+
+
+def stress_relaxation(ecm, *, gamma0=0.1, koff0_per_s=0.01, x_beta_nm=0.4, dt_real_s=None,
+                      t_total_s=None, n_record=24, mech_substeps=150, device="cpu") -> dict:
+    """Viscoelastic stress-relaxation G(t): step shear γ₀, then let CROSSLINKS turn over (Bell slip,
+    ``xl_turnover_kernel``) so their rest length creeps and the stress relaxes — a Maxwell/SLS network
+    (KB-1.6: G(t)=G∞+G₁·exp(−t/τ), τ~30-1000 s set by crosslink lifetime 1/k_off; Chaudhuri matrix
+    viscoelasticity). τ EMERGES ≈ 1/k_off₀ — validated, not tuned. Fibers (segments) + bending stay elastic;
+    only crosslinks relax. Returns G(t)/G₀, fitted τ, and the residual G∞/G₀."""
+    from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
+    from ffn_sim.ff.network_warp import xl_turnover_kernel
+    if dt_real_s is None:
+        dt_real_s = (1.0 / koff0_per_s) * 6.0 / n_record        # span ~6 relaxation times
+    lo, hi = ecm.box_lo, ecm.box_hi
+    Lz = hi[2] - lo[2]
+    m = 0.08 * Lz
+    V = float(np.prod(hi - lo))
+    pos0 = ecm.net.pos.copy()
+    fixed = (pos0[:, 2] < lo[2] + m) | (pos0[:, 2] > hi[2] - m)
+    pos = pos0.copy()
+    pos[:, 0] += gamma0 * (pos0[:, 2] - lo[2])
+    ecm.net.pos[:] = pos
+    # device setup: bending + segment springs (elastic) + crosslink springs (turn over)
+    d = device
+    N = ecm.net.n_nodes
+    tri = np.ascontiguousarray(ecm.net.bend_triples, np.int32)
+    has_bend = tri.shape[0] > 0
+    alpha = np.ascontiguousarray(_per_triple_alpha(ecm.net), np.float64) if has_bend else np.zeros(0)
+    pos_d = wp.array(np.ascontiguousarray(pos, np.float64), dtype=wp.vec3d, device=d)
+    f_d = wp.zeros(N, dtype=wp.vec3d, device=d)
+    tri_d = wp.array(tri, dtype=wp.int32, device=d) if has_bend else None
+    alpha_d = wp.array(alpha, dtype=wp.float64, device=d) if has_bend else None
+    seg = np.stack([ecm.seg_i, ecm.seg_j], 1).astype(np.int32) if ecm.seg_i.size else np.zeros((0, 2), np.int32)
+    seg_d = wp.array(seg, dtype=wp.int32, device=d) if seg.shape[0] else None
+    segk_d = wp.array(np.ascontiguousarray(ecm.seg_k, np.float64), dtype=wp.float64, device=d) if seg.shape[0] else None
+    segr_d = wp.array(np.ascontiguousarray(ecm.seg_rest, np.float64), dtype=wp.float64, device=d) if seg.shape[0] else None
+    xl = np.stack([ecm.xl_i, ecm.xl_j], 1).astype(np.int32) if ecm.xl_i.size else np.zeros((0, 2), np.int32)
+    xl_d = wp.array(xl, dtype=wp.int32, device=d) if xl.shape[0] else None
+    xlk_d = wp.array(np.ascontiguousarray(ecm.xl_k, np.float64), dtype=wp.float64, device=d) if xl.shape[0] else None
+    r0 = ecm.xl_rest.astype(np.float64).copy()
+    r0_d = wp.array(np.ascontiguousarray(r0, np.float64), dtype=wp.float64, device=d) if xl.shape[0] else None
+    fixed_d = wp.array(fixed.astype(np.int32), dtype=wp.int32, device=d)
+    target_d = wp.array(pos.copy(), dtype=wp.vec3d, device=d)
+    kmax = (float(ecm.net.kappa.max()) / (float(ecm.net.seg_rest.mean()) if ecm.net.seg_rest.size else 1.0) ** 3) if has_bend else 0.0
+    kmax = max(kmax, float(np.max(ecm.link_k)) if ecm.link_k.size else 1.0)
+    dt_mu = 0.1 / max(kmax, 1e-9)
+    x_beta_over_kT = (x_beta_nm * 1e-3) / U.KBT                  # (µm)/(pN·µm) = 1/pN
+    seg_i, seg_j, seg_k, seg_r = ecm.seg_i, ecm.seg_j, ecm.seg_k, ecm.seg_rest
+
+    def equilibrate():
+        for _ in range(mech_substeps):
+            wp.launch(_zero, dim=N, inputs=[f_d], device=d)
+            if has_bend:
+                wp.launch(cytosim_bending_kernel, dim=tri.shape[0], inputs=[pos_d, tri_d, alpha_d, f_d], device=d)
+            if seg_d is not None:
+                wp.launch(link_spring_kernel, dim=seg.shape[0], inputs=[pos_d, seg_d, segk_d, segr_d, f_d], device=d)
+            if xl_d is not None:
+                wp.launch(link_spring_kernel, dim=xl.shape[0], inputs=[pos_d, xl_d, xlk_d, r0_d, f_d], device=d)
+            wp.launch(_freeze_mask_kernel, dim=N, inputs=[f_d, fixed_d], device=d)
+            wp.launch(axpy_kernel, dim=N, inputs=[pos_d, wp.float64(dt_mu), f_d], device=d)
+            wp.launch(_pin_positions_kernel, dim=N, inputs=[pos_d, fixed_d, target_d], device=d)
+
+    ts, Gs = [], []
+    equilibrate()                                               # instantaneous (elastic) state
+    for rec in range(n_record):
+        wp.synchronize_device(d)
+        p = pos_d.numpy()
+        r0h = r0_d.numpy() if xl_d is not None else np.zeros(0)
+        sig = _bond_virial_sigma_xz(p, seg_i, seg_j, seg_k, seg_r, V) + \
+            _bond_virial_sigma_xz(p, ecm.xl_i, ecm.xl_j, ecm.xl_k, r0h, V)
+        ts.append(rec * dt_real_s)
+        Gs.append(abs(sig) / gamma0)
+        if xl_d is not None:                                    # advance one real timestep of turnover
+            wp.launch(xl_turnover_kernel, dim=xl.shape[0],
+                      inputs=[pos_d, xl_d, xlk_d, r0_d, wp.float64(koff0_per_s * dt_real_s),
+                              wp.float64(x_beta_over_kT)], device=d)
+        equilibrate()
+    ecm.net.pos[:] = pos0
+    ts = np.asarray(ts); Gs = np.asarray(Gs)
+    G0 = Gs[0] if Gs[0] > 0 else 1e-9
+    ratio = Gs / G0
+    # fit G(t) = Ginf + (G0-Ginf) exp(-t/tau): estimate tau where ratio crosses (1+ratio[-1])/2 ... e-folding
+    Ginf = float(ratio[-1])
+    decay = (ratio - Ginf) / max(1.0 - Ginf, 1e-9)
+    tau = float("nan")
+    below = np.where(decay < np.exp(-1.0))[0]
+    if below.size:
+        tau = float(ts[below[0]])
+    return {"t_s": ts.tolist(), "G_t_Pa": Gs.tolist(), "G_over_G0": ratio.tolist(),
+            "G0_Pa": float(G0), "Ginf_over_G0": Ginf, "tau_s": tau, "koff0_per_s": koff0_per_s,
+            "tau_x_koff": tau * koff0_per_s if tau == tau else float("nan")}
+
+
 def calibrate_continuum_k(spec, box_lo, box_hi, *, dim=3, node_spacing_um=2.0, probe="uniaxial",
                           n_steps=3000, device="cpu", rng=None) -> float:
     """One-shot calibration of the continuum-lattice bond stiffness: build with k=1, measure E-per-k via
@@ -451,4 +553,5 @@ def calibrate_continuum_k(spec, box_lo, box_hi, *, dim=3, node_spacing_um=2.0, p
 
 
 __all__ = ["shear_modulus", "uniaxial_modulus", "anisotropy", "indentation_modulus",
-           "hertz_E_from_force", "calibrate_continuum_k", "shear_energy", "strain_stiffening"]
+           "hertz_E_from_force", "calibrate_continuum_k", "shear_energy", "strain_stiffening",
+           "stress_relaxation"]
