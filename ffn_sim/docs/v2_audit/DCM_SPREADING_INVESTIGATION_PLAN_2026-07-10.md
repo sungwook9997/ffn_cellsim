@@ -97,6 +97,34 @@ compaction-irrelevant" junction mechanism into the driver of a data-matching spr
    SourceEvidence so the comparison is KB-grounded (a TAG-ingest task, PI-gated for new SE rows).
 4. Do NOT tune cadherin/γ to hit an A/A0 target (magic-number rule) — the phenotype must EMERGE from lit adhesion values.
 
+## 6b. Stage-1 FINDINGS (2026-07-10) — DCM single-cell CANNOT spread cleanly (visual-verified)
+
+Ran the single-cell spread on the substrate; **every A/A0 claim was checked in a real browser** (browser_check
+screenshot, per the PI visual mandate) — which repeatedly caught the metric lying:
+
+- **Active lamellipodium (`--lamellipodium --lamel-clutch --well`)**: STABLE (CFL~0, V/V0=1, gates PASS) but the
+  cell stays a round ball — A/A0 = **0.956** (rounds, does not spread). The active protrusion is too weak (anchor-
+  not-motor; drift 0.04 µm) — matches the docs' "lamellipodium is a modulator, not a driver".
+- **Passive wetting (`--polarize --well`)**: at accel_dt=8e-4 it **diverges** (A/A0=1e139 = the dt/CFL artifact);
+  at accel_dt=4e-5/8e-5 the metric reads A/A0=2.26/9.96 with V/V0=1.000 — but the **HTML viewer shows a round
+  blue cell body with a few nodes EJECTED into red spikes**. The top-down convex-hull A/A0 is fooled by the
+  ejected nodes; the cell did NOT flatten. This is the documented "area-maximising / node-ejection" (needs a
+  contact-line bound), now confirmed VISUALLY (not "ejection-corrected 3.8" — the raw behaviour is ejection).
+- **Wetting + remesh (`--polarize --remesh-period`)**: remesh (area source) does NOT fix it — it AMPLIFIES the
+  ejection (adds nodes to the runaway sheets; A/A0 → 5.9 (p=25) → **96** (p=50), still a round body + huge ejected
+  sheets in the viewer).
+
+**Root cause (robust): the DCM cell body will not flatten.** Turgor (V/V0=1) + surface tension keep it a sphere;
+the basal wetting/protrusion forces eject a few edge nodes instead of pancaking the bulk. Spreading by cell
+FLATTENING needs an explicit remodelling cortex + area assembly (the FF engine's `spreading_push` + `actin_assembly`),
+which the DCM's turgid closed-surface cell lacks. → **DCM single-cell flatten-spreading is a structural dead-end**
+(upgrades `DCM_SPREADING_LIMIT_CONCLUSION_2026-07-01` with visual proof). Figures: `outputs/.../spread_*_last.png`.
+
+**Pivot within spreading**: since cell FLATTENING is dead, the achievable DCM spreading is aggregate DISPERSAL
+(cells stay round but move APART / crawl out — no flattening needed). The untested lever is the finished IPC-newton
+contact (the docs said the aggregate no-spread verdict was "gated on the M1/IPC contact fix") + the S1–S3 cadherin
+cluster de-cohesion. → Stage 2.
+
 ## 7. One-line summary
 Active spheroid compaction is a confirmed dead-end (S4 + (b)S1); pivot to spreading — establish the working single-cell active
 spread (Stage 1, TAG-compared to Chaudhuri/fried-egg), then turn the S1–S3 cadherin cluster into the fine-grained de-cohesion
