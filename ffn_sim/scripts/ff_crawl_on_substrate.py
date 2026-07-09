@@ -39,7 +39,8 @@ from ffn_sim.ff.fa_clutch_warp import (clutch_spring_kernel, clutch_catchslip_km
 from ffn_sim.ff.motility_warp import (axpy_physical_kernel, leading_edge_push_kernel, protrusion_reaction_kernel,
                                       spreading_push_kernel, spreading_reaction_kernel, gravity_kernel,
                                       cortex_volume_kernel, xl_turnover_kernel, actin_assembly_kernel,
-                                      barbed_end_growth_kernel, sum_pos_kernel, sum_radius_kernel,
+                                      barbed_end_growth_kernel, directed_front_growth_kernel,
+                                      sum_pos_kernel, sum_radius_kernel,
                                       volume_gradient, physical_node_gammas, crawl_cfl_dt)
 from ffn_sim.ff.units import ETA_CYTOPLASM
 from ffn_sim.ff.implicit_ff import implicit_step_current
@@ -328,11 +329,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(z_sub), wp.float64(h_basal), wp.float64(0.1), wp.float64(S["f_pro"]),
                       wp.float64(poly.delta_um), wp.float64(kT), f_d, spread_total_d], device=d)
             wp.launch(spreading_reaction_kernel, dim=Nc, inputs=[spread_total_d, wp.float64(Nc), f_d], device=d)
-        elif protrude:
-            total_d.zero_()
-            wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
-                      wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
-            wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
+        # NOTE (2026-07-09): the leading-edge PROTRUSION is no longer a body force here — it is real DIRECTED
+        # front barbed-end polymerization applied at the growth tick (directed_front_growth_kernel, post-step),
+        # advanced by reshape. The retired leading_edge_push/protrusion_reaction body-force pair tore the cell.
         wp.synchronize_device(d)
         F = f_d.numpy().reshape(-1)
         # EXACT cortex osmotic/turgor force f = ΔP·g, computed from the CURRENT x (consistent across Newton iters)
@@ -393,12 +392,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                           wp.float64(z_sub), wp.float64(h_basal), wp.float64(0.1), wp.float64(S["f_pro"]),
                           wp.float64(poly.delta_um), wp.float64(kT), f_d, spread_total_d], device=d)
                 wp.launch(spreading_reaction_kernel, dim=Nc, inputs=[spread_total_d, wp.float64(Nc), f_d], device=d)
-            elif protrude:                                        # C1 (2026-07-09): leading-edge push in the NATIVE
-                total_d.zero_()                                   # large-dt path — was DROPPED here (→ native disp=0);
-                wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
-                          wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
-                wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
-            wp.synchronize_device(d)                              # mirrors full_force / the explicit loop (Newton-pair)
+            # protrusion is directed front polymerization (post-step tick), NOT a body force here — see full_force note
+            wp.synchronize_device(d)                              # mirrors full_force / the explicit loop
             F = cpx.asarray(f_d).reshape(-1).copy()
             # exact osmotic force ΔP·g in cupy (g = ∂V/∂x from the fixed face triangulation)
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
@@ -466,11 +461,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(z_sub), wp.float64(h_basal), wp.float64(0.1), wp.float64(S["f_pro"]),
                       wp.float64(poly.delta_um), wp.float64(kT), f_d, spread_total_d], device=d)
             wp.launch(spreading_reaction_kernel, dim=Nc, inputs=[spread_total_d, wp.float64(Nc), f_d], device=d)
-        elif protrude:                                         # leading-edge push (polarized crawl) — reads emergent load
-            total_d.zero_()
-            wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
-                      wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
-            wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
+        # protrusion is directed front polymerization (post-step tick), NOT a body force here — see full_force note
         if gpu_impl:                                           # GPU-RESIDENT implicit (cupy) — GPU-only, native-scale
             x_cp = cpx.asarray(pos_d).reshape(-1).copy()
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
@@ -541,6 +532,13 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         if growth and step % assembly_every == 0 and step > 0:   # per-filament BARBED-END polymerization (KB-3.6 ratchet; reads tip load in f_d)
             wp.launch(barbed_end_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, foff_d, soff_d, sr_d,
                       wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d, wp.float64(seg_max), grown_d], device=d)
+        if protrude and step % assembly_every == 0 and step > 0:  # DIRECTED FRONT barbed-end polymerization — the MECHANISTIC
+            _pcm = pos_d.numpy()[:Nc].mean(0)                      # crawl protrusion (replaces the retired body-force proxy):
+            _cmv = wp.vec3d(float(_pcm[0]), float(_pcm[1]), float(_pcm[2]))   # grow leading-cap FORWARD tips; reshape advances them →
+            wp.launch(directed_front_growth_kernel, dim=n_cortex_fib, inputs=[pos_d, _cmv, ph,   # the front membrane protrudes by real
+                      wp.float64(front_cos_R), wp.float64(0.0), foff_d, soff_d, sr_d,             # subunit addition; reaction is emergent
+                      wp.float64(v0_dt), wp.float64(poly.delta_um), wp.float64(kT), f_d,          # (tip→link_spring→basal clutches→traction)
+                      wp.float64(seg_max), grown_d], device=d)
         if clutches and rupture and step % kmc_every == 0 and step > 0:   # catch-slip turnover + nascent-adhesion rebind
             wp.launch(clutch_catchslip_kmc_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                       wp.float64(cp.rest_um), wp.float64(cp.kc0), wp.float64(cp.xc_um), wp.float64(cp.ks0),

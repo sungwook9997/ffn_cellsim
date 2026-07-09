@@ -165,6 +165,57 @@ def barbed_end_growth_kernel(pos: wp.array(dtype=wp.vec3d), fiber_off: wp.array(
 
 
 @wp.kernel
+def directed_front_growth_kernel(pos: wp.array(dtype=wp.vec3d), com: wp.vec3d, phat: wp.vec3d,
+                                 front_cos_R: wp.float64, cos_min: wp.float64,
+                                 fiber_off: wp.array(dtype=wp.int32), seg_off: wp.array(dtype=wp.int32),
+                                 seg_rest: wp.array(dtype=wp.float64), v0_dt: wp.float64, delta: wp.float64,
+                                 kT: wp.float64, force: wp.array(dtype=wp.vec3d), seg_max: wp.float64,
+                                 grown: wp.array(dtype=wp.float64)):
+    """DIRECTED leading-edge barbed-end polymerization — the MECHANISTIC replacement (2026-07-09) for the retired
+    ``leading_edge_push`` / ``protrusion_reaction`` body-force proxy (that uniform front+/rear− dipole stretched a
+    fixed network into a 136 µm tube — see FF_CRAWL_PROTRUSION_REBUILD_2026-07-09.md). One thread per cortex fiber:
+    grow the tip (barbed-end) segment's rest length at the SAME Mogilner-Oster ratchet as ``barbed_end_growth_kernel``
+    (v0·e^{−f_load·δ/kT}, capped at ``seg_max``), but ONLY for fibers whose tip is in the LEADING cap
+    ((pos_tip−com)·phat > ``front_cos_R``) AND points FORWARD (tip_tangent·phat > ``cos_min``). The grown rest
+    length becomes a real forward advance via ``reshape_kernel`` (adds actin subunits at the front) → the leading
+    edge protrudes. The retrograde reaction is EMERGENT, not a body force: the growing tip pushes the front
+    membrane, and ``link_spring`` propagates that reaction down the filament into the basal network where the bound
+    clutches resist it against the substrate (traction) → the cell TRANSLOCATES compactly instead of tearing.
+    Load-gated (Brownian ratchet): a tip stalled against the membrane stops growing."""
+    f = wp.tid()
+    a = fiber_off[f]
+    b = fiber_off[f + 1]
+    if b - a < 2:
+        return
+    tip = b - 1                                       # barbed-end node
+    d = pos[tip] - com
+    if wp.dot(d, phat) < front_cos_R:                 # tip not in the leading cap → no protrusion here
+        return
+    t = pos[tip] - pos[tip - 1]
+    L = wp.length(t)
+    if L < wp.float64(1.0e-9):
+        return
+    that = t / L                                      # outward tip tangent (unit)
+    if wp.dot(that, phat) < cos_min:                  # tip not forward-pointing → growth would not advance the edge
+        return
+    f_load = wp.max(-wp.dot(force[tip], that), wp.float64(0.0))   # emergent opposing load at the barbed end
+    vp = v0_dt * wp.exp(-f_load * delta / kT)         # ratchet: 0 load → v0, high load → stalled
+    stip = seg_off[f] + (b - a - 2)                   # tip segment index
+    r = seg_rest[stip]
+    room = seg_max - r                                # cap: sustained growth past seg_max needs bead insertion (Step 3)
+    if room <= wp.float64(0.0):
+        return
+    adv = wp.min(vp, room)
+    # A barbed-end subunit is added AT THE TIP: advance the barbed node forward and grow the rest length to match.
+    # Unlike a rest-length-only bump (which reshape's COG-conservation would cancel by retracting the tail), moving
+    # the tip while the POINTED END stays makes reshape see the segment already at rest ⇒ the forward advance PERSISTS.
+    # The tip pushes the front membrane out; the reaction is carried by link_spring into the basal clutches (emergent).
+    pos[tip] = pos[tip] + adv * that
+    seg_rest[stip] = r + adv
+    wp.atomic_add(grown, 0, adv)
+
+
+@wp.kernel
 def gravity_kernel(fz_node: wp.float64, force: wp.array(dtype=wp.vec3d)):
     """Net sedimentation body force (gravity − buoyancy): every cortex node gets a downward z-force
     ``fz_node = −Δρ·g·v_node`` (Δρ = ρ_cell − ρ_medium > 0 ⇒ the cell sinks toward the dish). This is REAL
@@ -295,4 +346,5 @@ def crawl_cfl_dt(gammas: np.ndarray, kmax: float, *, safety: float = 0.1) -> flo
 __all__ = ["axpy_physical_kernel", "leading_edge_push_kernel", "protrusion_reaction_kernel",
            "spreading_push_kernel", "spreading_reaction_kernel", "gravity_kernel", "cortex_volume_kernel",
            "xl_turnover_kernel", "actin_assembly_kernel", "barbed_end_growth_kernel",
+           "directed_front_growth_kernel",
            "volume_gradient", "physical_node_gammas", "crawl_cfl_dt"]
