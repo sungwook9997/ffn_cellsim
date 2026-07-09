@@ -149,6 +149,28 @@ cluster is the DCM's contribution to the de-cohesion side). The DCM delivers the
 compaction mechanical end-state; it does not deliver active spreading. TAG-grounded: epithelial-confined is the
 data-matched DCM result; mesenchymal-spread is out of the DCM's structural reach.
 
+## 6d. Stage-2 mesenchymal (WEAK cadherin) + the UNIFYING ROOT (2026-07-10, visual-verified)
+
+Tested the other half of the epithelial/mesenchymal contrast: N=100 spheroid + WEAK cadherin (`--cad-cluster
+--cad-n-nascent 1`, no maturation = easy de-cohesion) + all-cell protrusion + IPC + substrate. **Result: A/A0 = 0.990
+(CONFINED — same as the strong/matured case, 1.001)**, stable, and the **HTML viewer is essentially identical** to the
+strong case (compact bonded cluster, a few peripheral cells stressed by protrusion but not detached). So **cadherin
+strength does NOT change the outcome** — strong and weak both confine.
+
+**THE UNIFYING ROOT (comprehensive, visual-verified):** the DCM aggregate stays confined regardless of cadherin
+because **cells do not migrate / rearrange** (no crawl, no T1 neighbour-exchange). de-cohesion happens (bonds churn)
+but a de-cohered cell has no motility to move away, so it re-bonds in place. This is the **SAME root** that blocked the
+compaction-RATE line ((b) T1: the aggregate-σ compaction bypasses junctions because cells gap-close radially without
+rearranging). **Both DCM dynamic limits — no rate-gated compaction, no spreading/dispersal — stem from one cause:
+DCM cells don't slide past each other.** The DCM does STATIC mechanics (compaction end-state, confinement, full-
+compartment) well; it lacks DYNAMIC cell rearrangement.
+
+**Verdict + recommendation:** DCM spreading is a fundamental engine limit (not a parameter/contact/cadherin issue).
+The honest data-match: DCM = confined epithelial spheroid (MCF-7/MCF-10A non-wetting ✓); mesenchymal spreading
+(cells crawl out) = the **FF single-cell engine's** domain (FF crawl works). The unifying UNLOCK for the DCM's dynamic
+gaps = **genuine cell rearrangement (active junctional T1 neighbour-exchange)** — the (b)S2 mechanism, now motivated as
+the root fix for BOTH compaction-rate AND collective spreading. Recommended next direction (proceeding autonomously).
+
 ## 7. One-line summary
 Active spheroid compaction is a confirmed dead-end (S4 + (b)S1); pivot to spreading — establish the working single-cell active
 spread (Stage 1, TAG-compared to Chaudhuri/fried-egg), then turn the S1–S3 cadherin cluster into the fine-grained de-cohesion
