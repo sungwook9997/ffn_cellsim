@@ -80,6 +80,10 @@ def main():
     ap.add_argument("--gap", type=float, default=2.05, dest="gap",
                     help="initial inter-cell center spacing factor (2.05 default; 2.3 = gapped start, "
                          "lets turgor+cohesion compact rather than starting pre-overlapped)")
+    ap.add_argument("--remesh-period", type=int, default=0, dest="remesh_period",
+                    help="remesh cadence (steps): split stretched faces / collapse slivers so the SPREADING "
+                         "cortex gets NEW area (nodes) instead of over-stretching a few nodes into ejected "
+                         "spikes. The area-source that lets a cell flatten cleanly (0=off).")
     ap.add_argument("--coupling", action="store_true",
                     help="node-FACE CONTINUOUS adhesion ON (coh_adh=adh_strength) — the flat-interface "
                          "adhesion that, with surface tension, facets cells into space-filling polyhedra "
@@ -121,6 +125,15 @@ def main():
                          "basal-outward lamellipodial leading edge at the UNCHANGED Gil-Redondo physiological "
                          "per-node force (Farooqui-Fenteany KB-4.6). Fixes the rim-only peeling; spreading "
                          "diagnostic. Forces the host ratchet path (all-cell geometry is host-only).")
+    ap.add_argument("--cad-cluster", action="store_true", dest="cad_cluster",
+                    help="fine-grained load-sharing cadherin cluster de-cohesion (S1-S3): junction = bundle_n "
+                         "parallel trans-dimers, m→0 death; de-cohesion EMERGES as traction ruptures nascent "
+                         "junctions → cells crawl out. The spreading-by-dispersal driver.")
+    ap.add_argument("--cad-mature", action="store_true", dest="cad_mature",
+                    help="cadherin junction maturation (contact-age): matured junctions resist de-cohesion "
+                         "(confined = epithelial/MCF-7); nascent let go (dispersing = mesenchymal).")
+    ap.add_argument("--cad-n-nascent", type=int, default=4, dest="cad_n_nascent",
+                    help="nascent cluster size (KB-4.3 controlled var).")
     ap.add_argument("--division", action="store_true",
                     help="C7 rim-cell proliferation ON. Pair with --div-real-hours for TIME-CONSISTENT "
                          "division (cells divide at the MCF7 cycle rate over the run's represented real time).")
@@ -192,7 +205,9 @@ def main():
         lamel_clutch=a.lamel_clutch, lamel_all_cell=a.lamel_all_cell,
         gpu_probe=a.gpu_probe,
         coupling=a.coupling,
-        cad_bundle=40.0, ecm_bundle=167.0,
+        cad_bundle=(20.0 if a.cad_cluster else 40.0), ecm_bundle=167.0,
+        cad_cluster=a.cad_cluster, cad_mature=a.cad_mature, cad_n_nascent=a.cad_n_nascent,
+        remesh_period=a.remesh_period,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement
         division=a.division, div_real_hours=a.div_real_hours, div_t_cycle_h=a.div_t_cycle_h,
