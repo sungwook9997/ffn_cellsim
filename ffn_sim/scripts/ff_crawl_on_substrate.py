@@ -76,7 +76,8 @@ def _fps_subsample(pts: np.ndarray, k: int) -> np.ndarray:
 def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.0, 0.0),
           length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0,
           from_resting=False, relax_steps=6000, relax_device="cpu",
-          n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN, n_fa=0):
+          n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN, n_fa=0,
+          ecm=False, ecm_fibers=1500, ecm_depth=4.0, ecm_capture=1.0):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
@@ -150,11 +151,26 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     front = np.where(proj > front_frac * R)[0]
     node_area = 4.0 * np.pi * R**2 / Nc                       # mean cortex area per node [µm²]
     f_pro = FIL_AREAL_DENSITY_PER_UM2 * node_area * F_STALL_ACTIN_PN   # per front-node protrusive force [pN]
+    # S4 (Phase B) — build a collagen-I (Mikado) ECM slab UNDER the cell + attach the basal clutches to fiber nodes.
+    # BUILD-side only (the FA↔ECM force coupling in run() is the next, PI-overseen step — see
+    # FF_S4_INTEGRATION_DESIGN_2026-07-09); with --ecm alone the crawl still runs on the fixed-substrate clutch, so
+    # the validated path is UNTOUCHED. This just makes the matrix + the nascent bonds available in S.
+    ecm_net = ecm_node = None
+    if ecm:
+        from ffn_sim.ff.ecm_mikado import build_mikado_network
+        from ffn_sim.ff.fa_ecm import attach_clutches_to_ecm
+        xy = cortex_pos[:, :2]
+        lo = np.array([xy[:, 0].min() - 2.0, xy[:, 1].min() - 2.0, z_sub - ecm_depth])
+        hi = np.array([xy[:, 0].max() + 2.0, xy[:, 1].max() + 2.0, z_sub + 0.5])  # slab from below z_sub to the basal cap
+        ecm_net = build_mikado_network(lo, hi, n_fibers=ecm_fibers, pin_face="z_lo",  # bulk collagen below = pinned
+                                       rng=np.random.default_rng(seed + 11))
+        ecm_node = attach_clutches_to_ecm(cortex_pos[basal.astype(np.int64)], ecm_net.net.pos, capture_um=ecm_capture)
     return dict(cx=cx, net=merged, Nc=Nc, Ne=Ne, n_nuc=nuc_pos.shape[0], pos_all=pos_all, nuc=nuc,
                 mem=mem, basal=basal.astype(np.int32), anchors=anchors, z_sub=z_sub, R=R, c=c,
                 phat=phat, front=front.astype(np.int32), front_frac=front_frac, f_pro=f_pro,
                 mtoc_idx=m["mtoc_idx"], hub_i=m["hub_i"], hub_j=m["hub_j"], hub_k=m["hub_k"],
-                hub_rest=m["hub_rest"], n_mt=int(m.get("n_mt", 0)), resting=resting)
+                hub_rest=m["hub_rest"], n_mt=int(m.get("n_mt", 0)), resting=resting,
+                ecm=ecm_net, ecm_node=ecm_node)
 
 
 def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, clutches=True, protrude=True,
@@ -622,6 +638,10 @@ def main():
                     "cell moves → clutch springs stretch → force grows → correction grows (positive feedback) → 767 µm/30 s, bound→0. So neither "
                     "in-solve rescaling (--bulk-drag: NaN) NOR post-hoc override (--com-drag: runaway) works → the grid-consistent crawl drag must be "
                     "done INSIDE the solver with rigid-mode regularization (OPEN PI-level numerics item). Kept to document the second dead-end.")
+    ap.add_argument("--ecm", action="store_true", help="S4 (Phase B): build a collagen-I (Mikado) ECM slab under the cell + attach basal "
+                    "clutches to fiber nodes (BUILD-side; the FA↔ECM run() coupling is the next PI-overseen step — FF_S4_INTEGRATION_DESIGN). "
+                    "Validated path untouched: with --ecm alone the crawl still uses the fixed-substrate clutch.")
+    ap.add_argument("--ecm-fibers", type=int, default=1500, help="collagen-I fiber count for the --ecm Mikado slab")
     ap.add_argument("--n-fa", type=int, default=0, help="cap basal clutches to N DISCRETE spatially-spread focal-adhesion sites "
                     "(0=one-per-cortex-node). Real FAs are ~10² integrin clusters; at native Nc the per-node model dilutes per-clutch "
                     "load ~100× so clutches never turn over (no crawl). ~150-300 restores physical per-clutch load → the catch-slip treadmill.")
@@ -667,7 +687,13 @@ def main():
     S = build(n_cortex_fil=args.cortex_fil, seed=args.seed, n_fa=args.n_fa, length_dist=args.fil_length_dist,
               microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
-              n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0))
+              n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0),
+              ecm=args.ecm, ecm_fibers=args.ecm_fibers)
+    if S.get("ecm") is not None:
+        _en = S["ecm_node"]
+        print(f"[ecm] collagen-I Mikado slab: {len(S['ecm'].net.fiber_offsets)-1} fibers, {S['ecm'].net.pos.shape[0]} nodes, "
+              f"mesh ξ={S['ecm'].mesh_size_um:.2f} µm; basal clutches attached to fibers: {int((_en>=0).sum())}/{_en.size} "
+              f"(BUILD-side; run() FA↔ECM coupling = next PI-overseen step)")
     mt_note = (f"; MT aster {S['n_mt']} tubes → Ne {S['Ne']} (Nmt+MTOC {S['Ne']-S['Nc']})" if args.microtubules else "")
     if S.get("resting") is not None:
         rr = S["resting"]
