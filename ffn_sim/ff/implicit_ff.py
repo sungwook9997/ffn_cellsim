@@ -153,7 +153,8 @@ def assemble_K_current(pos: np.ndarray, bend_triples: np.ndarray, alpha: np.ndar
 
 
 def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma, dt,
-                          n_newton=1, cg_tol=1e-6, cg_maxiter=300, vol_g=None, k_vol=0.0):
+                          n_newton=1, cg_tol=1e-6, cg_maxiter=300, vol_g=None, k_vol=0.0,
+                          diag_extra=None, com_gamma=None, n_cortex=None):
     """One NF2007 implicit overdamped step with the CURRENT-config Jacobian (unconditionally stable). Solves
     (γ/dt·I + K(x))·Δx = F_total(x) via CG on the assembled SPD matrix — no finite-difference JVP. ``force_fn``
     returns the FULL force (elastic + active) at a given x. Newton (n_newton>1) re-linearises for big steps.
@@ -166,6 +167,14 @@ def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *,
     N = x_flat.size // 3
     n3 = 3 * N
     a = gamma / dt
+    # MODAL drag (2026-07-09) — the crawl COM must feel the PHYSICAL whole-cell Stokes drag 6πηR, but a uniform
+    # small γ makes the CG ill-conditioned (γ/dt≪K → NaN). Instead keep the LARGE per-node γ (deformation stays
+    # well-conditioned) and lower ONLY the rigid-COM-translation mode's drag to the physical value via a symmetric
+    # rank-3 correction: the cortex-translation eigenvalue becomes a_com=(6πηR/Nc)/dt (regularized by the clutches
+    # in ``diag_extra``), so v_COM = F_ext/6πηR is Nc-invariant + physical WITHOUT destabilising the solve.
+    a_com = (float(com_gamma) / int(n_cortex)) / dt if (com_gamma is not None and n_cortex) else None
+    nc = int(n_cortex) if n_cortex else N
+    de = np.ascontiguousarray(diag_extra, np.float64) if diag_extra is not None else None
     x = np.ascontiguousarray(x_flat, np.float64).copy()
     x0 = x.copy()
     info = {"cg_iters": 0, "newton": 0}
@@ -173,13 +182,23 @@ def implicit_step_current(x_flat, force_fn, bend_triples, alpha, xl_ij, k_xl, *,
         pos = x.reshape(N, 3)
         K = assemble_K_current(pos, bend_triples, alpha, xl_ij, k_xl, N)
         M = (a * sp.identity(n3, format="csr") + K).tocsr()
+        if de is not None:                                 # clutch/substrate stiffness → K diagonal (regularises rigid modes)
+            M = (M + sp.diags(de, format="csr")).tocsr()
         F = np.asarray(force_fn(x), dtype=np.float64).reshape(-1)
         rhs = F - a * (x - x0)                              # residual RHS (0 net at x0 for n_newton=1)
-        if vol_g is not None and k_vol > 0.0:              # M + k_vol·g·gᵀ  (osmotic volume, implicit rank-1)
-            g = np.ascontiguousarray(vol_g, np.float64).reshape(-1)
-            op = LinearOperator((n3, n3), matvec=lambda v: M @ v + k_vol * (g @ v) * g, dtype=np.float64)
-        else:
-            op = M
+        g = np.ascontiguousarray(vol_g, np.float64).reshape(-1) if (vol_g is not None and k_vol > 0.0) else None
+
+        def _mv(v):
+            r = M @ v
+            if g is not None:                              # + k_vol·g·gᵀ  (osmotic volume, implicit rank-1)
+                r = r + k_vol * (g @ v) * g
+            if a_com is not None:                          # rigid-COM-translation drag lowered to the physical value
+                vr = v.reshape(N, 3); rr = np.array(r, copy=True).reshape(N, 3)
+                for d in range(3):
+                    rr[:nc, d] -= (a - a_com) * vr[:nc, d].mean()
+                r = rr.reshape(-1)
+            return r
+        op = LinearOperator((n3, n3), matvec=_mv, dtype=np.float64)
         it = [0]
         dx, _ = cg(op, rhs, rtol=cg_tol, maxiter=cg_maxiter, callback=lambda *_a: it.__setitem__(0, it[0] + 1))
         x = x + dx
@@ -234,7 +253,8 @@ def assemble_K_current_cupy(pos, bend_triples, alpha, xl_ij, k_xl, N, diag_extra
 
 
 def ff_implicit_step_gpu(x, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma, dt,
-                         vol_g=None, k_vol=0.0, diag_extra=None, cg_tol=1e-6, cg_maxiter=400):
+                         vol_g=None, k_vol=0.0, diag_extra=None, cg_tol=1e-6, cg_maxiter=400,
+                         com_gamma=None, n_cortex=None):
     """One GPU-resident NF2007 implicit overdamped step. All arrays cupy, device-resident. ``force_fn(x_cp)``
     returns the full force as a cupy (3N,) array (Warp kernels → cupy view, no host). Solves
     (γ/dt·I + K(x) + k_vol·g·gᵀ)·Δx = F(x) with cupy CG. Returns x+Δx (cupy).
@@ -251,11 +271,24 @@ def ff_implicit_step_gpu(x, force_fn, bend_triples, alpha, xl_ij, k_xl, *, gamma
     K = assemble_K_current_cupy(x.reshape(N, 3), bend_triples, alpha, xl_ij, k_xl, N, diag_extra=diag_extra)
     M = (a * csp.identity(n3, format="csr", dtype=cp.float64) + K).tocsr()
     F = force_fn(x)
-    if vol_g is not None and k_vol > 0.0:
-        g = vol_g
-        op = LinearOperator((n3, n3), matvec=lambda v: M @ v + k_vol * float(g @ v) * g, dtype=cp.float64)
-    else:
-        op = M
+    # MODAL drag (2026-07-09): lower ONLY the rigid-COM-translation drag to the physical 6πηR (a_com), keeping the
+    # LARGE per-node γ on the deformation modes (CG stays well-conditioned) — same rank-3 symmetric correction as
+    # the host path. The bound clutches (in diag_extra) regularise the now-soft rigid mode. Makes v_COM Nc-invariant.
+    a_com = (float(com_gamma) / int(n_cortex)) / dt if (com_gamma is not None and n_cortex) else None
+    nc = int(n_cortex) if n_cortex else N
+    g = vol_g if (vol_g is not None and k_vol > 0.0) else None
+
+    def _mv(v):
+        r = M @ v
+        if g is not None:
+            r = r + k_vol * float(g @ v) * g
+        if a_com is not None:
+            vr = v.reshape(N, 3); rr = r.reshape(N, 3).copy()
+            m = vr[:nc].mean(axis=0)                        # mean cortex displacement per axis (rigid translation)
+            rr[:nc] -= (a - a_com) * m                      # subtract the excess per-node drag on the rigid mode
+            r = rr.reshape(-1)
+        return r
+    op = LinearOperator((n3, n3), matvec=_mv, dtype=cp.float64) if (g is not None or a_com is not None) else M
     dx, _ = cg(op, F, rtol=cg_tol, maxiter=cg_maxiter)
     return x + dx
 

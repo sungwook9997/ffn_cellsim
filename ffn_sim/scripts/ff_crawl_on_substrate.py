@@ -471,9 +471,6 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             wp.launch(leading_edge_push_kernel, dim=Nc, inputs=[pos_d, centre, ph, wp.float64(front_cos_R),
                       wp.float64(S["f_pro"]), wp.float64(poly.delta_um), wp.float64(kT), f_d, total_d], device=d)
             wp.launch(protrusion_reaction_kernel, dim=Nc, inputs=[ph, total_d, wp.float64(Nc), f_d], device=d)
-        if com_drag:                                           # capture BEFORE the step: net external force + cortex COM
-            _com0 = pos_d.numpy().reshape(N, 3)[:Nc].mean(0)   # (internal forces cancel ⇒ Σf_i = the net external force)
-            _Fext = f_d.numpy().reshape(N, 3).sum(0)
         if gpu_impl:                                           # GPU-RESIDENT implicit (cupy) — GPU-only, native-scale
             x_cp = cpx.asarray(pos_d).reshape(-1).copy()
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
@@ -495,7 +492,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 diag[3 * bset] += cp.k_int; diag[3 * bset + 1] += cp.k_int; diag[3 * bset + 2] += cp.k_int
             diag[3 * bas_cp + 2] += k_plane                    # substrate excluded-volume on basal z
             x_cp = ff_implicit_step_gpu(x_cp, gpu_force_fn, bt_cp, al_cp, xlij_cp, kxl_cp,
-                                        gamma=gamma_rep, dt=dt, vol_g=vol_g, k_vol=k_vol, diag_extra=diag)
+                                        gamma=gamma_rep, dt=dt, vol_g=vol_g, k_vol=k_vol, diag_extra=diag,
+                                        com_gamma=(6.0 * np.pi * ETA_CYTOPLASM * S["R"]) if com_drag else None,
+                                        n_cortex=Nc)
             pos_d.assign(wp.array(cpx.ascontiguousarray(x_cp.reshape(N, 3)), dtype=wp.vec3d, device=d))
         elif implicit:                                         # host implicit (CPU dev fallback)
             xv = pos_d.numpy().reshape(-1)
@@ -507,8 +506,15 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             vs["dP"] = min(max(dP, -TURGOR_PI_IN0), TURGOR_PI_IN0); vs["g"] = gN
             k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-3 * V0) ** 2    # floor 1e-3·V0 (osmotic stiffness; not 1e-9→overflow)
             vol_g = np.zeros(3 * N); vol_g[:3 * Nc] = gN.reshape(-1)
+            _de = _cg = None
+            if com_drag:                                       # MODAL drag: rigid-COM feels the physical 6πηR; the bound
+                _cg = 6.0 * np.pi * ETA_CYTOPLASM * S["R"]      # clutches (added to K) regularise the now-soft rigid mode
+                _bd = bd_d.numpy(); _bb = S["basal"][_bd > 0]
+                _de = np.zeros(3 * N)
+                _de[3 * _bb] = cp.k_int; _de[3 * _bb + 1] = cp.k_int; _de[3 * _bb + 2] = cp.k_int
             xv, _info = implicit_step_current(xv, full_force, bend_triples_np, alpha, xl_ij_np, kxl_np,
-                                              gamma=gamma_rep, dt=dt, n_newton=1, vol_g=vol_g, k_vol=k_vol)
+                                              gamma=gamma_rep, dt=dt, n_newton=1, vol_g=vol_g, k_vol=k_vol,
+                                              diag_extra=_de, com_gamma=_cg, n_cortex=Nc)
             # HARD incompressibility: project the cortex to V=V0 exactly (Newton on the volume constraint along
             # g=∂V/∂x). The basal cap is held by the clutches, so the inward correction drops the free APEX ⇒ as
             # the base area grows (assembly) the cell FLATTENS at constant volume instead of inflating.
@@ -523,17 +529,6 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             pos_d.assign(np.ascontiguousarray(xv, np.float64).reshape(N, 3))
         else:                                                  # explicit physical-γ step (CFL-bound)
             wp.launch(axpy_physical_kernel, dim=N, inputs=[pos_d, wp.float64(dt), gamma_d, f_d], device=d)
-        if com_drag and (gpu_impl or implicit):
-            # ⚠️ FAILED attempt (2026-07-09) — post-hoc rigid-body COM-drag override. Intent: keep the per-node γ (solver
-            # stable) but shift the whole cell so the COM translates under the physical Stokes drag 6πηR. FAILS by
-            # positive feedback: overriding the COM post-solve desynchronises it from the implicit clutch springs, so the
-            # shift stretches the clutches → the "external force" F_ext (below) grows → the next shift grows → RUNAWAY
-            # (767 µm/30 s, clutches all rip off). The grid-consistent drag must be solved WITH the clutch coupling, not
-            # patched after — an in-solver rigid-mode-regularized drag (OPEN PI item). Left as a documented dead-end.
-            _p = pos_d.numpy().reshape(N, 3)
-            _shift = (_Fext / (6.0 * np.pi * ETA_CYTOPLASM * S["R"])) * dt - (_p[:Nc].mean(0) - _com0)
-            _p += _shift
-            pos_d.assign(np.ascontiguousarray(_p, np.float64))
         if substrate is not None and clutches:                 # COMPLIANT SUBSTRATE: movable FA anchors at the clutch↔substrate series equilibrium (stable)
             wp.launch(substrate_anchor_equilibrium_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, anch_rest_d, bd_d,
                       wp.float64(cp.k_int), wp.float64(substrate.k_sub)], device=d)
@@ -633,11 +628,11 @@ def main():
                     "Nc the per-node γ=6πηR/Nc≈0.035 makes the solver diagonal γ/dt ≪ the crosslink stiffness K, so the cortex rigid-body modes go "
                     "unregularized → NaN. The grid-consistent crawl drag needs a solver-side fix (regularize rigid modes / add an inertial term) — "
                     "OPEN ITEM for PI, not a one-liner. Left as a flag documenting the diagnosis.")
-    ap.add_argument("--com-drag", action="store_true", help="EXPERIMENTAL — FAILED (2026-07-09). Post-hoc override of the cortex COM translation "
-                    "to the physical whole-cell Stokes drag 6πηR. ⚠️ RUNS AWAY: overriding the COM post-solve breaks the implicit clutch coupling → "
-                    "cell moves → clutch springs stretch → force grows → correction grows (positive feedback) → 767 µm/30 s, bound→0. So neither "
-                    "in-solve rescaling (--bulk-drag: NaN) NOR post-hoc override (--com-drag: runaway) works → the grid-consistent crawl drag must be "
-                    "done INSIDE the solver with rigid-mode regularization (OPEN PI-level numerics item). Kept to document the second dead-end.")
+    ap.add_argument("--com-drag", action="store_true", help="MODAL DRAG (2026-07-09, the WORKING native-crawl fix): the crawl COM must feel the "
+                    "physical whole-cell Stokes drag 6πηR, but a uniform small γ makes the CG ill-conditioned (γ/dt≪K → NaN). Instead keep the LARGE "
+                    "per-node γ (deformation modes stay well-conditioned) and lower ONLY the rigid-COM-translation mode's drag to 6πηR via a symmetric "
+                    "rank-3 correction inside the implicit solve (regularized by the bound clutches in K). Stable + far less Nc-dependent than the "
+                    "single-fiber drag. (Earlier --bulk-drag = uniform-small-γ NaN; the old post-hoc override runaway — both superseded by this.)")
     ap.add_argument("--ecm", action="store_true", help="S4 (Phase B): build a collagen-I (Mikado) ECM slab under the cell + attach basal "
                     "clutches to fiber nodes (BUILD-side; the FA↔ECM run() coupling is the next PI-overseen step — FF_S4_INTEGRATION_DESIGN). "
                     "Validated path untouched: with --ecm alone the crawl still uses the fixed-substrate clutch.")
