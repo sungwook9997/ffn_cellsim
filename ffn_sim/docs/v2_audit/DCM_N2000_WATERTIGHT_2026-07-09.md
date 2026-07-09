@@ -94,8 +94,15 @@ N=2000 confluent INSET=0.18, accel_dt=8e-3, SIGMA=0, **STEPS=5000 (40 s 물리�
 - **per-step ≈ 2.06 s** (5000 step + 300 warmup, 3.05 h wall). 게이트 pen은 이 내내 75.09 불변(= 실제
   관통 flat의 메트릭 그림자).
 
-**결론: N=2000도 대형-dt로 돈다** — red-flag #2(timescale, 0.12 s→40 s)와 #4(interpenetration, 0.11%
-안정)를 동시에. 남은 건 게이트 pen_frac 메트릭 수정(PI 승인)뿐, 재-init은 불필요.
+**⚠️ 정직 정정 (2026-07-09, PI 지적):** 이 Phase A는 **SIGMA=0(압축 driver 없음) + confluent(이미 compact)**
+이라 40 s 동안 시스템이 거의 **정지**(A/A0=1.000, drift=0)했다. 따라서 이건 "N=2000 large-dt가 해결됐다"가
+**아니다**:
+- ✅ **확실**: 게이트 pen 75 = 메트릭 버그 규명(실제 깊은관통 0.11%, 측정 확실).
+- ⚠️ **정적 안정성 데모일 뿐**: 정지 confluent이 대형-dt에서 안 터짐. **압축(움직임) 시 관통이 안 생기는지는 미검증.**
+- ❌ **red-flag #2(timescale) 미해결**: 40 s를 "도달"했으나 그 시간에 mechanobiology(압축·재배열)가 없음 →
+  timescale의 핵심(min-hr에 걸친 실제 물리)을 충족 못 함. #4도 정적에서만 안정.
+- ❌ **N=2000 large-dt 압축(loose→compact) 여전히 미해결**: loose N=2000은 대형-dt 발산, confluent은 이미
+  compact(압축할 void 없음), 48h는 ~515일 비현실(dt=0.1 발산→8e-3 상한). N=400 압축(Phase B/C)만 성립.
 
 ## 남은 것
 

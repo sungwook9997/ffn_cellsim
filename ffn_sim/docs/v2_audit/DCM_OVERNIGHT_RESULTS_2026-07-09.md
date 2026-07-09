@@ -5,16 +5,20 @@
 
 밤새 자율 실행(PI /goal). 각 Phase 완료 시 능동 분석. 아래는 확정된 결과.
 
-## Phase A — N=2000 대형-dt: 관통 0.11% 안정 (red-flag #2+#4 동시 해결) ✅
+## Phase A — N=2000 대형-dt: SIGMA=0 정적 안정성 데모 + 게이트 버그 규명 (⚠️ "해결" 아님)
 
-confluent N=2000, INSET=0.18, accel_dt=8e-3, SIGMA=0, **STEPS=5000 (40 s 물리시간)**, per-step 2.06 s (3.05 h).
+confluent N=2000, INSET=0.18, accel_dt=8e-3, **SIGMA=0(압축 driver 없음)**, **STEPS=5000 (40 s)**, per-step 2.06 s.
+**⚠️ SIGMA=0 + confluent(이미 compact) ⇒ 시스템이 40 s 동안 거의 정지(A/A0=1.000, drift=0).** 아래 "관통 안정"은
+정지 상태의 안정이지 압축(움직임) 시 검증이 아니다. red-flag #2/#4를 "해결"한 게 아님(정정 항목은 문서 하단).
 
 - **관통 시계열 완전 안정**: 깊은관통(>0.2R) = 315 nodes (0.11%) — step 0→5000 동안 **불변**(폭발/드리프트
   없음). V/V0=1.000, A/A0=1.000, drift=0. → 대형-dt IPC가 N=2000 관통을 40 s 내내 정확히 고정.
 - porosity 0.451 불변, asph 0.0035 (둥근 confluent foam). 게이트 pen 75.09 불변(= 실제 관통 flat의 메트릭 그림자).
 - HTML 421 MB 풀-렌더, 실제 Chrome WebGL 검증(에러 0) — 조밀 watertight foam spheroid.
-- **결론: N=2000도 대형-dt로 돈다.** timescale 0.12 s→40 s, interpenetration 0.11% 안정. 재-init 불필요,
-  남은 건 게이트 pen_frac 메트릭 수정(PI 승인). 상세: DCM_N2000_WATERTIGHT_2026-07-09.md.
+- **정직 결론 (PI 지적, 정정):** ✅ 확실한 성과 = **게이트 pen 75 메트릭 버그 규명**(실제 관통 0.11%).
+  ⚠️ 나머지는 **정적 안정성 데모일 뿐** — SIGMA=0이라 압축·mechanobiology가 없다. ❌ red-flag #2(timescale)는
+  미해결(40 s에 실제 물리 없음), ❌ N=2000 large-dt **압축**은 미해결(loose 발산 / confluent 이미 compact /
+  48h ~515일 비현실). 상세: DCM_N2000_WATERTIGHT_2026-07-09.md.
 
 ## Phase B — N=400 압축 σ-sweep: NON-MONOTONIC, sweet spot σ=5 mN/m ⭐
 
@@ -64,12 +68,29 @@ N=400 loose gap-2.4, σ=5 mN/m, accel_dt=8e-3, **STEPS=12000 (96 s 물리시간)
   contact_frac(324k²)을 계산 → 조합당 ~44 min, subdiv=3(1.3M²)은 비실용(수 h). validate를 KDTree/
   subsample로 효율화해야 full lloyd×subdiv×eps sweep 가능(개선 항목). outlier **방향(lloyd↑)**은 확인.
 
+## 48h N=2000 시뮬레이션 실현가능성 (PI 질문 2026-07-09)
+
+**현재 dt(accel_dt=8e-3): ~515일 — 비현실적.** 48h 물리시간 = 172,800 s ÷ 8e-3 = **2.16e7 step**
+× per-step 2.06 s(N=2000, Phase A 실측) = 4.45e7 s ≈ **515일**.
+
+**dt로 못 줄임 — 8e-3이 N=2000의 사실상 상한.** dt-probe(confluent N=2000, SIGMA=0): **accel_dt=0.1에서
+발산**(pen 101, cfl 5.3e4). #1 GPU 검증의 dt ceiling ~2.0 s는 small-N(N=2)에서였고, N=2000은 수천 셀의
+lagged soft-force + Newton 결합으로 dt 상한이 **8e-3로 훨씬 낮다**. (dt=1.0/2.0 = 더 발산, 확정 대기.)
+
+**핵심: 48h는 mechanical compaction에 불필요하다.** Phase C에서 N=400 σ=5가 **96 s**에 porosity 0.285로
+포화(거의 완전 densify) + drift 수렴 — mechanical 압축·재배열은 ~100 s면 끝난다. 24–48h는 biological
+remodeling(cadherin 성숙, cortex 재조직) 타임스케일로, 이 fine-grained *mechanical* 모델의 스코프 밖이다.
+→ **48h 도달을 목표로 하지 말고 mechanical 포화(~100 s)까지가 이 엔진의 유효 범위.** 더 긴 시간이 필요하면
+(a) per-step을 근본적으로 낮추거나(GPU 커널 최적화, Newton 예열), (b) biological remodeling을 별도
+mesoscale 모델로 붙여야 한다.
+
 ## 종합
 
 밤샘 큐 4 Phase (halt-free, A5000). 핵심 성과 (C/D는 완료 시 갱신):
 
-1. **N=2000 대형-dt 작동 (Phase A)** — 관통 0.11% 40s 내내 안정, red-flag #2(timescale)+#4(interpenetration)
-   동시 해결. "N=2000 not-watertight"는 게이트 pen_frac 메트릭 버그로 규명(초기 mean_edge + max-only).
+1. **게이트 pen 75 = 메트릭 버그 규명 (Phase A의 ✅ 확실한 성과)** — 실제 깊은관통 0.11%(측정 확실). ⚠️ 단
+   Phase A는 SIGMA=0 정적이라 "N=2000 large-dt 작동/해결"은 **아님**(압축·mechanobiology 없음, red-flag #2 미해결,
+   압축은 loose 발산·confluent 이미 compact로 미해결).
 2. **σ-sweep non-monotonic (Phase B)** — sweet spot σ=5 mN/m @ accel_dt=8e-3; σ>5는 σ-dt 결합으로
    과충격·관통·압축 상실. 압축 production 표준 = σ=5 (lit-anchored + 안정).
 3. **장시간 수렴 + densify (Phase C)** — σ=5 @ 96s: porosity 0.631→0.285(32s의 0.408보다 조밀),
