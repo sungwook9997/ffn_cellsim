@@ -210,3 +210,38 @@ A 3-agent design workflow grounded both in the KB (mmp-design agent hit a transi
   ⚠️ front_frac/myo_rear_bias/n_fa are PI-flagged (qualitatively grounded, must NOT be swept to a target speed).
 - Coarse: both build+run clean. **Native 3-way (epithelial vs mesenchymal vs mesenchymal+MMP on conc-3 collagen)
   running** — the decisive test of whether the rear-myosin engine + MMP channel reach physiological migration.
+
+---
+
+## OVERNIGHT AUTONOMOUS ROADMAP (2026-07-11, PI: "밤동안 계속 진행, /loop 1h, 결정은 네가")
+
+Standing directive: work through the night, decide autonomously when blocked on a PI choice (record the choice +
+rationale), extend this roadmap as phases close, keep the loop going. Every phase ends in a browsable HTML/figure
+(visual-checked) + a backup commit + a TAG cross-check. Native + full only for conclusions; gbook ssh flaky →
+run detached, monitor by log. Do NOT push ffn/foundation.
+
+**Phase M1 — 3-way cell-type/MMP verdict (in flight).** Read epithelial vs mesenchymal vs mesenchymal+MMP.
+Gate: does mesenchymal translocate > epithelial (rear-myosin engine works)? does MMP raise v / open a channel
+(severed segments > 0, localised at the front)? TAG: compare v to KB-3.12 (10-100 nm/s motility). Visual: the
+mesenchymal crawl + the MMP-degraded channel (ECM tension/severed overlay). If physiological → migration story
+COMPLETE; if not → diagnose (M1b: longer sim, or the rear-myosin/MMP interplay).
+
+**Phase M2 — the "cell leaves its position" capstone.** A long native mesenchymal(+MMP) sim on compliant collagen
+→ the cell crawls a visible µm-scale track (COM trail) while remodelling/degrading the matrix. The animated
+interactive viewer (crawl + collagen recruit/tension/reorientation/severed) = the PI's original ask made real.
+
+**Phase M3 — tumor-aligned matrix + contact guidance (KB-1.9).** `--ecm-align-s 0.6` (TACS-3 tumor stroma,
+S 0.3-0.7). Does the cell migrate ALONG the aligned fibres (contact guidance)? Does its traction increase the
+alignment (feed-forward)? Reproduces the tumor-invasion-highway phenotype.
+
+**Phase M4 — the physical biphasic (real Chan-Odde curve).** Sweep `--ecm-conc` (1.5→30) with `--ecm-material
+collagen_I`, normalise traction per bound clutch (remove the attachment confound the κ-sweep hit), overlay the
+motility optimum (M2 speed) → the traction+motility biphasic vs real matrix modulus (Bangasser 2-300 kPa band).
+
+**Phase M5 — migration-mode atlas (a synthesis deliverable).** One figure/viewer contrasting the modes the engine
+now spans: epithelial remodel-in-place; mesenchymal crawl; proteolytic (MMP) invasion; on stiff vs compliant vs
+aligned collagen — the FF single-cell migration phase map, KB-grounded.
+
+**Backlog / PI-flagged (decide autonomously, record rationale):** MMP absolute secretion flux (kept ρ∈[0,1]);
+contractility_mult (kept 1.0); whether to register any new KB rows (surface, don't auto-create gates/contracts).
+Autonomous-decision log appended below as choices are made.
