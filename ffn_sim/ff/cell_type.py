@@ -51,12 +51,14 @@ _PROFILES = {
     #    (OverflowError in the from-resting relaxation) AND added no migration benefit — dropped from the preset
     #    (the --myo-rear-bias flag + build hook remain for PI experimentation). Contraction = the existing uniform
     #    myosin; the migration front-back ASYMMETRY is set by polarize (adhesion turnover), the validated mechanism.
-    #  • n_fa 100: physiological FA count (KB-2.12 per-cell 10-100 nN / single FA 1-10 nN → ~10-100 FAs). n_fa=50
-    #    COLLAPSED traction to 0 on sparse physiological collagen (too few grips = the biphasic soft-arm); n_fa=100
-    #    sits in the physiological + working-traction regime. NOT tuned-to-speed — a KB-2.12 count that avoids the
-    #    traction-collapse failure mode. The dynamics come from polarize's front-form/rear-release clutch turnover.
+    #  • n_fa 0 (one clutch/node = STRONG adhesion, KB-3.11 "strong FA/traction"): reducing the FA count (50, 100)
+    #    COLLAPSES traction on sparse physiological collagen (too few grips → the biphasic soft-arm, v→0), and — key —
+    #    starves the MMP source (proteolysis needs FRONT bound clutches to secrete). Proteolytic invasion (KB-1.20)
+    #    is a STRONG-adhesion mode: strong FAs give high traction + the MMP source, and MMP degrades the anchor ahead
+    #    to unlock advance. So keep the natural strong adhesion (least-tuned, no arbitrary count); the migration
+    #    dynamics come from polarize's front-form/rear-release turnover + MMP, not from adhesion reduction.
     "mesenchymal": CellTypeProfile("mesenchymal", polarize=True, ecm_regrip=True,
-                                   front_frac=0.6, myo_rear_bias=0.0, n_fa=100, contractility_mult=1.0),
+                                   front_frac=0.6, myo_rear_bias=0.0, n_fa=0, contractility_mult=1.0),
 }
 _PROFILES["emt"] = replace(_PROFILES["mesenchymal"], name="emt")
 _ALIASES = {"mcf7": "mcf7_epithelial", "epithelial": "mcf7_epithelial", "mda": "mesenchymal",
