@@ -610,8 +610,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             pc = x_cp.reshape(N, 3)[:Nc]; ce = pc.mean(0)
             a3 = pc[faces_cp[:, 0]] - ce; b3 = pc[faces_cp[:, 1]] - ce; c3 = pc[faces_cp[:, 2]] - ce
             Vc = float(cpx.abs((a3 * cpx.cross(b3, c3)).sum() / 6.0))
-            if not np.isfinite(Vc) or Vc <= 1.02 * vmin:       # volume collapsed toward vmin (implicit overshoot at too-large dt)
-                print(f"  [!] volume collapse at step {step} (Vc={Vc:.1f} ≤ vmin={vmin:.1f}) — truncating"); diverged = True; break
+            if not np.isfinite(Vc) or Vc <= 1.02 * vmin or Vc > 50.0 * V0:   # volume COLLAPSED toward vmin OR EXPLODED (>50·V0):
+                print(f"  [!] volume {'collapse' if Vc <= 1.02*vmin else 'explosion'} at step {step} "  # implicit overshoot / instability
+                      f"(Vc={Vc:.3g}, vmin={vmin:.1f}, V0={V0:.1f}) — truncating"); diverged = True; break
             g = cpx.zeros((Nc, 3))
             cpx.add.at(g, faces_cp[:, 0], cpx.cross(b3, c3) / 6.0)
             cpx.add.at(g, faces_cp[:, 1], cpx.cross(c3, a3) / 6.0)
