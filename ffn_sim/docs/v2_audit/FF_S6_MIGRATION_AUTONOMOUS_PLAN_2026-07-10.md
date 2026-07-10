@@ -339,3 +339,33 @@ decisively, *"migration-speed vs cell-size emerges from geometry (FA-formation p
 
 This is a re-plan, not a result: nothing was run (GPU busy). It converts the vague "solver look" open item into a
 concrete, KB-anchored, PI-gated experiment, and it strengthens (does not overturn) the honest migration verdict.
+
+### FF-engine mechanism gap analysis (TAG-grounded, 2026-07-11) — the next-mechanism menu for you
+
+Inventoried the live FF kernels vs the Kim+Miyazaki corpus roadmap (`turnover · severing · catch-slip · PCM myosin ·
+formin · cylinder-drag`). **Already implemented:** barbed-end growth (KB-3.6), pointed-end depoly, fiber treadmilling,
+α-actinin KMC Bell turnover, catch-slip clutches, Stam-Hocky minifilament myosin, Arp2/3 branch-angle, directed front
+growth, FA growth/disassembly/maturation, MT aster, active-gel polarization, membrane/nucleus/ERM. The engine is
+**substantially complete**. Two genuine gaps, with an honest blocker on the first:
+
+1. **Cofilin severing — real gap, but KB-BLOCKED (do NOT implement yet).** No `sever` kernel exists (the grep hit was
+   "*several*"). Severing is the disassembly arm that keeps the cortex fluid and, paired with front barbed-growth, is
+   part of the crawl treadmill — so it is on-thread. **But the TAG shows the KB has *no* KnowledgeClaim quantifying a
+   severing rate** (per-µm frequency, ADP-preference constant): the physics is only qualitative in the corpus (cofilin
+   prefers ADP/aged actin, nucleotide-gated, rate ∝ cofilin conc), and the quantitative primary source —
+   **Elam, Kang & De La Cruz 2013, FEBS Lett 587:1215 (doi:10.1016/j.febslet.2013.01.062)** — is *cited but not ingested*.
+   Implementing severing now would require an **invented rate = a magic number = hard-rule violation.** → **Surfacing to
+   you:** the correct path is (a) ingest Elam2013 as SourceEvidence + register a KnowledgeClaim for the severing rate
+   (PI-gated KB change), then (b) implement a KMC severing kernel grounded in it (per-segment P_sever ∝ cofilin·age,
+   ADP-gated). I did NOT invent a rate.
+2. **Formin processivity — architectural-only, a design refinement (not KB-blocked).** `formin` exists as a *nucleator
+   label* in `architecture_spec` (filopodium/SF parallel bundles) but there is **no formin-specific processive-elongation
+   kernel** — `barbed_end_growth_kernel` covers elongation generically. Formin's distinct physics (processive barbed-end
+   tracking, elongation acceleration, capping protection) is a refinement of the existing growth kernel, implementable
+   from the existing KB-3.6 growth grounding + a formin on-rate; lower priority than severing and needs your steer on
+   whether the generic growth kernel is sufficient for the current cortex/filopodium work.
+
+**Turnover is NOT a gap** (treadmill + pointed-depoly + KMC-Bell already cover it). **Net recommendation for you:** the
+highest-value next FF mechanism is **cofilin severing**, but it is gated on a **KB ingestion of Elam2013** — a
+gate-contract/KB change that is yours to approve, not mine to auto-create. Until then I will not implement it (no magic
+number). Everything here is GPU-free planning; nothing was run or changed in the engine.
