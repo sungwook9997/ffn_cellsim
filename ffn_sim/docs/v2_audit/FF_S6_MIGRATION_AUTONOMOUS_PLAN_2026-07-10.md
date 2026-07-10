@@ -154,3 +154,26 @@ central technical task of this mandate — without it, native migration is eithe
   4. Accept MCF7-as-non-migratory (remodel-in-place) as the honest epithelial result.
 - Proceeding with (1): implement a minimal direction-fixed polarisation (`--polarize`), coarse-test for net
   translocation, then native. If it converges → long migration demo + COM-trail viewer.
+
+### Tick 3 (05:00 KST) — migration verdict CONSOLIDATED: MCF7 remodels-in-place, doesn't migrate (robust)
+- `--polarize` native: coherence 0.03→**0.15** (directionality emerged) but v=0.09 nm/s (no translocation).
+- `--n-fa 200` (physiological FA count, the anchor fix + the 2× traction correction) native: coherence **0.29**
+  (highest) but v=0.07 nm/s (still ~0). traction 0.29 nN.
+- **ROBUST CONCLUSION (5 native tests):** across emergent-crawl, com_drag, re-grip, polarize, and n-fa, the
+  directionality steadily improved (coherence 0.05→0.15→0.29) but **translocation never emerged** (v≈0.07–0.09
+  nm/s throughout). A native MCF7 cell on stiff PINNED collagen-I **remodels the matrix in place but does NOT
+  migrate.** This is physiologically CORRECT (epithelial MCF7 is poorly migratory) and was NOT tuned for — the
+  model reproduces the remodel-not-migrate phenotype. The distributed grip on the stiff pinned matrix anchors the
+  cell; front-back asymmetry alone is too weak to translocate. The S6 CORE deliverable (matrix-remodel caveat
+  RESOLVED, +264.9 nm coherent inward) STANDS and is unaffected.
+- **PI DECISION POINT (migration is a research direction, not a tweak — needs the PI's greenlight):**
+  1. **(RECOMMENDED) MMP proteolytic invasion (KB-1.20):** the cell secretes MMP at the leading edge, degrades
+     collagen ahead (dL_f/dt=−k_deg·ρ_MMP·L_f, remove at L_f<0.5µm), opening a channel it grips + pulls into.
+     This is THE cancer-invasion mechanism and directly removes the stiff-matrix anchor. A substantial new
+     mechanism (secretion + diffusion + fibre degradation + cyclic protrusion) — a proper implementation session.
+  2. Compliant/unpinned collagen (biphasic regime) — a softer, yielding matrix the cell can deform through.
+  3. Model a MOTILE cell type (mesenchymal / EMT-MCF7) with a single dominant leading edge, not epithelial MCF7.
+  4. Accept remodel-in-place as the honest MCF7 result (it matches the biology).
+- **Proceeding meanwhile (certain, KB-grounded deliverables):** the biphasic clutch cross-check (Chan-Odde /
+  Bangasser, KB-1.5 stiffness, `--ecm-lp-um` sweep) and the `ecm_library` physiological-collagen integration
+  (nematic-S alignment KB-1.9). These produce clean results while the migration-mechanism decision awaits the PI.
