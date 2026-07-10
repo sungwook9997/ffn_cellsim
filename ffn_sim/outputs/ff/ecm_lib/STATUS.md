@@ -87,3 +87,10 @@ Core goal + 5 extensions COMPLETE. This cycle: adversarial correctness review of
 ecm_mechanics.py (units/formulas/signs/numerics — the "high precision" mandate), focused on what the
 empirical validations don't cover (energy-route factor-of-2, bond virial, Hertz inversion, continuum
 calibration, alignment sampler, re-pin logic, NaN/zero paths). Will fix any confirmed correctness bugs.
+
+## Checkpoint 5 (2026-07-10) — c-scaling root-caused
+Tested the c^2 hypothesis after the QA stretch-dominated insight. Result: exponent is a mechanical-regime +
+rigidity-percolation effect, BRACKETED: spring(stretch-dominated) n=1.07 ↔ reshape(bending-dominated,
+crosses rigidity threshold) n=7.24; real c²≈2 needs a PI-decided ⟨z⟩(c) crosslink law kept above the
+sub-isostatic threshold (my rule gives ⟨z⟩=2.18=floppy at 1mg/mL). No tuning. → CSCALING_REGIME_FINDING.md.
+This is a modeling decision (collagen crosslink biology) — PI-scoped, not auto-tuned.
