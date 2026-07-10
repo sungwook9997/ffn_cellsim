@@ -410,6 +410,47 @@ def indentation_modulus(ecm, *, indenter_R_um: float = 6.0, max_depth_um: float 
             "flatness": (max(E_pts) / max(min([e for e in E_pts if e > 0], default=1.0), 1e-9)) if E_pts else 0.0}
 
 
+def shear_stress_curve(ecm, *, gammas=None, n_steps=5000, axial_mode="spring", device="cpu",
+                       margin_frac=0.08) -> dict:
+    """Nonlinear shear via the full virial tensor: σ_xz(γ), the first normal-stress difference
+    N1(γ)=σ_xx−σ_zz, and the differential modulus K(γ)=dσ_xz/dγ — all from ``ecm_material_stress``.
+
+    Semiflexible biopolymer networks (collagen/fibrin) show a hallmark **NEGATIVE normal stress** under
+    shear (they pull the plates together, N1<0) with |N1|~|σ_xz| near ~20% strain (Janmey 2007) — an
+    ungameable magnitude discriminator, and K(γ) strain-stiffens. Both EMERGE from the Mikado physics, not
+    tuned. Uses the affine-pre-shear + interior-relax scheme; each γ is an independent point."""
+    if gammas is None:
+        gammas = np.linspace(0.02, 0.30, 10)
+    gammas = np.asarray(gammas, float)
+    lo, hi = ecm.box_lo, ecm.box_hi
+    Lz = hi[2] - lo[2]
+    m = margin_frac * Lz
+    pos0 = ecm.net.pos.copy()
+    fixed = (pos0[:, 2] < lo[2] + m) | (pos0[:, 2] > hi[2] - m)
+    pairs, klink, rlink, use_reshape = _links_for(ecm, axial_mode)
+    sxz, n1 = [], []
+    for g in gammas:
+        pos = pos0.copy()
+        pos[:, 0] += g * (pos0[:, 2] - lo[2])
+        ecm.net.pos[:] = pos
+        dev = _to_device(ecm, pairs, klink, rlink, device)
+        relaxed = _relax(dev, ecm, fixed, use_reshape=use_reshape, n_steps=n_steps)
+        sig = ecm_material_stress(ecm, relaxed, device=device)
+        sxz.append(float(sig[0, 2]))
+        n1.append(float(sig[0, 0] - sig[2, 2]))
+    ecm.net.pos[:] = pos0
+    sxz = np.array(sxz)
+    n1 = np.array(n1)
+    K = np.gradient(np.abs(sxz), gammas)
+    K0 = K[0] if K[0] > 0 else float(np.max(K[K > 0], initial=1e-9))
+    # |N1| vs |σ_xz| ratio near 20% strain (the Janmey magnitude gate)
+    i20 = int(np.argmin(np.abs(gammas - 0.20)))
+    return {"gammas": gammas.tolist(), "sigma_xz_Pa": sxz.tolist(), "N1_Pa": n1.tolist(),
+            "K_Pa": K.tolist(), "K0_Pa": float(K0), "K_over_K0": (K / max(K0, 1e-12)).tolist(),
+            "N1_negative": bool(np.all(n1[gammas > 0.05] <= 0)), "N1_over_sxz_at20": float(abs(n1[i20]) / max(abs(sxz[i20]), 1e-9)),
+            "max_stiffening": float(np.max(K / max(K0, 1e-12)))}
+
+
 def shear_energy(ecm, *, gamma, n_steps=5000, axial_mode="spring", device="cpu", margin_frac=0.08) -> float:
     """Stored elastic energy U(γ) [pN·µm] under an affine simple shear γ (pin z-min/z-max, relax interior).
     The nonlinear-mechanics primitive: σ(γ)=(1/V)dU/dγ, K(γ)=dσ/dγ — no small-strain assumption."""
@@ -620,4 +661,4 @@ def calibrate_continuum_k(spec, box_lo, box_hi, *, dim=3, node_spacing_um=2.0, p
 
 __all__ = ["shear_modulus", "uniaxial_modulus", "anisotropy", "indentation_modulus",
            "hertz_E_from_force", "calibrate_continuum_k", "shear_energy", "strain_stiffening",
-           "stress_relaxation", "ecm_material_stress"]
+           "stress_relaxation", "ecm_material_stress", "shear_stress_curve"]

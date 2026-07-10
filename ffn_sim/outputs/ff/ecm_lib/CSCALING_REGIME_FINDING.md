@@ -48,10 +48,26 @@ Result at fixed physical ⟨z⟩=3.2 (box 26 µm):
 Exponent **n=1.04** — the clean fixed-connectivity prediction (G∝density∝c at fixed ⟨z⟩), no longer
 confounded by the ⟨z⟩ blow-up. Reference G(1.5 mg/mL)=13.4 Pa (⟨z⟩=3.02) still matches Yang-Kaufman.
 
+## Independent confirmation: the first normal-stress sign N1 (via the virial tensor)
+
+The full virial Cauchy tensor (`ecm_material_stress`) gives a SECOND, independent diagnostic of the same
+regime — the first normal-stress difference N1=σ_xx−σ_zz under shear (`shear_stress_curve`):
+- **Model: N1 > 0** (collagen +0.6 Pa, fibrin +4.4 Pa @20% strain) — a STRETCH-dominated network pushes the
+  plates apart (the Poynting effect, like rubber).
+- **Real collagen/fibrin: N1 < 0** (Janmey 2007) — bending-dominated semiflexible networks pull the plates
+  together (fibers buckle in compression, sustain tension → net inward pull), with |N1|~|σ_xz| at ~20% strain.
+
+So the WRONG SIGN of N1 (and |N1|/|σ_xz|≈0.15-0.28 vs ~1) confirms — from a completely different observable
+than the c-exponent — that the spring-mode model is stretch-dominated, not bending-dominated. `figs/normal_
+stress_N1.png`. Two independent signatures (c-scaling exponent AND N1 sign) point to the same root, making the
+regime diagnosis robust. Reaching the negative-N1, c² bending-dominated regime is the same PI-gated modeling
+decision (⟨z⟩(c) growth law / stable inextensible dynamics).
+
 ## Bottom line
 
 The reference-concentration Pa is correct (validated) and ⟨z⟩ is now physically controllable at the KB-1.3
 value. The c-scaling gap is fully understood: **at physical fixed ⟨z⟩ the athermal model gives c¹** (density-
 linear); the literature c²≈2 requires ⟨z⟩ to GROW with c (bending-dominated, above threshold) — a PI-decided,
 literature-anchored crosslink-density-vs-concentration law (collagen LOX biology), NOT an n-fit. Bracketed
-1.04 (fixed ⟨z⟩) / 1.07 (⟨z⟩ blow-up) ↔ 7.24 (reshape through threshold). No tuning was applied.
+1.04 (fixed ⟨z⟩) / 1.07 (⟨z⟩ blow-up) ↔ 7.24 (reshape through threshold). Independently confirmed by the
+positive N1 sign (stretch-dominated) vs the literature negative N1 (bending-dominated). No tuning was applied.
