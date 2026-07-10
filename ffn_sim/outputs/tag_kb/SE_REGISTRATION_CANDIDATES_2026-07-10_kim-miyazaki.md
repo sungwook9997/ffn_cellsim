@@ -161,13 +161,40 @@ constriction invariants (p59); ⟨ω⟩∝1/R confined rotational flow (p77).
 
 ---
 
-## Part E — Conflicts / decisions to surface to PI (do NOT silently reconcile)
-1. Crosslinker k0=0.115 s⁻¹ (filamin-A) vs KB 0.066 s⁻¹ (α-actinin) — same Ferrer 2008 paper, different
-   isoform → register as **distinct species**, do not overwrite the α-actinin anchor.
-2. Myosin stall 5–5.7 pN/head vs `PARAM-F_stall_motor` default 2 pN "per motor" (per-head vs per-motor);
-   NMII v0 140 nm/s vs `PARAM-v_unloaded` 100 → PI to decide per-head vs per-motor convention.
-3. `PARAM-F_stall_motor` default 2 pN and `PARAM-v_unloaded` 100 nm/s are currently **uncalibrated
-   (`calibrated=No`)** — this corpus supplies sourced values; recommend re-anchoring under PI sign-off.
+## Part E — Conflicts — ✅ RESOLVED 2026-07-10 (PI delegated the adjudication: "1만 ㄱㄱ")
+
+**Verdict (grounded in the actual code — `ff/myosin_linear.py`, `ff/kim_network.py`, `ff/hand_kmc.py`,
+`params_manifest.yaml`): all three are granularity / species / scope distinctions, NOT contradictions.
+Our fine-grained FF code already implements the mechanistic versions correctly. → ZERO existing
+parameters overwritten (respects no-param-tuning); corpus values register as distinct species or as
+molecular cross-checks; the lumped motor-clutch params get a clarifying note to prevent conflation.**
+
+1. **Crosslinker off-rate — distinct SPECIES, no overwrite.** filamin-A k0=0.115 s⁻¹ and α-actinin
+   0.066 s⁻¹ are different proteins (both Ferrer 2008). FF already treats them as distinct species
+   (`ff/kim_network.py`: α-actinin 4.6e5 vs filamin 8.2e5 pN/µm; `ff/hand_kmc.py`: "faithful filamin
+   catch bond, KU-3.19"). → Register 0.115 s⁻¹ as the **filamin** off-rate (KU-3.19 family); keep
+   α-actinin 0.066 (KU-3.5 anchor). Corpus papers p02/p03/p53/p69 all use the filamin value — correct.
+
+2. **Myosin stall — different GRANULARITY / sub-model, no conflict.** Corpus 5–5.7 pN is **per-head**
+   (Erdmann-Schwarz PCM). `ff/myosin_linear.py` already uses a per-head `F_head` (KB-3.18) + duty
+   (Kovács 2003) and derives the ENSEMBLE stall = N_side·F_head → 50–100 pN/minifilament. `PARAM-
+   F_stall_motor`=2 pN is the FA/traction **motor-clutch** abstraction (`bridge.motor_clutch.
+   F_stall_per_motor`, KU-2.18, Chan-Odde lineage) — a different sub-model at a different scale. →
+   Register PCM 5.7 pN/head as a **cross-check for FF's F_head (KB-3.18)**; annotate PARAM-F_stall_motor
+   "lumped motor-clutch, do NOT conflate with FF minifilament head/ensemble stall". No overwrite.
+
+3. **Myosin velocity — different QUANTITY, no conflict.** Corpus 140 nm/s is the molecular NMII unloaded
+   **walking** velocity (PCM). `ff/myosin_linear.py` already uses v0=120 nm/s (KB-PIV-4). `PARAM-
+   v_unloaded`=100 is the motor-clutch **retrograde-flow** velocity (`bridge.motor_clutch.v_unloaded`,
+   KU-2.18) — a cell-scale emergent speed, not the molecular v0. → Corpus 140 nm/s **corroborates FF's
+   v0=120 (KB-PIV-4)** within ~15%; keep PARAM-v_unloaded as retrograde flow. No overwrite, no
+   re-anchoring needed.
+
+**Net effect: nothing existing changed. New rows to register (part of the manifest, PI-gated): filamin
+off-rate 0.115 s⁻¹ (KU-3.19); PCM per-head stall 5.7 pN + molecular v0 140 nm/s as cross-checks for
+KB-3.18 / KB-PIV-4; clarifying notes on the two lumped motor-clutch params.** Note: FF force-velocity is
+**linear (PI-ratified 2026-07-07), not Hill** — the corpus's PCM/Hill kernels are cross-check oracles
+only, never a runtime downgrade of the ratified linear law.
 
 ## Part F — SI-fetch backlog (fetch before registering these force constants)
 - p74 Mulla — Suppl. Table 1 (1D Bell k_catch0/k_slip0/f_catch/f_slip) + Table 2 (3D network κ's).
