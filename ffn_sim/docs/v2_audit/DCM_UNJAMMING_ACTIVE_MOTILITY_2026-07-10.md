@@ -178,6 +178,19 @@ timescale gap; the force-mode is effectively a biology-time acceleration, like S
   knob; the honest statement is a Péclet-number (v0·τ_p/a) map, and reaching the transition at physiological v0 needs
   physiological time.
 
+## 4i. v0-mode result — CONFIRMS the timescale gap (Péclet framing)
+
+CFL-safe v0-mode sweep (τ_p=600 s, 4.8 s simulated, seed 11): v0 = 2 / 10 / 50 µm/min → A/A0 = 0.997 / 1.021 / 1.079,
+shape index s = **4.938 / 4.939 / 4.986** (all ≈ the confined 4.93, ~7 % unjammed) = **stays JAMMED**. So at CFL-bounded
+PHYSICAL speed + FEASIBLE sim time, the aggregate does not unjam in 4.8 s. The force-mode fa100 unjammed only because
+its effective speed was super-physical: F=100 nN / γ_cell(≈γ_node·N_c=9.3e-3) → v_eff ≈ 645 µm/min ≈ 300× the ~2 µm/min
+lit cell speed → Péclet Pe = v·τ_p/a ≈ 432 (deep-fluid), reached in 4.8 s. The physiological Pe (v0=2 µm/min, τ_p=600 s)
+≈ 1.3 — right at the jamming transition — but reaching the unjammed STEADY STATE at Pe~O(1) takes several τ_p ≈ tens of
+minutes of PHYSICAL time = ~millions of steps at accel_dt=8e-4 (infeasible). **This is the project-wide biology-time gap,
+now precisely located for the unjamming: the MECHANISM + phase structure (SPV, both axes, decoupling) are correct and
+demonstrated; the physiological-time approach to steady state is the acceleration.** The honest deliverable is the
+qualitative + Péclet-phase result, with the force-mode understood as a biology-time acceleration (like S_accel).
+
 ## 5. Next
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
