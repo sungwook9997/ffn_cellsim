@@ -142,3 +142,21 @@ PA continuum G_energy=G_virial=G_react=1522 Pa (all agree); collagen sparse G_en
 (0.98×, agree) while G_reaction=1.4 (11× low = the unreliable route). So the virial (grid-invariant truth)
 CONFIRMS the energy route is accurate and identifies reaction as the outlier — resolving the two-readout
 inconsistency. Unblocks the nonlinear master curve + N1 + r^-n (all are components of this one tensor).
+
+## Checkpoint 13 (2026-07-11) — README consolidated + NEAR #4 launched
+- README brought to full current state (cell-ECM stiffness-sensing, virial tensor, N1, all scripts, KB
+  REGISTERED). Commit 3dfb195.
+- **NEAR #4 (6-material native modulus atlas)** ff_ecm_native_atlas.py: builds each of the 6 materials at a
+  native-density 40µm REV on the A5000, measures the modulus (fibrillar→shear G via virial tensor;
+  continuum→calibrate+indentation), checks vs literature band + REV↔native consistency. ⚠️first launch crashed
+  KeyError G_virial_Pa = STALE gbook ecm_mechanics.py (virial tensor added locally in NEAR #3/#5 wasn't re-
+  synced); re-synced + relaunched (virial-tensor presence verified on gbook). Monitor armed for completion.
+- Session so far executed ROADMAP NEAR #1(native-confirmed)/#3/#4(running)/#5. Lesson: re-sync ff/ after every
+  local kernel/API change before a gbook run.
+
+## Checkpoint 14 (2026-07-11) — NEAR #4 native atlas: 6/6 IN BAND at native scale
+ff_ecm_native_atlas.py on A5000: all 6 materials at a 40µm native-density REV — collagen 15.2 (33.6k nodes),
+fibrin 78.7 (74.7k), PA 3654, HA 331, Matrigel 439, agarose 16117 Pa — ALL in the literature band, and each
+MATCHES its small-REV value (modulus is intensive → REV↔native consistency confirmed). Fibrillar measured via
+the NEAR-#3 virial tensor (G_virial), integrating #3+#4. figs/native_atlas.png. NEAR #4 modulus production
+done; per-material native full-extent VIEWERS = remaining half. Roadmap NEAR #1/#3/#4/#5 done this session.
