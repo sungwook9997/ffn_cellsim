@@ -177,3 +177,20 @@ central technical task of this mandate — without it, native migration is eithe
 - **Proceeding meanwhile (certain, KB-grounded deliverables):** the biphasic clutch cross-check (Chan-Odde /
   Bangasser, KB-1.5 stiffness, `--ecm-lp-um` sweep) and the `ecm_library` physiological-collagen integration
   (nematic-S alignment KB-1.9). These produce clean results while the migration-mechanism decision awaits the PI.
+
+### Tick 4 (05:30 KST) — biphasic κ-null → ecm_library integration → compliant matrix REVIVES migration
+- **Biphasic with `--ecm-lp-um` (κ) is FLAT** (`c4d75c8`): traction ~21 nN across Lp=2→2e5. The clutch feels a
+  K_SEG/crosslink/pin-dominated stiffness, not the bending κ → κ is the wrong knob. Need a network-modulus sweep.
+- **`ecm_library` integration (`71a41e0`):** `--ecm-material collagen_I` wires the parallel session's grounded
+  builder → PHYSICAL per-segment `seg_k` (real E_fibril, 17279 vs fixed K_SEG=5e4) + concentration→mesh (KB-1.7)
+  + nematic S (KB-1.9). The physical (softer) collagen remodels MORE + more coherently (coherence 0.14→0.58,
+  aligned 0.72). Realistically SPARSE (conc 1.5 → ξ~2µm, vs the old unphysical ξ=0.5µm dense Mikado).
+- **⭐ Compliant physiological collagen REVIVES migration (`343e54a`):** fully physiological native (collagen_I
+  conc=3, ξ=1.5µm, z=4.47; `--n-fa 150`; `--polarize --com-drag`): disp∥=+0.085µm, **v=0.57 nm/s — 6× the
+  stiff-collagen tests**, fibre RAI Δ=+0.010 (10×), nematic ΔS=+0.014 (3×). So the migration story is
+  stiffness-dependent: **stiff pinned collagen → remodel-in-place; compliant physiological collagen → directional
+  migration + fibre alignment EMERGE.** Still sub-physiological absolute speed (0.57 vs 10–30 nm/s) — a longer sim
+  / even-softer matrix / MMP pushes further. This is the compliant-matrix option (2) validated directionally.
+- **Next:** (a) physical biphasic (`--ecm-conc` sweep 1→30, normalise traction per bound clutch to remove the
+  attachment confound) → the real Chan-Odde inverted-U; (b) a longer compliant-collagen sim → visible migration +
+  alignment approaching the KB-1.9 tumor-stroma S band; (c) tumor-aligned S6 (`--ecm-align-s 0.6`); (d) MMP (PI).
