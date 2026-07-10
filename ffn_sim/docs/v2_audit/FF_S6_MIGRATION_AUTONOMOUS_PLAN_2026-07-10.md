@@ -262,6 +262,13 @@ Autonomous-decision log appended below as choices are made.
   migration biphasic in matrix density (peak conc 3), directionality↑ but speed sub-physiological.
 - **Two engine robustness fixes:** k_vol OverflowError hardening + a volume-EXPLOSION guard (clean truncation) —
   both genuine, normal-run-unaffected.
+- **ECM stress/strain/reorientation viz VERIFIED (PI HARD visual mandate):** the three ECM field scenes
+  (`collagen recruit` 0–169 nm displacement, `ECM tension` |ΔL|/L₀ tensile strain, `ECM reorientation` tangent-turn°)
+  render correctly in a real browser — collagen fibres coloured turbo by load, colorbars + two-way legend correct,
+  cell shown. Directly browser-checked (screenshots), not grep — caught+fixed that the full-res native HTML is
+  **277 MB** (6 scenes × cortex) which headless couldn't load (blank canvas): reduced to 3 temporal frames (spatial
+  res untouched, PI rule) → renders; and faded the cell to a 0.05 silhouette so the matrix field is the subject.
+  The native HTML stays a local artifact (>GitHub 100 MB), regenerable from the npz.
 
 **4 autonomous decisions (all KB/stability-grounded, NOT tuned-to-speed; full rationale in each commit):**
 1. mesenchymal `n_fa` 50→0→100→0: fewer FAs collapse traction (soft-arm) AND starve the MMP source; proteolytic
