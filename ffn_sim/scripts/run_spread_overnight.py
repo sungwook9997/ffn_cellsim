@@ -146,6 +146,10 @@ def main():
                     help="polarity persistence time tau_p [s] (cell directional persistence ~10 min).")
     ap.add_argument("--motility-seed", type=int, default=7, dest="motility_seed",
                     help="seed for the random per-cell polarity (ensemble over this for seed-robustness).")
+    ap.add_argument("--v0-um-min", type=float, default=0.0, dest="v0_um_min",
+                    help="SPV v0-mode: target physiological migration SPEED [µm/min] (~0.5-2). The per-node force is "
+                         "set from gamma_node·v0 so cells self-propel at v0, bounding CFL — the SPV-faithful, "
+                         "CFL-safe knob (overrides --f-active-nn when >0).")
     ap.add_argument("--division", action="store_true",
                     help="C7 rim-cell proliferation ON. Pair with --div-real-hours for TIME-CONSISTENT "
                          "division (cells divide at the MCF7 cycle rate over the run's represented real time).")
@@ -221,6 +225,7 @@ def main():
         cad_cluster=a.cad_cluster, cad_mature=a.cad_mature, cad_n_nascent=a.cad_n_nascent,
         active_motility=a.active_motility, f_active_N=a.f_active_nn * 1e-9,
         motility_persistence_s=a.motility_tau, motility_seed=a.motility_seed,
+        motility_v0_um_s=a.v0_um_min / 60.0,
         remesh_period=a.remesh_period,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement

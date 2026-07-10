@@ -39,13 +39,21 @@ class ActiveMotilityHost:
     """Per-cell polarity with rotational diffusion (persistent random walk). Host-updates p̂_c each batch;
     the device kernel applies F_active·p̂_c per cell every step."""
 
-    def __init__(self, *, n_cells: int, cof: np.ndarray, f_active_N: float,
-                 persistence_s: float = 600.0, planar: bool = True, seed: int = 7):
-        """f_active_N = whole-cell propulsion force [N] (physiological single-cell traction ~1e-8..1e-7 N).
-        persistence_s = polarity reorientation time τ_p (cell directional persistence, ~10 min lit).
-        planar = keep polarity in-plane (xy) so cells crawl ON the substrate (default), else 3D."""
+    def __init__(self, *, n_cells: int, cof: np.ndarray, f_active_N: float = 0.0,
+                 persistence_s: float = 600.0, planar: bool = True, seed: int = 7,
+                 v0_um_s: float = 0.0, gamma_node: float = 0.0):
+        """Two ways to set the self-propulsion (the SPV v0 axis):
+          - v0_um_s > 0 (PREFERRED, faithful to SPV): target a physiological migration SPEED v0 [µm/s]; the
+            per-node force = gamma_node·v0 so each cell self-propels at v0 (overdamped v=F/γ). Bounds the
+            velocity → bounds CFL → maps the phase diagram cleanly at any v0. gamma_node = the physiological
+            per-node Stokes drag (6π·η·R/npc) from the caller. (physiological cell speed ~0.5-2 µm/min.)
+          - f_active_N > 0 (legacy): a fixed whole-cell propulsion FORCE [N] (mesh-invariant per node); CFL
+            grows with F when the drag gives super-physiological speed.
+        persistence_s = polarity reorientation time τ_p (~10 min lit). planar = crawl in-plane (on substrate)."""
         self.n_cells = int(n_cells)
         self.f_active_N = float(f_active_N)
+        self.v0 = float(v0_um_s) * 1e-6            # µm/s → m/s
+        self.gamma_node = float(gamma_node)
         self.tau_p = float(persistence_s)
         self.planar = bool(planar)
         self._rng = np.random.default_rng(seed)
@@ -82,7 +90,11 @@ class ActiveMotilityHost:
 
     def upload(self, device):
         import warp as wp
-        fnode = (self.f_active_N / self._Nc).astype(np.float64)
+        if self.v0 > 0.0 and self.gamma_node > 0.0:
+            # target speed v0: per-node force = gamma_node·v0 → each node (hence the cell) moves at v0
+            fnode = np.full(self.n_cells, self.gamma_node * self.v0, dtype=np.float64)
+        else:
+            fnode = (self.f_active_N / self._Nc).astype(np.float64)
         if self._pol_d is None:
             self._pol_d = wp.zeros(self.n_cells, dtype=wp.vec3d, device=device)
             self._fnode_d = wp.array(fnode, dtype=wp.float64, device=device)

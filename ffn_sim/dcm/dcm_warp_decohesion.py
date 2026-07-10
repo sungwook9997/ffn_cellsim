@@ -275,7 +275,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cad_cluster: bool = False, cad_n_nascent: int = 4,
                    active_motility: bool = False, f_active_N: float = 0.0,
                    motility_persistence_s: float = 600.0, motility_planar: bool = True,
-                   motility_seed: int = 7,
+                   motility_seed: int = 7, motility_v0_um_s: float = 0.0,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -639,13 +639,19 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
 
     # Active per-cell self-propulsion (motility) — the active-matter unjamming lever (default OFF).
     mot = None
-    if active_motility and f_active_N > 0.0:
+    if active_motility and (f_active_N > 0.0 or motility_v0_um_s > 0.0):
         mot = ActiveMotilityHost(n_cells=n_cells, cof=cof_a, f_active_N=f_active_N,
                                  persistence_s=motility_persistence_s, planar=motility_planar,
-                                 seed=motility_seed)
+                                 seed=motility_seed, v0_um_s=motility_v0_um_s,
+                                 gamma_node=(1.0 / inv_gamma))
         mot.upload(device)
-        print(f"  [motility] F_active={f_active_N*1e9:.2f}nN/cell  tau_p={motility_persistence_s:.0f}s  "
-              f"planar={motility_planar} (active-matter unjamming test)", flush=True)
+        if motility_v0_um_s > 0.0:
+            print(f"  [motility] v0={motility_v0_um_s*60:.2f}um/min ({motility_v0_um_s*1e3:.1f}nm/s)  "
+                  f"tau_p={motility_persistence_s:.0f}s  gamma_node={1.0/inv_gamma:.2e} (SPV v0-mode, CFL-bounded)",
+                  flush=True)
+        else:
+            print(f"  [motility] F_active={f_active_N*1e9:.2f}nN/cell  tau_p={motility_persistence_s:.0f}s  "
+                  f"planar={motility_planar} (active-matter unjamming test)", flush=True)
 
     # B3 filopodia host (explicit finger protrusions; tips probe + adhere node-FACE to other
     # cells and node-to-plane to the dish). Additive; constructed only when --filopodia.
