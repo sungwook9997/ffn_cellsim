@@ -128,7 +128,27 @@ handles it and the spreading result is **dt-CONVERGED / trustworthy** (not a tim
 non-monotonicity was extreme-CFL (100 / 24812) over-capping only. → the unjamming spread + the cadherin/motility
 decoupling are quantitatively trustworthy at accel_dt ≤ 8e-4, F_active ≤ ~100 nN.
 
-## 5. Next (in progress)
+## 4f. SPV PERSISTENCE axis (2026-07-10) — both SPV axes reproduced; physiological persistence reaches s0*
+
+The SPV transition is set by BOTH the self-propulsion force AND the directional persistence τ_p (=1/Dr). At fixed
+F_active=100 nN, sweeping τ_p (seed 11; fig `dcm_unjamming_spv_persistence.png`; τ_p=30 s visually confirmed JAMMED):
+
+| τ_p [s] | A/A0 | shape index s | frac_unjammed |
+|---|---|---|---|
+| 30 | 1.04 | **4.922** (JAMMED = confined 4.93) | 0.02 |
+| 150 | 2.58 | 5.397 | 0.42 |
+| 600 (physiological ~10 min) | 2.19 | **5.408 ≈ s0\*** | 0.45 |
+| 3000 | 2.39 | **5.411 = s0\*** | 0.39 |
+
+**Sharp transition ~τ_p 100 s:** LOW persistence (30 s) → the motility reorients too fast, the net displacement
+cancels (DIFFUSIVE) → the tissue stays JAMMED (s=4.92, the no-motility confined value) DESPITE the same active force;
+τ_p ≥ 150 s (incl. the physiological ~10 min) → ballistic/directed motion → the tissue UNJAMS and the shape index
+reaches **s0*≈5.41** (the clean crossing). So a jammed tissue needs DIRECTED, not diffusive, motility. **Both SPV axes
+(F_active/v0 and persistence/Dr) are now reproduced on the DCM**, and at the PHYSIOLOGICAL operating point (F_active~100
+nN, τ_p~10 min) the shape index sits right at the unjamming threshold — the DCM tissue is poised at the jamming↔
+unjamming transition, exactly the SPV / KB-PIV-10 picture.
+
+## 5. Next
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
 - Resolve the fa150 non-monotonicity (CFL/velocity cap check); map A/A0, s, frac_unjammed vs F_active with ensembles
