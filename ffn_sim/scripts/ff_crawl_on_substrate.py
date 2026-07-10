@@ -81,7 +81,7 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
           from_resting=False, relax_steps=6000, relax_device="cpu",
           n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN, n_fa=0,
           ecm=False, ecm_fibers=1500, ecm_depth=4.0, ecm_capture=1.0, ecm_lp_um=20.0,
-          ecm_material="mikado", ecm_conc=1.5, ecm_align_s=0.0):
+          ecm_material="mikado", ecm_conc=1.5, ecm_align_s=0.0, myo_rear_bias=0.0):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
@@ -120,6 +120,14 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
     R = cx.R0_mean
     Nc = cx.net.n_nodes
     phat = np.asarray(phat, np.float64); phat = phat / np.linalg.norm(phat)
+    if myo_rear_bias > 0.0 and cx.myo_i.size:                  # MOTILE cell-type: relocate a fraction of minifilaments to the REAR cap
+        from ffn_sim.ff.gamma_floor import _cross_fiber_pairs, mesoscale_reach   # (SE248 Betorz2023: rear = more active myosin) — force-conserving (same n_myo/stall)
+        _com = cx.net.pos.mean(0); _rear = ((cx.net.pos - _com) @ phat) < -0.2 * R   # trailing-cap nodes (Rho-active rear)
+        _nrel = int(round(myo_rear_bias * cx.myo_i.size))
+        _rp = _cross_fiber_pairs(cx.net, mesoscale_reach(R, n_cortex_fil), _nrel, rng, node_mask=_rear)
+        _k = min(_nrel, _rp.shape[0])
+        if _k:                                                 # localise contraction to the rear → pulls the body toward the anchored front
+            cx.myo_i[:_k] = _rp[:_k, 0]; cx.myo_j[:_k] = _rp[:_k, 1]
     nuc = resolve_nucleus(R_nuc_um=0.70 * R, n_beads=3000)     # 0.70R: MCF7 nucleus (Moore2016 0.68-0.77, PI-ratified 2026-07-07;
     #                                                            Ø~12µm ≈ 0.8R, N:C 1.9 ~50% cell vol) — was 0.25R (~3× too small)
     mem = resolve_membrane(f_excess=f_excess)                 # from_resting → 0.25 reservoir (checkpoint); else plateau
@@ -891,11 +899,29 @@ def main():
     ap.add_argument("--relax-steps", type=int, default=6000, help="pre-relaxation steps to the resting set-point (--from-resting)")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
+    ap.add_argument("--cell-type", default="mcf7_epithelial", help="migration cell-type preset (ffn_sim.ff.cell_type): "
+                    "'mcf7_epithelial' (default = current behaviour, isotropic, poorly-migratory) or 'mesenchymal'/'emt' "
+                    "(KB-3.11/SE248: front-Rac protrusion + rear-Rho contraction + walking adhesions → directional crawl). "
+                    "The preset sets --polarize/--ecm-regrip/--n-fa/--front-frac/--myo-rear-bias; an explicit CLI flag overrides.")
+    ap.add_argument("--front-frac", type=float, default=None, help="leading-edge cap fraction (None→cell-type: epithelial 0.5 broad, mesenchymal 0.6 single dominant front)")
+    ap.add_argument("--myo-rear-bias", type=float, default=None, help="fraction of minifilaments relocated to the REAR cap "
+                    "(None→cell-type: epithelial 0.0 uniform, mesenchymal 0.7; SE248 rear-myosin, force-conserving)")
     args = ap.parse_args()
     wp.init(); t0 = time.time()
+    from ffn_sim.ff.cell_type import resolve_cell_type
+    _prof = resolve_cell_type(args.cell_type)                  # cell-type preset; explicit CLI flags override the preset
+    _polarize = bool(args.polarize or _prof.polarize)
+    _regrip = bool(args.ecm_regrip or _prof.ecm_regrip)
+    _n_fa = args.n_fa if args.n_fa else _prof.n_fa
+    _front_frac = args.front_frac if args.front_frac is not None else _prof.front_frac
+    _rear_bias = args.myo_rear_bias if args.myo_rear_bias is not None else _prof.myo_rear_bias
+    if _prof.name != "mcf7_epithelial":
+        print(f"[cell-type] {_prof.name}: polarize={_polarize} ecm_regrip={_regrip} front_frac={_front_frac} "
+              f"myo_rear_bias={_rear_bias} n_fa={_n_fa}")
     if args.microtubules and not args.implicit:
         print("[!] --microtubules needs the implicit solver (MT bending rides K); add --implicit for production.")
-    S = build(n_cortex_fil=args.cortex_fil, seed=args.seed, n_fa=args.n_fa, length_dist=args.fil_length_dist,
+    S = build(n_cortex_fil=args.cortex_fil, seed=args.seed, n_fa=_n_fa, length_dist=args.fil_length_dist,
+              front_frac=_front_frac, myo_rear_bias=_rear_bias,
               microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
               n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0),
@@ -920,7 +946,7 @@ def main():
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
             fa_maturation=args.fa_maturation, treadmill=args.treadmill, bulk_drag=args.bulk_drag,
             rear_depoly=args.rear_depoly, flow=args.flow, v_retro_um_s=args.v_retro,
-            com_drag=args.com_drag, ecm_regrip=args.ecm_regrip, polarize=args.polarize, kmc_every=args.kmc_every, device=args.device)
+            com_drag=args.com_drag, ecm_regrip=_regrip, polarize=_polarize, kmc_every=args.kmc_every, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
