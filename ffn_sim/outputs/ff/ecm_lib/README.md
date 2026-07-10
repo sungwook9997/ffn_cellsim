@@ -81,22 +81,41 @@ target order within a few percent.
    viscoelasticity (Chaudhuri → cell fate). `figs/stress_relaxation.png` (`ff_ecm_viscoelastic.py`).
 4. **Durotaxis stiffness-gradient substrate** — spatially-graded local modulus (1/10/100 Pa/µm, KB-1.V.1.3),
    probed by indenting along the gradient axis. `figs/durotaxis_gradient.png` (`ff_ecm_gradient.py`).
+5. **Full virial Cauchy stress tensor + negative-normal-stress diagnostic** — `ecm_material_stress→σ[3,3]`
+   (one grid-invariant stress; method-independence proven: energy==virial, reaction is the outlier). N1=σ_xx−σ_zz
+   under shear: model N1>0 (stretch-dominated) vs literature N1<0 (Janmey, bending) — an INDEPENDENT confirmation
+   of the c-scaling regime (`figs/normal_stress_N1.png`, `CSCALING_REGIME_FINDING.md`).
+
+## Cell in the ECM (the library's purpose — ROADMAP execution)
+
+A resting full-compartment cell (cortex+turgor+membrane+nucleus) adhered to a substrate SENSES its stiffness:
+engaged-clutch traction rises with E (0→0.090 nN over 150 Pa–40 kPa) with an engagement threshold (bound
+0.02@150Pa → 0.80@2kPa) = the durotaxis basis — **native A5000-confirmed** (Nc=266000). `ff_stiffness_sensing.py`,
+`figs/stiffness_sensing_native.png`. Development plan in **`ROADMAP.md`** (NEAR/MID/FAR; the living-substrate vision).
 
 ## Code
 
 | file | role |
 |---|---|
-| `ffn_sim/ff/ecm_library.py` | `ECMSpec` registry, nematic-S sampler, 2D/3D fibrillar + continuum builders, composites |
-| `ffn_sim/ff/ecm_mechanics.py` | shear / uniaxial / indentation → Pa; strain-stiffening; continuum calibration |
+| `ffn_sim/ff/ecm_library.py` | `ECMSpec` registry (+PA recipe ladder, target_z), nematic-S sampler, 2D/3D fibrillar + continuum + gradient builders, composites |
+| `ffn_sim/ff/ecm_mechanics.py` | shear/uniaxial/indentation → Pa; strain-stiffening; viscoelastic G(t); **full virial tensor** `ecm_material_stress`; `shear_stress_curve` (σ_xz/N1/K); continuum calibration |
 | `ffn_sim/scripts/ff_ecm_validate.py` | per-material validation + concentration/alignment/dim/composite + figures |
-| `ffn_sim/scripts/ff_ecm_novelty.py` | emergent strain-stiffening + mode-decoupling |
-| `ffn_sim/scripts/ff_ecm_viewer.py` | standalone ECM HTML gallery (fibers+crosslinks) + native npz viewer |
+| `ffn_sim/scripts/ff_ecm_pa_ladder.py` | PA gel by acrylamide/bis recipe (150 Pa–40 kPa), pressed E_eff vs recipe |
+| `ffn_sim/scripts/ff_ecm_fibrin_conc.py` | fibrin G'(c) per-concentration (Piechocka band) |
+| `ffn_sim/scripts/ff_ecm_novelty.py` | strain-stiffening + shear↔indentation mode-decoupling |
+| `ffn_sim/scripts/ff_ecm_viscoelastic.py` | stress-relaxation τ∝1/k_off (KB-1.6) |
+| `ffn_sim/scripts/ff_ecm_gradient.py` | durotaxis stiffness-gradient substrate |
+| `ffn_sim/scripts/ff_ecm_indent_viz.py` | animated indentation viewer (dimple) + F(δ) Hertz figure |
+| `ffn_sim/scripts/ff_ecm_viewer.py` | standalone ECM HTML gallery + native npz viewer |
 | `ffn_sim/scripts/ff_ecm_native.py` | native 5R×5R full-extent build + GPU indentation (A5000) |
+| `ffn_sim/scripts/ff_stiffness_sensing.py` | resting cell senses substrate E (durotaxis basis, native-confirmed) |
 
-Reproduce:  `python -m ffn_sim.scripts.ff_ecm_validate` · `... ff_ecm_novelty` · `... ff_ecm_viewer`.
-Native (gbook): `python -m ffn_sim.scripts.ff_ecm_native --device cuda:0`.
+Reproduce:  `python -m ffn_sim.scripts.ff_ecm_validate` · `... ff_ecm_pa_ladder` · `... ff_ecm_novelty` ·
+`... ff_ecm_viscoelastic` · `... ff_ecm_gradient` · `... ff_ecm_indent_viz` · `... ff_ecm_viewer`.
+Native (gbook A5000): `... ff_ecm_native --device cuda:0` · `... ff_stiffness_sensing --nf 38000 --device cuda:0`.
 
 ## KB
 
-New DOI-verified material claims (PA/fibrin/Matrigel/agarose/HA) staged for the Notion Contract-Graph in
-`KB_ECM_MATERIALS_REGISTRATION.md` (collagen-I and PAA-substrate were already in the KB).
+DOI-verified material claims **REGISTERED** to the Notion Contract-Graph + duckdb as **KB-1.V.4.1 PA · 4.2
+fibrin · 4.3 Matrigel · 4.4 agarose · 4.5 HA** (status=verified, 21 SourceEvidence rows + Claim→Evidence
+relations wired; collagen-I + PAA already present). Detail: `KB_ECM_MATERIALS_REGISTRATION.md`.
