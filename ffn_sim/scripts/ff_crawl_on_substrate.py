@@ -250,7 +250,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
         treadmill=False, rear_depoly=False, flow=False, cortex_treadmill=True, v_retro_um_s=0.03, bulk_drag=False,
-        com_drag=False, ecm_regrip=False, polarize=False, refresh_every=50, reshape_every=20, kmc_every=2000,
+        com_drag=False, ecm_regrip=False, polarize=False, mmp=False, mmp_kdeg=1.0e-3, mmp_lambda=4.5,
+        mmp_every=50, refresh_every=50, reshape_every=20, kmc_every=2000,
         xl_turn_every=50, assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
@@ -744,6 +745,19 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                       wp.float64(mp.kT), wp.float64(mp.k_refold), wp.float64(mp.k_rec), wp.float64(mp.k_diss), wp.float64(mp.n_max), wp.float64(dt * kmc_every)], device=d)
             wp.launch(fa_growth_kernel, dim=M, inputs=[load_d, area_d, wp.float64(mp.kg0), wp.float64(mp.kd), wp.float64(mp.n_hill), wp.float64(mp.fth), wp.float64(dt * kmc_every)], device=d)
             wp.launch(fa_disassemble_kernel, dim=M, inputs=[area_d, bd_d, wp.float64(0.1)], device=d)   # sub-threshold FAs unbind (force-gated adhesion)
+        if mmp and ecm_on and clutches and step % mmp_every == 0 and step > 0:   # MMP PROTEOLYSIS (KB-1.20): the leading edge secretes MMP
+            _ep = Ep_d.numpy(); _bh = bd_d.numpy(); _enb = np.asarray(S["ecm_node"])   # → degrades collagen ahead → opens the invasion channel
+            _bas = pos_d.numpy()[S["basal"]]; _cmf = pos_d.numpy()[:Nc].mean(0)
+            _sec = (_bh > 0) & (_enb >= 0) & (((_bas - _cmf) @ phat) > 0.0)     # FRONT bound clutches secrete MMP (leading edge)
+            if _sec.any():
+                _dist, _ = cKDTree(_ep[_enb[_sec]]).query(_ep)                  # distance of each collagen node to the nearest secreting front node
+                _rho = np.exp(-_dist / max(mmp_lambda, 1e-6))                   # MMP field ρ∈(0,1] (quasi-steady diffusive halo λ=√(2·D·τ)≈4.5µm)
+                _dec = float(np.exp(-mmp_kdeg * (dt * mmp_every)))              # saturating per-tick stiffness loss (KB-1.20 k_deg~1e-3/s)
+                _sk = Esegk_d.numpy(); _sk *= _dec ** (0.5 * (_rho[_Eseg[:, 0]] + _rho[_Eseg[:, 1]]))   # d(seg_k)/dt=-k_deg·ρ·seg_k, ρ-weighted
+                _sk[_sk < 100.0] = 0.0; Esegk_d.assign(_sk)                     # SEVER (seg_k→0) a fully-degraded segment (KB-1.20 remove at L_f<L_min)
+                if _Exl.shape[0]:
+                    _xk = Exlk_d.numpy(); _xk *= _dec ** (0.5 * (_rho[_Exl[:, 0]] + _rho[_Exl[:, 1]]))
+                    _xk[_xk < 10.0] = 0.0; Exlk_d.assign(_xk)                   # crosslinks cleaved too (network locally softens)
         if ecm_on:                                             # S6: SUBSTEP the collagen under the cell's clutch traction → REMODEL
             if clutches:                                       # only ENGAGED clutches grip the collagen (catch-slip release stops pulling;
                 wp.launch(mask_ecm_by_bound_kernel, dim=M, inputs=[en_base_d, bd_d, en_d], device=d)   # OFF control → no grip → remodel is traction-driven)
@@ -797,6 +811,9 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         Fclutch = cp.k_int * np.maximum(L - cp.rest_um, 0.0) * bd
     ecm_metrics = (ecm_remodel_metrics(ecm_pos0, ecm_posf, S["ecm_node"], S["basal"], xp,
                                        S["ecm"].net.fiber_offsets) if ecm_on else None)   # S6: coherent-remodel decomposition
+    if ecm_metrics is not None and mmp:                        # MMP: how much collagen the leading edge proteolysed (severed segments)
+        _skf = Esegk_d.numpy(); ecm_metrics["mmp_severed"] = int((_skf == 0.0).sum())
+        ecm_metrics["mmp_severed_frac"] = float((_skf == 0.0).mean())
     # ---- CONTACT / ADHESION diagnostics (foundation state) ----
     pcx = xp[:Nc]                                              # cortex nodes only
     zc = pcx[:, 2] - z_sub                                     # cortex node height above the substrate plane
@@ -899,6 +916,13 @@ def main():
     ap.add_argument("--relax-steps", type=int, default=6000, help="pre-relaxation steps to the resting set-point (--from-resting)")
     ap.add_argument("--tag", default="crawl")
     ap.add_argument("--out", default="ffn_sim/outputs/ff")
+    ap.add_argument("--mmp", action="store_true", help="MMP PROTEOLYTIC INVASION (KB-1.20): the leading edge secretes MMP that "
+                    "degrades collagen fibres/crosslinks ahead (d(seg_k)/dt=-k_deg·ρ_MMP·seg_k; sever when fully degraded), opening "
+                    "an invasion channel the cell advances into. The cancer-mesenchymal invasion mode (needs --ecm; pair with "
+                    "--cell-type mesenchymal --com-drag). Default off (KB-1.20: static ECM is Phase-1; invasion is Phase-3+).")
+    ap.add_argument("--mmp-kdeg", type=float, default=1.0e-3, help="MMP collagen degradation rate k_deg [1/s] at saturating MMP (KB-1.20 Wolf2013)")
+    ap.add_argument("--mmp-lambda", type=float, default=4.5, help="MMP diffusive halo λ=√(2·D·τ) [µm] (KB-1.20 D_MMP≈10 µm²/s → ~4.5µm front channel)")
+    ap.add_argument("--mmp-every", type=int, default=50, help="steps between MMP degradation ticks (proteolysis is slow, tens of min)")
     ap.add_argument("--cell-type", default="mcf7_epithelial", help="migration cell-type preset (ffn_sim.ff.cell_type): "
                     "'mcf7_epithelial' (default = current behaviour, isotropic, poorly-migratory) or 'mesenchymal'/'emt' "
                     "(KB-3.11/SE248: front-Rac protrusion + rear-Rho contraction + walking adhesions → directional crawl). "
@@ -946,7 +970,8 @@ def main():
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
             fa_maturation=args.fa_maturation, treadmill=args.treadmill, bulk_drag=args.bulk_drag,
             rear_depoly=args.rear_depoly, flow=args.flow, v_retro_um_s=args.v_retro,
-            com_drag=args.com_drag, ecm_regrip=_regrip, polarize=_polarize, kmc_every=args.kmc_every, device=args.device)
+            com_drag=args.com_drag, ecm_regrip=_regrip, polarize=_polarize, mmp=args.mmp, mmp_kdeg=args.mmp_kdeg,
+            mmp_lambda=args.mmp_lambda, mmp_every=args.mmp_every, kmc_every=args.kmc_every, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
@@ -961,6 +986,9 @@ def main():
               f"densification(footprint-radial)={_m['dens_nm']:+.1f} nm  settling(dz)={_m['dz_nm']:+.1f} nm  coherence={_m['coh']:.2f}")
         print(f"[ECM-ALIGN]   fiber radial-alignment index (near footprint) {_m['rai0']:.3f} → {_m['raif']:.3f}  "
               f"(Δ={_m['drai']:+.3f}; >0 = fibers reorient toward the cell)  attached={_m['n_grip']}/{_en.size}")
+        if "mmp_severed" in _m:
+            print(f"[MMP]         proteolysed {_m['mmp_severed']} collagen segments ({_m['mmp_severed_frac']*100:.1f}%) "
+                  f"at the leading edge (invasion channel)")
     if args.piezo:                                             # Piezo1 tension reporter (KB-3.10, diagnostic; feedback OFF)
         pz = resolve_piezo(); g_mem = S["mem"].gamma_mem
         print(f"[Piezo] membrane tension {g_mem:.1f} pN/µm → P_open={float(p_open(g_mem, pz)):.4f} (rest≈closed; opens as tension→γ_half=5000; feedback gain=0)")
