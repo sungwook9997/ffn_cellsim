@@ -185,6 +185,24 @@ REGISTRY: dict[str, ECMSpec] = {
 }
 
 
+# Polyacrylamide gel formulations: (total acrylamide %(w/v), bis-acrylamide %(w/v)) → measured Young's E [Pa]
+# + the tissue that stiffness mimics. Anchors are DOI-verified (KB-1.V.4.1): Subramani 2020 (AFM+rheo) for
+# the four *bis-verified points, plus the Tse-Engler / Engler-2006 tissue-stiffness ladder. This is how PA is
+# specified in practice — by the acrylamide/bis recipe, which sets E — so the library builds PA "by
+# concentration" (recipe → E → continuum) exactly as an experimentalist casts a gel.
+PA_FORMULATIONS: tuple = (
+    # (name, acrylamide%, bis%, E_Pa, tissue mimicked)
+    ("3/0.06", 3.0, 0.06, 150.0, "brain / neural (soft, neurogenic ~0.1-1 kPa, Engler 2006)"),
+    ("8/0.01", 8.0, 0.01, 620.0, "fat / marrow / very soft stroma (Subramani 2020, AFM+rheo)"),
+    ("5/0.10", 5.0, 0.10, 1970.0, "soft tissue (Subramani 2020)"),
+    ("8/0.06", 8.0, 0.06, 3400.0, "spreading threshold ~3 kPa (Yeung 2005)"),
+    ("8/0.20", 8.0, 0.20, 7930.0, "muscle-range (Subramani 2020)"),
+    ("8/0.40", 8.0, 0.40, 13000.0, "striated muscle / stiff (Subramani 2020)"),
+    ("12/0.15", 12.0, 0.15, 25000.0, "osteoid / pre-calcified bone (osteogenic, Engler 2006)"),
+    ("15/0.20", 15.0, 0.20, 40000.0, "stiff osteoid ceiling (~40 kPa, Tse-Engler)"),
+)
+
+
 def get_spec(key: str) -> ECMSpec:
     """Look up an :class:`ECMSpec` by key or alias (case-insensitive)."""
     if key in REGISTRY:
@@ -721,6 +739,15 @@ def build_composite(components, box_lo, box_hi, *, dim: int = 3, interlink_um: f
                       meta={"components": [c["material"] for c in components], "n_nodes": merged_net.n_nodes})
 
 
+def pa_formulation_E(name: str) -> tuple[float, str]:
+    """Look up a PA-gel recipe's Young's modulus E [Pa] + mimicked tissue by formulation name
+    (e.g. ``"8/0.20"`` = 8% acrylamide / 0.2% bis). See :data:`PA_FORMULATIONS`."""
+    for nm, acr, bis, E, tissue in PA_FORMULATIONS:
+        if nm == name:
+            return E, tissue
+    raise KeyError(f"unknown PA formulation {name!r}; known: {[f[0] for f in PA_FORMULATIONS]}")
+
+
 __all__ = ["ECMSpec", "REGISTRY", "get_spec", "ECMNetwork", "sample_orientations",
            "build_fibrillar_ecm", "build_continuum_ecm", "build_ecm", "build_composite",
-           "build_gradient_ecm", "fibers_for_concentration"]
+           "build_gradient_ecm", "fibers_for_concentration", "PA_FORMULATIONS", "pa_formulation_E"]

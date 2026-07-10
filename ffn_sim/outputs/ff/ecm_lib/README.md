@@ -35,7 +35,7 @@ Units: FF µm·pN·s → **1 pN/µm² = 1 Pa** exactly, so all moduli come out d
 |---|---|---|---|
 | collagen-I | fibrillar·G | 12 Pa | 5–100 (Yang-Kaufman G'(1.5mg/mL)≈11) |
 | fibrin | fibrillar·G | 63 Pa | 10–1000 (Piechocka) |
-| polyacrylamide | continuum·E | 3.4 kPa | 0.1–40 kPa (Tse-Engler) |
+| polyacrylamide | continuum·E | 3.4 kPa (default); **full ladder 150 Pa–40 kPa by recipe** | 0.1–40 kPa (Tse-Engler) |
 | hyaluronic acid | continuum·E | 309 Pa | 10–3000 (brain-mimetic) |
 | Matrigel | continuum·E | 411 Pa | 30–900 (Soofi AFM 450) |
 | agarose | continuum·E | 14 kPa | 1–100 kPa (Normand) |

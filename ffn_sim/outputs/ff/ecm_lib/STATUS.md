@@ -108,3 +108,13 @@ existing datum, NOT tuned to n. At fixed physical ⟨z⟩=3.2 → clean c^1.04 (
 connectivity prediction); reference G(1.5mg/mL)=13.4 Pa still matches. Default None (backward-compat).
 The c-scaling investigation is now cleanly closed: physical ⟨z⟩ controllable; c²≈2 needs a PI-decided ⟨z⟩(c)
 GROWTH law (collagen LOX biology), not an n-fit.
+
+## Checkpoint 8 (2026-07-10) — PI feedback: PA by concentration + indentation visualized
+PI asked: (1) is PA gel done per-concentration? (2) how is the pressing measured — visualize it.
+- **PA by recipe/concentration**: PA_FORMULATIONS table (8 recipes, acrylamide%/bis% → E, KB-1.V.4.1 Subramani
+  + Engler tissue ladder) + pa_formulation_E(); ff_ecm_pa_ladder.py builds each and PRESSES it — indentation
+  E_eff reproduces the recipe Pa across **150 Pa–40 kPa** (uniaxial exact on 1:1; indent ~0.6-0.7× continuum
+  factor). figs/pa_stiffness_ladder.png.
+- **Indentation visualized**: ff_ecm_indent_viz.py — progressive spherical indentation, animated 3D HTML
+  (cross-section + full-3D scenes, bead descending into gel) + figs/indent_curve.png (the DIMPLE surface
+  profile deepening + the measured F(δ) with Hertz fit F=(4/3)E*√R·δ^1.5). All eye-verified in browser.
