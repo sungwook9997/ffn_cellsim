@@ -25,7 +25,7 @@ import time
 
 import numpy as np
 import warp as wp
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull, cKDTree
 
 from ffn_sim.ff.gamma_floor import (build_crosslinked_cortex, CortexParams, TURGOR_DP0, TURGOR_PI_IN0,
                                     VMIN_FRAC, NMIIA_MINIFIL_STALL_PN)
@@ -236,8 +236,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         spread=False, rupture=True, gravity=True, delta_rho=55.0, koff_xl=0.4, implicit=False, dt_impl=1.0e-2,
         assembly=False, k_assembly=0.4, growth=False, myosin_linear=False, substrate_E=0.0, fa_maturation=False,
         treadmill=False, rear_depoly=False, flow=False, cortex_treadmill=True, v_retro_um_s=0.03, bulk_drag=False,
-        com_drag=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50, assembly_every=20,
-        record_every=2500, device="cpu"):
+        com_drag=False, ecm_regrip=False, refresh_every=50, reshape_every=20, kmc_every=2000, xl_turn_every=50,
+        assembly_every=20, record_every=2500, device="cpu"):
     """PHYSICAL-TIME crawl via a single EXPLICIT overdamped loop (CFL-stable — cannot diverge) + cortical
     crosslink turnover. Every force ticks at the same physical ``dt`` (= safety·γ_min/kmax, ~5.5 µs — set by
     the stiff α-actinin crosslinks) and every node (cortex + membrane law + nucleus) co-moves in real time:
@@ -697,8 +697,18 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             else:
                 reb = can & (np.random.default_rng(step).random(M) < p_on)
             if reb.any():
-                anchors[reb, 0] = p[S["basal"][reb], 0]; anchors[reb, 1] = p[S["basal"][reb], 1]
-                anchors[reb, 2] = z_sub; bd[reb] = 1
+                if ecm_on and ecm_regrip:                      # S6 MIGRATION: the rebinding clutch RE-GRIPS the nearest CURRENT collagen
+                    _ep = Ep_d.numpy(); _ri = np.where(reb)[0]  # node under it (KB-1.23 FA captures fibres within R_FA≈1.5µm) — as the
+                    _dq, _jq = cKDTree(_ep).query(p[S["basal"][reb]], k=1)   # cell protrudes forward, front clutches grab NEW fibres ahead,
+                    _ok = _dq <= 1.5                            # rear clutches (no fibre in reach) stay released → the grip rolls forward
+                    _enb = en_base_d.numpy()
+                    _enb[_ri[_ok]] = _jq[_ok].astype(np.int32)  # re-map the clutch→collagen node (drives en_d at the force sites next step)
+                    en_base_d.assign(_enb)
+                    anchors[_ri[_ok]] = _ep[_jq[_ok]]           # seat the catch-slip anchor at the new node
+                    bd[_ri[_ok]] = 1                            # only clutches that found collagen bind
+                else:
+                    anchors[reb, 0] = p[S["basal"][reb], 0]; anchors[reb, 1] = p[S["basal"][reb], 1]
+                    anchors[reb, 2] = z_sub; bd[reb] = 1
                 anch_d.assign(anchors); bd_d.assign(bd)
         if fa_maturation and clutches and step % kmc_every == 0 and step > 0:   # FA MATURATION mechanosensor (KB-2.x)
             wp.launch(clutch_load_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int), wp.float64(cp.rest_um), load_d], device=d)
@@ -800,6 +810,10 @@ def main():
                     "clutches to fiber nodes (BUILD-side; the FA↔ECM run() coupling is the next PI-overseen step — FF_S4_INTEGRATION_DESIGN). "
                     "Validated path untouched: with --ecm alone the crawl still uses the fixed-substrate clutch.")
     ap.add_argument("--ecm-fibers", type=int, default=1500, help="collagen-I fiber count for the --ecm Mikado slab")
+    ap.add_argument("--ecm-regrip", action="store_true", help="S6 MIGRATION: rebinding basal clutches RE-GRIP the nearest "
+                    "CURRENT collagen fibre (KB-1.23 FA-captures-fibres, R_FA≈1.5µm) instead of staying tethered to their "
+                    "frame-0 node — so as the cell protrudes, front clutches grab NEW fibres ahead + rear releases → the cell "
+                    "WALKS across the collagen (needs --ecm; pair with --com-drag). Default off = validated remodel-in-place path.")
     ap.add_argument("--ecm-lp-um", type=float, default=20.0, help="collagen fiber persistence length Lp [µm] → κ=kBT·Lp "
                     "(the BIPHASIC-sweep stiffness knob; default 20 = LP_COLLAGEN_UM; thin-fibril→thick-bundle range 2–2e5, PI-gated). "
                     "Chan-Odde/Bangasser cross-check: clutch traction should peak at an intermediate effective stiffness.")
@@ -875,7 +889,7 @@ def main():
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
             fa_maturation=args.fa_maturation, treadmill=args.treadmill, bulk_drag=args.bulk_drag,
             rear_depoly=args.rear_depoly, flow=args.flow, v_retro_um_s=args.v_retro,
-            com_drag=args.com_drag, kmc_every=args.kmc_every, device=args.device)
+            com_drag=args.com_drag, ecm_regrip=args.ecm_regrip, kmc_every=args.kmc_every, device=args.device)
     tag_mode = "SPREAD" if args.spread else ("STATIC adhere" if args.static else "CRAWL clutch ON")
     print(f"[{tag_mode}] dt={r['dt']*1e3:.3g} ms  T={r['times'][-1]:.1f} s  "
           f"disp∥={r['disp_along_um']:+.3f} µm  v_crawl={r['v_crawl_nm_s']:+.2f} nm/s  "
