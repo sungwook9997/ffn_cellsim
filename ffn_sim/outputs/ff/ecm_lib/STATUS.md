@@ -134,3 +134,11 @@ baseline (ΔP=40.5 Pa, γ=0.153, V/V0=0.998); traction rises 0→0.078 nN with a
 (bound 0.01@150Pa → 0.80@2kPa) = durotaxis basis. E=input, k_sub=derived, optimum=measured (no tuning).
 Biphasic PEAK needs native (denser myosin → higher per-clutch load shifts the optimum into range) — native
 --nf 38000 A5000 run LAUNCHED. Path (a) (grip the actual library ECM network) = documented next increment.
+
+## Checkpoint 11 (2026-07-10) — ROADMAP NEAR #3: full virial Cauchy stress tensor
+ecm_material_stress(ecm,pos)→σ[3,3]: crosslink+segment central-bond virial + bending atomic virial (full
+tensor generalizing the xz functions). shear_modulus now returns G_virial. Method-independence PROVEN:
+PA continuum G_energy=G_virial=G_react=1522 Pa (all agree); collagen sparse G_energy=16.1 ≈ G_virial=16.4
+(0.98×, agree) while G_reaction=1.4 (11× low = the unreliable route). So the virial (grid-invariant truth)
+CONFIRMS the energy route is accurate and identifies reaction as the outlier — resolving the two-readout
+inconsistency. Unblocks the nonlinear master curve + N1 + r^-n (all are components of this one tensor).

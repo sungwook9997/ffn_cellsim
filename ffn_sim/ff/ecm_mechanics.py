@@ -267,13 +267,15 @@ def shear_modulus(ecm, *, gamma: float = 0.02, n_steps: int = 4000, axial_mode: 
     dev = _to_device(ecm, pairs, klink, rlink, device)
     relaxed = _relax(dev, ecm, fixed, use_reshape=use_reshape, n_steps=n_steps)
     Fx = _reaction_on(dev, top, axis=0)
+    sig = ecm_material_stress(ecm, relaxed, device=device) if not use_reshape else None  # full virial tensor
     ecm.net.pos[:] = pos0                                       # restore (leave the ECM object undeformed)
     V = float(np.prod(hi - lo))
     U = _elastic_energy(ecm, relaxed, use_spring=not use_reshape)
     G = 2.0 * U / (V * gamma ** 2)                              # energy route (primary) — pN/µm² = Pa
     area = (hi[0] - lo[0]) * (hi[1] - lo[1])
     G_reaction = abs(Fx / area) / gamma                         # boundary-reaction route (cross-check)
-    return {"G_Pa": G, "G_reaction_Pa": G_reaction, "U_pN_um": U, "gamma": gamma,
+    G_virial = abs(float(sig[0, 2])) / gamma if sig is not None else float("nan")  # σ_xz/γ (grid-invariant)
+    return {"G_Pa": G, "G_reaction_Pa": G_reaction, "G_virial_Pa": G_virial, "U_pN_um": U, "gamma": gamma,
             "V_um3": V, "n_top": int(top.sum()), "n_bot": int(bot.sum())}
 
 
@@ -479,6 +481,36 @@ def _bending_virial_sigma_xz(net, pos, V, device="cpu") -> float:
     return float(0.5 * np.sum(pos[:, 0] * fb[:, 2] + pos[:, 2] * fb[:, 0]) / V)
 
 
+def ecm_material_stress(ecm, pos, device="cpu") -> np.ndarray:
+    """Full macroscopic virial (Cauchy) stress tensor σ[3,3] of an ECM network at ``pos`` [Pa].
+
+    σ_ab = (1/V)·[ Σ_bonds (F/L)·r_a·r_b  +  ½·Σ_i (r_a·f_bend_b + r_b·f_bend_a) ] — the crosslink + segment
+    central-bond virial (symmetric, F=k(L−r₀) the bond tension) plus the bending atomic virial (origin-
+    independent since bending forces are per-triple force- and torque-balanced). This is the ONE grid-invariant
+    macroscopic stress readout: any modulus/normal-stress is a component of it (G=σ_xz/γ, E=σ_zz/ε, N1=σ_xx−σ_zz).
+    Generalizes ``_bond_virial_sigma_xz``/``_bending_virial_sigma_xz`` from the xz component to the full tensor;
+    same convention as the cortex ``ff_virial_stress`` (1 pN/µm²=1 Pa). Bending term is zero for continuum gels."""
+    V = float(np.prod(np.asarray(ecm.box_hi) - np.asarray(ecm.box_lo)))
+    sig = np.zeros((3, 3))
+    for i, j, k, r0 in ((ecm.xl_i, ecm.xl_j, ecm.xl_k, ecm.xl_rest),
+                        (ecm.seg_i, ecm.seg_j, ecm.seg_k, ecm.seg_rest)):
+        if getattr(i, "size", 0):
+            d = pos[j] - pos[i]
+            L = np.linalg.norm(d, axis=1) + 1e-12
+            f_over_L = k * (L - r0) / L                         # bond tension / length
+            sig += np.einsum("n,na,nb->ab", f_over_L, d, d) / V
+    if ecm.net.bend_triples.shape[0]:
+        from ffn_sim.ff.forces_warp import bending_force
+        saved = ecm.net.pos
+        ecm.net.pos = pos
+        try:
+            fb = bending_force(ecm.net, device=device)
+        finally:
+            ecm.net.pos = saved
+        sig += 0.5 * (pos.T @ fb + fb.T @ pos) / V
+    return sig
+
+
 def stress_relaxation(ecm, *, gamma0=0.1, koff0_per_s=0.01, x_beta_nm=0.4, dt_real_s=None,
                       t_total_s=None, n_record=24, mech_substeps=150, device="cpu") -> dict:
     """Viscoelastic stress-relaxation G(t): step shear γ₀, then let CROSSLINKS turn over (Bell slip,
@@ -588,4 +620,4 @@ def calibrate_continuum_k(spec, box_lo, box_hi, *, dim=3, node_spacing_um=2.0, p
 
 __all__ = ["shear_modulus", "uniaxial_modulus", "anisotropy", "indentation_modulus",
            "hertz_E_from_force", "calibrate_continuum_k", "shear_energy", "strain_stiffening",
-           "stress_relaxation"]
+           "stress_relaxation", "ecm_material_stress"]
