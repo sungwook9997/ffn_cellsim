@@ -160,3 +160,16 @@ fibrin 78.7 (74.7k), PA 3654, HA 331, Matrigel 439, agarose 16117 Pa — ALL in 
 MATCHES its small-REV value (modulus is intensive → REV↔native consistency confirmed). Fibrillar measured via
 the NEAR-#3 virial tensor (G_virial), integrating #3+#4. figs/native_atlas.png. NEAR #4 modulus production
 done; per-material native full-extent VIEWERS = remaining half. Roadmap NEAR #1/#3/#4/#5 done this session.
+
+## Checkpoint 15 (2026-07-11) — NEAR #2 Path (a): cell grips the LIVE library ECM network
+ff_stiffness_sensing.py `--mode ecm-network`: the resting cell adheres to an actual ecm_library network
+(build_ecm PA-gel at E, two-sided clutch_ecm_spring_kernel + ECM explicit substeps), so stiffness is the
+ECM's OWN calibrated modulus (deepest library integration; Path b Winkler kept intact). ECM_CFL_SAFETY=0.01
+(diagnosed stability margin, physics-invariant). CPU coarse smoke (nf=800, NON-AUTHORITATIVE):
+- ⭐CLEAN signal — ECM DEFORMATION tracks stiffness: soft PA(150Pa) 552nm → stiff(40kPa) 6nm (the cell feels
+  ECM stiffness through how much it can deform it = the mechanistic durotaxis basis; Path (a) coupling VALIDATED).
+- traction curve is ERRATIC/non-monotonic at coarse (2.57→2.54→0.09→0.01→0.87 nN; the 40kPa jump = a small-N
+  stochastic artifact, only 6/200 clutches bound loaded to 144pN) — NOT a clean biphasic; needs native
+  (more clutches → statistical averaging) + ensemble. Path (a) [clutches loaded ABOVE F*≈7pN, slip side] and
+  Path (b) [Winkler a=0.05µm keeps forces BELOW F*, catch side] bracket the Bangasser-Odde biphasic.
+- Path (b) confirmed byte-intact (150→0, 8000→0.162). Native Path (a) launched for the authoritative curve.
