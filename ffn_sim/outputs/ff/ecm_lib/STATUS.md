@@ -118,3 +118,9 @@ PI asked: (1) is PA gel done per-concentration? (2) how is the pressing measured
 - **Indentation visualized**: ff_ecm_indent_viz.py — progressive spherical indentation, animated 3D HTML
   (cross-section + full-3D scenes, bead descending into gel) + figs/indent_curve.png (the DIMPLE surface
   profile deepening + the measured F(δ) with Hertz fit F=(4/3)E*√R·δ^1.5). All eye-verified in browser.
+
+## Checkpoint 9 (2026-07-10) — fibrin per-concentration validation
+Applied the PI's per-concentration principle to the other fibrillar ECM. ff_ecm_fibrin_conc.py: fibrin
+G'(c) sweep 0.5-8 mg/mL — G 17.7→247.6 Pa, ALL in the Piechocka band (0.1-2000 Pa) ✓; exponent n=0.96
+(vs lit 2.3) = the same athermal stretch-dominated regime as collagen (CSCALING_REGIME_FINDING.md applies to
+both). figs/fibrin_concentration.png. Fibrillar per-concentration validation now symmetric (collagen + fibrin).
