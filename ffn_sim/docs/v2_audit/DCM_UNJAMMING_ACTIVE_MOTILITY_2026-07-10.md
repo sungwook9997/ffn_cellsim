@@ -120,6 +120,14 @@ and the clean run needs a smaller accel_dt (or a per-step velocity-limited motil
 unjams the jammed aggregate → genuine collective spread; cadherin sets cohesion not unjamming) is robust; the numbers
 are pending this convergence check.
 
+## 4e. dt-CONVERGENCE = PASS (2026-07-10)
+
+fa100 seed11 at matched physical time 1.2 s, accel_dt 8e-4 / 2e-4 / 8e-5 (CFL ~28 / 7 / 2.8): A/A0 =
+**1.521 / 1.526 / 1.507** — CONVERGED (within 1.3 %), all GENUINE. So despite CFL≈28, the implicit+IPC solver
+handles it and the spreading result is **dt-CONVERGED / trustworthy** (not a timestep artifact). The fa150/200
+non-monotonicity was extreme-CFL (100 / 24812) over-capping only. → the unjamming spread + the cadherin/motility
+decoupling are quantitatively trustworthy at accel_dt ≤ 8e-4, F_active ≤ ~100 nN.
+
 ## 5. Next (in progress)
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
