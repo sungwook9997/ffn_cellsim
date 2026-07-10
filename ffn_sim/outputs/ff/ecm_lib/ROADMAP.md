@@ -21,22 +21,26 @@ reshaping a native tissue-mimetic matrix once principled Stokes drag unblocks mi
 Route the library into the cell scripts, stand up ONE macroscopic stress tensor, and put a resting cell on
 real-Pa ECM — zero tuning.
 
-1. ⭐ **Quasi-static stiffness-sensing demo (TOP PICK, executing now)** — `ff_stiffness_sensing.py`: a
-   `--from-resting` full-compartment cell (cortex+turgor+membrane+nucleus) coupled by basal FA clutches to a
-   LIVE library ECM (PA 150 Pa / PA 40 kPa / collagen). Read engaged-clutch **traction + bound-fraction**
-   (PRIMARY) and top-down xy-silhouette **spread** (SECONDARY) vs substrate E → emergent biphasic optimum.
-   Fresh path (leaves the validated crawl loop byte-identical); coupling de-risked in `ff_ecm_remodel_demo.py`.
-   E = literature input, k_sub = DERIVED Winkler/Boussinesq (a=0.05µm), optimum MEASURED. Native A5000 reconfirm.
-2. **Reachability wiring** — route `--ecm-material/-alignment-S/-conc` onto `build_ecm()` in the cell scripts;
-   `attach_clutches_to_ecm` onto the library net; guard alignment-S for continuum. OFF-path byte-identical.
-3. **Full macroscopic virial Cauchy stress tensor** — `ecm_material_stress(ecm,pos)→σ[3,3]` (bond+crosslink+
-   bending virial, full tensor). Proves method-independence: virial==energy on dense PA (E=5000), virial vs
-   reaction on sparse collagen (energy-route bias quantified). The single grid-invariant stress downstream needs.
-4. **Native production for all 6 materials + per-material HTML viewers** — generalize `ff_ecm_native.py`;
-   REV↔native consistency; one full-res annotated viewer per material (measured Pa + band + ⟨z⟩/mesh/S).
-5. **Nonlinear master curve K(σ) collapse (KB-1.12) + negative normal stress N1** (needs #3) — the thesis-grade
-   nonlinear validation; |N1|~|σxz| at ~20% strain is an ungameable magnitude discriminator (Janmey/Kim p13).
+> **Execution status (2026-07-11): NEAR #1, #3, #4, #5 DONE + native/method-verified. #2 & #6 remaining.**
+
+1. ✅ **DONE — Quasi-static stiffness-sensing demo** — `ff_stiffness_sensing.py`: `--from-resting` full-
+   compartment cell (Winkler substrate k_sub=2Ea/(1−ν²), Path b). **Native A5000-confirmed** (Nc=266000):
+   traction 0→0.090 nN with the engagement threshold (bound 0.02@150Pa → 0.80@2kPa) = the durotaxis basis.
+   Monotonic to 40 kPa (interior peak above range). `figs/stiffness_sensing_native.png`. Path (a) — grip the
+   ACTUAL library ECM network — is #2 below.
+2. **Reachability / Path (a)** — extend `ff_stiffness_sensing.py` (or route the cell scripts) onto
+   `build_ecm()` so the cell grips the LIVE library ECM network (traction emergent from its calibrated seg_k),
+   `attach_clutches_to_ecm` onto `ecm.net.pos`; guard alignment-S for continuum. *Next autonomous item.*
+3. ✅ **DONE — Full macroscopic virial Cauchy stress tensor** — `ecm_material_stress→σ[3,3]` (commit d47b5ae).
+   Method-independence PROVEN: PA G_energy=G_virial=G_react=1522; collagen G_energy=16.1≈G_virial=16.4 while
+   G_react=1.4 (reaction is the outlier). Resolves the two-readout inconsistency.
+4. ✅ **DONE — 6-material native atlas** — `ff_ecm_native_atlas.py`: 6/6 IN BAND at a 40µm native REV, each
+   matching its small-REV value (REV↔native consistency), fibrillar via the virial tensor. `figs/native_atlas.png`.
+   *Remaining: per-material full-extent annotated HTML viewers (the gallery covers most at moderate box).*
+5. ✅ **DONE — Nonlinear σ_xz/N1/K(γ)** — `shear_stress_curve` via the tensor. N1 SIGN independently confirms
+   the stretch-dominated regime (model N1>0 vs literature N1<0, Janmey). `figs/normal_stress_N1.png`.
 6. **Systematized static traction-remodeling + contact-guidance anisotropy** on validated collagen (extends S6).
+   *Next autonomous item (needs Path a / cell-ECM coupling).*
 
 ## MID — moderate build or one PI decision
 
