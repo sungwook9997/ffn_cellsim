@@ -408,6 +408,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         Exlr_d = wp.array(np.ascontiguousarray(_emk.xl_rest, np.float64), dtype=wp.float64, device=d)
         Eseg_d = wp.array(np.ascontiguousarray(_Eseg, np.int32), dtype=wp.int32, ndim=2, device=d)
         Esegk_d = wp.array(np.ascontiguousarray(_Esegk, np.float64), dtype=wp.float64, device=d)
+        _Esegk0 = np.ascontiguousarray(_Esegk, np.float64).copy()          # MMP: frame-0 segment stiffness (degradation reference)
         Esegr_d = wp.array(np.ascontiguousarray(_Esegr, np.float64), dtype=wp.float64, device=d)
         Egam_d = wp.array(_Egam, dtype=wp.float64, device=d)
         en_base_d = wp.array(np.ascontiguousarray(S["ecm_node"], np.int32), dtype=wp.int32, device=d)   # clutch → collagen node (frame-0 attach)
@@ -814,6 +815,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                                        S["ecm"].net.fiber_offsets) if ecm_on else None)   # S6: coherent-remodel decomposition
     if ecm_metrics is not None and mmp:                        # MMP: how much collagen the leading edge proteolysed (severed segments)
         _skf = Esegk_d.numpy(); ecm_metrics["mmp_severed"] = int((_skf == 0.0).sum())
+        ecm_metrics["mmp_degraded_pct"] = float((1.0 - _skf / np.maximum(_Esegk0, 1e-9)).mean() * 100.0)   # mean seg-stiffness loss
+        ecm_metrics["mmp_degraded_max_pct"] = float((1.0 - _skf / np.maximum(_Esegk0, 1e-9)).max() * 100.0)   # peak (at the front)
         ecm_metrics["mmp_severed_frac"] = float((_skf == 0.0).mean())
     # ---- CONTACT / ADHESION diagnostics (foundation state) ----
     pcx = xp[:Nc]                                              # cortex nodes only
@@ -990,6 +993,9 @@ def main():
         if "mmp_severed" in _m:
             print(f"[MMP]         proteolysed {_m['mmp_severed']} collagen segments ({_m['mmp_severed_frac']*100:.1f}%) "
                   f"at the leading edge (invasion channel)")
+            print(f"[MMP]         seg-stiffness degraded: mean {_m.get('mmp_degraded_pct', 0.0):.2f}%  "
+                  f"peak(front) {_m.get('mmp_degraded_max_pct', 0.0):.2f}%  "
+                  f"(sever needs 99.8%↓ 5e4→100 pN/µm ≈ tens of min at KB-1.20 k_deg; short sim → degrade-not-sever)")
     if args.piezo:                                             # Piezo1 tension reporter (KB-3.10, diagnostic; feedback OFF)
         pz = resolve_piezo(); g_mem = S["mem"].gamma_mem
         print(f"[Piezo] membrane tension {g_mem:.1f} pN/µm → P_open={float(p_open(g_mem, pz)):.4f} (rest≈closed; opens as tension→γ_half=5000; feedback gain=0)")
