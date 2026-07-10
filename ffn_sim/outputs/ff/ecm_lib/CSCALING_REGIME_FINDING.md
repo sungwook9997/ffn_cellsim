@@ -29,8 +29,29 @@ biology (LOX density vs concentration) — it should be **PI-decided and literat
 hit n=2. Flagged for PI. The `reshape` mode's numerical stability with the affine-energy method would also
 need fixing (it diverges — currently boundary-driven + virial is the stable reshape path used for this test).
 
+## Physical-connectivity control added (`target_z`, KB-1.3 anchored)
+
+The raw near-contact rule let ⟨z⟩ blow up unphysically with density (1 mg/mL → ⟨z⟩=2.18 floppy; 7 mg/mL →
+⟨z⟩=14.2 over-connected). `build_fibrillar_ecm(target_z=3.2)` now subsamples fiber-pair crosslinks to the
+**literature ⟨z⟩~3.2 (KB-1.3, roughly concentration-independent)** — collagen crosslinks only a LOX-set
+subset of geometric contacts, not every one. This is anchored to an existing KB datum, NOT tuned to n.
+
+Result at fixed physical ⟨z⟩=3.2 (box 26 µm):
+
+| c (mg/mL) | ⟨z⟩ | G (Pa) |
+|---|---|---|
+| 1.0 | 1.95 (can't reach 3.2 — genuinely under-connected at low c) | 8.3 |
+| 2.0 | 3.20 | 18.5 |
+| 4.0 | 3.20 | 36.8 |
+| 7.0 | 3.20 | 64.1 |
+
+Exponent **n=1.04** — the clean fixed-connectivity prediction (G∝density∝c at fixed ⟨z⟩), no longer
+confounded by the ⟨z⟩ blow-up. Reference G(1.5 mg/mL)=13.4 Pa (⟨z⟩=3.02) still matches Yang-Kaufman.
+
 ## Bottom line
 
-The reference-concentration Pa is correct (validated). The c-scaling gap is understood: it is the
-stretch↔bending regime + rigidity-percolation, bracketed 1.07 (stretch) ↔ 7.24 (bending-through-threshold),
-with real c²≈2 requiring a PI-decided ⟨z⟩(c) crosslink law kept above threshold. No tuning was applied.
+The reference-concentration Pa is correct (validated) and ⟨z⟩ is now physically controllable at the KB-1.3
+value. The c-scaling gap is fully understood: **at physical fixed ⟨z⟩ the athermal model gives c¹** (density-
+linear); the literature c²≈2 requires ⟨z⟩ to GROW with c (bending-dominated, above threshold) — a PI-decided,
+literature-anchored crosslink-density-vs-concentration law (collagen LOX biology), NOT an n-fit. Bracketed
+1.04 (fixed ⟨z⟩) / 1.07 (⟨z⟩ blow-up) ↔ 7.24 (reshape through threshold). No tuning was applied.

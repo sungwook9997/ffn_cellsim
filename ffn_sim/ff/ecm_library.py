@@ -348,9 +348,14 @@ class ECMNetwork:
         return np.concatenate([self.xl_rest, self.seg_rest]).astype(np.float64)
 
 
-def _crosslink_near_contacts(net: FiberNetwork, xl_contact_um: float, k_xl: float):
+def _crosslink_near_contacts(net: FiberNetwork, xl_contact_um: float, k_xl: float,
+                             target_z: float | None = None, rng: np.random.Generator | None = None):
     """Mikado near-contact crosslinks: pairs of nodes on DIFFERENT fibers within ``xl_contact_um``,
-    at most one (nearest) per fiber-pair. Returns (xl_i, xl_j, xl_k, xl_rest)."""
+    at most one (nearest) per fiber-pair. If ``target_z`` is set, randomly SUBSAMPLE the fiber-pair
+    crosslinks to that connectivity ⟨z⟩ (2·n_xl/n_fibers = target_z) — collagen crosslinks only a subset
+    of geometric contacts (LOX/enzyme-set), and the literature ⟨z⟩~3.2 (KB-1.3) is roughly
+    concentration-independent, so this keeps the network at physical, above-threshold connectivity instead
+    of letting ⟨z⟩ blow up with density. Returns (xl_i, xl_j, xl_k, xl_rest)."""
     node_fiber = np.concatenate([np.full(net.fiber_offsets[f + 1] - net.fiber_offsets[f], f)
                                  for f in range(net.n_fibers)])
     tree = cKDTree(net.pos)
@@ -371,6 +376,12 @@ def _crosslink_near_contacts(net: FiberNetwork, xl_contact_um: float, k_xl: floa
         pairs = pairs[np.array(keep)]
     if not pairs.shape[0]:
         return (np.zeros(0, np.int64), np.zeros(0, np.int64), np.zeros(0), np.zeros(0))
+    if target_z is not None and pairs.shape[0]:                 # subsample fiber-pair crosslinks to ⟨z⟩=target_z
+        n_keep = int(round(target_z * net.n_fibers / 2.0))
+        if 0 < n_keep < pairs.shape[0]:
+            r = rng if rng is not None else np.random.default_rng(0)
+            sel = r.choice(pairs.shape[0], size=n_keep, replace=False)
+            pairs = pairs[np.sort(sel)]
     xi, xj = pairs[:, 0], pairs[:, 1]
     xr = np.linalg.norm(net.pos[xj] - net.pos[xi], axis=1)
     return xi, xj, np.full(xi.shape[0], float(k_xl)), xr
@@ -462,6 +473,7 @@ def _pin_mask(net: FiberNetwork, box_lo, box_hi, pin_faces, margin_um) -> np.nda
 def build_fibrillar_ecm(spec: ECMSpec, box_lo, box_hi, *, n_fibers: int | None = None,
                         concentration: float | None = None, dim: int = 3, alignment_S: float = 0.0,
                         director=(1.0, 0.0, 0.0), pin_faces=("z_lo",), pin_margin_um: float = 1.0,
+                        target_z: float | None = None,
                         rng: np.random.Generator | None = None) -> ECMNetwork:
     """Build a fibrillar ECM (Mikado semiflexible-fiber network) for ``spec``.
 
@@ -483,7 +495,8 @@ def build_fibrillar_ecm(spec: ECMSpec, box_lo, box_hi, *, n_fibers: int | None =
     orient = sample_orientations(n_fibers, alignment_S, director=director, dim=dim, rng=rng)
     fibers = _random_rods(box_lo, box_hi, n_fibers, spec.fiber_len_um, orient, spec.seg_um, dim, rng)
     net = build_fiber_network(fibers, kappa=spec.kappa_pN_um2)
-    xl_i, xl_j, xl_k, xl_rest = _crosslink_near_contacts(net, spec.xl_contact_um, spec.k_xl_pN_um)
+    xl_i, xl_j, xl_k, xl_rest = _crosslink_near_contacts(net, spec.xl_contact_um, spec.k_xl_pN_um,
+                                                         target_z=target_z, rng=rng)
     seg_i, seg_j, seg_k, seg_rest = _segment_springs(net, spec.k_seg_pN_um())
     pinned = _pin_mask(net, box_lo, box_hi, pin_faces, pin_margin_um)
     z = _connectivity_z(net, xl_i, xl_j)
