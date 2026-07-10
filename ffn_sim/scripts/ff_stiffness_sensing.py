@@ -84,7 +84,8 @@ from ffn_sim.ff.substrate import resolve_substrate, substrate_anchor_equilibrium
 from ffn_sim.common.compartments import resolve_nucleus, resolve_membrane
 from ffn_sim.ff.ecm_library import PA_FORMULATIONS, get_spec, build_ecm
 from ffn_sim.ff.fa_ecm import (attach_clutches_to_ecm, clutch_ecm_spring_kernel,
-                               mask_ecm_by_bound_kernel)
+                               mask_ecm_by_bound_kernel, traction_director_anisotropy, _inplane_unit)
+from ffn_sim.ff.ecm_mechanics import ecm_material_stress
 
 NATIVE_NF = 38000                 # native cortex filament count (the ONLY authoritative basis; CLAUDE.md HARD)
 DEFAULT_E_LIST = (150.0, 500.0, 2000.0, 8000.0, 40000.0)   # Pa: brain-PA → stiff muscle/osteoid-PA (library ladder)
@@ -384,6 +385,7 @@ def sense_ecm_network(S: dict, material: str, *, E_gel_Pa: float | None = None, 
                       f_myo: float = NMIIA_MINIFIL_STALL_PN, koff_xl: float = 0.4, refresh_every: int = 50,
                       reshape_every: int = 20, xl_turn_every: int = 50, adh_h: float = 0.4,
                       capture_um: float = 1.0, ecm_substeps: int = 20, target_z: float = 3.2,
+                      alignment_S: float = 0.0, director: tuple = (1.0, 0.0, 0.0),
                       seed: int = 7, device: str = "cpu") -> dict:
     """PATH (a): quasi-static stiffness sensing against a LIVE :mod:`ff.ecm_library` ECM network under the cell.
 
@@ -461,7 +463,8 @@ def sense_ecm_network(S: dict, material: str, *, E_gel_Pa: float | None = None, 
     spec = get_spec(material)
     ecm_rng = np.random.default_rng(seed)
     if spec.is_fibrillar:                                      # emergent modulus from the fiber microstructure
-        ecm = build_ecm(material, lo, hi, pin_faces=("z_lo",), rng=ecm_rng, concentration=conc, target_z=target_z)
+        ecm = build_ecm(material, lo, hi, pin_faces=("z_lo",), rng=ecm_rng, concentration=conc, target_z=target_z,
+                        alignment_S=alignment_S, director=director)   # NEAR #6: aligned collagen (contact guidance)
         E_or_conc = float(conc) if conc is not None else float(spec.ref_conc)
     else:                                                      # continuum gel: bond k = analytic inverse of E_gel
         E_gel = spec.E_gel_Pa if E_gel_Pa is None else E_gel_Pa
@@ -645,7 +648,27 @@ def sense_ecm_network(S: dict, material: str, *, E_gel_Pa: float | None = None, 
     n_bound = int(bd.sum())
     sil = float(ConvexHull(xp[:Nc][:, :2]).volume)             # top-down xy silhouette area [µm²]
     ecm_disp = np.linalg.norm(ep - ep0, axis=1)                # ECM node displacement (the matrix deformation)
+
+    # ---- NEAR #6 contact guidance: director-decomposition of the engaged-clutch traction + ECM virial ratio ----
+    dvec = np.asarray(ecm.director, float)
+    aniso = traction_director_anisotropy(
+        xp[basal][eng] if eng.any() else np.zeros((0, 3)),
+        ep[en_host[eng]] if eng.any() else np.zeros((0, 3)),
+        cp.k_int, cp.rest_um, dvec)                            # A_F=F∥/F⊥ (Ray-2017 force anisotropy)
+    dhat = _inplane_unit(dvec); ehat = np.array([-dhat[1], dhat[0], 0.0])
+    try:                                                       # grid-invariant cross-check: virial σ on the director
+        sig = ecm_material_stress(ecm, ep)                     # σ[3,3] [Pa] (clutch count-independent)
+        sig_par = float(dhat @ sig @ dhat); sig_perp = float(ehat @ sig @ ehat)
+        R_sigma = float(sig_par / sig_perp) if abs(sig_perp) > 1e-30 else float("nan")
+    except Exception:                                          # virial degenerate (e.g. no bonds) → nan, not a crash
+        sig_par = sig_perp = R_sigma = float("nan")
     return dict(material=str(material), E_pa=float(E_or_conc), E_or_conc=float(E_or_conc),
+                alignment_S=float(alignment_S), S_measured=float(getattr(ecm, "S_measured", 0.0)),
+                director=[float(x) for x in dvec],
+                A_F=float(aniso["A_F"]), A_F_rms=float(aniso["A_F_rms"]),
+                F_par_pN=float(aniso["F_par_pN"]), F_perp_pN=float(aniso["F_perp_pN"]),
+                S_bound=float(aniso["S_bound"]), n_engaged=int(aniso["n_engaged"]),
+                R_sigma=R_sigma, sigma_par_Pa=sig_par, sigma_perp_Pa=sig_perp,
                 is_fibrillar=bool(spec.is_fibrillar), traction_nN=float(Fclutch.sum() / 1e3),
                 bound_frac=float(bd.mean()), force_per_clutch_pN=float(Fclutch.mean()) if Fclutch.size else 0.0,
                 silhouette_um2=sil, n_clutch=int(M), n_bound=n_bound, n_ecm_nodes=int(n_em),

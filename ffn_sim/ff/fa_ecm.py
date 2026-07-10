@@ -75,4 +75,79 @@ def attach_clutches_to_ecm(actin_pos: np.ndarray, ecm_pos: np.ndarray, capture_u
     return np.where(dist <= float(capture_um), idx, -1).astype(np.int64)
 
 
-__all__ = ["clutch_ecm_spring_kernel", "mask_ecm_by_bound_kernel", "attach_clutches_to_ecm"]
+def _inplane_unit(director) -> np.ndarray:
+    """The in-plane (xy) unit direction of ``director`` (contact guidance is an in-plane fiber-axis effect)."""
+    d = np.asarray(director, float).copy()
+    d[2] = 0.0
+    n = np.linalg.norm(d)
+    return d / n if n > 1e-12 else np.array([1.0, 0.0, 0.0])
+
+
+def nematic_order_2d(vectors: np.ndarray, director) -> float:
+    """2D nematic order S = ⟨2cos²φ − 1⟩ of the in-plane parts of ``vectors`` about the in-plane ``director``.
+
+    φ is the angle between each vector's in-plane projection and the director. S=1 all-parallel, S=0 isotropic,
+    S=−1 all-perpendicular (a headless/axial order parameter, sign of the vector ignored)."""
+    v = np.asarray(vectors, float)
+    if v.ndim != 2 or v.shape[0] == 0:
+        return 0.0
+    dhat = _inplane_unit(director)
+    ehat = np.array([-dhat[1], dhat[0], 0.0])                 # in-plane ⟂ (= ẑ × d̂)
+    vp = v.copy(); vp[:, 2] = 0.0
+    n = np.linalg.norm(vp, axis=1)
+    keep = n > 1e-12
+    if not keep.any():
+        return 0.0
+    cos = (vp[keep] @ dhat) / n[keep]                          # cosφ (in-plane)
+    return float(np.mean(2.0 * cos * cos - 1.0))
+
+
+def traction_director_anisotropy(actin_pos: np.ndarray, ecm_pos_bound: np.ndarray, k_int: float,
+                                 rest: float, director) -> dict:
+    """Contact-guidance readout (ROADMAP NEAR #6): decompose the engaged-clutch traction on the fiber director.
+
+    For each ENGAGED clutch (actin end node ``actin_pos[i]`` bound to fiber node ``ecm_pos_bound[i]``) the
+    traction VECTOR is the SAME isotropic Hookean clutch law used by :func:`clutch_ecm_spring_kernel`,
+    ``f = k_int·max(L−rest,0)/L·(ecm − actin)`` — no directional prefactor is introduced; any anisotropy must
+    EMERGE from the aligned microstructure resisting that isotropic pull. The vectors are projected onto the
+    in-plane director d̂ (‖) and the in-plane perpendicular ê=ẑ×d̂ (⟂):
+
+    - ``F_par``  = Σ |f·d̂|,   ``F_perp`` = Σ |f·ê|  (sum-abs)
+    - ``A_F``    = F_par / F_perp  — the traction anisotropy ratio (the Ray-2017 "force anisotropy"). It is a
+      RATIO of two projections of the SAME clutch population, so the seed-to-seed few-clutch noise that made the
+      absolute traction curve noisy cancels in numerator/denominator.
+    - ``A_F_rms`` uses RMS instead of sum-abs (robust to a few large clutches).
+    - ``S_bound`` = 2D nematic order of the engaged-clutch traction directions about the director.
+
+    Returns zeros / A_F=nan for an empty engaged set. Pure host numpy; call once at the end of a quasi-static
+    run (not per step)."""
+    a = np.ascontiguousarray(actin_pos, np.float64)
+    e = np.ascontiguousarray(ecm_pos_bound, np.float64)
+    out = dict(F_par_pN=0.0, F_perp_pN=0.0, A_F=float("nan"), A_F_rms=float("nan"),
+               n_engaged=int(a.shape[0]), S_bound=0.0)
+    if a.shape[0] == 0:
+        return out
+    d = e - a
+    L = np.linalg.norm(d, axis=1)
+    ext = np.maximum(L - float(rest), 0.0)
+    ok = L > 1e-12
+    f = np.zeros_like(d)
+    f[ok] = (float(k_int) * ext[ok] / L[ok])[:, None] * d[ok]  # per-clutch traction vector [pN]
+    dhat = _inplane_unit(director)
+    ehat = np.array([-dhat[1], dhat[0], 0.0])                  # in-plane ⟂
+    fpar = f @ dhat
+    fperp = f @ ehat
+    F_par = float(np.abs(fpar).sum())
+    F_perp = float(np.abs(fperp).sum())
+    out["F_par_pN"] = F_par
+    out["F_perp_pN"] = F_perp
+    out["A_F"] = float(F_par / F_perp) if F_perp > 1e-12 else float("nan")
+    rms_par = float(np.sqrt(np.mean(fpar ** 2)))
+    rms_perp = float(np.sqrt(np.mean(fperp ** 2)))
+    out["A_F_rms"] = float(rms_par / rms_perp) if rms_perp > 1e-12 else float("nan")
+    out["S_bound"] = nematic_order_2d(f, director)
+    return out
+
+
+__all__ = ["clutch_ecm_spring_kernel", "mask_ecm_by_bound_kernel", "attach_clutches_to_ecm",
+           "traction_director_anisotropy", "nematic_order_2d"]

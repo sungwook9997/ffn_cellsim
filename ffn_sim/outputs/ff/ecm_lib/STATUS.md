@@ -173,3 +173,26 @@ ECM's OWN calibrated modulus (deepest library integration; Path b Winkler kept i
   (more clutches → statistical averaging) + ensemble. Path (a) [clutches loaded ABOVE F*≈7pN, slip side] and
   Path (b) [Winkler a=0.05µm keeps forces BELOW F*, catch side] bracket the Bangasser-Odde biphasic.
 - Path (b) confirmed byte-intact (150→0, 8000→0.162). Native Path (a) launched for the authoritative curve.
+
+## Checkpoint 16 (2026-07-11) — NEAR #6: contact-guidance traction anisotropy on ALIGNED collagen (Path a)
+ff_contact_guidance_anisotropy.py (new driver) + fa_ecm.traction_director_anisotropy/nematic_order_2d +
+sense_ecm_network(alignment_S=, director=) threading. The resting cell grips aligned collagen-I (nematic S from
+the Watson sampler, director fixed in-plane) via the SAME isotropic two-sided clutch; anisotropy must EMERGE
+from the aligned microstructure (no directional force prefactor — unfitted, S is the swept IV). Design +
+KB-grounding via a 4-lens workflow (validation bands: Ray 2017 >3× force anisotropy, Szulczewski 2021 up-to-35×
+matrix directional stiffness, Niraula 2025 traction-saturation, Riching 2014 persistence).
+Two readouts — a RATIO cancels the few-clutch stochasticity that made the absolute Path-a traction noisy:
+- PRIMARY A_F=F∥/F⊥ (engaged clutches; the Ray force anisotropy). SECONDARY R_σ=σ∥/σ⊥ (ECM virial Cauchy
+  tensor, clutch-count-INDEPENDENT → authoritative if native engaged counts stay low).
+Readout unit-tested (pure-∥→F⊥=0,S_bound=1; isotropic-4dir→A_F=1.0 exact; nematic S(∥)=1/S(⟂)=−1).
+COARSE CPU smoke (nf=500, 1 seed, S={0,0.83}, NON-AUTHORITATIVE) — plumbing VALIDATED + a clear diagnosis:
+- ✅ aligned collagen builds (S_measured 0.09→0.82 tracks target), sense loop + both readouts run.
+- ✅ R_σ (grid-invariant) is the ROBUST directional signal — monotone 0.78→4.26 with alignment even at coarse
+  (independent of the 71→56 engaged-clutch count) — exactly the spec's predicted authoritative signal. NOTE
+  R_σ is the cell-scale directional STRESS response (Szulczewski regime), smaller in magnitude than the pure-
+  shear E∥/E⊥=63 (a different quantity, validated separately by the library).
+- ⚠️ A_F (traction) is NOISY at coarse (1.97→0.93, non-monotone; A_F=1.97 at isotropic S=0 IS the single-seed
+  few-clutch geometric noise) — needs NATIVE + ≥3-seed ensemble to resolve above the ~60-clutch layout noise
+  (exactly as the spec predicted). Whether the cell TRACTION anisotropy A_F follows the matrix STRESS anisotropy
+  R_σ is the open question the native run answers.
+Native gbook run queued (gbook SSH was transiently down). MT-OFF (same as NEAR #1/#2 sensing family) — open PI item.
