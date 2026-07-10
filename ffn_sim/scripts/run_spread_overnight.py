@@ -144,6 +144,8 @@ def main():
                          "KB-2.12; controlled variable, swept — never tuned to a spreading target).")
     ap.add_argument("--motility-tau", type=float, default=600.0, dest="motility_tau",
                     help="polarity persistence time tau_p [s] (cell directional persistence ~10 min).")
+    ap.add_argument("--motility-seed", type=int, default=7, dest="motility_seed",
+                    help="seed for the random per-cell polarity (ensemble over this for seed-robustness).")
     ap.add_argument("--division", action="store_true",
                     help="C7 rim-cell proliferation ON. Pair with --div-real-hours for TIME-CONSISTENT "
                          "division (cells divide at the MCF7 cycle rate over the run's represented real time).")
@@ -218,7 +220,7 @@ def main():
         cad_bundle=(20.0 if a.cad_cluster else 40.0), ecm_bundle=167.0,
         cad_cluster=a.cad_cluster, cad_mature=a.cad_mature, cad_n_nascent=a.cad_n_nascent,
         active_motility=a.active_motility, f_active_N=a.f_active_nn * 1e-9,
-        motility_persistence_s=a.motility_tau,
+        motility_persistence_s=a.motility_tau, motility_seed=a.motility_seed,
         remesh_period=a.remesh_period,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement

@@ -275,6 +275,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cad_cluster: bool = False, cad_n_nascent: int = 4,
                    active_motility: bool = False, f_active_N: float = 0.0,
                    motility_persistence_s: float = 600.0, motility_planar: bool = True,
+                   motility_seed: int = 7,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -640,7 +641,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     mot = None
     if active_motility and f_active_N > 0.0:
         mot = ActiveMotilityHost(n_cells=n_cells, cof=cof_a, f_active_N=f_active_N,
-                                 persistence_s=motility_persistence_s, planar=motility_planar)
+                                 persistence_s=motility_persistence_s, planar=motility_planar,
+                                 seed=motility_seed)
         mot.upload(device)
         print(f"  [motility] F_active={f_active_N*1e9:.2f}nN/cell  tau_p={motility_persistence_s:.0f}s  "
               f"planar={motility_planar} (active-matter unjamming test)", flush=True)
