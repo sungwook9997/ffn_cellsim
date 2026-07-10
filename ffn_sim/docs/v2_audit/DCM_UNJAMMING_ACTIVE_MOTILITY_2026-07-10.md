@@ -1,9 +1,32 @@
-# DCM spreading SOLVED — active-motility unjamming (the jamming→unjamming transition)
+# DCM spreading = an active-matter jamming→unjamming transition (mechanism demonstrated; biology-time caveated)
 
-**Date:** 2026-07-10 · **Owner:** Lead session (PI 8h /goal) · **Branch:** `dcm/main`
-**Result:** the DCM aggregate spreads by an **active-matter jamming→unjamming transition** — visually verified,
-dose-dependent, and quantified in the literature's own order parameter (shape index → s0*≈5.41), validated by the
-freshly-ingested TAG jamming/SPV literature + PI's KB-PIV-10 experiment.
+**Date:** 2026-07-10/11 · **Owner:** Lead session (PI 8h then overnight /goal) · **Branch:** `dcm/main`
+
+## EXECUTIVE SUMMARY (read this first)
+The session's arc: "the DCM spheroid **can't spread**" → the honest reason is that it is **JAMMED** (cells don't slide;
+confined regardless of cadherin) → the freshly-ingested TAG literature is exactly the **jamming/unjamming SPV framework**
+(Bi-Manning shape index p0*=3.81 / **s0*≈5.41 3D**; Geiger2022 invasion=fluidization; PI's own KB-PIV-10) → built
+per-cell **active motility (SPV)** → the jammed DCM aggregate **UNJAMS and spreads**.
+
+**What is ROBUST (seed-ensemble + dt-converged + visual-verified + lit-validated):**
+- Active motility fluidises the jammed DCM spheroid → genuine collective spread; the per-cell 3D **shape index (the
+  jamming order parameter) rises from 4.93 (jammed) toward s0*≈5.41 (unjammed)**.
+- **BOTH SPV axes** reproduced: self-propulsion (v0) AND directional persistence (τ_p; τ_p=30 s = diffusive = stays
+  JAMMED even with force; τ_p≥150 s = directed → unjams). A jammed tissue needs DIRECTED, not diffusive, motility.
+- **Cadherin × motility DECOUPLE**: motility sets the UNJAMMING (shape index, cadherin-independent); cadherin sets the
+  COHESION (how far the fluidised cells disperse) → epithelial (strong-cad, fluid-but-cohesive, Park2015) vs mesenchymal
+  (weak-cad, fluid-and-dispersing), matching KB-PIV-10 low-E-cadherin→gas.
+
+**What is CAVEATED (honest):** the force-mode demos ran at **super-physical SPEED** (fa100 CFL≈28, v_eff~300× the
+~2 µm/min lit cell speed, Péclet~432) to reach the transition in ~5 s of simulated time — a **biology-time acceleration**.
+At true physiological speed (v0-mode, CFL-safe) the aggregate stays jammed in feasible sim time; reaching the physiological
+steady state (Pe~O(1)) needs physical TIME (tens of min = ~10⁶ steps, infeasible at accel_dt=8e-4) — the project-wide
+timescale gap. So the MECHANISM + PHASE STRUCTURE are correct and demonstrated; the absolute speed↔time calibration is
+the acceleration. `--v0-um-min` is the honest CFL-safe Péclet knob for future physical-time work.
+
+**Bottom line:** the DCM reproduces the active-matter jamming↔unjamming physics of collective cell migration / spheroid
+invasion, quantified in the literature order parameter, tuned by motility (v0, τ_p) and cadherin — the correct model for
+epithelial-confined ↔ mesenchymal-spreading, with the physiological-timescale approach flagged as the standing gap.
 
 ---
 
