@@ -45,9 +45,13 @@ _PROFILES = {
     # DEFAULT — byte-for-byte the current run when no other flags are given (the rear-bias hook is a no-op at 0.0)
     "mcf7_epithelial": CellTypeProfile("mcf7_epithelial", polarize=False, ecm_regrip=False,
                                        front_frac=0.5, myo_rear_bias=0.0, n_fa=0, contractility_mult=1.0),
-    # MOTILE — front-Rac protrusion / rear-Rho contraction / walking adhesions (SE248, KB-3.11, KB-4.12)
+    # MOTILE — front-Rac protrusion / rear-Rho contraction / walking adhesions (SE248, KB-3.11, KB-4.12).
+    # n_fa=0 (one clutch/node = STRONG adhesion, KB-3.11 "strong FA/traction"): the 3-way native test (2026-07-11)
+    # showed n_fa=50 COLLAPSES traction to 0 on sparse physiological collagen (too few grips → the biphasic soft-arm),
+    # so the fewer-FA idea (a mis-application of KB-2.2 maturation to a count) is dropped — the mesenchymal cell keeps
+    # STRONG but DYNAMIC adhesion (strength from n_fa=0, dynamics from polarize's front-form/rear-release turnover).
     "mesenchymal": CellTypeProfile("mesenchymal", polarize=True, ecm_regrip=True,
-                                   front_frac=0.6, myo_rear_bias=0.7, n_fa=50, contractility_mult=1.0),
+                                   front_frac=0.6, myo_rear_bias=0.7, n_fa=0, contractility_mult=1.0),
 }
 _PROFILES["emt"] = replace(_PROFILES["mesenchymal"], name="emt")
 _ALIASES = {"mcf7": "mcf7_epithelial", "epithelial": "mcf7_epithelial", "mda": "mesenchymal",
