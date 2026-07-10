@@ -160,6 +160,24 @@ cohesive-fluid (epithelial) vs dispersing-fluid (mesenchymal) without changing t
 physiologically-anchored capstone: motility (v0) + persistence (Dr) set the jamming state, and at the in-vivo operating
 point the tissue is critically poised.
 
+## 4h. ⚠️ HONESTY — force-mode used SUPER-PHYSIOLOGICAL SPEED; the v0-mode fix
+
+The SPV axis is v0 (self-propulsion SPEED), not force. Adding a v0-mode (per-node force = γ_node·v0, physiological
+Stokes drag) revealed that the **force-mode demonstrations (fa10–100 nN) ran the cells at SUPER-PHYSIOLOGICAL SPEED**:
+fa100 has CFL≈28, i.e. the cells move far faster than the lit ~1 µm/min cell speed — that is how the tissue reached
+the unjamming transition in only ~5 s of simulated time. So **the §4g "physiological operating point" is physiological
+FORCE, not physiological SPEED**. At true physiological v0 (~1 µm/min) the same physics holds but the transition
+develops over the physiological TIME (hours) — unreachable at accel_dt=8e-4 in feasible steps (the project-wide
+timescale gap; the force-mode is effectively a biology-time acceleration, like S_accel in the compaction line).
+
+**What stands vs what is caveated:**
+- ROBUST: motility unjams the jammed DCM aggregate → genuine collective spread; BOTH SPV axes (v0 and persistence);
+  the cadherin=cohesion / motility=unjamming decoupling; shape index → s0*. All qualitative, seed-robust, visual-verified.
+- CAVEATED: the absolute F_active↔speed calibration + the "at the physiological point the tissue is exactly at s0*"
+  magnitude — those used super-physiological speed. The v0-mode (`--v0-um-min`, CFL-bounded, SPV-faithful) is the correct
+  knob; the honest statement is a Péclet-number (v0·τ_p/a) map, and reaching the transition at physiological v0 needs
+  physiological time.
+
 ## 5. Next
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
