@@ -1,0 +1,267 @@
+# Current TAG/KB validation state (SoT snapshot for gap analysis)
+
+
+## VALIDATION GATES (table `validation_gate`)  cols=['id', 'vg_id', 'observable', 'notes', 'type', 'decisions', 'runs', 'code', 'status', 'band_expected', 'tests_contract', 'title']
+
+- id=395120daec5d81959108c4b4cc1d259f | vg_id=VG-U5-viable-rim | observable=Viable-rim thickness (proliferating + quiescent shell, live cells) vs cluster radius, over a growing MCF-7 cluster. | notes=OVERLAY-ONLY, never fit (project hard rule). If it fails, surface to PI for a contract change - do NOT tune L_viable outside 100-200 um and do NOT fit to a PI CSV. Necrosis 3-zone track, SYNTHESIS section 4 target 3. Tests MC-U5-necrosis-3z… | type=Validation | status=not-started | band_expected=Viable rim ~150 um (100-200), ~CONSTANT as the cluster grows; only the necrotic core R_nec = R_cluster - L_viable expands. Necrotic core first appears when diameter > 300 um, robust by 400-500 um. | tests_contract=["395120daec5d81cfaed6c5aba49ca1e8"] | title=Viable rim stays ~150 um constant as the necrotic core grows (Greenspan invariant)
+- id=395120daec5d81c4924eef75b6a4045c | vg_id=VG-U5-necrotic-fraction | observable=Necrotic-core volume fraction vs spheroid diameter for a growing cluster (and viability time course). | notes=OVERLAY-ONLY, never fit. MCF-7 necrotic-fraction is semi-quantitative; quantitative curve is BT-474 (Nieto2026). Mazloomi2025 viability numbers pending PDF verification. Necrosis 3-zone track, SYNTHESIS section 4 targets 1/2/4/5. Tests MC-U… | type=Validation | status=not-started | band_expected=All-viable <= 300 um dia; onset 400-500 um; prominent ~700 um (MCF-7 day 8). Necrotic fraction tracks the BT-474 sibling curve 0.20 (0.50mm) -> 0.29 (0.84mm) -> 0.61 (0.86mm). | tests_contract=["395120daec5d81cfaed6c5aba49ca1e8"] | title=Necrotic-core fraction vs diameter tracks the BT-474 overlay curve
+- id=379120daec5d814a94a7c80f05482933 | vg_id=VG-H7-gate-a | observable=γ_soft (active cortical tension, soft-MOP) vs grip-stretch s_grip/ℓ₀ on the full physiological MCF7 cell | notes=Gate-A asks: is the ~1000x active-γ floor an s_grip GENERATION problem? CONFIRM if γ_soft climbs toward band as s_grip→ℓ₀; REFUTE if γ_soft does not respond (wall downstream = Gate-B). RESULT 2026-06-08 (full GPU-main stack: native constrai… | type=Validation | runs=["379120daec5d81d19947f1c85765f2b3", "379120daec5d8140b581f60c8ae8140a", "379120daec5d810d9bd1d3b07e209409", "379120daec5d81869d32c132e714407e", "379120daec5d817ba0b1df859f06e436", "379120daec5d8105b4fbd58530b66630", "379120daec5d814fbd95e6… | status=failing | band_expected=[0.35, 0.65] mN/m (KU-3.5 cortex tension; rounded/de-adhered non-MCF7 proxy — band-contract review pending PI) | tests_contract=["372120daec5d8160be1dc6019c22620c"] | title=H.7 Gate-A — active cortical tension vs myosin grip-stretch (generation vs transmission)
+- id=379120daec5d81bb91a1df65d3b3e12a | vg_id=VG-H7-gate-b | observable=γ_active / γ_structural cortical tension under a relaxed-constraint (buckling-permitting) backbone vs band | notes=Gate-B is the transmission/lever follow-up to Gate-A's REFUTE: the rigid M-SHAKE backbone forbids the Murrell/Lenz/Miyazaki buckling/condensation symmetry-breaking (r/r0=1.0000 throughout Gate-A). LEVER: relax M-SHAKE to permit filament buc… | type=Validation | runs=["379120daec5d81fb9e8af35842917068", "379120daec5d81af9d22e9f5d7993cf3", "379120daec5d81d5b5d7d908a05947e1", "379120daec5d8189acc1decf8bf091d7", "379120daec5d815fbdd8c731ba8812eb", "379120daec5d81b7a296df7e9f95573a", "379120daec5d817ea6dddf… | status=blocked | band_expected=[0.35, 0.65] mN/m (KU-3.5) | tests_contract=["372120daec5d8160be1dc6019c22620c"] | title=H.7 Gate-B — relaxed-M-SHAKE buckling/condensation transmission lever
+- id=372120daec5d810d8bc5cae52a73732d | vg_id=VG-H9-nucleus | observable=E_nuc; nucleus:cytoplasm modulus ratio; confined-arrest cross-section | notes=Tests MC-H9-nucleus. KB-3.B2.1/3.B2.3. Code not started. Do NOT hard-code 10x ratio. | type=Validation | status=not-started | band_expected=E_nuc 1-10 kPa (in-situ ~5); ratio 1.4-5x in-situ; arrest at ~10% cross-section (tumor 7 um^2) | tests_contract=["372120daec5d8105af66d8c18cb1dc86"] | title=H.9 — nuclear modulus + confinement deformability
+- id=372120daec5d81258c68e6930b1ad4aa | vg_id=VG-H3-composite-tension | observable=whole-cell gamma_total decomposed into membrane + cortex + nucleus contributions | notes=Tests MC-H3-composite-tension. BLOCKED on H.8+H.9 code. Supersedes cortex-attributed VG-H3-KU35 once those land. | type=Validation | status=blocked | band_expected=composite gamma_total in 0.35-0.65 mN/m band (KU-3.5), with membrane/nucleus shares attributed (not 100% cortex) | tests_contract=["372120daec5d8160be1dc6019c22620c"] | title=H.3 composite tension (membrane+cortex+nucleus)
+- id=372120daec5d81588b09c9f5a8c99ec1 | vg_id=VG-H10-cytoplasm | observable=cytoplasm eta, G; poroelastic diffusion Dp | notes=Tests MC-H10-cytoplasm. KB-3.B3.1/3.B3.2. Code not started; integrator-adjacent (frozen-integrator PI-gate likely). | type=Validation | status=not-started | band_expected=eta 10-70 Pa s, G 30-80 Pa (cytoplasm, 10-20x below whole-cell); Dp 40-60 um^2/s; mesh xi~14 nm | tests_contract=["372120daec5d81738702fb2d8cc45b60"] | title=H.10 — cytoplasm viscoelasticity + poroelastic Dp
+- id=372120daec5d81e7b639d0cf135890e4 | vg_id=VG-H8-membrane-tension | observable=tether force f_t; apparent tension T from f_t=2pi sqrt(2 kappa_m(T_m+gamma_MCA)) | notes=Tests MC-H8-membrane-surface. KB-3.B1.1/3.B1.4. Code not started. | type=Validation | status=not-started | band_expected=f_t 5-40 pN; T 3e-5-3e-4 N/m; kappa_m 0.4-1.2e-19 J; K_A ~0.24 N/m (lysis 3-10 mN/m) | tests_contract=["372120daec5d815d9921e13d146d6214"] | title=H.8 — membrane tether force / apparent tension
+- id=372120daec5d81139720d36bdb87c342 | vg_id=VG-U1-wlc-hamiltonian | observable=Energy and force for simple bead chain | notes=Source KB-1.24. | type=Verification | runs=["379120daec5d8178a412dcfb886f17be"] | status=not-started | band_expected=Force = -grad H; energy decreases during relaxation | tests_contract=["379120daec5d81d3ab0ad2eab7aabafb"] | title=U1 ECM — WLC Hamiltonian implementation
+- id=372120daec5d811d98b1f35d91647f25 | vg_id=VG-U1-force-propagation | observable=sigma(r) decay exponent n | notes=PASS-as-documented: r^-1 exceedance expected for 2D sub-isostatic Mikado (z~3.4<z_iso=4), commit d92ac20. 3D Phase2. Source KB-1.10/1.30. | type=Validation | status=passing | band_expected=fibrous regime closer to 1/r than 1/r^3 | tests_contract=["379120daec5d81d3ab0ad2eab7aabafb"] | title=U1 ECM — Force propagation sigma(r) decay
+- id=372120daec5d8131b2b4c8518da5f412 | vg_id=VG-U1-G0-linear | observable=G0 | notes=Phase1 OOM PASS G0~32 Pa (h=xi=2um slab). publication_grade=false; Lees-Edwards+bead refinement Phase2. Worker A Unit1.2, 02_summary.json. Source KB-1.30. | type=Validation | runs=["379120daec5d8171b7c9f179fb947099", "379120daec5d81a1a338ebbe888f78da"] | status=passing | band_expected=~30-100 Pa reference collagen; applied band [15,200] Pa | tests_contract=["379120daec5d81d3ab0ad2eab7aabafb"] | title=U1 ECM — Linear shear modulus G0
+- id=372120daec5d8131b74cd8d4cd8a1085 | vg_id=VG-U5-radial-expansion | observable=R(t) exponent alpha | notes=Phase-2+. Source KB-5.15. | type=Validation | runs=["379120daec5d8105b831caa138583823", "379120daec5d8195954ce22f6cb10abe", "379120daec5d81518008fce85a4f68ef", "379120daec5d8115a031fc3015c70b5b", "379120daec5d810ba381c30a39c0535b", "379120daec5d8177acbbc070cf32a23e"] | status=not-started | band_expected=Early alpha ~0.5; later approaches 1 | tests_contract=["379120daec5d8126a0aec6ec54693f13"] | title=U5 Collective — Radial expansion law
+- id=372120daec5d81489a91d139ae8b5d8d | vg_id=VG-U1-strain-stiffening | observable=Exponent near critical strain | notes=Phase1 affine+2D-Mikado PASS, magnitude [1.5,2.5] on stiffening branch gamma[0.30,0.65], commit 11eaf13. 3D large-strain Phase2. Source KB-1.4/1.30. | type=Validation | status=passing | band_expected=exponent [-2.5,-1.5] (magnitude [1.5,2.5]) | tests_contract=["379120daec5d81d3ab0ad2eab7aabafb"] | title=U1 ECM — Strain stiffening exponent
+- id=372120daec5d814ab61fecca9f92d356 | vg_id=VG-U2-catch-slip-bond | observable=Lifetime vs force | notes=Source KB-2.5. | type=Verification | status=not-started | band_expected=Lifetime peak near ~30 pN for integrin-FN | tests_contract=["379120daec5d8173b32ce7156e1769f9"] | title=U2 FA — Catch-slip bond lifetime
+- id=372120daec5d814ba1b6c49421b06384 | vg_id=VG-U5-wetting-dewetting | observable=Contact angle, spread area, R(t) | notes=Phase-2+. Source KB-5.3/5.4. | type=Validation | status=not-started | band_expected=Stiff substrates favor wetting; soft favor dewetting | tests_contract=["379120daec5d8126a0aec6ec54693f13"] | title=U5 Collective — Wetting/dewetting
+- id=372120daec5d81568aeccf1833ae7dee | vg_id=VG-U5-velocity-correlation | observable=C(r), xi_v | notes=Phase-2+. Source KB-5.7. | type=Validation | status=not-started | band_expected=xi_v ~50-200 um in epithelial monolayer | tests_contract=["379120daec5d8126a0aec6ec54693f13"] | title=U5 Collective — Velocity correlation length
+- id=372120daec5d8160ba37e41ed17c255a | vg_id=VG-U4-contact-angle | observable=Contact angle theta | notes=Source KB-4.4. | type=Verification | status=not-started | band_expected=Follows cortex/junction tension ratio | tests_contract=["379120daec5d813ea4fefe64b68cb8c5"] | title=U4 Junction — Contact geometry (contact angle)
+- id=372120daec5d816fb8b4fb02630e390e | vg_id=VG-U2-biphasic-traction | observable=Mean traction vs substrate stiffness | notes=Source KB-2.8. NOTE Phase-1 finding (KB-2.8): biphasic is saturating not peaked. | type=Validation | runs=["379120daec5d81dcb843e2c3e039944c"] | status=not-started | band_expected=Peak around 1-10 kPa for typical parameters | tests_contract=["379120daec5d8173b32ce7156e1769f9"] | title=U2 FA — Motor-clutch biphasic traction
+- id=372120daec5d818fa306cc1acaee725e | vg_id=VG-U3-gactin-pool | observable=c_G(t) shared conservation cortex+lamellipodia+filopodia | notes=Phase 1 c_G=const; dynamic c_G required Phase 2 when filament length change >=10%. Source KB-3.21. | type=Phase-2 entry gate | status=blocked | band_expected=Total actin mass conserved; lamellipodia self-limiting via c_G depletion | tests_contract=["379120daec5d8185afb0d1d2009d0bc6"] | title=U3 Cell — G-actin monomer pool conservation
+- id=372120daec5d81a4a272cb76bde35a34 | vg_id=VG-U3-lamellipodia-separation | observable=Cell.lamellipodia as separate dataclass | notes=Phase 1 lumps as cortex boundary protrusion; dataclass separation required Phase 2. Source KB-3.6/3.7. | type=Phase-2 entry gate | status=blocked | band_expected=Per-instance {r_LE,p,w_L,n_barbed,v_p}; Mueller 2017 Hill (w~2); Bieling 2016 branching | tests_contract=["379120daec5d8185afb0d1d2009d0bc6"] | title=U3 Cell — Lamellipodia separation
+- id=372120daec5d81b9a4b7f4b305be6dae | vg_id=VG-U2-traction-magnitude | observable=FA force, cell total force | notes=Source KB-2.12. | type=Validation | status=not-started | band_expected=FA 1-10 nN; cell total 10-100 nN | tests_contract=["379120daec5d8173b32ce7156e1769f9"] | title=U2 FA — Traction magnitude
+- id=372120daec5d81c39093ce741a722a45 | vg_id=VG-U1-mikado-topology | observable=Mesh size, mean segment length, z | notes=Source KB-1.3/1.7/1.27. | type=Verification | status=not-started | band_expected=xi ~1-5 um; z ~3-3.5 for collagen-like network | tests_contract=["379120daec5d81d3ab0ad2eab7aabafb"] | title=U1 ECM — Mikado topology
+- id=372120daec5d81d48e09c242a8e58d3f | vg_id=VG-U4-monolayer-stress | observable=Stress buildup from edge | notes=Source KB-4.8. | type=Validation | status=not-started | band_expected=Midline ~1-2 kPa in relevant monolayer cases | tests_contract=["379120daec5d813ea4fefe64b68cb8c5"] | title=U4 Junction — Monolayer stress buildup
+- id=372120daec5d81d597b6d83b1d5b152d | vg_id=VG-U3-cortex-tension-spreading | observable=Cell area/spreading vs gamma | notes=Source KB-3.5. Distinct from VG-H3-KU35-cortex-tension (the active failing gate on phase1/h3-cortex). | type=Validation | status=not-started | band_expected=Lower myosin/cortex tension should alter spreading | tests_contract=["379120daec5d8185afb0d1d2009d0bc6"] | title=U3 Cell — Cortex tension response (spreading vs gamma)
+- id=372120daec5d81efbb5ef22d85df969b | vg_id=VG-U3-shape-index-p0 | observable=p0 = P/sqrt(A) | notes=Source KB-3.15. | type=Sanity check | status=not-started | band_expected=p0 below/above 3.81 maps jammed/unjammed (confluent) | tests_contract=["379120daec5d8185afb0d1d2009d0bc6"] | title=U3 Cell — Shape index p0
+- id=372120daec5d81f388e5d43867b7539f | vg_id=VG-U3-cortex-multifilament | observable=N independent filaments + crosslinks; per-segment theta; Q_ij measurable | notes=Phase 1 = single closed bead-spring chain; reimplementation required before Phase 2. Source KB-3.18/3.19/3.20. | type=Phase-2 entry gate | status=blocked | band_expected=N_filaments >= 50; Bell-Evans crosslink dynamics active; Q_ij spatial distribution measurable | tests_contract=["379120daec5d8185afb0d1d2009d0bc6"] | title=U3 Cell — Cortex multi-filament reconstruction
+- id=372120daec5d81f4a103fb841ccb4f51 | vg_id=VG-U4-junction-force | observable=Force per contact | notes=Source KB-4.11. | type=Validation | status=not-started | band_expected=~1-10 nN for mature contact | tests_contract=["379120daec5d813ea4fefe64b68cb8c5"] | title=U4 Junction — Junction force range
+- id=372120daec5d81f78efaf59df35c4d3d | vg_id=VG-U3-force-balance | observable=Residual norm of div(sigma)+f_ext | notes=Source KB-3.16. | type=Verification | status=not-started | band_expected=Small relative residual after relaxation | tests_contract=["379120daec5d8185afb0d1d2009d0bc6"] | title=U3 Cell — Cell force balance residual
+- id=371120daec5d817b924bff600f047521 | vg_id=VG-H3-KU35-cortex-tension | observable=gamma_total from method-of-planes (steady-state cortex tension) | notes=v4 floor: gamma_total ~3e-4 mN/m (~1600x under). Two mechanism issues (both independent of B1/B2): (1) FA clutch never loads (cell doesn't reach z=0 substrate); (2) myosin step_advances=0 (re-check: may be too-short-sim artifact). Diagnosis… | type=Validation | decisions=["371120daec5d810cbd26e57101436347", "375120daec5d8182aa8ae6f8ae2fe096"] | runs=["371120daec5d816d9eebc5d34d328997", "379120daec5d81fb9e8af35842917068", "379120daec5d81af9d22e9f5d7993cf3", "379120daec5d81d5b5d7d908a05947e1", "379120daec5d815fbdd8c731ba8812eb", "379120daec5d81e9aa05cc000d9a3133", "379120daec5d818f813ae4… | code=["371120daec5d81a083cde8480b2a17e5", "371120daec5d81f499a4d070bbcc7a57"] | status=failing | band_expected=0.35-0.65 mN/m (KU-3.5 v4 band) | tests_contract=["371120daec5d816db459e1b141df8dbd"] | title=KU-3.5 cortex tension floor
+
+## PARAMETERS (table `parameter`)  cols=['id', 'calibrated', 'status', 'config_field', 'contract', 'module', 'range', 'source_claim', 'provenance', 'notes', 'param_id', 'unit', 'default', 'title']
+
+- id=372120daec5d811288f5c54f26c5b907 | calibrated=Sweep | status=draft | config_field=junction config | module=Cell-cell junction | range=TBD | source_claim=["372120daec5d8121b14cea02113ae447", "372120daec5d8186a410c86c26a90b9c"] | provenance=Literature + phase default (KU-4.11, KU-4.17) | notes=Source KU-4.11/4.17. Compare to density x contact area. Relation pending. | param_id=PARAM-N_cad | unit=count/contact | default=100 | title=N_cad
+- id=372120daec5d81519c0be9edf3422a2a | calibrated=Yes | status=draft | config_field=ECM crosslink config | module=ECM cross-links | range=1e-4-1e-2 | source_claim=["372120daec5d8113944fe604e2f898a5"] | provenance=Literature/model fit (KU-1.28) | notes=Source KU-1.28. Treat as fit/sensitivity parameter. Relation pending. | param_id=PARAM-k_xl | unit=N/m | default=TBD | title=k_xl
+- id=372120daec5d815caac9cf062356bde1 | calibrated=Yes | status=draft | config_field=ECM generation config | module=ECM generation | range=Phase-specific | source_claim=["372120daec5d81eca478d4e20880a985"] | provenance=Phase default (KU-1.22) | notes=Source KU-1.22. Calibrate to mesh size/connectivity. Relation pending. | param_id=PARAM-N_fibers | unit=count | default=100 | title=N_fibers
+- id=372120daec5d8161a823f23de151dcff | calibrated=Sweep | status=draft | config_field=cell config | module=Cell mechanics | range=TBD | source_claim=["372120daec5d815ab44dd6529566259e"] | provenance=Phase default (KU-3.17) | notes=Source KU-3.17. Verify against area elasticity convention. Relation pending. | param_id=PARAM-K_A | unit=mN/m | default=0.1 | title=K_A
+- id=372120daec5d81708276eccaaa047ac0 | calibrated=No | status=draft | config_field=motor config | module=Motor-clutch | range=TBD | source_claim=["372120daec5d81bead96e9d82fd9796d", "372120daec5d8178aea7feaf27e4d14d"] | provenance=Literature/model default (KU-2.4, KU-2.18) | notes=Source KU-2.4/2.18. Per myosin motor. Relation pending. | param_id=PARAM-F_stall_motor | unit=pN | default=2 | title=F_stall_motor
+- id=372120daec5d817698afc1f84910b240 | calibrated=No | status=draft | config_field=ECM fiber config | module=ECM stretch modulus | range=TBD | source_claim=["372120daec5d81748d46fb63b2d6d7e2"] | provenance=Model-derived (KU-1.2) | notes=Source KU-1.2. Check fibril vs fiber terminology. Relation pending. | param_id=PARAM-E_fibril | unit=MPa | default=1.1 | title=E_fibril
+- id=372120daec5d817ab0b8f21c8af5a3d9 | calibrated=Sweep | status=draft | config_field=spheroid config | module=Spheroid boundary | range=1-20 | source_claim=["372120daec5d816f94acc5e3e1813ed9", "372120daec5d81528ae2d936695c6799"] | provenance=Literature range + phase default (KU-5.13, KU-5.16) | notes=Source KU-5.13/5.16. Aggregate surface tension. Phase-2+. Relation pending. | param_id=PARAM-gamma_agg | unit=mN/m | default=5 | title=gamma_agg
+- id=372120daec5d817c84cbc87e9897799c | calibrated=Sweep | status=draft | config_field=FA config | module=FA motor-clutch | range=TBD | source_claim=["372120daec5d81bead96e9d82fd9796d", "372120daec5d8178aea7feaf27e4d14d"] | provenance=Model default (KU-2.4, KU-2.18) | notes=Source KU-2.4/2.18. Needs direct source support. Relation pending. | param_id=PARAM-k_on_clutch | unit=s^-1 | default=1 | title=k_on_clutch
+- id=372120daec5d8186bcc1fd5d985637ee | calibrated=Sweep | status=draft | config_field=junction config | module=Cell-cell junction | range=TBD | source_claim=["372120daec5d8186a410c86c26a90b9c"] | provenance=Phase default (KU-4.17) | notes=Source KU-4.17. Check against contact angle formula. Relation pending. | param_id=PARAM-gamma_junction | unit=mN/m | default=0.3 | title=gamma_junction
+- id=372120daec5d8192a624f9946a98a5e6 | calibrated=Sweep | status=draft | config_field=ECM generation config | module=ECM generation | range=0-1 | source_claim=["372120daec5d81bd9d6fff287a38a6d5", "372120daec5d81eca478d4e20880a985"] | provenance=Model parameter (KU-1.9, KU-1.22) | notes=Source KU-1.9/1.22. Sweep isotropic->aligned tumor-like. Relation pending. | param_id=PARAM-alignment_S | unit=dimensionless | default=0 | title=alignment_S
+- id=372120daec5d81939b78e2d2dcc2a2c3 | calibrated=No | status=draft | config_field=ECM domain config | module=ECM simulation domain | range=Phase-specific | source_claim=["372120daec5d81eca478d4e20880a985"] | provenance=Phase default (KU-1.22) | notes=Source KU-1.22. Numerical/domain choice, not biological. Relation pending. | param_id=PARAM-box_size | unit=um | default=200 | title=box_size
+- id=372120daec5d81a09c1cc706cab6e14d | calibrated=Maybe | status=draft | config_field=ECM generation config | module=ECM generation | range=1-5 | source_claim=["372120daec5d81ec9bf1da96c5a1b8b0"] | provenance=Literature range + phase default (KU-1.7, KU-1.22) | notes=Source KU-1.7/1.22. Depends on collagen concentration. Relation pending. | param_id=PARAM-mesh_size_xi | unit=um | default=2 | title=mesh_size_xi
+- id=372120daec5d81a8aeecf5c2a8293ce8 | calibrated=Calibrate | status=draft | config_field=collective config | module=Collective model | range=TBD | source_claim=["372120daec5d81ec9f9ffed79abd4b77", "372120daec5d81528ae2d936695c6799"] | provenance=Phase default (KU-5.11, KU-5.16) | notes=Source KU-5.11/5.16. Needs dimensional consistency check. Phase-2+. Relation pending. | param_id=PARAM-substrate_friction_alpha | unit=Pa s um^-1 | default=100 | title=substrate_friction_alpha
+- id=372120daec5d81b2a6c1fd3cf27c869a | calibrated=Sweep | status=draft | config_field=FA config | module=FA motor-clutch | range=50-100 | source_claim=["372120daec5d81bead96e9d82fd9796d", "372120daec5d8178aea7feaf27e4d14d"] | provenance=Literature/model default (KU-2.4, KU-2.18) | notes=Source KU-2.4/2.18. Cell-type dependent. Relation pending. | param_id=PARAM-N_clutch | unit=count/FA | default=50 | title=N_clutch
+- id=372120daec5d81b5a55cfd587f9654d9 | calibrated=Sweep | status=draft | config_field=FA/junction config | module=FA and junction | range=TBD | source_claim=["372120daec5d8178aea7feaf27e4d14d", "372120daec5d8186a410c86c26a90b9c"] | provenance=Phase default (KU-2.18, KU-4.17) | notes=Source KU-2.18/4.17. Same default for FA/junction needs justification. Relation pending. | param_id=PARAM-k_int | unit=pN/nm | default=1 | title=k_int
+- id=372120daec5d81c2b21ad1d393b0d14a | calibrated=No | status=draft | config_field=cell config | module=Cell geometry | range=TBD | source_claim=["372120daec5d815ab44dd6529566259e"] | provenance=Phase default (KU-3.17) | notes=Source KU-3.17. Phase 1 disk model. Relation pending. | param_id=PARAM-cell_radius | unit=um | default=10 | title=cell_radius
+- id=372120daec5d81c9ab44f471fb7fea3b | calibrated=No | status=draft | config_field=motor config | module=Actin retrograde flow | range=10-100 | source_claim=["372120daec5d81bead96e9d82fd9796d", "372120daec5d8189ad95f1d9df1cca64"] | provenance=Literature/model range (KU-2.4, KU-3.12) | notes=Source KU-2.4/3.12. Unit 2/3 overlap. Relation pending. | param_id=PARAM-v_unloaded | unit=nm/s | default=100 | title=v_unloaded
+- id=372120daec5d81cd9527d4676bf1d5b3 | calibrated=No | status=draft | config_field=derive at runtime from temperature | module=ECM fiber mechanics | range=TBD | source_claim=["372120daec5d8154b04acfc2fa25158e", "372120daec5d814cb11ac9277a4de9af"] | provenance=Derived from ell_p*kBT (KU-1.1, KU-1.24) | notes=Source KU-1.1/1.24. Derive from T when possible. Relation pending. | param_id=PARAM-kappa_fiber | unit=N m^2 | default=7e-26 | title=kappa_fiber
+- id=372120daec5d81d7994bf34947e13905 | calibrated=No | status=draft | config_field=ECM fiber config | module=ECM fiber mechanics | range=9-22 | source_claim=["372120daec5d8154b04acfc2fa25158e"] | provenance=Literature measured/model-derived (KU-1.1) | notes=Type I collagen persistence length. Source KU-1.1. Source Claim relation pending KU migration. | param_id=PARAM-ell_p | unit=um | default=17 | title=ell_p
+- id=371120daec5d81069789d5d6f4f0d3c5 | calibrated=Sweep | status=draft | config_field=substrate E_sub (Cell.build with_substrate); nu=0.45 | contract=["371120daec5d81b2bff5f553074eeb51"] | module=Substrate / ECM (Track A substrate integration) | range=0.1-50 (PAA range); 0.1 kPa-10 GPa across tissues | source_claim=["371120daec5d8160b8cef6a9513bea51"] | provenance=Literature range + Phase default (KB-1.5) | notes=PAA-like linear elastic. Key durotaxis/wetting sweep parameter. nu=0.45 near-incompressible. Effective_E_sub diagnostic relabeled N/m^3 (PI-flag 1af5b4d). | param_id=PARAM-E_substrate | unit=kPa | default=5 | title=E_substrate
+- id=371120daec5d816c9c42c69c9566b068 | calibrated=No | status=implemented | config_field=ffn_sim/configs/phase1_h3.yaml | contract=["371120daec5d816db459e1b141df8dbd"] | module=Cell cortex (ffn_sim/cortex) | range=0.1-1 (0.05 for blebbistatin variant) | source_claim=["371120daec5d815ab3e1ef281fc54cd4"] | provenance=Literature lumped active+passive (KB-3.5) | notes=Key spreading control parameter. Blebbistatin test variant = 10x drop. | param_id=PARAM-gamma_cortex | unit=mN/m | default=0.5 | title=gamma_cortex
+
+## MODEL CONTRACTS (table `model_contract`)  cols=['id', 'mc_id', 'decisions', 'status', 'adopts', 'gates', 'code', 'phase', 'caveat', 'interpretation', 'parameters', 'title']
+
+- id=395120daec5d81cfaed6c5aba49ca1e8 | mc_id=MC-U5-necrosis-3zone | status=draft | adopts=["395120daec5d81259982caa5d97e027a", "395120daec5d81598b6cc2b64107033a", "395120daec5d818eb3c9fc1cfe317331", "395120daec5d81acaf04eab948688890"] | gates=["395120daec5d81959108c4b4cc1d259f", "395120daec5d81c4924eef75b6a4045c"] | phase=Phase 1 | caveat=sigma must EMERGE from contact mechanics (Dolega 2017), never be imposed as sigma(r). kPa thresholds are cell-line-independent (no MCF-7-specific datum). Size landmarks (KB-5.20) and BT-474 fraction curve are OVERLAY-ONLY, never fit (VG-U5-… | interpretation=Per-cell fate updater for the DCM spheroid layer. Each cell takes the WORST verdict of two co-located channels: (a) nutrient/O2 access = rim-depth d = R_cluster - r_cell vs L_viable=150um and d_prolif=40um (KB-5.17/5.18); (b) mechanical com… | title=DCM 3-zone necrosis / quiescence per-cell state updater (worst-of-two: nutrient-depth OR mechanical-compression)
+- id=379120daec5d8126a0aec6ec54693f13 | mc_id=MC-U5-collective | status=draft | gates=["372120daec5d8131b74cd8d4cd8a1085", "372120daec5d81568aeccf1833ae7dee", "372120daec5d814ba1b6c49421b06384"] | phase=Phase 1 | caveat=Layer-2 center-based CBM is a scale-bridge, NOT the fine-grained runtime; FORM reproduced, magnitude is a structural limit (PI-ratified 2026-06-05). Fine-grained collective not yet built (status=draft). | interpretation=Multi-cell collective behaviour: radial expansion law, velocity correlation length, and wetting/dewetting transitions emerge from single-cell mechanics scaled up. The Layer-2 CBM line reproduced the spheroid spreading-law FORM (A/A0=a+b/R+c… | title=Collective / spheroid mechanics — radial expansion law + velocity correlation + wetting/dewetting
+- id=379120daec5d813ea4fefe64b68cb8c5 | mc_id=MC-U4-junction-cadherin | status=draft | gates=["372120daec5d8160ba37e41ed17c255a", "372120daec5d81f4a103fb841ccb4f51", "372120daec5d81d48e09c242a8e58d3f"] | phase=Phase 1 | caveat=Catch-bond model lives in validation/cadherin_*.py (runtime-import-forbidden as oracle); the runtime junction module is not yet wired into Cell.build (status=draft). Catch-bond is full KU-4.2 (NOT slip-only KU-4.17) per the architectural pr… | interpretation=Cell-cell adhesion is an explicit E-cadherin catch-bond (full KU-4.2 catch model, Rakshit-2012), driving junction force range, contact angle/geometry, and monolayer stress buildup, validated against the U4 gates. | title=Cell-cell junction — E-cadherin catch-bond (KU-4.2) + contact mechanics (KU-4.1/4.17)
+- id=379120daec5d8173b32ce7156e1769f9 | mc_id=MC-U2-fa-motor-clutch | status=implemented | gates=["372120daec5d816fb8b4fb02630e390e", "372120daec5d814ab61fecca9f92d356", "372120daec5d81b9a4b7f4b305be6dae"] | code=["379120daec5d8174b410d2acf57659d0", "379120daec5d8190a67ac43b64bd719d", "379120daec5d81de96c4e7504a5ceb90", "379120daec5d81ceaf80f1aeb2531593", "379120daec5d81b58225dc8eb52b1e9e", "379120daec5d81528ed6f901204b5c39", "379120daec5d8129903afb… | phase=Phase 1 | caveat=Off-rate is Bell-Evans force-dependent (NOT Metropolis proxy) per the architectural principle. Traction magnitude band is lit-anchored. | interpretation=Cell-substrate adhesion is an explicit motor-clutch: discrete integrin bonds with force-dependent Bell-Evans/catch-slip lifetimes, ligand species, and FA growth, transmitting actin retrograde flow to traction. Biphasic traction vs substrate… | title=Focal-adhesion motor-clutch — Bell-Evans catch-slip integrin bonds + FA growth (KU-2.2/2.4/2.5/2.17/2.18)
+- id=379120daec5d8185afb0d1d2009d0bc6 | mc_id=MC-U3-cell-integration | status=implemented | gates=["372120daec5d81f388e5d43867b7539f", "372120daec5d81d597b6d83b1d5b152d", "372120daec5d81f78efaf59df35c4d3d", "372120daec5d818fa306cc1acaee725e", "372120daec5d81a4a272cb76bde35a34", "372120daec5d81efbb5ef22d85df969b"] | code=["379120daec5d81bcb9d2c54ad01761a2", "379120daec5d81458310e4ade8d03e97", "379120daec5d81358a33cc7ddc4d2537", "379120daec5d8184ae6ce6ce3b91580e", "379120daec5d81d6a886d0da6777a954", "379120daec5d81da8084ee72334f4b30", "379120daec5d8164856ccd… | phase=Phase 1 | caveat=Cortex is the connected spanning mesh (z~3.3) per the 2026-06-04 rebuild, NOT the fragmented mesh. Operating point must be the physiological baseline (turgor ON, real cytoplasm viscosity). | interpretation=The single cell is the integrated compartment stack: a connected multi-filament cortex (KU-3.17 thickness, KU-3.19 crosslinkers, KU-3.18 ERM tethers) enclosing cytoplasm/nucleus/membrane, with a conserved g-actin monomer pool, whole-cell fo… | title=Single-cell integration — multi-filament cortex topology + crosslinkers + ERM + g-actin pool + force balance (KU-3.17/3.18/3.19)
+- id=379120daec5d81d3ab0ad2eab7aabafb | mc_id=MC-U1-ecm-network | status=implemented | gates=["372120daec5d8131b2b4c8518da5f412", "372120daec5d811d98b1f35d91647f25", "372120daec5d81c39093ce741a722a45", "372120daec5d81489a91d139ae8b5d8d", "372120daec5d81139720d36bdb87c342"] | code=["379120daec5d812fba1fc54009b356a6", "379120daec5d81e3a9c8cbdb4a952bea", "379120daec5d81f4996cd0010625f6fd", "379120daec5d81c8ac86ceeeed23e3b0", "379120daec5d8177912dd61be537c116"] | phase=Phase 1 | caveat=Phase-1 substrate is PAA-like linear-elastic (see MC-substrate-phase1) distinct from this fibrous ECM contract. Bands are first-principles/lit-anchored, not tuned. | interpretation=The ECM is an explicit Mikado network of WLC fibers with discrete cross-links (no continuum/lumped modulus). Linear shear modulus G0, force propagation sigma(r) decay, and the strain-stiffening exponent EMERGE from the fiber+crosslink mecha… | title=Fine-grained cross-linked ECM network — Mikado topology + WLC fibers + strain-stiffening (KU-1.1/1.24/1.27/1.28/1.30)
+- id=372120daec5d8105af66d8c18cb1dc86 | mc_id=MC-H9-nucleus | status=draft | adopts=["372120daec5d8124b93df04b7b86c5da", "372120daec5d81b2b644ce142beb4fc2"] | gates=["372120daec5d810d8bc5cae52a73732d"] | phase=Phase 1 | caveat=brief DRAFT (docs/briefs/H9_nucleus.md); CODE NOT STARTED. Nucleus:cytoplasm ratio technique-dependent (do NOT hard-code 10x). status->implemented after code+verify. | interpretation=EXTEND: add nucleus as 9th additive module. Two-element: chromatin interior (small strain) + lamin-A/C shell (strain-stiffening). E_nuc~1-10 kPa (KB-3.B2.1); lamin-A ~ tissue-E^0.7, viscosity~[lamin-A]^3 (KB-3.B2.2). Nucleus = rate-limiting… | title=H.9 nucleus module (additive)
+- id=372120daec5d815d9921e13d146d6214 | mc_id=MC-H8-membrane-surface | status=draft | adopts=["372120daec5d8131ab35c1491de5db3a", "372120daec5d81fbae01c3b2e6a64f74"] | gates=["372120daec5d81e7b639d0cf135890e4"] | phase=Phase 1 | caveat=brief DRAFT (docs/briefs/H8_membrane_surface.md); CODE NOT STARTED. Sequenced AFTER Lead H.4 FA Cell-integration lands (shared-tree). status->implemented after code+verify. | interpretation=EXTEND (not rebuild): add a plasma-membrane surface as the 8th additive, default-off module. Apparent tension T = T_m + gamma_MCA (KB-3.B1.1); H.8 coupling SSOT = KB-3.B1.4 (f_t=2pi sqrt(2 kappa_m(T_m+gamma_MCA))). Defaults T~3e-5 N/m, kapp… | title=H.8 plasma-membrane surface module (additive)
+- id=372120daec5d8160be1dc6019c22620c | mc_id=MC-H3-composite-tension | status=draft | adopts=["372120daec5d8104828de30c8cf4bb24"] | gates=["372120daec5d81258c68e6930b1ad4aa", "379120daec5d814a94a7c80f05482933", "379120daec5d81bb91a1df65d3b3e12a"] | code=["379120daec5d81949b91eb799ed1d84f", "379120daec5d817eb718cdaef8a1c622", "379120daec5d81a5943ddfb875c34795", "379120daec5d81f38445e100042cdd2c", "379120daec5d813d9f6ed540e9cc4fd2", "379120daec5d81ac83a0df4a20669734"] | phase=Phase 1 | caveat=Blocked on MC-H8-membrane-surface + MC-H9-nucleus implementation. Until then KU-3.5 (VG-H3-KU35) stays cortex-attributed. | interpretation=Once H.8 membrane + H.9 nucleus land, whole-cell tension must be re-derived as a COMPOSITE (membrane + cortex + nucleus) instead of cortex-only. Resolves the caveat on MC-H3-cortex-tension-phase1; current KU-3.5/3.1 results re-labeled corte… | title=KU-3.5/3.1 composite tension re-derivation (post H.8/H.9)
+- id=372120daec5d81738702fb2d8cc45b60 | mc_id=MC-H10-cytoplasm | status=draft | adopts=["372120daec5d81a7992ed48acb46ad1e", "372120daec5d810e98aef8772f361c6c"] | gates=["372120daec5d81588b09c9f5a8c99ec1"] | phase=Phase 1 | caveat=brief DRAFT (docs/briefs/H10_cytoplasm.md); CODE NOT STARTED. INTEGRATOR-ADJACENT - likely frozen-integrator PI-gate. status->implemented after code+verify. | interpretation=EXTEND: add cytoplasm viscoelasticity/poroelasticity as 10th additive module. eta 10-70 Pa s, G 30-80 Pa (KB-3.B3.1, viscosity is the metastasis discriminator); poroelastic Dp~40-60 um^2/s, mesh xi~14 nm (KB-3.B3.2). Cytoplasm moduli 10-20x… | title=H.10 cytoplasm module (additive)
+- id=371120daec5d81b2bff5f553074eeb51 | mc_id=MC-substrate-phase1 | status=implemented | adopts=["371120daec5d8160b8cef6a9513bea51"] | phase=Phase 1 | caveat=Linear elastic only; in-vivo tissue is nonlinear + viscoelastic (Phase 2+). Bulk value -- cells sense heterogeneous cell-scale stiffness on fibrous gels (KU-1.14). | interpretation=Phase-1 adopts a linear-elastic PAA-like substrate at E=5 kPa, nu=0.45 (near-incompressible hydrogel). Matches soft-tissue range; standard in spheroid spreading assays. | parameters=["371120daec5d81069789d5d6f4f0d3c5"] | title=Phase-1 substrate = PAA-like linear elastic 5 kPa
+- id=371120daec5d816db459e1b141df8dbd | mc_id=MC-H3-cortex-tension-phase1 | decisions=["371120daec5d810cbd26e57101436347"] | status=implemented | adopts=["371120daec5d815ab3e1ef281fc54cd4"] | gates=["371120daec5d817b924bff600f047521"] | code=["371120daec5d81a083cde8480b2a17e5", "371120daec5d81f499a4d070bbcc7a57"] | phase=Phase 1 | caveat=COMPOSITE re-derivation tracked as MC-H3-composite-tension (372120daec5d8160be1dc6019c22620c) + VG-H3-composite-tension, blocked on H.8/H.9. Current results cortex-attributed until then. KU-3.5/3.1 become composite gates. | interpretation=Phase-1 models whole-cell tension as cortex-only (no membrane/nucleus/cytoplasm compartments yet). gamma_total from method-of-planes attributed entirely to cortex. Target band 0.35-0.65 mN/m (KU-3.5 v4). | parameters=["371120daec5d816c9c42c69c9566b068"] | title=Phase-1 cortex-only tension gate
+
+## KNOWLEDGE CLAIMS (table `knowledge_claim`) — id + statement (compact)
+
+- 395120daec5d81259982caa5d97e027a: 
+- 395120daec5d81598b6cc2b64107033a: 
+- 395120daec5d818eb3c9fc1cfe317331: 
+- 395120daec5d81acaf04eab948688890: 
+- 372120daec5d8126b220db6aa45cb630: 
+- 372120daec5d8127b195ea82791ffb52: 
+- 372120daec5d813eae8ae4dde75b3d05: 
+- 372120daec5d81498a2bf3819ba7a382: 
+- 372120daec5d8162b352ce41627edad7: 
+- 372120daec5d8178b300c339799292b9: 
+- 372120daec5d81909e4fda1040251210: 
+- 372120daec5d819c9a24eec486934e46: 
+- 372120daec5d81d2bfedd9734f618b41: 
+- 372120daec5d81fab845cb8c65786b4d: 
+- 372120daec5d81038576cdfb8c9fed85: 
+- 372120daec5d810391cfc996a2bb1ba9: 
+- 372120daec5d8103ad8dd70a10e9e696: 
+- 372120daec5d8108ad37d33b8ad8b251: 
+- 372120daec5d810e98aef8772f361c6c: 
+- 372120daec5d81229bb0e468d0608b0b: 
+- 372120daec5d8124b93df04b7b86c5da: 
+- 372120daec5d813183a1e4f671bda9d9: 
+- 372120daec5d8131ab35c1491de5db3a: 
+- 372120daec5d8136be37d9f06344ddf7: 
+- 372120daec5d8139b232ca02e580d804: 
+- 372120daec5d8145a3d7fce3cafc9039: 
+- 372120daec5d81478ebae13099bd1dca: 
+- 372120daec5d814eb416eceba58f2585: 
+- 372120daec5d81518137d45204b49a11: 
+- 372120daec5d815fa183f9cf5470ab22: 
+- 372120daec5d817ea68def1931dedd5d: 
+- 372120daec5d81819762dbd1fe86ccd5: 
+- 372120daec5d81889c65ca0f45fe8517: 
+- 372120daec5d81929958fc123bde6a3d: 
+- 372120daec5d8197a6b0da35d96118ee: 
+- 372120daec5d819ab2a6c31090a89f4b: 
+- 372120daec5d819d83b3d731f5e768e0: 
+- 372120daec5d81a2a082d59be53787a2: 
+- 372120daec5d81a69d60cbd19253699b: 
+- 372120daec5d81a7992ed48acb46ad1e: 
+- 372120daec5d81adb9a6cec288c3fa65: 
+- 372120daec5d81afb5d4dc9033e2f5eb: 
+- 372120daec5d81afb63de67d6f58cdab: 
+- 372120daec5d81b2b644ce142beb4fc2: 
+- 372120daec5d81c087e2e4a512b020be: 
+- 372120daec5d81cca43bf37916328beb: 
+- 372120daec5d81d1a21cf62cd5426eee: 
+- 372120daec5d81d49901dbd98b36abd6: 
+- 372120daec5d81d5bcd0d3665921c006: 
+- 372120daec5d81d79c31cb729d33f8b9: 
+- 372120daec5d81e4aaddea9a390764ab: 
+- 372120daec5d81e4b02fda20db6eed77: 
+- 372120daec5d81f5b45dd4e870582f38: 
+- 372120daec5d81fbae01c3b2e6a64f74: 
+- 372120daec5d81fbb56fde8ff7b76df5: 
+- 372120daec5d81ffac9ecb007feba113: 
+- 372120daec5d812b915ec7a25c88387a: 
+- 372120daec5d81528ae2d936695c6799: 
+- 372120daec5d815388dce4cad33348bf: 
+- 372120daec5d815bb147ebc17dc1dc1c: 
+- 372120daec5d815ebfb3d7562eae7cb1: 
+- 372120daec5d8168a1a0e76cf59fd523: 
+- 372120daec5d816f94acc5e3e1813ed9: 
+- 372120daec5d8197b85fe8449087ae87: 
+- 372120daec5d8198a094e11a64962753: 
+- 372120daec5d81a6a498c03ea52dc0ef: 
+- 372120daec5d81c2b5a8c45648570d15: 
+- 372120daec5d81e5bd1ff676f6296687: 
+- 372120daec5d81ec9f9ffed79abd4b77: 
+- 372120daec5d81f2b796e1deb61fe2d8: 
+- 372120daec5d81fc8c10d1e6cf5baa97: 
+- 372120daec5d8107a704fb7b164c83ae: 
+- 372120daec5d811c96f6c2aee5d1774c: 
+- 372120daec5d8121b14cea02113ae447: 
+- 372120daec5d8123933ee62bd5424f8a: 
+- 372120daec5d812faf1dea8a4f3a21e9: 
+- 372120daec5d813bb968e755d47c618f: 
+- 372120daec5d814aa5bae097dec64b0d: 
+- 372120daec5d8157bf6dcd86593d92aa: 
+- 372120daec5d8165812ff8f8fc0c9b33: 
+- 372120daec5d816f949cd51ad9a7a9b0: 
+- 372120daec5d8186a410c86c26a90b9c: 
+- 372120daec5d81929477ce4478d2d3ad: 
+- 372120daec5d81a2b0d6cdee1e3c0a49: 
+- 372120daec5d81a483fdf9474520bb14: 
+- 372120daec5d81aca6c2dee3a8e86072: 
+- 372120daec5d81af8e53dbfa4c8265a6: 
+- 372120daec5d81b6845ce411766fb87f: 
+- 372120daec5d81d08096e0a6f7b56ba5: 
+- 372120daec5d8104828de30c8cf4bb24: 
+- 372120daec5d811886e8f8da19787b5b: 
+- 372120daec5d813795efc28ee677345f: 
+- 372120daec5d8145af3edc1a5deb6946: 
+- 372120daec5d8156ac35f472ecb723a3: 
+- 372120daec5d81599a9ff6a8cd598092: 
+- 372120daec5d815ab44dd6529566259e: 
+- 372120daec5d8168a3d6cfa4d69eb218: 
+- 372120daec5d81749e14c8e04c451f3e: 
+- 372120daec5d81789786f70374dc9f59: 
+- 372120daec5d817c92aae9f47033461a: 
+- 372120daec5d8189ad95f1d9df1cca64: 
+- 372120daec5d8191828cd8ac030b2ebf: 
+- 372120daec5d819b821ef539dcc5c6dd: 
+- 372120daec5d81a2bdedd7df448fde77: 
+- 372120daec5d81babaaed054f0d69c54: 
+- 372120daec5d81c1b9a5d1dfd6dd8525: 
+- 372120daec5d81c8a6d6e8f46c8531a1: 
+- 372120daec5d81d09155c2b44c0a01dc: 
+- 372120daec5d81d2962ae77caec02e66: 
+- 372120daec5d81db8d29d1e1e3f1857f: 
+- 372120daec5d81de9dcdf012b5210e9b: 
+- 372120daec5d8106b071cd36e3103060: 
+- 372120daec5d811eb3e6ec6bbfb8261a: 
+- 372120daec5d812da5c8eea09f76d056: 
+- 372120daec5d812f8759d2a7d475f6c0: 
+- 372120daec5d8130b752f235f64421ef: 
+- 372120daec5d81529ed5feab33329793: 
+- 372120daec5d8176b628e26fce81d6f9: 
+- 372120daec5d8178aea7feaf27e4d14d: 
+- 372120daec5d817b892ac25bcbf67c80: 
+- 372120daec5d8185ad18c0c2c9ee9d4c: 
+- 372120daec5d818bb771fea7b3c59b6c: 
+- 372120daec5d8194a81de3847551c15d: 
+- 372120daec5d8194b2a5d8e68e48c642: 
+- 372120daec5d81b0a55ed5fa46322252: 
+- 372120daec5d81bead96e9d82fd9796d: 
+- 372120daec5d81bf8c56d7fc6d3340c6: 
+- 372120daec5d81ceb4e1e0bb99366e0f: 
+- 372120daec5d81db8e84f2d4b149e06d: 
+- 372120daec5d81039c48e3ede00c39a0: 
+- 372120daec5d810e8276cb53ea8291fd: 
+- 372120daec5d8113944fe604e2f898a5: 
+- 372120daec5d8119b879f90e50d44e7f: 
+- 372120daec5d81289ec4e77ffbd36e99: 
+- 372120daec5d812b81d6dc5cf1050c01: 
+- 372120daec5d81499f3bea7bafc95a04: 
+- 372120daec5d814cb11ac9277a4de9af: 
+- 372120daec5d814d803ff8e6d3de223e: 
+- 372120daec5d8154b04acfc2fa25158e: 
+- 372120daec5d815683aafeea5a5039e5: 
+- 372120daec5d81748d46fb63b2d6d7e2: 
+- 372120daec5d8174afb0e1cfce3b4a42: 
+- 372120daec5d817b8a5ce28da1115608: 
+- 372120daec5d8193a07fda6e93225c0b: 
+- 372120daec5d81a8aff2dea369ba403b: 
+- 372120daec5d81b58f8ccf94635371dd: 
+- 372120daec5d81bd993ec09de8f4ba89: 
+- 372120daec5d81bd9d6fff287a38a6d5: 
+- 372120daec5d81c699a7ed42ee15a6af: 
+- 372120daec5d81c887dee9aed4c25a7e: 
+- 372120daec5d81cea8fbca47ed8eb086: 
+- 372120daec5d81dcb6d3d6c8b7a304fd: 
+- 372120daec5d81e687d3f9ccfd9dbd2d: 
+- 372120daec5d81eb9888f6c055dcd2c9: 
+- 372120daec5d81ec9bf1da96c5a1b8b0: 
+- 372120daec5d81eca478d4e20880a985: 
+- 372120daec5d81ecbd41e910970e3757: 
+- 372120daec5d81ffba0ddd9aaa5a6ed7: 
+- 371120daec5d8160b8cef6a9513bea51: 
+- 371120daec5d819ca4e4f26e1cdc3227: 
+- 371120daec5d819da6e4dfe0ceabfde2: 
+- 371120daec5d815ab3e1ef281fc54cd4: 
+
+## ORACLE CONFIGS on disk (ffn_sim/validation/oracles/)
+
+- ffn_sim/validation/oracles/configs/layer2_cbm.yaml
+- ffn_sim/validation/oracles/configs/phase1_unit1.yaml
+- ffn_sim/validation/oracles/configs/phase1_unit2_1.yaml
+- ffn_sim/validation/oracles/configs/phase1_unit2_2.yaml
+- ffn_sim/validation/oracles/configs/phase1_unit3.yaml
+- ffn_sim/validation/oracles/configs/phase1_unit4_1.yaml
+- ffn_sim/validation/oracles/__init__.py
+- ffn_sim/validation/oracles/bridge/__init__.py
+- ffn_sim/validation/oracles/bridge/traction.py
+- ffn_sim/validation/oracles/bridge/types.py
+- ffn_sim/validation/oracles/common/__init__.py
+- ffn_sim/validation/oracles/common/derived_params.py
+- ffn_sim/validation/oracles/common/derived_params_cell.py
+- ffn_sim/validation/oracles/common/sanity_gate.py
+- ffn_sim/validation/oracles/ecm/__init__.py
+- ffn_sim/validation/oracles/ecm/cross_links.py
+- ffn_sim/validation/oracles/ecm/diagnostics.py
+- ffn_sim/validation/oracles/ecm/fiber_mechanics.py
+- ffn_sim/validation/oracles/ecm/fiber_network.py
+- ffn_sim/validation/oracles/junction/__init__.py
+- ffn_sim/validation/oracles/junction/contact_angle.py
+- ffn_sim/validation/oracles/junction/types.py
+- ffn_sim/validation/oracles/spheroid/__init__.py
+- ffn_sim/validation/oracles/spheroid/aa0_law.py
+- ffn_sim/validation/oracles/spheroid/surface_tension_bridge.py
+- ffn_sim/validation/oracles/young_dupre.py

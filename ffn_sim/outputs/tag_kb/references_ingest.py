@@ -61,7 +61,7 @@ def slug(s: str, n: int = 60) -> str:
 
 def pdf_paths() -> list[pathlib.Path]:
     paths = sorted(REF_DIR.glob("*.pdf"))
-    for sub in ("cellpress_bundle", "downloaded"):
+    for sub in ("cellpress_bundle", "downloaded", "2026_07_10"):
         d = REF_DIR / sub
         if d.exists():
             paths += sorted(d.glob("*.pdf"))
