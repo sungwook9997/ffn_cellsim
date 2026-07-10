@@ -21,7 +21,10 @@ reshaping a native tissue-mimetic matrix once principled Stokes drag unblocks mi
 Route the library into the cell scripts, stand up ONE macroscopic stress tensor, and put a resting cell on
 real-Pa ECM — zero tuning.
 
-> **Execution status (2026-07-11): NEAR #1, #3, #4, #5 DONE + native/method-verified. #2 & #6 remaining.**
+> **Execution status (2026-07-11 night): NEAR #1, #3, #4, #5 DONE + native/method-verified. #2 committed
+> (Path a coupling validated; native pa_gel run in flight). #6 IMPLEMENTED + coarse-smoke-validated (aligned
+> collagen builds, R_σ grid-invariant signal monotone; A_F needs the native ensemble — queued behind #2 on the
+> A5000). Overnight autonomous execution plan: `OVERNIGHT_PLAN_2026-07-11.md`.**
 
 1. ✅ **DONE — Quasi-static stiffness-sensing demo** — `ff_stiffness_sensing.py`: `--from-resting` full-
    compartment cell (Winkler substrate k_sub=2Ea/(1−ν²), Path b). **Native A5000-confirmed** (Nc=266000):
