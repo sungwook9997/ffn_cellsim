@@ -80,7 +80,8 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
           length_dist="mono", microtubules=False, n_mt=40, L_mt_um=6.0,
           from_resting=False, relax_steps=6000, relax_device="cpu",
           n_myo_ratio=160, f_excess=0.0, f_myo=NMIIA_MINIFIL_STALL_PN, n_fa=0,
-          ecm=False, ecm_fibers=1500, ecm_depth=4.0, ecm_capture=1.0, ecm_lp_um=20.0):
+          ecm=False, ecm_fibers=1500, ecm_depth=4.0, ecm_capture=1.0, ecm_lp_um=20.0,
+          ecm_material="mikado", ecm_conc=1.5, ecm_align_s=0.0):
     """Polarized cell on a substrate: cortex + nucleus + membrane, basal FA clutches on the contact cap, and a
     FRONT cap (nodes with (x−com)·phat > front_frac·R) that carries the leading-edge protrusion.
 
@@ -166,9 +167,14 @@ def build(n_cortex_fil=900, seed=7, contact_h=0.6, front_frac=0.5, phat=(1.0, 0.
         xy = cortex_pos[:, :2]
         lo = np.array([xy[:, 0].min() - 2.0, xy[:, 1].min() - 2.0, z_sub - ecm_depth])
         hi = np.array([xy[:, 0].max() + 2.0, xy[:, 1].max() + 2.0, z_sub + 0.5])  # slab from below z_sub to the basal cap
-        ecm_net = build_mikado_network(lo, hi, n_fibers=ecm_fibers, pin_face="z_lo",  # bulk collagen below = pinned
-                                       kappa=U.KBT * float(ecm_lp_um),                 # κ=kBT·Lp; Lp is the biphasic-sweep stiffness knob (PI-gated)
-                                       rng=np.random.default_rng(seed + 11))
+        if ecm_material != "mikado":                                             # PHYSIOLOGICAL collagen via the grounded ecm_library:
+            from ffn_sim.ff.ecm_library import build_ecm                         # real E_fibril→seg_k, concentration→mesh (KB-1.7), nematic S (KB-1.9)
+            ecm_net = build_ecm(ecm_material, lo, hi, concentration=float(ecm_conc), alignment_S=float(ecm_align_s),
+                                dim=3, director=tuple(phat), pin_faces=("z_lo",), rng=np.random.default_rng(seed + 11))
+        else:                                                                    # raw Mikado (back-compat): fixed K_SEG, κ=kBT·Lp knob
+            ecm_net = build_mikado_network(lo, hi, n_fibers=ecm_fibers, pin_face="z_lo",  # bulk collagen below = pinned
+                                           kappa=U.KBT * float(ecm_lp_um),
+                                           rng=np.random.default_rng(seed + 11))
         ecm_node = attach_clutches_to_ecm(cortex_pos[basal.astype(np.int64)], ecm_net.net.pos, capture_um=ecm_capture)
     return dict(cx=cx, net=merged, Nc=Nc, Ne=Ne, n_nuc=nuc_pos.shape[0], pos_all=pos_all, nuc=nuc,
                 mem=mem, basal=basal.astype(np.int32), anchors=anchors, z_sub=z_sub, R=R, c=c,
@@ -372,10 +378,17 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         _Etri = np.ascontiguousarray(_enet.bend_triples, np.int32); _EnT = _Etri.shape[0]
         _Eal = np.ascontiguousarray(_per_triple_alpha(_enet), np.float64)
         _Exl = np.ascontiguousarray(np.stack([_emk.xl_i, _emk.xl_j], 1), np.int32) if _emk.xl_i.size else np.zeros((0, 2), np.int32)
-        _Eseg = _segment_pairs(_enet.fiber_offsets)
-        _Esegr = np.linalg.norm(_Ep0[_Eseg[:, 0]] - _Ep0[_Eseg[:, 1]], axis=1) if _Eseg.shape[0] else np.zeros(0)
+        if hasattr(_emk, "seg_k") and np.asarray(_emk.seg_k).size:         # ecm_library ECMNetwork: PHYSICAL per-segment axial springs (real E_fibril)
+            _Eseg = np.stack([_emk.seg_i, _emk.seg_j], 1)
+            _Esegr = np.ascontiguousarray(_emk.seg_rest, np.float64)
+            _Esegk = np.ascontiguousarray(_emk.seg_k, np.float64)
+        else:                                                              # raw Mikado (back-compat): fixed K_SEG inextensibility
+            _Eseg = _segment_pairs(_enet.fiber_offsets)
+            _Esegr = np.linalg.norm(_Ep0[_Eseg[:, 0]] - _Ep0[_Eseg[:, 1]], axis=1) if _Eseg.shape[0] else np.zeros(0)
+            _Esegk = np.full(_Eseg.shape[0], K_SEG)
         _Egam = np.where(_emk.pinned, 1.0e18, 1.0).astype(np.float64)      # pinned boundary immovable; bulk drag 1.0 (demo units)
-        _Ekmax = max(float(_enet.kappa.max()) / (0.5 ** 3) if _enet.kappa.size else 1.0, K_SEG,
+        _Ekmax = max(float(_enet.kappa.max()) / (0.5 ** 3) if _enet.kappa.size else 1.0,
+                     float(_Esegk.max()) if _Esegk.size else 1.0,
                      float(_emk.xl_k.max()) if _emk.xl_k.size else 1.0, float(cp.k_int))
         _Edt = 0.1 * 1.0 / _Ekmax                                          # collagen explicit CFL-stable substep [s]
         _Ensub = 20                                                        # collagen substeps per cell step (partial relax; remodel accumulates over steps)
@@ -385,7 +398,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
         Exlk_d = wp.array(np.ascontiguousarray(_emk.xl_k, np.float64), dtype=wp.float64, device=d)
         Exlr_d = wp.array(np.ascontiguousarray(_emk.xl_rest, np.float64), dtype=wp.float64, device=d)
         Eseg_d = wp.array(np.ascontiguousarray(_Eseg, np.int32), dtype=wp.int32, ndim=2, device=d)
-        Esegk_d = wp.array(np.full(_Eseg.shape[0], K_SEG), dtype=wp.float64, device=d)
+        Esegk_d = wp.array(np.ascontiguousarray(_Esegk, np.float64), dtype=wp.float64, device=d)
         Esegr_d = wp.array(np.ascontiguousarray(_Esegr, np.float64), dtype=wp.float64, device=d)
         Egam_d = wp.array(_Egam, dtype=wp.float64, device=d)
         en_base_d = wp.array(np.ascontiguousarray(S["ecm_node"], np.int32), dtype=wp.int32, device=d)   # clutch → collagen node (frame-0 attach)
@@ -827,8 +840,13 @@ def main():
                     "frame-0 node — so as the cell protrudes, front clutches grab NEW fibres ahead + rear releases → the cell "
                     "WALKS across the collagen (needs --ecm; pair with --com-drag). Default off = validated remodel-in-place path.")
     ap.add_argument("--ecm-lp-um", type=float, default=20.0, help="collagen fiber persistence length Lp [µm] → κ=kBT·Lp "
-                    "(the BIPHASIC-sweep stiffness knob; default 20 = LP_COLLAGEN_UM; thin-fibril→thick-bundle range 2–2e5, PI-gated). "
-                    "Chan-Odde/Bangasser cross-check: clutch traction should peak at an intermediate effective stiffness.")
+                    "(raw-Mikado bending knob; default 20 = LP_COLLAGEN_UM). NOTE the clutch feels a K_SEG/crosslink-dominated "
+                    "stiffness, so this κ knob does NOT move the effective substrate stiffness — use --ecm-material for a physical sweep.")
+    ap.add_argument("--ecm-material", default="mikado", help="collagen build backend: 'mikado' (raw, fixed K_SEG, back-compat "
+                    "default) or an ecm_library material key ('collagen_I', 'fibrin', …) → PHYSICAL per-segment stiffness from the "
+                    "real E_fibril + concentration→mesh (KB-1.7) + nematic alignment (KB-1.9). Use for the physical biphasic + tumor-aligned matrices.")
+    ap.add_argument("--ecm-conc", type=float, default=1.5, help="collagen concentration [mg/mL] for --ecm-material (sets density→mesh→modulus; the PHYSICAL biphasic knob)")
+    ap.add_argument("--ecm-align-s", type=float, default=0.0, help="collagen nematic order S for --ecm-material (0=isotropic; 0.3–0.7=tumor stroma TACS, KB-1.9; director=phat)")
     ap.add_argument("--n-fa", type=int, default=0, help="cap basal clutches to N DISCRETE spatially-spread focal-adhesion sites "
                     "(0=one-per-cortex-node). Real FAs are ~10² integrin clusters; at native Nc the per-node model dilutes per-clutch "
                     "load ~100× so clutches never turn over (no crawl). ~150-300 restores physical per-clutch load → the catch-slip treadmill.")
@@ -881,7 +899,8 @@ def main():
               microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
               n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0),
-              ecm=args.ecm, ecm_fibers=args.ecm_fibers, ecm_lp_um=args.ecm_lp_um)
+              ecm=args.ecm, ecm_fibers=args.ecm_fibers, ecm_lp_um=args.ecm_lp_um,
+              ecm_material=args.ecm_material, ecm_conc=args.ecm_conc, ecm_align_s=args.ecm_align_s)
     if S.get("ecm") is not None:
         _en = S["ecm_node"]
         print(f"[ecm] collagen-I Mikado slab: {len(S['ecm'].net.fiber_offsets)-1} fibers, {S['ecm'].net.pos.shape[0]} nodes, "
