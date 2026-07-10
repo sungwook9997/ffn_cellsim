@@ -250,6 +250,13 @@ Autonomous-decision log appended below as choices are made.
 
 ## MORNING SUMMARY (overnight of 2026-07-10→11) — read first
 
+> **Full arc:** (1) S6 caveat resolved + MMP + cell-type + honest migration verdict + atlas + engine fixes + ECM-viz
+> verified (this summary), then two PI-decision items worked out in the continuation (bottom of this file, **read them**):
+> **§ TAG re-plan** — migration is traction-limited, KB-confirmed, not a drag bug (lever = EMT + KB-3.14, PI-gated); and
+> **§ FF-engine mechanism gap analysis** — the next mechanism (cofilin severing) is **KB-blocked**, needs your KB-ingestion
+> sign-off (I did not invent a rate). Nothing needs action to be *safe*; the two § sections are where your input unblocks
+> the next step. kb-check green throughout (runs 31 / params 42, no drift).
+
 **Landed (all committed, backed up, no ffn/foundation push):**
 - **MMP proteolytic invasion** (`--mmp`, KB-1.20) + **motile/EMT cell-type** (`--cell-type mesenchymal/emt`, new
   `ffn_sim/ff/cell_type.py`, KB-3.11/SE248/KB-4.12) — the two mechanisms you asked for, both default-off, KB-grounded.
