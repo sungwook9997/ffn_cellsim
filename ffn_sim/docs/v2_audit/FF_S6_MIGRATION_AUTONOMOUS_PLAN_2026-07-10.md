@@ -310,3 +310,32 @@ Autonomous-decision log appended below as choices are made.
   flagged rather than edited. The explosion guard makes it fail safe.
 
 **Continuing autonomously:** M2 (crawl viewer from the best migration run) + consolidation; the loop stays live.
+
+---
+
+## TAG re-plan (2026-07-11) — the migration open item is TRACTION-limited, NOT a drag bug (KB-confirmed)
+
+Per your instruction ("check the TAG for new info, then re-plan from it"), I queried the Kim+Miyazaki corpus for the
+crawl/drag physics. **Kim2012_IntegrBiol** (the FF migration reference): drag is **per-node, linear `F_D = C·v`**,
+`C = 0.001 N·s·m⁻¹` **fixed**, total drag `∝ N adhesion nodes`, **bond-rupture origin (NOT hydrodynamic)** — and,
+decisively, *"migration-speed vs cell-size emerges from geometry (FA-formation probability → traction imbalance),
+**not** from a size-scaled drag coefficient"* [Kim2012 p7–10].
+
+**What this re-plans:**
+- The migration open item was framed as an "adhesion-drag" problem. The TAG shows the drag is **already handled**:
+  my `--com-drag` applies the physical whole-cell Stokes drag `6πηR` to the COM mode (Nc-independent) — the earlier
+  `Σγ ∝ Nc` grid-drag (`--bulk-drag`, unstable) is superseded. So native slowness is **not** a drag-magnitude bug.
+- Kim2012 says the speed lever is the **front–back traction imbalance** (FA-formation asymmetry, geometry-driven).
+  That is exactly what my `polarize` + `ecm_regrip` model — and they produced the correct **directionality**
+  (coherence 0.05→0.44) at MCF7-appropriate **modest speed**. So the honest M1 verdict is **KB-CONFIRMED**, not a
+  defect: a poorly-motile epithelial MCF7 *should* be traction-imbalance-limited and slow.
+- **The legitimate (non-tuning) path to physiological speed** is therefore the **EMT/mesenchymal program**, exactly
+  as Kim2012 frames cell-type ("change cell size or the number of adhesions per node"): more/denser front adhesions
+  + stronger polarization + the **KB-3.14 contractility upregulation (2–10×, PI-gated)**. My `cell_type.py`
+  `mesenchymal`/`emt` presets already encode the adhesion/polarization side; `contractility_mult` stays **1.0**
+  (PI-gated) by design. **Next migration step (needs the A5000 free + your OK on the KB-3.14 lever):** run
+  `--cell-type emt --com-drag` with `contractility_mult` raised into the KB-3.14 2–10× band and measure v — a
+  KB-grounded cell-type change, *not* a tuning sweep of MCF7.
+
+This is a re-plan, not a result: nothing was run (GPU busy). It converts the vague "solver look" open item into a
+concrete, KB-anchored, PI-gated experiment, and it strengthens (does not overturn) the honest migration verdict.
