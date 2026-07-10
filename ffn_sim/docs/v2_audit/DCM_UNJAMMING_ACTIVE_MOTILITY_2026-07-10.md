@@ -104,6 +104,22 @@ mesenchymal (weak cadherin) fluidises AND disperses. Matches KB-PIV-10 (low E-ca
 "matured spreads more" (n=1) was stochastic — the ensemble reverses it. So: **motility → unjamming (v0 axis); cadherin
 → cohesion (E-cadherin axis)** — the two independent knobs of the tissue jamming/wetting state.
 
+## 4d. fa150 non-monotonicity RESOLVED = CFL artifact; ⚠️ dt-convergence of the core result being verified
+
+fa100/150/200 at seed 11 with CFL capture: **maxCFL blows up with F_active — fa100=28, fa150=101, fa200=24812**. So
+the fa150<fa100 non-monotonicity is a **NUMERICAL (CFL) artifact**, not a physical re-entrant/re-jamming transition:
+at high F_active the accel_dt=8e-4 timestep is far too large (CFL≫1), the implicit-solver displacement/CCD cap
+dominates → cells move less per step → less effective unjamming. The runs stay STABLE + GENUINE (the implicit+IPC
+solver is unconditionally stable) but the DYNAMICS are under-resolved / capped above ~fa100.
+
+**⚠️ This flags a rigour gap in the whole dose-response: even fa100 has CFL≈28 (≫1).** The unjamming spread is real
+(stable, GENUINE, visual-verified, ensemble-consistent at fa100), but the QUANTITATIVE dose-response magnitude may be
+accel_dt-dependent. **dt-convergence check running** (fa100 at accel_dt 8e-4 / 2e-4 / … at matched physical time): if
+A/A0 + shape index hold as dt↓ (CFL→O(1)), the result is trustworthy; if they drift, the magnitudes are dt-confounded
+and the clean run needs a smaller accel_dt (or a per-step velocity-limited motility). The QUALITATIVE claim (motility
+unjams the jammed aggregate → genuine collective spread; cadherin sets cohesion not unjamming) is robust; the numbers
+are pending this convergence check.
+
 ## 5. Next (in progress)
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
