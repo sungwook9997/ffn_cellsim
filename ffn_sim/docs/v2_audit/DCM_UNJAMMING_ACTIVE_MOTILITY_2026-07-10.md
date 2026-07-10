@@ -64,9 +64,26 @@ Every value lit-anchored: F_active = KB-2.12 single-cell traction (swept, not tu
 Every A/A0 claim VISUALLY verified (browser_check) — which is why the wetting/node-ejection artifacts were caught and
 this genuine spread is trusted. Compared against TAG (jamming/SPV/Geiger2022) + PI KB-PIV-10.
 
-## 5. Next
-- Cross s0*=5.41 cleanly (slightly higher F_active or longer time) + map the full transition curve (A/A0, s, drift
-  vs F_active/persistence) → reproduce the SPV phase diagram; anchor to KB-PIV-10 unjamming-by-size + E-cadherin.
-- Couple with the cadherin cluster maturation (strong/matured = jammed/epithelial; nascent + motility = unjammed/
-  mesenchymal) → the EMT-like unjamming controlled by junction state × motility.
+## 4b. HONEST caveats (2026-07-10, EMT-sweep follow-up)
+
+The §2 dose-response is a **single run per F_active at motility-seed 7** — and follow-up runs show it is **stochastic
+and not cleanly monotonic**, so those numbers are indicative, not yet ensemble-quantified:
+- **fa150 nascent** (same seed 7, DETERMINISTIC vs fa100): A/A0=1.229, drift 1.35 µm — **LESS** than fa100 (1.918),
+  a real non-monotonicity at high force (suspect a velocity/CFL cap or a collective-cancellation of the stronger
+  random propulsion). To investigate.
+- **fa100 MATURED cadherin** (n=1): A/A0=2.421, drift 5.14 µm — **more** than fa100 nascent (1.918), the OPPOSITE of
+  the "matured/epithelial resists unjamming" hypothesis. **Visually verified GENUINE** (intact cells, dispersed, no
+  ejection), but n=1 is within the stochastic spread — inconclusive on maturation-gating.
+- Unjamming TIME-COURSE (fa100): shape index jumps 4.855→5.30 in the first ~2 s then plateaus at 5.35 (frac_unjammed
+  0→45 %); confined stays 4.85→4.93 (7 %). So the fluidisation is fast; A/A0 keeps rising as cells drift apart.
+
+**Conclusion stands at the mechanism level** (active motility unjams the DCM aggregate → genuine collective spread,
+shape index rises toward s0*, visual-verified) — but the QUANTITATIVE dose-response + the maturation-gating question
+require **seed ensembles** (per the 'ensemble before spontaneous' rule). `--motility-seed` now exposes the polarity RNG.
+
+## 5. Next (in progress)
+- **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
+  (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
+- Resolve the fa150 non-monotonicity (CFL/velocity cap check); map A/A0, s, frac_unjammed vs F_active with ensembles
+  → the SPV phase diagram; anchor to KB-PIV-10 unjamming-by-size.
 - Apply the same fluidisation to rate-gated compaction ((b) line).
