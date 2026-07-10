@@ -58,6 +58,11 @@ MAT_LIFE = float(os.environ.get("MATURE_LIFETIME", "600"))  # mature junction li
 CLUSTER  = os.environ.get("CLUSTER", "0") == "1"        # S3 load-sharing cluster break (junction=bundle_n parallel
                                                         # trans-dimers, m→0 death; +MATURE → contact-age maturation ENGAGES)
 NNASCENT = int(os.environ.get("N_NASCENT", "4"))        # nascent cluster size (KB-4.3 controlled var)
+MOTIL    = os.environ.get("MOTILITY", "0") == "1"       # Phase-4: per-cell active motility (SPV fluidisation) — does
+                                                        # fluidising the aggregate make σ-compaction rearrangement-mediated?
+FACT_NN  = float(os.environ.get("F_ACTIVE_NN", "100"))  # active force [nN/cell] (KB-2.12; super-physio speed caveat)
+MOT_TAU  = float(os.environ.get("MOTILITY_TAU", "600")) # persistence τ_p [s] (≥150s = directed, unjams)
+MOT_SEED = int(os.environ.get("MOTILITY_SEED", "11"))
 BUILDER  = os.environ.get("BUILDER", "fcc")             # 'fcc' loose | 'confluent' Voronoi space-filling (feasible)
 INSET    = float(os.environ.get("INSET", "0.0"))        # >0 → shrink cells at build so they START non-overlapping (G2 fix)
 INIT_NPZ = os.environ.get("INIT_NPZ", "") or None       # restart from a saved aggregate npz (frames/faces/cof)
@@ -87,6 +92,9 @@ r = run_decohesion(
     surface_tension=True, gamma_surf=GAMMA, diff_tension=True,
     # --- the driver under test: aggregate-level Foty-Steinberg σ (SIGMA=0 ⇒ off = baseline) ---
     aggregate_tension=(SIGMA > 0.0), sigma_agg=SIGMA, agg_every=25,
+    # --- Phase-4: SPV fluidisation ⊗ compaction (MOTILITY=0 ⇒ off; 3D isotropic, not planar) ---
+    active_motility=MOTIL, f_active_N=FACT_NN * 1e-9,
+    motility_persistence_s=MOT_TAU, motility_seed=MOT_SEED, motility_planar=False,
     warmup=WARMUP, save_frames=npz)
 
 # ---- compaction metrics from the saved trajectory (DCM pos in METERS ×1e6 → µm) ----

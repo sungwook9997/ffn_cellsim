@@ -90,6 +90,29 @@ is not accessible at the feasible integration step.** The DCM does the *mechanis
 the *biology-time equilibrium*. This is the project timescale gap, now quantified from two directions. Nothing here
 loosens or overstates; it tightens the caveat.
 
+### Phase 4 — fluidisation ⊗ compaction — DONE: motility rearranges but σ DETERMINES packing
+Loose N=100 aggregate (gap=2.4), aggregate-σ=5 mN/m (the compaction sweet-spot), accel_dt=8e-4, 60k steps (48 s phys),
+seed 11. Two conditions; a new **tangential/radial displacement ratio** diagnostic separates rearrangement-mediated
+from gap-closing compaction:
+
+| condition | shape index | tang/radial | cum-path (churn) | porosity | Rg |
+|---|---|---|---|---|---|
+| **A σ-only** (S4 baseline) | 4.855 → 5.064 (jammed) | **0.06** (pure radial) | 0.69 µm (= net; monotonic) | 0.643 → **0.569** | −2.24 % |
+| **B σ + motility fa100** | 4.855 → 5.078 (still jammed) | **1.15** (real tangential) | 2.14 µm (≫ net = churn) | 0.643 → **0.568** | −2.31 % |
+
+**Finding:** motility introduces GENUINE tangential rearrangement (tang/rad 0.06 → 1.15; cum-path 0.69 → 2.14 µm =
+cells slide past each other, T1-like churn) — but the aggregate-σ compaction end-state is **σ-DETERMINED, not
+rearrangement-determined**: porosity (0.568 ≈ 0.569), Rg, and shape index (stays jammed ~5.08) are IDENTICAL with or
+without the rearrangement. σ (compaction) and motility (fluidisation) COMPETE — σ holds the packing, motility churns
+the cells but neither loosens nor improves it. Visual-verified (`s12_B_last.png`): compact intact aggregate, peripheral
+cells stressed by the competing active force but NOT dispersed. This CONFIRMS the S4 result (aggregate-σ compaction is
+not junction-rate-gated) from the rearrangement angle, and answers the "are the two dynamic lines the same physics?"
+question: **NO** — aggregate-σ is a mean-field surface tension that sets packing independent of cell-scale rearrangement;
+the unjamming line (motility → spread) and the compaction line (σ → pack) are DISTINCT levers that compete, not one
+mechanism. ⚠️ single-seed (tang/rad magnitude n=1; qualitative robust); ⚠️ super-physiological speed (force-mode, same
+caveat as §4i); tested at ONE (σ, F) point — a σ-strength bracket (σ=2 mN/m + fa100) is running to map the competition
+boundary (does weaker σ let motility win?).
+
 ### Re-plan (next, autonomous)
 Phases 1–3 are the honest close of the unjamming line. Remaining productive threads, in priority:
 - **(a) Consolidate (Phase 2 finish):** fold Phase-1 v0/Péclet + Phase-3 size into the main doc as the two closing
