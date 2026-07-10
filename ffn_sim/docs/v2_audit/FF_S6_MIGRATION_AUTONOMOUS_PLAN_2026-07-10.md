@@ -129,3 +129,28 @@ central technical task of this mandate — without it, native migration is eithe
      when L_f<0.5µm; k_deg~1e-3/s) — KB flags it Phase-3+, so stage it AFTER re-grip.
   4. **Longer sims** for alignment to approach the KB-1.9 tumor-stroma S band, measured with the KB nematic order.
 - Next action: implement clutch re-grip (migration unlock), coarse-test that the cell now translocates, then native.
+
+### Tick 2 (04:30 KST) — re-grip verdict: the native migration blocker is ISOTROPY, not drag/tethering
+- **Native `--ecm-regrip --com-drag`:** STABLE (V/V0=1.000) but STILL ~0 migration (disp∥=+0.007µm, v=0.03 nm/s).
+  Re-grip raised traction 187 → **1291 nN** (~157 pN/clutch, ABOVE physiological 5–20 — over-engagement) and
+  bound 0.75, yet no net translocation. Visual check: the recruit field is symmetric/ISOTROPIC (pulled equally
+  from all sides).
+- **⭐ Confirmed diagnosis (two native tests):** native migration is blocked by **ISOTROPIC adhesion**, not the
+  drag (com_drag stable) and not tethering (re-grip re-engages). ~10⁴ clutches grip all around the footprint →
+  the traction is radially balanced → **net forward force ≈ 0**. The coarse "emergent crawl" (C2, ~13 nm/s) was a
+  small-N asymmetry fluctuation that the law of large numbers washes out at native. This matches the biology:
+  strongly-adherent EPITHELIAL MCF7 remodels the matrix in place but is poorly migratory. **Migration requires
+  explicit POLARISATION (front-back asymmetry), which is a real Rho/Rac program, not tuning.** (The parallel DCM
+  session independently reached the same place: it solved cell spreading via ACTIVE SELF-PROPULSION / jamming→
+  unjamming — the multicellular analog of single-cell polarisation.)
+- **PI decision — how to make the cell leave its position (recommendation first):**
+  1. **(RECOMMENDED) Explicit polarisation program:** rear-enriched actomyosin CONTRACTION (pulls the body toward
+     the front) + front-biased nascent adhesion (front clutches grip new collagen) + rear de-adhesion — all fixed
+     to `phat` (NOT COM-relative, to avoid the rejected `--treadmill` run-down). This is the physiological
+     mesenchymal-migration engine; it directly cures the isotropy.
+  2. Compliant/sparse collagen (biphasic regime) — lets the matrix deform more, but the REAR stays isotropically
+     anchored, so alone it won't translocate; useful as a co-lever with (1).
+  3. MMP proteolysis (KB-1.20) — degrade fibres ahead to release the front / rear; cancer-invasion mechanism.
+  4. Accept MCF7-as-non-migratory (remodel-in-place) as the honest epithelial result.
+- Proceeding with (1): implement a minimal direction-fixed polarisation (`--polarize`), coarse-test for net
+  translocation, then native. If it converges → long migration demo + COM-trail viewer.
