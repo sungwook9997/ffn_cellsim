@@ -94,3 +94,9 @@ rigidity-percolation effect, BRACKETED: spring(stretch-dominated) n=1.07 ↔ res
 crosses rigidity threshold) n=7.24; real c²≈2 needs a PI-decided ⟨z⟩(c) crosslink law kept above the
 sub-isostatic threshold (my rule gives ⟨z⟩=2.18=floppy at 1mg/mL). No tuning. → CSCALING_REGIME_FINDING.md.
 This is a modeling decision (collagen crosslink biology) — PI-scoped, not auto-tuned.
+
+## Checkpoint 6 (2026-07-10) — KB registration FULLY completed
+Created 21 SourceEvidence rows (DOI-verified) + wired Claim→Evidence relations for all 5 material claims
+(KB-1.V.4.1-4.5: 4/4/5/4/4 evidence links). source_evidence 355→376; DOIs now citation-auditable (were
+text-only). SoT snapshot refreshed; kb-check gates green. "TAG KB 신설" is now complete end-to-end
+(claim + evidence + relations + duckdb mirror).

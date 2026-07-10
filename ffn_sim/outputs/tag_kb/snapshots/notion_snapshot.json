@@ -4,7 +4,7 @@
  "built_at": "2026-07-10",
  "note": "Flattened snapshot for durability + diff. Regenerate with dump_notion_snapshot.py; git history is the dated archive.",
  "row_counts": {
-  "SourceEvidence": 355,
+  "SourceEvidence": 376,
   "KnowledgeClaim": 167,
   "ModelContract": 12,
   "Parameter": 21,
@@ -4734,6 +4734,279 @@
     "Notes": "Necrosis 3-zone track (SYNTHESIS section 5, mechanical channel). Survival under solid stress = active Na+/NHE1 osmoregulation; BREAST lineage validated; death = osmoregulation failure. Mechanistic basis for the mechanical death channel (relevant to MCF-7).",
     "Anchor Status": "survival = Na+/NHE1 osmoregulation, breast lineage; CrossRef-verified 2026-07-06; necrosis 3-zone track, Claim unlinked",
     "Citation Key": "McGrail2015_BiophysJ"
+   },
+   {
+    "_id": "399120daec5d8102b71cda77f3cb69fd",
+    "DOI": "https://doi.org/10.1126/science.1127317",
+    "UID": "SE363",
+    "Claims": [
+     "398120daec5d81b4946cf051c9335ed5"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Liu ... Guthold 2006, Science 313(5787):634",
+    "Notes": "Fibrin fibers strain to ~180% without permanent lengthening. KB-1.V.4.2.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Liu2006_Science"
+   },
+   {
+    "_id": "399120daec5d8103ae1bdb30130fda48",
+    "DOI": "https://doi.org/10.1016/j.biomaterials.2011.07.005",
+    "UID": "SE374",
+    "Claims": [
+     "398120daec5d81c982f2de69efb9b0a6"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Ananthanarayanan, Kim, Kumar 2011, Biomaterials 32(31):7913",
+    "Notes": "Brain-mimetic HA hydrogel E ~50 Pa-35 kPa. KB-1.V.4.5.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Ananthanarayanan2011_Biomaterials"
+   },
+   {
+    "_id": "399120daec5d810d9c21d896b1a170c5",
+    "DOI": "https://doi.org/10.1016/S0006-3495(99)77113-4",
+    "UID": "SE364",
+    "Claims": [
+     "398120daec5d81b4946cf051c9335ed5"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Ryan ... Lorand 1999, Biophys J 77(5):2813",
+    "Notes": "Fibrinogen/thrombin/Ca knob -> fiber diameter/length. KB-1.V.4.2.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Ryan1999_BiophysJ"
+   },
+   {
+    "_id": "399120daec5d811c8939e649810282c7",
+    "DOI": "https://doi.org/10.1002/cm.20041",
+    "UID": "SE359",
+    "Claims": [
+     "398120daec5d81239f46d2fa9b7dd674"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Yeung T, ... Janmey PA 2005, Cell Motil Cytoskeleton 60(1):24",
+    "Notes": "PAA stiffness ~2-55000 Pa; spreading transition ~3 kPa. KB-1.V.4.1.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Yeung2005_CellMotilCytoskeleton"
+   },
+   {
+    "_id": "399120daec5d8122ae41fa5bc6055b7d",
+    "DOI": "https://doi.org/10.1016/j.bpj.2018.09.020",
+    "UID": "SE369",
+    "Claims": [
+     "398120daec5d8162b9e7d40eeff7478d"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Fabris ... Mele 2018, Biophys J 115(10):2032",
+    "Notes": "Poroelastic polymer-network-in-liquid model of Matrigel. KB-1.V.4.3.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Fabris2018_BiophysJ"
+   },
+   {
+    "_id": "399120daec5d812aad4ddd0c81279661",
+    "DOI": "https://doi.org/10.1073/pnas.0504120102",
+    "UID": "SE362",
+    "Claims": [
+     "398120daec5d81b4946cf051c9335ed5"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Collet ... Weisel 2005, PNAS 102(26):9133",
+    "Notes": "Single fibrin fiber Young's E = 1.7+/-1.3 MPa. KB-1.V.4.2.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Collet2005_PNAS"
+   },
+   {
+    "_id": "399120daec5d813496cde3131ab47219",
+    "DOI": "https://doi.org/10.1021/bm005583j",
+    "UID": "SE370",
+    "Claims": [
+     "398120daec5d81ca939dc5333126abae"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Normand ... Aymard 2000, Biomacromolecules 1(4):730",
+    "Notes": "Agarose modulus vs concentration/MW; nu~0.5 incompressible. KB-1.V.4.4.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Normand2000_Biomacromolecules"
+   },
+   {
+    "_id": "399120daec5d815485f5d4558ad41ee6",
+    "DOI": "https://doi.org/10.1002/0471143030.cb1016s47",
+    "UID": "SE357",
+    "Claims": [
+     "398120daec5d81239f46d2fa9b7dd674"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Tse JR, Engler AJ 2010, Curr Protoc Cell Biol 47:10.16",
+    "Notes": "Canonical PAA acrylamide/bis -> E calibration protocol; E ~0.2-40 kPa. FF ECM lib KB-1.V.4.1.",
+    "Anchor Status": "verified 2026-07-10 (FF ECM lib)",
+    "Citation Key": "Tse2010_CurrProtocCellBiol"
+   },
+   {
+    "_id": "399120daec5d8156999fcf2de2c64f9c",
+    "DOI": "https://doi.org/10.1016/j.jmbbm.2013.11.008",
+    "UID": "SE377",
+    "Claims": [
+     "398120daec5d81c982f2de69efb9b0a6"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Guvendiren ... Burdick 2014, J Mech Behav Biomed Mater",
+    "Notes": "MeHA stepwise crosslinking soft ~2 kPa vs stiff ~24 kPa. KB-1.V.4.5.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Guvendiren2013_JMBBM"
+   },
+   {
+    "_id": "399120daec5d815aaadbe1bd2c330519",
+    "DOI": "https://doi.org/10.1021/acsami.5b09344",
+    "UID": "SE360",
+    "Claims": [
+     "398120daec5d81239f46d2fa9b7dd674"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Denisin AK, Pruitt BL 2016, ACS Appl Mater Interfaces 8(34):21893",
+    "Notes": "Non-monotonic E vs bis crosslinker; method-dependent scatter. KB-1.V.4.1.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Denisin2016_ACSAMI"
+   },
+   {
+    "_id": "399120daec5d815e874bd23ab54c46ad",
+    "DOI": "https://doi.org/10.1073/pnas.2022422118",
+    "UID": "SE368",
+    "Claims": [
+     "398120daec5d8162b9e7d40eeff7478d"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Li ... Guo M 2021, PNAS 118(11):e2022422118",
+    "Notes": "Matrigel = permeable hyperelastic poroelastic network in liquid. KB-1.V.4.3.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Li2021_PNAS"
+   },
+   {
+    "_id": "399120daec5d81629e3ffae2411c172f",
+    "DOI": "https://doi.org/10.1016/j.bpj.2010.01.040",
+    "UID": "SE361",
+    "Claims": [
+     "398120daec5d81b4946cf051c9335ed5"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Piechocka ... Koenderink 2010, Biophys J 98(10):2281",
+    "Notes": "Fibrin G0 0.1-2000 Pa over 0.1-8 mg/mL, G~c^2.3. KB-1.V.4.2.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Piechocka2010_BiophysJ"
+   },
+   {
+    "_id": "399120daec5d816d8977ffd33735a548",
+    "DOI": "https://doi.org/10.1073/pnas.94.25.13661",
+    "UID": "SE358",
+    "Claims": [
+     "398120daec5d81239f46d2fa9b7dd674"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Pelham RJ, Wang YL 1997, PNAS 94(25):13661",
+    "Notes": "Original collagen-coated PAA tunable-flexibility substrate. KB-1.V.4.1.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "PelhamWang1997_PNAS"
+   },
+   {
+    "_id": "399120daec5d8194afe0cde267077cc0",
+    "DOI": "https://doi.org/10.1002/elps.1150180111",
+    "UID": "SE371",
+    "Claims": [
+     "398120daec5d81ca939dc5333126abae"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Pernodet ... Tinland 1997, Electrophoresis 18(1):55",
+    "Notes": "Agarose pore size a ~ C^-gamma (gamma 0.5-0.75). KB-1.V.4.4.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Pernodet1997_Electrophoresis"
+   },
+   {
+    "_id": "399120daec5d819b9e60ed343dca446b",
+    "DOI": "https://doi.org/10.1002/adma.201003963",
+    "UID": "SE375",
+    "Claims": [
+     "398120daec5d81c982f2de69efb9b0a6"
+    ],
+    "Source Type": "Review consensus",
+    "Short Source": "Burdick, Prestwich 2011, Adv Mater 23(12):H41",
+    "Notes": "HA crosslinking chemistries + physical properties review. KB-1.V.4.5.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "BurdickPrestwich2011_AdvMater"
+   },
+   {
+    "_id": "399120daec5d81a0b5fae21c5b344b93",
+    "DOI": "https://doi.org/10.1115/1.4032429",
+    "UID": "SE376",
+    "Claims": [
+     "398120daec5d81c982f2de69efb9b0a6"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Ondeck, Engler 2016, J Biomech Eng 138(2):021003",
+    "Notes": "MeHA AFM modulus vs UV dose (crosslink-tunable). KB-1.V.4.5.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Ondeck2016_JBiomechEng"
+   },
+   {
+    "_id": "399120daec5d81a184d6ddcc2fddb8ac",
+    "DOI": "https://doi.org/10.1002/pmic.200900758",
+    "UID": "SE367",
+    "Claims": [
+     "398120daec5d8162b9e7d40eeff7478d"
+    ],
+    "Source Type": "Review consensus",
+    "Short Source": "Hughes ... Lajoie 2010, Proteomics 10(9):1886",
+    "Notes": "Matrigel = complex laminin-111 + collagen-IV + entactin BM composite. KB-1.V.4.3.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Hughes2010_Proteomics"
+   },
+   {
+    "_id": "399120daec5d81d1ba3bf9dac66aff19",
+    "DOI": "https://doi.org/10.1016/j.jbiomech.2013.10.051",
+    "UID": "SE373",
+    "Claims": [
+     "398120daec5d81ca939dc5333126abae"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Zignego ... June 2014, J Biomech 47(9):2143",
+    "Notes": "Agarose as cartilage-PCM stiffness mimic. KB-1.V.4.4.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Zignego2014_JBiomech"
+   },
+   {
+    "_id": "399120daec5d81f48280d9e01c1aed38",
+    "DOI": "https://doi.org/10.1021/acs.macromol.0c00601",
+    "UID": "SE372",
+    "Claims": [
+     "398120daec5d81ca939dc5333126abae"
+    ],
+    "Source Type": "Model-derived",
+    "Short Source": "Martikainen ... Ikkala 2020, Macromolecules 53(22):9983",
+    "Notes": "Agarose = subisostatic athermal fibrous network (strain-stiffening). KB-1.V.4.4.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Martikainen2020_Macromolecules"
+   },
+   {
+    "_id": "399120daec5d81fd98adfe69594365b9",
+    "DOI": "https://doi.org/10.1021/la8033098",
+    "UID": "SE366",
+    "Claims": [
+     "398120daec5d8162b9e7d40eeff7478d"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Reed ... Gimzewski 2009, Langmuir 25(1):36",
+    "Notes": "Matrigel modulus by mechanical imaging interferometry. KB-1.V.4.3.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Reed2009_Langmuir"
+   },
+   {
+    "_id": "399120daec5d81feb0dec0994f2d1916",
+    "DOI": "https://doi.org/10.1016/j.jsb.2009.05.005",
+    "UID": "SE365",
+    "Claims": [
+     "398120daec5d8162b9e7d40eeff7478d"
+    ],
+    "Source Type": "Direct measurement",
+    "Short Source": "Soofi ... Murphy CJ 2009, J Struct Biol 167(3):216",
+    "Notes": "Matrigel Young's E by AFM 37C ~450 Pa (443+/-). KB-1.V.4.3.",
+    "Anchor Status": "verified 2026-07-10",
+    "Citation Key": "Soofi2009_JStructBiol"
    }
   ],
   "KnowledgeClaim": [
@@ -8036,7 +8309,12 @@
     "Value Range SI": "Linear-elastic NON-fibrillar gel; E tunable 0.1-40 kPa by total acrylamide %(w/v) + bis %(w/v); nu~0.45-0.48 undrained (0.30-0.37 drained). Anchors (Subramani 2020 AFM+rheo): 8%/0.01%bis->620 Pa, 5%/0.1%->1970 Pa, 8%/0.2%->7930 Pa, 8%/0.4%->13 kPa. E(bis) NON-monotonic (clustering). Does NOT strain-stiffen. G=E/[2(1+nu)].",
     "Parameters": [],
     "Status": "verified",
-    "Evidence": [],
+    "Evidence": [
+     "399120daec5d815485f5d4558ad41ee6",
+     "399120daec5d816d8977ffd33735a548",
+     "399120daec5d811c8939e649810282c7",
+     "399120daec5d815aaadbe1bd2c330519"
+    ],
     "Assumptions": "",
     "Subtopic": "ECM material mechanics (synthetic gel)",
     "KB ID": "KB-1.V.4.1",
@@ -8052,7 +8330,13 @@
     "Value Range SI": "Soft laminin-111 + collagen-IV BM mimic, near-continuum fine mesh. E ~30-900 Pa (typ 450, AFM 37C, Soofi). Batch-variable; poroelastic (permeable polymer network in liquid). nu~0.45-0.5.",
     "Parameters": [],
     "Status": "verified",
-    "Evidence": [],
+    "Evidence": [
+     "399120daec5d81feb0dec0994f2d1916",
+     "399120daec5d81fd98adfe69594365b9",
+     "399120daec5d81a184d6ddcc2fddb8ac",
+     "399120daec5d815e874bd23ab54c46ad",
+     "399120daec5d8122ae41fa5bc6055b7d"
+    ],
     "Assumptions": "",
     "Subtopic": "ECM material mechanics (basement membrane)",
     "KB ID": "KB-1.V.4.3",
@@ -8068,7 +8352,12 @@
     "Value Range SI": "Fibrous clot network. G0 0.1-2000 Pa over 0.1-8 mg/mL fibrinogen, power law G~c^2.3 (Piechocka). Fiber diameter ~100-130 nm; single-fiber Young's E=1.7+/-1.3 MPa (Collet); fibers strain to ~180% without permanent lengthening (Liu) -> strong strain-stiffening. Mesh ~1-5 um.",
     "Parameters": [],
     "Status": "verified",
-    "Evidence": [],
+    "Evidence": [
+     "399120daec5d81629e3ffae2411c172f",
+     "399120daec5d812aad4ddd0c81279661",
+     "399120daec5d8102b71cda77f3cb69fd",
+     "399120daec5d810d9c21d896b1a170c5"
+    ],
     "Assumptions": "",
     "Subtopic": "ECM material mechanics (fibrillar)",
     "KB ID": "KB-1.V.4.2",
@@ -8084,7 +8373,12 @@
     "Value Range SI": "Soft flexible polyelectrolyte, usually crosslinked (MeHA). E ~50 Pa-35 kPa tunable by weight fraction (1-8 wt%) AND crosslink density independently; brain/neural-mimetic ~0.1-1 kPa. nu~0.5. Typically non-fibrillar (mesh ~0.1 um).",
     "Parameters": [],
     "Status": "verified",
-    "Evidence": [],
+    "Evidence": [
+     "399120daec5d8103ae1bdb30130fda48",
+     "399120daec5d819b9e60ed343dca446b",
+     "399120daec5d81a0b5fae21c5b344b93",
+     "399120daec5d8156999fcf2de2c64f9c"
+    ],
     "Assumptions": "",
     "Subtopic": "ECM material mechanics (polyelectrolyte gel)",
     "KB ID": "KB-1.V.4.5",
@@ -8100,7 +8394,12 @@
     "Value Range SI": "Polysaccharide thermogel. E ~5 kPa-1 MPa (typ ~30 kPa @1%w/v), G~c^2.3. Structurally a fine sub-isostatic athermal bundle network (mesh ~0.24 um, pore a~C^-gamma gamma=0.5-0.75) but at cell scale a near-incompressible elastic continuum (nu~0.5). Cartilage/chondrocyte-encapsulation mimic.",
     "Parameters": [],
     "Status": "verified",
-    "Evidence": [],
+    "Evidence": [
+     "399120daec5d813496cde3131ab47219",
+     "399120daec5d8194afe0cde267077cc0",
+     "399120daec5d81f48280d9e01c1aed38",
+     "399120daec5d81d1ba3bf9dac66aff19"
+    ],
     "Assumptions": "",
     "Subtopic": "ECM material mechanics (polysaccharide gel)",
     "KB ID": "KB-1.V.4.4",
