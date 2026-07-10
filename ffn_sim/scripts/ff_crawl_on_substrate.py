@@ -616,7 +616,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             cpx.add.at(g, faces_cp[:, 0], cpx.cross(b3, c3) / 6.0)
             cpx.add.at(g, faces_cp[:, 1], cpx.cross(c3, a3) / 6.0)
             cpx.add.at(g, faces_cp[:, 2], cpx.cross(a3, b3) / 6.0)
-            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-3 * V0) ** 2   # floor 1e-3·V0 (not 1e-9→overflow when squared)
+            k_vol = min(TURGOR_PI_IN0 * (V0 - vmin) / max(max(Vc - vmin, 1e-3 * V0) ** 2, 1e-9), 1.0e12)   # floor 1e-3·V0 (not 1e-9→overflow when squared)
             vol_g = cpx.zeros(3 * N); vol_g[:3 * Nc] = g.reshape(-1)
             # CLUTCH + SUBSTRATE stiffness → implicit K diagonal (so dt is not capped by their explicit CFL);
             # start from the constant MT-γ correction (zeros when MT OFF ⇒ bit-identical to the pre-change zeros)
@@ -638,7 +638,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             gN = volume_gradient(pcx2, faces, cen2)            # ∂V/∂x (Nc,3) — exact osmotic force direction
             dP = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-12 * V0) - (TURGOR_PI_IN0 - TURGOR_DP0)
             vs["dP"] = min(max(dP, -TURGOR_PI_IN0), TURGOR_PI_IN0); vs["g"] = gN
-            k_vol = TURGOR_PI_IN0 * (V0 - vmin) / max(Vc - vmin, 1e-3 * V0) ** 2    # floor 1e-3·V0 (osmotic stiffness; not 1e-9→overflow)
+            k_vol = min(TURGOR_PI_IN0 * (V0 - vmin) / max(max(Vc - vmin, 1e-3 * V0) ** 2, 1e-9), 1.0e12)    # floor 1e-3·V0 (osmotic stiffness; not 1e-9→overflow)
             vol_g = np.zeros(3 * N); vol_g[:3 * Nc] = gN.reshape(-1)
             _de = _cg = None
             if com_drag:                                       # MODAL drag: rigid-COM feels the physical 6πηR; the bound
