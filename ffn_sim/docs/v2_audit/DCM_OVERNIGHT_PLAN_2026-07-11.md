@@ -110,8 +110,28 @@ not junction-rate-gated) from the rearrangement angle, and answers the "are the 
 question: **NO** — aggregate-σ is a mean-field surface tension that sets packing independent of cell-scale rearrangement;
 the unjamming line (motility → spread) and the compaction line (σ → pack) are DISTINCT levers that compete, not one
 mechanism. ⚠️ single-seed (tang/rad magnitude n=1; qualitative robust); ⚠️ super-physiological speed (force-mode, same
-caveat as §4i); tested at ONE (σ, F) point — a σ-strength bracket (σ=2 mN/m + fa100) is running to map the competition
-boundary (does weaker σ let motility win?).
+caveat as §4i); tested at ONE (σ, F) point — a σ-strength bracket (σ=2 mN/m + fa100) mapped the competition boundary.
+
+**σ-strength bracket (σ=2 vs 5 mN/m × motility off/fa100) — CLOSED. Antagonistic, σ-dominated.** Full 4-condition
+(fig `dcm_fluidcompact_sigma_bracket.png`; visual `s13_Bp_last.png`):
+
+| condition | tang/radial | shape index s | Rg [µm] | porosity |
+|---|---|---|---|---|
+| σ5 off | 0.06 | 5.064 | 35.28 | 0.569 |
+| σ5 +mot | 1.15 | 5.078 | 35.26 | 0.568 |
+| σ2 off | 0.07 | 4.980 | 35.65 | 0.590 |
+| σ2 +mot | 1.43 | 4.930 | 35.76 | 0.596 |
+
+Complete verdict: motility introduces genuine tangential rearrangement in ALL cases (tang/rad 0.06→1.15 at σ5,
+0.07→1.43 at σ2 — churns MORE at weaker σ) but (1) NEVER unjams the compacting aggregate (shape index stays 4.93–5.08
+≪ s0*=5.41 — the σ compaction SUPPRESSES the very unjamming the same fa100 produces in free spreading, s=5.4), and
+(2) NEVER improves packing (Rg/porosity σ-determined: no effect at σ5, only a slight LOOSENING 0.590→0.596 at σ2 —
+motility mildly OPPOSES compaction, never aids it). **Compaction (aggregate-σ) and unjamming (motility) are
+ANTAGONISTIC, σ-dominated levers, not a synergy.** The (b) hope — fluidisation → rearrangement-mediated, better
+compaction — is REFUTED. Visual (σ2+mot, max churn): compact intact aggregate, cells heavily stressed by the active
+force but NOT dispersed (σ holds packing). This is the honest close of the (b) compaction line via the fluidisation
+route: aggregate-σ is a mean-field surface tension whose end-state is set independent of — and against — cell-scale
+active rearrangement.
 
 ### Re-plan (next, autonomous)
 Phases 1–3 are the honest close of the unjamming line. Remaining productive threads, in priority:

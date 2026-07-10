@@ -246,5 +246,32 @@ The active-matter jamming→unjamming line is **closed honestly**:
   Both land on the project-wide timescale gap: the DCM captures the *mechanism* and *kinetics*, not the biology-time
   *equilibrium*.
 
-Remaining (optional, non-scope-inventing): apply the same fluidisation to the aggregate-σ compaction ((b) line) to
-test whether the two dynamic lines are the same physics — with the same super-physiological-speed caveat.
+## 6. Fluidisation ⊗ compaction (the (b) line) — ANTAGONISTIC, σ-dominated (not a synergy)
+
+Applied the same active motility to the aggregate-σ compaction ((b) line) to ask whether the two dynamic lines are
+the same physics. Loose N=100 aggregate, gap=2.4, accel_dt=8e-4, 60k steps (48 s phys), seed 11; σ ∈ {2, 5} mN/m ×
+motility ∈ {off, fa100}. A new **tangential/radial per-cell displacement ratio** cleanly separates
+rearrangement-mediated from gap-closing compaction (fig `dcm_fluidcompact_sigma_bracket.png`; visuals
+`dcm_fluidcompact_B_sig_mot.png`, `s13_Bp_last.png`):
+
+| condition | tang/radial | shape index s | Rg [µm] | porosity |
+|---|---|---|---|---|
+| σ5 off | 0.06 | 5.064 | 35.28 | 0.569 |
+| σ5 +mot | 1.15 | 5.078 | 35.26 | 0.568 |
+| σ2 off | 0.07 | 4.980 | 35.65 | 0.590 |
+| σ2 +mot | 1.43 | 4.930 | 35.76 | 0.596 |
+
+**Verdict.** Motility introduces GENUINE tangential rearrangement in every case (tang/rad 0.06→1.15 at σ5, 0.07→1.43
+at σ2 — cells slide past each other, T1-like churn, more so at weaker σ) — but:
+1. it **never unjams the compacting aggregate** (shape index stays 4.93–5.08 ≪ s0*=5.41): the σ compaction SUPPRESSES
+   the very unjamming that the same fa100 produces in free spreading (s=5.4). Compaction ⟂ unjamming.
+2. it **never improves packing** (Rg/porosity are σ-determined): no effect at σ5 (0.569→0.568), only a slight LOOSENING
+   at σ2 (0.590→0.596) — motility mildly OPPOSES compaction, never aids it.
+
+So aggregate-σ compaction and active-motility unjamming are **ANTAGONISTIC, σ-dominated levers, not one physics and not
+a synergy.** The (b) hope — fluidisation making compaction rearrangement-mediated and better — is REFUTED: aggregate-σ
+is a mean-field surface tension whose end-state is set independent of, and against, cell-scale active rearrangement.
+Visual-verified (σ2+mot, max churn): compact intact aggregate, cells heavily stressed by the active force but NOT
+dispersed. This confirms the S4 finding (aggregate-σ compaction is not junction-rate-gated) from the rearrangement
+angle and closes the (b) line via the fluidisation route. ⚠️ single-seed (magnitudes n=1; signs robust) + the
+super-physiological-speed caveat of §4i carry over.
