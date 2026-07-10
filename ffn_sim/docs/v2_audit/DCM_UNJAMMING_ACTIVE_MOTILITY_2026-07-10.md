@@ -214,9 +214,37 @@ now precisely located for the unjamming: the MECHANISM + phase structure (SPV, b
 demonstrated; the physiological-time approach to steady state is the acceleration.** The honest deliverable is the
 qualitative + Péclet-phase result, with the force-mode understood as a biology-time acceleration (like S_accel).
 
-## 5. Next
-- **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
-  (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
-- Resolve the fa150 non-monotonicity (CFL/velocity cap check); map A/A0, s, frac_unjammed vs F_active with ensembles
-  → the SPV phase diagram; anchor to KB-PIV-10 unjamming-by-size.
-- Apply the same fluidisation to rate-gated compaction ((b) line).
+## 4j. SIZE axis (KB-PIV-10) — a KINETIC size effect, not the steady-state size-phase
+
+PI's KB-PIV-10 is unjamming-by-size (aggregate solid <25 µm / liquid >25 µm / gas >10 cells). Test whether aggregate
+SIZE modulates the motility-driven unjamming. N ∈ {50, 100, 200} at fa100 / τ_p=600 s / seed 11 / 4.8 s (shape index,
+s0*=5.41):
+- N=50  → s = 5.235, frac_unjam 0.24, A/A0 1.86
+- N=100 → s = **5.407**, frac_unjam **0.44**, A/A0 2.24  (unjams most)
+- N=200 → s = **5.092**, frac_unjam **0.01**, A/A0 1.07, drift 0.24 µm — **stays JAMMED**; visual-verified
+  (`s11_N200_last.png`): 200 intact cells, compact ~spherical aggregate, virial stress concentrated at junctions, a
+  few peripheral cells stressed but bonded — NOT spread.
+
+**Bigger aggregate stays jammed at fixed time/motility** = a KINETIC size effect: the interior cells are more
+constrained (surface-to-volume drops with N), so the same per-cell motility fluidises a smaller *fraction* of the
+tissue within the same 4.8 s window; N=200's frac_unjam 0.01 vs N=100's 0.44 is far outside seed scatter (the sign is
+robust; magnitude is single-seed). This is the SAME timescale mechanism as §4i, seen along the size axis: at fixed
+short sim time the DCM shows the *kinetics* of unjamming (bigger = slower to fluidise), which DIFFERS from PI's
+KB-PIV-10 *steady-state* size-phase (bigger → more liquid) — that equilibrium phase needs physiological time. So the
+size axis, like the v0 axis, confirms: the mechanism + kinetics are captured; the biology-time equilibrium is the gap.
+
+## 5. Closing status (overnight 2026-07-11)
+
+The active-matter jamming→unjamming line is **closed honestly**:
+- **Mechanism (ROBUST):** per-cell active motility unjams the jammed DCM aggregate → genuine collective spread; shape
+  index → s0*=5.41; BOTH SPV axes (v0 force + persistence τ_p); cadherin=cohesion / motility=unjamming decoupling
+  (epithelial/mesenchymal). Seed-robust, dt-converged, visual-verified, lit-validated (Bi-Manning/Park2015/Geiger2022
+  + KB-PIV-10).
+- **Biology-time (CAVEATED, quantified from TWO axes):** §4i v0/Péclet — at physiological v0 (Pe≈1.3) the transition
+  needs physiological time (millions of steps, infeasible); the force-mode reached it at super-physiological speed
+  (Pe≈432). §4j size — bigger aggregate stays jammed at fixed time (kinetic, not the KB-PIV-10 steady-state size-phase).
+  Both land on the project-wide timescale gap: the DCM captures the *mechanism* and *kinetics*, not the biology-time
+  *equilibrium*.
+
+Remaining (optional, non-scope-inventing): apply the same fluidisation to the aggregate-σ compaction ((b) line) to
+test whether the two dynamic lines are the same physics — with the same super-physiological-speed caveat.

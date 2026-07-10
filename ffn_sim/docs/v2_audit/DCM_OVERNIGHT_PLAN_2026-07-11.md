@@ -48,3 +48,55 @@ compaction become rearrangement-mediated (vs the S4 gap-closing bypass)? Uncerta
 ## One-line
 Close the unjamming line honestly (Phase 1 Péclet map replacing the speed-confounded capstone), consolidate it
 thesis-grade (Phase 2), then extend to PI's size axis (Phase 3) — visually + TAG-verified, seed-robust, backed up, all night.
+
+---
+
+## NIGHT RESULTS (self-logged as phases landed)
+
+### Phase 1 — v0-mode / Péclet (CFL-safe) — DONE, the honesty result
+CFL-bounded v0-mode sweep (per-node force = γ_node·v0, physiological Stokes drag; τ_p=600s, N=100, 4.8s sim):
+- v0 = 2 µm/min (physiological, 33 nm/s) → A/A0 = **0.997** (no spread; slight peel)
+- v0 = 10 µm/min → A/A0 = **1.021**
+- v0 = 50 µm/min (super-physiological) → A/A0 = **1.079**
+
+**At physiologically-faithful speed the aggregate does NOT reach the unjamming transition in the accessible sim
+time.** Clean quantification of *why*: at v0 = 2 µm/min a cell moves v0·t = 0.033 µm/s × 4.8 s ≈ **0.16 µm** over the
+whole run — a small fraction of a cell diameter, far too little for a T1 neighbour-exchange. To rearrange (~1 diameter,
+~15 µm) at physiological speed takes ~7–8 min of *simulated* time = ~5×10⁵ steps at accel_dt=8e-4 → ~15 h wall/run
+(infeasible). The force-mode "unjamming" demos were REAL physics but reached the transition only by running cells at
+**super-physiological speed** (compressing physiological minutes–hours of migration into ~5 s). This is the project
+timescale gap, stated precisely; the v0-mode is the honest Péclet knob (Pe = v0·τ_p/a). **The mechanism is robust; the
+absolute biology-time is not accessible.** Fig source: `bmbtvli46` v0-sweep log.
+
+### Phase 3 — KB-PIV-10 SIZE axis — DONE, a kinetic (not steady-state) size effect
+N∈{50,100,200} at fa100 / τ_p=600 / seed 11 / 4.8 s, shape index (s0*=5.41):
+- N=50  → s = 5.235, frac_unjam 0.24, A/A0 1.86
+- N=100 → s = **5.407**, frac_unjam **0.44**, A/A0 2.24  (unjams most)
+- N=200 → s = **5.092**, frac_unjam **0.01**, A/A0 1.07, drift 0.24 µm  (**stays JAMMED**) — visual-verified
+  (`s11_N200_last.png`): 200 intact cells, compact ~spherical, stress at junctions, NOT spread.
+
+**Bigger aggregate stays jammed at fixed time/motility** — a KINETIC size effect (interior cells more constrained →
+slower to rearrange; the periphery-to-volume ratio drops with N so the same per-cell motility fluidises less of the
+tissue in the same window). This DIFFERS from PI's KB-PIV-10 *steady-state* size-dependence (bigger → more liquid),
+and for the same reason as Phase 1: the steady-state phase needs physiological TIME; at fixed short sim time the DCM
+shows the *kinetics* (bigger = slower to unjam), not the equilibrium size-phase. Single-seed (trend robust in sign;
+magnitude would need an ensemble — but N=200's frac 0.01 vs N=100's 0.44 is far outside seed scatter).
+
+### Convergent conclusion (Phases 1 + 3)
+Both independent axes land on the SAME honest statement already in the main doc's caveat: **the unjamming MECHANISM
+is robust and lit-validated (SPV both axes, shape index → s0*, cadherin/motility decoupling), but the physiological
+STEADY STATE — whether at physiological v0 or the size-dependent equilibrium phase — requires physiological time that
+is not accessible at the feasible integration step.** The DCM does the *mechanism* and the *kinetics*; it cannot reach
+the *biology-time equilibrium*. This is the project timescale gap, now quantified from two directions. Nothing here
+loosens or overstates; it tightens the caveat.
+
+### Re-plan (next, autonomous)
+Phases 1–3 are the honest close of the unjamming line. Remaining productive threads, in priority:
+- **(a) Consolidate (Phase 2 finish):** fold Phase-1 v0/Péclet + Phase-3 size into the main doc as the two closing
+  honesty sections (replacing/augmenting the speed-confounded capstone framing). Update memory + Notion milestone.
+  → do now (non-GPU, safe).
+- **(b) Phase 4 stretch (fluidisation ⊗ compaction):** does super-physiological-speed motility make the aggregate-σ
+  compaction rearrangement-mediated (vs S4 gap-closing)? Same super-physio-speed caveat, but tests whether the (b)
+  compaction line and the unjamming line are the same physics. GPU run; launch after (a) is committed.
+- **(c) If both done:** the unjamming line is closed; hand back to PI a clean summary at wake. Do NOT invent new
+  scope overnight beyond (a)/(b) — the honest close is the deliverable, not more experiments.
