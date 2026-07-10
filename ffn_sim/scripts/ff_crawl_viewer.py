@@ -164,7 +164,10 @@ def build(npz_path: str, out: str, *, front_frac: float = 0.5, title: str | None
     scenes = {"shape": layers}; cbars = {}
     if ecm_cbar:
         cbars["shape"] = ecm_cbar
-        cell_faint = [dict(L, opacity=(0.06 if L["kind"] == "mesh" else 0.18)) for L in layers   # cell as faint context
+        # PI viz: in the ECM scenes the MATRIX is the subject, the cell is a faint silhouette so the collagen
+        # stress/strain/reorientation reads clearly (the dense 266k cortex filaments at 0.18 formed an opaque
+        # ball that hid the ECM). Hull → 0.05, filaments/MT → 0.05 (barely-there reference), ECM stays ~0.95.
+        cell_faint = [dict(L, opacity=(0.05 if L["kind"] == "mesh" else 0.05)) for L in layers   # cell as faint silhouette
                       if L is not ecm_layer and L["name"] != "substrate"]
         scenes["collagen recruit"] = [ecm_layer] + cell_faint   # dedicated scene: the matrix deformation front-and-centre
         cbars["collagen recruit"] = ecm_cbar
