@@ -196,3 +196,14 @@ COARSE CPU smoke (nf=500, 1 seed, S={0,0.83}, NON-AUTHORITATIVE) — plumbing VA
   (exactly as the spec predicted). Whether the cell TRACTION anisotropy A_F follows the matrix STRESS anisotropy
   R_σ is the open question the native run answers.
 Native gbook run queued (gbook SSH was transiently down). MT-OFF (same as NEAR #1/#2 sensing family) — open PI item.
+
+## Checkpoint 17 (2026-07-11 night) — NEAR #6 KB-grounding (the KB already covers contact guidance)
+KB query (duckdb) for the #6 validation bands: the primary source + the claim to validate against ALREADY exist —
+- SourceEvidence `Ray2017_NatCommun` (DOI 10.1038/ncomms14923, force anisotropy >3×) — **source_audit verdict OK**
+  (citation-verified → citable in the deliverable). Also present + OK: `Provenzano2006_BMCMed`, `Conklin2011_AmJPathol`,
+  `Bredfeldt2014_JBiomedOpt`, `Ray2021_COCellBiol`.
+- KnowledgeClaims to cite: **KB-2.14 "Contact guidance via anisotropic FA elongation"** (the existing claim my
+  EMERGENT A_F(S) validates), KB-1.V.2.4 "Fiber alignment TACS-1/2/3", KB-1.9 / KB-3.20 (nematic order parameter).
+So #6 CITES existing kb_ids (no new SourceEvidence for Ray/Provenzano). NEW (not in KB, PI-gated DRAFT only):
+Szulczewski 2021 (35× matrix directional stiffness), Riching 2014 (persistence), Niraula 2025 (traction saturation).
+kb-check gate at this commit: verify_runs OK (31, no drift) · verify_params OK (42, no drift). No DRIFT.
