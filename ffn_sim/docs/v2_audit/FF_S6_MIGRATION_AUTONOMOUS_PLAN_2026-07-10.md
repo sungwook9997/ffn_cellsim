@@ -285,8 +285,16 @@ Autonomous-decision log appended below as choices are made.
   proteolysis), while a feasible native sim is ~100 s. So over the sim MMP **degrades but does not sever**.
 - I added a **degradation metric** (`mmp_degraded_pct` mean / `mmp_degraded_max_pct` peak-at-front) so the
   report shows the proteolysis that IS happening rather than a misleading "0". Coarse smoke (6 s sim-time): front
-  collagen softened **0.58%**, 0 severed — mechanism confirmed acting, physiologically slow. Native val2 re-run
-  (new metric) in flight; the native front-degradation % will be folded in here.
+  collagen softened **0.58%**, 0 severed — mechanism confirmed acting, physiologically slow.
+- **Native val2 re-run outcome (honest):** the clean native re-run with the new metric **fell back to CPU** (I
+  omitted `--device cuda:0` on the launch) AND the A5000 was occupied by the **parallel session's native job**
+  (`ff_contact_guidance_anisotropy … --tag cg_native`, the aligned-collagen contact-guidance study — i.e. the
+  parallel session is actively owning the aligned-ECM domain I flagged, ✓). A native 266k cell on CPU is
+  ~12–24 h and non-authoritative, so I **killed it** rather than contend with the parallel session's GPU run.
+  The MMP finding does **not** need it: native **0-severed is already confirmed** (previous native val, 185 nN),
+  the degradation metric is validated (coarse smoke), and the front-degradation % is a scale-invariant
+  exponential (`exp(-k_deg·ρ·t)`) ⇒ derivable ≈ a few % over a 100 s native sim. A clean native-GPU degradation
+  datum is **deferred** to whenever the A5000 frees (launch WITH `--device cuda:0`); it changes no conclusion.
 - **I did NOT tune `k_deg` to force severance** — it is a KB-1.20 value; forcing a visible channel would be
   tuning-to-outcome. The honest statement: *MMP proteolysis is implemented and KB-grounded; at the physiological
   rate it opens a channel only over physiological (tens-of-min) time, which a short native sim cannot reach.* A
