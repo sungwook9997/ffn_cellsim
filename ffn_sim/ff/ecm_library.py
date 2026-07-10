@@ -612,7 +612,7 @@ def build_ecm(material: str, box_lo, box_hi, **kw) -> ECMNetwork:
 
 
 def build_gradient_ecm(spec: ECMSpec, box_lo, box_hi, *, E_lo_Pa: float, E_hi_Pa: float,
-                       axis: str = "x", node_spacing_um: float = 2.5, k_per_E: float = 1.0,
+                       axis: str = "x", node_spacing_um: float = 2.5, k_per_E: float | None = None,
                        pin_faces=("z_lo",), pin_margin_um: float = 1.0,
                        rng: np.random.Generator | None = None) -> ECMNetwork:
     """Build a continuum-gel substrate with a SPATIAL stiffness GRADIENT along ``axis`` — a durotaxis
@@ -624,6 +624,12 @@ def build_gradient_ecm(spec: ECMSpec, box_lo, box_hi, *, E_lo_Pa: float, E_hi_Pa
     """
     if spec.is_fibrillar:
         raise ValueError(f"{spec.key} is fibrillar; gradient substrate uses the continuum lattice")
+    if k_per_E is None:
+        raise ValueError(
+            "k_per_E (bond-stiffness-per-Pa) is required — it is geometry-dependent (varies with "
+            "node_spacing). Calibrate it: k_ref = ecm_mechanics.calibrate_continuum_k(spec, box_lo, box_hi, "
+            "node_spacing_um=<same>); k_per_E = k_ref / spec.E_gel_Pa. (A fixed default would give wrong "
+            "absolute Pa at any spacing other than the one it happened to match.)")
     ecm = build_continuum_ecm(spec, box_lo, box_hi, dim=3, node_spacing_um=node_spacing_um,
                               k_bond_pN_um=1.0, pin_faces=pin_faces, pin_margin_um=pin_margin_um, rng=rng)
     ax = {"x": 0, "y": 1, "z": 2}[axis]

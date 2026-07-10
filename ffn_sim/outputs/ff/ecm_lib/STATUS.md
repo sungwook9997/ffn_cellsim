@@ -81,3 +81,9 @@ Contract-Graph** (user authorized "없으면 신설하여 진행") — the one s
   **τ ∝ 1/k_off EMERGES** (τ·k_off≈0.82 const) — α-actinin ~12s → weak-physical ~200s (KB-1.6 30-1000s ✓)
   → covalent-LOX ~1170s; G∞/G₀≈0.14 (86% relaxation). figs/stress_relaxation.png (eye-verified).
   Extensions this session: native GPU · strain-stiffening · mode-decoupling · durotaxis gradient · viscoelastic.
+
+## Checkpoint 4 (2026-07-10) — QA pass
+Core goal + 5 extensions COMPLETE. This cycle: adversarial correctness review of ecm_library.py +
+ecm_mechanics.py (units/formulas/signs/numerics — the "high precision" mandate), focused on what the
+empirical validations don't cover (energy-route factor-of-2, bond virial, Hertz inversion, continuum
+calibration, alignment sampler, re-pin logic, NaN/zero paths). Will fix any confirmed correctness bugs.

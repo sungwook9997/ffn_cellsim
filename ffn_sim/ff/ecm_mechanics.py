@@ -17,9 +17,13 @@ The relaxation reuses the FF Warp kernels unchanged (``cytosim_bending_kernel``,
 
 Method notes (validated 2026-07-10):
 * **Energy route is primary.** After an affine pre-deformation + interior relaxation, the modulus is read
-  from the stored elastic energy: G = 2U/(V·γ²), E = 2U/(V·ε²). This bulk scalar is robust to the
-  boundary-layer definition; the boundary-reaction route (kept as ``*_reaction_Pa`` cross-check) is
-  sensitive to how many fibers grip the pinned band and reads unreliably on sparse networks.
+  from the stored elastic energy: G = 2U/(V·γ²), E = 2U/(V·ε²). The boundary-reaction route (kept as
+  ``*_reaction_Pa`` cross-check) is sensitive to how many fibers grip the pinned band and reads unreliably
+  on sparse networks. Caveat (fibrillar): U is the total energy over the whole box, whose pinned boundary
+  layers (``margin_frac``≈0.08 top+bottom) are held affine — a constraint that can only *raise* the relaxed
+  minimum, so the fibrillar modulus carries a small UPWARD bias that grows with ``margin_frac`` (~tens of %).
+  For the continuum path this cancels exactly: ``calibrate_continuum_k`` measures E-per-k through the
+  identical geometry, so the same boundary/V effect divides out (why the PA-gel returns E=5000 exactly).
 * **Axial mode = finite EA spring (default).** The derived per-segment stretch spring k=EA/ℓ₀ gives a
   clean, converged modulus. ``axial_mode='reshape'`` (inextensible projection) is NOT recommended with
   the affine-pre-strain scheme here — it fights the imposed strain and fails to converge.
@@ -31,6 +35,11 @@ Method notes (validated 2026-07-10):
   softening; contact radius must exceed the mesh ξ to approach the continuum value — see KB-1.14). For
   fibrillar ECM the shear/uniaxial modulus is the "material Pa" vs rheology; indentation is the local
   probe. Continuum gels read the same E all three ways.
+* **Continuum-gel Poisson caveat:** a central-force Delaunay spring lattice obeys the Cauchy relation, so
+  its true ν is pinned ~0.25–0.33 in 3D and cannot reach the specs' ν (PA 0.45, BM gels 0.4–0.5). The Hertz
+  inversion uses ``spec.poisson``, introducing a ~10–13% E offset (E=E*(1−ν²)) folded into the ~0.7–0.8×
+  continuum indentation factor. The calibrated uniaxial E is exact regardless of ν; only the indentation
+  readout carries this. A ν-faithful continuum would need non-central / multibody terms.
 """
 
 from __future__ import annotations
@@ -386,8 +395,16 @@ def indentation_modulus(ecm, *, indenter_R_um: float = 6.0, max_depth_um: float 
     ecm.net.pos[:] = pos0
     E_fit = _hertz_slope_E(depths, forces, indenter_R_um, nu)
     E_pts = [hertz_E_from_force(F, indenter_R_um, d, nu) for F, d in zip(forces, depths)]
+    # contact guard: if the bead never engaged (contacts 0 / no positive force) E_eff=0 is NOT a physical
+    # modulus — flag it so callers don't read a silent zero as "soft". Indenter must be positioned on the
+    # surface with R_ind ≫ mesh ξ.
+    contact_ok = bool(max(contacts) > 0 and E_fit > 0.0)
+    if not contact_ok:
+        import warnings
+        warnings.warn(f"indentation_modulus: no/degenerate contact (contacts={contacts}, E_eff={E_fit}) — "
+                      "E_eff=0 is not physical; check indenter position / R_ind vs mesh / slab surface.")
     return {"E_eff_Pa": E_fit, "nu": nu, "R_ind_um": indenter_R_um, "depths_um": depths.tolist(),
-            "forces_pN": forces, "E_pts_Pa": E_pts, "contacts": contacts,
+            "forces_pN": forces, "E_pts_Pa": E_pts, "contacts": contacts, "contact_ok": contact_ok,
             "flatness": (max(E_pts) / max(min([e for e in E_pts if e > 0], default=1.0), 1e-9)) if E_pts else 0.0}
 
 
@@ -444,6 +461,22 @@ def _bond_virial_sigma_xz(pos, i_arr, j_arr, k_arr, r0_arr, V) -> float:
     Lc = np.linalg.norm(d, axis=1) + 1e-12
     f = k_arr * (Lc - r0_arr)                         # scalar bond tension [pN]
     return float(np.sum(f / Lc * d[:, 0] * d[:, 2]) / V)
+
+
+def _bending_virial_sigma_xz(net, pos, V, device="cpu") -> float:
+    """Bending contribution to σ_xz via the atomic virial (1/2V)·Σ_i (r_x·f_z + r_z·f_x). Bending forces
+    per triple sum to zero force AND zero torque, so this is origin-independent. MUST be included for
+    bending-dominated (sub-isostatic) fiber networks — else the stress is severely under-reported."""
+    if net.bend_triples.shape[0] == 0:
+        return 0.0
+    from ffn_sim.ff.forces_warp import bending_force
+    saved = net.pos
+    net.pos = pos
+    try:
+        fb = bending_force(net, device=device)
+    finally:
+        net.pos = saved
+    return float(0.5 * np.sum(pos[:, 0] * fb[:, 2] + pos[:, 2] * fb[:, 0]) / V)
 
 
 def stress_relaxation(ecm, *, gamma0=0.1, koff0_per_s=0.01, x_beta_nm=0.4, dt_real_s=None,
@@ -513,7 +546,8 @@ def stress_relaxation(ecm, *, gamma0=0.1, koff0_per_s=0.01, x_beta_nm=0.4, dt_re
         p = pos_d.numpy()
         r0h = r0_d.numpy() if xl_d is not None else np.zeros(0)
         sig = _bond_virial_sigma_xz(p, seg_i, seg_j, seg_k, seg_r, V) + \
-            _bond_virial_sigma_xz(p, ecm.xl_i, ecm.xl_j, ecm.xl_k, r0h, V)
+            _bond_virial_sigma_xz(p, ecm.xl_i, ecm.xl_j, ecm.xl_k, r0h, V) + \
+            _bending_virial_sigma_xz(ecm.net, p, V, device=device)   # bending stress (dominant for sub-isostatic)
         ts.append(rec * dt_real_s)
         Gs.append(abs(sig) / gamma0)
         if xl_d is not None:                                    # advance one real timestep of turnover
