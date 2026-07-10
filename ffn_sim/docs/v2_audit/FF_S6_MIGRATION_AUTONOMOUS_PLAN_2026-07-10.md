@@ -245,3 +245,38 @@ aligned collagen — the FF single-cell migration phase map, KB-grounded.
 **Backlog / PI-flagged (decide autonomously, record rationale):** MMP absolute secretion flux (kept ρ∈[0,1]);
 contractility_mult (kept 1.0); whether to register any new KB rows (surface, don't auto-create gates/contracts).
 Autonomous-decision log appended below as choices are made.
+
+---
+
+## MORNING SUMMARY (overnight of 2026-07-10→11) — read first
+
+**Landed (all committed, backed up, no ffn/foundation push):**
+- **MMP proteolytic invasion** (`--mmp`, KB-1.20) + **motile/EMT cell-type** (`--cell-type mesenchymal/emt`, new
+  `ffn_sim/ff/cell_type.py`, KB-3.11/SE248/KB-4.12) — the two mechanisms you asked for, both default-off, KB-grounded.
+- **M1 migration verdict (honest):** native migration of a strongly-adherent MCF7 on physiological collagen is
+  **sub-physiological (v~0.2–0.57 nm/s vs 10–30)** and numerically fragile — the model reproduces MCF7's poor
+  motility. Directionality (remodel coherence) rose 0.05→0.44 as the motile program was added, but translocation
+  stayed modest. Full-speed invasion is an open adhesion-drag/solver item, **not reachable by parameter choice** —
+  reported honestly, not tuned to a target.
+- **M5 migration-mode ATLAS** (`ff_s6_migration_atlas.png`) — one figure: caveat resolved (remodel 16→265→391 nm),
+  migration biphasic in matrix density (peak conc 3), directionality↑ but speed sub-physiological.
+- **Two engine robustness fixes:** k_vol OverflowError hardening + a volume-EXPLOSION guard (clean truncation) —
+  both genuine, normal-run-unaffected.
+
+**4 autonomous decisions (all KB/stability-grounded, NOT tuned-to-speed; full rationale in each commit):**
+1. mesenchymal `n_fa` 50→0→100→0: fewer FAs collapse traction (soft-arm) AND starve the MMP source; proteolytic
+   invasion is a STRONG-adhesion mode → keep n_fa=0 natural strong adhesion (the preset currently sits at the last
+   stable-verified n_fa=100; the n_fa=0 strong-adhesion run overflowed — see below).
+2. `myo_rear_bias` 0.7→0.0: the 70%-rear-myosin relocation is numerically unstable at native (overflow) + gave no
+   migration benefit → dropped from the preset (flag/hook retained for your experimentation).
+
+**Open items for you (flagged, not auto-resolved):**
+- **Native migration full-speed** — the honest limit above; the physical path is MMP invasion on a compliant matrix
+  with enough front traction to source MMP, or a fundamentally softer/2-D regime. Needs a solver look (adhesion-drag).
+- **Aligned collagen (`--ecm-align-s`) instability** — the tumor-stroma aligned matrix builds (S_measured≈0.64,
+  matches KB-1.9), but the cell-collagen co-sim EXPLODES early: the aligned net is under-constrained (⟨z⟩ 1.47,
+  parallel fibres floppy ⊥ alignment) → clutch traction drives runaway collagen displacement. This is an
+  `ecm_library` aligned-build item (needs more crosslinking / a stiffer-⊥ aligned net) — a parallel-session file, so
+  flagged rather than edited. The explosion guard makes it fail safe.
+
+**Continuing autonomously:** M2 (crawl viewer from the best migration run) + consolidation; the loop stays live.
