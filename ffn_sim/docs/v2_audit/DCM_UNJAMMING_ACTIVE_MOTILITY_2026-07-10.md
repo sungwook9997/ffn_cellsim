@@ -81,6 +81,29 @@ and not cleanly monotonic**, so those numbers are indicative, not yet ensemble-q
 shape index rises toward s0*, visual-verified) — but the QUANTITATIVE dose-response + the maturation-gating question
 require **seed ensembles** (per the 'ensemble before spontaneous' rule). `--motility-seed` now exposes the polarity RNG.
 
+## 4c. ENSEMBLE RESULT (2026-07-10) — unjamming DECOUPLES from spread: motility fluidises, cadherin sets cohesion
+
+Seed ensemble (fa100 active motility, N=100, seeds {7,11,17}), cadherin **nascent(weak)** vs **matured(strong)**
+(fig `dcm_unjamming_cadherin_ensemble.png`; both conditions visual-verified seed-11):
+
+| cadherin | A/A0 (spread) | shape index s | frac_unjammed |
+|---|---|---|---|
+| nascent (weak) | **2.44 ± 0.11** | 5.361 ± 0.051 | 0.38 ± 0.06 |
+| matured (strong) | **1.81 ± 0.25** | 5.352 ± 0.033 | 0.41 ± 0.05 |
+
+**The decoupling (seed-robust, all 3 seeds nascent>matured on A/A0):**
+- **UNJAMMING (shape index s) is the SAME** (5.36 vs 5.35, ~40% cells past s0*=5.41, overlapping) → **active motility
+  fluidises the tissue regardless of cadherin** (both reach the same fluid cell-shape state).
+- **SPREAD (A/A0) DIFFERS** (nascent 2.44 vs matured 1.81) → **cadherin sets the aggregate COHESION** — how far the
+  fluidised cells disperse, NOT the unjamming. Visual (seed-11): matured = fluid-but-COHESIVE (deform/migrate yet stay
+  compact); nascent = fluid-AND-dispersing.
+
+**This is the epithelial↔mesenchymal physics, correctly decoupled:** epithelial (strong E-cadherin) tissue can be
+FLUID/unjammed (rearranging) yet stay cohesive (Park2015 asthmatic airway epithelium unjams but stays a monolayer);
+mesenchymal (weak cadherin) fluidises AND disperses. Matches KB-PIV-10 (low E-cadherin → gas/EMT). The earlier single
+"matured spreads more" (n=1) was stochastic — the ensemble reverses it. So: **motility → unjamming (v0 axis); cadherin
+→ cohesion (E-cadherin axis)** — the two independent knobs of the tissue jamming/wetting state.
+
 ## 5. Next (in progress)
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
