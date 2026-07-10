@@ -3,6 +3,39 @@
 **Directive:** PI set an overnight /goal — work autonomously, /loop ~1 h health checks, self-decide when the session
 would wait for PI, and when a thread finishes write a new plan and keep going. Backups every commit (nothing lost).
 
+---
+
+## ☀️ WAKE SUMMARY (PI, read first) — both DCM dynamic lines CLOSED honestly overnight
+
+Everything committed to `dcm/main` + backed up on origin + github + branch `dcm-backup-2026-07-10` (HEAD `b9649ef`).
+All quantities TAG/lit-anchored, seed-sign-robust, **visually verified in a real browser** per your mandate, no magic
+numbers, no gate-loosening.
+
+1. **Unjamming line — CLOSED honestly** (`DCM_UNJAMMING_ACTIVE_MOTILITY_2026-07-10` §4i/§4j/§5). Active per-cell motility
+   unjams the jammed DCM aggregate → genuine collective spread; shape index → s0*=5.41; both SPV axes; cadherin=cohesion
+   / motility=unjamming decoupling. **Honesty, quantified from two axes:** at physiological speed (v0=2 µm/min, Pe≈1.3)
+   the transition needs biology-time that is infeasible at the integration step — the force-mode reached it only at
+   super-physiological speed (Pe≈432); and bigger aggregates (N=200) stay jammed at fixed time (kinetic, not KB-PIV-10's
+   steady-state size-phase). **Mechanism ROBUST + lit-validated; biology-time equilibrium is the project timescale gap.**
+
+2. **(b) compaction line via fluidisation — CLOSED, ANTAGONISTIC** (same doc §6). Adding the same motility to the
+   aggregate-σ compaction: motility DOES introduce genuine cell rearrangement (new tang/radial diagnostic 0.06→1.15),
+   but it **never unjams the compacting aggregate** (σ suppresses the unjamming) and **never improves packing**
+   (σ-determined; a σ=2 vs 5 mN/m bracket shows motility mildly OPPOSES compaction at weak σ). **Aggregate-σ compaction
+   and active-motility unjamming are antagonistic, σ-dominated levers — not one physics, not a synergy. The (b) hope
+   (fluidisation → better, rearrangement-mediated compaction) is REFUTED; confirms S4 from the rearrangement angle.**
+
+**Net:** the DCM does static mechanics + the unjamming *mechanism* + compaction *kinetics* correctly and honestly; what
+it cannot reach is the biology-time *equilibrium* (physiological-speed spreading / steady-state size-phase). Mesenchymal
+single-cell SPREADING remains the FF crawl engine's domain (parallel lane). **Decisions for you:** (i) is the honest
+mechanism-demonstrated-but-biology-time-caveated close acceptable as the DCM dynamic-lines verdict, or do you want the
+timescale gap attacked directly (e.g. an implicit-large-dt push / τ_p=2^N·τ compaction-rate idea from the Kim corpus)?
+(ii) hand mesenchymal spread fully to FF? Figures: `dcm_unjamming_*`, `dcm_fluidcompact_*` in `outputs/h_dcm_two_stage/figs/`.
+
+**Idle policy after this point (self-decided):** both planned lines are closed; per this plan's own clause (c) I do NOT
+invent new DCM scope overnight (further runs would only add error bars to already-clear verdicts — diminishing returns
+for large GPU burn). The loop reverts to health-checks + awaiting your call on (i)/(ii) above.
+
 ## State at start of the night
 The DCM active-matter **jamming→unjamming** line is comprehensively delivered + rigorously validated + honestly
 caveated (doc `DCM_UNJAMMING_ACTIVE_MOTILITY_2026-07-10`, ~8 figures, 2 Notion milestones, memory, backup
