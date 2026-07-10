@@ -101,3 +101,31 @@ central technical task of this mandate — without it, native migration is eithe
 - Next: read the native migration result; if stable + Nc-invariant → long migration sim + animated COM-trail viewer
   (cell crawls across + remodels the collagen). If it runs away at native → document + fall back to the rigid-mode
   regularisation (handle rotation modes too, not just translation).
+
+### Tick 1 (04:00 KST) — native migration verdict + NEW-KB cross-check reframes the whole direction
+- **Native `--com-drag` migration verdict:** STABLE at native (no runaway, V/V0=1.000 — the collagen-regularisation
+  STABILITY hypothesis is CONFIRMED) BUT **still ~0 migration** (v = −0.02 nm/s). com_drag alone does NOT unlock
+  native migration. Root cause: the cell is FIRMLY ANCHORED — 10953 clutches grip PINNED collagen, and each clutch
+  stays TETHERED to its frame-0 collagen node (`en_base_d` never refreshed), so the cell remodels in place but can't
+  translocate. **The blocker is not the drag — it's that clutches don't RE-GRIP new collagen ahead as the cell
+  protrudes.**
+- **A big, directly-relevant KB-1 ECM series just landed** (parallel session's ECM library). Cross-checked the S6
+  remodel field against it (`ff_s6_kb_crosscheck.py`):
+  - **KB-1.10** (σ(r)~r^-n; n~1 fibrous force-chains, n=3 continuum): our field decays with **n=2.24** — more
+    continuum-like than the fibrous n~1 real collagen shows. Cause: our Mikado is LINEAR — it lacks the
+    **strain-stiffening (KB-1.4)** that builds the long-range tensile force chains. The parallel session's
+    `ecm_library`/`ecm_mechanics` already has EMERGENT strain-stiffening → **integrate it as the S6 substrate**.
+  - **KB-1.9** (nematic order S=<cos2θ>; tumor stroma 0.3–0.7, healthy <0.1): our fibre alignment built only
+    **ΔS=+0.005** over 400 s (S 0.033→0.038) — negligible vs tumor stroma. Alignment is a slow, hours-scale +
+    reorientation-enabled process (matches the tiny RAI).
+- **Re-plan (KB-grounded):**
+  1. **Migration = clutch RE-GRIP (KB-1.23: FA captures fibres within R_FA≈1.5µm), not a drag fix.** As the cell
+     protrudes, released (rear) clutches rebind the NEAREST CURRENT collagen node ahead → the grip rolls forward →
+     the cell walks across the slab (+ com_drag keeps the rigid mode physical). Implement: at the kmc rebind, re-run
+     `attach_clutches_to_ecm` against the live `Ep_d` for rebinding clutches and update `en_base_d`.
+  2. **Fidelity: use the ECM library's strain-stiffening collagen (KB-1.4)** so stress propagates fibrous n~1
+     (KB-1.10) — coordinate with the parallel session's `ecm_mechanics` rather than duplicate.
+  3. **MMP proteolytic migration (KB-1.20)** is the deeper cancer-invasion mechanism (degrade fibres ahead, remove
+     when L_f<0.5µm; k_deg~1e-3/s) — KB flags it Phase-3+, so stage it AFTER re-grip.
+  4. **Longer sims** for alignment to approach the KB-1.9 tumor-stroma S band, measured with the KB nematic order.
+- Next action: implement clutch re-grip (migration unlock), coarse-test that the cell now translocates, then native.
