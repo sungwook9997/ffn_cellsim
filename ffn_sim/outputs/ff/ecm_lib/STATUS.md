@@ -124,3 +124,13 @@ Applied the PI's per-concentration principle to the other fibrillar ECM. ff_ecm_
 G'(c) sweep 0.5-8 mg/mL — G 17.7→247.6 Pa, ALL in the Piechocka band (0.1-2000 Pa) ✓; exponent n=0.96
 (vs lit 2.3) = the same athermal stretch-dominated regime as collagen (CSCALING_REGIME_FINDING.md applies to
 both). figs/fibrin_concentration.png. Fibrillar per-concentration validation now symmetric (collagen + fibrin).
+
+## Checkpoint 10 (2026-07-10) — ROADMAP + executing NEAR #1 (stiffness-sensing)
+PI asked for a development plan. Wrote ROADMAP.md (5-lens adversarial workflow → 3-horizon synthesis;
+ROADMAP_workflow.json). Executing the NEAR top pick: ff_stiffness_sensing.py — a resting full-compartment
+cell on a Winkler compliant substrate (k_sub=2Ea/(1−ν²)), stiffness swept across the library's material
+moduli (150 Pa brain-PA → 40 kPa muscle-PA). CPU smoke (COARSE nf=800, non-authoritative): physiological
+baseline (ΔP=40.5 Pa, γ=0.153, V/V0=0.998); traction rises 0→0.078 nN with a sharp engagement threshold
+(bound 0.01@150Pa → 0.80@2kPa) = durotaxis basis. E=input, k_sub=derived, optimum=measured (no tuning).
+Biphasic PEAK needs native (denser myosin → higher per-clutch load shifts the optimum into range) — native
+--nf 38000 A5000 run LAUNCHED. Path (a) (grip the actual library ECM network) = documented next increment.
