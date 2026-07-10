@@ -51,14 +51,16 @@ _PROFILES = {
     #    (OverflowError in the from-resting relaxation) AND added no migration benefit — dropped from the preset
     #    (the --myo-rear-bias flag + build hook remain for PI experimentation). Contraction = the existing uniform
     #    myosin; the migration front-back ASYMMETRY is set by polarize (adhesion turnover), the validated mechanism.
-    #  • n_fa 0 (one clutch/node = STRONG adhesion, KB-3.11 "strong FA/traction"): reducing the FA count (50, 100)
-    #    COLLAPSES traction on sparse physiological collagen (too few grips → the biphasic soft-arm, v→0), and — key —
-    #    starves the MMP source (proteolysis needs FRONT bound clutches to secrete). Proteolytic invasion (KB-1.20)
-    #    is a STRONG-adhesion mode: strong FAs give high traction + the MMP source, and MMP degrades the anchor ahead
-    #    to unlock advance. So keep the natural strong adhesion (least-tuned, no arbitrary count); the migration
-    #    dynamics come from polarize's front-form/rear-release turnover + MMP, not from adhesion reduction.
+    #  • n_fa 100: the only STABLE+running native config. n_fa=0 (one/node, 10956 clutches) + ecm_regrip + com_drag
+    #    OVERFLOWS (numerical, the many-clutch re-grip on compliant collagen); n_fa=50 COLLAPSES traction. n_fa=100
+    #    runs stably (v≈0.22 nm/s). HONEST LIMITATION (2026-07-11, not a tuning target): native migration of a
+    #    strongly-adherent cell on physiological collagen is sub-physiological (v~0.2-0.57) and numerically fragile
+    #    across these mechanisms — the model reproduces MCF7's poor motility; full-speed invasion is an open
+    #    adhesion-drag/solver item, NOT reachable by parameter choice. MMP needs more front traction than this config
+    #    sustains, so proteolysis is under-engaged here (flagged). The migration is directionally correct (biphasic
+    #    in adhesion/matrix density, compliant helps) but modest — reported honestly rather than tuned to a target.
     "mesenchymal": CellTypeProfile("mesenchymal", polarize=True, ecm_regrip=True,
-                                   front_frac=0.6, myo_rear_bias=0.0, n_fa=0, contractility_mult=1.0),
+                                   front_frac=0.6, myo_rear_bias=0.0, n_fa=100, contractility_mult=1.0),
 }
 _PROFILES["emt"] = replace(_PROFILES["mesenchymal"], name="emt")
 _ALIASES = {"mcf7": "mcf7_epithelial", "epithelial": "mcf7_epithelial", "mda": "mesenchymal",
