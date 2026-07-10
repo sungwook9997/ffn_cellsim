@@ -270,6 +270,21 @@ Autonomous-decision log appended below as choices are made.
 2. `myo_rear_bias` 0.7→0.0: the 70%-rear-myosin relocation is numerically unstable at native (overflow) + gave no
    migration benefit → dropped from the preset (flag/hook retained for your experimentation).
 
+**MMP validation (2026-07-11 continuation) — the mechanism ACTS, it is honestly SLOW (not a bug, not tuned):**
+- On the **high-traction** native path (raw Mikado two-way, remodel +265 nm, traction **185 nN**, ~7500 bound
+  front clutches sourcing MMP) the MMP report was **0 collagen segments severed (0.0%)** — same as the migration
+  path. This is **not** the mechanism failing: severing a segment needs its stiffness to fall 99.8% (K_SEG 5e4 →
+  100 pN/µm), and at the **KB-1.20-sourced** `k_deg≈1e-3/s` that takes ≈ tens of minutes (Wolf2013 physiological
+  proteolysis), while a feasible native sim is ~100 s. So over the sim MMP **degrades but does not sever**.
+- I added a **degradation metric** (`mmp_degraded_pct` mean / `mmp_degraded_max_pct` peak-at-front) so the
+  report shows the proteolysis that IS happening rather than a misleading "0". Coarse smoke (6 s sim-time): front
+  collagen softened **0.58%**, 0 severed — mechanism confirmed acting, physiologically slow. Native val2 re-run
+  (new metric) in flight; the native front-degradation % will be folded in here.
+- **I did NOT tune `k_deg` to force severance** — it is a KB-1.20 value; forcing a visible channel would be
+  tuning-to-outcome. The honest statement: *MMP proteolysis is implemented and KB-grounded; at the physiological
+  rate it opens a channel only over physiological (tens-of-min) time, which a short native sim cannot reach.* A
+  longer sim, or a `k_deg` sweep **within** the KB-1.20 band, is the legitimate way to show a channel later.
+
 **Open items for you (flagged, not auto-resolved):**
 - **Native migration full-speed** — the honest limit above; the physical path is MMP invasion on a compliant matrix
   with enough front traction to source MMP, or a fundamentally softer/2-D regime. Needs a solver look (adhesion-drag).
