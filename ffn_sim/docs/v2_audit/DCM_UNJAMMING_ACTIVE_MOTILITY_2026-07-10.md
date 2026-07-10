@@ -148,6 +148,18 @@ reaches **s0*≈5.41** (the clean crossing). So a jammed tissue needs DIRECTED, 
 nN, τ_p~10 min) the shape index sits right at the unjamming threshold — the DCM tissue is poised at the jamming↔
 unjamming transition, exactly the SPV / KB-PIV-10 picture.
 
+## 4g. CAPSTONE — at the PHYSIOLOGICAL operating point the tissue sits AT s0* (seed-robust)
+
+Ensemble at the physiological motility parameters (F_active=100 nN single-cell traction, τ_p=600 s ≈ 10 min directional
+persistence; seeds {7,11,17}): mean 3D shape index **s = 5.373 ± 0.079** (per-seed 5.264 / 5.408 / 5.447, one above s0*)
+— i.e. within ~0.7 % of the Merkel–Manning unjamming threshold **s0*≈5.41**. A/A0 = 2.30 ± 0.4 (all GENUINE spread).
+**So at physiological parameters the DCM spheroid sits RIGHT AT the jamming↔unjamming transition** — poised between the
+solid/confined (epithelial) and fluid/spreading (mesenchymal) states, exactly as real tissues operate near the jamming
+critical point (Park2015 airway epithelium; the SPV picture). Junction state (cadherin) then tips the poised tissue to
+cohesive-fluid (epithelial) vs dispersing-fluid (mesenchymal) without changing the unjamming itself (§4c). This is the
+physiologically-anchored capstone: motility (v0) + persistence (Dr) set the jamming state, and at the in-vivo operating
+point the tissue is critically poised.
+
 ## 5. Next
 - **Seed ensemble** (running): fa100 nascent × {7,11,17} vs matured × {7,11,17} → the maturation effect with error bars
   (does junction maturation gate the unjamming, matching KB-PIV-10 low-E-cadherin→gas?).
