@@ -194,3 +194,19 @@ central technical task of this mandate — without it, native migration is eithe
 - **Next:** (a) physical biphasic (`--ecm-conc` sweep 1→30, normalise traction per bound clutch to remove the
   attachment confound) → the real Chan-Odde inverted-U; (b) a longer compliant-collagen sim → visible migration +
   alignment approaching the KB-1.9 tumor-stroma S band; (c) tumor-aligned S6 (`--ecm-align-s 0.6`); (d) MMP (PI).
+
+### Tick 5 (2026-07-11, PI: "1,2 모두 진행") — MMP + motile cell-type IMPLEMENTED (both full-speed-migration paths)
+A 3-agent design workflow grounded both in the KB (mmp-design agent hit a transient rate-limit; the KB-grounding
++ motile-design agents carried it). Both landed default-off (validated remodel/biphasic paths untouched):
+- **`--mmp` proteolytic invasion (`2cb6ac4`, KB-1.20):** the FRONT bound clutches secrete MMP; a quasi-steady
+  diffusive halo ρ=exp(−r/λ), λ=√(2·D·τ)≈4.5µm (D_MMP≈10 µm²/s), degrades collagen segment + crosslink stiffness
+  d(seg_k)/dt=−k_deg·ρ·seg_k (k_deg~1e-3/s, Wolf2013) and SEVERS a segment when fully degraded — opening the
+  invasion channel the polarised cell advances into. ρ dimensionless [0,1] ⇒ timescale set by the sourced k_deg
+  (no tuned magnitude; absolute MMP flux PI-flagged). `[MMP]` print reports severed-segment count.
+- **`--cell-type` motile/EMT preset (`d763812`, new `ffn_sim/ff/cell_type.py`):** `mcf7_epithelial` (default =
+  current) vs `mesenchymal`/`emt` — a bundle of the existing knobs grounded in KB-3.11 / SE248 Betorz2023 / KB-4.12
+  / KB-2.2: polarize + ecm_regrip + front_frac 0.6 + **myo_rear_bias 0.7** (NEW build hook: relocate a fraction of
+  Stam-Hocky minifilaments onto the REAR cap, force-conserving) + n_fa 50. CLI flags override the preset.
+  ⚠️ front_frac/myo_rear_bias/n_fa are PI-flagged (qualitatively grounded, must NOT be swept to a target speed).
+- Coarse: both build+run clean. **Native 3-way (epithelial vs mesenchymal vs mesenchymal+MMP on conc-3 collagen)
+  running** — the decisive test of whether the rear-myosin engine + MMP channel reach physiological migration.
