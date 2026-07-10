@@ -60,6 +60,7 @@ from ffn_sim.dcm.dcm_filopodia_warp import (
 from ffn_sim.dcm.dcm_division_host import DivisionHost, DivisionParams
 from ffn_sim.dcm.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
+from ffn_sim.dcm.dcm_active_motility_warp import ActiveMotilityHost, active_self_propulsion_kernel
 from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.dcm.dcm_remesh import remesh_pass
 from ffn_sim.dcm.dcm_cleave import cleave_cell
@@ -272,6 +273,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    cad_mature: bool = False, cad_tau_mature: float = 600.0,
                    cad_mature_lifetime: float = 600.0,
                    cad_cluster: bool = False, cad_n_nascent: int = 4,
+                   active_motility: bool = False, f_active_N: float = 0.0,
+                   motility_persistence_s: float = 600.0, motility_planar: bool = True,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -632,6 +635,15 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                                 device=device)
         print(f"  [lamel] rim cells={lam.n_rim}/{n_cells}  pool={lam.n_pool}  "
               f"p_advance={lam.p_advance:.3e}  z_basal={lam.z_basal*1e6:.3f}um", flush=True)
+
+    # Active per-cell self-propulsion (motility) — the active-matter unjamming lever (default OFF).
+    mot = None
+    if active_motility and f_active_N > 0.0:
+        mot = ActiveMotilityHost(n_cells=n_cells, cof=cof_a, f_active_N=f_active_N,
+                                 persistence_s=motility_persistence_s, planar=motility_planar)
+        mot.upload(device)
+        print(f"  [motility] F_active={f_active_N*1e9:.2f}nN/cell  tau_p={motility_persistence_s:.0f}s  "
+              f"planar={motility_planar} (active-matter unjamming test)", flush=True)
 
     # B3 filopodia host (explicit finger protrusions; tips probe + adhere node-FACE to other
     # cells and node-to-plane to the dish). Additive; constructed only when --filopodia.
@@ -1275,6 +1287,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               d["actin"], d["actin_cell"], wp.int32(d["n_used"]),
                               wp.float64(lam.p.k_tether), wp.float64(lam.p.tether_cap),
                               wp.float64(lam.p.tether_radius), force_d], device=device)
+        # Active per-cell self-propulsion (every step): F_active·p̂_c distributed over the cell's nodes.
+        if mot is not None and do_spread:
+            wp.launch(active_self_propulsion_kernel, dim=N,
+                      inputs=[cof_d, mot._pol_d, mot._fnode_d, force_d], device=device)
         # B3 filopodia tip adhesions (every step; tips refreshed at cadence): node-FACE pull
         # toward a neighbour's face + node-to-plane clutch to the dish.
         if filo is not None and do_spread and filo._dev is not None:
@@ -1574,6 +1590,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 wp.synchronize_device(device)
                 lam.update(pos_d.numpy().astype(np.float64))
             lam.upload(device)
+        # Active motility: reorient each cell's polarity (rotational diffusion) at the active cadence.
+        if mot is not None and (s == 1 or s % active_batch == 0):
+            mot.update(active_batch * _dt_accel)
+            mot.upload(device)
         # B3: extend/probe filopodia + refresh tip-adhesion device arrays at low cadence
         if filo is not None and (s == 1 or s % filo.batch_steps == 0):
             wp.synchronize_device(device)
