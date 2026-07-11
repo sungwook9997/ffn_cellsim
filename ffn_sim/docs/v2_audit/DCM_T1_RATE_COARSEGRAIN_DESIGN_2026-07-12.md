@@ -138,5 +138,16 @@ shape-index unjamming needs a **deformation-aware T1 move** (elongate the swappi
 rigid translation) — the clear next increment. The biology-time route is mechanically working; closing the shape
 observable is the remaining piece.
 
-Remaining: (1) deformation-aware T1 move → re-run G4 → does s now track the reference? (2) physiological biology-time
-hero run once G4 converges on s.
+**Diagnostic (why did s drop?)** — re-ran C at low k0=0.005 (6 T1s vs C's 30): s_final = 4.902, still BELOW the frozen
+control (4.983) and non-monotonic with C (4.937). So the s-drop is NOT churn from over-firing — the **T1 move itself
+rounds cells** (rigid translate → overlap → IPC relax pushes apart → rounder → s↓), regardless of T1 count.
+
+**Reframed insight (SPV):** the shape index s is a *material state* (set by cortical tension / pressure / adhesion;
+raised by active-stress deformation), and the T1 rate is the *output* (the flow rate at that s). So the T1-KMC should
+supply the FLOW (rearrangement) **without changing s** — but the crude rigid move perturbs s downward. The correct fix
+is an **s-NEUTRAL T1 move** that repositions the 4-cell swap into a valid non-overlapping configuration (so no rounding
+IPC relax is triggered), rather than translating cells into overlaps. In a 3D node-based deformable-cell model this is
+genuine research (the 2D vertex-model edge-flip has no direct 3D node-mesh analog) — the well-scoped next increment.
+
+Remaining: (1) an s-neutral / deformation-aware T1 move → re-run G4 → does s now track the reference while the flow rate
+holds? (2) physiological biology-time hero run once G4 converges on s.
