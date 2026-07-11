@@ -503,3 +503,29 @@ model correctly reproduces that a myosin-only EMT upregulation does not make a p
 not forced; reported exactly as measured. **PI decision for next**: invest in the stable-high-adhesion solver fix
 (n_fa→0 without overflow) as the real migration unlock, or accept the honest sub-physiological limit and move to the
 next FF milestone (e.g. the severing KB-ingestion, or a new mechanism).
+
+### M6 adhesion-density sweep (2026-07-12 07:10) — adhesion is the REMODELLING lever, NOT the migration lever
+
+Follow-up to the contractility sweep: raise n_fa at baseline contractility (emt, `--n-fa {100,500,1000}`). All ran clean
+on the free A5000 (no overflow up to 1000):
+
+| n_fa | traction (nN) | densification (nm) | recruit (nm) | v_crawl (nm/s) |
+|---|---|---|---|---|
+| 100 | ≈0 | 1.4 | 36 | 0.16 |
+| 500 | 0.04 | 12.9 | 63 | 0.00 |
+| 1000 | **0.09** | **40.1** | **112** | **0.00** |
+
+**Monotonic + decisive:** more adhesion → **more traction + more matrix remodelling** (traction 0→0.09 nN, densification
+1.4→40 nm), but **migration stays ≈0**. So adhesion density is the **matrix-REMODELLING lever** (the cell grips harder
+and reorganises the collagen more strongly), **not** the migration lever — the traction goes into pulling the *pinned*
+collagen in place, not translocating the cell through it. Figure `ff_m6_adhesion.png` (browser-checked).
+
+**INTEGRATED migration verdict (contractility ⊗ adhesion, both native sweeps):** neither **contraction** (KB-3.14 myosin
+1–10×, v falls) nor **adhesion** (n_fa 100–1000, v stays ~0) lifts native migration. What rises with either is *in-place
+matrix remodelling*, not translocation. The cell is a **strong traction motor that remodels its pinned 3-D collagen but
+cannot crawl through it** — physiological migration needs a fundamentally different regime the current setup doesn't
+provide: a **compliant/unpinned matrix** the cell can displace, a **2-D surface** to crawl on, or **proteolytic
+path-clearing** (MMP — but that's KB-1.20-slow, shown earlier). This is the honest, now-fully-characterised limit; it is
+a PROPERTY of the pinned-3-D-slab geometry + the walking-cycle solver, not a missing force. **PI decision point:** pick
+the regime to pursue for true migration (unpinned/2-D/proteolysis), or bank this characterisation and move to the next
+FF milestone. All reported as measured — no tuning, no forcing.
