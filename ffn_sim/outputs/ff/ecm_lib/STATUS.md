@@ -285,3 +285,24 @@ bands (real Pa). (2) alignment→R_σ(S) tracks the library E∥/E⊥ ladder, ap
 propagation n(S) collagen+fibrin both drop with alignment, both above the KB-1.10 continuum(3)/fibrous(1) refs
 (FF steeper = honest sub-isostatic limit). (4) stiffness sensing Path b(Winkler ascending)+Path a(live-ECM
 descending) bracket the motor-clutch biphasic. Verified. The "완성" review artifact for the PI's morning.
+
+## ═══ OVERNIGHT SESSION SUMMARY (2026-07-11 night → 07-12) — for PI morning review ═══
+The ECM-library program is COMPLETE + native-A5000-confirmed + fully visualized. What landed overnight (all
+committed, all figures/viewers real-browser-verified, kb-check gates green, NO tuning):
+- **NEAR (6/6 DONE native):** stiffness sensing Path a (live library ECM, descending/slip) + Path b (Winkler,
+  ascending/catch) BRACKET the motor-clutch biphasic; contact guidance on aligned collagen — R_σ=σ∥/σ⊥ EMERGES
+  (1.6→30.8× tracking library E∥/E⊥) while resting-cell traction A_F stays ~isotropic (passive sensing reads
+  matrix STIFFNESS, active traction guidance needs motility). #6 interactive HTML viewer.
+- **MID Job D (DONE native):** directional stress propagation from a contractile inclusion — n drops with
+  alignment 8.1→4.7 (collagen), aligned channels stress ~10× farther; GENERALIZES to fibrin (16.8→8.3). KB-1.10
+  anchored (FF n>3 steeper than continuum n=3 — sub-isostatic limit, honest). Stress-field HTML viewer.
+- **c-scaling gap RESOLVED (diagnosis):** KB-anchored as THERMAL (KB-1.30 G0~kBT·ℓp²/ξ⁵ + KB-1.7 ξ~c^-1/2 →
+  c^2.5), NOT ⟨z⟩(c) (KB-1.3 ⟨z⟩~3.2 c-independent — ruled out as over-fit). Analytic overlay figure.
+- **Consolidated validation dashboard** (`figs/ecm_validation_dashboard.png`) — all results vs literature/KB.
+- **In flight:** fibrin contact-guidance R_σ (native ~8/12) — early finding: fibrin R_σ WEAKER than collagen
+  (S=0.59: fibrin ~1.7 vs collagen 6.4) → contact-guidance R_σ is a PARTIAL generalization (unlike Job D's full
+  one), because the resting cell loads the denser fibrin network less directionally. Land when done (~2.7h).
+- **BLOCKED/PI-GATED (deferred, documented):** #6 active-motility follow-up (native-crawl grid-drag blocker);
+  thermal-WLC runtime physics (c² resolution); ν-faithful continuum; ECMRemodeler Bell-rate datum. Awaiting PI.
+- **Note:** concurrent sessions (DCM T1-KMC, M6 contractility) share dcm/main; my commits are clean specific-adds,
+  no cross-contamination. Some ecm_lib figs show as modified by those sessions — left untouched.
