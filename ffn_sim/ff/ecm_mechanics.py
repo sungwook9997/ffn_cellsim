@@ -552,6 +552,72 @@ def ecm_material_stress(ecm, pos, device="cpu") -> np.ndarray:
     return sig
 
 
+def stress_field_radial(ecm, pos, center, *, n_shells: int = 16, r_max: float | None = None,
+                        r_min: float | None = None) -> dict:
+    """Radial stress field |σ_rr|(r) around a point ``center`` — the long-range stress-propagation profile.
+
+    For a contractile inclusion embedded in the matrix, the stress transmitted across a sphere of radius r
+    decays with distance. We bin every bond (crosslink + segment) by the radial distance of its midpoint from
+    ``center`` and accumulate the RADIAL-RADIAL component of its virial contribution:
+
+        σ_rr(shell) = (1/V_shell) · Σ_{bonds in shell} (F/L)·(d·r̂)²        [Pa, 1 pN/µm²=1 Pa]
+
+    where F=k(L−r₀) is the bond tension, d the bond vector, r̂ the radial unit at the bond midpoint, and
+    V_shell the spherical-shell volume. Also returns the tangential σ_θθ and the pressure p=−tr(σ)/3 per shell.
+    Fit log|σ_rr| vs log r over the clean mid-range (away from the inclusion boundary and the outer pinned BC)
+    to get the decay exponent n (|σ|~r^−n) — linear-elastic point-source gives n≈2–3; a sub-isostatic FIBROUS
+    network propagates LONGER-range (smaller n, ~1) because fibers carry tension in chains (Notbohm/Rosakis/
+    Han). Bending virial is omitted here (stretch-dominated regime — the segment/crosslink tension dominates)."""
+    pos = np.ascontiguousarray(pos, float)
+    c = np.asarray(center, float)
+    # gather all bonds (xl + seg)
+    ii, jj, kk, rr0 = [], [], [], []
+    for i, j, k, r0 in ((ecm.xl_i, ecm.xl_j, ecm.xl_k, ecm.xl_rest),
+                        (ecm.seg_i, ecm.seg_j, ecm.seg_k, ecm.seg_rest)):
+        if getattr(i, "size", 0):
+            ii.append(np.asarray(i)); jj.append(np.asarray(j))
+            kk.append(np.broadcast_to(k, np.asarray(i).shape) if np.ndim(k) == 0 else np.asarray(k))
+            rr0.append(np.broadcast_to(r0, np.asarray(i).shape) if np.ndim(r0) == 0 else np.asarray(r0))
+    if not ii:
+        return dict(r=np.zeros(0), sigma_rr=np.zeros(0), sigma_tt=np.zeros(0), pressure=np.zeros(0), n_exp=float("nan"))
+    i = np.concatenate(ii); j = np.concatenate(jj); k = np.concatenate(kk); r0 = np.concatenate(rr0)
+    d = pos[j] - pos[i]
+    L = np.linalg.norm(d, axis=1) + 1e-12
+    f_over_L = k * (L - r0) / L                                    # bond tension / length [pN/µm]
+    mid = 0.5 * (pos[i] + pos[j])
+    rvec = mid - c
+    r = np.linalg.norm(rvec, axis=1) + 1e-12
+    rhat = rvec / r[:, None]
+    d_rad = np.einsum("na,na->n", d, rhat)                         # bond projected on radial
+    d2 = np.einsum("na,na->n", d, d)
+    d_tan2 = np.maximum(d2 - d_rad ** 2, 0.0)                      # tangential² = |d|² − radial²
+    vir_rr = f_over_L * d_rad ** 2                                 # per-bond σ_rr·V contribution
+    vir_tt = f_over_L * 0.5 * d_tan2                               # split over the two tangential dirs
+    vir_tr = f_over_L * d2                                         # per-bond trace contribution
+    rmax = float(r_max if r_max is not None else np.percentile(r, 98))
+    rmin = float(r_min if r_min is not None else max(np.percentile(r, 2), 1e-3))
+    edges = np.linspace(rmin, rmax, n_shells + 1)
+    rmid = 0.5 * (edges[:-1] + edges[1:])
+    Vsh = (4.0 / 3.0) * np.pi * (edges[1:] ** 3 - edges[:-1] ** 3)
+    idx = np.clip(np.digitize(r, edges) - 1, 0, n_shells - 1)
+    in_range = (r >= rmin) & (r < rmax)
+    srr = np.zeros(n_shells); stt = np.zeros(n_shells); str_ = np.zeros(n_shells)
+    np.add.at(srr, idx[in_range], vir_rr[in_range])
+    np.add.at(stt, idx[in_range], vir_tt[in_range])
+    np.add.at(str_, idx[in_range], vir_tr[in_range])
+    srr /= Vsh; stt /= Vsh; press = -(str_ / Vsh) / 3.0
+    # fit exponent on the clean mid-range (drop the innermost + outermost shell)
+    lo, hi = 1, n_shells - 1
+    mag = np.abs(srr[lo:hi]); rm = rmid[lo:hi]
+    ok = (mag > 0) & np.isfinite(mag)
+    n_exp = float("nan")
+    if ok.sum() >= 3:
+        p = np.polyfit(np.log(rm[ok]), np.log(mag[ok]), 1)
+        n_exp = float(-p[0])
+    return dict(r=rmid, sigma_rr=srr, sigma_tt=stt, pressure=press, n_exp=n_exp,
+                edges=edges, r_fit_lo=float(rmid[lo]), r_fit_hi=float(rmid[hi - 1]))
+
+
 def stress_relaxation(ecm, *, gamma0=0.1, koff0_per_s=0.01, x_beta_nm=0.4, dt_real_s=None,
                       t_total_s=None, n_record=24, mech_substeps=150, device="cpu") -> dict:
     """Viscoelastic stress-relaxation G(t): step shear γ₀, then let CROSSLINKS turn over (Bell slip,
