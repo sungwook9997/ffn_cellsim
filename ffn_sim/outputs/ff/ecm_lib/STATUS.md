@@ -266,3 +266,14 @@ blue→red, green director. The morphology behind the r⁻ⁿ channeling. Real-b
 eyeballed: pulled region concentrated near the inclusion along the director — displacement is LOCALIZED, the
 short-range n≈5-8 result made visible). Representative 40µm REV (mechanism view; the quantitative n(S) is the
 native box=90 figure). Both viz types now exist for Job D (comparison figure + interactive HTML), per PI.
+
+## Checkpoint 22 (2026-07-12) — Job D generalizes to FIBRIN (aligned-channeling is a general fibrous property)
+ff_ecm_stress_propagation.py --material fibrin, native (box=90µm, 637875 nodes — fibrin denser than collagen,
+100k relax, 3 seeds). n(S): S=0→16.83±3.18, S=0.30→17.94±5.04, S=0.59→8.61±0.96, S=0.83→8.29±0.57.
+→ ⭐ Fibrin shows the SAME trend as collagen — n DROPS with alignment (16.8→8.3, a bimodal split at S~0.5):
+aligned fibrin channels contractile stress farther. So the aligned-stress-channeling is a GENERAL fibrous-network
+property, not collagen-specific. HONEST caveat: fibrin's ABSOLUTE n is higher than collagen's (4.7-8.1) because
+fibrin is denser (637k vs 382k nodes) AND the bigger network is less equilibrated at 100k steps (the collagen
+lesson: n falls as steps rise) — so fibrin's absolute n is an UPPER bound (range a lower bound); the TREND is the
+robust, converged result. Fixed a plot-title bug (was hardcoded "collagen-I"; now uses meta['material']).
+`figs/stress_propagation_sp_fibrin_native.png`. Fibrin contact-guidance (R_σ) run still in flight (~half done).

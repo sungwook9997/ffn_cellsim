@@ -154,8 +154,8 @@ def plot(cases, meta, path):
     ax.set_xlabel("distance from inclusion centre  r  [µm]")
     ax.set_ylabel("radial stress  |σ_rr(r)|  [Pa]")
     ax.set_title(f"FF ECM — stress propagation from a contractile inclusion  ·  {note}\n"
-                 f"collagen-I ε={meta['eps']:.0%} contraction  ·  |σ_rr|~r⁻ⁿ decay exponent EMERGES vs the "
-                 f"elastic references (aligned vs isotropic)  ·  tag={meta['tag']}", fontsize=9)
+                 f"{meta.get('material', 'collagen_I')} ε={meta['eps']:.0%} contraction  ·  |σ_rr|~r⁻ⁿ decay "
+                 f"exponent EMERGES vs the elastic references (aligned vs isotropic)  ·  tag={meta['tag']}", fontsize=9)
     ax.grid(True, which="both", alpha=0.3)
     ax.legend(fontsize=8, loc="lower left")
     fig.tight_layout()
@@ -200,8 +200,9 @@ def main():
                                   sd=float(ns.std()) if ns.size > 1 else 0.0, n_seeds=int(ns.size))
     print(f"[exponents] " + "  ".join(f"S={S:g}:n={n_by_S[f'S={S:g}']['mean']:.2f}±{n_by_S[f'S={S:g}']['sd']:.2f}"
                                       for S in S_list))
-    meta = dict(tag=a.tag, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, S_list=S_list, seeds=a.seeds,
-                steps=a.steps, device=a.device, coarse_nonauthoritative=bool(coarse), n_exp=n_by_S,
+    meta = dict(tag=a.tag, material=a.material, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps,
+                S_list=S_list, seeds=a.seeds, steps=a.steps, device=a.device,
+                coarse_nonauthoritative=bool(coarse), n_exp=n_by_S,
                 reference="linear-elastic point source n≈2–3; fibrous network longer-range n→~1 (KB-1.10; "
                           "Notbohm2015/Han2018 oracle-overlay)")
     os.makedirs(a.out, exist_ok=True)
