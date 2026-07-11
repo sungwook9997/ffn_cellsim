@@ -90,9 +90,13 @@ target order within a few percent.
    σ_rr(r) that decays as |σ|~r⁻ⁿ; the exponent DROPS MONOTONICALLY with fiber alignment — n=8.1±2.6
    (isotropic) → 4.7±0.2 (S=0.83) — so aligned collagen CHANNELS contractile stress ~10× farther (3-seed
    ensemble). Absolute n≈5-8 is steeper than linear-elastic (~r⁻²⁻³): the athermal sub-isostatic Mikado
-   localizes stress (short-range), the SAME stretch-dominated limit as the c-scaling + N1 findings; the
-   true fibrous long-range (Notbohm ~r⁻¹) needs the PI-gated nonlinear/bending physics.
-   `figs/stress_propagation_sp_native.png` (`ff_ecm_stress_propagation.py`, `ecm_mechanics.stress_field_radial`).
+   localizes stress (short-range), the SAME stretch-dominated limit as the c-scaling + N1 findings. **KB-anchored**:
+   KB-1.10 states σ(r)~r⁻ⁿ with n~1 (fibrous) vs n=3 (continuum 3D) — the FF athermal sub-isostatic Mikado is
+   STEEPER than BOTH (n≈5-8 > 3), so reaching the fibrous n~1 (Notbohm2016_BiophysJ verdict OK, Swaminathan2011
+   OK) needs the fiber buckling / tension-stiffening the athermal model lacks. The EMERGENT directional result
+   (n drops ~2× with alignment) GENERALIZES to fibrin (n 16.8→8.3) — a robust fibrous-network property.
+   `figs/stress_propagation_sp_native.png` (+ `_sp_fibrin_native.png`), `stress_propagation_viewer.html`
+   (`ff_ecm_stress_propagation.py`, `ecm_mechanics.stress_field_radial`).
 
 ## Cell in the ECM (the library's purpose — ROADMAP execution, native A5000-confirmed)
 
