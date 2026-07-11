@@ -155,6 +155,18 @@ def main():
                          "instead of backward-Euler. Fixes BE's over-damping of slow active forcing (the freeze that "
                          "broke naive large-dt) fundamentally — so the FORCE-based motility itself stays accurate at "
                          "large dt (no operator-split needed). Same Newton/CG cost per step.")
+    ap.add_argument("--t1-rate", action="store_true", dest="t1_rate",
+                    help="TIMESCALE ATTACK biology-time route (PI 2026-07-12): supply the slow tissue rearrangement "
+                         "the large-dt BDF2 mechanics correctly freeze, as a physical KMC of T1 events (k_T1(s) rate "
+                         "law, grounded k0←k_endo/KB-4.13). Pair with --bdf2 + a large --accel-dt. See "
+                         "DCM_T1_RATE_COARSEGRAIN_DESIGN_2026-07-12.")
+    ap.add_argument("--t1-k0", type=float, default=0.03, dest="t1_k0",
+                    help="T1 attempt/gating frequency [1/s] (k_endo anchor 0.01-0.1, KB-4.13).")
+    ap.add_argument("--t1-barrier-b", type=float, default=3.0, dest="t1_barrier_b",
+                    help="T1 shape-index barrier stiffness B (calibrated from the small-dt k_T1(s) measurement).")
+    ap.add_argument("--t1-cadence", type=int, default=200, dest="t1_cadence",
+                    help="steps between KMC T1 passes (host round-trip cadence).")
+    ap.add_argument("--t1-seed", type=int, default=13, dest="t1_seed")
     ap.add_argument("--motility-split", action="store_true", dest="motility_split",
                     help="TIMESCALE ATTACK: apply the v0-mode drift as a position translation (x*=xₙ+v0·dt·p̂) "
                          "BEFORE the implicit relax (Lie-Trotter operator split) instead of a self-propulsion force. "
@@ -236,6 +248,8 @@ def main():
         active_motility=a.active_motility, f_active_N=a.f_active_nn * 1e-9,
         motility_persistence_s=a.motility_tau, motility_seed=a.motility_seed,
         motility_v0_um_s=a.v0_um_min / 60.0, motility_split=a.motility_split,
+        t1_rate=a.t1_rate, t1_k0=a.t1_k0, t1_barrier_b=a.t1_barrier_b,
+        t1_cadence=a.t1_cadence, t1_seed=a.t1_seed,
         remesh_period=a.remesh_period,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement

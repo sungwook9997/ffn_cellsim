@@ -62,6 +62,9 @@ from ffn_sim.dcm.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.dcm.dcm_active_motility_warp import (ActiveMotilityHost, active_self_propulsion_kernel,
                                                    active_drift_translate_kernel)
+from ffn_sim.dcm.dcm_t1_rate import (cell_centroids as _t1_centroids, auto_cutoff as _t1_cutoff,
+                                     t1_kmc_step, K0_DEFAULT as _T1_K0)
+from ffn_sim.dcm.dcm_jamming_metrics import cell_shape_index_3d as _t1_shape
 from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.dcm.dcm_remesh import remesh_pass
 from ffn_sim.dcm.dcm_cleave import cleave_cell
@@ -278,6 +281,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    motility_persistence_s: float = 600.0, motility_planar: bool = True,
                    motility_seed: int = 7, motility_v0_um_s: float = 0.0,
                    motility_split: bool = False,
+                   t1_rate: bool = False, t1_k0: float = _T1_K0, t1_barrier_b: float = 3.0,
+                   t1_cadence: int = 200, t1_seed: int = 13, t1_margin: float = 0.05,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -1621,6 +1626,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     every = max(1, steps // max(1, frames))
     t0 = time.perf_counter()
     truncated_at = None
+    # T1 rate/event coarse-graining (PI 2026-07-12): supply the slow rearrangement the large-dt BDF2 mechanics
+    # correctly freeze, as a physical KMC of T1 events (design DCM_T1_RATE_COARSEGRAIN_DESIGN_2026-07-12).
+    _t1_rng = np.random.default_rng(t1_seed) if t1_rate else None
+    if t1_rate:
+        print(f"  [t1-rate] KMC T1 coarse-graining ON  k0={t1_k0:.3f}/s (k_endo-anchored) B={t1_barrier_b:.2f} "
+              f"cadence={t1_cadence} steps ({t1_cadence*_dt_accel:.3f}s)  seed={t1_seed}", flush=True)
+    _t1_fired_total = 0
+
     for s in range(1, steps + 1):
         # M2: ratchet the lamellipodial front on the host at low cadence, then refresh
         # the device anchor + leading-node geometry (the tether reads them every step)
@@ -1764,6 +1777,28 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                       inputs=[V0_cell_d, Vc_d, contact_cnt_d, cof_d, wp.int32(npc),
                               wp.float64(float(faces_per_cell)), wp.float64(osm_relax / max(osm_batch, 1))],
                       device=device)
+        # T1 KMC pass (before the mechanics relax): fire physical T1 events at the grounded rate, apply the
+        # discrete swap moves to pos_d; the BDF2/IPC step then relaxes the induced overlaps. Host round-trip at
+        # a coarse cadence only. This supplies the rearrangement that large-dt mechanics correctly freeze.
+        if t1_rate and s % t1_cadence == 0:
+            wp.synchronize_device(device)
+            ph = pos_d.numpy().astype(np.float64)
+            nc_now = int(cof_a.max()) + 1
+            cens = _t1_centroids(ph, cof_a, nc_now)
+            sidx = _t1_shape(ph, faces_a, cof_a)                 # per-cell 3D shape index (nan on degenerate)
+            sidx = np.where(np.isfinite(sidx), sidx, 0.0)        # nan → 0 (deep-jammed → rate≈0, no spurious T1)
+            valid = np.isfinite(cens).all(axis=1)
+            if valid.all():
+                out = t1_kmc_step(cens, sidx, _t1_cutoff(cens), t1_cadence * _dt_accel, _t1_rng,
+                                  k0=t1_k0, barrier_stiffness=t1_barrier_b, margin=t1_margin)
+                if out["disp"]:
+                    for cell, dv in out["disp"].items():
+                        ph[cof_a == cell] += dv
+                    pos_d.assign(ph)
+                    _t1_fired_total += out["n_fired"]
+                    if s % (t1_cadence * 10) == 0:
+                        print(f"  [t1-rate] step {s}: {out['n_fired']} T1 events this pass "
+                              f"({_t1_fired_total} total)", flush=True)
         stepped(s, dt)
         if s % every == 0 or s == steps:
             wp.synchronize_device(device)
