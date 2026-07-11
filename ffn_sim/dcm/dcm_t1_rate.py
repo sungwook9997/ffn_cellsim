@@ -76,6 +76,42 @@ def t1_swap_partners(neighbors: set[tuple[int, int]], a: int, b: int,
     return best
 
 
+def t1_geometric_move(centroids: np.ndarray, a: int, b: int, c: int, d: int, cutoff: float,
+                      margin: float = 0.05) -> dict[int, np.ndarray]:
+    """The discrete T1 geometric move: separate the firing pair (a,b), approach the swap pair (c,d).
+
+    Returns per-cell centroid displacement vectors (applied as a RIGID translation of each cell's nodes — this preserves
+    cell volume and shape, Sanity Gate G5). Each pair moves symmetrically (momentum-neutral, no spurious aggregate
+    drift). Magnitudes come from the LOCAL geometry (cross the contact threshold by ``margin``), not a free parameter:
+      - a,b separate along their axis until |a−b| = cutoff·(1+margin)  (contact just broken);
+      - c,d approach along their axis until |c−d| = cutoff·(1−margin)  (contact just made).
+    The resulting small overlaps with surrounding cells are re-resolved by the IPC relax in the BDF2 step. The move is a
+    NO-OP direction (zero displacement) for a pair already on the correct side of the threshold.
+
+    Args:
+        centroids: (n_cells, 3) cell centroids [m].
+        a, b: firing (separating) pair. c, d: swap-in (approaching) pair.
+        cutoff: contact threshold [m].
+        margin: fractional overshoot past the threshold.
+    """
+    disp = {a: np.zeros(3), b: np.zeros(3), c: np.zeros(3), d: np.zeros(3)}
+    # separate a,b
+    v = centroids[a] - centroids[b]; dab = float(np.linalg.norm(v))
+    if dab > 1e-30:
+        n = v / dab
+        target = cutoff * (1.0 + margin)
+        half = max(target - dab, 0.0) / 2.0        # only push apart (never pull together)
+        disp[a] += half * n; disp[b] -= half * n
+    # approach c,d
+    w = centroids[c] - centroids[d]; dcd = float(np.linalg.norm(w))
+    if dcd > 1e-30:
+        n = w / dcd
+        target = cutoff * (1.0 - margin)
+        half = max(dcd - target, 0.0) / 2.0        # only pull together (never push apart)
+        disp[c] -= half * n; disp[d] += half * n
+    return disp
+
+
 def measure_t1_rate(frames: np.ndarray, cof: np.ndarray, dt_frame: float,
                     shell_factor: float = 1.15) -> dict:
     """G3 grounding: measure the physical T1 (neighbour-exchange) rate from a fine-grained trajectory.

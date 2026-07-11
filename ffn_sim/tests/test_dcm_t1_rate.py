@@ -8,7 +8,8 @@ import pytest
 
 from ffn_sim.dcm.dcm_t1_rate import (
     auto_cutoff, cell_neighbor_set, cell_centroids, measure_t1_rate,
-    k_t1_arrhenius, fit_barrier_stiffness, t1_swap_partners, K0_DEFAULT, S0_STAR_3D,
+    k_t1_arrhenius, fit_barrier_stiffness, t1_swap_partners, t1_geometric_move,
+    K0_DEFAULT, S0_STAR_3D,
 )
 
 
@@ -76,6 +77,29 @@ def test_t1_swap_partners_picks_common_neighbours():
     nbrs2 = nbrs | {(0, 3), (1, 2)}             # make 2,3 each touch both 0 and 1
     sp = t1_swap_partners(nbrs2, 0, 1, c)
     assert sp == (2, 3)
+
+
+def test_t1_geometric_move_crosses_threshold_and_conserves_momentum():
+    # a,b touching (dist 0.5 < cutoff 1.0) must separate past cutoff; c,d apart (dist 1.5 > cutoff) must approach below.
+    cen = np.array([[0, 0, 0], [0.5, 0, 0],       # a,b close (to separate)
+                    [0, 3.0, 0], [1.5, 3.0, 0]], float)  # c,d far (to approach)
+    cutoff = 1.0
+    disp = t1_geometric_move(cen, 0, 1, 2, 3, cutoff, margin=0.05)
+    new = cen.copy()
+    for k, dv in disp.items():
+        new[k] = cen[k] + dv
+    dab = np.linalg.norm(new[0] - new[1]); dcd = np.linalg.norm(new[2] - new[3])
+    assert dab == pytest.approx(cutoff * 1.05, rel=1e-6)     # a,b just separated
+    assert dcd == pytest.approx(cutoff * 0.95, rel=1e-6)     # c,d just joined
+    # each pair momentum-neutral → total displacement ≈ 0
+    assert np.allclose(sum(disp.values()), 0.0, atol=1e-12)
+
+
+def test_t1_geometric_move_noop_when_already_correct():
+    # a,b already separated (dist 2>cutoff) and c,d already touching (dist 0.5<cutoff) → zero move
+    cen = np.array([[0, 0, 0], [2.0, 0, 0], [0, 3, 0], [0.5, 3, 0]], float)
+    disp = t1_geometric_move(cen, 0, 1, 2, 3, cutoff=1.0)
+    assert all(np.allclose(v, 0.0) for v in disp.values())
 
 
 def test_fit_barrier_recovers_known_stiffness():
