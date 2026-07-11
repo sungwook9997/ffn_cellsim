@@ -70,3 +70,42 @@ figure + advance the queue; (3) if a job hung/failed → diagnose (GPU util + lo
 next job, document; (4) if the queue drained → build the next item or extend this plan; (5) re-arm the 1 h loop.
 Never idle-wait passively — always advance a buildable no-GPU item (KB verification, next driver, docs) while the
 GPU is busy. Surface nothing to the PI unless a hard-rule DRIFT or an unrecoverable blocker appears.
+
+---
+
+## MID execution tranche (2026-07-12, autonomous — appended per PI "계획서 계속 확장")
+
+All 6 NEAR done + native. Now executing MID. GPU pipeline (A5000) still serialized; each item follows
+build → coarse smoke → native → validate-vs-KB → figure + interactive HTML → commit. Never block on a PI
+decision (choose the best literature-anchored option, mark PROVISIONAL, continue).
+
+### In flight
+- **Job D — long-range stress propagation** (KB-1.10): native 3-seed running. FINDING (single-seed native, 3-seed
+  refining): aligned collagen (S≥0.59) channels contractile stress ~10× farther than isotropic; exponent n drops
+  6→4.4 with alignment. Absolute n≈4-6 is STEEPER than elastic (r^-2..-3) — the athermal sub-isostatic Mikado
+  localizes stress (short-range), the SAME stretch-dominated limitation as the c-scaling + N1 findings; the true
+  fibrous long-range (Notbohm n≈1) needs the PI-gated nonlinear/bending physics. TO DO: land 3-seed n(S)±sd +
+  stress-field interactive HTML (deformation around the inclusion).
+- **Fibrin contact-guidance generalization** (extends NEAR #6): native run in flight — does R_σ(S) rise like
+  collagen? (early: A_F~1, R_σ low at S=0; awaiting S≥0.59).
+
+### Next MID items (priority order, autonomous)
+1. **#6 active-motility follow-up** — the honest next step from the NEAR #6 finding. A POLARIZED / actively-
+   contracting cell (myosin-biased or a protrusion along +x) on aligned collagen: does the ACTIVE traction A_F
+   exceed 1 (Ray >3×) when the resting cell's did not? Reuses the crawl/motility layer + the ecm-network coupling.
+   *This converts the R_σ matrix signal into the biological traction guidance — the key open question.*
+2. **Interactive stress-field + deformation viewers** for Job D (per PI viz directive) — the collagen network
+   colored by |displacement| around the contractile inclusion, isotropic vs aligned (the channeling made visible).
+3. **Long-range r^-n with a REAL contractile cell** (not a prescribed inclusion) — embed the FF cell (cortex+
+   myosin) in collagen, let its own contraction load the matrix, measure σ(r). Ties Job D to the cell engine.
+4. **Kim BD acceptance-oracle cross-validation** for collagen G / K(γ) / N1 (oracle-only, per PI-2026-06-30) —
+   a Cytosim/Kim-BD comparison as an independent cross-check of the emergent moduli. NOT a runtime mechanism.
+5. **ECMRemodeler topological bond-mutation** (MMP/LOX plasticity) — PROVISIONAL rate = α-actinin k_off0=0.066/s
+   (Ferrer 2008, in KB), covalent = k_off→0; PI-to-ratify.
+6. **⟨z⟩(c) LOX law → predicted c²** — PROVISIONAL literature-anchored growth option (default OFF), show it yields
+   c≈2, never an n-fit; PI-to-ratify. (Closes the documented c-scaling gap as an OPTION.)
+
+### PI decisions parked (auto-decided PROVISIONAL, listed for morning ratification)
+- collagen concentration for sweeps = spec.ref_conc 1.5 mg/mL (physiological; not tuned).
+- sensing cell MICROTUBULES-OFF (consistent with the NEAR #1/#2/#6 sensing family).
+- new KnowledgeClaims (contact-guidance A_F/R_σ; stress-propagation n(S)) DRAFTED, not auto-created (PI-authored).
