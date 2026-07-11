@@ -71,3 +71,21 @@ linear); the literature c²≈2 requires ⟨z⟩ to GROW with c (bending-dominat
 literature-anchored crosslink-density-vs-concentration law (collagen LOX biology), NOT an n-fit. Bracketed
 1.04 (fixed ⟨z⟩) / 1.07 (⟨z⟩ blow-up) ↔ 7.24 (reshape through threshold). Independently confirmed by the
 positive N1 sign (stretch-dominated) vs the literature negative N1 (bending-dominated). No tuning was applied.
+
+## KB-anchored resolution (2026-07-12): the gap is THERMAL, not connectivity ⟨z⟩(c)
+
+A KB query settles which route closes the c-exponent gap:
+- **KB-1.3** — collagen ⟨z⟩=3-3.5, sub-isostatic, roughly concentration-INDEPENDENT (no ⟨z⟩(c) growth datum
+  exists). So the ⟨z⟩(c) route is **ruled out**: at the KB-anchored fixed ⟨z⟩=3.2 the athermal network is
+  density-linear, G∝ρ∝c¹ (measured n=1.05). It is NOT legitimate to grow ⟨z⟩(c) to hit n=2 — there is no
+  literature datum for it, and that would be tuning to the outcome.
+- **KB-1.30 benchmark #1** — the entropic MacKintosh plateau modulus **G0 ~ kB·T·ℓp²/ξ⁵** (thermal bending of
+  semiflexible segments between crosslinks), with **KB-1.7** mesh **ξ ~ c^(−1/2)** (3D) ⇒ **G0 ~ c^(5/2)=c^2.5**.
+- **KB-1.V.2.1** — the measured literature exponent n≈2.0-2.1 sits BETWEEN the athermal c¹ and the pure
+  affine-thermal c^2.5 — the real semiflexible crossover (partial affinity / non-affine bending).
+
+`ff_ecm_cscaling_thermal.py` → `figs/cscaling_thermal_diagnosis.png` overlays all three anchored at the reference
+G'(1.5)=13.4 Pa: athermal (shallow c¹) → literature band (c²) → thermal (steep c^2.5). The gap is therefore a
+THERMAL semiflexible effect, and closing it in the RUNTIME requires the **PI-gated thermal-WLC force-extension**
+(a production-default physics change, MID roadmap) — NOT a connectivity law. This figure is the KB-grounded
+diagnosis + the quantified resolution path; the physics change itself is deferred to PI ratification.
