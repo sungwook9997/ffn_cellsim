@@ -325,3 +325,15 @@ intermediate reading (S=0.59 → "fibrin weaker") was PREMATURE — the 3-seed m
 wait for the full ensemble before concluding. Fixed the plot material-label bug (was hardcoded "collagen-I").
 `figs/contact_guidance_anisotropy_cg_fibrin_native.png`. This completes the fibrin generalization program (both
 Job D stress-propagation AND #6 contact-guidance now confirmed general across collagen + fibrin).
+
+## Checkpoint 25 (2026-07-12) — mammary-stroma tissue-mimetic: the athermal ceiling at TISSUE scale (scope/limit)
+ff_ecm_tissue_mimetic.py: interpenetrating collagen-I+Matrigel composites, literature-anchored (NOT tuned) vs
+KB-1.V.1.2. Result (virial G, box 30µm REV): normal mammary stroma G=89 Pa (band 140-400, ~1.6× UNDER); tumor
+stroma TACS-3 (dense 5 mg/mL aligned collagen) G=129 Pa (band 5000-10000, ~50× UNDER). HONEST scope finding (not
+a success story): the athermal sub-isostatic fibrillar library reproduces individual DILUTE-material moduli (6/6
+in band) but UNDER-shoots realistic DENSE/tumor TISSUE moduli — because desmoplastic stiffening relies on the
+thermal/nonlinear collagen stiffening the athermal Mikado lacks (the c-scaling/N1/stress-propagation ceiling, now
+at tissue scale). CRUCIALLY continuum gels DO reach kPa (agarose 14k, PA 40k in band), so the ceiling is SPECIFIC
+to the fibrillar collagen route → the runtime fix is the PI-gated thermal-WLC. This BOUNDS the library scope:
+trustworthy for individual materials + soft tissues + the mechanistic cell-ECM coupling; needs thermal-WLC for
+dense tumor stroma. `figs/tissue_mimetic_mammary.png`. Consistent with the c-scaling diagnosis (checkpoint 22).
