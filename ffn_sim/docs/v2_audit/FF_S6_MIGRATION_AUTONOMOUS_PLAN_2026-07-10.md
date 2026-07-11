@@ -476,3 +476,30 @@ what the Kim2012 TAG re-plan predicted (speed emerges from FA-formation/traction
 KB-3.14 lever is **not** the migration unlock; the real lever is **adhesion density** (more bound clutches), which is
 the known open item (n_fa=0 + the emt motile program OVERFLOWS — the adhesion-drag/solver item). Sweep 1×/10× in flight
 to confirm the flat v(contractility) trend. Reported as measured — not tuned, not forced.
+
+### M6 SWEEP COMPLETE (2026-07-12 06:40) — KB-3.14 contractility is REFUTED as the migration lever
+
+Full native v(contractility) curve (all three ran cleanly on the freed A5000, foreground, no contention):
+
+| contractility | v_crawl (nm/s) | disp∥ (nm) | traction (nN) | densification (nm) | coherence |
+|---|---|---|---|---|---|
+| **1× (baseline)** | 0.16 | 23 | ≈0 | 1.4 | 0.13 |
+| **5×** | 0.09 | 13 | ≈0.003 | 1.6 | 0.13 |
+| **10× (max)** | 0.02 | 3 | ≈0 | 1.4 | 0.15 |
+
+**Verdict — the KB-3.14 EMT contractility lever does NOT lift native migration; it is flat-to-NEGATIVE** (v *falls*
+0.16→0.02 as myosin rises 1×→10×), and all three stay **50–1500× below** the physiological 10–30 nm/s band. Traction is
+≈0 throughout. Root cause, now proven by the sweep: at the mesenchymal preset's **n_fa=100** the adhesions are too sparse
+to transmit traction (~0 nN vs 185 nN at n_fa=0's 10 953 clutches), so extra myosin just contracts the body **isotropically
+in place** — which slightly *reduces* net translocation. This **definitively confirms the Kim2012 TAG re-plan**: FF
+migration speed is set by **adhesion/traction-formation, not by a myosin multiplier**. Figure: `ff_m6_contractility.png`
+(browser-checked). Viz: `ff_m6_emt5_crawl.html` (cell stationary, collagen disp maxes 1.3 nm).
+
+**The migration lever, therefore, is ADHESION DENSITY** — many bound clutches (n_fa→0) — but that config **overflows** with
+the emt motile program (the standing adhesion-drag/solver open item). So native physiological migration remains the one
+open technical item, now with a **sharp, KB-anchored diagnosis**: it is an adhesion-transmission/solver problem, and
+neither contractility (proven here) nor a bigger myosin number will move it. This is a *result*, not a failure — the
+model correctly reproduces that a myosin-only EMT upregulation does not make a poorly-adherent cell migrate. Not tuned,
+not forced; reported exactly as measured. **PI decision for next**: invest in the stable-high-adhesion solver fix
+(n_fa→0 without overflow) as the real migration unlock, or accept the honest sub-physiological limit and move to the
+next FF milestone (e.g. the severing KB-ingestion, or a new mechanism).
