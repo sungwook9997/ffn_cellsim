@@ -127,6 +127,8 @@ Development plan in **`ROADMAP.md`** + the overnight execution log `OVERNIGHT_PL
 | `ffn_sim/scripts/ff_ecm_viewer.py` | standalone ECM HTML gallery + native npz viewer |
 | `ffn_sim/scripts/ff_ecm_native.py` | native 5R×5R full-extent build + GPU indentation (A5000) |
 | `ffn_sim/scripts/ff_stiffness_sensing.py` | resting cell senses substrate E (durotaxis basis, native-confirmed) |
+| `ffn_sim/scripts/ff_contact_guidance_anisotropy.py` | contact guidance on aligned collagen: A_F=F∥/F⊥ + R_σ=σ∥/σ⊥ vs nematic S (native) |
+| `ffn_sim/scripts/ff_contact_guidance_viewer.py` | interactive HTML: aligned collagen microstructure vs S + director + native R_σ |
 
 Reproduce:  `python -m ffn_sim.scripts.ff_ecm_validate` · `... ff_ecm_pa_ladder` · `... ff_ecm_novelty` ·
 `... ff_ecm_viscoelastic` · `... ff_ecm_gradient` · `... ff_ecm_indent_viz` · `... ff_ecm_viewer`.

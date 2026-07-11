@@ -231,3 +231,12 @@ HONEST split: passive quasi-static sensing reads matrix directional STIFFNESS bu
 data (was over-claiming "traction 2-4×"; re-plotted from JSON). KB: Ray2017 (verdict OK) + KB-2.14 contact-guidance
 + KB-1.V.2.4 TACS cited (existing). NEAR #6 ✅ DONE native; active-motility follow-up → MID.
 ### ALL 6 NEAR items now native-confirmed. Next: MID + the #6 active-motility follow-up. kb-check: runs/params OK.
+
+## Checkpoint 19 (2026-07-12) — NEAR #6 interactive HTML viewer (per PI viz directive)
+ff_contact_guidance_viewer.py → contact_guidance_viewer.html (4.4 MB, full-res, no downsample): the aligned
+collagen-I microstructure across the S ladder (0→0.83) as a multi-scene interactive viewer, each scene labelled
+with measured S + library E∥/E⊥ + the native R_σ (1.6/4.5/6.4/30.8×); a green line marks the fixed director. The
+morphology counterpart to the comparison figure. Real-browser verified (browser_check.py: rendered + exited, no
+JS errors; screenshot eyeballed — isotropic S=0 fibers all-directions + director axis correct). Fibrin
+generalization run still in flight on the A5000 (~4/12 at check; A_F~1, R_σ~1 at S=0 so far). Output/viz locations
+kept as-is per PI (ffn_sim/outputs/ff/ecm_lib/ + figs/).
