@@ -98,8 +98,17 @@ T1 rate rises with shape index (frozen s=4.93 → 0; reference s=5.00 → 6.9e-3
 tracing the k_T1(s) curve the rate law needs (barrier → 0 as s → s0*). The operator-split's 6.5× excess T1 rate is the
 quantitative signature of its ~2× over-drift.
 
-## Status
-Design + Sanity Gates + G3 grounding DONE (this doc). The rate model has a MEASURED target (6.9e-3 /cell/s) and a
-grounded k_T1(s) trend. Next increments (multi-step module): (2) 3D near-T1 pair detection, (3) the T1 geometric move +
-junction topology update, (4) KMC cadence in the BDF2 loop behind `--t1-rate`, (5) G4 convergence vs the small-dt
-reference, then a physiological biology-time hero run.
+## Implementation status (2026-07-12)
+The full host-side module + wiring are IMPLEMENTED, unit-tested, and committed:
+- **`ffn_sim/dcm/dcm_t1_rate.py`** — `cell_neighbor_set`/`auto_cutoff` (topology), `measure_t1_rate` (G3, reproduces
+  6.944e-3/cell/s on the reference + 0 on the frozen run), `t1_swap_partners` (3D swap-in pair), `t1_geometric_move`
+  (discrete volume-preserving swap move), `k_t1_arrhenius` (grounded rate law, k0←k_endo), `fit_barrier_stiffness`,
+  `t1_kmc_step` (one KMC pass). **12 unit tests PASS** (`ffn_sim/tests/test_dcm_t1_rate.py`).
+- **KMC wiring** in `run_decohesion` behind `--t1-rate` (+`--t1-k0`/`--t1-barrier-b`/`--t1-cadence`/`--t1-seed`): at a
+  coarse host cadence, compute centroids + per-cell shape index from `pos_d`, run `t1_kmc_step`, apply the per-cell
+  displacements, let the BDF2/IPC step relax. Local CPU smoke: hook active, stable, V/V0 conserved.
+- **`dcm_t1_rate_calibration_fig.py`** — k_T1(s) figure (per-cell + aggregate rate vs s, fitted B, k_endo band + s0*).
+
+Remaining (data/GPU-dependent): (1) the k_T1(s) calibration sweep (v0=10/20/40 small-dt) → fit B + the figure;
+(2) **G4 convergence** — a native large-dt (BDF2 + `--t1-rate`) run must reproduce the small-dt reference's unjamming
+(s→, T1 rate, A/A0) at the correct rate, with a viz HTML comparison; (3) the physiological biology-time hero run.
