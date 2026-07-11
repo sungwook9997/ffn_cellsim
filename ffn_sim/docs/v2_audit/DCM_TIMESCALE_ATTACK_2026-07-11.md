@@ -58,11 +58,33 @@ forces / the xₙ freeze, each node is translated by `v0·dt·p̂_c`; the force-
 So the backward-Euler anchor is x* = xₙ + drift and the implicit IPC-Newton relax runs from there → Lie-Trotter
 drift-then-relax, drift exact at any dt. Local CPU smoke PASS (compiles, runs, V/V0 conserved).
 
-**Convergence test running** (s15, same config as step 1 + `--motility-split`, dt ∈ {8e-4, 8e-3, 2e-2}):
-- **Falsifiable predictions:** split @ dt=8e-4 must match the force-based reference (per-cell disp ≈ 3.07 µm, s→5.0)
-  — small-dt consistency; and if the split works, split @ dt=2e-2 must ALSO give ≈3 µm (not freeze) = **gap closed,
-  25× acceleration**. If split @ 2e-2 also freezes, the jammed-creep is intrinsically small-dt (T1-event-limited) and
-  the gap is deeper than the integrator — escalate to (a) an A-stable higher-order scheme or accept the honest limit.
+**Convergence test (s15) — RESULT: the split FIXES the freeze + instability (partial success).**
+
+| dt | method | A/A0 | V/V0 | shape index (→) | per-cell disp | verdict |
+|---|---|---|---|---|---|---|
+| 8e-4 | force (ref) | 1.154 | 1.000 | →5.003 | 3.07 µm | accurate reference |
+| 8e-4 | **split** | 1.174 | 1.000 | →4.998 | **3.13 µm** | **matches ref** ✓ (small-dt consistency) |
+| 8e-3 | force | 31.7 | 1.058 | →13.72 | 0.37 µm | blow-up |
+| 8e-3 | **split** | 1.277 | 1.000 | →5.185 | **7.24 µm** | **stable** ✓ (blow-up fixed) |
+| 2e-2 | force | 1.002 | 1.000 | →4.916 | 0.287 µm | FROZEN |
+| 2e-2 | **split** | 1.277 | 1.000 | →**5.307** (frac 0.31) | **6.69 µm** | **NOT frozen** ✓ genuine unjam |
+
+**What the split achieves:** (1) at dt=8e-4 it matches the force reference (disp 3.13 vs 3.07) → the split is correct at
+small dt; (2) it removes the dt=8e-3 blow-up (cells stay intact, V/V0=1.0); (3) at dt=2e-2 (25×) it PRESERVES the drift
+(6.69 µm vs the force path's frozen 0.287 µm) → the aggregate genuinely unjams (s→5.307, 31 % of cells past s0*).
+**Visual-verified** (`s15_split_2e-2_last.png`): 100 intact cells, loosened + rearranged, cadherin bonds intact,
+moderate stress — real collective unjamming at 25× dt, NOT the force path's mangled blob.
+
+**The caveat (honest):** the large-dt split OVER-drifts ~2× vs the small-dt reference (6.7 µm vs 3.1 µm) and is not
+cleanly monotone (8e-3: 7.24, 2e-2: 6.69; the 8e-3 run also carried pen 0.058). This is a Lie-Trotter O(dt) splitting
+error (fewer relax steps between drift kicks → less elastic push-back → over-drift) plus some large-dt contact-resolution
+slack. So the split **qualitatively closes the gap** (stable, physical, unjamming large-dt runs → 25× ≈ τ_p=600 s in
+~40 min instead of ~15 h) with a **~2× quantitative accuracy caveat**.
+
+**Next (fork):** tighten the accuracy — **Strang splitting** (symmetric half-kick / relax / half-kick → O(dt²)) and/or
+more IPC-Newton iters at large dt — before quantitative claims; OR proceed to a physiological-v0 large-dt hero run now
+as the qualitative gap-closing demonstration (unjamming at physiological v0 over ~physiological time, ±2× rate). Both
+are legitimate; the split is the enabling result either way.
 
 ## Fix options (for PI if step 2 is insufficient)
 - **(a) A-stable, non-over-damped integrator** — implicit midpoint / trapezoidal / BDF2 instead of backward-Euler;
