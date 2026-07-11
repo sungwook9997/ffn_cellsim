@@ -31,6 +31,10 @@ Units: FF µm·pN·s → **1 pN/µm² = 1 Pa** exactly, so all moduli come out d
 
 ## Validation — 실제와 같은 Pa (all IN literature band)
 
+**Consolidated native validation dashboard** (all flagship results vs their literature/KB anchors in
+one figure): `figs/ecm_validation_dashboard.png` — 6/6 materials real-Pa · alignment→R_σ · stress-
+propagation n(S) collagen+fibrin vs KB-1.10 · stiffness-sensing two-path biphasic (`ff_ecm_summary_dashboard.py`).
+
 | material | class | measured | band (Pa) |
 |---|---|---|---|
 | collagen-I | fibrillar·G | 12 Pa | 5–100 (Yang-Kaufman G'(1.5mg/mL)≈11) |

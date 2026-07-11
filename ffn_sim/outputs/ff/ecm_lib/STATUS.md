@@ -277,3 +277,11 @@ fibrin is denser (637k vs 382k nodes) AND the bigger network is less equilibrate
 lesson: n falls as steps rise) — so fibrin's absolute n is an UPPER bound (range a lower bound); the TREND is the
 robust, converged result. Fixed a plot-title bug (was hardcoded "collagen-I"; now uses meta['material']).
 `figs/stress_propagation_sp_fibrin_native.png`. Fibrin contact-guidance (R_σ) run still in flight (~half done).
+
+## Checkpoint 23 (2026-07-12) — consolidated native validation dashboard (per PI "완성·비교 피규어")
+ff_ecm_summary_dashboard.py → figs/ecm_validation_dashboard.png: one 4-panel figure tying the whole ECM-library
+program to its literature/KB anchors (reads committed native JSONs, no re-sim). (1) 6/6 materials vs literature
+bands (real Pa). (2) alignment→R_σ(S) tracks the library E∥/E⊥ ladder, approaches Szulczewski ≤35×. (3) stress-
+propagation n(S) collagen+fibrin both drop with alignment, both above the KB-1.10 continuum(3)/fibrous(1) refs
+(FF steeper = honest sub-isostatic limit). (4) stiffness sensing Path b(Winkler ascending)+Path a(live-ECM
+descending) bracket the motor-clutch biphasic. Verified. The "완성" review artifact for the PI's morning.
