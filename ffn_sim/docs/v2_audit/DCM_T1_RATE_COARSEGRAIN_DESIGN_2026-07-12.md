@@ -109,6 +109,34 @@ The full host-side module + wiring are IMPLEMENTED, unit-tested, and committed:
   displacements, let the BDF2/IPC step relax. Local CPU smoke: hook active, stable, V/V0 conserved.
 - **`dcm_t1_rate_calibration_fig.py`** — k_T1(s) figure (per-cell + aggregate rate vs s, fitted B, k_endo band + s0*).
 
-Remaining (data/GPU-dependent): (1) the k_T1(s) calibration sweep (v0=10/20/40 small-dt) → fit B + the figure;
-(2) **G4 convergence** — a native large-dt (BDF2 + `--t1-rate`) run must reproduce the small-dt reference's unjamming
-(s→, T1 rate, A/A0) at the correct rate, with a viz HTML comparison; (3) the physiological biology-time hero run.
+### k_T1(s) calibration — DONE (fit B=2.68)
+Small-dt (8e-4) references at v0=10/20/40 → (s, T1 rate): (4.974, 6.91e-3), (4.998, 6.94e-3), (5.037, 23.17e-3). The
+rate rises steeply as s→s0*=5.41 (barrier). Fit k_T1=k0·exp(−2.68·(s0*−s)_+), k0=0.03/s (k_endo anchor, KB-4.13).
+Fig `dcm_t1_rate_calibration.png`. ⚠️ narrow accessible s-range (small-dt barely unjams in 24s); B has uncertainty.
+
+### G4 convergence — PARTIAL: the KMC supplies the RATE, but the rigid move misses the shape unjamming
+Native N=100, v0=20, phys=24s: (A) small-dt reference, (B) large-dt (2e-2) frozen control, (C) large-dt + `--t1-rate`
+(B=2.68). Figs `dcm_t1_g4_convergence.png`, `dcm_t1_g4_C_kmc.png`:
+
+| condition | shape index s (→) | T1 rate | A/A0 |
+|---|---|---|---|
+| A small-dt (truth) | 4.998 | 6.94e-3 | 1.176 |
+| B large-dt FROZEN | 4.983 | 0.79e-3 | 1.002 |
+| C large-dt + T1-KMC | **4.937** | **11.71e-3** | 1.028 |
+
+**✓ The KMC mechanism WORKS:** at large dt (25×) it fires T1 events at ~the physical rate (11.7e-3 vs the frozen
+control's 0.79e-3) — the rearrangement the mechanics correctly froze is now supplied. A/A0 rose above the frozen
+control (1.028 > 1.002). **✗ But it does NOT reproduce the shape-index unjamming:** C's s (4.937) is BELOW even the
+frozen control (4.983), because the **rigid-translation T1 move rearranges cell POSITIONS without deforming cell
+SHAPES**, and the IPC relax then rounds the cells (s↓). Visual-verified (`dcm_t1_g4_C_kmc.png`): cells stay spherical,
+one T1-displaced cell stressed at the rim. Real unjamming's s-rise comes from cell DEFORMATION (elongation as cells
+squeeze past each other during a T1) driven by active stress — which the rigid move + the weakened large-dt deformation
+drive miss.
+
+**Honest verdict:** the rate/event machinery is validated (T1s fire at the grounded rate at large dt), but the
+shape-index unjamming needs a **deformation-aware T1 move** (elongate the swapping cells along the swap axis, not a
+rigid translation) — the clear next increment. The biology-time route is mechanically working; closing the shape
+observable is the remaining piece.
+
+Remaining: (1) deformation-aware T1 move → re-run G4 → does s now track the reference? (2) physiological biology-time
+hero run once G4 converges on s.
