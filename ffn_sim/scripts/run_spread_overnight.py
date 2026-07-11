@@ -150,6 +150,11 @@ def main():
                     help="SPV v0-mode: target physiological migration SPEED [µm/min] (~0.5-2). The per-node force is "
                          "set from gamma_node·v0 so cells self-propel at v0, bounding CFL — the SPV-faithful, "
                          "CFL-safe knob (overrides --f-active-nn when >0).")
+    ap.add_argument("--bdf2", action="store_true", dest="bdf2",
+                    help="TIMESCALE ATTACK (A-stable, PI 2026-07-11): 2nd-order stiffly-stable BDF2 integrator "
+                         "instead of backward-Euler. Fixes BE's over-damping of slow active forcing (the freeze that "
+                         "broke naive large-dt) fundamentally — so the FORCE-based motility itself stays accurate at "
+                         "large dt (no operator-split needed). Same Newton/CG cost per step.")
     ap.add_argument("--motility-split", action="store_true", dest="motility_split",
                     help="TIMESCALE ATTACK: apply the v0-mode drift as a position translation (x*=xₙ+v0·dt·p̂) "
                          "BEFORE the implicit relax (Lie-Trotter operator split) instead of a self-propulsion force. "
@@ -240,7 +245,7 @@ def main():
         osmotic=a.osmotic,
         accel_real_hours=a.accel_real_hours,
         necrosis=a.necrosis,
-        builder=a.builder, integrator="implicit", accel_dt=a.accel_dt,
+        builder=a.builder, integrator=("bdf2" if a.bdf2 else "implicit"), accel_dt=a.accel_dt,
         frozen_neighbors=a.frozen_neighbors, precond_diag=a.precond_diag,
         ipc=a.ipc, project=a.project, proj_iter=a.proj_iter, proj_omega=a.proj_omega,
         proj_gap_factor=a.proj_gap_factor,

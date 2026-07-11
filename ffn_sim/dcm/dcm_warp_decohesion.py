@@ -326,7 +326,11 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if k_edge > 0.0:                                # cortex deformability override (faceting lever:
         p.k_edge = k_edge                          # a stiff cortex resists flattening → round cells)
     R = p.R_cell
-    implicit = (integrator == "implicit")          # I-opt: linearly-implicit IMEX integration
+    bdf2 = (integrator == "bdf2")                  # A-stable 2nd-order (timescale attack, PI 2026-07-11):
+    #   fixes backward-Euler's L-stable OVER-DAMPING of slow active forcing (the freeze that broke naive
+    #   large-dt) by a 2nd-order stiffly-stable scheme (|R(∞)|=1/3 → still damps stiff contact, no ringing).
+    #   Identical Newton/CG machinery as BE with a'=1.5·γ/dt and anchor x_ref=(4xₙ−xₙ₋₁)/3.
+    implicit = (integrator == "implicit" or bdf2)  # I-opt: linearly-implicit IMEX integration
     if implicit and not use_grid:
         # stiff_force_into builds cohesion/contact ONLY on the grid path; without it the implicit
         # operator would omit the dominant contact stiffness (review fix #4). Require the grid.
@@ -334,7 +338,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     if implicit and accel_dt:
         dt = accel_dt                              # implicit unlocks a larger (accuracy-bound) dt
     if implicit:
-        print(f"  [integrator] IMPLICIT (IMEX linearly-implicit) dt={dt:.1e}  cg_maxiter={cg_maxiter} "
+        print(f"  [integrator] {'BDF2 (A-stable 2nd-order, stiffly stable)' if bdf2 else 'IMPLICIT (IMEX linearly-implicit)'}"
+              f" dt={dt:.1e}  cg_maxiter={cg_maxiter} "
               f"— stiff operator (contact/turgor/edges/well/nucleus/bending) implicit, soft drivers explicit", flush=True)
     # A1 remesh and C7 division both draw dormant nodes from cof<0 and cannot co-run safely yet.
     # NB: this is NOT a one-line "−2 sentinel" fix — parked-cell node blocks double as cleave's
@@ -584,6 +589,10 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
     # dp0eff = per-cell osmotic-excess for the turgor line-search energy.
     if ipc_newton and ipc and implicit:
         xn_d = wp.zeros(N, dtype=wp.vec3d, device=device)
+        # BDF2 (A-stable): x_prev holds xₙ₋₁; _bdf_ready gates the 1-step BE startup (needs 2 history points).
+        # Only armed in the main (do_spread) loop where dt is constant — BDF2's (4xₙ−xₙ₋₁)/3 assumes fixed dt.
+        x_prev_d = wp.zeros(N, dtype=wp.vec3d, device=device) if bdf2 else None
+        _bdf_ready = [False]
         fsoft_d = wp.zeros(N, dtype=wp.vec3d, device=device)
         nt_Fb = wp.zeros(N, dtype=wp.vec3d, device=device)
         dp0eff_d = wp.zeros(n_cells, dtype=wp.float64, device=device)
@@ -1343,9 +1352,22 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                 wp.launch(_vaxpy, dim=N, inputs=[fsoft_d, wp.float64(-1.0), nt_Fb], device=device)    # − stiff
                 wp.launch(turgor_dp0eff_kernel, dim=n_cells, inputs=[V0_cell_d, wp.float64(V0),
                           wp.float64(p.turgor_dP0), wp.int32(1 if osmotic else 0), dp0eff_d], device=device)
-                wp.launch(_vcopy, dim=N, inputs=[xn_d, pos_d], device=device)                         # freeze xₙ
-                _nt_a[0] = a_imp
-                nt_info = ipc_newton_step(pos_d, xn_d, a_imp, force_total_into=nt_force_total_into,
+                # BDF2 anchor: xn_d ← (4·xₙ − xₙ₋₁)/3 with a'=1.5·γ/dt (A-stable, 2nd-order; no over-damping
+                # of the slow active drift). First main step / warmup / settle fall back to backward-Euler
+                # (xₙ, a) as the BDF2 startup. x_prev holds xₙ₋₁; pos_d (=xₙ) is the Newton initial guess.
+                a_eff = a_imp
+                if bdf2 and do_spread and _bdf_ready[0]:
+                    wp.launch(_vcopy, dim=N, inputs=[xn_d, pos_d], device=device)                     # xn = xₙ
+                    wp.launch(_vaxpy, dim=N, inputs=[xn_d, wp.float64(1.0 / 3.0), pos_d], device=device)   # → (4/3)xₙ
+                    wp.launch(_vaxpy, dim=N, inputs=[xn_d, wp.float64(-1.0 / 3.0), x_prev_d], device=device)  # −(1/3)xₙ₋₁
+                    a_eff = 1.5 * a_imp
+                else:
+                    wp.launch(_vcopy, dim=N, inputs=[xn_d, pos_d], device=device)                     # freeze xₙ (BE)
+                if bdf2 and do_spread:
+                    wp.launch(_vcopy, dim=N, inputs=[x_prev_d, pos_d], device=device)                 # xₙ₋₁ ← xₙ (next step)
+                    _bdf_ready[0] = True
+                _nt_a[0] = a_eff
+                nt_info = ipc_newton_step(pos_d, xn_d, a_eff, force_total_into=nt_force_total_into,
                           stiff_force_into=nt_stiff_into, energy_fn=nt_energy, ccd_alpha_fn=nt_ccd,
                           cof_d=cof_d, scratch=cg_scratch, device=device, max_newton=ipc_newton_max,
                           newton_tol=ipc_newton_tol, hess_apply=ipc_hess, precond_apply=None,
