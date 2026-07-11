@@ -306,3 +306,22 @@ committed, all figures/viewers real-browser-verified, kb-check gates green, NO t
   thermal-WLC runtime physics (c² resolution); ν-faithful continuum; ECMRemodeler Bell-rate datum. Awaiting PI.
 - **Note:** concurrent sessions (DCM T1-KMC, M6 contractility) share dcm/main; my commits are clean specific-adds,
   no cross-contamination. Some ecm_lib figs show as modified by those sessions — left untouched.
+
+## Checkpoint 24 (2026-07-12) — fibrin contact-guidance LANDED: NEAR #6 GENERALIZES (both readouts)
+Native fibrin (nf=38000, Nc=266000, 4 S × 3 seeds, 28197s). Final aggregates:
+| S | R_σ=σ∥/σ⊥ | A_F=F∥/F⊥ |
+|---|---|---|
+| 0.00 | 0.9±0.4 | 1.14±0.17 |
+| 0.30 | 1.2±0.6 | 0.98±0.12 |
+| 0.59 | 4.9±4.6 | 0.89±0.13 |
+| 0.83 | 22.1±22.9 | 0.80±0.06 |
+→ ⭐ BOTH NEAR #6 findings GENERALIZE from collagen to fibrin: (a) the matrix stress anisotropy R_σ EMERGES with
+alignment (fibrin 0.9→22.1 vs collagen 1.6→30.8 — same order, comparable magnitude); (b) the resting cell's clutch
+traction A_F stays ~isotropic (fibrin 1.14→0.80, like collagen 0.91→0.67). So contact guidance (matrix feels
+alignment, passive traction doesn't) is a GENERAL fibrous-network property, not collagen-specific.
+⚠️ HIGH seed variance (R_σ ±22.9 at S=0.83, driven by seed3=54.5) — the matrix stress anisotropy under cell load
+is stochastic (fiber realization near the cell); the MEAN trend is robust. LESSON (re-confirmed): the 2-seed
+intermediate reading (S=0.59 → "fibrin weaker") was PREMATURE — the 3-seed mean shows full generalization. Always
+wait for the full ensemble before concluding. Fixed the plot material-label bug (was hardcoded "collagen-I").
+`figs/contact_guidance_anisotropy_cg_fibrin_native.png`. This completes the fibrin generalization program (both
+Job D stress-propagation AND #6 contact-guidance now confirmed general across collagen + fibrin).

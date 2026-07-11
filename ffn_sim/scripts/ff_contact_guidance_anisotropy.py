@@ -122,7 +122,8 @@ def plot_anisotropy(rows: list[dict], meta: dict, path: str) -> None:
                 label=f"Ray 2017: guided cells >{RAY_ANISO_FLOOR:.0f}× (force anisotropy)")
     axL.axhline(1.0, color="0.4", ls="--", lw=1.4, zorder=3, label="isotropic anchor  A_F=1 (S=0)")
     axL.axhline(5.0, color="tab:red", ls=":", lw=1.2, zorder=3, label="clutch-saturation ceiling ≈5× (Niraula 2025)")
-    axL.set_xlabel("collagen-I nematic alignment order  S  [—]")
+    mat = str(meta.get("material", "collagen_I")).replace("_", "-")
+    axL.set_xlabel(f"{mat} nematic alignment order  S  [—]")
     axL.set_ylabel("clutch traction anisotropy  A_F = F∥ / F⊥  [—]")
     axL.set_title("Resting-cell clutch traction anisotropy A_F — stays ~ISOTROPIC\n"
                   "(passive quasi-static sensing: no active traction guidance without motility)", fontsize=9)
@@ -142,7 +143,7 @@ def plot_anisotropy(rows: list[dict], meta: dict, path: str) -> None:
                  label="R_σ = σ∥/σ⊥  (ECM virial, mean ± sd)")
     axR.axhline(SZUL_FOLD, color="tab:purple", ls="-.", lw=1.5, zorder=3,
                 label=f"Szulczewski 2021: up to {SZUL_FOLD:.0f}× matrix directional stiffness")
-    axR.set_xlabel("collagen-I nematic alignment order  S  [—]")
+    axR.set_xlabel(f"{mat} nematic alignment order  S  [—]")
     axR.set_ylabel("matrix directional stress/stiffness ratio  [—]")
     axR.set_title("Grid-invariant cross-check: ECM virial σ∥/σ⊥ RISES with alignment (cell-scale directional\n"
                   "response under cell load — clutch-count-independent; magnitude < pure-shear E∥/E⊥)", fontsize=9)
@@ -153,7 +154,7 @@ def plot_anisotropy(rows: list[dict], meta: dict, path: str) -> None:
     a0 = afm[0] if np.isfinite(afm[0]) else float("nan")
     aH = afm[np.isfinite(afm)][-1] if np.isfinite(afm).any() else float("nan")
     rH = rsm[np.isfinite(rsm)][-1] if np.isfinite(rsm).any() else float("nan")
-    fig.suptitle(f"FF ECM NEAR #6 — contact guidance on aligned collagen-I  ·  {note}  ·  "
+    fig.suptitle(f"FF ECM NEAR #6 — contact guidance on aligned {mat}  ·  {note}  ·  "
                  f"conc={meta.get('conc')} mg/mL  ·  Nc={meta.get('Nc')}  ·  seeds={meta.get('seeds')}  ·  "
                  f"tag={meta.get('tag')}\nFINDING: matrix stress anisotropy R_σ EMERGES with alignment "
                  f"(1→{rH:.0f}× at S={S_list[-1]:g}, tracks library E∥/E⊥) — but the RESTING cell's clutch "
