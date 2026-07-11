@@ -60,7 +60,8 @@ from ffn_sim.dcm.dcm_filopodia_warp import (
 from ffn_sim.dcm.dcm_division_host import DivisionHost, DivisionParams
 from ffn_sim.dcm.dcm_necrosis_host import NecrosisHost, NecrosisParams
 from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
-from ffn_sim.dcm.dcm_active_motility_warp import ActiveMotilityHost, active_self_propulsion_kernel
+from ffn_sim.dcm.dcm_active_motility_warp import (ActiveMotilityHost, active_self_propulsion_kernel,
+                                                   active_drift_translate_kernel)
 from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.dcm.dcm_remesh import remesh_pass
 from ffn_sim.dcm.dcm_cleave import cleave_cell
@@ -276,6 +277,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    active_motility: bool = False, f_active_N: float = 0.0,
                    motility_persistence_s: float = 600.0, motility_planar: bool = True,
                    motility_seed: int = 7, motility_v0_um_s: float = 0.0,
+                   motility_split: bool = False,
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -1072,6 +1074,14 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
 
     def step_once(s, dt_step, do_spread=True):
         wp.launch(_zero_vec, dim=N, inputs=[force_d], device=device)
+        # OPERATOR-SPLIT active drift (timescale attack): translate nodes by v0·dt·p̂ BEFORE the implicit relax
+        # so the SPV drift is preserved at large dt (the force-based path freezes — the implicit solve equilibrates
+        # F_active vs contact each step). Done at the top so grids, forces AND the backward-Euler anchor xₙ (frozen
+        # at line ~1335 via xn_d=pos_d) all see the drifted state x* → correct Lie-Trotter drift-then-relax. v0-mode
+        # only (constant dx); force-mode keeps the force path.
+        if mot is not None and do_spread and motility_split and mot.v0 > 0.0:
+            wp.launch(active_drift_translate_kernel, dim=N,
+                      inputs=[cof_d, mot._pol_d, wp.float64(mot.v0 * dt_step), pos_d], device=device)
         if aggregate_tension and (s % agg_every == 0):
             # Foty-Steinberg aggregate liquid-drop: refresh the global centroid + ΔP=2σ/R_agg. DCM positions
             # are in METERS (R_cell=7.5e-6 m), so _R is in meters and ΔP = 2·σ[N/m]/R[m] = Pa directly (SI),
@@ -1296,7 +1306,8 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                               wp.float64(lam.p.k_tether), wp.float64(lam.p.tether_cap),
                               wp.float64(lam.p.tether_radius), force_d], device=device)
         # Active per-cell self-propulsion (every step): F_active·p̂_c distributed over the cell's nodes.
-        if mot is not None and do_spread:
+        # Skipped under motility_split (v0-mode) — the drift was already applied as a position translation above.
+        if mot is not None and do_spread and not (motility_split and mot.v0 > 0.0):
             wp.launch(active_self_propulsion_kernel, dim=N,
                       inputs=[cof_d, mot._pol_d, mot._fnode_d, force_d], device=device)
         # B3 filopodia tip adhesions (every step; tips refreshed at cadence): node-FACE pull

@@ -35,6 +35,28 @@ def active_self_propulsion_kernel(
     force[i] = force[i] + pol[c] * fnode[c]
 
 
+@wp.kernel
+def active_drift_translate_kernel(
+    cof: wp.array(dtype=wp.int32),
+    pol: wp.array(dtype=wp.vec3d),        # (n_cells,) per-cell unit polarity
+    dx: wp.float64,                       # v0 · dt_step: the per-step drift distance (v0-mode)
+    pos: wp.array(dtype=wp.vec3d),        # (N,) in/out — translated in place
+):
+    """OPERATOR-SPLIT active drift (timescale attack, 2026-07-11). Translate each live node by dx·p̂_c BEFORE
+    the implicit elastic/contact relax, instead of adding a self-propulsion FORCE that the backward-Euler solve
+    over-damps. Lie-Trotter split of the overdamped dynamics γẋ = F_active + F_passive: substep-1 (drift) is
+    exact — x* = xₙ + (F_active/γ)·dt = xₙ + v0·dt·p̂ — so the SPV drift is preserved at ANY dt (the force-based
+    application froze at large dt because the implicit solve equilibrates F_active against contact each step,
+    skipping the non-equilibrium T1 creep). substep-2 (relax) is the existing implicit IPC-Newton solve, whose
+    backward-Euler anchor xₙ is captured AFTER this translation → relaxes from x*. dx tiny (v0·dt) so the
+    per-step overlap IPC must resolve is small at every dt."""
+    i = wp.tid()
+    c = cof[i]
+    if c < wp.int32(0):
+        return
+    pos[i] = pos[i] + pol[c] * dx
+
+
 class ActiveMotilityHost:
     """Per-cell polarity with rotational diffusion (persistent random walk). Host-updates p̂_c each batch;
     the device kernel applies F_active·p̂_c per cell every step."""
