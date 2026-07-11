@@ -258,3 +258,11 @@ single-seed S=0.30 outlier; error tightens as S rises (±0.23 at S=0.83). Absolu
 c-scaling/N1; true fibrous long-range (Notbohm r⁻¹) needs PI-gated nonlinear/bending physics. Equilibration
 lesson: the big native network needed 100k steps (4k gave n=15 under-relaxed). Figure verified. TO DO: stress-
 field interactive HTML (displacement-colored, iso vs aligned). Compares to KB-1.10 as oracle-overlay (not registered).
+
+## Checkpoint 21 (2026-07-12) — Job D stress-field interactive HTML viewer (per PI viz directive)
+ff_ecm_stress_propagation_viewer.py → stress_propagation_viewer.html: the displacement field a contractile
+inclusion drives through collagen-I (isotropic vs aligned scenes), still matrix faint, the pulled top-20% coloured
+blue→red, green director. The morphology behind the r⁻ⁿ channeling. Real-browser verified (renders, no JS errors,
+eyeballed: pulled region concentrated near the inclusion along the director — displacement is LOCALIZED, the
+short-range n≈5-8 result made visible). Representative 40µm REV (mechanism view; the quantitative n(S) is the
+native box=90 figure). Both viz types now exist for Job D (comparison figure + interactive HTML), per PI.
