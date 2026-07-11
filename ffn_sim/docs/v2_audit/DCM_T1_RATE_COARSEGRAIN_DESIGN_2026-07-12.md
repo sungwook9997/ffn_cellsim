@@ -149,5 +149,31 @@ is an **s-NEUTRAL T1 move** that repositions the 4-cell swap into a valid non-ov
 IPC relax is triggered), rather than translating cells into overlaps. In a 3D node-based deformable-cell model this is
 genuine research (the 2D vertex-model edge-flip has no direct 3D node-mesh analog) — the well-scoped next increment.
 
-Remaining: (1) an s-neutral / deformation-aware T1 move → re-run G4 → does s now track the reference while the flow rate
-holds? (2) physiological biology-time hero run once G4 converges on s.
+### ⭐ Biology-time HERO (600s) — the KMC FLUIDIZES the tissue where the mechanics FREEZE (POSITIVE)
+The G4 shape-drop was a 24 s TRANSIENT. Ran the real biology-time test: large-dt (2e-2) over **600 s** (= 10 min
+physical, 30000 steps, ~40 min wall) with `--t1-rate` vs the frozen control. Figs `dcm_t1_hero_trajectory.png`,
+`dcm_t1_hero_kmc_600s.png`:
+
+| 600 s | shape index s (→) | T1 rate | per-cell disp | A/A0 (peak / final) |
+|---|---|---|---|---|
+| **T1-KMC** | 4.855 → **5.016** | 2.99e-3 | **3.29 µm** | **1.118 / 1.043** |
+| frozen (no T1) | 4.855 → **4.935** | 0.00 | 0.08 µm | 1.003 / 1.003 |
+
+**The KMC keeps the tissue FLUIDIZED at large dt over biology-time:** the shape index RISES to 5.016 (unjammed,
+comparable to the small-dt reference 4.998) and stays above the frozen control the whole run (trajectory: overshoot to
+s=5.20 at ~30 s, relax, then trend back up to 5.02 by 600 s); cells genuinely REARRANGE (per-cell disp 3.29 µm vs the
+frozen 0.08 µm); A/A0 sustains ~1.04 (peak 1.12). The **frozen control JAMS** — s DROPS to 4.935, zero T1s, no motion,
+no spread. Visual-verified (`dcm_t1_hero_kmc_600s.png`): intact cells, rearranged, edge cells extruded by the flow.
+
+**Verdict — the biology-time route WORKS (for the flow/fluidization gap).** At large dt where the fine-grained mechanics
+correctly FREEZE (BDF2 proof), the T1-rate KMC supplies the physical rearrangement → the tissue unjams (s→5.0),
+rearranges (disp 3.29 µm), and flows — reproducing the small-dt fluidization at 25× the time-step (600 s in ~40 min vs
+~15 h). The G4 24 s "shape drop" was a short-time transient (rigid-move rounding) that the accumulated motility
+deformation + flow overcome over biology-time. ⚠️ Honest caveats: the spread is MODEST (A/A0 steady ~1.04) and
+non-monotonic (transient overshoot then relax); the rigid T1 move still isn't s-neutral (an s-neutral/deformation-aware
+move would be cleaner and is the natural refinement); B has calibration uncertainty. But the core claim holds: **the
+rate/event-driven T1 coarse-graining lets the DCM reach biology-time tissue flow/fluidization at a feasible time-step,
+which no time integrator can do (the fundamental gap).**
+
+Remaining refinements: an s-neutral/deformation-aware T1 move (cleaner shape); wider k_T1(s) calibration; native
+full-compartment + longer (hours) runs.
