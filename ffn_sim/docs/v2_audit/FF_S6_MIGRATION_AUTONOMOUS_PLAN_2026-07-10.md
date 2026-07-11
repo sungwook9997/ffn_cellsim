@@ -415,3 +415,22 @@ the three multipliers + the 1× baseline. Then **visually verify** the best run'
 **Guardrails:** native-only for the verdict (coarse degrades on its own — HARD rule); do not contend with the parallel
 session's GPU jobs (launch only when free); if all three destabilise, that is the honest finding (report, don't tune
 the solver to force it). This is the KB-grounded attempt at the migration you want — reported as it comes out.
+
+### M6 progress (2026-07-12) — a relax-crash BUG fixed + the KB comparison figure; native run blocked on gbook infra
+
+- **Relax-crash bug FOUND + FIXED** (commit after de941ff): the first native `--contractility-mult 5` runs died silently
+  *during the from-resting relax*. Root cause: build() was relaxing at the **upregulated** 5× f_myo, which violates the
+  physiological-baseline HARD rule (the resting checkpoint must be the real baseline; EMT upregulation is a perturbation
+  FROM it) and over-contracts → destabilises the relax. Fix: **build() relaxes at baseline f_myo, run() applies _f_myo**
+  (active phase only). Coarse from-resting smoke now reaches the validated checkpoint (γ=0.171, ΔP=40) then applies 5×
+  in-run — clean. A genuine correctness fix regardless of the experiment.
+- **KB-comparison figure DELIVERED** (`ff_s6_kb_comparison.png`, per your "실제 파라미터랑 비교 피규어"): 4 panels,
+  measured-vs-KB with the reference band overlaid (viz-integrity rule) — VALIDATED (ECM moduli 6/6 ∈ band, nematic
+  S=0.64 ∈ KB-1.9, resting γ=0.171 ≈ Laplace) + HONEST GAP (migration 17–50× sub-physiological; MMP degrade-not-sever,
+  severance ~105 min vs sim ~100 s). Visually checked.
+- **Native M6 execution is BLOCKED on gbook infrastructure (surfaced, per the mandate):** two obstacles — (1) the
+  tailscale **ssh is flaky** (foreground launches return exit 255 = dropped connection), and (2) the native relax on
+  cuda:0 **crashes under the parallel session's heavy GPU/CPU load** (run_spread_overnight at ~100% GPU util +
+  contact_guidance at ~10 CPU cores). Even a detached `screen` run dies in the native relax. The crash is being
+  root-caused with `PYTHONFAULTHANDLER` (segfault/CUDA-error dump). The M6 **code is ready** — it needs a genuinely
+  free, uncontended A5000. Not forcing it into contention (respecting the parallel session, HARD guardrail). Queued.
