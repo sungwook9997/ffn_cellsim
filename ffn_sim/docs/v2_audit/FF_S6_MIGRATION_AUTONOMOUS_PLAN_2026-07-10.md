@@ -457,3 +457,22 @@ then `python -m ffn_sim.scripts.ff_m6_contractility_fig`. The migration answer (
 toward physiological, or destabilise?) is the ONE open result — blocked purely on GPU access + connection stability, not
 on any physics/code. Not run on CPU (native-CPU ≈ hours/run + would contend with the parallel session's ~10 CPU cores).
 Honestly blocked, not forced.
+
+## M6 RESULT (2026-07-12 06:10) — native EMT contractility 5× RAN; migration is ADHESION-limited (Kim2012 CONFIRMED)
+
+The A5000 freed at ~06:00 (parallel session paused); M6 launched foreground (harness-held ssh, no contention) and
+**completed cleanly** — the relax-fix works (relaxed to the physiological checkpoint γ=0.151, V/V0=1.000, at BASELINE
+myosin) and the 5× upregulation applied in-run. **Native result (`emt_contract5`, Nc=266 k, 100 FA clutches):**
+- **v_crawl = 0.09 nm/s**, disp∥ 13 nm / disp⊥ 28 nm (⊥>∥ → not even directed), **traction = 0.003 nN (≈0)**,
+  bound 32/100, remodel densification **+1.6 nm**, coherence 0.13, fibre realignment Δrai = 0.
+- **Visually verified** (`ff_m6_emt5_crawl.html`, browser-checked): cell intact + essentially stationary; the collagen
+  **displacement colourbar maxes at 1.3 nm** (vs +265 nm in the high-traction n_fa=0 remodel run) — the matrix barely
+  moves. Screenshot confirms ~zero traction.
+
+**Finding (honest, KB-consistent):** raising EMT myosin to 5× (KB-3.14) did **NOT** lift migration — because the
+mesenchymal preset's **n_fa=100 discrete adhesions starve the traction** (~0.003 nN; 100 clutches vs the 10 953 that
+give 185 nN at n_fa=0). Migration here is **adhesion/traction-transmission-limited, not contraction-limited** — exactly
+what the Kim2012 TAG re-plan predicted (speed emerges from FA-formation/traction, not from a myosin multiplier). So the
+KB-3.14 lever is **not** the migration unlock; the real lever is **adhesion density** (more bound clutches), which is
+the known open item (n_fa=0 + the emt motile program OVERFLOWS — the adhesion-drag/solver item). Sweep 1×/10× in flight
+to confirm the flat v(contractility) trend. Reported as measured — not tuned, not forced.
