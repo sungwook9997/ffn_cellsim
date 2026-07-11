@@ -934,6 +934,10 @@ def main():
     ap.add_argument("--front-frac", type=float, default=None, help="leading-edge cap fraction (None→cell-type: epithelial 0.5 broad, mesenchymal 0.6 single dominant front)")
     ap.add_argument("--myo-rear-bias", type=float, default=None, help="fraction of minifilaments relocated to the REAR cap "
                     "(None→cell-type: epithelial 0.0 uniform, mesenchymal 0.7; SE248 rear-myosin, force-conserving)")
+    ap.add_argument("--contractility-mult", type=float, default=None, help="EMT myosin-II UPREGULATION multiplier on the "
+                    "minifilament stall force (KB-3.14 licenses 2–10× for EMT/mesenchymal). None→cell-type preset (1.0 for all "
+                    "presets by default). This is the KB-3.14 lever: a value in [2,10] is a KB-grounded cell-type change, NOT a "
+                    "tune-to-target sweep of MCF7. Scales f_myo = NMIIA_MINIFIL_STALL_PN × mult in both build() and run().")
     args = ap.parse_args()
     wp.init(); t0 = time.time()
     from ffn_sim.ff.cell_type import resolve_cell_type
@@ -943,13 +947,15 @@ def main():
     _n_fa = args.n_fa if args.n_fa else _prof.n_fa
     _front_frac = args.front_frac if args.front_frac is not None else _prof.front_frac
     _rear_bias = args.myo_rear_bias if args.myo_rear_bias is not None else _prof.myo_rear_bias
-    if _prof.name != "mcf7_epithelial":
+    _contractility = args.contractility_mult if args.contractility_mult is not None else _prof.contractility_mult
+    _f_myo = NMIIA_MINIFIL_STALL_PN * _contractility          # KB-3.14 EMT myosin upregulation (1.0 = baseline)
+    if _prof.name != "mcf7_epithelial" or _contractility != 1.0:
         print(f"[cell-type] {_prof.name}: polarize={_polarize} ecm_regrip={_regrip} front_frac={_front_frac} "
-              f"myo_rear_bias={_rear_bias} n_fa={_n_fa}")
+              f"myo_rear_bias={_rear_bias} n_fa={_n_fa} contractility={_contractility:.1f}× (f_myo={_f_myo:.1f} pN)")
     if args.microtubules and not args.implicit:
         print("[!] --microtubules needs the implicit solver (MT bending rides K); add --implicit for production.")
     S = build(n_cortex_fil=args.cortex_fil, seed=args.seed, n_fa=_n_fa, length_dist=args.fil_length_dist,
-              front_frac=_front_frac, myo_rear_bias=_rear_bias,
+              front_frac=_front_frac, myo_rear_bias=_rear_bias, f_myo=_f_myo,
               microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
               n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0),
@@ -968,7 +974,7 @@ def main():
     print(f"[build] cortex {S['Nc']} + nucleus {S['n_nuc']}{mt_note}; basal FA clutches {S['basal'].size}; "
           f"front-cap nodes {S['front'].size}; f_pro {S['f_pro']:.1f} pN/node; z_sub {S['z_sub']:.2f}  "
           f"({time.time()-t0:.0f}s)")
-    r = run(S, steps=args.steps, record_every=args.record_every, clutches=True,
+    r = run(S, steps=args.steps, record_every=args.record_every, clutches=True, f_myo=_f_myo,
             protrude=(not args.static and not args.spread), spread=args.spread,
             rupture=not args.mature, implicit=args.implicit, dt_impl=args.dt_impl,
             assembly=args.assembly, growth=args.growth, myosin_linear=args.myosin_linear, substrate_E=args.substrate_E,
