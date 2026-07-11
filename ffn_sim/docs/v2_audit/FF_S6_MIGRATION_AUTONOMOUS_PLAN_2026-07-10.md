@@ -428,9 +428,13 @@ the solver to force it). This is the KB-grounded attempt at the migration you wa
   measured-vs-KB with the reference band overlaid (viz-integrity rule) — VALIDATED (ECM moduli 6/6 ∈ band, nematic
   S=0.64 ∈ KB-1.9, resting γ=0.171 ≈ Laplace) + HONEST GAP (migration 17–50× sub-physiological; MMP degrade-not-sever,
   severance ~105 min vs sim ~100 s). Visually checked.
-- **Native M6 execution is BLOCKED on gbook infrastructure (surfaced, per the mandate):** two obstacles — (1) the
-  tailscale **ssh is flaky** (foreground launches return exit 255 = dropped connection), and (2) the native relax on
-  cuda:0 **crashes under the parallel session's heavy GPU/CPU load** (run_spread_overnight at ~100% GPU util +
-  contact_guidance at ~10 CPU cores). Even a detached `screen` run dies in the native relax. The crash is being
-  root-caused with `PYTHONFAULTHANDLER` (segfault/CUDA-error dump). The M6 **code is ready** — it needs a genuinely
-  free, uncontended A5000. Not forcing it into contention (respecting the parallel session, HARD guardrail). Queued.
+- **Native M6 execution — blocked on infra, now handled by an autonomous WATCHER.** Two obstacles surfaced: (1) my
+  tailscale **ssh is flaky** — every interactive/nohup launch I issued died on a connection drop (exit 255), *while the
+  parallel session's own `bash -c '… nohup python …'` jobs survive* (they were launched from a stable session). The fix
+  was to launch with the **exact plain-nohup pattern the parallel jobs use** (no setsid/screen wrapper) — that survives.
+  (2) The **GPU is genuinely contended** (parallel run_spread_overnight ~100% util + contact_guidance; 5 ffn procs), and
+  the HARD guardrail says don't contend. **Solution deployed:** `run_emt_watcher.sh` (gbook, plain-nohup, alive) POLLS
+  until the parallel ffn procs hit 0 (GPU free), THEN runs the sweep **5× → 2× → 10×** native (`--out ffn_sim/outputs/ff`,
+  tags `emt_contract{5,2,10}`). Fully autonomous, no contention, ssh-independent. So M6 will run itself the moment the
+  A5000 frees; I recover + visually verify + KB-compare each result then. The relax-crash was a *separate* real bug
+  (fixed above); this remaining block is pure resource contention, correctly deferred.
