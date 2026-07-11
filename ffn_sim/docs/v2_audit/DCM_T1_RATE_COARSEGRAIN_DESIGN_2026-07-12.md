@@ -30,6 +30,22 @@ detailed-balance MC acceptance). Arrhenius barrier-crossing under active drive:
 Every quantity is grounded in the fine-grained mechanics or physiological inputs (Magic-Number Block clean). The rate
 law's shape (barrier → 0 at s0*) must reproduce the SPV/Bi-Manning unjamming transition as a consistency gate.
 
+**TAG literature validation (2026-07-12).** The design + G3 grounding are corroborated by the KB:
+- **KB-5.12 (T1 topological transitions):** "a T1 fires when an edge L < L_min; the energy barrier depends on p0;
+  **T1 frequency is high in the fluid phase and zero in the solid phase**." This is EXACTLY the rate-law shape
+  (barrier → 0 at unjamming; rate → 0 when jammed) — and it matches G3 (frozen/jammed state = 0 T1; fluid state =
+  6.9×10⁻³ /cell/s).
+- **KB-4.13 (junction remodeling):** endocytic junction turnover **k_endo ≈ 0.01–0.1 s⁻¹**, "T1 = junction shrinks to
+  zero, neighbour swap." This is the literature anchor for **k0** (the attempt/gating frequency) — NOT a fitted number.
+  The measured T1 rate 6.9×10⁻³ s⁻¹ sits just below this gate (a T1 needs a junction to remodel, so k_T1 ≤ k_endo ✓).
+- **KB-5.8 (RAB5A) + motility-driven-glass:** T1 rate scales with motile force v0 (higher activity → above threshold →
+  more T1s) — grounds the E_active(v0) dependence; the k_T1(s) calibration sweep (v0=10/20/40) tests this scaling.
+- **s0* caveat (from TAG):** KB carries the **2D** threshold p0*=3.81 (Bi/Manning vertex); our s0*=**5.41** is the 3D
+  Voronoi analog (s=S/V^{2/3}). Don't conflate — the DCM is 3D, so 5.41 is correct here.
+
+So k0 is literature-anchored (k_endo, KB-4.13), the rate-law shape is literature-validated (KB-5.12), and the v0
+dependence is literature-supported (KB-5.8) — the rate law is fully grounded, no magic numbers.
+
 ## Algorithm — KMC of T1 layered on the BDF2 fine-grained mechanics
 1. Run the fine-grained DCM at large dt (BDF2 — stable, resolves the fast elastic/contact relaxation; it FREEZES the
    slow creep, which is exactly the part we now supply by rate).
