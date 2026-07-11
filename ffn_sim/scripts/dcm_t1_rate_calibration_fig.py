@@ -53,7 +53,7 @@ for lbl, path in RUNS:
     except FileNotFoundError:
         print(f"  (skip {lbl}: {path} not found)"); continue
     fr = d["frames"]; cof = d["cof"].astype(int); faces = d["faces"].astype(int)
-    dtf = DT_FRAME_V20 if lbl == "v0=20" else dt_frame
+    dtf = DT_FRAME_V20 if lbl == "v0=20" else DT_FRAME
     r = measure_t1_rate(fr, cof, dtf)
     sf = np.nanmean(cell_shape_index_3d(fr[-1], faces, cof))
     agg_s.append(sf); agg_rate.append(r["rate_per_cell_s"]); labels.append(lbl)
