@@ -175,5 +175,24 @@ move would be cleaner and is the natural refinement); B has calibration uncertai
 rate/event-driven T1 coarse-graining lets the DCM reach biology-time tissue flow/fluidization at a feasible time-step,
 which no time integrator can do (the fundamental gap).**
 
-Remaining refinements: an s-neutral/deformation-aware T1 move (cleaner shape); wider k_T1(s) calibration; native
-full-compartment + longer (hours) runs.
+### Native N=400 reconfirmation (PI NATIVE+FULL rule) — the mechanism SCALES
+Re-ran the hero at N=400 full-compartment (nucleus + membrane tension + bending + turgor + well, BDF2, 600 s), KMC vs
+frozen. Fig `dcm_t1_native400_kmc.png`:
+
+| N=400, 600 s | shape index s (→) | T1 rate | per-cell disp | A/A0 |
+|---|---|---|---|---|
+| **T1-KMC** | 4.855 → **4.998** | 2.81e-3 (621 T1s) | **2.76 µm** | 1.026 |
+| frozen (no T1) | 4.855 → **4.925** | 0.00 | 0.04 µm | 0.999 |
+
+The mechanism HOLDS at native scale: the KMC fluidizes the large full-compartment aggregate (s → 4.998 = the small-dt
+reference exactly; per-cell disp 2.76 µm; 621 T1 events) while the frozen control JAMS (s → 4.925, disp 0.04 µm, no
+spread). The disp is slightly below N=100 (2.76 vs 3.29 µm) — bigger aggregate, interior more constrained (consistent
+with the earlier size-axis result), but the fluidization clearly scales. Visual-verified (`dcm_t1_native400_kmc.png`):
+400 intact cells, rearranged, edge cells extruded by the flow, cohesive aggregate.
+
+**So the biology-time route is validated at N=100 AND N=400 (native full-compartment):** the rate/event-driven T1-KMC
+supplies the physical rearrangement at large dt so the tissue fluidizes/flows, reaching biology-time where the
+fine-grained mechanics correctly freeze — the fundamental gap, bridged.
+
+Remaining refinements: an s-neutral/deformation-aware T1 move (cleaner shape observable); wider k_T1(s) calibration;
+E_nuc→399 (physiological) production config; multi-hour runs.
