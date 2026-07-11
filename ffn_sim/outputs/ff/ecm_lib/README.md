@@ -86,12 +86,30 @@ target order within a few percent.
    under shear: model N1>0 (stretch-dominated) vs literature N1<0 (Janmey, bending) — an INDEPENDENT confirmation
    of the c-scaling regime (`figs/normal_stress_N1.png`, `CSCALING_REGIME_FINDING.md`).
 
-## Cell in the ECM (the library's purpose — ROADMAP execution)
+## Cell in the ECM (the library's purpose — ROADMAP execution, native A5000-confirmed)
 
-A resting full-compartment cell (cortex+turgor+membrane+nucleus) adhered to a substrate SENSES its stiffness:
-engaged-clutch traction rises with E (0→0.090 nN over 150 Pa–40 kPa) with an engagement threshold (bound
-0.02@150Pa → 0.80@2kPa) = the durotaxis basis — **native A5000-confirmed** (Nc=266000). `ff_stiffness_sensing.py`,
-`figs/stiffness_sensing_native.png`. Development plan in **`ROADMAP.md`** (NEAR/MID/FAR; the living-substrate vision).
+A resting full-compartment cell (cortex+turgor+membrane+nucleus, Nc=266000) adhered to the library ECM SENSES it:
+
+- **Stiffness sensing — two paths bracket the motor-clutch biphasic** (native-confirmed):
+  - *Path (b) Winkler* (`k_sub=2Ea/(1−ν²)`): engaged-clutch traction RISES with E (0→0.090 nN over 150 Pa–40 kPa),
+    engagement threshold bound 0.02@150Pa → 0.80@2kPa — the **ASCENDING/catch arm** (forces below F*≈7pN).
+    `figs/stiffness_sensing_native.png`.
+  - *Path (a) live library ECM network* (two-sided clutch↔ECM, the cell grips an actual `build_ecm` matrix):
+    traction DESCENDS with stiffness (0.177 nN@150Pa → ~0.007 nN@≥2kPa; bound 0.33→0.01) — the **DESCENDING/slip
+    arm** — while the ECM DEFORMATION cleanly tracks stiffness (soft 275 nm → stiff 0 nm). `figs/stiffness_sensing_ecmnet_native.png`.
+  - Together (a)+(b) bracket the Bangasser-Odde optimum at f/clutch≈F*≈7pN. `ff_stiffness_sensing.py --mode {winkler,ecm-network}`.
+- **Contact guidance on ALIGNED collagen** (NEAR #6, native-confirmed, `ff_contact_guidance_anisotropy.py`): sweep
+  nematic order S at a fixed in-plane director. Two readouts (unfitted — S is the only swept variable):
+  - The grid-invariant **ECM virial stress anisotropy R_σ=σ∥/σ⊥ EMERGES with alignment** — 1.6→4.5→6.4→**30.8** for
+    S=0→0.30→0.59→0.83, tracking the library E∥/E⊥ ladder (1/3.1/10.3/63) and approaching Szulczewski's ≤35×
+    cell-scale directional stiffness. The matrix directionally "feels" the alignment.
+  - The resting cell's **clutch TRACTION anisotropy A_F=F∥/F⊥ stays ~isotropic** (0.91→0.67, no alignment trend;
+    engagement is weak, per-clutch ≪ F*). *Passive quasi-static sensing reads the matrix directional STIFFNESS but
+    not active traction guidance — converting R_σ into a directional traction (Ray-2017 >3×) needs polarized
+    protrusion/contraction (the FF motility layer), the honest next step.* `figs/contact_guidance_anisotropy_cg_native.png`.
+    Grounded in the existing KB (Ray2017_NatCommun verdict OK, KB-2.14 contact-guidance-via-FA-elongation, KB-1.V.2.4 TACS).
+
+Development plan in **`ROADMAP.md`** + the overnight execution log `OVERNIGHT_PLAN_2026-07-11.md` (NEAR/MID/FAR).
 
 ## Code
 

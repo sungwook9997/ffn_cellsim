@@ -207,3 +207,27 @@ KB query (duckdb) for the #6 validation bands: the primary source + the claim to
 So #6 CITES existing kb_ids (no new SourceEvidence for Ray/Provenzano). NEW (not in KB, PI-gated DRAFT only):
 Szulczewski 2021 (35× matrix directional stiffness), Riching 2014 (persistence), Niraula 2025 (traction saturation).
 kb-check gate at this commit: verify_runs OK (31, no drift) · verify_params OK (42, no drift). No DRIFT.
+
+## Checkpoint 18 (2026-07-12 morning) — BOTH native jobs LANDED (overnight pipeline completed)
+The gbook A5000 chain ran #2 (3.5h) → #6 (7.5h) to completion; GPU now free. Both figures visually verified.
+### Native #2 — Path (a) pa_gel stiffness sensing (Nc=266000, 3 E, --tag native_ecmnet)
+traction 0.177nN@150Pa → 0.007@2kPa → 0.009@40kPa (bound 0.33→0.01→0.02); ECM-disp 275→4→0 nm.
+→ Path (a) traction DESCENDS with stiffness (soft ECM engages+deforms+traction more) = the slip/DESCENDING arm;
+with Path (b) Winkler ASCENDING (0→0.090nN, bound 0.02→0.80) they BRACKET the Bangasser-Odde biphasic at
+f/clutch≈F*≈7pN. ECM-deformation is the clean monotone signal. `figs/stiffness_sensing_ecmnet_native.png`,
+`ecm_stiffness_ecmnet_native.json`. NEAR #2 ✅ DONE native-confirmed.
+### Native #6 — contact guidance on aligned collagen (Nc=266000, 4 S × 3 seeds)
+| S | A_F=F∥/F⊥ | R_σ=σ∥/σ⊥ | n_eng |
+|---|---|---|---|
+| 0.00 | 0.91±0.13 | 1.6±0.8 | 97 |
+| 0.30 | 0.80±0.06 | 4.5±4.3 | 90 |
+| 0.59 | 0.83±0.15 | 6.4±4.3 | 89 |
+| 0.83 | 0.67±0.04 | 30.8±23.0 | 75 |
+→ ⭐ The grid-invariant **matrix stress anisotropy R_σ EMERGES** with alignment (1.6→30.8×, tracks the library
+E∥/E⊥ ladder 1/3.1/10.3/63, ≈ Szulczewski ≤35×) — the matrix directionally feels the alignment. The resting
+cell's **clutch TRACTION A_F stays ~isotropic** (0.91→0.67, no alignment trend; per-clutch ≪ F*, weak engagement).
+HONEST split: passive quasi-static sensing reads matrix directional STIFFNESS but NOT active traction guidance
+(Ray-2017 >3× needs polarized protrusion/contraction — the FF motility layer). Figure KEY corrected to match the
+data (was over-claiming "traction 2-4×"; re-plotted from JSON). KB: Ray2017 (verdict OK) + KB-2.14 contact-guidance
++ KB-1.V.2.4 TACS cited (existing). NEAR #6 ✅ DONE native; active-motility follow-up → MID.
+### ALL 6 NEAR items now native-confirmed. Next: MID + the #6 active-motility follow-up. kb-check: runs/params OK.

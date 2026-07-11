@@ -124,8 +124,8 @@ def plot_anisotropy(rows: list[dict], meta: dict, path: str) -> None:
     axL.axhline(5.0, color="tab:red", ls=":", lw=1.2, zorder=3, label="clutch-saturation ceiling ≈5× (Niraula 2025)")
     axL.set_xlabel("collagen-I nematic alignment order  S  [—]")
     axL.set_ylabel("clutch traction anisotropy  A_F = F∥ / F⊥  [—]")
-    axL.set_title("EMERGENT contact-guidance traction anisotropy\n(same isotropic clutch law, aligned matrix — unfitted)",
-                  fontsize=9)
+    axL.set_title("Resting-cell clutch traction anisotropy A_F — stays ~ISOTROPIC\n"
+                  "(passive quasi-static sensing: no active traction guidance without motility)", fontsize=9)
     axL.set_ylim(bottom=0.0)
     axL.grid(True, alpha=0.3)
     axL.legend(fontsize=8, loc="upper left", framealpha=0.92)
@@ -150,10 +150,16 @@ def plot_anisotropy(rows: list[dict], meta: dict, path: str) -> None:
     axR.grid(True, which="both", alpha=0.3)
     axR.legend(fontsize=8, loc="upper left", framealpha=0.92)
 
+    a0 = afm[0] if np.isfinite(afm[0]) else float("nan")
+    aH = afm[np.isfinite(afm)][-1] if np.isfinite(afm).any() else float("nan")
+    rH = rsm[np.isfinite(rsm)][-1] if np.isfinite(rsm).any() else float("nan")
     fig.suptitle(f"FF ECM NEAR #6 — contact guidance on aligned collagen-I  ·  {note}  ·  "
                  f"conc={meta.get('conc')} mg/mL  ·  Nc={meta.get('Nc')}  ·  seeds={meta.get('seeds')}  ·  "
-                 f"tag={meta.get('tag')}\nKEY: traction anisotropy (2–4×) ≪ matrix stiffness anisotropy (35–63×) "
-                 f"because clutches saturate — both EMERGE, unfitted", fontsize=10)
+                 f"tag={meta.get('tag')}\nFINDING: matrix stress anisotropy R_σ EMERGES with alignment "
+                 f"(1→{rH:.0f}× at S={S_list[-1]:g}, tracks library E∥/E⊥) — but the RESTING cell's clutch "
+                 f"traction stays ~isotropic (A_F {a0:.2f}→{aH:.2f}): passive quasi-static sensing reads matrix\n"
+                 f"directional STIFFNESS, not active traction guidance (which needs polarized protrusion/contraction "
+                 f"— the FF motility layer). Both readouts unfitted; S is the swept variable.", fontsize=9.5)
     fig.tight_layout(rect=(0, 0, 1, 0.93))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fig.savefig(path, dpi=140)

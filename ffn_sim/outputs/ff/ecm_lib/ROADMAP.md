@@ -21,10 +21,13 @@ reshaping a native tissue-mimetic matrix once principled Stokes drag unblocks mi
 Route the library into the cell scripts, stand up ONE macroscopic stress tensor, and put a resting cell on
 real-Pa ECM — zero tuning.
 
-> **Execution status (2026-07-11 night): NEAR #1, #3, #4, #5 DONE + native/method-verified. #2 committed
-> (Path a coupling validated; native pa_gel run in flight). #6 IMPLEMENTED + coarse-smoke-validated (aligned
-> collagen builds, R_σ grid-invariant signal monotone; A_F needs the native ensemble — queued behind #2 on the
-> A5000). Overnight autonomous execution plan: `OVERNIGHT_PLAN_2026-07-11.md`.**
+> **Execution status (2026-07-12 morning): ALL 6 NEAR items DONE + native A5000-confirmed.** #1/#2 stiffness
+> sensing (Path b ASCENDING + Path a DESCENDING bracket the biphasic; ECM-deform 275→0 nm clean). #3 virial
+> tensor. #4 6-material native atlas. #5 N1 regime. #6 contact guidance native: the grid-invariant matrix stress
+> anisotropy R_σ EMERGES with alignment (1.6→30.8× for S=0→0.83, tracks library E∥/E⊥) while the resting cell's
+> clutch traction stays isotropic (A_F 0.91→0.67) — passive sensing reads matrix directional STIFFNESS, active
+> traction guidance needs the FF motility layer. Overnight log: `OVERNIGHT_PLAN_2026-07-11.md`. Now on MID + the
+> #6 active-motility follow-up.
 
 1. ✅ **DONE — Quasi-static stiffness-sensing demo** — `ff_stiffness_sensing.py`: `--from-resting` full-
    compartment cell (Winkler substrate k_sub=2Ea/(1−ν²), Path b). **Native A5000-confirmed** (Nc=266000):
@@ -42,8 +45,13 @@ real-Pa ECM — zero tuning.
    *Remaining: per-material full-extent annotated HTML viewers (the gallery covers most at moderate box).*
 5. ✅ **DONE — Nonlinear σ_xz/N1/K(γ)** — `shear_stress_curve` via the tensor. N1 SIGN independently confirms
    the stretch-dominated regime (model N1>0 vs literature N1<0, Janmey). `figs/normal_stress_N1.png`.
-6. **Systematized static traction-remodeling + contact-guidance anisotropy** on validated collagen (extends S6).
-   *Next autonomous item (needs Path a / cell-ECM coupling).*
+6. ✅ **DONE (native) — contact-guidance anisotropy on aligned collagen** — `ff_contact_guidance_anisotropy.py`.
+   The grid-invariant ECM virial stress anisotropy R_σ=σ∥/σ⊥ EMERGES with nematic order S (1.6→4.5→6.4→30.8 for
+   S=0→0.30→0.59→0.83, tracks the library E∥/E⊥ ladder 1/3.1/10.3/63 ≈ Szulczewski ≤35×), unfitted. The resting
+   cell's clutch traction A_F=F∥/F⊥ stays ~isotropic (0.91→0.67) — passive quasi-static sensing reads matrix
+   directional STIFFNESS, not active traction guidance. `figs/contact_guidance_anisotropy_cg_native.png`. KB-2.14
+   + Ray2017 (OK). *Remaining (moved to MID): the ACTIVE-motility follow-up — does a polarized/contracting cell
+   convert R_σ into a directional traction (Ray >3×)? + the static traction-REMODELING (fiber recruitment) half.*
 
 ## MID — moderate build or one PI decision
 
