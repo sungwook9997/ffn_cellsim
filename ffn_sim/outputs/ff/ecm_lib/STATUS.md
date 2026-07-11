@@ -240,3 +240,21 @@ morphology counterpart to the comparison figure. Real-browser verified (browser_
 JS errors; screenshot eyeballed — isotropic S=0 fibers all-directions + director axis correct). Fibrin
 generalization run still in flight on the A5000 (~4/12 at check; A_F~1, R_σ~1 at S=0 so far). Output/viz locations
 kept as-is per PI (ffn_sim/outputs/ff/ecm_lib/ + figs/).
+
+## Checkpoint 20 (2026-07-12) — Job D native (3-seed): directional stress propagation (MID, KB-1.10)
+ff_ecm_stress_propagation.py native (box=90µm, 382725 nodes, 100k relax steps, 3 seeds; GPU-resident relax, no
+host-CG → 786s for 12 runs). Eshelby-type contractile inclusion (ε=20%, frozen — no force tuning), spherical
+far-field BC, σ_rr(r) via ecm_mechanics.stress_field_radial (shell virial).
+| S | n_exp (|σ_rr|~r⁻ⁿ) |
+|---|---|
+| 0.00 | 8.12±2.57 |
+| 0.30 | 7.96±0.96 |
+| 0.59 | 5.69±0.79 |
+| 0.83 | 4.72±0.23 |
+→ ⭐ n DROPS MONOTONICALLY with alignment (8.1→4.7): aligned collagen CHANNELS contractile stress ~10× farther
+(the figure shows purple S=0.83 sustaining ~10× more σ at r~28µm than blue S=0). 3-seed ensemble resolved the
+single-seed S=0.30 outlier; error tightens as S rises (±0.23 at S=0.83). Absolute n≈5-8 STEEPER than elastic
+(r⁻²⁻³) = sub-isostatic athermal Mikado localizes stress (short-range) — same stretch-dominated limit as
+c-scaling/N1; true fibrous long-range (Notbohm r⁻¹) needs PI-gated nonlinear/bending physics. Equilibration
+lesson: the big native network needed 100k steps (4k gave n=15 under-relaxed). Figure verified. TO DO: stress-
+field interactive HTML (displacement-colored, iso vs aligned). Compares to KB-1.10 as oracle-overlay (not registered).

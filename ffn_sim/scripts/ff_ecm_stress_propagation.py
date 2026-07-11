@@ -113,27 +113,43 @@ def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7):
                 wall_s=time.time() - t0, **meta)
 
 
+def _by_S(cases):
+    """Group cases by S_target → {S: [cases]} preserving order."""
+    out = {}
+    for c in cases:
+        out.setdefault(round(float(c["S"]), 3), []).append(c)
+    return out
+
+
 def plot(cases, meta, path):
-    """|σ_rr|(r) log-log with the fitted exponent + the linear-elastic reference band → PNG."""
+    """|σ_rr|(r) log-log: per-S ensemble-mean curve + fitted exponent (mean±sd over seeds) + elastic refs → PNG."""
     coarse = meta["box"] < 60
     note = f"COARSE box={meta['box']}µm — DEV SMOKE (non-authoritative)" if coarse else f"NATIVE box={meta['box']}µm"
     fig, ax = plt.subplots(figsize=(8.2, 5.6))
-    cols = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd"]
-    for i, c in enumerate(cases):
-        r = np.array(c["r"]); s = np.abs(np.array(c["sigma_rr"]))
+    cols = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e"]
+    grp = _by_S(cases)
+    first_curve = None
+    for i, (S, cs) in enumerate(grp.items()):
+        r = np.array(cs[0]["r"])
+        s_all = np.array([np.abs(c["sigma_rr"]) for c in cs])       # (seeds, shells)
+        s = s_all.mean(0)
+        ns = np.array([c["n_exp"] for c in cs], float); ns = ns[np.isfinite(ns)]
+        Sm = float(np.mean([c["S_measured"] for c in cs]))
         ok = s > 0
-        ax.plot(r[ok], s[ok], "-o", color=cols[i % len(cols)], lw=2, ms=6,
-                label=f"S={c['S']:g} (meas {c['S_measured']:.2f}) — fit n={c['n_exp']:.2f}")
-    # reference power laws anchored at the first case's first point
-    if cases:
-        r = np.array(cases[0]["r"]); s = np.abs(np.array(cases[0]["sigma_rr"]))
-        ok = s > 0
-        if ok.any():
-            r0, s0 = r[ok][0], s[ok][0]
-            rr = np.linspace(r[ok][0], r[ok][-1], 40)
-            for n_ref, ls, lbl in [(1.0, ":", "elastic ~r⁻¹ (KB-1.10 long-range)"),
-                                   (2.0, "--", "linear-elastic ~r⁻² (short range)")]:
-                ax.plot(rr, s0 * (rr / r0) ** (-n_ref), ls, color="0.5", lw=1.4, label=lbl)
+        lbl = (f"S={S:g} (meas {Sm:.2f}) — n={ns.mean():.2f}" + (f"±{ns.std():.2f}" if ns.size > 1 else ""))
+        ax.plot(r[ok], s[ok], "-o", color=cols[i % len(cols)], lw=2, ms=6, label=lbl)
+        if s_all.shape[0] > 1:                                       # per-seed thin lines (stochastic spread)
+            for sc in s_all:
+                ok2 = sc > 0
+                ax.plot(r[ok2], sc[ok2], "-", color=cols[i % len(cols)], lw=0.6, alpha=0.35)
+        if first_curve is None and ok.any():
+            first_curve = (r[ok][0], s[ok][0], r[ok][-1])
+    if first_curve:
+        r0, s0, r1 = first_curve
+        rr = np.linspace(r0, r1, 40)
+        for n_ref, ls, lbl in [(1.0, ":", "elastic ~r⁻¹ (KB-1.10 long-range)"),
+                               (2.0, "--", "linear-elastic ~r⁻² (short range)")]:
+            ax.plot(rr, s0 * (rr / r0) ** (-n_ref), ls, color="0.5", lw=1.4, label=lbl)
     ax.set_xscale("log"); ax.set_yscale("log")
     ax.set_xlabel("distance from inclusion centre  r  [µm]")
     ax.set_ylabel("radial stress  |σ_rr(r)|  [Pa]")
@@ -154,6 +170,7 @@ def main():
     ap.add_argument("--R-incl", type=float, default=None, help="inclusion radius [µm] (default box/8)")
     ap.add_argument("--eps", type=float, default=0.2, help="inclusion contraction strain (physical input)")
     ap.add_argument("--S", default="0.0,0.83", help="comma-separated alignment orders (isotropic vs aligned)")
+    ap.add_argument("--seeds", type=int, default=1, help="matrix realizations per S (ensemble; ≥3 for a clean exponent)")
     ap.add_argument("--steps", type=int, default=400, help="relaxation steps")
     ap.add_argument("--n-shells", type=int, default=16)
     ap.add_argument("--device", default="cpu")
@@ -168,14 +185,22 @@ def main():
         print(f"[!] COARSE box={a.box}µm — DEV SMOKE, NON-AUTHORITATIVE; reconfirm at NATIVE box≥80 --device cuda:0.")
     cases = []
     for S in S_list:
-        c = run_case(S, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, steps=a.steps,
-                     n_shells=a.n_shells, device=a.device)
-        print(f"[S={S:>4.2f}] n_exp={c['n_exp']:.2f}  (fit r∈[{c['r_fit'][0]:.1f},{c['r_fit'][1]:.1f}]µm)  "
-              f"incl={c['n_incl']} outer={c['n_outer']} nodes={c['n_nodes']}  ({c['wall_s']:.0f}s)", flush=True)
-        cases.append(c)
-    meta = dict(tag=a.tag, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, S_list=S_list,
-                steps=a.steps, device=a.device, coarse_nonauthoritative=bool(coarse),
-                n_exp={f"S={c['S']:g}": c["n_exp"] for c in cases},
+        for sd in range(a.seeds):
+            c = run_case(S, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, steps=a.steps,
+                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd)
+            c["seed"] = int(sd)
+            print(f"[S={S:>4.2f} seed={sd}] n_exp={c['n_exp']:.2f}  (fit r∈[{c['r_fit'][0]:.1f},"
+                  f"{c['r_fit'][1]:.1f}]µm)  incl={c['n_incl']} nodes={c['n_nodes']}  ({c['wall_s']:.0f}s)", flush=True)
+            cases.append(c)
+    n_by_S = {}
+    for S in S_list:
+        ns = np.array([c["n_exp"] for c in cases if round(c["S"], 3) == round(S, 3) and np.isfinite(c["n_exp"])])
+        n_by_S[f"S={S:g}"] = dict(mean=float(ns.mean()) if ns.size else float("nan"),
+                                  sd=float(ns.std()) if ns.size > 1 else 0.0, n_seeds=int(ns.size))
+    print(f"[exponents] " + "  ".join(f"S={S:g}:n={n_by_S[f'S={S:g}']['mean']:.2f}±{n_by_S[f'S={S:g}']['sd']:.2f}"
+                                      for S in S_list))
+    meta = dict(tag=a.tag, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, S_list=S_list, seeds=a.seeds,
+                steps=a.steps, device=a.device, coarse_nonauthoritative=bool(coarse), n_exp=n_by_S,
                 reference="linear-elastic point source n≈2–3; fibrous network longer-range n→~1 (KB-1.10; "
                           "Notbohm2015/Han2018 oracle-overlay)")
     os.makedirs(a.out, exist_ok=True)

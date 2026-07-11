@@ -85,6 +85,14 @@ target order within a few percent.
    (one grid-invariant stress; method-independence proven: energy==virial, reaction is the outlier). N1=σ_xx−σ_zz
    under shear: model N1>0 (stretch-dominated) vs literature N1<0 (Janmey, bending) — an INDEPENDENT confirmation
    of the c-scaling regime (`figs/normal_stress_N1.png`, `CSCALING_REGIME_FINDING.md`).
+6. **Emergent directional stress propagation from a contractile inclusion** (KB-1.10, native-confirmed):
+   an Eshelby-type contractile inclusion (ε=20%, no force tuning) in collagen-I transmits radial stress
+   σ_rr(r) that decays as |σ|~r⁻ⁿ; the exponent DROPS MONOTONICALLY with fiber alignment — n=8.1±2.6
+   (isotropic) → 4.7±0.2 (S=0.83) — so aligned collagen CHANNELS contractile stress ~10× farther (3-seed
+   ensemble). Absolute n≈5-8 is steeper than linear-elastic (~r⁻²⁻³): the athermal sub-isostatic Mikado
+   localizes stress (short-range), the SAME stretch-dominated limit as the c-scaling + N1 findings; the
+   true fibrous long-range (Notbohm ~r⁻¹) needs the PI-gated nonlinear/bending physics.
+   `figs/stress_propagation_sp_native.png` (`ff_ecm_stress_propagation.py`, `ecm_mechanics.stress_field_radial`).
 
 ## Cell in the ECM (the library's purpose — ROADMAP execution, native A5000-confirmed)
 
