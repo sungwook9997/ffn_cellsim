@@ -99,6 +99,10 @@ target order within a few percent.
    STEEPER than BOTH (n≈5-8 > 3), so reaching the fibrous n~1 (Notbohm2016_BiophysJ verdict OK, Swaminathan2011
    OK) needs the fiber buckling / tension-stiffening the athermal model lacks. The EMERGENT directional result
    (n drops ~2× with alignment) GENERALIZES to fibrin (n 16.8→8.3) — a robust fibrous-network property.
+   ⭐DIRECTIONAL refinement (`ecm_mechanics.stress_field_directional`): decomposing σ_rr(r) along (n∥)
+   vs across (n⊥) the director shows aligned collagen is a stress WAVEGUIDE — n∥ DROPS 12.8→4.5 (far
+   along fibers, toward elastic n=3) while n⊥ RISES 12.0→21.6 (dies across fibers); isotropic at S=0
+   (n∥≈n⊥≈12). The mechanistic heart of TACS-3 directional force transmission. `figs/stress_propagation_directional_sp_dir_native.png`.
    `figs/stress_propagation_sp_native.png` (+ `_sp_fibrin_native.png`), `stress_propagation_viewer.html`
    (`ff_ecm_stress_propagation.py`, `ecm_mechanics.stress_field_radial`).
 

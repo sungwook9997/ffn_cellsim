@@ -37,7 +37,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from ffn_sim.ff import ecm_library as L
-from ffn_sim.ff.ecm_mechanics import stress_field_radial
+from ffn_sim.ff.ecm_mechanics import stress_field_radial, stress_field_directional
 from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.network_warp import _zero, link_spring_kernel
 from ffn_sim.ff.motility_warp import axpy_physical_kernel
@@ -106,7 +106,11 @@ def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7, m
     pos, meta = _relax_inclusion(ecm, center, R_incl_um, eps, steps=steps, device=device)
     prof = stress_field_radial(ecm, pos, center, n_shells=n_shells,
                                r_min=R_incl_um * 1.3, r_max=0.32 * box)   # buffer from both BCs → clean power-law
+    # DIRECTIONAL: does stress channel FARTHER along the fiber director? (n_∥ < n_⊥ for aligned)
+    dvec = np.asarray(getattr(ecm, "director", (1.0, 0.0, 0.0)), float)
+    dprof = stress_field_directional(ecm, pos, center, dvec, r_min=R_incl_um * 1.3, r_max=0.32 * box)
     return dict(S=float(S), S_measured=float(getattr(ecm, "S_measured", S)), n_exp=float(prof["n_exp"]),
+                n_par=float(dprof["n_par"]), n_perp=float(dprof["n_perp"]), n_aniso=float(dprof["anisotropy"]),
                 r=[float(x) for x in prof["r"]], sigma_rr=[float(x) for x in prof["sigma_rr"]],
                 sigma_tt=[float(x) for x in prof["sigma_tt"]], pressure=[float(x) for x in prof["pressure"]],
                 r_fit=[prof["r_fit_lo"], prof["r_fit_hi"]], n_nodes=int(ecm.meta["n_nodes"]),
@@ -163,6 +167,32 @@ def plot(cases, meta, path):
     fig.savefig(path, dpi=140); plt.close(fig)
 
 
+def plot_directional(cases, meta, path):
+    """n∥(S) vs n⊥(S): the DIRECT channeling signature — along-fiber decay stays shallow (n∥ ~const) while
+    across-fiber decay steepens with alignment (n⊥↑), so the stress becomes a fiber-guided waveguide."""
+    coarse = meta["box"] < 60
+    note = f"COARSE box={meta['box']}µm — DEV SMOKE (non-authoritative)" if coarse else f"NATIVE box={meta['box']}µm"
+    grp = _by_S(cases)
+    S = sorted(grp)
+    npar = [np.nanmean([c["n_par"] for c in grp[s]]) for s in S]
+    npar_sd = [np.nanstd([c["n_par"] for c in grp[s]]) for s in S]
+    nperp = [np.nanmean([c["n_perp"] for c in grp[s]]) for s in S]
+    nperp_sd = [np.nanstd([c["n_perp"] for c in grp[s]]) for s in S]
+    fig, ax = plt.subplots(figsize=(8.0, 5.6))
+    ax.errorbar(S, npar, yerr=npar_sd, fmt="-o", color="#2ca02c", lw=2.2, ms=8, capsize=4,
+                label="n∥  (decay ALONG the fiber director)")
+    ax.errorbar(S, nperp, yerr=nperp_sd, fmt="-s", color="#d62728", lw=2.2, ms=8, capsize=4,
+                label="n⊥  (decay ACROSS the fibers)")
+    ax.axhline(3.0, color="0.5", ls="--", lw=1.2, label="linear-elastic n=3 (KB-1.10)")
+    ax.set_xlabel("nematic alignment order  S"); ax.set_ylabel("stress-decay exponent n  (|σ_rr|~r⁻ⁿ)")
+    ax.set_title(f"FF ECM — DIRECTIONAL stress channeling  ·  {note}\n{meta.get('material','collagen_I')}: "
+                 f"stress propagates FAR along fibers (n∥ low) but dies ACROSS them (n⊥↑ with S) — a fiber waveguide",
+                 fontsize=9)
+    ax.grid(True, alpha=0.3); ax.legend(fontsize=8, loc="upper left")
+    fig.tight_layout(); os.makedirs(os.path.dirname(path), exist_ok=True)
+    fig.savefig(path, dpi=140); plt.close(fig)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--box", type=float, default=40.0, help="box side [µm] (native ≥60)")
@@ -190,8 +220,9 @@ def main():
             c = run_case(S, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, steps=a.steps,
                          n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd, material=a.material)
             c["seed"] = int(sd)
-            print(f"[S={S:>4.2f} seed={sd}] n_exp={c['n_exp']:.2f}  (fit r∈[{c['r_fit'][0]:.1f},"
-                  f"{c['r_fit'][1]:.1f}]µm)  incl={c['n_incl']} nodes={c['n_nodes']}  ({c['wall_s']:.0f}s)", flush=True)
+            print(f"[S={S:>4.2f} seed={sd}] n_iso={c['n_exp']:.2f}  n∥={c['n_par']:.2f}  n⊥={c['n_perp']:.2f}  "
+                  f"(Δ={c['n_aniso']:+.2f} → {'channels ∥' if c['n_aniso'] > 0 else 'no ∥ channeling'})  "
+                  f"incl={c['n_incl']} nodes={c['n_nodes']}  ({c['wall_s']:.0f}s)", flush=True)
             cases.append(c)
     n_by_S = {}
     for S in S_list:
@@ -200,15 +231,25 @@ def main():
                                   sd=float(ns.std()) if ns.size > 1 else 0.0, n_seeds=int(ns.size))
     print(f"[exponents] " + "  ".join(f"S={S:g}:n={n_by_S[f'S={S:g}']['mean']:.2f}±{n_by_S[f'S={S:g}']['sd']:.2f}"
                                       for S in S_list))
+    dir_by_S = {}
+    for S in S_list:
+        npar = np.array([c["n_par"] for c in cases if round(c["S"], 3) == round(S, 3) and np.isfinite(c["n_par"])])
+        nperp = np.array([c["n_perp"] for c in cases if round(c["S"], 3) == round(S, 3) and np.isfinite(c["n_perp"])])
+        dir_by_S[f"S={S:g}"] = dict(n_par=float(npar.mean()) if npar.size else float("nan"),
+                                    n_perp=float(nperp.mean()) if nperp.size else float("nan"))
+    print(f"[directional] " + "  ".join(f"S={S:g}:n∥={dir_by_S[f'S={S:g}']['n_par']:.1f}/n⊥="
+                                        f"{dir_by_S[f'S={S:g}']['n_perp']:.1f}" for S in S_list)
+          + "  (n∥<n⊥ ⇒ stress channels along the fibers)")
     meta = dict(tag=a.tag, material=a.material, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps,
                 S_list=S_list, seeds=a.seeds, steps=a.steps, device=a.device,
-                coarse_nonauthoritative=bool(coarse), n_exp=n_by_S,
+                coarse_nonauthoritative=bool(coarse), n_exp=n_by_S, directional=dir_by_S,
                 reference="linear-elastic point source n≈2–3; fibrous network longer-range n→~1 (KB-1.10; "
                           "Notbohm2015/Han2018 oracle-overlay)")
     os.makedirs(a.out, exist_ok=True)
     with open(f"{a.out}/stress_propagation_{a.tag}.json", "w") as f:
         json.dump(dict(meta=meta, cases=cases), f, indent=2, default=float)
     plot(cases, meta, f"{a.out}/figs/stress_propagation_{a.tag}.png")
+    plot_directional(cases, meta, f"{a.out}/figs/stress_propagation_directional_{a.tag}.png")
     print(f"[done] wrote {a.out}/stress_propagation_{a.tag}.json + figs/stress_propagation_{a.tag}.png "
           f"({time.time()-t0:.0f}s)")
 

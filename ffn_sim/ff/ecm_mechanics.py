@@ -618,6 +618,70 @@ def stress_field_radial(ecm, pos, center, *, n_shells: int = 16, r_max: float | 
                 edges=edges, r_fit_lo=float(rmid[lo]), r_fit_hi=float(rmid[hi - 1]))
 
 
+def stress_field_directional(ecm, pos, center, director, *, n_shells: int = 14, r_max: float | None = None,
+                             r_min: float | None = None, cone_deg: float = 35.0) -> dict:
+    """DIRECTIONAL stress propagation: σ_rr(r) measured SEPARATELY along the director (∥) and perpendicular (⊥).
+
+    Extends :func:`stress_field_radial` to resolve WHERE a contractile inclusion's stress goes. Each bond is
+    classified by the angle of its midpoint's radial direction r̂ relative to the (in-plane) ``director`` d̂:
+    ∥-sector = |r̂·d̂| > cos(cone_deg) (a double cone about the director), ⊥-sector = |r̂·d̂| < sin(cone_deg)
+    (the equatorial band). Within each sector we accumulate the radial virial σ_rr(r)=Σ(F/L)(d·r̂)²/V_shell and
+    fit |σ|~r⁻ⁿ. For ALIGNED fibers the along-fiber decay is SHALLOWER (n_∥ < n_⊥) — stress channels farther
+    along the director — the DIRECT signature of contact-guided force transmission (only the exponents are
+    compared; a per-sector solid-angle constant divides out of the log-log slope)."""
+    pos = np.ascontiguousarray(pos, float)
+    c = np.asarray(center, float)
+    d = np.asarray(director, float)
+    d = d / (np.linalg.norm(d) + 1e-12)
+    ii, jj, kk, rr0 = [], [], [], []
+    for i, j, k, r0 in ((ecm.xl_i, ecm.xl_j, ecm.xl_k, ecm.xl_rest),
+                        (ecm.seg_i, ecm.seg_j, ecm.seg_k, ecm.seg_rest)):
+        if getattr(i, "size", 0):
+            ii.append(np.asarray(i)); jj.append(np.asarray(j))
+            kk.append(np.broadcast_to(k, np.asarray(i).shape) if np.ndim(k) == 0 else np.asarray(k))
+            rr0.append(np.broadcast_to(r0, np.asarray(i).shape) if np.ndim(r0) == 0 else np.asarray(r0))
+    if not ii:
+        return dict(r=np.zeros(0), n_par=float("nan"), n_perp=float("nan"))
+    i = np.concatenate(ii); j = np.concatenate(jj); k = np.concatenate(kk); r0 = np.concatenate(rr0)
+    bd = pos[j] - pos[i]
+    L = np.linalg.norm(bd, axis=1) + 1e-12
+    f_over_L = k * (L - r0) / L
+    mid = 0.5 * (pos[i] + pos[j])
+    rvec = mid - c
+    r = np.linalg.norm(rvec, axis=1) + 1e-12
+    rhat = rvec / r[:, None]
+    d_rad = np.einsum("na,na->n", bd, rhat)
+    vir_rr = f_over_L * d_rad ** 2
+    cosang = np.abs(rhat @ d)                                      # |cos| between radial and director
+    par = cosang > np.cos(np.deg2rad(cone_deg))                   # within cone_deg of the director axis
+    perp = cosang < np.sin(np.deg2rad(cone_deg))                  # within cone_deg of the equatorial plane
+    rmax = float(r_max if r_max is not None else np.percentile(r, 96))
+    rmin = float(r_min if r_min is not None else max(np.percentile(r, 4), 1e-3))
+    edges = np.linspace(rmin, rmax, n_shells + 1)
+    rmid = 0.5 * (edges[:-1] + edges[1:])
+    Vsh = (4.0 / 3.0) * np.pi * (edges[1:] ** 3 - edges[:-1] ** 3)
+    idx = np.clip(np.digitize(r, edges) - 1, 0, n_shells - 1)
+    inr = (r >= rmin) & (r < rmax)
+
+    def _sector(mask):
+        s = np.zeros(n_shells)
+        sel = mask & inr
+        np.add.at(s, idx[sel], vir_rr[sel])
+        s = s / Vsh
+        lo, hi = 1, n_shells - 1
+        mag = np.abs(s[lo:hi]); rm = rmid[lo:hi]
+        ok = (mag > 0) & np.isfinite(mag)
+        n = float("nan")
+        if ok.sum() >= 3:
+            n = float(-np.polyfit(np.log(rm[ok]), np.log(mag[ok]), 1)[0])
+        return s, n
+
+    s_par, n_par = _sector(par)
+    s_perp, n_perp = _sector(perp)
+    return dict(r=rmid, sigma_par=s_par, sigma_perp=s_perp, n_par=n_par, n_perp=n_perp,
+                anisotropy=float(n_perp - n_par) if (np.isfinite(n_par) and np.isfinite(n_perp)) else float("nan"))
+
+
 def stress_relaxation(ecm, *, gamma0=0.1, koff0_per_s=0.01, x_beta_nm=0.4, dt_real_s=None,
                       t_total_s=None, n_record=24, mech_substeps=150, device="cpu") -> dict:
     """Viscoelastic stress-relaxation G(t): step shear γ₀, then let CROSSLINKS turn over (Bell slip,

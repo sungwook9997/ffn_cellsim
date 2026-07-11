@@ -337,3 +337,21 @@ at tissue scale). CRUCIALLY continuum gels DO reach kPa (agarose 14k, PA 40k in 
 to the fibrillar collagen route → the runtime fix is the PI-gated thermal-WLC. This BOUNDS the library scope:
 trustworthy for individual materials + soft tissues + the mechanistic cell-ECM coupling; needs thermal-WLC for
 dense tumor stroma. `figs/tissue_mimetic_mammary.png`. Consistent with the c-scaling diagnosis (checkpoint 22).
+
+## Checkpoint 26 (2026-07-12) — DIRECTIONAL stress channeling: aligned collagen is a fiber WAVEGUIDE (novel)
+ecm_mechanics.stress_field_directional + ff_ecm_stress_propagation directional readout (n∥ = decay ALONG the
+director cone, n⊥ = decay ACROSS). Native collagen (box=90µm, 100k relax, 3 seeds):
+| S | n∥ (along fibers) | n⊥ (across fibers) |
+|---|---|---|
+| 0.00 | 12.8 | 12.0 |
+| 0.30 | 7.1 | 14.8 |
+| 0.59 | 5.2 | 21.1 |
+| 0.83 | 4.5 | 21.6 |
+→ ⭐ the DIRECT channeling signature: at S=0 isotropic (n∥≈n⊥≈12); as alignment rises n∥ DROPS (12.8→4.5, stress
+propagates FAR along fibers, toward the elastic n=3) while n⊥ RISES (12.0→21.6, stress dies fast across fibers).
+Aligned collagen is a stress WAVEGUIDE — it funnels contractile force along the director and blocks it
+perpendicular. This EXPLAINS the isotropic-average n(S) drop (8.1→4.7, checkpoint 20): the average falls because
+the ∥ channel opens. The mechanistic heart of TACS-3 directional long-range force transmission (aligned tumor
+collagen transmits contraction along invasion highways = mechanical cell-cell communication, KB-1.10). Unfitted,
+no directional force prefactor — emerges from the aligned microstructure + isotropic bond virial. Coarse-smoke +
+native-confirmed. `figs/stress_propagation_directional_sp_dir_native.png`. Novel Job D refinement (checkpoint 20).
