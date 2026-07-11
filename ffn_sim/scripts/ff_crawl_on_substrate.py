@@ -948,15 +948,18 @@ def main():
     _front_frac = args.front_frac if args.front_frac is not None else _prof.front_frac
     _rear_bias = args.myo_rear_bias if args.myo_rear_bias is not None else _prof.myo_rear_bias
     _contractility = args.contractility_mult if args.contractility_mult is not None else _prof.contractility_mult
-    _f_myo = NMIIA_MINIFIL_STALL_PN * _contractility          # KB-3.14 EMT myosin upregulation (1.0 = baseline)
+    # KB-3.14 EMT myosin upregulation applies to the ACTIVE migration run only, NOT the from-resting relax: the resting
+    # checkpoint is the PHYSIOLOGICAL baseline (physiological-baseline HARD rule) — relaxing it at 2–10× myosin would be
+    # a wrong over-contracted baseline AND destabilises the relax. So build() keeps baseline f_myo; run() gets _f_myo.
+    _f_myo = NMIIA_MINIFIL_STALL_PN * _contractility          # active-phase EMT myosin force (1.0 = baseline)
     if _prof.name != "mcf7_epithelial" or _contractility != 1.0:
         print(f"[cell-type] {_prof.name}: polarize={_polarize} ecm_regrip={_regrip} front_frac={_front_frac} "
               f"myo_rear_bias={_rear_bias} n_fa={_n_fa} contractility={_contractility:.1f}× (f_myo={_f_myo:.1f} pN)")
     if args.microtubules and not args.implicit:
         print("[!] --microtubules needs the implicit solver (MT bending rides K); add --implicit for production.")
     S = build(n_cortex_fil=args.cortex_fil, seed=args.seed, n_fa=_n_fa, length_dist=args.fil_length_dist,
-              front_frac=_front_frac, myo_rear_bias=_rear_bias, f_myo=_f_myo,
-              microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,
+              front_frac=_front_frac, myo_rear_bias=_rear_bias,   # NB: build() relaxes at BASELINE f_myo (physiological
+              microtubules=args.microtubules, n_mt=args.n_mt, L_mt_um=args.l_mt,   # resting checkpoint); contractility
               from_resting=args.from_resting, relax_steps=args.relax_steps, relax_device=args.device,
               n_myo_ratio=(10 if args.from_resting else 160), f_excess=(0.25 if args.from_resting else 0.0),
               ecm=args.ecm, ecm_fibers=args.ecm_fibers, ecm_lp_um=args.ecm_lp_um,
