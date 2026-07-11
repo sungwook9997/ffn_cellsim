@@ -109,3 +109,6 @@ decision (choose the best literature-anchored option, mark PROVISIONAL, continue
 - collagen concentration for sweeps = spec.ref_conc 1.5 mg/mL (physiological; not tuned).
 - sensing cell MICROTUBULES-OFF (consistent with the NEAR #1/#2/#6 sensing family).
 - new KnowledgeClaims (contact-guidance A_F/R_σ; stress-propagation n(S)) DRAFTED, not auto-created (PI-authored).
+
+### Finding (2026-07-12): the #6 ACTIVE-motility follow-up is BLOCKED (documented, not abandoned)
+The crawl driver (`ff_crawl_on_substrate.py`) ALREADY supports a polarized cell on aligned ECM (`ecm_align_s`, `phat`, `myo_rear_bias`) — but a NATIVE crawling cell is ~500× slow (the grid-drag Σγ∝Nc blocker, `--bulk-drag` unstable = OPEN; memory [[project-ff-crawl-mechanism]]). So the full active-crawl-on-aligned-collagen test is gated by the SAME Stokes-drag migration unblocker that gates the FAR vision — it is NOT a quick MID item. Deferred to FAR (post-unblocker). INSTEAD generalized Job D (stress propagation) to FIBRIN to confirm the aligned-channeling is a general fibrous-network property.

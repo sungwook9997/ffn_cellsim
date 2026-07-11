@@ -94,9 +94,9 @@ def _relax_inclusion(ecm, center, R_incl_um, eps, *, steps, device):
                                R_incl_um=float(R_incl_um), eps=float(eps))
 
 
-def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7):
-    """Build collagen at alignment S, contract the inclusion, relax, and measure σ_rr(r)."""
-    spec = L.get_spec("collagen_I")
+def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7, material="collagen_I"):
+    """Build a fibrillar matrix at alignment S, contract the inclusion, relax, and measure σ_rr(r)."""
+    spec = L.get_spec(material)
     lo, hi = [0.0, 0.0, 0.0], [box, box, box]
     rng = np.random.default_rng(seed)
     ecm = L.build_fibrillar_ecm(spec, lo, hi, concentration=conc, dim=3, alignment_S=float(S),
@@ -166,7 +166,8 @@ def plot(cases, meta, path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--box", type=float, default=40.0, help="box side [µm] (native ≥60)")
-    ap.add_argument("--conc", type=float, default=1.5, help="collagen concentration [mg/mL]")
+    ap.add_argument("--material", default="collagen_I", help="fibrillar ecm_library key (collagen_I / fibrin)")
+    ap.add_argument("--conc", type=float, default=1.5, help="fibrillar concentration [mg/mL]")
     ap.add_argument("--R-incl", type=float, default=None, help="inclusion radius [µm] (default box/8)")
     ap.add_argument("--eps", type=float, default=0.2, help="inclusion contraction strain (physical input)")
     ap.add_argument("--S", default="0.0,0.83", help="comma-separated alignment orders (isotropic vs aligned)")
@@ -187,7 +188,7 @@ def main():
     for S in S_list:
         for sd in range(a.seeds):
             c = run_case(S, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, steps=a.steps,
-                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd)
+                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd, material=a.material)
             c["seed"] = int(sd)
             print(f"[S={S:>4.2f} seed={sd}] n_exp={c['n_exp']:.2f}  (fit r∈[{c['r_fit'][0]:.1f},"
                   f"{c['r_fit'][1]:.1f}]µm)  incl={c['n_incl']} nodes={c['n_nodes']}  ({c['wall_s']:.0f}s)", flush=True)
