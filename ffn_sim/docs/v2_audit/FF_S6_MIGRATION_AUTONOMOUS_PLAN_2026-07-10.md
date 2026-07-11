@@ -376,3 +376,36 @@ growth, FA growth/disassembly/maturation, MT aster, active-gel polarization, mem
 highest-value next FF mechanism is **cofilin severing**, but it is gated on a **KB ingestion of Elam2013** — a
 gate-contract/KB change that is yours to approve, not mine to auto-create. Until then I will not implement it (no magic
 number). Everything here is GPU-free planning; nothing was run or changed in the engine.
+
+---
+
+## PHASE M6 (2026-07-11, PI: "자율주행하고 있어줘 — decide yourself") — the KB-3.14 EMT contractility migration experiment
+
+You re-affirmed full autonomy and did not pick among my three gated items, so I am driving the one that serves your
+core goal (*"세포가 ECM 위에서 잘 움직이도록 / 자기 자리에서 벗어나는 것"*) and is **KB-grounded, not tuning**:
+raise myosin contractility into the **KB-3.14 EMT band (2–10×)** on the motile cell-type and measure whether
+physiological translocation emerges.
+
+**Why this is legitimate, not tune-to-target (the hard-rule check):**
+- KB-3.14 licenses **2–10× EMT/mesenchymal myosin-II upregulation** — this is a *cell-type property*, not a knob I
+  invented to hit a speed. Changing MCF7→EMT and setting contractility in the KB band is the R-sweep-style legitimate
+  move (characterise the response across the KB band), **not** a lower-a-derived-param-to-pass-a-gate sweep.
+- I will run the **whole band (2×, 5×, 10×)** and report the v(contractility) curve honestly — including if it
+  *destabilises* (the M1 verdict flagged native fragility) or if it *doesn't* raise speed (which would say migration is
+  adhesion-turnover-limited, not contraction-limited). No cherry-picking a "good" multiplier.
+
+**Done this tick (GPU-free):** wired the lever — `--contractility-mult` scales `f_myo = NMIIA_MINIFIL_STALL_PN × mult`
+in build() + run() (was a dead `cell_type.py` field). CPU-smoke: `emt --contractility-mult 5` → f_myo 5→25 pN, clean.
+Commit `de941ff`. Default 1.0 = byte-identical to prior runs.
+
+**Queued for the A5000 (native, when it frees — parallel session currently owns it):**
+```
+ff_crawl_on_substrate --device cuda:0 --cortex-fil 38000 --from-resting --microtubules --implicit --dt-impl 5e-2 \
+  --ecm --ecm-fibers 3000 --cell-type emt --com-drag --contractility-mult {2,5,10} --steps 3000 --tag emt_contract_{N}
+```
+Measure: disp∥ (COM translocation), v_crawl, remodel coherence, bound-fraction, stability (explosion guard). Compare
+the three multipliers + the 1× baseline. Then **visually verify** the best run's crawl viewer (PI mandate) and commit.
+
+**Guardrails:** native-only for the verdict (coarse degrades on its own — HARD rule); do not contend with the parallel
+session's GPU jobs (launch only when free); if all three destabilise, that is the honest finding (report, don't tune
+the solver to force it). This is the KB-grounded attempt at the migration you want — reported as it comes out.
