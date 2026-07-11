@@ -9,7 +9,7 @@ import pytest
 from ffn_sim.dcm.dcm_t1_rate import (
     auto_cutoff, cell_neighbor_set, cell_centroids, measure_t1_rate,
     k_t1_arrhenius, fit_barrier_stiffness, t1_swap_partners, t1_geometric_move,
-    K0_DEFAULT, S0_STAR_3D,
+    t1_kmc_step, K0_DEFAULT, S0_STAR_3D,
 )
 
 
@@ -100,6 +100,41 @@ def test_t1_geometric_move_noop_when_already_correct():
     cen = np.array([[0, 0, 0], [2.0, 0, 0], [0, 3, 0], [0.5, 3, 0]], float)
     disp = t1_geometric_move(cen, 0, 1, 2, 3, cutoff=1.0)
     assert all(np.allclose(v, 0.0) for v in disp.values())
+
+
+def _dense_blob(n_side=4, spacing=1.0):
+    """A dense cubic blob of cells (many contacting pairs + common neighbours → real T1 candidates)."""
+    g = np.array([[i, j, k] for i in range(n_side) for j in range(n_side) for k in range(n_side)], float)
+    return g * spacing
+
+
+def test_kmc_step_zero_rate_fires_nothing():
+    cen = _dense_blob()
+    s = np.full(len(cen), 5.41)          # at threshold, but k0-scaled...
+    rng = np.random.default_rng(0)
+    out = t1_kmc_step(cen, s, cutoff=1.5, dt=1.0, rng=rng, k0=0.0)   # k0=0 → k_T1=0 → p=0
+    assert out["n_fired"] == 0
+    assert out["disp"] == {}
+
+
+def test_kmc_step_high_rate_fires_and_moves():
+    cen = _dense_blob()
+    s = np.full(len(cen), 5.41)          # fluid → barrier 0 → rate=k0
+    rng = np.random.default_rng(1)
+    out = t1_kmc_step(cen, s, cutoff=1.5, dt=1.0, rng=rng, k0=1e6)   # p≈1 → (almost) every valid pair fires
+    assert out["n_fired"] > 0
+    # fired T1s produce non-zero displacements on the involved cells
+    assert len(out["disp"]) > 0
+    assert any(np.linalg.norm(v) > 0 for v in out["disp"].values())
+
+
+def test_kmc_step_jammed_suppresses_rate():
+    cen = _dense_blob()
+    s_jammed = np.full(len(cen), 4.5)    # deep jammed → large barrier → far fewer firings than fluid
+    rng1 = np.random.default_rng(2); rng2 = np.random.default_rng(2)
+    fluid = t1_kmc_step(cen, np.full(len(cen), 5.41), cutoff=1.5, dt=1.0, rng=rng1, k0=0.05, barrier_stiffness=5.0)
+    jammed = t1_kmc_step(cen, s_jammed, cutoff=1.5, dt=1.0, rng=rng2, k0=0.05, barrier_stiffness=5.0)
+    assert jammed["n_fired"] <= fluid["n_fired"]
 
 
 def test_fit_barrier_recovers_known_stiffness():

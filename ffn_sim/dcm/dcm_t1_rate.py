@@ -141,6 +141,43 @@ def measure_t1_rate(frames: np.ndarray, cof: np.ndarray, dt_frame: float,
                 cutoff_m=cutoff, n_cells=n_cells, T_total_s=T_total)
 
 
+def t1_kmc_step(centroids: np.ndarray, shape_index: np.ndarray, cutoff: float, dt: float, rng,
+                *, k0: float = K0_DEFAULT, s_star: float = S0_STAR_3D, barrier_stiffness: float = 1.0,
+                margin: float = 0.05) -> dict:
+    """One KMC pass of T1 events over the current tissue — the coarse-grained rearrangement supplied at large dt.
+
+    For each contacting cell pair (a,b): the local shape index s = min(s_a, s_b) (the pair unjams only if BOTH sides
+    can) sets the rate k_T1 (``k_t1_arrhenius``); the pair fires with p = 1−exp(−k_T1·dt); a fired pair executes a T1
+    geometric move (separate a,b; approach their swap partners). Displacements are accumulated per cell (a cell touched
+    by several T1s in one pass sums them). Returns the per-cell displacement dict + the list of fired (a,b) pairs.
+
+    Args:
+        centroids: (n_cells, 3) cell centroids [m].
+        shape_index: (n_cells,) per-cell 3D shape index s.
+        cutoff: contact threshold [m].
+        dt: the KMC cadence interval [s].
+        rng: a numpy Generator (seeded by the caller for reproducibility).
+        k0, s_star, barrier_stiffness, margin: rate-law + move parameters (k0/B grounded per the design).
+    """
+    neighbors = cell_neighbor_set(centroids, cutoff)
+    disp: dict[int, np.ndarray] = {}
+    fired: list[tuple[int, int]] = []
+    for (a, b) in neighbors:
+        s_pair = float(min(shape_index[a], shape_index[b]))
+        k = float(k_t1_arrhenius(s_pair, k0, s_star, barrier_stiffness))
+        p = 1.0 - np.exp(-k * dt)
+        if rng.random() < p:
+            partners = t1_swap_partners(neighbors, a, b, centroids)
+            if partners is None:
+                continue
+            c, d = partners
+            move = t1_geometric_move(centroids, a, b, c, d, cutoff, margin)
+            for cell, dv in move.items():
+                disp[cell] = disp.get(cell, np.zeros(3)) + dv
+            fired.append((a, b))
+    return dict(disp=disp, fired=fired, n_fired=len(fired))
+
+
 def k_t1_arrhenius(s: float | np.ndarray, k0: float = K0_DEFAULT, s_star: float = S0_STAR_3D,
                    barrier_stiffness: float = 1.0) -> float | np.ndarray:
     """Physical T1 rate law (NOT Metropolis): k_T1 = k0·exp(−B·(s0*−s)_+).
