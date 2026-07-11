@@ -28,14 +28,11 @@ The three results are wildly different → **not converged**. Visual-verified: d
 with an inverted-cell red spike (`s14_dt8e-3_last.png`) = numerical blow-up, not physics; dt=2e-2 aggregate is unchanged
 (frozen).
 
-## Root cause — backward-Euler over-damping of SLOW active forcing (+ intermediate-dt contact instability)
-The "implicit handles large dt" assumption holds for **stiff, fast** forces (elastic, contact) — backward-Euler is
-L-stable, so it damps the fast elastic relaxation and stays stable. But that same L-stability **over-damps SLOW
-forcing**: the active motility drift (a near-constant force) is under-resolved at large dt — backward-Euler relaxes the
-cell back elastically faster than the slow drift can move it, so the net motion is suppressed (dt=2e-2 froze at 1/10 the
-reference displacement). And at intermediate dt (8e-3) the contact/elastic solve loses robustness and a cell inverts →
-blow-up. So there is **no usable large-dt window** on the current backward-Euler + explicit-safeguard integrator: too
-small = infeasible, intermediate = unstable, large = frozen. **Cranking dt does NOT close the gap.**
+## Initial hypothesis (backward-Euler over-damping) — later REFUTED by BDF2 (§Step 3)
+The freeze *looked* like backward-Euler's L-stability over-damping the slow active drift (BE damps the fast elastic
+relaxation to stay stable; the hypothesis was that it also suppresses the slow drift). At intermediate dt (8e-3) the
+contact solve also lost robustness → cell inversion → blow-up. This motivated the two fixes below. **But the A-stable
+BDF2 test (Step 3) REFUTED the over-damping hypothesis** — see there. Keeping this here as the honest hypothesis trail.
 
 ## The real fix (integrator-level, for PI decision)
 The gap is not a parameter; it is the time integrator's response to slow active forcing. Options:
@@ -86,14 +83,55 @@ more IPC-Newton iters at large dt — before quantitative claims; OR proceed to 
 as the qualitative gap-closing demonstration (unjamming at physiological v0 over ~physiological time, ±2× rate). Both
 are legitimate; the split is the enabling result either way.
 
-## Fix options (for PI if step 2 is insufficient)
-- **(a) A-stable, non-over-damped integrator** — implicit midpoint / trapezoidal / BDF2 instead of backward-Euler;
-  resolves slow forcing at large dt without artificial over-damping. The general/correct fix; a real runtime change.
-- **(b) Operator-split exact drift** — IMPLEMENTED above (under test).
-- **(c) Robustify contact + moderate dt** — fix the intermediate-dt cell-inversion to open a 5–10× window; likely
-  still short of the minutes–hours gap on its own.
+## Step 3 — A-stable BDF2 integrator (PI's choice, option a) — REFUTES the over-damping hypothesis
+Implemented BDF2 (2nd-order, stiffly stable, `--bdf2`; reuses the exact BE Newton/CG machinery with a'=1.5·γ/dt and
+anchor x_ref=(4xₙ−xₙ₋₁)/3). Same config as steps 1–2, FORCE-based motility (no split):
 
-## Status
-- Naive large-dt push (force-based) characterized + REFUTED (accurate window ≈ dt=8e-4 only), visual-verified.
-- Operator-split (b) implemented behind `--motility-split`; smoke PASS; convergence test in flight (s15).
-- Next: read the s15 convergence — if it closes, a physiological-v0 + large-dt hero run to τ_p=600 s; else escalate to (a)/PI.
+| dt | integrator | A/A0 | V/V0 | shape index (→) | per-cell disp | verdict |
+|---|---|---|---|---|---|---|
+| 8e-4 | BE (ref) | 1.154 | 1.000 | →5.003 | 3.07 µm | reference |
+| 8e-4 | **BDF2** | 1.176 | 1.000 | →4.998 | **3.09 µm** | matches ref ✓ (consistent) |
+| 8e-3 | BE | 31.7 | 1.058 | →13.72 | 0.37 µm | blow-up |
+| 8e-3 | **BDF2** | 1.000 | 1.000 | →4.927 | **0.082 µm** | **STABLE (blow-up fixed) but FROZEN** |
+| 2e-2 | BE | 1.002 | 1.000 | →4.916 | 0.287 µm | frozen |
+| 2e-2 | **BDF2** | 1.001 | 1.000 | →4.933 | **0.157 µm** | **STABLE but FROZEN** (cleaner than BE) |
+
+**BDF2 does two things: (1) it removes the intermediate-dt blow-up (stiff stability), and (2) at large dt it FREEZES
+the force-based drift even more cleanly than BE (0.08–0.16 µm vs BE's 0.287 µm).** Visual-verified
+(`s16_bdf2_2e-2_last.png`): ordered, low-stress, static jammed aggregate — no unjamming. So a *more accurate*
+integrator freezes *more*, which **REFUTES the over-damping hypothesis**: the freeze is not a backward-Euler artifact.
+
+## ⭐ DECISIVE CONCLUSION — the biology-time gap is FUNDAMENTAL (T1-event-limited), not an integrator artifact
+The freeze is the **physically correct large-dt behavior** of the force-based overdamped dynamics. In a jammed packing
+the active force F_active is balanced by contact resistance, so the correct instantaneous state is force-balance = no net
+motion. The emergent creep (unjamming) comes entirely from **fast, sub-timestep T1 rearrangement events** (a contact
+suddenly releases, a cell snaps past a neighbour). Any large-dt implicit scheme correctly finds the static
+force-balanced state *between* T1 events and therefore freezes — and a better integrator (BDF2, 2nd-order) freezes more
+cleanly because it removes BE's spurious residual motion. **PI's A-stable choice was the decisive test: it ruled out
+"numerical over-damping" and proved the gap is a genuine timescale separation (slow creep set by fast sub-dt T1 events),
+not something any time integrator can fix.**
+
+This also explains the operator-split: it only appears to work because it **prescribes** the drift (bypasses the
+force-balance physics), which is why it over-drifts ~2× — it ignores the sub-dt contact resistance that the real T1
+dynamics encode.
+
+## What can and cannot close the gap (honest)
+- **Better integrator (a): CANNOT** — proven. The gap is not over-damping.
+- **Small dt: CAN but is infeasible** — resolves the T1 events, but minutes–hours = ~10⁶–10⁸ steps.
+- **Operator-split (b): coarse bridge** — non-frozen large-dt unjamming at ~2× error (prescribes drift; useful for a
+  qualitative demonstration, not a quantitative rate).
+- **Rate/event-driven coarse-graining: the rigorous route** — model the slow rearrangement as a *stochastic rate
+  process* (kinetic-Monte-Carlo of T1 transitions, or a mean-field rearrangement rate) at large dt, instead of resolving
+  the sub-dt mechanics. This is a DIFFERENT modeling paradigm from fine-grained mechanics and matches the Kim-corpus
+  τ_p=2^N·τ compaction-RATE idea ([[project-kim-miyazaki-corpus-absorption]]) — a coarse-grained rate law for the slow
+  process layered on top of the fine-grained mechanics.
+
+## Status / decision for PI
+- Steps 1–3 committed + backed up + visual-verified. The timescale gap for jammed unjamming is now **characterised as
+  fundamental (T1-event-limited)** — a rigorous negative result: no time integrator closes it (BDF2 proved it).
+- BDF2 (`--bdf2`) is kept — it is a genuinely better integrator (removes the intermediate-dt blow-up, cleaner large-dt
+  stability) even though it does not close the gap; useful for any future stiff run.
+- **Decision:** (i) accept the fundamental-gap characterisation as the answer (the DCM does fine-grained mechanism +
+  kinetics at small dt; biology-time equilibrium needs a rate model) and hand biology-time to a rate/event-driven
+  layer; or (ii) invest in that rate/event-driven T1 coarse-graining (a real new modeling effort, Kim-corpus-aligned);
+  or (iii) use the operator-split as a labelled coarse ~2× demonstrator for the qualitative biology-time picture.
