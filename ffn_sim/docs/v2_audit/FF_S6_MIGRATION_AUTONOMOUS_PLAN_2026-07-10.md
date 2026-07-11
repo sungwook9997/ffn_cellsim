@@ -251,11 +251,14 @@ Autonomous-decision log appended below as choices are made.
 ## MORNING SUMMARY (overnight of 2026-07-10→11) — read first
 
 > **Full arc:** (1) S6 caveat resolved + MMP + cell-type + honest migration verdict + atlas + engine fixes + ECM-viz
-> verified (this summary), then two PI-decision items worked out in the continuation (bottom of this file, **read them**):
-> **§ TAG re-plan** — migration is traction-limited, KB-confirmed, not a drag bug (lever = EMT + KB-3.14, PI-gated); and
-> **§ FF-engine mechanism gap analysis** — the next mechanism (cofilin severing) is **KB-blocked**, needs your KB-ingestion
-> sign-off (I did not invent a rate). Nothing needs action to be *safe*; the two § sections are where your input unblocks
-> the next step. kb-check green throughout (runs 31 / params 42, no drift).
+> verified; (2) TAG re-plan + FF-gap analysis; (3) **⭐ M6 native migration experiment RAN + fully characterised (bottom
+> §§ M6, read them)** — two native sweeps on the freed A5000: **contractility (KB-3.14, 1–10×) → v FALLS 0.16→0.02**, and
+> **adhesion (n_fa 100–1000) → traction+remodel RISE but v stays ~0**. **Verdict: neither force lifts migration; both
+> raise in-place matrix remodelling. The cell remodels its pinned 3-D collagen but can't crawl through it — migration is a
+> REGIME problem (compliant/2-D/proteolysis), not a missing force. Kim2012 confirmed.** Figs `ff_m6_contractility.png` +
+> `ff_m6_adhesion.png` (browser-checked). **PI decision points:** (a) migration regime to pursue, (b) cofilin severing =
+> KB-blocked, needs your KB-ingestion sign-off (no rate invented). Nothing needs action to be *safe*. kb-check green
+> throughout (runs 31 / params 42, no drift).
 
 **Landed (all committed, backed up, no ffn/foundation push):**
 - **MMP proteolytic invasion** (`--mmp`, KB-1.20) + **motile/EMT cell-type** (`--cell-type mesenchymal/emt`, new
