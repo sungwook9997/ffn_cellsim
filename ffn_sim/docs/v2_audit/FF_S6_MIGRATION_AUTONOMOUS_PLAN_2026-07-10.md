@@ -438,3 +438,22 @@ the solver to force it). This is the KB-grounded attempt at the migration you wa
   tags `emt_contract{5,2,10}`). Fully autonomous, no contention, ssh-independent. So M6 will run itself the moment the
   A5000 frees; I recover + visually verify + KB-compare each result then. The relax-crash was a *separate* real bug
   (fixed above); this remaining block is pure resource contention, correctly deferred.
+
+### M6 UPDATE (2026-07-12 ~04:00) — HARD-BLOCKED on gbook infra; honest stop after ~12 launch attempts
+
+The autonomous watcher approach hit a wall I decided to stop fighting rather than force:
+- **My tailscale ssh drops on every launch command (exit 255).** Single-command checks (`ssh gbook 'pgrep …'`) work,
+  but any backgrounding launch (`nohup/setsid … &`) returns 255 mid-launch and the process doesn't persist. ~12 attempts
+  (nohup, setsid, screen, wrapper) all died the same way. The parallel session's jobs survive only because they were
+  launched from a stable session.
+- **The A5000 stays monopolised by the parallel DCM session** (contact_guidance + run_spread_overnight + T1-rate, 3–5
+  procs, 2.5 h+). HARD guardrail = don't contend, so even a successful launch shouldn't run yet.
+- **`nvidia-smi` hangs under that GPU load** and froze the one watcher that did launch (stuck at 01:30). Watcher is now
+  pgrep-only, but can't be relaunched over the dropping ssh.
+
+**Decision (per "게이팅된 건 surface하고 대기 · 억지로 만들지 말 것"):** stop launch-fighting, surface, wait. M6 is a
+**one-command run** the moment the A5000 frees OR a stable session exists (you're back): `bash ~/ff_scratch/run_emt_watcher.sh`
+then `python -m ffn_sim.scripts.ff_m6_contractility_fig`. The migration answer (does KB-3.14 EMT contractility lift v
+toward physiological, or destabilise?) is the ONE open result — blocked purely on GPU access + connection stability, not
+on any physics/code. Not run on CPU (native-CPU ≈ hours/run + would contend with the parallel session's ~10 CPU cores).
+Honestly blocked, not forced.
