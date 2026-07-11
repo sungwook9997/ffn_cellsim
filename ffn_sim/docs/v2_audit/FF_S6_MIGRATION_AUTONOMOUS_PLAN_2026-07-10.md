@@ -365,6 +365,12 @@ growth, FA growth/disassembly/maturation, MT aster, active-gel polarization, mem
    you:** the correct path is (a) ingest Elam2013 as SourceEvidence + register a KnowledgeClaim for the severing rate
    (PI-gated KB change), then (b) implement a KMC severing kernel grounded in it (per-segment P_sever ∝ cofilin·age,
    ADP-gated). I did NOT invent a rate.
+   *Deeper corpus check (2026-07-11): a **modelling** paper does give a severing constant `k0,sev ≈ 0–24×10⁻⁵ s⁻¹`
+   (events/µm²/s, network-level), and Kadzik2026 gives disassembly slopes 0.045–0.17 /s — but the modelling k0,sev is a
+   **borrowed paper-model parameter** (using it as our runtime rate violates the CLAUDE.md mechanistic principle: paper
+   closed-forms are oracles, not the runtime mechanism) and the Kadzik values are **network disassembly, not single-
+   filament severing**. So the fine-grained biophysical severing rate genuinely requires the primary source (Elam2013).
+   The block is principled, not just missing-data.*
 2. **Formin processivity — architectural-only, a design refinement (not KB-blocked).** `formin` exists as a *nucleator
    label* in `architecture_spec` (filopodium/SF parallel bundles) but there is **no formin-specific processive-elongation
    kernel** — `barbed_end_growth_kernel` covers elongation generically. Formin's distinct physics (processive barbed-end
