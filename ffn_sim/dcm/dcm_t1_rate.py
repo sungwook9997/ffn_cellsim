@@ -47,6 +47,35 @@ def cell_neighbor_set(centroids: np.ndarray, cutoff: float) -> set[tuple[int, in
     return cKDTree(centroids).query_pairs(cutoff)
 
 
+def t1_swap_partners(neighbors: set[tuple[int, int]], a: int, b: int,
+                     centroids: np.ndarray) -> tuple[int, int] | None:
+    """The cell pair (c, d) that swaps IN when the contacting pair (a, b) undergoes a T1.
+
+    A T1 is the 3D analog of the 2D vertex flip: cells a,b share a junction and lose contact, while the two cells that
+    neighbour BOTH a and b (the cells straddling that junction) gain contact. Among the common neighbours we pick the
+    closest-approaching pair — the two most poised to touch after a,b separate. Returns None if <2 common neighbours
+    (no well-defined swap, e.g. a surface junction).
+
+    Args:
+        neighbors: current contact-neighbour set (unordered i<j pairs).
+        a, b: the contacting cell pair firing the T1.
+        centroids: (n_cells, 3) cell centroids [m].
+    """
+    def nbrs(x):
+        return {j for (i, j) in neighbors if i == x} | {i for (i, j) in neighbors if j == x}
+    common = sorted(nbrs(a) & nbrs(b) - {a, b})
+    if len(common) < 2:
+        return None
+    # closest-approaching common-neighbour pair
+    best, bestd = None, np.inf
+    for i in range(len(common)):
+        for j in range(i + 1, len(common)):
+            d = float(np.linalg.norm(centroids[common[i]] - centroids[common[j]]))
+            if d < bestd:
+                bestd, best = d, (common[i], common[j])
+    return best
+
+
 def measure_t1_rate(frames: np.ndarray, cof: np.ndarray, dt_frame: float,
                     shell_factor: float = 1.15) -> dict:
     """G3 grounding: measure the physical T1 (neighbour-exchange) rate from a fine-grained trajectory.

@@ -8,7 +8,7 @@ import pytest
 
 from ffn_sim.dcm.dcm_t1_rate import (
     auto_cutoff, cell_neighbor_set, cell_centroids, measure_t1_rate,
-    k_t1_arrhenius, fit_barrier_stiffness, K0_DEFAULT, S0_STAR_3D,
+    k_t1_arrhenius, fit_barrier_stiffness, t1_swap_partners, K0_DEFAULT, S0_STAR_3D,
 )
 
 
@@ -63,6 +63,19 @@ def test_rate_law_saturates_at_threshold_and_suppresses_below():
     # below s0* the rate is strictly suppressed and monotone in s
     assert k_t1_arrhenius(5.0, barrier_stiffness=2.0) < K0_DEFAULT
     assert k_t1_arrhenius(4.5, barrier_stiffness=2.0) < k_t1_arrhenius(5.0, barrier_stiffness=2.0)
+
+
+def test_t1_swap_partners_picks_common_neighbours():
+    # 4 cells in a square: the contacting pair (0,1) [bottom edge] has common neighbours {2,3} (both touch 0 and 1).
+    c = _square_cells(1.0)
+    nbrs = cell_neighbor_set(c, cutoff=1.2)     # {(0,1),(0,2),(1,3),(2,3)}
+    # 0 neighbours {1,2}; 1 neighbours {0,3}; common(0,1) needs cells touching BOTH → none here (square has no
+    # cell touching both 0 and 1), so expect None. Add a centre cell 4 touching all → common becomes {4,...}.
+    assert t1_swap_partners(nbrs, 0, 1, c) is None
+    # now a triangle bipyramid-ish: cells 2 and 3 both neighbour 0 and 1
+    nbrs2 = nbrs | {(0, 3), (1, 2)}             # make 2,3 each touch both 0 and 1
+    sp = t1_swap_partners(nbrs2, 0, 1, c)
+    assert sp == (2, 3)
 
 
 def test_fit_barrier_recovers_known_stiffness():
