@@ -555,3 +555,17 @@ stays sub-physiological (0.36 vs 10–30 nm/s).** So the complete, integrated mi
 **Net:** migration IS improvable by the matrix regime (a real, honest, KB-consistent 2.3× gain toward your goal), and the
 remaining gap is now sharply localised to ONE known open item (native translation-drag regularisation), not force or
 adhesion. That drag fix is the PI-level numerics task already flagged; everything else about migration is characterised.
+
+### M6 long compliant run (2026-07-12 10:40) — the honest MAXIMAL cell-movement viz (your "긴 sim서 자리 벗어남" ask)
+
+Your #1 explicit desire was to SEE the cell leave its position over a long sim. I ran the best-migrating config
+(emt + compliant large-pore collagen_I conc3) for **8000 steps = 400 s** (2.7× the probe). Native, clean, plain-nohup.
+- **disp∥ = 121 nm** (2.2× the 150 s probe's 54 nm — translocation scales with sim time, v≈0.30 nm/s steady), collagen
+  remodelled up to **176 nm**. COM-trail viz `ff_m6_compliant_long.html` (browser-checked, 4 frames for headless;
+  full-res local).
+- **Honest read:** the cell DOES translocate + strongly remodels the matrix, and a longer sim shows proportionally more
+  movement — but 121 nm is still only ~0.8% of the 15 µm cell, so it does not *dramatically* leave its position. This
+  is the residual grid-drag/propulsive-traction cap again (traction ≈0 nN): **time doesn't beat it — the drag/traction
+  solver fix does.** So the maximal honest cell-movement the current engine produces on the best matrix is ~0.3 nm/s /
+  ~100s-of-nm; dramatic migration is gated on the PI-level solver item, exactly as characterised. This is the culminating
+  migration viz — the cell moving + remodelling as far as the physics currently allows, shown honestly.
