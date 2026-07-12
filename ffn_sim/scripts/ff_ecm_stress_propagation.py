@@ -94,12 +94,12 @@ def _relax_inclusion(ecm, center, R_incl_um, eps, *, steps, device):
                                R_incl_um=float(R_incl_um), eps=float(eps))
 
 
-def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7, material="collagen_I"):
+def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7, material="collagen_I", dim=3):
     """Build a fibrillar matrix at alignment S, contract the inclusion, relax, and measure σ_rr(r)."""
     spec = L.get_spec(material)
     lo, hi = [0.0, 0.0, 0.0], [box, box, box]
     rng = np.random.default_rng(seed)
-    ecm = L.build_fibrillar_ecm(spec, lo, hi, concentration=conc, dim=3, alignment_S=float(S),
+    ecm = L.build_fibrillar_ecm(spec, lo, hi, concentration=conc, dim=dim, alignment_S=float(S),
                                 director=(1.0, 0.0, 0.0), pin_faces=(), target_z=3.2, rng=rng)
     center = 0.5 * (np.asarray(lo) + np.asarray(hi))
     t0 = time.time()
@@ -197,6 +197,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--box", type=float, default=40.0, help="box side [µm] (native ≥60)")
     ap.add_argument("--material", default="collagen_I", help="fibrillar ecm_library key (collagen_I / fibrin)")
+    ap.add_argument("--dim", type=int, default=3, choices=(2, 3), help="2D planar sheet vs 3D bulk")
     ap.add_argument("--conc", type=float, default=1.5, help="fibrillar concentration [mg/mL]")
     ap.add_argument("--R-incl", type=float, default=None, help="inclusion radius [µm] (default box/8)")
     ap.add_argument("--eps", type=float, default=0.2, help="inclusion contraction strain (physical input)")
@@ -218,7 +219,7 @@ def main():
     for S in S_list:
         for sd in range(a.seeds):
             c = run_case(S, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, steps=a.steps,
-                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd, material=a.material)
+                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd, material=a.material, dim=a.dim)
             c["seed"] = int(sd)
             print(f"[S={S:>4.2f} seed={sd}] n_iso={c['n_exp']:.2f}  n∥={c['n_par']:.2f}  n⊥={c['n_perp']:.2f}  "
                   f"(Δ={c['n_aniso']:+.2f} → {'channels ∥' if c['n_aniso'] > 0 else 'no ∥ channeling'})  "
@@ -240,7 +241,7 @@ def main():
     print(f"[directional] " + "  ".join(f"S={S:g}:n∥={dir_by_S[f'S={S:g}']['n_par']:.1f}/n⊥="
                                         f"{dir_by_S[f'S={S:g}']['n_perp']:.1f}" for S in S_list)
           + "  (n∥<n⊥ ⇒ stress channels along the fibers)")
-    meta = dict(tag=a.tag, material=a.material, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps,
+    meta = dict(tag=a.tag, material=a.material, dim=a.dim, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps,
                 S_list=S_list, seeds=a.seeds, steps=a.steps, device=a.device,
                 coarse_nonauthoritative=bool(coarse), n_exp=n_by_S, directional=dir_by_S,
                 reference="linear-elastic point source n≈2–3; fibrous network longer-range n→~1 (KB-1.10; "

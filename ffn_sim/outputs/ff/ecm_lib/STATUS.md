@@ -355,3 +355,12 @@ the ∥ channel opens. The mechanistic heart of TACS-3 directional long-range fo
 collagen transmits contraction along invasion highways = mechanical cell-cell communication, KB-1.10). Unfitted,
 no directional force prefactor — emerges from the aligned microstructure + isotropic bond virial. Coarse-smoke +
 native-confirmed. `figs/stress_propagation_directional_sp_dir_native.png`. Novel Job D refinement (checkpoint 20).
+
+## Checkpoint 27 (2026-07-12) — 2D stress-propagation: added --dim, but 2D directional is statistics-limited (honest)
+Threaded `--dim {2,3}` through ff_ecm_stress_propagation (2D planar vs 3D bulk; build_fibrillar_ecm already
+supports dim=2). Coarse 2D smoke (box=44) HONEST finding: a 2D fibrillar sheet is TOO SPARSE (~2000 nodes vs 44730
+in 3D at the same box — nodes scale as area + fewer fiber crossings), so the directional sector-shell bins have too
+few bonds → noisy/unphysical exponents (e.g. n⊥=−7.17, negative = insufficient statistics). A clean 2D directional
+result would need a much larger box (≥200µm) — deferred as marginal vs the clean, comprehensive 3D result (the 3D
+directional waveguide, checkpoint 26, is the authoritative channeling result). The --dim feature is committed for
+future use. No 2D conclusion drawn (correctly — the smoke showed it's not ready).
