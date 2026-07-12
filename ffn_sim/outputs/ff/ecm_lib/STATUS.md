@@ -418,3 +418,23 @@ field_radial, stress_field_directional} + fa_ecm.{traction_director_anisotropy, 
 **6. AWAITING PI (gated, all documented — pick a direction & I resume immediately):**
 (a) thermal-WLC runtime physics — closes c² + tumor stiffness (biggest lever); (b) #6 active-motility follow-up —
 needs the native-crawl grid-drag/Stokes unblocker; (c) ν-faithful continuum; (d) ⟨z⟩(c) has no literature datum.
+
+## Checkpoint 29 (2026-07-12) — CAPSTONE: a BM-gel continuum SHORT-CIRCUITS the collagen stress waveguide (novel)
+ff_ecm_stress_propagation --composite-with matrigel (tumor-stroma composite = aligned collagen + Matrigel BM gel,
+interpenetrating). Native (box=90µm, 480061 nodes, 100k relax, 3 seeds):
+| S | iso-n | n∥ | n⊥ |
+|---|---|---|---|
+| 0.00 | 2.76 | 2.7 | 2.8 |
+| 0.30 | 2.75 | 2.7 | 2.7 |
+| 0.59 | 2.75 | 2.7 | 2.7 |
+| 0.83 | 2.74 | 2.7 | 2.7 |
+→ ⭐⭐ DEFINITIVE + ultra-clean (±0.01): the composite propagates stress like a LINEAR-ELASTIC CONTINUUM (n≈2.75,
+alignment-INDEPENDENT) and PERFECTLY ISOTROPIC (n∥≈n⊥ at every S) — the Matrigel continuum COMPLETELY SHORT-
+CIRCUITS the collagen fiber waveguide. Compare pure collagen (checkpoint 26): iso-n 8.1→4.7, n∥ 12.8→4.5 / n⊥
+12→21.6 (strong waveguide). BIOLOGICAL PREDICTION (novel, testable): contact-guided DIRECTIONAL long-range force
+transmission (TACS-3 invasion highways, mechanical cell-cell communication) is a property of SPARSE FIBER-DOMINATED
+collagen — it is LOST when the interstitium is filled with basement-membrane gel (or dense continuum ECM), because
+the isotropic continuum provides a dominant non-directional stress path. This UNIFIES the tissue-mimetic finding
+(checkpoint 25: composite modulus continuum-dominated) with the channeling finding — the BM gel dominates the
+composite in BOTH modulus and stress-transmission directionality. `figs/stress_propagation_directional_sp_comp_native.png`.
+Unfitted, physical. Ties tissue-mimetic + Job D + directional into one biological prediction. --composite-with feature added.
