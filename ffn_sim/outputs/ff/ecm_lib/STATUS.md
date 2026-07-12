@@ -364,3 +364,20 @@ few bonds → noisy/unphysical exponents (e.g. n⊥=−7.17, negative = insuffic
 result would need a much larger box (≥200µm) — deferred as marginal vs the clean, comprehensive 3D result (the 3D
 directional waveguide, checkpoint 26, is the authoritative channeling result). The --dim feature is committed for
 future use. No 2D conclusion drawn (correctly — the smoke showed it's not ready).
+
+## Checkpoint 28 (2026-07-12) — 2D directional channeling: the waveguide is DIMENSION-GENERAL (box=200, honest)
+Following up checkpoint 27: box=200µm 2D gives enough nodes (42000, vs the too-sparse box=44 smoke) to test the
+directional channeling in 2D. Native 2D collagen (dim=2, box=200, 100k relax, 3 seeds):
+| S | iso-n | n∥ | n⊥ |
+|---|---|---|---|
+| 0.00 | 20.0 | 17.9 | 30.3 |
+| 0.30 | 12.4 | 13.2 | 39.5 |
+| 0.59 | 11.1 | 10.9 | 33.7 |
+| 0.83 | 7.2 | 6.5 | 10.6 |
+→ the channeling GENERALIZES to 2D: n∥ DROPS cleanly with alignment (17.9→6.5) and n∥<n⊥ at EVERY S (the fiber
+waveguide holds in 2D). BUT honest caveat: n⊥ is NON-MONOTONE with huge error bars (30→39→34→10.6) — a 2D aligned
+network has most fibers ∥ so the ⊥ sector is inherently bond-sparse → n⊥ unreliable; and box=200 is under-
+equilibrated at 100k steps (absolute n high, like the 3D 4k-step lesson) — 2D's larger extent needs more relax
+steps. So 2D CONFIRMS the waveguide qualitatively (via the clean n∥) but the 3D directional result (checkpoint 26,
+n∥ 12.8→4.5 / n⊥ 12→21.6) remains the authoritative quantitative one. `figs/stress_propagation_directional_sp_2d_native.png`.
+This completes "2D 3D 모두" for the flagship channeling (dimension-general, honestly bounded).

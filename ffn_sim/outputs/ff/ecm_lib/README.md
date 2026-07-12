@@ -103,6 +103,7 @@ target order within a few percent.
    vs across (n⊥) the director shows aligned collagen is a stress WAVEGUIDE — n∥ DROPS 12.8→4.5 (far
    along fibers, toward elastic n=3) while n⊥ RISES 12.0→21.6 (dies across fibers); isotropic at S=0
    (n∥≈n⊥≈12). The mechanistic heart of TACS-3 directional force transmission. `figs/stress_propagation_directional_sp_dir_native.png`.
+   The waveguide is DIMENSION-GENERAL — confirmed in 2D (n∥ 17.9→6.5, n∥<n⊥ throughout; box=200), though 2D's n⊥ is ⊥-sparsity-noisy so 3D is the authoritative quantitative result.
    `figs/stress_propagation_sp_native.png` (+ `_sp_fibrin_native.png`), `stress_propagation_viewer.html`
    (`ff_ecm_stress_propagation.py`, `ecm_mechanics.stress_field_radial`).
 
