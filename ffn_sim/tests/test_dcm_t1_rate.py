@@ -9,7 +9,7 @@ import pytest
 from ffn_sim.dcm.dcm_t1_rate import (
     auto_cutoff, cell_neighbor_set, cell_centroids, measure_t1_rate,
     k_t1_arrhenius, fit_barrier_stiffness, t1_swap_partners, t1_geometric_move,
-    t1_kmc_step, K0_DEFAULT, S0_STAR_3D,
+    t1_deformation_move, apply_cell_elongation, t1_kmc_step, K0_DEFAULT, S0_STAR_3D,
 )
 
 
@@ -66,17 +66,15 @@ def test_rate_law_saturates_at_threshold_and_suppresses_below():
     assert k_t1_arrhenius(4.5, barrier_stiffness=2.0) < k_t1_arrhenius(5.0, barrier_stiffness=2.0)
 
 
-def test_t1_swap_partners_picks_common_neighbours():
-    # 4 cells in a square: the contacting pair (0,1) [bottom edge] has common neighbours {2,3} (both touch 0 and 1).
-    c = _square_cells(1.0)
-    nbrs = cell_neighbor_set(c, cutoff=1.2)     # {(0,1),(0,2),(1,3),(2,3)}
-    # 0 neighbours {1,2}; 1 neighbours {0,3}; common(0,1) needs cells touching BOTH → none here (square has no
-    # cell touching both 0 and 1), so expect None. Add a centre cell 4 touching all → common becomes {4,...}.
-    assert t1_swap_partners(nbrs, 0, 1, c) is None
-    # now a triangle bipyramid-ish: cells 2 and 3 both neighbour 0 and 1
-    nbrs2 = nbrs | {(0, 3), (1, 2)}             # make 2,3 each touch both 0 and 1
-    sp = t1_swap_partners(nbrs2, 0, 1, c)
-    assert sp == (2, 3)
+def test_t1_swap_partners_picks_nontouching_common_neighbours():
+    # Proper T1 quartet: firing pair 0,1 touch; c=2 (above) and d=3 (below) each touch BOTH 0 and 1 but NOT each
+    # other (they GAIN contact in the T1). cutoff 1.6: c-0,c-1,d-0,d-1 ≈ 1.58 (<1.6, touch); c-d = 3.0 (>1.6, apart).
+    c = np.array([[0, 0, 0], [1, 0, 0], [0.5, 1.5, 0], [0.5, -1.5, 0]], float)
+    nbrs = cell_neighbor_set(c, cutoff=1.6)          # {(0,1),(0,2),(1,2),(0,3),(1,3)} — NOT (2,3)
+    sp = t1_swap_partners(nbrs, 0, 1, c)
+    assert sp == (2, 3)                               # the non-touching common-neighbour pair
+    # if 2,3 also touched (add (2,3)), they are no longer a swap-in pair → None
+    assert t1_swap_partners(nbrs | {(2, 3)}, 0, 1, c) is None
 
 
 def test_t1_geometric_move_crosses_threshold_and_conserves_momentum():
@@ -135,6 +133,39 @@ def test_kmc_step_jammed_suppresses_rate():
     fluid = t1_kmc_step(cen, np.full(len(cen), 5.41), cutoff=1.5, dt=1.0, rng=rng1, k0=0.05, barrier_stiffness=5.0)
     jammed = t1_kmc_step(cen, s_jammed, cutoff=1.5, dt=1.0, rng=rng2, k0=0.05, barrier_stiffness=5.0)
     assert jammed["n_fired"] <= fluid["n_fired"]
+
+
+def test_apply_cell_elongation_is_volume_preserving_and_raises_aspect():
+    rng = np.random.default_rng(0)
+    sph = rng.normal(size=(300, 3)); sph /= np.linalg.norm(sph, axis=1, keepdims=True)   # unit sphere shell
+    el = apply_cell_elongation(sph, np.array([1.0, 0, 0]), lam=1.4)
+    # volume proxy = product of per-axis std (∝ ellipsoid volume) preserved (det of the scaling = 1)
+    assert np.prod(el.std(0)) == pytest.approx(np.prod(sph.std(0)), rel=1e-6)
+    # elongated along x → x-aspect rises above 1
+    assert el[:, 0].std() / el[:, 1].std() > 1.2
+
+
+def test_deformation_move_grounded_lambda_and_noop_when_touching():
+    cen = np.array([[0, 0, 0], [3e-6, 0, 0]], float)     # c,d 3µm apart, cutoff 2µm → gap>0 → elongate
+    m = t1_deformation_move(cen, 0, 1, cutoff=2e-6, r_cell=7.5e-6)
+    assert set(m.keys()) == {0, 1}
+    lam = m[0][1]
+    assert lam > 1.0                                     # prolate
+    # grounded: λ = 1 + (gap/2)/r_cell, gap = 3µm − 2µm·0.95 = 1.1µm → λ = 1 + 0.55/7.5
+    assert lam == pytest.approx(1.0 + (3e-6 - 2e-6 * 0.95) / 2 / 7.5e-6, rel=1e-6)
+    # already touching (gap<0) → no-op
+    assert t1_deformation_move(np.array([[0, 0, 0], [1e-6, 0, 0]], float), 0, 1, cutoff=2e-6, r_cell=7.5e-6) == {}
+
+
+def test_kmc_deform_mode_fires_and_returns_elongations():
+    cen = _dense_blob() * 1e-6
+    out = t1_kmc_step(cen, np.full(len(cen), 5.41), cutoff=1.8e-6, dt=1.0,
+                      rng=np.random.default_rng(1), k0=1e6, move_mode="deform", r_cell=0.5e-6)
+    assert out["n_fired"] > 0
+    assert len(out["elong"]) > 0
+    assert len(out["disp"]) == 0                         # deform mode uses elong, not disp
+    ax, lam = next(iter(out["elong"].values()))
+    assert lam > 1.0
 
 
 def test_fit_barrier_recovers_known_stiffness():

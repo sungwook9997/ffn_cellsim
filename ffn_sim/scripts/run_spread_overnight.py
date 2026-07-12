@@ -167,6 +167,10 @@ def main():
     ap.add_argument("--t1-cadence", type=int, default=200, dest="t1_cadence",
                     help="steps between KMC T1 passes (host round-trip cadence).")
     ap.add_argument("--t1-seed", type=int, default=13, dest="t1_seed")
+    ap.add_argument("--t1-deform", action="store_true", dest="t1_deform",
+                    help="s-RAISING deformation-aware T1 move (harden refinement): elongate the swap cells toward each "
+                         "other (prolate, volume-preserving, grounded lambda) instead of the rigid translation that "
+                         "rounds cells (G4 24s shape-drop). Reproduces the real T1 cell strain.")
     ap.add_argument("--motility-split", action="store_true", dest="motility_split",
                     help="TIMESCALE ATTACK: apply the v0-mode drift as a position translation (x*=xₙ+v0·dt·p̂) "
                          "BEFORE the implicit relax (Lie-Trotter operator split) instead of a self-propulsion force. "
@@ -250,6 +254,7 @@ def main():
         motility_v0_um_s=a.v0_um_min / 60.0, motility_split=a.motility_split,
         t1_rate=a.t1_rate, t1_k0=a.t1_k0, t1_barrier_b=a.t1_barrier_b,
         t1_cadence=a.t1_cadence, t1_seed=a.t1_seed,
+        t1_move_mode=("deform" if a.t1_deform else "rigid"),
         remesh_period=a.remesh_period,
         substrate_wetting=substrate_wetting, use_substrate_well=use_substrate_well,
         ubottom=ubottom,                                      # ULA non-adhesive bowl confinement

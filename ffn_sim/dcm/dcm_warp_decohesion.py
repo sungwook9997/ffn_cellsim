@@ -63,7 +63,7 @@ from ffn_sim.dcm.dcm_lamellipodium_host import LamellipodiumHost, LamelParams
 from ffn_sim.dcm.dcm_active_motility_warp import (ActiveMotilityHost, active_self_propulsion_kernel,
                                                    active_drift_translate_kernel)
 from ffn_sim.dcm.dcm_t1_rate import (cell_centroids as _t1_centroids, auto_cutoff as _t1_cutoff,
-                                     t1_kmc_step, K0_DEFAULT as _T1_K0)
+                                     t1_kmc_step, apply_cell_elongation as _t1_elongate, K0_DEFAULT as _T1_K0)
 from ffn_sim.dcm.dcm_jamming_metrics import cell_shape_index_3d as _t1_shape
 from ffn_sim.dcm.dcm_junction_switch_host import JunctionSwitchHost, JunctionParams
 from ffn_sim.dcm.dcm_remesh import remesh_pass
@@ -283,6 +283,7 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
                    motility_split: bool = False,
                    t1_rate: bool = False, t1_k0: float = _T1_K0, t1_barrier_b: float = 3.0,
                    t1_cadence: int = 200, t1_seed: int = 13, t1_margin: float = 0.05,
+                   t1_move_mode: str = "rigid",
                    ecm_bundle: float = 1.0,
                    ecm_ligand: float = 1.0,
                    gravity: bool = False, delta_rho: float = 55.0, coupling: bool = False,
@@ -1790,14 +1791,18 @@ def run_decohesion(*, n_cells: int = 12, subdiv: int = 2, steps: int = 40000,
             valid = np.isfinite(cens).all(axis=1)
             if valid.all():
                 out = t1_kmc_step(cens, sidx, _t1_cutoff(cens), t1_cadence * _dt_accel, _t1_rng,
-                                  k0=t1_k0, barrier_stiffness=t1_barrier_b, margin=t1_margin)
-                if out["disp"]:
-                    for cell, dv in out["disp"].items():
-                        ph[cof_a == cell] += dv
+                                  k0=t1_k0, barrier_stiffness=t1_barrier_b, margin=t1_margin,
+                                  move_mode=t1_move_mode, r_cell=R)
+                applied = False
+                for cell, dv in out["disp"].items():                     # rigid mode: centroid translation
+                    ph[cof_a == cell] += dv; applied = True
+                for cell, (axis, elam) in out["elong"].items():          # deform mode: prolate elongation (s-raising)
+                    m = (cof_a == cell); ph[m] = _t1_elongate(ph[m], axis, elam); applied = True
+                if applied:
                     pos_d.assign(ph)
                     _t1_fired_total += out["n_fired"]
                     if s % (t1_cadence * 10) == 0:
-                        print(f"  [t1-rate] step {s}: {out['n_fired']} T1 events this pass "
+                        print(f"  [t1-rate/{t1_move_mode}] step {s}: {out['n_fired']} T1 events this pass "
                               f"({_t1_fired_total} total)", flush=True)
         stepped(s, dt)
         if s % every == 0 or s == steps:

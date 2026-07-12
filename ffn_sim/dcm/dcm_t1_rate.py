@@ -66,13 +66,18 @@ def t1_swap_partners(neighbors: set[tuple[int, int]], a: int, b: int,
     common = sorted(nbrs(a) & nbrs(b) - {a, b})
     if len(common) < 2:
         return None
-    # closest-approaching common-neighbour pair
+    # The proper T1 swap-in pair (c,d) straddles the a–b junction but does NOT yet touch each other (they GAIN contact
+    # in the T1). So pick the CLOSEST common-neighbour pair that is currently NON-adjacent; fall back to the closest
+    # pair if all common neighbours already touch (degenerate — nothing to swap in).
     best, bestd = None, np.inf
     for i in range(len(common)):
         for j in range(i + 1, len(common)):
-            d = float(np.linalg.norm(centroids[common[i]] - centroids[common[j]]))
+            ci, cj = common[i], common[j]
+            if (min(ci, cj), max(ci, cj)) in neighbors:
+                continue                                # already touching → not a swap-in pair
+            d = float(np.linalg.norm(centroids[ci] - centroids[cj]))
             if d < bestd:
-                bestd, best = d, (common[i], common[j])
+                bestd, best = d, (ci, cj)
     return best
 
 
@@ -112,6 +117,46 @@ def t1_geometric_move(centroids: np.ndarray, a: int, b: int, c: int, d: int, cut
     return disp
 
 
+def t1_deformation_move(centroids: np.ndarray, c: int, d: int, cutoff: float, r_cell: float,
+                        margin: float = 0.05) -> dict[int, tuple[np.ndarray, float]]:
+    """Deformation-aware (s-RAISING) T1 move — the harden-first refinement of the rigid translate.
+
+    The rigid ``t1_geometric_move`` translates whole cells into overlaps → the IPC relax rounds them → the shape index
+    DROPS (the G4 24 s artifact). Real T1s instead ELONGATE the swapping cells as they squeeze past. Here the swap pair
+    (c, d) each elongate ALONG the c–d axis toward each other (prolate, VOLUME-PRESERVING: λ along the axis, 1/√λ
+    perpendicular), so their tips meet and form the new contact WITHOUT a gross whole-cell overlap — and the elongation
+    RAISES their shape index (S/V^{2/3}), reproducing the T1's real cell strain. The separating pair (a, b) is NOT moved:
+    inserting c,d between them stretches the a–b junction, which the force-based cadherin de-cohesion then ruptures
+    (topology follows geometry). λ is GROUNDED, not free: each cell extends by half the gap so the tips just touch →
+    λ = 1 + (gap/2)/r_cell, gap = |c−d| − cutoff·(1−margin). Returns {cell: (axis_unit, λ)}; no-op (empty) if already
+    in contact.
+
+    Args:
+        centroids: (n_cells, 3) cell centroids [m]. c, d: the swap-in pair. cutoff: contact threshold [m].
+        r_cell: cell radius [m] (sets the grounded elongation). margin: fractional contact overshoot.
+    """
+    w = centroids[c] - centroids[d]
+    dcd = float(np.linalg.norm(w))
+    gap = dcd - cutoff * (1.0 - margin)
+    if dcd < 1e-30 or gap <= 0.0 or r_cell <= 0.0:
+        return {}
+    axis = w / dcd
+    lam = 1.0 + (gap / 2.0) / r_cell          # extend each tip by half the gap → tips meet (grounded, volume-preserving)
+    return {c: (axis, lam), d: (axis, lam)}
+
+
+def apply_cell_elongation(nodes: np.ndarray, axis: np.ndarray, lam: float) -> np.ndarray:
+    """Volume-preserving prolate scaling of a cell's nodes about their centroid: ×λ along ``axis``, ×1/√λ
+    perpendicular (det = λ·(1/√λ)² = 1). Raises the cell's shape index without changing its volume (Sanity Gate G5)."""
+    cen = nodes.mean(0)
+    rel = nodes - cen
+    a = axis / (np.linalg.norm(axis) + 1e-30)
+    along = rel @ a                                    # (n,) component along the axis
+    perp = rel - np.outer(along, a)                    # perpendicular part
+    scaled = np.outer(along * lam, a) + perp / np.sqrt(lam)
+    return cen + scaled
+
+
 def measure_t1_rate(frames: np.ndarray, cof: np.ndarray, dt_frame: float,
                     shell_factor: float = 1.15) -> dict:
     """G3 grounding: measure the physical T1 (neighbour-exchange) rate from a fine-grained trajectory.
@@ -143,7 +188,7 @@ def measure_t1_rate(frames: np.ndarray, cof: np.ndarray, dt_frame: float,
 
 def t1_kmc_step(centroids: np.ndarray, shape_index: np.ndarray, cutoff: float, dt: float, rng,
                 *, k0: float = K0_DEFAULT, s_star: float = S0_STAR_3D, barrier_stiffness: float = 1.0,
-                margin: float = 0.05) -> dict:
+                margin: float = 0.05, move_mode: str = "rigid", r_cell: float = 7.5e-6) -> dict:
     """One KMC pass of T1 events over the current tissue — the coarse-grained rearrangement supplied at large dt.
 
     For each contacting cell pair (a,b): the local shape index s = min(s_a, s_b) (the pair unjams only if BOTH sides
@@ -161,6 +206,7 @@ def t1_kmc_step(centroids: np.ndarray, shape_index: np.ndarray, cutoff: float, d
     """
     neighbors = cell_neighbor_set(centroids, cutoff)
     disp: dict[int, np.ndarray] = {}
+    elong: dict[int, tuple[np.ndarray, float]] = {}      # deform mode: {cell: (axis, λ)}
     fired: list[tuple[int, int]] = []
     for (a, b) in neighbors:
         s_pair = float(min(shape_index[a], shape_index[b]))
@@ -171,11 +217,22 @@ def t1_kmc_step(centroids: np.ndarray, shape_index: np.ndarray, cutoff: float, d
             if partners is None:
                 continue
             c, d = partners
-            move = t1_geometric_move(centroids, a, b, c, d, cutoff, margin)
-            for cell, dv in move.items():
-                disp[cell] = disp.get(cell, np.zeros(3)) + dv
+            if move_mode == "deform":
+                move = t1_deformation_move(centroids, c, d, cutoff, r_cell, margin)
+                if not move:
+                    continue
+                # compound elongations on a cell touched by several T1s (multiply λ, keep first axis)
+                for cell, (axis, lam) in move.items():
+                    if cell in elong:
+                        ax0, l0 = elong[cell]; elong[cell] = (ax0, l0 * lam)
+                    else:
+                        elong[cell] = (axis, lam)
+            else:
+                move = t1_geometric_move(centroids, a, b, c, d, cutoff, margin)
+                for cell, dv in move.items():
+                    disp[cell] = disp.get(cell, np.zeros(3)) + dv
             fired.append((a, b))
-    return dict(disp=disp, fired=fired, n_fired=len(fired))
+    return dict(disp=disp, elong=elong, fired=fired, n_fired=len(fired))
 
 
 def k_t1_arrhenius(s: float | np.ndarray, k0: float = K0_DEFAULT, s_star: float = S0_STAR_3D,
