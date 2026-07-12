@@ -532,3 +532,26 @@ path-clearing** (MMP — but that's KB-1.20-slow, shown earlier). This is the ho
 a PROPERTY of the pinned-3-D-slab geometry + the walking-cycle solver, not a missing force. **PI decision point:** pick
 the regime to pursue for true migration (unpinned/2-D/proteolysis), or bank this characterisation and move to the next
 FF milestone. All reported as measured — no tuning, no forcing.
+
+### M6 REGIME probe (2026-07-12 09:40, autonomous decision) — a compliant matrix DOUBLES migration; regime matters
+
+After the force sweeps (contractility/adhesion don't lift migration), I made an autonomous call (per "결정은 네가" + your
+core goal) to run ONE bounded probe of the regime my verdict predicted: emt on a **compliant, large-pore collagen**
+(`--ecm-material collagen_I --ecm-conc 3` → 81 fibres, mesh ξ=1.5 µm, vs raw Mikado 3000 fibres ξ=0.5 µm). Native, clean.
+- **v_crawl 0.16 → 0.36 nm/s (2.3×)**, coherence 0.13 → 0.24 (more directed), disp∥ 23 → 54 nm, remodel recruit +228 nm.
+- Visually verified (`ff_m6_compliant_crawl.html`): the collagen is visibly sparse/large-pore, the cell deforms it up to
+  131 nm and translocates further. Figure `ff_m6_regime.png` (both panels).
+
+**This CONFIRMS migration is regime-sensitive** (a compliant/large-pore matrix the cell can move *through* roughly
+doubles both speed and directionality) — the prediction of the force-sweep verdict. **But even the compliant optimum
+stays sub-physiological (0.36 vs 10–30 nm/s).** So the complete, integrated migration picture:
+1. **Force** (contractility 1–10×, adhesion n_fa 100–1000): NOT the lever — raises in-place remodelling, not migration.
+2. **Regime** (compliant/large-pore matrix): **~2.3× lever** — confirms migration is regime-sensitive; the cell crawls
+   through larger pores. Consistent with the earlier biphasic-in-concentration finding (optimum ~conc 3).
+3. **Residual cap**: even the best regime is ~50–80× below physiological — the **native grid-drag limit**
+   (`Σγ ∝ Nc`, the standing PI-level solver item from `project-ff-crawl-mechanism`) is what remains. Regime + motile
+   program get ~2× of the way; the last ~50× is the drag/solver fix, not force or matrix.
+
+**Net:** migration IS improvable by the matrix regime (a real, honest, KB-consistent 2.3× gain toward your goal), and the
+remaining gap is now sharply localised to ONE known open item (native translation-drag regularisation), not force or
+adhesion. That drag fix is the PI-level numerics task already flagged; everything else about migration is characterised.
