@@ -347,6 +347,10 @@ class ECMNetwork:
     S_target: float
     S_measured: float
     director: np.ndarray
+    seg_Lc: np.ndarray = None          # WLC (thermal, opt-in): per-segment contour length seg_rest·(1+ξ/6L_p)
+    seg_Lp: float = 0.0                # WLC: persistence length L_p [µm] (0 ⇒ WLC no-op, e.g. continuum gel)
+    seg_EA: float = 0.0               # WLC: axial stiffness EA [pN] (enthalpic backbone wall)
+    mesh_xi_um: float = 0.0            # emergent geometric mesh ξ=(V/L_total)^½ (the thermal-slack scale; ~c^-½)
     concentration: float = 0.0
     meta: dict = field(default_factory=dict)
 
@@ -520,13 +524,20 @@ def build_fibrillar_ecm(spec: ECMSpec, box_lo, box_hi, *, n_fibers: int | None =
     z = _connectivity_z(net, xl_i, xl_j)
     mesh = _mesh_size(net, xl_i, xl_j, spec.seg_um, spec.fiber_len_um)
     S_meas = _safe_order(net)
+    # WLC thermal state (opt-in via axial_mode='wlc'): the thermal slack is the EMERGENT geometric mesh ξ~c^-½
+    # (NOT the c-independent seg_rest — that would give c¹). seg_Lc = seg_rest·(1+ξ/6L_p). See ff/wlc.py.
+    from ffn_sim.ff.wlc import geometric_mesh_um, segment_contour_lengths
+    xi = geometric_mesh_um(seg_rest, box_lo, box_hi, dim=dim) if spec.lp_um > 0 else 0.0
+    seg_Lc = segment_contour_lengths(seg_rest, spec.lp_um, xi) if (spec.lp_um > 0 and xi > 0) else seg_rest.copy()
     return ECMNetwork(net=net, xl_i=xl_i, xl_j=xl_j, xl_k=xl_k, xl_rest=xl_rest,
                       seg_i=seg_i, seg_j=seg_j, seg_k=seg_k, seg_rest=seg_rest,
                       pinned=pinned, box_lo=box_lo, box_hi=box_hi, dim=dim, material=spec.key,
                       mesh_size_um=mesh, connectivity_z=z, S_target=alignment_S, S_measured=S_meas,
-                      director=np.asarray(director, float), concentration=concentration or 0.0,
+                      director=np.asarray(director, float),
+                      seg_Lc=seg_Lc, seg_Lp=float(spec.lp_um), seg_EA=float(spec.EA_pN), mesh_xi_um=float(xi),
+                      concentration=concentration or 0.0,
                       meta={"n_fibers": net.n_fibers, "n_nodes": net.n_nodes, "n_xl": int(xl_i.size),
-                            "kappa": spec.kappa_pN_um2, "EA_pN": spec.EA_pN})
+                            "kappa": spec.kappa_pN_um2, "EA_pN": spec.EA_pN, "mesh_xi_um": float(xi)})
 
 
 def _safe_order(net: FiberNetwork) -> float:
