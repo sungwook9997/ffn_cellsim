@@ -42,6 +42,42 @@ def link_spring_kernel(
 
 
 @wp.kernel
+def wlc_spring_kernel(
+    pos: wp.array(dtype=wp.vec3d),              # (N,) node positions
+    seg: wp.array(dtype=wp.int32, ndim=2),      # (S, 2) fiber-segment node pairs
+    Lc: wp.array(dtype=wp.float64),             # (S,) per-segment contour length [µm]
+    Lp: wp.float64,                             # persistence length [µm]
+    EA: wp.float64,                             # axial stiffness [pN] (enthalpic backbone wall)
+    kBT: wp.float64,                            # thermal energy [pN·µm]
+    x_max: wp.float64,                          # entropic→enthalpic crossover (f'_WLC=EA)
+    force: wp.array(dtype=wp.vec3d),            # (N,) out
+):
+    """Thermal extensible-WLC segment tension (mirrors ff.wlc.wlc_tension_np exactly): Marko-Siggia entropic
+    F=(kBT/Lp)[1/(4(1−x)²)−1/4+x] for x=L/Lc ≤ x_max, else the finite EA wall F(x_max)+(EA/Lc)(L−x_max·Lc)
+    (C¹-continuous, no 1/(1−x)² blow-up). FIBER SEGMENTS ONLY — crosslinks keep link_spring_kernel."""
+    t = wp.tid()
+    i = seg[t, 0]
+    j = seg[t, 1]
+    d = pos[j] - pos[i]
+    L = wp.length(d)
+    if L > wp.float64(1e-12):
+        lc = Lc[t]
+        x = L / lc
+        one = wp.float64(1.0)
+        qtr = wp.float64(0.25)
+        if x <= x_max:
+            om = one - x
+            F = (kBT / Lp) * (one / (wp.float64(4.0) * om * om) - qtr + x)
+        else:
+            omm = one - x_max
+            F_max = (kBT / Lp) * (one / (wp.float64(4.0) * omm * omm) - qtr + x_max)
+            F = F_max + (EA / lc) * (L - x_max * lc)
+        f = (F / L) * d
+        wp.atomic_add(force, i, f)
+        wp.atomic_add(force, j, -f)
+
+
+@wp.kernel
 def xl_turnover_kernel(
     pos: wp.array(dtype=wp.vec3d),              # (N,) node positions
     links: wp.array(dtype=wp.int32, ndim=2),    # (L, 2) crosslinker node pairs

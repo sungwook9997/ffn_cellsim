@@ -456,3 +456,28 @@ membrane gels (Matrigel 411 Pa) and tissue gels are MUCH stiffer than dilute col
 destroyed in composite tissue — directional long-range force transmission requires SPARSE, gel-poor fibrous regions
 (the biological threshold, quantified). `figs/waveguide_crossover.png` + waveguide_crossover.json. Unfitted (E is
 the swept input, the crossover EMERGES at the collagen-modulus scale).
+
+## Checkpoint 31 (2026-07-12) — THERMAL-WLC IMPLEMENTED + VALIDATED: the c-exponent is fixed (PI-authorized, default-off)
+The PI-authorized big lever (from the "너가 알아서 결정" mandate). Full Marko-Siggia extensible-WLC option
+`axial_mode='wlc'` for fibrillar segments (crosslinks stay linear), DEFAULT-OFF, PROVISIONAL. Built to the design
+spec: ff/wlc.py (law, 6 unit tests), wlc_spring_kernel (Warp, bit-parity with host to 1e-9), seg_Lc from the
+EMERGENT geometric mesh ξ~c^(-0.500 verified) [the crux — seg_rest would give c¹], and axial_mode threaded through
+ecm_mechanics (_links_for/_wlc_block/_to_device/_force_pass/_cfl_dt/_elastic_energy with BASELINE SUBTRACTION/
+ecm_material_stress WLC tension). All constants derived (kBT=U.KBT 310K, Lp/EA from spec, ξ emergent, x_max=0.99756
+from f'_WLC=EA) — NO tuning.
+VALIDATION (collagen G'(c), native REV, spring vs wlc):
+| c (mg/mL) | G_spring | G_wlc (Pa) |
+|---|---|---|
+| 1 | 9.3 | 0.17 |
+| 2 | 18.4 | 0.72 |
+| 4 | 44.9 | 5.9 |
+| 7 | 76.9 | 25.3 |
+→ ⭐⭐⭐ the c-EXPONENT RISES from spring n=1.11 to **WLC n=2.63** — CONFIRMS the KB-1.30 thermal diagnosis
+(G0~kBT·L_p²/ξ⁵~c^2.5; checkpoint 22). The athermal→thermal physics is the c-scaling fix, validated. Anti-pre-
+stress gate PASSES (RMS node drift 0.0001µm ≪ seg_rest — the thermal slack sits the network at its physiological
+baseline, not floppy/pre-stressed). ⚠️ HONEST CAVEAT (the spec predicted this): the WLC absolute modulus drops
+BELOW band at low c (0.17-0.72 Pa vs 11-13) — replacing the stiff EA rod with the ~33 pN/µm entropic spring makes
+the network bending+entropic-co-dominated, softer than the EA-dominated athermal one. So WLC fixes the SCALING
+(physics) but the reference-concentration ABSOLUTE anchoring (bending κ / target_z / ξ prefactor) is a PI-scoped
+re-calibration — NOT auto-tuned (KB-1.3 forbids ⟨z⟩(c); the spec forbids fitting). Spring mode unchanged (n=1.11).
+Remaining validation (next): strain-stiffening K~σ^{3/2} + N1 sign flip. `ff/wlc.py`, `tests/ff/test_wlc.py`.

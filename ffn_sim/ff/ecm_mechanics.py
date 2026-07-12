@@ -52,7 +52,7 @@ import warp as wp
 from ffn_sim.ff import units as U
 from ffn_sim.ff.forces_warp import _per_triple_alpha, cytosim_bending_kernel
 from ffn_sim.ff.network_warp import (
-    _zero, axpy_kernel, link_spring_kernel, reshape_kernel,
+    _zero, axpy_kernel, link_spring_kernel, wlc_spring_kernel, reshape_kernel,
 )
 
 wp.init()
@@ -112,9 +112,13 @@ class _Dev:
     n_links: int
     seg_mean: float
     device: str
+    wlc_seg: wp.array = None            # WLC segment block (axial_mode='wlc')
+    wlc_Lc: wp.array = None
+    wlc: dict = None                    # scalars {Lp, EA, kBT, x_max}
+    n_wlc: int = 0
 
 
-def _to_device(ecm, link_pairs, link_k, link_rest, device):
+def _to_device(ecm, link_pairs, link_k, link_rest, device, wlc_block=None):
     net = ecm.net
     N = net.n_nodes
     tri = np.ascontiguousarray(net.bend_triples, np.int32)
@@ -139,7 +143,10 @@ def _to_device(ecm, link_pairs, link_k, link_rest, device):
         if len(link_pairs) else None,
         rlink=wp.array(np.ascontiguousarray(link_rest, np.float64), dtype=wp.float64, device=d)
         if len(link_pairs) else None,
-        n_nodes=N, n_tri=tri.shape[0], n_links=len(link_pairs), seg_mean=seg_mean, device=d)
+        n_nodes=N, n_tri=tri.shape[0], n_links=len(link_pairs), seg_mean=seg_mean, device=d,
+        wlc_seg=wp.array(wlc_block["seg"], dtype=wp.int32, ndim=2, device=d) if wlc_block else None,
+        wlc_Lc=wp.array(wlc_block["Lc"], dtype=wp.float64, device=d) if wlc_block else None,
+        wlc=wlc_block, n_wlc=(wlc_block["seg"].shape[0] if wlc_block else 0))
 
 
 def _force_pass(dev: _Dev, indenter=None):
@@ -150,6 +157,10 @@ def _force_pass(dev: _Dev, indenter=None):
         wp.launch(cytosim_bending_kernel, dim=dev.n_tri, inputs=[dev.pos, dev.tri, dev.alpha, dev.f], device=d)
     if dev.n_links:
         wp.launch(link_spring_kernel, dim=dev.n_links, inputs=[dev.pos, dev.links, dev.klink, dev.rlink, dev.f], device=d)
+    if dev.n_wlc:                                 # thermal WLC segment tension (fiber segments only)
+        w = dev.wlc
+        wp.launch(wlc_spring_kernel, dim=dev.n_wlc, inputs=[dev.pos, dev.wlc_seg, dev.wlc_Lc,
+                  wp.float64(w["Lp"]), wp.float64(w["EA"]), wp.float64(w["kBT"]), wp.float64(w["x_max"]), dev.f], device=d)
     react = None
     if indenter is not None:
         centre, R_ind, k_ind, react = indenter
@@ -165,6 +176,8 @@ def _cfl_dt(dev: _Dev, ecm, k_extra=0.0) -> float:
         kmax = float(ecm.net.kappa.max()) / dev.seg_mean ** 3
     if dev.n_links:
         kmax = max(kmax, float(np.max(ecm.link_k)) if ecm.link_k.size else 0.0)
+    if dev.n_wlc:                                # WLC max stiffness = EA/Lc.min (the finite enthalpic wall)
+        kmax = max(kmax, float(dev.wlc["EA"]) / float(np.min(dev.wlc_Lc.numpy())))
     kmax = max(kmax, k_extra)
     return 0.1 / max(kmax, 1e-9)
 
@@ -203,11 +216,12 @@ def _reaction_on(dev: _Dev, node_mask, axis: int) -> float:
     return float(f[node_mask, axis].sum())
 
 
-def _elastic_energy(ecm, pos, use_spring: bool) -> float:
-    """Total stored elastic energy [pN·µm] at ``pos`` = bending + crosslink-spring [+ axial-spring]. This
-    is the robust modulus route (G = 2U/(V·γ²)) — a bulk scalar, insensitive to boundary-layer definition
-    unlike the boundary-reaction route. The unstrained built network is at rest (straight rods, bonds at
-    rest length) so its reference energy is ~0; ΔU ≈ U."""
+def _elastic_energy(ecm, pos, axial_mode: str = "spring") -> float:
+    """Total stored elastic energy [pN·µm] at ``pos`` = bending + crosslink-spring [+ axial segment energy].
+    The robust modulus route G = 2ΔU/(V·γ²) — a bulk scalar. Segment axial term by mode: 'spring' = linear
+    Hookean; 'reshape' = none (inextensible); 'wlc' = thermal WLC energy (ff.wlc.wlc_energy_np). For 'wlc' the
+    BUILT network has a nonzero baseline energy (segments sit at x₀≈0.98), so callers must subtract
+    U_ref = _elastic_energy(ecm, pos0_built, 'wlc') — ΔU, not U. (For spring/reshape U_ref≈0, so it's a no-op.)"""
     from ffn_sim.ff.forces_warp import bending_energy
     net = ecm.net
     U = 0.0
@@ -221,23 +235,45 @@ def _elastic_energy(ecm, pos, use_spring: bool) -> float:
     if ecm.xl_i.size:
         d = np.linalg.norm(pos[ecm.xl_j] - pos[ecm.xl_i], axis=1)
         U += 0.5 * float(np.sum(ecm.xl_k * (d - ecm.xl_rest) ** 2))
-    if use_spring and ecm.seg_i.size:
+    if ecm.seg_i.size:
         d = np.linalg.norm(pos[ecm.seg_j] - pos[ecm.seg_i], axis=1)
-        U += 0.5 * float(np.sum(ecm.seg_k * (d - ecm.seg_rest) ** 2))
+        if axial_mode == "spring":
+            U += 0.5 * float(np.sum(ecm.seg_k * (d - ecm.seg_rest) ** 2))
+        elif axial_mode == "wlc" and getattr(ecm, "seg_Lp", 0.0) > 0.0:
+            from ffn_sim.ff.wlc import wlc_energy_np, wlc_x_crossover
+            from ffn_sim.ff.units import KBT
+            xmax = wlc_x_crossover(ecm.seg_EA, ecm.seg_Lp, KBT)
+            U += float(np.sum(wlc_energy_np(d, ecm.seg_Lc, ecm.seg_Lp, ecm.seg_EA, KBT, xmax)))
+        # 'reshape': segments inextensible → no axial energy term
     return U
 
 
 def _links_for(ecm, axial_mode: str):
     """Which Hookean bonds to apply and whether to use reshape. Continuum lattices → Delaunay springs;
-    fibrillar 'reshape' → crosslinks only (+reshape inextensibility); fibrillar 'spring' → xl + seg."""
+    fibrillar 'reshape'/'wlc' → crosslinks only as LINEAR bonds (+reshape inextensibility / +WLC segments handled
+    separately); fibrillar 'spring' → xl + seg all linear."""
     is_continuum = ecm.net.bend_triples.shape[0] == 0
     if is_continuum:
         pairs = np.stack([ecm.seg_i, ecm.seg_j], 1) if ecm.seg_i.size else np.zeros((0, 2), np.int64)
         return pairs.astype(np.int32), ecm.seg_k, ecm.seg_rest, False
     if axial_mode == "spring":
         return ecm.links, ecm.link_k, ecm.link_rest, False
+    # 'reshape' and 'wlc': the LINEAR bonds are the crosslinks only (segments are reshape-inextensible or WLC)
     xl = np.stack([ecm.xl_i, ecm.xl_j], 1) if ecm.xl_i.size else np.zeros((0, 2), np.int64)
-    return xl.astype(np.int32), ecm.xl_k, ecm.xl_rest, True
+    return xl.astype(np.int32), ecm.xl_k, ecm.xl_rest, (axial_mode == "reshape")
+
+
+def _wlc_block(ecm, axial_mode: str):
+    """WLC segment block (seg pairs, seg_Lc, Lp, EA, kBT, x_max) for axial_mode='wlc' on a fibrillar net with a
+    thermal contour set (seg_Lp>0). Else None (spring/reshape/continuum stay linear). Thermal segments ONLY."""
+    if axial_mode != "wlc" or getattr(ecm, "seg_Lp", 0.0) <= 0.0 or not ecm.seg_i.size:
+        return None
+    from ffn_sim.ff.units import KBT
+    from ffn_sim.ff.wlc import wlc_x_crossover
+    seg = np.stack([ecm.seg_i, ecm.seg_j], 1).astype(np.int32)
+    Lc = np.ascontiguousarray(ecm.seg_Lc, np.float64)
+    x_max = wlc_x_crossover(ecm.seg_EA, ecm.seg_Lp, KBT)
+    return dict(seg=seg, Lc=Lc, Lp=float(ecm.seg_Lp), EA=float(ecm.seg_EA), kBT=float(KBT), x_max=float(x_max))
 
 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -264,13 +300,13 @@ def shear_modulus(ecm, *, gamma: float = 0.02, n_steps: int = 4000, axial_mode: 
     pos[:, 0] += gamma * (pos0[:, 2] - lo[2])
     ecm.net.pos[:] = pos
     pairs, klink, rlink, use_reshape = _links_for(ecm, axial_mode)
-    dev = _to_device(ecm, pairs, klink, rlink, device)
+    dev = _to_device(ecm, pairs, klink, rlink, device, wlc_block=_wlc_block(ecm, axial_mode))
     relaxed = _relax(dev, ecm, fixed, use_reshape=use_reshape, n_steps=n_steps)
     Fx = _reaction_on(dev, top, axis=0)
-    sig = ecm_material_stress(ecm, relaxed, device=device) if not use_reshape else None  # full virial tensor
+    sig = ecm_material_stress(ecm, relaxed, device=device, axial_mode=axial_mode) if not use_reshape else None
     ecm.net.pos[:] = pos0                                       # restore (leave the ECM object undeformed)
     V = float(np.prod(hi - lo))
-    U = _elastic_energy(ecm, relaxed, use_spring=not use_reshape)
+    U = _elastic_energy(ecm, relaxed, axial_mode) - _elastic_energy(ecm, pos0, axial_mode)   # ΔU (WLC baseline≠0)
     G = 2.0 * U / (V * gamma ** 2)                              # energy route (primary) — pN/µm² = Pa
     area = (hi[0] - lo[0]) * (hi[1] - lo[1])
     G_reaction = abs(Fx / area) / gamma                         # boundary-reaction route (cross-check)
@@ -303,12 +339,12 @@ def uniaxial_modulus(ecm, *, strain: float = 0.02, axis: str = "z", n_steps: int
     pos[:, ax] = lo[ax] + (1.0 + strain) * (pos0[:, ax] - lo[ax])
     ecm.net.pos[:] = pos
     pairs, klink, rlink, use_reshape = _links_for(ecm, axial_mode)
-    dev = _to_device(ecm, pairs, klink, rlink, device)
+    dev = _to_device(ecm, pairs, klink, rlink, device, wlc_block=_wlc_block(ecm, axial_mode))
     relaxed = _relax(dev, ecm, fixed, use_reshape=use_reshape, n_steps=n_steps)
     F = _reaction_on(dev, plus, axis=ax)
     ecm.net.pos[:] = pos0                                       # restore
     V = float(np.prod(hi - lo))
-    U = _elastic_energy(ecm, relaxed, use_spring=not use_reshape)
+    U = _elastic_energy(ecm, relaxed, axial_mode) - _elastic_energy(ecm, pos0, axial_mode)
     E = 2.0 * U / (V * strain ** 2)                             # energy route (primary)
     others = [i for i in range(3) if i != ax and (ecm.dim == 3 or i != 2)]
     area = np.prod([hi[i] - lo[i] for i in others]) if others else 1.0
@@ -381,7 +417,7 @@ def indentation_modulus(ecm, *, indenter_R_um: float = 6.0, max_depth_um: float 
     forces, contacts = [], []
     for delta in depths:
         ecm.net.pos[:] = pos0                                   # fresh slab each depth (independent Hertz point)
-        dev = _to_device(ecm, pairs, klink, rlink, device)
+        dev = _to_device(ecm, pairs, klink, rlink, device, wlc_block=_wlc_block(ecm, axial_mode))
         centre_z = z_surf + indenter_R_um - delta               # sphere bottom sits δ below the surface
         react = wp.zeros(2, dtype=wp.float64, device=device)
         centre = wp.vec3d(float(cx), float(cy), float(centre_z))
@@ -433,9 +469,9 @@ def shear_stress_curve(ecm, *, gammas=None, n_steps=5000, axial_mode="spring", d
         pos = pos0.copy()
         pos[:, 0] += g * (pos0[:, 2] - lo[2])
         ecm.net.pos[:] = pos
-        dev = _to_device(ecm, pairs, klink, rlink, device)
+        dev = _to_device(ecm, pairs, klink, rlink, device, wlc_block=_wlc_block(ecm, axial_mode))
         relaxed = _relax(dev, ecm, fixed, use_reshape=use_reshape, n_steps=n_steps)
-        sig = ecm_material_stress(ecm, relaxed, device=device)
+        sig = ecm_material_stress(ecm, relaxed, device=device, axial_mode=axial_mode)
         sxz.append(float(sig[0, 2]))
         n1.append(float(sig[0, 0] - sig[2, 2]))
     ecm.net.pos[:] = pos0
@@ -463,10 +499,10 @@ def shear_energy(ecm, *, gamma, n_steps=5000, axial_mode="spring", device="cpu",
     pos[:, 0] += gamma * (pos0[:, 2] - lo[2])
     ecm.net.pos[:] = pos
     pairs, klink, rlink, use_reshape = _links_for(ecm, axial_mode)
-    dev = _to_device(ecm, pairs, klink, rlink, device)
+    dev = _to_device(ecm, pairs, klink, rlink, device, wlc_block=_wlc_block(ecm, axial_mode))
     relaxed = _relax(dev, ecm, fixed, use_reshape=use_reshape, n_steps=n_steps)
     ecm.net.pos[:] = pos0
-    return _elastic_energy(ecm, relaxed, use_spring=not use_reshape)
+    return _elastic_energy(ecm, relaxed, axial_mode) - _elastic_energy(ecm, pos0, axial_mode)
 
 
 def strain_stiffening(ecm, *, gammas=None, n_steps=5000, axial_mode="spring", device="cpu") -> dict:
@@ -522,7 +558,7 @@ def _bending_virial_sigma_xz(net, pos, V, device="cpu") -> float:
     return float(0.5 * np.sum(pos[:, 0] * fb[:, 2] + pos[:, 2] * fb[:, 0]) / V)
 
 
-def ecm_material_stress(ecm, pos, device="cpu") -> np.ndarray:
+def ecm_material_stress(ecm, pos, device="cpu", axial_mode="spring") -> np.ndarray:
     """Full macroscopic virial (Cauchy) stress tensor σ[3,3] of an ECM network at ``pos`` [Pa].
 
     σ_ab = (1/V)·[ Σ_bonds (F/L)·r_a·r_b  +  ½·Σ_i (r_a·f_bend_b + r_b·f_bend_a) ] — the crosslink + segment
@@ -533,12 +569,19 @@ def ecm_material_stress(ecm, pos, device="cpu") -> np.ndarray:
     same convention as the cortex ``ff_virial_stress`` (1 pN/µm²=1 Pa). Bending term is zero for continuum gels."""
     V = float(np.prod(np.asarray(ecm.box_hi) - np.asarray(ecm.box_lo)))
     sig = np.zeros((3, 3))
-    for i, j, k, r0 in ((ecm.xl_i, ecm.xl_j, ecm.xl_k, ecm.xl_rest),
-                        (ecm.seg_i, ecm.seg_j, ecm.seg_k, ecm.seg_rest)):
+    wlc_seg = (axial_mode == "wlc" and getattr(ecm, "seg_Lp", 0.0) > 0.0 and ecm.seg_i.size)
+    for grp, (i, j, k, r0) in ((("xl"), (ecm.xl_i, ecm.xl_j, ecm.xl_k, ecm.xl_rest)),
+                               (("seg"), (ecm.seg_i, ecm.seg_j, ecm.seg_k, ecm.seg_rest))):
         if getattr(i, "size", 0):
             d = pos[j] - pos[i]
             L = np.linalg.norm(d, axis=1) + 1e-12
-            f_over_L = k * (L - r0) / L                         # bond tension / length
+            if grp == "seg" and wlc_seg:                        # WLC thermal segment tension (not the linear spring)
+                from ffn_sim.ff.wlc import wlc_tension_np, wlc_x_crossover
+                from ffn_sim.ff.units import KBT
+                xmax = wlc_x_crossover(ecm.seg_EA, ecm.seg_Lp, KBT)
+                f_over_L = wlc_tension_np(L, ecm.seg_Lc, ecm.seg_Lp, ecm.seg_EA, KBT, xmax) / L
+            else:
+                f_over_L = k * (L - r0) / L                     # linear bond tension / length
             sig += np.einsum("n,na,nb->ab", f_over_L, d, d) / V
     if ecm.net.bend_triples.shape[0]:
         from ffn_sim.ff.forces_warp import bending_force
