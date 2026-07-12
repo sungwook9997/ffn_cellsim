@@ -94,14 +94,17 @@ def _relax_inclusion(ecm, center, R_incl_um, eps, *, steps, device):
                                R_incl_um=float(R_incl_um), eps=float(eps))
 
 
-def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7, material="collagen_I", dim=3, composite_with=None):
+def run_case(S, *, box, conc, R_incl_um, eps, steps, n_shells, device, seed=7, material="collagen_I", dim=3, composite_with=None, composite_E=None):
     """Build a fibrillar matrix at alignment S, contract the inclusion, relax, and measure σ_rr(r)."""
     spec = L.get_spec(material)
     lo, hi = [0.0, 0.0, 0.0], [box, box, box]
     rng = np.random.default_rng(seed)
     if composite_with:                                            # interpenetrating composite: aligned fibrillar + a 2nd material
+        comp2 = dict(material=composite_with)
+        if composite_E is not None:
+            comp2["E_gel_Pa"] = float(composite_E)              # sweep the continuum stiffness (crossover)
         ecm = L.build_composite([dict(material=material, concentration=conc, alignment_S=float(S),
-                                      director=(1.0, 0.0, 0.0), target_z=3.2), dict(material=composite_with)],
+                                      director=(1.0, 0.0, 0.0), target_z=3.2), comp2],
                                 lo, hi, dim=dim, interlink_um=0.75, interlink_k=100.0, pin_faces=(), rng=rng)
         ecm.director = np.array([1.0, 0.0, 0.0])
     else:
@@ -213,6 +216,7 @@ def main():
     ap.add_argument("--material", default="collagen_I", help="fibrillar ecm_library key (collagen_I / fibrin)")
     ap.add_argument("--dim", type=int, default=3, choices=(2, 3), help="2D planar sheet vs 3D bulk")
     ap.add_argument("--composite-with", default=None, help="interpenetrate the aligned fibrillar matrix with a 2nd material (e.g. matrigel)")
+    ap.add_argument("--composite-E", type=float, default=None, help="continuum stiffness [Pa] of the composite gel component (crossover sweep)")
     ap.add_argument("--conc", type=float, default=1.5, help="fibrillar concentration [mg/mL]")
     ap.add_argument("--R-incl", type=float, default=None, help="inclusion radius [µm] (default box/8)")
     ap.add_argument("--eps", type=float, default=0.2, help="inclusion contraction strain (physical input)")
@@ -234,7 +238,7 @@ def main():
     for S in S_list:
         for sd in range(a.seeds):
             c = run_case(S, box=a.box, conc=a.conc, R_incl_um=R_incl, eps=a.eps, steps=a.steps,
-                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd, material=a.material, dim=a.dim, composite_with=a.composite_with)
+                         n_shells=a.n_shells, device=a.device, seed=7 + 13 * sd, material=a.material, dim=a.dim, composite_with=a.composite_with, composite_E=a.composite_E)
             c["seed"] = int(sd)
             print(f"[S={S:>4.2f} seed={sd}] n_iso={c['n_exp']:.2f}  n∥={c['n_par']:.2f}  n⊥={c['n_perp']:.2f}  "
                   f"(Δ={c['n_aniso']:+.2f} → {'channels ∥' if c['n_aniso'] > 0 else 'no ∥ channeling'})  "
