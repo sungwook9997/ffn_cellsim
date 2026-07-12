@@ -438,3 +438,21 @@ the isotropic continuum provides a dominant non-directional stress path. This UN
 (checkpoint 25: composite modulus continuum-dominated) with the channeling finding — the BM gel dominates the
 composite in BOTH modulus and stress-transmission directionality. `figs/stress_propagation_directional_sp_comp_native.png`.
 Unfitted, physical. Ties tissue-mimetic + Job D + directional into one biological prediction. --composite-with feature added.
+
+## Checkpoint 30 (2026-07-12) — the fiber-waveguide CROSSOVER: gel stiffness vs the collagen channel (novel, quantitative)
+ff_ecm_stress_propagation --composite-E sweep (aligned collagen S=0.83 + gel of stiffness E), native (box=80µm,
+337721 nodes, 2 seeds each). n∥/n⊥ vs gel stiffness E:
+| E_gel (Pa) | n∥ | n⊥ | waveguide |
+|---|---|---|---|
+| 5 | 4.7 | 11.5 | STRONG (n⊥≫n∥) |
+| 15 | 4.3 | 6.7 | weakening |
+| 50 | 3.4 | 3.8 | nearly lost |
+| 150 | 2.9 | 2.9 | LOST (isotropic) |
+| 500 | 2.7 | 2.7 | LOST (continuum) |
+→ ⭐ quantitative CROSSOVER completing the capstone (checkpoint 29): the fiber waveguide (n⊥≫n∥) SURVIVES only when
+the interstitial gel is SOFTER than the collagen network itself (E_gel ≲ collagen bulk G≈12 Pa); any stiffer gel
+progressively SHORT-CIRCUITS it, fully lost by E≈150 Pa (both → isotropic continuum n≈3). Since real basement-
+membrane gels (Matrigel 411 Pa) and tissue gels are MUCH stiffer than dilute collagen, the waveguide is generally
+destroyed in composite tissue — directional long-range force transmission requires SPARSE, gel-poor fibrous regions
+(the biological threshold, quantified). `figs/waveguide_crossover.png` + waveguide_crossover.json. Unfitted (E is
+the swept input, the crossover EMERGES at the collagen-modulus scale).
