@@ -218,14 +218,17 @@ def t1_kmc_step(centroids: np.ndarray, shape_index: np.ndarray, cutoff: float, d
                 continue
             c, d = partners
             if move_mode == "deform":
+                # STABILITY CAP (breaks the elongate→s↑→rate↑→elongate runaway): a cell that has already reached the
+                # unjamming threshold s0* is fluid — no further elongation (cells don't get MORE fluid than s0*). This
+                # bounds s at ~s0*, the physical transition. Skip the geometric move if either swap cell is unjammed.
+                if shape_index[c] >= s_star or shape_index[d] >= s_star:
+                    fired.append((a, b)); continue
                 move = t1_deformation_move(centroids, c, d, cutoff, r_cell, margin)
                 if not move:
                     continue
-                # compound elongations on a cell touched by several T1s (multiply λ, keep first axis)
+                # ONE elongation per cell per pass (no compounding — the accumulation was the runaway); keep the largest.
                 for cell, (axis, lam) in move.items():
-                    if cell in elong:
-                        ax0, l0 = elong[cell]; elong[cell] = (ax0, l0 * lam)
-                    else:
+                    if cell not in elong or lam > elong[cell][1]:
                         elong[cell] = (axis, lam)
             else:
                 move = t1_geometric_move(centroids, a, b, c, d, cutoff, margin)

@@ -159,13 +159,18 @@ def test_deformation_move_grounded_lambda_and_noop_when_touching():
 
 def test_kmc_deform_mode_fires_and_returns_elongations():
     cen = _dense_blob() * 1e-6
-    out = t1_kmc_step(cen, np.full(len(cen), 5.41), cutoff=1.8e-6, dt=1.0,
+    # s below s0* → elongation fires; at/above s0* the stability cap zeroes elongation (no runaway)
+    out = t1_kmc_step(cen, np.full(len(cen), 5.0), cutoff=1.8e-6, dt=1.0,
                       rng=np.random.default_rng(1), k0=1e6, move_mode="deform", r_cell=0.5e-6)
     assert out["n_fired"] > 0
     assert len(out["elong"]) > 0
     assert len(out["disp"]) == 0                         # deform mode uses elong, not disp
     ax, lam = next(iter(out["elong"].values()))
     assert lam > 1.0
+    # unjamming cap: cells already at s0* get no elongation (breaks the s↑→rate↑→elongate runaway)
+    capped = t1_kmc_step(cen, np.full(len(cen), S0_STAR_3D), cutoff=1.8e-6, dt=1.0,
+                         rng=np.random.default_rng(1), k0=1e6, move_mode="deform", r_cell=0.5e-6)
+    assert len(capped["elong"]) == 0
 
 
 def test_fit_barrier_recovers_known_stiffness():
