@@ -381,3 +381,40 @@ equilibrated at 100k steps (absolute n high, like the 3D 4k-step lesson) — 2D'
 steps. So 2D CONFIRMS the waveguide qualitatively (via the clean n∥) but the 3D directional result (checkpoint 26,
 n∥ 12.8→4.5 / n⊥ 12→21.6) remains the authoritative quantitative one. `figs/stress_propagation_directional_sp_2d_native.png`.
 This completes "2D 3D 모두" for the flagship channeling (dimension-general, honestly bounded).
+
+## ═══════ FINAL COMPLETE SUMMARY (2026-07-12, supersedes the partial one above) — PI REVIEW ═══════
+Overnight autonomous ECM-library program, FULLY EXHAUSTED. All native A5000-confirmed (Nc=266000 for cell runs),
+all figures + interactive HTML viewers real-browser-verified, kb-check gates green, ZERO tuning, memory updated.
+Concurrent DCM(T1-KMC)+M6(contractility) sessions share dcm/main — my commits are clean specific-adds only.
+
+**1. MATERIALS (from 07-10, standing):** 6/6 real-Pa in band (collagen 12, fibrin 63, PA 3.4k, HA 309, Matrigel
+411, agarose 14k), 2D+3D, alignment S→E∥/E⊥ 1/3/10/63, composites. 5 novel (strain-stiffening, mode-decoupling,
+viscoelastic τ∝1/koff, durotaxis gradient, virial tensor+N1). KB-1.V.4.1-4.5 registered.
+
+**2. CELL-IN-ECM (07-12 native):**
+- Stiffness sensing — Path b Winkler (ASCENDING/catch) + Path a live-ECM (DESCENDING/slip) BRACKET the Bangasser-
+  Odde biphasic at f/clutch≈F*≈7pN. ECM-deform 275→0nm.
+- Contact guidance — R_σ=σ∥/σ⊥ EMERGES with alignment (collagen 1.6→30.8, fibrin 0.9→22.1: GENERALIZES); resting-
+  cell traction A_F stays isotropic (needs active motility, blocked). KB-2.14 + Ray2017(OK).
+
+**3. Job D STRESS PROPAGATION (07-12 native, MID/KB-1.10):**
+- |σ|~r⁻ⁿ, n DROPS with alignment (collagen 8.1→4.7, fibrin 16.8→8.3): aligned channels stress ~10× farther,
+  GENERALIZES. FF n>3 steeper than continuum (sub-isostatic ceiling).
+- ⭐DIRECTIONAL WAVEGUIDE — n∥ (along fibers) 12.8→4.5 vs n⊥ (across) 12→21.6: aligned collagen funnels stress
+  along the director. DIMENSION-GENERAL (2D box=200 confirms via n∥; 2D n⊥ ⊥-sparsity-noisy). The mechanistic
+  heart of TACS-3 directional force transmission.
+
+**4. LIMITS honestly bounded:**
+- c-scaling gap = THERMAL (KB-1.30 G0~kBT·ℓp²/ξ⁵ + KB-1.7 ξ~c⁻¹ᐟ² → c^2.5; KB-1.3 rules out ⟨z⟩(c)); runtime fix
+  = PI-gated thermal-WLC.
+- tissue-mimetic: athermal fibrillar UNDER-shoots dense/tumor tissue (normal 89 vs 140-400, tumor 129 vs 5-10k Pa);
+  continuum gels DO reach kPa → the ceiling is the collagen route → thermal-WLC.
+
+**5. DELIVERABLES:** ff_{stiffness_sensing, contact_guidance_anisotropy, contact_guidance_viewer, ecm_stress_
+propagation(+_viewer), ecm_summary_dashboard, ecm_cscaling_thermal, ecm_tissue_mimetic}.py + ecm_mechanics.{stress_
+field_radial, stress_field_directional} + fa_ecm.{traction_director_anisotropy, nematic_order_2d}. Dashboard +
+3 interactive viewers. README/ROADMAP/STATUS/OVERNIGHT_PLAN + memory current.
+
+**6. AWAITING PI (gated, all documented — pick a direction & I resume immediately):**
+(a) thermal-WLC runtime physics — closes c² + tumor stiffness (biggest lever); (b) #6 active-motility follow-up —
+needs the native-crawl grid-drag/Stokes unblocker; (c) ν-faithful continuum; (d) ⟨z⟩(c) has no literature datum.
