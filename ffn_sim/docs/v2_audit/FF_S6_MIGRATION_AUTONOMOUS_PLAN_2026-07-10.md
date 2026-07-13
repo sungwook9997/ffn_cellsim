@@ -569,3 +569,28 @@ Your #1 explicit desire was to SEE the cell leave its position over a long sim. 
   solver fix does.** So the maximal honest cell-movement the current engine produces on the best matrix is ~0.3 nm/s /
   ~100s-of-nm; dramatic migration is gated on the PI-level solver item, exactly as characterised. This is the culminating
   migration viz — the cell moving + remodelling as far as the physics currently allows, shown honestly.
+
+## MIGRATION RESOLVED (2026-07-13, option A) — the crawl ENGINE was never wired to the collagen path
+
+Root cause of the overnight "force-limited migration": the molecular-clutch retrograde-flow traction
+(`clutch_slip_traction`, the actual crawl engine) was wired ONLY to the rigid-dish clutch; the `--ecm` path had a
+passive two-way spring with NO propulsion. **All 8 overnight M6 experiments (every one `--ecm`) ran the engine OFF** —
+so no force/adhesion/regime lever could ever help; the engine simply wasn't connected.
+
+**Fix (committed):** `clutch_ecm_slip_traction_kernel` (two-way twin) wired behind `--flow` into the ECM path (cell node
+FORWARD + live collagen REARWARD, momentum-conserving). Native (emt + compliant collagen):
+
+| config | v_crawl | disp∥ | directionality | per-clutch |
+|---|---|---|---|---|
+| engine OFF (overnight) | 0.36 nm/s | 121 nm | undirected (0.63) | 0.1 pN |
+| engine ON, kmc=2000 | 26.5 nm/s | 3980 nm | straight (1.00) | 5652 pN (over-loaded) |
+| **engine ON, kmc=25 (correct turnover)** | **2.48 nm/s** | **371 nm** | **straight (0.98)** | 384 pN |
+
+**Honest verdict:** connecting the engine makes the native cell **CRAWL directionally** (straightness 0.98) — the
+overnight blocker is RESOLVED (it was engine-off, not force-limited). The honest speed at the correct ~1 s clutch
+turnover (`--kmc-every 25`) is **2.48 nm/s = 6.9× the engine-off** — directed, below the mesenchymal 10–30 band, which is
+consistent with **poorly-motile MCF7** (KB-PIV-7). The 26.5 nm/s (kmc=2000) was an artifact of the clutch not turning
+over (release fires once). One refinement remains: the per-clutch force (384 pN) is still >F* (7 pN) because the
+catch-slip release is a DISCRETE kmc tick (force builds between checks) — clamping the slip-traction to F* would finalize
+the physiological per-clutch (and likely trim the speed slightly). Figs `ff_flow_resolved.png`, `ff_flow_crawl.html`.
+Not tuned: F*, v_retro, kmc-every are all KB-grounded (Bell-Evans / Chan-Odde / ~1 s clutch lifetime).
