@@ -20,7 +20,14 @@ The delta (baseline vs +σ) isolates the aggregate-tension effect and cancels an
 soft-force lag. Question: does physical-magnitude aggregate σ drive CLEAN compaction (Rg↓, porosity↓,
 pen~0) once given physiological time?
 
-Env: NCELLS STEPS ACCEL_DT SIGMA GAP BUNDLE ENUC RNUC GAMMA NEWTON_MAX FRAMES TAG NUCLEUS.
+Env: NCELLS STEPS ACCEL_DT SIGMA GAP BUNDLE ENUC RNUC GAMMA NEWTON_MAX FRAMES TAG NUCLEUS DEVICE.
+
+Biology-time route (2026-07-13): set T1_RATE=1 (+ BDF2=1) to layer the rate/event-driven T1-KMC
+rearrangement on top of the aggregate-σ compaction — the σ-only run (T1_RATE=0) gives END-STATE
+mechanical packing that saturates ~100s; the +T1 run supplies the slow tissue rearrangement that
+large-dt mechanics correctly freeze, testing whether T1 unjamming continues compaction toward
+biology-time. Extra env: T1_RATE T1_K0 T1_BARRIER_B T1_CADENCE T1_SEED T1_MODE BDF2.
+The 2×2 factorial SIGMA∈{0,5e-3} × T1_RATE∈{0,1} decomposes the two independent levers.
 """
 import os
 import sys
@@ -34,7 +41,7 @@ from scipy.spatial import cKDTree, ConvexHull
 
 from ffn_sim.dcm.dcm_warp_decohesion import run_decohesion
 
-OUT = os.path.expanduser("~/ff_scratch/_prod_out")
+OUT = os.environ.get("OUT_DIR", os.path.expanduser("~/ff_scratch/_prod_out"))  # override for Colab (/content/out)
 os.makedirs(OUT, exist_ok=True)
 
 N        = int(os.environ.get("NCELLS", "400"))
@@ -66,23 +73,45 @@ MOT_SEED = int(os.environ.get("MOTILITY_SEED", "11"))
 BUILDER  = os.environ.get("BUILDER", "fcc")             # 'fcc' loose | 'confluent' Voronoi space-filling (feasible)
 INSET    = float(os.environ.get("INSET", "0.0"))        # >0 → shrink cells at build so they START non-overlapping (G2 fix)
 INIT_NPZ = os.environ.get("INIT_NPZ", "") or None       # restart from a saved aggregate npz (frames/faces/cof)
+DEVICE   = os.environ.get("DEVICE", "cuda:0")           # 'cuda:0' native | 'cpu' dev-only NON-AUTHORITATIVE smoke
+# --- biology-time route: rate/event-driven T1 rearrangement ⊗ aggregate-σ (2026-07-13) -------------
+# The σ Foty-Steinberg driver gives END-STATE mechanical compaction that SATURATES ~100s. The T1-KMC
+# supplies the slow tissue rearrangement (fluidisation) that large-dt mechanics correctly freeze
+# (timescale gap = FUNDAMENTAL, T1-event-limited). Combining them tests whether T1 unjamming lets σ
+# continue packing PAST the mechanical plateau toward biology-time. σ and T1 are independent levers
+# in run_decohesion (no mutual exclusion). BDF2 is the strictly-better A-stable integrator for the
+# large-dt T1 route (pairs with --t1-rate); keep accel_dt at the σ-compaction ceiling (8e-3 loose).
+BDF2     = os.environ.get("BDF2", "0") == "1"           # A-stable 2nd-order integrator (PI 2026-07-11); pairs with T1
+T1RATE   = os.environ.get("T1_RATE", "0") == "1"        # KMC of T1 events → biology-time flow (0 = mechanical σ only)
+T1_K0    = float(os.environ.get("T1_K0", "0.03"))       # T1 attempt/gating freq [1/s] = k_endo anchor (KB-4.13)
+T1_B     = float(os.environ.get("T1_BARRIER_B", "2.68"))# barrier stiffness B (calibrated from small-dt k_T1(s))
+T1_CAD   = int(os.environ.get("T1_CADENCE", "200"))     # steps between KMC passes (host round-trip cadence)
+T1_SEED  = int(os.environ.get("T1_SEED", "13"))
+T1_MODE  = os.environ.get("T1_MODE", "rigid")           # 'rigid' centroid-swap | 'deform' s-raising prolate elongation
 TAG      = os.environ.get("TAG", "")
 
-npz = f"{OUT}/agg_compaction_n{N}_sig{SIGMA:.0e}_adt{ACCEL_DT:g}{TAG}.npz"
+_t1tag = f"_t1{T1_MODE}" if T1RATE else ""
+_intg  = "bdf2" if BDF2 else "implicit"
+npz = f"{OUT}/agg_compaction_n{N}_sig{SIGMA:.0e}_adt{ACCEL_DT:g}{_t1tag}{TAG}.npz"
 
 print(f"[AGG-COMPACT] N={N} steps={STEPS} accel_dt={ACCEL_DT}s (phys time≈{STEPS*ACCEL_DT:.0f}s="
       f"{STEPS*ACCEL_DT/60:.1f}min) sigma={SIGMA*1e3:.1f}mN/m gap={GAP} bundle={BUNDLE} "
-      f"nucleus={NUCLEUS} -> {npz}", flush=True)
+      f"nucleus={NUCLEUS} integrator={_intg} t1_rate={T1RATE}"
+      + (f"(mode={T1_MODE} k0={T1_K0} B={T1_B} cad={T1_CAD})" if T1RATE else "")
+      + f" device={DEVICE} -> {npz}", flush=True)
 
 t0 = time.time()
 r = run_decohesion(
-    n_cells=N, subdiv=2, steps=STEPS, frames=FRAMES, device="cuda:0",
+    n_cells=N, subdiv=2, steps=STEPS, frames=FRAMES, device=DEVICE,
     builder=BUILDER, gap=GAP, init_npz=INIT_NPZ, inset=INSET,
     v0_from_init=(BUILDER == "confluent" or INIT_NPZ is not None), lloyd_iters=6,
     # --- contact: finished #1 projected-Newton IPC (log-barrier, guaranteed non-penetration) ---
     conservative_contact=False, ipc=True,
     ipc_newton=True, ipc_newton_max=NEWTONMAX, ipc_newton_tol=1e-4,
-    integrator="implicit", accel_dt=ACCEL_DT,
+    integrator=_intg, accel_dt=ACCEL_DT,
+    # --- biology-time flow: rate/event-driven T1 KMC rearrangement (T1_RATE=0 ⇒ mechanical σ only) ---
+    t1_rate=T1RATE, t1_k0=T1_K0, t1_barrier_b=T1_B,
+    t1_cadence=T1_CAD, t1_seed=T1_SEED, t1_move_mode=T1_MODE,
     # --- cell-cell adhesion: explicit cadherin catch-bonds, bundle-10 (de-cohesion emergent) ---
     cadherin=True, cad_bundle=BUNDLE,
     cad_mature=MATURE, cad_tau_mature=TAU_MAT, cad_mature_lifetime=MAT_LIFE,
@@ -163,8 +192,8 @@ for t in range(len(fr)):
 
 rg0, rg1 = com_rg(fr[0].astype(float)), com_rg(fr[-1].astype(float))
 p0, p1 = porosity(fr[0].astype(float)), porosity(fr[-1].astype(float))
-print(f"\n[SUMMARY sigma={SIGMA*1e3:.1f}mN/m] Rg {rg0:.2f}->{rg1:.2f}um "
-      f"({100*(rg1/max(rg0,1e-9)-1):+.2f}%)  porosity {p0:.3f}->{p1:.3f}  "
+print(f"\n[SUMMARY sigma={SIGMA*1e3:.1f}mN/m t1={T1RATE}({T1_MODE if T1RATE else '-'})] "
+      f"Rg {rg0:.2f}->{rg1:.2f}um ({100*(rg1/max(rg0,1e-9)-1):+.2f}%)  porosity {p0:.3f}->{p1:.3f}  "
       f"vv0={r.get('vv0_final','?')}  pen_peak={r.get('pen_frac_peak','?')}  "
-      f"pen_final={r.get('pen_frac_final','?')}", flush=True)
+      f"pen_final={r.get('pen_frac_final','?')}  t1_fired={r.get('t1_fired','?')}", flush=True)
 print("AGG-COMPACT DONE", flush=True)
