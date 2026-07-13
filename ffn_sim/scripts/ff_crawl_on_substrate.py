@@ -380,7 +380,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
     #      is the two-sided coupling. Replaces the fixed-dish clutch when --ecm. ----
     ecm_on = S.get("ecm") is not None
     if ecm_on:
-        from ffn_sim.ff.fa_ecm import clutch_ecm_spring_kernel, mask_ecm_by_bound_kernel
+        from ffn_sim.ff.fa_ecm import clutch_ecm_spring_kernel, mask_ecm_by_bound_kernel, clutch_ecm_slip_traction_kernel
         from ffn_sim.scripts.ff_ecm_remodel_demo import _segment_pairs, K_SEG   # _per_triple_alpha already imported at module level
         _emk = S["ecm"]; _enet = _emk.net
         _Ep0 = np.ascontiguousarray(_enet.pos, np.float64); _En = _Ep0.shape[0]
@@ -444,6 +444,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             if ecm_on:                                         # S6: collagen-I IS the substrate → the clutch pulls the LIVE fiber node (two-way; the cell FEELS the matrix)
                 wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d, Edummy_e], device=d)                  # +f traction on the cell; the −f reaction is applied in the collagen substep (partitioned/staggered)
+                if flow:                                       # PROPULSION: retrograde-flow crawl engine on the live collagen (cell side; −f on collagen in the substep)
+                    wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
             else:
                 wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d], device=d)
@@ -513,6 +515,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 if ecm_on:                                       # S6: collagen-I IS the substrate → the clutch pulls the LIVE fiber node (two-way; native production path)
                     wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
                               wp.float64(cp.rest_um), f_d, Edummy_e], device=d)              # +f traction on the cell; −f reaction applied in the collagen substep
+                    if flow:                                     # PROPULSION: retrograde-flow crawl engine on the live collagen (cell side)
+                        wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
                 else:
                     wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                               wp.float64(cp.rest_um), f_d], device=d)
@@ -594,6 +598,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
             if ecm_on:                                         # S6: collagen-I IS the substrate → the clutch pulls the LIVE fiber node (two-way; also the tip-load the ratchet reads)
                 wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d, Edummy_e], device=d)                  # +f traction on the cell; −f reaction applied in the collagen substep
+                if flow:                                       # PROPULSION: retrograde-flow crawl engine on the live collagen (cell side)
+                    wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
             else:
                 wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d], device=d)
@@ -773,6 +779,8 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 if clutches:
                     wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),   # BOUND cell basal
                               wp.float64(cp.rest_um), Edummy, Ef_d], device=d)                                          # clutch pulls the fiber
+                    if flow:                                   # PROPULSION reaction: retrograde-flow pushes the engaged collagen REARWARD (two-way, collagen side)
+                        wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[Edummy, Ef_d, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
                 wp.launch(axpy_physical_kernel, dim=_En, inputs=[Ep_d, wp.float64(_Edt), Egam_d, Ef_d], device=d)   # pinned bulk BC via huge γ
         if step % record_every == 0:
             p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)
@@ -903,9 +911,12 @@ def main():
                     "advances, clutches fall behind it and stop re-forming → bound→0 → traction collapses → LESS crawl. Kept only as a documented dead-end.")
     ap.add_argument("--rear-depoly", action="store_true", help="TREADMILL S1: pointed-end depolymerization at the rear cap "
                     "(mirror of directed front growth; mass-matched) — the rear half of the actin treadmill (mass-conserving).")
-    ap.add_argument("--flow", action="store_true", help="TREADMILL S2/S3: molecular-clutch RETROGRADE FLOW — bound-clutch anchors "
-                    "drift forward at v_retro in the mesh frame (= actin flows rearward), so the clutch builds forward load from FLOW "
-                    "→ traction → compact translocation; catch-slip releases at F*, nascent-rebind reseeds at the front.")
+    ap.add_argument("--flow", action="store_true", help="molecular-clutch RETROGRADE FLOW = the CRAWL PROPULSION ENGINE. A bound "
+                    "clutch grips actin flowing rearward at v_retro, so the accumulated slip pulls the cell node FORWARD (k·slip·phat) → "
+                    "traction → translocation; catch-slip releases at F*, nascent-rebind reseeds at the front. Works on BOTH the rigid "
+                    "dish (clutch_slip_traction, fixed anchor) AND the live collagen (--ecm: clutch_ecm_slip_traction, two-way — the cell "
+                    "crawls forward + pushes the engaged fibre rearward, momentum-conserving). NB: WITHOUT --flow the --ecm clutch is a "
+                    "passive spring only (no propulsion) — this flag connects the crawl engine to the collagen substrate.")
     ap.add_argument("--v-retro", type=float, default=0.03, help="retrograde actin flow speed [µm/s] (Chan-Odde 0.01–0.10; default 0.03 mid-band)")
     ap.add_argument("--fil-length-dist", default="mono", choices=["mono", "exponential"],
                     help="cortex filament length model: mono (identical L) or exponential (KB-3.18 distributed 1–10µm)")

@@ -51,6 +51,35 @@ def clutch_ecm_spring_kernel(
 
 
 @wp.kernel
+def clutch_ecm_slip_traction_kernel(
+    cell_force: wp.array(dtype=wp.vec3d),        # += forward retrograde-flow traction on the cell actin node
+    ecm_force: wp.array(dtype=wp.vec3d),         # += equal-opposite reaction on the LIVE collagen node (two-way)
+    actin: wp.array(dtype=wp.int32),             # (M,) cell actin-end node index per clutch
+    ecm_node: wp.array(dtype=wp.int32),          # (M,) bound collagen node index per clutch (<0 = unbound)
+    slip: wp.array(dtype=wp.float64),            # (M,) accumulated retrograde slip s [µm]
+    phat: wp.vec3d,                              # crawl polarity axis (unit)
+    k_int: wp.float64,                           # clutch stiffness [pN/µm]
+):
+    """Molecular-clutch RETROGRADE-FLOW traction on the LIVE collagen — the two-way twin of
+    ``motility_warp.clutch_slip_traction_kernel`` (which assumes a FIXED dish anchor). A bound clutch grips actin
+    flowing REARWARD; the receded material (slip ``s``, accumulated once per step by
+    ``clutch_slip_accumulate_kernel``) makes the clutch pull the cell node FORWARD by ``k_int·s·phat`` — and
+    because the collagen is LIVE (not an immovable dish), the equal-and-opposite reaction pushes the engaged
+    collagen node REARWARD (``−k_int·s·phat``). Momentum-conserving: the pinned collagen (z_lo BC) resists, so the
+    cell crawls forward against a matrix it can also displace ⇒ traction/propulsion vs matrix stiffness emerges
+    (molecular-clutch stiffness-sensing) instead of a body force. Same staggered launch as the ``clutch_ecm_spring``
+    pair: cell side in the force-eval (``ecm_force``=dummy), collagen side in the substep (``cell_force``=dummy)."""
+    t = wp.tid()
+    j = ecm_node[t]
+    if j < 0:
+        return
+    a = actin[t]
+    f = k_int * slip[t]
+    wp.atomic_add(cell_force, a, wp.vec3d(f * phat[0], f * phat[1], f * phat[2]))      # cell pulled FORWARD (crawl)
+    wp.atomic_add(ecm_force, j, wp.vec3d(-f * phat[0], -f * phat[1], -f * phat[2]))    # collagen reaction (two-way)
+
+
+@wp.kernel
 def mask_ecm_by_bound_kernel(base: wp.array(dtype=wp.int32), bound: wp.array(dtype=wp.int32),
                              out: wp.array(dtype=wp.int32)):
     """``out[t] = base[t]`` if the clutch is BOUND (``bound[t]==1``) else ``-1`` — so only ENGAGED clutches grip
