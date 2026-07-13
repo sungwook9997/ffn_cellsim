@@ -162,6 +162,17 @@ ffn_sim/outputs/warp_decohesion/figs/n1000_divfix_ipc_24h.html
 ffn_sim/outputs/warp_decohesion/figs/n100_divfix_24h.html
 ffn_sim/outputs/warp_decohesion/figs/n100_realistic_24h.html
 
+# --- 2026-07-13 FF native full-res HTML viewers + scratch (working-tree cleanup) ---
+# FF cell/ECM HTML viewers under outputs/ff/figs/ are native full-res — 264-485 MB each
+# (5.8 GB untracked total). Regenerable from the run; the committed record is the PNG
+# figures + curves + JSON data (PI native-viewer rule). Large morphology viewers are
+# release-uploaded for the gh-pages gallery, not git; lightweight demo HTMLs here are
+# dev scratch. The 14 already-tracked HTMLs stay tracked — this only stops NEW ones.
+ffn_sim/outputs/ff/figs/*.html
+# underscore-prefixed scratch/diagnostic dumps (convention) + TAG query scratch txt
+ffn_sim/outputs/ff/figs/_*
+ffn_sim/outputs/tag_kb/_*.txt
+
 # --- 2026-07-06 secret hardening (repo is public) — never commit credentials ---
 *.env
 .env.*
