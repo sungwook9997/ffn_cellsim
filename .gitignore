@@ -187,3 +187,11 @@ id_ed25519
 secrets.*
 credentials.*
 *.secret
+
+# --- 2026-07-13 local-only deliverables + personal file (PI: keep local, do not distribute) ---
+# Personal portfolio (public repo — never commit) + project/biology report deliverables
+# kept LOCAL only: not committed to git and not gallery-distributed (PI 2026-07-13 decision).
+/sungwook_portfolio.pdf
+/ffn_cellsim_report.pdf
+ffn_sim/docs/ffn_cellsim_10week_report.html
+ffn_sim/docs/bio_reports/
