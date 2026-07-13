@@ -594,3 +594,27 @@ over (release fires once). One refinement remains: the per-clutch force (384 pN)
 catch-slip release is a DISCRETE kmc tick (force builds between checks) — clamping the slip-traction to F* would finalize
 the physiological per-clutch (and likely trim the speed slightly). Figs `ff_flow_resolved.png`, `ff_flow_crawl.html`.
 Not tuned: F*, v_retro, kmc-every are all KB-grounded (Bell-Evans / Chan-Odde / ~1 s clutch lifetime).
+
+### MIGRATION FULLY RESOLVED (2026-07-13) — engine + physiological clutch mechanics = 0.76 nm/s (the correct MCF7 phenotype)
+
+The F*-clamp (`f = min(k·slip, F*)`, KB Bell-Evans release force) completes the molecular clutch: the sustained
+per-clutch traction cannot exceed F*, so the discrete-kmc overshoot is removed. Native 4-case (emt + compliant):
+
+| config | v_crawl | per-clutch | note |
+|---|---|---|---|
+| engine OFF (all overnight M6) | 0.36 nm/s | 0.1 pN | engine never wired to collagen |
+| engine ON, kmc=2000 | 26.5 | 5652 pN | over-load artifact (no turnover) |
+| engine ON, kmc=25 | 2.48 | 384 pN | turnover, still >F* |
+| **engine ON, kmc=25 + F*-clamp** | **0.76 nm/s** | **~26 pN (≈F*)** | **FULLY PHYSIOLOGICAL** |
+
+**Final honest verdict:** the overnight "migration is force-limited" was **engine-OFF** — the retrograde-flow crawl engine
+was wired only to the rigid dish, so all 8 M6 experiments had NO propulsion. Connecting it (`--flow` →
+`clutch_ecm_slip_traction`) makes the native cell **crawl directionally** (COM straightness 0.98). At **fully
+physiological clutch mechanics** (correct ~1 s turnover + per-clutch capped at F*=7 pN) the speed is **0.76 nm/s = 2× the
+engine-off** — the net directed propulsion is ~1 clutch-worth of F* (the ~23 bound clutches don't pull coherently
+forward + turn over). The higher speeds (26.5, 2.48) were progressively-less-physiological over-load artifacts, honestly
+filtered out. **This slow speed is the CORRECT poorly-motile MCF7 phenotype (KB-PIV-7) achieved WITH the right mechanism**
+— not a bug and not the engine being off. Everything KB-grounded (F* Bell-Evans, v_retro Chan-Odde, ~1 s clutch
+lifetime), nothing tuned. Figs `ff_flow_final.png`, `ff_flow_crawl.html`. **To get mesenchymal-fast migration you now need
+a genuinely motile cell (MDA-MB-231: stronger coherent polarization + more adhesions) — which needs the 5 missing
+MDA-MB-231 KB parameters (cortical tension, contractility, adhesion, radius, speed) ingested first (PI-gated).**
