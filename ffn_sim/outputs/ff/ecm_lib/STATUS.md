@@ -481,3 +481,16 @@ the network bending+entropic-co-dominated, softer than the EA-dominated athermal
 (physics) but the reference-concentration ABSOLUTE anchoring (bending κ / target_z / ξ prefactor) is a PI-scoped
 re-calibration — NOT auto-tuned (KB-1.3 forbids ⟨z⟩(c); the spec forbids fitting). Spring mode unchanged (n=1.11).
 Remaining validation (next): strain-stiffening K~σ^{3/2} + N1 sign flip. `ff/wlc.py`, `tests/ff/test_wlc.py`.
+
+## Checkpoint 32 (2026-07-12) — thermal-WLC validation complete: strain-stiffening ✓, N1 partial (honest)
+Remaining WLC validation (collagen ref, spring vs wlc): STRAIN-STIFFENING — differential modulus K/K0 rises to
+1.17× (spring, weak) vs **4.46× (WLC)** at γ=0.2 → the WLC produces the strong semiflexible nonlinear stiffening
+(K~σ^{3/2} regime), a second independent confirmation of the thermal physics. N1 (first normal-stress): spring
+N1/σxz@20%=0.08 (stays +); WLC ratio rises to 0.20 but N1 STAYS POSITIVE (no flip to the Janmey negative). Honest:
+the WLC softens the axial stretch but the entropic tension still carries stretch, so it does NOT fully reach the
+bending-dominated negative-N1 regime — consistent with the stretch-dominated diagnosis (CSCALING). So WLC fixes
+2 of 3 thermal signatures (c-exponent 1.11→2.63 ✓, strain-stiffening 1.17→4.46× ✓) but not the N1 sign.
+`figs/wlc_validation.png` (spring vs WLC c-scaling + strain-stiffening). THE ONE PI-SCOPED ITEM: the WLC absolute
+modulus at reference c is below band (entropic softer than the EA rod) — re-anchoring (bending κ / confinement-tube
+prefactor / target_z) is a modeling decision, NOT auto-tuned (hard rule). Next: WLC tumor tissue-mimetic (does the
+nonlinear wall reach kPa at high strain?).
