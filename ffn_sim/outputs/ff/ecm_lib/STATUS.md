@@ -542,3 +542,15 @@ tuning opportunity. Candidate resolutions (all PI-scoped, beyond parameter tunin
 single-fiber Mikado omits; or a prestress contribution to the measured modulus. This CLOSES the thermal-WLC
 re-anchoring question: the physics (c² scaling) is confirmed and the magnitude limitation is precisely bounded by
 the KB constraints — a clean, honest terminus. No tuning at any step.
+
+## Checkpoint 36 (2026-07-13) — dashboard updated with thermal-WLC; Kim-BD oracle N/A in corpus (honest closes)
+Two consolidations: (1) the consolidated validation dashboard now includes the thermal-WLC c-scaling fix (panel 5:
+spring n=1.11 vs WLC n=2.63) — the PI review artifact is current + complete (5 panels: 6-material Pa · alignment R_σ
+· stress-propagation n(S) · 2-path sensing · WLC c-exponent). `figs/ecm_validation_dashboard.png`, `wlc_cscaling.json`.
+(2) Kim-BD acceptance-oracle cross-validation (a MID item) — NOT available: the absorbed Kim corpus (Kim2012_IntegrBiol,
+Kim2023_Jour, in paper_chunks) is cell-MIGRATION-focused, not collagen-network rheology, so there is no Kim-BD G'(c)/
+K(γ)/N1 dataset to cross-validate against. Honest close: the emergent moduli are validated against the literature
+bands (Yang-Kaufman etc.) + the KB claims; a BD oracle cross-check would need a network-rheology BD source not in
+the corpus. With this, the autonomous non-tuning non-blocked ECM work is exhausted; remaining items are strictly
+PI-scoped (WLC two-regime/bundling/prestress re-anchoring; ν-faithful; ⟨z⟩(c); gate-family) or blocked (active-
+motility, Stokes-drag).

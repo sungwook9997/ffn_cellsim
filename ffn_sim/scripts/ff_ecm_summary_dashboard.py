@@ -115,11 +115,25 @@ def panel_sensing(ax):
     ax.legend(fontsize=7, loc="upper right"); ax.grid(True, which="both", alpha=0.25)
 
 
+def panel_wlc(ax):
+    d = _load("wlc_cscaling.json")
+    if not d:
+        ax.set_visible(False); return
+    c = np.array(d["concentration_mgml"])
+    ax.fill_between([0.8, 8], [5, 5], [100, 100], color="0.85", alpha=0.6, label="lit band 5-100 Pa")
+    ax.plot(c, d["G_spring_Pa"], "-o", color="#1f77b4", lw=2, ms=6, label=f"athermal spring n={d['exponent_spring']:.2f}")
+    ax.plot(c, d["G_wlc_Pa"], "-s", color="#d62728", lw=2, ms=6, label=f"thermal WLC n={d['exponent_wlc']:.2f}")
+    ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("collagen c [mg/mL]"); ax.set_ylabel("G' [Pa]")
+    ax.set_title("(5) thermal-WLC FIXES the c-exponent (1.11->2.63; confirms KB-1.30 thermal; PROVISIONAL)", fontsize=9)
+    ax.legend(fontsize=7, loc="upper left"); ax.grid(True, which="both", alpha=0.25)
+
+
 def main():
     os.makedirs(FIGS, exist_ok=True)
-    fig, axs = plt.subplots(2, 2, figsize=(13.5, 9.5))
+    fig, axs = plt.subplots(2, 3, figsize=(19.5, 9.5))
     panel_moduli(axs[0, 0]); panel_alignment(axs[0, 1])
     panel_stress_prop(axs[1, 0]); panel_sensing(axs[1, 1])
+    panel_wlc(axs[0, 2]); axs[1, 2].set_visible(False)
     fig.suptitle("FF ECM library — native validation dashboard (all results vs literature/KB anchors; "
                  "unfitted, bands = acceptance oracles)\ncollagen-I · fibrin · PA · HA · Matrigel · agarose  ·  "
                  "6/6 real Pa · alignment anisotropy · directional stress channeling · motor-clutch biphasic",

@@ -1,0 +1,33 @@
+{
+  "concentration_mgml": [
+    1.0,
+    2.0,
+    4.0,
+    7.0
+  ],
+  "G_spring_Pa": [
+    9.33,
+    18.42,
+    44.91,
+    76.86
+  ],
+  "G_wlc_Pa": [
+    0.17,
+    0.72,
+    5.94,
+    25.29
+  ],
+  "exponent_spring": 1.11,
+  "exponent_wlc": 2.63,
+  "literature_exponent": [
+    2.0,
+    2.1
+  ],
+  "literature_band_Pa": [
+    5,
+    100
+  ],
+  "strain_stiffen_spring": 1.17,
+  "strain_stiffen_wlc": 4.46,
+  "finding": "WLC fixes the c-exponent (1.11->2.63, confirms KB-1.30 thermal) + strain-stiffening (1.17->4.46x); absolute modulus below band at low c is a fundamental magnitude-exponent tension (KB-1.1 L_p bounded 9-22um cannot close it) = a model limit, not tuning. Default-off, PROVISIONAL."
+}
