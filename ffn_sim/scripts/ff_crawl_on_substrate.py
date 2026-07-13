@@ -445,7 +445,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d, Edummy_e], device=d)                  # +f traction on the cell; the −f reaction is applied in the collagen substep (partitioned/staggered)
                 if flow:                                       # PROPULSION: retrograde-flow crawl engine on the live collagen (cell side; −f on collagen in the substep)
-                    wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+                    wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int), wp.float64(cp.F_star_pN)], device=d)
             else:
                 wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d], device=d)
@@ -516,7 +516,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                     wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
                               wp.float64(cp.rest_um), f_d, Edummy_e], device=d)              # +f traction on the cell; −f reaction applied in the collagen substep
                     if flow:                                     # PROPULSION: retrograde-flow crawl engine on the live collagen (cell side)
-                        wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+                        wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int), wp.float64(cp.F_star_pN)], device=d)
                 else:
                     wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                               wp.float64(cp.rest_um), f_d], device=d)
@@ -599,7 +599,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                 wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d, Edummy_e], device=d)                  # +f traction on the cell; −f reaction applied in the collagen substep
                 if flow:                                       # PROPULSION: retrograde-flow crawl engine on the live collagen (cell side)
-                    wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+                    wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[f_d, Edummy_e, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int), wp.float64(cp.F_star_pN)], device=d)
             else:
                 wp.launch(clutch_spring_kernel, dim=M, inputs=[pos_d, ac_d, anch_d, bd_d, wp.float64(cp.k_int),
                           wp.float64(cp.rest_um), f_d], device=d)
@@ -780,7 +780,7 @@ def run(S, *, steps=600000, dt=None, safety=0.1, f_myo=NMIIA_MINIFIL_STALL_PN, c
                     wp.launch(clutch_ecm_spring_kernel, dim=M, inputs=[pos_d, ac_d, Ep_d, en_d, wp.float64(cp.k_int),   # BOUND cell basal
                               wp.float64(cp.rest_um), Edummy, Ef_d], device=d)                                          # clutch pulls the fiber
                     if flow:                                   # PROPULSION reaction: retrograde-flow pushes the engaged collagen REARWARD (two-way, collagen side)
-                        wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[Edummy, Ef_d, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int)], device=d)
+                        wp.launch(clutch_ecm_slip_traction_kernel, dim=M, inputs=[Edummy, Ef_d, ac_d, en_d, slip_d, ph, wp.float64(cp.k_int), wp.float64(cp.F_star_pN)], device=d)
                 wp.launch(axpy_physical_kernel, dim=_En, inputs=[Ep_d, wp.float64(_Edt), Egam_d, Ef_d], device=d)   # pinned bulk BC via huge γ
         if step % record_every == 0:
             p = pos_d.numpy(); pcxr = p[:Nc]; cc = pcxr.mean(0)      # frames need the host copy (rare)

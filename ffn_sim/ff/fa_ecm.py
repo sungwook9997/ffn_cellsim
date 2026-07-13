@@ -59,6 +59,7 @@ def clutch_ecm_slip_traction_kernel(
     slip: wp.array(dtype=wp.float64),            # (M,) accumulated retrograde slip s [µm]
     phat: wp.vec3d,                              # crawl polarity axis (unit)
     k_int: wp.float64,                           # clutch stiffness [pN/µm]
+    f_star: wp.float64,                          # catch-slip release force [pN]: sustained per-clutch traction is capped here
 ):
     """Molecular-clutch RETROGRADE-FLOW traction on the LIVE collagen — the two-way twin of
     ``motility_warp.clutch_slip_traction_kernel`` (which assumes a FIXED dish anchor). A bound clutch grips actin
@@ -68,13 +69,17 @@ def clutch_ecm_slip_traction_kernel(
     collagen node REARWARD (``−k_int·s·phat``). Momentum-conserving: the pinned collagen (z_lo BC) resists, so the
     cell crawls forward against a matrix it can also displace ⇒ traction/propulsion vs matrix stiffness emerges
     (molecular-clutch stiffness-sensing) instead of a body force. Same staggered launch as the ``clutch_ecm_spring``
-    pair: cell side in the force-eval (``ecm_force``=dummy), collagen side in the substep (``cell_force``=dummy)."""
+    pair: cell side in the force-eval (``ecm_force``=dummy), collagen side in the substep (``cell_force``=dummy).
+
+    The per-clutch force is CAPPED at ``f_star`` (Bell-Evans catch-slip release, KB): a real clutch releases at ~F*,
+    so its sustained traction cannot exceed it. Without the cap the discrete kmc release (every kmc_every steps)
+    lets ``k·s`` overshoot F* between ticks; the cap makes the per-clutch load physiological (≤F*) at any cadence."""
     t = wp.tid()
     j = ecm_node[t]
     if j < 0:
         return
     a = actin[t]
-    f = k_int * slip[t]
+    f = wp.min(k_int * slip[t], f_star)          # sustained per-clutch traction ≤ catch-slip release force F*
     wp.atomic_add(cell_force, a, wp.vec3d(f * phat[0], f * phat[1], f * phat[2]))      # cell pulled FORWARD (crawl)
     wp.atomic_add(ecm_force, j, wp.vec3d(-f * phat[0], -f * phat[1], -f * phat[2]))    # collagen reaction (two-way)
 
