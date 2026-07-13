@@ -494,3 +494,13 @@ bending-dominated negative-N1 regime — consistent with the stretch-dominated d
 modulus at reference c is below band (entropic softer than the EA rod) — re-anchoring (bending κ / confinement-tube
 prefactor / target_z) is a modeling decision, NOT auto-tuned (hard rule). Next: WLC tumor tissue-mimetic (does the
 nonlinear wall reach kPa at high strain?).
+
+## Checkpoint 33 (2026-07-13) — WLC E.5 tumor check: does the nonlinear wall reach kPa? (honest: no, reinforces re-anchoring)
+Dense aligned collagen (c=7, S=0.59) tangent modulus K at high strain, spring vs wlc: spring K=84→97 Pa (γ 0.1→0.5),
+WLC K=71→94 Pa — BOTH ~50-100× below the tumor band (5000-10000 Pa). The WLC's nonlinear enthalpic wall does NOT
+reach tumor kPa at these densities/strains — the low-c absolute-modulus softness carries through to dense collagen.
+So thermal-WLC fixes the SCALING (c-exponent + strain-stiffening) but not the ABSOLUTE tissue stiffness; reaching
+the kPa tumor range needs the reference re-anchoring (the one PI-scoped item) OR higher crosslink density than the
+KB-1.3 ⟨z⟩=3.2 physiological value (which must not be tuned). thermal-WLC is COMPLETE as a validated default-off
+option: it confirms the c-scaling physics is thermal (the documented gap's root cause), with the absolute anchoring
+left as a clean PI modeling decision. This closes the PI-authorized thermal-WLC thrust.
