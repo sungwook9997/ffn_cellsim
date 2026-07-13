@@ -504,3 +504,25 @@ the kPa tumor range needs the reference re-anchoring (the one PI-scoped item) OR
 KB-1.3 ⟨z⟩=3.2 physiological value (which must not be tuned). thermal-WLC is COMPLETE as a validated default-off
 option: it confirms the c-scaling physics is thermal (the documented gap's root cause), with the absolute anchoring
 left as a clean PI modeling decision. This closes the PI-authorized thermal-WLC thrust.
+
+## Checkpoint 34 (2026-07-13) — WLC re-anchoring is a FUNDAMENTAL magnitude↔exponent tension (non-tuning diagnostic)
+Investigated the WLC absolute-modulus gap WITHOUT tuning (a confinement-factor sensitivity scan — characterize, not
+fit). The WLC modulus is hypersensitive to the thermal slack x₀ (df/dR ∝ 1/(1−x₀)³). Scanning the confinement
+factor (tighter tube → higher x₀):
+| factor | x₀(ref) | G_ref (Pa) | c-exponent n |
+|---|---|---|---|
+| 1.0 (mesh ξ) | 0.980 | 0.33 | 2.74 |
+| 2.0 | 0.990 | 3.45 | 1.81 |
+| 3.0 | 0.993 | 7.52 | 1.45 |
+| 4.0 | 0.995 | 10.1 | 1.31 |
+→ ⭐ KEY FINDING: the band magnitude (G→11-13 Pa) and the c² exponent are in FUNDAMENTAL TENSION — tightening the
+confinement to reach the band pushes the segments onto the enthalpic EA wall (stiff, density-linear c¹), which
+DESTROYS the c^2.5 exponent (n drops 2.74→1.31 back toward athermal). Physical reason: low x₀ = entropic regime
+(soft, thermal c²); high x₀ = enthalpic regime (stiff, athermal c¹). Collagen at 1.5 mg/mL sits at this crossover.
+So the reference re-anchoring is NOT a free prefactor — no single confinement scale gives BOTH the 11-13 Pa
+magnitude AND the c² exponent in the athermal-Mikado+WLC framework. The entropic contribution that gives c² is ~30×
+softer than the measured modulus (the KB-1.30 formula kBT·L_p²/ξ⁵≈0.04 Pa at ξ=2µm confirms the entropic term is
+tiny). RESOLUTION FOR PI (characterized, not decided): real collagen's (n≈2 AND 11-13 Pa) implies either a larger
+effective L_p/κ than the sourced 17µm (literature re-examination), OR a two-regime constitutive law (entropic sets
+scaling, a separately-anchored enthalpic sets magnitude) — a genuine modeling call, now precisely framed.
+`figs/wlc_reanchor_tension.png`. NO tuning: the scan characterizes the sensitivity; no value was set to hit the band.
