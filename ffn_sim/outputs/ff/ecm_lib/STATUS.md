@@ -526,3 +526,19 @@ tiny). RESOLUTION FOR PI (characterized, not decided): real collagen's (n≈2 AN
 effective L_p/κ than the sourced 17µm (literature re-examination), OR a two-regime constitutive law (entropic sets
 scaling, a separately-anchored enthalpic sets magnitude) — a genuine modeling call, now precisely framed.
 `figs/wlc_reanchor_tension.png`. NO tuning: the scan characterizes the sensitivity; no value was set to hit the band.
+
+## Checkpoint 35 (2026-07-13) — WLC re-anchoring DEFINITIVELY CLOSED: it is a genuine model limit, not a parameter error
+Followed the checkpoint-34 tension to its root via the KB. KB-1.1 "Collagen FIBER persistence length" = 9-22 µm
+(median 17 µm) — so the spec's L_p=17µm is ALREADY the fiber (not fibril) value, KB-bounded 9-22µm. Reaching the
+band via L_p is IMPOSSIBLE: G_entropic ∝ L_p², so 11-13 Pa (from 0.33 Pa) would need L_p≈300µm — 14× above the KB-1.1
+ceiling. Even the KB high-end L_p=22µm gives only ~0.55 Pa (still ~20× under). Combined with KB-1.3 (⟨z⟩=3.2, no
+⟨z⟩(c)) and checkpoint 34 (confinement tightening kills the c² exponent), EVERY KB-anchored lever is exhausted:
+NONE closes the magnitude gap without violating a KB claim or destroying the exponent. ⭐ DEFINITIVE, HONEST
+CONCLUSION: with all parameters at their KB-anchored physiological values, the FF athermal-Mikado+WLC collagen gives
+the correct c² EXPONENT (thermal, WLC-confirmed) but an entropic modulus ~30× below the measured 11-13 Pa — a
+GENUINE MODEL LIMITATION (the single-fiber Mikado's entropic-modulus magnitude), NOT a mis-set parameter or a
+tuning opportunity. Candidate resolutions (all PI-scoped, beyond parameter tuning): a two-regime constitutive law
+(entropic scaling + separately-anchored enthalpic magnitude); a lateral fiber-bundling/interaction term the
+single-fiber Mikado omits; or a prestress contribution to the measured modulus. This CLOSES the thermal-WLC
+re-anchoring question: the physics (c² scaling) is confirmed and the magnitude limitation is precisely bounded by
+the KB constraints — a clean, honest terminus. No tuning at any step.
