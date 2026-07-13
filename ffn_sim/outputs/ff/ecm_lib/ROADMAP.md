@@ -57,8 +57,11 @@ real-Pa ECM — zero tuning.
 
 - **ECMRemodeler topological bond-mutation operator** → emergent plasticity + MMP + LOX channels (Kim p07/p39:
   transient Bell crosslinks, covalent = k_off→0 limit, creep-recovery). *Blocked on the matrix Bell-rate datum.*
-- **Thermal semiflexible force-extension** (WLC entropic) → real differential-modulus **K~σ^{3/2}** master curve.
-  *Changing the production default is PI-gated.*
+- ✅ **Thermal semiflexible force-extension** (WLC entropic) — IMPLEMENTED + VALIDATED (2026-07-13, default-off
+  `axial_mode='wlc'`, PROVISIONAL): c-exponent 1.11→**2.63** + strain-stiffening K/K0 1.17→**4.46×** CONFIRM the
+  KB-1.30 thermal diagnosis. Honest: N1 no-flip; absolute modulus below band = a FUNDAMENTAL magnitude↔exponent
+  tension (tightening confinement to reach the band kills c² — checkpoint 34). Re-anchoring (larger effective
+  L_p/κ, or a two-regime law) is the precisely-framed PI modeling call. `ff/wlc.py`, `figs/wlc_validation.png`.
 - **Principled per-segment cylindrical Stokes drag (Kim T6)** — the **migration unblocker** (fixes native crawl
   Σγ∝Nc solver instability). *Blocked on solver stability work.*
 - **Long-range stress propagation |σ|(r)~r^-n** via a contractile inclusion (KB-1.10) — needs #3.
