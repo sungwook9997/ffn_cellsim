@@ -668,12 +668,22 @@ try{
 setFrame(_f0);
 updMode();
 
+// event-driven rendering: NO rAF when idle. Was an unconditional 60fps renderer.render →
+// idle tabs pegged CPU/GPU forever, catastrophic under software-WebGL (2026-07-08).
+// The loop reschedules itself only while playback runs or a repaint is pending, then
+// stops — a still viewer costs zero CPU and headless capture can settle to idle.
+let dirty=true, running=false;
+function wake(){ if(!running){ running=true; requestAnimationFrame(loop); } }
+function requestRender(){ dirty=true; wake(); }
+ctr.addEventListener('change', requestRender);
+for(const ev of ['input','change','click']) document.addEventListener(ev, requestRender);
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);});
-function loop(t){requestAnimationFrame(loop); ctr.update();
-  if(playing && t-last>1000/fps){last=t; setFrame(cur+1);}
-  renderer.render(scene,cam);}
-requestAnimationFrame(loop);
+  renderer.setSize(innerWidth,innerHeight); requestRender();});
+function loop(t){ ctr.update();
+  if(playing && t-last>1000/fps){last=t; setFrame(cur+1); dirty=true;}
+  if(dirty){ dirty=false; renderer.render(scene,cam); }
+  if(playing || dirty){ requestAnimationFrame(loop); } else { running=false; }}
+requestRender();
 </script></body></html>"""
 
 

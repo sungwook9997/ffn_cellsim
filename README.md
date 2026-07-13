@@ -10,9 +10,9 @@
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![Engine](https://img.shields.io/badge/GPU-NVIDIA%20Warp-76B900?logo=nvidia&logoColor=white)
-![Lines of code](https://img.shields.io/badge/code-177k%20LOC-informational)
-![Commits](https://img.shields.io/badge/commits-1233%20in%2010%20weeks-success)
-![Tests](https://img.shields.io/badge/validation-148%20test%20files-blueviolet)
+![Lines of code](https://img.shields.io/badge/code-193k%20LOC-informational)
+![Commits](https://img.shields.io/badge/commits-1530%20in%2011%20weeks-success)
+![Tests](https://img.shields.io/badge/validation-167%20test%20files-blueviolet)
 
 ### ▶ [**Explore the interactive 3D gallery →**](https://sungwook9997.github.io/ffn_cellsim/)
 <sub>rotate the cells, cut the spheroids, walk through the DCM & FF engines and the validation foundation</sub>
@@ -41,7 +41,7 @@ Behavior here **emerges** from microscopic physics — nothing is hand-animated 
 
 Full-compartment and faceted spheroids (N=400), cell division, emergent aggregation, and the filament (FF) engine's cortex and ECM protrusions — all live, GPU-native renders.
 
-**Cross-checked against the literature, not fitted to it:** contact angle vs Young–Dupré, spheroid geometry vs Laplace, and ECM fiber-network remodeling vs the Taeyoon-Kim oracle (the ~1/r strain field recovered in the clean intermediate regime); single-filament and ECM sanity gates pass before any production run. Where the model falls short of a target — the active-cortical-tension magnitude, or single-cell spreading against the lab's collective-spheroid data — **that gap is reported honestly, not hidden.** Validation figures live in the gallery's *Quantitative validation* section.
+**Cross-checked against the literature, not fitted to it:** contact angle vs Young–Dupré, spheroid geometry vs Laplace, ECM fiber-network remodeling vs the Taeyoon-Kim oracle (the ~1/r strain field recovered in the clean intermediate regime), and a 6-material ECM library (collagen → Matrigel → agarose) validated to real moduli — with emergent stiffness-sensing and contact-guidance falling out of the fiber physics; single-filament and ECM sanity gates pass before any production run. Where the model falls short of a target — the active-cortical-tension magnitude, or single-cell spreading against the lab's collective-spheroid data — **that gap is reported honestly, not hidden.** Validation figures live in the gallery's *Quantitative validation* section.
 
 ---
 
@@ -80,10 +80,10 @@ This has been a single, sustained build. The commit history is the honest record
 
 | | |
 |---|---|
-| **~1,233 commits** | over 10 weeks (2026-04-29 → 07-06): 40 → **357** → **711** → 125 per month |
-| **177,000 lines** | of Python across 674 files |
-| **148 test files** | validation-first: sanity gates written *before* each physics module runs |
-| **156 design docs** | every non-trivial decision recorded with its literature anchor |
+| **~1,530 commits** | over 11 weeks (2026-04-29 → 07-13): 40 → **357** → **711** → 422 per month |
+| **193,000 lines** | of Python across 769 files |
+| **167 test files** | validation-first: sanity gates written *before* each physics module runs |
+| **500+ design docs** | every non-trivial decision recorded with its literature anchor |
 | **2 physics engines** | GPU-native Warp, parity-gated against an archived HOOMD reference |
 
 Native-resolution multicellular assemblies (10²–10³ deformable cells, each ~42 nodes) run on a single RTX A5000 — see the interactive spheroids in the [gallery](https://sungwook9997.github.io/ffn_cellsim/).
